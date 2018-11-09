@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -188,7 +189,7 @@ func mergeProcessesFromOldIntoNew(old, newAlert *v1.Alert) (newAlertHasNewProces
 func mergeAlerts(old, newAlert *v1.Alert) *v1.Alert {
 	if old.GetLifecycleStage() == v1.LifecycleStage_RUNTIME && newAlert.GetLifecycleStage() == v1.LifecycleStage_RUNTIME {
 		newAlertHasNewProcesses := mergeProcessesFromOldIntoNew(old, newAlert)
-		// This ensures that we don't keep updating the timestamp of an old runtime alert.
+		// This ensures that we don't keep updating an old runtime alert, so that we have idempotent checks.
 		if !newAlertHasNewProcesses {
 			return old
 		}
@@ -198,7 +199,12 @@ func mergeAlerts(old, newAlert *v1.Alert) *v1.Alert {
 	// Updated deploy-time alerts continue to have the same enforcement action.
 	if newAlert.GetLifecycleStage() == v1.LifecycleStage_DEPLOY && old.GetLifecycleStage() == v1.LifecycleStage_DEPLOY {
 		newAlert.Enforcement = old.GetEnforcement()
+		// Don't keep updating the timestamp of the violation _unless_ the violations are actually different.
+		if protoutils.EqualV1Alert_ViolationSlices(newAlert.GetViolations(), old.GetViolations()) {
+			newAlert.Time = old.GetTime()
+		}
 	}
+
 	newAlert.FirstOccurred = old.GetFirstOccurred()
 	return newAlert
 }

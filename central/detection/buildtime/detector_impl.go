@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/detection/image"
 	"github.com/stackrox/rox/central/globalindex"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -65,7 +65,7 @@ func policyAndViolationsToAlert(policy *v1.Policy, violations []*v1.Alert_Violat
 	alert := &v1.Alert{
 		Id:             uuid.NewV4().String(),
 		LifecycleStage: v1.LifecycleStage_BUILD,
-		Policy:         proto.Clone(policy).(*v1.Policy),
+		Policy:         protoutils.CloneV1Policy(policy),
 		Violations:     violations,
 		Time:           ptypes.TimestampNow(),
 	}

@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/deployment/index/mappings"
 	"github.com/stackrox/rox/central/metrics"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
+	"github.com/stackrox/rox/pkg/protoutils"
 )
 
 type predicatedMatcher struct {
@@ -61,7 +61,7 @@ func (p *setImpl) UpsertPolicy(policy *v1.Policy) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	cloned := proto.Clone(policy).(*v1.Policy)
+	cloned := protoutils.CloneV1Policy(policy)
 
 	searchBasedMatcher, err := matcher.ForPolicy(cloned, mappings.OptionsMap, p.processStore)
 	if err != nil {

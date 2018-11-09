@@ -3,12 +3,12 @@ package image
 import (
 	"sync"
 
-	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/image/index/mappings"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protoutils"
 )
 
 type setImpl struct {
@@ -37,7 +37,7 @@ func (p *setImpl) UpsertPolicy(policy *v1.Policy) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	cloned := proto.Clone(policy).(*v1.Policy)
+	cloned := protoutils.CloneV1Policy(policy)
 
 	searchBasedMatcher, err := matcher.ForPolicy(cloned, mappings.OptionsMap, nil)
 	if err != nil {

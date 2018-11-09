@@ -1,7 +1,6 @@
 package enrichment
 
 import (
-	"github.com/gogo/protobuf/proto"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageIntegrationDS "github.com/stackrox/rox/central/imageintegration/datastore"
@@ -9,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/risk"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/images/enricher"
+	"github.com/stackrox/rox/pkg/protoutils"
 )
 
 // enricherImpl enriches images with data from registries and scanners.
@@ -88,7 +88,7 @@ func (e *enricherImpl) ReprocessRiskAsync() {
 // ReprocessDeploymentRisk will reprocess the passed deployments risk and save the results
 func (e *enricherImpl) ReprocessDeploymentRiskAsync(deployment *v1.Deployment) {
 	go func() {
-		deployment = proto.Clone(deployment).(*v1.Deployment)
+		deployment = protoutils.CloneV1Deployment(deployment)
 		if err := e.addRiskToDeployment(deployment); err != nil {
 			logger.Errorf("Error reprocessing risk for deployment %s: %s", deployment.GetName(), err)
 		}

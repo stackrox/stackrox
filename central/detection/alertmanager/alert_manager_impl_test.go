@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/searchbasedpolicies/builders"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
@@ -170,7 +170,7 @@ func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesForNonRuntime() {
 func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithNoOldAlert() {
 	suite.makeAlertsMockReturn()
 	alert := getFakeRuntimeAlert(nowProcess)
-	clonedAlert := proto.Clone(alert).(*v1.Alert)
+	clonedAlert := protoutils.CloneV1Alert(alert)
 	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(alert))
 	suite.Equal(clonedAlert, alert)
 }
@@ -183,7 +183,7 @@ func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithTheSameAlert() 
 func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithAnOldAlert() {
 	suite.makeAlertsMockReturn(getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess))
 	alert := getFakeRuntimeAlert(nowProcess)
-	clonedAlert := proto.Clone(alert).(*v1.Alert)
+	clonedAlert := protoutils.CloneV1Alert(alert)
 	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(alert))
 	suite.Equal(clonedAlert, alert)
 }
@@ -201,7 +201,7 @@ func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithSuperOldAlert()
 func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesActuallyTrims() {
 	suite.makeAlertsMockReturn(getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess))
 	alert := getFakeRuntimeAlert(yesterdayProcess, nowProcess)
-	clonedAlert := proto.Clone(alert).(*v1.Alert)
+	clonedAlert := protoutils.CloneV1Alert(alert)
 	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(alert))
 	suite.NotEqual(clonedAlert, alert)
 	suite.Len(alert.GetViolations()[0].GetProcesses(), 1)

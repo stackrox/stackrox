@@ -3,13 +3,13 @@ package runtime
 import (
 	"fmt"
 
-	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/deployment"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -121,8 +121,8 @@ func policyDeploymentAndViolationsToAlert(policy *v1.Policy, deployment *v1.Depl
 	alert := &v1.Alert{
 		Id:             uuid.NewV4().String(),
 		LifecycleStage: v1.LifecycleStage_RUNTIME,
-		Deployment:     proto.Clone(deployment).(*v1.Deployment),
-		Policy:         proto.Clone(policy).(*v1.Policy),
+		Deployment:     protoutils.CloneV1Deployment(deployment),
+		Policy:         protoutils.CloneV1Policy(policy),
 		Violations:     violations,
 		Time:           ptypes.TimestampNow(),
 	}
