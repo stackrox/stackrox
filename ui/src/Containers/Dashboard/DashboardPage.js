@@ -349,10 +349,13 @@ class DashboardPage extends Component {
             });
         });
         const severities = Object.keys(counts);
+        const totalViolations = Object.values(counts).reduce((a, b) => a + b);
         return (
             <div className="w-full">
                 <h2 className="-ml-6 bg-base-100 inline-block leading-normal mb-6 p-3 pb-2 pl-6 pr-4 rounded-r-full text-base-600 text-lg text-primary-800 tracking-wide tracking-widest uppercase">
-                    System Violations
+                    {totalViolations === 1
+                        ? `${totalViolations} System Violation`
+                        : `${totalViolations} System Violations`}
                 </h2>
                 <div className="flex">
                     {severities.map((severity, i) => (
