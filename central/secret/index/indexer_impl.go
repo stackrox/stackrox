@@ -6,8 +6,11 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/batcher"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
+
+const batchSize = 5000
 
 type secretWrapper struct {
 	// Json name of this field must match what is used in secret/search/options/map
@@ -25,13 +28,10 @@ type indexerImpl struct {
 
 func (i *indexerImpl) UpsertSecret(secret *v1.Secret) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "Secret")
-
 	return i.index.Index(secret.GetId(), wrap(secret))
 }
 
-func (i *indexerImpl) UpsertSecrets(secrets ...*v1.Secret) error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "Secret")
-
+func (i *indexerImpl) processBatch(secrets []*v1.Secret) error {
 	batch := i.index.NewBatch()
 	for _, secret := range secrets {
 		batch.Index(secret.GetId(), wrap(secret))
@@ -39,8 +39,22 @@ func (i *indexerImpl) UpsertSecrets(secrets ...*v1.Secret) error {
 	return i.index.Batch(batch)
 }
 
+func (i *indexerImpl) UpsertSecrets(secrets ...*v1.Secret) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "Secret")
+	batchManager := batcher.New(len(secrets), batchSize)
+	for {
+		start, end, ok := batchManager.Next()
+		if !ok {
+			break
+		}
+		if err := i.processBatch(secrets[start:end]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (i *indexerImpl) RemoveSecret(id string) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Remove, "Secret")
-
 	return i.index.Delete(id)
 }

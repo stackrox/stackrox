@@ -7,12 +7,14 @@ import (
 	"github.com/stackrox/rox/central/deployment/index/mappings"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/batcher"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
-// AlertIndex provides storage functionality for alerts.
+const batchSize = 5000
+
 type indexerImpl struct {
 	index bleve.Index
 }
@@ -28,15 +30,28 @@ func (b *indexerImpl) AddDeployment(deployment *v1.Deployment) error {
 	return b.index.Index(deployment.GetId(), &deploymentWrapper{Type: v1.SearchCategory_DEPLOYMENTS.String(), Deployment: deployment})
 }
 
-// AddDeployments adds the deployments to the index
-func (b *indexerImpl) AddDeployments(deployments []*v1.Deployment) error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "Deployment")
-
+func (b *indexerImpl) processBatch(deployments []*v1.Deployment) error {
 	batch := b.index.NewBatch()
 	for _, deployment := range deployments {
 		batch.Index(deployment.GetId(), &deploymentWrapper{Type: v1.SearchCategory_DEPLOYMENTS.String(), Deployment: deployment})
 	}
 	return b.index.Batch(batch)
+}
+
+// AddDeployments adds the deployments to the index
+func (b *indexerImpl) AddDeployments(deployments []*v1.Deployment) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "Deployment")
+	batchManager := batcher.New(len(deployments), batchSize)
+	for {
+		start, end, ok := batchManager.Next()
+		if !ok {
+			break
+		}
+		if err := b.processBatch(deployments[start:end]); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // DeleteDeployment deletes the deployment from the index

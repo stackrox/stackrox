@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -546,5 +547,24 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 				"result, please update the test if you want it to be more general.")
 			suite.Equal(c.expectedMatches, results[0].Matches)
 		}
+	}
+}
+
+func (suite *DeploymentIndexTestSuite) TestBatches() {
+	deployments := []*v1.Deployment{
+		fixtures.GetDeployment(),
+		fixtures.GetDeployment(),
+		fixtures.GetDeployment(),
+		fixtures.GetDeployment(),
+	}
+	for _, d := range deployments {
+		d.Id = uuid.NewV4().String()
+	}
+	err := suite.indexer.AddDeployments(deployments)
+	suite.NoError(err)
+	for _, d := range deployments {
+		results, err := suite.indexer.Search(search.NewQueryBuilder().AddExactMatches(search.DeploymentID, d.GetId()).ProtoQuery())
+		suite.NoError(err)
+		suite.Len(results, 1)
 	}
 }

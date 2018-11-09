@@ -7,10 +7,13 @@ import (
 	"github.com/stackrox/rox/central/alert/index/mappings"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/batcher"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
+
+const batchSize = 5000
 
 type indexerImpl struct {
 	index bleve.Index
@@ -27,14 +30,28 @@ func (b *indexerImpl) AddAlert(alert *v1.Alert) error {
 	return b.index.Index(alert.GetId(), &alertWrapper{Type: v1.SearchCategory_ALERTS.String(), Alert: alert})
 }
 
-// AddAlerts adds the alerts to the indexer
-func (b *indexerImpl) AddAlerts(alerts []*v1.Alert) error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "Alert")
+func (b *indexerImpl) processBatch(alerts []*v1.Alert) error {
 	batch := b.index.NewBatch()
 	for _, alert := range alerts {
 		batch.Index(alert.GetId(), &alertWrapper{Type: v1.SearchCategory_ALERTS.String(), Alert: alert})
 	}
 	return b.index.Batch(batch)
+}
+
+// AddAlerts adds the alerts to the indexer
+func (b *indexerImpl) AddAlerts(alerts []*v1.Alert) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "Alert")
+	batchManager := batcher.New(len(alerts), batchSize)
+	for {
+		start, end, ok := batchManager.Next()
+		if !ok {
+			break
+		}
+		if err := b.processBatch(alerts[start:end]); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // DeleteAlert deletes the alert from the indexer

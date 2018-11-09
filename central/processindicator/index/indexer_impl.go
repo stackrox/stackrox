@@ -7,10 +7,13 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator/index/mappings"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/batcher"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
+
+const batchSize = 5000
 
 // AlertIndex provides storage functionality for alerts.
 type indexerImpl struct {
@@ -28,14 +31,28 @@ func (b *indexerImpl) AddProcessIndicator(indicator *v1.ProcessIndicator) error 
 	return b.index.Index(indicator.GetId(), &indicatorWrapper{Type: v1.SearchCategory_PROCESS_INDICATORS.String(), ProcessIndicator: indicator})
 }
 
-// AddIndicators adds the indicators to the indexer
-func (b *indexerImpl) AddProcessIndicators(indicators []*v1.ProcessIndicator) error {
-	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "ProcessIndicator")
+func (b *indexerImpl) processBatch(indicators []*v1.ProcessIndicator) error {
 	batch := b.index.NewBatch()
 	for _, indicator := range indicators {
 		batch.Index(indicator.GetId(), &indicatorWrapper{Type: v1.SearchCategory_PROCESS_INDICATORS.String(), ProcessIndicator: indicator})
 	}
 	return b.index.Batch(batch)
+}
+
+// AddIndicators adds the indicators to the indexer
+func (b *indexerImpl) AddProcessIndicators(indicators []*v1.ProcessIndicator) error {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "ProcessIndicator")
+	batchManager := batcher.New(len(indicators), batchSize)
+	for {
+		start, end, ok := batchManager.Next()
+		if !ok {
+			break
+		}
+		if err := b.processBatch(indicators[start:end]); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // DeleteIndicator deletes the indicator from the index
