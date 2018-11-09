@@ -42,7 +42,7 @@ func main() {
 		logger.Fatalf("Unable to generate specified flows. Increase maxDeployments or decrease maxNetworkFlows")
 	}
 
-	conn, err := clientconn.GRPCConnection(*centralEndpoint)
+	conn, err := clientconn.GRPCConnection(*centralEndpoint, clientconn.Central)
 	if err != nil {
 		panic(err)
 	}

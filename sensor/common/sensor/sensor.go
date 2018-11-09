@@ -106,7 +106,7 @@ func (s *Sensor) Start() {
 	// Start up connections.
 	s.logger.Infof("Connecting to Central server %s", s.centralEndpoint)
 	var err error
-	s.conn, err = clientconn.GRPCConnection(s.centralEndpoint)
+	s.conn, err = clientconn.GRPCConnection(s.centralEndpoint, clientconn.Central)
 	if err != nil {
 		s.logger.Fatalf("Error connecting to central: %s", err)
 	}

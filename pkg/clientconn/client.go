@@ -13,22 +13,32 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
+// Service identifies the service which acts as gRPC server.
+type Service int
+
+const (
+	// Central is the service name for central
+	Central Service = iota
+	// Sensor is the service name for sensor
+	Sensor
+)
+
 // GRPCConnection returns a grpc.ClientConn object.
-func GRPCConnection(endpoint string) (conn *grpc.ClientConn, err error) {
-	return AuthenticatedGRPCConnection(endpoint)
+func GRPCConnection(endpoint string, service Service) (conn *grpc.ClientConn, err error) {
+	return AuthenticatedGRPCConnection(endpoint, service)
 }
 
-func tlsConfig(clientCert tls.Certificate, rootCAs *x509.CertPool) *tls.Config {
+func tlsConfig(clientCert tls.Certificate, rootCAs *x509.CertPool, server string) *tls.Config {
 	return &tls.Config{
 		Certificates: []tls.Certificate{clientCert},
-		ServerName:   mtls.CentralSubject.Hostname(),
+		ServerName:   server,
 		RootCAs:      rootCAs,
 	}
 }
 
 // AuthenticatedGRPCConnection returns a grpc.ClientConn object that uses
 // client certificates found on the local file system.
-func AuthenticatedGRPCConnection(endpoint string) (conn *grpc.ClientConn, err error) {
+func AuthenticatedGRPCConnection(endpoint string, service Service) (conn *grpc.ClientConn, err error) {
 	clientCert, err := mtls.LeafCertificateFromFile()
 	if err != nil {
 		return nil, fmt.Errorf("client credentials: %s", err)
@@ -38,7 +48,12 @@ func AuthenticatedGRPCConnection(endpoint string) (conn *grpc.ClientConn, err er
 		return nil, fmt.Errorf("trusted pool: %s", err)
 	}
 
-	creds := credentials.NewTLS(tlsConfig(clientCert, rootCAs))
+	var creds credentials.TransportCredentials
+	if service == Central {
+		creds = credentials.NewTLS(tlsConfig(clientCert, rootCAs, mtls.CentralSubject.Hostname()))
+	} else if service == Sensor {
+		creds = credentials.NewTLS(tlsConfig(clientCert, rootCAs, mtls.SensorSubject.Hostname()))
+	}
 	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds), keepAliveDialOption())
 }
 

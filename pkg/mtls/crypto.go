@@ -43,6 +43,9 @@ var (
 	// CentralSubject is the identity used in certificates for Central.
 	CentralSubject = Subject{ServiceType: v1.ServiceType_CENTRAL_SERVICE, Identifier: "Central"}
 
+	// SensorSubject is the identity used in certificates for Sensor.
+	SensorSubject = Subject{ServiceType: v1.ServiceType_SENSOR_SERVICE, Identifier: "Sensor"}
+
 	readCAOnce sync.Once
 	caCert     *x509.Certificate
 	caCertDER  []byte
