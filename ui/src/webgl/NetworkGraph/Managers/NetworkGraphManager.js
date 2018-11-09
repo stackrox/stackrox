@@ -1,5 +1,11 @@
+import throttle from 'lodash/throttle';
+import debounce from 'lodash/debounce';
+
 import SceneManager from './SceneManager';
 import DataManager from './DataManager';
+
+const THROTTLE_DELAY = 500;
+const DEBOUNCE_DELAY = 15;
 
 const NetworkGraphManager = element => {
     let networkGraphCanvas;
@@ -36,14 +42,18 @@ const NetworkGraphManager = element => {
         sceneManager.zoomOut();
     }
 
+    const onThrottleClick = throttle(onClick, THROTTLE_DELAY, { trailing: false });
+
+    const onDebounceMouseMove = debounce(mouseMove, DEBOUNCE_DELAY);
+
     function bindEventListeners() {
-        networkGraphCanvas.addEventListener('click', onClick, false);
-        networkGraphCanvas.addEventListener('mousemove', mouseMove, false);
+        networkGraphCanvas.addEventListener('click', onThrottleClick, false);
+        networkGraphCanvas.addEventListener('mousemove', onDebounceMouseMove, false);
     }
 
     function unbindEventListeners() {
-        networkGraphCanvas.removeEventListener('click', onClick, false);
-        networkGraphCanvas.removeEventListener('mousemove', mouseMove, false);
+        networkGraphCanvas.removeEventListener('click', onThrottleClick, false);
+        networkGraphCanvas.removeEventListener('mousemove', onDebounceMouseMove, false);
     }
 
     function setUpNetworkData({ nodes, networkFlowMapping }) {
