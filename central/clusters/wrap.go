@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	defaultMonitoringPort = 8086
+	defaultMonitoringPort = 8186
 )
 
 var (

@@ -5,8 +5,8 @@ metadata:
   namespace: stackrox
 spec:
   ports:
-  - port: 8086
-    targetPort: 8086
+  - port: 8186
+    targetPort: 8186
   selector:
     app: monitoring
   type: LoadBalancer

@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/pkg/version"
 	zipPkg "github.com/stackrox/rox/pkg/zip"
 )
@@ -104,9 +103,16 @@ func generateMonitoringFiles(zipW *zip.Writer, caCert, caKey []byte) error {
 		return fmt.Errorf("failed to write key.pem: %s", err)
 	}
 
-	// Generate monitoring password
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-password", []byte(uuid.NewV4().String()), false)); err != nil {
-		return fmt.Errorf("failed to write monitoring-password: %s", err)
+	monitoringCert, monitoringKey, err = mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: v1.ServiceType_MONITORING_CLIENT_SERVICE, Identifier: "Monitoring Client"},
+		caCert, caKey)
+	if err != nil {
+		return err
+	}
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring-client-cert.pem", monitoringCert, false)); err != nil {
+		return fmt.Errorf("failed to write cert.pem: %s", err)
+	}
+	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring-client-key.pem", monitoringKey, false)); err != nil {
+		return fmt.Errorf("failed to write key.pem: %s", err)
 	}
 	return nil
 }

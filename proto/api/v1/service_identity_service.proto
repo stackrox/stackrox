@@ -17,6 +17,7 @@ enum ServiceType {
     COLLECTOR_SERVICE         = 4;
     MONITORING_UI_SERVICE     = 5;
     MONITORING_DB_SERVICE     = 6;
+    MONITORING_CLIENT_SERVICE = 7;
 }
 
 message ServiceIdentity {

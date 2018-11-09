@@ -60,7 +60,7 @@ kubectl apply -f "$DIR/sensor-rbac.yaml" || print_rbac_instructions
 
 {{if .MonitoringEndpoint}}
 echo "Creating secrets for monitoring..."
-kubectl create secret -n "{{.Namespace}}" generic monitoring --from-file="$DIR/monitoring-password" --from-file="$DIR/monitoring-ca.pem"
+kubectl create secret -n "{{.Namespace}}" generic monitoring-client --from-file="$DIR/monitoring-client-cert.pem" --from-file="$DIR/monitoring-client-key.pem" --from-file="$DIR/monitoring-ca.pem"
 kubectl create cm -n "{{.Namespace}}" telegraf --from-file="$DIR/telegraf.conf"
 {{- end}}
 

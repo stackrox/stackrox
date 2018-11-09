@@ -112,8 +112,8 @@ func validateInput(cluster *v1.Cluster) error {
 
 	if cluster.GetMonitoringEndpoint() != "" {
 		// Purposefully not checking the CAPath because only one is needed for an indication of monitoring not being enabled
-		if _, err := ioutil.ReadFile(monitoring.PasswordPath); err != nil {
-			errorList.AddString("Could not read monitoring password. Continue by removing the monitoring endpoint")
+		if _, err := ioutil.ReadFile(monitoring.CAPath); err != nil {
+			errorList.AddString("Could not read monitoring CA. Continue by removing the monitoring endpoint")
 		}
 	}
 

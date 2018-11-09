@@ -23,10 +23,9 @@ fi
 
 {{if not .K8sConfig.MonitoringType.None}}
 # Add monitoring client configmap
-kubectl create cm -n "{{.K8sConfig.Namespace}}" telegraf --from-file="$DIR/telegraf.conf"
+oc create cm -n "{{.K8sConfig.Namespace}}" telegraf --from-file="$DIR/telegraf.conf"
+oc create secret -n "{{.K8sConfig.Namespace}}" generic monitoring-client --from-file="$DIR/monitoring-client-cert.pem" --from-file="$DIR/monitoring-client-key.pem" --from-file="$DIR/ca.pem"
 {{- end}}
-
-oc -n {{.K8sConfig.Namespace}} secrets add serviceaccount/central secrets/stackrox --for=pull
 
 oc create secret -n "{{.K8sConfig.Namespace}}" generic central-tls --from-file="$DIR/ca.pem" --from-file="$DIR/ca-key.pem"
 oc create secret -n "{{.K8sConfig.Namespace}}" generic central-jwt --from-file="$DIR/jwt-key.der"

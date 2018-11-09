@@ -88,7 +88,7 @@ spec:
           readOnly: true
         {{if not .K8sConfig.MonitoringType.None}}
         - name: monitoring-client-volume
-          mountPath: /run/secrets/stackrox.io/monitoring/
+          mountPath: /run/secrets/stackrox.io/monitoring/certs
           readOnly: true
         {{- end}}
         {{if .HostPath -}}
@@ -102,7 +102,7 @@ spec:
       - name: telegraf
         image: {{.K8sConfig.MainImage}}
         command:
-          - /telegraf.sh
+          - /telegraf
         env:
           - name: SERVICE
             value: central
@@ -127,7 +127,7 @@ spec:
           mountPath: /var/log/stackrox/
           readOnly: true
         - name: monitoring-client-volume
-          mountPath: /run/secrets/stackrox.io/monitoring/
+          mountPath: /run/secrets/stackrox.io/monitoring/certs
           readOnly: true
         - name: telegraf-config-volume
           mountPath: /etc/telegraf/
@@ -149,12 +149,7 @@ spec:
       {{if not .K8sConfig.MonitoringType.None}}
       - name: monitoring-client-volume
         secret:
-          secretName: monitoring
-          items:
-            - key: monitoring-password
-              path: password
-            - key: monitoring-ca.pem
-              path: ca.pem
+          secretName: monitoring-client
       - name: telegraf-config-volume
         configMap:
           name: telegraf

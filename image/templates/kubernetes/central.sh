@@ -21,6 +21,7 @@ fi
 {{if not .K8sConfig.MonitoringType.None}}
 # Add monitoring client configmap
 kubectl create cm -n "{{.K8sConfig.Namespace}}" telegraf --from-file="$DIR/telegraf.conf"
+kubectl create secret -n "{{.K8sConfig.Namespace}}" generic monitoring-client --from-file="$DIR/monitoring-client-cert.pem" --from-file="$DIR/monitoring-client-key.pem" --from-file="$DIR/ca.pem"
 {{- end}}
 
 # Add Central secrets

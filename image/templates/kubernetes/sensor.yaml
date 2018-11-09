@@ -68,7 +68,7 @@ spec:
       - name: telegraf
         image: {{.Image}}
         command:
-          - /telegraf.sh
+          - /telegraf
         env:
         - name: SERVICE
           value: sensor
@@ -91,8 +91,8 @@ spec:
         volumeMounts:
           - name: varlog
             mountPath: /var/log/stackrox/
-          - name: monitoring-volume
-            mountPath: /run/secrets/stackrox.io/monitoring/
+          - name: monitoring-client-volume
+            mountPath: /run/secrets/stackrox.io/monitoring/certs
             readOnly: true
           - name: telegraf-config-volume
             mountPath: /etc/telegraf/
@@ -112,14 +112,9 @@ spec:
       - name: varlog
         emptyDir: {}
       {{if .MonitoringEndpoint}}
-      - name: monitoring-volume
+      - name: monitoring-client-volume
         secret:
-          secretName: monitoring
-          items:
-          - key: monitoring-password
-            path: password
-          - key: monitoring-ca.pem
-            path: ca.pem
+          secretName: monitoring-client
       - name: telegraf-config-volume
         configMap:
           name: telegraf
@@ -209,7 +204,7 @@ spec:
       - name: telegraf
         image: {{.Image}}
         command:
-          - /telegraf.sh
+          - /telegraf
         env:
         - name: SERVICE
           value: collector
@@ -230,8 +225,8 @@ spec:
           capabilities:
             drop: ["NET_RAW"]
         volumeMounts:
-          - name: monitoring-volume
-            mountPath: /run/secrets/stackrox.io/monitoring/
+          - name: monitoring-client-volume
+            mountPath: /run/secrets/stackrox.io/monitoring/certs
             readOnly: true
           - name: telegraf-config-volume
             mountPath: /etc/telegraf/
@@ -264,14 +259,9 @@ spec:
           - key: ca.pem
             path: ca.pem
       {{if .MonitoringEndpoint}}
-      - name: monitoring-volume
+      - name: monitoring-client-volume
         secret:
-          secretName: monitoring
-          items:
-            - key: monitoring-ca.pem
-              path: ca.pem
-            - key: monitoring-password
-              path: password
+          secretName: monitoring-client
       - name: telegraf-config-volume
         configMap:
           name: telegraf

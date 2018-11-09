@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -138,18 +137,27 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if resp.GetCluster().GetMonitoringEndpoint() != "" {
-		// Pass the monitoring password and CA
-		password, err := ioutil.ReadFile(monitoring.PasswordPath)
+		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		idReq = &v1.CreateServiceIdentityRequest{
+			Id:   resp.GetCluster().GetId(),
+			Type: v1.ServiceType_MONITORING_CLIENT_SERVICE,
+		}
+		id, err = z.identityService.CreateServiceIdentity(ctx, idReq)
 		if err != nil {
-			writeGRPCStyleError(w, codes.InvalidArgument,
-				errors.New("Could not read monitoring password in Central. Please remove the monitoring endpoint to continue"))
+			writeGRPCStyleError(w, codes.Internal, err)
 			return
 		}
-		// Add the files required for monitoring
-		if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring-password", password, false)); err != nil {
-			writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "monitoring-password", err))
+
+		if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring-client-cert.pem", id.GetCertificatePem(), false)); err != nil {
+			writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "monitoring-client-cert.pem", err))
 			return
 		}
+		if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring-client-key.pem", id.GetPrivateKeyPem(), false)); err != nil {
+			writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "monitoring-client-key.pem", err))
+			return
+		}
+
 		monitoringCA, err := ioutil.ReadFile(monitoring.CAPath)
 		if err != nil {
 			writeGRPCStyleError(w, codes.Internal, err)

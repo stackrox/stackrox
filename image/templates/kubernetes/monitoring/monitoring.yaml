@@ -14,8 +14,8 @@ metadata:
 spec:
   ports:
   - name: https
-    port: 8086
-    targetPort: 8086
+    port: 443
+    targetPort: 443
   selector:
     app: monitoring
   type: ClusterIP
@@ -52,9 +52,6 @@ spec:
               command: ["/bin/sh", "-c", "/influx-post-start.sh"]
         command:
         - /influxd
-        ports:
-        - name: api
-          containerPort: 8086
         resources:
           requests:
             memory: "500Mi"
@@ -69,16 +66,33 @@ spec:
           - name: monitoring-db-volume
             mountPath: /run/secrets/stackrox.io/monitoring/certs/
             readOnly: true
-          - name: monitoring-client-volume
-            mountPath: /run/secrets/stackrox.io/monitoring/client/
-            readOnly: true
           - name: influxdb-config-volume
             mountPath: /etc/influxdb/
+            readOnly: true
+      - name: telegraf-proxy
+        image: {{.K8sConfig.MonitoringImage}}
+        command:
+        - /telegraf
+        ports:
+        - name: api
+          containerPort: 443
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "100m"
+          limits:
+            memory: "200Mi"
+            cpu: "200m"
+        volumeMounts:
+          - name: monitoring-db-volume
+            mountPath: /run/secrets/stackrox.io/monitoring/certs/
+            readOnly: true
+          - name: telegraf-proxy-config-volume
+            mountPath: /etc/telegraf
             readOnly: true
       - name: grafana
         image: {{.K8sConfig.MonitoringImage}}
         command:
-        - /grafana-entrypoint.sh
         - /run.sh
         ports:
         - name: api
@@ -93,10 +107,6 @@ spec:
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
-        volumeMounts:
-          - name: monitoring-client-volume
-            mountPath: /run/secrets/stackrox.io/monitoring
-            readOnly: true
       volumes:
       - name: monitoring-db-volume
         secret:
@@ -106,6 +116,8 @@ spec:
               path: cert.pem
             - key: monitoring-db-key.pem
               path: key.pem
+            - key: monitoring-ca.pem
+              path: ca.pem
       - name: monitoring-ui-volume
         secret:
           secretName: monitoring
@@ -114,17 +126,15 @@ spec:
               path: cert.pem
             - key: monitoring-ui-key.pem
               path: key.pem
-      - name: monitoring-client-volume
-        secret:
-          secretName: monitoring
-          items:
-            - key: monitoring-password
-              path: password
-            - key: monitoring-ca.pem
-              path: ca.pem
       - name: influxdb-config-volume
         configMap:
           name: influxdb
+      - name: telegraf-proxy-config-volume
+        configMap:
+          name: telegraf-proxy
+          items:
+            - key: telegraf-proxy.conf
+              path: telegraf.conf
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -134,7 +144,7 @@ metadata:
 spec:
   ingress:
   - ports:
-    - port: 8086
+    - port: 8186
       protocol: TCP
     - port: 3000
       protocol: TCP

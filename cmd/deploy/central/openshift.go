@@ -24,6 +24,7 @@ var openshiftMonitoringOnPrem = []string{
 	"kubernetes/monitoring/monitoring-np.yaml",
 	"kubernetes/monitoring/monitoring-port-forward.sh",
 	"kubernetes/monitoring/influxdb.conf",
+	"kubernetes/monitoring/telegraf-proxy.conf",
 }
 
 func (o *openshift) Render(c Config) ([]*v1.File, error) {

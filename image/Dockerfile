@@ -33,7 +33,6 @@ COPY ./ui/build  /ui/
 # build.
 COPY ./*.txt /
 
-COPY ./telegraf.sh /telegraf.sh
 COPY ./assets /data/assets
 
 EXPOSE 443

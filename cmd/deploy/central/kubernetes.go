@@ -28,6 +28,7 @@ var k8sMonitoringOnPrem = []string{
 	"kubernetes/monitoring/monitoring-np.yaml",
 	"kubernetes/monitoring/monitoring-port-forward.sh",
 	"kubernetes/monitoring/influxdb.conf",
+	"kubernetes/monitoring/telegraf-proxy.conf",
 }
 
 var monitoringClient = []string{

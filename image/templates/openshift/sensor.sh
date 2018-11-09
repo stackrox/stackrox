@@ -46,17 +46,15 @@ type: kubernetes.io/dockerconfigjson
 EOF
 fi
 
-oc secrets add serviceaccount/collector secrets/stackrox secrets/collector-stackrox --for=pull
-
 echo "Creating secrets for collector..."
-kubectl create secret -n "{{.Namespace}}" generic collector-tls --from-file="$DIR/collector-cert.pem" --from-file="$DIR/collector-key.pem" --from-file="$DIR/ca.pem"
+oc create secret -n "{{.Namespace}}" generic collector-tls --from-file="$DIR/collector-cert.pem" --from-file="$DIR/collector-key.pem" --from-file="$DIR/ca.pem"
 
 {{- end}}
 
 {{if .MonitoringEndpoint}}
 echo "Creating secrets for monitoring..."
-kubectl create secret -n "{{.Namespace}}" generic monitoring --from-file="$DIR/monitoring-password" --from-file="$DIR/monitoring-ca.pem"
-kubectl create cm -n "{{.Namespace}}" telegraf --from-file="$DIR/telegraf.conf"
+oc create secret -n "{{.Namespace}}" generic monitoring-client --from-file="$DIR/monitoring-client-cert.pem" --from-file="$DIR/monitoring-client-key.pem" --from-file="$DIR/monitoring-ca.pem"
+oc create cm -n "{{.Namespace}}" telegraf --from-file="$DIR/telegraf.conf"
 {{- end}}
 
 oc apply -f "$DIR/sensor.yaml"

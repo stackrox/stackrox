@@ -38,7 +38,7 @@ func k8sBasedOrchestrator(k8sConfig *central.K8sConfig, shortName, longName stri
 
 	// Adds k8s specific flags
 	c.PersistentFlags().StringVarP(&k8sConfig.Namespace, "namespace", "n", "stackrox", "namespace")
-	c.PersistentFlags().StringVarP(&k8sConfig.MonitoringEndpoint, "monitoring-endpoint", "", "monitoring.stackrox:8086", "monitoring endpoint")
+	c.PersistentFlags().StringVarP(&k8sConfig.MonitoringEndpoint, "monitoring-endpoint", "", "monitoring.stackrox:443", "monitoring endpoint")
 	c.PersistentFlags().Var(&monitoringWrapper{Monitoring: &k8sConfig.MonitoringType}, "monitoring-type", "where to host the monitoring (on-prem, none)")
 	c.PersistentFlags().StringVarP(&k8sConfig.MainImage, "main-image", "i", "stackrox.io/"+mainImage, "Image to use")
 	c.PersistentFlags().StringVarP(&k8sConfig.ClairifyImage, "clairify-image", "", "stackrox.io/"+clairifyImage, "Clairify image to use")
