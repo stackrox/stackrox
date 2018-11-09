@@ -20,6 +20,8 @@ const SceneManager = canvas => {
     let mouse;
     const ZOOM_TYPE = { ZOOM_IN: true, ZOOM_OUT: false };
 
+    let selectedNodeId;
+
     function buildRaycaster() {
         const webGLRayCaster = new THREE.Raycaster();
         return webGLRayCaster;
@@ -113,34 +115,37 @@ const SceneManager = canvas => {
         renderer.setSize(clientWidth, clientHeight);
     }
 
-    function showOnlyLinksForConnectedNodes(obj) {
-        const { deploymentId } = obj.object.material.userData && obj.object.material.userData.node;
+    function highlightNode(deploymentId) {
         sceneObjects
-            .filter(sceneObject => sceneObject.getType() === constants.NETWORK_GRAPH_TYPES.LINK)
-            .forEach(link => {
-                const source = link.getSource();
-                const target = link.getTarget();
-                if (link.isLinkInScene()) {
-                    // do nothing
-                } else if (
-                    source.deploymentId === deploymentId ||
-                    target.deploymentId === deploymentId
-                ) {
-                    link.createLink();
+            .filter(sceneObject => sceneObject.getType() === constants.NETWORK_GRAPH_TYPES.NODE)
+            .forEach(node => {
+                const nodeId = node.getDeploymentId();
+                if ((deploymentId && nodeId === deploymentId) || !deploymentId) {
+                    node.highlight();
                 } else {
-                    link.removeLink();
+                    node.unhighlight();
                 }
             });
-        update();
     }
 
-    function hideLinks() {
+    function showLinks(nodeId) {
         sceneObjects
             .filter(sceneObject => sceneObject.getType() === constants.NETWORK_GRAPH_TYPES.LINK)
             .forEach(link => {
-                link.removeLink();
+                const { deploymentId: srcDeploymentId } = link.getSource();
+                const { deploymentId: tgtDeploymentId } = link.getTarget();
+                const linkExists = link.isLinkInScene();
+                const isLinkToNode = srcDeploymentId === nodeId || tgtDeploymentId === nodeId;
+
+                if (!linkExists && isLinkToNode) {
+                    link.createLink();
+                } else if (linkExists) {
+                    link.removeLink();
+                    if (isLinkToNode) {
+                        link.createLink();
+                    }
+                }
             });
-        update();
     }
 
     function showLinksForConnectedNamespaces(obj) {
@@ -186,6 +191,7 @@ const SceneManager = canvas => {
 
         if (intersectingNodes.length) {
             const { node } = intersectingNodes[0].object.material.userData;
+            selectedNodeId = node.deploymentId;
             return node;
         }
         return null;
@@ -198,13 +204,23 @@ const SceneManager = canvas => {
 
         const hoveredOverNamespaces = intersectingObjects.filter(intersectsNamespaces);
 
+        const isHovering = canvas.classList.contains('cursor-pointer');
         if (hoveredOverNodes.length) {
-            canvas.classList.add('cursor-pointer');
-            const hoveredOverNode = hoveredOverNodes[0];
-            showOnlyLinksForConnectedNodes(hoveredOverNode);
-        } else {
+            if (!isHovering) {
+                canvas.classList.add('cursor-pointer');
+                const hoveredOverNode = hoveredOverNodes[0];
+                const { deploymentId } =
+                    hoveredOverNode.object.material.userData &&
+                    hoveredOverNode.object.material.userData.node;
+                showLinks(deploymentId);
+                highlightNode(deploymentId);
+                update();
+            }
+        } else if (isHovering) {
             canvas.classList.remove('cursor-pointer');
-            hideLinks();
+            showLinks(selectedNodeId);
+            highlightNode(selectedNodeId);
+            update();
         }
 
         if (hoveredOverNamespaces.length) {

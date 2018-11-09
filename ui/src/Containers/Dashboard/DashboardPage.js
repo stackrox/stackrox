@@ -265,7 +265,7 @@ class DashboardPage extends Component {
                                             value: '',
                                             angle: -90,
                                             position: 'insideLeft',
-                                            textAnchor: 'right'
+                                            textAnchor: 'end'
                                         }}
                                     />
                                     <CartesianGrid strokeDasharray="1 1" />

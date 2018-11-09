@@ -32,6 +32,11 @@ const Node = (scene, data) => {
     scene.add(circle);
     scene.add(label);
 
+    function setNodeOpacity(value) {
+        circle.material.opacity = value;
+        label.material.opacity = value;
+    }
+
     function update() {
         const { x, y } = node;
         circle.position.set(x, y, 0);
@@ -42,9 +47,24 @@ const Node = (scene, data) => {
         return constants.NETWORK_GRAPH_TYPES.NODE;
     }
 
+    function getDeploymentId() {
+        return node.deploymentId;
+    }
+
+    function unhighlight() {
+        setNodeOpacity(0.5);
+    }
+
+    function highlight() {
+        setNodeOpacity(1);
+    }
+
     return {
         update,
-        getType
+        getType,
+        getDeploymentId,
+        highlight,
+        unhighlight
     };
 };
 

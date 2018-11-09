@@ -128,7 +128,7 @@ export const getLinksInSameNamespace = (nodes, networkFlowMapping) => {
                 return;
             }
             const link = { source: node.deploymentId, target: tgtNode.deploymentId };
-            link.isActive = networkFlowMapping[`${node.deploymentId}--${tgtNode.deploymentId}`];
+            link.isActive = !!networkFlowMapping[`${node.deploymentId}--${tgtNode.deploymentId}`];
             filteredLinks.push(link);
         });
     });
@@ -153,6 +153,8 @@ export const getLinksBetweenNamespaces = (nodes, networkFlowMapping) => {
                 namespaceLinks[key] = {
                     source: srcNamespace,
                     target: tgtNamespace,
+                    sourceDeployment: srcDeploymentId,
+                    targetDeployment: tgtDeploymentId,
                     isActive: !!activeStatus
                 };
             }
