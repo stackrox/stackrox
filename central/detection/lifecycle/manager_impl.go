@@ -14,6 +14,7 @@ import (
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/set"
 	"golang.org/x/time/rate"
@@ -36,7 +37,7 @@ type managerImpl struct {
 	queuedIndicators map[string]indicatorWithInjector
 
 	queueLock           sync.Mutex
-	flushProcessingLock sync.Mutex
+	flushProcessingLock concurrency.TransparentMutex
 
 	limiter *rate.Limiter
 	ticker  *time.Ticker
@@ -62,7 +63,11 @@ func (m *managerImpl) flushQueuePeriodically() {
 }
 
 func (m *managerImpl) flushIndicatorQueue() {
-	m.flushProcessingLock.Lock()
+	// This is a potentially long-running operation, and we don't want to have a pile of goroutines queueing up on
+	// this lock.
+	if !m.flushProcessingLock.MaybeLock() {
+		return
+	}
 	defer m.flushProcessingLock.Unlock()
 
 	copiedQueue := m.copyAndResetIndicatorQueue()
