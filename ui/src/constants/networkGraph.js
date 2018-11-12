@@ -67,6 +67,7 @@ export const INTERNET_ACCESS_NODE_COLOR = '#64a6f0';
 export const INTERNET_ACCESS_NODE_BORDER_COLOR = '#c4cdfa';
 export const LINK_COLOR = '#C5CEF7';
 export const NAMESPACE_LINK_COLOR = 0xbdc2d9;
+export const NAMESPACE_CONNECTION_POINT_COLOR = 0xffffff;
 export const TEXT_COLOR = PRIMARY_COLOR_STRING;
 export const NAMESPACE_TEXT_COLOR = '#60689B';
 

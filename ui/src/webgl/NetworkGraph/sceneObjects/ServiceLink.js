@@ -39,7 +39,6 @@ const ServiceLink = (scene, canvas, data) => {
         line.frustumCulled = false;
         line.mLine = meshLine;
         line.geo = geometry;
-        line.name = constants.NETWORK_GRAPH_TYPES.LINK;
         line.userData = { link };
 
         scene.add(line);
@@ -47,8 +46,7 @@ const ServiceLink = (scene, canvas, data) => {
 
     function removeLink() {
         if (!line) return;
-        const selectedLine = scene.getObjectByName(line.name);
-        scene.remove(selectedLine);
+        scene.remove(line);
         line = null;
     }
 

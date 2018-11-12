@@ -4,9 +4,9 @@ import * as constants from 'constants/networkGraph';
 import { intersectsNodes, intersectsNamespaces } from 'utils/networkGraphUtils';
 
 import Node from '../sceneObjects/Node';
-import Link from '../sceneObjects/ServiceLink';
+import ServiceLink from '../sceneObjects/ServiceLink';
+import CrossNamespaceLink from '../sceneObjects/CrossNamespaceLink';
 import Namespace from '../sceneObjects/Namespace';
-import NamespaceLink from '../sceneObjects/NamespaceLink';
 
 const OrbitControls = threeOrbitControls(THREE);
 
@@ -65,7 +65,7 @@ const SceneManager = canvas => {
     }
 
     function createSceneObjects(webGLScene, data) {
-        const { nodes, links, namespaces, namespaceLinks } = data;
+        const { nodes, links, namespaces } = data;
         const objects = [];
 
         namespaces.forEach(namespace => {
@@ -73,15 +73,15 @@ const SceneManager = canvas => {
         });
 
         links.forEach(link => {
-            objects.push(new Link(webGLScene, canvas, link));
+            if (link.source.namespace === link.target.namespace) {
+                objects.push(new ServiceLink(webGLScene, canvas, link));
+            } else {
+                objects.push(new CrossNamespaceLink(webGLScene, canvas, link));
+            }
         });
 
         nodes.forEach(node => {
             objects.push(new Node(webGLScene, node));
-        });
-
-        namespaceLinks.forEach(namespaceLink => {
-            objects.push(new NamespaceLink(webGLScene, canvas, namespaceLink));
         });
 
         return objects;

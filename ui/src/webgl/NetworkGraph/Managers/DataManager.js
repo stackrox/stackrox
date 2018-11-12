@@ -3,7 +3,7 @@ import * as constants from 'constants/networkGraph';
 import {
     forceCollide,
     forceCluster,
-    getLinksInSameNamespace,
+    getLinks,
     getLinksBetweenNamespaces,
     getBidirectionalLinks
 } from 'utils/networkGraphUtils';
@@ -115,7 +115,7 @@ const DataManager = canvas => {
 
     function setData(data) {
         nodes = enrichNodes(data.nodes);
-        links = getLinksInSameNamespace(nodes, data.networkFlowMapping);
+        links = getLinks(nodes, data.networkFlowMapping);
         namespaces = getNamespaces(nodes);
         namespaceLinks = getNamespaceLinks(nodes, data.networkFlowMapping);
         simulation = setUpForceLayout();

@@ -117,16 +117,12 @@ export const getBidirectionalLinks = links => {
  * @param {!Object[]} nodes list of nodes
  * @returns {!Object[]}
  */
-export const getLinksInSameNamespace = (nodes, networkFlowMapping) => {
+export const getLinks = (nodes, networkFlowMapping) => {
     const filteredLinks = [];
 
     nodes.forEach(node => {
-        const srcNamespace = node.namespace;
         Object.keys(node.outEdges).forEach(targetIndex => {
             const tgtNode = nodes[targetIndex];
-            if (srcNamespace !== tgtNode.namespace) {
-                return;
-            }
             const link = { source: node.deploymentId, target: tgtNode.deploymentId };
             link.isActive = !!networkFlowMapping[`${node.deploymentId}--${tgtNode.deploymentId}`];
             filteredLinks.push(link);
