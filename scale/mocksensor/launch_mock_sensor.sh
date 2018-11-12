@@ -80,7 +80,7 @@ function get_authority {
 # Any arguments passed to this script are passed on to the mocksensor program.
 # Example: ./launch_mock_sensor.sh -max-deployments 100 will launch mocksensor with the args -max-deployments 100.
 
-tag=$(git describe --tags --abbr)
+tag=$(git describe --tags --abbrev=10)
 echo "Launching mock sensor with tag: ${tag}"
 
 clusterName=""
