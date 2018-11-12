@@ -12,8 +12,6 @@ import stackrox.generated.AlertServiceOuterClass.ListAlert
 import stackrox.generated.Common
 import stackrox.generated.DeploymentServiceGrpc
 import stackrox.generated.DetectionServiceGrpc
-import stackrox.generated.EnforcementServiceGrpc
-import stackrox.generated.EnforcementServiceOuterClass
 import stackrox.generated.ImageIntegrationServiceGrpc
 import stackrox.generated.ImageIntegrationServiceOuterClass
 import stackrox.generated.ImageIntegrationServiceOuterClass.ImageIntegration
@@ -35,7 +33,6 @@ import stackrox.generated.DeploymentServiceOuterClass.ListDeployment
 import stackrox.generated.DeploymentServiceOuterClass.Deployment
 import stackrox.generated.Common.ResourceByID
 import stackrox.generated.SearchServiceOuterClass
-import stackrox.generated.SensorEventIservice
 import v1.NetworkPolicyServiceGrpc
 import v1.SecretServiceGrpc
 import v1.NetworkPolicyServiceOuterClass
@@ -80,10 +77,6 @@ class Services extends BaseService {
 
     static getNotifierClient() {
         return NotifierServiceGrpc.newBlockingStub(getChannel())
-    }
-
-    static getEnforcementClient() {
-        return EnforcementServiceGrpc.newBlockingStub(getChannel())
     }
 
     static List<ListPolicy> getPolicies(RawQuery query = RawQuery.newBuilder().build()) {
@@ -553,58 +546,6 @@ class Services extends BaseService {
         } catch (Exception e) {
             println e.toString()
         }
-    }
-
-    static applyEnforcement(SensorEventIservice.SensorEnforcement.Builder builder) {
-        try {
-            return getEnforcementClient().applyEnforcement(
-                    EnforcementServiceOuterClass.EnforcementRequest.newBuilder()
-                            .setClusterId(ClusterService.getClusterId())
-                            .setEnforcement(builder)
-                    .build()
-            )
-        } catch (Exception e) {
-            println e.toString()
-        }
-    }
-
-    static applyKillEnforcement(String podId, String containerId) {
-        SensorEventIservice.SensorEnforcement.Builder killEnforcementBuilder =
-                SensorEventIservice.SensorEnforcement.newBuilder()
-                        .setEnforcement(EnforcementAction.KILL_POD_ENFORCEMENT)
-                        .setContainerInstance(SensorEventIservice.ContainerInstanceEnforcement.newBuilder()
-                                .setContainerInstanceId(containerId)
-                                .setPodId(podId)
-                        )
-        return applyEnforcement(killEnforcementBuilder)
-    }
-
-    static applyScaleDownEnforcement(objects.Deployment deployment) {
-        SensorEventIservice.SensorEnforcement.Builder scaleDownEnforcementBuilder =
-                SensorEventIservice.SensorEnforcement.newBuilder()
-                        .setEnforcement(EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
-                        .setDeployment(SensorEventIservice.DeploymentEnforcement.newBuilder()
-                                .setDeploymentId(deployment.deploymentUid)
-                                .setDeploymentName(deployment.name)
-                                .setDeploymentType("Deployment")
-                                .setNamespace(deployment.namespace)
-                                .setAlertId("qa_automation")
-                        )
-        return applyEnforcement(scaleDownEnforcementBuilder)
-    }
-
-    static applyNodeConstraintEnforcement(objects.Deployment deployment) {
-        SensorEventIservice.SensorEnforcement.Builder scaleDownEnforcementBuilder =
-                SensorEventIservice.SensorEnforcement.newBuilder()
-                        .setEnforcement(EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT)
-                        .setDeployment(SensorEventIservice.DeploymentEnforcement.newBuilder()
-                        .setDeploymentId(deployment.deploymentUid)
-                        .setDeploymentName(deployment.name)
-                        .setDeploymentType("Deployment")
-                        .setNamespace(deployment.namespace)
-                        .setAlertId("qa_automation")
-                )
-        return applyEnforcement(scaleDownEnforcementBuilder)
     }
 
     static waitForNetworkPolicy(String id, int timeoutSeconds = 30) {

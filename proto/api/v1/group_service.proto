@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+option java_package = "stackrox.generated";
+
+import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
+
+package v1;
+
+// GroupProperties defines the properties of a unique group.
+// Groups apply to users when their properties match. For instance:
+// If the GroupProperties on has a auth_provider_id, then that group applies to all users logged in
+// with that auth provider. If it has a claim key, then it applies to all users with that auth provider
+// and claim key, etc.
+// This can be used to create default groups/roles for All source provider (no fields set), a specific
+// auth provider (only auth_provider_id field set) etc.
+message GroupProperties {
+    string auth_provider_id = 1;
+    string key = 2;
+    string value = 3;
+}
+
+// Group is a GroupProperties : Role mapping.
+message Group {
+    // GroupProperties uniquely identifies a group.
+    GroupProperties props = 1;
+
+    // This is the name of the role that will apply to users in this group.
+    string role_name = 3;
+}
+
+// API for updating Groups and getting users.
+message GetGroupsResponse {
+    repeated Group groups = 1;
+}
+
+service GroupService {
+
+    rpc GetGroups (Empty) returns (GetGroupsResponse) {
+        option (google.api.http) = {
+            get: "/v1/groups"
+        };
+    }
+
+    rpc GetGroup (GroupProperties) returns (Group) {
+        option (google.api.http) = {
+            get: "/v1/groups"
+        };
+    }
+
+    rpc CreateGroup (Group) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v1/groups"
+            body: "*"
+        };
+    }
+
+    rpc UpdateGroup (Group) returns (Empty) {
+        option (google.api.http) = {
+            put: "/v1/groups"
+            body: "*"
+        };
+    }
+
+    rpc DeleteGroup (GroupProperties) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/groups"
+        };
+    }
+
+}

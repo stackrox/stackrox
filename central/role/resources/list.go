@@ -21,7 +21,7 @@ var (
 	DebugMetrics      = newResource("DebugMetrics")
 	Deployment        = newResource("Deployment")
 	Detection         = newResource("Detection")
-	Enforcements      = newResource("Enforcements")
+	Group             = newResource("Group")
 	Image             = newResource("Image")
 	ImageIntegration  = newResource("ImageIntegration")
 	ImbuedLogs        = newResource("ImbuedLogs")

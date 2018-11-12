@@ -23,10 +23,10 @@ import (
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
 	detectionService "github.com/stackrox/rox/central/detection/service"
-	enforcementService "github.com/stackrox/rox/central/enforcement/service"
 	"github.com/stackrox/rox/central/enrichanddetect"
 	"github.com/stackrox/rox/central/globaldb"
 	globaldbHandlers "github.com/stackrox/rox/central/globaldb/handlers"
+	groupService "github.com/stackrox/rox/central/group/service"
 	imageService "github.com/stackrox/rox/central/image/service"
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
 	interceptorSingletons "github.com/stackrox/rox/central/interceptor/singletons"
@@ -162,7 +162,7 @@ func (c *central) startGRPCServer() {
 		clusterService.Singleton(),
 		deploymentService.Singleton(),
 		detectionService.Singleton(),
-		enforcementService.Singleton(),
+		groupService.Singleton(),
 		imageService.Singleton(),
 		iiService.Singleton(),
 		metadataService.New(),
