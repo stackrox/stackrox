@@ -30,7 +30,7 @@ func main() {
 	maxDeployments := flag.Int("max-deployments", 10000, "maximum number of deployments to send")
 	indicatorInterval := flag.Duration("indicator-interval", 100*time.Millisecond, "interval for sending indicators")
 	maxIndicators := flag.Int("max-indicators", 20000, "maximum number of indicators to send")
-	networkFlowInterval := flag.Duration("network-flow-interval", 30*time.Second, "interval for sending network flow diffs")
+	networkFlowInterval := flag.Duration("network-flow-interval", 5*time.Second, "interval for sending network flow diffs")
 	maxNetworkFlows := flag.Int("max-network-flows", 1000, "maximum number of network flows to send at once")
 	maxUpdates := flag.Int("max-updates", 100, "total number of network flows updates to send")
 	flowDeleteRate := flag.Float64("flow-delete-rate", 0.03, "fraction of flows that will be marked removed in each network flow update")
@@ -59,6 +59,8 @@ func main() {
 
 	deploymentSignal := concurrency.NewSignal()
 	go sendDeployments(stream, *maxDeployments, *deploymentInterval, *bigDepRate, deploymentSignal)
+
+	time.Sleep(5 * time.Second)
 
 	indicatorSignal := concurrency.NewSignal()
 	go sendIndicators(stream, *maxIndicators, *indicatorInterval, indicatorSignal)

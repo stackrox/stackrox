@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: mocksensor
+  name: DEPLOYMENT_NAME
   namespace: stackrox
   labels:
     app: mocksensor
@@ -23,10 +23,11 @@ spec:
       imagePullSecrets:
         - name: stackrox
       containers:
-      - image: stackrox/scale:REPLACE-ME
+      - image: IMAGE_NAME
         name: mocksensor
         command:
           - /mocksensor
+        args:
         volumeMounts:
         - name: varlog
           mountPath: /var/log/stackrox/
@@ -36,7 +37,7 @@ spec:
       volumes:
       - name: certs
         secret:
-          secretName: sensor-tls
+          secretName: SECRET_NAME
           items:
           - key: sensor-cert.pem
             path: cert.pem
