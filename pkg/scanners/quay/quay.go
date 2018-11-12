@@ -9,6 +9,7 @@ import (
 
 	"github.com/stackrox/rox/generated/api/v1"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/logging"
 	quayRegistry "github.com/stackrox/rox/pkg/registries/quay"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -18,6 +19,8 @@ import (
 const (
 	requestTimeout = 5 * time.Second
 )
+
+var log = logging.LoggerForModule()
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
 func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageScanner, error)) {

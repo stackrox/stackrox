@@ -21,6 +21,7 @@ func convertNVDFindingsAndPackagesToComponents(findings []*finding, packages []p
 			Cve:     finding.NVDFinding.CVE,
 			Summary: finding.NVDFinding.Description,
 			Link:    scans.GetVulnLink(finding.NVDFinding.CVE),
+			CvssV2:  convertCVSS(finding.NVDFinding),
 		}
 		for _, affectedPackage := range finding.Packages {
 			packagesToVulnerabilities[affectedPackage] = append(packagesToVulnerabilities[affectedPackage], vulnerability)
@@ -51,4 +52,59 @@ func convertScanToImageScan(image *v1.Image, s *scanResult) *v1.ImageScan {
 		ScanTime:   completedAt,
 		Components: components,
 	}
+}
+
+func getImpact(i string) v1.CVSSV2_Impact {
+	switch i {
+	case "None":
+		return v1.CVSSV2_IMPACT_NONE
+	case "Partial":
+		return v1.CVSSV2_IMPACT_PARTIAL
+	case "Complete":
+		return v1.CVSSV2_IMPACT_COMPLETE
+	default:
+		log.Errorf("Impact could not parse: %v", i)
+		return v1.CVSSV2_IMPACT_COMPLETE
+	}
+}
+
+func convertCVSS(nvd nvdFinding) *v1.CVSSV2 {
+	var cvss v1.CVSSV2
+	switch nvd.AccessVector {
+	case "Network":
+		cvss.AttackVector = v1.CVSSV2_ATTACK_NETWORK
+	case "Adjacent":
+		cvss.AttackVector = v1.CVSSV2_ATTACK_ADJACENT
+	case "Local":
+		cvss.AttackVector = v1.CVSSV2_ATTACK_LOCAL
+	default:
+		log.Errorf("Could not parse access vector %v", nvd.AccessVector)
+		cvss.AttackVector = v1.CVSSV2_ATTACK_NETWORK
+	}
+	switch nvd.Auth {
+	case "None required":
+		cvss.Authentication = v1.CVSSV2_AUTH_NONE
+	case "Single":
+		cvss.Authentication = v1.CVSSV2_AUTH_SINGLE
+	case "Multiple":
+		cvss.Authentication = v1.CVSSV2_AUTH_MULTIPLE
+	default:
+		log.Errorf("Could not parse auth vector %v", nvd.Auth)
+		cvss.Authentication = v1.CVSSV2_AUTH_MULTIPLE
+	}
+	switch nvd.AccessComplexity {
+	case "Low":
+		cvss.AccessComplexity = v1.CVSSV2_ACCESS_LOW
+	case "Medium":
+		cvss.AccessComplexity = v1.CVSSV2_ACCESS_MEDIUM
+	case "High":
+		cvss.AccessComplexity = v1.CVSSV2_ACCESS_HIGH
+	default:
+		log.Errorf("Could not parse access complexity %v", nvd.AccessComplexity)
+		cvss.AccessComplexity = v1.CVSSV2_ACCESS_HIGH
+	}
+	cvss.Availability = getImpact(nvd.AvailabilityImpact)
+	cvss.Confidentiality = getImpact(nvd.ConfidentialityImpact)
+	cvss.Integrity = getImpact(nvd.IntegrityImpact)
+	return &cvss
 }

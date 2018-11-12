@@ -144,16 +144,3 @@ func (suite *DTRSuite) TestGetLastScan() {
 	expectedScans := convertTagScanSummariesToImageScans(d.conf.Endpoint, expectedScanSummaries)
 	suite.Equal(expectedScans[0], scan)
 }
-
-func (suite *DTRSuite) TestScan() {
-	d := suite.dtr.(*dtr)
-	image := &v1.Image{
-		Name: &v1.ImageName{
-			Registry: "",
-			Remote:   "docker/nginx",
-			Tag:      "1.10",
-		},
-	}
-	err := d.Scan(image)
-	suite.NoError(err)
-}

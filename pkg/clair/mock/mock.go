@@ -20,7 +20,8 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*v1.Vulnerability) {
 			Metadata: map[string]interface{}{
 				"NVD": map[string]interface{}{
 					"CVSSv2": map[string]interface{}{
-						"Score": 6.8,
+						"Score":   6.8,
+						"Vectors": "AV:N/AC:L/Au:S/C:N/I:N",
 					},
 				},
 			},
@@ -41,6 +42,15 @@ func GetTestVulns() ([]clairV1.Vulnerability, []*v1.Vulnerability) {
 			Cvss:    6.8,
 			SetFixedBy: &v1.Vulnerability_FixedBy{
 				FixedBy: "",
+			},
+			CvssV2: &v1.CVSSV2{
+				Vector:           "AV:N/AC:L/Au:S/C:N/I:N",
+				AttackVector:     v1.CVSSV2_ATTACK_NETWORK,
+				AccessComplexity: v1.CVSSV2_ACCESS_LOW,
+				Authentication:   v1.CVSSV2_AUTH_SINGLE,
+				Confidentiality:  v1.CVSSV2_IMPACT_NONE,
+				Integrity:        v1.CVSSV2_IMPACT_NONE,
+				Availability:     v1.CVSSV2_IMPACT_NONE,
 			},
 		},
 	}

@@ -5,15 +5,20 @@ import (
 
 	clairV1 "github.com/coreos/clair/api/v1"
 	"github.com/stackrox/rox/generated/api/v1"
+	cvssconv "github.com/stackrox/rox/pkg/cvss"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scans"
 )
+
+var log = logging.LoggerForModule()
 
 type nvd struct {
 	Cvss cvss `json:"CVSSv2"`
 }
 
 type cvss struct {
-	Score float32 `json:"score"`
+	Score   float32 `json:"score"`
+	Vectors string  `json:"vectors"`
 }
 
 // ConvertVulnerability converts a clair vulnerability to a proto vulnerability
@@ -39,6 +44,9 @@ func ConvertVulnerability(v clairV1.Vulnerability) *v1.Vulnerability {
 			return vul
 		}
 		vul.Cvss = n.Cvss.Score
+		if cvssVector, err := cvssconv.ParseCVSSV2(n.Cvss.Vectors); err == nil {
+			vul.CvssV2 = cvssVector
+		}
 	}
 	return vul
 }

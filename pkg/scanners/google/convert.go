@@ -1,7 +1,10 @@
 package google
 
 import (
+	"strings"
+
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/cvss"
 	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1alpha1"
 )
 
@@ -28,17 +31,21 @@ func (c *googleScanner) convertVulnerabilityFromPackageVulnerabilityOccurrence(o
 		link = note.GetRelatedUrl()[0].GetUrl()
 	}
 	summary := c.getSummary(note.GetVulnerabilityType().GetDetails(), affectedLocation.GetCpeUri())
-	return affectedLocation.GetCpeUri(),
-		affectedLocation.GetPackage(),
-		&v1.Vulnerability{
-			Cve:     note.GetShortDescription(),
-			Link:    link,
-			Cvss:    occurrence.GetVulnerabilityDetails().GetCvssScore(),
-			Summary: summary,
-			SetFixedBy: &v1.Vulnerability_FixedBy{
-				FixedBy: pkgIssue.GetFixedLocation().GetVersion().GetRevision(),
-			},
-		}
+
+	vuln := &v1.Vulnerability{
+		Cve:     note.GetShortDescription(),
+		Link:    link,
+		Cvss:    occurrence.GetVulnerabilityDetails().GetCvssScore(),
+		Summary: summary,
+		SetFixedBy: &v1.Vulnerability_FixedBy{
+			FixedBy: pkgIssue.GetFixedLocation().GetVersion().GetRevision(),
+		},
+	}
+
+	if cvssVector, err := cvss.ParseCVSSV2(strings.TrimPrefix(note.LongDescription, "NIST vectors: ")); err == nil {
+		vuln.CvssV2 = cvssVector
+	}
+	return affectedLocation.GetCpeUri(), affectedLocation.GetPackage(), vuln
 }
 
 // getSummary searches through the details and returns the summary that matches the cpeURI

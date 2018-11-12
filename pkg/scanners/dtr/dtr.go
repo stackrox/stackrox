@@ -145,13 +145,6 @@ func (d *dtr) GetScans(image *v1.Image) ([]*v1.ImageScan, error) {
 	return convertTagScanSummariesToImageScans(d.conf.Endpoint, scans), nil
 }
 
-//GET /api/v0/imagescan/repositories/{namespace}/{reponame}/{tag}?detailed=true
-// Scan initiates a scan of the passed id
-func (d *dtr) Scan(image *v1.Image) error {
-	_, err := d.sendRequest(d.client, "POST", fmt.Sprintf("/api/v0/imagescan/scan/%v/%v/linux/amd64", image.GetName().GetRemote(), image.GetName().GetTag()))
-	return err
-}
-
 func errorFromStatusCode(status int) error {
 	switch status {
 	case 400:

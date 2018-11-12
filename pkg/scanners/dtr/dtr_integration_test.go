@@ -73,15 +73,3 @@ func (suite *DTRIntegrationSuite) TestGetLastScan() {
 	suite.NotNil(scan)
 	suite.NotEmpty(scan.GetComponents())
 }
-
-func (suite *DTRIntegrationSuite) TestScan() {
-	image := &v1.Image{
-		Name: &v1.ImageName{
-			Registry: dtrServer,
-			Remote:   "srox/nginx",
-			Tag:      "1.12",
-		},
-	}
-	err := suite.Scan(image)
-	suite.Nil(err)
-}

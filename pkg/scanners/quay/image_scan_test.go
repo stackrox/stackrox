@@ -33,7 +33,8 @@ const scanPayload = `
               "Metadata": {
                 "NVD": {
                   "CVSSv2": {
-                    "Score": 6.8
+                    "Score": 6.8,
+					"Vectors": "AV:L/AC:L/Au:N/C:N/I:P"
                   }
                 }
               }
@@ -71,7 +72,8 @@ func getImageScan() (*scanResult, error) {
 								Metadata: map[string]interface{}{
 									"NVD": map[string]interface{}{
 										"CVSSv2": map[string]interface{}{
-											"Score": 6.8,
+											"Score":   6.8,
+											"Vectors": "AV:L/AC:L/Au:N/C:N/I:P",
 										},
 									},
 								},
