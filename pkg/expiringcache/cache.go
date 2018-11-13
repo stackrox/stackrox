@@ -15,6 +15,7 @@ type elem struct {
 type Cache interface {
 	Add(string, interface{})
 	Get(string) interface{}
+	GetAll() []interface{}
 	Purge()
 }
 
@@ -50,6 +51,20 @@ func (e *expiringCacheImpl) Get(k string) interface{} {
 		return nil
 	}
 	return el.(*elem).data
+}
+
+func (e *expiringCacheImpl) GetAll() []interface{} {
+	keys := e.cache.Keys()
+
+	ret := make([]interface{}, 0, len(keys))
+	for _, key := range keys {
+		el, ok := e.cache.Get(key)
+		if !ok || el.(*elem).expiry.Before(time.Now()) {
+			continue
+		}
+		ret = append(ret, el.(*elem).data)
+	}
+	return ret
 }
 
 func (e *expiringCacheImpl) Purge() {

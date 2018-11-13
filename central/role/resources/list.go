@@ -34,6 +34,7 @@ var (
 	Role              = newResource("Role")
 	Secret            = newResource("Secret")
 	ServiceIdentity   = newResource("ServiceIdentity")
+	User              = newResource("User")
 
 	allResources = make(map[permissions.Resource]struct{})
 )

@@ -51,6 +51,7 @@ import (
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/user/mapper"
+	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
@@ -180,6 +181,7 @@ func (c *central) startGRPCServer() {
 		siService.Singleton(),
 		summaryService.Singleton(),
 		sensornetworkflow.Singleton(),
+		userService.Singleton(),
 	)
 
 	enrichanddetect.GetLoop().Start()
