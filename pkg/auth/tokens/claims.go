@@ -12,6 +12,9 @@ type ExternalUserClaim struct {
 	UserID   string `json:"user_id"`
 	FullName string `json:"full_name,omitempty"`
 	Email    string `json:"email,omitempty"`
+
+	// Any extra information we want to attach.
+	Attributes map[string][]string
 }
 
 // RoxClaims are the claims used for authentication by the StackRox container security platform.

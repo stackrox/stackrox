@@ -92,10 +92,7 @@ func (p *provider) consumeSAMLResponse(samlResponse string) (*tokens.ExternalUse
 		opts = append(opts, tokens.WithExpiry(*ai.SessionNotOnOrAfter))
 	}
 
-	claim := &tokens.ExternalUserClaim{
-		UserID: ai.NameID,
-	}
-
+	claim := saml2AssertionInfoToExternalClaim(ai)
 	return claim, opts, nil
 }
 
@@ -137,4 +134,28 @@ func (p *provider) LoginURL(clientState string) string {
 		log.Errorf("could not obtain the login URL: %v", err)
 	}
 	return url
+}
+
+// Helpers
+//////////
+
+func saml2AssertionInfoToExternalClaim(assertionInfo *saml2.AssertionInfo) *tokens.ExternalUserClaim {
+	claim := &tokens.ExternalUserClaim{
+		UserID: assertionInfo.NameID,
+	}
+	claim.Attributes = make(map[string][]string)
+	claim.Attributes["userid"] = []string{claim.UserID}
+
+	// We store claims as both friendly name and name for easy of use.
+	for _, value := range assertionInfo.Values {
+		for _, innerValue := range value.Values {
+			if value.Name != "" {
+				claim.Attributes[value.Name] = append(claim.Attributes[value.Name], innerValue.Value)
+			}
+			if value.FriendlyName != "" {
+				claim.Attributes[value.FriendlyName] = append(claim.Attributes[value.FriendlyName], innerValue.Value)
+			}
+		}
+	}
+	return claim
 }

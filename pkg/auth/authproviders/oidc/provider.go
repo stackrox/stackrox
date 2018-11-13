@@ -60,23 +60,12 @@ func (p *provider) verifyIDToken(ctx context.Context, rawIDToken string) (*token
 		return nil, nil, errors.New("invalid token")
 	}
 
-	userInfo := struct {
-		Name  string `json:"name"`
-		EMail string `json:"email"`
-		UID   string `json:"sub"`
-	}{}
-
+	var userInfo userInfoType
 	if err := idToken.Claims(&userInfo); err != nil {
 		return nil, nil, err
 	}
-	claim := &tokens.ExternalUserClaim{
-		UserID:   userInfo.UID,
-		Email:    userInfo.EMail,
-		FullName: userInfo.Name,
-	}
-	if claim.UserID == "" {
-		claim.UserID = claim.Email
-	}
+
+	claim := userInfoToExternalClaims(&userInfo)
 	return claim, []tokens.Option{tokens.WithExpiry(idToken.Expiry)}, nil
 }
 
@@ -217,4 +206,46 @@ func (p *provider) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*
 	}
 
 	return userClaim, opts, clientState, nil
+}
+
+// Helpers
+///////////
+
+// UserInfo is an internal helper struct to unmarshal OIDC token info into.
+type userInfoType struct {
+	Name   string   `json:"name"`
+	EMail  string   `json:"email"`
+	UID    string   `json:"sub"`
+	Groups []string `json:"groups"`
+}
+
+func userInfoToExternalClaims(userInfo *userInfoType) *tokens.ExternalUserClaim {
+	claim := &tokens.ExternalUserClaim{
+		UserID:   userInfo.UID,
+		FullName: userInfo.Name,
+		Email:    userInfo.EMail,
+	}
+
+	// If no user id, substitute email.
+	if claim.UserID == "" {
+		claim.UserID = userInfo.EMail
+	}
+
+	// Add all fields as attributes.
+	claim.Attributes = make(map[string][]string)
+	if claim.UserID != "" {
+		claim.Attributes["userid"] = []string{claim.UserID}
+	}
+	if claim.FullName != "" {
+		claim.Attributes["name"] = []string{claim.FullName}
+	}
+	if claim.Email != "" {
+		claim.Attributes["email"] = []string{claim.Email}
+	}
+
+	// If using non-standard group information add them.
+	if len(userInfo.Groups) > 0 {
+		claim.Attributes["groups"] = userInfo.Groups
+	}
+	return claim
 }
