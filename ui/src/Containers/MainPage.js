@@ -20,21 +20,25 @@ import {
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 
+import asyncComponent from 'Components/AsyncComponent';
 import ProtectedRoute from 'Components/ProtectedRoute';
 import Notifications from 'Containers/Notifications';
-import DashboardPage from 'Containers/Dashboard/DashboardPage';
-import NetworkPage from 'Containers/Network/NetworkPage';
-import IntegrationsPage from 'Containers/Integrations/IntegrationsPage';
-import ViolationsPage from 'Containers/Violations/ViolationsPage';
-import PoliciesPage from 'Containers/Policies/Page';
-import ImagesPage from 'Containers/Images/ImagesPage';
-import CompliancePage from 'Containers/Compliance/CompliancePage';
-import RiskPage from 'Containers/Risk/RiskPage';
-import SecretsPage from 'Containers/Secrets/SecretsPage';
 import TopNavigation from 'Containers/Navigation/TopNavigation';
 import LeftNavigation from 'Containers/Navigation/LeftNavigation';
 import SearchModal from 'Containers/Search/SearchModal';
 import ErrorBoundary from 'Containers/ErrorBoundary';
+
+const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
+const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/NetworkPage'));
+const AsyncIntegrationsPage = asyncComponent(() =>
+    import('Containers/Integrations/IntegrationsPage')
+);
+const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/ViolationsPage'));
+const AsyncPoliciesPage = asyncComponent(() => import('Containers/Policies/Page'));
+const AsyncImagesPage = asyncComponent(() => import('Containers/Images/ImagesPage'));
+const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/CompliancePage'));
+const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
+const AsyncSecretsPage = asyncComponent(() => import('Containers/Secrets/SecretsPage'));
 
 class MainPage extends Component {
     static propTypes = {
@@ -57,15 +61,15 @@ class MainPage extends Component {
         <section className="flex-auto w-full overflow-hidden">
             <ErrorBoundary>
                 <Switch>
-                    <ProtectedRoute path={dashboardPath} component={DashboardPage} />
-                    <ProtectedRoute path={networkPath} component={NetworkPage} />
-                    <ProtectedRoute path={violationsPath} component={ViolationsPage} />
-                    <ProtectedRoute path={compliancePath} component={CompliancePage} />
-                    <ProtectedRoute path={integrationsPath} component={IntegrationsPage} />
-                    <ProtectedRoute path={policiesPath} component={PoliciesPage} />
-                    <ProtectedRoute path={riskPath} component={RiskPage} />
-                    <ProtectedRoute path={imagesPath} component={ImagesPage} />
-                    <ProtectedRoute path={secretsPath} component={SecretsPage} />
+                    <ProtectedRoute path={dashboardPath} component={AsyncDashboardPage} />
+                    <ProtectedRoute path={networkPath} component={AsyncNetworkPage} />
+                    <ProtectedRoute path={violationsPath} component={AsyncViolationsPage} />
+                    <ProtectedRoute path={compliancePath} component={AsyncCompliancePage} />
+                    <ProtectedRoute path={integrationsPath} component={AsyncIntegrationsPage} />
+                    <ProtectedRoute path={policiesPath} component={AsyncPoliciesPage} />
+                    <ProtectedRoute path={riskPath} component={AsyncRiskPage} />
+                    <ProtectedRoute path={imagesPath} component={AsyncImagesPage} />
+                    <ProtectedRoute path={secretsPath} component={AsyncSecretsPage} />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
             </ErrorBoundary>
