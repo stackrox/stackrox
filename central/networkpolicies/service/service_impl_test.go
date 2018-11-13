@@ -189,6 +189,8 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 	expectedGraph := &v1.NetworkGraph{}
 	suite.evaluator.EXPECT().GetGraph(deps, checkHasPolicies("first-policy")).
 		Return(expectedGraph)
+	suite.evaluator.EXPECT().GetGraph(deps, checkHasPolicies("first-policy")).
+		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
 	request := &v1.SimulateNetworkGraphRequest{
@@ -222,6 +224,8 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
 	suite.evaluator.EXPECT().GetGraph(deps, checkHasPolicies("first-policy", "second-policy")).
+		Return(expectedGraph)
+	suite.evaluator.EXPECT().GetGraph(deps, checkHasPolicies("second-policy")).
 		Return(expectedGraph)
 
 	request := &v1.SimulateNetworkGraphRequest{
@@ -258,6 +262,8 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 	expectedGraph := &v1.NetworkGraph{}
 	suite.evaluator.EXPECT().GetGraph(deps, checkHasPolicies("first-policy", "second-policy")).
 		Return(expectedGraph)
+	suite.evaluator.EXPECT().GetGraph(deps, checkHasPolicies("first-policy")).
+		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
 	request := &v1.SimulateNetworkGraphRequest{
@@ -293,6 +299,8 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 	// Check that the evaluator gets called with our created deployment and policy set.
 	expectedGraph := &v1.NetworkGraph{}
 	suite.evaluator.EXPECT().GetGraph(deps, checkHasPolicies("first-policy", "second-policy")).
+		Return(expectedGraph)
+	suite.evaluator.EXPECT().GetGraph(deps, checkHasPolicies()).
 		Return(expectedGraph)
 
 	// Make the request to the service and check that it did not err.
@@ -331,6 +339,9 @@ func networkPolicyGetIsForCluster(clusterID string) gomock.Matcher {
 // exactly one policy for every input (policyNames).
 func checkHasPolicies(policyNames ...string) gomock.Matcher {
 	return testutils.PredMatcher("has policies", func(networkPolicies []*v1.NetworkPolicy) bool {
+		if len(networkPolicies) != len(policyNames) {
+			return false
+		}
 		for _, name := range policyNames {
 			count := 0
 			for _, policy := range networkPolicies {

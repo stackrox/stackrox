@@ -123,9 +123,21 @@ message NetworkPolicyInSimulation {
     NetworkPolicy old_policy = 3;  // if status is MODIFIED, this contains the previous network policy.
 }
 
+message NetworkNodeDiff {
+    repeated string policy_ids = 1;
+    map<int32, NetworkEdgePropertiesBundle> out_edges = 2;
+}
+
+message NetworkGraphDiff {
+    map<int32, NetworkNodeDiff> node_diffs = 1;
+}
+
 message SimulateNetworkGraphResponse {
     NetworkGraph simulated_graph                = 1;
     repeated NetworkPolicyInSimulation policies = 2;
+
+    NetworkGraphDiff added = 3;
+    NetworkGraphDiff removed = 4;
 }
 
 message NetworkGraphEpoch {

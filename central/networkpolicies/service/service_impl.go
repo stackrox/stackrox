@@ -172,16 +172,42 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 		return nil, err
 	}
 
-	// Generate the graph.
-	networkPolicies := make([]*v1.NetworkPolicy, len(networkPoliciesInSimulation))
-	for i, policyInSim := range networkPoliciesInSimulation {
-		networkPolicies[i] = policyInSim.GetPolicy()
+	// Generate the base graph.
+	newPolicies := make([]*v1.NetworkPolicy, 0, len(networkPoliciesInSimulation))
+	oldPolicies := make([]*v1.NetworkPolicy, 0, len(networkPoliciesInSimulation))
+	var hasChanges bool
+	for _, policyInSim := range networkPoliciesInSimulation {
+		switch policyInSim.GetStatus() {
+		case v1.NetworkPolicyInSimulation_UNCHANGED:
+			oldPolicies = append(oldPolicies, policyInSim.GetPolicy())
+			newPolicies = append(newPolicies, policyInSim.GetPolicy())
+		case v1.NetworkPolicyInSimulation_ADDED:
+			newPolicies = append(newPolicies, policyInSim.GetPolicy())
+			hasChanges = true
+		case v1.NetworkPolicyInSimulation_MODIFIED:
+			oldPolicies = append(oldPolicies, policyInSim.GetOldPolicy())
+			newPolicies = append(newPolicies, policyInSim.GetPolicy())
+			hasChanges = true
+		}
 	}
-	graph := s.graphEvaluator.GetGraph(deployments, networkPolicies)
-	return &v1.SimulateNetworkGraphResponse{
-		SimulatedGraph: graph,
+	newGraph := s.graphEvaluator.GetGraph(deployments, newPolicies)
+	result := &v1.SimulateNetworkGraphResponse{
+		SimulatedGraph: newGraph,
 		Policies:       networkPoliciesInSimulation,
-	}, nil
+	}
+	if !hasChanges {
+		// no need to compute diff - no new policies
+		return result, nil
+	}
+
+	oldGraph := s.graphEvaluator.GetGraph(deployments, oldPolicies)
+	removedEdges, addedEdges, err := graph.ComputeDiff(oldGraph, newGraph)
+	if err != nil {
+		return nil, fmt.Errorf("could not compute a network graph diff: %v", err)
+	}
+
+	result.Removed, result.Added = removedEdges, addedEdges
+	return result, nil
 }
 
 func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.SendNetworkPolicyYamlRequest) (*v1.Empty, error) {
