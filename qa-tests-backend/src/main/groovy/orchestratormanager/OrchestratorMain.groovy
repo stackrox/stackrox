@@ -25,6 +25,7 @@ interface OrchestratorMain {
     def getDaemonSetNodeSelectors(DaemonSet daemonSet)
     def getDaemonSetUnavailableReplicaCount(DaemonSet daemonSet)
     def getDaemonSetCount()
+    def waitForDaemonSetDeletion(String name)
 
     //Containers
     String getpods()

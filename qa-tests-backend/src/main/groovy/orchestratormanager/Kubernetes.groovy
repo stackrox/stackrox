@@ -256,6 +256,24 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         println daemonSet.name + ": daemonset removed."
     }
 
+    def waitForDaemonSetDeletion(String name, String ns = namespace) {
+        int waitTime = 0
+
+        while (waitTime < maxWaitTime) {
+            V1beta1DaemonSetList dList
+            dList = beta1.listNamespacedDaemonSet(ns, null, null, null, null, null, null, null, null, null)
+
+            if (dList.getItems().find { it.getMetadata().getName() == name }.collect().size() == 0) {
+                return
+            }
+
+            sleep(sleepDuration)
+            waitTime += sleepDuration
+        }
+
+        println "Timed out waiting for daemonset ${name} to stop"
+    }
+
     def getDaemonSetReplicaCount(DaemonSet daemonSet) {
         V1beta1DaemonSetList daemonSets = this.beta1.listNamespacedDaemonSet(
                 daemonSet.namespace,

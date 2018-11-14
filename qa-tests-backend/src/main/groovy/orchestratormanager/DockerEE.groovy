@@ -17,7 +17,7 @@ import objects.NetworkPolicy
 
 import java.util.stream.Collectors
 
-class DockerEE extends OrchestratorCommon implements OrchestratorMain {
+class DockerEE extends OrchestratorCommon {
     DockerClient docker
 
     final String dockerHost = System.getenv("DOCKER_HOST")
