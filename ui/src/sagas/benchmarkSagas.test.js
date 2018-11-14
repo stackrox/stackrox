@@ -64,7 +64,7 @@ describe('Benchmark Sagas Test', () => {
     });
 
     it('should get a filtered list of clusters on Dashboard page when searching', () => {
-        const fetchMock = jest.fn().mockReturnValueOnce(clusters);
+        const fetchMock = jest.fn().mockReturnValueOnce(filteredClusters);
 
         return expectSaga(saga)
             .provide([

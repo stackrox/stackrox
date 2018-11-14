@@ -9,17 +9,6 @@ import { actions as benchmarkActions, types as benchmarkTypes } from 'reducers/b
 import { types as dashboardType } from 'reducers/dashboard';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
-function filterResultByClusterSearchOption(result, filters) {
-    let filteredResult = result.slice();
-    if (filters && filters.query) {
-        let clusterNames = filters.query.split('+').filter(obj => obj.includes('Cluster:'));
-        if (clusterNames.length) clusterNames = clusterNames[0].replace('Cluster:', '').split(',');
-        if (clusterNames.length && clusterNames[0] !== '')
-            filteredResult = result.filter(obj => clusterNames.includes(obj.clusterName));
-    }
-    return filteredResult;
-}
-
 export function* getBenchmarks() {
     try {
         const result = yield call(service.fetchBenchmarks);
@@ -41,9 +30,7 @@ export function* getBenchmarkCheckHostResults({ params: benchmark }) {
 function* getBenchmarksByCluster(filters) {
     try {
         const result = yield call(service.fetchBenchmarksByCluster, filters);
-        // This is a hack. Will need to remove it. Backend API should allow filtering the response using the search query
-        const filteredResult = filterResultByClusterSearchOption(result, filters);
-        yield put(benchmarkActions.fetchBenchmarksByCluster.success(filteredResult));
+        yield put(benchmarkActions.fetchBenchmarksByCluster.success(result));
     } catch (error) {
         yield put(benchmarkActions.fetchBenchmarksByCluster.failure(error));
     }

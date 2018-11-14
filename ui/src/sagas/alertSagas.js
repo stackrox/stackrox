@@ -22,33 +22,6 @@ import searchOptionsToQuery from 'services/searchOptionsToQuery';
 import { whitelistDeployment } from 'services/PoliciesService';
 import { actions as notificationActions } from 'reducers/notifications';
 
-function filterTimeseriesResultsByClusterSearchOptions(result, filters) {
-    const filteredResult = Object.assign({}, result);
-    if (filters && filters.query) {
-        let clusterNames = filters.query.split('+').filter(obj => obj.includes('Cluster:'));
-        if (clusterNames.length) clusterNames = clusterNames[0].replace('Cluster:', '').split(',');
-        if (clusterNames.length && clusterNames[0] !== '') {
-            filteredResult.response.clusters = result.response.clusters.filter(obj =>
-                clusterNames.includes(obj.cluster)
-            );
-        }
-    }
-    return filteredResult;
-}
-
-function filterCountsResultByClusterSearchOption(result, filters) {
-    const filteredResult = Object.assign({}, result);
-    if (filters && filters.query) {
-        let clusterNames = filters.query.split('+').filter(obj => obj.includes('Cluster:'));
-        if (clusterNames.length) clusterNames = clusterNames.replace('Cluster:', '').split(',');
-        if (clusterNames.length && clusterNames[0] !== '')
-            filteredResult.response.groups = result.response.groups.filter(obj =>
-                clusterNames.includes(obj.group)
-            );
-    }
-    return filteredResult;
-}
-
 function* getAlerts(filters) {
     try {
         const result = yield call(service.fetchAlerts, filters);
@@ -72,11 +45,7 @@ function* getGlobalAlertCounts(filters) {
         const newFilters = { ...filters };
         newFilters.group_by = 'CLUSTER';
         const result = yield call(service.fetchAlertCounts, newFilters);
-        /*
-         * @TODO This is a hack. Will need to remove it. Backend API should allow filtering the response using the search query
-         */
-        const filteredResult = filterCountsResultByClusterSearchOption(result, filters);
-        yield put(actions.fetchGlobalAlertCounts.success(filteredResult.response));
+        yield put(actions.fetchGlobalAlertCounts.success(result.response));
     } catch (error) {
         yield put(actions.fetchGlobalAlertCounts.failure(error));
     }
@@ -98,11 +67,7 @@ function* getAlertCountsByCluster(filters) {
         const newFilters = { ...filters };
         newFilters.group_by = 'CLUSTER';
         const result = yield call(service.fetchAlertCounts, newFilters);
-        /*
-         * @TODO This is a hack. Will need to remove it. Backend API should allow filtering the response using the search query
-         */
-        const filteredResult = filterCountsResultByClusterSearchOption(result, filters);
-        yield put(actions.fetchAlertCountsByCluster.success(filteredResult.response));
+        yield put(actions.fetchAlertCountsByCluster.success(result.response));
     } catch (error) {
         yield put(actions.fetchAlertCountsByCluster.failure(error));
     }
@@ -111,11 +76,7 @@ function* getAlertCountsByCluster(filters) {
 function* getAlertsByTimeseries(filters) {
     try {
         const result = yield call(service.fetchAlertsByTimeseries, filters);
-        /*
-         * @TODO This is a hack. Will need to remove it. Backend API should allow filtering the response using the search query
-         */
-        const filteredResult = filterTimeseriesResultsByClusterSearchOptions(result, filters);
-        yield put(actions.fetchAlertsByTimeseries.success(filteredResult.response));
+        yield put(actions.fetchAlertsByTimeseries.success(result.response));
     } catch (error) {
         yield put(actions.fetchAlertsByTimeseries.failure(error));
     }
