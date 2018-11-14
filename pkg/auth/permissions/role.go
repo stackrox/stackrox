@@ -9,12 +9,20 @@ type RoleStore interface {
 	RoleByName(name string) *v1.Role
 }
 
-// NewAllAccessRole returns a new role with the given name,
+// NewReadWriteRole returns a new role with the given name,
 // which has access to all permissions. Use sparingly!
-func NewAllAccessRole(name string) *v1.Role {
+func NewReadWriteRole(name string) *v1.Role {
 	return &v1.Role{
-		Name:      name,
-		AllAccess: true,
+		Name:         name,
+		GlobalAccess: v1.Access_READ_WRITE_ACCESS,
+	}
+}
+
+// NewReadOnlyRole returns a new role with the given name that has read only access to all resources.
+func NewReadOnlyRole(name string) *v1.Role {
+	return &v1.Role{
+		Name:         name,
+		GlobalAccess: v1.Access_READ_ACCESS,
 	}
 }
 
@@ -24,9 +32,8 @@ func NewRoleWithPermissions(name string, permissions ...*v1.Permission) *v1.Role
 	// resource with more than one permission set.
 	resourceToPermission := make(map[string]*v1.Permission, len(permissions))
 	for _, permission := range permissions {
-		if permission, exists := resourceToPermission[permission.GetResource()]; exists {
-			currentAccess := resourceToPermission[permission.GetResource()].Access
-			resourceToPermission[permission.GetResource()].Access = maxAccess(currentAccess, permission.GetAccess())
+		if curr, exists := resourceToPermission[permission.GetResource()]; exists {
+			resourceToPermission[permission.GetResource()].Access = maxAccess(curr.GetAccess(), permission.GetAccess())
 		} else {
 			resourceToPermission[permission.GetResource()] = permission
 		}
@@ -40,7 +47,7 @@ func NewRoleWithPermissions(name string, permissions ...*v1.Permission) *v1.Role
 
 // RoleHasPermission is a helper function that returns if the given roles provides the given permission.
 func RoleHasPermission(role *v1.Role, permission *v1.Permission) bool {
-	if role.GetAllAccess() {
+	if role.GetGlobalAccess() >= permission.GetAccess() {
 		return true
 	}
 	return role.GetResourceToPermission()[permission.GetResource()].GetAccess() >= permission.GetAccess()

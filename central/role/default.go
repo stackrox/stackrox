@@ -11,6 +11,12 @@ const (
 	// Admin is a role that's, well, authorized to do anything.
 	Admin = "Admin"
 
+	// Analyst is a role that has read access to all resources
+	Analyst = "Analyst"
+
+	// None role has no access.
+	None = "None"
+
 	// ContinuousIntegration is for CI piplines.
 	ContinuousIntegration = "Continuous Integration"
 
@@ -20,7 +26,9 @@ const (
 
 // DefaultRoles holds the... default roles.
 var DefaultRoles = map[string]*v1.Role{
-	Admin: permissions.NewAllAccessRole(Admin),
+	None:    permissions.NewRoleWithPermissions(None),
+	Analyst: permissions.NewReadOnlyRole(Analyst),
+	Admin:   permissions.NewReadWriteRole(Admin),
 	ContinuousIntegration: permissions.NewRoleWithPermissions(ContinuousIntegration,
 		permissions.View(resources.Detection),
 	),

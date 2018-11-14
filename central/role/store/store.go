@@ -2,7 +2,6 @@ package store
 
 import (
 	"github.com/stackrox/rox/central/role"
-	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 )
@@ -16,24 +15,9 @@ type Store interface {
 	GetRoles() []*v1.Role
 }
 
-// defaultRolesMap returns the pre-defined roles that we allow.
-func defaultRolesMap() map[string]*v1.Role {
-	return map[string]*v1.Role{
-		role.Admin: permissions.NewAllAccessRole(role.Admin),
-		role.ContinuousIntegration: permissions.NewRoleWithPermissions(role.ContinuousIntegration,
-			permissions.View(resources.Detection),
-		),
-		role.SensorCreator: permissions.NewRoleWithPermissions(role.SensorCreator,
-			permissions.View(resources.Cluster),
-			permissions.Modify(resources.Cluster),
-			permissions.View(resources.ServiceIdentity),
-		),
-	}
-}
-
 // New returns a new store.
 func New() Store {
 	return &storeImpl{
-		roles: defaultRolesMap(),
+		roles: role.DefaultRoles,
 	}
 }
