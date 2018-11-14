@@ -36,6 +36,22 @@
           "namespace": "kube-system"
         }
       }
+    },
+    {
+      "name": "Don't alert on openshift-node namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-node"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-sdn namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-sdn"
+        }
+      }
     }
   ]
 }

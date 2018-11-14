@@ -28,10 +28,98 @@
   "remediation": "Specify the requests and limits of CPU and Memory for your deployment.",
   "whitelists": [
     {
+      "name": "Don't alert on kube-public namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-public"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on kube-service-catalog namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-service-catalog"
+        }
+      }
+    },
+    {
       "name": "Don't alert on kube-system namespace",
       "deployment": {
         "scope": {
           "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on management-infra namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "management-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-ansible-service-broker namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-ansible-service-broker"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-infra namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-infra"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-logging namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-logging"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-node namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-node"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-sdn namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-sdn"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-template-service-broker namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-template-service-broker"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-web-console namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-web-console"
         }
       }
     },
