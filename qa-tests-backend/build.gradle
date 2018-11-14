@@ -77,6 +77,8 @@ dependencies {
 
     compile group: 'com.github.docker-java', name: 'docker-java', version: '3.1.0-rc-3'
 
+    compile 'io.fabric8:openshift-client:4.1.0'
+
     compile group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
 
     compile 'com.google.api.grpc:googleapis-common-protos:0.0.3'

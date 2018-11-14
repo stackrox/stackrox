@@ -9,6 +9,7 @@ import stackrox.generated.AlertServiceOuterClass.ListAlertsRequest
 import stackrox.generated.AlertServiceOuterClass.GetAlertsCountsRequest.RequestGroup
 import stackrox.generated.AlertServiceOuterClass.GetAlertsCountsRequest
 import stackrox.generated.AlertServiceOuterClass.GetAlertsGroupResponse
+import org.junit.Assume
 
 import groups.BAT
 import org.junit.experimental.categories.Category
@@ -105,8 +106,17 @@ class DefaultPoliciesTest extends BaseSpecification {
         "Curl in Image"                                | STRUTS         | "C948"
 
         "DockerHub NGINX 1.10"                         | NGINX_1_10     | "C823"
+    }
 
-        "Kubernetes Dashboard Deployed"                | K8S_DASHBOARD  | ""
+    @Category(BAT)
+    def "Verify that Kubernetes Dashboard violation is generated"() {
+        given:
+        "Orchestrator is K8S"
+        Assume.assumeTrue(orchestrator.isKubeDashboardRunning())
+
+        expect:
+        "Verify Kubernetes Dashboard violation exists"
+        waitForViolation(K8S_DASHBOARD,  "Kubernetes Dashboard Deployed", 30)
     }
 
     @Category(BAT)

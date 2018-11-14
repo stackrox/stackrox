@@ -12,6 +12,7 @@ import io.kubernetes.client.models.V1Capabilities
 import io.kubernetes.client.models.V1LabelSelector
 import io.kubernetes.client.models.V1EnvVar
 import io.kubernetes.client.models.V1LocalObjectReference
+import io.kubernetes.client.models.V1Node
 import io.kubernetes.client.models.V1ObjectMeta
 import io.kubernetes.client.models.V1Namespace
 import io.kubernetes.client.models.ExtensionsV1beta1Deployment
@@ -389,6 +390,16 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         }
     }
 
+    def isKubeDashboardRunning() {
+        V1PodList pods = api.listPodForAllNamespaces(null, null, true, null, null, null, null, null, false)
+        List<V1Pod> kubeDashboards = pods.getItems().findAll {
+            it.getSpec().getContainers().find {
+                it.getImage().contains("kubernetes-dashboard")
+            }
+        }
+        return kubeDashboards.size() > 0
+    }
+
     /*
         Service Methods
     */
@@ -468,7 +479,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     def getSecretCount() {
         return api.listSecretForAllNamespaces(
                 null,
-                "type=Opaque", //SR only counts Opaque secrets
+                null,
                 true,
                 null,
                 null,
@@ -476,7 +487,10 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 null,
                 null,
                 false
-        ).getItems().size()
+        ).getItems().findAll {
+            !it.type.startsWith("kubernetes.io/docker") &&
+                    !it.type.startsWith("kubernetes.io/service-account-token")
+        }.size()
     }
 
     /*
@@ -538,6 +552,23 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 null,
                 false
         ).getItems().size()
+    }
+
+    def supportsNetworkPolicies() {
+        List<V1Node> gkeNodes =  api.listNode(
+                null,
+                null,
+                null,
+                true,
+                null,
+                null,
+                null,
+                null,
+                false
+        ).getItems().findAll {
+            it.getStatus().getNodeInfo().getKubeletVersion().contains("gke")
+        }
+        return gkeNodes.size() > 0
     }
 
     /*

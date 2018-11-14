@@ -15,7 +15,7 @@ class OrchestratorType {
                 orchestrator = new DockerEE()
                 return orchestrator
             case OrchestratorTypes.OPENSHIFT:
-                orchestrator = new OpenShift()
+                orchestrator = new OpenShift(namespace)
                 return orchestrator
         }
     }

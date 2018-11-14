@@ -5,6 +5,7 @@ import objects.Deployment
 import objects.Edge
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
+import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.NetworkGraphService
 import spock.lang.Unroll
@@ -26,7 +27,6 @@ class NetworkFlowTest extends BaseSpecification {
     static final private String NOCONNECTIONSOURCE = "no-connection-source"
     static final private String SHORTCONSISTENTSOURCE = "short-consistent-source"
     static final private String SINGLECONNECTIONSOURCE = "single-connection-source"
-    static final private String EXTERNALCONNECTIONSOURCE = "external-connection-source"
     static final private String MULTIPLEPORTSCONNECTION = "two-ports-connect-source"
 
     static final private List<Deployment> DEPLOYMENTS = [
@@ -100,16 +100,6 @@ class NetworkFlowTest extends BaseSpecification {
                                       "while sleep 5; " +
                                       "do socat -s STDIN TCP:${TCPCONNECTIONTARGET}:80; " +
                                       "done" as String,]),
-            new Deployment()
-                    .setName(EXTERNALCONNECTIONSOURCE)
-                    .setImage("ubuntu")
-                    .addLabel("app", EXTERNALCONNECTIONSOURCE)
-                    .setCommand(["/bin/sh", "-c"])
-                    .setArgs(["/usr/bin/apt-get update && " +
-                                      "/usr/bin/apt-get install curl --assume-yes && " +
-                                      "while sleep ${NETWORK_FLOW_UPDATE_CADENCE / 1000}; " +
-                                      "do curl http://www.google.com; " +
-                                      "done", ]),
             new Deployment()
                     .setName(MULTIPLEPORTSCONNECTION)
                     .setImage("ubuntu")
@@ -257,6 +247,11 @@ class NetworkFlowTest extends BaseSpecification {
     @Category([NetworkFlowVisualization])
     def "Verify cluster updates can block flow connections from showing"() {
         given:
+        "orchestrator supports NetworkPolicies"
+        // limit this test to run only on environments that support Network Policies
+        Assume.assumeTrue(orchestrator.supportsNetworkPolicies())
+
+        and:
         "Two deployments, A and B, where B communicates to A"
         String targetUid = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert targetUid != null
@@ -291,19 +286,6 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Category([NetworkFlowVisualization])
-    def "Verify deployment connecting to external does not generate edge"() {
-        given:
-        "One deployments, A, where A communicates to google.com"
-        String sourceUid = DEPLOYMENTS.find { it.name == EXTERNALCONNECTIONSOURCE }?.deploymentUid
-        assert sourceUid != null
-
-        expect:
-        "Check for edge in network graph"
-        println "Checking for NO edge between ${EXTERNALCONNECTIONSOURCE} and www.google.com"
-        assert checkForEdge(sourceUid, null, null, 30)?.size() <= 1
-    }
-
-    @Category([NetworkFlowVisualization])
     def "Verify edge timestamps are never in the future, or before start of flow tests"() {
         given:
         "Get current state of edges and current timestamp"
@@ -313,7 +295,7 @@ class NetworkFlowTest extends BaseSpecification {
         expect:
         "Check timestamp for each edge"
         for (Edge edge : NetworkGraphUtil.findEdges(currentGraph, null, null)) {
-            assert edge.lastActiveTimestamp <= currentTime
+            assert edge.lastActiveTimestamp <= currentTime + 2000 //allow up to 2 sec leeway
             assert edge.lastActiveTimestamp >= Timestamps.toMillis(testStartTime)
         }
     }

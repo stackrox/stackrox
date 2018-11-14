@@ -30,6 +30,7 @@ interface OrchestratorMain {
     String getpods()
     def wasContainerKilled(String containerName, String namespace)
     def isKubeProxyPresent()
+    def isKubeDashboardRunning()
 
     //Services
     def deleteService(String serviceName, String namespace)
@@ -45,6 +46,7 @@ interface OrchestratorMain {
 
     //Nodes
     def getNodeCount()
+    def supportsNetworkPolicies()
 
     //Misc
     def createClairifyDeployment()

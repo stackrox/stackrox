@@ -183,4 +183,12 @@ class DockerEE extends OrchestratorCommon implements OrchestratorMain {
     @Override
     def isKubeProxyPresent() {
     }
+
+    @Override
+    def supportsNetworkPolicies() {
+    }
+
+    @Override
+    def isKubeDashboardRunning() {
+    }
 }

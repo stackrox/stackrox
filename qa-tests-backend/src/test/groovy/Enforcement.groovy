@@ -160,7 +160,7 @@ class Enforcement extends BaseSpecification {
         }
         assert nodeSelectors != null
         println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
-        assert orchestrator.getDeploymentUnavailableReplicaCount(d) ==
+        assert orchestrator.getDeploymentUnavailableReplicaCount(d) >=
                 orchestrator.getDeploymentReplicaCount(d)
         assert alert.enforcement.action == EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT
         assert Services.getAlertEnforcementCount(
@@ -233,7 +233,7 @@ class Enforcement extends BaseSpecification {
                 .setName("scale-node-deployment-enforcement-int")
                 .setImage("nginx")
                 .addPort(22)
-                .addLabel("app", "scale-down-enforcement-int")
+                .addLabel("app", "scale-node-deployment-enforcement-int")
                 .setSkipReplicaWait(true)
         orchestrator.createDeployment(d)
 
@@ -292,7 +292,7 @@ class Enforcement extends BaseSpecification {
                 .setName("scale-node-daemonset-enforcement-int")
                 .setImage("nginx")
                 .addPort(22)
-                .addLabel("app", "scale-down-enforcement-int")
+                .addLabel("app", "scale-node-daemonset-enforcement-int")
                 .setSkipReplicaWait(true)
                 .create()
 

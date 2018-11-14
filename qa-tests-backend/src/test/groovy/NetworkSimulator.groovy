@@ -161,13 +161,15 @@ class NetworkSimulator extends BaseSpecification {
                 .setNamespace("qa")
                 .addPodSelector(["app": WEBDEPLOYMENT])
                 .addIngressPodSelector(["app": CLIENTDEPLOYMENT])
+                .addPolicyType(NetworkPolicyTypes.INGRESS)
         NetworkPolicy policy3 = new NetworkPolicy("allow-egress-application-client")
                 .setNamespace("qa")
                 .addPodSelector(["app": CLIENTDEPLOYMENT])
                 .addEgressPodSelector(["app": WEBDEPLOYMENT])
+                .addPolicyType(NetworkPolicyTypes.EGRESS)
         def simulation = Services.submitNetworkGraphSimulation(
                 orchestrator.generateYaml(policy2) + orchestrator.generateYaml(policy3),
-                "Deployment:web,client")
+                "Deployment:web,client+Namespace:qa")
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
         def clientAppId = simulation.simulatedGraph.nodesList.find {
@@ -239,7 +241,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addPodSelector(["app": WEBDEPLOYMENT])
                 .addIngressNamespaceSelector()
         def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2),
-                "Deployment:web,central")
+                "Deployment:web,central+Namespace:qa,stackrox")
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
         def centralAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == "central" }.deploymentId
