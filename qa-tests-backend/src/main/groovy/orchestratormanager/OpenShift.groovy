@@ -117,19 +117,19 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
         if (deployment.exposeAsService) {
             this.deleteService(deployment.name, deployment.namespace)
         }
-        osClient.extensions().deployments().inNamespace(deployment.namespace).withName(deployment.name).delete()
+        osClient.apps().deployments().inNamespace(deployment.namespace).withName(deployment.name).delete()
         println deployment.name + ": deployment removed."
     }
 
     String getDeploymentId(Deployment deployment) {
-        return osClient.extensions().deployments()
+        return osClient.apps().deployments()
                 .inNamespace(deployment.namespace)
                 .withName(deployment.name)
                 .get().metadata.uid
     }
 
     def getDeploymentReplicaCount(Deployment deployment) {
-        io.fabric8.kubernetes.api.model.apps.Deployment d = osClient.extensions().deployments()
+        io.fabric8.kubernetes.api.model.apps.Deployment d = osClient.apps().deployments()
                 .inNamespace(deployment.namespace)
                 .withName(deployment.name)
                 .get()
@@ -140,7 +140,7 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
     }
 
     def getDeploymentUnavailableReplicaCount(Deployment deployment) {
-        io.fabric8.kubernetes.api.model.apps.Deployment d = osClient.extensions().deployments()
+        io.fabric8.kubernetes.api.model.apps.Deployment d = osClient.apps().deployments()
                 .inNamespace(deployment.namespace)
                 .withName(deployment.name)
                 .get()
@@ -151,7 +151,7 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
     }
 
     def getDeploymentNodeSelectors(Deployment deployment) {
-        io.fabric8.kubernetes.api.model.apps.Deployment d = osClient.extensions().deployments()
+        io.fabric8.kubernetes.api.model.apps.Deployment d = osClient.apps().deployments()
                 .inNamespace(deployment.namespace)
                 .withName(deployment.name)
                 .get()
@@ -163,7 +163,7 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
 
     def getDeploymentCount() {
         return osClient.deploymentConfigs().inAnyNamespace().list().getItems().size() +
-                osClient.extensions().deployments().inAnyNamespace().list().getItems().size()
+                osClient.apps().deployments().inAnyNamespace().list().getItems().size()
     }
 
     /*
@@ -176,12 +176,29 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
     }
 
     def deleteDaemonSet(DaemonSet daemonSet) {
-        osClient.extensions().daemonSets().inNamespace(daemonSet.namespace).withName(daemonSet.name).delete()
+        osClient.apps().daemonSets().inNamespace(daemonSet.namespace).withName(daemonSet.name).delete()
         println daemonSet.name + ": daemonset removed."
     }
 
+    def waitForDaemonSetDeletion(String name, String ns = namespace) {
+        int waitTime = 0
+
+        while (waitTime < maxWaitTime) {
+            io.fabric8.kubernetes.api.model.apps.DaemonSet ds =
+                    osClient.apps().daemonSets().inNamespace(ns).withName(name).get()
+            if (ds == null) {
+                return
+            }
+
+            sleep(sleepDuration)
+            waitTime += sleepDuration
+        }
+
+        println "Timed out waiting for daemonset ${name} to stop"
+    }
+
     def getDaemonSetReplicaCount(DaemonSet daemonSet) {
-        io.fabric8.kubernetes.api.model.apps.DaemonSet d = osClient.extensions().daemonSets()
+        io.fabric8.kubernetes.api.model.apps.DaemonSet d = osClient.apps().daemonSets()
                 .inNamespace(daemonSet.namespace)
                 .withName(daemonSet.name)
                 .get()
@@ -193,7 +210,7 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
     }
 
     def getDaemonSetUnavailableReplicaCount(DaemonSet daemonSet) {
-        io.fabric8.kubernetes.api.model.apps.DaemonSet d = osClient.extensions().daemonSets()
+        io.fabric8.kubernetes.api.model.apps.DaemonSet d = osClient.apps().daemonSets()
                 .inNamespace(daemonSet.namespace)
                 .withName(daemonSet.name)
                 .get()
@@ -205,7 +222,7 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
     }
 
     def getDaemonSetNodeSelectors(DaemonSet daemonSet) {
-        io.fabric8.kubernetes.api.model.apps.DaemonSet d = osClient.extensions().daemonSets()
+        io.fabric8.kubernetes.api.model.apps.DaemonSet d = osClient.apps().daemonSets()
                 .inNamespace(daemonSet.namespace)
                 .withName(daemonSet.name)
                 .get()
@@ -217,7 +234,7 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
     }
 
     def getDaemonSetCount() {
-        return osClient.extensions().daemonSets().inAnyNamespace().list().getItems().size()
+        return osClient.apps().daemonSets().inAnyNamespace().list().getItems().size()
     }
 
     /*
@@ -349,13 +366,13 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
         println "${networkPolicy.metadata.name}: NetworkPolicy created:"
         println YamlGenerator.toYaml(networkPolicy)
         io.fabric8.kubernetes.api.model.networking.NetworkPolicy createdPolicy =
-                osClient.extensions().networkPolicies().inNamespace(policy.namespace).createOrReplace(networkPolicy)
+                osClient.apps().networkPolicies().inNamespace(policy.namespace).createOrReplace(networkPolicy)
         policy.uid = createdPolicy.metadata.uid
         return createdPolicy.metadata.uid
     }
 
     boolean deleteNetworkPolicy(NetworkPolicy policy) {
-        Boolean success = osClient.extensions()
+        Boolean success = osClient.apps()
                 .networkPolicies().
                 inNamespace(policy.namespace)
                 .withName(policy.name)
@@ -499,7 +516,7 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
                                 .endSpec()
                         .endTemplate()
                 .endSpec()
-        osClient.extensions().deployments().inNamespace("stackrox").createOrReplace(clairifyDeployment.build())
+        osClient.apps().deployments().inNamespace("stackrox").createOrReplace(clairifyDeployment.build())
         waitForDeploymentCreation("clairify", "stackrox")
     }
 
@@ -531,7 +548,7 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
                 .endSpec()
 
         try {
-            osClient.extensions().deployments().inNamespace(deployment.namespace).createOrReplace(dep.build())
+            osClient.apps().deployments().inNamespace(deployment.namespace).createOrReplace(dep.build())
             println("Told the orchestrator to create " + deployment.getName())
         } catch (Exception e) {
             println("Error creating os deployment: " + e.toString())
@@ -560,7 +577,7 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
         int waitTime = 0
 
         while (waitTime < maxWaitTime) {
-            def dList = osClient.extensions().deployments().inNamespace(namespace).list()
+            def dList = osClient.apps().deployments().inNamespace(namespace).list()
 
             println "Waiting for " + deploymentName
             for (io.fabric8.kubernetes.api.model.apps.Deployment deployment : dList.getItems()) {
@@ -611,7 +628,7 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
                 .endSpec()
 
         try {
-            osClient.extensions().daemonSets().inNamespace(daemonSet.namespace).createOrReplace(dep.build())
+            osClient.apps().daemonSets().inNamespace(daemonSet.namespace).createOrReplace(dep.build())
             println("Told the orchestrator to create " + daemonSet.getName())
         } catch (Exception e) {
             println("Error creating os deployment" + e.toString())
@@ -635,7 +652,7 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
         int waitTime = 0
 
         while (waitTime < maxWaitTime) {
-            DaemonSetList dList = osClient.extensions().daemonSets().inNamespace(namespace).list()
+            DaemonSetList dList = osClient.apps().daemonSets().inNamespace(namespace).list()
 
             println "Waiting for " + deploymentName
             for (io.fabric8.kubernetes.api.model.apps.DaemonSet daemonSet : dList.getItems()) {
