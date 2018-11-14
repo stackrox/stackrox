@@ -23,15 +23,29 @@ const NetworkGraphManager = element => {
         return canvas;
     }
 
+    function render() {
+        if (shouldUpdate) {
+            sceneManager.update();
+            shouldUpdate = false;
+        }
+        sceneManager.render();
+    }
+
     // event listeners
 
     function onClick({ layerX: x, layerY: y }) {
         const node = sceneManager.getNodeAtPosition(x, y);
         if (node) onNodeClick(node);
+        render();
     }
 
-    function mouseMove({ layerX: x, layerY: y }) {
+    function onMouseMove({ layerX: x, layerY: y }) {
         sceneManager.onMouseMove(x, y);
+        render();
+    }
+
+    function onMouseWheel() {
+        render();
     }
 
     function zoomIn() {
@@ -44,16 +58,18 @@ const NetworkGraphManager = element => {
 
     const onThrottleClick = throttle(onClick, THROTTLE_DELAY, { trailing: false });
 
-    const onDebounceMouseMove = debounce(mouseMove, DEBOUNCE_DELAY);
+    const onDebounceMouseMove = debounce(onMouseMove, DEBOUNCE_DELAY);
 
     function bindEventListeners() {
         networkGraphCanvas.addEventListener('click', onThrottleClick, false);
         networkGraphCanvas.addEventListener('mousemove', onDebounceMouseMove, false);
+        networkGraphCanvas.addEventListener('wheel', onMouseWheel, false);
     }
 
     function unbindEventListeners() {
         networkGraphCanvas.removeEventListener('click', onThrottleClick, false);
         networkGraphCanvas.removeEventListener('mousemove', onDebounceMouseMove, false);
+        networkGraphCanvas.addEventListener('wheel', onMouseWheel, false);
     }
 
     function setUpNetworkData({ nodes, networkFlowMapping }) {
@@ -61,19 +77,11 @@ const NetworkGraphManager = element => {
         const data = dataManager.getData();
         sceneManager.setData(data);
         shouldUpdate = true;
+        render();
     }
 
     function setOnNodeClick(callback) {
         onNodeClick = callback;
-    }
-
-    function render() {
-        requestAnimationFrame(render);
-        if (shouldUpdate) {
-            sceneManager.update();
-            shouldUpdate = false;
-        }
-        sceneManager.render();
     }
 
     function setUp() {
