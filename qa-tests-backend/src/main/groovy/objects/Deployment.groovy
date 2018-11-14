@@ -12,6 +12,7 @@ class Deployment {
     List<String> secretNames = new ArrayList<String>()
     Map<String, String> labels = new HashMap<>()
     Map<Integer, String> ports = new HashMap<>()
+    Map<String,String> annotation = new HashMap<>()
     List<String> command = new ArrayList<>()
     List<Pod> pods = new ArrayList<>()
     String deploymentUid
@@ -44,6 +45,11 @@ class Deployment {
 
     Deployment addLabel(String k, String v) {
         this.labels[k] = v
+        return this
+    }
+
+    Deployment addAnnotation(String key, String val) {
+        this.annotation[key] = val
         return this
     }
 

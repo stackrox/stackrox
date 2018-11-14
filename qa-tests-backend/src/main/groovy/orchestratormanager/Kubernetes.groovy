@@ -696,7 +696,6 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
 
     private createDeploymentNoWait(Deployment deployment) {
         deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
-
         ExtensionsV1beta1Deployment k8sDeployment = new ExtensionsV1beta1Deployment()
                 .metadata(
                 new V1ObjectMeta()
@@ -710,6 +709,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 .template(new V1PodTemplateSpec()
                 .spec(generatePodSpec(deployment))
                 .metadata(new V1ObjectMeta()
+                .annotations(deployment.getAnnotation())
                 .name(deployment.getName())
                 .namespace(this.namespace)
                 .labels(deployment.getLabels())

@@ -4,6 +4,8 @@ import stackrox.generated.PolicyServiceOuterClass.PolicyFields
 import stackrox.generated.PolicyServiceOuterClass.ImageNamePolicy
 import stackrox.generated.PolicyServiceOuterClass.LifecycleStage
 import stackrox.generated.PolicyServiceOuterClass.DockerfileLineRuleField
+import stackrox.generated.PolicyServiceOuterClass.PortPolicy
+import stackrox.generated.PolicyServiceOuterClass.KeyValuePolicy
 import groups.BAT
 import objects.Deployment
 import org.junit.experimental.categories.Category
@@ -16,33 +18,35 @@ class PolicyConfigurationTest extends BaseSpecification {
     //static final private String DEPLOYMENTREGISTRY = "deploymentregistry"
     static final private String DEPLOYMENTAGE = "deploymentage"
     static final private String DEPLOYMENTDOCKERFILE = "deploymentdockerfileandnoscan"
-
+    static final private String STRUTS = "qadefpolstruts"
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName (DEPLOYMENTNGINX)
                     .setImage ("nginx:1.10")
                     .addPort (22)
+                    .addAnnotation ( "test", "annotation" )
+                    .setEnv (["CLUSTER_NAME": "main"])
                     .addLabel ( "app", "test" ),
-
             new Deployment()
                     .setName (DEPLOYMENTREMOTE)
                     .setImage ("apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest")
                     .addLabel ( "app", "test" ),
-
             new Deployment()
                     .setName (DEPLOYMENTAGE)
                     .setImage ("nginx:1.10")
                     .addLabel ( "app", "test" ),
-
             new Deployment()
                     .setName (DEPLOYMENTDOCKERFILE)
                     .setImage ("nginx:1.7.9")
                     .addLabel ( "app", "test" ),
-
            /* new Deployment()
                     .setName (DEPLOYMENTREGISTRY)
                     .setImage ("us.gcr.io/ultra-current-825/apache-dns:latest")
                     .addLabel ( "app", "test" ),*/
+            new Deployment()
+                    .setName(STRUTS)
+                    .setImage("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
+                    .addLabel("app", "test"),
     ]
 
     def setupSpec() {
@@ -94,7 +98,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .build())
                         .build() | DEPLOYMENTNGINX
 
-       /* "Image Registry" |
+        /*"Image Registry" |
                 Policy.newBuilder()
                         .setName("TestImageRegistryPolicy")
                         .setDescription("Test registry tag")
@@ -109,7 +113,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                                 .setRegistry("us.gcr.io")
                                 .build())
                         .build())
-                        .build() | DEPLOYMENTREGISTRY */
+                        .build() | DEPLOYMENTREGISTRY*/
 
         "Image Remote" |
                 Policy.newBuilder()
@@ -184,6 +188,77 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                         .setNoScanExists(true))
                         .build() | DEPLOYMENTDOCKERFILE
-    }
 
+        "CVE is available" |
+                Policy.newBuilder()
+                        .setName("TestCVEPolicy")
+                        .setDescription("TestCVE")
+                        .setRationale("TestCVE")
+                        .addLifecycleStages(LifecycleStage.DEPLOY)
+                        .addCategories("DevOps Best Practices")
+                        .setDisabled(false)
+                        .setSeverityValue(2)
+                        .setFields(PolicyFields.newBuilder()
+                        .setCve("CVE-2017-5638"))
+                        .build() | STRUTS
+
+        "Port" |
+                Policy.newBuilder()
+                        .setName("TestPortPolicy")
+                        .setDescription("Testport")
+                        .setRationale("Testport")
+                        .addLifecycleStages(LifecycleStage.DEPLOY)
+                        .addCategories("DevOps Best Practices")
+                        .setDisabled(false)
+                        .setSeverityValue(2)
+                        .setFields(PolicyFields.newBuilder()
+                        .setPortPolicy(PortPolicy.newBuilder()
+                        .setPort(22).build()))
+                        .build() | DEPLOYMENTNGINX
+
+        "Required Label" |
+                Policy.newBuilder()
+                        .setName("TestLabelPolicy")
+                        .setDescription("TestLabel")
+                        .setRationale("TestLabel")
+                        .addLifecycleStages(LifecycleStage.DEPLOY)
+                        .addCategories("DevOps Best Practices")
+                        .setDisabled(false)
+                        .setSeverityValue(2)
+                        .setFields(PolicyFields.newBuilder()
+                        .setRequiredLabel(KeyValuePolicy.newBuilder()
+                          .setKey("app1")
+                          .setValue("test1").build()))
+                        .build() | DEPLOYMENTNGINX
+
+        "Required Annotations" |
+                Policy.newBuilder()
+                        .setName("TestAnnotationPolicy")
+                        .setDescription("TestAnnotation")
+                        .setRationale("TestAnnotation")
+                        .addLifecycleStages(LifecycleStage.DEPLOY)
+                        .addCategories("DevOps Best Practices")
+                        .setDisabled(false)
+                        .setSeverityValue(2)
+                        .setFields(PolicyFields.newBuilder()
+                        .setRequiredAnnotation(KeyValuePolicy.newBuilder()
+                            .setKey("test")
+                            .setValue("annotation").build()))
+                        .build() | DEPLOYMENTNGINX
+
+        "Environment is available" |
+                Policy.newBuilder()
+                        .setName("TestEnvironmentPolicy")
+                        .setDescription("TestEnvironment")
+                        .setRationale("TestEnvironment")
+                        .addLifecycleStages(LifecycleStage.DEPLOY)
+                        .addCategories("DevOps Best Practices")
+                        .setDisabled(false)
+                        .setSeverityValue(2)
+                        .setFields(PolicyFields.newBuilder()
+                        .setEnv(KeyValuePolicy.newBuilder()
+                        .setKey("CLUSTER_NAME")
+                        .setValue("main").build()))
+                        .build() | DEPLOYMENTNGINX
+    }
 }
