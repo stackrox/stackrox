@@ -17,7 +17,7 @@ required = ["golang.org/x/tools/go/ast/astutil"]
 [[override]]
   name = "github.com/heroku/docker-registry-client"
   source = "github.com/stackrox/docker-registry-client.git"
-  branch = "cgorman-manifest-updates"
+  revision = "3d98b2b79d1baebfb4deee7df2658afdf12b9b58"
 
 [[constraint]]
   name = "github.com/boltdb/bolt"
@@ -164,7 +164,7 @@ required = ["golang.org/x/tools/go/ast/astutil"]
 
 [[constraint]]
   name = "github.com/stackrox/clairify"
-  branch = "cgorman-update-manifiests-registry-client"
+  revision = "22124b9db62818d3e2cf2a5b04633f46a07eab42"
 
 [[constraint]]
   name = "github.com/aws/aws-sdk-go"

@@ -614,12 +614,12 @@
   revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
 
 [[projects]]
-  branch = "cgorman-manifest-updates"
-  digest = "1:21fe3c512997dcf2fd967069088ea3356e863344557b93b3f0bdc28b38c24655"
+  branch = "master"
+  digest = "1:bdec2bcab73bccf50c8522baac7c37e55fafcd99bded20748dea0d61666fb7b2"
   name = "github.com/heroku/docker-registry-client"
   packages = ["registry"]
   pruneopts = "NUT"
-  revision = "7aaa8e8d76f06ad750117261e1972664b90a1886"
+  revision = "3d98b2b79d1baebfb4deee7df2658afdf12b9b58"
   source = "github.com/stackrox/docker-registry-client.git"
 
 [[projects]]
@@ -926,15 +926,15 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "cgorman-update-manifiests-registry-client"
-  digest = "1:8a3462e0c52a3a0931b7c9f0dd38708ecc607a4b4cfcb91a0ea9ecf24bfec17f"
+  branch = "master"
+  digest = "1:8f04ab63534bb5c63a460d5a101032e29985cfae09b5b3e5634a45895cefce59"
   name = "github.com/stackrox/clairify"
   packages = [
     "client",
     "types",
   ]
   pruneopts = "NUT"
-  revision = "eb581accbe4debe3a8f5e625943815bb39456d99"
+  revision = "22124b9db62818d3e2cf2a5b04633f46a07eab42"
 
 [[projects]]
   branch = "master"
