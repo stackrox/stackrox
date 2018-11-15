@@ -15,7 +15,8 @@ import {
     policiesPath,
     riskPath,
     imagesPath,
-    secretsPath
+    secretsPath,
+    apidocsPath
 } from 'routePaths';
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
@@ -27,6 +28,8 @@ import TopNavigation from 'Containers/Navigation/TopNavigation';
 import LeftNavigation from 'Containers/Navigation/LeftNavigation';
 import SearchModal from 'Containers/Search/SearchModal';
 import ErrorBoundary from 'Containers/ErrorBoundary';
+
+import ApiDocsPage from 'Containers/Docs/ApiPage';
 
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
 const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/NetworkPage'));
@@ -70,6 +73,7 @@ class MainPage extends Component {
                     <ProtectedRoute path={riskPath} component={AsyncRiskPage} />
                     <ProtectedRoute path={imagesPath} component={AsyncImagesPage} />
                     <ProtectedRoute path={secretsPath} component={AsyncSecretsPage} />
+                    <ProtectedRoute path={apidocsPath} component={ApiDocsPage} />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
             </ErrorBoundary>

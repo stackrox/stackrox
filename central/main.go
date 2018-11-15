@@ -23,6 +23,7 @@ import (
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
 	detectionService "github.com/stackrox/rox/central/detection/service"
+	"github.com/stackrox/rox/central/docs"
 	"github.com/stackrox/rox/central/enrichanddetect"
 	"github.com/stackrox/rox/central/globaldb"
 	globaldbHandlers "github.com/stackrox/rox/central/globaldb/handlers"
@@ -236,6 +237,12 @@ func (c *central) customRoutes() (customRoutes []routes.CustomRoute) {
 			Authorizer:    allow.Anonymous(),
 			ServerHandler: promhttp.Handler(),
 			Compression:   false,
+		},
+		{
+			Route:         "/api/docs/swagger",
+			Authorizer:    authzUser.With(permissions.View(resources.APIToken)),
+			ServerHandler: docs.Swagger(),
+			Compression:   true,
 		},
 	}
 

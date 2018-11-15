@@ -854,3 +854,11 @@ overflow: initial !important;
 .overflow-overlay {
     overflow: overlay;
 }
+
+.redoc-wrap, .redoc-wrap .menu-content {
+    @apply .h-full !important;
+}
+
+.redoc-wrap .api-content {
+    @apply .overflow-auto !important;
+}

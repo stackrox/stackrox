@@ -12,7 +12,7 @@ SERVICE_PROTOS_REL = $(SERVICE_PROTOS:$(PROTO_BASE_PATH)/%=%)
 API_SERVICE_PROTOS = $(filter api/v1/%, $(SERVICE_PROTOS_REL))
 
 GENERATED_BASE_PATH = $(BASE_PATH)/generated
-GENERATED_DOC_PATH = docs
+GENERATED_DOC_PATH = image/docs
 MERGED_API_SWAGGER_SPEC = $(GENERATED_DOC_PATH)/api/v1/swagger.json
 GENERATED_API_DOCS = $(GENERATED_DOC_PATH)/api/v1/reference
 GENERATED_PB_SRCS = $(ALL_PROTOS_REL:%.proto=$(GENERATED_BASE_PATH)/%.pb.go)
@@ -200,7 +200,7 @@ $(MERGED_API_SWAGGER_SPEC): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SW
 # Generate the docs from the merged swagger specs.
 $(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(PROTOC_GEN_GRPC_GATEWAY)
 	@echo "+ $@"
-	docker run --user $(shell id -u) --rm -v $(CURDIR)/docs:/tmp/docs swaggerapi/swagger-codegen-cli generate -l html2 -i /tmp/$< -o /tmp/$@
+	docker run --user $(shell id -u) --rm -v $(CURDIR)/$(GENERATED_DOC_PATH):/tmp/$(GENERATED_DOC_PATH) swaggerapi/swagger-codegen-cli generate -l html2 -i /tmp/$< -o /tmp/$@
 
 .PHONY: clean-protos
 clean-protos: clean-generated

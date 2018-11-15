@@ -14,7 +14,7 @@ central.zip
 tmp
 
 # Generated API docs
-/docs/
+/image/docs/
 
 # Uncommitted code
 vendor/

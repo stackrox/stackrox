@@ -146,6 +146,17 @@ dependencies:
     attribution:
     - JS Foundation and other contributors
 
+  ui/node_modules/mobx:
+    url: https://github.com/mobxjs/mobx
+    license: MIT
+    files:
+      LICENSE: 8fc7f323662b01cdbfcae37b82644cfb52dceb3101afb2ce8c50c78b0fb47d42
+      package.json:
+        author: b9f83237f4466765abdd373c2f37871e6814518a8585e22e53d3bb5589ae2f73
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+    - 2015 Michel Weststrate
+
   ui/node_modules/normalizr:
     url: https://github.com/paularmstrong/normalizr
     license: MIT
@@ -464,6 +475,17 @@ dependencies:
     - 2015 recharts
     - 2015-2017 Recharts Group
 
+  ui/node_modules/redoc:
+    url: https://github.com/Rebilly/ReDoc
+    license: MIT
+    files:
+      LICENSE: d3026d549cf68ab7355bcfa85877bf8f845b3334a7efbfdc63936432fb34ff0e
+      package.json:
+        author: e7a8ed877a8d0b98ef22671ea93e45b0c3f1f76b6b685151b346b84b6be10f27
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+    - 2015-present, Rebilly, Inc.
+
   ui/node_modules/redux:
     url: https://github.com/reduxjs/redux
     license: MIT
@@ -542,6 +564,17 @@ dependencies:
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
     - 2010-2017 Marcus Westin
+
+  ui/node_modules/styled-components:
+    url: https://github.com/styled-components/styled-components
+    license: MIT
+    files:
+      LICENSE: 5b893305a717230e5b0024ff5ca3eec1dc05ba600c9b140730488d97ce56f1e6
+      package.json:
+        author: d1b09bcf03e730fd144e26e7ea4079ee33ed36efdd4f462586b34c34859728c0
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+    - 2016-present Glen Maddern and Maximilian Stoiber
 
   ui/node_modules/tailwindcss:
     url: https://github.com/tailwindcss/tailwindcss

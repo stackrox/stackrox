@@ -202,7 +202,7 @@ coverage:
 ###########
 ## Image ##
 ###########
-image: gazelle clean-image
+image: gazelle clean-image $(MERGED_API_SWAGGER_SPEC)
 	@echo "+ $@"
 	bazel build $(BAZEL_FLAGS) \
 		//central \
@@ -252,7 +252,7 @@ clean: clean-image clean-generated-srcs
 clean-image:
 	@echo "+ $@"
 	git clean -xf image/bin
-	git clean -xdf image/ui
+	git clean -xdf image/ui image/docs
 	git clean -xf integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 
 .PHONY: tag
