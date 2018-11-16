@@ -65,20 +65,29 @@ class NetworkSimulator extends BaseSpecification {
         def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy))
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
+        def webAppIndex = simulation.simulatedGraph.nodesList.indexOf(
+                simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }
+        )
 
         then:
         "verify simulation"
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, webAppId).size() ==
                 NetworkGraphUtil.findEdges(baseline, null, webAppId).size()
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, webAppId, null).size() == 0
-        NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation sim =
-                simulation.policiesList.find { it.policy.name == "deny-all-namespace-ingress" }
-        assert sim.status == NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.MODIFIED
-        assert sim.policy.spec.policyTypesList.containsAll(
-                [NetworkPolicyServiceOuterClass.NetworkPolicyType.INGRESS_NETWORK_POLICY_TYPE,
-                 NetworkPolicyServiceOuterClass.NetworkPolicyType.EGRESS_NETWORK_POLICY_TYPE,])
-        assert sim.oldPolicy.spec.policyTypesList.containsAll(
-                [NetworkPolicyServiceOuterClass.NetworkPolicyType.INGRESS_NETWORK_POLICY_TYPE,])
+        assert simulation.policiesList.find { it.policy.name == "deny-all-namespace-ingress" }?.status ==
+                NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.MODIFIED
+
+        // Verify ingress nodes to 'web' are removed from nodes outside `qa` namespace
+        simulation.removed.nodeDiffsMap.each {
+            if (simulation.simulatedGraph.nodesList.get(it.key).namespace != "qa") {
+                assert it.value.outEdgesMap.containsKey(webAppIndex)
+                assert it.value.policyIdsList.contains(policyId)
+            }
+        }
+        // Verify no change to added nodes
+        simulation.added.nodeDiffsMap.each {
+            assert it.value.outEdgesCount == 0
+        }
 
         cleanup:
         "cleanup"
@@ -109,6 +118,9 @@ class NetworkSimulator extends BaseSpecification {
         def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2))
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
+        def webAppIndex = simulation.simulatedGraph.nodesList.indexOf(
+                simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }
+        )
         def clientAppId = simulation.simulatedGraph.nodesList.find {
             it.deploymentName == CLIENTDEPLOYMENT
         }.deploymentId
@@ -123,18 +135,23 @@ class NetworkSimulator extends BaseSpecification {
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, clientAppId, null).size() ==
                 NetworkGraphUtil.findEdges(baseline, clientAppId, null).size()
 
-        NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation sim1 =
-                simulation.policiesList.find { it.policy.name == "deny-all-traffic" }
-        assert sim1.status == NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.UNCHANGED
-        assert sim1.policy.spec.policyTypesList.containsAll(
-                [NetworkPolicyServiceOuterClass.NetworkPolicyType.INGRESS_NETWORK_POLICY_TYPE,
-                 NetworkPolicyServiceOuterClass.NetworkPolicyType.EGRESS_NETWORK_POLICY_TYPE,])
+        assert simulation.policiesList.find { it.policy.name == "deny-all-traffic" }?.status ==
+                NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.UNCHANGED
 
-        NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation sim2 =
-                simulation.policiesList.find { it.policy.name == "allow-ingress-application-web" }
-        assert sim2.status == NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.ADDED
-        assert sim2.policy.spec.podSelector.matchLabelsMap.containsKey("app")
-        assert sim2.policy.spec.podSelector.matchLabelsMap.get("app") == WEBDEPLOYMENT
+        assert simulation.policiesList.find { it.policy.name == "allow-ingress-application-web" }?.status ==
+                NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.ADDED
+
+        // Verify outEdge to 'web' is added to all nodes
+        simulation.added.nodeDiffsMap.each {
+            if (it.key != webAppIndex) {
+                assert it.value.outEdgesMap.containsKey(webAppIndex)
+            } else {
+                assert it.value.policyIdsCount > 0
+            }
+        }
+
+        // Verify removed is not changed
+        assert simulation.removed.nodeDiffsMap.size() == 0
 
         cleanup:
         "cleanup"
@@ -172,9 +189,15 @@ class NetworkSimulator extends BaseSpecification {
                 "Deployment:web,client+Namespace:qa")
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
+        def webAppIndex = simulation.simulatedGraph.nodesList.indexOf(
+                simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }
+        )
         def clientAppId = simulation.simulatedGraph.nodesList.find {
             it.deploymentName == CLIENTDEPLOYMENT
         }.deploymentId
+        def clientAppIndex = simulation.simulatedGraph.nodesList.indexOf(
+                simulation.simulatedGraph.nodesList.find { it.deploymentName == CLIENTDEPLOYMENT }
+        )
 
         then:
         "verify simulation"
@@ -184,34 +207,23 @@ class NetworkSimulator extends BaseSpecification {
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, clientAppId, null).size() == 1
         assert simulation.simulatedGraph.nodesList.size() == 2
 
-        NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation sim1 =
-                simulation.policiesList.find { it.policy.name == "deny-all-traffic" }
-        assert sim1.status == NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.UNCHANGED
-        assert sim1.policy.spec.policyTypesList.containsAll(
-                [NetworkPolicyServiceOuterClass.NetworkPolicyType.INGRESS_NETWORK_POLICY_TYPE,
-                 NetworkPolicyServiceOuterClass.NetworkPolicyType.EGRESS_NETWORK_POLICY_TYPE,])
+        assert simulation.policiesList.find { it.policy.name == "deny-all-traffic" }?.status ==
+                NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.UNCHANGED
 
-        NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation sim2 =
-                simulation.policiesList.find { it.policy.name == "allow-ingress-application-web" }
-        assert sim2.status == NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.ADDED
-        assert sim2.policy.spec.podSelector.matchLabelsMap.containsKey("app") &&
-                sim2.policy.spec.podSelector.matchLabelsMap.get("app") == WEBDEPLOYMENT
-        assert sim2.policy.spec.ingressList.find {
-            it.fromList.find {
-                it.podSelector.matchLabelsMap.containsKey("app") &&
-                        it.podSelector.matchLabelsMap.get("app") == CLIENTDEPLOYMENT
-            }
-        }
+        assert simulation.policiesList.find { it.policy.name == "allow-ingress-application-web" }?.status ==
+                NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.ADDED
 
-        NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation sim3 =
-                simulation.policiesList.find { it.policy.name == "allow-egress-application-client" }
-        assert sim3.status == NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.ADDED
-        assert sim3.policy.spec.podSelector.matchLabelsMap.containsKey("app") &&
-                sim3.policy.spec.podSelector.matchLabelsMap.get("app") == CLIENTDEPLOYMENT
-        assert sim3.policy.spec.egressList.find {
-            it.toList.find {
-                it.podSelector.matchLabelsMap.containsKey("app") &&
-                        it.podSelector.matchLabelsMap.get("app") == WEBDEPLOYMENT
+        assert simulation.policiesList.find { it.policy.name == "allow-egress-application-client" }?.status ==
+                NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.ADDED
+
+        // Verify outEdge to 'web' is added to 'client' node only
+        simulation.added.nodeDiffsMap.each {
+            if (it.key == clientAppIndex) {
+                assert it.value.outEdgesMap.containsKey(webAppIndex)
+                assert it.value.outEdgesCount == 1
+            } else {
+                assert it.value.policyIdsCount > 0
+                assert !it.value.outEdgesMap.containsKey(webAppIndex)
             }
         }
 
@@ -244,6 +256,9 @@ class NetworkSimulator extends BaseSpecification {
                 "Deployment:web,central+Namespace:qa,stackrox")
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
+        def webAppIndex = simulation.simulatedGraph.nodesList.indexOf(
+                simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }
+        )
         def centralAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == "central" }.deploymentId
 
         then:
@@ -254,18 +269,23 @@ class NetworkSimulator extends BaseSpecification {
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, centralAppId, null).size() == 1
         assert simulation.simulatedGraph.nodesList.size() == 2
 
-        NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation sim1 =
-                simulation.policiesList.find { it.policy.name == "deny-all-traffic" }
-        assert sim1.status == NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.UNCHANGED
-        assert sim1.policy.spec.policyTypesList.containsAll(
-                [NetworkPolicyServiceOuterClass.NetworkPolicyType.INGRESS_NETWORK_POLICY_TYPE,
-                 NetworkPolicyServiceOuterClass.NetworkPolicyType.EGRESS_NETWORK_POLICY_TYPE,])
+        assert simulation.policiesList.find { it.policy.name == "deny-all-traffic" }?.status ==
+                NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.UNCHANGED
 
-        NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation sim2 =
-                simulation.policiesList.find { it.policy.name == "allow-ingress-application-web" }
-        assert sim2.status == NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.ADDED
-        assert sim2.policy.spec.podSelector.matchLabelsMap.containsKey("app")
-        assert sim2.policy.spec.podSelector.matchLabelsMap.get("app") == WEBDEPLOYMENT
+        assert simulation.policiesList.find { it.policy.name == "allow-ingress-application-web" }?.status ==
+                NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.ADDED
+
+        // Verify outEdge to 'web' is added to all nodes
+        simulation.added.nodeDiffsMap.each {
+            if (it.key != webAppIndex) {
+                assert it.value.outEdgesMap.containsKey(webAppIndex)
+            } else {
+                assert it.value.policyIdsCount > 0
+            }
+        }
+
+        // Verify removed is not changed
+        assert simulation.removed.nodeDiffsMap.size() == 0
 
         cleanup:
         "cleanup"
@@ -295,6 +315,9 @@ class NetworkSimulator extends BaseSpecification {
         def clientAppId = simulation.simulatedGraph.nodesList.find {
             it.deploymentName == CLIENTDEPLOYMENT
         }.deploymentId
+        def clientAppIndex = simulation.simulatedGraph.nodesList.indexOf(
+                simulation.simulatedGraph.nodesList.find { it.deploymentName == CLIENTDEPLOYMENT }
+        )
 
         then:
         "verify simulation"
@@ -303,18 +326,24 @@ class NetworkSimulator extends BaseSpecification {
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, webAppId, null).size() == 0
         assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, clientAppId, null).size() == 0
 
-        NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation sim1 =
-                simulation.policiesList.find { it.policy.name == "deny-all-namespace" }
-        assert sim1.status == NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.ADDED
-        assert sim1.policy.spec.policyTypesList.containsAll(
-                [NetworkPolicyServiceOuterClass.NetworkPolicyType.INGRESS_NETWORK_POLICY_TYPE,
-                 NetworkPolicyServiceOuterClass.NetworkPolicyType.EGRESS_NETWORK_POLICY_TYPE,])
+        assert simulation.policiesList.find { it.policy.name == "deny-all-namespace" }?.status ==
+                NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.ADDED
 
-        NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation sim2 =
-                simulation.policiesList.find { it.policy.name == "allow-ingress-to-application-web" }
-        assert sim2.status == NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.ADDED
-        assert sim2.policy.spec.podSelector.matchLabelsMap.containsKey("app")
-        assert sim2.policy.spec.podSelector.matchLabelsMap.get("app") == WEBDEPLOYMENT
+        assert simulation.policiesList.find { it.policy.name == "allow-ingress-to-application-web" }?.status ==
+                NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.ADDED
+
+        // Verify outEdges are not changed
+        simulation.added.nodeDiffsMap.each {
+            assert it.value.policyIdsCount > 0
+            assert it.value.outEdgesCount == 0
+        }
+
+        // Verify outEdge to 'client' is removed from all nodes
+        simulation.removed.nodeDiffsMap.each {
+            if (it.key != clientAppIndex) {
+                assert it.value.outEdgesMap.containsKey(clientAppIndex)
+            }
+        }
      }
 
     @Category([NetworkPolicySimulation])
