@@ -42,9 +42,20 @@ class ViolationsDetails extends Component {
                 const lastOccurrenceTimestamp = Math.max(...timestamps);
 
                 const processesList = processes.map(process => {
-                    const { time, args, execFilePath, containerId } = process.signal;
+                    const { time, args, execFilePath, containerId, lineage } = process.signal;
                     const processTime = new Date(time);
                     const timeFormat = format(processTime, dateTimeFormat);
+                    let ancestors = null;
+                    if (Array.isArray(lineage) && lineage.length) {
+                        ancestors = (
+                            <div className="flex flex-1 text-base-600 px-4 py-2">
+                                <div>
+                                    <span className="font-700">Ancestors:</span>{' '}
+                                    {lineage.join(', ')}
+                                </div>
+                            </div>
+                        );
+                    }
                     return (
                         <div className="border-t border-base-300" key={process.id}>
                             <div className="flex text-base-600">
@@ -63,6 +74,7 @@ class ViolationsDetails extends Component {
                                     <span className="font-700">Arguments:</span> {args}
                                 </div>
                             </div>
+                            {ancestors}
                         </div>
                     );
                 });

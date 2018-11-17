@@ -46,4 +46,7 @@ message ProcessSignal {
 
     // Real group ID
     uint32 gid                     = 9;
+
+    // Process Lineage
+    repeated string lineage        = 10;
 }
