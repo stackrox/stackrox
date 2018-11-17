@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	nodeStore "github.com/stackrox/rox/central/node/store"
+	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/search"
@@ -19,6 +20,7 @@ type datastoreImpl struct {
 	ads alertDataStore.DataStore
 	dds deploymentDataStore.DataStore
 	ns  nodeStore.GlobalStore
+	ss  secretDataStore.DataStore
 }
 
 // GetCluster is a pass through function to the underlying storage.
@@ -98,7 +100,22 @@ func (ds *datastoreImpl) RemoveCluster(id string) error {
 		return err
 	}
 
+	secrets, err := ds.getSecrets(cluster)
+	if err != nil {
+		return err
+	}
+	for _, s := range secrets {
+		// Best effort to remove. If the object doesn't exist, then that is okay
+		ds.ss.RemoveSecret(s.GetId())
+	}
+
 	return ds.storage.RemoveCluster(id)
+}
+
+// RemoveCluster removes an cluster from the storage and the indexer
+func (ds *datastoreImpl) getSecrets(cluster *v1.Cluster) ([]*v1.ListSecret, error) {
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).ProtoQuery()
+	return ds.ss.SearchListSecrets(q)
 }
 
 // RemoveCluster removes an cluster from the storage and the indexer

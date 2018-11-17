@@ -8,6 +8,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
 	nodeStore "github.com/stackrox/rox/central/node/store"
+	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 )
 
 var (
@@ -21,7 +22,7 @@ var (
 func initialize() {
 	storage = store.New(globaldb.GetGlobalDB())
 
-	ad = New(storage, alertDataStore.Singleton(), deploymentDataStore.Singleton(), nodeStore.Singleton())
+	ad = New(storage, alertDataStore.Singleton(), deploymentDataStore.Singleton(), nodeStore.Singleton(), secretDataStore.Singleton())
 }
 
 // Singleton provides the interface for non-service external interaction.

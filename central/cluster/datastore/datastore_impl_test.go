@@ -10,7 +10,9 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/store/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/store/mocks"
+	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -28,6 +30,7 @@ type ClusterDataStoreTestSuite struct {
 	deployments *deploymentMocks.MockDataStore
 	alerts      *alertMocks.MockDataStore
 	nodes       *nodeMocks.MockGlobalStore
+	secrets     *secretMocks.MockDataStore
 
 	clusterDataStore DataStore
 
@@ -40,8 +43,9 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.deployments = deploymentMocks.NewMockDataStore(suite.mockCtrl)
 	suite.alerts = alertMocks.NewMockDataStore(suite.mockCtrl)
 	suite.nodes = nodeMocks.NewMockGlobalStore(suite.mockCtrl)
+	suite.secrets = secretMocks.NewMockDataStore(suite.mockCtrl)
 
-	suite.clusterDataStore = New(suite.clusters, suite.alerts, suite.deployments, suite.nodes)
+	suite.clusterDataStore = New(suite.clusters, suite.alerts, suite.deployments, suite.nodes, suite.secrets)
 }
 
 func (suite *ClusterDataStoreTestSuite) TearDownTest() {
@@ -72,11 +76,13 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveTombstonesDeploymentsAndMarksA
 
 	suite.nodes.EXPECT().RemoveClusterNodeStore(fakeClusterID).Times(1).Return(nil)
 
+	suite.secrets.EXPECT().SearchListSecrets(search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).ProtoQuery()).Return([]*v1.ListSecret{}, nil)
+
 	// run removal.
 	suite.clusterDataStore.RemoveCluster(fakeClusterID)
 }
 
-// Test that when the cluster we try to remove does not exist, we return an error.
+//// Test that when the cluster we try to remove does not exist, we return an error.
 func (suite *ClusterDataStoreTestSuite) TestHandlesClusterDoesNotExist() {
 	// Return false for the cluster not existing.
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return((*v1.Cluster)(nil), false, nil)
@@ -111,6 +117,8 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesNoDeployments() {
 	suite.clusters.EXPECT().RemoveCluster(fakeClusterID).Return(nil)
 
 	suite.nodes.EXPECT().RemoveClusterNodeStore(fakeClusterID).Times(1).Return(nil)
+
+	suite.secrets.EXPECT().SearchListSecrets(search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).ProtoQuery()).Return([]*v1.ListSecret{}, nil)
 
 	// run removal.
 	suite.clusterDataStore.RemoveCluster(fakeClusterID)
@@ -190,6 +198,8 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesNoAlerts() {
 	suite.clusters.EXPECT().RemoveCluster(fakeClusterID).Return(nil)
 
 	suite.nodes.EXPECT().RemoveClusterNodeStore(fakeClusterID).Times(1).Return(nil)
+
+	suite.secrets.EXPECT().SearchListSecrets(search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).ProtoQuery()).Return([]*v1.ListSecret{}, nil)
 
 	// run removal.
 	suite.clusterDataStore.RemoveCluster(fakeClusterID)
