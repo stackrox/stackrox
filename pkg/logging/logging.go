@@ -163,9 +163,7 @@ func init() {
 	}
 
 	logFile, err := os.OpenFile(loggingPath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
-	if err != nil {
-		thisModuleLogger.Warnf("Could not create or open log file '%s'", loggingPath)
-	} else {
+	if err == nil {
 		defaultDestination = io.MultiWriter(os.Stdout, logFile)
 	}
 

@@ -8,6 +8,7 @@ import (
 	"github.com/blevesearch/bleve/search"
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/stackrox/rox/generated/api/v1"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch/validpositions"
 )
 
@@ -22,9 +23,12 @@ func treeForField(locationsMap search.FieldTermLocationMap, fieldPath string) *v
 }
 
 func constructValidPositionsTree(locationsMap search.FieldTermLocationMap, fieldsAndValues []searchFieldAndValue) (validPositions *validpositions.Tree) {
-	for i, fieldAndValue := range fieldsAndValues {
+	for _, fieldAndValue := range fieldsAndValues {
+		if fieldAndValue.value == searchPkg.WildcardString {
+			continue
+		}
 		t := treeForField(locationsMap, fieldAndValue.sf.GetFieldPath())
-		if i == 0 {
+		if validPositions == nil {
 			validPositions = t
 		} else {
 			validPositions.Merge(t)
@@ -46,6 +50,9 @@ func fieldMatchesValidPositions(locationsMap search.FieldTermLocationMap, fieldP
 
 func allFieldsMatchValidPositions(locationsMap search.FieldTermLocationMap, fieldsAndValues []searchFieldAndValue, validPositions *validpositions.Tree) bool {
 	for _, fieldAndValue := range fieldsAndValues {
+		if fieldAndValue.value == searchPkg.WildcardString {
+			continue
+		}
 		if !fieldMatchesValidPositions(locationsMap, fieldAndValue.sf.GetFieldPath(), validPositions) {
 			return false
 		}
@@ -108,8 +115,13 @@ func matchAllFieldsQuery(index bleve.Index, category v1.SearchCategory, fieldsAn
 	// we perform the query, and filter the results by those which have matches in corresponding positions of different
 	// fields, and return a docID query for those fields.
 	// See the comments on tree.Tree for details on how the array positions checks work.
-	mfQs := make([]query.Query, 0, len(fieldsAndValues))
+	var mfQs []query.Query
 	for _, fieldAndValue := range fieldsAndValues {
+		// Wildcards have no use case except to highlight fields
+		if fieldAndValue.value == searchPkg.WildcardString {
+			highlightCtx.AddFieldToHighlight(fieldAndValue.sf.GetFieldPath())
+			continue
+		}
 		mfQ, err := matchFieldQuery(category, fieldAndValue.sf.GetFieldPath(), fieldAndValue.sf.GetType(), fieldAndValue.value)
 		if err != nil {
 			return nil, fmt.Errorf("computing match field query for %+v: %s", fieldAndValue, err)
