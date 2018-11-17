@@ -15,5 +15,8 @@ COPY --from=0 /influxd /influxd
 COPY --from=0 /telegraf /telegraf
 COPY ./influx-post-start.sh /influx-post-start.sh
 COPY ./influxdb.yaml /etc/grafana/provisioning/datasources/influxdb.yaml
+COPY ./dashboard-config.yaml /etc/grafana/provisioning/dashboards/dashboard-config.yaml
+
+COPY ./dashboards/* /var/lib/grafana/dashboards/
 
 USER root

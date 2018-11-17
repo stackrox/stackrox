@@ -144,7 +144,7 @@ metadata:
 spec:
   ingress:
   - ports:
-    - port: 8186
+    - port: 443
       protocol: TCP
     - port: 3000
       protocol: TCP
