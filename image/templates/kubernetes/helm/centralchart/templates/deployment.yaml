@@ -1,0 +1,126 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: central
+  namespace: {{.Values.namespace}}
+  labels:
+    app: central
+  annotations:
+    owner: stackrox
+    email: support@stackrox.com
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: central
+  template:
+    metadata:
+      namespace: {{.Values.namespace}}
+      labels:
+        app: central
+    spec:
+      {{if .Values.nodeSelector -}}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end}}
+      serviceAccount: central
+      containers:
+      - name: central
+        image: {{.Values.image}}
+        command:
+          - /stackrox/entrypoint.sh
+          - central
+        ports:
+          - name: api
+            containerPort: 443
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+          readOnlyRootFilesystem: true
+        {{- if .Features -}}
+        env:
+{{ toYaml .Values.env | indent 8 }}
+  {{- end }}
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log/stackrox/
+        - name: central-certs-volume
+          mountPath: /run/secrets/stackrox.io/certs/
+          readOnly: true
+        - name: central-jwt-volume
+          mountPath: /run/secrets/stackrox.io/jwt/
+          readOnly: true
+        - name: additional-ca-volume
+          mountPath: /usr/local/share/ca-certificates/
+          readOnly: true
+        - name: {{.Values.persistence.name}}
+          mountPath: /var/lib/stackrox
+      {{if .Values.monitoring}}
+        - name: monitoring-client-volume
+          mountPath: /run/secrets/stackrox.io/monitoring/certs
+          readOnly: true
+      {{- end}}
+      {{if .Values.monitoring}}
+      - name: telegraf
+        image: {{.Values.image}}
+        command:
+          - /telegraf
+        env:
+          - name: SERVICE
+            value: central
+          - name: CLUSTER_NAME
+            value: main
+          - name: PROMETHEUS_ENDPOINT
+            value: https://localhost:443
+          - name: MONITORING_ENDPOINT
+            value: {{.Values.monitoring.endpoint}}
+        resources:
+          requests:
+            memory: "50Mi"
+            cpu: "50m"
+          limits:
+            memory: "100Mi"
+            cpu: "100m"
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log/stackrox/
+          readOnly: true
+        - name: monitoring-client-volume
+          mountPath: /run/secrets/stackrox.io/monitoring/certs
+          readOnly: true
+        - name: telegraf-config-volume
+          mountPath: /etc/telegraf/
+          readOnly: true
+      {{- end}}
+      volumes:
+      - name: varlog
+        emptyDir: {}
+      - name: central-certs-volume
+        secret:
+          secretName: central-tls
+      - name: central-jwt-volume
+        secret:
+          secretName: central-tls
+          items:
+            - key: jwt-key.der
+              path: jwt-key.der
+      - name: additional-ca-volume
+        secret:
+          secretName: additional-ca
+          optional: true
+      {{if .Values.monitoring}}
+      - name: monitoring-client-volume
+        secret:
+          secretName: monitoring-client
+      - name: telegraf-config-volume
+        configMap:
+          name: telegraf
+      {{- end}}
+      - name: {{.Values.persistence.name}}
+{{ toYaml .Values.persistence.value | indent 8 }}

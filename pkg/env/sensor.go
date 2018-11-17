@@ -1,5 +1,7 @@
 package env
 
+// These environment variables are used in the deployment file
+// Please check the files before deleting
 var (
 	// ClusterID is used to provide a cluster ID to a sensor.
 	// This cluster ID is not relied upon for authentication or authorization.

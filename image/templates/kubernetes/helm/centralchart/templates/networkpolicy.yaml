@@ -1,0 +1,15 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ext-to-central
+  namespace: {{.Values.namespace}}
+spec:
+  ingress:
+  - ports:
+    - port: 443
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: central
+  policyTypes:
+  - Ingress

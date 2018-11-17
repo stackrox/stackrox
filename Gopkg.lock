@@ -21,6 +21,30 @@
   revision = "d6e3b3328b783f23731bc4d058875b0371ff8109"
 
 [[projects]]
+  digest = "1:5d72bbcc9c8667b11c3dc3cbe681c5a6f71e5096744c0bf7726ab5c6425d5dc4"
+  name = "github.com/BurntSushi/toml"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "3012a1dbe2e4bd1391d42b32f0577cb7bbc7f005"
+  version = "v0.3.1"
+
+[[projects]]
+  digest = "1:a26f8da48b22e6176c1c6a2459904bb30bd0c49ada04b2963c2c3a203e81a620"
+  name = "github.com/Masterminds/semver"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "c7af12943936e8c39859482e61f0574c2fd7fc75"
+  version = "v1.4.2"
+
+[[projects]]
+  digest = "1:f89a071e9ba5a038f0378960d4343b88e145f5791355bbd0769826d158fc448e"
+  name = "github.com/Masterminds/sprig"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "15f9564e7e9cf0da02a48e0d25f12a7b83559aa6"
+  version = "v2.16.0"
+
+[[projects]]
   digest = "1:2be791e7b333ff7c06f8fb3dc18a7d70580e9399dbdffd352621d067ff260b6e"
   name = "github.com/Microsoft/go-winio"
   packages = ["."]
@@ -78,6 +102,14 @@
   pruneopts = "NUT"
   revision = "0298784c4606cdf01e99644da115863c052a737c"
   version = "v1.5.0"
+
+[[projects]]
+  digest = "1:975108e8d4f5dab096fc991326e96a5716ee8d02e5e7386bb4796171afc4ab9a"
+  name = "github.com/aokoli/goutils"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "3391d3790d23d03408670993e957e8f408993c34"
+  version = "v1.0.1"
 
 [[projects]]
   digest = "1:3f13646bcc0eae07b93ea6e34d3e9a84513f4e8dfa075b500d217b8f660c60f4"
@@ -454,6 +486,23 @@
   version = "v1.38.2"
 
 [[projects]]
+  digest = "1:6a7159c5f8f8826207545407a458b43ab6599c1c8a2271465c2e979ecea1dcd4"
+  name = "github.com/gobwas/glob"
+  packages = [
+    ".",
+    "compiler",
+    "match",
+    "syntax",
+    "syntax/ast",
+    "syntax/lexer",
+    "util/runes",
+    "util/strings",
+  ]
+  pruneopts = "NUT"
+  revision = "5ccd90ef52e1e632236f7326478d4faa74f99438"
+  version = "v0.2.3"
+
+[[projects]]
   digest = "1:fd13acfe94ed604682ce01528a1ae0399391e64054143a8a0a98399c78696679"
   name = "github.com/gogo/protobuf"
   packages = [
@@ -541,6 +590,14 @@
   revision = "24818f796faf91cd76ec7bddd72458fbced7a6c1"
 
 [[projects]]
+  digest = "1:a1578f7323eca2b88021fdc9a79a99833d40b12c32a5ea4f284e2fad19ea2657"
+  name = "github.com/google/uuid"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "d460ce9f8df2e77fb1ba55ca87fafed96c607494"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:06a7dadb7b760767341ffb6c8d377238d68a1226f2b21b5d497d2e3f6ecf6b4e"
   name = "github.com/googleapis/gnostic"
   packages = [
@@ -621,6 +678,22 @@
   pruneopts = "NUT"
   revision = "3d98b2b79d1baebfb4deee7df2658afdf12b9b58"
   source = "github.com/stackrox/docker-registry-client.git"
+
+[[projects]]
+  digest = "1:dc54242755f5b6721dd880843de6e45fe234838ea9149ec8249951880fd5802f"
+  name = "github.com/huandu/xstrings"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "f02667b379e2fb5916c3cda2cf31e0eb885d79f8"
+  version = "v1.2.0"
+
+[[projects]]
+  digest = "1:9a52adf44086cead3b384e5d0dbf7a1c1cce65e67552ee3383a8561c42a18cd3"
+  name = "github.com/imdario/mergo"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "9f23e2d6bd2a77f959b2bf6acdbefd708a83a4a4"
+  version = "v0.3.6"
 
 [[projects]]
   digest = "1:406338ad39ab2e37b7f4452906442a3dbf0eb3379dd1f06aafb5c07e769a5fbb"
@@ -1014,7 +1087,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d031e55eb6b9bc9676b868dc97316a2154d88c2825deeb587c39411addeef0ea"
+  digest = "1:daa1acfbd3e02dd0ea2b78bda1a2e2ed0b25e49387d810e2d2ee3299d90cbe4c"
   name = "golang.org/x/crypto"
   packages = [
     "bcrypt",
@@ -1031,6 +1104,7 @@
     "pkcs12/internal/rc2",
     "poly1305",
     "salsa20/salsa",
+    "scrypt",
     "ssh/terminal",
   ]
   pruneopts = "NUT"
@@ -1449,6 +1523,24 @@
   revision = "23781f4d6632d88e869066eaebb743857aa1ef9b"
   version = "kubernetes-1.10.0"
 
+[[projects]]
+  digest = "1:ba526fa965b0945971ea95754f3f5979fc62b1a47280b85560f5c23b11b217b1"
+  name = "k8s.io/helm"
+  packages = [
+    "pkg/chartutil",
+    "pkg/engine",
+    "pkg/ignore",
+    "pkg/proto/hapi/chart",
+    "pkg/proto/hapi/version",
+    "pkg/renderutil",
+    "pkg/sympath",
+    "pkg/version",
+  ]
+  pruneopts = "NUT"
+  revision = "2e55dbe1fdb5fdb96b75ff144a339489417b146b"
+  source = "https://github.com/helm/helm.git"
+  version = "v2.11.0"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
@@ -1495,6 +1587,7 @@
     "github.com/docker/docker/image",
     "github.com/docker/docker/registry",
     "github.com/docker/go-units",
+    "github.com/ghodss/yaml",
     "github.com/gogo/protobuf/proto",
     "github.com/gogo/protobuf/types",
     "github.com/golang/mock/gomock",
@@ -1502,6 +1595,7 @@
     "github.com/golang/protobuf/proto",
     "github.com/golang/protobuf/protoc-gen-go/descriptor",
     "github.com/golang/protobuf/ptypes",
+    "github.com/golang/protobuf/ptypes/any",
     "github.com/golang/protobuf/ptypes/timestamp",
     "github.com/grpc-ecosystem/go-grpc-middleware",
     "github.com/grpc-ecosystem/go-grpc-middleware/auth",
@@ -1577,6 +1671,9 @@
     "k8s.io/client-go/listers/core/v1",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/cache",
+    "k8s.io/helm/pkg/chartutil",
+    "k8s.io/helm/pkg/proto/hapi/chart",
+    "k8s.io/helm/pkg/renderutil",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

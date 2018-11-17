@@ -42,6 +42,7 @@ func k8sBasedOrchestrator(k8sConfig *central.K8sConfig, shortName, longName stri
 	c.PersistentFlags().Var(&monitoringWrapper{Monitoring: &k8sConfig.MonitoringType}, "monitoring-type", "where to host the monitoring (on-prem, none)")
 	c.PersistentFlags().StringVarP(&k8sConfig.MainImage, "main-image", "i", "stackrox.io/"+mainImage, "Image to use")
 	c.PersistentFlags().StringVarP(&k8sConfig.ClairifyImage, "clairify-image", "", "stackrox.io/"+clairifyImage, "Clairify image to use")
+	c.PersistentFlags().Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", "the output format from the installer (kubectl, helm)")
 	return c
 }
 
@@ -54,11 +55,15 @@ func newK8sConfig(monitoringDefault central.MonitoringType) *central.K8sConfig {
 func k8s() *cobra.Command {
 	k8sConfig := newK8sConfig(central.OnPrem)
 	c := k8sBasedOrchestrator(k8sConfig, "k8s", "Kubernetes", v1.ClusterType_KUBERNETES_CLUSTER)
+	c.PersistentFlags().Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (lb, np, none)")
+	c.PersistentFlags().Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.MonitoringLoadBalancerType}, "monitoring-lb-type", "the method of exposing Monitoring (lb, np, none)")
 	return c
 }
 
 func openshift() *cobra.Command {
 	k8sConfig := newK8sConfig(central.OnPrem)
 	c := k8sBasedOrchestrator(k8sConfig, "openshift", "Openshift", v1.ClusterType_OPENSHIFT_CLUSTER)
+	c.PersistentFlags().Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (route, lb, np, none)")
+	c.PersistentFlags().Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.MonitoringLoadBalancerType}, "monitoring-lb-type", "the method of exposing Monitoring (route, lb, np, none)")
 	return c
 }

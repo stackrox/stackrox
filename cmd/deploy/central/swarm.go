@@ -2,6 +2,7 @@ package central
 
 import (
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/zip"
 )
 
 func init() {
@@ -24,10 +25,18 @@ func (s *swarm) Render(c Config) ([]*v1.File, error) {
 		"swarm/clairify.sh",
 	}
 
-	return renderFilenames(filenames, &c, "/data/assets/docker-auth.sh")
+	var files []*v1.File
+	for k, v := range c.SecretsByteMap {
+		files = append(files, zip.NewFile(k, v, false))
+	}
+	renderedFiles, err := renderFilenames(filenames, &c, "/data/assets/docker-auth.sh")
+	if err != nil {
+		return nil, err
+	}
+	return append(files, renderedFiles...), nil
 }
 
-func (s *swarm) Instructions() string {
+func (s *swarm) Instructions(c Config) string {
 	return `To deploy:
   1. Unzip the deployment bundle.
   2. Run central.sh.

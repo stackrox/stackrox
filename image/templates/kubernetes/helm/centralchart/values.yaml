@@ -1,0 +1,72 @@
+
+version: {{.K8sConfig.MainImageTag}}
+
+clusterType: {{.ClusterType.String}}
+
+namespace: {{.K8sConfig.Namespace}}
+
+image: {{.K8sConfig.MainImage}}
+
+{{if not .K8sConfig.MonitoringType.None}}
+monitoring:
+  endpoint: {{.K8sConfig.MonitoringEndpoint}}
+{{- end}}
+
+persistence:
+{{if .HostPath}}
+  name: {{.HostPath.Name}}
+  type: hostpath
+  value:
+    hostPath:
+      path: {{.HostPath.HostPath}}
+{{- else if .External}}
+  name: {{.External.Name}}
+  type: pv
+  value:
+    persistentVolumeClaim:
+      claimName: {{.External.Name}}
+{{- else}}
+  name: empty-db
+  type: none
+  value:
+    emptyDir: {}
+{{- end}}
+
+{{if .HostPath.WithNodeSelector -}}
+nodeSelector:
+  {{.HostPath.NodeSelectorKey}}: {{.HostPath.NodeSelectorValue}}
+{{end -}}
+
+resources:
+  requests:
+    memory: "2Gi"
+    cpu: "1000m"
+  limits:
+    memory: "8Gi"
+    cpu: "2000m"
+
+secrets:
+  tls:
+    data:
+      ca.pem: {{index .SecretsBase64Map "ca.pem"}}
+      ca-key.pem: {{index .SecretsBase64Map "ca-key.pem"}}
+      jwt-key.der: {{index .SecretsBase64Map "jwt-key.der"}}
+  {{if not .K8sConfig.MonitoringType.None}}
+  monitoring:
+    data:
+      monitoring-client-cert.pem: {{index .SecretsBase64Map "monitoring-client-cert.pem"}}
+      monitoring-client-key.pem: {{index .SecretsBase64Map "monitoring-client-key.pem"}}
+      ca.pem: {{index .SecretsBase64Map "ca.pem"}}
+  {{- end}}
+
+exposure:
+  port: 443
+  {{if eq .K8sConfig.LoadBalancerType.String "LOAD_BALANCER"}}
+  type: LoadBalancer
+  {{else if eq .K8sConfig.LoadBalancerType.String "NODE_PORT"}}
+  type: NodePort
+  {{else if eq .K8sConfig.LoadBalancerType.String "ROUTE"}}
+  type: Route
+  {{else}}
+  type: None
+  {{- end}}

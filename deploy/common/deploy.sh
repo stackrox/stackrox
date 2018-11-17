@@ -83,7 +83,7 @@ function get_cluster_zip {
         -w "%{http_code}\n" \
         https://$LOCAL_API_ENDPOINT/v1/clusters)
     >&2 echo "Status: $STATUS"
-    if [ "$STATUS" == "500" ]; then
+    if [ "$STATUS" != "200" ]; then
       cat $TMP
       exit 1
     fi

@@ -1,0 +1,16 @@
+{{if eq .Values.persistence.type "pv" -}}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{.Values.persistence.name}}
+  namespace: {{.Values.namespace}}
+spec:
+  {{if .Values.persistence.storageClass -}}
+  storageClassName: {{.Values.persistence.storageClass}}
+  {{- end}}
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+{{- end}}

@@ -1,0 +1,48 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: clairify
+  namespace: {{.Values.namespace}}
+  labels:
+    app: clairify
+  annotations:
+    owner: stackrox
+    email: support@stackrox.com
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: clairify
+  template:
+    metadata:
+      namespace: {{.Values.namespace}}
+      labels:
+        app: clairify
+    spec:
+      containers:
+      - name: clairify
+        image: {{.Values.image}}
+        resources:
+          requests:
+            memory: "500Mi"
+            cpu: "500m"
+          limits:
+            memory: "2000Mi"
+            cpu: "2000m"
+        env:
+        - name: CLAIR_ARGS
+          value: "-insecure-tls"
+        command:
+        - /init
+        - /clairify
+        imagePullPolicy: Always
+        ports:
+        - name: clair
+          containerPort: 6060
+        - name: clairify
+          containerPort: 8080
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+      serviceAccount: clairify

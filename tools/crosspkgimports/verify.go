@@ -121,8 +121,9 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot string) (errs []
 	if validImportRoot != "pkg" {
 		allowedPackages = append(allowedPackages, "pkg")
 	}
-	// Allow central to import "image" (for fixtures)
-	if validImportRoot == "central" {
+
+	// Allow central and cmd/deploy to import "image" (for fixtures)
+	if validImportRoot == "central" || validImportRoot == "cmd/deploy" {
 		allowedPackages = append(allowedPackages, "image")
 	}
 

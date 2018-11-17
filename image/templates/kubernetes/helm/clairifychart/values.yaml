@@ -1,0 +1,6 @@
+
+clusterType: {{.ClusterType.String}}
+
+namespace: {{.K8sConfig.Namespace}}
+
+image: {{.K8sConfig.ClairifyImage}}

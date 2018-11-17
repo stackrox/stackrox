@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"fmt"
 	"os"
 
@@ -44,20 +45,17 @@ func getVersion() string {
 	return v
 }
 
-func generateJWTSigningKey(zipW *zip.Writer) error {
+func generateJWTSigningKey(fileMap map[string][]byte) error {
 	// Generate the private key that we will use to sign JWTs for API keys.
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
 		return fmt.Errorf("couldn't generate private key: %s", err)
 	}
-	err = zipPkg.AddFile(zipW, zipPkg.NewFile("jwt-key.der", x509.MarshalPKCS1PrivateKey(privateKey), false))
-	if err != nil {
-		return fmt.Errorf("failed to write jwt key: %s", err)
-	}
+	fileMap["jwt-key.der"] = x509.MarshalPKCS1PrivateKey(privateKey)
 	return nil
 }
 
-func generateMTLSFiles(zipW *zip.Writer) (cert, key []byte, err error) {
+func generateMTLSFiles(fileMap map[string][]byte) (cert, key []byte, err error) {
 	// Add MTLS files
 	req := csr.CertificateRequest{
 		CN:         "StackRox Certificate Authority",
@@ -68,52 +66,37 @@ func generateMTLSFiles(zipW *zip.Writer) (cert, key []byte, err error) {
 		err = fmt.Errorf("could not generate keypair: %s", err)
 		return
 	}
-	if err = zipPkg.AddFile(zipW, zipPkg.NewFile("ca.pem", cert, false)); err != nil {
-		err = fmt.Errorf("failed to write cert.pem: %s", err)
-		return
-	}
-	if err = zipPkg.AddFile(zipW, zipPkg.NewFile("ca-key.pem", key, false)); err != nil {
-		err = fmt.Errorf("failed to write key.pem: %s", err)
-		return
-	}
+	fileMap["ca.pem"] = cert
+	fileMap["ca-key.pem"] = key
 	return
 }
 
-func generateMonitoringFiles(zipW *zip.Writer, caCert, caKey []byte) error {
-	monitoringCert, monitoringKey, err := mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: v1.ServiceType_MONITORING_DB_SERVICE, Identifier: "Monitoring UI"},
+func generateMonitoringFiles(fileMap map[string][]byte, caCert, caKey []byte) error {
+	monitoringCert, monitoringKey, err := mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: v1.ServiceType_MONITORING_DB_SERVICE, Identifier: "Monitoring DB"},
 		caCert, caKey)
 	if err != nil {
 		return err
 	}
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-db-cert.pem", monitoringCert, false)); err != nil {
-		return fmt.Errorf("failed to write cert.pem: %s", err)
-	}
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-db-key.pem", monitoringKey, false)); err != nil {
-		return fmt.Errorf("failed to write key.pem: %s", err)
-	}
-	monitoringCert, monitoringKey, err = mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: v1.ServiceType_MONITORING_UI_SERVICE, Identifier: "Monitoring"},
+	fileMap["monitoring-db-cert.pem"] = monitoringCert
+	fileMap["monitoring-db-key.pem"] = monitoringKey
+
+	monitoringCert, monitoringKey, err = mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: v1.ServiceType_MONITORING_UI_SERVICE, Identifier: "Monitoring UI"},
 		caCert, caKey)
 	if err != nil {
 		return err
 	}
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-ui-cert.pem", monitoringCert, false)); err != nil {
-		return fmt.Errorf("failed to write cert.pem: %s", err)
-	}
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring/monitoring-ui-key.pem", monitoringKey, false)); err != nil {
-		return fmt.Errorf("failed to write key.pem: %s", err)
-	}
+
+	fileMap["monitoring-ui-cert.pem"] = monitoringCert
+	fileMap["monitoring-ui-key.pem"] = monitoringKey
 
 	monitoringCert, monitoringKey, err = mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: v1.ServiceType_MONITORING_CLIENT_SERVICE, Identifier: "Monitoring Client"},
 		caCert, caKey)
 	if err != nil {
 		return err
 	}
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring-client-cert.pem", monitoringCert, false)); err != nil {
-		return fmt.Errorf("failed to write cert.pem: %s", err)
-	}
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring-client-key.pem", monitoringKey, false)); err != nil {
-		return fmt.Errorf("failed to write key.pem: %s", err)
-	}
+
+	fileMap["monitoring-client-cert.pem"] = monitoringCert
+	fileMap["monitoring-client-key.pem"] = monitoringKey
 	return nil
 }
 
@@ -128,6 +111,25 @@ func outputZip(config central.Config) error {
 		return fmt.Errorf("undefined cluster deployment generator: %s", config.ClusterType)
 	}
 
+	config.SecretsByteMap = make(map[string][]byte)
+	if err := generateJWTSigningKey(config.SecretsByteMap); err != nil {
+		return err
+	}
+
+	cert, key, err := generateMTLSFiles(config.SecretsByteMap)
+	if err != nil {
+		return err
+	}
+
+	if config.K8sConfig != nil && config.K8sConfig.MonitoringType.OnPrem() {
+		generateMonitoringFiles(config.SecretsByteMap, cert, key)
+	}
+
+	config.SecretsBase64Map = make(map[string]string)
+	for k, v := range config.SecretsByteMap {
+		config.SecretsBase64Map[k] = base64.StdEncoding.EncodeToString(v)
+	}
+
 	files, err := d.Render(config)
 	if err != nil {
 		return fmt.Errorf("could not render files: %s", err)
@@ -136,19 +138,6 @@ func outputZip(config central.Config) error {
 		if err := zipPkg.AddFile(zipW, f); err != nil {
 			return fmt.Errorf("failed to write '%s': %s", f.Name, err)
 		}
-	}
-
-	if err := generateJWTSigningKey(zipW); err != nil {
-		return err
-	}
-
-	cert, key, err := generateMTLSFiles(zipW)
-	if err != nil {
-		return err
-	}
-
-	if config.K8sConfig != nil && config.K8sConfig.MonitoringType.OnPrem() {
-		generateMonitoringFiles(zipW, cert, key)
 	}
 
 	err = zipW.Close()

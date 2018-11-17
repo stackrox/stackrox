@@ -1,0 +1,6 @@
+name: clairify
+description: StackRox Clairify
+version: 2.2.11.0
+maintainers:
+  - name: stackrox
+    email: support@stackrox.com

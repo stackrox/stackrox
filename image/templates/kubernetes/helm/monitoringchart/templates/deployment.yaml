@@ -1,0 +1,104 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: monitoring
+  namespace: {{.Values.namespace}}
+  labels:
+    app: monitoring
+  annotations:
+    owner: stackrox
+    email: support@stackrox.com
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: monitoring
+  template:
+    metadata:
+      namespace: {{.Values.namespace}}
+      labels:
+        app: monitoring
+    spec:
+      serviceAccount: monitoring
+      containers:
+      - name: influxdb
+        image: {{.Values.image}}
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/sh", "-c", "/influx-post-start.sh"]
+        command:
+        - /influxd
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+        volumeMounts:
+          - name: influxdb-config-volume
+            mountPath: /etc/influxdb/
+            readOnly: true
+      - name: telegraf-proxy
+        image: {{.Values.image}}
+        command:
+        - /telegraf
+        ports:
+        - name: api
+          containerPort: 443
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "100m"
+          limits:
+            memory: "200Mi"
+            cpu: "200m"
+        volumeMounts:
+          - name: monitoring-db-volume
+            mountPath: /run/secrets/stackrox.io/monitoring/certs/
+            readOnly: true
+          - name: telegraf-proxy-config-volume
+            mountPath: /etc/telegraf
+            readOnly: true
+      - name: grafana
+        image: {{.Values.image}}
+        command:
+        - /run.sh
+        ports:
+        - name: api
+          containerPort: 3000
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "100m"
+          limits:
+            memory: "500Mi"
+            cpu: "500m"
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+      volumes:
+      - name: monitoring-db-volume
+        secret:
+          secretName: monitoring
+          items:
+            - key: monitoring-db-cert.pem
+              path: cert.pem
+            - key: monitoring-db-key.pem
+              path: key.pem
+            - key: monitoring-ca.pem
+              path: ca.pem
+      - name: monitoring-ui-volume
+        secret:
+          secretName: monitoring
+          items:
+            - key: monitoring-ui-cert.pem
+              path: cert.pem
+            - key: monitoring-ui-key.pem
+              path: key.pem
+      - name: influxdb-config-volume
+        configMap:
+          name: influxdb
+      - name: telegraf-proxy-config-volume
+        configMap:
+          name: telegraf-proxy

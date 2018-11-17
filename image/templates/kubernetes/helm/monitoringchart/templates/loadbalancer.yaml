@@ -1,0 +1,31 @@
+{{if eq .Values.exposure.type "Route"}}
+apiVersion: v1
+kind: Route
+metadata:
+  labels:
+    app.kubernetes.io/name: monitoring
+  name: monitoring-mtls
+  namespace: {{.Values.namespace}}
+spec:
+  host: monitoring.stackrox
+  port:
+    targetPort: https
+  tls:
+    termination: passthrough
+  to:
+    kind: Service
+    name: monitoring
+{{else if ne .Values.exposure.type "None"}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: monitoring-loadbalancer
+  namespace: {{.Values.namespace}}
+spec:
+  ports:
+  - port: {{.Values.exposure.port}}
+    targetPort: 443
+  selector:
+    app: monitoring
+  type: {{.Values.exposure.type}}
+{{- end}}

@@ -20,6 +20,8 @@ import (
 
 var (
 	log = logging.LoggerForModule()
+
+	dockerAuthPath = "/data/assets/docker-auth.sh"
 )
 
 // ExternalPersistence holds the data for a volume that is already created (e.g. docker volume, PV, etc)
@@ -93,7 +95,9 @@ func (m MonitoringType) None() bool {
 // K8sConfig contains k8s fields
 type K8sConfig struct {
 	CommonConfig
+	ConfigType v1.DeploymentFormat
 
+	// k8s fields
 	Namespace string
 	Registry  string
 
@@ -102,15 +106,23 @@ type K8sConfig struct {
 	MainImageTag     string
 	ClairifyImageTag string
 
-	MonitoringEndpoint string
-	MonitoringImage    string
-	MonitoringType     MonitoringType
+	MonitoringEndpoint         string
+	MonitoringImage            string
+	MonitoringType             MonitoringType
+	MonitoringLoadBalancerType v1.LoadBalancerType
+
+	DeploymentFormat v1.DeploymentFormat
+	LoadBalancerType v1.LoadBalancerType
+
+	// Command is either oc or kubectl depending on the value of cluster type
+	Command string
 }
 
 // SwarmConfig contains swarm fields
 type SwarmConfig struct {
 	CommonConfig
 
+	// swarm fields
 	NetworkMode string
 	PublicPort  int
 }
@@ -125,15 +137,26 @@ type Config struct {
 	HostPath *HostPathPersistence
 	Features []features.FeatureFlag
 	Password string
+
+	SecretsByteMap   map[string][]byte
+	SecretsBase64Map map[string]string
 }
 
 type deployer interface {
 	Render(Config) ([]*v1.File, error)
-	Instructions() string
+	Instructions(Config) string
 }
 
 // Deployers contains all implementations for central deployment generators.
 var Deployers = make(map[v1.ClusterType]deployer)
+
+func executeRawTemplate(raw string, c *Config) ([]byte, error) {
+	t, err := template.New("temp").Parse(raw)
+	if err != nil {
+		return nil, err
+	}
+	return executeTemplate(t, c)
+}
 
 func executeTemplate(temp *template.Template, c *Config) ([]byte, error) {
 	var b []byte
@@ -156,6 +179,27 @@ func generateMonitoringImage(mainImage string) string {
 	return fmt.Sprintf("%s/%s:%s", img.GetName().GetRegistry(), remote, img.GetName().GetTag())
 }
 
+func wrapFiles(files []*v1.File, c *Config, staticFilenames ...string) ([]*v1.File, error) {
+	for _, staticFilename := range staticFilenames {
+		f, err := zip.NewFromFile(staticFilename, path.Base(staticFilename), path.Ext(staticFilename) == ".sh")
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, f)
+	}
+	files = append(files, zip.NewFile("README", []byte(standardizeWhitespace(Deployers[c.ClusterType].Instructions(*c))), false))
+
+	if features.HtpasswdAuth.Enabled() {
+		htpasswd, err := generateHtpasswd(c)
+		if err != nil {
+			return nil, err
+		}
+		files = append(files, zip.NewFile("htpasswd", htpasswd, false))
+		files = append(files, zip.NewFile("password", []byte(c.Password+"\n"), false))
+	}
+	return files, nil
+}
+
 func renderFilenames(filenames []string, c *Config, staticFilenames ...string) ([]*v1.File, error) {
 	var files []*v1.File
 	for _, f := range filenames {
@@ -172,30 +216,13 @@ func renderFilenames(filenames []string, c *Config, staticFilenames ...string) (
 		path := f[strings.Index(f, "/")+1:]
 		files = append(files, zip.NewFile(path, d, strings.HasSuffix(f, ".sh")))
 	}
-	for _, staticFilename := range staticFilenames {
-		f, err := zip.NewFromFile(staticFilename, path.Base(staticFilename), path.Ext(staticFilename) == ".sh")
-		if err != nil {
-			return nil, err
-		}
-		files = append(files, f)
-	}
-	files = append(files, zip.NewFile("README", []byte(standardizeWhitespace(Deployers[c.ClusterType].Instructions())), false))
-
-	if features.HtpasswdAuth.Enabled() {
-		htpasswd, err := generateHtpasswd(c)
-		if err != nil {
-			return nil, err
-		}
-		files = append(files, zip.NewFile("htpasswd", htpasswd, false))
-		files = append(files, zip.NewFile("password", []byte(c.Password+"\n"), false))
-	}
-	return files, nil
+	return wrapFiles(files, c, staticFilenames...)
 }
 
 // WriteInstructions writes the instructions for the configured cluster
 // to the provided writer.
 func (c Config) WriteInstructions(w io.Writer) {
-	fmt.Fprint(w, standardizeWhitespace(Deployers[c.ClusterType].Instructions()))
+	fmt.Fprint(w, standardizeWhitespace(Deployers[c.ClusterType].Instructions(c)))
 }
 
 func standardizeWhitespace(instructions string) string {

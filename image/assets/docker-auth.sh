@@ -141,7 +141,7 @@ if [[ -n "$username" && -n "$password" ]]; then
 	print_auth "$(mkauth "${REGISTRY_USERNAME}" "${REGISTRY_PASSWORD}")"
 fi
 
-if [[ -f ~/.docker/config.json ]]; then
+if [[ -f ~/.docker/config.json || ! -x "$(command -v jq)" ]]; then
 	dockercfg="$(< ~/.docker/config.json)"
 	try_dockercfg_plain "$dockercfg"
 	try_dockercfg_credstore "$dockercfg"

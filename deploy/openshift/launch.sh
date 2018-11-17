@@ -19,17 +19,19 @@ function launch_central {
 
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then
         echo "Deploying Monitoring..."
-        $unzip_dir/monitoring/monitoring.sh
+        $unzip_dir/monitoring/scripts/setup.sh
+        oc create -R -f $unzip_dir/monitoring
         echo
 
         oc -n stackrox patch deployment monitoring --patch "$(cat $K8S_DIR/monitoring-resources-patch.yaml)"
     fi
 
     echo "Deploying Central..."
-    $unzip_dir/central.sh
+    $unzip_dir/central/scripts/setup.sh
+    oc create -R -f $unzip_dir/central
     echo
 
-    $unzip_dir/port-forward.sh 8000
+    $unzip_dir/central/scripts/port-forward.sh 8000
     local local_api_endpoint=localhost:8000
     echo "Set local API endpoint to: $local_api_endpoint"
 

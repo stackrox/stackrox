@@ -1,0 +1,36 @@
+
+version: {{.K8sConfig.MainImageTag}}
+
+clusterType: {{.ClusterType.String}}
+
+namespace: {{.K8sConfig.Namespace}}
+
+image: {{.K8sConfig.MonitoringImage}}
+
+resources:
+  requests:
+    memory: "500Mi"
+    cpu: "500m"
+  limits:
+    memory: "1Gi"
+    cpu: "1000m"
+
+secrets:
+  data:
+    monitoring-ca.pem: {{index .SecretsBase64Map "ca.pem"}}
+    monitoring-db-cert.pem: {{index .SecretsBase64Map "monitoring-db-cert.pem"}}
+    monitoring-db-key.pem: {{index .SecretsBase64Map "monitoring-db-key.pem"}}
+    monitoring-ui-cert.pem: {{index .SecretsBase64Map "monitoring-ui-cert.pem"}}
+    monitoring-ui-key.pem: {{index .SecretsBase64Map "monitoring-ui-key.pem"}}
+
+exposure:
+  port: 443
+  {{if eq .K8sConfig.MonitoringLoadBalancerType.String "LOAD_BALANCER"}}
+  type: LoadBalancer
+  {{else if eq .K8sConfig.MonitoringLoadBalancerType.String "NODE_PORT"}}
+  type: NodePort
+  {{else if eq .K8sConfig.LoadBalancerType.String "ROUTE"}}
+  type: Route
+  {{else}}
+  type: None
+  {{- end}}

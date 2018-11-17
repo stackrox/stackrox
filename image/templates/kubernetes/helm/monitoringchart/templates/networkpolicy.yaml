@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ext-to-monitoring
+  namespace: {{.Values.namespace}}
+spec:
+  ingress:
+  - ports:
+    - port: 443
+      protocol: TCP
+    - port: 3000
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: monitoring
+  policyTypes:
+  - Ingress

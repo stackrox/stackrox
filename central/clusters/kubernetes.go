@@ -21,7 +21,7 @@ func addCommonKubernetesParams(params *v1.CommonKubernetesParams, fields map[str
 }
 
 var monitoringFilenames = []string{
-	"kubernetes/telegraf.conf",
+	"kubernetes/kubectl/telegraf.conf",
 }
 
 func (k *kubernetes) Render(c Wrap) ([]*v1.File, error) {
@@ -38,10 +38,10 @@ func (k *kubernetes) Render(c Wrap) ([]*v1.File, error) {
 	addCommonKubernetesParams(kubernetesParams.GetParams(), fields)
 
 	filenames := []string{
-		"kubernetes/sensor.sh",
-		"kubernetes/sensor.yaml",
-		"kubernetes/sensor-rbac.yaml",
-		"kubernetes/delete-sensor.sh",
+		"kubernetes/kubectl/sensor.sh",
+		"kubernetes/kubectl/sensor.yaml",
+		"kubernetes/kubectl/sensor-rbac.yaml",
+		"kubernetes/kubectl/delete-sensor.sh",
 	}
 
 	if c.MonitoringEndpoint != "" {

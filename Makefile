@@ -170,6 +170,11 @@ bazel-test: gazelle
 	    -- \
 	    //... -benchmarks/... -proto/... -qa-tests-backend/... -tests/... -vendor/...
 
+.PHONY: deploy-test
+deploy-test:
+	@# The deploy tests don't work in Bazel yet.
+	@go test -tags=nobazel ./cmd/deploy/central
+
 .PHONY: benchmarks-test
 benchmarks-test:
 	@# Benchmark tests don't work in Bazel yet.
@@ -181,7 +186,7 @@ ui-test:
 	make -C ui test
 
 .PHONY: test
-test: bazel-test benchmarks-test ui-test collector-tag
+test: bazel-test benchmarks-test ui-test collector-tag deploy-test
 
 upload-coverage:
 	@# 'mode: set' is repeated in each coverage file, but Coveralls only wants it

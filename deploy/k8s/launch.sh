@@ -10,7 +10,10 @@ function launch_central {
     EXTRA_ARGS=()
     if [[ "$MONITORING_SUPPORT" == "false" ]]; then
         EXTRA_ARGS+=("--monitoring-type=none")
+    else
+        EXTRA_ARGS+=("--monitoring-lb-type=$MONITORING_LOAD_BALANCER")
     fi
+    EXTRA_ARGS+=("--lb-type=$LOAD_BALANCER")
 
     docker run --rm "${main_image}" deploy k8s ${EXTRA_ARGS[@]} -i "$main_image" "${storage}" > "${k8s_dir}/central.zip"
 
@@ -21,17 +24,19 @@ function launch_central {
 
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then
         echo "Deploying Monitoring..."
-        $unzip_dir/monitoring/monitoring.sh
+        $unzip_dir/monitoring/scripts/setup.sh
+        kubectl create -R -f $unzip_dir/monitoring
         echo
 
         kubectl -n stackrox patch deployment monitoring --patch "$(cat $k8s_dir/monitoring-resources-patch.yaml)"
     fi
 
     echo "Deploying Central..."
-    $unzip_dir/central.sh
+    $unzip_dir/central/scripts/setup.sh
+    kubectl create -R -f $unzip_dir/central
     echo
 
-    $unzip_dir/port-forward.sh 8000
+    $unzip_dir/central/scripts/port-forward.sh 8000
     wait_for_central "localhost:8000"
     echo "Successfully deployed Central!"
     echo "Access the UI at: https://localhost:8000"

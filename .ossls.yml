@@ -973,3 +973,11 @@ dependencies:
       LICENSE: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
     attribution:
     - The Kubernetes Authors
+
+  vendor/k8s.io/helm:
+      url: https://github.com/helm/helm
+      license: Apache-2.0
+      files:
+        LICENSE: 75bd47da88044ab35f277475359fc2c1bcc3171ab94d721a5c1a0d33ac61deb2
+      attribution:
+      - The Helm Authors

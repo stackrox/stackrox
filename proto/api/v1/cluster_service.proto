@@ -18,6 +18,18 @@ enum ClusterType {
     DOCKER_EE_CLUSTER  = 4;
 }
 
+enum DeploymentFormat {
+    KUBECTL = 0;
+    HELM    = 1;
+}
+
+enum LoadBalancerType {
+    NONE          = 0;
+    LOAD_BALANCER = 1;
+    NODE_PORT     = 2;
+    ROUTE         = 3;
+}
+
 message CommonKubernetesParams {
     string namespace         = 1;
 }

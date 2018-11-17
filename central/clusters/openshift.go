@@ -30,11 +30,10 @@ func (o *openshift) Render(c Wrap) ([]*v1.File, error) {
 	fields["OpenshiftAPIEnv"] = env.OpenshiftAPI.EnvVar()
 
 	filenames := []string{
-		"kubernetes/sensor.yaml",
-		"openshift/delete-sensor.sh",
-		"openshift/sensor.sh",
-		"openshift/sensor-image-setup.sh",
-		"openshift/sensor-rbac.yaml",
+		"kubernetes/kubectl/sensor.yaml",
+		"openshift/kubectl/sensor.sh",
+		"openshift/kubectl/sensor-image-setup.sh",
+		"openshift/kubectl/sensor-rbac.yaml",
 	}
 
 	if c.MonitoringEndpoint != "" {
