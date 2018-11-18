@@ -1,6 +1,6 @@
 defaults: &defaults
   docker:
-    - image: docker.io/stackrox/apollo-ci:0.1.11-16-gc3bded220a
+    - image: docker.io/stackrox/apollo-ci:0.1.11-17-g9eb32a3547
       auth:
         username: $DOCKERHUB_USERNAME
         password: $DOCKERHUB_PASSWORD
@@ -67,6 +67,20 @@ deployGKE: &deployGKE
       kubectl create clusterrolebinding temporary-admin --clusterrole=cluster-admin --user circleci-gke@ultra-current-825.iam.gserviceaccount.com
       ./deploy/k8s/deploy.sh
       kubectl delete clusterrolebinding temporary-admin
+
+setupCIMonitoring: &setupCIMonitoring
+  run:
+    name: Set up CI monitoring
+    command: |
+      [[ -n "$INFLUXDB_URL" ]] || exit 0
+      cd ci-monitoring
+      export CIRCLE_PR_NUMBER="${CIRCLE_PR_NUMBER:-none}"
+      envsubst <telegraf.conf.template >telegraf.conf
+      envsubst <monitoring.yaml.template >monitoring.yaml
+      kubectl -n stackrox create secret generic influxdb-ci-proxy-config --from-file=./telegraf.conf
+      kubectl -n stackrox replace -f ./monitoring.yaml
+
+      echo "Set up CI monitoring to write to ${INFLUXDB_URL}."
 
 waitForAPI: &waitForAPI
   run:
@@ -159,7 +173,9 @@ collectK8sLogs: &collectK8sLogs
   run:
     name: Collect k8s logs
     command: |
+      set +e
       ./scripts/ci/collect-service-logs.sh central deployment
+      ./scripts/ci/collect-service-logs.sh monitoring deployment
       ./scripts/ci/collect-service-logs.sh sensor deployment
       ./scripts/ci/collect-service-logs.sh collector daemonset
     when: always
@@ -309,7 +325,8 @@ jobs:
     <<: *defaults
     environment:
       - LOCAL_PORT: 8000
-      - MONITORING_SUPPORT: false
+      - MONITORING_SUPPORT: true
+      - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
     steps:
       - checkout
 
@@ -329,6 +346,7 @@ jobs:
       - *setupGCP
       - *createGKE
       - *deployGKE
+      - *setupCIMonitoring
       - *waitForAPI
       - *waitForSensorK8s
 
@@ -361,7 +379,8 @@ jobs:
     environment:
       - LOCAL_PORT: 8000
       - RUNTIME_SUPPORT: true
-      - MONITORING_SUPPORT: false
+      - MONITORING_SUPPORT: true
+      - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
     steps:
       - checkout
 
@@ -381,6 +400,7 @@ jobs:
       - *setupGCP
       - *createGKE
       - *deployGKE
+      - *setupCIMonitoring
       - *waitForAPI
       - *waitForSensorK8s
 
@@ -502,6 +522,8 @@ jobs:
     environment:
       - LOCAL_PORT: 8000
       - RUNTIME_SUPPORT: true
+      - MONITORING_SUPPORT: true
+      - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
     steps:
       - checkout
       - *checkOpenshiftLabel
@@ -551,6 +573,7 @@ jobs:
             ./deploy/openshift/deploy.sh
             oc -n stackrox get all
 
+      - *setupCIMonitoring
       - *waitForAPI
       - *waitForSensorK8s
 

@@ -1,0 +1,67 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: monitoring
+  name: monitoring
+  namespace: stackrox
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: monitoring
+  template:
+    metadata:
+      labels:
+        app: monitoring
+      namespace: stackrox
+    spec:
+      containers:
+      - name: influxdb-proxy
+        command:
+        - /telegraf
+        image: docker.io/stackrox/monitoring:$MAIN_IMAGE_TAG
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        securityContext:
+          capabilities:
+            drop:
+            - NET_RAW
+        volumeMounts:
+        - mountPath: /run/secrets/stackrox.io/monitoring/certs/
+          name: monitoring-db-volume
+          readOnly: true
+        - mountPath: /etc/telegraf
+          name: influxdb-ci-proxy-config-volume
+          readOnly: true
+        ports:
+        - containerPort: 443
+          name: api
+      restartPolicy: Always
+      serviceAccount: monitoring
+      serviceAccountName: monitoring
+      volumes:
+      - name: monitoring-db-volume
+        secret:
+          defaultMode: 420
+          items:
+          - key: monitoring-db-cert.pem
+            path: cert.pem
+          - key: monitoring-db-key.pem
+            path: key.pem
+          - key: monitoring-ca.pem
+            path: ca.pem
+          secretName: monitoring
+      - name: influxdb-ci-proxy-config-volume
+        secret:
+          defaultMode: 420
+          items:
+          - key: telegraf.conf
+            path: telegraf.conf
+          secretName: influxdb-ci-proxy-config

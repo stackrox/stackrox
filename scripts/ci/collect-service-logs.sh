@@ -21,10 +21,10 @@ usage() {
     echo "e.g. ./scripts/ci/collect-service-logs.sh central deployment"
 }
 
-main() {
+main() (
     if [ -z ${2+1} ]; then
         usage
-        return 1
+        exit 1
     fi
     service_name="$1"
     type="$2"
@@ -32,12 +32,15 @@ main() {
     log_dir="/tmp/k8s-service-logs/${service_name}"
     mkdir -p "$log_dir"
 
-    kubectl describe "${type}/${service_name}" -n stackrox > "${log_dir}/describe.log" || true
+	set +e
+    kubectl describe "${type}/${service_name}" -n stackrox > "${log_dir}/describe.log"
     for pod in $(kubectl -n stackrox get po | grep "${service_name}" | awk '{print $1}'); do
-        kubectl -n stackrox logs "po/${pod}" ${service_name} > "${log_dir}/${pod}.log"
+        for ctr in $(kubectl -n stackrox get po $pod -o jsonpath='{.status.containerStatuses[*].name}'); do
+            kubectl -n stackrox logs "po/${pod}" -c "$ctr" > "${log_dir}/${pod}-${ctr}.log"
+            kubectl -n stackrox logs "po/${pod}" -p -c "$ctr" > "${log_dir}/${pod}-${ctr}-previous.log"
+        done
     done
-    kubectl  logs -p "${type}/${service_name}" "${service_name}" -n stackrox > "${log_dir}/logs_previous.log" 2>/dev/null || true
-
-}
+    find "${log_dir}" -type f -size 0 -delete
+)
 
 main "$@"

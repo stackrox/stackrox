@@ -15,4 +15,5 @@ gcloud container clusters create \
     --enable-ip-alias \
     --enable-network-policy \
     --image-type UBUNTU \
+    --tags="stackrox-ci,stackrox-ci-${CIRCLE_JOB}" \
     "prevent-ci-${CIRCLE_BUILD_NUM}"
