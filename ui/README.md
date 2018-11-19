@@ -12,7 +12,7 @@ the instructions below.
 ### Build Tooling
 
 * [Docker](https://www.docker.com/)
-* [Node.js](https://nodejs.org/en/) `8.12.0` or above (it's highly recommended to use an LTS version).
+* [Node.js](https://nodejs.org/en/) `8.12.0` or above, but still must be Node8.
 if you're managing multiple versions of Node.js on your machine, consider using [nvm](https://github.com/creationix/nvm))
 * [Yarn](https://yarnpkg.com/en/)
 
