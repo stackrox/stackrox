@@ -5,7 +5,7 @@ import (
 	"crypto/rand"
 	"math/big"
 
-	"github.com/stackrox/rox/pkg/auth/authproviders/userpass/htpasswd"
+	"github.com/stackrox/rox/pkg/auth/htpasswd"
 )
 
 const (
@@ -16,7 +16,8 @@ const (
 	pwCharacters = `abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789`
 )
 
-func generateHtpasswd(c *Config) ([]byte, error) {
+// GenerateHtpasswd creates a password for admin user if it was not created during the install
+func GenerateHtpasswd(c *Config) ([]byte, error) {
 	if c.Password == "" {
 		c.Password = createPassword()
 	}

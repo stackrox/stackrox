@@ -15,11 +15,12 @@ function launch_central {
     fi
     EXTRA_ARGS+=("--lb-type=$LOAD_BALANCER")
 
-    docker run --rm "${main_image}" deploy k8s ${EXTRA_ARGS[@]} -i "$main_image" "${storage}" > "${k8s_dir}/central.zip"
+    docker run --rm -e ROX_HTPASSWD_AUTH=${ROX_HTPASSWD_AUTH} "${main_image}" deploy k8s ${EXTRA_ARGS[@]} -i "$main_image" "${storage}" > "${k8s_dir}/central.zip"
 
     local unzip_dir="${k8s_dir}/central-deploy/"
     rm -rf "${unzip_dir}"
     unzip "${k8s_dir}/central.zip" -d "${unzip_dir}"
+
     echo
 
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then

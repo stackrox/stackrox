@@ -128,6 +128,7 @@ func verifyCentralDeployment(t *testing.T, centralDeployment *v1.Deployment) {
 
 	expectedPathPrefixes := []string{
 		"/run/secrets/stackrox.io/certs",
+		"/run/secrets/stackrox.io/htpasswd/",
 		"/run/secrets/stackrox.io/jwt",
 		"/usr/local/share/ca-certificates/",
 	}

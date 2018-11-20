@@ -189,14 +189,6 @@ func wrapFiles(files []*v1.File, c *Config, staticFilenames ...string) ([]*v1.Fi
 	}
 	files = append(files, zip.NewFile("README", []byte(standardizeWhitespace(Deployers[c.ClusterType].Instructions(*c))), false))
 
-	if features.HtpasswdAuth.Enabled() {
-		htpasswd, err := generateHtpasswd(c)
-		if err != nil {
-			return nil, err
-		}
-		files = append(files, zip.NewFile("htpasswd", htpasswd, false))
-		files = append(files, zip.NewFile("password", []byte(c.Password+"\n"), false))
-	}
 	return files, nil
 }
 

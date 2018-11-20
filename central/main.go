@@ -12,6 +12,7 @@ import (
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
 	authService "github.com/stackrox/rox/central/auth/service"
+	"github.com/stackrox/rox/central/auth/userpass"
 	authproviderService "github.com/stackrox/rox/central/authprovider/service"
 	authProviderStore "github.com/stackrox/rox/central/authprovider/store"
 	benchmarkService "github.com/stackrox/rox/central/benchmark/service"
@@ -59,6 +60,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -154,7 +156,6 @@ func (c *central) startGRPCServer() {
 	c.server.Register(
 		alertService.Singleton(),
 		apiTokenService.Singleton(),
-		authService.Singleton(),
 		authproviderService.New(registry),
 		benchmarkService.Singleton(),
 		bsService.Singleton(),
@@ -184,6 +185,10 @@ func (c *central) startGRPCServer() {
 		sensornetworkflow.Singleton(),
 		userService.Singleton(),
 	)
+
+	if features.HtpasswdAuth.Enabled() {
+		c.server.Register(authService.Singleton(userpass.Singleton(jwt.IssuerFactorySingleton(), userpass.MustOpenHtpasswd())))
+	}
 
 	enrichanddetect.GetLoop().Start()
 	startedSig := c.server.Start()

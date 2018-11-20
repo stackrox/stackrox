@@ -121,6 +121,17 @@ func outputZip(config central.Config) error {
 		return err
 	}
 
+	var files []*v1.File
+	if features.HtpasswdAuth.Enabled() {
+		htpasswd, err := central.GenerateHtpasswd(&config)
+		if err != nil {
+			return err
+		}
+		files = append(files, zipPkg.NewFile("htpasswd", htpasswd, false))
+		files = append(files, zipPkg.NewFile("password", []byte(config.Password+"\n"), false))
+		config.SecretsByteMap["htpasswd"] = htpasswd
+	}
+
 	if config.K8sConfig != nil && config.K8sConfig.MonitoringType.OnPrem() {
 		generateMonitoringFiles(config.SecretsByteMap, cert, key)
 	}
@@ -130,7 +141,7 @@ func outputZip(config central.Config) error {
 		config.SecretsBase64Map[k] = base64.StdEncoding.EncodeToString(v)
 	}
 
-	files, err := d.Render(config)
+	files, err = d.Render(config)
 	if err != nil {
 		return fmt.Errorf("could not render files: %s", err)
 	}

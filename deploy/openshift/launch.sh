@@ -11,10 +11,12 @@ function launch_central {
         extra_args+=("--monitoring-type=none")
     fi
 
-    docker run "$main_image" deploy openshift ${extra_args[@]+"${extra_args[@]}"} -i "$main_image" none > $openshift_dir/central.zip
+    docker run  -e ROX_HTPASSWD_AUTH=${ROX_HTPASSWD_AUTH} "$main_image" deploy openshift ${extra_args[@]+"${extra_args[@]}"} -i "$main_image" none > $openshift_dir/central.zip
     local unzip_dir="$openshift_dir/central-deploy/"
-    rm -rf "$unzip_dir"
-    unzip "$openshift_dir/central.zip" -d "$unzip_dir"
+    rm -rf "${unzip_dir}"
+    unzip "$openshift_dir/central.zip" -d "${unzip_dir}"
+    htpasswd -vb "${unzip_dir}"/htpasswd admin "$(cat ${unzip_dir}/password)"
+
     echo
 
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then

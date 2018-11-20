@@ -20,10 +20,26 @@ message AuthStatus {
     string                    refresh_url = 4;
 }
 
+message LoginRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message LoginResponse {
+    string token = 1;
+}
+
 service AuthService {
     rpc GetAuthStatus(Empty) returns (AuthStatus) {
         option (google.api.http) = {
             get: "/v1/auth/status"
+        };
+    }
+
+    rpc Login(LoginRequest) returns (LoginResponse) {
+        option (google.api.http) = {
+            post: "/v1/auth/login"
+            body: "*"
         };
     }
 }

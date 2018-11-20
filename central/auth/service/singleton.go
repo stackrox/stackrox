@@ -1,6 +1,10 @@
 package service
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/stackrox/rox/central/auth/userpass"
+)
 
 var (
 	once sync.Once
@@ -8,12 +12,10 @@ var (
 	as Service
 )
 
-func initialize() {
-	as = New()
-}
-
 // Singleton provides the instance of the Service interface to register.
-func Singleton() Service {
-	once.Do(initialize)
+func Singleton(pass *userpass.Issuer) Service {
+	once.Do(func() {
+		as = New(pass)
+	})
 	return as
 }

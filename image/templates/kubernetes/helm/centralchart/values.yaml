@@ -51,6 +51,13 @@ secrets:
       ca.pem: {{index .SecretsBase64Map "ca.pem"}}
       ca-key.pem: {{index .SecretsBase64Map "ca-key.pem"}}
       jwt-key.der: {{index .SecretsBase64Map "jwt-key.der"}}
+
+  {{if ne (index .SecretsBase64Map "htpasswd") ""}}
+  htpasswd:
+    data:
+      htpasswd: {{index .SecretsBase64Map "htpasswd"}}
+  {{end -}}
+
   {{if not .K8sConfig.MonitoringType.None}}
   monitoring:
     data:

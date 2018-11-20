@@ -31,6 +31,9 @@ services:
       - source: central_certificate
         target: stackrox.io/certs/ca.pem
         mode: 400
+      - source: central_htpasswd
+        target: stackrox.io/htpasswd/htpasswd
+        mode: 400
       - source: central_jwt_key
         target: stackrox.io/jwt/jwt-key.der
         mode: 400
@@ -51,6 +54,8 @@ secrets:
     file: ./ca-key.pem
   central_certificate:
     file: ./ca.pem
+  central_htpasswd:
+    file: ./htpasswd
   central_jwt_key:
     file: ./jwt-key.der
 {{if .External -}}

@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/auth/authproviders/userpass/htpasswd"
+	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,7 +22,7 @@ func testHtpasswd(t *testing.T, password string) {
 	cfg := &Config{
 		Password: password,
 	}
-	htpasswdFile, err := generateHtpasswd(cfg)
+	htpasswdFile, err := GenerateHtpasswd(cfg)
 	require.NoError(t, err)
 
 	assert.NotEmpty(t, cfg.Password)

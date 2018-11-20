@@ -38,6 +38,7 @@ func (e *extractor) IdentityForRequest(ri requestinfo.RequestInfo) (authn.Identi
 			uid:          fmt.Sprintf("auth-token:%s", token.ID),
 			friendlyName: token.Subject,
 			role:         permissions.NewRoleWithPermissions("unnamed", token.Permissions...),
+			expiry:       token.Expiry(),
 		}
 		if id.friendlyName == "" {
 			id.friendlyName = fmt.Sprintf("anonymous bearer token (expires %v)", token.Expiry())
@@ -55,6 +56,7 @@ func (e *extractor) IdentityForRequest(ri requestinfo.RequestInfo) (authn.Identi
 			uid:          fmt.Sprintf("auth-token:%s", token.ID),
 			friendlyName: token.Subject,
 			role:         role,
+			expiry:       token.Expiry(),
 		}
 		if id.friendlyName == "" {
 			id.friendlyName = fmt.Sprintf("anonymous bearer token with role %s (expires %v)", role.GetName(), token.Expiry())

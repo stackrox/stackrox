@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/auth/userpass"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -21,6 +22,8 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New() Service {
-	return &serviceImpl{}
+func New(pass *userpass.Issuer) Service {
+	return &serviceImpl{
+		pass: pass,
+	}
 }

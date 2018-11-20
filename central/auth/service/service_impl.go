@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/central/auth/userpass"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -13,7 +14,9 @@ import (
 )
 
 // ClusterService is the struct that manages the cluster API
-type serviceImpl struct{}
+type serviceImpl struct {
+	pass *userpass.Issuer
+}
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
@@ -58,4 +61,14 @@ func authStatusForID(id authn.Identity) (*v1.AuthStatus, error) {
 		result.Id = &v1.AuthStatus_UserId{UserId: id.UID()}
 	}
 	return result, nil
+}
+
+func (s *serviceImpl) Login(ctx context.Context, request *v1.LoginRequest) (*v1.LoginResponse, error) {
+	t, err := s.pass.IssueToken(request.GetUsername(), request.GetPassword())
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, err.Error())
+	}
+	return &v1.LoginResponse{
+		Token: t,
+	}, nil
 }
