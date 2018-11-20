@@ -1,8 +1,6 @@
 import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
 import { LOCATION_CHANGE } from 'react-router-redux';
-
-import { types as clusterTypes } from 'reducers/clusters';
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
 import { types as deploymentTypes } from 'reducers/deployments';
 import {
@@ -21,6 +19,7 @@ export const types = {
     FETCH_NODE_UPDATES: createFetchingActionTypes('network/FETCH_NODE_UPDATES'),
     SET_NETWORK_FLOW_MAPPING: 'network/SET_NETWORK_FLOW_MAPPING',
     SET_SELECTED_NODE_ID: 'network/SET_SELECTED_NODE_ID',
+    SELECT_DEFAULT_NETWORK_CLUSTER_ID: 'network/SELECT_DEFAULT_NETWORK_CLUSTER_ID',
     SELECT_NETWORK_CLUSTER_ID: 'network/SELECT_NETWORK_CLUSTER_ID',
     INCREMENT_NETWORK_GRAPH_UPDATE_KEY: 'network/INCREMENT_NETWORK_GRAPH_UPDATE_KEY',
     SET_NETWORK_GRAPH_STATE: 'network/NETWORK_GRAPH_STATE',
@@ -52,6 +51,10 @@ export const actions = {
         flowGraph
     }),
     setSelectedNodeId: id => ({ type: types.SET_SELECTED_NODE_ID, id }),
+    selectDefaultNetworkClusterId: response => ({
+        type: types.SELECT_DEFAULT_NETWORK_CLUSTER_ID,
+        response
+    }),
     selectNetworkClusterId: clusterId => ({
         type: types.SELECT_NETWORK_CLUSTER_ID,
         clusterId
@@ -164,7 +167,7 @@ export const networkGraphClusters = {
 };
 
 const selectedNetworkClusterId = (state = null, action) => {
-    if (!state && action.type === clusterTypes.FETCH_CLUSTERS.SUCCESS) {
+    if (!state && action.type === types.SELECT_DEFAULT_NETWORK_CLUSTER_ID) {
         const { cluster } = action.response.entities;
         const filteredClusters = Object.values(cluster).filter(c => networkGraphClusters[c.type]);
         if (filteredClusters && filteredClusters.length) {

@@ -4,7 +4,7 @@ import { networkPath } from 'routePaths';
 import * as service from 'services/NetworkService';
 import { fetchClusters } from 'services/ClustersService';
 import { actions, types } from 'reducers/network';
-import { actions as clusterActions, types as clusterTypes } from 'reducers/clusters';
+import { actions as clusterActions } from 'reducers/clusters';
 import { actions as notificationActions } from 'reducers/notifications';
 import { selectors } from 'reducers';
 import { takeEveryLocation } from 'utils/sagaEffects';
@@ -94,17 +94,7 @@ function* watchLocation() {
             pollTask = null;
             yield put(actions.setSelectedNodeId(null));
             yield put(actions.setNetworkGraphState(null));
-            yield put(actions.setYamlFile(null));
         }
-    }
-}
-
-function* getClusters() {
-    try {
-        const result = yield call(fetchClusters);
-        yield put(clusterActions.fetchClusters.success(result.response));
-    } catch (error) {
-        yield put(clusterActions.fetchClusters.failure(error));
     }
 }
 
@@ -127,8 +117,14 @@ function* filterNetworkPageBySearch() {
 }
 
 function* loadNetworkPage() {
-    yield fork(getClusters);
-    yield fork(filterNetworkPageBySearch);
+    try {
+        const result = yield call(fetchClusters);
+        yield put(clusterActions.fetchClusters.success(result.response));
+        yield put(actions.selectDefaultNetworkClusterId(result.response));
+        yield fork(filterNetworkPageBySearch);
+    } catch (error) {
+        yield put(clusterActions.fetchClusters.failure(error));
+    }
 }
 
 function* watchNetworkSearchOptions() {
@@ -151,10 +147,6 @@ function* watchSendYAMLNotification() {
     yield takeLatest(types.SEND_YAML_NOTIFICATION, sendYAMLNotification);
 }
 
-function* watchFetchClustersSuccess() {
-    yield takeLatest(clusterTypes.FETCH_CLUSTERS.SUCCESS, filterNetworkPageBySearch);
-}
-
 function* watchSetYamlFile() {
     yield takeLatest(types.SET_YAML_FILE, filterNetworkPageBySearch);
 }
@@ -171,7 +163,6 @@ export default function* network() {
         fork(watchFetchDeploymentRequest),
         fork(watchSelectNetworkCluster),
         fork(watchNetworkNodesUpdate),
-        fork(watchFetchClustersSuccess),
         fork(watchSetYamlFile),
         fork(watchSendYAMLNotification),
         fork(watchLocation)

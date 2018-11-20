@@ -499,14 +499,11 @@ const mapStateToProps = createStructuredSelector({
     isViewFiltered
 });
 
-const mapDispatchToProps = dispatch => ({
-    setSearchOptions: searchOptions =>
-        dispatch(dashboardActions.setDashboardSearchOptions(searchOptions)),
-    setSearchModifiers: searchModifiers =>
-        dispatch(dashboardActions.setDashboardSearchModifiers(searchModifiers)),
-    setSearchSuggestions: searchSuggestions =>
-        dispatch(dashboardActions.setDashboardSearchSuggestions(searchSuggestions))
-});
+const mapDispatchToProps = {
+    setSearchOptions: dashboardActions.setDashboardSearchOptions,
+    setSearchModifiers: dashboardActions.setDashboardSearchModifiers,
+    setSearchSuggestions: dashboardActions.setDashboardSearchSuggestions
+};
 
 export default connect(
     mapStateToProps,
