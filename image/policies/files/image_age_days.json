@@ -8,5 +8,15 @@
     "image_age_days": 90
   },
   "rationale": "Base images are updated frequently with bug fixes and vulnerability patches. Image age exceeding 90 days may indicate a higher risk of vulnerabilities existing in the image.",
-  "remediation": "Rebuild your image, push a new minor version (with a new immutable tag), and update your service to use it."
+  "remediation": "Rebuild your image, push a new minor version (with a new immutable tag), and update your service to use it.",
+  "whitelists": [
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    }
+  ]
 }
