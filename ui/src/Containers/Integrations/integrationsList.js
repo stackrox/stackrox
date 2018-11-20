@@ -45,59 +45,19 @@ const integrationsList = {
     ],
     imageIntegrations: [
         {
-            label: 'Generic Docker Registry',
-            type: 'docker',
-            categories: 'Registry',
-            source: 'imageIntegrations',
-            image: docker,
-            disabled: false
-        },
-        {
-            label: 'Docker Trusted Registry',
-            type: 'dtr',
-            categories: 'Registry + Scanner',
-            source: 'imageIntegrations',
-            image: docker,
-            disabled: false
-        },
-        {
-            label: 'Tenable.io',
-            type: 'tenable',
-            categories: 'Registry + Scanner',
-            source: 'imageIntegrations',
-            image: tenable,
-            disabled: false
-        },
-        {
-            label: 'JFrog Artifactory',
-            type: 'artifactory',
-            categories: 'Registry',
-            source: 'imageIntegrations',
-            image: artifactory,
-            disabled: false
-        },
-        {
-            label: 'Quay.io',
-            type: 'quay',
-            categories: 'Registry + Scanner',
-            source: 'imageIntegrations',
-            image: quay,
-            disabled: false
-        },
-        {
-            label: 'CoreOS Clair',
-            type: 'clair',
-            categories: 'Scanner',
-            source: 'imageIntegrations',
-            image: clair,
-            disabled: false
-        },
-        {
             label: 'Clairify',
             type: 'clairify',
             categories: 'Scanner',
             source: 'imageIntegrations',
             image: clair,
+            disabled: false
+        },
+        {
+            label: 'AWS ECR',
+            type: 'ecr',
+            categories: 'Registry',
+            source: 'imageIntegrations',
+            image: aws,
             disabled: false
         },
         {
@@ -109,11 +69,51 @@ const integrationsList = {
             disabled: false
         },
         {
-            label: 'AWS ECR',
-            type: 'ecr',
+            label: 'JFrog Artifactory',
+            type: 'artifactory',
             categories: 'Registry',
             source: 'imageIntegrations',
-            image: aws,
+            image: artifactory,
+            disabled: false
+        },
+        {
+            label: 'Docker Trusted Registry',
+            type: 'dtr',
+            categories: 'Registry + Scanner',
+            source: 'imageIntegrations',
+            image: docker,
+            disabled: false
+        },
+        {
+            label: 'Quay.io',
+            type: 'quay',
+            categories: 'Registry + Scanner',
+            source: 'imageIntegrations',
+            image: quay,
+            disabled: false
+        },
+        {
+            label: 'Tenable.io',
+            type: 'tenable',
+            categories: 'Registry + Scanner',
+            source: 'imageIntegrations',
+            image: tenable,
+            disabled: false
+        },
+        {
+            label: 'Generic Docker Registry',
+            type: 'docker',
+            categories: 'Registry',
+            source: 'imageIntegrations',
+            image: docker,
+            disabled: false
+        },
+        {
+            label: 'CoreOS Clair',
+            type: 'clair',
+            categories: 'Scanner',
+            source: 'imageIntegrations',
+            image: clair,
             disabled: false
         }
     ],
