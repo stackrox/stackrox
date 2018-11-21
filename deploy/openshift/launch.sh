@@ -15,8 +15,6 @@ function launch_central {
     local unzip_dir="$openshift_dir/central-deploy/"
     rm -rf "${unzip_dir}"
     unzip "$openshift_dir/central.zip" -d "${unzip_dir}"
-    htpasswd -vb "${unzip_dir}"/htpasswd admin "$(cat ${unzip_dir}/password)"
-
     echo
 
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then
