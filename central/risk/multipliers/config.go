@@ -13,6 +13,7 @@ const (
 	ServiceConfigHeading = "Service Configuration"
 
 	configSaturation = 8
+	configMaxScore   = 2
 )
 
 // serviceConfigMultiplier is a scorer for the service configuration
@@ -48,13 +49,10 @@ func (s *serviceConfigMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Resu
 	}
 	if factor := s.scorePrivilege(deployment); factor != "" {
 		overallScore *= 2
-		if overallScore < 2 {
-			overallScore = 2
-		}
 		riskResult.Factors = append(riskResult.Factors, &v1.Risk_Result_Factor{Message: factor})
 	}
 	// riskResult.Score is the normalized [1.0,2.0] score
-	riskResult.Score = (overallScore / configSaturation) + 1
+	riskResult.Score = normalizeScore(overallScore, configSaturation, configMaxScore)
 	return riskResult
 }
 
@@ -86,12 +84,12 @@ func (s *serviceConfigMultiplier) scoreSecrets(deployment *v1.Deployment) string
 	return ""
 }
 
-var capAdds = map[string]struct{}{
-	"ALL":            {},
-	"CAP_SYS_ADMIN":  {},
-	"CAP_NET_ADMIN":  {},
-	"CAP_SYS_MODULE": {},
-}
+var relevantCapAdds = set.NewStringSet(
+	"ALL",
+	"CAP_SYS_ADMIN",
+	"CAP_NET_ADMIN",
+	"CAP_SYS_MODULE",
+)
 
 func (s *serviceConfigMultiplier) scoreCapabilities(deployment *v1.Deployment) (capAddFactor, capDropFactor string) {
 	capsAdded := set.NewStringSet()
@@ -99,7 +97,7 @@ func (s *serviceConfigMultiplier) scoreCapabilities(deployment *v1.Deployment) (
 	for _, container := range deployment.GetContainers() {
 		context := container.GetSecurityContext()
 		for _, cap := range context.GetAddCapabilities() {
-			if _, ok := capAdds[cap]; ok {
+			if relevantCapAdds.Contains(cap) {
 				capsAdded.Add(cap)
 			}
 		}

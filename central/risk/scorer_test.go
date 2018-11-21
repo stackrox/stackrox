@@ -25,19 +25,19 @@ func TestScore(t *testing.T) {
 	})
 
 	// Without user defined function
-	expectedRiskScore := 4.032
+	expectedRiskScore := 7.2128
 	expectedRiskResults := []*v1.Risk_Result{
 		{
 			Name:    multipliers.PolicyViolationsHeading,
 			Factors: []*v1.Risk_Result_Factor{{Message: "Test (severity: Critical)"}},
-			Score:   1.2,
+			Score:   1.96,
 		},
 		{
 			Name: multipliers.VulnsHeading,
 			Factors: []*v1.Risk_Result_Factor{
 				{Message: "Image contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0"},
 			},
-			Score: 1.05,
+			Score: 1.15,
 		},
 		{
 			Name: multipliers.ServiceConfigHeading,
@@ -77,7 +77,7 @@ func TestScore(t *testing.T) {
 		scorer.UpdateUserDefinedMultiplier(mult)
 	}
 
-	expectedRiskScore = 24.192
+	expectedRiskScore = 43.2768
 	expectedRiskResults = append(expectedRiskResults, []*v1.Risk_Result{
 		{
 			Name: "Cluster multiplier 3",

@@ -34,7 +34,7 @@ func TestViolationsScore(t *testing.T) {
 				Factors: []*v1.Risk_Result_Factor{
 					{Message: "Policy 1 (severity: Critical)"},
 				},
-				Score: 1.2,
+				Score: 1.96,
 			},
 		},
 		{
@@ -52,7 +52,7 @@ func TestViolationsScore(t *testing.T) {
 				Factors: []*v1.Risk_Result_Factor{
 					{Message: "Policy 1 (severity: Critical)"},
 				},
-				Score: 1.2,
+				Score: 1.96,
 			},
 		},
 		{
@@ -84,7 +84,7 @@ func TestViolationsScore(t *testing.T) {
 					{Message: "Policy 2 (severity: Medium)"},
 					{Message: "Policy 3 (severity: Low)"},
 				},
-				Score: 1.3,
+				Score: 1.84,
 			},
 		},
 		{
@@ -116,7 +116,7 @@ func TestViolationsScore(t *testing.T) {
 					{Message: "Policy 2 (severity: High)"},
 					{Message: "Policy 3 (severity: Low)"},
 				},
-				Score: 1.4,
+				Score: 2.56,
 			},
 		},
 		{
@@ -169,7 +169,7 @@ func TestViolationsScore(t *testing.T) {
 					{Message: "Policy 2 (severity: High)"},
 					{Message: "Policy 1 (severity: Low)"},
 				},
-				Score: 1.4,
+				Score: 2.56,
 			},
 		},
 	}

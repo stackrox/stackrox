@@ -11,7 +11,8 @@ const (
 	// VulnsHeading is the risk result name for scores calculated by this multiplier.
 	VulnsHeading = "Image Vulnerabilities"
 
-	saturationCeiling = 100
+	vulnSaturation = 100
+	vulnMaxScore   = 4
 )
 
 // vulnerabilitiesMultiplier is a scorer for the vulnerabilities in a deployment
@@ -45,10 +46,8 @@ func (c *vulnerabilitiesMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Re
 	// This does not contribute to the overall risk of the container
 	if cvssSum == 0 {
 		return nil
-	} else if cvssSum > saturationCeiling {
-		cvssSum = saturationCeiling
 	}
-	score := (cvssSum / saturationCeiling) + 1
+	score := normalizeScore(cvssSum, vulnSaturation, vulnMaxScore)
 	return &v1.Risk_Result{
 		Name: VulnsHeading,
 		Factors: []*v1.Risk_Result_Factor{

@@ -14,7 +14,8 @@ const (
 	// PolicyViolationsHeading is the risk result name for scores calculated by this multiplier.
 	PolicyViolationsHeading = "Policy Violations"
 
-	policySaturation = 20
+	policySaturation = 50
+	policyMaxValue   = 4
 )
 
 // ViolationsMultiplier is a scorer for the violations on a deployment
@@ -61,10 +62,8 @@ func (v *ViolationsMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result 
 	// This does not contribute to the overall risk of the container
 	if severitySum == 0 {
 		return nil
-	} else if severitySum > policySaturation {
-		severitySum = policySaturation
 	}
-	score := (severitySum / policySaturation) + 1
+	score := normalizeScore(severitySum, policySaturation, policyMaxValue)
 	return &v1.Risk_Result{
 		Name:    PolicyViolationsHeading,
 		Factors: policyFactors(factors),
@@ -73,18 +72,7 @@ func (v *ViolationsMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result 
 }
 
 func severityImpact(severity v1.Severity) float32 {
-	switch severity {
-	case v1.Severity_LOW_SEVERITY:
-		return 1
-	case v1.Severity_MEDIUM_SEVERITY:
-		return 2
-	case v1.Severity_HIGH_SEVERITY:
-		return 3
-	case v1.Severity_CRITICAL_SEVERITY:
-		return 4
-	default:
-		return 0
-	}
+	return float32(severity) * float32(severity)
 }
 
 func severityString(s v1.Severity) string {

@@ -10,7 +10,8 @@ const (
 	// ReachabilityHeading is the risk result name for scores calculated by this multiplier.
 	ReachabilityHeading = `Service Reachability`
 
-	reachabilitySaturation = float32(10)
+	reachabilitySaturation = 10
+	reachabilityValue      = 2
 )
 
 // reachabilityMultiplier is a scorer for the port exposures
@@ -40,10 +41,7 @@ func (s *reachabilityMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Resul
 	if score == 0 {
 		return nil
 	}
-	if score > reachabilitySaturation {
-		score = reachabilitySaturation
-	}
-	riskResult.Score = (score / reachabilitySaturation) + 1
+	riskResult.Score = normalizeScore(score, reachabilitySaturation, reachabilityValue)
 	return riskResult
 }
 

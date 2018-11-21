@@ -56,5 +56,5 @@ func (suite *BenchmarkTriggerStoreTestSuite) TestTriggers() {
 	actualTriggers, err := suite.store.GetBenchmarkTriggers(&v1.GetBenchmarkTriggersRequest{})
 	suite.NoError(err)
 
-	suite.Equal(triggers, actualTriggers)
+	suite.ElementsMatch(triggers, actualTriggers)
 }
