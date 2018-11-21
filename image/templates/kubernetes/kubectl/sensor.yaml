@@ -175,7 +175,7 @@ spec:
             cpu: 750m
             memory: 1Gi
           requests:
-            cpu: 250m
+            cpu: 50m
             memory: 320Mi
         securityContext:
           capabilities:
