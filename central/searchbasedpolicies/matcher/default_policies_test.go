@@ -67,7 +67,7 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 	processIndexer := processIndicatorIndex.New(suite.bleveIndex)
 	processSearcher, err := processIndicatorSearch.New(processStore, processIndexer)
 	suite.Require().NoError(err)
-	suite.processDataStore = processIndicatorDataStore.New(processStore, processIndexer, processSearcher)
+	suite.processDataStore = processIndicatorDataStore.New(processStore, processIndexer, processSearcher, nil)
 
 	defaults.PoliciesPath = policies.Directory()
 

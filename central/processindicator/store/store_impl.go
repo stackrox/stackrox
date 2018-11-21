@@ -8,6 +8,7 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/generated/api/v1"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
@@ -56,11 +57,44 @@ func (b *storeImpl) GetProcessIndicators() ([]*v1.ProcessIndicator, error) {
 	return indicators, err
 }
 
+func (b *storeImpl) GetProcessInfoToArgs() (map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetGrouped, "ProcessIndicator")
+	processNamesToArgs := make(map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs)
+	err := b.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(uniqueProcessesBucket))
+		return b.ForEach(func(k, v []byte) error {
+			uniqueKey := new(v1.ProcessIndicatorUniqueKey)
+			if err := proto.Unmarshal(k, uniqueKey); err != nil {
+				return fmt.Errorf("key unmarshaling: %s", err)
+			}
+			info := processindicator.ProcessWithContainerInfo{
+				ContainerName: uniqueKey.GetContainerName(),
+				PodID:         uniqueKey.GetPodId(),
+				ProcessName:   uniqueKey.GetProcessName(),
+			}
+			processNamesToArgs[info] = append(processNamesToArgs[info], processindicator.IDAndArgs{
+				ID:   string(v),
+				Args: uniqueKey.GetProcessArgs(),
+			})
+			return nil
+		})
+	})
+	if err != nil {
+		return nil, err
+	}
+	return processNamesToArgs, nil
+}
+
 // get the value of the secondary key
-func getSecondaryKey(indicator *v1.ProcessIndicator) []byte {
-	signal := indicator.GetSignal()
-	return []byte(fmt.Sprintf("%s %s %s %s %s", indicator.GetPodId(), indicator.GetContainerName(), signal.GetExecFilePath(),
-		signal.GetName(), signal.GetArgs()))
+func getSecondaryKey(indicator *v1.ProcessIndicator) ([]byte, error) {
+	uniqueKey := &v1.ProcessIndicatorUniqueKey{
+		PodId:               indicator.GetPodId(),
+		ContainerName:       indicator.GetContainerName(),
+		ProcessExecFilePath: indicator.GetSignal().GetExecFilePath(),
+		ProcessName:         indicator.GetSignal().GetName(),
+		ProcessArgs:         indicator.GetSignal().GetArgs(),
+	}
+	return proto.Marshal(uniqueKey)
 }
 
 func (b *storeImpl) addProcessIndicator(tx *bolt.Tx, indicator *v1.ProcessIndicator, data []byte) (string, error) {
@@ -70,7 +104,10 @@ func (b *storeImpl) addProcessIndicator(tx *bolt.Tx, indicator *v1.ProcessIndica
 		return "", fmt.Errorf("indicator with id '%s' already exists", indicator.GetId())
 	}
 	uniqueBucket := tx.Bucket([]byte(uniqueProcessesBucket))
-	secondaryKey := getSecondaryKey(indicator)
+	secondaryKey, err := getSecondaryKey(indicator)
+	if err != nil {
+		return "", err
+	}
 	oldID := uniqueBucket.Get([]byte(secondaryKey))
 	var oldIDString string
 	if oldID != nil {
@@ -151,7 +188,11 @@ func (b *storeImpl) RemoveProcessIndicator(id string) error {
 			return nil
 		}
 		uniqueBucket := tx.Bucket([]byte(uniqueProcessesBucket))
-		if err := uniqueBucket.Delete(getSecondaryKey(indicator)); err != nil {
+		secondaryKey, err := getSecondaryKey(indicator)
+		if err != nil {
+			return err
+		}
+		if err := uniqueBucket.Delete(secondaryKey); err != nil {
 			return fmt.Errorf("deleting from unique bucket: %s", err)
 		}
 		if err := removeProcessIndicator(tx, []byte(id)); err != nil {

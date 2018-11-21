@@ -2,12 +2,15 @@ package datastore
 
 import (
 	"fmt"
+	"time"
 
-	"github.com/prometheus/common/log"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator/index"
+	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	ops "github.com/stackrox/rox/pkg/metrics"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -16,6 +19,7 @@ type datastoreImpl struct {
 	storage  store.Store
 	indexer  index.Indexer
 	searcher search.Searcher
+	pruner   pruner.Pruner
 }
 
 func (ds *datastoreImpl) Search(q *v1.Query) ([]pkgSearch.Result, error) {
@@ -94,13 +98,16 @@ func (ds *datastoreImpl) removeMatchingIndicators(results []pkgSearch.Result) er
 	for _, r := range results {
 		idsToDelete = append(idsToDelete, r.ID)
 	}
+	return ds.removeIndicators(idsToDelete)
+}
 
-	for _, id := range idsToDelete {
+func (ds *datastoreImpl) removeIndicators(ids []string) error {
+	for _, id := range ids {
 		if err := ds.storage.RemoveProcessIndicator(id); err != nil {
 			log.Warnf("Failed to remove process indicator %q: %v", id, err)
 		}
 	}
-	return ds.indexer.DeleteProcessIndicators(idsToDelete...)
+	return ds.indexer.DeleteProcessIndicators(ids...)
 }
 
 func (ds *datastoreImpl) RemoveProcessIndicatorsByDeployment(id string) error {
@@ -125,4 +132,34 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsOfStaleContainers(deploymentID s
 		return err
 	}
 	return ds.removeMatchingIndicators(results)
+}
+
+func (ds *datastoreImpl) prunePeriodically() {
+	if ds.pruner == nil {
+		return
+	}
+	t := time.NewTicker(ds.pruner.Period())
+	defer t.Stop()
+	for range t.C {
+		ds.prune()
+	}
+}
+
+func (ds *datastoreImpl) prune() {
+	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Prune, "ProcessIndicator")
+	processInfoToArgs, err := ds.storage.GetProcessInfoToArgs()
+	if err != nil {
+		log.Errorf("Error while pruning processes: couldn't retrieve process info to args: %s", err)
+		return
+	}
+	for _, args := range processInfoToArgs {
+		idsToRemove := ds.pruner.Prune(args)
+		if len(idsToRemove) > 0 {
+			if err := ds.removeIndicators(idsToRemove); err != nil {
+				log.Errorf("Error while pruning processes: %s", err)
+			} else {
+				incrementPrunedProcessesMetric(len(idsToRemove))
+			}
+		}
+	}
 }

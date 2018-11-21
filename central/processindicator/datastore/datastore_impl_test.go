@@ -3,15 +3,21 @@ package datastore
 import (
 	"fmt"
 	"math/rand"
+	"sort"
 	"testing"
+	"time"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/index"
+	"github.com/stackrox/rox/central/processindicator/pruner/mocks"
 	processSearch "github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -24,6 +30,10 @@ type IndicatorDataStoreTestSuite struct {
 	datastore DataStore
 	storage   store.Store
 	indexer   index.Indexer
+	searcher  processSearch.Searcher
+
+	mockPruner *mocks.MockPruner
+	mockCtrl   *gomock.Controller
 }
 
 func (suite *IndicatorDataStoreTestSuite) SetupTest() {
@@ -35,10 +45,19 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 	suite.NoError(err)
 	suite.indexer = index.New(tmpIndex)
 
-	searcher, err := processSearch.New(suite.storage, suite.indexer)
+	suite.searcher, err = processSearch.New(suite.storage, suite.indexer)
 	suite.NoError(err)
 
-	suite.datastore = New(suite.storage, suite.indexer, searcher)
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.mockPruner = mocks.NewMockPruner(suite.mockCtrl)
+}
+
+func (suite *IndicatorDataStoreTestSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
+}
+
+func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
+	suite.datastore = New(suite.storage, suite.indexer, suite.searcher, nil)
 }
 
 func (suite *IndicatorDataStoreTestSuite) verifyIndicatorsAre(indicators ...*v1.ProcessIndicator) {
@@ -81,6 +100,7 @@ func getIndicators() (indicators []*v1.ProcessIndicator, repeatIndicator *v1.Pro
 			DeploymentId: "d2",
 
 			Signal: &v1.ProcessSignal{
+				Name: "blah",
 				Args: "args2",
 			},
 		},
@@ -95,12 +115,16 @@ func getIndicators() (indicators []*v1.ProcessIndicator, repeatIndicator *v1.Pro
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestIndicatorBatchAdd() {
+	suite.setupDataStoreNoPruning()
+
 	indicators, repeatIndicator := getIndicators()
 	suite.NoError(suite.datastore.AddProcessIndicators(append(indicators, repeatIndicator)...))
 	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestIndicatorBatchAddWithOldIndicator() {
+	suite.setupDataStoreNoPruning()
+
 	indicators, repeatIndicator := getIndicators()
 	suite.NoError(suite.datastore.AddProcessIndicator(indicators[0]))
 	suite.verifyIndicatorsAre(indicators[0])
@@ -110,6 +134,8 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorBatchAddWithOldIndicator(
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestIndicatorAddOneByOne() {
+	suite.setupDataStoreNoPruning()
+
 	indicators, repeatIndicator := getIndicators()
 	suite.NoError(suite.datastore.AddProcessIndicators(indicators[0]))
 	suite.verifyIndicatorsAre(indicators[0])
@@ -139,6 +165,8 @@ func generateIndicators(deploymentIDs []string, containerIDs []string) []*v1.Pro
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByDeploymentID() {
+	suite.setupDataStoreNoPruning()
+
 	indicators := generateIndicators([]string{"d1", "d2"}, []string{"c1", "c2"})
 	suite.NoError(suite.datastore.AddProcessIndicators(indicators...))
 	suite.verifyIndicatorsAre(indicators...)
@@ -148,6 +176,8 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByDeploymentID() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByDeploymentIDAgain() {
+	suite.setupDataStoreNoPruning()
+
 	indicators := generateIndicators([]string{"d1", "d2", "d3"}, []string{"c1", "c2", "c3"})
 	suite.NoError(suite.datastore.AddProcessIndicators(indicators...))
 	suite.verifyIndicatorsAre(indicators...)
@@ -157,6 +187,8 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByDeploymentIDAgai
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByContainerID() {
+	suite.setupDataStoreNoPruning()
+
 	indicators := generateIndicators([]string{"d1", "d2"}, []string{"c1", "c2"})
 	suite.NoError(suite.datastore.AddProcessIndicators(indicators...))
 	suite.verifyIndicatorsAre(indicators...)
@@ -170,10 +202,59 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByContainerID() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByContainerIDAgain() {
+	suite.setupDataStoreNoPruning()
+
 	indicators := generateIndicators([]string{"d1", "d2"}, []string{"c1", "c2"})
 	suite.NoError(suite.datastore.AddProcessIndicators(indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
 	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers("d1", nil))
 	suite.verifyIndicatorsAre(generateIndicators([]string{"d2"}, []string{"c1", "c2"})...)
+}
+
+func (suite *IndicatorDataStoreTestSuite) TestPruningWithNoPruning() {
+	const pruneDuration = 100 * time.Millisecond
+	suite.mockPruner.EXPECT().Period().Return(pruneDuration)
+	suite.datastore = New(suite.storage, suite.indexer, suite.searcher, suite.mockPruner)
+
+	indicators, _ := getIndicators()
+	suite.NoError(suite.datastore.AddProcessIndicators(indicators...))
+	suite.verifyIndicatorsAre(indicators...)
+
+	ch := make(chan struct{})
+
+	m := testutils.PredMatcher("id with args matcher", func(passed []processindicator.IDAndArgs) bool {
+		defer func() {
+			ch <- struct{}{}
+		}()
+		ourIDsAndArgs := make([]processindicator.IDAndArgs, 0, len(indicators))
+		for _, indicator := range indicators {
+			ourIDsAndArgs = append(ourIDsAndArgs, processindicator.IDAndArgs{ID: indicator.GetId(), Args: indicator.GetSignal().GetArgs()})
+		}
+		sort.Slice(ourIDsAndArgs, func(i, j int) bool {
+			return ourIDsAndArgs[i].ID < ourIDsAndArgs[j].ID
+		})
+		sort.Slice(passed, func(i, j int) bool {
+			return passed[i].ID < passed[j].ID
+		})
+		if len(ourIDsAndArgs) != len(passed) {
+			return false
+		}
+		for i, idAndArg := range ourIDsAndArgs {
+			if idAndArg.ID != passed[i].ID || idAndArg.Args != passed[i].Args {
+				return false
+			}
+		}
+		return true
+	})
+
+	suite.mockPruner.EXPECT().Prune(m).Return(nil)
+	<-ch
+	time.Sleep(pruneDuration / 2)
+	suite.verifyIndicatorsAre(indicators...)
+
+	suite.mockPruner.EXPECT().Prune(m).Return([]string{indicators[0].GetId()})
+	<-ch
+	time.Sleep(pruneDuration / 2)
+	suite.verifyIndicatorsAre(indicators[1:]...)
 }

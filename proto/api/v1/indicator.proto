@@ -21,3 +21,15 @@ message ProcessIndicator {
     // A process signal message passed from Collector to Sensor
     ProcessSignal signal = 6;
 }
+
+// This is the unique key we store process indicators under in Bolt.
+// This is stored in the DB, so please follow proto compatibility rules for it,
+// OR discard existing values and repopulate it on startup.
+message ProcessIndicatorUniqueKey {
+    string pod_id                 = 1;
+    string container_name         = 2;
+    string process_name           = 3;
+    string process_exec_file_path = 4;
+    string process_args           = 5;
+}
+

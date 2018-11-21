@@ -4,7 +4,6 @@ option go_package = "v1";
 
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
-import "api/v1/empty.proto";
 import "api/v1/network_enums.proto";
 
 package v1;

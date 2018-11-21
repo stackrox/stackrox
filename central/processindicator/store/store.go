@@ -2,6 +2,7 @@ package store
 
 import (
 	"github.com/boltdb/bolt"
+	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/logging"
@@ -18,6 +19,7 @@ const (
 type Store interface {
 	GetProcessIndicator(id string) (*v1.ProcessIndicator, bool, error)
 	GetProcessIndicators() ([]*v1.ProcessIndicator, error)
+	GetProcessInfoToArgs() (map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs, error)
 	AddProcessIndicator(*v1.ProcessIndicator) (string, error)
 	AddProcessIndicators(...*v1.ProcessIndicator) ([]string, error)
 	RemoveProcessIndicator(id string) error

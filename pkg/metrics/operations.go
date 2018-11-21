@@ -17,7 +17,13 @@ const (
 	GetAll
 	GetMany
 
+	// Special operation currently used only for processes.
+	GetGrouped
+
 	List
+
+	Prune
+
 	Rename
 	Remove
 	RemoveMany
