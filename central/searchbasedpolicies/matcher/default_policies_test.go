@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/boltdb/bolt"
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	gogoTypes "github.com/gogo/protobuf/types"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"

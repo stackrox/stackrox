@@ -3,7 +3,7 @@ package store
 import (
 	"fmt"
 
-	"github.com/boltdb/bolt"
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/api/v1"
 )
 

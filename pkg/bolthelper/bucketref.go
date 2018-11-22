@@ -3,7 +3,7 @@ package bolthelper
 import (
 	"fmt"
 
-	"github.com/boltdb/bolt"
+	bolt "github.com/etcd-io/bbolt"
 )
 
 // BucketRef is a reference to a bucket. The user does not need to care whether this is a top-level bucket, or a nested

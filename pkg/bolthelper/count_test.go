@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/boltdb/bolt"
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/stretchr/testify/suite"
 )
 

@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/boltdb/bolt"
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/golang/mock/gomock"
 	dDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"

@@ -3,7 +3,7 @@ package store
 import (
 	"testing"
 
-	"github.com/boltdb/bolt"
+	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/suite"
 )

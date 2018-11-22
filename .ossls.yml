@@ -655,8 +655,8 @@ dependencies:
     attribution:
     - 2017 Couchbase, Inc.
 
-  vendor/github.com/boltdb/bolt:
-    url: https://github.com/boltdb/bolt
+  vendor/github.com/etcd-io/bbolt:
+    url: https://github.com/etcd-io/bbolt
     license: MIT
     files:
       LICENSE: c15d721c37e277a11584547de6d618541501f7aa10c4e32a945a4f9ff36cb0f6

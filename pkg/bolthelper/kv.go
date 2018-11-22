@@ -1,6 +1,6 @@
 package bolthelper
 
-import "github.com/boltdb/bolt"
+import bolt "github.com/etcd-io/bbolt"
 
 // KV is a key/value pair.
 type KV struct {

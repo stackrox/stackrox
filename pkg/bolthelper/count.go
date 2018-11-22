@@ -1,7 +1,7 @@
 package bolthelper
 
 import (
-	"github.com/boltdb/bolt"
+	bolt "github.com/etcd-io/bbolt"
 )
 
 // CountLeavesRecursive counts the number of all leaves in the given bucket and nested buckets up to the given max

@@ -20,8 +20,8 @@ required = ["golang.org/x/tools/go/ast/astutil"]
   revision = "3d98b2b79d1baebfb4deee7df2658afdf12b9b58"
 
 [[constraint]]
-  name = "github.com/boltdb/bolt"
-  version = "1.3.1"
+  name = "github.com/etcd-io/bbolt"
+  version = "v1.3.1-etcd.8"
 
 [[constraint]]
   name = "github.com/docker/distribution"

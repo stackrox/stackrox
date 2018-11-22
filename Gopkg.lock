@@ -427,6 +427,14 @@
   revision = "0bce6a6887123b67a60366d2c9fe2dfb74289d2e"
 
 [[projects]]
+  digest = "1:e907c2cf2df370592f4e3a5b8c2bcdf6e16709cace789d53ea7d22720e8b79c2"
+  name = "github.com/etcd-io/bbolt"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "7ee3ded59d4835e10f3e7d0f7603c42aa5e83820"
+  version = "v1.3.1-etcd.8"
+
+[[projects]]
   digest = "1:52ec55889de2c93a772ceba253313c12f65444aac61a11182d4d119ef97479e8"
   name = "github.com/fatih/structs"
   packages = ["."]
@@ -1555,6 +1563,7 @@
     "github.com/docker/docker/image",
     "github.com/docker/docker/registry",
     "github.com/docker/go-units",
+    "github.com/etcd-io/bbolt",
     "github.com/ghodss/yaml",
     "github.com/gogo/protobuf/proto",
     "github.com/gogo/protobuf/types",
