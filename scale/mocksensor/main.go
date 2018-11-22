@@ -74,7 +74,7 @@ func main() {
 	defer nfStream.CloseSend()
 	networkFlowSignal := concurrency.NewSignal()
 
-	go sendNetworkFlows(nfStream, *networkFlowInterval, *maxNetworkFlows, *maxUpdates, *flowDeleteRate, networkFlowSignal)
+	go sendNetworkFlows(nfStream, *networkFlowInterval, *maxNetworkFlows, *maxUpdates, *flowDeleteRate, &networkFlowSignal)
 
 	deploymentSignal.Wait()
 	indicatorSignal.Wait()
@@ -153,40 +153,39 @@ func sendIndicators(stream v1.SensorEventService_RecordEventClient, maxIndicator
 	signal.Signal()
 }
 
-func sendNetworkFlows(stream central.NetworkFlowService_PushNetworkFlowsClient, networkFlowInterval time.Duration, maxNetworkFlows int, maxUpdates int, flowDeleteRate float64, signal concurrency.Signal) {
+func sendNetworkFlows(stream central.NetworkFlowService_PushNetworkFlowsClient, networkFlowInterval time.Duration, maxNetworkFlows int, maxUpdates int, flowDeleteRate float64, signal *concurrency.Signal) {
+	defer signal.Signal()
+
+	nextTick := time.Now()
 	for u := 0; u < maxUpdates; u++ {
+		time.Sleep(nextTick.Sub(time.Now()))
 		update := generateNetworkFlowUpdate(maxNetworkFlows, flowDeleteRate)
-		ticker := time.NewTicker(networkFlowInterval)
-		for c := 0; c < maxNetworkFlows; c++ {
-			<-ticker.C
-			if err := stream.Send(update); err != nil {
-				logger.Errorf("Error: %v", err)
-			}
+		if err := stream.Send(update); err != nil {
+			logger.Errorf("Error: %v", err)
 		}
-		ticker.Stop()
-		logger.Infof("Finished sending update (%d) with %d network flows", u, maxNetworkFlows)
+		logger.Infof("Finished sending update %d with %d network flows", u, len(update.Updated))
+		nextTick = nextTick.Add(networkFlowInterval)
 	}
-	signal.Signal()
 }
 
 func generateNetworkFlowUpdate(maxNetworkFlows int, flowDeleteRate float64) *central.NetworkFlowUpdate {
-	flows := make([]*v1.NetworkFlow, 0, maxNetworkFlows)
+	numFlows := deploymentCount * deploymentCount
+	if numFlows > maxNetworkFlows {
+		numFlows = maxNetworkFlows
+	}
 
-	max := math.Max(float64(maxNetworkFlows), math.Pow(float64(deploymentCount), 2))
-	for i := 0; i < int(max); i++ {
-		srcID := getGeneratedDeploymentID(rand.Int() % deploymentCount)
-		var dstID string
-		for {
-			dstID = getGeneratedDeploymentID(rand.Int() % deploymentCount)
-			if srcID != dstID {
-				break
-			}
+	flows := make([]*v1.NetworkFlow, numFlows)
+	for i := range flows {
+		srcIndex := rand.Int() % deploymentCount
+		dstIndex := rand.Int() % (deploymentCount - 1)
+		if dstIndex >= srcIndex {
+			dstIndex++
 		}
 
 		flow := &v1.NetworkFlow{
 			Props: &v1.NetworkFlowProperties{
-				SrcDeploymentId: srcID,
-				DstDeploymentId: dstID,
+				SrcDeploymentId: getGeneratedDeploymentID(srcIndex),
+				DstDeploymentId: getGeneratedDeploymentID(dstIndex),
 				L4Protocol:      v1.L4Protocol_L4_PROTOCOL_TCP,
 				DstPort:         80,
 			},
@@ -194,11 +193,8 @@ func generateNetworkFlowUpdate(maxNetworkFlows int, flowDeleteRate float64) *cen
 
 		if rand.Float64() < flowDeleteRate {
 			flow.LastSeenTimestamp = timestamp.Now().GogoProtobuf()
-		} else {
-			flow.LastSeenTimestamp = timestamp.MicroTS(0).GogoProtobuf()
 		}
-
-		flows = append(flows, flow)
+		flows[i] = flow
 	}
 
 	return &central.NetworkFlowUpdate{
