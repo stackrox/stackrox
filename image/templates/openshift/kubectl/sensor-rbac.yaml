@@ -69,6 +69,7 @@ rules:
   - resources:
     - daemonsets
     - deployments
+    - deployments/scale
     - deploymentconfigs
     - pods
     - replicasets
