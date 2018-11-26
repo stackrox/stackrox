@@ -10,7 +10,7 @@ import Table, {
 } from 'Components/Table';
 import Modal from 'Components/Modal';
 
-class DockerFileModal extends Component {
+class DockerfileModal extends Component {
     static propTypes = {
         data: PropTypes.arrayOf(PropTypes.shape()).isRequired,
         onClose: PropTypes.func.isRequired
@@ -18,7 +18,7 @@ class DockerFileModal extends Component {
 
     renderHeader = () => (
         <header className="flex items-center w-full p-4 bg-primary-500 text-base-100 uppercase">
-            <span className="flex flex-1 uppercase">Docker File</span>
+            <span className="flex flex-1 uppercase">Dockerfile</span>
             <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.props.onClose} />
         </header>
     );
@@ -66,4 +66,4 @@ class DockerFileModal extends Component {
     }
 }
 
-export default DockerFileModal;
+export default DockerfileModal;

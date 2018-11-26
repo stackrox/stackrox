@@ -15,7 +15,7 @@ import Table, { defaultHeaderClassName } from 'Components/Table';
 import CollapsibleCard from 'Components/CollapsibleCard';
 import Panel from 'Components/Panel';
 import KeyValuePairs from 'Components/KeyValuePairs';
-import DockerFileModal from 'Containers/Images/DockerFileModal';
+import DockerfileModal from 'Containers/Images/DockerfileModal';
 import Loader from 'Components/Loader';
 
 const imageDetailsMap = {
@@ -73,12 +73,12 @@ class ImageDetails extends Component {
                 onClick={this.openModal}
                 disabled={!(image.metadata && image.metadata.v1)}
             >
-                View Docker File
+                View Dockerfile
             </button>
         );
         if (image.metadata) return button;
         return (
-            <Tooltip placement="top" overlay={<div>Docker file not available</div>}>
+            <Tooltip placement="top" overlay={<div>Dockerfile not available</div>}>
                 <div>{button}</div>
             </Tooltip>
         );
@@ -246,10 +246,10 @@ class ImageDetails extends Component {
         );
     };
 
-    renderDockerFileModal() {
+    renderDockerfileModal() {
         const { image } = this.props;
         if (!this.state.modalOpen || !image || !image.metadata || !image.metadata.v1) return null;
-        return <DockerFileModal data={image.metadata.v1.layers} onClose={this.closeModal} />;
+        return <DockerfileModal data={image.metadata.v1.layers} onClose={this.closeModal} />;
     }
 
     render() {
@@ -262,7 +262,7 @@ class ImageDetails extends Component {
             <div className="flex flex-col w-full bg-base-200 overflow-auto pb-5">
                 {this.renderOverview()}
                 {this.renderCVEs()}
-                {this.renderDockerFileModal()}
+                {this.renderDockerfileModal()}
             </div>
         );
         return (
