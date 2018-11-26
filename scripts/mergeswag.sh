@@ -9,34 +9,29 @@ set -euxo pipefail
 
 folder="$1"
 
-specs=$(echo "$folder/*.swagger.json" | sort)
-
-cur="$folder/cur.json"
-echo "{}" > "$cur"
-
-mongo="$folder/mongo.json"
-
-for next in $specs
-do
-    jq -s '.[0] * .[1]' "$cur" "$next" > "$mongo"
-    mv "$mongo" "$cur"
-done
-
 export TITLE="API Reference"
 export VERSION="1"
 export DESCRIPTION="API reference for the StackRox Security Platform"
 export CONTACT_EMAIL="support@stackrox.com"
 export LICENSE_NAME="All Rights Reserved"
 export LICENSE_URL="http://www.stackrox.com/"
-export HOST="localhost:3000"
 
-cat "$cur" \
-    | jq .'info.title=env.TITLE' \
-    | jq .'info.version=env.VERSION' \
-    | jq .'info.description=env.DESCRIPTION' \
-    | jq .'info.contact.email=env.CONTACT_EMAIL' \
-    | jq .'info.license.name=env.LICENSE_NAME' \
-    | jq .'info.license.url=env.LICENSE_URL' \
-    | jq .'host=env.HOST' \
-    > "$folder/swagger.json"
+metadata='{
+  "info": {
+    "title": env.TITLE,
+    "version": env.VERSION,
+    "description": env.DESCRIPTION,
+    "contact": {
+      "email": env.CONTACT_EMAIL
+    },
+    "license": {
+      "name": env.LICENSE_NAME,
+      "url": env.LICENSE_URL
+    }
+  }
+}'
 
+find "$folder/" -name '*.swagger.json' -print0 \
+	| sort -zr \
+	| xargs -0 jq -s 'reduce .[] as $item ('"$metadata"'; $item * .)' \
+		> "$folder/swagger.json"
