@@ -31,7 +31,7 @@ const formatResources = resource => {
 // JSON value name mapped to formatting for description page.
 const fieldsMap = {
     id: {
-        label: 'Id',
+        label: 'ID',
         formatValue: d => d
     },
     name: {

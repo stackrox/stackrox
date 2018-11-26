@@ -47,7 +47,7 @@ export const selectors = {
         }
     },
     policyDetailsPanel: {
-        idValueDiv: 'div.text-base-600:contains("Id") + div',
+        idValueDiv: 'div.text-base-600:contains("ID:") + div',
         enabledValueDiv: 'div.text-base-600:contains("Enabled") + div'
     },
     searchInput: '.react-select__input > input',
