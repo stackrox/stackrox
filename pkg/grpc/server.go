@@ -11,7 +11,6 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -92,7 +91,6 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 	u := []grpc.UnaryServerInterceptor{
 		contextutil.UnaryServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
 		grpc_prometheus.UnaryServerInterceptor,
-		grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
 		contextutil.UnaryServerInterceptor(
 			authn.ContextUpdater(a.config.IdentityExtractors...),
 			authn.NewAuthConfigChecker(a.config.AuthProviders)),
@@ -110,7 +108,6 @@ func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 	s := []grpc.StreamServerInterceptor{
 		contextutil.StreamServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
 		grpc_prometheus.StreamServerInterceptor,
-		grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
 		contextutil.StreamServerInterceptor(
 			authn.ContextUpdater(a.config.IdentityExtractors...),
 			authn.NewAuthConfigChecker(a.config.AuthProviders)),

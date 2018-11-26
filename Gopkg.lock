@@ -616,13 +616,12 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6e53093e9d05488697c242a7583629b797c92f65c2570315bc65ba2416ca3ca1"
+  digest = "1:c3e3170b4be575540c21aab612ea623f20de36cc17aacff7487cc213b3c668ca"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
   packages = [
     ".",
     "auth",
     "recovery",
-    "tags",
     "util/metautils",
   ]
   pruneopts = "NUT"
@@ -1577,7 +1576,6 @@
     "github.com/grpc-ecosystem/go-grpc-middleware",
     "github.com/grpc-ecosystem/go-grpc-middleware/auth",
     "github.com/grpc-ecosystem/go-grpc-middleware/recovery",
-    "github.com/grpc-ecosystem/go-grpc-middleware/tags",
     "github.com/grpc-ecosystem/go-grpc-middleware/util/metautils",
     "github.com/grpc-ecosystem/go-grpc-prometheus",
     "github.com/grpc-ecosystem/grpc-gateway/runtime",
