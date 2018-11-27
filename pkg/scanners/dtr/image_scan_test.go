@@ -63,44 +63,38 @@ const scanResultPayload = `[
  ]
 `
 
-func getExpectedImageScans() ([]*tagScanSummary, error) {
+func getExpectedImageScan() (*tagScanSummary, error) {
 	complete, err := time.Parse(time.RFC3339, "2017-11-16T21:39:07.676Z")
 	if err != nil {
 		return nil, err
 	}
-	return []*tagScanSummary{
-		{
-			Namespace:        "docker",
-			Tag:              "1.10",
-			RepoName:         "nginx",
-			LastScanStatus:   6,
-			CheckCompletedAt: complete,
-			LayerDetails: []*detailedSummary{
-				{
-					SHA256Sum: "ef24d3d19d383c557b3bb92c21cc1b3e0c4ca6735160b6d3c684fb92ba0b3569",
-					Components: []*component{
-						{
-							Component: "berkeleydb",
-							Version:   "5.3.28-9",
-							License: &license{
-								Name: "sleepycat",
-								Type: "copyleft",
-								URL:  "https://opensource.org/licenses/Sleepycat",
-							},
-							Vulnerabilities: []*vulnerabilityDetails{
-								{
-									Vulnerability: &vulnerability{
-										CVE:     "CVE-2016-0682",
-										CVSS:    6.9,
-										Summary: "Unspecified vulnerability in the DataStore component in Oracle Berkeley DB 11.2.5.0.32, 11.2.5.1.29, 11.2.5.2.42, 11.2.5.3.28, 12.1.6.0.35, and 12.1.6.1.26 allows local users to affect confidentiality, integrity, and availability via unknown vectors, a different vulnerability than CVE-2016-0689, CVE-2016-0692, CVE-2016-0694, and CVE-2016-3418.",
-									},
+	return &tagScanSummary{
+		CheckCompletedAt: complete,
+		LayerDetails: []*detailedSummary{
+			{
+				SHA256Sum: "ef24d3d19d383c557b3bb92c21cc1b3e0c4ca6735160b6d3c684fb92ba0b3569",
+				Components: []*component{
+					{
+						Component: "berkeleydb",
+						Version:   "5.3.28-9",
+						License: &license{
+							Name: "sleepycat",
+							Type: "copyleft",
+							URL:  "https://opensource.org/licenses/Sleepycat",
+						},
+						Vulnerabilities: []*vulnerabilityDetails{
+							{
+								Vulnerability: &vulnerability{
+									CVE:     "CVE-2016-0682",
+									CVSS:    6.9,
+									Summary: "Unspecified vulnerability in the DataStore component in Oracle Berkeley DB 11.2.5.0.32, 11.2.5.1.29, 11.2.5.2.42, 11.2.5.3.28, 12.1.6.0.35, and 12.1.6.1.26 allows local users to affect confidentiality, integrity, and availability via unknown vectors, a different vulnerability than CVE-2016-0689, CVE-2016-0692, CVE-2016-0694, and CVE-2016-3418.",
 								},
-								{
-									Vulnerability: &vulnerability{
-										CVE:     "CVE-2016-0689",
-										CVSS:    6.9,
-										Summary: "Unspecified vulnerability in the DataStore component in Oracle Berkeley DB 11.2.5.0.32, 11.2.5.1.29, 11.2.5.2.42, 11.2.5.3.28, 12.1.6.0.35, and 12.1.6.1.26 allows local users to affect confidentiality, integrity, and availability via unknown vectors, a different vulnerability than CVE-2016-0682, CVE-2016-0692, CVE-2016-0694, and CVE-2016-3418.",
-									},
+							},
+							{
+								Vulnerability: &vulnerability{
+									CVE:     "CVE-2016-0689",
+									CVSS:    6.9,
+									Summary: "Unspecified vulnerability in the DataStore component in Oracle Berkeley DB 11.2.5.0.32, 11.2.5.1.29, 11.2.5.2.42, 11.2.5.3.28, 12.1.6.0.35, and 12.1.6.1.26 allows local users to affect confidentiality, integrity, and availability via unknown vectors, a different vulnerability than CVE-2016-0682, CVE-2016-0692, CVE-2016-0694, and CVE-2016-3418.",
 								},
 							},
 						},
@@ -115,7 +109,7 @@ func TestParseImageScan(t *testing.T) {
 	actualScans, err := parseDTRImageScans([]byte(scanResultPayload))
 	require.Nil(t, err)
 
-	expectedScans, err := getExpectedImageScans()
+	expectedScan, err := getExpectedImageScan()
 	assert.Nil(t, err)
-	assert.Equal(t, expectedScans, actualScans)
+	assert.Equal(t, expectedScan, actualScans[0])
 }

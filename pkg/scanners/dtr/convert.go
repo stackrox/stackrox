@@ -1,6 +1,8 @@
 package dtr
 
 import (
+	"sort"
+
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/scans"
@@ -54,20 +56,41 @@ func convertLayers(layerDetails []*detailedSummary) []*v1.ImageScanComponent {
 	return components
 }
 
-func convertTagScanSummariesToImageScans(server string, tagScanSummaries []*tagScanSummary) []*v1.ImageScan {
-	imageScans := make([]*v1.ImageScan, 0, len(tagScanSummaries))
-	for _, tagScan := range tagScanSummaries {
-		convertedLayers := convertLayers(tagScan.LayerDetails)
-
-		completedAt, err := ptypes.TimestampProto(tagScan.CheckCompletedAt)
-		if err != nil {
-			log.Error(err)
-		}
-
-		imageScans = append(imageScans, &v1.ImageScan{
-			ScanTime:   completedAt,
-			Components: convertedLayers,
-		})
+func compareComponent(c1, c2 *v1.ImageScanComponent) int {
+	if c1.GetName() < c2.GetName() {
+		return -1
+	} else if c1.GetName() > c2.GetName() {
+		return 1
 	}
-	return imageScans
+	if c1.GetVersion() < c2.GetVersion() {
+		return -1
+	} else if c1.GetVersion() > c2.GetVersion() {
+		return 1
+	}
+	return 0
+}
+
+func convertTagScanSummaryToImageScan(tagScanSummary *tagScanSummary) *v1.ImageScan {
+	convertedLayers := convertLayers(tagScanSummary.LayerDetails)
+	completedAt, err := ptypes.TimestampProto(tagScanSummary.CheckCompletedAt)
+	if err != nil {
+		log.Error(err)
+	}
+
+	// Deduplicate the components by sorting first then iterating
+	sort.SliceStable(convertedLayers, func(i, j int) bool {
+		return compareComponent(convertedLayers[i], convertedLayers[j]) <= 0
+	})
+	uniqueLayers := convertedLayers[:1]
+	for i := 1; i < len(convertedLayers); i++ {
+		prevComponent, currComponent := convertedLayers[i-1], convertedLayers[i]
+		if compareComponent(prevComponent, currComponent) == 0 {
+			continue
+		}
+		uniqueLayers = append(uniqueLayers, currComponent)
+	}
+	return &v1.ImageScan{
+		ScanTime:   completedAt,
+		Components: convertedLayers,
+	}
 }

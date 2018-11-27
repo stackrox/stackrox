@@ -121,24 +121,16 @@ func TestConvertLayers(t *testing.T) {
 
 func TestConvertTagScanSummariesToImageScans(t *testing.T) {
 	dockerLayers, expectedComponents := getTestLayers()
-	tagScanSummaries := []*tagScanSummary{
-		{
-			Namespace:        "docker",
-			RepoName:         "nginx",
-			Tag:              "latest",
-			LastScanStatus:   checking,
-			LayerDetails:     dockerLayers,
-			CheckCompletedAt: time.Unix(0, 1000),
-		},
+	tagScanSummary := &tagScanSummary{
+		LayerDetails:     dockerLayers,
+		CheckCompletedAt: time.Unix(0, 1000),
 	}
 	protoTime, _ := ptypes.TimestampProto(time.Unix(0, 1000))
-	expectedScans := []*v1.ImageScan{
-		{
-			Components: expectedComponents,
-			ScanTime:   protoTime,
-		},
+	expectedScan := &v1.ImageScan{
+		Components: expectedComponents,
+		ScanTime:   protoTime,
 	}
 
-	actualScans := convertTagScanSummariesToImageScans("registry", tagScanSummaries)
-	assert.Equal(t, expectedScans, actualScans)
+	actualScans := convertTagScanSummaryToImageScan(tagScanSummary)
+	assert.Equal(t, expectedScan, actualScans)
 }

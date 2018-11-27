@@ -113,14 +113,14 @@ func (suite *DTRSuite) TestGetScans() {
 			Tag:      "1.10",
 		},
 	}
-	scans, err := d.GetScans(image)
+	scans, err := d.GetLastScan(image)
 	suite.NoError(err)
 
-	expectedScanSummaries, err := getExpectedImageScans()
+	expectedScanSummary, err := getExpectedImageScan()
 	suite.NoError(err)
 
 	// convert scans here. It relies on converting the scan but is not the conversion test
-	expectedScans := convertTagScanSummariesToImageScans(d.conf.Endpoint, expectedScanSummaries)
+	expectedScans := convertTagScanSummaryToImageScan(expectedScanSummary)
 	suite.Equal(expectedScans, scans)
 }
 
@@ -137,10 +137,10 @@ func (suite *DTRSuite) TestGetLastScan() {
 	scan, err := d.GetLastScan(image)
 	suite.NoError(err)
 
-	expectedScanSummaries, err := getExpectedImageScans()
+	expectedScanSummary, err := getExpectedImageScan()
 	suite.NoError(err)
 
 	// convert scans here. It relies on converting the scan but is not the conversion test
-	expectedScans := convertTagScanSummariesToImageScans(d.conf.Endpoint, expectedScanSummaries)
-	suite.Equal(expectedScans[0], scan)
+	expectedScan := convertTagScanSummaryToImageScan(expectedScanSummary)
+	suite.Equal(expectedScan, scan)
 }

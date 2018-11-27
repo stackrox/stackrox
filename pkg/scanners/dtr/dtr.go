@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"sort"
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
@@ -115,8 +114,8 @@ func (d *dtr) sendRequest(client *http.Client, method, urlPrefix string) ([]byte
 	return body, nil
 }
 
-// GetScan takes in an id and returns the image scan for that id if applicable
-func (d *dtr) GetScans(image *v1.Image) ([]*v1.ImageScan, error) {
+// getScan takes in an id and returns the image scan for that id if applicable
+func (d *dtr) getScan(image *v1.Image) (*v1.ImageScan, error) {
 	if image == nil || image.GetName().GetRemote() == "" || image.GetName().GetTag() == "" {
 		return nil, nil
 	}
@@ -140,9 +139,17 @@ func (d *dtr) GetScans(image *v1.Image) ([]*v1.ImageScan, error) {
 	if len(scans) == 0 {
 		return nil, fmt.Errorf("expected to receive at least one scan for %v", image.String())
 	}
-	// After should sort in descending order based on completion
-	sort.SliceStable(scans, func(i, j int) bool { return scans[i].CheckCompletedAt.After(scans[j].CheckCompletedAt) })
-	return convertTagScanSummariesToImageScans(d.conf.Endpoint, scans), nil
+
+	// Find the last scan time
+	lastScanTime := scans[0].CheckCompletedAt
+	scanIdx := 0
+	for i, s := range scans {
+		if s.CheckCompletedAt.After(lastScanTime) {
+			lastScanTime = s.CheckCompletedAt
+			scanIdx = i
+		}
+	}
+	return convertTagScanSummaryToImageScan(scans[scanIdx]), nil
 }
 
 func errorFromStatusCode(status int) error {
@@ -181,14 +188,7 @@ func (d *dtr) Test() error {
 // GetLastScan retrieves the most recent scan
 func (d *dtr) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 	log.Infof("Getting latest scan for image %v", image.GetName().GetFullName())
-	imageScans, err := d.GetScans(image)
-	if err != nil {
-		return nil, err
-	}
-	if len(imageScans) == 0 {
-		return nil, fmt.Errorf("no scans were found for image %v", image.GetName().GetFullName())
-	}
-	return imageScans[0], nil
+	return d.getScan(image)
 }
 
 // Match decides if the image is contained within this registry

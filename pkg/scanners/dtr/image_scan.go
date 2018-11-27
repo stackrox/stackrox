@@ -6,40 +6,6 @@ import (
 	"time"
 )
 
-type scanStatus int
-
-// Do not reorder
-const (
-	failed scanStatus = iota
-	unscanned
-	scanning
-	pending
-	scanned
-	checking
-	completed
-)
-
-func (s scanStatus) String() string {
-	switch s {
-	case failed:
-		return "failed"
-	case unscanned:
-		return "unscanned"
-	case scanning:
-		return "scanning"
-	case pending:
-		return "pending"
-	case scanned:
-		return "scanned"
-	case checking:
-		return "checking"
-	case completed:
-		return "completed"
-	default:
-		return "unknown"
-	}
-}
-
 func parseDTRImageScans(data []byte) ([]*tagScanSummary, error) {
 	var scans []*tagScanSummary
 	err := json.Unmarshal(data, &scans)
@@ -59,12 +25,7 @@ func parseDTRImageScanErrors(data []byte) (scanErrors, error) {
 // tagScanSummary implements the results of scan from DTR
 // see https://docs.docker.com/datacenter/dtr/2.3/reference/api/
 type tagScanSummary struct {
-	Namespace string `json:"namespace"`
-	RepoName  string `json:"reponame"`
-	Tag       string `json:"tag"`
-
 	CheckCompletedAt time.Time          `json:"check_completed_at"`
-	LastScanStatus   scanStatus         `json:"last_scan_status"`
 	LayerDetails     []*detailedSummary `json:"layer_details"`
 }
 
