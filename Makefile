@@ -10,7 +10,7 @@ all: deps style test image
 ## Style ##
 ###########
 .PHONY: style
-style: fmt imports lint vet blanks crosspkgimports ui-lint qa-tests-style
+style: fmt imports lint vet blanks crosspkgimports no-large-files ui-lint qa-tests-style
 
 .PHONY: qa-tests-style
 qa-tests-style:
@@ -52,6 +52,11 @@ endif
 crosspkgimports:
 	@echo "+ $@"
 	@go run $(BASE_DIR)/tools/crosspkgimports/verify.go $(shell go list -e ./... | grep -v generated | grep -v vendor)
+
+.PHONY: no-large-files
+no-large-files:
+	@echo "+ $@"
+	@$(BASE_DIR)/tools/large-git-files/find.sh
 
 .PHONY: lint
 lint:
