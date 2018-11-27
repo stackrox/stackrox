@@ -2,7 +2,6 @@ package store
 
 import (
 	"bytes"
-	"crypto/sha1"
 	"fmt"
 	"time"
 
@@ -125,7 +124,5 @@ func readFlow(bucket *bolt.Bucket, id []byte) (flow *v1.NetworkFlow, err error) 
 }
 
 func getID(props *v1.NetworkFlowProperties) []byte {
-	hashed := sha1.New()
-	fmt.Fprintf(hashed, "%s:%s:%x:%x", props.GetSrcDeploymentId(), props.GetDstDeploymentId(), props.GetDstPort(), props.GetL4Protocol())
-	return hashed.Sum(nil)
+	return []byte(fmt.Sprintf("%s:%s:%d:%d", props.GetSrcDeploymentId(), props.GetDstDeploymentId(), props.GetDstPort(), props.GetL4Protocol()))
 }

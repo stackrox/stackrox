@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -78,5 +79,17 @@ func BenchmarkLeveledFlows(b *testing.B) {
 		b.Run(fmt.Sprintf("%d-%d", c.preload, c.postload), func(b *testing.B) {
 			benchmarkUpdate(b, c.preload, c.postload)
 		})
+	}
+}
+
+func BenchmarkGetID(b *testing.B) {
+	props := &v1.NetworkFlowProperties{
+		SrcDeploymentId: uuid.NewV4().String(),
+		DstDeploymentId: uuid.NewV4().String(),
+		DstPort:         9999,
+		L4Protocol:      v1.L4Protocol_L4_PROTOCOL_UDP,
+	}
+	for i := 0; i < b.N; i++ {
+		getID(props)
 	}
 }
