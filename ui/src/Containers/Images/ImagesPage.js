@@ -17,7 +17,7 @@ import { actions as imagesActions, types } from 'reducers/images';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
-import { sortNumber, sortDate } from 'sorters/sorters';
+import { sortValue, sortDate } from 'sorters/sorters';
 import ImageDetails from 'Containers/Images/ImageDetails';
 import Panel from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
@@ -111,7 +111,7 @@ class ImagesPage extends Component {
                 headerClassName: `w-24 ${defaultHeaderClassName}`,
                 className: `w-24 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ original }) => original.components || 'N/A',
-                sortMethod: sortNumber
+                sortMethod: sortValue
             },
             {
                 accessor: 'cves',
@@ -119,7 +119,7 @@ class ImagesPage extends Component {
                 headerClassName: `w-12 ${defaultHeaderClassName}`,
                 className: `w-12 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ original }) => original.cves || 'N/A',
-                sortMethod: sortNumber
+                sortMethod: sortValue
             },
             {
                 accessor: 'fixableCves',
@@ -127,7 +127,7 @@ class ImagesPage extends Component {
                 headerClassName: `w-16 ${defaultHeaderClassName}`,
                 className: `w-16 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ original }) => original.fixableCves || 'N/A',
-                sortMethod: sortNumber
+                sortMethod: sortValue
             }
         ];
         const { images, selectedImage } = this.props;

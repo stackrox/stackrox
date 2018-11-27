@@ -30,14 +30,15 @@ const sortSeverity = (a, b) => {
 };
 
 /**
- * Sort Numbers
+ * Sort Values (Numbers or Strings)
  * @returns {number}
  */
-const sortNumber = (a, b) => {
-    if (a === b) return 0;
+const sortValue = (a, b) => {
     if (a === undefined) return -1;
     if (b === undefined) return 1;
-    return a - b;
+    if (a < b) return -1;
+    if (a > b) return 1;
+    return 0;
 };
 
 /**
@@ -48,7 +49,20 @@ const sortNumber = (a, b) => {
  */
 const sortNumberByKey = key => (a, b) => {
     const { aValue, bValue } = flattenObjectProperties(a, b, key);
-    return sortNumber(aValue, bValue);
+    return sortValue(aValue, bValue);
+};
+
+/**
+ * Sort Lifecycle
+ * @param a
+ * @param b
+ * @returns {string}
+ */
+
+const sortLifecycle = (a, b) => {
+    const aValue = a[0];
+    const bValue = b[0];
+    return sortValue(aValue, bValue);
 };
 
 /**
@@ -63,4 +77,4 @@ const sortDate = (a, b) => {
     if (bDate === undefined) return 1;
     return aDate - bDate;
 };
-export { sortSeverity, sortNumber, sortNumberByKey, sortDate };
+export { sortSeverity, sortValue, sortNumberByKey, sortLifecycle, sortDate };

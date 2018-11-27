@@ -17,7 +17,7 @@ import Loader from 'Components/Loader';
 import TabContent from 'Components/TabContent';
 import TablePagination from 'Components/TablePagination';
 
-import { sortNumber, sortDate } from 'sorters/sorters';
+import { sortValue, sortDate } from 'sorters/sorters';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import RiskDetails from './RiskDetails';
@@ -120,7 +120,7 @@ class RiskPage extends Component {
                 Header: 'Priority',
                 accessor: 'priority',
                 Cell: ({ value }) => <span>{value}</span>,
-                sortMethod: sortNumber
+                sortMethod: sortValue
             }
         ];
 

@@ -22,7 +22,7 @@ import {
     rtTrActionsClassName
 } from 'Components/Table';
 import { lifecycleStageLabels, severityLabels } from 'messages/common';
-import { sortSeverity } from 'sorters/sorters';
+import { sortSeverity, sortLifecycle } from 'sorters/sorters';
 
 const getSeverityClassName = severity => {
     switch (severity) {
@@ -158,14 +158,14 @@ class TableContents extends Component {
             },
             {
                 Header: 'Lifecycle',
-                accessor: 'lifecycle_stages',
+                accessor: 'lifecycleStages',
                 className: `${wrapClassName} ${defaultColumnClassName}`,
                 headerClassName: `${defaultHeaderClassName}`,
                 Cell: ({ original }) => {
                     const { lifecycleStages } = original;
                     return lifecycleStages.map(stage => lifecycleStageLabels[stage]).join(', ');
                 },
-                sortable: false
+                sortMethod: sortLifecycle
             },
             {
                 Header: 'Severity',

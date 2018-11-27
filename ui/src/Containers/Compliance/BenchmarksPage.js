@@ -8,7 +8,7 @@ import { actions as benchmarkActions, types } from 'reducers/benchmarks';
 import dateFns from 'date-fns';
 import dateTimeFormat from 'constants/dateTimeFormat';
 import { ClipLoader } from 'react-spinners';
-import { sortNumber } from 'sorters/sorters';
+import { sortValue } from 'sorters/sorters';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Table, {
@@ -251,7 +251,7 @@ class BenchmarksPage extends Component {
                 headerClassName: `w-12 ${defaultHeaderClassName}`,
                 className: `w-12 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ original }) => original.aggregatedResults.PASS || 0,
-                sortMethod: sortNumber
+                sortMethod: sortValue
             },
             {
                 accessor: 'aggregatedResults.INFO',
@@ -259,7 +259,7 @@ class BenchmarksPage extends Component {
                 headerClassName: `w-12 ${defaultHeaderClassName}`,
                 className: `w-12 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ original }) => original.aggregatedResults.INFO || 0,
-                sortMethod: sortNumber
+                sortMethod: sortValue
             },
             {
                 accessor: 'aggregatedResults.WARN',
@@ -267,7 +267,7 @@ class BenchmarksPage extends Component {
                 headerClassName: `w-12 ${defaultHeaderClassName}`,
                 className: `w-12 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ original }) => original.aggregatedResults.WARN || 0,
-                sortMethod: sortNumber
+                sortMethod: sortValue
             },
             {
                 accessor: 'aggregatedResults.NOTE',
@@ -275,7 +275,7 @@ class BenchmarksPage extends Component {
                 headerClassName: `w-12 ${defaultHeaderClassName}`,
                 className: `w-12 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ original }) => original.aggregatedResults.NOTE || 0,
-                sortMethod: sortNumber
+                sortMethod: sortValue
             }
         ];
 
