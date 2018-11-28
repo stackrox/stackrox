@@ -18,8 +18,21 @@ if you're managing multiple versions of Node.js on your machine, consider using 
 
 ### Dev Env Setup
 
-Follow the deployment steps from the parent [README.md](../README.md#how-to-deploy).
-Then execute `make -C ui start` which will start a dev server to serve UI.
+_ Before starting, make sure you have the above tools installed on your machine and you've run `yarn install` to download dependencies _
+
+The front end development environment consists of a local static file server used to serve static UI assets and a remote instance of StackRox for data and API calls. Set up your environment as follows:
+
+1. ** Provision back end infrastructure ** - Navigate to the [Stackrox setup tool](https://setup.rox.systems/). This tool lets you provision a temporary, self destructing infrastructure in GCloud you will connect to during your development session. Hit the `+` button near the top left. Use the default form settings and provide a "Setup Name" (e.g. `yourname-dev`). Choose the number of hours you would like the cluster to remain active (This should be set to the expected hours of your development session). After you click `run` it may take up to 5 minutes to provision the new cluster. Once the status of your cluster shows as `The cluster is ready`, copy the name of the 'Resource Group' and move on to step 2.  
+
+2. ** Connect local machine to infrastructure ** - Your local machine needs to be made aware of the cloud infrastructure you just created. run `yarn run connect [rg-name]` where `[rg-name]` is the name found in the 'Resource Group` you created in the previous step. This name can be found by going to  https://setup.rox.systems/ and selecting your setup name from the dropdown list.
+
+3. ** Deploy StackRox ** - Deploy a fresh copy of the StackRox software to your new infrastructure by running `yarn run deploy`. During the deployment process, you may be asked for your Dockerhub credentials. In addition to deploying, this command will set up port forwarding from port 8000 to 3000 on your machine.
+
+4. ** Run local server ** - Start your local server by running `yarn start`. This will open your web browser to [https://localhost:3000](https://localhost:3000)
+
+_ ** If your machine goes into sleep mode, you may lose the port forwarding set up during the deploy step. If this happens, run `yarn run forward` to restart port forwarding. _
+
+
 
 ### IDEs
 

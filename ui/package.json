@@ -70,7 +70,10 @@
     "test-e2e-local": "cypress run",
     "test-e2e-ci": "cypress run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.json",
     "eject": "react-scripts eject",
-    "postinstall": "node ./scripts/spdy-issue47-quickfix.js"
+    "postinstall": "node ./scripts/spdy-issue47-quickfix.js",
+    "connect": "../scripts/connect-ui.sh ${1}",
+    "deploy": "../deploy/k8s/deploy.sh",
+    "forward": "../scripts/port-forward-ui.sh"
   },
   "proxy": {
     "^/v1": {
