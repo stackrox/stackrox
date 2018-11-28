@@ -27,7 +27,8 @@ export const types = {
     UPDATE_WIZARD_STATE: 'clusters/UPDATE_WIZARD_STATE',
     FINISH_WIZARD: 'clusters/FINISH_WIZARD',
     SAVE_CLUSTER: createFetchingActionTypes('clusters/SAVE_CLUSTER'),
-    DELETE_CLUSTERS: 'clusters/DELETE_CLUSTERS'
+    DELETE_CLUSTERS: 'clusters/DELETE_CLUSTERS',
+    DOWNLOAD_CLUSTER_YAML: 'clusters/DOWNLOAD_CLUSTER_YAML'
 };
 
 // Actions
@@ -42,20 +43,25 @@ export const actions = {
     updateWizardState: (page, clusterId) => ({ type: types.UPDATE_WIZARD_STATE, page, clusterId }),
     finishWizard: () => ({ type: types.FINISH_WIZARD }),
     saveCluster: createFetchingActions(types.SAVE_CLUSTER),
-    deleteClusters: clusterIds => ({ type: types.DELETE_CLUSTERS, clusterIds })
+    deleteClusters: clusterIds => ({ type: types.DELETE_CLUSTERS, clusterIds }),
+    downloadClusterYaml: clusterId => ({ type: types.DOWNLOAD_CLUSTER_YAML, clusterId })
 };
 
 // Reducers
 
-const byId = (state = {}, action) => {
-    if (action.response && action.response.entities && action.response.entities.cluster) {
-        const clustersById = action.response.entities.cluster;
-        const newState = mergeEntitiesById(state, clustersById);
-        if (action.type === types.FETCH_CLUSTERS.SUCCESS) {
-            const onlyExisting = pick(newState, Object.keys(clustersById));
-            return isEqual(onlyExisting, state) ? state : onlyExisting;
+const byId = (state = {}, { type, response }) => {
+    if (type === types.FETCH_CLUSTERS.SUCCESS) {
+        if (!response.entities.cluster) {
+            return {};
         }
-        return newState;
+        const clustersById = response.entities.cluster;
+        const newState = mergeEntitiesById(state, clustersById);
+        const onlyExisting = pick(newState, Object.keys(clustersById));
+        return isEqual(onlyExisting, state) ? state : onlyExisting;
+    }
+    if (type === types.SAVE_CLUSTER.SUCCESS || type === types.FETCH_CLUSTER.SUCCESS) {
+        const clustersById = response.entities.cluster;
+        return mergeEntitiesById(state, clustersById);
     }
     return state;
 };
@@ -76,7 +82,7 @@ const selectedCluster = (state = null, action) => {
     return state;
 };
 
-const wizard = (state = null, { type, clusterId, page, response }) => {
+const wizard = (state = null, { type, clusterId, page }) => {
     switch (type) {
         case types.START_WIZARD:
             return { page: wizardPages.FORM, clusterId };
@@ -84,9 +90,6 @@ const wizard = (state = null, { type, clusterId, page, response }) => {
             return { page, clusterId };
         case types.FINISH_WIZARD:
             return null;
-        case types.FETCH_CLUSTERS.SUCCESS:
-            // check that wizard cluster is still there
-            return state && state.clusterId && !response.entities.cluster[clusterId] ? null : state;
         default:
             return state;
     }

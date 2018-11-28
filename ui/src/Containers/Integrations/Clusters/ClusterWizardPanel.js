@@ -2,13 +2,10 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
-import { ToastContainer, toast } from 'react-toastify';
 import * as Icon from 'react-feather';
-import Raven from 'raven-js';
 
 import { actions, wizardPages, clusterTypes } from 'reducers/clusters';
 import { selectors } from 'reducers';
-import { downloadClusterYaml } from 'services/ClustersService';
 
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
@@ -26,6 +23,7 @@ class ClusterWizardPanel extends Component {
         currentPage: PropTypes.oneOf(Object.values(wizardPages)).isRequired,
         onFinish: PropTypes.func.isRequired,
         onNext: PropTypes.func.isRequired,
+        onDownload: PropTypes.func.isRequired,
         metadata: PropTypes.shape({ version: PropTypes.string })
     };
 
@@ -40,22 +38,16 @@ class ClusterWizardPanel extends Component {
         this.props.onFinish();
     }
 
-    onDownload = () => {
-        downloadClusterYaml(this.props.cluster.id).catch(error => {
-            toast('Error while downloading a file');
-            Raven.captureException(error);
-        });
-    };
-
     renderPanelButtons() {
-        switch (this.props.currentPage) {
+        const { currentPage, onNext, onFinish } = this.props;
+        switch (currentPage) {
             case wizardPages.FORM:
                 return (
                     <PanelButton
                         icon={<Icon.ArrowRight className="h-4 w-4" />}
                         text="Next"
                         className="btn btn-primary"
-                        onClick={this.props.onNext}
+                        onClick={onNext}
                     />
                 );
             case wizardPages.DEPLOYMENT:
@@ -64,50 +56,47 @@ class ClusterWizardPanel extends Component {
                         icon={<Icon.Check className="h-4 w-4" />}
                         text="Finish"
                         className="btn btn-success"
-                        onClick={this.props.onFinish}
+                        onClick={onFinish}
                     />
                 );
             default:
-                throw new Error(`Unknown cluster wizard page ${this.props.currentPage}`);
+                throw new Error(`Unknown cluster wizard page ${currentPage}`);
         }
     }
 
     renderPage() {
-        switch (this.props.currentPage) {
+        const { currentPage, clusterType, cluster, metadata, onDownload } = this.props;
+        switch (currentPage) {
             case wizardPages.FORM:
                 return (
                     <ClusterEditForm
-                        clusterType={this.props.clusterType}
-                        initialValues={this.props.cluster}
-                        metadata={this.props.metadata}
+                        clusterType={clusterType}
+                        initialValues={cluster}
+                        metadata={metadata}
                     />
                 );
             case wizardPages.DEPLOYMENT:
                 return (
                     <ClusterDeploymentPage
-                        onFileDownload={this.onDownload}
-                        clusterCheckedIn={!!this.props.cluster.lastContact}
+                        onFileDownload={onDownload}
+                        clusterCheckedIn={!!(cluster && cluster.lastContact)}
                     />
                 );
             default:
-                throw new Error(`Unknown cluster wizard page ${this.props.currentPage}`);
+                throw new Error(`Unknown cluster wizard page ${currentPage}`);
         }
     }
 
     render() {
-        const clusterName = this.props.cluster && this.props.cluster.name;
+        const { cluster, onFinish } = this.props;
+        const clusterName = cluster && cluster.name;
         return (
             <div className="w-full">
-                <ToastContainer
-                    toastClassName="font-sans text-base-600 text-base-100 font-600 bg-black"
-                    hideProgressBar
-                    autoClose={3000}
-                />
                 <Panel
                     header={clusterName || 'New Cluster'}
                     buttons={this.renderPanelButtons()}
                     className="h-full w-full"
-                    onClose={this.props.onFinish}
+                    onClose={onFinish}
                 >
                     {this.renderPage()}
                 </Panel>
@@ -130,7 +119,8 @@ const mapStateToProps = createStructuredSelector({
 const mapDispatchToProps = {
     onFinish: actions.finishWizard,
     onNext: actions.nextWizardPage,
-    onPrev: actions.prevWizardPage
+    onPrev: actions.prevWizardPage,
+    onDownload: actions.downloadClusterYaml
 };
 
 export default connect(

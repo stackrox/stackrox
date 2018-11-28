@@ -57,6 +57,17 @@ function* deleteClusters({ clusterIds }) {
     }
 }
 
+function* downloadClusterYaml() {
+    try {
+        const clusterId = yield select(selectors.getWizardClusterId);
+        yield call(service.downloadClusterYaml, clusterId);
+    } catch (error) {
+        yield put(notificationActions.addNotification('Error while downloading a file'));
+        yield put(notificationActions.removeOldestNotification());
+        Raven.captureException(error);
+    }
+}
+
 function* watchLocation() {
     const effects = [dashboardPath, integrationsPath, policiesPath, compliancePath].map(path =>
         takeEveryNewlyMatchedLocation(path, getClusters)
@@ -79,6 +90,10 @@ function* pollCluster(clusterId) {
     }
 }
 
+function* watchDownloadRequest() {
+    yield takeLatest(types.DOWNLOAD_CLUSTER_YAML, downloadClusterYaml);
+}
+
 function* watchWizard() {
     while (true) {
         const action = yield take([types.NEXT_WIZARD_PAGE, types.PREV_WIZARD_PAGE]);
@@ -88,6 +103,7 @@ function* watchWizard() {
         if (action.type === types.NEXT_WIZARD_PAGE && currentPage === wizardPages.FORM) {
             const formData = yield select(getFormValues(clusterFormId));
             const savedClusterId = yield call(saveCluster, { id: clusterId, ...formData });
+            yield fork(getClusters);
             if (savedClusterId) {
                 yield put(actions.updateWizardState(wizardPages.DEPLOYMENT, savedClusterId));
                 yield race([
@@ -109,6 +125,7 @@ export default function* clusters() {
         fork(watchLocation),
         fork(watchFetchRequest),
         fork(watchDeleteRequest),
-        fork(watchWizard)
+        fork(watchWizard),
+        fork(watchDownloadRequest)
     ]);
 }
