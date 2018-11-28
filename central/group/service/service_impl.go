@@ -74,7 +74,10 @@ func (s *serviceImpl) CreateGroup(ctx context.Context, group *v1.Group) (*v1.Emp
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 	err := s.groupStore.Add(group)
-	return nil, err
+	if err != nil {
+		return nil, err
+	}
+	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) UpdateGroup(ctx context.Context, group *v1.Group) (*v1.Empty, error) {
@@ -82,10 +85,16 @@ func (s *serviceImpl) UpdateGroup(ctx context.Context, group *v1.Group) (*v1.Emp
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
 	err := s.groupStore.Update(group)
-	return nil, err
+	if err != nil {
+		return nil, err
+	}
+	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) DeleteGroup(ctx context.Context, props *v1.GroupProperties) (*v1.Empty, error) {
 	err := s.groupStore.Remove(props)
-	return nil, err
+	if err != nil {
+		return nil, err
+	}
+	return &v1.Empty{}, nil
 }
