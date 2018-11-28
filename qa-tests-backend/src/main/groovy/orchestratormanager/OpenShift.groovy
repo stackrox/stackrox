@@ -366,13 +366,13 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
         println "${networkPolicy.metadata.name}: NetworkPolicy created:"
         println YamlGenerator.toYaml(networkPolicy)
         io.fabric8.kubernetes.api.model.networking.NetworkPolicy createdPolicy =
-                osClient.apps().networkPolicies().inNamespace(policy.namespace).createOrReplace(networkPolicy)
+                osClient.extensions().networkPolicies().inNamespace(policy.namespace).createOrReplace(networkPolicy)
         policy.uid = createdPolicy.metadata.uid
         return createdPolicy.metadata.uid
     }
 
     boolean deleteNetworkPolicy(NetworkPolicy policy) {
-        Boolean success = osClient.apps()
+        Boolean success = osClient.extensions()
                 .networkPolicies().
                 inNamespace(policy.namespace)
                 .withName(policy.name)

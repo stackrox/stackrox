@@ -590,6 +590,35 @@ jobs:
       - *waitForUIDevServer
       - *runUIE2E
 
+      - *restoreGradle
+      - run:
+          name: QA Automation Platform
+          command: |
+            if .circleci/pr_has_label.sh ci-no-qa-tests; then
+              echo "Skipping QA tests because of the presence of the ci-no-qa-tests label..."
+            else
+              export CLUSTER=OPENSHIFT
+              export HOSTNAME=localhost
+              export PORT=${LOCAL_PORT}
+              if [ "${CIRCLE_BRANCH}" = "master" ]; then
+                echo "On master, running all QA tests..."
+                make -C qa-tests-backend test
+              elif .circleci/pr_has_label.sh ci-all-qa-tests; then
+                echo "ci-all-qa-tests label was specified, so running all QA tests..."
+                make -C qa-tests-backend test
+              else
+                echo "On a PR branch, running BAT tests only..."
+                make -C qa-tests-backend bat-test
+              fi
+            fi
+
+      - store_test_results:
+          path: qa-tests-backend/build/test-results/test
+
+      - store_artifacts:
+          path: ./qa-tests-backend/build/spock-reports
+          destination: qa-test-report
+
       - *collectImbuedUILogs
       - *storeImbuedUILogs
 
