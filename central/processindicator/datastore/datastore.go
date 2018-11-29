@@ -10,6 +10,7 @@ import (
 )
 
 // DataStore is an intermediary to PolicyStorage.
+//go:generate mockgen-wrapper DataStore
 type DataStore interface {
 	Search(q *v1.Query) ([]pkgSearch.Result, error)
 	SearchRawProcessIndicators(q *v1.Query) ([]*v1.ProcessIndicator, error)

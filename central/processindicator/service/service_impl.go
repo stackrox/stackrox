@@ -72,7 +72,8 @@ func sortIndicators(indicators []*v1.ProcessIndicator) {
 	})
 }
 
-func indicatorsToGroupedResponses(indicators []*v1.ProcessIndicator) []*v1.ProcessNameGroup {
+// IndicatorsToGroupedResponses rearranges process indicator storage items into API process name group items.
+func IndicatorsToGroupedResponses(indicators []*v1.ProcessIndicator) []*v1.ProcessNameGroup {
 	processGroups := make(map[string]map[string][]*v1.ProcessIndicator)
 	processNameToContainers := make(map[string]map[string]struct{})
 	for _, i := range indicators {
@@ -119,6 +120,6 @@ func (s *serviceImpl) GetGroupedProcessByDeployment(_ context.Context, req *v1.G
 	}
 
 	return &v1.GetGroupedProcessesResponse{
-		Groups: indicatorsToGroupedResponses(indicators),
+		Groups: IndicatorsToGroupedResponses(indicators),
 	}, nil
 }

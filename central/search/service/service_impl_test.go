@@ -13,7 +13,7 @@ import (
 )
 
 func TestSearchCategoryToResourceMap(t *testing.T) {
-	for _, searchCategory := range getAllSearchableCategories() {
+	for _, searchCategory := range GetAllSearchableCategories() {
 		_, ok := searchCategoryToResource[searchCategory]
 		// This is a programming error. If you see this, add the new category you've added to the
 		// searchCategoryToResource map!
@@ -27,7 +27,7 @@ func TestSearchFuncs(t *testing.T) {
 
 	s := New(alertMocks.NewMockDataStore(mockCtrl), deploymentMocks.NewMockDataStore(mockCtrl), imageMocks.NewMockDataStore(mockCtrl), policyMocks.NewMockDataStore(gomock.NewController(t)), secretMocks.NewMockDataStore(mockCtrl))
 	searchFuncMap := s.(*serviceImpl).getSearchFuncs()
-	for _, searchCategory := range getAllSearchableCategories() {
+	for _, searchCategory := range GetAllSearchableCategories() {
 		_, ok := searchFuncMap[searchCategory]
 		// This is a programming error. If you see this, add the new category you've added to the
 		// searchCategoryToResource map!

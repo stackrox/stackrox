@@ -1,3 +1,4 @@
 ui/src/fonts/Open_Sans_Regular.json
 ui/src/images/globalSearchEmptyState.svg
 ui/yarn.lock
+central/graphql/resolvers/generated.go

@@ -183,6 +183,10 @@ required = ["golang.org/x/tools/go/ast/astutil"]
   branch = "master"
 
 [[constraint]]
+  branch = "master"
+  name = "github.com/graph-gophers/graphql-go"
+
+[[constraint]]
   name = "k8s.io/helm"
   source = "https://github.com/helm/helm.git"
   version = "2.11.0"

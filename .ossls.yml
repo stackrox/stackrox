@@ -981,3 +981,11 @@ dependencies:
         LICENSE: 75bd47da88044ab35f277475359fc2c1bcc3171ab94d721a5c1a0d33ac61deb2
       attribution:
       - The Helm Authors
+
+  vendor/github.com/graph-gophers/graphql-go:
+    url: "https://github.com/graph-gophers/graphql-go"
+    license: BSD-2-Clause
+    files:
+      LICENSE: 95c674e934e587e8f5a362f81acf829bd51218c6b393f848b4edf410787845ab
+    attribution:
+    - Richard Musiol

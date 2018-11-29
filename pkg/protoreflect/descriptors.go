@@ -54,13 +54,13 @@ type ProtoEnum interface {
 // ParseFileDescriptor takes a gzipped serialized file descriptor proto, and returns the parsed proto object or an
 // error.
 func ParseFileDescriptor(data []byte) (*descriptor.FileDescriptorProto, error) {
-	fileDescCacheMutex.RLock()
-	desc := fileDescCache[data]
-	fileDescCacheMutex.RUnlock()
-
-	if desc != nil {
-		return desc, nil
-	}
+	//fileDescCacheMutex.RLock()
+	//desc := fileDescCache[data]
+	//fileDescCacheMutex.RUnlock()
+	//
+	//if desc != nil {
+	//	return desc, nil
+	//}
 
 	uncompressedReader, err := gzip.NewReader(bytes.NewBuffer(data))
 	if err != nil {
@@ -70,14 +70,14 @@ func ParseFileDescriptor(data []byte) (*descriptor.FileDescriptorProto, error) {
 	if err != nil {
 		return nil, fmt.Errorf("uncompressing file descriptor data: %v", err)
 	}
-	desc = &descriptor.FileDescriptorProto{}
+	desc := &descriptor.FileDescriptorProto{}
 	if err := proto.Unmarshal(uncompressedData, desc); err != nil {
 		return nil, fmt.Errorf("unmarshalling file descriptor: %v", err)
 	}
 
-	fileDescCacheMutex.Lock()
-	fileDescCache[data] = desc
-	fileDescCacheMutex.Unlock()
+	//fileDescCacheMutex.Lock()
+	//fileDescCache[data] = desc
+	//fileDescCacheMutex.Unlock()
 
 	return desc, nil
 }

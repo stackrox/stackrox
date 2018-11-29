@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/central/enrichanddetect"
 	"github.com/stackrox/rox/central/globaldb"
 	globaldbHandlers "github.com/stackrox/rox/central/globaldb/handlers"
+	graphqlHandler "github.com/stackrox/rox/central/graphql/handler"
 	groupService "github.com/stackrox/rox/central/group/service"
 	imageService "github.com/stackrox/rox/central/image/service"
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
@@ -247,6 +248,12 @@ func (c *central) customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/api/docs/swagger",
 			Authorizer:    authzUser.With(permissions.View(resources.APIToken)),
 			ServerHandler: docs.Swagger(),
+			Compression:   true,
+		},
+		{
+			Route:         "/api/graphql",
+			Authorizer:    allow.Anonymous(), // graphql enforces permissions internally
+			ServerHandler: graphqlHandler.Handler(),
 			Compression:   true,
 		},
 	}

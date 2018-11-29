@@ -101,7 +101,7 @@ func (s *serviceImpl) Search(ctx context.Context, request *v1.RawSearchRequest) 
 	searchFuncMap := s.getSearchFuncs()
 	categories := request.GetCategories()
 	if len(categories) == 0 {
-		categories = getAllSearchableCategories()
+		categories = GetAllSearchableCategories()
 	}
 	for _, category := range categories {
 		searchFunc, ok := searchFuncMap[category]
@@ -125,14 +125,15 @@ func (s *serviceImpl) Search(ctx context.Context, request *v1.RawSearchRequest) 
 func (s *serviceImpl) Options(ctx context.Context, request *v1.SearchOptionsRequest) (*v1.SearchOptionsResponse, error) {
 	categories := request.GetCategories()
 	if len(categories) == 0 {
-		categories = getAllSearchableCategories()
+		categories = GetAllSearchableCategories()
 	}
 	return &v1.SearchOptionsResponse{
 		Options: options.GetOptions(categories),
 	}, nil
 }
 
-func getAllSearchableCategories() (categories []v1.SearchCategory) {
+// GetAllSearchableCategories returns a list of categories that are currently valid for global search
+func GetAllSearchableCategories() (categories []v1.SearchCategory) {
 	categories = make([]v1.SearchCategory, 0, len(v1.SearchCategory_name)-1)
 	for i := 1; i < len(v1.SearchCategory_name); i++ {
 		category := v1.SearchCategory(i)

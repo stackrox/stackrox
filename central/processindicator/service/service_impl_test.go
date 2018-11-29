@@ -114,7 +114,7 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.nameGroups, indicatorsToGroupedResponses(c.indicators))
+			assert.Equal(t, c.nameGroups, IndicatorsToGroupedResponses(c.indicators))
 		})
 	}
 }
