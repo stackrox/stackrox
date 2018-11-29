@@ -22,6 +22,7 @@ secrets:
     monitoring-db-key.pem: {{index .SecretsBase64Map "monitoring-db-key.pem"}}
     monitoring-ui-cert.pem: {{index .SecretsBase64Map "monitoring-ui-cert.pem"}}
     monitoring-ui-key.pem: {{index .SecretsBase64Map "monitoring-ui-key.pem"}}
+    monitoring-password: {{index .SecretsBase64Map "monitoring-password"}}
 
 exposure:
   port: 443

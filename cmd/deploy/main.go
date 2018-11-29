@@ -35,6 +35,8 @@ var (
 	clairifyImage = "clairify:" + clairifyTag
 	mainTag       = getVersion()
 	mainImage     = "main:" + mainTag
+
+	generatedMonitoringPassword = central.CreatePassword()
 )
 
 func getVersion() string {
@@ -97,6 +99,7 @@ func generateMonitoringFiles(fileMap map[string][]byte, caCert, caKey []byte) er
 
 	fileMap["monitoring-client-cert.pem"] = monitoringCert
 	fileMap["monitoring-client-key.pem"] = monitoringKey
+
 	return nil
 }
 
@@ -134,6 +137,8 @@ func outputZip(config central.Config) error {
 
 	if config.K8sConfig != nil && config.K8sConfig.MonitoringType.OnPrem() {
 		generateMonitoringFiles(config.SecretsByteMap, cert, key)
+
+		config.SecretsByteMap["monitoring-password"] = []byte(config.K8sConfig.MonitoringPassword)
 	}
 
 	config.SecretsBase64Map = make(map[string]string)

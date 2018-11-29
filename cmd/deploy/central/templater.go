@@ -110,6 +110,7 @@ type K8sConfig struct {
 	MonitoringImage            string
 	MonitoringType             MonitoringType
 	MonitoringLoadBalancerType v1.LoadBalancerType
+	MonitoringPassword         string
 
 	DeploymentFormat v1.DeploymentFormat
 	LoadBalancerType v1.LoadBalancerType

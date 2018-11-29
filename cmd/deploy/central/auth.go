@@ -19,7 +19,7 @@ const (
 // GenerateHtpasswd creates a password for admin user if it was not created during the install
 func GenerateHtpasswd(c *Config) ([]byte, error) {
 	if c.Password == "" {
-		c.Password = createPassword()
+		c.Password = CreatePassword()
 	}
 
 	hf := htpasswd.New()
@@ -29,7 +29,8 @@ func GenerateHtpasswd(c *Config) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func createPassword() string {
+// CreatePassword generates an alphanumeric password
+func CreatePassword() string {
 	var pw string
 	max := big.NewInt(int64(len(pwCharacters)))
 	for i := 0; i < autogenPasswordLength; i++ {

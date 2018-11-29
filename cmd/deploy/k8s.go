@@ -4,9 +4,24 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/cmd/deploy/central"
 	"github.com/stackrox/rox/generated/api/v1"
 )
+
+type persistentFlagsWrapper struct {
+	*pflag.FlagSet
+}
+
+func (w *persistentFlagsWrapper) StringVarP(p *string, name, shorthand string, value string, usage string, group string) {
+	w.FlagSet.StringVarP(p, name, shorthand, value, usage)
+	w.SetAnnotation(name, groupAnnotation, []string{group})
+}
+
+func (w *persistentFlagsWrapper) Var(value pflag.Value, name string, usage string, group string) {
+	w.FlagSet.Var(value, name, usage)
+	w.SetAnnotation(name, groupAnnotation, []string{group})
+}
 
 func orchestratorCommand(shortName, longName string) *cobra.Command {
 	c := &cobra.Command{
@@ -16,7 +31,7 @@ func orchestratorCommand(shortName, longName string) *cobra.Command {
 Output is a zip file printed to stdout.`, shortName, longName),
 		SilenceErrors: true,
 		Annotations: map[string]string{
-			"category": "Enter orchestrator",
+			categoryAnnotation: "Enter orchestrator",
 		},
 		RunE: func(*cobra.Command, []string) error {
 			return fmt.Errorf("storage type must be specified")
@@ -36,13 +51,19 @@ func k8sBasedOrchestrator(k8sConfig *central.K8sConfig, shortName, longName stri
 	c.AddCommand(hostPathVolume(cluster))
 	c.AddCommand(noVolume())
 
+	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
+
 	// Adds k8s specific flags
-	c.PersistentFlags().StringVarP(&k8sConfig.Namespace, "namespace", "n", "stackrox", "namespace")
-	c.PersistentFlags().StringVarP(&k8sConfig.MonitoringEndpoint, "monitoring-endpoint", "", "monitoring.stackrox:443", "monitoring endpoint")
-	c.PersistentFlags().Var(&monitoringWrapper{Monitoring: &k8sConfig.MonitoringType}, "monitoring-type", "where to host the monitoring (on-prem, none)")
-	c.PersistentFlags().StringVarP(&k8sConfig.MainImage, "main-image", "i", "stackrox.io/"+mainImage, "Image to use")
-	c.PersistentFlags().StringVarP(&k8sConfig.ClairifyImage, "clairify-image", "", "stackrox.io/"+clairifyImage, "Clairify image to use")
-	c.PersistentFlags().Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", "the output format from the installer (kubectl, helm)")
+	flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", "the output format from the installer (kubectl, helm)", "central")
+	flagWrap.StringVarP(&k8sConfig.Namespace, "namespace", "n", "stackrox", "namespace", "central")
+	flagWrap.StringVarP(&k8sConfig.MainImage, "main-image", "i", "stackrox.io/"+mainImage, "Image to use", "central")
+
+	flagWrap.StringVarP(&k8sConfig.MonitoringEndpoint, "monitoring-endpoint", "", "monitoring.stackrox:443", "monitoring endpoint", "monitoring")
+	flagWrap.Var(&monitoringWrapper{Monitoring: &k8sConfig.MonitoringType}, "monitoring-type", "where to host the monitoring (on-prem, none)", "monitoring")
+	flagWrap.StringVarP(&k8sConfig.MonitoringPassword, "monitoring-password", "p", generatedMonitoringPassword, "enter a monitoring password", "monitoring")
+
+	flagWrap.StringVarP(&k8sConfig.ClairifyImage, "clairify-image", "", "stackrox.io/"+clairifyImage, "Clairify image to use", "clairify")
+
 	return c
 }
 
@@ -55,15 +76,24 @@ func newK8sConfig(monitoringDefault central.MonitoringType) *central.K8sConfig {
 func k8s() *cobra.Command {
 	k8sConfig := newK8sConfig(central.OnPrem)
 	c := k8sBasedOrchestrator(k8sConfig, "k8s", "Kubernetes", v1.ClusterType_KUBERNETES_CLUSTER)
-	c.PersistentFlags().Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (lb, np, none)")
-	c.PersistentFlags().Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.MonitoringLoadBalancerType}, "monitoring-lb-type", "the method of exposing Monitoring (lb, np, none)")
+	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
+
+	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (lb, np, none)", "central")
+
+	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.MonitoringLoadBalancerType}, "monitoring-lb-type", "the method of exposing Monitoring (lb, np, none)", "monitoring")
+
 	return c
 }
 
 func openshift() *cobra.Command {
 	k8sConfig := newK8sConfig(central.OnPrem)
 	c := k8sBasedOrchestrator(k8sConfig, "openshift", "Openshift", v1.ClusterType_OPENSHIFT_CLUSTER)
-	c.PersistentFlags().Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (route, lb, np, none)")
-	c.PersistentFlags().Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.MonitoringLoadBalancerType}, "monitoring-lb-type", "the method of exposing Monitoring (route, lb, np, none)")
+
+	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
+
+	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (route, lb, np, none)", "central")
+
+	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.MonitoringLoadBalancerType}, "monitoring-lb-type", "the method of exposing Monitoring (route, lb, np, none)", "monitoring")
+
 	return c
 }

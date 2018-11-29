@@ -13,10 +13,13 @@ FROM grafana/grafana:5.3.0
 COPY --from=0 /influx /influx
 COPY --from=0 /influxd /influxd
 COPY --from=0 /telegraf /telegraf
-COPY ./influx-post-start.sh /influx-post-start.sh
-COPY ./influxdb.yaml /etc/grafana/provisioning/datasources/influxdb.yaml
-COPY ./dashboard-config.yaml /etc/grafana/provisioning/dashboards/dashboard-config.yaml
 
-COPY ./dashboards/* /var/lib/grafana/dashboards/
+COPY ./influxdb/influx-post-start.sh /influx-post-start.sh
+
+
+COPY ./grafana/dashboard-config.yaml /etc/grafana/provisioning/dashboards/dashboard-config.yaml
+COPY ./grafana/dashboards/* /var/lib/grafana/dashboards/
+COPY ./grafana/datasources/* /etc/grafana/provisioning/datasources/
+COPY ./grafana/entrypoint.sh /grafana-entrypoint.sh
 
 USER root

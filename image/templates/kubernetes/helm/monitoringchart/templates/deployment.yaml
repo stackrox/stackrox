@@ -63,6 +63,7 @@ spec:
       - name: grafana
         image: {{.Values.image}}
         command:
+        - /grafana-entrypoint.sh
         - /run.sh
         ports:
         - name: api
@@ -77,6 +78,13 @@ spec:
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
+        volumeMounts:
+          - name: monitoring-ui-volume
+            mountPath: /run/secrets/stackrox.io/monitoring/certs/
+            readOnly: true
+          - name: monitoring-password-volume
+            mountPath: /run/secrets/stackrox.io/monitoring/secrets/
+            readOnly: true
       volumes:
       - name: monitoring-db-volume
         secret:
@@ -96,6 +104,12 @@ spec:
               path: cert.pem
             - key: monitoring-ui-key.pem
               path: key.pem
+      - name: monitoring-password-volume
+        secret:
+          secretName: monitoring
+          items:
+            - key: monitoring-password
+              path: password
       - name: influxdb-config-volume
         configMap:
           name: influxdb

@@ -17,7 +17,7 @@ Output is a zip file printed to stdout.`, name),
 		Example:       "Enter volume",
 		SilenceErrors: true,
 		Annotations: map[string]string{
-			"category": "Enter volume",
+			categoryAnnotation: "Enter volume",
 		},
 	}
 }

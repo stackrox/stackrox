@@ -94,36 +94,44 @@ func (k *kubernetes) Render(c Config) ([]*v1.File, error) {
 	return wrapFiles(renderedFiles, &c, dockerAuthPath)
 }
 
-const instructionTemplate = `To deploy:
+const instructionPrefix = `To deploy:
   - Unzip the deployment bundle.
-  - If you need to add additional trusted CAs, run central/scripts/ca-setup.sh.
-  {{- if not .K8sConfig.MonitoringType.None}}
+  - If you need to add additional trusted CAs, run central/scripts/ca-setup.sh.`
+
+const helmInstructionTemplate = instructionPrefix + `
+  {{if not .K8sConfig.MonitoringType.None}}
   - Deploy Monitoring
     - Run monitoring/scripts/setup.sh
-  {{- if eq .K8sConfig.DeploymentFormat.String "KUBECTL"}}
-    - Run {{.K8sConfig.Command}} create -R -f monitoring
-  {{- else}}
     - Run helm install --name monitoring monitoring
-  {{- end}}
   {{- end}}
   - Deploy Central
     - Run central/scripts/setup.sh
-  {{- if eq .K8sConfig.DeploymentFormat.String "KUBECTL"}}
-    - Run {{.K8sConfig.Command}} create -R -f central
-  {{- else}}
     - Run helm install --name central central
-  {{- end}}
   - Deploy Clairify
-  {{- if eq .K8sConfig.DeploymentFormat.String "KUBECTL"}}
-    - If you want to run the StackRox Clairify scanner, run {{.K8sConfig.Command}} create -R -f clairify
-  {{- else}}
-    - Run helm install --name clairify clairify
+    - If you want to run the StackRox Clairify scanner, run helm install --name clairify clairify
+`
+
+const kubectlInstructionTemplate = instructionPrefix + `
+  {{if not .K8sConfig.MonitoringType.None}}
+  - Deploy Monitoring
+    - Run monitoring/scripts/setup.sh
+    - Run {{.K8sConfig.Command}} create -R -f monitoring
   {{- end}}
+  - Deploy Central
+    - Run central/scripts/setup.sh
+    - Run {{.K8sConfig.Command}} create -R -f central
+  - Deploy Clairify
+    - If you want to run the StackRox Clairify scanner, run {{.K8sConfig.Command}} create -R -f clairify
 `
 
 func (k *kubernetes) Instructions(c Config) string {
+	template := kubectlInstructionTemplate
+	if c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_HELM {
+		template = helmInstructionTemplate
+	}
+
 	// If error, then its a programming error
-	data, err := executeRawTemplate(instructionTemplate, &c)
+	data, err := executeRawTemplate(template, &c)
 	if err != nil {
 		panic(err)
 	}
