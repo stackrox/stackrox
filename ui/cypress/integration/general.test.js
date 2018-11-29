@@ -51,4 +51,11 @@ describe('General sanity checks', () => {
 
         cy.get('.navigation-panel').should('not.be.visible');
     });
+
+    it('should go to API docs', () => {
+        cy.visit('/');
+        cy.get(selectors.navLinks.apidocs).as('apidocs');
+        cy.get('@apidocs').click();
+        cy.url().should('contain', 'apidocs');
+    });
 });

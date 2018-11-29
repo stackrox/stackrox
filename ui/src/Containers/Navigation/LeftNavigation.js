@@ -11,48 +11,50 @@ import { selectors } from 'reducers';
 
 import NavigationPanel from './NavigationPanel';
 
+const linkClassName =
+    'flex flex-col font-condensed font-700 border-primary-900 text-primary-400 px-3 no-underline justify-center h-18 hover:bg-base-700 items-center border-b';
+const iconClassName = 'h-4 w-4 mb-1';
 const navLinks = [
     {
         text: 'Dashboard',
         to: '/main/dashboard',
-        renderIcon: () => <Icon.BarChart2 className="h-4 w-4 mb-1" />
+        renderIcon: () => <Icon.BarChart2 className={iconClassName} />
     },
     {
         text: 'Network',
         to: '/main/network',
-        renderIcon: () => <Icon.Share2 className="h-4 w-4 mb-1" />
+        renderIcon: () => <Icon.Share2 className={iconClassName} />
     },
     {
         text: 'Violations',
         to: '/main/violations',
-        renderIcon: () => <Icon.AlertTriangle className="h-4 w-4 mb-1" />
+        renderIcon: () => <Icon.AlertTriangle className={iconClassName} />
     },
     {
         text: 'Compliance',
-        id: 'joe',
         to: '',
-        renderIcon: () => <Icon.CheckSquare className="h-4 w-4 mb-1" />,
+        renderIcon: () => <Icon.CheckSquare className={iconClassName} />,
         panelType: 'compliance'
     },
     {
         text: 'Risk',
         to: '/main/risk',
-        renderIcon: () => <Icon.ShieldOff className="h-4 w-4 mb-1" />
+        renderIcon: () => <Icon.ShieldOff className={iconClassName} />
     },
     {
         text: 'Images',
         to: '/main/images',
-        renderIcon: () => <Icon.FileMinus className="h-4 w-4 mb-1" />
+        renderIcon: () => <Icon.FileMinus className={iconClassName} />
     },
     {
         text: 'Secrets',
         to: '/main/secrets',
-        renderIcon: () => <Icon.Lock className="h-4 w-4 mb-1" />
+        renderIcon: () => <Icon.Lock className={iconClassName} />
     },
     {
         text: 'Configure',
         to: '',
-        renderIcon: () => <Icon.Settings className="h-4 w-4 mb-1" />,
+        renderIcon: () => <Icon.Settings className={iconClassName} />,
         panelType: 'configure'
     }
 ];
@@ -91,30 +93,32 @@ class LeftNavigation extends Component {
     getActiveClassName = navLink => {
         const { pathname } = this.props.location;
         const navText = navLink.text.toLowerCase();
+        const baseActiveClass = 'text-base-100 bg-primary-700 hover:bg-primary-700';
         if (pathname.includes('compliance') && navText === 'compliance') {
-            return 'text-base-100 bg-primary-700 hover:bg-primary-700';
+            return baseActiveClass;
         }
 
         if (
             (pathname.includes('policies') || pathname.includes('integrations')) &&
             navText === 'configure'
         ) {
-            return 'text-base-100 bg-primary-700 hover:bg-primary-700';
+            return baseActiveClass;
         }
 
         if (navLink.to !== '') {
-            return 'text-base-100 bg-primary-700 hover:bg-primary-700';
+            return baseActiveClass;
         }
         if (navLink.to === '') {
+            const baseFocusClass = 'text-base-100 bg-base-800 hover:bg-base-800';
             if (this.state.panelType && this.state.panelType === navLink.panelType) {
-                return 'text-base-100 bg-base-800 hover:bg-base-800';
+                return baseFocusClass;
             }
             if (
                 !this.state.panelType &&
                 this.state.clickOnPanelItem &&
                 this.state.selectedPanel === navText
             ) {
-                return 'text-base-100 bg-base-800 hover:bg-base-800';
+                return baseFocusClass;
             }
             return 'bg-primary-800';
         }
@@ -138,15 +142,12 @@ class LeftNavigation extends Component {
         }
     };
 
-    renderLink = (navLink, i, arr) => (
+    renderLink = navLink => (
         <Link
             to={navLink.to}
-            id={navLink.id}
             activeClassName={this.getActiveClassName(navLink)}
             onClick={this.showNavigationPanel(navLink)}
-            className={`flex flex-col font-condensed font-700 border-primary-900 text-primary-400 px-3 no-underline justify-center h-18 hover:bg-base-700 items-center ${
-                i === arr.length - 1 ? 'border-b border-b' : 'border-b'
-            }`}
+            className={linkClassName}
         >
             <div className="text-center pb-1">{navLink.renderIcon()}</div>
             <div className="text-center text-base-100">{navLink.text}</div>
@@ -155,14 +156,29 @@ class LeftNavigation extends Component {
 
     renderLeftSideNavLinks = () => (
         <ul className="flex flex-col list-reset uppercase text-sm tracking-wide">
-            {navLinks.map((navLink, i, arr) => (
-                <li key={navLink.text}>{this.renderLink(navLink, i, arr)}</li>
+            {navLinks.map(navLink => (
+                <li key={navLink.text}>{this.renderLink(navLink)}</li>
             ))}
         </ul>
     );
 
-    renderVersion = () => (
-        <div className="flex text-center text-xs font-700">
+    renderFooter = () => (
+        <div
+            className="flex flex-col flex-none text-center text-xs font-700"
+            data-test-id="nav-footer"
+        >
+            <Link
+                to="/main/apidocs"
+                className={`${linkClassName} border-t`}
+                onClick={this.closePanel()}
+            >
+                <div className="text-center pb-1">
+                    <Icon.HelpCircle className={`${iconClassName} text-primary-400`} />
+                </div>
+                <div className="text-center text-base-100 font-condensed uppercase text-sm tracking-wide">
+                    API Docs
+                </div>
+            </Link>
             <span className="left-navigation p-3 text-primary-400 word-break-all">
                 v{this.props.metadata.version}
             </span>
@@ -178,7 +194,7 @@ class LeftNavigation extends Component {
         return (
             <div className="flex flex-col justify-between bg-primary-800 flex-none overflow-overlay z-20">
                 <nav className="left-navigation">{this.renderLeftSideNavLinks()}</nav>
-                {this.renderVersion()}
+                {this.renderFooter()}
                 {this.renderNavigationPanel()}
             </div>
         );
