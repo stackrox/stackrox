@@ -9,14 +9,14 @@ type sshBenchmark struct{}
 
 func (c *sshBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.6",
 			Description: "Ensure ssh is not run within containers",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *sshBenchmark) Run() (result v1.CheckResult) {
+func (c *sshBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Note(&result)
 	utils.AddNotes(&result, "Check containers to ensure ssh is not running within them")
 	return

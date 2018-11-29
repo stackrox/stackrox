@@ -22,14 +22,14 @@ type kubeletSystemdPermissions struct{}
 
 func (c *kubeletSystemdPermissions) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Kubernetes v1.2.0 - 2.2.3",
 			Description: "Ensure that the kubelet service file permissions are set to 644 or more restrictive",
 		},
 	}
 }
 
-func (c *kubeletSystemdPermissions) Run() (result v1.CheckResult) {
+func (c *kubeletSystemdPermissions) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 
 	systemdPath, err := utils.GetSystemdFile("kubelet.service")
@@ -42,7 +42,7 @@ func (c *kubeletSystemdPermissions) Run() (result v1.CheckResult) {
 	result = utils.NewPermissionsCheck("", "", systemdPath, 0644, true).Run()
 
 	res := utils.NewRecursivePermissionsCheck("", "", systemdPath+".d", 0644, true).Run()
-	if result.Result != v1.CheckStatus_PASS {
+	if result.Result != v1.BenchmarkCheckStatus_PASS {
 		result.Result = res.Result
 	}
 	utils.AddNotes(&result, res.Notes...)

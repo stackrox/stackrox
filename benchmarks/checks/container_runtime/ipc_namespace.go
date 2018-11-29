@@ -9,14 +9,14 @@ type ipcNamespaceBenchmark struct{}
 
 func (c *ipcNamespaceBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.16",
 			Description: "Ensure the host's IPC namespace is not shared",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *ipcNamespaceBenchmark) Run() (result v1.CheckResult) {
+func (c *ipcNamespaceBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.IpcMode.IsHost() {

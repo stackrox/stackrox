@@ -12,14 +12,14 @@ type caCertificates struct{}
 
 func (c *caCertificates) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 7.9",
 			Description: "Ensure CA certificates are rotated as appropriate",
 		},
 	}
 }
 
-func (c *caCertificates) Run() (result v1.CheckResult) {
+func (c *caCertificates) Run() (result v1.BenchmarkCheckResult) {
 	utils.Note(&result)
 	info, err := os.Stat(utils.ContainerPath("/var/lib/docker/swarm/certificates/swarm-root-ca.crt"))
 	if err != nil {

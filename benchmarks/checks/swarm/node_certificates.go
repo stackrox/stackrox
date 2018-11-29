@@ -9,7 +9,7 @@ type nodeCertificates struct{}
 
 func (c *nodeCertificates) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 7.8",
 			Description: "Ensure node certificates are rotated as appropriate",
 		},
@@ -17,7 +17,7 @@ func (c *nodeCertificates) Definition() utils.Definition {
 	}
 }
 
-func (c *nodeCertificates) Run() (result v1.CheckResult) {
+func (c *nodeCertificates) Run() (result v1.BenchmarkCheckResult) {
 	if !utils.DockerInfo.Swarm.ControlAvailable {
 		utils.NotApplicable(&result)
 		utils.AddNotes(&result, "Checking  node certificate rotation applies only to Swarm managers and this node is not a Swarm Manager")

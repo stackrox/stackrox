@@ -19,14 +19,14 @@ var updateCmds = []string{
 
 func (c *imageUpdateInstructionsBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 4.7",
 			Description: "Ensure update instructions are not use alone in the Dockerfile",
 		}, Dependencies: []utils.Dependency{utils.InitImages},
 	}
 }
 
-func (c *imageUpdateInstructionsBenchmark) Run() (result v1.CheckResult) {
+func (c *imageUpdateInstructionsBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, image := range utils.Images {
 		ctx, cancel := docker.TimeoutContext()

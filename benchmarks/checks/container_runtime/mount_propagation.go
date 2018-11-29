@@ -10,14 +10,14 @@ type mountPropagationBenchmark struct{}
 
 func (c *mountPropagationBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.19",
 			Description: "Ensure mount propagation mode is not set to shared",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *mountPropagationBenchmark) Run() (result v1.CheckResult) {
+func (c *mountPropagationBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		for _, containerMount := range container.Mounts {

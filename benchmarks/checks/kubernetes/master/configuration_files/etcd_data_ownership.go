@@ -10,14 +10,14 @@ type etcdDataOwnership struct{}
 
 func (c *etcdDataOwnership) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Kubernetes v1.2.0 - 1.4.12",
 			Description: "Ensure that the etcd data directory ownership is set to etcd:etcd",
 		}, Dependencies: []utils.Dependency{utils.InitEtcdConfig},
 	}
 }
 
-func (c *etcdDataOwnership) Run() (result v1.CheckResult) {
+func (c *etcdDataOwnership) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	var dir string
 	params, ok := utils.EtcdConfig.Get("data-dir")

@@ -90,11 +90,11 @@ func (s *serviceImpl) GetBenchmarkScan(ctx context.Context, request *v1.GetBench
 }
 
 func (s *serviceImpl) convertScanDataToBenchmarkGroup(benchmarkName string, scan *v1.BenchmarkScan) (*v1.BenchmarkGroup, error) {
-	var scanMap = map[v1.CheckStatus]int64{
-		v1.CheckStatus_PASS: 0,
-		v1.CheckStatus_NOTE: 0,
-		v1.CheckStatus_INFO: 0,
-		v1.CheckStatus_WARN: 0,
+	var scanMap = map[v1.BenchmarkCheckStatus]int64{
+		v1.BenchmarkCheckStatus_PASS: 0,
+		v1.BenchmarkCheckStatus_NOTE: 0,
+		v1.BenchmarkCheckStatus_INFO: 0,
+		v1.BenchmarkCheckStatus_WARN: 0,
 	}
 	for _, c := range scan.Checks {
 		results, exists, err := s.benchmarkScanStorage.GetHostResults(&v1.GetHostResultsRequest{

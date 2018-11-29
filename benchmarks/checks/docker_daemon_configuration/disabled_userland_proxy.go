@@ -9,14 +9,14 @@ type disableUserlandProxyBenchmark struct{}
 
 func (c *disableUserlandProxyBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 2.15",
 			Description: "Ensure Userland Proxy is Disabled",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *disableUserlandProxyBenchmark) Run() (result v1.CheckResult) {
+func (c *disableUserlandProxyBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	opts, ok := utils.DockerConfig["userland-proxy"]
 	if !ok {
 		utils.Warn(&result)

@@ -9,14 +9,14 @@ type sharedNetworkBenchmark struct{}
 
 func (c *sharedNetworkBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.9",
 			Description: "Ensure the host's network namespace is not shared",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *sharedNetworkBenchmark) Run() (result v1.CheckResult) {
+func (c *sharedNetworkBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.NetworkMode.IsHost() {

@@ -9,14 +9,14 @@ type memoryBenchmark struct{}
 
 func (c *memoryBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.10",
 			Description: "Ensure memory usage for container is limited",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *memoryBenchmark) Run() (result v1.CheckResult) {
+func (c *memoryBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.Memory == 0 {

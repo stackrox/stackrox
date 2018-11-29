@@ -12,14 +12,14 @@ type securePort struct{}
 
 func (a *securePort) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Kubernetes v1.2.0 - 1.1.7",
 			Description: "Ensure that the --secure-port argument is not set to 0",
 		}, Dependencies: []utils.Dependency{utils.InitKubeAPIServerConfig},
 	}
 }
 
-func (a *securePort) Run() (result v1.CheckResult) {
+func (a *securePort) Run() (result v1.BenchmarkCheckResult) {
 	if params, ok := utils.KubeAPIServerConfig["secure-port"]; ok {
 		port, err := strconv.Atoi(params.String())
 		if err != nil || port < 1 || port > 65535 {

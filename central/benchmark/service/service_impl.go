@@ -66,7 +66,7 @@ func (s *serviceImpl) GetBenchmark(ctx context.Context, request *v1.ResourceByID
 }
 
 // GetChecks returns all the available checks that can be included in a benchmark
-func (s *serviceImpl) GetChecks(ctx context.Context, _ *v1.Empty) (*v1.GetChecksResponse, error) {
+func (s *serviceImpl) GetChecks(ctx context.Context, _ *v1.Empty) (*v1.GetBenchmarkChecksResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 

@@ -10,14 +10,14 @@ type etcdDataPermissions struct{}
 
 func (c *etcdDataPermissions) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Kubernetes v1.2.0 - 1.4.11",
 			Description: "Ensure that the etcd data directory permissions are set to 700 or more restrictive",
 		}, Dependencies: []utils.Dependency{utils.InitEtcdConfig},
 	}
 }
 
-func (c *etcdDataPermissions) Run() (result v1.CheckResult) {
+func (c *etcdDataPermissions) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	params, ok := utils.EtcdConfig.Get("data-dir")
 	if !ok {

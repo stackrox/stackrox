@@ -10,14 +10,14 @@ type kubeconfigFileOwnership struct{}
 
 func (c *kubeconfigFileOwnership) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Kubernetes v1.2.0 - 2.2.6",
 			Description: "Ensure that the proxy kubeconfig file ownership is set to root:root",
 		}, Dependencies: []utils.Dependency{utils.InitKubeProxyConfig},
 	}
 }
 
-func (c *kubeconfigFileOwnership) Run() (result v1.CheckResult) {
+func (c *kubeconfigFileOwnership) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	params, ok := utils.KubeletConfig.Get("kubeconfig")
 	if !ok {

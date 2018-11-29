@@ -9,14 +9,14 @@ type cgroupBenchmark struct{}
 
 func (c *cgroupBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.24",
 			Description: "Ensure cgroup usage is confirmed",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *cgroupBenchmark) Run() (result v1.CheckResult) {
+func (c *cgroupBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.CgroupParent != "docker" && container.HostConfig.CgroupParent != "" {

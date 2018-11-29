@@ -105,17 +105,17 @@ func (b *storeImpl) getScanMetadata(tx *bolt.Tx, scanID string) (*v1.BenchmarkSc
 	return &result, nil
 }
 
-func (b *storeImpl) getCheckResult(tx *bolt.Tx, k []byte) (*v1.CheckResult, error) {
+func (b *storeImpl) getCheckResult(tx *bolt.Tx, k []byte) (*v1.BenchmarkCheckResult, error) {
 	checkBucket := tx.Bucket([]byte(checkResultsBucket))
 	bytes := checkBucket.Get(k)
-	var result v1.CheckResult
+	var result v1.BenchmarkCheckResult
 	if err := proto.Unmarshal(bytes, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
-func (b *storeImpl) fillScanCheck(check *v1.BenchmarkScan_Check, result *v1.CheckResult) {
+func (b *storeImpl) fillScanCheck(check *v1.BenchmarkScan_Check, result *v1.BenchmarkCheckResult) {
 	check.Definition = result.GetDefinition()
 	check.AggregatedResults[result.GetResult().String()]++
 }

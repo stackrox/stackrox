@@ -18,14 +18,14 @@ type filePermissionsCheck struct {
 
 func (f *filePermissionsCheck) Definition() Definition {
 	return Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        f.Name,
 			Description: f.Description,
 		},
 	}
 }
 
-func compareFilePermissions(file string, permissionLevel uint32, includesLower bool) (result v1.CheckResult) {
+func compareFilePermissions(file string, permissionLevel uint32, includesLower bool) (result v1.BenchmarkCheckResult) {
 	info, err := os.Stat(ContainerPath(file))
 	if os.IsNotExist(err) {
 		Note(&result)
@@ -46,7 +46,7 @@ func compareFilePermissions(file string, permissionLevel uint32, includesLower b
 	return
 }
 
-func (f *filePermissionsCheck) Run() (result v1.CheckResult) {
+func (f *filePermissionsCheck) Run() (result v1.BenchmarkCheckResult) {
 	if f.File == "" {
 		Note(&result)
 		AddNotes(&result, "Test is not applicable. File is not defined")
@@ -88,13 +88,13 @@ func NewSystemdPermissionsCheck(name, description, service string, permissionLev
 
 func (s *systemdPermissionsCheck) Definition() Definition {
 	return Definition{
-		CheckDefinition: v1.CheckDefinition{Name: s.Name,
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{Name: s.Name,
 			Description: s.Description,
 		},
 	}
 }
 
-func (s *systemdPermissionsCheck) Run() (result v1.CheckResult) {
+func (s *systemdPermissionsCheck) Run() (result v1.BenchmarkCheckResult) {
 	if s.Service == "" {
 		Note(&result)
 		AddNotes(&result, "Test is not applicable. Service is not defined")
@@ -120,14 +120,14 @@ type recursivePermissionsCheck struct {
 
 func (r *recursivePermissionsCheck) Definition() Definition {
 	return Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        r.Name,
 			Description: r.Description,
 		},
 	}
 }
 
-func (r *recursivePermissionsCheck) Run() (result v1.CheckResult) {
+func (r *recursivePermissionsCheck) Run() (result v1.BenchmarkCheckResult) {
 	Pass(&result)
 	if r.Directory == "" {
 		Note(&result)
@@ -147,7 +147,7 @@ func (r *recursivePermissionsCheck) Run() (result v1.CheckResult) {
 	}
 	for _, file := range files {
 		tempResult := compareFilePermissions(filepath.Join(r.Directory, file.Name()), r.PermissionLevel, r.IncludesLower)
-		if tempResult.Result != v1.CheckStatus_PASS {
+		if tempResult.Result != v1.BenchmarkCheckStatus_PASS {
 			AddNotes(&result, tempResult.Notes...)
 			result.Result = tempResult.Result
 		}

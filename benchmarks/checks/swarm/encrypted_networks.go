@@ -12,7 +12,7 @@ type encryptedNetworks struct{}
 
 func (c *encryptedNetworks) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 7.4",
 			Description: "Ensure data exchanged between containers are encrypted on different nodes on the overlay network",
 		},
@@ -20,7 +20,7 @@ func (c *encryptedNetworks) Definition() utils.Definition {
 	}
 }
 
-func (c *encryptedNetworks) Run() (result v1.CheckResult) {
+func (c *encryptedNetworks) Run() (result v1.BenchmarkCheckResult) {
 	if !utils.DockerInfo.Swarm.ControlAvailable {
 		utils.NotApplicable(&result)
 		utils.AddNotes(&result, "Checking encrypted networks applies only to Swarm managers and this node is not a Swarm Manager")

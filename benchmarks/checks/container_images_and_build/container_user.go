@@ -9,14 +9,14 @@ type containerUserBenchmark struct{}
 
 func (c *containerUserBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 4.1",
 			Description: "Ensure a user for the container has been created",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *containerUserBenchmark) Run() (result v1.CheckResult) {
+func (c *containerUserBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if container.Config.User == "" || container.Config.User == "root" {

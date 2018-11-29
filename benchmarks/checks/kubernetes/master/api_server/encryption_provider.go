@@ -12,14 +12,14 @@ type encryptionProvider struct{}
 
 func (c *encryptionProvider) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Kubernetes v1.2.0 - 1.1.34",
 			Description: "Ensure that the encryption provider is set to aescbc",
 		}, Dependencies: []utils.Dependency{utils.InitKubeAPIServerConfig},
 	}
 }
 
-func (c *encryptionProvider) Run() (result v1.CheckResult) {
+func (c *encryptionProvider) Run() (result v1.BenchmarkCheckResult) {
 	params, ok := utils.KubeAPIServerConfig.Get("experimental-encryption-provider-config")
 	if !ok {
 		utils.Warn(&result)

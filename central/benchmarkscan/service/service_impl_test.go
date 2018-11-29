@@ -33,10 +33,10 @@ func (*mockStorage) GetHostResults(request *v1.GetHostResultsRequest) (*v1.HostR
 	case "check1":
 		return &v1.HostResults{HostResults: []*v1.HostResults_HostResult{
 			{
-				Result: v1.CheckStatus_PASS,
+				Result: v1.BenchmarkCheckStatus_PASS,
 			},
 			{
-				Result: v1.CheckStatus_INFO,
+				Result: v1.BenchmarkCheckStatus_INFO,
 			},
 		},
 		}, true, nil
@@ -44,10 +44,10 @@ func (*mockStorage) GetHostResults(request *v1.GetHostResultsRequest) (*v1.HostR
 		return &v1.HostResults{
 			HostResults: []*v1.HostResults_HostResult{
 				{
-					Result: v1.CheckStatus_WARN,
+					Result: v1.BenchmarkCheckStatus_WARN,
 				},
 				{
-					Result: v1.CheckStatus_WARN,
+					Result: v1.BenchmarkCheckStatus_WARN,
 				},
 			},
 		}, true, nil
@@ -60,12 +60,12 @@ func (*mockStorage) AddBenchmarkResult(*v1.BenchmarkResult) error { return nil }
 var scan = &v1.BenchmarkScan{
 	Checks: []*v1.BenchmarkScan_Check{
 		{
-			Definition: &v1.CheckDefinition{
+			Definition: &v1.BenchmarkCheckDefinition{
 				Name: "check1",
 			},
 		},
 		{
-			Definition: &v1.CheckDefinition{
+			Definition: &v1.BenchmarkCheckDefinition{
 				Name: "check2",
 			},
 		},
@@ -76,19 +76,19 @@ var expectedGroup = &v1.BenchmarkGroup{
 	Benchmark: "benchmark",
 	Counts: []*v1.StatusCount{
 		{
-			Status: v1.CheckStatus_INFO,
+			Status: v1.BenchmarkCheckStatus_INFO,
 			Count:  1,
 		},
 		{
-			Status: v1.CheckStatus_WARN,
+			Status: v1.BenchmarkCheckStatus_WARN,
 			Count:  2,
 		},
 		{
-			Status: v1.CheckStatus_NOTE,
+			Status: v1.BenchmarkCheckStatus_NOTE,
 			Count:  0,
 		},
 		{
-			Status: v1.CheckStatus_PASS,
+			Status: v1.BenchmarkCheckStatus_PASS,
 			Count:  1,
 		},
 	},

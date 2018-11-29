@@ -10,7 +10,7 @@ import "api/v1/empty.proto";
 
 package v1;
 
-enum CheckStatus {
+enum BenchmarkCheckStatus {
     INFO           = 0;
     WARN           = 1;
     NOTE           = 2;
@@ -23,19 +23,19 @@ enum BenchmarkReason {
     TRIGGERED = 1;
 }
 
-message CheckResult {
+message BenchmarkCheckResult {
     string id                  = 1;
     string host                = 2;
     string cluster_id          = 3;
-    CheckDefinition definition = 4;
-    CheckStatus result         = 5;
+    BenchmarkCheckDefinition definition = 4;
+    BenchmarkCheckStatus result         = 5;
     repeated string notes      = 6;
 }
 
 message BenchmarkResult {
     string id                            = 1;
     string benchmark_id                  = 2;
-    repeated CheckResult results         = 3;
+    repeated BenchmarkCheckResult results         = 3;
     google.protobuf.Timestamp start_time = 4;
     google.protobuf.Timestamp end_time   = 5;
     string host                          = 6;

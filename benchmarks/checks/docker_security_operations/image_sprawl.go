@@ -9,14 +9,14 @@ type imageSprawlBenchmark struct{}
 
 func (c *imageSprawlBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 6.1",
 			Description: "Ensure image sprawl is avoided",
 		}, Dependencies: []utils.Dependency{utils.InitImages, utils.InitContainers},
 	}
 }
 
-func (c *imageSprawlBenchmark) Run() (result v1.CheckResult) {
+func (c *imageSprawlBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Info(&result)
 	m := make(map[string]struct{})
 	for _, container := range utils.ContainersRunning {

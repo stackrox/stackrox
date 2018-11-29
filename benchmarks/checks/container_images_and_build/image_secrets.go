@@ -9,14 +9,14 @@ type imageSecretsBenchmark struct{}
 
 func (c *imageSecretsBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 4.10",
 			Description: "Ensure secrets are not stored in Dockerfiles",
 		}, Dependencies: []utils.Dependency{utils.InitImages},
 	}
 }
 
-func (c *imageSecretsBenchmark) Run() (result v1.CheckResult) {
+func (c *imageSecretsBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Note(&result)
 	utils.AddNotes(&result, "Ensuring secrets are not stored in Dockerfiles requires manual introspection")
 	return

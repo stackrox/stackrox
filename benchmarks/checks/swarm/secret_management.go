@@ -11,7 +11,7 @@ type secretManagement struct{}
 
 func (c *secretManagement) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 7.5",
 			Description: "Ensure Docker's secret management commands are used for managing secrets in a Swarm cluster",
 		},
@@ -19,7 +19,7 @@ func (c *secretManagement) Definition() utils.Definition {
 	}
 }
 
-func (c *secretManagement) Run() (result v1.CheckResult) {
+func (c *secretManagement) Run() (result v1.BenchmarkCheckResult) {
 	if !utils.DockerInfo.Swarm.ControlAvailable {
 		utils.NotApplicable(&result)
 		utils.AddNotes(&result, "Checking docker secrets applies only to Swarm managers and this node is not a Swarm Manager")

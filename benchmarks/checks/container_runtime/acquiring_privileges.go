@@ -11,14 +11,14 @@ type acquiringPrivilegesBenchmark struct{}
 
 func (c *acquiringPrivilegesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.25",
 			Description: "Ensure the container is restricted from acquiring additional privileges",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *acquiringPrivilegesBenchmark) Run() (result v1.CheckResult) {
+func (c *acquiringPrivilegesBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 LOOP:
 	for _, container := range utils.ContainersRunning {

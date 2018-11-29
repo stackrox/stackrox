@@ -9,14 +9,14 @@ type unnecessaryPackagesBenchmark struct{}
 
 func (c *unnecessaryPackagesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 4.3",
 			Description: "Ensure unnecessary packages are not installed in the container",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *unnecessaryPackagesBenchmark) Run() (result v1.CheckResult) {
+func (c *unnecessaryPackagesBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Note(&result)
 	utils.AddNotef(&result, "Check if the packages inside the image are necessary")
 	return

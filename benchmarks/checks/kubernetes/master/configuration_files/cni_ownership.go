@@ -10,14 +10,14 @@ type cniDataOwnership struct{}
 
 func (c *cniDataOwnership) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Kubernetes v1.2.0 - 1.4.10",
 			Description: "Ensure that the Container Network Interface file ownership is set to root:root",
 		}, Dependencies: []utils.Dependency{utils.InitKubeletConfig},
 	}
 }
 
-func (c *cniDataOwnership) Run() (result v1.CheckResult) {
+func (c *cniDataOwnership) Run() (result v1.BenchmarkCheckResult) {
 	var dir string
 	params, ok := utils.KubeletConfig.Get("cni-conf-dir")
 	if !ok {
@@ -35,7 +35,7 @@ func (c *cniDataOwnership) Run() (result v1.CheckResult) {
 	}
 	binDirRes := utils.NewRecursiveOwnershipCheck("", "", dir, "root", "root").Run()
 
-	if result.Result == v1.CheckStatus_PASS {
+	if result.Result == v1.BenchmarkCheckStatus_PASS {
 		result.Result = binDirRes.Result
 	}
 	utils.AddNotes(&result, binDirRes.Notes...)

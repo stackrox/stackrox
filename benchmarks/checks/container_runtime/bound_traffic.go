@@ -11,14 +11,14 @@ type specificHostInterfaceBenchmark struct{}
 
 func (c *specificHostInterfaceBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.13",
 			Description: "Ensure incoming container traffic is binded to a specific host interface",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *specificHostInterfaceBenchmark) Run() (result v1.CheckResult) {
+func (c *specificHostInterfaceBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		for containerPort, hostBinding := range container.NetworkSettings.Ports {

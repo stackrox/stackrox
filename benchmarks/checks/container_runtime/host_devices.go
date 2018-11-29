@@ -12,14 +12,14 @@ type hostDevicesBenchmark struct{}
 
 func (c *hostDevicesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.17",
 			Description: "Ensure host devices are not directly exposed to containers",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *hostDevicesBenchmark) Run() (result v1.CheckResult) {
+func (c *hostDevicesBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if len(container.HostConfig.Devices) > 0 {

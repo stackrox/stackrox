@@ -11,14 +11,14 @@ type remoteLoggingBenchmark struct{}
 
 func (c *remoteLoggingBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 2.12",
 			Description: "Ensure centralized and remote logging is configured",
 		}, Dependencies: []utils.Dependency{utils.InitInfo},
 	}
 }
 
-func (c *remoteLoggingBenchmark) Run() (result v1.CheckResult) {
+func (c *remoteLoggingBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	if utils.DockerInfo.LoggingDriver == "json-file" {
 		utils.Warn(&result)
 		utils.AddNotes(&result,

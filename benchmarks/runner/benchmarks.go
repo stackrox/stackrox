@@ -43,19 +43,19 @@ func RunBenchmark() *v1.BenchmarkResult {
 	return result
 }
 
-func runBenchmark() []*v1.CheckResult {
+func runBenchmark() []*v1.BenchmarkCheckResult {
 	checks := renderChecks()
 
-	results := make([]*v1.CheckResult, 0, len(checks))
+	results := make([]*v1.BenchmarkCheckResult, 0, len(checks))
 Loop:
 	for _, check := range checks {
-		definition := check.Definition().CheckDefinition
+		definition := check.Definition().BenchmarkCheckDefinition
 		for _, dep := range check.Definition().Dependencies {
 			if err := dep(); err != nil {
 				msg := fmt.Sprintf("Skipping Test %v due to err in dependency: %+v", check.Definition().Name, err)
-				result := &v1.CheckResult{
+				result := &v1.BenchmarkCheckResult{
 					Definition: &definition,
-					Result:     v1.CheckStatus_NOTE,
+					Result:     v1.BenchmarkCheckStatus_NOTE,
 					Notes:      []string{msg},
 				}
 				results = append(results, result)

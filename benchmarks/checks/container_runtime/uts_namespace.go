@@ -9,14 +9,14 @@ type utsNamespaceBenchmark struct{}
 
 func (c *utsNamespaceBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.20",
 			Description: "Ensure the host's UTS namespace is not shared",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *utsNamespaceBenchmark) Run() (result v1.CheckResult) {
+func (c *utsNamespaceBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.UTSMode.IsHost() {

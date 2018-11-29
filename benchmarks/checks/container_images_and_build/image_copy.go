@@ -12,14 +12,14 @@ type imageCopyBenchmark struct{}
 
 func (c *imageCopyBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 4.9",
 			Description: "Ensure COPY is used instead of ADD in Dockerfile",
 		}, Dependencies: []utils.Dependency{utils.InitImages},
 	}
 }
 
-func (c *imageCopyBenchmark) Run() (result v1.CheckResult) {
+func (c *imageCopyBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, image := range utils.Images {
 		ctx, cancel := docker.TimeoutContext()

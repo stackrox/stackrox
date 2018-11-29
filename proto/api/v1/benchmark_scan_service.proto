@@ -23,7 +23,7 @@ message BenchmarkScanMetadata {
 message BenchmarkScan {
     string id = 1;
     message Check {
-        CheckDefinition   definition         = 1;
+        BenchmarkCheckDefinition   definition         = 1;
         map<string,int32> aggregated_results = 2;
     }
     repeated Check checks = 2;
@@ -32,7 +32,7 @@ message BenchmarkScan {
 message HostResults {
     message HostResult {
         string          host   = 1;
-        CheckStatus     result = 2;
+        BenchmarkCheckStatus     result = 2;
         repeated string notes  = 3;
     }
     repeated HostResult host_results = 1;
@@ -59,7 +59,7 @@ message GetBenchmarkScanRequest {
 }
 
 message StatusCount {
-    CheckStatus status = 1;
+    BenchmarkCheckStatus status = 1;
     int64       count  = 2;
 }
 

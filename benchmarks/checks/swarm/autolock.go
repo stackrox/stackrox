@@ -9,7 +9,7 @@ type autoLock struct{}
 
 func (c *autoLock) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 7.6",
 			Description: "Ensure swarm manager is run in auto-lock mode",
 		},
@@ -17,7 +17,7 @@ func (c *autoLock) Definition() utils.Definition {
 	}
 }
 
-func (c *autoLock) Run() (result v1.CheckResult) {
+func (c *autoLock) Run() (result v1.BenchmarkCheckResult) {
 	if !utils.DockerInfo.Swarm.ControlAvailable {
 		utils.NotApplicable(&result)
 		utils.AddNotes(&result, "Autolock applies only to Swarm managers and this node is not a Swarm Manager")

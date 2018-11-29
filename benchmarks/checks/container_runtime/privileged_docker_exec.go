@@ -11,14 +11,14 @@ type privilegedDockerExecBenchmark struct{}
 
 func (c *privilegedDockerExecBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.22",
 			Description: "Ensure docker exec commands are not used with privileged option",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *privilegedDockerExecBenchmark) Run() (result v1.CheckResult) {
+func (c *privilegedDockerExecBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	auditLog, err := utils.ReadFile(utils.ContainerPath("/var/log/audit/audit.log"))
 	if err != nil {

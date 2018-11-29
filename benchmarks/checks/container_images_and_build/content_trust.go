@@ -13,14 +13,14 @@ type contentTrustBenchmark struct{}
 
 func (c *contentTrustBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 4.5",
 			Description: "Ensure Content trust for Docker is Enabled",
 		},
 	}
 }
 
-func (c *contentTrustBenchmark) Run() (result v1.CheckResult) {
+func (c *contentTrustBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	trust := os.Getenv("DOCKER_CONTENT_TRUST")
 	if trust == "" {

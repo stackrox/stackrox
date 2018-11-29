@@ -9,14 +9,14 @@ type bridgeNetworkBenchmark struct{}
 
 func (c *bridgeNetworkBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.29",
 			Description: "Ensure Docker's default bridge docker0 is not used",
 		}, Dependencies: []utils.Dependency{utils.InitDockerClient},
 	}
 }
 
-func (c *bridgeNetworkBenchmark) Run() (result v1.CheckResult) {
+func (c *bridgeNetworkBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if _, ok := container.NetworkSettings.Networks["bridge"]; ok {

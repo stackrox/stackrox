@@ -9,14 +9,14 @@ type liveRestoreEnabledBenchmark struct{}
 
 func (c *liveRestoreEnabledBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 2.14",
 			Description: "Ensure live restore is Enabled",
 		}, Dependencies: []utils.Dependency{utils.InitDockerClient},
 	}
 }
 
-func (c *liveRestoreEnabledBenchmark) Run() (result v1.CheckResult) {
+func (c *liveRestoreEnabledBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	if !utils.DockerInfo.LiveRestoreEnabled {
 		utils.Warn(&result)
 		utils.AddNotes(&result, "Live restore is not enabled")

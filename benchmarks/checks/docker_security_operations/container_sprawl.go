@@ -9,14 +9,14 @@ type containerSprawlBenchmark struct{}
 
 func (c *containerSprawlBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 6.2",
 			Description: "Ensure container sprawl is avoided",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *containerSprawlBenchmark) Run() (result v1.CheckResult) {
+func (c *containerSprawlBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Info(&result)
 	utils.AddNotef(&result, "There are '%v' containers in use out of '%v'", len(utils.ContainersRunning), len(utils.ContainersAll))
 	return

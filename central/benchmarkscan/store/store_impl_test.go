@@ -70,20 +70,20 @@ func (suite *BenchmarkScanStoreTestSuite) TestResults() {
 			EndTime:     ptypes.TimestampNow(),
 			Host:        "host1",
 			ClusterId:   cluster1,
-			Results: []*v1.CheckResult{
+			Results: []*v1.BenchmarkCheckResult{
 				{
-					Definition: &v1.CheckDefinition{
+					Definition: &v1.BenchmarkCheckDefinition{
 						Name:        "check1",
 						Description: "desc1",
 					},
-					Result: v1.CheckStatus_PASS,
+					Result: v1.BenchmarkCheckStatus_PASS,
 				},
 				{
-					Definition: &v1.CheckDefinition{
+					Definition: &v1.BenchmarkCheckDefinition{
 						Name:        "check2",
 						Description: "desc2",
 					},
-					Result: v1.CheckStatus_PASS,
+					Result: v1.BenchmarkCheckStatus_PASS,
 				},
 			},
 		},
@@ -94,21 +94,21 @@ func (suite *BenchmarkScanStoreTestSuite) TestResults() {
 			EndTime:     ptypes.TimestampNow(),
 			Host:        "host2",
 			ClusterId:   cluster2,
-			Results: []*v1.CheckResult{
+			Results: []*v1.BenchmarkCheckResult{
 				{
-					Definition: &v1.CheckDefinition{
+					Definition: &v1.BenchmarkCheckDefinition{
 						Name:        "check1",
 						Description: "desc1",
 					},
-					Result: v1.CheckStatus_WARN,
+					Result: v1.BenchmarkCheckStatus_WARN,
 					Notes:  []string{"note1"},
 				},
 				{
-					Definition: &v1.CheckDefinition{
+					Definition: &v1.BenchmarkCheckDefinition{
 						Name:        "check2",
 						Description: "desc2",
 					},
-					Result: v1.CheckStatus_WARN,
+					Result: v1.BenchmarkCheckStatus_WARN,
 					Notes:  []string{"note2"},
 				},
 			},
@@ -132,23 +132,23 @@ func (suite *BenchmarkScanStoreTestSuite) TestResults() {
 		Id: "scan1",
 		Checks: []*v1.BenchmarkScan_Check{
 			{
-				Definition: &v1.CheckDefinition{
+				Definition: &v1.BenchmarkCheckDefinition{
 					Name:        "check1",
 					Description: "desc1",
 				},
 				AggregatedResults: map[string]int32{
-					v1.CheckStatus_PASS.String(): 1,
-					v1.CheckStatus_WARN.String(): 1,
+					v1.BenchmarkCheckStatus_PASS.String(): 1,
+					v1.BenchmarkCheckStatus_WARN.String(): 1,
 				},
 			},
 			{
-				Definition: &v1.CheckDefinition{
+				Definition: &v1.BenchmarkCheckDefinition{
 					Name:        "check2",
 					Description: "desc2",
 				},
 				AggregatedResults: map[string]int32{
-					v1.CheckStatus_PASS.String(): 1,
-					v1.CheckStatus_WARN.String(): 1,
+					v1.BenchmarkCheckStatus_PASS.String(): 1,
+					v1.BenchmarkCheckStatus_WARN.String(): 1,
 				},
 			},
 		},

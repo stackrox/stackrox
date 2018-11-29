@@ -10,13 +10,13 @@ import "api/v1/empty.proto";
 
 package v1;
 
-message CheckDefinition {
+message BenchmarkCheckDefinition {
     string name        = 1;
     string description = 2;
 }
 
-message GetChecksResponse {
-    repeated CheckDefinition checks = 1;
+message GetBenchmarkChecksResponse {
+    repeated BenchmarkCheckDefinition checks = 1;
 }
 
 message Benchmark {
@@ -45,7 +45,7 @@ message DeleteBenchmarkRequest {
 
 service BenchmarkService {
 
-    rpc GetChecks (Empty) returns (GetChecksResponse) {
+    rpc GetChecks (Empty) returns (GetBenchmarkChecksResponse) {
         option (google.api.http) = {
             get: "/v1/benchmarks/checks"
         };

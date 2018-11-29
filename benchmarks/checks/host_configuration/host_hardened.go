@@ -9,14 +9,14 @@ type hostHardened struct{}
 
 func (c *hostHardened) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 1.2",
 			Description: "Ensure the container host has been Hardened",
 		},
 	}
 }
 
-func (c *hostHardened) Run() (result v1.CheckResult) {
+func (c *hostHardened) Run() (result v1.BenchmarkCheckResult) {
 	utils.Note(&result)
 	utils.AddNotes(&result, "Ensuring the host is hardened with the latest kernel requires manual introspection")
 	return

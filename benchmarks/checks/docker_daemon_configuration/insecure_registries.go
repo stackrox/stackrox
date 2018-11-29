@@ -11,14 +11,14 @@ type insecureRegistriesBenchmark struct{}
 
 func (c *insecureRegistriesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 2.4",
 			Description: "Ensure insecure registries are not used",
 		}, Dependencies: []utils.Dependency{utils.InitInfo},
 	}
 }
 
-func (c *insecureRegistriesBenchmark) Run() (result v1.CheckResult) {
+func (c *insecureRegistriesBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, registry := range utils.DockerInfo.RegistryConfig.InsecureRegistryCIDRs {
 		if strings.HasPrefix(registry.String(), "127.") { // Localhost prefix can be ignored

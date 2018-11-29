@@ -10,14 +10,14 @@ type caFileOwnership struct{}
 
 func (c *caFileOwnership) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Kubernetes v1.2.0 - 2.2.8",
 			Description: "Ensure that the client certificate authorities file ownership is set to root:root",
 		}, Dependencies: []utils.Dependency{utils.InitKubeletConfig},
 	}
 }
 
-func (c *caFileOwnership) Run() (result v1.CheckResult) {
+func (c *caFileOwnership) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	params, ok := utils.KubeletConfig.Get("client-ca-file")
 	if !ok {

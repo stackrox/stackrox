@@ -11,14 +11,14 @@ type capabilitiesBenchmark struct{}
 
 func (c *capabilitiesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.3",
 			Description: "Ensure Linux Kernel Capabilities are restricted within containers",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *capabilitiesBenchmark) Run() (result v1.CheckResult) {
+func (c *capabilitiesBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Info(&result)
 	for _, container := range utils.ContainersRunning {
 		if len(container.HostConfig.CapAdd) > 0 {

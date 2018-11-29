@@ -13,14 +13,14 @@ type systemdAudit struct {
 
 func (s *systemdAudit) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        s.Name,
 			Description: s.Description,
 		},
 	}
 }
 
-func (s *systemdAudit) Run() (result v1.CheckResult) {
+func (s *systemdAudit) Run() (result v1.BenchmarkCheckResult) {
 	path, err := utils.GetSystemdFile(s.Service)
 	if err != nil {
 		utils.Note(&result)

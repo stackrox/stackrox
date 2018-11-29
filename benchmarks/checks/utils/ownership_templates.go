@@ -22,14 +22,14 @@ type fileOwnershipCheck struct {
 
 func (f *fileOwnershipCheck) Definition() Definition {
 	return Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        f.Name,
 			Description: f.Description,
 		},
 	}
 }
 
-func compareFileOwnership(file string, expectedUser string, expectedGroup string) (result v1.CheckResult) {
+func compareFileOwnership(file string, expectedUser string, expectedGroup string) (result v1.BenchmarkCheckResult) {
 	info, err := os.Stat(ContainerPath(file))
 	if os.IsNotExist(err) {
 		Note(&result)
@@ -74,7 +74,7 @@ func compareFileOwnership(file string, expectedUser string, expectedGroup string
 	return
 }
 
-func (f *fileOwnershipCheck) Run() (result v1.CheckResult) {
+func (f *fileOwnershipCheck) Run() (result v1.BenchmarkCheckResult) {
 	if f.File == "" {
 		Note(&result)
 		AddNotes(&result, "Test is not applicable. File is not defined")
@@ -116,14 +116,14 @@ func NewSystemdOwnershipCheck(name, description, service, user, group string) Ch
 
 func (s *systemdOwnershipCheck) Definition() Definition {
 	return Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        s.Name,
 			Description: s.Description,
 		},
 	}
 }
 
-func (s *systemdOwnershipCheck) Run() (result v1.CheckResult) {
+func (s *systemdOwnershipCheck) Run() (result v1.BenchmarkCheckResult) {
 	if s.Service == "" {
 		Note(&result)
 		AddNotes(&result, "Test is not applicable. Service is not defined")
@@ -149,13 +149,13 @@ type recursiveOwnershipCheck struct {
 
 func (r *recursiveOwnershipCheck) Definition() Definition {
 	return Definition{
-		CheckDefinition: v1.CheckDefinition{Name: r.Name,
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{Name: r.Name,
 			Description: r.Description,
 		},
 	}
 }
 
-func (r *recursiveOwnershipCheck) Run() (result v1.CheckResult) {
+func (r *recursiveOwnershipCheck) Run() (result v1.BenchmarkCheckResult) {
 	Pass(&result)
 	if r.Directory == "" {
 		Note(&result)
@@ -175,7 +175,7 @@ func (r *recursiveOwnershipCheck) Run() (result v1.CheckResult) {
 	}
 	for _, file := range files {
 		tempResult := compareFileOwnership(filepath.Join(r.Directory, file.Name()), r.User, r.Group)
-		if tempResult.Result != v1.CheckStatus_PASS {
+		if tempResult.Result != v1.BenchmarkCheckStatus_PASS {
 			AddNotes(&result, tempResult.Notes...)
 			result.Result = tempResult.Result
 		}

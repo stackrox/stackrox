@@ -9,14 +9,14 @@ type daemonWideSeccompBenchmark struct{}
 
 func (c *daemonWideSeccompBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 2.16",
 			Description: "Ensure daemon-wide custom seccomp profile is applied, if needed",
 		}, Dependencies: []utils.Dependency{utils.InitInfo},
 	}
 }
 
-func (c *daemonWideSeccompBenchmark) Run() (result v1.CheckResult) {
+func (c *daemonWideSeccompBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	for _, opt := range utils.DockerInfo.SecurityOptions {
 		if opt == "default" {
 			utils.Warn(&result)

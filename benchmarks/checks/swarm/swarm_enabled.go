@@ -10,7 +10,7 @@ type swarmEnabled struct{}
 
 func (c *swarmEnabled) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 7.1",
 			Description: "Do not enable swarm mode on a docker engine instance unless needed",
 		},
@@ -18,7 +18,7 @@ func (c *swarmEnabled) Definition() utils.Definition {
 	}
 }
 
-func (c *swarmEnabled) Run() (result v1.CheckResult) {
+func (c *swarmEnabled) Run() (result v1.BenchmarkCheckResult) {
 	if utils.DockerInfo.Swarm.LocalNodeState != swarm.LocalNodeStateActive && utils.DockerInfo.Swarm.LocalNodeState != swarm.LocalNodeStateInactive {
 		utils.Warn(&result)
 		utils.AddNotef(&result, "Node is in unexpected state: %v", utils.DockerInfo.Swarm.LocalNodeState)

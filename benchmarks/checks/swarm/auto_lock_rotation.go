@@ -9,7 +9,7 @@ type autoLockRotation struct{}
 
 func (c *autoLockRotation) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 7.7",
 			Description: "Ensure swarm manager auto-lock key is rotated periodically",
 		},
@@ -17,7 +17,7 @@ func (c *autoLockRotation) Definition() utils.Definition {
 	}
 }
 
-func (c *autoLockRotation) Run() (result v1.CheckResult) {
+func (c *autoLockRotation) Run() (result v1.BenchmarkCheckResult) {
 	if !utils.DockerInfo.Swarm.ControlAvailable {
 		utils.NotApplicable(&result)
 		utils.AddNotes(&result, "Autolock applies only to Swarm managers and this node is not a Swarm Manager")

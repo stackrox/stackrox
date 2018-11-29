@@ -9,14 +9,14 @@ type ulimitBenchmark struct{}
 
 func (c *ulimitBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.18",
 			Description: "Ensure the default ulimit is overwritten at runtime, only if needed",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *ulimitBenchmark) Run() (result v1.CheckResult) {
+func (c *ulimitBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	utils.Note(&result)
 	for _, container := range utils.ContainersRunning {
 		if len(container.HostConfig.Ulimits) > 0 {

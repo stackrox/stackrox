@@ -10,14 +10,14 @@ type caFilePermissions struct{}
 
 func (c *caFilePermissions) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Kubernetes v1.2.0 - 2.2.7",
 			Description: "Ensure that the certificate authorities file permissions are set to 644 or more restrictive",
 		}, Dependencies: []utils.Dependency{utils.InitKubeletConfig},
 	}
 }
 
-func (c *caFilePermissions) Run() (result v1.CheckResult) {
+func (c *caFilePermissions) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	params, ok := utils.KubeletConfig.Get("client-ca-file")
 	if !ok {

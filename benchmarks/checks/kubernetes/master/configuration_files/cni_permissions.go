@@ -10,14 +10,14 @@ type cniDataPermissions struct{}
 
 func (c *cniDataPermissions) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Kubernetes v1.2.0 - 1.4.9",
 			Description: "Ensure that the Container Network Interface file permissions are set to 644 or more restrictive",
 		}, Dependencies: []utils.Dependency{utils.InitKubeletConfig},
 	}
 }
 
-func (c *cniDataPermissions) Run() (result v1.CheckResult) {
+func (c *cniDataPermissions) Run() (result v1.BenchmarkCheckResult) {
 	utils.Pass(&result)
 
 	var dir string
@@ -37,7 +37,7 @@ func (c *cniDataPermissions) Run() (result v1.CheckResult) {
 	}
 	binDirRes := utils.NewRecursivePermissionsCheck("", "", dir, 0644, true).Run()
 
-	if result.Result == v1.CheckStatus_PASS {
+	if result.Result == v1.BenchmarkCheckStatus_PASS {
 		result.Result = binDirRes.Result
 	}
 	utils.AddNotes(&result, binDirRes.Notes...)

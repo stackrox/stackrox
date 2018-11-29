@@ -11,14 +11,14 @@ type containerPartitionBenchmark struct{}
 
 func (c *containerPartitionBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		CheckDefinition: v1.CheckDefinition{
+		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 1.1",
 			Description: "Ensure a separate partition for containers has been created",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *containerPartitionBenchmark) Run() (result v1.CheckResult) {
+func (c *containerPartitionBenchmark) Run() (result v1.BenchmarkCheckResult) {
 	fstab, err := utils.ReadFile(utils.ContainerPath("/etc/fstab"))
 	if err != nil {
 		utils.Warn(&result)
