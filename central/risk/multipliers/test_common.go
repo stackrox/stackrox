@@ -36,6 +36,20 @@ func getMockDeployment() *v1.Deployment {
 					Scan: &v1.ImageScan{
 						Components: []*v1.ImageScanComponent{
 							{
+								Name:    "comp1",
+								Version: "1.1.1",
+								Vulns: []*v1.Vulnerability{
+									{
+										Cvss: 5,
+									},
+									{
+										Cvss: 5,
+									},
+								},
+							},
+							{
+								Name:    "comp1",
+								Version: "1.1.1",
 								Vulns: []*v1.Vulnerability{
 									{
 										Cvss: 5,
