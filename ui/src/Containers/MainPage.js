@@ -29,8 +29,7 @@ import LeftNavigation from 'Containers/Navigation/LeftNavigation';
 import SearchModal from 'Containers/Search/SearchModal';
 import ErrorBoundary from 'Containers/ErrorBoundary';
 
-import ApiDocsPage from 'Containers/Docs/ApiPage';
-
+const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
 const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/NetworkPage'));
 const AsyncIntegrationsPage = asyncComponent(() =>
@@ -73,7 +72,7 @@ class MainPage extends Component {
                     <ProtectedRoute path={riskPath} component={AsyncRiskPage} />
                     <ProtectedRoute path={imagesPath} component={AsyncImagesPage} />
                     <ProtectedRoute path={secretsPath} component={AsyncSecretsPage} />
-                    <ProtectedRoute path={apidocsPath} component={ApiDocsPage} />
+                    <ProtectedRoute path={apidocsPath} component={AsyncApiDocsPage} />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
             </ErrorBoundary>
