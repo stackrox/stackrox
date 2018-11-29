@@ -31,7 +31,7 @@ func init() {
 }
 
 var (
-	clairifyTag   = "0.5.0"
+	clairifyTag   = "0.5.2"
 	clairifyImage = "clairify:" + clairifyTag
 	mainTag       = getVersion()
 	mainImage     = "main:" + mainTag
