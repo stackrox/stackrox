@@ -1,7 +1,10 @@
 package multipliers
 
 import (
+	"time"
+
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 func getMockDeployment() *v1.Deployment {
@@ -61,6 +64,11 @@ func getMockDeployment() *v1.Deployment {
 							},
 						},
 					},
+					Metadata: &v1.ImageMetadata{
+						V1: &v1.V1Metadata{
+							Created: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(180 * 24 * time.Hour))),
+						},
+					},
 				},
 				Ports: []*v1.PortConfig{
 					{
@@ -84,6 +92,13 @@ func getMockDeployment() *v1.Deployment {
 				},
 			},
 			{
+				Image: &v1.Image{
+					Metadata: &v1.ImageMetadata{
+						V1: &v1.V1Metadata{
+							Created: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(90 * 24 * time.Hour))),
+						},
+					},
+				},
 				Volumes: []*v1.Volume{
 					{
 						Name: "rw volume",
