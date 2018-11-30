@@ -141,6 +141,8 @@ type Config struct {
 
 	SecretsByteMap   map[string][]byte
 	SecretsBase64Map map[string]string
+
+	Environment map[string]string
 }
 
 type deployer interface {

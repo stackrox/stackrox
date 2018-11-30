@@ -3,10 +3,20 @@ package tests
 import (
 	"os"
 	"testing"
+
+	"github.com/stackrox/rox/pkg/clientconn"
+	"google.golang.org/grpc"
+)
+
+const (
+	usernameEnvVar = `ROX_USERNAME`
+	passwordEnvVar = `ROX_PASSWORD`
 )
 
 var (
 	apiEndpoint = `localhost:8000`
+
+	username, password string
 )
 
 func TestMain(m *testing.M) {
@@ -23,4 +33,14 @@ func init() {
 	if le, ok := os.LookupEnv(`API_ENDPOINT`); ok {
 		apiEndpoint = le
 	}
+
+	username = os.Getenv(usernameEnvVar)
+	password = os.Getenv(passwordEnvVar)
+}
+
+func grpcConnection() (*grpc.ClientConn, error) {
+	if username != "" && password != "" {
+		return clientconn.GRPCConnectionWithBasicAuth(apiEndpoint, username, password)
+	}
+	return clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
 }

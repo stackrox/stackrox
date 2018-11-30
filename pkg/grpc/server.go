@@ -159,7 +159,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	}
 
 	if a.config.AuthProviders != nil {
-		mux.Handle(a.config.AuthProviders.URLPathPrefix(), a.config.AuthProviders)
+		mux.Handle(a.config.AuthProviders.URLPathPrefix(), httpInterceptors(a.config.AuthProviders))
 	}
 
 	gwMux := runtime.NewServeMux(

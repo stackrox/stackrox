@@ -12,14 +12,13 @@ import (
 	deploymentStore "github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 // This doesn't actually check for the existence of a specific deployment, but any deployment
 func checkDeploymentExists(t *testing.T) {
-	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
+	conn, err := grpcConnection()
 	require.NoError(t, err)
 
 	service := v1.NewDeploymentServiceClient(conn)
@@ -57,7 +56,12 @@ func TestBackup(t *testing.T) {
 			},
 		},
 	}
-	resp, err := client.Get("https://" + apiEndpoint + "/db/backup")
+	req, err := http.NewRequest(http.MethodGet, "https://"+apiEndpoint+"/db/backup", nil)
+	require.NoError(t, err)
+	if username != "" && password != "" {
+		req.SetBasicAuth(username, password)
+	}
+	resp, err := client.Do(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 	_, err = io.Copy(out, resp.Body)

@@ -40,10 +40,8 @@ spec:
           capabilities:
             drop: ["NET_RAW"]
           readOnlyRootFilesystem: true
-        {{- if .Features -}}
         env:
-{{ toYaml .Values.env | indent 8 }}
-  {{- end }}
+{{ toYaml .Values.env | indent 10 }}
         volumeMounts:
         - name: varlog
           mountPath: /var/log/stackrox/

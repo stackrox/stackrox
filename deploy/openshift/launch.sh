@@ -11,7 +11,7 @@ function launch_central {
         extra_args+=("--monitoring-type=none")
     fi
 
-    docker run  -e ROX_HTPASSWD_AUTH=${ROX_HTPASSWD_AUTH} "$main_image" deploy openshift ${extra_args[@]+"${extra_args[@]}"} --monitoring-password stackrox -i "$main_image" none > $openshift_dir/central.zip
+    docker run  -e ROX_HTPASSWD_AUTH "$main_image" deploy openshift ${extra_args[@]+"${extra_args[@]}"} --monitoring-password stackrox -i "$main_image" none > $openshift_dir/central.zip
     local unzip_dir="$openshift_dir/central-deploy/"
     rm -rf "${unzip_dir}"
     unzip "$openshift_dir/central.zip" -d "${unzip_dir}"
@@ -25,6 +25,11 @@ function launch_central {
 
         oc -n stackrox patch deployment monitoring --patch "$(cat $K8S_DIR/monitoring-resources-patch.yaml)"
     fi
+
+	if [[ -f "${unzip_dir}/password" ]]; then
+		export ROX_ADMIN_USER=admin
+		export ROX_ADMIN_PASSWORD="$(< "${unzip_dir}/password")"
+	fi
 
     echo "Deploying Central..."
     $unzip_dir/central/scripts/setup.sh

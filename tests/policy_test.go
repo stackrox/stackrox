@@ -8,7 +8,6 @@ import (
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/image/policies"
-	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
@@ -51,7 +50,7 @@ func TestDefaultPolicies(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
+	conn, err := grpcConnection()
 	require.NoError(t, err)
 
 	defaults.PoliciesPath = policies.Directory()
@@ -78,7 +77,7 @@ func TestDefaultPolicies(t *testing.T) {
 }
 
 func TestPoliciesCRUD(t *testing.T) {
-	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
+	conn, err := grpcConnection()
 	require.NoError(t, err)
 
 	service := v1.NewPolicyServiceClient(conn)

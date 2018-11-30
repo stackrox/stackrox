@@ -53,6 +53,7 @@ dependencies {
     compile "io.grpc:grpc-netty:${grpcVersion}"
     compile "io.grpc:grpc-protobuf:${grpcVersion}"
     compile "io.grpc:grpc-stub:${grpcVersion}"
+    compile "io.grpc:grpc-auth:${grpcVersion}"
     compile "com.google.protobuf:protobuf-java-util:${protobufVersion}"
     compile "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
 

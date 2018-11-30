@@ -1,6 +1,9 @@
 import { selectors as SecretsPageSelectors, url as secretsUrl } from './constants/SecretsPage';
+import withAuth from './helpers/basicAuth';
 
 describe('Secrets page', () => {
+    withAuth();
+
     beforeEach(() => {
         cy.visit(secretsUrl);
     });

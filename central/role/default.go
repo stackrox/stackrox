@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
-// All currently-valid role names are declared in the block below.
+// All builtin, immutable role names are declared in the block below.
 const (
 	// Admin is a role that's, well, authorized to do anything.
 	Admin = "Admin"

@@ -1,6 +1,14 @@
 package services
 
+import io.grpc.CallOptions
+import io.grpc.Channel
+import io.grpc.ClientCall
+import io.grpc.ClientCall.Listener
+import io.grpc.ClientInterceptor
+import io.grpc.ClientInterceptors
 import io.grpc.ManagedChannel
+import io.grpc.Metadata
+import io.grpc.MethodDescriptor
 import io.grpc.netty.GrpcSslContexts
 import io.grpc.netty.NegotiationType
 import io.grpc.netty.NettyChannelBuilder
@@ -8,6 +16,50 @@ import io.netty.handler.ssl.SslContext
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 
 class BaseService {
+
+    private static class CallWithAuthorizationHeader<ReqT, RespT>
+            extends ClientInterceptors.CheckedForwardingClientCall<ReqT, RespT> {
+
+        private static final Metadata.Key<String> AUTHORIZATION =
+                Metadata.Key.of("Authorization", Metadata.ASCII_STRING_MARSHALLER)
+
+        private final String authHeaderContents
+
+        CallWithAuthorizationHeader(ClientCall<ReqT, RespT> delegate, String authHeaderContents) {
+            super(delegate)
+            this.authHeaderContents = authHeaderContents
+        }
+
+        @Override
+        protected void checkedStart(Listener<RespT> responseListener, Metadata headers) throws Exception {
+            headers.put(AUTHORIZATION, authHeaderContents)
+            delegate().start(responseListener, headers)
+        }
+    }
+
+    private static class AuthInterceptor implements ClientInterceptor {
+        private final String authHeaderContents
+
+        AuthInterceptor(String username, String password) {
+            authHeaderContents = "Basic " + Base64.getEncoder().encodeToString(
+                    (username + ":" + password).getBytes("UTF-8"))
+        }
+
+        public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(
+                MethodDescriptor<ReqT, RespT> method, CallOptions callOptions, Channel next) {
+            return new CallWithAuthorizationHeader<>(next.newCall(method, callOptions), authHeaderContents)
+        }
+    }
+
+    private static List<ClientInterceptor> interceptors() {
+        String username = System.getenv("ROX_USERNAME") ?: ""
+        String password = System.getenv("ROX_PASSWORD") ?: ""
+        def interceptors = new ArrayList<ClientInterceptor>()
+        if (!username.empty && !password.empty) {
+            interceptors.add(new AuthInterceptor(username, password))
+        }
+        return interceptors
+    }
 
     static ManagedChannel channelInstance = null
 
@@ -23,6 +75,7 @@ class BaseService {
                         .forAddress(System.getenv("HOSTNAME"), port)
                         .negotiationType(NegotiationType.TLS)
                         .sslContext(sslContext)
+                        .intercept(interceptors())
                         .build()
     }
 

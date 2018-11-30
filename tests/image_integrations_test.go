@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -66,7 +65,7 @@ func TestImageIntegration(t *testing.T) {
 	defer teardownAlpineDeployment(t)
 	setupAlpineDeployment(t)
 
-	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
+	conn, err := grpcConnection()
 	require.NoError(t, err)
 
 	subtests := []struct {

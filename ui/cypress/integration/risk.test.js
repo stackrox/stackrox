@@ -1,8 +1,11 @@
 import { selectors as RiskPageSelectors, url } from './constants/RiskPage';
 import selectors from './constants/SearchPage';
 import * as api from './constants/apiEndpoints';
+import withAuth from './helpers/basicAuth';
 
 describe('Risk page', () => {
+    withAuth();
+
     beforeEach(() => {
         cy.server();
         cy.fixture('risks/riskyDeployments.json').as('risksJson');

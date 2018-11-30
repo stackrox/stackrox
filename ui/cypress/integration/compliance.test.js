@@ -1,7 +1,10 @@
 import { selectors, url as complianceUrl } from './constants/CompliancePage';
 import * as api from './constants/apiEndpoints';
+import withAuth from './helpers/basicAuth';
 
 describe('Compliance page', () => {
+    withAuth();
+
     const setupMultipleClustersFixture = () => {
         cy.server();
         cy.fixture('clusters/couple.json').as('coupleCluster');

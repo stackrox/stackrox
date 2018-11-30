@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -34,7 +33,7 @@ func init() {
 func TestNotifierCRUD(t *testing.T) {
 	require.NotEmpty(t, notifierConfig.LabelDefault)
 
-	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
+	conn, err := grpcConnection()
 	require.NoError(t, err)
 
 	service := v1.NewNotifierServiceClient(conn)

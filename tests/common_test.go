@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/require"
 )
@@ -38,7 +37,7 @@ func retrieveDeployments(service v1.DeploymentServiceClient, deps []*v1.ListDepl
 }
 
 func waitForDeployment(t *testing.T, deploymentName string) {
-	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
+	conn, err := grpcConnection()
 	require.NoError(t, err)
 
 	service := v1.NewDeploymentServiceClient(conn)
@@ -85,7 +84,7 @@ func waitForDeployment(t *testing.T, deploymentName string) {
 }
 
 func waitForTermination(t *testing.T, deploymentName string) {
-	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
+	conn, err := grpcConnection()
 	require.NoError(t, err)
 
 	service := v1.NewDeploymentServiceClient(conn)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"google.golang.org/grpc"
@@ -66,6 +67,17 @@ func UnauthenticatedGRPCConnection(endpoint string) (conn *grpc.ClientConn, err 
 	}
 	creds := credentials.NewTLS(tlsConfig)
 	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds))
+}
+
+// GRPCConnectionWithBasicAuth returns a grpc.ClientConn using the given username/password to authenticate
+// via basic auth.
+func GRPCConnectionWithBasicAuth(endpoint string, username, password string) (*grpc.ClientConn, error) {
+	tlsConfig := &tls.Config{
+		// TODO(ROX-61): Issue credentials and remove this.
+		InsecureSkipVerify: true,
+	}
+	creds := credentials.NewTLS(tlsConfig)
+	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(basic.PerRPCCredentials(username, password)))
 }
 
 // Parameters for keep alive.

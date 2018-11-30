@@ -68,6 +68,14 @@ deployGKE: &deployGKE
       ./deploy/k8s/deploy.sh
       kubectl delete clusterrolebinding temporary-admin
 
+      if [[ -f ./deploy/k8s/central-deploy/password ]]; then
+        password="$(< ./deploy/k8s/central-deploy/password)"
+        cat >>"$BASH_ENV" <<-EOF
+          export ROX_USERNAME=admin
+          export ROX_PASSWORD="$password"
+      EOF
+      fi
+
 setupCIMonitoring: &setupCIMonitoring
   run:
     name: Set up CI monitoring
@@ -135,6 +143,19 @@ runUIE2E: &runUIE2E
       else
         export UI_BASE_URL="https://localhost:${LOCAL_PORT}"
       fi
+
+      if [[ -n "$ROX_USERNAME" && -n "$ROX_PASSWORD" ]]; then
+        export CYPRESS_ROX_AUTH_TOKEN="$(
+          curl -sk -u "${ROX_USERNAME}:${ROX_PASSWORD}" "https://localhost:${LOCAL_PORT}/v1/apitokens/generate" \
+            -X POST \
+            -d '{"name": "cypress_tests", "role": "Admin"}' \
+          | jq -r '.token // ""')"
+        if [[ -z "$CYPRESS_ROX_AUTH_TOKEN" ]]; then
+          echo >&2 "Could not issue auth token for UI tests"
+          exit 1
+        fi
+      fi
+
       make -C ui test-e2e-ci
 
 collectImbuedUILogs: &collectImbuedUILogs
@@ -142,7 +163,11 @@ collectImbuedUILogs: &collectImbuedUILogs
     name: Collect imbued UI logs
     command: |
       mkdir -p /tmp/imbued-ui-logs
-      status_code="$(curl -sk -o logs.zip -w "%{http_code}\n" "https://localhost:${LOCAL_PORT}/api/logimbue")"
+      curl_cmd=(curl)
+      if [[ -n "$ROX_USERNAME" && -n "$ROX_PASSWORD" ]]; then
+        curl_cmd+=(-u "${ROX_USERNAME}:${ROX_PASSWORD}")
+      fi
+      status_code="$("${curl_cmd[@]}" -sk -o logs.zip -w "%{http_code}\n" "https://localhost:${LOCAL_PORT}/api/logimbue")"
       # Central returns 204 if there are no imbued logs
       if [ "${status_code}" -eq 204 ]; then
         echo "No imbued logs found."
@@ -327,6 +352,7 @@ jobs:
       - LOCAL_PORT: 8000
       - MONITORING_SUPPORT: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
+      - ROX_HTPASSWD_AUTH: false
     steps:
       - checkout
 
@@ -381,6 +407,7 @@ jobs:
       - RUNTIME_SUPPORT: true
       - MONITORING_SUPPORT: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
+      - ROX_HTPASSWD_AUTH: false
     steps:
       - checkout
 
@@ -524,6 +551,7 @@ jobs:
       - RUNTIME_SUPPORT: true
       - MONITORING_SUPPORT: true
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
+      - ROX_HTPASSWD_AUTH: false
     steps:
       - checkout
       - *checkOpenshiftLabel
@@ -572,6 +600,14 @@ jobs:
           command: |
             ./deploy/openshift/deploy.sh
             oc -n stackrox get all
+
+            if [[ -f ./deploy/openshift/central-deploy/password ]]; then
+              password="$(< ./deploy/openshift/central-deploy/password)"
+              cat >>"$BASH_ENV" <<-EOF
+                export ROX_USERNAME=admin
+                export ROX_PASSWORD="$password"
+            EOF
+            fi
 
       - *setupCIMonitoring
       - *waitForAPI

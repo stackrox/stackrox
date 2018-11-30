@@ -14,7 +14,7 @@ function launch_central {
 
     set -u
 
-    docker run --rm "$main_image" deploy swarm -i "$main_image" -p 8000 none > "$swarm_dir/central.zip"
+    docker run --rm -e ROX_HTPASSWD_AUTH "$main_image" deploy swarm -i "$main_image" -p 8000 none > "$swarm_dir/central.zip"
 
 
     export DOCKER_HOST="$OLD_DOCKER_HOST"
@@ -33,6 +33,10 @@ function launch_central {
         rm "$unzip_dir/tmp"
     fi
 
+	if [[ -f "${unzip_dir}/password" ]]; then
+		export ROX_ADMIN_USER=admin
+		export ROX_ADMIN_PASSWORD="$(< "${unzip_dir}/password")"
+	fi
     $unzip_dir/central.sh
     echo
     wait_for_central "localhost:8000"

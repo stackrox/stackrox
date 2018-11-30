@@ -119,20 +119,26 @@ func outputZip(config central.Config) error {
 		return err
 	}
 
-	cert, key, err := generateMTLSFiles(config.SecretsByteMap)
-	if err != nil {
-		return err
-	}
+	var authFiles []*v1.File
 
-	var files []*v1.File
 	if features.HtpasswdAuth.Enabled() {
+		if config.Environment == nil {
+			config.Environment = make(map[string]string)
+		}
+		config.Environment[features.HtpasswdAuth.EnvVar()] = "true"
+
 		htpasswd, err := central.GenerateHtpasswd(&config)
 		if err != nil {
 			return err
 		}
-		files = append(files, zipPkg.NewFile("htpasswd", htpasswd, false))
-		files = append(files, zipPkg.NewFile("password", []byte(config.Password+"\n"), false))
+
 		config.SecretsByteMap["htpasswd"] = htpasswd
+		authFiles = append(authFiles, zipPkg.NewFile("password", []byte(config.Password+"\n"), false))
+	}
+
+	cert, key, err := generateMTLSFiles(config.SecretsByteMap)
+	if err != nil {
+		return err
 	}
 
 	if config.K8sConfig != nil && config.K8sConfig.MonitoringType.OnPrem() {
@@ -146,10 +152,12 @@ func outputZip(config central.Config) error {
 		config.SecretsBase64Map[k] = base64.StdEncoding.EncodeToString(v)
 	}
 
-	files, err = d.Render(config)
+	files, err := d.Render(config)
 	if err != nil {
 		return fmt.Errorf("could not render files: %s", err)
 	}
+
+	files = append(files, authFiles...)
 	for _, f := range files {
 		if err := zipPkg.AddFile(zipW, f); err != nil {
 			return fmt.Errorf("failed to write '%s': %s", f.Name, err)

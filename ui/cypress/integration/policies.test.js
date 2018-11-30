@@ -1,7 +1,10 @@
 import { selectors, text, url } from './constants/PoliciesPage';
 import * as api from './constants/apiEndpoints';
+import withAuth from './helpers/basicAuth';
 
 describe('Policies page', () => {
+    withAuth();
+
     beforeEach(() => {
         cy.server();
         cy.fixture('search/metadataOptions.json').as('metadataOptionsJson');

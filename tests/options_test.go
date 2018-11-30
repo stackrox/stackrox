@@ -7,13 +7,12 @@ import (
 
 	"github.com/stackrox/rox/central/search/options"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestOptions(t *testing.T) {
-	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
+	conn, err := grpcConnection()
 	require.NoError(t, err)
 
 	service := v1.NewSearchServiceClient(conn)

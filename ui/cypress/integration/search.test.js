@@ -1,8 +1,11 @@
 import selectors from './constants/SearchPage';
 import * as api from './constants/apiEndpoints';
+import withAuth from './helpers/basicAuth';
 
 // TODO(ROX-813): Fix these tests
 xdescribe('Global Search Modal', () => {
+    withAuth();
+
     beforeEach(() => {
         cy.server();
         cy.route('GET', api.search.globalSearchWithNoResults, []).as('globalSearchResults');

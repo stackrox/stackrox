@@ -3,8 +3,11 @@ import { url as dashboardUrl, selectors } from './constants/DashboardPage';
 import { url as complianceUrl } from './constants/CompliancePage';
 import { url as violationsUrl } from './constants/ViolationsPage';
 import * as api from './constants/apiEndpoints';
+import withAuth from './helpers/basicAuth';
 
 describe('Dashboard page', () => {
+    withAuth();
+
     it('should select item in nav bar', () => {
         cy.visit(dashboardUrl);
         cy.get(selectors.navLink).should('have.class', 'bg-primary-700');

@@ -140,22 +140,30 @@ func (c *central) startGRPCServer() {
 		}
 	}
 
+	idExtractors := []authn.IdentityExtractor{
+		service.NewExtractor(), // internal services
+		tokenbased.NewExtractor(roleStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens
+	}
+
+	if features.HtpasswdAuth.Enabled() {
+		idExtractors = append(idExtractors, userpass.IdentityExtractorOrPanic())
+		userpass.RegisterAuthProviderOrPanic(registry)
+	}
+
 	config := pkgGRPC.Config{
 		CustomRoutes:       c.customRoutes(),
 		TLS:                verifier.CA{},
 		UnaryInterceptors:  interceptorSingletons.GrpcUnaryInterceptors(),
 		StreamInterceptors: interceptorSingletons.GrpcStreamInterceptors(),
-		IdentityExtractors: []authn.IdentityExtractor{
-			service.NewExtractor(), // internal services
-			tokenbased.NewExtractor(roleStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens
-		},
-		AuthProviders: registry,
+		IdentityExtractors: idExtractors,
+		AuthProviders:      registry,
 	}
 
 	c.server = pkgGRPC.NewAPI(config)
 
 	c.server.Register(
 		alertService.Singleton(),
+		authService.New(),
 		apiTokenService.Singleton(),
 		authproviderService.New(registry),
 		benchmarkService.Singleton(),
@@ -186,10 +194,6 @@ func (c *central) startGRPCServer() {
 		sensornetworkflow.Singleton(),
 		userService.Singleton(),
 	)
-
-	if features.HtpasswdAuth.Enabled() {
-		c.server.Register(authService.Singleton(userpass.Singleton(jwt.IssuerFactorySingleton(), userpass.MustOpenHtpasswd())))
-	}
 
 	enrichanddetect.GetLoop().Start()
 	startedSig := c.server.Start()

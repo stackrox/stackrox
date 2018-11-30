@@ -15,7 +15,7 @@ function launch_central {
     fi
     EXTRA_ARGS+=("--lb-type=$LOAD_BALANCER")
 
-    docker run --rm -e ROX_HTPASSWD_AUTH=${ROX_HTPASSWD_AUTH} "${main_image}" deploy k8s ${EXTRA_ARGS[@]} --monitoring-password stackrox -i "$main_image" "${storage}" > "${k8s_dir}/central.zip"
+    docker run --rm -e ROX_HTPASSWD_AUTH "${main_image}" deploy k8s ${EXTRA_ARGS[@]} --monitoring-password stackrox -i "$main_image" "${storage}" > "${k8s_dir}/central.zip"
 
     local unzip_dir="${k8s_dir}/central-deploy/"
     rm -rf "${unzip_dir}"
@@ -31,6 +31,11 @@ function launch_central {
 
         kubectl -n stackrox patch deployment monitoring --patch "$(cat $k8s_dir/monitoring-resources-patch.yaml)"
     fi
+
+	if [[ -f "${unzip_dir}/password" ]]; then
+		export ROX_ADMIN_USER=admin
+		export ROX_ADMIN_PASSWORD="$(< "${unzip_dir}/password")"
+	fi
 
     echo "Deploying Central..."
     $unzip_dir/central/scripts/setup.sh

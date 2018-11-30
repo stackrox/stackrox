@@ -4,8 +4,11 @@ import {
 } from './constants/ViolationsPage';
 import * as api from './constants/apiEndpoints';
 import selectors from './constants/SearchPage';
+import withAuth from './helpers/basicAuth';
 
 describe('Violations page', () => {
+    withAuth();
+
     beforeEach(() => {
         cy.server();
         cy.fixture('alerts/alerts.json').as('alerts');

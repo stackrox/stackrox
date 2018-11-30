@@ -1,5 +1,5 @@
 {
     "baseUrl": "https://localhost:3000",
     "chromeWebSecurity": false,
-    "ignoreTestFiles": [ "**/constants/**/*" ]
+    "ignoreTestFiles": [ "**/constants/**/*", "**/helpers/**/*" ]
 }

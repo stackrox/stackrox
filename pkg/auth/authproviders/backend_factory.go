@@ -12,7 +12,7 @@ type BackendFactory interface {
 	CreateAuthProviderBackend(ctx context.Context, id, uiEndpoint string, config map[string]string) (AuthProviderBackend, map[string]string, error)
 
 	// ProcessHTTPRequest is the dispatcher for HTTP/1.1 requests to `<sso-prefix>/<provider-type>/...`. The envisioned
-	// workflow consists in extracting the specific auth provider ID from the request, usually via a `state` parameter,
+	// workflow consists of extracting the specific auth provider ID from the request, usually via a `state` parameter,
 	// and returning this provider ID from the function (with the Registry taking care of forwarding the request to that
 	// provider's HTTP handler). If there are any provider-independent HTTP endpoints (such as the SP metadata for
 	// SAML), this can be handled in this function as well - an empty provider ID along with a nil error needs to be

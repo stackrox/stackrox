@@ -1,7 +1,10 @@
 import { selectors } from './constants/IntegrationsPage';
 import * as api from './constants/apiEndpoints';
+import withAuth from './helpers/basicAuth';
 
 describe('Integrations page', () => {
+    withAuth();
+
     beforeEach(() => {
         cy.visit('/');
         cy.get(selectors.configure).click();
@@ -59,6 +62,8 @@ describe('Integrations page', () => {
 });
 
 describe('API Token Creation Flow', () => {
+    withAuth();
+
     const randomTokenName = `Token${Math.random()
         .toString(36)
         .substring(7)}`;
@@ -105,6 +110,8 @@ describe('API Token Creation Flow', () => {
 });
 
 describe('Cluster Creation Flow', () => {
+    withAuth();
+
     beforeEach(() => {
         cy.server();
         cy.fixture('clusters/single.json').as('singleCluster');

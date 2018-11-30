@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/notifiers/slack"
 	"github.com/stackrox/rox/pkg/search"
@@ -71,7 +70,7 @@ func TestNotification(t *testing.T) {
 }
 
 func setupTestNotification(t *testing.T) {
-	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
+	conn, err := grpcConnection()
 	require.NoError(t, err)
 
 	setupNotifier(t, conn)
@@ -80,7 +79,7 @@ func setupTestNotification(t *testing.T) {
 }
 
 func teardownTestNotification(t *testing.T) {
-	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
+	conn, err := grpcConnection()
 	require.NoError(t, err)
 
 	teardownNginxLatestTagDeployment(t)
@@ -170,7 +169,7 @@ func verifyPolicyHasNoNotifier(t *testing.T, conn *grpc.ClientConn) {
 }
 
 func verifyAlertsForLatestTag(t *testing.T, alert *v1.Alert) {
-	conn, err := clientconn.UnauthenticatedGRPCConnection(apiEndpoint)
+	conn, err := grpcConnection()
 	require.NoError(t, err)
 
 	service := v1.NewAlertServiceClient(conn)

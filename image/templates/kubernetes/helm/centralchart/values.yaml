@@ -77,3 +77,11 @@ exposure:
   {{else}}
   type: None
   {{- end}}
+
+env:
+  {{range $key, $value := .Environment -}}
+  - name: {{ $key }}
+    value: "{{ $value }}"
+  {{ else -}}
+  []
+  {{- end }}

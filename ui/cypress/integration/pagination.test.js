@@ -1,6 +1,9 @@
 import { selectors } from './constants/TablePagination';
+import withAuth from './helpers/basicAuth';
 
 describe('Table pagination header in Policies page', () => {
+    withAuth();
+
     it('should be visible', () => {
         cy.visit('/');
         cy.get(selectors.configure).click();

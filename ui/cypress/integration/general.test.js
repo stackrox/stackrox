@@ -1,11 +1,14 @@
 import { url as dashboardUrl } from './constants/DashboardPage';
 import selectors from './constants/GeneralPage';
+import withAuth from './helpers/basicAuth';
 
 //
 // Sanity / general checks for UI being up and running
 //
 
 describe('General sanity checks', () => {
+    withAuth();
+
     it('should have correct <title>', () => {
         cy.visit('/');
         cy.title().should('eq', 'StackRox');

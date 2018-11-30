@@ -8,6 +8,15 @@ echo "StackRox image tag set to $MAIN_IMAGE_TAG"
 export MAIN_IMAGE="${MAIN_IMAGE:-stackrox/main:$MAIN_IMAGE_TAG}"
 echo "StackRox image set to $MAIN_IMAGE"
 
+function curl_central() {
+	cmd=(curl -k)
+	local admin_user="${ROX_ADMIN_USER:-admin}"
+	if [[ -n "${ROX_ADMIN_PASSWORD:-}" ]]; then
+		cmd+=(-u "${admin_user}:${ROX_ADMIN_PASSWORD}")
+	fi
+	"${cmd[@]}" "$@"
+}
+
 # generate_ca
 # arguments:
 #   - directory to drop files in
@@ -37,7 +46,7 @@ function wait_for_central {
     set +e
     local start_time="$(date '+%s')"
     local deadline=$((start_time + 10*60))  # 10 minutes
-    until $(curl --output /dev/null --silent --fail -k "https://$LOCAL_API_ENDPOINT/v1/ping"); do
+    until $(curl_central --output /dev/null --silent --fail "https://$LOCAL_API_ENDPOINT/v1/ping"); do
         if [[ "$(date '+%s')" > "$deadline" ]]; then
             echo >&2 "Exceeded deadline waiting for Central."
             exit 1
@@ -75,9 +84,8 @@ function get_cluster_zip {
     export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"main_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\", \"runtime_support\": $RUNTIME_SUPPORT $EXTRA_JSON}"
 
     TMP=$(mktemp)
-    STATUS=$(curl -X POST \
+    STATUS=$(curl_central -X POST \
         -d "$CLUSTER_JSON" \
-        -k \
         -s \
         -o $TMP \
         -w "%{http_code}\n" \
@@ -91,9 +99,8 @@ function get_cluster_zip {
     ID="$(cat ${TMP} | jq -r .cluster.id)"
 
     echo "Getting zip file for cluster ${ID}"
-    STATUS=$(curl -X POST \
+    STATUS=$(curl_central -X POST \
         -d "{\"id\": \"$ID\"}" \
-        -k \
         -s \
         -o $OUTPUT_DIR/sensor-deploy.zip \
         -w "%{http_code}\n" \
@@ -116,9 +123,8 @@ function get_identity {
     echo "Getting identity for new cluster"
     export ID_JSON="{\"id\": \"$CLUSTER_ID\", \"type\": \"SENSOR_SERVICE\"}"
     TMP=$(mktemp)
-    STATUS=$(curl -X POST \
+    STATUS=$(curl_central -X POST \
         -d "$ID_JSON" \
-        -k \
         -s \
         -o "$TMP" \
         -w "%{http_code}\n" \
@@ -141,8 +147,7 @@ function get_authority {
 
     echo "Getting CA certificate"
     TMP="$(mktemp)"
-    STATUS=$(curl \
-        -k \
+    STATUS=$(curl_central \
         -s \
         -o "$TMP" \
         -w "%{http_code}\n" \

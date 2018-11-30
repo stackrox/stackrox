@@ -3,6 +3,10 @@ services:
   central:
     image: {{.SwarmConfig.MainImage}}
     entrypoint: ["central"]
+    environment:
+      {{range $key, $value := .Environment -}}
+        - {{ $key }}={{ $value }}
+      {{- end}}
     networks:
       net:
     deploy:

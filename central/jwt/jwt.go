@@ -4,19 +4,17 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"sync"
 
 	"github.com/stackrox/rox/pkg/auth/tokens"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
 var (
-	factory   tokens.IssuerFactory
-	validator tokens.Validator
+	factory        tokens.IssuerFactory
+	tokenValidator tokens.Validator
 
 	initOnce sync.Once
-
-	log = logging.LoggerForModule()
 )
 
 const (
@@ -42,7 +40,7 @@ func create() (tokens.IssuerFactory, tokens.Validator, error) {
 
 func initialize() {
 	var err error
-	factory, validator, err = create()
+	factory, tokenValidator, err = create()
 	if err != nil {
 		log.Panicf("Could not instantiate JWT factory: %v", err)
 	}
@@ -51,7 +49,7 @@ func initialize() {
 // singleton returns the singleton issuer factory & validator.
 func singleton() (tokens.IssuerFactory, tokens.Validator) {
 	initOnce.Do(initialize)
-	return factory, validator
+	return factory, tokenValidator
 }
 
 // IssuerFactorySingleton retrieves the issuer factory singleton instance.
