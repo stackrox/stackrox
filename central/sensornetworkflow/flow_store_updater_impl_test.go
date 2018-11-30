@@ -41,27 +41,27 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 	storedFlows := []*v1.NetworkFlow{
 		{
 			Props: &v1.NetworkFlowProperties{
-				SrcDeploymentId: "someNode1",
-				DstDeploymentId: "someNode2",
-				DstPort:         1,
-				L4Protocol:      v1.L4Protocol_L4_PROTOCOL_TCP,
+				SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+				DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
+				DstPort:    1,
+				L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: firstTimestamp,
 		},
 		{
 			Props: &v1.NetworkFlowProperties{
-				SrcDeploymentId: "someOtherNode1",
-				DstDeploymentId: "someOtherNode2",
-				DstPort:         2,
-				L4Protocol:      v1.L4Protocol_L4_PROTOCOL_TCP,
+				SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode1"},
+				DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+				DstPort:    2,
+				L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
 			},
 		},
 		{
 			Props: &v1.NetworkFlowProperties{
-				SrcDeploymentId: "someNode1",
-				DstDeploymentId: "someOtherNode2",
-				DstPort:         2,
-				L4Protocol:      v1.L4Protocol_L4_PROTOCOL_TCP,
+				SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+				DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+				DstPort:    2,
+				L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: firstTimestamp,
 		},
@@ -71,19 +71,19 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 	newFlows := []*v1.NetworkFlow{
 		{
 			Props: &v1.NetworkFlowProperties{
-				SrcDeploymentId: "someNode1",
-				DstDeploymentId: "someNode2",
-				DstPort:         1,
-				L4Protocol:      v1.L4Protocol_L4_PROTOCOL_TCP,
+				SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+				DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
+				DstPort:    1,
+				L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: nil,
 		},
 		{
 			Props: &v1.NetworkFlowProperties{
-				SrcDeploymentId: "someNode1",
-				DstDeploymentId: "someOtherNode2",
-				DstPort:         2,
-				L4Protocol:      v1.L4Protocol_L4_PROTOCOL_TCP,
+				SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+				DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+				DstPort:    2,
+				L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: secondTimestamp,
 		},
@@ -92,22 +92,22 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 	// The properties of the flows we expect updates to. Properties identify flows uniquely.
 	expectedUpdateProps := []*v1.NetworkFlowProperties{
 		{
-			SrcDeploymentId: "someNode1",
-			DstDeploymentId: "someNode2",
-			DstPort:         1,
-			L4Protocol:      v1.L4Protocol_L4_PROTOCOL_TCP,
+			SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+			DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
+			DstPort:    1,
+			L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
 		},
 		{
-			SrcDeploymentId: "someOtherNode1",
-			DstDeploymentId: "someOtherNode2",
-			DstPort:         2,
-			L4Protocol:      v1.L4Protocol_L4_PROTOCOL_TCP,
+			SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode1"},
+			DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+			DstPort:    2,
+			L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
 		},
 		{
-			SrcDeploymentId: "someNode1",
-			DstDeploymentId: "someOtherNode2",
-			DstPort:         2,
-			L4Protocol:      v1.L4Protocol_L4_PROTOCOL_TCP,
+			SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+			DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+			DstPort:    2,
+			L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
 		},
 	}
 

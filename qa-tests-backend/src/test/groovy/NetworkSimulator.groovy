@@ -10,6 +10,7 @@ import util.NetworkGraphUtil
 import v1.NetworkPolicyServiceOuterClass
 
 class NetworkSimulator extends BaseSpecification {
+
     // Deployment names
     static final private String WEBDEPLOYMENT = "web"
     static final private String WEB2DEPLOYMENT = "alt-web"
@@ -62,12 +63,10 @@ class NetworkSimulator extends BaseSpecification {
         and:
         "generate simulation"
         policy.addPolicyType(NetworkPolicyTypes.EGRESS)
-        def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy))
+        def policyYAML = orchestrator.generateYaml(policy)
+        def simulation = Services.submitNetworkGraphSimulation(policyYAML)
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
-        def webAppIndex = simulation.simulatedGraph.nodesList.indexOf(
-                simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }
-        )
 
         then:
         "verify simulation"
@@ -77,16 +76,17 @@ class NetworkSimulator extends BaseSpecification {
         assert simulation.policiesList.find { it.policy.name == "deny-all-namespace-ingress" }?.status ==
                 NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.MODIFIED
 
-        // Verify ingress nodes to 'web' are removed from nodes outside `qa` namespace
-        simulation.removed.nodeDiffsMap.each {
-            if (simulation.simulatedGraph.nodesList.get(it.key).namespace != "qa") {
-                assert it.value.outEdgesMap.containsKey(webAppIndex)
-                assert it.value.policyIdsList.contains(policyId)
-            }
-        }
         // Verify no change to added nodes
-        simulation.added.nodeDiffsMap.each {
-            assert it.value.outEdgesCount == 0
+        assert simulation.added.nodeDiffsCount == 0
+
+        // Verify all edges from nodes inside of 'qa' to nodes outside of 'qa' are removed
+        def nonQANodes = simulation.simulatedGraph.nodesList.findAll { it.namespace != "qa" }.size()
+        simulation.removed.nodeDiffsMap.each {
+            def node = simulation.simulatedGraph.nodesList.get(it.key)
+
+            assert node.namespace == "qa"
+            assert it.value.policyIdsCount == 0
+            assert it.value.outEdgesMap.size() == nonQANodes
         }
 
         cleanup:

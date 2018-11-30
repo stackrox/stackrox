@@ -599,8 +599,15 @@ func createNode(node string, namespace string, internetAccess bool, policies ...
 		policies = []string{}
 	}
 	return &v1.NetworkNode{
-		DeploymentId:   node,
-		Namespace:      namespace,
+		Entity: &v1.NetworkEntityInfo{
+			Type: v1.NetworkEntityInfo_DEPLOYMENT,
+			Id:   node,
+			Desc: &v1.NetworkEntityInfo_Deployment_{
+				Deployment: &v1.NetworkEntityInfo_Deployment{
+					Namespace: namespace,
+				},
+			},
+		},
 		PolicyIds:      policies,
 		InternetAccess: internetAccess,
 		OutEdges:       make(map[int32]*v1.NetworkEdgePropertiesBundle),
@@ -1033,7 +1040,7 @@ func TestEvaluateClusters(t *testing.T) {
 func populateOutEdges(nodes []*v1.NetworkNode, edges []edge) {
 	indexMap := make(map[string]int)
 	for i, node := range nodes {
-		indexMap[node.DeploymentId] = i
+		indexMap[node.Entity.Id] = i
 	}
 
 	for _, e := range edges {

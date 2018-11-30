@@ -323,6 +323,19 @@ func replaceOrAddPolicies(newPolicies []*v1.NetworkPolicy, oldPolicies []*v1.Net
 		}
 		outputPolicies = append(outputPolicies, newPolicySim)
 	}
+
+	// Fix IDs: For all modified policies, the ID of the new and old policies should be the same (that way the
+	// diff does not get cluttered with just policy ID changes); for all new policies, we generate new, fresh UUIDs
+	// that do not collide with any other IDs.
+	// Rationale: IDs are (almost) meaningless - IDs from the simulation YAML will be changed by kubectl create/apply
+	// anyway.
+	for _, policy := range outputPolicies {
+		if policy.GetStatus() == v1.NetworkPolicyInSimulation_MODIFIED {
+			policy.Policy.Id = policy.GetOldPolicy().GetId()
+		} else if policy.GetStatus() == v1.NetworkPolicyInSimulation_ADDED {
+			policy.Policy.Id = uuid.NewV4().String()
+		}
+	}
 	return
 }
 
@@ -344,13 +357,6 @@ func compileValidateYaml(simulationYaml string) ([]*v1.NetworkPolicy, error) {
 	for _, policy := range policies {
 		if policy.GetNamespace() == "" {
 			return nil, fmt.Errorf("yamls tested against must apply to a namespace")
-		}
-	}
-
-	// Ensure that all resulting policies have IDs.
-	for _, policy := range policies {
-		if policy.GetId() == "" {
-			policy.Id = uuid.NewV4().String()
 		}
 	}
 

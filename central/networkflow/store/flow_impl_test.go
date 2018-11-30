@@ -43,19 +43,19 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	flows := []*v1.NetworkFlow{
 		{
 			Props: &v1.NetworkFlowProperties{
-				SrcDeploymentId: "someNode1",
-				DstDeploymentId: "someNode2",
-				DstPort:         1,
-				L4Protocol:      v1.L4Protocol_L4_PROTOCOL_TCP,
+				SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+				DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
+				DstPort:    1,
+				L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
 		},
 		{
 			Props: &v1.NetworkFlowProperties{
-				SrcDeploymentId: "someOtherNode1",
-				DstDeploymentId: "someOtherNode2",
-				DstPort:         2,
-				L4Protocol:      v1.L4Protocol_L4_PROTOCOL_TCP,
+				SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode1"},
+				DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+				DstPort:    2,
+				L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
 		},
@@ -69,18 +69,18 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.NoError(err, "upsert should succeed on second insert")
 
 	err = suite.tested.RemoveFlow(&v1.NetworkFlowProperties{
-		SrcDeploymentId: flows[1].GetProps().GetSrcDeploymentId(),
-		DstDeploymentId: flows[1].GetProps().GetDstDeploymentId(),
-		DstPort:         flows[1].GetProps().GetDstPort(),
-		L4Protocol:      flows[1].GetProps().GetL4Protocol(),
+		SrcEntity:  flows[1].GetProps().GetSrcEntity(),
+		DstEntity:  flows[1].GetProps().GetDstEntity(),
+		DstPort:    flows[1].GetProps().GetDstPort(),
+		L4Protocol: flows[1].GetProps().GetL4Protocol(),
 	})
 	suite.NoError(err, "remove should succeed when present")
 
 	err = suite.tested.RemoveFlow(&v1.NetworkFlowProperties{
-		SrcDeploymentId: flows[1].GetProps().GetSrcDeploymentId(),
-		DstDeploymentId: flows[1].GetProps().GetDstDeploymentId(),
-		DstPort:         flows[1].GetProps().GetDstPort(),
-		L4Protocol:      flows[1].GetProps().GetL4Protocol(),
+		SrcEntity:  flows[1].GetProps().GetSrcEntity(),
+		DstEntity:  flows[1].GetProps().GetDstEntity(),
+		DstPort:    flows[1].GetProps().GetDstPort(),
+		L4Protocol: flows[1].GetProps().GetL4Protocol(),
 	})
 	suite.NoError(err, "remove should succeed when not present")
 

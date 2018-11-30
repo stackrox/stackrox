@@ -103,9 +103,17 @@ const networkFlowMapping = (state = {}, action) => {
         }
         const newState = Object.assign({}, state);
         flowGraph.nodes.forEach(node => {
+            if (!node.entity || node.entity.type !== 'DEPLOYMENT') {
+                return;
+            }
+            const { id: srcDeploymentId } = node.entity;
             Object.keys(node.outEdges).forEach(tgtIndex => {
                 const tgtNode = flowGraph.nodes[tgtIndex];
-                newState[`${node.deploymentId}--${tgtNode.deploymentId}`] = true;
+                if (!tgtNode.entity || tgtNode.entity.type !== 'DEPLOYMENT') {
+                    return;
+                }
+                const { id: tgtDeploymentId } = tgtNode.entity;
+                newState[`${srcDeploymentId}--${tgtDeploymentId}`] = true;
             });
         });
         return newState;

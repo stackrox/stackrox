@@ -22,7 +22,7 @@ type flowStoreImpl struct {
 
 const updatedTSKey = "\x00"
 
-// GetAllFlows returns all the flows in the store.;
+// GetAllFlows returns all the flows in the store.
 func (s *flowStoreImpl) GetAllFlows() (flows []*v1.NetworkFlow, ts types.Timestamp, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
 
@@ -124,5 +124,5 @@ func readFlow(bucket *bolt.Bucket, id []byte) (flow *v1.NetworkFlow, err error) 
 }
 
 func getID(props *v1.NetworkFlowProperties) []byte {
-	return []byte(fmt.Sprintf("%s:%s:%d:%d", props.GetSrcDeploymentId(), props.GetDstDeploymentId(), props.GetDstPort(), props.GetL4Protocol()))
+	return []byte(fmt.Sprintf("%x:%s:%x:%s:%x:%x", props.GetSrcEntity().GetType(), props.GetSrcEntity().GetId(), props.GetDstEntity().GetType(), props.GetDstEntity().GetId(), props.GetDstPort(), props.GetL4Protocol()))
 }

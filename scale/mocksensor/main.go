@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/networkentity"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -184,10 +185,10 @@ func generateNetworkFlowUpdate(maxNetworkFlows int, flowDeleteRate float64) *cen
 
 		flow := &v1.NetworkFlow{
 			Props: &v1.NetworkFlowProperties{
-				SrcDeploymentId: getGeneratedDeploymentID(srcIndex),
-				DstDeploymentId: getGeneratedDeploymentID(dstIndex),
-				L4Protocol:      v1.L4Protocol_L4_PROTOCOL_TCP,
-				DstPort:         80,
+				SrcEntity:  networkentity.ForDeployment(getGeneratedDeploymentID(srcIndex)).ToProto(),
+				DstEntity:  networkentity.ForDeployment(getGeneratedDeploymentID(dstIndex)).ToProto(),
+				L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
+				DstPort:    80,
 			},
 		}
 

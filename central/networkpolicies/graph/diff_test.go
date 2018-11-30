@@ -37,16 +37,23 @@ func (m nodeSpecMap) toGraph() *v1.NetworkGraph {
 	}
 	for node, spec := range m {
 		result.Nodes = append(result.Nodes, &v1.NetworkNode{
-			DeploymentId:   node,
-			DeploymentName: node,
-			OutEdges:       make(map[int32]*v1.NetworkEdgePropertiesBundle, len(spec.adjacencies)),
-			PolicyIds:      sortedIDs(spec.policies),
+			Entity: &v1.NetworkEntityInfo{
+				Type: v1.NetworkEntityInfo_DEPLOYMENT,
+				Id:   node,
+				Desc: &v1.NetworkEntityInfo_Deployment_{
+					Deployment: &v1.NetworkEntityInfo_Deployment{
+						Name: node,
+					},
+				},
+			},
+			OutEdges:  make(map[int32]*v1.NetworkEdgePropertiesBundle, len(spec.adjacencies)),
+			PolicyIds: sortedIDs(spec.policies),
 		})
 	}
-	sort.Slice(result.Nodes, func(i, j int) bool { return result.Nodes[i].DeploymentId < result.Nodes[j].DeploymentId })
+	sort.Slice(result.Nodes, func(i, j int) bool { return result.Nodes[i].Entity.Id < result.Nodes[j].Entity.Id })
 	nodeIDs := make(map[string]int, len(result.Nodes))
 	for idx, node := range result.Nodes {
-		nodeIDs[node.DeploymentId] = idx
+		nodeIDs[node.Entity.Id] = idx
 	}
 	for node, spec := range m {
 		node := result.Nodes[nodeIDs[node]]
@@ -63,7 +70,7 @@ func (m nodeSpecMap) toDiff(g *v1.NetworkGraph) *v1.NetworkGraphDiff {
 	}
 	nodeIDs := make(map[string]int, len(g.Nodes))
 	for idx, node := range g.Nodes {
-		nodeIDs[node.DeploymentId] = idx
+		nodeIDs[node.Entity.Id] = idx
 	}
 	for node, spec := range m {
 		diff := &v1.NetworkNodeDiff{

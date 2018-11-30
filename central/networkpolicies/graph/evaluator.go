@@ -110,10 +110,17 @@ func (g *evaluatorImpl) evaluate(deployments []*v1.Deployment, networkPolicies [
 		sort.Strings(nodePoliciesSet)
 
 		node := &v1.NetworkNode{
-			DeploymentId:   d.GetId(),
-			DeploymentName: d.GetName(),
-			Cluster:        d.GetClusterName(),
-			Namespace:      d.GetNamespace(),
+			Entity: &v1.NetworkEntityInfo{
+				Type: v1.NetworkEntityInfo_DEPLOYMENT,
+				Id:   d.GetId(),
+				Desc: &v1.NetworkEntityInfo_Deployment_{
+					Deployment: &v1.NetworkEntityInfo_Deployment{
+						Name:      d.GetName(),
+						Namespace: d.GetNamespace(),
+						Cluster:   d.GetClusterName(),
+					},
+				},
+			},
 			InternetAccess: internetAccess,
 			PolicyIds:      nodePoliciesSet,
 			OutEdges:       make(map[int32]*v1.NetworkEdgePropertiesBundle),

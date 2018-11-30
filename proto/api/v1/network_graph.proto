@@ -5,6 +5,7 @@ option go_package = "v1";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/network_enums.proto";
+import "api/v1/network_flow.proto";
 
 package v1;
 
@@ -20,14 +21,11 @@ message NetworkEdgePropertiesBundle {
 }
 
 message NetworkNode {
-    string          deployment_id   = 1;
-    string          cluster         = 2;
-    string          namespace       = 3;
-    bool            internet_access = 4;
-    repeated string policy_ids      = 5;
-    string          deployment_name = 6;
+    NetworkEntityInfo entity          = 1;
+    bool              internet_access = 2;
+    repeated string   policy_ids      = 3;
 
-    map<int32, NetworkEdgePropertiesBundle> out_edges = 7;
+    map<int32, NetworkEdgePropertiesBundle> out_edges = 4;
 }
 
 message NetworkGraphRequest {
@@ -47,7 +45,5 @@ service NetworkGraphService {
             get: "/v1/networkgraph/cluster/{cluster_id}"
         };
     }
-
-
 
 }

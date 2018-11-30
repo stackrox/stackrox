@@ -81,6 +81,9 @@ const SceneManager = canvas => {
         });
 
         nodes.forEach(node => {
+            if (!node.deploymentId) {
+                return;
+            }
             objects.push(new Node(webGLScene, node));
         });
 

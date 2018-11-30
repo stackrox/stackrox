@@ -1,6 +1,5 @@
 plugins {
     id "com.google.protobuf" version "0.8.6"
-    id "java"
     id "groovy"
     id "codenarc"
 }
@@ -32,18 +31,20 @@ protobuf {
                 outputSubDir = "java"
             }
         }
+
+        // Add each output source directory to the sourceSet based on its basename (e.g., `java`).
+        all().each { task ->
+            task.outputSourceDirectorySet.srcDirs.each { srcDir ->
+                sourceSets[task.sourceSet.name][srcDir.name].srcDirs += srcDir
+            }
+        }
     }
-    generatedFilesBaseDir = "$projectDir/src"
 }
 
-
-sourceSets {
-
-    main {
-        java { srcDirs = [] }    // no source dirs for the java compiler
-        groovy { srcDirs = ["src/main/java", "src/main/groovy"] }
-        proto { }
-    }
+// Assign all Java source dirs to Groovy, as the groovy compiler should take care of them.
+sourceSets.each { ss ->
+    ss.groovy.srcDirs += ss.java.srcDirs
+    ss.java.srcDirs = []
 }
 
 dependencies {

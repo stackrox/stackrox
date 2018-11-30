@@ -7,6 +7,7 @@ import (
 	protobuf "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/networkflow/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/networkentity"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
@@ -81,26 +82,26 @@ func convertTS(ts timestamp.MicroTS) *types.Timestamp {
 ////////////////
 
 type networkFlowProperties struct {
-	srcDeploymentID string
-	dstDeploymentID string
-	dstPort         uint32
-	protocol        v1.L4Protocol
+	srcEntity networkentity.Entity
+	dstEntity networkentity.Entity
+	dstPort   uint32
+	protocol  v1.L4Protocol
 }
 
 func fromProto(protoProps *v1.NetworkFlowProperties) networkFlowProperties {
 	return networkFlowProperties{
-		srcDeploymentID: protoProps.SrcDeploymentId,
-		dstDeploymentID: protoProps.DstDeploymentId,
-		dstPort:         protoProps.DstPort,
-		protocol:        protoProps.L4Protocol,
+		srcEntity: networkentity.FromProto(protoProps.SrcEntity),
+		dstEntity: networkentity.FromProto(protoProps.DstEntity),
+		dstPort:   protoProps.DstPort,
+		protocol:  protoProps.L4Protocol,
 	}
 }
 
 func (n *networkFlowProperties) toProto() *v1.NetworkFlowProperties {
 	return &v1.NetworkFlowProperties{
-		SrcDeploymentId: n.srcDeploymentID,
-		DstDeploymentId: n.dstDeploymentID,
-		DstPort:         n.dstPort,
-		L4Protocol:      n.protocol,
+		SrcEntity:  n.srcEntity.ToProto(),
+		DstEntity:  n.dstEntity.ToProto(),
+		DstPort:    n.dstPort,
+		L4Protocol: n.protocol,
 	}
 }

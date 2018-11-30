@@ -22,9 +22,10 @@ const DataManager = canvas => {
     function setUpForceLayout() {
         simulationRunning = true;
 
+        const deploymentNodes = nodes.filter(n => n.deploymentId);
         const forceSimulation = d3
             .forceSimulation()
-            .nodes(nodes, d => d.deploymentId)
+            .nodes(deploymentNodes, d => d.deploymentId)
             .force(
                 'link',
                 d3
@@ -44,7 +45,7 @@ const DataManager = canvas => {
 
         // create static force layout by calculating ticks beforehand
         let i = 0;
-        const x = nodes.length * 5;
+        const x = deploymentNodes.length * 5;
         while (i < x) {
             forceSimulation.tick();
             i += 1;
@@ -57,24 +58,30 @@ const DataManager = canvas => {
 
     function getNamespaces(dataNodes) {
         const namespacesMapping = {};
-        let foundNamespaces = [];
 
         dataNodes.forEach(node => {
-            if (!namespacesMapping[node.namespace] || node.internetAccess) {
-                const namespace = {
-                    namespace: node.namespace,
-                    internetAccess: node.internetAccess
-                };
-                namespacesMapping[node.namespace] = namespace;
+            if (!node.entity || node.entity.type !== 'DEPLOYMENT') {
+                return;
             }
+            const {
+                deployment: { namespace }
+            } = node.entity;
+            let namespaceProperties = namespacesMapping[namespace];
+            if (!namespaceProperties) {
+                namespaceProperties = {
+                    namespace,
+                    internetAccess: false,
+                    nodes: []
+                };
+                namespacesMapping[namespace] = namespaceProperties;
+            }
+            if (node.internetAccess) {
+                namespaceProperties.internetAccess = true;
+            }
+            namespaceProperties.nodes.push(node);
         });
 
-        foundNamespaces = Object.values(namespacesMapping);
-
-        return foundNamespaces.map(namespace => ({
-            ...namespace,
-            nodes: dataNodes.filter(node => node.namespace === namespace.namespace)
-        }));
+        return Object.values(namespacesMapping);
     }
 
     function enrichNodes(dataNodes) {
@@ -82,15 +89,27 @@ const DataManager = canvas => {
 
         const enrichedNodes = dataNodes.map(dataNode => {
             const node = { ...dataNode };
+
+            if (dataNode.entity.type !== 'DEPLOYMENT') {
+                return node;
+            }
+
+            const {
+                id: deploymentId,
+                deployment: { namespace, name: deploymentName }
+            } = dataNode.entity;
             node.radius = constants.NODE_RADIUS;
+            node.deploymentId = deploymentId;
+            node.deploymentName = deploymentName;
+            node.namespace = namespace;
 
             // set centroid
-            if (!namespacesMapping[node.namespace]) {
+            if (!namespacesMapping[namespace]) {
                 node.centroid = true;
-                namespacesMapping[node.namespace] = node;
+                namespacesMapping[namespace] = node;
             }
             if (node.internetAccess) {
-                namespacesMapping[node.namespace] = node;
+                namespacesMapping[namespace] = node;
             }
 
             return node;

@@ -4,6 +4,7 @@ import objects.Edge
 import v1.NetworkGraphOuterClass
 
 class NetworkGraphUtil {
+
     static List<Edge> findEdges(NetworkGraphOuterClass.NetworkGraph graph, String sourceId, String targetId) {
         def sourceNodes = sourceId == null ? graph.nodesList : graph.nodesList.findAll {
             it.deploymentId == sourceId
@@ -33,4 +34,6 @@ class NetworkGraphUtil {
             }
         }
     }
+
 }
+

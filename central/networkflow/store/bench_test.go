@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/networkentity"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
@@ -23,10 +24,10 @@ func getFlows(maxNetworkFlows int) []*v1.NetworkFlow {
 		for j := 0; j < numDeployments; j++ {
 			flow := &v1.NetworkFlow{
 				Props: &v1.NetworkFlowProperties{
-					SrcDeploymentId: fmt.Sprintf("%d", i),
-					DstDeploymentId: fmt.Sprintf("%d", j),
-					L4Protocol:      v1.L4Protocol_L4_PROTOCOL_TCP,
-					DstPort:         80,
+					SrcEntity:  networkentity.ForDeployment(fmt.Sprintf("%d", i)).ToProto(),
+					DstEntity:  networkentity.ForDeployment(fmt.Sprintf("%d", j)).ToProto(),
+					L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
+					DstPort:    80,
 				},
 			}
 			flows = append(flows, flow)
@@ -84,10 +85,10 @@ func BenchmarkLeveledFlows(b *testing.B) {
 
 func BenchmarkGetID(b *testing.B) {
 	props := &v1.NetworkFlowProperties{
-		SrcDeploymentId: uuid.NewV4().String(),
-		DstDeploymentId: uuid.NewV4().String(),
-		DstPort:         9999,
-		L4Protocol:      v1.L4Protocol_L4_PROTOCOL_UDP,
+		SrcEntity:  networkentity.ForDeployment(uuid.NewV4().String()).ToProto(),
+		DstEntity:  networkentity.ForDeployment(uuid.NewV4().String()).ToProto(),
+		DstPort:    9999,
+		L4Protocol: v1.L4Protocol_L4_PROTOCOL_UDP,
 	}
 	for i := 0; i < b.N; i++ {
 		getID(props)

@@ -11,33 +11,50 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/networkentity"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/metrics"
 )
 
+const (
+	// Wait at least this long before determining that an unresolvable IP is "outside of the cluster".
+	clusterEntityResolutionWaitPeriod = 10 * time.Second
+)
+
+var (
+	internetUUID = uuid.Nil
+)
+
 type hostConnections struct {
-	connections        map[connection]timestamp.MicroTS
+	connections        map[connection]*connStatus
 	lastKnownTimestamp timestamp.MicroTS
 	sequenceID         int64
 
 	mutex sync.Mutex
 }
 
+type connStatus struct {
+	firstSeen timestamp.MicroTS
+	lastSeen  timestamp.MicroTS
+	used      bool
+}
+
 type networkConnIndicator struct {
-	srcDeploymentID string
-	dstDeploymentID string
-	dstPort         uint16
-	protocol        v1.L4Protocol
+	srcEntity networkentity.Entity
+	dstEntity networkentity.Entity
+	dstPort   uint16
+	protocol  v1.L4Protocol
 }
 
 func (i networkConnIndicator) toProto(ts timestamp.MicroTS) *v1.NetworkFlow {
 	proto := &v1.NetworkFlow{
 		Props: &v1.NetworkFlowProperties{
-			SrcDeploymentId: i.srcDeploymentID,
-			DstDeploymentId: i.dstDeploymentID,
-			DstPort:         uint32(i.dstPort),
-			L4Protocol:      i.protocol,
+			SrcEntity:  i.srcEntity.ToProto(),
+			DstEntity:  i.dstEntity.ToProto(),
+			DstPort:    uint32(i.dstPort),
+			L4Protocol: i.protocol,
 		},
 	}
 
@@ -49,9 +66,10 @@ func (i networkConnIndicator) toProto(ts timestamp.MicroTS) *v1.NetworkFlow {
 
 // connection is an instance of a connection as reported by collector
 type connection struct {
-	src            net.IPPortPair
-	dest           net.NumericEndpoint
-	srcContainerID string
+	local       net.IPPortPair
+	remote      net.NumericEndpoint
+	containerID string
+	incoming    bool
 }
 
 type networkFlowManager struct {
@@ -115,26 +133,64 @@ func (m *networkFlowManager) currentEnrichedConns() map[networkConnIndicator]tim
 	conns := m.getAllConnections()
 
 	enrichedConnections := make(map[networkConnIndicator]timestamp.MicroTS)
-	for conn, ts := range conns {
-		container, ok := m.clusterEntities.LookupByContainerID(conn.srcContainerID)
+	for conn, status := range conns {
+		container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
 		if !ok {
-			log.Errorf("Unable to fetch source deployment information, deployment does not exist for container %s", conn.srcContainerID)
+			log.Errorf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
 			continue
 		}
 
-		for _, lookupResult := range m.clusterEntities.LookupByEndpoint(conn.dest) {
+		lookupResults := m.clusterEntities.LookupByEndpoint(conn.remote)
+		if len(lookupResults) == 0 {
+			if timestamp.Now().ElapsedSince(status.firstSeen) < clusterEntityResolutionWaitPeriod {
+				continue
+			}
+			status.used = true
+
+			var port uint16
+			if conn.incoming {
+				port = conn.local.Port
+			} else {
+				port = conn.remote.IPAndPort.Port
+			}
+
+			// Fake a lookup result with an empty deployment ID.
+			lookupResults = []clusterentities.LookupResult{
+				{
+					Entity: networkentity.Entity{
+						Type: v1.NetworkEntityInfo_INTERNET,
+					},
+					ContainerPorts: []uint16{port},
+				},
+			}
+		} else {
+			status.used = true
+			if conn.incoming {
+				// Only report incoming connections from outside of the cluster. These are already taken care of by the
+				// corresponding outgoing connection from the other end.
+				continue
+			}
+		}
+
+		for _, lookupResult := range lookupResults {
 			for _, port := range lookupResult.ContainerPorts {
 				indicator := networkConnIndicator{
-					srcDeploymentID: container.DeploymentID,
-					dstDeploymentID: lookupResult.DeploymentID,
-					dstPort:         port,
-					protocol:        conn.dest.L4Proto.ToProtobuf(),
+					dstPort:  port,
+					protocol: conn.remote.L4Proto.ToProtobuf(),
+				}
+
+				if conn.incoming {
+					indicator.srcEntity = lookupResult.Entity
+					indicator.dstEntity = networkentity.ForDeployment(container.DeploymentID)
+				} else {
+					indicator.srcEntity = networkentity.ForDeployment(container.DeploymentID)
+					indicator.dstEntity = lookupResult.Entity
 				}
 
 				// Multiple connections from a collector can result in a single enriched connection
 				// hence update the timestamp only if we have a more recent connection than the one we have already enriched.
-				if oldTS, found := enrichedConnections[indicator]; !found || oldTS < ts {
-					enrichedConnections[indicator] = ts
+				if oldTS, found := enrichedConnections[indicator]; !found || oldTS < status.lastSeen {
+					enrichedConnections[indicator] = status.lastSeen
 				}
 			}
 		}
@@ -169,7 +225,7 @@ func computeUpdateMessage(current map[networkConnIndicator]timestamp.MicroTS, pr
 	}
 }
 
-func (m *networkFlowManager) getAllConnections() map[connection]timestamp.MicroTS {
+func (m *networkFlowManager) getAllConnections() map[connection]*connStatus {
 	// Phase 1: get a snapshot of all *hostConnections.
 	m.connectionsByHostMutex.Lock()
 	allHostConns := make([]*hostConnections, 0, len(m.connectionsByHost))
@@ -180,12 +236,12 @@ func (m *networkFlowManager) getAllConnections() map[connection]timestamp.MicroT
 
 	// Phase 2: Merge all connections from all *hostConnections into a single map. This two-phase approach avoids
 	// holding two locks simultaneously.
-	allConnections := make(map[connection]timestamp.MicroTS)
+	allConnections := make(map[connection]*connStatus)
 	for _, hostConns := range allHostConns {
 		hostConns.mutex.Lock()
-		for conn, ts := range hostConns.connections {
-			allConnections[conn] = ts
-			if ts != timestamp.InfiniteFuture {
+		for conn, status := range hostConns.connections {
+			allConnections[conn] = status
+			if status.lastSeen != timestamp.InfiniteFuture && status.used {
 				delete(hostConns.connections, conn) // connection not active, no longer needed
 			}
 		}
@@ -202,7 +258,7 @@ func (m *networkFlowManager) RegisterCollector(hostname string) (HostNetworkInfo
 
 	if conns == nil {
 		conns = &hostConnections{
-			connections: make(map[connection]timestamp.MicroTS),
+			connections: make(map[connection]*connStatus),
 		}
 		m.connectionsByHost[hostname] = conns
 	}
@@ -229,10 +285,10 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 		return errors.New("replaced by newer connection")
 	} else if sequenceID > h.sequenceID {
 		// This is the first message of the new connection.
-		for c := range h.connections {
+		for _, status := range h.connections {
 			// Mark all connections as closed this is the first update
 			// after a connection went down and came back up again.
-			h.connections[c] = h.lastKnownTimestamp
+			status.lastSeen = h.lastKnownTimestamp
 		}
 		h.sequenceID = sequenceID
 	}
@@ -242,7 +298,17 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 		if t != timestamp.InfiniteFuture { // adjust timestamp if not zero.
 			t += tsOffset
 		}
-		h.connections[c] = t
+		status := h.connections[c]
+		if status == nil {
+			status = &connStatus{
+				firstSeen: timestamp.Now(),
+			}
+			if t < status.firstSeen {
+				status.firstSeen = t
+			}
+			h.connections[c] = status
+		}
+		status.lastSeen = t
 	}
 
 	h.lastKnownTimestamp = nowTimestamp
@@ -261,20 +327,26 @@ func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connec
 	updatedConnections := make(map[connection]timestamp.MicroTS)
 
 	for _, conn := range networkInfo.GetUpdatedConnections() {
-		// Ignore connection originating from a server
-		if conn.Role != v1.ClientServerRole_ROLE_CLIENT {
+		var incoming bool
+		switch conn.Role {
+		case v1.ClientServerRole_ROLE_SERVER:
+			incoming = true
+		case v1.ClientServerRole_ROLE_CLIENT:
+			incoming = false
+		default:
 			continue
 		}
 
-		dest := net.NumericEndpoint{
+		remote := net.NumericEndpoint{
 			IPAndPort: getIPAndPort(conn.GetRemoteAddress()),
 			L4Proto:   net.L4ProtoFromProtobuf(conn.GetProtocol()),
 		}
-		src := getIPAndPort(conn.GetLocalAddress())
+		local := getIPAndPort(conn.GetLocalAddress())
 		c := connection{
-			src:            src,
-			dest:           dest,
-			srcContainerID: conn.GetContainerId(),
+			local:       local,
+			remote:      remote,
+			containerID: conn.GetContainerId(),
+			incoming:    incoming,
 		}
 
 		// timestamp will be set to close timestamp for closed connections, and zero for newly added connection.

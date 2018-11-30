@@ -42,7 +42,15 @@ class NetworkPage extends Component {
         networkPolicyGraph: PropTypes.shape({
             nodes: PropTypes.arrayOf(
                 PropTypes.shape({
-                    deploymentId: PropTypes.string.isRequired,
+                    entity: PropTypes.shape({
+                        type: PropTypes.string.isRequired,
+                        id: PropTypes.string.isRequired,
+                        deployment: PropTypes.shape({
+                            name: PropTypes.string.isRequired,
+                            namespace: PropTypes.string.isRequired,
+                            cluster: PropTypes.string.isRequired
+                        })
+                    }).isRequired,
                     outEdges: PropTypes.shape({})
                 })
             ),
@@ -51,7 +59,15 @@ class NetworkPage extends Component {
         networkFlowGraph: PropTypes.shape({
             nodes: PropTypes.arrayOf(
                 PropTypes.shape({
-                    deploymentId: PropTypes.string.isRequired,
+                    entity: PropTypes.shape({
+                        type: PropTypes.string.isRequired,
+                        id: PropTypes.string.isRequired,
+                        deployment: PropTypes.shape({
+                            name: PropTypes.string.isRequired,
+                            namespace: PropTypes.string.isRequired,
+                            cluster: PropTypes.string.isRequired
+                        })
+                    }).isRequired,
                     outEdges: PropTypes.shape({})
                 })
             ),

@@ -1,0 +1,3 @@
+moduleName = qa-tests-backend-extension-module
+moduleVersion = 1.0
+extensionClasses = util.NetworkNodeExtension

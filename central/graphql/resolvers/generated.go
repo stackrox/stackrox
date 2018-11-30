@@ -1725,6 +1725,116 @@ func (resolver *metadataResolver) Version() string {
 	return value
 }
 
+type networkEntityInfoResolver struct {
+	root *Resolver
+	data *v1.NetworkEntityInfo
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo(value *v1.NetworkEntityInfo, ok bool, err error) (*networkEntityInfoResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &networkEntityInfoResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfos(values []*v1.NetworkEntityInfo, err error) ([]*networkEntityInfoResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*networkEntityInfoResolver, len(values))
+	for i, v := range values {
+		output[i] = &networkEntityInfoResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *networkEntityInfoResolver) Id() graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *networkEntityInfoResolver) Type() string {
+	value := resolver.data.GetType()
+	return value.String()
+}
+
+type networkEntityInfoDescResolver struct {
+	resolver *networkEntityInfoResolver
+}
+
+func (resolver *networkEntityInfoResolver) Desc() *networkEntityInfoDescResolver {
+	return &networkEntityInfoDescResolver{resolver}
+}
+
+func (resolver *networkEntityInfoDescResolver) ToNetworkEntityInfo_Deployment() (*networkEntityInfo_DeploymentResolver, bool) {
+	value := resolver.resolver.data.GetDeployment()
+	if value != nil {
+		return &networkEntityInfo_DeploymentResolver{resolver.resolver.root, value}, true
+	}
+	return nil, false
+}
+
+type networkEntityInfo_DeploymentResolver struct {
+	root *Resolver
+	data *v1.NetworkEntityInfo_Deployment
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_Deployment(value *v1.NetworkEntityInfo_Deployment, ok bool, err error) (*networkEntityInfo_DeploymentResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &networkEntityInfo_DeploymentResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_Deployments(values []*v1.NetworkEntityInfo_Deployment, err error) ([]*networkEntityInfo_DeploymentResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*networkEntityInfo_DeploymentResolver, len(values))
+	for i, v := range values {
+		output[i] = &networkEntityInfo_DeploymentResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *networkEntityInfo_DeploymentResolver) Cluster() string {
+	value := resolver.data.GetCluster()
+	return value
+}
+
+func (resolver *networkEntityInfo_DeploymentResolver) Name() string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *networkEntityInfo_DeploymentResolver) Namespace() string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+type networkEntityInfo_TypeResolver struct {
+	root *Resolver
+	data *v1.NetworkEntityInfo_Type
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_Type(value *v1.NetworkEntityInfo_Type, ok bool, err error) (*networkEntityInfo_TypeResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &networkEntityInfo_TypeResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapNetworkEntityInfo_Types(values []*v1.NetworkEntityInfo_Type, err error) ([]*networkEntityInfo_TypeResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*networkEntityInfo_TypeResolver, len(values))
+	for i, v := range values {
+		output[i] = &networkEntityInfo_TypeResolver{resolver, v}
+	}
+	return output, nil
+}
+
 type networkFlowResolver struct {
 	root *Resolver
 	data *v1.NetworkFlow
@@ -1781,9 +1891,9 @@ func (resolver *Resolver) wrapNetworkFlowPropertiess(values []*v1.NetworkFlowPro
 	return output, nil
 }
 
-func (resolver *networkFlowPropertiesResolver) DstDeploymentId() string {
-	value := resolver.data.GetDstDeploymentId()
-	return value
+func (resolver *networkFlowPropertiesResolver) DstEntity() (*networkEntityInfoResolver, error) {
+	value := resolver.data.GetDstEntity()
+	return resolver.root.wrapNetworkEntityInfo(value, true, nil)
 }
 
 func (resolver *networkFlowPropertiesResolver) DstPort() int32 {
@@ -1796,9 +1906,9 @@ func (resolver *networkFlowPropertiesResolver) L4Protocol() string {
 	return value.String()
 }
 
-func (resolver *networkFlowPropertiesResolver) SrcDeploymentId() string {
-	value := resolver.data.GetSrcDeploymentId()
-	return value
+func (resolver *networkFlowPropertiesResolver) SrcEntity() (*networkEntityInfoResolver, error) {
+	value := resolver.data.GetSrcEntity()
+	return resolver.root.wrapNetworkEntityInfo(value, true, nil)
 }
 
 type nodeResolver struct {

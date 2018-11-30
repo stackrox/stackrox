@@ -15,6 +15,7 @@ import v1.NetworkGraphOuterClass.NetworkGraph
 import com.google.protobuf.util.Timestamps
 
 class NetworkFlowTest extends BaseSpecification {
+
     static final private NETWORK_FLOW_UPDATE_CADENCE = 30000 // Network flow data is updated every 30 seconds
 
     // Deployment names

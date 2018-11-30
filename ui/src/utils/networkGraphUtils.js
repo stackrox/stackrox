@@ -121,10 +121,18 @@ export const getLinks = (nodes, networkFlowMapping) => {
     const filteredLinks = [];
 
     nodes.forEach(node => {
+        if (!node.entity || node.entity.type !== 'DEPLOYMENT') {
+            return;
+        }
+        const { id: srcDeploymentId } = node.entity;
         Object.keys(node.outEdges).forEach(targetIndex => {
             const tgtNode = nodes[targetIndex];
-            const link = { source: node.deploymentId, target: tgtNode.deploymentId };
-            link.isActive = !!networkFlowMapping[`${node.deploymentId}--${tgtNode.deploymentId}`];
+            if (!tgtNode.entity || tgtNode.entity.type !== 'DEPLOYMENT') {
+                return;
+            }
+            const { id: tgtDeploymentId } = tgtNode.entity;
+            const link = { source: srcDeploymentId, target: tgtDeploymentId };
+            link.isActive = !!networkFlowMapping[`${srcDeploymentId}--${tgtDeploymentId}`];
             filteredLinks.push(link);
         });
     });
@@ -136,11 +144,22 @@ export const getLinksBetweenNamespaces = (nodes, networkFlowMapping) => {
     const namespaceLinks = {};
 
     nodes.forEach(node => {
-        const srcNamespace = node.namespace;
-        const srcDeploymentId = node.deploymentId;
+        if (!node.entity || node.entity.type !== 'DEPLOYMENT') {
+            return;
+        }
+        const {
+            id: srcDeploymentId,
+            deployment: { namespace: srcNamespace }
+        } = node.entity;
         Object.keys(node.outEdges).forEach(targetIndex => {
-            const tgtNamespace = nodes[targetIndex].namespace;
-            const tgtDeploymentId = nodes[targetIndex].deploymentId;
+            const tgtNode = nodes[targetIndex];
+            if (!tgtNode.entity || tgtNode.entity.type !== 'DEPLOYMENT') {
+                return;
+            }
+            const {
+                id: tgtDeploymentId,
+                deployment: { namespace: tgtNamespace }
+            } = tgtNode.entity;
             const key = `${srcNamespace}--${tgtNamespace}`;
             const isActive = networkFlowMapping[`${srcDeploymentId}--${tgtDeploymentId}`];
             const hasActive = namespaceLinks[key] && namespaceLinks[key].isActive;

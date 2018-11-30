@@ -7,7 +7,13 @@ class NetworkGraph extends Component {
     static propTypes = {
         nodes: PropTypes.arrayOf(
             PropTypes.shape({
-                deploymentId: PropTypes.string.isRequired
+                entity: PropTypes.shape({
+                    type: PropTypes.string.isRequired,
+                    id: PropTypes.string.isRequired,
+                    deployment: PropTypes.shape({
+                        name: PropTypes.string.isRequired
+                    })
+                }).isRequired
             })
         ).isRequired,
         networkFlowMapping: PropTypes.shape({}).isRequired,

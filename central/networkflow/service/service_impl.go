@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"google.golang.org/grpc"
@@ -60,6 +59,7 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 	if since == 0 {
 		since = timestamp.FromGoTime(time.Now().Add(defaultSince))
 	}
+
 	// Get the deployments we want to check connectivity between.
 	deployments, err := s.getDeployments(request.GetClusterId(), request.GetQuery())
 
@@ -67,20 +67,8 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 		return nil, err
 	}
 
-	// compute nodes
-	var nodes []*v1.NetworkNode
-
-	nodeIndices := make(map[string]int)
-	for i, d := range deployments {
-		nodes = append(nodes, &v1.NetworkNode{
-			DeploymentId:   d.GetId(),
-			DeploymentName: d.GetName(),
-			Cluster:        d.GetClusterName(),
-			Namespace:      d.GetNamespace(),
-			OutEdges:       make(map[int32]*v1.NetworkEdgePropertiesBundle),
-		})
-		nodeIndices[d.GetId()] = i
-	}
+	builder := newFlowGraphBuilder()
+	builder.AddDeployments(deployments)
 
 	flowStore := s.clusterStore.GetFlowStore(request.GetClusterId())
 
@@ -99,34 +87,8 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 	filteredFlows := filterNetworkFlowsByDeployments(flows, deployments)
 	filteredFlows = filterNetworkFlowsByTime(filteredFlows, since)
 
-	for _, flow := range filteredFlows {
-		props := flow.GetProps()
-		srcIdx := nodeIndices[props.GetSrcDeploymentId()]
-		srcNode := nodes[srcIdx]
-		tgtIdx := int32(nodeIndices[props.GetDstDeploymentId()])
-
-		tgtEdgeBundle := srcNode.OutEdges[tgtIdx]
-		if tgtEdgeBundle == nil {
-			tgtEdgeBundle = &v1.NetworkEdgePropertiesBundle{}
-			srcNode.OutEdges[tgtIdx] = tgtEdgeBundle
-		}
-
-		edgeProps := &v1.NetworkEdgeProperties{
-			Port:     props.GetDstPort(),
-			Protocol: props.L4Protocol,
-		}
-
-		edgeProps.LastActiveTimestamp = flow.GetLastSeenTimestamp()
-		if edgeProps.LastActiveTimestamp == nil {
-			edgeProps.LastActiveTimestamp = protoconv.ConvertTimeToTimestamp(time.Now())
-		}
-
-		tgtEdgeBundle.Properties = append(tgtEdgeBundle.Properties, edgeProps)
-	}
-
-	return &v1.NetworkGraph{
-		Nodes: nodes,
-	}, nil
+	builder.AddFlows(filteredFlows)
+	return builder.Build(), nil
 }
 
 func filterNetworkFlowsByDeployments(flows []*v1.NetworkFlow, deployments []*v1.Deployment) (filtered []*v1.NetworkFlow) {
@@ -138,13 +100,17 @@ func filterNetworkFlowsByDeployments(flows []*v1.NetworkFlow, deployments []*v1.
 	}
 
 	for _, flow := range flows {
-		srcID := flow.GetProps().SrcDeploymentId
-		dstID := flow.GetProps().DstDeploymentId
+		srcEnt := flow.GetProps().GetSrcEntity()
+		dstEnt := flow.GetProps().GetDstEntity()
 
-		if deploymentIDMap[srcID] && deploymentIDMap[dstID] {
-			filtered = append(filtered, flow)
+		if srcEnt.GetType() == v1.NetworkEntityInfo_DEPLOYMENT && !deploymentIDMap[srcEnt.GetId()] {
+			continue
+		}
+		if dstEnt.GetType() == v1.NetworkEntityInfo_DEPLOYMENT && !deploymentIDMap[dstEnt.GetId()] {
+			continue
 		}
 
+		filtered = append(filtered, flow)
 	}
 
 	return

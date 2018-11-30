@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/networkentity"
 )
 
 // ContainerMetadata is the container metadata that is stored per instance
@@ -185,7 +186,7 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 
 // LookupResult contains the result of a lookup operation.
 type LookupResult struct {
-	DeploymentID   string
+	Entity         networkentity.Entity
 	ContainerPorts []uint16
 	PortNames      []string
 }
@@ -208,7 +209,7 @@ func (e *Store) LookupByContainerID(containerID string) (ContainerMetadata, bool
 func (e *Store) lookupNoLock(endpoint net.NumericEndpoint) (results []LookupResult) {
 	for deploymentID, targetInfoSet := range e.endpointMap[endpoint] {
 		result := LookupResult{
-			DeploymentID:   deploymentID,
+			Entity:         networkentity.ForDeployment(deploymentID),
 			ContainerPorts: make([]uint16, 0, len(targetInfoSet)),
 		}
 		for tgtInfo := range targetInfoSet {
@@ -226,7 +227,7 @@ func (e *Store) lookupNoLock(endpoint net.NumericEndpoint) (results []LookupResu
 
 	for deploymentID := range e.ipMap[endpoint.IPAndPort.Address] {
 		result := LookupResult{
-			DeploymentID:   deploymentID,
+			Entity:         networkentity.ForDeployment(deploymentID),
 			ContainerPorts: []uint16{endpoint.IPAndPort.Port},
 		}
 		results = append(results, result)
