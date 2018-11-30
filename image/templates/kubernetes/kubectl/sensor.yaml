@@ -165,6 +165,7 @@ spec:
       containers:
       - name: collector
         image: {{.CollectorImage}}
+        imagePullPolicy: Always
         env:
         - name: COLLECTOR_CONFIG
           value: '{"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"},"syscalls":["accept","connect","execve","fork","clone","close","shutdown","socket"]}'
