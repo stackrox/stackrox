@@ -4,25 +4,12 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
-// RoleStore allows querying roles by name.
-type RoleStore interface {
-	RoleByName(name string) *v1.Role
-}
-
-// NewReadWriteRole returns a new role with the given name,
-// which has access to all permissions. Use sparingly!
-func NewReadWriteRole(name string) *v1.Role {
+// NewRoleWithGlobalAccess returns a new role with the given name,
+// which has access to all resources.
+func NewRoleWithGlobalAccess(name string, globalAccessLevel v1.Access) *v1.Role {
 	return &v1.Role{
 		Name:         name,
-		GlobalAccess: v1.Access_READ_WRITE_ACCESS,
-	}
-}
-
-// NewReadOnlyRole returns a new role with the given name that has read only access to all resources.
-func NewReadOnlyRole(name string) *v1.Role {
-	return &v1.Role{
-		Name:         name,
-		GlobalAccess: v1.Access_READ_ACCESS,
+		GlobalAccess: globalAccessLevel,
 	}
 }
 
@@ -30,18 +17,53 @@ func NewReadOnlyRole(name string) *v1.Role {
 func NewRoleWithPermissions(name string, permissions ...*v1.Permission) *v1.Role {
 	// Combine permissions into a map by resource, using the maximum access level for any
 	// resource with more than one permission set.
-	resourceToPermission := make(map[string]*v1.Permission, len(permissions))
+	resourcetoAccess := make(map[string]v1.Access, len(permissions))
 	for _, permission := range permissions {
-		if curr, exists := resourceToPermission[permission.GetResource()]; exists {
-			resourceToPermission[permission.GetResource()].Access = maxAccess(curr.GetAccess(), permission.GetAccess())
+		if access, exists := resourcetoAccess[permission.GetResource()]; exists {
+			resourcetoAccess[permission.GetResource()] = maxAccess(access, permission.GetAccess())
 		} else {
-			resourceToPermission[permission.GetResource()] = permission
+			resourcetoAccess[permission.GetResource()] = permission.GetAccess()
 		}
 	}
 
 	return &v1.Role{
-		Name:                 name,
-		ResourceToPermission: resourceToPermission,
+		Name:             name,
+		ResourceToAccess: resourcetoAccess,
+	}
+}
+
+// NewUnionRole returns a new role with maximum of the permissions of all input roles.
+func NewUnionRole(roles []*v1.Role) *v1.Role {
+	if len(roles) == 0 {
+		return nil
+	}
+	if len(roles) == 1 {
+		return roles[0]
+	}
+
+	// Combine permissions into a map by resource, using the maximum access level for any
+	// resource with more than one permission set.
+	globalAccess := v1.Access_NO_ACCESS
+	resourceToAccess := make(map[string]v1.Access)
+	for _, role := range roles {
+		if role.GetGlobalAccess() > globalAccess {
+			globalAccess = role.GetGlobalAccess()
+		}
+		for resource, access := range role.GetResourceToAccess() {
+			if acc, exists := resourceToAccess[resource]; exists {
+				resourceToAccess[resource] = maxAccess(acc, access)
+			} else {
+				resourceToAccess[resource] = access
+			}
+		}
+	}
+	if len(resourceToAccess) == 0 {
+		resourceToAccess = nil
+	}
+
+	return &v1.Role{
+		GlobalAccess:     globalAccess,
+		ResourceToAccess: resourceToAccess,
 	}
 }
 
@@ -50,7 +72,7 @@ func RoleHasPermission(role *v1.Role, permission *v1.Permission) bool {
 	if role.GetGlobalAccess() >= permission.GetAccess() {
 		return true
 	}
-	return role.GetResourceToPermission()[permission.GetResource()].GetAccess() >= permission.GetAccess()
+	return role.GetResourceToAccess()[permission.GetResource()] >= permission.GetAccess()
 }
 
 func maxAccess(access1, access2 v1.Access) v1.Access {

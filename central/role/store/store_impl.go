@@ -1,27 +1,94 @@
 package store
 
 import (
+	"fmt"
+
+	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/bolthelper/crud/proto"
 )
 
-// storeImpl implements store.
-// Currently, it is just a simple in-mem map, since the roles are pre-defined in the code.
-// We don't need to persist unless we allow users to create/modify roles.
 type storeImpl struct {
-	// We don't need to synchronize access to the map with a lock right now,
-	// since we only ever read from it. If we start modifying it, we will need
-	// to do that.
-	roles map[string]*v1.Role
+	roleCrud proto.MessageCrud
 }
 
-func (s *storeImpl) GetRoles() []*v1.Role {
-	roles := make([]*v1.Role, 0, len(s.roles))
-	for _, role := range s.roles {
-		roles = append(roles, role)
+// AddRole adds a role to the store.
+// Returns an error if the role already exists
+func (s *storeImpl) AddRole(role *v1.Role) error {
+	return s.roleCrud.Create(role)
+}
+
+// UpdateRole udpates a role to the store.
+// Returns an error if the role does not already exist, or if the role is a pre-loaded role.
+// Pre-loaded roles cannot be updated./
+func (s *storeImpl) UpdateRole(role *v1.Role) error {
+	if isDefaultRole(role) {
+		return fmt.Errorf("cannot modify default role %s", role.GetName())
 	}
-	return roles
+	return s.roleCrud.Update(role)
 }
 
-func (s *storeImpl) RoleByName(name string) *v1.Role {
-	return s.roles[name]
+// RemoveRole removes a role from the store.
+// Pre-loaded roles cannot be removed.
+func (s *storeImpl) RemoveRole(name string) error {
+	if isDefaultRoleName(name) {
+		return fmt.Errorf("cannot modify default role %s", name)
+	}
+	return s.roleCrud.Delete(name)
+}
+
+// GetRole returns a role from the store by name.
+// Returns nil without an error if the requested role does not exist.
+func (s *storeImpl) GetRole(name string) (*v1.Role, error) {
+	msg, err := s.roleCrud.Read(name)
+	if msg == nil {
+		return nil, err
+	}
+	return msg.(*v1.Role), err
+}
+
+// GetRolesBatch returns a list of the roles corresponding to the input ids in the same order.
+func (s *storeImpl) GetRolesBatch(names []string) ([]*v1.Role, error) {
+	// Get the list of proto.Messages.
+	msgs, err := s.roleCrud.ReadBatch(names)
+	if err != nil {
+		return nil, err
+	}
+	if len(msgs) == 0 {
+		return nil, err
+	}
+	// Cast to a list of roles.
+	roles := make([]*v1.Role, 0, len(names))
+	for _, msg := range msgs {
+		roles = append(roles, msg.(*v1.Role))
+	}
+	return roles, err
+}
+
+// GetRoles returns all of the roles in the store.
+// Returns nil without an error if no roles exist in the store (default roles cannot be deleted, so never)
+func (s *storeImpl) GetAllRoles() ([]*v1.Role, error) {
+	msgs, err := s.roleCrud.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+	if len(msgs) == 0 {
+		return nil, err
+	}
+	// Cast to a list of roles.
+	Roles := make([]*v1.Role, 0, len(msgs))
+	for _, msg := range msgs {
+		Roles = append(Roles, msg.(*v1.Role))
+	}
+	return Roles, nil
+}
+
+// Helper functions to check if a given role/name corresponds to a pre-loaded role.
+func isDefaultRoleName(name string) bool {
+	_, ok := rolePkg.DefaultRolesByName[name]
+	return ok
+}
+
+func isDefaultRole(role *v1.Role) bool {
+	return isDefaultRoleName(role.GetName())
 }

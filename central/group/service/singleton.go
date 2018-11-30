@@ -11,12 +11,10 @@ var (
 	once sync.Once
 )
 
-func initialize() {
-	svc = New(store.Singleton())
-}
-
 // Singleton provides the instance of the service to register.
 func Singleton() Service {
-	once.Do(initialize)
+	once.Do(func() {
+		svc = New(store.Singleton())
+	})
 	return svc
 }

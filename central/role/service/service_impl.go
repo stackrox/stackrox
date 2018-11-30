@@ -12,12 +12,21 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Role)): {
 			"/v1.RoleService/GetRoles",
+			"/v1.RoleService/GetRole",
+		},
+		user.With(permissions.Modify(resources.Role)): {
+			"/v1.RoleService/CreateRole",
+			"/v1.RoleService/SetDefaultRole",
+			"/v1.RoleService/UpdateRole",
+			"/v1.RoleService/DeleteRole",
 		},
 	})
 )
@@ -39,9 +48,35 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 }
 
 func (s *serviceImpl) GetRoles(context.Context, *v1.Empty) (*v1.GetRolesResponse, error) {
-	resp := new(v1.GetRolesResponse)
-	for _, role := range s.roleStore.GetRoles() {
-		resp.Roles = append(resp.GetRoles(), &v1.Role{Name: role.GetName()})
+	roles, err := s.roleStore.GetAllRoles()
+	if err != nil {
+		return nil, err
 	}
-	return resp, nil
+	return &v1.GetRolesResponse{Roles: roles}, nil
+}
+
+func (s *serviceImpl) GetRole(ctx context.Context, id *v1.ResourceByID) (*v1.Role, error) {
+	role, err := s.roleStore.GetRole(id.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if role == nil {
+		return nil, status.Errorf(codes.NotFound, "Role %s not found", id.GetId())
+	}
+	return role, nil
+}
+
+func (s *serviceImpl) CreateRole(ctx context.Context, role *v1.Role) (*v1.Empty, error) {
+	err := s.roleStore.AddRole(role)
+	return &v1.Empty{}, err
+}
+
+func (s *serviceImpl) UpdateRole(ctx context.Context, role *v1.Role) (*v1.Empty, error) {
+	err := s.roleStore.UpdateRole(role)
+	return &v1.Empty{}, err
+}
+
+func (s *serviceImpl) DeleteRole(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
+	err := s.roleStore.RemoveRole(id.GetId())
+	return &v1.Empty{}, err
 }

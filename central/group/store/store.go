@@ -9,6 +9,7 @@ import (
 const groupsBucket = "groups"
 
 // Store updates and utilizes groups, which are attribute to role mappings.
+//go:generate mockgen-wrapper Store
 type Store interface {
 	Get(props *v1.GroupProperties) (*v1.Group, error)
 	GetAll() ([]*v1.Group, error)

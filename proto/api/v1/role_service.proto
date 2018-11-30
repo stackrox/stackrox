@@ -5,6 +5,7 @@ option go_package = "v1";
 option java_package = "stackrox.generated";
 
 import weak "google/api/annotations.proto";
+import "api/v1/common.proto";
 import "api/v1/empty.proto";
 
 package v1;
@@ -25,7 +26,7 @@ message Role {
     string name = 1;
     Access global_access = 2;
 
-    map<string, Permission> resource_to_permission = 3;
+    map<string, Access> resource_to_access = 3;
 }
 
 message GetRolesResponse {
@@ -37,6 +38,32 @@ service RoleService {
     rpc GetRoles (Empty) returns (GetRolesResponse) {
         option (google.api.http) = {
             get: "/v1/roles"
+        };
+    }
+
+    rpc GetRole (ResourceByID) returns (Role) {
+        option (google.api.http) = {
+            get: "/v1/roles/{id}"
+        };
+    }
+
+    rpc CreateRole (Role) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v1/roles/{name}"
+            body: "*"
+        };
+    }
+
+    rpc UpdateRole (Role) returns (Empty) {
+        option (google.api.http) = {
+            put: "/v1/roles/{name}"
+            body: "*"
+        };
+    }
+
+    rpc DeleteRole (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/roles/{id}"
         };
     }
 

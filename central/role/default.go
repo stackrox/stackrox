@@ -24,17 +24,27 @@ const (
 	SensorCreator = "Sensor Creator"
 )
 
-// DefaultRoles holds the... default roles.
-var DefaultRoles = map[string]*v1.Role{
-	None:    permissions.NewRoleWithPermissions(None),
-	Analyst: permissions.NewReadOnlyRole(Analyst),
-	Admin:   permissions.NewReadWriteRole(Admin),
-	ContinuousIntegration: permissions.NewRoleWithPermissions(ContinuousIntegration,
+// DefaultRoles are the pre-defined roles available.
+var defaultRoles = []*v1.Role{
+	permissions.NewRoleWithPermissions(None),
+	permissions.NewRoleWithGlobalAccess(Admin, v1.Access_READ_WRITE_ACCESS),
+	permissions.NewRoleWithGlobalAccess(Analyst, v1.Access_READ_ACCESS),
+	permissions.NewRoleWithPermissions(ContinuousIntegration,
 		permissions.View(resources.Detection),
 	),
-	SensorCreator: permissions.NewRoleWithPermissions(SensorCreator,
+	permissions.NewRoleWithPermissions(SensorCreator,
 		permissions.View(resources.Cluster),
 		permissions.Modify(resources.Cluster),
 		permissions.View(resources.ServiceIdentity),
 	),
+}
+
+// DefaultRolesByName holds the default roles mapped by name.
+var DefaultRolesByName map[string]*v1.Role
+
+func init() {
+	DefaultRolesByName = make(map[string]*v1.Role)
+	for _, role := range defaultRoles {
+		DefaultRolesByName[role.GetName()] = role
+	}
 }

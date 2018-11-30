@@ -30,7 +30,7 @@ var (
 // NewStoreBackedRegistry creates a new auth provider registry that is backed by a store. It also can handle HTTP requests,
 // where every incoming HTTP request URL is expected to refer to a path under `urlPathPrefix`. The redirect URL for
 // clients upon successful/failed authentication is `clientRedirectURL`.
-func NewStoreBackedRegistry(urlPathPrefix string, redirectURL string, store Store, tokenIssuerFactory tokens.IssuerFactory, defaultRoleMapper permissions.RoleMapper) (Registry, error) {
+func NewStoreBackedRegistry(urlPathPrefix string, redirectURL string, store Store, tokenIssuerFactory tokens.IssuerFactory, roleMapperFactory permissions.RoleMapperFactory) (Registry, error) {
 	urlPathPrefix = strings.TrimRight(urlPathPrefix, "/") + "/"
 	registry := &storeBackedRegistry{
 		ServeMux:      http.NewServeMux(),
@@ -43,7 +43,7 @@ func NewStoreBackedRegistry(urlPathPrefix string, redirectURL string, store Stor
 		providers:        make(map[string]*authProvider),
 		providersByName:  make(map[string]*authProvider),
 
-		defaultRoleMapper: defaultRoleMapper,
+		roleMapperFactory: roleMapperFactory,
 	}
 
 	if err := registry.init(); err != nil {
@@ -66,7 +66,7 @@ type storeBackedRegistry struct {
 	providersByName  map[string]*authProvider
 	mutex            sync.RWMutex
 
-	defaultRoleMapper permissions.RoleMapper
+	roleMapperFactory permissions.RoleMapperFactory
 }
 
 // createAuthProviderAsync is called asynchronously when a new auth provider factory is registered, and providers have
@@ -137,7 +137,7 @@ func (r *storeBackedRegistry) createFromStoredDef(ctx context.Context, def *v1.A
 		return &authProvider{
 			baseInfo:   *def,
 			registry:   r,
-			roleMapper: r.defaultRoleMapper,
+			roleMapper: r.roleMapperFactory.GetRoleMapper(def.GetId()),
 		}
 	}
 
@@ -172,7 +172,7 @@ func (r *storeBackedRegistry) createProvider(ctx context.Context, id, typ, name,
 			Validated:  validated,
 		},
 		registry:   r,
-		roleMapper: r.defaultRoleMapper,
+		roleMapper: r.roleMapperFactory.GetRoleMapper(id),
 	}
 	return provider, nil
 }

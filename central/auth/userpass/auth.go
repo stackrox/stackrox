@@ -38,7 +38,7 @@ func RegisterAuthProviderOrPanic(registry authproviders.Registry) {
 
 // IdentityExtractorOrPanic creates and returns the identity extractor for basic authentication.
 func IdentityExtractorOrPanic() authn.IdentityExtractor {
-	adminRole := role.DefaultRoles[role.Admin]
+	adminRole := role.DefaultRolesByName[role.Admin]
 	if adminRole == nil {
 		log.Panic("Could not look up admin role")
 	}

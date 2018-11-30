@@ -44,6 +44,7 @@ import (
 	pingService "github.com/stackrox/rox/central/ping/service"
 	policyService "github.com/stackrox/rox/central/policy/service"
 	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
+	"github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
 	roleStore "github.com/stackrox/rox/central/role/store"
@@ -53,7 +54,6 @@ import (
 	"github.com/stackrox/rox/central/sensornetworkflow"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
 	summaryService "github.com/stackrox/rox/central/summary/service"
-	"github.com/stackrox/rox/central/user/mapper"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -128,7 +128,7 @@ func (c *central) startGRPCServer() {
 	registry, err := authproviders.NewStoreBackedRegistry(
 		ssoURLPathPrefix, tokenRedirectURLPath,
 		authProviderStore.New(globaldb.GetGlobalDB()), jwt.IssuerFactorySingleton(),
-		usermapper.Singleton())
+		mapper.FactorySingleton())
 
 	if err != nil {
 		log.Panicf("Could not create auth provider registry: %v", err)

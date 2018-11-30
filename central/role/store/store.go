@@ -1,23 +1,42 @@
 package store
 
 import (
-	"github.com/stackrox/rox/central/role"
+	"github.com/etcd-io/bbolt"
+	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/bolthelper"
+	proto2 "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
 )
 
+const rolesBucket = "roles"
+
 // Store is the store for roles.
-// For now, roles are read-only, and valid roles are pre-defined in the code.
-// The store's interface can be expanded if we start allowing for the creation
-// of custom roles, or for the updating of existing roles.
+//go:generate mockgen-wrapper Store
 type Store interface {
-	permissions.RoleStore
-	GetRoles() []*v1.Role
+	GetRole(name string) (*v1.Role, error)
+	GetRolesBatch(names []string) ([]*v1.Role, error)
+	GetAllRoles() ([]*v1.Role, error)
+
+	AddRole(*v1.Role) error
+	UpdateRole(*v1.Role) error
+	RemoveRole(name string) error
 }
 
-// New returns a new store.
-func New() Store {
+// New returns a new Store instance.
+// The buckets used are not deduped, so separate instances will read and write to the same KV store.
+func New(db *bbolt.DB) Store {
+	bolthelper.RegisterBucketOrPanic(db, rolesBucket)
+
 	return &storeImpl{
-		roles: role.DefaultRoles,
+		// Crud to store all of the roles.
+		roleCrud: proto2.NewMessageCrud(db,
+			rolesBucket,
+			func(msg proto.Message) []byte { // Roles stored by name.
+				return []byte(msg.(*v1.Role).GetName())
+			},
+			func() proto.Message {
+				return &v1.Role{}
+			},
+		),
 	}
 }

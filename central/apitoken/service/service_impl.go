@@ -76,9 +76,12 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 	}
 
 	// Make sure the role exists. We do not allow people to generate a token for a role that doesn't exist.
-	role := s.roleStore.RoleByName(req.GetRole())
+	role, err := s.roleStore.GetRole(req.GetRole())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "unable to fetch role %q", req.GetRole())
+	}
 	if role == nil {
-		return nil, status.Errorf(codes.InvalidArgument, "role '%s' doesn't exist", req.GetRole())
+		return nil, status.Errorf(codes.InvalidArgument, "role %q doesn't exist", req.GetRole())
 	}
 
 	token, metadata, err := s.backend.IssueRoleToken(req.GetName(), role)

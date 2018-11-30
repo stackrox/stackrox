@@ -2,11 +2,6 @@ package permissions
 
 import (
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/logging"
-)
-
-var (
-	logger = logging.LoggerForModule()
 )
 
 // Resource is a string representation of an exposed set of API endpoints (services).

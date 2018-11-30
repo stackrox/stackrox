@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -53,9 +52,7 @@ func (s *serviceImpl) GetGroups(context.Context, *v1.Empty) (*v1.GetGroupsRespon
 	if err != nil {
 		return nil, err
 	}
-	resp := new(v1.GetGroupsResponse)
-	resp.Groups = groups
-	return resp, nil
+	return &v1.GetGroupsResponse{Groups: groups}, nil
 }
 
 func (s *serviceImpl) GetGroup(ctx context.Context, props *v1.GroupProperties) (*v1.Group, error) {
@@ -64,7 +61,7 @@ func (s *serviceImpl) GetGroup(ctx context.Context, props *v1.GroupProperties) (
 		return nil, err
 	}
 	if group == nil {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("Group %s not found", proto.MarshalTextString(props)))
+		return nil, status.Errorf(codes.NotFound, "group %q not found", proto.MarshalTextString(props))
 	}
 	return group, nil
 }
