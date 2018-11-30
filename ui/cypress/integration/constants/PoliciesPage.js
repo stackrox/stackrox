@@ -14,11 +14,12 @@ export const selectors = {
     checkboxes: 'input:checkbox',
     policies: {
         scanImage: 'div.rt-tr:contains("90-Day")',
-        addCapabilities: '.rt-tr:contains("CAP_SYS_ADMIN capability added")'
+        addCapabilities: '.rt-tr:contains("CAP_SYS_ADMIN capability added")',
+        disabledPolicyImage: 'div.rt-tr.data-test-disabled:first'
     },
     form: {
-        nameInput: 'form input:first',
-        enableField: 'form div:contains("Enable") + div',
+        nameInput: 'form input[name=name]',
+        enableField: 'form input[name=disabled]',
         required: 'form span[data-test-id="required"]',
         select: 'form select',
         selectValue: 'form .react-select__multi-value__label'
@@ -54,6 +55,8 @@ export const selectors = {
     sidePanel: '[data-test-id="panel"]',
     sidePanelHeader: '[data-test-id="panel-header"]',
     tableFirstRow: 'div.rt-tbody > div.rt-tr-group:first > .rt-tr.-odd',
+    tableFirstRowName:
+        'div.rt-tbody > div.rt-tr-group:first > .rt-tr.-odd [data-test-id=policy-name]',
     hoverActionButtons: '.rt-tr-actions svg',
     tableContainer: '[data-test-id="policies-table-container"]',
     enableDisableIcon: '[data-test-id="enable-disable-icon"]',

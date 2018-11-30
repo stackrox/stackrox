@@ -862,3 +862,53 @@ overflow: initial !important;
 .redoc-wrap .api-content {
     @apply .overflow-auto !important;
 }
+
+/* CHECKBOX TOGGLE SWITCH */
+.form-switch, .form-switch-reverse{
+    @apply relative select-none w-12 mr-2 leading-normal;
+}
+
+.form-switch-checkbox {
+    @apply hidden;
+}
+
+.form-switch-checkbox:disabled + .form-switch-label {
+    @apply opacity-50
+}
+
+.form-switch-checkbox:disabled + .form-switch-label:before {
+    @apply bg-base-200
+}
+
+.form-switch-label {
+    @apply block overflow-hidden cursor-pointer  border rounded h-6;
+
+    transition: background-color 0.2s ease-in;
+}
+
+.form-switch .form-switch-label,
+.form-switch-reverse .form-switch-checkbox:checked + .form-switch-label {
+    @apply bg-base-600 shadow-inner;
+}
+
+.form-switch-label:before {
+    @apply absolute block bg-base-100 pin-y w-6 border rounded -ml-1;
+    
+    right: 50%;
+    content: "";
+    transition: all 0.2s ease-in;
+}
+
+.form-switch .form-switch-checkbox:checked + .form-switch-label,
+.form-switch-reverse .form-switch-checkbox + .form-switch-label {
+    @apply bg-primary-600 shadow-none;
+}
+
+.form-switch-reverse .form-switch-checkbox:checked + .form-switch-label:before {
+    right: 50%;
+}
+
+.form-switch .form-switch-checkbox:checked + .form-switch-label:before,
+.form-switch-reverse .form-switch-checkbox + .form-switch-label:before {
+    @apply pin-r;
+}

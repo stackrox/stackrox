@@ -42,16 +42,21 @@ class Table extends Component {
 
     getTrProps = (state, rowInfo) => {
         const flattenedRowInfo = rowInfo && rowInfo.original && flattenObject(rowInfo.original);
+
+        const classes = [];
+        if (rowInfo && rowInfo.original) {
+            classes.push(
+                flattenedRowInfo[this.props.idAttribute] === this.props.selectedRowId
+                    ? 'row-active'
+                    : ''
+            );
+            classes.push(rowInfo.original.disabled ? 'data-test-disabled' : '');
+        }
         return {
             onClick: () => {
                 if (this.props.onRowClick) this.props.onRowClick(rowInfo.original);
             },
-            className:
-                rowInfo &&
-                rowInfo.original &&
-                flattenedRowInfo[this.props.idAttribute] === this.props.selectedRowId
-                    ? 'row-active'
-                    : ''
+            className: classes.join(' ')
         };
     };
 

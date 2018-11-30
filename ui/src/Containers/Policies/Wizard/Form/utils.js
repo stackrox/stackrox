@@ -76,8 +76,9 @@ export function mapDescriptorToKey(descriptor) {
 }
 
 export function getPolicyFormDataKeys() {
-    const { policyDetails, policyConfiguration } = policyFormFields;
+    const { policyDetails, policyConfiguration, policyStatus } = policyFormFields;
     const policyDetailsKeys = mapDescriptorToKey(policyDetails.descriptor);
     const policyConfigurationKeys = mapDescriptorToKey(policyConfiguration.descriptor);
-    return [...policyDetailsKeys, ...policyConfigurationKeys];
+    const policyStatusKeys = mapDescriptorToKey(policyStatus.descriptor);
+    return [...policyDetailsKeys, ...policyConfigurationKeys, ...policyStatusKeys];
 }

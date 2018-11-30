@@ -144,7 +144,9 @@ class TableContents extends Component {
                             }`}
                             data-test-id="enable-disable-icon"
                         />
-                        <div className="pl-4">{original.name}</div>
+                        <div className="pl-4" data-test-id="policy-name">
+                            {original.name}
+                        </div>
                     </div>
                 ),
                 className: `w-1/5 sticky-column left-checkbox-offset ${wrapClassName} ${defaultColumnClassName}`,

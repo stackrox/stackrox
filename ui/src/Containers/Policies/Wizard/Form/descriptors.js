@@ -99,6 +99,18 @@ const memoryResource = (label, policy, field) => ({
 });
 
 // A descriptor for every option on the policy creation page.
+const policyStatusDescriptor = [
+    {
+        label: '',
+        header: true,
+        jsonpath: 'disabled',
+        type: 'toggle',
+        required: false,
+        reverse: true,
+        default: true
+    }
+];
+
 const policyDetailsFormDescriptor = [
     {
         label: 'Name',
@@ -153,15 +165,6 @@ const policyDetailsFormDescriptor = [
         jsonpath: 'remediation',
         type: 'textarea',
         placeholder: 'What can an operator do to resolve any violations?',
-        required: false,
-        default: true
-    },
-    {
-        label: 'Enable',
-        jsonpath: 'disabled',
-        exclude: false,
-        type: 'select',
-        options: [{ label: 'Yes', value: false }, { label: 'No', value: true }],
         required: false,
         default: true
     },
@@ -507,6 +510,10 @@ const policyConfigurationDescriptor = [
 ];
 
 const policyFormFields = {
+    policyStatus: {
+        header: 'Enable Policy',
+        descriptor: policyStatusDescriptor
+    },
     policyDetails: {
         header: 'Policy Details',
         descriptor: policyDetailsFormDescriptor

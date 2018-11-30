@@ -8,6 +8,7 @@ import ReduxCheckboxField from 'Components/forms/ReduxCheckboxField';
 import ReduxMultiSelectField from 'Components/forms/ReduxMultiSelectField';
 import ReduxMultiSelectCreatableField from 'Components/forms/ReduxMultiSelectCreatableField';
 import ReduxNumericInputField from 'Components/forms/ReduxNumericInputField';
+import ReduxToggleField from 'Components/forms/ReduxToggleField';
 
 export default function Field({ field }) {
     if (field === undefined) return null;
@@ -23,6 +24,14 @@ export default function Field({ field }) {
             );
         case 'checkbox':
             return <ReduxCheckboxField name={field.jsonpath} disabled={field.disabled} />;
+        case 'toggle':
+            return (
+                <ReduxToggleField
+                    name={field.jsonpath}
+                    disabled={field.disabled}
+                    reverse={field.reverse}
+                />
+            );
         case 'select':
             return (
                 <ReduxSelectField

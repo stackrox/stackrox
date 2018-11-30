@@ -84,9 +84,10 @@ describe('Policies page', () => {
     });
 
     it('should open side panel and check for the policy name', () => {
+        const name = Cypress.$(selectors.tableFirstRowName).text();
         cy.get(selectors.tableFirstRow).click({ force: true });
         cy.get(selectors.sidePanel).should('exist');
-        cy.get(selectors.sidePanelHeader).contains('30-Day Scan Age');
+        cy.get(selectors.sidePanelHeader).contains(name);
     });
 
     it('should allow updating policy name', () => {
@@ -149,12 +150,8 @@ describe('Policies page', () => {
     });
 
     it('should show a specific message when editing a policy with "enabled" value as "no"', () => {
-        cy.get(selectors.policies.scanImage).click({ force: true });
+        cy.get(selectors.policies.disabledPolicyImage).click({ force: true });
         editPolicy();
-        cy.get(`${selectors.form.enableField} .react-select__dropdown-indicator`)
-            .first()
-            .click();
-        cy.get(`div[role="option"]:contains("No")`).click();
         cy.get(selectors.nextButton).click();
         cy.get(selectors.policyPreview.message).should('have.text', text.policyPreview.message);
     });

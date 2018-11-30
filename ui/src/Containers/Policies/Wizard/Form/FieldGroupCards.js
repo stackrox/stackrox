@@ -63,12 +63,16 @@ class FieldGroupCards extends Component {
             const isAddedField =
                 this.state.fields.length !== 0 && this.state.fields.find(o => o === field.jsonpath);
             return (
-                field.default ||
-                isAddedField ||
-                formData.find(jsonpath => jsonpath.includes(field.jsonpath))
+                !field.header &&
+                (field.default ||
+                    isAddedField ||
+                    formData.find(jsonpath => jsonpath.includes(field.jsonpath)))
             );
         });
+
         if (!filteredFields.length) {
+            if (this.isHeaderOnlyCard(formFields)) return '';
+
             return <div className="p-3 text-base-500 font-500">No Fields Added</div>;
         }
 
@@ -116,18 +120,40 @@ class FieldGroupCards extends Component {
         );
     };
 
+    renderHeaderControl = formFields => {
+        const headerField = formFields.find(field => field.header);
+        if (!headerField) return '';
+
+        return (
+            <div className="header-control float-right flex">
+                <span className="pr-1">{headerField.label}</span>
+                <Field field={headerField} />
+            </div>
+        );
+    };
+
+    isHeaderOnlyCard = formFields =>
+        formFields.length === 1 && formFields.find(field => field.header);
+
     render() {
-        const fieldGroups = Object.keys(this.props.policyFormFields);
+        const fieldGroups = this.props.policyFormFields;
+        const fieldGroupKeys = Object.keys(fieldGroups);
         const formData = Object.keys(flattenObject(removeEmptyFields(this.props.formData)));
 
-        return fieldGroups.map(fieldGroup => {
-            const fieldGroupName = fieldGroup.replace(/([A-Z])/g, ' $1');
-            const formFields = this.props.policyFormFields[fieldGroup].descriptor;
+        return fieldGroupKeys.map(fieldGroupKey => {
+            const fieldGroupName = fieldGroups[fieldGroupKey].header;
+            const formFields = fieldGroups[fieldGroupKey].descriptor;
+            const headerControl = this.renderHeaderControl(formFields);
+            const border = this.isHeaderOnlyCard(formFields) ? '' : 'border';
+            const leading = headerControl ? 'leading-loose' : 'leading-normal';
             return (
-                <div className="px-3 pt-5" data-test-id={fieldGroup} key={fieldGroup}>
-                    <div className="bg-base-100 border border-base-200 shadow">
-                        <div className="p-3 pb-2 border-b border-base-300 text-base-600 font-700 text-lg leading-normal capitalize">
+                <div className="px-3 pt-5" data-test-id={fieldGroupKey} key={fieldGroupKey}>
+                    <div className={`bg-base-100 ${border} border-base-200 shadow`}>
+                        <div
+                            className={`p-3 pb-2 border-b border-base-300 text-base-600 font-700 text-lg capitalize flex justify-between ${leading}`}
+                        >
                             {fieldGroupName}
+                            {headerControl}
                         </div>
                         {this.renderFields(formFields, formData)}
                         {this.renderFieldsDropdown(formFields, formData)}
