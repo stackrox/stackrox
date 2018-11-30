@@ -748,7 +748,7 @@ dependencies:
     license: BSD-3-Clause
     files:
       AUTHORS: b82446c166daa6932dc33418961ed7a7f06c5a9fee17e9d214e16079e3442757
-      LICENSE: 583251bbdd1cbc531bf7ebe12b8535e1f9d3a4c7aa3cf25db5be62c5aa8cbd8f
+      LICENSE: 8778a9fc1eaffb03ab873caae251df2d224f6b5502be8777d3cd573a4dd43903
       CONTRIBUTORS: 9a8de5acb21b2911cc799e14f943b8974b281f503637cf92aeee4f01aa568e03
     attribution:
     - 2010 The Go Authors.
