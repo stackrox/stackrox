@@ -84,10 +84,13 @@ describe('Policies page', () => {
     });
 
     it('should open side panel and check for the policy name', () => {
-        const name = Cypress.$(selectors.tableFirstRowName).text();
-        cy.get(selectors.tableFirstRow).click({ force: true });
-        cy.get(selectors.sidePanel).should('exist');
-        cy.get(selectors.sidePanelHeader).contains(name);
+        cy.get(selectors.tableFirstRowName)
+            .invoke('text')
+            .then(name => {
+                cy.get(selectors.tableFirstRow).click({ force: true });
+                cy.get(selectors.sidePanel).should('exist');
+                cy.get(selectors.sidePanelHeader).contains(name);
+            });
     });
 
     it('should allow updating policy name', () => {
