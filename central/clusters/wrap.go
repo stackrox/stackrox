@@ -111,10 +111,11 @@ func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
 		"AdvertisedEndpointEnv": env.AdvertisedEndpoint.EnvVar(),
 		"AdvertisedEndpoint":    env.AdvertisedEndpoint.Setting(),
 
-		"RuntimeSupport":    c.RuntimeSupport,
-		"CollectorRegistry": collectorRegistry,
-		"CollectorImage":    collectorName.GetFullName(),
-		"CollectorTag":      version.GetCollectorVersion(),
+		"RuntimeSupport":                 c.RuntimeSupport,
+		"CollectorRegistry":              collectorRegistry,
+		"CollectorImage":                 collectorName.GetFullName(),
+		"CollectorTag":                   version.GetCollectorVersion(),
+		"CollectorModuleDownloadBaseURL": "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656",
 
 		"MonitoringEndpoint": netutil.WithDefaultPort(c.MonitoringEndpoint, defaultMonitoringPort),
 		"ClusterType":        c.Type.String(),
