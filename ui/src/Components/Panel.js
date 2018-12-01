@@ -3,13 +3,15 @@ import PropTypes from 'prop-types';
 import 'rc-tooltip/assets/bootstrap.css';
 import CloseButton from './CloseButton';
 
+export const headerClassName = 'flex w-full h-12 word-break';
+
 const Panel = props => (
     <div
-        className={`flex flex-col h-full border-l border-t-0 border-base-400 ${props.className}`}
+        className={`flex flex-col h-full border border-base-400 ${props.className}`}
         data-test-id="panel"
     >
         <div className="border-b border-base-400">
-            <div className="flex w-full h-12 word-break">
+            <div className={props.headerClassName}>
                 <div
                     className="flex flex-1 text-base-600 uppercase items-center tracking-wide pl-4 pt-1 leading-normal font-700"
                     data-test-id="panel-header"
@@ -35,6 +37,7 @@ const Panel = props => (
 
 Panel.propTypes = {
     header: PropTypes.string,
+    headerClassName: PropTypes.string,
     buttons: PropTypes.node,
     className: PropTypes.string,
     children: PropTypes.node.isRequired,
@@ -46,6 +49,7 @@ Panel.propTypes = {
 
 Panel.defaultProps = {
     header: ' ',
+    headerClassName,
     buttons: null,
     className: 'w-full',
     onClose: null,

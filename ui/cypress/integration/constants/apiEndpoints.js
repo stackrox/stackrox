@@ -52,3 +52,7 @@ export const policies = {
     policy: 'v1/policies/*',
     dryrun: 'v1/policies/dryrun'
 };
+
+export const roles = {
+    list: '/v1/roles/*'
+};

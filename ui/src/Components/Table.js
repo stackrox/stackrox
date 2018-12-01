@@ -23,7 +23,8 @@ class Table extends Component {
         noDataText: ReactTablePropTypes.noDataText,
         setTableRef: PropTypes.func,
         page: PropTypes.number,
-        trClassName: PropTypes.string
+        trClassName: PropTypes.string,
+        showThead: PropTypes.bool
     };
 
     static defaultProps = {
@@ -33,7 +34,18 @@ class Table extends Component {
         onRowClick: null,
         setTableRef: null,
         page: 0,
-        trClassName: ''
+        trClassName: '',
+        showThead: true
+    };
+
+    getTheadProps = () => {
+        if (!this.props.showThead) {
+            return {
+                style: { display: 'none' }
+            };
+        }
+        // returns an object, if there are no styles to override
+        return {};
     };
 
     getTrGroupProps = (state, rowInfo) => ({
@@ -79,6 +91,7 @@ class Table extends Component {
                 columns={columns}
                 getTrGroupProps={this.getTrGroupProps}
                 getTrProps={this.getTrProps}
+                getTheadProps={this.getTheadProps}
                 defaultPageSize={pageSize}
                 className="flex flex-1 overflow-auto border-0 w-full h-full"
                 resizable={false}

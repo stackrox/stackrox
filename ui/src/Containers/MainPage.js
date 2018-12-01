@@ -16,7 +16,8 @@ import {
     riskPath,
     imagesPath,
     secretsPath,
-    apidocsPath
+    apidocsPath,
+    accessControlPath
 } from 'routePaths';
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
@@ -41,6 +42,7 @@ const AsyncImagesPage = asyncComponent(() => import('Containers/Images/ImagesPag
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/CompliancePage'));
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
 const AsyncSecretsPage = asyncComponent(() => import('Containers/Secrets/SecretsPage'));
+const AsyncAccessControlPage = asyncComponent(() => import('Containers/AccessControl/Page'));
 
 class MainPage extends Component {
     static propTypes = {
@@ -72,6 +74,7 @@ class MainPage extends Component {
                     <ProtectedRoute path={riskPath} component={AsyncRiskPage} />
                     <ProtectedRoute path={imagesPath} component={AsyncImagesPage} />
                     <ProtectedRoute path={secretsPath} component={AsyncSecretsPage} />
+                    <ProtectedRoute path={accessControlPath} component={AsyncAccessControlPage} />
                     <ProtectedRoute path={apidocsPath} component={AsyncApiDocsPage} />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>

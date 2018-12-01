@@ -21,6 +21,11 @@ const common = Object.freeze({
         SCALE_TO_ZERO_ENFORCEMENT: 'Scale to Zero Replicas',
         KILL_POD_ENFORCEMENT: 'Kill Pod',
         UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: 'Add an Unsatisfiable Node Constraint'
+    },
+    accessControl: {
+        NO_ACCESS: 'No Access',
+        READ_ACCESS: 'Read Access',
+        READ_WRITE_ACCESS: 'Read + Write Access'
     }
 });
 

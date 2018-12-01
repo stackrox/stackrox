@@ -16,3 +16,4 @@ export const riskPath = `${mainPath}/risk/:deploymentId?`;
 export const imagesPath = `${mainPath}/images/:imageId?`;
 export const secretsPath = `${mainPath}/secrets/:secretId?`;
 export const apidocsPath = `${mainPath}/apidocs`;
+export const accessControlPath = `${mainPath}/access`;
