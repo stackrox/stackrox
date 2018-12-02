@@ -43,7 +43,7 @@ func NewDeployer(c *v1.Cluster) (Deployer, error) {
 
 // Deployer is the interface that defines how to get the specific files per orchestrator
 type Deployer interface {
-	Render(Wrap) ([]*v1.File, error)
+	Render(Wrap) ([]*zip.File, error)
 }
 
 var deployers = make(map[v1.ClusterType]Deployer)
@@ -123,8 +123,8 @@ func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
 	return fields, nil
 }
 
-func renderFilenames(filenames []string, c map[string]interface{}, staticFilenames ...string) ([]*v1.File, error) {
-	var files []*v1.File
+func renderFilenames(filenames []string, c map[string]interface{}, staticFilenames ...string) ([]*zip.File, error) {
+	var files []*zip.File
 	for _, f := range filenames {
 		t, err := templates.ReadFileAndTemplate(f)
 		if err != nil {
@@ -134,10 +134,18 @@ func renderFilenames(filenames []string, c map[string]interface{}, staticFilenam
 		if err != nil {
 			return nil, err
 		}
-		files = append(files, zip.NewFile(filepath.Base(f), d, path.Ext(f) == ".sh"))
+		var flags zip.FileFlags
+		if path.Ext(f) == ".sh" {
+			flags |= zip.Executable
+		}
+		files = append(files, zip.NewFile(filepath.Base(f), d, flags))
 	}
 	for _, staticFilename := range staticFilenames {
-		f, err := zip.NewFromFile(staticFilename, path.Base(staticFilename), path.Ext(staticFilename) == ".sh")
+		var flags zip.FileFlags
+		if path.Ext(staticFilename) == ".sh" {
+			flags |= zip.Executable
+		}
+		f, err := zip.NewFromFile(staticFilename, path.Base(staticFilename), flags)
 		if err != nil {
 			return nil, err
 		}

@@ -16,7 +16,7 @@ func newSwarm() deployer {
 	return &swarm{}
 }
 
-func (s *swarm) Render(c Config) ([]*v1.File, error) {
+func (s *swarm) Render(c Config) ([]*zip.File, error) {
 
 	filenames := []string{
 		"swarm/central.yaml",
@@ -25,9 +25,9 @@ func (s *swarm) Render(c Config) ([]*v1.File, error) {
 		"swarm/clairify.sh",
 	}
 
-	var files []*v1.File
+	var files []*zip.File
 	for k, v := range c.SecretsByteMap {
-		files = append(files, zip.NewFile(k, v, false))
+		files = append(files, zip.NewFile(k, v, zip.Sensitive))
 	}
 	renderedFiles, err := renderFilenames(filenames, &c, "/data/assets/docker-auth.sh")
 	if err != nil {

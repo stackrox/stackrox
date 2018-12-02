@@ -3,6 +3,7 @@ package clusters
 import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/zip"
 )
 
 func init() {
@@ -15,7 +16,7 @@ func newOpenshift() Deployer {
 	return &openshift{}
 }
 
-func (o *openshift) Render(c Wrap) ([]*v1.File, error) {
+func (o *openshift) Render(c Wrap) ([]*zip.File, error) {
 	var openshiftParams *v1.OpenshiftParams
 	clusterOpenshift, ok := c.OrchestratorParams.(*v1.Cluster_Openshift)
 	if ok {

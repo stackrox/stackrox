@@ -6,15 +6,14 @@ import (
 
 	"github.com/ghodss/yaml"
 	google_protobuf "github.com/golang/protobuf/ptypes/any"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/zip"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/renderutil"
 )
 
-func executeChartFiles(prefix string, c Config, files ...*google_protobuf.Any) ([]*v1.File, error) {
-	v1Files := make([]*v1.File, 0, len(files))
+func executeChartFiles(prefix string, c Config, files ...*google_protobuf.Any) ([]*zip.File, error) {
+	zipFiles := make([]*zip.File, 0, len(files))
 	for _, f := range files {
 		file, ok, err := executeChartFile(prefix, f.GetTypeUrl(), string(f.GetValue()), c)
 		if err != nil {
@@ -23,12 +22,12 @@ func executeChartFiles(prefix string, c Config, files ...*google_protobuf.Any) (
 		if !ok {
 			continue
 		}
-		v1Files = append(v1Files, file)
+		zipFiles = append(zipFiles, file)
 	}
-	return v1Files, nil
+	return zipFiles, nil
 }
 
-func executeChartFile(prefix string, filename string, templateStr string, c Config) (*v1.File, bool, error) {
+func executeChartFile(prefix string, filename string, templateStr string, c Config) (*zip.File, bool, error) {
 	data, err := executeRawTemplate(templateStr, &c)
 	if err != nil {
 		return nil, false, err
@@ -37,17 +36,24 @@ func executeChartFile(prefix string, filename string, templateStr string, c Conf
 	return file, ok, nil
 }
 
-func getChartFile(prefix, filename string, data []byte) (*v1.File, bool) {
+func getChartFile(prefix, filename string, data []byte) (*zip.File, bool) {
 	dataStr := string(data)
 	if len(strings.TrimSpace(dataStr)) == 0 {
 		return nil, false
 	}
-	return zip.NewFile(filepath.Join(prefix, filename), data, filepath.Ext(filename) == ".sh"), true
+	var flags zip.FileFlags
+	if filepath.Ext(filename) == ".sh" {
+		flags |= zip.Executable
+	}
+	if strings.HasSuffix(filepath.Base(filename), "-secret.yaml") {
+		flags |= zip.Sensitive
+	}
+	return zip.NewFile(filepath.Join(prefix, filename), data, flags), true
 }
 
 // Helm charts consist of Chart.yaml, values.yaml and templates
 // We need to
-func (k *kubernetes) renderHelmFiles(c Config, path, prefix string) ([]*v1.File, error) {
+func (k *kubernetes) renderHelmFiles(c Config, path, prefix string) ([]*zip.File, error) {
 	ch, err := chartutil.Load(path)
 	if err != nil {
 		return nil, err
@@ -65,7 +71,7 @@ func (k *kubernetes) renderHelmFiles(c Config, path, prefix string) ([]*v1.File,
 		return nil, err
 	}
 
-	var renderedFiles []*v1.File
+	var renderedFiles []*zip.File
 	// For kubectl files, we don't want to have the templates path so we trim it out
 	for k, v := range m {
 		if file, ok := getChartFile(prefix, filepath.Base(k), []byte(v)); ok {
@@ -80,7 +86,7 @@ func (k *kubernetes) renderHelmFiles(c Config, path, prefix string) ([]*v1.File,
 	return append(renderedFiles, files...), nil
 }
 
-func chartToFiles(prefix string, ch *chart.Chart, c Config) ([]*v1.File, error) {
+func chartToFiles(prefix string, ch *chart.Chart, c Config) ([]*zip.File, error) {
 	renderedFiles, err := executeChartFiles(prefix, c, ch.Files...)
 	if err != nil {
 		return nil, err
@@ -97,6 +103,8 @@ func chartToFiles(prefix string, ch *chart.Chart, c Config) ([]*v1.File, error) 
 		return nil, err
 	}
 	if ok {
+		// Values potentially contains passwords
+		valueFile.Flags |= zip.Sensitive
 		renderedFiles = append(renderedFiles, valueFile)
 	}
 
@@ -115,7 +123,7 @@ func chartToFiles(prefix string, ch *chart.Chart, c Config) ([]*v1.File, error) 
 	return renderedFiles, nil
 }
 
-func (k *kubernetes) renderChart(name, path string, c Config) ([]*v1.File, error) {
+func (k *kubernetes) renderChart(name, path string, c Config) ([]*zip.File, error) {
 	ch, err := chartutil.Load(path)
 	if err != nil {
 		return nil, err
@@ -123,7 +131,7 @@ func (k *kubernetes) renderChart(name, path string, c Config) ([]*v1.File, error
 	return chartToFiles(name, ch, c)
 }
 
-func (k *kubernetes) renderHelm(c Config) ([]*v1.File, error) {
+func (k *kubernetes) renderHelm(c Config) ([]*zip.File, error) {
 	renderedFiles, err := k.renderChart("central", centralChartPath, c)
 	if err != nil {
 		return nil, err

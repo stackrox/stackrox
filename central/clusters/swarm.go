@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/zip"
 )
 
 func init() {
@@ -18,7 +19,7 @@ func newSwarm() Deployer {
 	return &swarm{}
 }
 
-func (s *swarm) Render(c Wrap) ([]*v1.File, error) {
+func (s *swarm) Render(c Wrap) ([]*zip.File, error) {
 	var swarmParams *v1.SwarmParams
 	clusterSwarm, ok := c.OrchestratorParams.(*v1.Cluster_Swarm)
 	if ok {

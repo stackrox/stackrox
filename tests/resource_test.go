@@ -50,13 +50,6 @@ func TestClusters(t *testing.T) {
 
 	cByID.GetCluster().LastContact = c.GetLastContact()
 	assert.Equal(t, c, cByID.GetCluster())
-	for _, f := range cByID.GetFiles() {
-		assert.NotEmpty(t, f.GetName())
-		assert.NotEmpty(t, f.GetContent())
-		if strings.HasSuffix(f.GetName(), ".sh") {
-			assert.True(t, f.GetExecutable())
-		}
-	}
 }
 
 func TestDeployments(t *testing.T) {

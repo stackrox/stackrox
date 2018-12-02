@@ -119,7 +119,7 @@ func outputZip(config central.Config) error {
 		return err
 	}
 
-	var authFiles []*v1.File
+	var authFiles []*zipPkg.File
 
 	if features.HtpasswdAuth.Enabled() {
 		if config.Environment == nil {
@@ -133,7 +133,7 @@ func outputZip(config central.Config) error {
 		}
 
 		config.SecretsByteMap["htpasswd"] = htpasswd
-		authFiles = append(authFiles, zipPkg.NewFile("password", []byte(config.Password+"\n"), false))
+		authFiles = append(authFiles, zipPkg.NewFile("password", []byte(config.Password+"\n"), zipPkg.Sensitive))
 	}
 
 	cert, key, err := generateMTLSFiles(config.SecretsByteMap)

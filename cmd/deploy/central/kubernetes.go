@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/utils"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/netutil"
+	"github.com/stackrox/rox/pkg/zip"
 )
 
 const (
@@ -39,7 +40,7 @@ var (
 	clairifyChartPath   = prefixPath + clairifyChartSuffix
 )
 
-func (k *kubernetes) renderKubectl(c Config) ([]*v1.File, error) {
+func (k *kubernetes) renderKubectl(c Config) ([]*zip.File, error) {
 	renderedFiles, err := k.renderHelmFiles(c, centralChartPath, "central")
 	if err != nil {
 		return nil, fmt.Errorf("error rendering central files: %v", err)
@@ -61,7 +62,7 @@ func (k *kubernetes) renderKubectl(c Config) ([]*v1.File, error) {
 	return renderedFiles, nil
 }
 
-func (k *kubernetes) Render(c Config) ([]*v1.File, error) {
+func (k *kubernetes) Render(c Config) ([]*zip.File, error) {
 	// Make all items in SecretsByteMap base64 encoded
 	c.SecretsBase64Map = make(map[string]string)
 	for k, v := range c.SecretsByteMap {
@@ -82,7 +83,7 @@ func (k *kubernetes) Render(c Config) ([]*v1.File, error) {
 	c.K8sConfig.MonitoringImage = generateMonitoringImage(c.K8sConfig.MainImage)
 	c.K8sConfig.MonitoringEndpoint = netutil.WithDefaultPort(c.K8sConfig.MonitoringEndpoint, defaultMonitoringPort)
 
-	var renderedFiles []*v1.File
+	var renderedFiles []*zip.File
 	if c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_HELM {
 		renderedFiles, err = k.renderHelm(c)
 	} else {

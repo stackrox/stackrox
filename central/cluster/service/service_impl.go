@@ -9,7 +9,6 @@ import (
 	"github.com/docker/distribution/reference"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/monitoring"
 	"github.com/stackrox/rox/central/role/resources"
@@ -170,19 +169,8 @@ func (s *serviceImpl) getCluster(id string) (*v1.ClusterResponse, error) {
 		return nil, status.Error(codes.NotFound, "Not found")
 	}
 
-	deployer, err := clusters.NewDeployer(cluster)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
-	}
-
-	files, err := deployer.Render(clusters.Wrap(*cluster))
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "Could not render all files: %s", err)
-	}
-
 	return &v1.ClusterResponse{
 		Cluster: cluster,
-		Files:   files,
 	}, nil
 }
 

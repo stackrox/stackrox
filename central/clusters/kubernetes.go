@@ -3,6 +3,7 @@ package clusters
 import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/zip"
 )
 
 func init() {
@@ -24,7 +25,7 @@ var monitoringFilenames = []string{
 	"kubernetes/kubectl/telegraf.conf",
 }
 
-func (k *kubernetes) Render(c Wrap) ([]*v1.File, error) {
+func (k *kubernetes) Render(c Wrap) ([]*zip.File, error) {
 	var kubernetesParams *v1.KubernetesParams
 	clusterKube, ok := c.OrchestratorParams.(*v1.Cluster_Kubernetes)
 	if ok {

@@ -146,7 +146,7 @@ type Config struct {
 }
 
 type deployer interface {
-	Render(Config) ([]*v1.File, error)
+	Render(Config) ([]*zip.File, error)
 	Instructions(Config) string
 }
 
@@ -182,21 +182,26 @@ func generateMonitoringImage(mainImage string) string {
 	return fmt.Sprintf("%s/%s:%s", img.GetName().GetRegistry(), remote, img.GetName().GetTag())
 }
 
-func wrapFiles(files []*v1.File, c *Config, staticFilenames ...string) ([]*v1.File, error) {
+func wrapFiles(files []*zip.File, c *Config, staticFilenames ...string) ([]*zip.File, error) {
+	files = files[:len(files):len(files)]
 	for _, staticFilename := range staticFilenames {
-		f, err := zip.NewFromFile(staticFilename, path.Base(staticFilename), path.Ext(staticFilename) == ".sh")
+		var flags zip.FileFlags
+		if path.Ext(staticFilename) == ".sh" {
+			flags |= zip.Executable
+		}
+		f, err := zip.NewFromFile(staticFilename, path.Base(staticFilename), flags)
 		if err != nil {
 			return nil, err
 		}
 		files = append(files, f)
 	}
-	files = append(files, zip.NewFile("README", []byte(standardizeWhitespace(Deployers[c.ClusterType].Instructions(*c))), false))
+	files = append(files, zip.NewFile("README", []byte(standardizeWhitespace(Deployers[c.ClusterType].Instructions(*c))), 0))
 
 	return files, nil
 }
 
-func renderFilenames(filenames []string, c *Config, staticFilenames ...string) ([]*v1.File, error) {
-	var files []*v1.File
+func renderFilenames(filenames []string, c *Config, staticFilenames ...string) ([]*zip.File, error) {
+	var files []*zip.File
 	for _, f := range filenames {
 		t, err := templates.ReadFileAndTemplate(f)
 		if err != nil {
@@ -207,9 +212,14 @@ func renderFilenames(filenames []string, c *Config, staticFilenames ...string) (
 			return nil, err
 		}
 
+		var flags zip.FileFlags
+		if strings.HasSuffix(f, ".sh") {
+			flags |= zip.Executable
+		}
+
 		// Trim the first section off of the path because it defines the orchestrator
 		path := f[strings.Index(f, "/")+1:]
-		files = append(files, zip.NewFile(path, d, strings.HasSuffix(f, ".sh")))
+		files = append(files, zip.NewFile(path, d, flags))
 	}
 	return wrapFiles(files, c, staticFilenames...)
 }
