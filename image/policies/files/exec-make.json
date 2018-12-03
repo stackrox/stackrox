@@ -1,14 +1,15 @@
 {
-    "name": "make Execution",
+    "name": "Compiler Tool Execution",
     "description": "Detects process execution of make",
+    "description": "Detects execution of binaries which are used to compile software",
     "categories": ["Package Management"],
     "severity": "LOW_SEVERITY",
     "lifecycle_stages": ["RUNTIME"],
     "fields": {
       "process_policy": {
-        "name": "make"
+        "name": "make|gcc|llc|llvm-.*"
       }
     },
-  "rationale": "Calling make during runtime could indicate someone trying to use your infrastructure to build software.",
-  "remediation": "Avoid packaging dev tools with the container that can be called in run time"
+  "rationale": "Usage of compilation tools during runtime may indicate usage of infrastructure to build software.",
+  "remediation": "Avoid packaging compiler tools container image."
 }

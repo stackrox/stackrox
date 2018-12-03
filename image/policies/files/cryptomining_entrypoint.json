@@ -1,6 +1,6 @@
 {
-  "name": "Cryptomining Entrypoint",
-  "description": "Alert on deployments with an entrypoint that contains `minerd`",
+  "name": "Cryptocurrency Mining Process as Entrypoint",
+  "description": "Alert on deployments with an entrypoint that is a known cryptocurrency miner.",
   "severity": "HIGH_SEVERITY",
   "lifecycle_stages": ["DEPLOY"],
   "categories": ["Security Best Practices"],
@@ -10,6 +10,6 @@
       "value": ".*minerd.*"
     }
   },
-  "rationale": "minerd is a cryptomining binary that has been recently used to mine cryptocurrency in hijacked clusters.",
-  "remediation": "Remove the services that are cryptomining."
+  "rationale": "Cryptocurrency mining process execution is often evidence of malicious activity or a hijacked cluster.",
+  "remediation": "Remove the services that are mining cryptocurrency."
 }

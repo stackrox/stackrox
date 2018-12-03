@@ -282,7 +282,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	suite.mustIndexDepAndImages(curlDep)
 
 	componentDeps := make(map[string]*v1.Deployment)
-	for _, component := range []string{"apt", "dnf", "wget", "yum", "rpm"} {
+	for _, component := range []string{"apt", "dnf", "wget"} {
 		dep := deploymentWithComponents([]*v1.ImageScanComponent{
 			{Name: component},
 		})
@@ -437,8 +437,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	suite.mustIndexDepAndImages(depWithAllResourceLimitsRequestsSpecified)
 
 	// Index processes
-	aptgetIndicator := suite.mustAddIndicator(fixtureDep.GetId(), "apt-get", "install nmap", "/usr/bin/apt-get")
-
 	fixtureDepAptIndicator := suite.mustAddIndicator(fixtureDep.GetId(), "apt", "", "/usr/bin/apt")
 	sysAdminDepAptIndicator := suite.mustAddIndicator(sysAdminDep.GetId(), "apt", "install blah", "/usr/bin/apt")
 
@@ -505,11 +503,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Aptitude Package Manager (apt) in Image",
+			policyName: "Ubuntu Package Manager in Image",
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				componentDeps["apt"].GetId(): {
 					{
-						Message: "Component name 'apt' matched apt",
+						Message: "Component name 'apt' matched apt|dpkg",
 					},
 				},
 			},
@@ -525,11 +523,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "DNF Package Manager (dnf) in Image",
+			policyName: "Red Hat Package Manager in Image",
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				componentDeps["dnf"].GetId(): {
 					{
-						Message: "Component name 'dnf' matched dnf",
+						Message: "Component name 'dnf' matched rpm|dnf|yum",
 					},
 				},
 			},
@@ -540,26 +538,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				componentDeps["wget"].GetId(): {
 					{
 						Message: "Component name 'wget' matched wget",
-					},
-				},
-			},
-		},
-		{
-			policyName: "Yum Package Manager (yum) in Image",
-			expectedViolations: map[string][]*v1.Alert_Violation{
-				componentDeps["yum"].GetId(): {
-					{
-						Message: "Component name 'yum' matched yum",
-					},
-				},
-			},
-		},
-		{
-			policyName: "RPM Package Manager (rpm) in Image",
-			expectedViolations: map[string][]*v1.Alert_Violation{
-				componentDeps["rpm"].GetId(): {
-					{
-						Message: "Component name 'rpm' matched rpm",
 					},
 				},
 			},
@@ -595,7 +573,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Image Port 22",
+			policyName: "Secure Shell (ssh) Port Exposed in Image",
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				imagePort22Dep.GetId(): {
 					{
@@ -605,7 +583,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Container Port 22",
+			policyName: "Secure Shell (ssh) Port Exposed",
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				containerPort22Dep.GetId(): {
 					{
@@ -643,7 +621,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Overwrites /run/secrets Volume",
+			policyName: "Improper Usage of Orchestrator Secrets Volume",
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				runSecretsDep.GetId(): {
 					{
@@ -673,7 +651,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			sampleViolationForMatched: "Image has not been scanned",
 		},
 		{
-			policyName: "Cryptomining Entrypoint",
+			policyName: "Cryptocurrency Mining Process as Entrypoint",
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				minerdDep.GetId(): {
 					{
@@ -762,7 +740,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Don't use environment variables with secrets",
+			policyName: "Environment Variable Contains Secret",
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				secretEnvDep.GetId(): {
 					{
@@ -813,17 +791,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "apt-get Execution",
-			expectedViolations: map[string][]*v1.Alert_Violation{
-				fixtureDep.GetId(): {
-					{
-						Message:   "Detected execution of binary '/usr/bin/apt-get' with arguments 'install nmap'",
-						Processes: []*v1.ProcessIndicator{aptgetIndicator},
-					},
-				},
-			},
-		},
-		{
 			policyName: "nmap Execution",
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				fixtureDep.GetId(): {
@@ -852,7 +819,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "apt Execution",
+			policyName: "Ubuntu Package Manager Execution",
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				fixtureDep.GetId(): {
 					{
@@ -951,11 +918,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Aptitude Package Manager (apt) in Image",
+			policyName: "Ubuntu Package Manager in Image",
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				suite.imageIDFromDep(componentDeps["apt"]): {
 					{
-						Message: "Component name 'apt' matched apt",
+						Message: "Component name 'apt' matched apt|dpkg",
 					},
 				},
 			},
@@ -971,11 +938,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "DNF Package Manager (dnf) in Image",
+			policyName: "Red Hat Package Manager in Image",
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				suite.imageIDFromDep(componentDeps["dnf"]): {
 					{
-						Message: "Component name 'dnf' matched dnf",
+						Message: "Component name 'dnf' matched rpm|dnf|yum",
 					},
 				},
 			},
@@ -986,26 +953,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				suite.imageIDFromDep(componentDeps["wget"]): {
 					{
 						Message: "Component name 'wget' matched wget",
-					},
-				},
-			},
-		},
-		{
-			policyName: "Yum Package Manager (yum) in Image",
-			expectedViolations: map[string][]*v1.Alert_Violation{
-				suite.imageIDFromDep(componentDeps["yum"]): {
-					{
-						Message: "Component name 'yum' matched yum",
-					},
-				},
-			},
-		},
-		{
-			policyName: "RPM Package Manager (rpm) in Image",
-			expectedViolations: map[string][]*v1.Alert_Violation{
-				suite.imageIDFromDep(componentDeps["rpm"]): {
-					{
-						Message: "Component name 'rpm' matched rpm",
 					},
 				},
 			},
@@ -1031,7 +978,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Image Port 22",
+			policyName: "Secure Shell (ssh) Port Exposed in Image",
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				suite.imageIDFromDep(imagePort22Dep): {
 					{
@@ -1051,7 +998,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Overwrites /run/secrets Volume",
+			policyName: "Improper Usage of Orchestrator Secrets Volume",
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				suite.imageIDFromDep(runSecretsDep): {
 					{
@@ -1070,7 +1017,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			sampleViolationForMatched: "Image has not been scanned",
 		},
 		{
-			policyName: "Cryptomining Entrypoint",
+			policyName: "Cryptocurrency Mining Process as Entrypoint",
 			expectedViolations: map[string][]*v1.Alert_Violation{
 				suite.imageIDFromDep(minerdDep): {
 					{

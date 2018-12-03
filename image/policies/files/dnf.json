@@ -1,14 +1,14 @@
 {
-  "name": "DNF Package Manager (dnf) in Image",
-  "description": "Alert on deployments with the DNF package manager (dnf), commonly used in Red Hat-family distributions, present",
+  "name": "Red Hat Package Manager in Image",
+  "description": "Alert on deployments with compoenents of the Red Hat/Fedora/CentOS package management system.",
   "severity": "LOW_SEVERITY",
   "lifecycle_stages": ["DEPLOY"],
   "categories": ["Security Best Practices"],
   "fields": {
     "component": {
-      "name": "dnf"
+      "name": "rpm|dnf|yum"
     }
   },
   "rationale": "Package managers make it easier for attackers to use compromised containers, since they can easily add software.",
-  "remediation": "Run `rpm -e $(rpm -qa *rpm*) $(rpm -qa *dnf*) $(rpm -qa *libsolv*) $(rpm -qa *hawkey*)` in the image build for production containers."
+  "remediation": "Run `rpm -e $(rpm -qa *rpm*) $(rpm -qa *dnf*) $(rpm -qa *libsolv*) $(rpm -qa *hawkey*) $(rpm -qa yum*)` in the image build for production containers."
 }

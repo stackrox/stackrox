@@ -13,7 +13,7 @@ import (
 const (
 	nginxDeploymentName     = `nginx`
 	expectedLatestTagPolicy = `Latest tag`
-	expectedPort22Policy    = `Container Port 22`
+	expectedPort22Policy    = `Secure Shell (ssh) Port Exposed`
 
 	waitTimeout = 2 * time.Minute
 )

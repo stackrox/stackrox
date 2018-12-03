@@ -1,6 +1,6 @@
 {
-  "name": "Container Port 22",
-  "description": "Alert on deployments exposing port 22",
+  "name": "Secure Shell (ssh) Port Exposed",
+  "description": "Alert on deployments exposing port 22, commonly reserved for SSH access.",
   "severity": "HIGH_SEVERITY",
   "lifecycle_stages": ["DEPLOY"],
   "categories": ["Security Best Practices"],

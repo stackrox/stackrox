@@ -79,33 +79,33 @@ class DefaultPoliciesTest extends BaseSpecification {
         where:
         "Data inputs are:"
 
-        policyName                                     | deploymentName | testId
+        policyName                                      | deploymentName | testId
 
-        "Container Port 22"                            | NGINX_LATEST   | "C311"
+        "Secure Shell (ssh) Port Exposed"               | NGINX_LATEST   | "C311"
 
-        "Latest tag"                                   | NGINX_LATEST   | ""
+        "Latest tag"                                    | NGINX_LATEST   | ""
 
-        "Don't use environment variables with secrets" | NGINX_LATEST   | ""
+        "Environment Variable Contains Secret"          | NGINX_LATEST   | ""
 
-        "Apache Struts: CVE-2017-5638"                 | STRUTS         | "C938"
+        "Apache Struts: CVE-2017-5638"                  | STRUTS         | "C938"
 
-        "Heartbleed: CVE-2014-0160"                    | SSL_TERMINATOR | "C947"
+        "Heartbleed: CVE-2014-0160"                     | SSL_TERMINATOR | "C947"
 
-        "Wget in Image"                                | STRUTS         | "C939"
+        "Wget in Image"                                 | STRUTS         | "C939"
 
-        "90-Day Image Age"                             | STRUTS         | "C810"
+        "90-Day Image Age"                              | STRUTS         | "C810"
 
-        "Aptitude Package Manager (apt) in Image"      | STRUTS         | "C931"
+        "Ubuntu Package Manager in Image"               | STRUTS         | "C931"
 
-        "30-Day Scan Age"                              | SSL_TERMINATOR | "C941"
+        "30-Day Scan Age"                               | SSL_TERMINATOR | "C941"
 
-        "CVSS >= 7"                                    | STRUTS         | "C933"
+        "CVSS >= 7"                                     | STRUTS         | "C933"
 
-        "Shellshock: CVE-2014-6271"                    | SSL_TERMINATOR | "C948"
+        "Shellshock: CVE-2014-6271"                     | SSL_TERMINATOR | "C948"
 
-        "Curl in Image"                                | STRUTS         | "C948"
+        "Curl in Image"                                 | STRUTS         | "C948"
 
-        "DockerHub NGINX 1.10"                         | NGINX_1_10     | "C823"
+        "DockerHub NGINX 1.10"                          | NGINX_1_10     | "C823"
     }
 
     @Category(BAT)
@@ -222,7 +222,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         "Verify expected groups have non-zero counts"
         flat.size() >= 3
         flat["Latest tag"] != 0
-        flat["Container Port 22"] != 0
+        flat["Secure Shell (ssh) Port Exposed"] != 0
         flat["Don't use environment variables with secrets"] != 0
     }
 }

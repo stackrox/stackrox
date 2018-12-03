@@ -32,7 +32,7 @@ class ImageManagementTest extends BaseSpecification {
         //intentionally use the same policy twice to make sure alert count does not increment
         "Latest tag"                                  | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
         "90-Day Image Age"                            | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
-        "Aptitude Package Manager (apt) in Image"     | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
+        "Ubuntu Package Manager in Image"             | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
         "Curl in Image"                               | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
         "CVSS >= 7"                                   | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
         "Wget in Image"                               | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"

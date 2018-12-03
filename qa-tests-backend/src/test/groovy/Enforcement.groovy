@@ -10,8 +10,8 @@ import stackrox.generated.PolicyServiceOuterClass
 import stackrox.generated.PolicyServiceOuterClass.EnforcementAction
 
 class Enforcement extends BaseSpecification {
-    private final static String CONTAINER_PORT_22_POLICY = "Container Port 22"
-    private final static String APT_GET_POLICY = "apt-get Execution"
+    private final static String CONTAINER_PORT_22_POLICY = "Secure Shell (ssh) Port Exposed"
+    private final static String APT_GET_POLICY = "Ubuntu Package Manager Execution"
     private final static String LATEST_TAG = "Latest tag"
 
     @Category([BAT, Integration, PolicyEnforcement])

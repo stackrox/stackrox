@@ -54,11 +54,11 @@ class RuntimePolicyTest extends BaseSpecification  {
 
         depName | policyName
 
-        DEPLOYMENTAPTGET | "apt-get Execution"
+        DEPLOYMENTAPTGET | "Ubuntu Package Manager Execution"
 
-        DEPLOYMENTAPT | "apt Execution"
+        DEPLOYMENTAPT | "Ubuntu Package Manager Execution"
 
-        DEPLOYMENTAPTGET | "dpkg Execution"
+        DEPLOYMENTAPTGET | "Ubuntu Package Manager Execution"
     }
 
 }
