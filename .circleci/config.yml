@@ -352,7 +352,6 @@ jobs:
       - LOCAL_PORT: 8000
       - MONITORING_SUPPORT: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
-      - ROX_HTPASSWD_AUTH: false
     steps:
       - checkout
 
@@ -407,7 +406,6 @@ jobs:
       - RUNTIME_SUPPORT: true
       - MONITORING_SUPPORT: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
-      - ROX_HTPASSWD_AUTH: false
     steps:
       - checkout
 
@@ -551,7 +549,6 @@ jobs:
       - RUNTIME_SUPPORT: true
       - MONITORING_SUPPORT: true
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
-      - ROX_HTPASSWD_AUTH: false
     steps:
       - checkout
       - *checkOpenshiftLabel

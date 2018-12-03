@@ -46,6 +46,7 @@ function launch_central {
     wait_for_central "localhost:8000"
     echo "Successfully deployed Central!"
     echo "Access the UI at: https://localhost:8000"
+    setup_auth0 "localhost:8000"
 }
 
 function launch_sensor {

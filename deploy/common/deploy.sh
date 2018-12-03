@@ -159,3 +159,21 @@ function get_authority {
     echo
 }
 
+function setup_auth0() {
+    local LOCAL_API_ENDPOINT="$1"
+	echo "Setting up StackRox Dev Auth0 login"
+	curl_central -s "https://${LOCAL_API_ENDPOINT}/v1/authProviders" -X POST -d @- >/dev/null <<-EOF
+{
+	"name": "StackRox Dev (Auth0)",
+	"type": "oidc",
+	"uiEndpoint": "${LOCAL_API_ENDPOINT}",
+	"enabled": true,
+	"validated": true,
+	"config": {
+		"issuer": "https://sr-dev.auth0.com",
+		"client_id": "bu63HaVAuVPEgMUeRVfL5PzrqTXaedA2",
+		"mode": "post"
+	}
+}
+EOF
+}
