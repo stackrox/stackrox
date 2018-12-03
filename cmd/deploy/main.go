@@ -31,21 +31,12 @@ func init() {
 }
 
 var (
-	clairifyTag   = "0.5.2"
-	clairifyImage = "clairify:" + clairifyTag
-	mainTag       = getVersion()
+	clairifyImage = "clairify:" + version.GetClairifyVersion()
+	mainTag       = version.GetMainVersion()
 	mainImage     = "main:" + mainTag
 
 	generatedMonitoringPassword = central.CreatePassword()
 )
-
-func getVersion() string {
-	v, err := version.GetVersion()
-	if err != nil {
-		panic(err)
-	}
-	return v
-}
 
 func generateJWTSigningKey(fileMap map[string][]byte) error {
 	// Generate the private key that we will use to sign JWTs for API keys.

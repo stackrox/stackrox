@@ -7,8 +7,6 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // Service is the struct that manages the Metadata API
@@ -31,11 +29,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetMetadata returns the metadata for Rox.
 func (s *serviceImpl) GetMetadata(context.Context, *v1.Empty) (*v1.Metadata, error) {
-	v, err := version.GetVersion()
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
 	return &v1.Metadata{
-		Version: v,
+		Version: version.GetMainVersion(),
 	}, nil
 }

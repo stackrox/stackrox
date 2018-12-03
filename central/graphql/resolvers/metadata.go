@@ -12,6 +12,6 @@ func init() {
 
 // Metadata returns a metadata object containing the stackrox version.
 func (resolver *Resolver) Metadata() (*metadataResolver, error) {
-	ver, err := version.GetVersion()
-	return resolver.wrapMetadata(&v1.Metadata{Version: ver}, ver != "", err)
+	ver := version.GetMainVersion()
+	return resolver.wrapMetadata(&v1.Metadata{Version: ver}, ver != "", nil)
 }

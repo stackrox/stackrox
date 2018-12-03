@@ -141,10 +141,11 @@ clean-deps:
 PURE := --features=pure
 RACE := --features=race
 LINUX_AMD64 := --cpu=k8
-BAZEL_FLAGS := $(PURE) $(LINUX_AMD64)
+VARIABLE_STAMPS := --workspace_status_command=$(BASE_DIR)/status.sh
+BAZEL_FLAGS := $(PURE) $(LINUX_AMD64) $(VARIABLE_STAMPS)
 cleanup:
 	@echo "Total BUILD.bazel files deleted: "
-	@find . -mindepth 2 -name BUILD.bazel -print | grep -v "^./image" | xargs rm -v | wc -l
+	@find . -mindepth 2 -name BUILD.bazel -print | grep -v '^\./\(image\|pkg/version\)' | xargs rm -v | wc -l
 
 .PHONY: gazelle
 gazelle: deps $(GENERATED_SRCS) cleanup
@@ -277,4 +278,4 @@ ossls-notice:
 
 .PHONY: collector-tag
 collector-tag:
-	@cat image/COLLECTOR_VERSION.txt
+	@cat COLLECTOR_VERSION
