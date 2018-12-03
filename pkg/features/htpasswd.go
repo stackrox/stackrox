@@ -15,7 +15,7 @@ func (htpasswdAuth) Name() string {
 	return "Htpasswd Authentication"
 }
 func (h htpasswdAuth) Enabled() bool {
-	return isEnabled(os.Getenv(h.EnvVar()), true)
+	return isEnabled(os.Getenv(h.EnvVar()), false)
 }
 
 func (htpasswdAuth) EnvVar() string {

@@ -8,4 +8,4 @@ export NAMESPACE=${NAMESPACE:-stackrox}
 echo "Kubernetes namespace set to $NAMESPACE"
 
 export MONITORING_SUPPORT=${MONITORING_SUPPORT:-true}
-export ROX_HTPASSWD_AUTH=${ROX_HTPASSWD_AUTH:-true}
+export ROX_HTPASSWD_AUTH=${ROX_HTPASSWD_AUTH:-false}
