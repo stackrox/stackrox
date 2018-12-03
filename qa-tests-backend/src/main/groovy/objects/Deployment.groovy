@@ -7,6 +7,7 @@ class Deployment {
     String namespace
     List<String> volNames = new ArrayList<String>()
     List<String> volMounts = new ArrayList<String>()
+    String volType
     String image
     String mountpath
     List<String> secretNames = new ArrayList<String>()
@@ -20,6 +21,9 @@ class Deployment {
     List<String> args = new ArrayList<>()
     Boolean exposeAsService = false
     Map<String, String> env = new HashMap<>()
+    Boolean isPrivileged
+    Map<String , String> limits = new HashMap<>()
+    Map<String , String> request = new HashMap<>()
 
     Deployment setName(String n) {
         this.name = n
@@ -38,6 +42,11 @@ class Deployment {
         return this
     }
 
+    Deployment addVolType(String type) {
+        this.volType = type
+        return this
+    }
+
     Deployment addMountPath(String m) {
         this.mountpath = m
         return this
@@ -45,6 +54,16 @@ class Deployment {
 
     Deployment addLabel(String k, String v) {
         this.labels[k] = v
+        return this
+    }
+
+    Deployment addLimits(String key, String val) {
+        this.limits.put(key, val)
+        return this
+    }
+
+    Deployment addRequest(String key, String val) {
+        this.request.put(key, val)
         return this
     }
 
@@ -118,6 +137,11 @@ class Deployment {
 
     def delete() {
         OrchestratorType.orchestrator.deleteDeployment(this)
+    }
+
+    Deployment setPrivilegedFlag(boolean val) {
+        this.isPrivileged = val
+        return this
     }
 }
 

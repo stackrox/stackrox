@@ -9,6 +9,7 @@ import io.kubernetes.client.apis.ExtensionsV1beta1Api
 import io.kubernetes.client.custom.IntOrString
 import io.kubernetes.client.models.ExtensionsV1beta1DeploymentList
 import io.kubernetes.client.models.V1Capabilities
+import io.kubernetes.client.models.V1HostPathVolumeSource
 import io.kubernetes.client.models.V1LabelSelector
 import io.kubernetes.client.models.V1EnvVar
 import io.kubernetes.client.models.V1LocalObjectReference
@@ -20,7 +21,7 @@ import io.kubernetes.client.models.ExtensionsV1beta1DeploymentSpec
 import io.kubernetes.client.models.V1ContainerPort
 import io.kubernetes.client.models.V1PodTemplateSpec
 import io.kubernetes.client.models.V1PodSpec
-import io.kubernetes.client.models.V1SecretVolumeSource
+import io.kubernetes.client.models.V1ResourceRequirements
 import io.kubernetes.client.models.V1Volume
 import io.kubernetes.client.models.V1Container
 import io.kubernetes.client.models.V1PodList
@@ -42,6 +43,7 @@ import io.kubernetes.client.models.V1beta1NetworkPolicyIngressRule
 import io.kubernetes.client.models.V1beta1NetworkPolicyPeer
 import io.kubernetes.client.models.V1beta1NetworkPolicySpec
 import io.kubernetes.client.util.Config
+import io.kubernetes.client.custom.Quantity
 import objects.DaemonSet
 import objects.Deployment
 import objects.NetworkPolicy
@@ -103,10 +105,10 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     }
 
     def batchCreateDeployments(List<Deployment> deployments) {
-        for (Deployment deployment: deployments) {
+        for (Deployment deployment : deployments) {
             createDeploymentNoWait(deployment)
         }
-        for (Deployment deployment: deployments) {
+        for (Deployment deployment : deployments) {
             waitForDeploymentAndPopulateInfo(deployment)
         }
     }
@@ -359,10 +361,10 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     */
 
     String getpods() {
-        List<String>podIds = new ArrayList<>()
+        List<String> podIds = new ArrayList<>()
         V1PodList pods = this.api.listNamespacedPod("qa", "", "", "", false, "", 1, "", 5, false)
         List<V1Pod> podlist = pods.getItems()
-        for ( V1Pod pod : podlist) {
+        for (V1Pod pod : podlist) {
             podIds.add(podlist.metadata.name)
         }
         return podIds.get(0)
@@ -435,10 +437,12 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                         .spec(
                         new V1ServiceSpec()
                                 .ports(deployment.getPorts().collect {
-                            k, v -> new V1ServicePort()
-                                    .name(k as String)
-                                    .port(k as Integer)
-                                    .protocol(v) })
+                            k, v ->
+            new V1ServicePort()
+                                        .name(k as String)
+                                        .port(k as Integer)
+                                        .protocol(v)
+                        })
                                 .selector(deployment.labels)
                 ),
                 null
@@ -573,7 +577,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     }
 
     def supportsNetworkPolicies() {
-        List<V1Node> gkeNodes =  api.listNode(
+        List<V1Node> gkeNodes = api.listNode(
                 null,
                 null,
                 null,
@@ -713,6 +717,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 .name(deployment.getName())
                 .namespace(this.namespace)
                 .labels(deployment.getLabels())
+
         )
         )
         )
@@ -846,7 +851,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         println "Timed out waiting for " + deploymentName
     }
 
-    def List<V1EnvVar> envToList (Map<String, String> env) {
+    def List<V1EnvVar> envToList(Map<String, String> env) {
         List<V1EnvVar> l
         l = new ArrayList<V1EnvVar>()
         for (Map.Entry<String, String> entry : env) {
@@ -874,16 +879,28 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         }
 
         List<V1Volume> volumes = new LinkedList<>()
-        for (int i = 0; i < deployment.getVolNames().size(); ++i) {
+        for (String str : deployment.getVolNames()) {
             V1Volume deployVol = new V1Volume()
-                    .name(deployment.getVolNames().get(i))
-                    .secret(new V1SecretVolumeSource()
-                    .secretName(deployment.getSecretNames().get(i)))
+                    .hostPath(new V1HostPathVolumeSource()
+                    .path("/tmp")
+                    .type("Directory"))
+                    .name(str)
             volumes.add(deployVol)
         }
 
-        List<V1EnvVar> env = envToList(deployment.getEnv())
+        Map<String , Quantity> getLimits = new HashMap<>()
+        for (String key : deployment.limits.keySet()) {
+            Quantity quantity = Quantity.fromString(deployment.limits.get(key))
+            getLimits.put(key, quantity)
+        }
 
+        Map<String , Quantity> getRequests = new HashMap<>()
+        for (String key : deployment.request.keySet()) {
+            Quantity quantity = Quantity.fromString(deployment.limits.get(key))
+            getLimits.put(key, quantity)
+        }
+
+        List<V1EnvVar> env = envToList(deployment.getEnv())
         V1PodSpec v1PodSpec = new V1PodSpec()
                 .containers(
                 [
@@ -894,7 +911,12 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                                 .args(deployment.getArgs())
                                 .env(env)
                                 .ports(containerPorts)
-                                .volumeMounts(mounts),
+                                .volumeMounts(mounts)
+                                .securityContext(new V1SecurityContext()
+                                .privileged(deployment.getIsPrivileged()))
+                                .resources(new V1ResourceRequirements()
+                                .limits(getLimits)
+                                .requests(getRequests)),
                 ]
         )
                 .volumes(volumes)

@@ -5,12 +5,14 @@ import io.fabric8.kubernetes.api.model.Capabilities
 import io.fabric8.kubernetes.api.model.Container
 import io.fabric8.kubernetes.api.model.ContainerPort
 import io.fabric8.kubernetes.api.model.EnvVar
+import io.fabric8.kubernetes.api.model.HostPathVolumeSource
 import io.fabric8.kubernetes.api.model.IntOrString
 import io.fabric8.kubernetes.api.model.LabelSelector
 import io.fabric8.kubernetes.api.model.LocalObjectReference
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.PodList
 import io.fabric8.kubernetes.api.model.PodSpec
+import io.fabric8.kubernetes.api.model.ResourceRequirements
 import io.fabric8.kubernetes.api.model.Secret
 import io.fabric8.kubernetes.api.model.SecretList
 import io.fabric8.kubernetes.api.model.SecretVolumeSource
@@ -36,6 +38,7 @@ import io.fabric8.openshift.api.model.SecurityContextConstraints
 import io.fabric8.openshift.api.model.SecurityContextConstraintsBuilder
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
+import io.fabric8.kubernetes.api.model.Quantity
 import objects.DaemonSet
 import objects.Deployment
 import objects.NetworkPolicy
@@ -701,9 +704,24 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
         deployment.volNames.each {
             Volume v = new Volume()
             v.setName(it)
+            v.hostPath(new HostPathVolumeSource()
+              .path("/tmp")
+              .type("Directory"))
             v.setSecret(new SecretVolumeSource()
                     .setSecretName(deployment.secretNames.get(deployment.volNames.indexOf(it))))
             volumes.add(v)
+        }
+
+        Map<String , Quantity> limits = new HashMap<>()
+        for (String key:deployment.limits.keySet()) {
+            Quantity quantity = Quantity(deployment.limits.get(key))
+            limits.put(key, quantity)
+        }
+
+        Map<String , Quantity> requests = new HashMap<>()
+        for (String key:deployment.request.keySet()) {
+            Quantity quantity = Quantity(deployment.request.get(key))
+            requests.put(key, quantity)
         }
 
         Container container = new Container(
@@ -714,11 +732,12 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
                 ports: depPorts,
                 volumeMounts: volMounts,
                 env: envVars
-        )
+        ).setResources(new ResourceRequirements(limits, requests))
         PodSpec podSpec = new PodSpec()
         podSpec.setContainers([container])
         podSpec.setVolumes(volumes)
-
+        podSpec.setSecurityContext(new SecurityContext()
+                .privileged(deployment.getIsPrivileged()))
         return podSpec
     }
 
