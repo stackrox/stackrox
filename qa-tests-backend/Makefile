@@ -22,7 +22,7 @@ proto-generated-srcs:
 .PHONY: clean-generated-srcs
 clean-generated-srcs:
 	@echo "+ $@"
-	git clean -xdf src/main/java
+	git clean -xdf build/generated
 
 .PHONY: test
 test:

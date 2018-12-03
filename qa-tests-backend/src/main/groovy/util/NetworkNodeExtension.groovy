@@ -1,7 +1,7 @@
 package util
 
-import v1.NetworkGraphOuterClass.NetworkNode
-import v1.NetworkFlowOuterClass.NetworkEntityInfo
+import stackrox.generated.NetworkGraphOuterClass.NetworkNode
+import stackrox.generated.NetworkFlowOuterClass.NetworkEntityInfo
 
 class NetworkNodeExtension {
     static String getDeploymentId(NetworkNode self) {

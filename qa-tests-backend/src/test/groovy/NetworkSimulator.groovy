@@ -7,7 +7,7 @@ import org.junit.experimental.categories.Category
 import spock.lang.Unroll
 import stackrox.generated.NotifierServiceOuterClass
 import util.NetworkGraphUtil
-import v1.NetworkPolicyServiceOuterClass
+import stackrox.generated.NetworkPolicyServiceOuterClass
 
 class NetworkSimulator extends BaseSpecification {
 

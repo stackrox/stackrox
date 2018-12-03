@@ -1,8 +1,8 @@
 package services
 
 import com.google.protobuf.Timestamp
-import v1.NetworkGraphOuterClass
-import v1.NetworkGraphServiceGrpc
+import stackrox.generated.NetworkGraphOuterClass
+import stackrox.generated.NetworkGraphServiceGrpc
 
 class NetworkGraphService extends BaseService {
     static getNetworkGraphClient() {

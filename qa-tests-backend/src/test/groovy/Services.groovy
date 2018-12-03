@@ -33,9 +33,9 @@ import stackrox.generated.DeploymentServiceOuterClass.ListDeployment
 import stackrox.generated.DeploymentServiceOuterClass.Deployment
 import stackrox.generated.Common.ResourceByID
 import stackrox.generated.SearchServiceOuterClass
-import v1.NetworkPolicyServiceGrpc
-import v1.SecretServiceGrpc
-import v1.NetworkPolicyServiceOuterClass
+import stackrox.generated.NetworkPolicyServiceGrpc
+import stackrox.generated.SecretServiceGrpc
+import stackrox.generated.NetworkPolicyServiceOuterClass
 
 class Services extends BaseService {
 
