@@ -1,6 +1,9 @@
 import { selectors, url } from './constants/AccessPage';
+import withAuth from './helpers/basicAuth';
 
 describe('Roles and Permissions', () => {
+    withAuth();
+
     beforeEach(() => {
         cy.visit(url);
     });
