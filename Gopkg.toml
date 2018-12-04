@@ -51,7 +51,7 @@ required = ["golang.org/x/tools/go/ast/astutil"]
 
 [[constraint]]
   name = "github.com/grpc-ecosystem/grpc-gateway"
-  branch = "master"
+  version = "v1.5.1"
 
 [[constraint]]
   name = "github.com/hashicorp/golang-lru"
@@ -115,7 +115,7 @@ required = ["golang.org/x/tools/go/ast/astutil"]
 
 [[override]]
   name = "github.com/google/certificate-transparency-go"
-  branch = "master"
+  version = "v1.0.21"
 
 [[constraint]]
   name = "github.com/NYTimes/gziphandler"
