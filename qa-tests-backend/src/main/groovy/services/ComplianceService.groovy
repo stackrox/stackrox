@@ -1,14 +1,14 @@
 package services
 
-import stackrox.generated.BenchmarkScanServiceGrpc
-import stackrox.generated.BenchmarkScanServiceOuterClass.BenchmarkScan
-import stackrox.generated.BenchmarkScanServiceOuterClass.ListBenchmarkScansRequest
-import stackrox.generated.BenchmarkScanServiceOuterClass.GetBenchmarkScanRequest
+import io.stackrox.proto.api.v1.BenchmarkScanServiceGrpc
+import io.stackrox.proto.api.v1.BenchmarkScanServiceOuterClass.BenchmarkScan
+import io.stackrox.proto.api.v1.BenchmarkScanServiceOuterClass.ListBenchmarkScansRequest
+import io.stackrox.proto.api.v1.BenchmarkScanServiceOuterClass.GetBenchmarkScanRequest
 
-import stackrox.generated.BenchmarkServiceGrpc
-import stackrox.generated.BenchmarkServiceOuterClass.GetBenchmarksRequest
-import stackrox.generated.BenchmarkTriggerServiceGrpc
-import stackrox.generated.BenchmarkTriggerServiceOuterClass.BenchmarkTrigger
+import io.stackrox.proto.api.v1.BenchmarkServiceGrpc
+import io.stackrox.proto.api.v1.BenchmarkServiceOuterClass.GetBenchmarksRequest
+import io.stackrox.proto.api.v1.BenchmarkTriggerServiceGrpc
+import io.stackrox.proto.api.v1.BenchmarkTriggerServiceOuterClass.BenchmarkTrigger
 
 import java.util.stream.Collectors
 

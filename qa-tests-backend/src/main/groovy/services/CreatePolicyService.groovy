@@ -1,8 +1,8 @@
 package services
 
-import stackrox.generated.Common
-import stackrox.generated.PolicyServiceGrpc
-import stackrox.generated.PolicyServiceOuterClass.Policy
+import io.stackrox.proto.api.v1.Common
+import io.stackrox.proto.api.v1.PolicyServiceGrpc
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.Policy
 
 class CreatePolicyService extends BaseService {
 

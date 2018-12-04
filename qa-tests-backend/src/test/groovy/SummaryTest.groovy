@@ -2,7 +2,7 @@ import groups.BAT
 import orchestratormanager.OrchestratorTypes
 import org.junit.experimental.categories.Category
 import services.SummaryService
-import stackrox.generated.SummaryServiceOuterClass
+import io.stackrox.proto.api.v1.SummaryServiceOuterClass
 
 class SummaryTest extends BaseSpecification {
 

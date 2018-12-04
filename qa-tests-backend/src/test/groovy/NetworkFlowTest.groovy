@@ -13,8 +13,8 @@ import org.junit.experimental.categories.Category
 import services.NetworkGraphService
 import spock.lang.Unroll
 import util.NetworkGraphUtil
-import stackrox.generated.NetworkEnums
-import stackrox.generated.NetworkGraphOuterClass.NetworkGraph
+import io.stackrox.proto.api.v1.NetworkEnums
+import io.stackrox.proto.api.v1.NetworkGraphOuterClass.NetworkGraph
 import com.google.protobuf.util.Timestamps
 
 class NetworkFlowTest extends BaseSpecification {

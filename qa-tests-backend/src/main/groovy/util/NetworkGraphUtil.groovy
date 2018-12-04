@@ -1,7 +1,7 @@
 package util
 
 import objects.Edge
-import stackrox.generated.NetworkGraphOuterClass
+import io.stackrox.proto.api.v1.NetworkGraphOuterClass
 
 class NetworkGraphUtil {
 

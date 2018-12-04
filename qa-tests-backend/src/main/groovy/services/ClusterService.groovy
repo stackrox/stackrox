@@ -1,6 +1,6 @@
 package services
 
-import stackrox.generated.ClustersServiceGrpc
+import io.stackrox.proto.api.v1.ClustersServiceGrpc
 
 class ClusterService extends BaseService {
     static getClusterServiceClient() {

@@ -10,8 +10,8 @@ import groups.BAT
 import java.util.stream.Collectors
 import objects.Deployment
 import org.junit.experimental.categories.Category
-import stackrox.generated.AlertServiceOuterClass
-import stackrox.generated.PolicyServiceOuterClass
+import io.stackrox.proto.api.v1.AlertServiceOuterClass
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass
 
 class RuntimeViolationLifecycleTest extends BaseSpecification  {
     static final private String APTGETPOLICY = "Ubuntu Package Manager Execution"

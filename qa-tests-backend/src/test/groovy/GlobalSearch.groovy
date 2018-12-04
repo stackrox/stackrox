@@ -1,9 +1,9 @@
 import static Services.getSearchResponse
 import static Services.waitForViolation
-import stackrox.generated.SearchServiceOuterClass.SearchResponse.Count
+import io.stackrox.proto.api.v1.SearchServiceOuterClass.SearchResponse.Count
 import objects.Deployment
 import spock.lang.Unroll
-import stackrox.generated.SearchServiceOuterClass
+import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import org.junit.experimental.categories.Category
 import groups.BAT
 

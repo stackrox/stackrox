@@ -1,7 +1,7 @@
 package services
 
-import stackrox.generated.EmptyOuterClass
-import stackrox.generated.SummaryServiceGrpc
+import io.stackrox.proto.api.v1.EmptyOuterClass
+import io.stackrox.proto.api.v1.SummaryServiceGrpc
 
 class SummaryService extends BaseService {
     static getClient() {

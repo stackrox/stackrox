@@ -2,8 +2,8 @@ import objects.Deployment
 import org.junit.experimental.categories.Category
 import groups.BAT
 import spock.lang.Unroll
-import stackrox.generated.EmptyOuterClass
-import stackrox.generated.NotifierServiceOuterClass
+import io.stackrox.proto.api.v1.EmptyOuterClass
+import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 
 class IntegrationsTest extends BaseSpecification {
     @Category(BAT)

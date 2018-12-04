@@ -5,9 +5,9 @@ import objects.DaemonSet
 import objects.Deployment
 import org.junit.experimental.categories.Category
 import spock.lang.Unroll
-import stackrox.generated.AlertServiceOuterClass
-import stackrox.generated.PolicyServiceOuterClass
-import stackrox.generated.PolicyServiceOuterClass.EnforcementAction
+import io.stackrox.proto.api.v1.AlertServiceOuterClass
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.EnforcementAction
 
 class Enforcement extends BaseSpecification {
     private final static String CONTAINER_PORT_22_POLICY = "Secure Shell (ssh) Port Exposed"

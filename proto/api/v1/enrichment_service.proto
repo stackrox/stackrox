@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 option go_package = "v1";
-option java_package = "stackrox.generated";
+option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
 import "api/v1/image_service.proto";

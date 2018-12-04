@@ -1,8 +1,8 @@
 package services
 
-import stackrox.generated.Indicator.ProcessIndicator
-import stackrox.generated.ProcessServiceGrpc
-import stackrox.generated.ProcessServiceOuterClass
+import io.stackrox.proto.api.v1.Indicator.ProcessIndicator
+import io.stackrox.proto.api.v1.ProcessServiceGrpc
+import io.stackrox.proto.api.v1.ProcessServiceOuterClass
 
 class ProcessService extends BaseService {
     static getClient() {

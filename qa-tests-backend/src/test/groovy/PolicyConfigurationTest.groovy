@@ -1,15 +1,15 @@
 import static Services.waitForViolation
-import stackrox.generated.PolicyServiceOuterClass.Policy
-import stackrox.generated.PolicyServiceOuterClass.PolicyFields
-import stackrox.generated.PolicyServiceOuterClass.ImageNamePolicy
-import stackrox.generated.PolicyServiceOuterClass.LifecycleStage
-import stackrox.generated.PolicyServiceOuterClass.DockerfileLineRuleField
-import stackrox.generated.PolicyServiceOuterClass.PortPolicy
-import stackrox.generated.PolicyServiceOuterClass.ResourcePolicy
-import stackrox.generated.PolicyServiceOuterClass.KeyValuePolicy
-import stackrox.generated.PolicyServiceOuterClass.NumericalPolicy
-import stackrox.generated.PolicyServiceOuterClass.Comparator
-import stackrox.generated.PolicyServiceOuterClass.VolumePolicy
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.Policy
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.PolicyFields
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.ImageNamePolicy
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.LifecycleStage
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.DockerfileLineRuleField
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.PortPolicy
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.ResourcePolicy
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.KeyValuePolicy
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.NumericalPolicy
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.Comparator
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.VolumePolicy
 import groups.BAT
 import objects.Deployment
 import org.junit.experimental.categories.Category

@@ -1,7 +1,7 @@
 package objects
 
 import com.google.protobuf.util.Timestamps
-import stackrox.generated.NetworkGraphOuterClass.NetworkEdgeProperties
+import io.stackrox.proto.api.v1.NetworkGraphOuterClass.NetworkEdgeProperties
 
 class Edge {
     String sourceID
