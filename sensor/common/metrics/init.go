@@ -7,9 +7,12 @@ import (
 func init() {
 	// general
 	prometheus.MustRegister(
+		panicCounter,
 		processDedupeCacheHits,
 		processDedupeCacheMisses,
-		panicCounter,
+		processEnrichmentHits,
+		processEnrichmentDrops,
+		processEnrichmentLRUCacheSize,
 		sensorIndicatorChannelFullCounter,
 		totalNetworkFlowsSentCounter,
 		totalNetworkFlowsReceivedCounter,
