@@ -17,6 +17,7 @@ import (
 
 const (
 	requestTimeout = 30 * time.Second
+	typeString     = "dtr"
 )
 
 var (
@@ -25,7 +26,7 @@ var (
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
 func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageScanner, error)) {
-	return "dtr", func(integration *v1.ImageIntegration) (types.ImageScanner, error) {
+	return typeString, func(integration *v1.ImageIntegration) (types.ImageScanner, error) {
 		scan, err := newScanner(integration)
 		return scan, err
 	}
@@ -198,4 +199,8 @@ func (d *dtr) Match(image *v1.Image) bool {
 
 func (d *dtr) Global() bool {
 	return len(d.protoImageIntegration.GetClusters()) == 0
+}
+
+func (d *dtr) Type() string {
+	return typeString
 }

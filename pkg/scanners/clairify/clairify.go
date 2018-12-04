@@ -13,9 +13,11 @@ import (
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
+const typeString = "clairify"
+
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
 func Creator(set registries.Set) (string, func(integration *v1.ImageIntegration) (scannerTypes.ImageScanner, error)) {
-	return "clairify", func(integration *v1.ImageIntegration) (scannerTypes.ImageScanner, error) {
+	return typeString, func(integration *v1.ImageIntegration) (scannerTypes.ImageScanner, error) {
 		scan, err := newScanner(integration, set)
 		return scan, err
 	}
@@ -141,4 +143,8 @@ func (c *clairify) Match(image *v1.Image) bool {
 
 func (c *clairify) Global() bool {
 	return len(c.protoImageIntegration.GetClusters()) == 0
+}
+
+func (c *clairify) Type() string {
+	return typeString
 }

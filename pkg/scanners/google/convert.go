@@ -8,7 +8,7 @@ import (
 	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1alpha1"
 )
 
-func (c *googleScanner) convertComponentFromPackageManagerOccurrence(occurrence *containeranalysis.Occurrence) (string, *v1.ImageScanComponent) {
+func (g *googleScanner) convertComponentFromPackageManagerOccurrence(occurrence *containeranalysis.Occurrence) (string, *v1.ImageScanComponent) {
 	location := occurrence.GetInstallation().GetLocation()[0]
 	version := location.GetVersion()
 	component := &v1.ImageScanComponent{
@@ -18,7 +18,7 @@ func (c *googleScanner) convertComponentFromPackageManagerOccurrence(occurrence 
 	return location.GetCpeUri(), component
 }
 
-func (c *googleScanner) convertVulnerabilityFromPackageVulnerabilityOccurrence(occurrence *containeranalysis.Occurrence, note *containeranalysis.Note) (string, string, *v1.Vulnerability) {
+func (g *googleScanner) convertVulnerabilityFromPackageVulnerabilityOccurrence(occurrence *containeranalysis.Occurrence, note *containeranalysis.Note) (string, string, *v1.Vulnerability) {
 	packageIssues := occurrence.GetVulnerabilityDetails().GetPackageIssue()
 	if len(packageIssues) == 0 {
 		return "", "", nil
@@ -30,7 +30,7 @@ func (c *googleScanner) convertVulnerabilityFromPackageVulnerabilityOccurrence(o
 	if len(note.GetRelatedUrl()) != 0 {
 		link = note.GetRelatedUrl()[0].GetUrl()
 	}
-	summary := c.getSummary(note.GetVulnerabilityType().GetDetails(), affectedLocation.GetCpeUri())
+	summary := g.getSummary(note.GetVulnerabilityType().GetDetails(), affectedLocation.GetCpeUri())
 
 	vuln := &v1.Vulnerability{
 		Cve:     note.GetShortDescription(),
@@ -49,7 +49,7 @@ func (c *googleScanner) convertVulnerabilityFromPackageVulnerabilityOccurrence(o
 }
 
 // getSummary searches through the details and returns the summary that matches the cpeURI
-func (c googleScanner) getSummary(details []*containeranalysis.VulnerabilityType_Detail, cpeURI string) string {
+func (g googleScanner) getSummary(details []*containeranalysis.VulnerabilityType_Detail, cpeURI string) string {
 	for _, detail := range details {
 		if detail.CpeUri == cpeURI {
 			return detail.Description

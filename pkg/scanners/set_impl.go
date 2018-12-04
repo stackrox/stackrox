@@ -1,10 +1,12 @@
 package scanners
 
 import (
+	"sort"
 	"sync"
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/scanners/types"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type setImpl struct {
@@ -13,6 +15,8 @@ type setImpl struct {
 	factory      Factory
 	integrations map[string]types.ImageScanner
 }
+
+var registryDependentScanners = set.NewStringSet("clair", "clairify")
 
 // GetAll returns the set of integrations that are active.
 func (e *setImpl) GetAll() []types.ImageScanner {
@@ -23,6 +27,9 @@ func (e *setImpl) GetAll() []types.ImageScanner {
 	for _, i := range e.integrations {
 		integrations = append(integrations, i)
 	}
+	sort.Slice(integrations, func(i, j int) bool {
+		return !registryDependentScanners.Contains(integrations[i].Type())
+	})
 	return integrations
 }
 

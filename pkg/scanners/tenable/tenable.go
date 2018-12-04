@@ -17,6 +17,8 @@ import (
 
 const (
 	requestTimeout = 5 * time.Second
+
+	typeString = "tenable"
 )
 
 // Variables so we can modify during unit tests
@@ -32,7 +34,7 @@ var (
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
 func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageScanner, error)) {
-	return "tenable", func(integration *v1.ImageIntegration) (types.ImageScanner, error) {
+	return typeString, func(integration *v1.ImageIntegration) (types.ImageScanner, error) {
 		scan, err := newScanner(integration)
 		return scan, err
 	}
@@ -147,4 +149,8 @@ func (d *tenable) Match(image *v1.Image) bool {
 
 func (d *tenable) Global() bool {
 	return len(d.protoImageIntegration.GetClusters()) == 0
+}
+
+func (d *tenable) Type() string {
+	return typeString
 }

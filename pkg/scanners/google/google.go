@@ -26,6 +26,8 @@ const (
 
 	maxComponentResults = 1000 // Need all the components so vulns can be attributed
 	maxVulnResults      = 200
+
+	typeString = "google"
 )
 
 var (
@@ -34,7 +36,7 @@ var (
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
 func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageScanner, error)) {
-	return "google", func(integration *v1.ImageIntegration) (types.ImageScanner, error) {
+	return typeString, func(integration *v1.ImageIntegration) (types.ImageScanner, error) {
 		scan, err := newScanner(integration)
 		return scan, err
 	}
@@ -134,11 +136,11 @@ func grpcContext() (context.Context, context.CancelFunc) {
 }
 
 // Test initiates a test of the Google Scanner which verifies that we have the proper scan permissions
-func (c *googleScanner) Test() error {
+func (g *googleScanner) Test() error {
 	ctx, cancel := grpcContext()
 	defer cancel()
-	_, err := c.client.ListNotes(ctx, &containeranalysis.ListNotesRequest{
-		Parent:   "projects/" + c.project,
+	_, err := g.client.ListNotes(ctx, &containeranalysis.ListNotesRequest{
+		Parent:   "projects/" + g.project,
 		PageSize: 1,
 	})
 	return err
@@ -158,23 +160,23 @@ func generalizeName(name string) string {
 // getComponents returns a map of cpeURIs -> map of generalized component names to components
 // the cpeURIs are for determining which summary is correct for the distribution
 // The names are generalized because google doesn't do direct correlation so pkg mysql should match mysql-5.5
-func (c *googleScanner) getComponents(image *v1.Image) (map[string]map[string]*v1.ImageScanComponent, error) {
+func (g *googleScanner) getComponents(image *v1.Image) (map[string]map[string]*v1.ImageScanComponent, error) {
 	cpeToComponentMap := make(map[string]map[string]*v1.ImageScanComponent)
 	filter := fmt.Sprintf(`kind="PACKAGE_MANAGER" AND resourceUrl="%s"`, getResourceURL(image))
 	occurenceReq := &containeranalysis.ListOccurrencesRequest{
-		Parent:   "projects/" + c.project,
+		Parent:   "projects/" + g.project,
 		PageSize: maxComponentResults,
 		Filter:   filter,
 	}
 	ctx, cancel := grpcContext()
 	defer cancel()
-	resp, err := c.client.ListOccurrences(ctx, occurenceReq)
+	resp, err := g.client.ListOccurrences(ctx, occurenceReq)
 	if err != nil {
 		return nil, err
 	}
 	log.Infof("Found %d components for image %s", len(resp.GetOccurrences()), image.GetName().GetFullName())
 	for _, occurrence := range resp.GetOccurrences() {
-		cpeURI, component := c.convertComponentFromPackageManagerOccurrence(occurrence)
+		cpeURI, component := g.convertComponentFromPackageManagerOccurrence(occurrence)
 
 		if _, ok := cpeToComponentMap[cpeURI]; !ok {
 			cpeToComponentMap[cpeURI] = make(map[string]*v1.ImageScanComponent)
@@ -195,16 +197,16 @@ func vulnSubstringMatch(componentMap map[string]*v1.ImageScanComponent, pkg stri
 	return nil, false
 }
 
-func (c *googleScanner) getVulnsForImage(image *v1.Image) ([]*containeranalysis.Occurrence, error) {
+func (g *googleScanner) getVulnsForImage(image *v1.Image) ([]*containeranalysis.Occurrence, error) {
 	filter := fmt.Sprintf(`kind="PACKAGE_VULNERABILITY" AND resourceUrl="%s"`, getResourceURL(image))
 	occurenceReq := &containeranalysis.ListOccurrencesRequest{
-		Parent:   "projects/" + c.project,
+		Parent:   "projects/" + g.project,
 		PageSize: maxVulnResults,
 		Filter:   filter,
 	}
 	ctx, cancel := grpcContext()
 	defer cancel()
-	resp, err := c.client.ListOccurrences(ctx, occurenceReq)
+	resp, err := g.client.ListOccurrences(ctx, occurenceReq)
 	if err != nil {
 		return nil, fmt.Errorf("could not list occurences: %s", err)
 	}
@@ -212,35 +214,35 @@ func (c *googleScanner) getVulnsForImage(image *v1.Image) ([]*containeranalysis.
 	return resp.GetOccurrences(), nil
 }
 
-func (c *googleScanner) getOccurrenceNote(name string) (*containeranalysis.Note, error) {
+func (g *googleScanner) getOccurrenceNote(name string) (*containeranalysis.Note, error) {
 	ctx, cancel := grpcContext()
 	defer cancel()
-	return c.client.GetOccurrenceNote(ctx, &containeranalysis.GetOccurrenceNoteRequest{Name: name})
+	return g.client.GetOccurrenceNote(ctx, &containeranalysis.GetOccurrenceNoteRequest{Name: name})
 }
 
 // addVulnsToComponents takes in the cpeToComponentMap and uses it to correlate its vulns to the components
-func (c *googleScanner) addVulnsToComponents(cpeToComponentMap map[string]map[string]*v1.ImageScanComponent, image *v1.Image) error {
+func (g *googleScanner) addVulnsToComponents(cpeToComponentMap map[string]map[string]*v1.ImageScanComponent, image *v1.Image) error {
 	// This retrieves all the vulnerabilities for the image through a request to the API
-	pkgVulnOccurences, err := c.getVulnsForImage(image)
+	pkgVulnOccurences, err := g.getVulnsForImage(image)
 	if err != nil {
 		return fmt.Errorf("failed to get vulns for image: %s", err)
 	}
 	// For every package based vulnerability, get the occurrence note, which gives more info about the vuln
 	for _, occurrence := range pkgVulnOccurences {
-		note, err := c.getOccurrenceNote(occurrence.GetName())
+		note, err := g.getOccurrenceNote(occurrence.GetName())
 		if err != nil {
 			log.Errorf("unable to get occurrence note '%s': %s", occurrence.GetName(), err)
 			continue
 		}
 
 		// Join the vuln to the component by using the vulns cpeURI -> to look up the affected components
-		c.joinVulnToComponent(cpeToComponentMap, occurrence, note)
+		g.joinVulnToComponent(cpeToComponentMap, occurrence, note)
 	}
 	return nil
 }
 
-func (c *googleScanner) joinVulnToComponent(cpeToComponentMap map[string]map[string]*v1.ImageScanComponent, occurrence *containeranalysis.Occurrence, note *containeranalysis.Note) {
-	cpeURI, pkg, vuln := c.convertVulnerabilityFromPackageVulnerabilityOccurrence(occurrence, note)
+func (g *googleScanner) joinVulnToComponent(cpeToComponentMap map[string]map[string]*v1.ImageScanComponent, occurrence *containeranalysis.Occurrence, note *containeranalysis.Note) {
+	cpeURI, pkg, vuln := g.convertVulnerabilityFromPackageVulnerabilityOccurrence(occurrence, note)
 	_, ok := cpeToComponentMap[cpeURI]
 	if !ok {
 		cpeToComponentMap[cpeURI] = make(map[string]*v1.ImageScanComponent)
@@ -262,16 +264,16 @@ func (c *googleScanner) joinVulnToComponent(cpeToComponentMap map[string]map[str
 }
 
 // GetLastScan retrieves the most recent scan
-func (c *googleScanner) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
+func (g *googleScanner) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 	log.Infof("Retrieving scans for image %s", image.GetName().GetFullName())
-	cpeToComponentMap, err := c.getComponents(image)
+	cpeToComponentMap, err := g.getComponents(image)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get components: %s", err)
 	}
 	if len(cpeToComponentMap) == 0 {
 		return nil, fmt.Errorf("No components were found in image '%s'", image.GetName().GetFullName())
 	}
-	if err := c.addVulnsToComponents(cpeToComponentMap, image); err != nil {
+	if err := g.addVulnsToComponents(cpeToComponentMap, image); err != nil {
 		return nil, fmt.Errorf("failed to add vulns to components: %s", err)
 	}
 	var components []*v1.ImageScanComponent
@@ -286,10 +288,14 @@ func (c *googleScanner) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 }
 
 // Match decides if the image is contained within this scanner
-func (c *googleScanner) Match(image *v1.Image) bool {
-	return image.GetName().GetRegistry() == c.registry && strings.HasPrefix(image.GetName().GetRemote(), c.project)
+func (g *googleScanner) Match(image *v1.Image) bool {
+	return image.GetName().GetRegistry() == g.registry && strings.HasPrefix(image.GetName().GetRemote(), g.project)
 }
 
-func (c *googleScanner) Global() bool {
-	return len(c.protoIntegration.GetClusters()) == 0
+func (g *googleScanner) Global() bool {
+	return len(g.protoIntegration.GetClusters()) == 0
+}
+
+func (g *googleScanner) Type() string {
+	return typeString
 }

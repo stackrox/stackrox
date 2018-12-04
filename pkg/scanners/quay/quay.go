@@ -18,13 +18,15 @@ import (
 
 const (
 	requestTimeout = 5 * time.Second
+
+	typeString = "quay"
 )
 
 var log = logging.LoggerForModule()
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
 func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageScanner, error)) {
-	return "quay", func(integration *v1.ImageIntegration) (types.ImageScanner, error) {
+	return typeString, func(integration *v1.ImageIntegration) (types.ImageScanner, error) {
 		scan, err := newScanner(integration)
 		return scan, err
 	}
@@ -133,4 +135,8 @@ func (q *quay) Match(image *v1.Image) bool {
 
 func (q *quay) Global() bool {
 	return len(q.protoImageIntegration.GetClusters()) == 0
+}
+
+func (q *quay) Type() string {
+	return typeString
 }

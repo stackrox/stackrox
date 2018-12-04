@@ -8,4 +8,5 @@ type ImageScanner interface {
 	Match(image *v1.Image) bool
 	Test() error
 	Global() bool
+	Type() string
 }

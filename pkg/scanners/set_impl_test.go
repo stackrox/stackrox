@@ -2,10 +2,14 @@ package scanners
 
 import (
 	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,6 +33,51 @@ func (*fakeScanner) Match(image *v1.Image) bool {
 
 func (*fakeScanner) Test() error {
 	panic("implement me")
+}
+
+func (*fakeScanner) Type() string {
+	return "type"
+}
+
+func TestSetOrdering(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "{}")
+	}))
+	defer server.Close()
+
+	registryFactory := registries.NewFactory()
+	registrySet := registries.NewSet(registryFactory)
+
+	scannerFactory := NewFactory(registrySet)
+	scannerSet := NewSet(scannerFactory)
+
+	clairifyIntegration := &v1.ImageIntegration{
+		Id:   "clairify",
+		Type: "clairify",
+		IntegrationConfig: &v1.ImageIntegration_Clairify{
+			Clairify: &v1.ClairifyConfig{
+				Endpoint: server.URL,
+			},
+		},
+	}
+	dtrIntegration := &v1.ImageIntegration{
+		Id:   "dtr",
+		Type: "dtr",
+		IntegrationConfig: &v1.ImageIntegration_Dtr{
+			Dtr: &v1.DTRConfig{
+				Username: "user",
+				Password: "password",
+				Endpoint: server.URL,
+			},
+		},
+	}
+	require.NoError(t, scannerSet.UpdateImageIntegration(clairifyIntegration))
+	require.NoError(t, scannerSet.UpdateImageIntegration(dtrIntegration))
+	for i := 0; i < 10000; i++ {
+		scanners := scannerSet.GetAll()
+		assert.Equal(t, "dtr", scanners[0].Type())
+		assert.Equal(t, "clairify", scanners[1].Type())
+	}
 }
 
 func TestSet(t *testing.T) {
