@@ -7,6 +7,7 @@ import (
 	multiplierDS "github.com/stackrox/rox/central/multiplier/store"
 	"github.com/stackrox/rox/central/risk"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/protoutils"
 )
@@ -56,7 +57,7 @@ func (e *enricherImpl) Enrich(deployment *v1.Deployment) (bool, error) {
 }
 
 // UpdateMultiplier upserts a multiplier into the scorer
-func (e *enricherImpl) UpdateMultiplier(multiplier *v1.Multiplier) {
+func (e *enricherImpl) UpdateMultiplier(multiplier *storage.Multiplier) {
 	e.scorer.UpdateUserDefinedMultiplier(multiplier)
 	e.ReprocessRiskAsync()
 }

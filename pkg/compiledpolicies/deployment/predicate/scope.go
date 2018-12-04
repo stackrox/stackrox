@@ -2,6 +2,7 @@ package predicate
 
 import (
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scopecomp"
 )
 
@@ -20,7 +21,7 @@ func newScopePredicate(policy *v1.Policy) (Predicate, error) {
 }
 
 type scopeWrapper struct {
-	scope *v1.Scope
+	scope *storage.Scope
 }
 
 func (p *scopeWrapper) shouldProcess(deployment *v1.Deployment) bool {

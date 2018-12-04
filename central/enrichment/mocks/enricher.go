@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
 
@@ -77,7 +78,7 @@ func (mr *MockEnricherMockRecorder) ReprocessRiskAsync() *gomock.Call {
 }
 
 // UpdateMultiplier mocks base method
-func (m *MockEnricher) UpdateMultiplier(arg0 *v1.Multiplier) {
+func (m *MockEnricher) UpdateMultiplier(arg0 *storage.Multiplier) {
 	m.ctrl.Call(m, "UpdateMultiplier", arg0)
 }
 

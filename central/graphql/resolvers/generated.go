@@ -4,7 +4,8 @@ package resolvers
 
 import (
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/generated/api/v1" // end range imports
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage" // end range imports
 )
 
 type accessResolver struct {
@@ -2868,17 +2869,17 @@ func (resolver *roleResolver) Name() string {
 
 type scopeResolver struct {
 	root *Resolver
-	data *v1.Scope
+	data *storage.Scope
 }
 
-func (resolver *Resolver) wrapScope(value *v1.Scope, ok bool, err error) (*scopeResolver, error) {
+func (resolver *Resolver) wrapScope(value *storage.Scope, ok bool, err error) (*scopeResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &scopeResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapScopes(values []*v1.Scope, err error) ([]*scopeResolver, error) {
+func (resolver *Resolver) wrapScopes(values []*storage.Scope, err error) ([]*scopeResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2906,17 +2907,17 @@ func (resolver *scopeResolver) Namespace() string {
 
 type scope_LabelResolver struct {
 	root *Resolver
-	data *v1.Scope_Label
+	data *storage.Scope_Label
 }
 
-func (resolver *Resolver) wrapScope_Label(value *v1.Scope_Label, ok bool, err error) (*scope_LabelResolver, error) {
+func (resolver *Resolver) wrapScope_Label(value *storage.Scope_Label, ok bool, err error) (*scope_LabelResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &scope_LabelResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapScope_Labels(values []*v1.Scope_Label, err error) ([]*scope_LabelResolver, error) {
+func (resolver *Resolver) wrapScope_Labels(values []*storage.Scope_Label, err error) ([]*scope_LabelResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}

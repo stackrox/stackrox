@@ -8,6 +8,7 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/store/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -479,11 +480,11 @@ func (suite *PolicyValidatorTestSuite) TestValidateScopes() {
 	err := suite.validator.validateScopes(policy)
 	suite.NoError(err, "scopes should not be required")
 
-	scope := &v1.Scope{
+	scope := &storage.Scope{
 		Cluster: "cluster1",
 	}
 	policy = &v1.Policy{
-		Scope: []*v1.Scope{
+		Scope: []*storage.Scope{
 			scope,
 		},
 	}
@@ -491,20 +492,20 @@ func (suite *PolicyValidatorTestSuite) TestValidateScopes() {
 	err = suite.validator.validateScopes(policy)
 	suite.NoError(err, "valid scope definition")
 
-	scope = &v1.Scope{}
+	scope = &storage.Scope{}
 	policy = &v1.Policy{
-		Scope: []*v1.Scope{
+		Scope: []*storage.Scope{
 			scope,
 		},
 	}
 	err = suite.validator.validateScopes(policy)
 	suite.NoError(err, "scopes with no cluster should be allowed")
 
-	scope = &v1.Scope{
+	scope = &storage.Scope{
 		Cluster: "cluster2",
 	}
 	policy = &v1.Policy{
-		Scope: []*v1.Scope{
+		Scope: []*storage.Scope{
 			scope,
 		},
 	}
@@ -512,11 +513,11 @@ func (suite *PolicyValidatorTestSuite) TestValidateScopes() {
 	err = suite.validator.validateScopes(policy)
 	suite.Error(err, "scopes whose clusters can't be found should fail")
 
-	scope = &v1.Scope{
+	scope = &storage.Scope{
 		Cluster: "cluster3",
 	}
 	policy = &v1.Policy{
-		Scope: []*v1.Scope{
+		Scope: []*storage.Scope{
 			scope,
 		},
 	}

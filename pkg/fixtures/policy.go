@@ -1,6 +1,9 @@
 package fixtures
 
-import "github.com/stackrox/rox/generated/api/v1"
+import (
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+)
 
 // GetPolicy returns a Mock Policy
 func GetPolicy() *v1.Policy {
@@ -12,11 +15,11 @@ func GetPolicy() *v1.Policy {
 		Severity:    v1.Severity_LOW_SEVERITY,
 		Rationale:   "This is the rationale",
 		Remediation: "This is the remediation",
-		Scope: []*v1.Scope{
+		Scope: []*storage.Scope{
 			{
 				Cluster:   "prod cluster",
 				Namespace: "stackrox",
-				Label: &v1.Scope_Label{
+				Label: &storage.Scope_Label{
 					Key:   "com.docker.stack.namespace",
 					Value: "prevent",
 				},

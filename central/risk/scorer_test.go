@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/risk/getters"
 	"github.com/stackrox/rox/central/risk/multipliers"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -66,10 +67,10 @@ func TestScore(t *testing.T) {
 
 	// With user defined function
 	for val := 1; val <= 3; val++ {
-		mult := &v1.Multiplier{
+		mult := &storage.Multiplier{
 			Id:   fmt.Sprintf("%d", val),
 			Name: fmt.Sprintf("Cluster multiplier %d", val),
-			Scope: &v1.Scope{
+			Scope: &storage.Scope{
 				Cluster: "cluster",
 			},
 			Value: float32(val),

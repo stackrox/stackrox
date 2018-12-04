@@ -2,7 +2,7 @@ package store
 
 import (
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
@@ -10,10 +10,10 @@ const multiplierBucket = "multipliers"
 
 // Store provides storage functionality for alerts.
 type Store interface {
-	GetMultiplier(id string) (*v1.Multiplier, bool, error)
-	GetMultipliers() ([]*v1.Multiplier, error)
-	AddMultiplier(multiplier *v1.Multiplier) (string, error)
-	UpdateMultiplier(multiplier *v1.Multiplier) error
+	GetMultiplier(id string) (*storage.Multiplier, bool, error)
+	GetMultipliers() ([]*storage.Multiplier, error)
+	AddMultiplier(multiplier *storage.Multiplier) (string, error)
+	UpdateMultiplier(multiplier *storage.Multiplier) error
 	RemoveMultiplier(id string) error
 }
 

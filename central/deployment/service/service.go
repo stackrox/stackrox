@@ -8,6 +8,7 @@ import (
 	multiplierStore "github.com/stackrox/rox/central/multiplier/store"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -27,8 +28,8 @@ type Service interface {
 	GetLabels(context.Context, *v1.Empty) (*v1.DeploymentLabelsResponse, error)
 
 	GetMultipliers(ctx context.Context, request *v1.Empty) (*v1.GetMultipliersResponse, error)
-	AddMultiplier(ctx context.Context, request *v1.Multiplier) (*v1.Multiplier, error)
-	UpdateMultiplier(ctx context.Context, request *v1.Multiplier) (*v1.Empty, error)
+	AddMultiplier(ctx context.Context, request *storage.Multiplier) (*storage.Multiplier, error)
+	UpdateMultiplier(ctx context.Context, request *storage.Multiplier) (*v1.Empty, error)
 	RemoveMultiplier(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error)
 }
 

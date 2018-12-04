@@ -7,6 +7,7 @@ import (
 	multiplierDS "github.com/stackrox/rox/central/multiplier/store"
 	"github.com/stackrox/rox/central/risk"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -20,7 +21,7 @@ var (
 type Enricher interface {
 	Enrich(deployment *v1.Deployment) (bool, error)
 
-	UpdateMultiplier(multiplier *v1.Multiplier)
+	UpdateMultiplier(multiplier *storage.Multiplier)
 	RemoveMultiplier(id string)
 
 	ReprocessRiskAsync()

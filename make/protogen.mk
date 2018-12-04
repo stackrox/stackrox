@@ -10,6 +10,7 @@ ALL_PROTOS_REL = $(ALL_PROTOS:$(PROTO_BASE_PATH)/%=%)
 SERVICE_PROTOS_REL = $(SERVICE_PROTOS:$(PROTO_BASE_PATH)/%=%)
 
 API_SERVICE_PROTOS = $(filter api/v1/%, $(SERVICE_PROTOS_REL))
+STORAGE_PROTOS = $(filter storage/%, $(ALL_PROTOS_REL))
 
 GENERATED_BASE_PATH = $(BASE_PATH)/generated
 GENERATED_DOC_PATH = image/docs
@@ -59,6 +60,10 @@ GOGO_M_STR := Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgoogle/
 # to import the go source for proto file $(BASE_PATH)/<path>/*.proto to
 # "github.com/stackrox/rox/generated/<path>".
 M_ARGS = $(foreach proto,$(ALL_PROTOS_REL),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto))))
+# This is the M_ARGS used for the grpc-gateway invocation. We only map the storage protos, because
+# - the gateway code produces no output (possibly because of a bug) if we pass M_ARGS_STR to it.
+# - the gateway code doesn't need access to anything outside api/v1 except storage. In particular, it should NOT import internalapi protos.
+GATEWAY_M_ARGS = $(foreach proto,$(STORAGE_PROTOS),M$(proto)=github.com/stackrox/rox/generated/$(patsubst %/,%,$(dir $(proto))))
 
 # Hack: there's no straightforward way to escape a comma in a $(subst ...) command, so we have to resort to this little
 # trick.
@@ -67,6 +72,7 @@ space := $(null) $(null)
 comma := ,
 
 M_ARGS_STR := $(subst $(space),$(comma),$(strip $(M_ARGS)))
+GATEWAY_M_ARGS_STR := $(subst $(space),$(comma),$(strip $(GATEWAY_M_ARGS)))
 
 $(GOPATH)/src/github.com/golang/protobuf/protoc-gen-go:
 	@echo "+ $@"
@@ -174,11 +180,8 @@ $(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
 		--proto_path=$(PROTO_BASE_PATH) \
-		--grpc-gateway_out=logtostderr=true:$(GENERATED_BASE_PATH) \
+		--grpc-gateway_out=$(GATEWAY_M_ARGS_STR),logtostderr=true:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
-	@for f in $(patsubst $(dir $<)/%.proto, $(dir $@)/%.pb.gw.go, $(wildcard $(dir $<)/*.proto)); do \
-    	test -f $$f || echo package $(subst -,_,$(notdir $(patsubst %/, %, $(dir $<)))) >$$f; \
-    done
 
 # Generate all of the swagger specifications with one invocation of protoc
 # when any of the .swagger.json sources don't exist or when any of the

@@ -5,16 +5,17 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scopecomp"
 )
 
 // userDefinedMultiplier is a wrapper around a proto multiplier
 type userDefinedMultiplier struct {
-	*v1.Multiplier
+	*storage.Multiplier
 }
 
 // NewUserDefined generates a new wrapper around the proto multiplier that implements the generic multiplier interface
-func NewUserDefined(mult *v1.Multiplier) Multiplier {
+func NewUserDefined(mult *storage.Multiplier) Multiplier {
 	return &userDefinedMultiplier{
 		Multiplier: mult,
 	}
@@ -34,7 +35,7 @@ func (u *userDefinedMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result
 	}
 }
 
-func formatScope(scope *v1.Scope) string {
+func formatScope(scope *storage.Scope) string {
 	var vals []string
 	if scope.GetCluster() != "" {
 		vals = append(vals, "cluster:"+scope.GetCluster())

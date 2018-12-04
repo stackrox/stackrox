@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+import "storage/scope.proto";
+
+option go_package = "storage";
+option java_package = "stackrox.generated";
+
+package storage;
+
+message Multiplier {
+    string id   = 1;
+    string name = 2;
+    Scope scope = 3;
+    float value = 4;
+}
+

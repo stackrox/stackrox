@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/risk/multipliers"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Scorer is the object that encompasses the multipliers for evaluating risk
@@ -26,7 +27,7 @@ func (s *scoreImpl) Score(deployment *v1.Deployment) *v1.Risk {
 }
 
 // UpdateUserDefinedMultiplier upserts the passed multiplier
-func (s *scoreImpl) UpdateUserDefinedMultiplier(mult *v1.Multiplier) {
+func (s *scoreImpl) UpdateUserDefinedMultiplier(mult *storage.Multiplier) {
 	s.multiplierLock.Lock()
 	defer s.multiplierLock.Unlock()
 

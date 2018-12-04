@@ -7,7 +7,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/secondarykey"
@@ -18,8 +18,8 @@ type storeImpl struct {
 	*bolt.DB
 }
 
-func (b *storeImpl) getMultiplier(id string, bucket *bolt.Bucket) (multiplier *v1.Multiplier, exists bool, err error) {
-	multiplier = new(v1.Multiplier)
+func (b *storeImpl) getMultiplier(id string, bucket *bolt.Bucket) (multiplier *storage.Multiplier, exists bool, err error) {
+	multiplier = new(storage.Multiplier)
 	val := bucket.Get([]byte(id))
 	if val == nil {
 		return
@@ -30,7 +30,7 @@ func (b *storeImpl) getMultiplier(id string, bucket *bolt.Bucket) (multiplier *v
 }
 
 // GetMultiplier returns multiplier with given id.
-func (b *storeImpl) GetMultiplier(id string) (multiplier *v1.Multiplier, exists bool, err error) {
+func (b *storeImpl) GetMultiplier(id string) (multiplier *storage.Multiplier, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Multiplier")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(multiplierBucket))
@@ -41,13 +41,13 @@ func (b *storeImpl) GetMultiplier(id string) (multiplier *v1.Multiplier, exists 
 }
 
 // GetMultipliers retrieves multipliers from bolt
-func (b *storeImpl) GetMultipliers() ([]*v1.Multiplier, error) {
+func (b *storeImpl) GetMultipliers() ([]*storage.Multiplier, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Multiplier")
-	var multipliers []*v1.Multiplier
+	var multipliers []*storage.Multiplier
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(multiplierBucket))
 		return b.ForEach(func(k, v []byte) error {
-			var multiplier v1.Multiplier
+			var multiplier storage.Multiplier
 			if err := proto.Unmarshal(v, &multiplier); err != nil {
 				return err
 			}
@@ -59,7 +59,7 @@ func (b *storeImpl) GetMultipliers() ([]*v1.Multiplier, error) {
 }
 
 // AddMultiplier adds a multiplier into bolt
-func (b *storeImpl) AddMultiplier(multiplier *v1.Multiplier) (string, error) {
+func (b *storeImpl) AddMultiplier(multiplier *storage.Multiplier) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Multiplier")
 	multiplier.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
@@ -84,7 +84,7 @@ func (b *storeImpl) AddMultiplier(multiplier *v1.Multiplier) (string, error) {
 }
 
 // UpdateMultiplier upserts a multiplier into bolt
-func (b *storeImpl) UpdateMultiplier(multiplier *v1.Multiplier) error {
+func (b *storeImpl) UpdateMultiplier(multiplier *storage.Multiplier) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Multiplier")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(multiplierBucket))

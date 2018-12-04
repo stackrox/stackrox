@@ -18,13 +18,3 @@ enum Severity {
 message ResourceByID {
     string id = 1;
 }
-
-message Scope {
-    string cluster      = 1;
-    string namespace    = 2;
-    message Label {
-        string key   = 1;
-        string value = 2;
-    }
-    Label label         = 3;
-}

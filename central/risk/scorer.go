@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/risk/getters"
 	"github.com/stackrox/rox/central/risk/multipliers"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -15,7 +16,7 @@ var (
 type Scorer interface {
 	Score(deployment *v1.Deployment) *v1.Risk
 
-	UpdateUserDefinedMultiplier(mult *v1.Multiplier)
+	UpdateUserDefinedMultiplier(mult *storage.Multiplier)
 	RemoveUserDefinedMultiplier(id string)
 }
 

@@ -9,7 +9,6 @@ import stackrox.generated.AlertServiceOuterClass.GetAlertsCountsResponse
 import stackrox.generated.AlertServiceOuterClass.GetAlertsGroupResponse
 import stackrox.generated.AlertServiceOuterClass.GetAlertTimeseriesResponse
 import stackrox.generated.AlertServiceOuterClass.ListAlert
-import stackrox.generated.Common
 import stackrox.generated.DeploymentServiceGrpc
 import stackrox.generated.DetectionServiceGrpc
 import stackrox.generated.ImageIntegrationServiceGrpc
@@ -25,6 +24,7 @@ import stackrox.generated.PolicyServiceOuterClass.EnforcementAction
 import stackrox.generated.PolicyServiceOuterClass.LifecycleStage
 import stackrox.generated.PolicyServiceOuterClass.ListPolicy
 import stackrox.generated.PolicyServiceOuterClass.Policy
+import stackrox.generated.ScopeOuterClass
 import stackrox.generated.SearchServiceGrpc
 import stackrox.generated.SearchServiceOuterClass.RawQuery
 import stackrox.generated.AlertServiceOuterClass.Alert
@@ -302,7 +302,7 @@ class Services extends BaseService {
             addWhitelists(PolicyServiceOuterClass.Whitelist.newBuilder().
                 setDeployment(PolicyServiceOuterClass.Whitelist.Deployment.newBuilder().
                     setName(deployment.getName()).
-                    setScope(Common.Scope.newBuilder().
+                    setScope(ScopeOuterClass.Scope.newBuilder().
                         setNamespace(deployment.getNamespace())
                     ).
                     build()).

@@ -13,6 +13,7 @@ import (
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/policies"
 )
@@ -204,7 +205,7 @@ func (s *policyValidator) validateDeploymentWhitelist(whitelist *v1.Whitelist) e
 	return nil
 }
 
-func (s *policyValidator) validateScope(scope *v1.Scope) error {
+func (s *policyValidator) validateScope(scope *storage.Scope) error {
 	if scope.GetCluster() == "" {
 		return nil
 	}

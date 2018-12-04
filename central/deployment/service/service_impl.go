@@ -11,6 +11,7 @@ import (
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/dberrors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -159,7 +160,7 @@ func (s *serviceImpl) GetMultipliers(ctx context.Context, request *v1.Empty) (*v
 	}, nil
 }
 
-func validateMultiplier(mult *v1.Multiplier) error {
+func validateMultiplier(mult *storage.Multiplier) error {
 	errorList := errorhelpers.NewErrorList("Validation")
 	if mult.GetName() == "" {
 		errorList.AddString("multiplier name must be specified")
@@ -171,7 +172,7 @@ func validateMultiplier(mult *v1.Multiplier) error {
 }
 
 // AddMultiplier inserts the specified multiplier
-func (s *serviceImpl) AddMultiplier(ctx context.Context, request *v1.Multiplier) (*v1.Multiplier, error) {
+func (s *serviceImpl) AddMultiplier(ctx context.Context, request *storage.Multiplier) (*storage.Multiplier, error) {
 	if err := validateMultiplier(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -185,7 +186,7 @@ func (s *serviceImpl) AddMultiplier(ctx context.Context, request *v1.Multiplier)
 }
 
 // UpdateMultiplier updates the specified multiplier
-func (s *serviceImpl) UpdateMultiplier(ctx context.Context, request *v1.Multiplier) (*v1.Empty, error) {
+func (s *serviceImpl) UpdateMultiplier(ctx context.Context, request *storage.Multiplier) (*v1.Empty, error) {
 	if err := s.multipliers.UpdateMultiplier(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

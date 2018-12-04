@@ -4,25 +4,26 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestWithinScope(t *testing.T) {
 	subtests := []struct {
 		name       string
-		scope      *v1.Scope
+		scope      *storage.Scope
 		deployment *v1.Deployment
 		result     bool
 	}{
 		{
 			name:       "empty scope",
-			scope:      &v1.Scope{},
+			scope:      &storage.Scope{},
 			deployment: &v1.Deployment{},
 			result:     true,
 		},
 		{
 			name: "matching cluster",
-			scope: &v1.Scope{
+			scope: &storage.Scope{
 				Cluster: "cluster",
 			},
 			deployment: &v1.Deployment{
@@ -32,7 +33,7 @@ func TestWithinScope(t *testing.T) {
 		},
 		{
 			name: "not matching cluster",
-			scope: &v1.Scope{
+			scope: &storage.Scope{
 				Cluster: "cluster1",
 			},
 			deployment: &v1.Deployment{
@@ -42,7 +43,7 @@ func TestWithinScope(t *testing.T) {
 		},
 		{
 			name: "matching namespace",
-			scope: &v1.Scope{
+			scope: &storage.Scope{
 				Namespace: "namespace",
 			},
 			deployment: &v1.Deployment{
@@ -52,7 +53,7 @@ func TestWithinScope(t *testing.T) {
 		},
 		{
 			name: "not matching namespace",
-			scope: &v1.Scope{
+			scope: &storage.Scope{
 				Namespace: "namespace1",
 			},
 			deployment: &v1.Deployment{
@@ -62,8 +63,8 @@ func TestWithinScope(t *testing.T) {
 		},
 		{
 			name: "matching label",
-			scope: &v1.Scope{
-				Label: &v1.Scope_Label{
+			scope: &storage.Scope{
+				Label: &storage.Scope_Label{
 					Key:   "key",
 					Value: "value",
 				},
@@ -78,8 +79,8 @@ func TestWithinScope(t *testing.T) {
 		},
 		{
 			name: "not matching label value",
-			scope: &v1.Scope{
-				Label: &v1.Scope_Label{
+			scope: &storage.Scope{
+				Label: &storage.Scope_Label{
 					Key:   "key",
 					Value: "value",
 				},
@@ -94,8 +95,8 @@ func TestWithinScope(t *testing.T) {
 		},
 		{
 			name: "not matching key value",
-			scope: &v1.Scope{
-				Label: &v1.Scope_Label{
+			scope: &storage.Scope{
+				Label: &storage.Scope_Label{
 					Key:   "key",
 					Value: "value",
 				},
@@ -110,10 +111,10 @@ func TestWithinScope(t *testing.T) {
 		},
 		{
 			name: "match all",
-			scope: &v1.Scope{
+			scope: &storage.Scope{
 				Cluster:   "cluster",
 				Namespace: "namespace",
-				Label: &v1.Scope_Label{
+				Label: &storage.Scope_Label{
 					Key:   "key",
 					Value: "value",
 				},

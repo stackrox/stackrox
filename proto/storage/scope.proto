@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "stackrox.generated";
+
+package storage;
+
+message Scope {
+    string cluster      = 1;
+    string namespace    = 2;
+    message Label {
+        string key   = 1;
+        string value = 2;
+    }
+    Label label         = 3;
+}
