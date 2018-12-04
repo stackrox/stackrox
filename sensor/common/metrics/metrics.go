@@ -28,27 +28,6 @@ var (
 		Help:      "A counter of the total number of times we've passed through the dedupe cache",
 	})
 
-	processEnrichmentDrops = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "process_enrichment_drops",
-		Help:      "A counter of the total number of times we've dropped enriching process indicators",
-	})
-
-	processEnrichmentHits = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "process_enrichment_hits",
-		Help:      "A counter of the total number of times we've successfully enriched process indicators",
-	})
-
-	processEnrichmentLRUCacheSize = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "process_enrichment_cache_size",
-		Help:      "A gauge to track the enrichment lru cache size",
-	})
-
 	sensorIndicatorChannelFullCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -106,19 +85,4 @@ func IncrementTotalNetworkFlowsSentCounter(clusterID string, numberOfFlows int) 
 // IncrementTotalNetworkFlowsReceivedCounter registers the total number of flows received
 func IncrementTotalNetworkFlowsReceivedCounter(clusterID string, numberOfFlows int) {
 	totalNetworkFlowsReceivedCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfFlows))
-}
-
-// IncrementProcessEnrichmentDrops increments the number of times we could not enrich.
-func IncrementProcessEnrichmentDrops() {
-	processEnrichmentDrops.Inc()
-}
-
-// IncrementProcessEnrichmentHits increments the number of times we could enrich.
-func IncrementProcessEnrichmentHits() {
-	processEnrichmentHits.Inc()
-}
-
-// SetProcessEnrichmentCacheSize sets the enrichment cache size.
-func SetProcessEnrichmentCacheSize(size float64) {
-	processEnrichmentLRUCacheSize.Set(size)
 }
