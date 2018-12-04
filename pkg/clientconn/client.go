@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
+	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"google.golang.org/grpc"
@@ -78,6 +79,15 @@ func GRPCConnectionWithBasicAuth(endpoint string, username, password string) (*g
 	}
 	creds := credentials.NewTLS(tlsConfig)
 	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(basic.PerRPCCredentials(username, password)))
+}
+
+// GRPCConnectionWithToken returns a grpc.ClientConn using the given token to authenticate
+func GRPCConnectionWithToken(endpoint, token string) (*grpc.ClientConn, error) {
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	creds := credentials.NewTLS(tlsConfig)
+	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(tokenbased.PerRPCCredentials(token)))
 }
 
 // Parameters for keep alive.

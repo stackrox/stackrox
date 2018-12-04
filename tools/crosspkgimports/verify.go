@@ -24,6 +24,7 @@ var (
 		"cmd/base64",
 		"cmd/deploy",
 		"cmd/roxdetect",
+		"cmd/common",
 		"pkg",
 		"sensor/kubernetes",
 		"sensor/swarm",
@@ -129,6 +130,10 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot string) (errs []
 
 	if validImportRoot == "sensor/swarm" || validImportRoot == "sensor/kubernetes" {
 		allowedPackages = append(allowedPackages, "sensor/common")
+	}
+
+	if validImportRoot == "cmd/roxdetect" {
+		allowedPackages = append(allowedPackages, "cmd/common")
 	}
 
 	for _, imp := range imps {

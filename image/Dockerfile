@@ -29,9 +29,7 @@ COPY ./bin/swarm-sensor /stackrox/
 COPY ./ui/build  /ui/
 COPY ./docs/api/v1/swagger.json /docs/api/v1/swagger.json
 
-# This will expand to VERSION.txt and COLLECTOR_VERSION.txt during a local
-# build, but COLLECTOR_VERSION.txt, NOTICE.txt, and VERSION.txt during a CI
-# build.
+# This will expand to NOTICE.txt during a CI build.
 COPY ./*.txt /
 
 COPY ./assets /data/assets
