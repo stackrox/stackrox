@@ -9,7 +9,7 @@ source $COMMON_DIR/deploy.sh
 source $K8S_DIR/launch.sh
 source $K8S_DIR/env.sh
 
-export RUNTIME_SUPPORT=${RUNTIME_SUPPORT:-false}
+export RUNTIME_SUPPORT=${RUNTIME_SUPPORT:-true}
 echo "RUNTIME_SUPPORT set to $RUNTIME_SUPPORT"
 
 if [[ -z $CLUSTER ]]; then

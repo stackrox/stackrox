@@ -11,7 +11,7 @@ source $K8S_DIR/env.sh
 export CLUSTER=${CLUSTER:-remote}
 echo "CLUSTER set to $CLUSTER"
 
-export RUNTIME_SUPPORT=${RUNTIME_SUPPORT:-false}
+export RUNTIME_SUPPORT=${RUNTIME_SUPPORT:-true}
 echo "RUNTIME_SUPPORT set to $RUNTIME_SUPPORT"
 
 launch_central "$K8S_DIR" "$MAIN_IMAGE"

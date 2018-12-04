@@ -4,7 +4,7 @@ set -e
 export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-central.stackrox:443}"
 echo "In-cluster Central endpoint set to $CLUSTER_API_ENDPOINT"
 
-export RUNTIME_SUPPORT=${RUNTIME_SUPPORT:-false}
+export RUNTIME_SUPPORT=${RUNTIME_SUPPORT:-true}
 echo "RUNTIME_SUPPORT set to $RUNTIME_SUPPORT"
 
 export ROX_HTPASSWD_AUTH=${ROX_HTPASSWD_AUTH:-true}
