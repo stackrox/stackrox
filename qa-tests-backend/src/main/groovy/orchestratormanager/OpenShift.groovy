@@ -9,13 +9,13 @@ import io.fabric8.kubernetes.api.model.HostPathVolumeSource
 import io.fabric8.kubernetes.api.model.IntOrString
 import io.fabric8.kubernetes.api.model.LabelSelector
 import io.fabric8.kubernetes.api.model.LocalObjectReference
+import io.fabric8.kubernetes.api.model.ObjectMeta
 import io.fabric8.kubernetes.api.model.Pod
 import io.fabric8.kubernetes.api.model.PodList
 import io.fabric8.kubernetes.api.model.PodSpec
 import io.fabric8.kubernetes.api.model.ResourceRequirements
 import io.fabric8.kubernetes.api.model.Secret
 import io.fabric8.kubernetes.api.model.SecretList
-import io.fabric8.kubernetes.api.model.SecretVolumeSource
 import io.fabric8.kubernetes.api.model.SecurityContext
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder
 import io.fabric8.kubernetes.api.model.ServiceBuilder
@@ -32,6 +32,10 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder
 import io.fabric8.kubernetes.client.KubernetesClientException
 import io.fabric8.openshift.api.model.ProjectRequest
 import io.fabric8.openshift.api.model.ProjectRequestBuilder
+import io.fabric8.openshift.api.model.Route
+import io.fabric8.openshift.api.model.RouteList
+import io.fabric8.openshift.api.model.RouteSpec
+import io.fabric8.openshift.api.model.RouteTargetReference
 import io.fabric8.openshift.api.model.RunAsUserStrategyOptions
 import io.fabric8.openshift.api.model.SELinuxContextStrategyOptions
 import io.fabric8.openshift.api.model.SecurityContextConstraints
@@ -307,6 +311,7 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
                 .endMetadata()
                 .withNewSpec()
                         .withSelector(deployment.labels)
+                        .withType(deployment.createLoadBalancer ? "LoadBalancer" : "ClusterIP")
 
         deployment.ports.each {
             k, v -> service.addNewPort()
@@ -322,6 +327,39 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
 
     def deleteService(String name, String namespace = this.namespace) {
         osClient.services().inNamespace(namespace).withName(name).delete()
+    }
+
+    def createLoadBalancer(Deployment deployment) {
+        if (deployment.createLoadBalancer) {
+            Route route = new Route(
+                    "v1",
+                    "Route",
+                    new ObjectMeta(name: deployment.name),
+                    new RouteSpec(to: new RouteTargetReference("Service", deployment.name, null)),
+                    null
+            )
+            osClient.routes().inNamespace(deployment.namespace).createOrReplace(route)
+            int waitTime = 0
+            println "Waiting for Route for " + deployment.name
+            while (waitTime < maxWaitTime) {
+                RouteList rList
+                rList = osClient.routes().inNamespace(deployment.namespace).list()
+
+                for (Route r : rList.getItems()) {
+                    if (r.getMetadata().getName() == deployment.name) {
+                        if (r.getStatus().getIngress() != null) {
+                            println "Route Host: " +
+                                    r.getStatus().getIngress().get(0).getHost()
+                            deployment.loadBalancerIP =
+                                    r.getStatus().getIngress().get(0).getHost()
+                            waitTime += maxWaitTime
+                        }
+                    }
+                }
+                sleep(sleepDuration)
+                waitTime += sleepDuration
+            }
+        }
     }
 
     /*
@@ -570,6 +608,7 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
             // Create service if needed
             if (deployment.exposeAsService) {
                 createService(deployment)
+                createLoadBalancer(deployment)
             }
         } catch (Exception e) {
             println("Error while waiting for deployment/populating deployment info: " + e.toString())
@@ -702,25 +741,22 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
 
         List<Volume> volumes = []
         deployment.volNames.each {
-            Volume v = new Volume()
-            v.setName(it)
-            v.hostPath(new HostPathVolumeSource()
-              .path("/tmp")
-              .type("Directory"))
-            v.setSecret(new SecretVolumeSource()
-                    .setSecretName(deployment.secretNames.get(deployment.volNames.indexOf(it))))
+            Volume v = new Volume(
+                    name: it,
+                    hostPath: new HostPathVolumeSource("/tmp", "Directory")
+            )
             volumes.add(v)
         }
 
         Map<String , Quantity> limits = new HashMap<>()
         for (String key:deployment.limits.keySet()) {
-            Quantity quantity = Quantity(deployment.limits.get(key))
+            Quantity quantity = new Quantity(deployment.limits.get(key))
             limits.put(key, quantity)
         }
 
         Map<String , Quantity> requests = new HashMap<>()
         for (String key:deployment.request.keySet()) {
-            Quantity quantity = Quantity(deployment.request.get(key))
+            Quantity quantity = new Quantity(deployment.request.get(key))
             requests.put(key, quantity)
         }
 
@@ -731,13 +767,14 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
                 args: deployment.args,
                 ports: depPorts,
                 volumeMounts: volMounts,
-                env: envVars
-        ).setResources(new ResourceRequirements(limits, requests))
-        PodSpec podSpec = new PodSpec()
-        podSpec.setContainers([container])
-        podSpec.setVolumes(volumes)
-        podSpec.setSecurityContext(new SecurityContext()
-                .privileged(deployment.getIsPrivileged()))
+                env: envVars,
+                resources: new ResourceRequirements(limits, requests),
+                securityContext: new SecurityContext(null, null, deployment.isPrivileged, null, null, null, null)
+        )
+        PodSpec podSpec = new PodSpec(
+                containers: [container],
+                volumes: volumes
+        )
         return podSpec
     }
 

@@ -1,3 +1,6 @@
+import static com.jayway.restassured.RestAssured.given
+
+import orchestratormanager.OrchestratorTypes
 import com.google.protobuf.Timestamp
 import groups.BAT
 import groups.NetworkFlowVisualization
@@ -29,6 +32,7 @@ class NetworkFlowTest extends BaseSpecification {
     static final private String SHORTCONSISTENTSOURCE = "short-consistent-source"
     static final private String SINGLECONNECTIONSOURCE = "single-connection-source"
     static final private String MULTIPLEPORTSCONNECTION = "two-ports-connect-source"
+    static final private String EXTERNALDESTINATION = "external-destination-source"
 
     static final private List<Deployment> DEPLOYMENTS = [
             //Target deployments
@@ -59,7 +63,8 @@ class NetworkFlowTest extends BaseSpecification {
                     .setImage("nginx")
                     .addPort(80)
                     .addLabel("app", NGINXCONNECTIONTARGET)
-                    .setExposeAsService(true),
+                    .setExposeAsService(true)
+                    .setCreateLoadBalancer(true),
 
             //Source deployments
             new Deployment()
@@ -111,6 +116,14 @@ class NetworkFlowTest extends BaseSpecification {
                                       "while sleep 5; " +
                                       "do socat -s STDIN TCP:${TCPCONNECTIONTARGET}:80; " +
                                       "socat -s STDIN TCP:${TCPCONNECTIONTARGET}:8080; " +
+                                      "done" as String,]),
+            new Deployment()
+                    .setName(EXTERNALDESTINATION)
+                    .setImage("nginx:1.15.4-alpine")
+                    .addLabel("app", EXTERNALDESTINATION)
+                    .setCommand(["/bin/sh", "-c",])
+                    .setArgs(["while sleep ${NETWORK_FLOW_UPDATE_CADENCE / 1000}; " +
+                                      "do wget -S http://www.google.com; " +
                                       "done" as String,]),
     ]
 
@@ -189,6 +202,46 @@ class NetworkFlowTest extends BaseSpecification {
         then:
         "Wait for collector update and fetch graph again to confirm short interval connections remain"
         assert waitForEdgeUpdate(edges.get(0), 90)
+    }
+
+    @Category([NetworkFlowVisualization])
+    def "Verify connections to external sources"() {
+        given:
+        "Deployment A, where A communicates to an external target"
+        String deploymentUid = DEPLOYMENTS.find { it.name == EXTERNALDESTINATION }?.deploymentUid
+        assert deploymentUid != null
+
+        expect:
+        "Check for edge in network graph"
+        println "Checking for edge from ${EXTERNALDESTINATION} to external target"
+        List<Edge> edges = checkForEdge(deploymentUid, "")
+        assert edges
+    }
+
+    @Category([NetworkFlowVisualization])
+    def "Verify connections from external sources"() {
+        given:
+        "Cluster is Openshift"
+        // This is due to ROX-897, external -> deploy in k8s via LB is not working
+        Assume.assumeTrue(OrchestratorTypes.valueOf(System.getenv("CLUSTER")) == OrchestratorTypes.OPENSHIFT)
+
+        and:
+        "Deployment A, where an external source communicates to A"
+        String deploymentUid = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
+        assert deploymentUid != null
+        String deploymentIP = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.loadBalancerIP
+        assert deploymentIP != null
+
+        when:
+        "ping the target deployment"
+        def response = given().get("http://${deploymentIP}")
+        println response.asString()
+
+        then:
+        "Check for edge in network graph"
+        println "Checking for edge from external target to ${EXTERNALDESTINATION}"
+        List<Edge> edges = checkForEdge("", deploymentUid)
+        assert edges
     }
 
     @Category([NetworkFlowVisualization])

@@ -38,7 +38,8 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .addRequest("cpu", "0")
                     .addVolMountName("test")
                     .addVolName("test")
-                    .addMountPath("/tmp"),
+                    .addMountPath("/tmp")
+                    .setSkipReplicaWait(true),
 
             new Deployment()
                     .setName(DEPLOYMENTREMOTE)

@@ -21,9 +21,11 @@ class Deployment {
     List<String> args = new ArrayList<>()
     Boolean exposeAsService = false
     Map<String, String> env = new HashMap<>()
-    Boolean isPrivileged
+    Boolean isPrivileged = false
     Map<String , String> limits = new HashMap<>()
     Map<String , String> request = new HashMap<>()
+    Boolean createLoadBalancer = false
+    String loadBalancerIP = null
 
     Deployment setName(String n) {
         this.name = n
@@ -89,6 +91,11 @@ class Deployment {
 
     Deployment setExposeAsService(Boolean expose) {
         this.exposeAsService = expose
+        return this
+    }
+
+    Deployment setCreateLoadBalancer(Boolean lb) {
+        this.createLoadBalancer = lb
         return this
     }
 

@@ -22,6 +22,7 @@ import io.kubernetes.client.models.V1ContainerPort
 import io.kubernetes.client.models.V1PodTemplateSpec
 import io.kubernetes.client.models.V1PodSpec
 import io.kubernetes.client.models.V1ResourceRequirements
+import io.kubernetes.client.models.V1ServiceList
 import io.kubernetes.client.models.V1Volume
 import io.kubernetes.client.models.V1Container
 import io.kubernetes.client.models.V1PodList
@@ -444,6 +445,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                                         .protocol(v)
                         })
                                 .selector(deployment.labels)
+                                .type(deployment.createLoadBalancer ? "LoadBalancer" : "ClusterIP")
                 ),
                 null
         )
@@ -461,6 +463,31 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 false,
                 null
         )
+    }
+
+    def createLoadBalancer(Deployment deployment) {
+        if (deployment.createLoadBalancer) {
+            int waitTime = 0
+            println "Waiting for LB external IP for " + deployment.name
+            while (waitTime < maxWaitTime) {
+                V1ServiceList sList
+                sList = api.listNamespacedService(namespace, null, null, null, null, null, null, null, null, null)
+
+                for (V1Service service : sList.getItems()) {
+                    if (service.getMetadata().getName() == deployment.name) {
+                        if (service.getStatus().getLoadBalancer().getIngress() != null) {
+                            println "LB IP: " +
+                                    service.getStatus().getLoadBalancer().getIngress().get(0).getIp()
+                            deployment.loadBalancerIP =
+                                    service.getStatus().getLoadBalancer().getIngress().get(0).getIp()
+                            waitTime += maxWaitTime
+                        }
+                    }
+                }
+                sleep(sleepDuration)
+                waitTime += sleepDuration
+            }
+        }
     }
 
     /*
@@ -741,6 +768,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
             // Create service if needed
             if (deployment.exposeAsService) {
                 createService(deployment)
+                createLoadBalancer(deployment)
             }
         } catch (Exception e) {
             println("Error while waiting for deployment/populating deployment info: " + e.toString())
@@ -913,10 +941,10 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                                 .ports(containerPorts)
                                 .volumeMounts(mounts)
                                 .securityContext(new V1SecurityContext()
-                                .privileged(deployment.getIsPrivileged()))
+                                        .privileged(deployment.getIsPrivileged()))
                                 .resources(new V1ResourceRequirements()
-                                .limits(getLimits)
-                                .requests(getRequests)),
+                                        .limits(getLimits)
+                                        .requests(getRequests)),
                 ]
         )
                 .volumes(volumes)
