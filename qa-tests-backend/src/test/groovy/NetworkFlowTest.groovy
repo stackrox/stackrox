@@ -344,7 +344,8 @@ class NetworkFlowTest extends BaseSpecification {
     def "Verify edge timestamps are never in the future, or before start of flow tests"() {
         given:
         "Get current state of edges and current timestamp"
-        NetworkGraph currentGraph = NetworkGraphService.getNetworkGraph()
+        def queryString = "Deployment:" + DEPLOYMENTS.name.join(",")
+        NetworkGraph currentGraph = NetworkGraphService.getNetworkGraph(null, queryString)
         long currentTime = System.currentTimeMillis()
 
         expect:

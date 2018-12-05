@@ -9,13 +9,16 @@ class NetworkGraphService extends BaseService {
         return NetworkGraphServiceGrpc.newBlockingStub(getChannel())
     }
 
-    static getNetworkGraph(Timestamp since = null) {
+    static getNetworkGraph(Timestamp since = null, String query = null) {
         try {
             NetworkGraphOuterClass.NetworkGraphRequest.Builder request =
                     NetworkGraphOuterClass.NetworkGraphRequest.newBuilder()
                             .setClusterId(ClusterService.getClusterId())
             if (since != null) {
                 request.setSince(since)
+            }
+            if (query != null) {
+                request.setQuery(query)
             }
             return getNetworkGraphClient().getNetworkGraph(request.build())
         } catch (Exception e) {
