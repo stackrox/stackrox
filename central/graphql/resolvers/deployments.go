@@ -15,7 +15,7 @@ func init() {
 	schema.AddResolver(&v1.Deployment{}, `groupedProcesses: [ProcessNameGroup!]!`)
 	schema.AddResolver(&v1.Deployment{}, `alerts: [Alert!]!`)
 	schema.AddQuery("deployment(id: ID): Deployment")
-	schema.AddQuery("deployments(): [Deployment!]!")
+	schema.AddQuery("deployments(query: String): [Deployment!]!")
 }
 
 // Deployment returns a GraphQL resolver for a given id
@@ -27,11 +27,20 @@ func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.
 }
 
 // Deployments returns GraphQL resolvers all deployments
-func (resolver *Resolver) Deployments(ctx context.Context) ([]*deploymentResolver, error) {
+func (resolver *Resolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
 	if err := deploymentAuth(ctx); err != nil {
 		return nil, err
 	}
-	return resolver.wrapDeployments(resolver.DeploymentDataStore.GetDeployments())
+	q, err := args.AsV1Query()
+	if err != nil {
+		return nil, err
+	}
+	if q == nil {
+		return resolver.wrapListDeployments(
+			resolver.DeploymentDataStore.ListDeployments())
+	}
+	return resolver.wrapListDeployments(
+		resolver.DeploymentDataStore.SearchListDeployments(q))
 }
 
 // Cluster returns a GraphQL resolver for the cluster where this deployment runs
@@ -56,4 +65,12 @@ func (resolver *deploymentResolver) Alerts(ctx context.Context) ([]*alertResolve
 	query := search.NewQueryBuilder().AddStrings(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
 	return resolver.root.wrapAlerts(
 		resolver.root.ViolationsDataStore.SearchRawAlerts(query))
+}
+
+func (resolver *Resolver) getDeployment(id string) *v1.Deployment {
+	deployment, ok, err := resolver.DeploymentDataStore.GetDeployment(id)
+	if err != nil || !ok {
+		return nil
+	}
+	return deployment
 }

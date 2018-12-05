@@ -82,10 +82,13 @@ func (ctx *walkState) walkUnions(p reflect.Type) (output []unionData) {
 
 func (ctx *walkState) walkType(p reflect.Type) {
 	var unions []unionData
+	if p.Kind() == reflect.Slice {
+		p = p.Elem()
+	}
 	if p != nil && p.Implements(messageType) {
 		unions = ctx.walkUnions(p)
 	}
-	for p.Kind() == reflect.Ptr || p.Kind() == reflect.Slice {
+	for p.Kind() == reflect.Ptr {
 		p = p.Elem()
 	}
 	if _, ok := ctx.typeData[p]; ok {

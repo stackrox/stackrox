@@ -24,7 +24,25 @@ import (
 	"{{$i}}"
 {{- end}}{{end}} // end range imports
 )
-{{range $td := .Entries}}
+{{range $td := .Entries}}{{if isEnum $td.Data.Type}}
+func to{{.Data.Name}}(value *string) {{importedName .Data.Type}} {
+	if value != nil {
+		return {{importedName .Data.Type}}({{importedName .Data.Type}}_value[*value])
+	}
+	return {{importedName .Data.Type}}(0)
+}
+
+func to{{plural .Data.Name}}(values *[]string) []{{importedName .Data.Type}} {
+	if values == nil {
+		return nil
+	}
+	output := make([]{{importedName .Data.Type}}, len(*values))
+	for i, v := range *values {
+		output[i] = to{{.Data.Name}}(&v)
+	}
+	return output
+}
+{{else}}
 type {{lower .Data.Name}}Resolver struct {
 	root *Resolver
 	data *{{importedName .Data.Type}}
@@ -71,11 +89,11 @@ func (resolver *{{lower .Data.Name}}Resolver) ensureData() {
 {{range $_, $fd := .Data.FieldData -}}
 {{$vt := valueType $fd}}{{if $vt}}
 func (resolver *{{lower $td.Data.Name}}Resolver) {{ $fd.Name }}() {{ $vt }} {
-{{- if $td.ListData}}{{if nonListField $td.ListData $fd.Name}}
+{{- if $td.ListData}}{{if nonListField $td $fd}}
 	resolver.ensureData()
 {{- end}}{{end}}
 	value := resolver.data.Get{{$fd.Name}}()
-{{- if listField $td.ListData $fd.Name}}
+{{- if listField $td $fd}}
 	if resolver.data == nil {
 		value = resolver.list.Get{{$fd.Name}}()
 	}
@@ -100,7 +118,7 @@ func (resolver *{{lower $td.Data.Name}}{{$ud.Name}}Resolver) To{{$ut.Type.Elem.N
 	}
 	return nil, false
 }
-{{end}}{{end}}{{end}}`,
+{{end}}{{end}}{{end}}{{end}}`,
 	"enum":         `value.String()`,
 	"enumslice":    `stringSlice(value)`,
 	"float":        `float64(value)`,
@@ -196,12 +214,9 @@ func valueType(fd fieldData) string {
 	return returnType
 }
 
-func nonListField(listData map[string]bool, field string) bool {
-	return len(listData) > 0 && !listData[field]
-}
-
-func listField(listData map[string]bool, field string) bool {
-	return listData[field]
+func listField(td schemaEntry, field fieldData) bool {
+	t, ok := td.ListData[field.Name]
+	return ok && t == field.Type
 }
 
 // GenerateResolvers produces go code for resolvers for all the types found by the typewalk.
@@ -214,14 +229,15 @@ func GenerateResolvers(parameters TypeWalkParameters, writer io.Writer) {
 	)
 	rootTemplate := template.New("codegen")
 	rootTemplate.Funcs(template.FuncMap{
-		"lower":        lower,
 		"importedName": importedName,
-		"listName":     listName,
-		"plural":       plural,
-		"valueType":    valueType,
-		"nonListField": nonListField,
+		"isEnum":       isEnum,
 		"listField":    listField,
+		"listName":     listName,
+		"lower":        lower,
+		"nonListField": func(td schemaEntry, field fieldData) bool { return !listField(td, field) },
+		"plural":       plural,
 		"translator":   translator(rootTemplate),
+		"valueType":    valueType,
 	})
 	for name, text := range templates {
 		thisTemplate := rootTemplate

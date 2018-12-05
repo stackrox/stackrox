@@ -33,5 +33,8 @@ func plural(s string) string {
 	if strings.HasSuffix(s, "y") {
 		return s[:len(s)-1] + "ies"
 	}
+	if strings.HasSuffix(s, "s") {
+		return s + "es"
+	}
 	return s + "s"
 }

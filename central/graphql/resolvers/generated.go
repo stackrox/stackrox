@@ -8,39 +8,35 @@ import (
 	"github.com/stackrox/rox/generated/storage" // end range imports
 )
 
-type accessResolver struct {
-	root *Resolver
-	data *v1.Access
+func toAccess(value *string) v1.Access {
+	if value != nil {
+		return v1.Access(v1.Access_value[*value])
+	}
+	return v1.Access(0)
 }
 
-func (resolver *Resolver) wrapAccess(value *v1.Access, ok bool, err error) (*accessResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
+func toAccesses(values *[]string) []v1.Access {
+	if values == nil {
+		return nil
 	}
-	return &accessResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapAccesss(values []*v1.Access, err error) ([]*accessResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
+	output := make([]v1.Access, len(*values))
+	for i, v := range *values {
+		output[i] = toAccess(&v)
 	}
-	output := make([]*accessResolver, len(values))
-	for i, v := range values {
-		output[i] = &accessResolver{resolver, v}
-	}
-	return output, nil
+	return output
 }
 
 type alertResolver struct {
 	root *Resolver
 	data *v1.Alert
+	list *v1.ListAlert
 }
 
 func (resolver *Resolver) wrapAlert(value *v1.Alert, ok bool, err error) (*alertResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &alertResolver{resolver, value}, nil
+	return &alertResolver{resolver, value, nil}, nil
 }
 
 func (resolver *Resolver) wrapAlerts(values []*v1.Alert, err error) ([]*alertResolver, error) {
@@ -49,57 +45,92 @@ func (resolver *Resolver) wrapAlerts(values []*v1.Alert, err error) ([]*alertRes
 	}
 	output := make([]*alertResolver, len(values))
 	for i, v := range values {
-		output[i] = &alertResolver{resolver, v}
+		output[i] = &alertResolver{resolver, v, nil}
 	}
 	return output, nil
 }
 
+func (resolver *Resolver) wrapListAlerts(values []*v1.ListAlert, err error) ([]*alertResolver, error) {
+	if err != nil || values == nil {
+		return nil, err
+	}
+	output := make([]*alertResolver, len(values))
+	for i, v := range values {
+		output[i] = &alertResolver{resolver, nil, v}
+	}
+	return output, nil
+}
+
+func (resolver *alertResolver) ensureData() {
+	if resolver.data == nil {
+		resolver.data = resolver.root.getAlert(resolver.list.GetId())
+	}
+}
+
 func (resolver *alertResolver) Deployment() (*deploymentResolver, error) {
+	resolver.ensureData()
 	value := resolver.data.GetDeployment()
 	return resolver.root.wrapDeployment(value, true, nil)
 }
 
 func (resolver *alertResolver) Enforcement() (*alert_EnforcementResolver, error) {
+	resolver.ensureData()
 	value := resolver.data.GetEnforcement()
 	return resolver.root.wrapAlert_Enforcement(value, true, nil)
 }
 
 func (resolver *alertResolver) FirstOccurred() (graphql.Time, error) {
+	resolver.ensureData()
 	value := resolver.data.GetFirstOccurred()
 	return timestamp(value)
 }
 
 func (resolver *alertResolver) Id() graphql.ID {
 	value := resolver.data.GetId()
+	if resolver.data == nil {
+		value = resolver.list.GetId()
+	}
 	return graphql.ID(value)
 }
 
 func (resolver *alertResolver) LifecycleStage() string {
 	value := resolver.data.GetLifecycleStage()
+	if resolver.data == nil {
+		value = resolver.list.GetLifecycleStage()
+	}
 	return value.String()
 }
 
 func (resolver *alertResolver) Policy() (*policyResolver, error) {
+	resolver.ensureData()
 	value := resolver.data.GetPolicy()
 	return resolver.root.wrapPolicy(value, true, nil)
 }
 
 func (resolver *alertResolver) SnoozeTill() (graphql.Time, error) {
+	resolver.ensureData()
 	value := resolver.data.GetSnoozeTill()
 	return timestamp(value)
 }
 
 func (resolver *alertResolver) State() string {
 	value := resolver.data.GetState()
+	if resolver.data == nil {
+		value = resolver.list.GetState()
+	}
 	return value.String()
 }
 
 func (resolver *alertResolver) Time() (graphql.Time, error) {
 	value := resolver.data.GetTime()
+	if resolver.data == nil {
+		value = resolver.list.GetTime()
+	}
 	return timestamp(value)
 }
 
 func (resolver *alertResolver) Violations() ([]*alert_ViolationResolver, error) {
+	resolver.ensureData()
 	value := resolver.data.GetViolations()
 	return resolver.root.wrapAlert_Violations(value, nil)
 }
@@ -271,96 +302,197 @@ func (resolver *cVSSV2Resolver) Vector() string {
 	return value
 }
 
-type cVSSV2_AccessComplexityResolver struct {
-	root *Resolver
-	data *v1.CVSSV2_AccessComplexity
+func toCVSSV2_AccessComplexity(value *string) v1.CVSSV2_AccessComplexity {
+	if value != nil {
+		return v1.CVSSV2_AccessComplexity(v1.CVSSV2_AccessComplexity_value[*value])
+	}
+	return v1.CVSSV2_AccessComplexity(0)
 }
 
-func (resolver *Resolver) wrapCVSSV2_AccessComplexity(value *v1.CVSSV2_AccessComplexity, ok bool, err error) (*cVSSV2_AccessComplexityResolver, error) {
+func toCVSSV2_AccessComplexities(values *[]string) []v1.CVSSV2_AccessComplexity {
+	if values == nil {
+		return nil
+	}
+	output := make([]v1.CVSSV2_AccessComplexity, len(*values))
+	for i, v := range *values {
+		output[i] = toCVSSV2_AccessComplexity(&v)
+	}
+	return output
+}
+
+func toCVSSV2_AttackVector(value *string) v1.CVSSV2_AttackVector {
+	if value != nil {
+		return v1.CVSSV2_AttackVector(v1.CVSSV2_AttackVector_value[*value])
+	}
+	return v1.CVSSV2_AttackVector(0)
+}
+
+func toCVSSV2_AttackVectors(values *[]string) []v1.CVSSV2_AttackVector {
+	if values == nil {
+		return nil
+	}
+	output := make([]v1.CVSSV2_AttackVector, len(*values))
+	for i, v := range *values {
+		output[i] = toCVSSV2_AttackVector(&v)
+	}
+	return output
+}
+
+func toCVSSV2_Authentication(value *string) v1.CVSSV2_Authentication {
+	if value != nil {
+		return v1.CVSSV2_Authentication(v1.CVSSV2_Authentication_value[*value])
+	}
+	return v1.CVSSV2_Authentication(0)
+}
+
+func toCVSSV2_Authentications(values *[]string) []v1.CVSSV2_Authentication {
+	if values == nil {
+		return nil
+	}
+	output := make([]v1.CVSSV2_Authentication, len(*values))
+	for i, v := range *values {
+		output[i] = toCVSSV2_Authentication(&v)
+	}
+	return output
+}
+
+func toCVSSV2_Impact(value *string) v1.CVSSV2_Impact {
+	if value != nil {
+		return v1.CVSSV2_Impact(v1.CVSSV2_Impact_value[*value])
+	}
+	return v1.CVSSV2_Impact(0)
+}
+
+func toCVSSV2_Impacts(values *[]string) []v1.CVSSV2_Impact {
+	if values == nil {
+		return nil
+	}
+	output := make([]v1.CVSSV2_Impact, len(*values))
+	for i, v := range *values {
+		output[i] = toCVSSV2_Impact(&v)
+	}
+	return output
+}
+
+type certResolver struct {
+	root *Resolver
+	data *v1.Cert
+}
+
+func (resolver *Resolver) wrapCert(value *v1.Cert, ok bool, err error) (*certResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &cVSSV2_AccessComplexityResolver{resolver, value}, nil
+	return &certResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapCVSSV2_AccessComplexities(values []*v1.CVSSV2_AccessComplexity, err error) ([]*cVSSV2_AccessComplexityResolver, error) {
+func (resolver *Resolver) wrapCerts(values []*v1.Cert, err error) ([]*certResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
-	output := make([]*cVSSV2_AccessComplexityResolver, len(values))
+	output := make([]*certResolver, len(values))
 	for i, v := range values {
-		output[i] = &cVSSV2_AccessComplexityResolver{resolver, v}
+		output[i] = &certResolver{resolver, v}
 	}
 	return output, nil
 }
 
-type cVSSV2_AttackVectorResolver struct {
-	root *Resolver
-	data *v1.CVSSV2_AttackVector
+func (resolver *certResolver) Algorithm() string {
+	value := resolver.data.GetAlgorithm()
+	return value
 }
 
-func (resolver *Resolver) wrapCVSSV2_AttackVector(value *v1.CVSSV2_AttackVector, ok bool, err error) (*cVSSV2_AttackVectorResolver, error) {
+func (resolver *certResolver) EndDate() (graphql.Time, error) {
+	value := resolver.data.GetEndDate()
+	return timestamp(value)
+}
+
+func (resolver *certResolver) Issuer() (*certNameResolver, error) {
+	value := resolver.data.GetIssuer()
+	return resolver.root.wrapCertName(value, true, nil)
+}
+
+func (resolver *certResolver) Sans() []string {
+	value := resolver.data.GetSans()
+	return value
+}
+
+func (resolver *certResolver) StartDate() (graphql.Time, error) {
+	value := resolver.data.GetStartDate()
+	return timestamp(value)
+}
+
+func (resolver *certResolver) Subject() (*certNameResolver, error) {
+	value := resolver.data.GetSubject()
+	return resolver.root.wrapCertName(value, true, nil)
+}
+
+type certNameResolver struct {
+	root *Resolver
+	data *v1.CertName
+}
+
+func (resolver *Resolver) wrapCertName(value *v1.CertName, ok bool, err error) (*certNameResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &cVSSV2_AttackVectorResolver{resolver, value}, nil
+	return &certNameResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapCVSSV2_AttackVectors(values []*v1.CVSSV2_AttackVector, err error) ([]*cVSSV2_AttackVectorResolver, error) {
+func (resolver *Resolver) wrapCertNames(values []*v1.CertName, err error) ([]*certNameResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
-	output := make([]*cVSSV2_AttackVectorResolver, len(values))
+	output := make([]*certNameResolver, len(values))
 	for i, v := range values {
-		output[i] = &cVSSV2_AttackVectorResolver{resolver, v}
+		output[i] = &certNameResolver{resolver, v}
 	}
 	return output, nil
 }
 
-type cVSSV2_AuthenticationResolver struct {
-	root *Resolver
-	data *v1.CVSSV2_Authentication
+func (resolver *certNameResolver) CommonName() string {
+	value := resolver.data.GetCommonName()
+	return value
 }
 
-func (resolver *Resolver) wrapCVSSV2_Authentication(value *v1.CVSSV2_Authentication, ok bool, err error) (*cVSSV2_AuthenticationResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &cVSSV2_AuthenticationResolver{resolver, value}, nil
+func (resolver *certNameResolver) Country() string {
+	value := resolver.data.GetCountry()
+	return value
 }
 
-func (resolver *Resolver) wrapCVSSV2_Authentications(values []*v1.CVSSV2_Authentication, err error) ([]*cVSSV2_AuthenticationResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*cVSSV2_AuthenticationResolver, len(values))
-	for i, v := range values {
-		output[i] = &cVSSV2_AuthenticationResolver{resolver, v}
-	}
-	return output, nil
+func (resolver *certNameResolver) Locality() string {
+	value := resolver.data.GetLocality()
+	return value
 }
 
-type cVSSV2_ImpactResolver struct {
-	root *Resolver
-	data *v1.CVSSV2_Impact
+func (resolver *certNameResolver) Names() []string {
+	value := resolver.data.GetNames()
+	return value
 }
 
-func (resolver *Resolver) wrapCVSSV2_Impact(value *v1.CVSSV2_Impact, ok bool, err error) (*cVSSV2_ImpactResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &cVSSV2_ImpactResolver{resolver, value}, nil
+func (resolver *certNameResolver) Organization() string {
+	value := resolver.data.GetOrganization()
+	return value
 }
 
-func (resolver *Resolver) wrapCVSSV2_Impacts(values []*v1.CVSSV2_Impact, err error) ([]*cVSSV2_ImpactResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*cVSSV2_ImpactResolver, len(values))
-	for i, v := range values {
-		output[i] = &cVSSV2_ImpactResolver{resolver, v}
-	}
-	return output, nil
+func (resolver *certNameResolver) OrganizationUnit() string {
+	value := resolver.data.GetOrganizationUnit()
+	return value
+}
+
+func (resolver *certNameResolver) PostalCode() string {
+	value := resolver.data.GetPostalCode()
+	return value
+}
+
+func (resolver *certNameResolver) Province() string {
+	value := resolver.data.GetProvince()
+	return value
+}
+
+func (resolver *certNameResolver) StreetAddress() string {
+	value := resolver.data.GetStreetAddress()
+	return value
 }
 
 type clusterResolver struct {
@@ -458,27 +590,22 @@ func (resolver *clusterOrchestratorParamsResolver) ToOpenshiftParams() (*openshi
 	return nil, false
 }
 
-type clusterTypeResolver struct {
-	root *Resolver
-	data *v1.ClusterType
+func toClusterType(value *string) v1.ClusterType {
+	if value != nil {
+		return v1.ClusterType(v1.ClusterType_value[*value])
+	}
+	return v1.ClusterType(0)
 }
 
-func (resolver *Resolver) wrapClusterType(value *v1.ClusterType, ok bool, err error) (*clusterTypeResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
+func toClusterTypes(values *[]string) []v1.ClusterType {
+	if values == nil {
+		return nil
 	}
-	return &clusterTypeResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapClusterTypes(values []*v1.ClusterType, err error) ([]*clusterTypeResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
+	output := make([]v1.ClusterType, len(*values))
+	for i, v := range *values {
+		output[i] = toClusterType(&v)
 	}
-	output := make([]*clusterTypeResolver, len(values))
-	for i, v := range values {
-		output[i] = &clusterTypeResolver{resolver, v}
-	}
-	return output, nil
+	return output
 }
 
 type commonKubernetesParamsResolver struct {
@@ -493,7 +620,7 @@ func (resolver *Resolver) wrapCommonKubernetesParams(value *v1.CommonKubernetesP
 	return &commonKubernetesParamsResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapCommonKubernetesParamss(values []*v1.CommonKubernetesParams, err error) ([]*commonKubernetesParamsResolver, error) {
+func (resolver *Resolver) wrapCommonKubernetesParamses(values []*v1.CommonKubernetesParams, err error) ([]*commonKubernetesParamsResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -509,27 +636,22 @@ func (resolver *commonKubernetesParamsResolver) Namespace() string {
 	return value
 }
 
-type comparatorResolver struct {
-	root *Resolver
-	data *v1.Comparator
+func toComparator(value *string) v1.Comparator {
+	if value != nil {
+		return v1.Comparator(v1.Comparator_value[*value])
+	}
+	return v1.Comparator(0)
 }
 
-func (resolver *Resolver) wrapComparator(value *v1.Comparator, ok bool, err error) (*comparatorResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
+func toComparators(values *[]string) []v1.Comparator {
+	if values == nil {
+		return nil
 	}
-	return &comparatorResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapComparators(values []*v1.Comparator, err error) ([]*comparatorResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
+	output := make([]v1.Comparator, len(*values))
+	for i, v := range *values {
+		output[i] = toComparator(&v)
 	}
-	output := make([]*comparatorResolver, len(values))
-	for i, v := range values {
-		output[i] = &comparatorResolver{resolver, v}
-	}
-	return output, nil
+	return output
 }
 
 type componentResolver struct {
@@ -800,27 +922,22 @@ func (resolver *containerInstanceIDResolver) Node() string {
 	return value
 }
 
-type containerRuntimeResolver struct {
-	root *Resolver
-	data *v1.ContainerRuntime
+func toContainerRuntime(value *string) v1.ContainerRuntime {
+	if value != nil {
+		return v1.ContainerRuntime(v1.ContainerRuntime_value[*value])
+	}
+	return v1.ContainerRuntime(0)
 }
 
-func (resolver *Resolver) wrapContainerRuntime(value *v1.ContainerRuntime, ok bool, err error) (*containerRuntimeResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
+func toContainerRuntimes(values *[]string) []v1.ContainerRuntime {
+	if values == nil {
+		return nil
 	}
-	return &containerRuntimeResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapContainerRuntimes(values []*v1.ContainerRuntime, err error) ([]*containerRuntimeResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
+	output := make([]v1.ContainerRuntime, len(*values))
+	for i, v := range *values {
+		output[i] = toContainerRuntime(&v)
 	}
-	output := make([]*containerRuntimeResolver, len(values))
-	for i, v := range values {
-		output[i] = &containerRuntimeResolver{resolver, v}
-	}
-	return output, nil
+	return output
 }
 
 type deploymentResolver struct {
@@ -1102,27 +1219,22 @@ func (resolver *embeddedSecretResolver) Path() string {
 	return value
 }
 
-type enforcementActionResolver struct {
-	root *Resolver
-	data *v1.EnforcementAction
+func toEnforcementAction(value *string) v1.EnforcementAction {
+	if value != nil {
+		return v1.EnforcementAction(v1.EnforcementAction_value[*value])
+	}
+	return v1.EnforcementAction(0)
 }
 
-func (resolver *Resolver) wrapEnforcementAction(value *v1.EnforcementAction, ok bool, err error) (*enforcementActionResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
+func toEnforcementActions(values *[]string) []v1.EnforcementAction {
+	if values == nil {
+		return nil
 	}
-	return &enforcementActionResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapEnforcementActions(values []*v1.EnforcementAction, err error) ([]*enforcementActionResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
+	output := make([]v1.EnforcementAction, len(*values))
+	for i, v := range *values {
+		output[i] = toEnforcementAction(&v)
 	}
-	output := make([]*enforcementActionResolver, len(values))
-	for i, v := range values {
-		output[i] = &enforcementActionResolver{resolver, v}
-	}
-	return output, nil
+	return output
 }
 
 type generateTokenResponseResolver struct {
@@ -1203,7 +1315,7 @@ func (resolver *Resolver) wrapGroupProperties(value *v1.GroupProperties, ok bool
 	return &groupPropertiesResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapGroupPropertiess(values []*v1.GroupProperties, err error) ([]*groupPropertiesResolver, error) {
+func (resolver *Resolver) wrapGroupPropertieses(values []*v1.GroupProperties, err error) ([]*groupPropertiesResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1232,13 +1344,14 @@ func (resolver *groupPropertiesResolver) Value() string {
 type imageResolver struct {
 	root *Resolver
 	data *v1.Image
+	list *v1.ListImage
 }
 
 func (resolver *Resolver) wrapImage(value *v1.Image, ok bool, err error) (*imageResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &imageResolver{resolver, value}, nil
+	return &imageResolver{resolver, value, nil}, nil
 }
 
 func (resolver *Resolver) wrapImages(values []*v1.Image, err error) ([]*imageResolver, error) {
@@ -1247,27 +1360,50 @@ func (resolver *Resolver) wrapImages(values []*v1.Image, err error) ([]*imageRes
 	}
 	output := make([]*imageResolver, len(values))
 	for i, v := range values {
-		output[i] = &imageResolver{resolver, v}
+		output[i] = &imageResolver{resolver, v, nil}
 	}
 	return output, nil
 }
 
+func (resolver *Resolver) wrapListImages(values []*v1.ListImage, err error) ([]*imageResolver, error) {
+	if err != nil || values == nil {
+		return nil, err
+	}
+	output := make([]*imageResolver, len(values))
+	for i, v := range values {
+		output[i] = &imageResolver{resolver, nil, v}
+	}
+	return output, nil
+}
+
+func (resolver *imageResolver) ensureData() {
+	if resolver.data == nil {
+		resolver.data = resolver.root.getImage(resolver.list.GetId())
+	}
+}
+
 func (resolver *imageResolver) Id() graphql.ID {
 	value := resolver.data.GetId()
+	if resolver.data == nil {
+		value = resolver.list.GetId()
+	}
 	return graphql.ID(value)
 }
 
 func (resolver *imageResolver) Metadata() (*imageMetadataResolver, error) {
+	resolver.ensureData()
 	value := resolver.data.GetMetadata()
 	return resolver.root.wrapImageMetadata(value, true, nil)
 }
 
 func (resolver *imageResolver) Name() (*imageNameResolver, error) {
+	resolver.ensureData()
 	value := resolver.data.GetName()
 	return resolver.root.wrapImageName(value, true, nil)
 }
 
 func (resolver *imageResolver) Scan() (*imageScanResolver, error) {
+	resolver.ensureData()
 	value := resolver.data.GetScan()
 	return resolver.root.wrapImageScan(value, true, nil)
 }
@@ -1598,7 +1734,7 @@ func (resolver *Resolver) wrapKubernetesParams(value *v1.KubernetesParams, ok bo
 	return &kubernetesParamsResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapKubernetesParamss(values []*v1.KubernetesParams, err error) ([]*kubernetesParamsResolver, error) {
+func (resolver *Resolver) wrapKubernetesParamses(values []*v1.KubernetesParams, err error) ([]*kubernetesParamsResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1614,27 +1750,22 @@ func (resolver *kubernetesParamsResolver) Params() (*commonKubernetesParamsResol
 	return resolver.root.wrapCommonKubernetesParams(value, true, nil)
 }
 
-type l4ProtocolResolver struct {
-	root *Resolver
-	data *v1.L4Protocol
+func toL4Protocol(value *string) v1.L4Protocol {
+	if value != nil {
+		return v1.L4Protocol(v1.L4Protocol_value[*value])
+	}
+	return v1.L4Protocol(0)
 }
 
-func (resolver *Resolver) wrapL4Protocol(value *v1.L4Protocol, ok bool, err error) (*l4ProtocolResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
+func toL4Protocols(values *[]string) []v1.L4Protocol {
+	if values == nil {
+		return nil
 	}
-	return &l4ProtocolResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapL4Protocols(values []*v1.L4Protocol, err error) ([]*l4ProtocolResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
+	output := make([]v1.L4Protocol, len(*values))
+	for i, v := range *values {
+		output[i] = toL4Protocol(&v)
 	}
-	output := make([]*l4ProtocolResolver, len(values))
-	for i, v := range values {
-		output[i] = &l4ProtocolResolver{resolver, v}
-	}
-	return output, nil
+	return output
 }
 
 type licenseResolver struct {
@@ -1675,27 +1806,22 @@ func (resolver *licenseResolver) Url() string {
 	return value
 }
 
-type lifecycleStageResolver struct {
-	root *Resolver
-	data *v1.LifecycleStage
+func toLifecycleStage(value *string) v1.LifecycleStage {
+	if value != nil {
+		return v1.LifecycleStage(v1.LifecycleStage_value[*value])
+	}
+	return v1.LifecycleStage(0)
 }
 
-func (resolver *Resolver) wrapLifecycleStage(value *v1.LifecycleStage, ok bool, err error) (*lifecycleStageResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
+func toLifecycleStages(values *[]string) []v1.LifecycleStage {
+	if values == nil {
+		return nil
 	}
-	return &lifecycleStageResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapLifecycleStages(values []*v1.LifecycleStage, err error) ([]*lifecycleStageResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
+	output := make([]v1.LifecycleStage, len(*values))
+	for i, v := range *values {
+		output[i] = toLifecycleStage(&v)
 	}
-	output := make([]*lifecycleStageResolver, len(values))
-	for i, v := range values {
-		output[i] = &lifecycleStageResolver{resolver, v}
-	}
-	return output, nil
+	return output
 }
 
 type metadataResolver struct {
@@ -1813,27 +1939,22 @@ func (resolver *networkEntityInfo_DeploymentResolver) Namespace() string {
 	return value
 }
 
-type networkEntityInfo_TypeResolver struct {
-	root *Resolver
-	data *v1.NetworkEntityInfo_Type
+func toNetworkEntityInfo_Type(value *string) v1.NetworkEntityInfo_Type {
+	if value != nil {
+		return v1.NetworkEntityInfo_Type(v1.NetworkEntityInfo_Type_value[*value])
+	}
+	return v1.NetworkEntityInfo_Type(0)
 }
 
-func (resolver *Resolver) wrapNetworkEntityInfo_Type(value *v1.NetworkEntityInfo_Type, ok bool, err error) (*networkEntityInfo_TypeResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
+func toNetworkEntityInfo_Types(values *[]string) []v1.NetworkEntityInfo_Type {
+	if values == nil {
+		return nil
 	}
-	return &networkEntityInfo_TypeResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapNetworkEntityInfo_Types(values []*v1.NetworkEntityInfo_Type, err error) ([]*networkEntityInfo_TypeResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
+	output := make([]v1.NetworkEntityInfo_Type, len(*values))
+	for i, v := range *values {
+		output[i] = toNetworkEntityInfo_Type(&v)
 	}
-	output := make([]*networkEntityInfo_TypeResolver, len(values))
-	for i, v := range values {
-		output[i] = &networkEntityInfo_TypeResolver{resolver, v}
-	}
-	return output, nil
+	return output
 }
 
 type networkFlowResolver struct {
@@ -1881,7 +2002,7 @@ func (resolver *Resolver) wrapNetworkFlowProperties(value *v1.NetworkFlowPropert
 	return &networkFlowPropertiesResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapNetworkFlowPropertiess(values []*v1.NetworkFlowProperties, err error) ([]*networkFlowPropertiesResolver, error) {
+func (resolver *Resolver) wrapNetworkFlowPropertieses(values []*v1.NetworkFlowProperties, err error) ([]*networkFlowPropertiesResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2088,7 +2209,7 @@ func (resolver *Resolver) wrapOpenshiftParams(value *v1.OpenshiftParams, ok bool
 	return &openshiftParamsResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapOpenshiftParamss(values []*v1.OpenshiftParams, err error) ([]*openshiftParamsResolver, error) {
+func (resolver *Resolver) wrapOpenshiftParamses(values []*v1.OpenshiftParams, err error) ([]*openshiftParamsResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2209,7 +2330,7 @@ func (resolver *Resolver) wrapPolicyFields(value *v1.PolicyFields, ok bool, err 
 	return &policyFieldsResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapPolicyFieldss(values []*v1.PolicyFields, err error) ([]*policyFieldsResolver, error) {
+func (resolver *Resolver) wrapPolicyFieldses(values []*v1.PolicyFields, err error) ([]*policyFieldsResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2358,27 +2479,22 @@ func (resolver *portConfigResolver) Protocol() string {
 	return value
 }
 
-type portConfig_ExposureResolver struct {
-	root *Resolver
-	data *v1.PortConfig_Exposure
+func toPortConfig_Exposure(value *string) v1.PortConfig_Exposure {
+	if value != nil {
+		return v1.PortConfig_Exposure(v1.PortConfig_Exposure_value[*value])
+	}
+	return v1.PortConfig_Exposure(0)
 }
 
-func (resolver *Resolver) wrapPortConfig_Exposure(value *v1.PortConfig_Exposure, ok bool, err error) (*portConfig_ExposureResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
+func toPortConfig_Exposures(values *[]string) []v1.PortConfig_Exposure {
+	if values == nil {
+		return nil
 	}
-	return &portConfig_ExposureResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapPortConfig_Exposures(values []*v1.PortConfig_Exposure, err error) ([]*portConfig_ExposureResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
+	output := make([]v1.PortConfig_Exposure, len(*values))
+	for i, v := range *values {
+		output[i] = toPortConfig_Exposure(&v)
 	}
-	output := make([]*portConfig_ExposureResolver, len(values))
-	for i, v := range values {
-		output[i] = &portConfig_ExposureResolver{resolver, v}
-	}
-	return output, nil
+	return output
 }
 
 type portPolicyResolver struct {
@@ -2699,7 +2815,7 @@ func (resolver *Resolver) wrapResources(value *v1.Resources, ok bool, err error)
 	return &resourcesResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapResourcess(values []*v1.Resources, err error) ([]*resourcesResolver, error) {
+func (resolver *Resolver) wrapResourceses(values []*v1.Resources, err error) ([]*resourcesResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2938,27 +3054,22 @@ func (resolver *scope_LabelResolver) Value() string {
 	return value
 }
 
-type searchCategoryResolver struct {
-	root *Resolver
-	data *v1.SearchCategory
+func toSearchCategory(value *string) v1.SearchCategory {
+	if value != nil {
+		return v1.SearchCategory(v1.SearchCategory_value[*value])
+	}
+	return v1.SearchCategory(0)
 }
 
-func (resolver *Resolver) wrapSearchCategory(value *v1.SearchCategory, ok bool, err error) (*searchCategoryResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
+func toSearchCategories(values *[]string) []v1.SearchCategory {
+	if values == nil {
+		return nil
 	}
-	return &searchCategoryResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapSearchCategories(values []*v1.SearchCategory, err error) ([]*searchCategoryResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
+	output := make([]v1.SearchCategory, len(*values))
+	for i, v := range *values {
+		output[i] = toSearchCategory(&v)
 	}
-	output := make([]*searchCategoryResolver, len(values))
-	for i, v := range values {
-		output[i] = &searchCategoryResolver{resolver, v}
-	}
-	return output, nil
+	return output
 }
 
 type searchResultResolver struct {
@@ -3192,6 +3303,22 @@ func (resolver *secretDataFileResolver) Type() string {
 	return value.String()
 }
 
+type secretDataFileMetadataResolver struct {
+	resolver *secretDataFileResolver
+}
+
+func (resolver *secretDataFileResolver) Metadata() *secretDataFileMetadataResolver {
+	return &secretDataFileMetadataResolver{resolver}
+}
+
+func (resolver *secretDataFileMetadataResolver) ToCert() (*certResolver, bool) {
+	value := resolver.resolver.data.GetCert()
+	if value != nil {
+		return &certResolver{resolver.resolver.root, value}, true
+	}
+	return nil, false
+}
+
 type secretDeploymentRelationshipResolver struct {
 	root *Resolver
 	data *v1.SecretDeploymentRelationship
@@ -3263,27 +3390,22 @@ func (resolver *secretRelationshipResolver) Id() graphql.ID {
 	return graphql.ID(value)
 }
 
-type secretTypeResolver struct {
-	root *Resolver
-	data *v1.SecretType
+func toSecretType(value *string) v1.SecretType {
+	if value != nil {
+		return v1.SecretType(v1.SecretType_value[*value])
+	}
+	return v1.SecretType(0)
 }
 
-func (resolver *Resolver) wrapSecretType(value *v1.SecretType, ok bool, err error) (*secretTypeResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
+func toSecretTypes(values *[]string) []v1.SecretType {
+	if values == nil {
+		return nil
 	}
-	return &secretTypeResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapSecretTypes(values []*v1.SecretType, err error) ([]*secretTypeResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
+	output := make([]v1.SecretType, len(*values))
+	for i, v := range *values {
+		output[i] = toSecretType(&v)
 	}
-	output := make([]*secretTypeResolver, len(values))
-	for i, v := range values {
-		output[i] = &secretTypeResolver{resolver, v}
-	}
-	return output, nil
+	return output
 }
 
 type securityContextResolver struct {
@@ -3372,27 +3494,22 @@ func (resolver *securityContext_SELinuxResolver) User() string {
 	return value
 }
 
-type severityResolver struct {
-	root *Resolver
-	data *v1.Severity
+func toSeverity(value *string) v1.Severity {
+	if value != nil {
+		return v1.Severity(v1.Severity_value[*value])
+	}
+	return v1.Severity(0)
 }
 
-func (resolver *Resolver) wrapSeverity(value *v1.Severity, ok bool, err error) (*severityResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
+func toSeverities(values *[]string) []v1.Severity {
+	if values == nil {
+		return nil
 	}
-	return &severityResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapSeverities(values []*v1.Severity, err error) ([]*severityResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
+	output := make([]v1.Severity, len(*values))
+	for i, v := range *values {
+		output[i] = toSeverity(&v)
 	}
-	output := make([]*severityResolver, len(values))
-	for i, v := range values {
-		output[i] = &severityResolver{resolver, v}
-	}
-	return output, nil
+	return output
 }
 
 type splunkResolver struct {
@@ -3445,7 +3562,7 @@ func (resolver *Resolver) wrapSwarmParams(value *v1.SwarmParams, ok bool, err er
 	return &swarmParamsResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapSwarmParamss(values []*v1.SwarmParams, err error) ([]*swarmParamsResolver, error) {
+func (resolver *Resolver) wrapSwarmParamses(values []*v1.SwarmParams, err error) ([]*swarmParamsResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3585,27 +3702,22 @@ func (resolver *v2MetadataResolver) Digest() string {
 	return value
 }
 
-type violationStateResolver struct {
-	root *Resolver
-	data *v1.ViolationState
+func toViolationState(value *string) v1.ViolationState {
+	if value != nil {
+		return v1.ViolationState(v1.ViolationState_value[*value])
+	}
+	return v1.ViolationState(0)
 }
 
-func (resolver *Resolver) wrapViolationState(value *v1.ViolationState, ok bool, err error) (*violationStateResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
+func toViolationStates(values *[]string) []v1.ViolationState {
+	if values == nil {
+		return nil
 	}
-	return &violationStateResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapViolationStates(values []*v1.ViolationState, err error) ([]*violationStateResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
+	output := make([]v1.ViolationState, len(*values))
+	for i, v := range *values {
+		output[i] = toViolationState(&v)
 	}
-	output := make([]*violationStateResolver, len(values))
-	for i, v := range values {
-		output[i] = &violationStateResolver{resolver, v}
-	}
-	return output, nil
+	return output
 }
 
 type volumeResolver struct {

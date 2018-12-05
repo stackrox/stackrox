@@ -32,7 +32,7 @@ func TestGetDeployment(t *testing.T) {
 
 func TestGetDeployments(t *testing.T) {
 	mocks := mockResolver(t)
-	mocks.deployment.EXPECT().GetDeployments().Return([]*v1.Deployment{
+	mocks.deployment.EXPECT().ListDeployments().Return([]*v1.ListDeployment{
 		{
 			Id: "one", Name: "one name",
 		},

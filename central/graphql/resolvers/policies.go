@@ -10,18 +10,24 @@ import (
 )
 
 func init() {
-	schema.AddQuery("policies: [Policy!]!")
+	schema.AddQuery("policies(query: String): [Policy!]!")
 	schema.AddQuery("policy(id: ID): Policy")
 	schema.AddResolver(&v1.Policy{}, `alerts: [Alert!]!`)
 }
 
 // Policies returns GraphQL resolvers for all policies
-func (resolver *Resolver) Policies(ctx context.Context) ([]*policyResolver, error) {
+func (resolver *Resolver) Policies(ctx context.Context, args rawQuery) ([]*policyResolver, error) {
 	if err := policyAuth(ctx); err != nil {
 		return nil, err
 	}
-
-	return resolver.wrapPolicies(resolver.PolicyDataStore.GetPolicies())
+	q, err := args.AsV1Query()
+	if err != nil {
+		return nil, err
+	}
+	if q == nil {
+		return resolver.wrapPolicies(resolver.PolicyDataStore.GetPolicies())
+	}
+	return resolver.wrapPolicies(resolver.PolicyDataStore.SearchRawPolicies(q))
 }
 
 // Policy returns a GraphQL resolver for a given policy

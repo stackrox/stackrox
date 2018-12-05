@@ -52,7 +52,7 @@ scalar Time
 
 type schemaEntry struct {
 	Data           typeData
-	ListData       map[string]bool
+	ListData       map[string]reflect.Type
 	ExtraResolvers []string
 }
 
@@ -69,27 +69,23 @@ func isListType(p reflect.Type) bool {
 
 func makeSchemaEntries(data []typeData, extraResolvers map[string][]string) []schemaEntry {
 	output := make([]schemaEntry, 0)
-	listRef := make(map[string]map[string]bool)
+	listRef := make(map[string]map[string]reflect.Type)
 	for _, td := range data {
 		if isListType(td.Type) {
-			fm := make(map[string]bool)
+			listFields := make(map[string]reflect.Type)
 			for _, f := range td.FieldData {
-				fm[f.Name] = true
+				listFields[f.Name] = f.Type
 			}
-			listRef[td.Name[4:]] = fm
+			listRef[td.Name[4:]] = listFields
 		}
 	}
 
 	for _, td := range data {
 		if (td.Name == "Query" || isProto(td.Type) || isEnum(td.Type)) && !isListType(td.Type) {
-			ldt, ok := listRef[td.Name]
-			ldp := ldt
-			if !ok {
-				ldp = nil
-			}
+			listRef := listRef[td.Name]
 			se := schemaEntry{
 				Data:           td,
-				ListData:       ldp,
+				ListData:       listRef,
 				ExtraResolvers: extraResolvers[td.Name],
 			}
 			output = append(output, se)

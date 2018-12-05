@@ -20,7 +20,6 @@ import (
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -100,20 +99,4 @@ func stringSlice(inputSlice interface{}) []string {
 		output[i] = fmt.Sprint(r.Index(i).Interface())
 	}
 	return output
-}
-
-func (resolver *Resolver) getSecret(id string) *v1.Secret {
-	secret, ok, err := resolver.SecretsDataStore.GetSecret(id)
-	if err != nil || !ok {
-		return nil
-	}
-	return secret
-}
-
-func (resolver *Resolver) getDeployment(id string) *v1.Deployment {
-	deployment, ok, err := resolver.DeploymentDataStore.GetDeployment(id)
-	if err != nil || !ok {
-		return nil
-	}
-	return deployment
 }

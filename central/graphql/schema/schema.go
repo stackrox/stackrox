@@ -16,10 +16,13 @@ var (
 	WalkParameters = generator.TypeWalkParameters{
 		IncludedTypes: []reflect.Type{
 			reflect.TypeOf((*v1.Alert)(nil)),
+			reflect.TypeOf((*v1.ListAlert)(nil)),
 			reflect.TypeOf((*v1.Cluster)(nil)),
 			reflect.TypeOf((*v1.Deployment)(nil)),
 			reflect.TypeOf((*v1.ListDeployment)(nil)),
 			reflect.TypeOf((*v1.Group)(nil)),
+			reflect.TypeOf((*v1.Image)(nil)),
+			reflect.TypeOf((*v1.ListImage)(nil)),
 			reflect.TypeOf((*v1.Metadata)(nil)),
 			reflect.TypeOf((*v1.NetworkFlow)(nil)),
 			reflect.TypeOf((*v1.Node)(nil)),
