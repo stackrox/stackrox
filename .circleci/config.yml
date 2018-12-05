@@ -210,6 +210,11 @@ storeK8sLogs: &storeK8sLogs
     path: /tmp/k8s-service-logs
     destination: k8s-service-logs
 
+storeProfilingResults: &storeProfilingResults
+  store_artifacts:
+    path: /tmp/pprof
+    destination: pprof
+
 storeCypressResults: &storeCypressResults
  store_test_results:
     path: ui/cypress/reports
@@ -459,6 +464,46 @@ jobs:
           path: ./qa-tests-backend/build/spock-reports
           destination: qa-test-report
 
+      - *collectK8sLogs
+      - *storeK8sLogs
+
+      - *teardownGKE
+
+  scale:
+    <<: *defaults
+    environment:
+      - LOCAL_PORT: 8000
+      - MONITORING_SUPPORT: true
+      - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
+    steps:
+      - checkout
+      - setup_remote_docker
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+      - *setupGCP
+      - *createGKE
+
+      - run:
+          name: Launch Central only
+          command: |
+            ./deploy/k8s/central.sh
+            if [[ -f ./deploy/k8s/central-deploy/password ]]; then
+              password="$(< ./deploy/k8s/central-deploy/password)"
+              cat >>"$BASH_ENV" <<-EOF
+                export ROX_USERNAME=admin
+                export ROX_PASSWORD="$password"
+            EOF
+            fi
+      - *setupCIMonitoring
+      - *waitForAPI
+
+      - run:
+          name: Launch Mock Sensors
+          command: |
+            ./scale/mocksensor/launch_multiple_mock_sensors.sh -instances=10 -max-deployments=200 -max-indicators=4000 -max-network-flows=20 -max-updates=2000
+            mkdir /tmp/pprof
+            ./scale/profiler/pprof.sh /tmp/pprof localhost:8000 10
+      - *storeProfilingResults
       - *collectK8sLogs
       - *storeK8sLogs
 
@@ -761,6 +806,12 @@ workflows:
             tags:
               only: /.*/
       - qa-tests:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /.*/
+      - scale:
           requires:
             - build
           filters:

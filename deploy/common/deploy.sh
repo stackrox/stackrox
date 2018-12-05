@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
-
 export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(git describe --tags --abbrev=10 --dirty)}"
 echo "StackRox image tag set to $MAIN_IMAGE_TAG"
 

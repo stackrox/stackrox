@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -eu
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
+
 let instances=1
 params=""
 
@@ -21,7 +23,7 @@ do
    deploymentName=mock-sensor-${i}
    secretName=sensor-tls-${i}
 
-   cmd="./launch_mock_sensor.sh -cluster-name=${clusterName} -deployment-name=${deploymentName} -secret-name=${secretName}"
+   cmd="$DIR/launch_mock_sensor.sh ${i}"
 
    if [[ ! -z "${params}" ]]
    then
@@ -29,5 +31,4 @@ do
    fi
 
    $cmd
-   sleep 60
 done

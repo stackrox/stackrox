@@ -1,10 +1,10 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: DEPLOYMENT_NAME
+  name: mock-sensor-${NAME}
   namespace: stackrox
   labels:
-    app: mocksensor
+    app: mocksensor-${NAME}
   annotations:
     owner: stackrox
     email: support@stackrox.com
@@ -13,21 +13,21 @@ spec:
   minReadySeconds: 15
   selector:
     matchLabels:
-      app: mocksensor
+      app: mocksensor-${NAME}
   template:
     metadata:
       namespace: stackrox
       labels:
-        app: mocksensor
+        app: mocksensor-${NAME}
     spec:
       imagePullSecrets:
         - name: stackrox
       containers:
-      - image: IMAGE_NAME
+      - image: stackrox/scale:${MAIN_IMAGE_TAG}
         name: mocksensor
         command:
           - /mocksensor
-        args:
+        args: ${ARGS}
         volumeMounts:
         - name: varlog
           mountPath: /var/log/stackrox/
@@ -37,7 +37,7 @@ spec:
       volumes:
       - name: certs
         secret:
-          secretName: SECRET_NAME
+          secretName: sensor-tls-${NAME}
           items:
           - key: sensor-cert.pem
             path: cert.pem
