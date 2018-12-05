@@ -173,7 +173,7 @@ class DeploymentDetails extends Component {
                             </ul>
                         </div>
                         <div className="py-3 border-b border-base-300">
-                            <div className="pr-1 font-700">Mounts:</div>
+                            <div className="pr-1 font-700">Volumes:</div>
                             <ul className="ml-2 mt-2 w-full list-reset">
                                 {this.renderContainerVolumes(container.volumes)}
                             </ul>
