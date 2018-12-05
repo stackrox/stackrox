@@ -655,19 +655,6 @@ jobs:
       - *waitForAPI
       - *waitForSensorK8s
 
-#      # TODO: make -C tests hangs when run
-#      - run:
-#          name: API tests
-#          command: |
-#            export API_ENDPOINT=localhost:${LOCAL_PORT}
-#            make -C tests
-
-      - *restoreUI
-      - *determineWhetherToRunUIDevServer
-      - *runUIDevServer
-      - *waitForUIDevServer
-      - *runUIE2E
-
       - *restoreGradle
       - run:
           name: QA Automation Platform
@@ -697,6 +684,11 @@ jobs:
           path: ./qa-tests-backend/build/spock-reports
           destination: qa-test-report
 
+      - *restoreUI
+      - *determineWhetherToRunUIDevServer
+      - *runUIDevServer
+      - *waitForUIDevServer
+      - *runUIE2E
       - *collectImbuedUILogs
       - *storeImbuedUILogs
 
