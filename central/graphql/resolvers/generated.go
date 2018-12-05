@@ -3580,17 +3580,17 @@ func (resolver *swarmParamsResolver) DisableSwarmTls() bool {
 
 type tokenMetadataResolver struct {
 	root *Resolver
-	data *v1.TokenMetadata
+	data *storage.TokenMetadata
 }
 
-func (resolver *Resolver) wrapTokenMetadata(value *v1.TokenMetadata, ok bool, err error) (*tokenMetadataResolver, error) {
+func (resolver *Resolver) wrapTokenMetadata(value *storage.TokenMetadata, ok bool, err error) (*tokenMetadataResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &tokenMetadataResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapTokenMetadatas(values []*v1.TokenMetadata, err error) ([]*tokenMetadataResolver, error) {
+func (resolver *Resolver) wrapTokenMetadatas(values []*storage.TokenMetadata, err error) ([]*tokenMetadataResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}

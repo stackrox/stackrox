@@ -6,6 +6,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/suite"
 )
@@ -43,7 +44,7 @@ func (suite *APITokenStoreTestSuite) verifyTokenDoesntExist(id string) {
 	suite.Nil(token)
 }
 
-func (suite *APITokenStoreTestSuite) mustGetToken(id string) *v1.TokenMetadata {
+func (suite *APITokenStoreTestSuite) mustGetToken(id string) *storage.TokenMetadata {
 	token, err := suite.store.GetTokenOrNil(id)
 	suite.Require().NoError(err)
 	suite.NotNil(token)
@@ -88,11 +89,11 @@ func (suite *APITokenStoreTestSuite) TestRevokedTokensStore() {
 	suite.verifyTokenDoesntExist(fakeID)
 	suite.verifyTokenDoesntExist(otherFakeID)
 
-	err = suite.store.AddToken(&v1.TokenMetadata{Id: fakeID})
+	err = suite.store.AddToken(&storage.TokenMetadata{Id: fakeID})
 	suite.Require().NoError(err)
 	suite.verifyTokenIDs(&v1.GetAPITokensRequest{}, fakeID)
 
-	err = suite.store.AddToken(&v1.TokenMetadata{Id: otherFakeID})
+	err = suite.store.AddToken(&storage.TokenMetadata{Id: otherFakeID})
 	suite.Require().NoError(err)
 	suite.verifyTokenIDs(&v1.GetAPITokensRequest{}, fakeID, otherFakeID)
 

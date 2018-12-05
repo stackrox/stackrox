@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/logging"
@@ -130,7 +130,7 @@ func (r *storeBackedRegistry) init() error {
 	return nil
 }
 
-func (r *storeBackedRegistry) createFromStoredDef(ctx context.Context, def *v1.AuthProvider) *authProvider {
+func (r *storeBackedRegistry) createFromStoredDef(ctx context.Context, def *storage.AuthProvider) *authProvider {
 	provider, err := r.createProvider(ctx, def.GetId(), def.GetType(), def.GetName(), AllUIEndpoints(def), def.GetEnabled(), def.GetValidated(), def.GetConfig())
 	if err != nil {
 		log.Errorf("Could not instantiate auth provider for stored configuration: %v", err)
@@ -161,7 +161,7 @@ func (r *storeBackedRegistry) createProvider(ctx context.Context, id, typ, name 
 	}
 	provider := &authProvider{
 		backend: backend,
-		baseInfo: v1.AuthProvider{
+		baseInfo: storage.AuthProvider{
 			Id:        id,
 			Name:      name,
 			Type:      typ,

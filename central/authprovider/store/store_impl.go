@@ -9,7 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/secondarykey"
@@ -19,8 +19,8 @@ type storeImpl struct {
 	*bolt.DB
 }
 
-func (b *storeImpl) getAuthProvider(id string, bucket *bolt.Bucket) (authProvider *v1.AuthProvider, exists bool, err error) {
-	authProvider = new(v1.AuthProvider)
+func (b *storeImpl) getAuthProvider(id string, bucket *bolt.Bucket) (authProvider *storage.AuthProvider, exists bool, err error) {
+	authProvider = new(storage.AuthProvider)
 	val := bucket.Get([]byte(id))
 	if val == nil {
 		return
@@ -34,16 +34,16 @@ func (b *storeImpl) getAuthProvider(id string, bucket *bolt.Bucket) (authProvide
 }
 
 // GetAuthProviders retrieves authProviders from bolt
-func (b *storeImpl) GetAllAuthProviders() ([]*v1.AuthProvider, error) {
+func (b *storeImpl) GetAllAuthProviders() ([]*storage.AuthProvider, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "AuthProvider")
 
-	var authProviders []*v1.AuthProvider
+	var authProviders []*storage.AuthProvider
 	err := b.View(func(tx *bolt.Tx) error {
 		provB := tx.Bucket([]byte(authProviderBucket))
 		valB := tx.Bucket([]byte(authValidatedBucket))
 
 		return provB.ForEach(func(k, v []byte) error {
-			var authProvider v1.AuthProvider
+			var authProvider storage.AuthProvider
 			if err := proto.Unmarshal(v, &authProvider); err != nil {
 				return err
 			}
@@ -62,7 +62,7 @@ func (b *storeImpl) GetAllAuthProviders() ([]*v1.AuthProvider, error) {
 }
 
 // AddAuthProvider adds an auth provider into bolt
-func (b *storeImpl) AddAuthProvider(authProvider *v1.AuthProvider) error {
+func (b *storeImpl) AddAuthProvider(authProvider *storage.AuthProvider) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "AuthProvider")
 
 	if authProvider.GetId() == "" || authProvider.GetName() == "" {
@@ -90,7 +90,7 @@ func (b *storeImpl) AddAuthProvider(authProvider *v1.AuthProvider) error {
 }
 
 // UpdateAuthProvider upserts an auth provider into bolt
-func (b *storeImpl) UpdateAuthProvider(authProvider *v1.AuthProvider) error {
+func (b *storeImpl) UpdateAuthProvider(authProvider *storage.AuthProvider) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "AuthProvider")
 
 	return b.Update(func(tx *bolt.Tx) error {

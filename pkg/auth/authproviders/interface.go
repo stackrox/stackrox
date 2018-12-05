@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -21,7 +21,7 @@ type AuthProvider interface {
 	RoleMapper() permissions.RoleMapper
 
 	// AsV1 returns a description of the authentication provider in protobuf format.
-	AsV1() *v1.AuthProvider
+	AsV1() *storage.AuthProvider
 
 	// RecordSuccess should be called the first time a user successfully logs in through an auth provider, to mark it as
 	// validated. This is used to prevent a user from accidentally locking themselves out of the system by setting up a

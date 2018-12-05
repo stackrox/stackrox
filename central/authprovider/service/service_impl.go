@@ -7,6 +7,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -55,7 +56,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetAuthProvider retrieves the authProvider based on the id passed
-func (s *serviceImpl) GetAuthProvider(ctx context.Context, request *v1.GetAuthProviderRequest) (*v1.AuthProvider, error) {
+func (s *serviceImpl) GetAuthProvider(ctx context.Context, request *v1.GetAuthProviderRequest) (*storage.AuthProvider, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Auth Provider id is required")
 	}
@@ -77,7 +78,7 @@ func (s *serviceImpl) GetAuthProviders(ctx context.Context, request *v1.GetAuthP
 	}
 
 	authProviders := s.registry.GetAuthProviders(ctx, name, typ)
-	result := make([]*v1.AuthProvider, len(authProviders))
+	result := make([]*storage.AuthProvider, len(authProviders))
 	for i, provider := range authProviders {
 		result[i] = provider.AsV1()
 	}
@@ -88,7 +89,7 @@ func (s *serviceImpl) GetAuthProviders(ctx context.Context, request *v1.GetAuthP
 }
 
 // PostAuthProvider inserts a new auth provider into the system
-func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuthProviderRequest) (*v1.AuthProvider, error) {
+func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuthProviderRequest) (*storage.AuthProvider, error) {
 	providerReq := request.GetProvider()
 	if providerReq.GetName() == "" {
 		return nil, status.Error(codes.InvalidArgument, "no provider name specified")
@@ -106,7 +107,7 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 	return provider.AsV1(), nil
 }
 
-func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.UpdateAuthProviderRequest) (*v1.AuthProvider, error) {
+func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.UpdateAuthProviderRequest) (*storage.AuthProvider, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Auth Provider id must not be empty")
 	}

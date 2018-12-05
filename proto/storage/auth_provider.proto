@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+package storage;
+
+// Next Tag: 9
+message AuthProvider {
+    string id                   = 1;
+    string name                 = 2;
+    string type                 = 3;
+    string ui_endpoint          = 4;
+    bool enabled                = 5;
+    map<string, string> config  = 6;
+    // The login URL will be provided by the backend, and may not be specified in a request.
+    string login_url            = 7;
+    bool validated              = 8;
+
+    // UI endpoints which to allow in addition to `ui_endpoint`. I.e., if a login request
+    // is coming from any of these, the auth request will use these for the callback URL,
+    // not ui_endpoint.
+    repeated string extra_ui_endpoints = 9;
+}
+

@@ -3,6 +3,7 @@ package store
 import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
@@ -14,9 +15,9 @@ const (
 // We don't store the tokens themselves, but do store metadata.
 // Importantly, the Store persists token revocations.
 type Store interface {
-	AddToken(*v1.TokenMetadata) error
-	GetTokenOrNil(id string) (token *v1.TokenMetadata, err error)
-	GetTokens(*v1.GetAPITokensRequest) ([]*v1.TokenMetadata, error)
+	AddToken(*storage.TokenMetadata) error
+	GetTokenOrNil(id string) (token *storage.TokenMetadata, err error)
+	GetTokens(*v1.GetAPITokensRequest) ([]*storage.TokenMetadata, error)
 	RevokeToken(id string) (exists bool, err error)
 }
 

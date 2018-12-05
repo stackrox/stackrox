@@ -5,10 +5,10 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
-import "google/protobuf/timestamp.proto";
 
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
+import "storage/api_token.proto";
 
 package v1;
 
@@ -17,18 +17,9 @@ message GenerateTokenRequest {
     string role = 2;
 }
 
-message TokenMetadata {
-    string id                            = 1;
-    string name                          = 2;
-    string role                          = 3;
-    google.protobuf.Timestamp issued_at  = 4;
-    google.protobuf.Timestamp expiration = 5;
-    bool revoked                         = 6;
-}
-
 message GenerateTokenResponse {
-    string token           = 1;
-    TokenMetadata metadata = 2;
+    string token                   = 1;
+    storage.TokenMetadata metadata = 2;
 }
 
 message GetAPITokensRequest {
@@ -38,12 +29,12 @@ message GetAPITokensRequest {
 }
 
 message GetAPITokensResponse {
-    repeated TokenMetadata tokens = 1;
+    repeated storage.TokenMetadata tokens = 1;
 }
 
 service APITokenService {
 
-    rpc GetAPIToken (ResourceByID) returns (TokenMetadata) {
+    rpc GetAPIToken (ResourceByID) returns (storage.TokenMetadata) {
         option (google.api.http) = {
             get: "/v1/apitokens/{id}"
         };

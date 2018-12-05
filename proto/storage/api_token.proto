@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+
+package storage;
+
+message TokenMetadata {
+    string id                            = 1;
+    string name                          = 2;
+    string role                          = 3;
+    google.protobuf.Timestamp issued_at  = 4;
+    google.protobuf.Timestamp expiration = 5;
+    bool revoked                         = 6;
+}
+

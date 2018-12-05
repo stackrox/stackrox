@@ -4,14 +4,14 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 )
 
 type authProvider struct {
 	backend    AuthProviderBackend
-	baseInfo   v1.AuthProvider
+	baseInfo   storage.AuthProvider
 	roleMapper permissions.RoleMapper
 
 	registry *storeBackedRegistry
@@ -83,7 +83,7 @@ func (p *authProvider) setBackend(backend AuthProviderBackend, effectiveConfig m
 	p.baseInfo.Config = effectiveConfig
 }
 
-func (p *authProvider) update(name *string, enabled *bool) (bool, v1.AuthProvider, string) {
+func (p *authProvider) update(name *string, enabled *bool) (bool, storage.AuthProvider, string) {
 	modified := false
 	var oldName string
 
@@ -101,7 +101,7 @@ func (p *authProvider) update(name *string, enabled *bool) (bool, v1.AuthProvide
 	return modified, p.baseInfo, oldName
 }
 
-func (p *authProvider) AsV1() *v1.AuthProvider {
+func (p *authProvider) AsV1() *storage.AuthProvider {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
 	result := p.baseInfo

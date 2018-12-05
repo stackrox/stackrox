@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -41,7 +41,7 @@ func (suite *AuthProviderStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *AuthProviderStoreTestSuite) TestAuthProviders() {
-	authProviders := []*v1.AuthProvider{
+	authProviders := []*storage.AuthProvider{
 		{
 			Name: "authProvider1",
 			Type: "Auth Provider 1",

@@ -6,6 +6,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/graphql/generator"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 var (
@@ -32,7 +33,7 @@ var (
 			reflect.TypeOf((*v1.SearchResult)(nil)),
 			reflect.TypeOf((*v1.Secret)(nil)),
 			reflect.TypeOf((*v1.ListSecret)(nil)),
-			reflect.TypeOf((*v1.TokenMetadata)(nil)),
+			reflect.TypeOf((*storage.TokenMetadata)(nil)),
 			reflect.TypeOf((*v1.GenerateTokenResponse)(nil)),
 		},
 	}

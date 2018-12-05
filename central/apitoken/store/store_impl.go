@@ -9,6 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -16,7 +17,7 @@ type storeImpl struct {
 	*bolt.DB
 }
 
-func (b *storeImpl) AddToken(token *v1.TokenMetadata) error {
+func (b *storeImpl) AddToken(token *storage.TokenMetadata) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "APIToken")
 
 	if token.GetId() == "" {
@@ -35,7 +36,7 @@ func (b *storeImpl) AddToken(token *v1.TokenMetadata) error {
 	})
 }
 
-func (b *storeImpl) GetTokenOrNil(id string) (token *v1.TokenMetadata, err error) {
+func (b *storeImpl) GetTokenOrNil(id string) (token *storage.TokenMetadata, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "APIToken")
 
 	err = b.View(func(tx *bolt.Tx) error {
@@ -44,7 +45,7 @@ func (b *storeImpl) GetTokenOrNil(id string) (token *v1.TokenMetadata, err error
 		if tokenBytes == nil {
 			return nil
 		}
-		token = new(v1.TokenMetadata)
+		token = new(storage.TokenMetadata)
 		err := proto.Unmarshal(tokenBytes, token)
 		if err != nil {
 			return fmt.Errorf("proto unmarshaling: %s", err)
@@ -54,13 +55,13 @@ func (b *storeImpl) GetTokenOrNil(id string) (token *v1.TokenMetadata, err error
 	return
 }
 
-func (b *storeImpl) GetTokens(req *v1.GetAPITokensRequest) (tokens []*v1.TokenMetadata, err error) {
+func (b *storeImpl) GetTokens(req *v1.GetAPITokensRequest) (tokens []*storage.TokenMetadata, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "APIToken")
 
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(apiTokensBucket))
 		return bucket.ForEach(func(k, v []byte) error {
-			var token v1.TokenMetadata
+			var token storage.TokenMetadata
 			err := proto.Unmarshal(v, &token)
 			if err != nil {
 				return fmt.Errorf("proto unmarshaling: %s", err)

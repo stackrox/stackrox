@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/role/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -35,7 +36,7 @@ type serviceImpl struct {
 	roleStore store.Store
 }
 
-func (s *serviceImpl) GetAPIToken(ctx context.Context, req *v1.ResourceByID) (*v1.TokenMetadata, error) {
+func (s *serviceImpl) GetAPIToken(ctx context.Context, req *v1.ResourceByID) (*storage.TokenMetadata, error) {
 	if req.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "empty id passed")
 	}
