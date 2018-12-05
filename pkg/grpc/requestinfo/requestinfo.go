@@ -56,8 +56,9 @@ type CertInfo struct {
 //   to prevent attackers from fabricating a RequestInfo with timestamp (in case a monotonic clock reading should ever
 //   leak), the entire RequestInfo (with timestamp) is signed with a cryptographic signature.
 type RequestInfo struct {
-	// Hostname is the hostname specified in a request. This is derived from the `Hostname` header for a HTTP/1.1
-	// request, and from the TLS ServerName otherwise.
+	// Hostname is the hostname specified in a request, as intended by the client. This is derived from the
+	// `X-Forwarded-Host` (if present) or the `Hostname` header for a HTTP/1.1 request, and from the TLS ServerName
+	// otherwise.
 	Hostname string
 	// VerifiedSubjectChains are the subjects of the verified certificate chains presented by the client.
 	VerifiedChains [][]CertInfo
@@ -248,6 +249,11 @@ func (h *Handler) HTTPIntercept(handler http.Handler) http.Handler {
 			Hostname:   r.Host,
 			RequestURL: r.URL,
 			Metadata:   metadataFromHeader(r.Header),
+		}
+		// X-Forwarded-Host takes precedence in case we are behind a proxy.
+		// `Hostname` should match what the client sees.
+		if fwdHost := r.Header.Get("X-Forwarded-Host"); fwdHost != "" {
+			ri.Hostname = fwdHost
 		}
 		if r.TLS != nil {
 			ri.VerifiedChains = extractCertInfoChains(r.TLS.VerifiedChains)

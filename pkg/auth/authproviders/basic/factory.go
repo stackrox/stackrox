@@ -33,9 +33,9 @@ func NewFactory(urlPathPrefix string) authproviders.BackendFactory {
 	}
 }
 
-func (f *factory) CreateAuthProviderBackend(ctx context.Context, id string, uiEndpoint string, config map[string]string) (authproviders.AuthProviderBackend, map[string]string, error) {
+func (f *factory) CreateAuthProviderBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (authproviders.AuthProviderBackend, map[string]string, error) {
 	providerURLPathPrefix := f.urlPathPrefix + id + "/"
-	return newProvider(ctx, id, uiEndpoint, providerURLPathPrefix, config)
+	return newProvider(ctx, id, uiEndpoints, providerURLPathPrefix, config)
 }
 
 func (f *factory) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (string, error) {

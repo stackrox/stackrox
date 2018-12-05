@@ -173,7 +173,8 @@ function setup_auth0() {
 		"issuer": "https://sr-dev.auth0.com",
 		"client_id": "bu63HaVAuVPEgMUeRVfL5PzrqTXaedA2",
 		"mode": "post"
-	}
+	},
+	"extraUiEndpoints": ["localhost:3000", "prevent.stackrox.com"]
 }
 EOF
 }

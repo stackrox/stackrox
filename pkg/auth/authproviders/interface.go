@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 )
 
 // An AuthProvider is an authenticator which is based on an external service, like auth0.
@@ -37,7 +38,7 @@ type Registry interface {
 	// URLPathPrefix returns the path prefix (including a trailing slash) for URLs handled by this registry.
 	URLPathPrefix() string
 
-	CreateAuthProvider(ctx context.Context, typ, name, uiEndpoint string, enabled bool, validated bool, config map[string]string) (AuthProvider, error)
+	CreateAuthProvider(ctx context.Context, typ, name string, uiEndpoints []string, enabled bool, validated bool, config map[string]string) (AuthProvider, error)
 	UpdateAuthProvider(ctx context.Context, id string, name *string, enabled *bool) (AuthProvider, error)
 	GetAuthProvider(ctx context.Context, id string) AuthProvider
 	GetAuthProviders(ctx context.Context, name, typ *string) []AuthProvider
@@ -56,7 +57,7 @@ type Registry interface {
 // AuthProviderBackend is a backend for an authentication provider.
 type AuthProviderBackend interface {
 	// LoginURL returns a login URL with the given client state.
-	LoginURL(clientState string) string
+	LoginURL(clientState string, ri *requestinfo.RequestInfo) string
 	// RefreshURL returns a refresh URL, if supported by the auth provider.
 	RefreshURL() string
 

@@ -31,8 +31,8 @@ func NewFactory(urlPathPrefix string) authproviders.BackendFactory {
 	return f
 }
 
-func (f *factory) CreateAuthProviderBackend(ctx context.Context, id, uiEndpoint string, config map[string]string) (authproviders.AuthProviderBackend, map[string]string, error) {
-	return newProvider(ctx, f.urlPathPrefix+acsRelativePath, id, uiEndpoint, config)
+func (f *factory) CreateAuthProviderBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (authproviders.AuthProviderBackend, map[string]string, error) {
+	return newProvider(ctx, f.urlPathPrefix+acsRelativePath, id, uiEndpoints, config)
 }
 
 func (f *factory) processACSRequest(r *http.Request) (string, error) {

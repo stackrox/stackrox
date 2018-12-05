@@ -72,7 +72,7 @@ type storeBackedRegistry struct {
 // createAuthProviderAsync is called asynchronously when a new auth provider factory is registered, and providers have
 // already been read from the database but couldn't be instantiated due to the factory missing.
 func createAuthProviderAsync(factory BackendFactory, typ string, provider *authProvider) {
-	backend, effectiveConfig, err := factory.CreateAuthProviderBackend(context.Background(), provider.ID(), provider.baseInfo.UiEndpoint, provider.baseInfo.Config)
+	backend, effectiveConfig, err := factory.CreateAuthProviderBackend(context.Background(), provider.ID(), AllUIEndpoints(&provider.baseInfo), provider.baseInfo.Config)
 	if err != nil {
 		log.Errorf("Failed to create auth provider of type %s: %v", typ, err)
 		return
@@ -131,7 +131,7 @@ func (r *storeBackedRegistry) init() error {
 }
 
 func (r *storeBackedRegistry) createFromStoredDef(ctx context.Context, def *v1.AuthProvider) *authProvider {
-	provider, err := r.createProvider(ctx, def.GetId(), def.GetType(), def.GetName(), def.GetUiEndpoint(), def.GetEnabled(), def.GetValidated(), def.GetConfig())
+	provider, err := r.createProvider(ctx, def.GetId(), def.GetType(), def.GetName(), AllUIEndpoints(def), def.GetEnabled(), def.GetValidated(), def.GetConfig())
 	if err != nil {
 		log.Errorf("Could not instantiate auth provider for stored configuration: %v", err)
 		return &authProvider{
@@ -150,29 +150,32 @@ func (r *storeBackedRegistry) getFactory(typ string) BackendFactory {
 	return r.backendFactories[typ]
 }
 
-func (r *storeBackedRegistry) createProvider(ctx context.Context, id, typ, name, uiEndpoint string, enabled bool, validated bool, config map[string]string) (*authProvider, error) {
+func (r *storeBackedRegistry) createProvider(ctx context.Context, id, typ, name string, uiEndpoints []string, enabled bool, validated bool, config map[string]string) (*authProvider, error) {
 	factory := r.getFactory(typ)
 	if factory == nil {
 		return nil, fmt.Errorf("unknown auth provider type %s", typ)
 	}
-	backend, effectiveConfig, err := factory.CreateAuthProviderBackend(ctx, id, uiEndpoint, config)
+	backend, effectiveConfig, err := factory.CreateAuthProviderBackend(ctx, id, uiEndpoints, config)
 	if err != nil {
 		return nil, err
 	}
 	provider := &authProvider{
 		backend: backend,
 		baseInfo: v1.AuthProvider{
-			Id:         id,
-			Name:       name,
-			Type:       typ,
-			UiEndpoint: uiEndpoint,
-			Enabled:    enabled,
-			Config:     effectiveConfig,
-			LoginUrl:   r.loginURL(id),
-			Validated:  validated,
+			Id:        id,
+			Name:      name,
+			Type:      typ,
+			Enabled:   enabled,
+			Config:    effectiveConfig,
+			LoginUrl:  r.loginURL(id),
+			Validated: validated,
 		},
 		registry:   r,
 		roleMapper: r.roleMapperFactory.GetRoleMapper(id),
+	}
+	if len(uiEndpoints) > 0 {
+		provider.baseInfo.UiEndpoint = uiEndpoints[0]
+		provider.baseInfo.ExtraUiEndpoints = uiEndpoints[1:]
 	}
 	return provider, nil
 }
@@ -193,9 +196,9 @@ func (r *storeBackedRegistry) registerProvider(provider *authProvider) {
 	provider.issuer = issuer
 }
 
-func (r *storeBackedRegistry) CreateAuthProvider(ctx context.Context, typ, name, uiEndpoint string, enabled bool, validate bool, config map[string]string) (AuthProvider, error) {
+func (r *storeBackedRegistry) CreateAuthProvider(ctx context.Context, typ, name string, uiEndpoints []string, enabled bool, validate bool, config map[string]string) (AuthProvider, error) {
 	id := uuid.NewV4().String()
-	newProvider, err := r.createProvider(ctx, id, typ, name, uiEndpoint, enabled, validate, config)
+	newProvider, err := r.createProvider(ctx, id, typ, name, uiEndpoints, enabled, validate, config)
 	if err != nil {
 		return nil, err
 	}

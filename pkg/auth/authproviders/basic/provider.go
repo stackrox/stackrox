@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/monoclock"
 	"google.golang.org/grpc/codes"
@@ -42,7 +43,7 @@ func (p *provider) ExchangeToken(ctx context.Context, externalRawToken, state st
 	return nil, nil, "", status.Errorf(codes.Unimplemented, "basic auth provider does not implement ExchangeToken")
 }
 
-func (p *provider) LoginURL(clientState string) string {
+func (p *provider) LoginURL(clientState string, _ *requestinfo.RequestInfo) string {
 	queryParams := url.Values{}
 	queryParams.Set(clientStateQueryParamName, clientState)
 	queryParams.Set("micro_ts", strconv.FormatInt(int64(p.monoClock.SinceEpoch()/time.Microsecond), 10))
@@ -57,7 +58,7 @@ func (p *provider) RefreshURL() string {
 	return ""
 }
 
-func newProvider(ctx context.Context, id string, uiEndpoint string, urlPathPrefix string, config map[string]string) (*provider, map[string]string, error) {
+func newProvider(ctx context.Context, id string, uiEndpoints []string, urlPathPrefix string, config map[string]string) (*provider, map[string]string, error) {
 	provider := &provider{
 		urlPathPrefix: urlPathPrefix,
 		monoClock:     monoclock.New(),

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 )
 
@@ -72,7 +73,8 @@ func (r *storeBackedRegistry) loginHTTPHandler(w http.ResponseWriter, req *http.
 		return
 	}
 
-	loginURL := provider.Backend().LoginURL(clientState)
+	ri := requestinfo.FromContext(req.Context())
+	loginURL := provider.Backend().LoginURL(clientState, &ri)
 	if loginURL == "" {
 		http.Error(w, "could not get login URL", http.StatusInternalServerError)
 		return

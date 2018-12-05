@@ -9,6 +9,7 @@ import (
 
 	"github.com/russellhaering/gosaml2"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -35,7 +36,10 @@ func (p *provider) loginURL(clientState string) (string, error) {
 	return authURL, nil
 }
 
-func newProvider(ctx context.Context, acsURLPath string, id, uiEndpoint string, config map[string]string) (*provider, map[string]string, error) {
+func newProvider(ctx context.Context, acsURLPath string, id string, uiEndpoints []string, config map[string]string) (*provider, map[string]string, error) {
+	if len(uiEndpoints) != 1 {
+		return nil, nil, errors.New("SAML requires exactly one UI endpoint")
+	}
 	p := &provider{
 		acsURLPath: acsURLPath,
 		id:         id,
@@ -43,7 +47,7 @@ func newProvider(ctx context.Context, acsURLPath string, id, uiEndpoint string, 
 
 	acsURL := &url.URL{
 		Scheme: "https",
-		Host:   uiEndpoint,
+		Host:   uiEndpoints[0],
 		Path:   acsURLPath,
 	}
 	p.sp.AssertionConsumerServiceURL = acsURL.String()
@@ -128,7 +132,7 @@ func (p *provider) RefreshURL() string {
 	return ""
 }
 
-func (p *provider) LoginURL(clientState string) string {
+func (p *provider) LoginURL(clientState string, _ *requestinfo.RequestInfo) string {
 	url, err := p.loginURL(clientState)
 	if err != nil {
 		log.Errorf("could not obtain the login URL: %v", err)

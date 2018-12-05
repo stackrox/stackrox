@@ -13,6 +13,8 @@ import (
 	"github.com/coreos/go-oidc"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/cryptoutils"
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/set"
 	"golang.org/x/oauth2"
 )
 
@@ -28,9 +30,15 @@ const (
 )
 
 type provider struct {
-	idTokenVerifier *oidc.IDTokenVerifier
-	noncePool       cryptoutils.NoncePool
-	loginURL        func(string) string
+	id                 string
+	idTokenVerifier    *oidc.IDTokenVerifier
+	noncePool          cryptoutils.NoncePool
+	defaultUIEndpoint  string
+	allowedUIEndpoints set.StringSet
+
+	baseRedirectURL url.URL
+	baseOauthConfig oauth2.Config
+	baseOptions     []oauth2.AuthCodeOption
 }
 
 func (p *provider) ExchangeToken(ctx context.Context, externalRawToken, state string) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
@@ -42,8 +50,8 @@ func (p *provider) ExchangeToken(ctx context.Context, externalRawToken, state st
 	return claim, opts, clientState, nil
 }
 
-func (p *provider) LoginURL(clientState string) string {
-	return p.loginURL(clientState)
+func (p *provider) LoginURL(clientState string, ri *requestinfo.RequestInfo) string {
+	return p.loginURL(clientState, ri)
 }
 
 func (p *provider) RefreshURL() string {
@@ -108,7 +116,11 @@ func createOIDCProvider(ctx context.Context, issuer string) (*oidc.Provider, str
 	}
 }
 
-func newProvider(ctx context.Context, id string, uiEndpoint string, callbackURLPath string, config map[string]string) (*provider, map[string]string, error) {
+func newProvider(ctx context.Context, id string, uiEndpoints []string, callbackURLPath string, config map[string]string) (*provider, map[string]string, error) {
+	if len(uiEndpoints) == 0 {
+		return nil, nil, errors.New("OIDC requires a default UI endpoint")
+	}
+
 	issuer := config[issuerConfigKey]
 	if issuer == "" {
 		return nil, nil, errors.New("no issuer provided")
@@ -129,57 +141,46 @@ func newProvider(ctx context.Context, id string, uiEndpoint string, callbackURLP
 		return nil, nil, errors.New("no client ID provided")
 	}
 
-	redirectURL := &url.URL{
-		Scheme: "https",
-		Host:   uiEndpoint,
-	}
-
-	options := []oauth2.AuthCodeOption{
-		oauth2.SetAuthURLParam("response_type", "id_token"),
-	}
-	mode := strings.ToLower(config[modeConfigKey])
-	switch mode {
-	case "", "fragment":
-		mode = "fragment"
-		redirectURL.Path = fragmentCallbackURLPath
-		options = append(options, oauth2.SetAuthURLParam("response_mode", "fragment"))
-	case "post":
-		redirectURL.Path = callbackURLPath
-		options = append(options, oauth2.SetAuthURLParam("response_mode", "form_post"))
-	default:
-		return nil, nil, fmt.Errorf("invalid mode %q", mode)
-	}
-
 	oidcProvider, issuer, err := createOIDCProvider(ctx, issuer)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	p := &provider{
+		id: id,
 		noncePool: cryptoutils.NewThreadSafeNoncePool(
 			cryptoutils.NewNonceGenerator(nonceByteLen, rand.Reader), nonceTTL),
+		defaultUIEndpoint:  uiEndpoints[0],
+		allowedUIEndpoints: set.NewStringSet(uiEndpoints[1:]...),
+	}
+
+	p.baseRedirectURL = url.URL{
+		Scheme: "https",
+	}
+
+	p.baseOptions = []oauth2.AuthCodeOption{
+		oauth2.SetAuthURLParam("response_type", "id_token"),
+	}
+
+	mode := strings.ToLower(config[modeConfigKey])
+	switch mode {
+	case "", "fragment":
+		mode = "fragment"
+		p.baseRedirectURL.Path = fragmentCallbackURLPath
+		p.baseOptions = append(p.baseOptions, oauth2.SetAuthURLParam("response_mode", "fragment"))
+	case "post":
+		p.baseRedirectURL.Path = callbackURLPath
+		p.baseOptions = append(p.baseOptions, oauth2.SetAuthURLParam("response_mode", "form_post"))
+	default:
+		return nil, nil, fmt.Errorf("invalid mode %q", mode)
 	}
 
 	p.idTokenVerifier = oidcProvider.Verifier(&oidcCfg)
 
-	oauthCfg := oauth2.Config{
-		ClientID:    oidcCfg.ClientID,
-		Endpoint:    oidcProvider.Endpoint(),
-		RedirectURL: redirectURL.String(),
-		Scopes:      []string{oidc.ScopeOpenID, "profile"},
-	}
-
-	p.loginURL = func(clientState string) string {
-		nonce, err := p.noncePool.IssueNonce()
-		if err != nil {
-			log.Errorf("UNEXPECTED: could not issue nonce")
-			return ""
-		}
-		state := makeState(id, clientState)
-		newOptions := make([]oauth2.AuthCodeOption, len(options)+1)
-		copy(newOptions, options)
-		newOptions[len(options)] = oidc.Nonce(nonce)
-		return oauthCfg.AuthCodeURL(state, newOptions...)
+	p.baseOauthConfig = oauth2.Config{
+		ClientID: oidcCfg.ClientID,
+		Endpoint: oidcProvider.Endpoint(),
+		Scopes:   []string{oidc.ScopeOpenID, "profile"},
 	}
 
 	effectiveConfig := map[string]string{
@@ -189,6 +190,29 @@ func newProvider(ctx context.Context, id string, uiEndpoint string, callbackURLP
 	}
 
 	return p, effectiveConfig, nil
+}
+
+func (p *provider) loginURL(clientState string, ri *requestinfo.RequestInfo) string {
+	nonce, err := p.noncePool.IssueNonce()
+	if err != nil {
+		log.Errorf("UNEXPECTED: could not issue nonce")
+		return ""
+	}
+
+	state := makeState(p.id, clientState)
+	options := make([]oauth2.AuthCodeOption, len(p.baseOptions)+1)
+	copy(options, p.baseOptions)
+	options[len(p.baseOptions)] = oidc.Nonce(nonce)
+
+	redirectURL := p.baseRedirectURL
+	if p.allowedUIEndpoints.Contains(ri.Hostname) {
+		redirectURL.Host = ri.Hostname
+	} else {
+		redirectURL.Host = p.defaultUIEndpoint
+	}
+	oauthCfg := p.baseOauthConfig
+	oauthCfg.RedirectURL = redirectURL.String()
+	return oauthCfg.AuthCodeURL(state, options...)
 }
 
 func (p *provider) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {

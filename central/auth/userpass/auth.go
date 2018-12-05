@@ -30,7 +30,7 @@ func RegisterAuthProviderOrPanic(registry authproviders.Registry) {
 	config := map[string]string{
 		"htpasswd_file": htpasswdFile,
 	}
-	_, err = registry.CreateAuthProvider(context.Background(), basicAuthProvider.TypeName, "Login with username/password", "", true, true, config)
+	_, err = registry.CreateAuthProvider(context.Background(), basicAuthProvider.TypeName, "Login with username/password", nil, true, true, config)
 	if err != nil {
 		log.Panicf("Could not set up basic auth provider: %v", err)
 	}

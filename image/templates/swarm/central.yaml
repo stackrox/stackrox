@@ -60,7 +60,7 @@ secrets:
     file: ./ca-key.pem
   central_certificate:
     file: ./ca.pem
-{{ if .Password -}}
+{{- if .Password }}
   central_htpasswd:
     file: ./htpasswd
 {{- end }}
