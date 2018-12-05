@@ -330,7 +330,8 @@ class NetworkFlowTest extends BaseSpecification {
 
         then:
         "make sure edge does not get updated"
-        assert !waitForEdgeUpdate(edges.get(0))
+        //Use a 20 second buffer to account for additional edges coming in through the data pipeline
+        assert !waitForEdgeUpdate(edges.get(0), 60, 20)
 
         cleanup:
         "remove policy"
@@ -374,14 +375,20 @@ class NetworkFlowTest extends BaseSpecification {
         return null
     }
 
-    private waitForEdgeUpdate(Edge edge, int timeoutSeconds = 60) {
+    private waitForEdgeUpdate(Edge edge, int timeoutSeconds = 60, int addSecondsToEdgeTimestamp = 0) {
         int intervalSeconds = 1
         int waitTime
         def startTime = System.currentTimeMillis()
         for (waitTime = 0; waitTime <= timeoutSeconds / intervalSeconds; waitTime++) {
             def graph = NetworkGraphService.getNetworkGraph()
             def newEdge = NetworkGraphUtil.findEdges(graph, edge.sourceID, edge.targetID)?.find { true }
-            if (newEdge != null && newEdge.lastActiveTimestamp > edge.lastActiveTimestamp) {
+
+            // Added an optional buffer here with addSecondsToEdgeTimestamp. Test was flakey
+            // because we cannot guarantee when an edge will stop appearing in the data pipeline
+            // the buffer simply says only check for updates that happen >`addSecondsToEdgeTimestamp`
+            // seconds after the baseline edge
+            if (newEdge != null &&
+                    newEdge.lastActiveTimestamp > edge.lastActiveTimestamp + (addSecondsToEdgeTimestamp * 1000)) {
                 println "Found updated edge in graph after ${(System.currentTimeMillis() - startTime) / 1000}s"
                 return newEdge
             }
