@@ -143,8 +143,9 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         assert originalAptGetAlert.getViolationsCount() == 1
         def subViolation = originalAptGetAlert.getViolations(0)
         assert subViolation.getProcessesCount() > 0
-        def violatingProcess = subViolation.getProcesses(0)
-        assert violatingProcess.getSignal().getName() == "apt-get"
+        def violatingProcess = subViolation.getProcessesList().
+            find { p -> p.getSignal().getName() == "apt-get" }
+        assert violatingProcess != null
         assert violatingProcess.getSignal().getArgs() == "-y update"
 
         when:
