@@ -1,8 +1,6 @@
 package main
 
 import (
-	"archive/zip"
-	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -19,7 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/version"
-	zipPkg "github.com/stackrox/rox/pkg/zip"
+	"github.com/stackrox/rox/pkg/zip"
 )
 
 func init() {
@@ -97,8 +95,7 @@ func generateMonitoringFiles(fileMap map[string][]byte, caCert, caKey []byte) er
 func outputZip(config central.Config) error {
 	fmt.Fprint(os.Stderr, "Generating deployment bundle... ")
 
-	buf := new(bytes.Buffer)
-	zipW := zip.NewWriter(buf)
+	wrapper := zip.NewWrapper()
 
 	d, ok := central.Deployers[config.ClusterType]
 	if !ok {
@@ -109,8 +106,6 @@ func outputZip(config central.Config) error {
 	if err := generateJWTSigningKey(config.SecretsByteMap); err != nil {
 		return err
 	}
-
-	var authFiles []*zipPkg.File
 
 	if features.HtpasswdAuth.Enabled() {
 		if config.Environment == nil {
@@ -124,7 +119,7 @@ func outputZip(config central.Config) error {
 		}
 
 		config.SecretsByteMap["htpasswd"] = htpasswd
-		authFiles = append(authFiles, zipPkg.NewFile("password", []byte(config.Password+"\n"), zipPkg.Sensitive))
+		wrapper.AddFiles(zip.NewFile("password", []byte(config.Password+"\n"), zip.Sensitive))
 	}
 
 	cert, key, err := generateMTLSFiles(config.SecretsByteMap)
@@ -147,20 +142,13 @@ func outputZip(config central.Config) error {
 	if err != nil {
 		return fmt.Errorf("could not render files: %s", err)
 	}
+	wrapper.AddFiles(files...)
 
-	files = append(files, authFiles...)
-	for _, f := range files {
-		if err := zipPkg.AddFile(zipW, f); err != nil {
-			return fmt.Errorf("failed to write '%s': %s", f.Name, err)
-		}
-	}
-
-	err = zipW.Close()
+	bytes, err := wrapper.Zip()
 	if err != nil {
-		return fmt.Errorf("couldn't close zip writer: %s", err)
+		return fmt.Errorf("error generating zip file: %v", err)
 	}
-
-	_, err = os.Stdout.Write(buf.Bytes())
+	_, err = os.Stdout.Write(bytes)
 	if err != nil {
 		return fmt.Errorf("couldn't write zip file: %s", err)
 	}

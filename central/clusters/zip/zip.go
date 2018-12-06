@@ -1,8 +1,6 @@
 package zip
 
 import (
-	"archive/zip"
-	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -19,7 +17,7 @@ import (
 	serviceIdentitiesService "github.com/stackrox/rox/central/serviceidentities/service"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
-	zipPkg "github.com/stackrox/rox/pkg/zip"
+	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -72,8 +70,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	buf := new(bytes.Buffer)
-	zipW := zip.NewWriter(buf)
+	wrapper := zip.NewWrapper()
 
 	// Add cluster YAML and command
 	cluster, _, err := z.clusterStore.GetCluster(clusterID.GetId())
@@ -97,12 +94,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, f := range baseFiles {
-		if err := zipPkg.AddFile(zipW, f); err != nil {
-			writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", f.Name, err))
-			return
-		}
-	}
+	wrapper.AddFiles(baseFiles...)
 
 	// Add MTLS files for sensor
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -117,14 +109,10 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("sensor-cert.pem", id.GetCertificatePem(), 0)); err != nil {
-		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "sensor-cert.pem", err))
-		return
-	}
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("sensor-key.pem", id.GetPrivateKeyPem(), zipPkg.Sensitive)); err != nil {
-		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "sensor-key.pem", err))
-		return
-	}
+	wrapper.AddFiles(
+		zip.NewFile("sensor-cert.pem", id.GetCertificatePem(), 0),
+		zip.NewFile("sensor-key.pem", id.GetPrivateKeyPem(), zip.Sensitive),
+	)
 
 	// Add MTLS files for collector if runtime support is enabled
 	if cluster.GetRuntimeSupport() {
@@ -140,14 +128,11 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := zipPkg.AddFile(zipW, zipPkg.NewFile("collector-cert.pem", id.GetCertificatePem(), 0)); err != nil {
-			writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "collector-cert.pem", err))
-			return
-		}
-		if err := zipPkg.AddFile(zipW, zipPkg.NewFile("collector-key.pem", id.GetPrivateKeyPem(), zipPkg.Sensitive)); err != nil {
-			writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "collector-key.pem", err))
-			return
-		}
+		wrapper.AddFiles(
+			zip.NewFile("collector-cert.pem", id.GetCertificatePem(), 0),
+			zip.NewFile("collector-key.pem", id.GetPrivateKeyPem(), zip.Sensitive),
+		)
+
 	}
 
 	if cluster.GetMonitoringEndpoint() != "" {
@@ -163,24 +148,17 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring-client-cert.pem", id.GetCertificatePem(), 0)); err != nil {
-			writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "monitoring-client-cert.pem", err))
-			return
-		}
-		if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring-client-key.pem", id.GetPrivateKeyPem(), zipPkg.Sensitive)); err != nil {
-			writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "monitoring-client-key.pem", err))
-			return
-		}
+		wrapper.AddFiles(
+			zip.NewFile("monitoring-client-cert.pem", id.GetCertificatePem(), 0),
+			zip.NewFile("monitoring-client-key.pem", id.GetPrivateKeyPem(), zip.Sensitive),
+		)
 
 		monitoringCA, err := ioutil.ReadFile(monitoring.CAPath)
 		if err != nil {
 			writeGRPCStyleError(w, codes.Internal, err)
 			return
 		}
-		if err := zipPkg.AddFile(zipW, zipPkg.NewFile("monitoring-ca.pem", monitoringCA, 0)); err != nil {
-			writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "monitoring-ca.pem", err))
-			return
-		}
+		wrapper.AddFiles(zip.NewFile("monitoring-ca.pem", monitoringCA, 0))
 	}
 
 	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
@@ -195,21 +173,19 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := zipPkg.AddFile(zipW, zipPkg.NewFile("ca.pem", authority.GetAuthorities()[0].GetCertificatePem(), 0)); err != nil {
-		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("%s writing: %s", "ca.pem", err))
-		return
-	}
+	wrapper.AddFiles(zip.NewFile("ca.pem", authority.GetAuthorities()[0].GetCertificatePem(), 0))
 
-	err = zipW.Close()
+	bytes, err := wrapper.Zip()
 	if err != nil {
-		logger.Warnf("Couldn't close zip writer: %s", err)
+		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("unable to render zip file: %v", err))
+		return
 	}
 
 	zipAttachment := fmt.Sprintf(`attachment; filename="sensor-%s.zip"`, getSafeFilename(cluster.GetName()))
 
 	// Tell the browser this is a download.
 	w.Header().Add("Content-Disposition", zipAttachment)
-	w.Write(buf.Bytes())
+	w.Write(bytes)
 }
 
 func writeGRPCStyleError(w http.ResponseWriter, c codes.Code, err error) {

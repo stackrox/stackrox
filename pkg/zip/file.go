@@ -1,11 +1,7 @@
 package zip
 
 import (
-	"archive/zip"
-	"fmt"
 	"io/ioutil"
-	"os"
-	"time"
 )
 
 // FileFlags store metadata about a file in a zip archive.
@@ -41,30 +37,4 @@ func NewFromFile(srcFilename, tgtFilename string, flags FileFlags) (*File, error
 		return nil, err
 	}
 	return NewFile(tgtFilename, contents, flags), nil
-}
-
-// AddFile adds a file to the zip writer
-func AddFile(zipW *zip.Writer, file *File) error {
-	hdr := &zip.FileHeader{
-		Name: file.Name,
-	}
-	hdr.Modified = time.Now()
-	mode := os.FileMode(0644)
-	if file.Flags&Executable != 0 {
-		mode |= os.FileMode(0111)
-	}
-	if file.Flags&Sensitive != 0 {
-		mode &= ^os.FileMode(0077)
-	}
-	hdr.SetMode(mode & os.ModePerm)
-
-	f, err := zipW.CreateHeader(hdr)
-	if err != nil {
-		return fmt.Errorf("file creation: %s", err)
-	}
-	_, err = f.Write(file.Content)
-	if err != nil {
-		return fmt.Errorf("file writing: %s", err)
-	}
-	return nil
 }
