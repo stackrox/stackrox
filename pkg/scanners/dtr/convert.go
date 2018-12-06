@@ -70,6 +70,16 @@ func compareComponent(c1, c2 *v1.ImageScanComponent) int {
 	return 0
 }
 
+func populateLayersWithScan(image *v1.Image, layerDetails []*detailedSummary) {
+	layerDetailIdx := 0
+	for _, l := range image.GetMetadata().GetV1().GetLayers() {
+		if !l.Empty {
+			l.Components = convertComponents(layerDetails[layerDetailIdx].Components)
+			layerDetailIdx++
+		}
+	}
+}
+
 func convertTagScanSummaryToImageScan(tagScanSummary *tagScanSummary) *v1.ImageScan {
 	convertedLayers := convertLayers(tagScanSummary.LayerDetails)
 	completedAt, err := ptypes.TimestampProto(tagScanSummary.CheckCompletedAt)
@@ -89,6 +99,7 @@ func convertTagScanSummaryToImageScan(tagScanSummary *tagScanSummary) *v1.ImageS
 		}
 		uniqueLayers = append(uniqueLayers, currComponent)
 	}
+
 	return &v1.ImageScan{
 		ScanTime:   completedAt,
 		Components: convertedLayers,

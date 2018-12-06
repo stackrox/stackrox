@@ -148,13 +148,13 @@ func convertImageToListImage(i *v1.Image) *v1.ListImage {
 
 	if i.GetScan() != nil {
 		listImage.SetComponents = &v1.ListImage_Components{
-			Components: int64(len(i.GetScan().GetComponents())),
+			Components: int32(len(i.GetScan().GetComponents())),
 		}
-		var numVulns int64
-		var numFixableVulns int64
+		var numVulns int32
+		var numFixableVulns int32
 		var fixedByProvided bool
 		for _, c := range i.GetScan().GetComponents() {
-			numVulns += int64(len(c.GetVulns()))
+			numVulns += int32(len(c.GetVulns()))
 			for _, v := range c.GetVulns() {
 				if v.GetSetFixedBy() != nil {
 					fixedByProvided = true

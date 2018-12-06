@@ -142,15 +142,17 @@ func (d *dtr) getScan(image *v1.Image) (*v1.ImageScan, error) {
 	}
 
 	// Find the last scan time
-	lastScanTime := scans[0].CheckCompletedAt
-	scanIdx := 0
-	for i, s := range scans {
-		if s.CheckCompletedAt.After(lastScanTime) {
-			lastScanTime = s.CheckCompletedAt
-			scanIdx = i
+	lastScan := scans[0]
+	for _, s := range scans {
+		if s.CheckCompletedAt.After(lastScan.CheckCompletedAt) {
+			lastScan = s
 		}
 	}
-	return convertTagScanSummaryToImageScan(scans[scanIdx]), nil
+
+	scan := convertTagScanSummaryToImageScan(lastScan)
+	// populate V1 Metadata with scan layers
+	populateLayersWithScan(image, lastScan.LayerDetails)
+	return scan, nil
 }
 
 func errorFromStatusCode(status int) error {

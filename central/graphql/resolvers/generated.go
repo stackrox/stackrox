@@ -1436,9 +1436,19 @@ func (resolver *imageLayerResolver) Author() string {
 	return value
 }
 
+func (resolver *imageLayerResolver) Components() ([]*imageScanComponentResolver, error) {
+	value := resolver.data.GetComponents()
+	return resolver.root.wrapImageScanComponents(value, nil)
+}
+
 func (resolver *imageLayerResolver) Created() (graphql.Time, error) {
 	value := resolver.data.GetCreated()
 	return timestamp(value)
+}
+
+func (resolver *imageLayerResolver) Empty() bool {
+	value := resolver.data.GetEmpty()
+	return value
 }
 
 func (resolver *imageLayerResolver) Instruction() string {

@@ -32,13 +32,13 @@ describe('Images page', () => {
         cy.get(imageSelectors.firstTableRow).click();
         cy.get(imageSelectors.panelHeader)
             .eq(1)
-            .should('have.text', 'docker.io/library/nginx:latest');
+            .should('have.text', 'apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest');
     });
 
     it('Should add the image id to the url when clicking a row', () => {
         cy.get(imageSelectors.firstTableRow).click();
         cy.fixture('images/images.json').then(json => {
-            cy.url().should('contain', `${imagesUrl}/${json.images[0].id}`);
+            cy.url().should('contain', `${imagesUrl}/${json.images[1].id}`);
         });
     });
 
@@ -47,7 +47,10 @@ describe('Images page', () => {
         cy.get(imageSelectors.viewDeploymentsButton).click();
         cy.url().should('contain', riskUrl);
         cy.get(riskSelectors.search.searchModifier).should('contain', 'Image:');
-        cy.get(riskSelectors.search.searchWord).should('contain', 'docker.io/library/nginx:latest');
+        cy.get(riskSelectors.search.searchWord).should(
+            'contain',
+            'apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest'
+        );
     });
 
     it('should close the side panel on search filter', () => {

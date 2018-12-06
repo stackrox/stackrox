@@ -12,10 +12,12 @@ import "api/v1/empty.proto";
 package v1;
 
 message ImageLayer {
-    string instruction                 = 1;
-    string value                       = 2;
-    google.protobuf.Timestamp created  = 3;
-    string author                      = 4;
+    string instruction                     = 1;
+    string value                           = 2;
+    google.protobuf.Timestamp created      = 3;
+    string author                          = 4;
+    repeated ImageScanComponent components = 5;
+    bool empty                             = 6;
 }
 
 message V1Metadata {
@@ -119,13 +121,13 @@ message ListImage {
     string id                         = 7;
     string name                       = 2;
     oneof set_components {
-        int64 components              = 3;
+        int32 components              = 3;
     }
     oneof set_cves {
-        int64 cves                    = 4;
+        int32 cves                    = 4;
     }
     oneof set_fixable {
-        int64 fixable_cves            = 5;
+        int32 fixable_cves            = 5;
     }
     google.protobuf.Timestamp created = 6;
 }

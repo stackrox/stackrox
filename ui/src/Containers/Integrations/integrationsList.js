@@ -14,7 +14,6 @@ import quay from 'images/quay.svg';
 import saml from 'images/saml.svg';
 import slack from 'images/slack.svg';
 import splunk from 'images/splunk.svg';
-import tenable from 'images/tenable.svg';
 
 const integrationsList = {
     authProviders: [
@@ -49,7 +48,15 @@ const integrationsList = {
             type: 'clairify',
             categories: 'Scanner',
             source: 'imageIntegrations',
-            image: clair,
+            image: logo,
+            disabled: false
+        },
+        {
+            label: 'Generic Docker Registry',
+            type: 'docker',
+            categories: 'Registry',
+            source: 'imageIntegrations',
+            image: docker,
             disabled: false
         },
         {
@@ -90,22 +97,6 @@ const integrationsList = {
             categories: 'Registry + Scanner',
             source: 'imageIntegrations',
             image: quay,
-            disabled: false
-        },
-        {
-            label: 'Tenable.io',
-            type: 'tenable',
-            categories: 'Registry + Scanner',
-            source: 'imageIntegrations',
-            image: tenable,
-            disabled: false
-        },
-        {
-            label: 'Generic Docker Registry',
-            type: 'docker',
-            categories: 'Registry',
-            source: 'imageIntegrations',
-            image: docker,
             disabled: false
         },
         {

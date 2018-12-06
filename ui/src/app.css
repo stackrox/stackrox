@@ -655,7 +655,7 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     overflow: overlay !important;
 }
 
-.rt-table:before {
+/* .rt-table:before {
     content: "";
     position: absolute;
     top: 0;
@@ -669,7 +669,7 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     background-repeat: no-repeat, no-repeat;
     width: 100%;
     background-position: right, bottom;
-}
+} */
 
 .ReactTable .-pagination  {
     @apply .shadow-none .border-t .shadow-underline .pt-2 .pb-2 .pl-0 .pr-0 !important;
@@ -693,9 +693,6 @@ z-index: 4 !important;
 .ReactTable .rt-tbody {
 overflow: initial !important;
 }
-
-
-    
 
 .ReactTable .rt-thead .rt-th:focus {
     @apply .outline-none !important;
@@ -849,6 +846,21 @@ overflow: initial !important;
 
 .ReactTable .rt-tbody .rt-td.sticky-column.left-checkbox-offset, .ReactTable .rt-thead .rt-th.sticky-column.left-checkbox-offset {
     left: 28px !important;
+}
+
+.cve-table .rt-table .rt-tbody, .cve-table .rt-table .rt-thead,
+.dockerfile-table .rt-table .rt-tbody, .dockerfile-table .rt-table .rt-thead {
+    @apply .p-0 !important;
+}
+
+.cve-table .rt-tbody .rt-tr, .cve-table .rt-thead .rt-tr,
+.dockerfile-table .cve-table .rt-tbody .rt-tr, .dockerfile-table .cve-table .rt-thead .rt-tr {
+    @apply .min-h-0 !important;
+}
+
+.cve-table .rt-thead .rt-th:first-child,
+.dockerfile-table .cve-table .rt-thead .rt-th:first-child {
+    @apply .shadow-none !important;
 }
 
 .overflow-overlay {

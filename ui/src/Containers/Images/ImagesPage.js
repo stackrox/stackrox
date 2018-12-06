@@ -102,7 +102,7 @@ class ImagesPage extends Component {
                 headerClassName: `w-24 ${defaultHeaderClassName}`,
                 className: `w-24 ${wrapClassName} ${defaultColumnClassName}`,
                 Cell: ({ original }) =>
-                    original.created ? dateFns.format(original.created, dateTimeFormat) : 'N/A',
+                    original.created ? dateFns.format(original.created, dateTimeFormat) : '—',
                 sortMethod: sortDate
             },
             {
@@ -110,7 +110,8 @@ class ImagesPage extends Component {
                 Header: 'Components',
                 headerClassName: `w-24 ${defaultHeaderClassName}`,
                 className: `w-24 ${wrapClassName} ${defaultColumnClassName}`,
-                Cell: ({ original }) => original.components || 'N/A',
+                Cell: ({ original }) =>
+                    original.components !== undefined ? original.components : '—',
                 sortMethod: sortValue
             },
             {
@@ -118,15 +119,16 @@ class ImagesPage extends Component {
                 Header: 'CVEs',
                 headerClassName: `w-12 ${defaultHeaderClassName}`,
                 className: `w-12 ${wrapClassName} ${defaultColumnClassName}`,
-                Cell: ({ original }) => original.cves || 'N/A',
+                Cell: ({ original }) => (original.cves !== undefined ? original.cves : '—'),
                 sortMethod: sortValue
             },
             {
                 accessor: 'fixableCves',
-                Header: 'Fixable',
+                Header: 'Fixable CVEs',
                 headerClassName: `w-16 ${defaultHeaderClassName}`,
                 className: `w-16 ${wrapClassName} ${defaultColumnClassName}`,
-                Cell: ({ original }) => original.fixableCves || 'N/A',
+                Cell: ({ original }) =>
+                    original.fixableCves !== undefined ? original.fixableCves : '—',
                 sortMethod: sortValue
             }
         ];
@@ -143,6 +145,12 @@ class ImagesPage extends Component {
                 selectedRowId={selectedId}
                 noDataText="No results found. Please refine your search."
                 page={this.state.page}
+                defaultSorted={[
+                    {
+                        id: 'cves',
+                        desc: true
+                    }
+                ]}
             />
         );
     }

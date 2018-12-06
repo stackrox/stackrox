@@ -126,6 +126,7 @@ func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*v1.
 			Author:      h.Author,
 			Instruction: instruction,
 			Value:       value,
+			Empty:       h.EmptyLayer,
 		})
 	}
 	var metadata = &v1.V1Metadata{}

@@ -11,12 +11,12 @@ import dateTimeFormat from 'constants/dateTimeFormat';
 import { actions as deploymentsActions } from 'reducers/deployments';
 import { addSearchModifier, addSearchKeyword } from 'utils/searchUtils';
 
-import Table, { defaultHeaderClassName } from 'Components/Table';
 import CollapsibleCard from 'Components/CollapsibleCard';
 import Panel from 'Components/Panel';
 import KeyValuePairs from 'Components/KeyValuePairs';
 import DockerfileModal from 'Containers/Images/DockerfileModal';
 import Loader from 'Components/Loader';
+import CVETable from './CVETable';
 
 const imageDetailsMap = {
     scanTime: {
@@ -40,7 +40,8 @@ class ImageDetails extends Component {
     static propTypes = {
         image: PropTypes.shape({
             name: PropTypes.string.isRequired,
-            scan: PropTypes.shape({})
+            scan: PropTypes.shape({}),
+            fixableCves: PropTypes.number
         }).isRequired,
         loading: PropTypes.bool.isRequired,
         history: ReactRouterPropTypes.history.isRequired,
@@ -139,62 +140,13 @@ class ImageDetails extends Component {
         );
     };
 
-    renderVulnsTable = row => {
-        const subColumns = [
-            {
-                Header: 'CVE',
-                accessor: 'cve',
-                Cell: ci => (
-                    <div className="truncate">
-                        <a
-                            href={ci.original.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary-600 font-600 pointer-events-auto"
-                        >
-                            {ci.value}
-                        </a>
-                        - {ci.original.summary}
-                    </div>
-                ),
-                headerClassName: 'font-600 border-b border-base-300 flex items-end',
-                className: 'pointer-events-none flex items-center justify-end'
-            },
-            {
-                Header: 'CVSS',
-                accessor: 'cvss',
-                width: 50,
-                headerClassName: 'font-600 border-b border-base-300 flex items-end justify-end',
-                className: 'pointer-events-none flex items-center justify-end'
-            },
-            {
-                Header: 'Fixed',
-                accessor: 'fixedBy',
-                width: 130,
-                headerClassName: 'font-600 border-b border-base-300 flex items-end',
-                className: 'pointer-events-none flex items-center justify-end'
-            }
-        ];
-        return (
-            row.original.vulns.length !== 0 && (
-                <Table
-                    rows={row.original.vulns}
-                    columns={subColumns}
-                    className="bg-base-200"
-                    showPagination={false}
-                    pageSize={row.original.vulns.length}
-                />
-            )
-        );
-    };
-
     renderCVEs = () => {
         const title = 'CVEs';
         return (
             <div className="px-3 pt-5">
                 <div className="alert-preview bg-base-100 shadow text-primary-600">
                     <CollapsibleCard title={title}>
-                        <div className="h-full p-3"> {this.renderCVEsTable()}</div>
+                        <div className="h-full"> {this.renderCVEsTable()}</div>
                     </CollapsibleCard>
                 </div>
             </div>
@@ -202,54 +154,15 @@ class ImageDetails extends Component {
     };
 
     renderCVEsTable = () => {
-        const { scan } = this.props.image;
+        const { scan, fixableCves } = this.props.image;
         if (!scan) return <div>No scanner setup for this registry</div>;
-
-        const columns = [
-            {
-                expander: true,
-                headerClassName: `w-1/8 ${defaultHeaderClassName}`,
-                className: 'w-1/8 pointer-events-none flex items-center justify-end',
-                Expander: ({ isExpanded, ...rest }) => {
-                    if (rest.original.vulns.length === 0) return '';
-                    const className = 'rt-expander w-1 pt-2 pointer-events-auto';
-                    return <div className={`${className} ${isExpanded ? '-open' : ''}`} />;
-                }
-            },
-            {
-                Header: 'Name',
-                accessor: 'name',
-                headerClassName: 'pl-3 font-600 text-left border-b border-base-300 border-r-0',
-                Cell: ci => <div>{ci.value}</div>
-            },
-            {
-                Header: 'Version',
-                accessor: 'version',
-                className: 'pr-4 flex items-center justify-end',
-                headerClassName: 'font-600 text-right border-b border-base-300 border-r-0 pr-4'
-            },
-            {
-                Header: 'CVEs',
-                accessor: 'vulns.length',
-                className: 'w-1/8 pr-4 flex items-center justify-end',
-                headerClassName:
-                    'w-1/8 font-600 text-right border-b border-base-300 border-r-0 pr-4'
-            }
-        ];
-        return (
-            <Table
-                defaultPageSize={scan.components.length}
-                rows={scan.components}
-                columns={columns}
-                SubComponent={this.renderVulnsTable}
-            />
-        );
+        return <CVETable components={scan.components} isFixable={fixableCves} />;
     };
 
     renderDockerfileModal() {
         const { image } = this.props;
         if (!this.state.modalOpen || !image || !image.metadata || !image.metadata.v1) return null;
-        return <DockerfileModal data={image.metadata.v1.layers} onClose={this.closeModal} />;
+        return <DockerfileModal image={image} onClose={this.closeModal} />;
     }
 
     render() {

@@ -69,7 +69,8 @@ func validateConfig(c *v1.ClairifyConfig) error {
 	return nil
 }
 
-func convertLayerToImageScan(layerEnvelope *clairV1.LayerEnvelope) *v1.ImageScan {
+func convertLayerToImageScan(image *v1.Image, layerEnvelope *clairV1.LayerEnvelope) *v1.ImageScan {
+	clairConv.PopulateLayersWithScan(image, layerEnvelope)
 	return &v1.ImageScan{
 		Components: clairConv.ConvertFeatures(layerEnvelope.Layer.Features),
 	}
@@ -120,7 +121,7 @@ func (c *clairify) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 			return nil, err
 		}
 	}
-	return convertLayerToImageScan(env), nil
+	return convertLayerToImageScan(image, env), nil
 }
 
 func (c *clairify) scan(image *v1.Image) error {
