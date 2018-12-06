@@ -32,7 +32,6 @@ type ExternalPersistence struct {
 
 // HostPathPersistence describes the parameters for a bind mount
 type HostPathPersistence struct {
-	Name              string
 	HostPath          string
 	NodeSelectorKey   string
 	NodeSelectorValue string

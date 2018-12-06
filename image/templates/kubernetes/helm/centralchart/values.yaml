@@ -14,7 +14,7 @@ monitoring:
 
 persistence:
 {{if .HostPath}}
-  name: {{.HostPath.Name}}
+  name: stackrox-db
   type: hostpath
   value:
     hostPath:

@@ -18,7 +18,6 @@ const (
 func init() {
 	Deployers[v1.ClusterType_KUBERNETES_CLUSTER] = newKubernetes()
 	Deployers[v1.ClusterType_OPENSHIFT_CLUSTER] = newKubernetes()
-
 }
 
 type kubernetes struct{}
@@ -112,8 +111,7 @@ const helmInstructionTemplate = instructionPrefix + `
     - If you want to run the StackRox Clairify scanner, run helm install --name clairify clairify
 `
 
-const kubectlInstructionTemplate = instructionPrefix + `
-  {{if not .K8sConfig.MonitoringType.None}}
+const kubectlInstructionTemplate = instructionPrefix + `{{if not .K8sConfig.MonitoringType.None}}
   - Deploy Monitoring
     - Run monitoring/scripts/setup.sh
     - Run {{.K8sConfig.Command}} create -R -f monitoring

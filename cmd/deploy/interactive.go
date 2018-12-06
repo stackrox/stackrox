@@ -23,17 +23,17 @@ var (
 			optional:   false,
 			groupOrder: 0,
 		},
+		"clairify": {
+			name:       "clairify",
+			optional:   false,
+			groupOrder: 1,
+		},
 		"monitoring": {
 			name:        "monitoring",
 			optional:    true,
-			groupOrder:  1,
-			groupPrompt: "Would you like to run the monitoring stack?",
-		},
-		"clairify": {
-			name:        "clairify",
-			optional:    true,
 			groupOrder:  2,
-			groupPrompt: "Would you like to run Clairify?",
+			groupPrompt: "Would you like to run the monitoring stack?",
+			cmdLineSpec: "--monitoring-type=none",
 		},
 	}
 )
@@ -126,6 +126,7 @@ type flagGroup struct {
 	groupOrder  int
 	groupPrompt string
 	flags       []*pflag.Flag
+	cmdLineSpec string
 }
 
 func getFirstFromStringSliceOrEmpty(s []string) string {
@@ -139,9 +140,14 @@ func flagGroups(flags []*pflag.Flag) []*flagGroup {
 	groups := make(map[string]*flagGroup)
 	for _, f := range flags {
 		name := getFirstFromStringSliceOrEmpty(f.Annotations[groupAnnotation])
+		// Check global flag group
 		group, ok := flagGroupMap[name]
 		if !ok {
-			group = &flagGroup{}
+			var ok bool
+			// Check per function group
+			if group, ok = groups[name]; !ok {
+				group = &flagGroup{}
+			}
 		}
 		group.flags = append(group.flags, f)
 		groups[name] = group
@@ -175,6 +181,9 @@ func walkTree(c *cobra.Command) (args []string) {
 				logger.Fatalf("Error prompting for section: %v", err)
 			}
 			if !wanted {
+				if fg.cmdLineSpec != "" {
+					args = append(args, fg.cmdLineSpec)
+				}
 				continue
 			}
 		}

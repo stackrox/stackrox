@@ -58,7 +58,6 @@ func hostPathVolume(cluster v1.ClusterType) *cobra.Command {
 		}
 		return outputZip(cfg)
 	}
-	c.Flags().StringVarP(&hostpath.Name, "name", "", "stackrox-db", "hostpath volume name")
 	c.Flags().StringVarP(&hostpath.HostPath, "hostpath", "", "/var/lib/stackrox", "path on the host")
 
 	var defaultSelector string

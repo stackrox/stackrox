@@ -54,14 +54,12 @@ func (suite *renderSuite) SetupSuite() {
 
 func (suite *renderSuite) testWithHostPath(t *testing.T, c Config) {
 	c.HostPath = &HostPathPersistence{
-		Name:     "stackrox-db",
 		HostPath: "/var/lib/stackrox",
 	}
 	_, err := suite.Render(c)
 	assert.NoError(t, err)
 
 	c.HostPath = &HostPathPersistence{
-		Name:              "stackrox-db",
 		HostPath:          "/var/lib/stackrox",
 		NodeSelectorKey:   "key",
 		NodeSelectorValue: "value",
