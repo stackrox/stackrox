@@ -1,11 +1,11 @@
-package main
+package deploy
 
 import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/cmd/deploy/central"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
 )
 
 func volumeCommand(name string) *cobra.Command {
@@ -23,7 +23,7 @@ Output is a zip file printed to stdout.`, name),
 }
 
 func externalVolume() *cobra.Command {
-	external := new(central.ExternalPersistence)
+	external := new(renderer.ExternalPersistence)
 	c := volumeCommand("pvc")
 	c.RunE = func(c *cobra.Command, args []string) error {
 		cfg.External = external
@@ -49,7 +49,7 @@ func noVolume() *cobra.Command {
 }
 
 func hostPathVolume(cluster v1.ClusterType) *cobra.Command {
-	hostpath := new(central.HostPathPersistence)
+	hostpath := new(renderer.HostPathPersistence)
 	c := volumeCommand("hostpath")
 	c.RunE = func(c *cobra.Command, args []string) error {
 		cfg.HostPath = hostpath

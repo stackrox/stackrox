@@ -1,4 +1,4 @@
-package main
+package check
 
 import (
 	"errors"
@@ -7,73 +7,59 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/cmd/common"
-	"github.com/stackrox/rox/cmd/roxdetect/report"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/images/utils"
-	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/image/check/report"
 	"golang.org/x/net/context"
 )
 
-const (
-	// This is set very high, because typically the scan will need to be triggered as the image will be new
-	// This means we must let the scanners do their thing otherwise we will miss the scans
-	timeout = 10 * time.Minute
-)
+// This is set very high, because typically the scan will need to be triggered as the image will be new
+// This means we must let the scanners do their thing otherwise we will miss the scans
+// TODO(cgorman) We need a flag currently that says --wait-for-image timeout or something like that because Clair does scanning inline
+// but other scanners do not
+const timeout = 10 * time.Minute
 
-func versionCommand() *cobra.Command {
-	c := &cobra.Command{
-		Use:   "version",
-		Short: "Prints out the version of roxdetect.",
-		Long:  "Prints out the version of roxdetect.",
-		Run: func(*cobra.Command, []string) {
-			fmt.Printf("%s\n", version.GetMainVersion())
-		},
-	}
-	return c
-}
-
-// CheckCommand checks the image against image build lifecycle policies
-func CheckCommand() *cobra.Command {
+// Command checks the image against image build lifecycle policies
+func Command() *cobra.Command {
 	var (
-		central string
-		image   string
-		json    bool
+		image string
+		json  bool
 	)
-
 	c := &cobra.Command{
-		Use:   "roxdetect",
+		Use:   "check",
 		Short: "Check images for build time policy violations.",
 		Long:  "Check images for build time policy violations.",
 		RunE: func(*cobra.Command, []string) error {
 			if image == "" {
-				return fmt.Errorf("image name must be set")
+				return fmt.Errorf("--image must be set")
 			}
-			return checkImage(central, image, json)
+			return checkImage(image, json)
 		},
 	}
-	c.AddCommand(versionCommand())
 
-	c.Flags().StringVarP(&central, "central", "c", "localhost:8443", "host and port endpoint where Central is located.")
 	c.Flags().StringVarP(&image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
 	c.Flags().BoolVar(&json, "json", false, "output policy results as json.")
 	return c
 }
 
-func checkImage(central, image string, json bool) error {
+func checkImage(image string, json bool) error {
 	// Get the violated policies for the input data.
-	violatedPolicies, err := getViolatedPolicies(central, image)
+	violatedPolicies, err := getViolatedPolicies(image)
 	if err != nil {
 		return err
 	}
+
 	// If json mode was given, print results (as json) and immediately return.
 	if json {
 		return report.JSON(os.Stdout, violatedPolicies)
 	}
+
 	// Print results in human readable mode.
 	if err = report.Pretty(os.Stdout, violatedPolicies); err != nil {
 		return err
 	}
+
 	// Check if any of the violated policies have an enforcement action that
 	// fails the CI build.
 	for _, policy := range violatedPolicies {
@@ -85,11 +71,12 @@ func checkImage(central, image string, json bool) error {
 }
 
 // Fetch the alerts for the inputs and convert them to a list of Policies that are violated.
-func getViolatedPolicies(central, image string) ([]*v1.Policy, error) {
-	alerts, err := getAlerts(central, image)
+func getViolatedPolicies(image string) ([]*v1.Policy, error) {
+	alerts, err := getAlerts(image)
 	if err != nil {
 		return nil, err
 	}
+
 	var policies []*v1.Policy
 	for _, alert := range alerts {
 		policies = append(policies, alert.GetPolicy())
@@ -98,18 +85,20 @@ func getViolatedPolicies(central, image string) ([]*v1.Policy, error) {
 }
 
 // Get the alerts for the command line inputs.
-func getAlerts(central, imageStr string) ([]*v1.Alert, error) {
+func getAlerts(imageStr string) ([]*v1.Alert, error) {
 	// Attempt to construct the request first since it is the cheapest op.
 	image, err := buildRequest(imageStr)
 	if err != nil {
 		return nil, err
 	}
+
 	// Create the connection to the central detection service.
-	conn, err := common.GetGRPCConnection(central)
+	conn, err := common.GetGRPCConnection()
 	if err != nil {
 		return nil, err
 	}
 	service := v1.NewDetectionServiceClient(conn)
+
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	// Call detection and return the returned alerts.
@@ -127,11 +116,4 @@ func buildRequest(image string) (*v1.Image, error) {
 		return nil, fmt.Errorf("could not parse image '%s': %s", image, err)
 	}
 	return img, nil
-}
-
-func main() {
-	if err := CheckCommand().Execute(); err != nil {
-		fmt.Printf("Error running roxdetect %v\n", err)
-		os.Exit(1)
-	}
 }

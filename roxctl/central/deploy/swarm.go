@@ -1,13 +1,13 @@
-package main
+package deploy
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/cmd/deploy/central"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
 )
 
 func dockerBasedOrchestrator(shortName, longName string, cluster v1.ClusterType) *cobra.Command {
-	swarmConfig := new(central.SwarmConfig)
+	swarmConfig := new(renderer.SwarmConfig)
 
 	c := orchestratorCommand(shortName, longName)
 	c.PersistentPreRun = func(*cobra.Command, []string) {

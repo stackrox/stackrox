@@ -142,6 +142,7 @@ PURE := --features=pure
 RACE := --features=race
 LINUX_AMD64 := --cpu=k8
 VARIABLE_STAMPS := --workspace_status_command=$(BASE_DIR)/status.sh
+PLATFORMS := --platforms=@io_bazel_rules_go//go/toolchain:darwin_amd64
 BAZEL_FLAGS := $(PURE) $(LINUX_AMD64) $(VARIABLE_STAMPS)
 cleanup:
 	@echo "Total BUILD.bazel files deleted: "
@@ -151,8 +152,11 @@ cleanup:
 gazelle: deps $(GENERATED_SRCS) cleanup
 	bazel run //:gazelle
 
+darwin-cli: gazelle
+	bazel build $(BAZEL_FLAGS) $(PLATFORMS) -- //roxctl
+
 .PHONY: build
-build: gazelle
+build: gazelle darwin-cli
 	bazel build $(BAZEL_FLAGS) -- //... -proto/... -qa-tests-backend/... -vendor/...
 
 .PHONY: gendocs
@@ -179,7 +183,7 @@ bazel-test: gazelle
 .PHONY: deploy-test
 deploy-test:
 	@# The deploy tests don't work in Bazel yet.
-	@go test -tags=nobazel ./cmd/deploy/central
+	@go test -tags=nobazel ./roxctl/central/deploy/renderer
 
 .PHONY: benchmarks-test
 benchmarks-test:
@@ -213,12 +217,11 @@ coverage:
 ###########
 ## Image ##
 ###########
-image: gazelle clean-image $(MERGED_API_SWAGGER_SPEC)
+image: gazelle clean-image $(MERGED_API_SWAGGER_SPEC) darwin-cli
 	@echo "+ $@"
 	bazel build $(BAZEL_FLAGS) \
 		//central \
-		//cmd/roxdetect \
-		//cmd/deploy \
+		//roxctl \
 		//benchmarks \
 		//benchmark-bootstrap \
 		//sensor/kubernetes \
@@ -232,7 +235,7 @@ image: gazelle clean-image $(MERGED_API_SWAGGER_SPEC)
 # TODO(cg): Replace with native bazel Docker build.
 	cp -r ui/build image/ui/
 	cp bazel-bin/central/linux_amd64_pure_stripped/central image/bin/central
-	cp bazel-bin/cmd/deploy/linux_amd64_pure_stripped/deploy image/bin/deploy
+	cp bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl image/bin/roxctl
 	cp bazel-bin/benchmarks/linux_amd64_pure_stripped/benchmarks image/bin/benchmarks
 	cp bazel-bin/benchmark-bootstrap/linux_amd64_pure_stripped/benchmark-bootstrap image/bin/benchmark-bootstrap
 	cp bazel-bin/sensor/swarm/linux_amd64_pure_stripped/swarm image/bin/swarm-sensor

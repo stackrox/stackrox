@@ -11,7 +11,7 @@ function launch_central {
         extra_args+=("--monitoring-type=none")
     fi
 
-    docker run  -e ROX_HTPASSWD_AUTH "$main_image" deploy openshift ${extra_args[@]+"${extra_args[@]}"} --monitoring-password stackrox -i "$main_image" none > $openshift_dir/central.zip
+    docker run  -e ROX_HTPASSWD_AUTH "$main_image" central generate openshift ${extra_args[@]+"${extra_args[@]}"} --monitoring-password stackrox -i "$main_image" none > $openshift_dir/central.zip
     local unzip_dir="$openshift_dir/central-deploy/"
     rm -rf "${unzip_dir}"
     unzip "$openshift_dir/central.zip" -d "${unzip_dir}"

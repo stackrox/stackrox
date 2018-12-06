@@ -21,10 +21,7 @@ var (
 		"benchmark-bootstrap",
 		"benchmarks",
 		"central",
-		"cmd/base64",
-		"cmd/deploy",
-		"cmd/roxdetect",
-		"cmd/common",
+		"roxctl",
 		"pkg",
 		"sensor/kubernetes",
 		"sensor/swarm",
@@ -124,7 +121,7 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot string) (errs []
 	}
 
 	// Allow central and cmd/deploy to import "image" (for fixtures)
-	if validImportRoot == "central" || validImportRoot == "cmd/deploy" {
+	if validImportRoot == "central" || validImportRoot == "roxctl" {
 		allowedPackages = append(allowedPackages, "image")
 	}
 

@@ -1,24 +1,24 @@
-package main
+package deploy
 
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/cmd/deploy/central"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
 )
 
 var (
-	cfg central.Config
+	cfg renderer.Config
 )
 
-func validateConfig(c central.Config) error {
+func validateConfig(c renderer.Config) error {
 	if err := validateExternal(c.External, c.ClusterType); err != nil {
 		return err
 	}
 	return validateHostPath(c.HostPath)
 }
 
-func validateHostPath(hostpath *central.HostPathPersistence) error {
+func validateHostPath(hostpath *renderer.HostPathPersistence) error {
 	if hostpath == nil {
 		return nil
 	}
@@ -28,7 +28,7 @@ func validateHostPath(hostpath *central.HostPathPersistence) error {
 	return nil
 }
 
-func validateExternal(ext *central.ExternalPersistence, cluster v1.ClusterType) error {
+func validateExternal(ext *renderer.ExternalPersistence, cluster v1.ClusterType) error {
 	if ext == nil {
 		return nil
 	}

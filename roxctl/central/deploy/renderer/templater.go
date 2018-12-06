@@ -1,5 +1,4 @@
-// Package central generates configurations for the Central service.
-package central
+package renderer
 
 import (
 	"bytes"

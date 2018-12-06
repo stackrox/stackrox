@@ -1,22 +1,22 @@
-package main
+package deploy
 
 import (
 	"strings"
 
-	"github.com/stackrox/rox/cmd/deploy/central"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
 )
 
 var logger = logging.LoggerForModule()
 
 type monitoringWrapper struct {
-	Monitoring *central.MonitoringType
+	Monitoring *renderer.MonitoringType
 }
 
-var monitoringMap = map[string]central.MonitoringType{
-	"on-prem":         central.OnPrem,
-	"none":            central.None,
-	"stackrox-hosted": central.StackRoxHosted,
+var monitoringMap = map[string]renderer.MonitoringType{
+	"on-prem":         renderer.OnPrem,
+	"none":            renderer.None,
+	"stackrox-hosted": renderer.StackRoxHosted,
 }
 
 func (m *monitoringWrapper) String() string {
@@ -26,7 +26,7 @@ func (m *monitoringWrapper) String() string {
 func (m *monitoringWrapper) Set(input string) error {
 	val, ok := monitoringMap[strings.ToLower(input)]
 	if !ok {
-		*m.Monitoring = central.MonitoringType(central.OnPrem)
+		*m.Monitoring = renderer.MonitoringType(renderer.OnPrem)
 	} else {
 		*m.Monitoring = val
 	}

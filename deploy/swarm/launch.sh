@@ -14,7 +14,7 @@ function launch_central {
 
     set -u
 
-    docker run --rm -e ROX_HTPASSWD_AUTH "$main_image" deploy swarm -i "$main_image" -p 8000 none > "$swarm_dir/central.zip"
+    docker run --rm -e ROX_HTPASSWD_AUTH "$main_image" central generate swarm -i "$main_image" -p 8000 none > "$swarm_dir/central.zip"
 
 
     export DOCKER_HOST="$OLD_DOCKER_HOST"

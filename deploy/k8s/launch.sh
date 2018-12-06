@@ -15,7 +15,7 @@ function launch_central {
     fi
     EXTRA_ARGS+=("--lb-type=$LOAD_BALANCER")
 
-    docker run --rm -e ROX_HTPASSWD_AUTH "${main_image}" deploy k8s ${EXTRA_ARGS[@]} --monitoring-password stackrox -i "$main_image" "${storage}" > "${k8s_dir}/central.zip"
+    docker run --rm -e ROX_HTPASSWD_AUTH "${main_image}" central generate k8s ${EXTRA_ARGS[@]} --monitoring-password stackrox -i "$main_image" "${storage}" > "${k8s_dir}/central.zip"
 
     local unzip_dir="${k8s_dir}/central-deploy/"
     rm -rf "${unzip_dir}"

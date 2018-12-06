@@ -74,7 +74,6 @@ func UnauthenticatedGRPCConnection(endpoint string) (conn *grpc.ClientConn, err 
 // via basic auth.
 func GRPCConnectionWithBasicAuth(endpoint string, username, password string) (*grpc.ClientConn, error) {
 	tlsConfig := &tls.Config{
-		// TODO(ROX-61): Issue credentials and remove this.
 		InsecureSkipVerify: true,
 	}
 	creds := credentials.NewTLS(tlsConfig)

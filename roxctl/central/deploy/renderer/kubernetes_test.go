@@ -1,6 +1,6 @@
 // +build nobazel
 
-package central
+package renderer
 
 import (
 	"fmt"

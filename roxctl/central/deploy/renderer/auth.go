@@ -1,4 +1,4 @@
-package central
+package renderer
 
 import (
 	"bytes"

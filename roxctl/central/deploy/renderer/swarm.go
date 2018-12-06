@@ -1,4 +1,4 @@
-package central
+package renderer
 
 import (
 	"github.com/stackrox/rox/generated/api/v1"
