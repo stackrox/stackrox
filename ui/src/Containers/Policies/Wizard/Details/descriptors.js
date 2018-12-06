@@ -178,22 +178,6 @@ const fieldsMap = {
             return `${key}=${value}`;
         }
     },
-    command: {
-        label: 'Command',
-        formatValue: d => d
-    },
-    arguments: {
-        label: 'Arguments',
-        formatValue: d => d
-    },
-    directory: {
-        label: 'Directory',
-        formatValue: d => d
-    },
-    user: {
-        label: 'User',
-        formatValue: d => d
-    },
     volumePolicy: {
         label: 'Volume Policy',
         formatValue: d => {

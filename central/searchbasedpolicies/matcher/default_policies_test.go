@@ -218,18 +218,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	})
 	suite.mustIndexDepAndImages(addDockerFileDep)
 
-	minerdDep := deploymentWithLayers([]*v1.ImageLayer{
-		{
-			Instruction: "RUN",
-			Value:       "deploy.sh",
-		},
-		{
-			Instruction: "ENTRYPOINT",
-			Value:       "minerd",
-		},
-	})
-	suite.mustIndexDepAndImages(minerdDep)
-
 	imagePort22Dep := deploymentWithLayers([]*v1.ImageLayer{
 		{
 			Instruction: "EXPOSE",
@@ -651,16 +639,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			sampleViolationForMatched: "Image has not been scanned",
 		},
 		{
-			policyName: "Cryptocurrency Mining Process as Entrypoint",
-			expectedViolations: map[string][]*v1.Alert_Violation{
-				minerdDep.GetId(): {
-					{
-						Message: "Dockerfile Line 'ENTRYPOINT minerd' matches the rule ENTRYPOINT .*minerd.*",
-					},
-				},
-			},
-		},
-		{
 			policyName:                "Required Label: Email",
 			shouldNotMatch:            map[string]struct{}{fixtureDep.GetId(): {}},
 			sampleViolationForMatched: "Required label not found (key = 'email', value = '[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+')",
@@ -1015,16 +993,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				suite.imageIDFromDep(oldScannedDep):              {},
 			},
 			sampleViolationForMatched: "Image has not been scanned",
-		},
-		{
-			policyName: "Cryptocurrency Mining Process as Entrypoint",
-			expectedViolations: map[string][]*v1.Alert_Violation{
-				suite.imageIDFromDep(minerdDep): {
-					{
-						Message: "Dockerfile Line 'ENTRYPOINT minerd' matches the rule ENTRYPOINT .*minerd.*",
-					},
-				},
-			},
 		},
 		{
 			policyName: "Shellshock: CVE-2014-6271",

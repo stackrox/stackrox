@@ -14,11 +14,6 @@ var OptionsMap = mergeMaps(map[search.FieldLabel]*v1.SearchField{
 	search.Namespace: search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.namespace"),
 	search.Label:     search.NewMapField(v1.SearchCategory_DEPLOYMENTS, "deployment.labels"),
 
-	search.Command:     search.NewStoredStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.config.command"),
-	search.CommandArgs: search.NewStoredStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.config.args"),
-	search.Directory:   search.NewStoredStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.config.directory"),
-	search.User:        search.NewStoredStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.config.user"),
-
 	search.Annotation:       search.NewMapField(v1.SearchCategory_DEPLOYMENTS, "deployment.annotations"),
 	search.CPUCoresLimit:    search.NewStoredNumericField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.resources.cpu_cores_limit"),
 	search.CPUCoresRequest:  search.NewStoredNumericField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.resources.cpu_cores_request"),

@@ -390,34 +390,6 @@ const policyConfigurationDescriptor = [
         default: false
     },
     {
-        label: 'Command',
-        jsonpath: 'fields.command',
-        type: 'text',
-        required: false,
-        default: false
-    },
-    {
-        label: 'Arguments',
-        jsonpath: 'fields.args',
-        type: 'text',
-        required: false,
-        default: false
-    },
-    {
-        label: 'Directory',
-        jsonpath: 'fields.directory',
-        type: 'text',
-        required: false,
-        default: false
-    },
-    {
-        label: 'User',
-        jsonpath: 'fields.user',
-        type: 'text',
-        required: false,
-        default: false
-    },
-    {
         label: 'Volume Name',
         jsonpath: 'fields.volumePolicy.name',
         type: 'text',
