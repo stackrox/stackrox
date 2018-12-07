@@ -213,7 +213,7 @@ git fetch --tags
 git checkout -b release/${RELEASE_VERSION} ${RELEASE_TO_PATCH}
 ```
 
-Then use `get cherry-pick -x ${commit_sha}` to cherry pick commits from `master`
+Then use `git cherry-pick -x ${commit_sha}` to cherry pick commits from `master`
 that are going into this patch release. If release requires special changes
 (besides cherry picking from `master`), push the release branch and create
 (and merge after code review) PR(s) targeting it.
