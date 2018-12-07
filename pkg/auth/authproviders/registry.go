@@ -46,9 +46,6 @@ func NewStoreBackedRegistry(urlPathPrefix string, redirectURL string, store Stor
 		roleMapperFactory: roleMapperFactory,
 	}
 
-	if err := registry.init(); err != nil {
-		return nil, err
-	}
 	return registry, nil
 }
 
@@ -114,7 +111,7 @@ func (r *storeBackedRegistry) validateNameNoLock(name string) error {
 	return nil
 }
 
-func (r *storeBackedRegistry) init() error {
+func (r *storeBackedRegistry) Init() error {
 	providerDefs, err := r.store.GetAllAuthProviders()
 	if err != nil {
 		return err

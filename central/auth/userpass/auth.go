@@ -27,9 +27,20 @@ func RegisterAuthProviderOrPanic(registry authproviders.Registry) {
 		log.Warnf("Could not register basic auth provider factory: %v", err)
 	}
 
+	// Delete all existing basic auth providers (alternatively, we could not try to register one if there is
+	// already an existing one, but that would get us into trouble when we change anything about the logic/config).
+	typ := basicAuthProvider.TypeName
+	existingBasicAuthProviders := registry.GetAuthProviders(context.Background(), nil, &typ)
+	for _, provider := range existingBasicAuthProviders {
+		if err := registry.DeleteAuthProvider(context.Background(), provider.ID()); err != nil {
+			log.Panicf("Could not delete existing basic auth provider %s: %v", provider.Name(), err)
+		}
+	}
+
 	config := map[string]string{
 		"htpasswd_file": htpasswdFile,
 	}
+
 	_, err = registry.CreateAuthProvider(context.Background(), basicAuthProvider.TypeName, "Login with username/password", nil, true, true, config)
 	if err != nil {
 		log.Panicf("Could not set up basic auth provider: %v", err)

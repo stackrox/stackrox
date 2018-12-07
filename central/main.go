@@ -141,6 +141,10 @@ func (c *central) startGRPCServer() {
 		}
 	}
 
+	if err := registry.Init(); err != nil {
+		log.Panicf("Could not initialize auth provider registry: %v", err)
+	}
+
 	idExtractors := []authn.IdentityExtractor{
 		service.NewExtractor(), // internal services
 		tokenbased.NewExtractor(roleStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens

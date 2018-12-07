@@ -35,6 +35,10 @@ type AuthProvider interface {
 type Registry interface {
 	http.Handler
 
+	// Init initializes the registry, including reading existing auth providers from the DB, if applicable.
+	// This allows registering auth providers before reading the registry.
+	Init() error
+
 	// URLPathPrefix returns the path prefix (including a trailing slash) for URLs handled by this registry.
 	URLPathPrefix() string
 
