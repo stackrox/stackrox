@@ -59,7 +59,7 @@ func TestConvert(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					UID:       types.UID("FooID"),
-					Name:      "Foo",
+					Name:      "deployment",
 					Namespace: "namespace",
 					Labels: map[string]string{
 						"key":      "value",
@@ -199,8 +199,13 @@ func TestConvert(t *testing.T) {
 					{
 						ObjectMeta: metav1.ObjectMeta{
 							UID:       types.UID("ebf487f0-a7c3-11e8-8600-42010a8a0066"),
-							Name:      "mypod",
+							Name:      "deployment-blah-blah",
 							Namespace: "myns",
+							OwnerReferences: []metav1.OwnerReference{
+								{
+									Kind: kubernetes.Deployment,
+								},
+							},
 						},
 						Status: v1.PodStatus{
 							ContainerStatuses: []v1.ContainerStatus{
@@ -222,7 +227,7 @@ func TestConvert(t *testing.T) {
 			},
 			expectedDeployment: &pkgV1.Deployment{
 				Id:               "FooID",
-				Name:             "Foo",
+				Name:             "deployment",
 				Namespace:        "namespace",
 				Type:             kubernetes.Deployment,
 				Version:          "100",
@@ -301,7 +306,7 @@ func TestConvert(t *testing.T) {
 								InstanceId: &pkgV1.ContainerInstanceID{
 									Node: "mynode",
 								},
-								ContainingPodId: "mypod.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
+								ContainingPodId: "deployment-blah-blah.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
 							},
 						},
 					},
@@ -352,7 +357,7 @@ func TestConvert(t *testing.T) {
 									Id:               "35669191c32a9cfb532e5d79b09f2b0926c0faf27e7543f1fbe433bd94ae78d7",
 									Node:             "mynode",
 								},
-								ContainingPodId: "mypod.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
+								ContainingPodId: "deployment-blah-blah.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
 							},
 						},
 					},
@@ -471,6 +476,83 @@ func TestGetVolumeSourceMap(t *testing.T) {
 	}
 	w := &deploymentWrap{}
 	assert.Equal(t, expectedMap, w.getVolumeSourceMap(spec))
+}
+
+func getPod(name string, owner string) *v1.Pod {
+	return &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					Kind: owner,
+				},
+			},
+		},
+	}
+}
+
+func TestFilterOnName(t *testing.T) {
+	var cases = []struct {
+		name     string
+		pods     []*v1.Pod
+		expected []*v1.Pod
+	}{
+		{
+			name: "nginx",
+			pods: []*v1.Pod{
+				getPod("nginx-deployment-86d59dd769-7gmsk", kubernetes.Deployment),
+				getPod("nginx-86d59dd769-abcde", kubernetes.Deployment),
+				getPod("nginx-86d59dd769-fghijk", kubernetes.Deployment),
+				getPod("nginxdeployment-86d59dd769-7gmsk", kubernetes.Deployment),
+			},
+			expected: []*v1.Pod{
+				getPod("nginx-86d59dd769-abcde", kubernetes.Deployment),
+				getPod("nginx-86d59dd769-fghijk", kubernetes.Deployment),
+			},
+		},
+		{
+			name: "nginx-deployment",
+			pods: []*v1.Pod{
+				getPod("nginx-deployment-7gmsk", kubernetes.Deployment),
+				getPod("nginx-86d59dd769-abcde", kubernetes.Deployment),
+				getPod("nginx-86d59dd769-fghijk", kubernetes.Deployment),
+				getPod("nginx-deployment-86d59dd769-7gmsk", kubernetes.Deployment),
+			},
+			expected: []*v1.Pod{
+				getPod("nginx-deployment-86d59dd769-7gmsk", kubernetes.Deployment),
+			},
+		},
+		{
+			name: "collector",
+			pods: []*v1.Pod{
+				getPod("collector-ds-7gmsk", kubernetes.DaemonSet),
+				getPod("collector-7gmsk", kubernetes.DaemonSet),
+
+				getPod("nginxdeployment-86d59dd769-7gmsk", kubernetes.DaemonSet),
+			},
+			expected: []*v1.Pod{
+				getPod("collector-7gmsk", kubernetes.DaemonSet),
+			},
+		},
+		{
+			name: "collector-ds",
+			pods: []*v1.Pod{
+				getPod("collector-ds-7gmsk", kubernetes.DaemonSet),
+				getPod("collector-7gmsk", kubernetes.DaemonSet),
+
+				getPod("nginxdeployment-86d59dd769-7gmsk", kubernetes.DaemonSet),
+			},
+			expected: []*v1.Pod{
+				getPod("collector-ds-7gmsk", kubernetes.DaemonSet),
+			},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.expected, filterOnName(c.name, c.pods))
+		})
+	}
 }
 
 type mockPodLister struct {

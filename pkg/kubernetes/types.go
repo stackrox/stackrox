@@ -13,6 +13,8 @@ const (
 	ReplicationController = `ReplicationController`
 	ReplicaSet            = `ReplicaSet`
 	StatefulSet           = `StatefulSet`
+	CronJob               = `CronJob`
+	Job                   = `Job`
 
 	Service = `Service`
 

@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"sort"
 	"strconv"
+	"strings"
 
 	ptypes "github.com/gogo/protobuf/types"
 	openshift_appsv1 "github.com/openshift/api/apps/v1"
@@ -202,7 +203,7 @@ func (w *deploymentWrap) populateFields(obj interface{}, action pkgV1.ResourceAc
 		if pod, ok := obj.(*v1.Pod); ok && w.Id != kubeProxyDeploymentID {
 			w.populateDataFromPods(pod)
 		} else {
-			if err := w.populatePodData(labelSelector, lister); err != nil {
+			if err := w.populatePodData(w.Name, labelSelector, lister); err != nil {
 				logger.Errorf("Could not populate pod data: %v", err)
 			}
 		}
@@ -263,13 +264,52 @@ func (w *deploymentWrap) populateReplicas(spec reflect.Value) {
 	}
 }
 
-func (w *deploymentWrap) populatePodData(labelSelector labels.Selector, lister v1listers.PodLister) error {
+func matchesOwnerName(name string, p *v1.Pod) bool {
+	// Edge case that ideally shouldn't happen
+	if len(p.GetOwnerReferences()) == 0 {
+		logger.Warnf("Trying to match pod %q with owner, but has no owner references", p.GetName())
+		return false
+	}
+	kind := p.GetOwnerReferences()[0].Kind
+	var numExpectedDashes int
+	switch kind {
+	case kubernetes.ReplicaSet, kubernetes.CronJob, kubernetes.Job, kubernetes.Deployment, kubernetes.DeploymentConfig: // 2 dash in pod
+		// nginx-deployment-86d59dd769-7gmsk we want nginx-deployment
+		numExpectedDashes = 2
+	case kubernetes.DaemonSet, kubernetes.StatefulSet, kubernetes.ReplicationController: // 1 dash in pod
+		// nginx-deployment-7gmsk we want nginx-deployment
+		numExpectedDashes = 1
+	default:
+		logger.Warnf("Currently do not handle owner kind %q. Attributing the pod", kind)
+		// By default if we can't parse, then we'll hit the mis-attribution edge case, but I'd rather do that
+		// then miss the pods altogether
+		return true
+	}
+	if spl := strings.Split(p.GetName(), "-"); len(spl) > numExpectedDashes {
+		return name == strings.Join(spl[:len(spl)-numExpectedDashes], "-")
+	}
+	logger.Warnf("Could not parse pod %q with owner type %q", p.GetName(), kind)
+	return false
+}
+
+// Do cheap filtering on pod name based on name of higher level object (deployment, daemonset, etc)
+func filterOnName(name string, pods []*v1.Pod) []*v1.Pod {
+	filteredPods := pods[:0]
+	for _, p := range pods {
+		if matchesOwnerName(name, p) {
+			filteredPods = append(filteredPods, p)
+		}
+	}
+	return filteredPods
+}
+
+func (w *deploymentWrap) populatePodData(topLevelName string, labelSelector labels.Selector, lister v1listers.PodLister) error {
 	w.podSelector = labelSelector
-	var err error
-	w.pods, err = lister.Pods(w.Namespace).List(w.podSelector)
+	pods, err := lister.Pods(w.Namespace).List(w.podSelector)
 	if err != nil {
 		return err
 	}
+	w.pods = filterOnName(topLevelName, pods)
 	w.populateDataFromPods(w.pods...)
 	return nil
 }
