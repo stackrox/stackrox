@@ -9,11 +9,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"google.golang.org/grpc"
 )
 
 var (
-	username string
 	password string
 	endpoint string
 )
@@ -21,7 +21,6 @@ var (
 // AddAuthFlags adds the endpoint to the base command
 // This package provides the ability to take the global flags
 func AddAuthFlags(c *cobra.Command) {
-	c.PersistentFlags().StringVarP(&username, "username", "u", "admin", "username for basic auth")
 	c.PersistentFlags().StringVarP(&password, "password", "p", "", "password for basic auth")
 	c.PersistentFlags().StringVarP(&endpoint, "endpoint", "e", "localhost:8443", "endpoint for service to contact")
 }
@@ -31,7 +30,7 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 	if token := env.TokenEnv.Setting(); token != "" {
 		return clientconn.GRPCConnectionWithToken(endpoint, token)
 	}
-	return clientconn.GRPCConnectionWithBasicAuth(endpoint, username, password)
+	return clientconn.GRPCConnectionWithBasicAuth(endpoint, basic.DefaultUsername, password)
 }
 
 // GetHTTPClient gets a client with the correct config
@@ -52,6 +51,6 @@ func AddAuthToRequest(req *http.Request) {
 	if token := env.TokenEnv.Setting(); token != "" {
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	} else {
-		req.SetBasicAuth(username, password)
+		req.SetBasicAuth(basic.DefaultUsername, password)
 	}
 }

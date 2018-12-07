@@ -6,10 +6,11 @@ import (
 	"math/big"
 
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
+	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 )
 
 const (
-	adminUsername = "admin"
+	adminUsername = basic.DefaultUsername
 
 	autogenPasswordLength = 25
 
@@ -20,6 +21,7 @@ const (
 func GenerateHtpasswd(c *Config) ([]byte, error) {
 	if c.Password == "" {
 		c.Password = CreatePassword()
+		c.PasswordAuto = true
 	}
 
 	hf := htpasswd.New()

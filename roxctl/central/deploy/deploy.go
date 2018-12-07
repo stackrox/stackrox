@@ -130,7 +130,13 @@ func outputZip(config renderer.Config) error {
 	if config.K8sConfig != nil && config.K8sConfig.MonitoringType.OnPrem() {
 		generateMonitoringFiles(config.SecretsByteMap, cert, key)
 
+		if config.K8sConfig.MonitoringPassword == "" {
+			config.K8sConfig.MonitoringPassword = renderer.CreatePassword()
+			config.K8sConfig.MonitoringPasswordAuto = true
+		}
+
 		config.SecretsByteMap["monitoring-password"] = []byte(config.K8sConfig.MonitoringPassword)
+		wrapper.AddFiles(zip.NewFile("monitoring/password", []byte(config.K8sConfig.MonitoringPassword+"\n"), zip.Sensitive))
 	}
 
 	config.SecretsBase64Map = make(map[string]string)
@@ -155,7 +161,7 @@ func outputZip(config renderer.Config) error {
 
 	fmt.Fprintln(os.Stderr, "Done!")
 	fmt.Fprintln(os.Stderr)
-	cfg.WriteInstructions(os.Stderr)
+	config.WriteInstructions(os.Stderr)
 
 	return nil
 }

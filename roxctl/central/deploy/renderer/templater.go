@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -109,6 +110,7 @@ type K8sConfig struct {
 	MonitoringType             MonitoringType
 	MonitoringLoadBalancerType v1.LoadBalancerType
 	MonitoringPassword         string
+	MonitoringPasswordAuto     bool
 
 	DeploymentFormat v1.DeploymentFormat
 	LoadBalancerType v1.LoadBalancerType
@@ -135,7 +137,9 @@ type Config struct {
 	External *ExternalPersistence
 	HostPath *HostPathPersistence
 	Features []features.FeatureFlag
-	Password string
+
+	Password     string
+	PasswordAuto bool
 
 	SecretsByteMap   map[string][]byte
 	SecretsBase64Map map[string]string
@@ -193,7 +197,11 @@ func wrapFiles(files []*zip.File, c *Config, staticFilenames ...string) ([]*zip.
 		}
 		files = append(files, f)
 	}
-	files = append(files, zip.NewFile("README", []byte(standardizeWhitespace(Deployers[c.ClusterType].Instructions(*c))), 0))
+	readmeText, err := generateReadme(c)
+	if err != nil {
+		return nil, err
+	}
+	files = append(files, zip.NewFile("README", []byte(standardizeWhitespace(readmeText)), 0))
 
 	return files, nil
 }
@@ -226,6 +234,17 @@ func renderFilenames(filenames []string, c *Config, staticFilenames ...string) (
 // to the provided writer.
 func (c Config) WriteInstructions(w io.Writer) {
 	fmt.Fprint(w, standardizeWhitespace(Deployers[c.ClusterType].Instructions(c)))
+
+	if c.PasswordAuto {
+		fmt.Fprintln(w)
+		fmt.Fprintf(w, "Use username '%s' and the following auto-generated password for administrator login (also stored in the 'password' file):\n", basic.DefaultUsername)
+		fmt.Fprintf(w, " %s\n", c.Password)
+	}
+	if c.K8sConfig != nil && c.K8sConfig.MonitoringPasswordAuto {
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "Use the following auto-generated password for accessing monitoring (also stored in the 'monitoring/password' file):")
+		fmt.Fprintf(w, " %s\n", c.K8sConfig.MonitoringPassword)
+	}
 }
 
 func standardizeWhitespace(instructions string) string {
