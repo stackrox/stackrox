@@ -634,7 +634,7 @@ jobs:
       - run:
           name: Generate Installation Bundle
           command: |
-            docker run -i "stackrox/main:$MAIN_IMAGE_TAG" deploy openshift none > /tmp/openshift.zip
+            docker run -i "stackrox/main:$MAIN_IMAGE_TAG" central generate openshift none > /tmp/openshift.zip
             unzip /tmp/openshift.zip -d openshift
 
       - run:
