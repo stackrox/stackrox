@@ -11,6 +11,7 @@ import "api/v1/search_service.proto";
 import "api/v1/indicator.proto";
 import "api/v1/empty.proto";
 import "storage/multiplier.proto";
+import "storage/image.proto";
 
 package v1;
 
@@ -86,7 +87,7 @@ message ContainerInstance {
 message Container {
     string id                           = 1;
     ContainerConfig config              = 2;
-    Image image                         = 3;
+    storage.Image image                         = 3;
     SecurityContext security_context    = 4;
     repeated Volume volumes             = 5;
     repeated PortConfig ports           = 6;

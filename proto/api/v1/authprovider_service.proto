@@ -30,8 +30,12 @@ message PostAuthProviderRequest {
 message UpdateAuthProviderRequest {
     string id = 1;
 
-    oneof name_opt    { string name  = 2; }
-    oneof enabled_opt { bool enabled = 3; }
+    oneof name_opt    {
+        string name  = 2;
+    }
+    oneof enabled_opt {
+        bool enabled = 3;
+    }
 }
 
 message ExchangeTokenRequest {

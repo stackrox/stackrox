@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 )
@@ -37,7 +38,7 @@ type lineMatcherImpl struct {
 	lineRegex   *regexp.Regexp
 }
 
-func (p *lineMatcherImpl) match(image *v1.Image) (violations []*v1.Alert_Violation) {
+func (p *lineMatcherImpl) match(image *storage.Image) (violations []*v1.Alert_Violation) {
 	for _, layer := range image.GetMetadata().GetV1().GetLayers() {
 		if p.instruction == layer.Instruction && p.lineRegex.MatchString(layer.GetValue()) {
 			dockerFileLine := fmt.Sprintf("%v %v", layer.GetInstruction(), layer.GetValue())

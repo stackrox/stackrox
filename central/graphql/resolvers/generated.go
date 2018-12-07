@@ -246,17 +246,17 @@ func (resolver *cSCCResolver) ServiceAccount() string {
 
 type cVSSV2Resolver struct {
 	root *Resolver
-	data *v1.CVSSV2
+	data *storage.CVSSV2
 }
 
-func (resolver *Resolver) wrapCVSSV2(value *v1.CVSSV2, ok bool, err error) (*cVSSV2Resolver, error) {
+func (resolver *Resolver) wrapCVSSV2(value *storage.CVSSV2, ok bool, err error) (*cVSSV2Resolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &cVSSV2Resolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapCVSSV2s(values []*v1.CVSSV2, err error) ([]*cVSSV2Resolver, error) {
+func (resolver *Resolver) wrapCVSSV2s(values []*storage.CVSSV2, err error) ([]*cVSSV2Resolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -302,72 +302,72 @@ func (resolver *cVSSV2Resolver) Vector() string {
 	return value
 }
 
-func toCVSSV2_AccessComplexity(value *string) v1.CVSSV2_AccessComplexity {
+func toCVSSV2_AccessComplexity(value *string) storage.CVSSV2_AccessComplexity {
 	if value != nil {
-		return v1.CVSSV2_AccessComplexity(v1.CVSSV2_AccessComplexity_value[*value])
+		return storage.CVSSV2_AccessComplexity(storage.CVSSV2_AccessComplexity_value[*value])
 	}
-	return v1.CVSSV2_AccessComplexity(0)
+	return storage.CVSSV2_AccessComplexity(0)
 }
 
-func toCVSSV2_AccessComplexities(values *[]string) []v1.CVSSV2_AccessComplexity {
+func toCVSSV2_AccessComplexities(values *[]string) []storage.CVSSV2_AccessComplexity {
 	if values == nil {
 		return nil
 	}
-	output := make([]v1.CVSSV2_AccessComplexity, len(*values))
+	output := make([]storage.CVSSV2_AccessComplexity, len(*values))
 	for i, v := range *values {
 		output[i] = toCVSSV2_AccessComplexity(&v)
 	}
 	return output
 }
 
-func toCVSSV2_AttackVector(value *string) v1.CVSSV2_AttackVector {
+func toCVSSV2_AttackVector(value *string) storage.CVSSV2_AttackVector {
 	if value != nil {
-		return v1.CVSSV2_AttackVector(v1.CVSSV2_AttackVector_value[*value])
+		return storage.CVSSV2_AttackVector(storage.CVSSV2_AttackVector_value[*value])
 	}
-	return v1.CVSSV2_AttackVector(0)
+	return storage.CVSSV2_AttackVector(0)
 }
 
-func toCVSSV2_AttackVectors(values *[]string) []v1.CVSSV2_AttackVector {
+func toCVSSV2_AttackVectors(values *[]string) []storage.CVSSV2_AttackVector {
 	if values == nil {
 		return nil
 	}
-	output := make([]v1.CVSSV2_AttackVector, len(*values))
+	output := make([]storage.CVSSV2_AttackVector, len(*values))
 	for i, v := range *values {
 		output[i] = toCVSSV2_AttackVector(&v)
 	}
 	return output
 }
 
-func toCVSSV2_Authentication(value *string) v1.CVSSV2_Authentication {
+func toCVSSV2_Authentication(value *string) storage.CVSSV2_Authentication {
 	if value != nil {
-		return v1.CVSSV2_Authentication(v1.CVSSV2_Authentication_value[*value])
+		return storage.CVSSV2_Authentication(storage.CVSSV2_Authentication_value[*value])
 	}
-	return v1.CVSSV2_Authentication(0)
+	return storage.CVSSV2_Authentication(0)
 }
 
-func toCVSSV2_Authentications(values *[]string) []v1.CVSSV2_Authentication {
+func toCVSSV2_Authentications(values *[]string) []storage.CVSSV2_Authentication {
 	if values == nil {
 		return nil
 	}
-	output := make([]v1.CVSSV2_Authentication, len(*values))
+	output := make([]storage.CVSSV2_Authentication, len(*values))
 	for i, v := range *values {
 		output[i] = toCVSSV2_Authentication(&v)
 	}
 	return output
 }
 
-func toCVSSV2_Impact(value *string) v1.CVSSV2_Impact {
+func toCVSSV2_Impact(value *string) storage.CVSSV2_Impact {
 	if value != nil {
-		return v1.CVSSV2_Impact(v1.CVSSV2_Impact_value[*value])
+		return storage.CVSSV2_Impact(storage.CVSSV2_Impact_value[*value])
 	}
-	return v1.CVSSV2_Impact(0)
+	return storage.CVSSV2_Impact(0)
 }
 
-func toCVSSV2_Impacts(values *[]string) []v1.CVSSV2_Impact {
+func toCVSSV2_Impacts(values *[]string) []storage.CVSSV2_Impact {
 	if values == nil {
 		return nil
 	}
-	output := make([]v1.CVSSV2_Impact, len(*values))
+	output := make([]storage.CVSSV2_Impact, len(*values))
 	for i, v := range *values {
 		output[i] = toCVSSV2_Impact(&v)
 	}
@@ -1343,18 +1343,18 @@ func (resolver *groupPropertiesResolver) Value() string {
 
 type imageResolver struct {
 	root *Resolver
-	data *v1.Image
-	list *v1.ListImage
+	data *storage.Image
+	list *storage.ListImage
 }
 
-func (resolver *Resolver) wrapImage(value *v1.Image, ok bool, err error) (*imageResolver, error) {
+func (resolver *Resolver) wrapImage(value *storage.Image, ok bool, err error) (*imageResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &imageResolver{resolver, value, nil}, nil
 }
 
-func (resolver *Resolver) wrapImages(values []*v1.Image, err error) ([]*imageResolver, error) {
+func (resolver *Resolver) wrapImages(values []*storage.Image, err error) ([]*imageResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1365,7 +1365,7 @@ func (resolver *Resolver) wrapImages(values []*v1.Image, err error) ([]*imageRes
 	return output, nil
 }
 
-func (resolver *Resolver) wrapListImages(values []*v1.ListImage, err error) ([]*imageResolver, error) {
+func (resolver *Resolver) wrapListImages(values []*storage.ListImage, err error) ([]*imageResolver, error) {
 	if err != nil || values == nil {
 		return nil, err
 	}
@@ -1410,17 +1410,17 @@ func (resolver *imageResolver) Scan() (*imageScanResolver, error) {
 
 type imageLayerResolver struct {
 	root *Resolver
-	data *v1.ImageLayer
+	data *storage.ImageLayer
 }
 
-func (resolver *Resolver) wrapImageLayer(value *v1.ImageLayer, ok bool, err error) (*imageLayerResolver, error) {
+func (resolver *Resolver) wrapImageLayer(value *storage.ImageLayer, ok bool, err error) (*imageLayerResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &imageLayerResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapImageLayers(values []*v1.ImageLayer, err error) ([]*imageLayerResolver, error) {
+func (resolver *Resolver) wrapImageLayers(values []*storage.ImageLayer, err error) ([]*imageLayerResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1463,17 +1463,17 @@ func (resolver *imageLayerResolver) Value() string {
 
 type imageMetadataResolver struct {
 	root *Resolver
-	data *v1.ImageMetadata
+	data *storage.ImageMetadata
 }
 
-func (resolver *Resolver) wrapImageMetadata(value *v1.ImageMetadata, ok bool, err error) (*imageMetadataResolver, error) {
+func (resolver *Resolver) wrapImageMetadata(value *storage.ImageMetadata, ok bool, err error) (*imageMetadataResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &imageMetadataResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapImageMetadatas(values []*v1.ImageMetadata, err error) ([]*imageMetadataResolver, error) {
+func (resolver *Resolver) wrapImageMetadatas(values []*storage.ImageMetadata, err error) ([]*imageMetadataResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1501,17 +1501,17 @@ func (resolver *imageMetadataResolver) V2() (*v2MetadataResolver, error) {
 
 type imageNameResolver struct {
 	root *Resolver
-	data *v1.ImageName
+	data *storage.ImageName
 }
 
-func (resolver *Resolver) wrapImageName(value *v1.ImageName, ok bool, err error) (*imageNameResolver, error) {
+func (resolver *Resolver) wrapImageName(value *storage.ImageName, ok bool, err error) (*imageNameResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &imageNameResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapImageNames(values []*v1.ImageName, err error) ([]*imageNameResolver, error) {
+func (resolver *Resolver) wrapImageNames(values []*storage.ImageName, err error) ([]*imageNameResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1582,17 +1582,17 @@ func (resolver *imageNamePolicyResolver) Tag() string {
 
 type imageScanResolver struct {
 	root *Resolver
-	data *v1.ImageScan
+	data *storage.ImageScan
 }
 
-func (resolver *Resolver) wrapImageScan(value *v1.ImageScan, ok bool, err error) (*imageScanResolver, error) {
+func (resolver *Resolver) wrapImageScan(value *storage.ImageScan, ok bool, err error) (*imageScanResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &imageScanResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapImageScans(values []*v1.ImageScan, err error) ([]*imageScanResolver, error) {
+func (resolver *Resolver) wrapImageScans(values []*storage.ImageScan, err error) ([]*imageScanResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1615,17 +1615,17 @@ func (resolver *imageScanResolver) ScanTime() (graphql.Time, error) {
 
 type imageScanComponentResolver struct {
 	root *Resolver
-	data *v1.ImageScanComponent
+	data *storage.ImageScanComponent
 }
 
-func (resolver *Resolver) wrapImageScanComponent(value *v1.ImageScanComponent, ok bool, err error) (*imageScanComponentResolver, error) {
+func (resolver *Resolver) wrapImageScanComponent(value *storage.ImageScanComponent, ok bool, err error) (*imageScanComponentResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &imageScanComponentResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapImageScanComponents(values []*v1.ImageScanComponent, err error) ([]*imageScanComponentResolver, error) {
+func (resolver *Resolver) wrapImageScanComponents(values []*storage.ImageScanComponent, err error) ([]*imageScanComponentResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1780,17 +1780,17 @@ func toL4Protocols(values *[]string) []v1.L4Protocol {
 
 type licenseResolver struct {
 	root *Resolver
-	data *v1.License
+	data *storage.License
 }
 
-func (resolver *Resolver) wrapLicense(value *v1.License, ok bool, err error) (*licenseResolver, error) {
+func (resolver *Resolver) wrapLicense(value *storage.License, ok bool, err error) (*licenseResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &licenseResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapLicenses(values []*v1.License, err error) ([]*licenseResolver, error) {
+func (resolver *Resolver) wrapLicenses(values []*storage.License, err error) ([]*licenseResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3643,17 +3643,17 @@ func (resolver *tokenMetadataResolver) Role() string {
 
 type v1MetadataResolver struct {
 	root *Resolver
-	data *v1.V1Metadata
+	data *storage.V1Metadata
 }
 
-func (resolver *Resolver) wrapV1Metadata(value *v1.V1Metadata, ok bool, err error) (*v1MetadataResolver, error) {
+func (resolver *Resolver) wrapV1Metadata(value *storage.V1Metadata, ok bool, err error) (*v1MetadataResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &v1MetadataResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapV1Metadatas(values []*v1.V1Metadata, err error) ([]*v1MetadataResolver, error) {
+func (resolver *Resolver) wrapV1Metadatas(values []*storage.V1Metadata, err error) ([]*v1MetadataResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3686,17 +3686,17 @@ func (resolver *v1MetadataResolver) Layers() ([]*imageLayerResolver, error) {
 
 type v2MetadataResolver struct {
 	root *Resolver
-	data *v1.V2Metadata
+	data *storage.V2Metadata
 }
 
-func (resolver *Resolver) wrapV2Metadata(value *v1.V2Metadata, ok bool, err error) (*v2MetadataResolver, error) {
+func (resolver *Resolver) wrapV2Metadata(value *storage.V2Metadata, ok bool, err error) (*v2MetadataResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &v2MetadataResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapV2Metadatas(values []*v1.V2Metadata, err error) ([]*v2MetadataResolver, error) {
+func (resolver *Resolver) wrapV2Metadatas(values []*storage.V2Metadata, err error) ([]*v2MetadataResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3823,17 +3823,17 @@ func (resolver *volumePolicyResolver) Type() string {
 
 type vulnerabilityResolver struct {
 	root *Resolver
-	data *v1.Vulnerability
+	data *storage.Vulnerability
 }
 
-func (resolver *Resolver) wrapVulnerability(value *v1.Vulnerability, ok bool, err error) (*vulnerabilityResolver, error) {
+func (resolver *Resolver) wrapVulnerability(value *storage.Vulnerability, ok bool, err error) (*vulnerabilityResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &vulnerabilityResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapVulnerabilities(values []*v1.Vulnerability, err error) ([]*vulnerabilityResolver, error) {
+func (resolver *Resolver) wrapVulnerabilities(values []*storage.Vulnerability, err error) ([]*vulnerabilityResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}

@@ -11,6 +11,7 @@ import (
 
 	clairV1 "github.com/coreos/clair/api/v1"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -128,7 +129,7 @@ func (c *clair) retrieveLayerData(layer string) (*clairV1.LayerEnvelope, error) 
 }
 
 // GetLastScan retrieves the most recent scan
-func (c *clair) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
+func (c *clair) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
 	if image == nil || image.GetName().GetRemote() == "" || image.GetName().GetTag() == "" {
 		return nil, nil
 	}
@@ -144,7 +145,7 @@ func (c *clair) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 }
 
 // Match decides if the image is contained within this scanner
-func (c *clair) Match(image *v1.Image) bool {
+func (c *clair) Match(image *storage.Image) bool {
 	return true
 }
 

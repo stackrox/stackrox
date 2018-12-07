@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Config is the config of the registry, which can be utilized by 3rd party scanners
@@ -15,8 +15,8 @@ type Config struct {
 
 // ImageRegistry is the interface that all image registries must implement
 type ImageRegistry interface {
-	Match(image *v1.Image) bool
-	Metadata(image *v1.Image) (*v1.ImageMetadata, error)
+	Match(image *storage.Image) bool
+	Metadata(image *storage.Image) (*storage.ImageMetadata, error)
 	Test() error
 	Global() bool
 	Config() *Config

@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/image/index"
 	"github.com/stackrox/rox/central/image/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -15,8 +16,8 @@ var (
 //go:generate mockgen-wrapper Searcher
 type Searcher interface {
 	SearchImages(q *v1.Query) ([]*v1.SearchResult, error)
-	SearchRawImages(q *v1.Query) ([]*v1.Image, error)
-	SearchListImages(q *v1.Query) ([]*v1.ListImage, error)
+	SearchRawImages(q *v1.Query) ([]*storage.Image, error)
+	SearchListImages(q *v1.Query) ([]*storage.ListImage, error)
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.

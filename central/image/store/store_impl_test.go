@@ -6,7 +6,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	timestamp "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -40,16 +40,16 @@ func (suite *ImageStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *ImageStoreTestSuite) TestImages() {
-	images := []*v1.Image{
+	images := []*storage.Image{
 		{
 			Id: "sha1",
-			Name: &v1.ImageName{
+			Name: &storage.ImageName{
 				FullName: "name1",
 			},
 		},
 		{
 			Id: "sha2",
-			Name: &v1.ImageName{
+			Name: &storage.ImageName{
 				FullName: "name2",
 			},
 		},
@@ -102,44 +102,44 @@ func (suite *ImageStoreTestSuite) TestImages() {
 func (suite *ImageStoreTestSuite) TestConvertImagesToListImages() {
 	ts := timestamp.TimestampNow()
 	var cases = []struct {
-		input    *v1.Image
-		expected *v1.ListImage
+		input    *storage.Image
+		expected *storage.ListImage
 	}{
 		{
-			input: &v1.Image{
+			input: &storage.Image{
 				Id: "sha",
-				Name: &v1.ImageName{
+				Name: &storage.ImageName{
 					FullName: "name",
 				},
 			},
-			expected: &v1.ListImage{
+			expected: &storage.ListImage{
 				Id:   "sha",
 				Name: "name",
 			},
 		},
 		{
-			input: &v1.Image{
+			input: &storage.Image{
 				Id: "sha",
-				Name: &v1.ImageName{
+				Name: &storage.ImageName{
 					FullName: "name",
 				},
-				Metadata: &v1.ImageMetadata{
-					V1: &v1.V1Metadata{
+				Metadata: &storage.ImageMetadata{
+					V1: &storage.V1Metadata{
 						Created: ts,
 					},
 				},
-				Scan: &v1.ImageScan{
-					Components: []*v1.ImageScanComponent{
+				Scan: &storage.ImageScan{
+					Components: []*storage.ImageScanComponent{
 						{
-							Vulns: []*v1.Vulnerability{
+							Vulns: []*storage.Vulnerability{
 								{},
 							},
 						},
 						{
-							Vulns: []*v1.Vulnerability{
+							Vulns: []*storage.Vulnerability{
 								{},
 								{
-									SetFixedBy: &v1.Vulnerability_FixedBy{
+									SetFixedBy: &storage.Vulnerability_FixedBy{
 										FixedBy: "hi",
 									},
 								},
@@ -148,17 +148,17 @@ func (suite *ImageStoreTestSuite) TestConvertImagesToListImages() {
 					},
 				},
 			},
-			expected: &v1.ListImage{
+			expected: &storage.ListImage{
 				Id:      "sha",
 				Name:    "name",
 				Created: ts,
-				SetComponents: &v1.ListImage_Components{
+				SetComponents: &storage.ListImage_Components{
 					Components: 2,
 				},
-				SetCves: &v1.ListImage_Cves{
+				SetCves: &storage.ListImage_Cves{
 					Cves: 3,
 				},
-				SetFixable: &v1.ListImage_FixableCves{
+				SetFixable: &storage.ListImage_FixableCves{
 					FixableCves: 1,
 				},
 			},

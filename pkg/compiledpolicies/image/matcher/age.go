@@ -6,6 +6,7 @@ import (
 
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func init() {
@@ -27,7 +28,7 @@ type ageMatcherImpl struct {
 	imageAgeDays *int64
 }
 
-func (p *ageMatcherImpl) match(image *v1.Image) []*v1.Alert_Violation {
+func (p *ageMatcherImpl) match(image *storage.Image) []*v1.Alert_Violation {
 	var violations []*v1.Alert_Violation
 	deadline := time.Now().AddDate(0, 0, -int(*p.imageAgeDays))
 	created := image.GetMetadata().GetV1().GetCreated()

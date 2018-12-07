@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,8 +28,8 @@ func TestTenable(t *testing.T) {
 	reg, err := newRegistry(protoImageIntegration)
 	require.NoError(t, err)
 
-	i := &v1.Image{
-		Name: &v1.ImageName{
+	i := &storage.Image{
+		Name: &storage.ImageName{
 			Remote: "srox/nginx",
 			Tag:    "1.10",
 		},

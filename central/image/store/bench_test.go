@@ -6,7 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -50,16 +50,16 @@ func BenchmarkListImage(b *testing.B) {
 
 // This really isn't a benchmark, but just prints out how many ListImages can be returned in an API call
 func BenchmarkMaxListImage(b *testing.B) {
-	listImage := &v1.ListImage{
+	listImage := &storage.ListImage{
 		Id:   uuid.NewDummy().String(),
 		Name: "quizzical_cat",
-		SetComponents: &v1.ListImage_Components{
+		SetComponents: &storage.ListImage_Components{
 			Components: 10,
 		},
-		SetCves: &v1.ListImage_Cves{
+		SetCves: &storage.ListImage_Cves{
 			Cves: 10,
 		},
-		SetFixable: &v1.ListImage_FixableCves{
+		SetFixable: &storage.ListImage_FixableCves{
 			FixableCves: 10,
 		},
 		Created: types.TimestampNow(),

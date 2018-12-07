@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	clairV1 "github.com/coreos/clair/api/v1"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,22 +26,22 @@ func TestPopulateLayersWithScan(t *testing.T) {
 
 	var cases = []struct {
 		name           string
-		metadata       *v1.ImageMetadata
+		metadata       *storage.ImageMetadata
 		envelope       *clairV1.LayerEnvelope
-		expectedLayers []*v1.ImageLayer
+		expectedLayers []*storage.ImageLayer
 	}{
 		{
 			name: "Nil metadata",
 		},
 		{
 			name:     "Empty metadata",
-			metadata: &v1.ImageMetadata{},
+			metadata: &storage.ImageMetadata{},
 		},
 		{
 			name: "v1 metadata with equal vulns and layers - no empty",
-			metadata: &v1.ImageMetadata{
-				V1: &v1.V1Metadata{
-					Layers: []*v1.ImageLayer{{}, {}},
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{{}, {}},
 				},
 				LayerShas: []string{"A", "B"},
 			},
@@ -59,20 +59,20 @@ func TestPopulateLayersWithScan(t *testing.T) {
 					},
 				},
 			},
-			expectedLayers: []*v1.ImageLayer{
+			expectedLayers: []*storage.ImageLayer{
 				{
-					Components: []*v1.ImageScanComponent{{Name: "a-name"}},
+					Components: []*storage.ImageScanComponent{{Name: "a-name"}},
 				},
 				{
-					Components: []*v1.ImageScanComponent{{Name: "b-name"}},
+					Components: []*storage.ImageScanComponent{{Name: "b-name"}},
 				},
 			},
 		},
 		{
 			name: "v1 metadata with fewer vulns than layers - no empty",
-			metadata: &v1.ImageMetadata{
-				V1: &v1.V1Metadata{
-					Layers: []*v1.ImageLayer{{}, {}},
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{{}, {}},
 				},
 				LayerShas: []string{"A", "B"},
 			},
@@ -86,22 +86,22 @@ func TestPopulateLayersWithScan(t *testing.T) {
 					},
 				},
 			},
-			expectedLayers: []*v1.ImageLayer{
+			expectedLayers: []*storage.ImageLayer{
 				{
 					Components: nil,
 				},
 				{
-					Components: []*v1.ImageScanComponent{{Name: "b-name"}},
+					Components: []*storage.ImageScanComponent{{Name: "b-name"}},
 				},
 			},
 		},
 		{
 			name: "v2 metadata with fewer vulns than layers - no empty",
-			metadata: &v1.ImageMetadata{
-				V1: &v1.V1Metadata{
-					Layers: []*v1.ImageLayer{{}, {}},
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{{}, {}},
 				},
-				V2:        &v1.V2Metadata{},
+				V2:        &storage.V2Metadata{},
 				LayerShas: []string{"A", "B"},
 			},
 			envelope: &clairV1.LayerEnvelope{
@@ -114,22 +114,22 @@ func TestPopulateLayersWithScan(t *testing.T) {
 					},
 				},
 			},
-			expectedLayers: []*v1.ImageLayer{
+			expectedLayers: []*storage.ImageLayer{
 				{
 					Components: nil,
 				},
 				{
-					Components: []*v1.ImageScanComponent{{Name: "b-name"}},
+					Components: []*storage.ImageScanComponent{{Name: "b-name"}},
 				},
 			},
 		},
 		{
 			name: "v2 metadata with empty layers",
-			metadata: &v1.ImageMetadata{
-				V1: &v1.V1Metadata{
-					Layers: []*v1.ImageLayer{{Empty: true}, {}, {}},
+			metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Layers: []*storage.ImageLayer{{Empty: true}, {}, {}},
 				},
-				V2:        &v1.V2Metadata{},
+				V2:        &storage.V2Metadata{},
 				LayerShas: []string{"A", "B"},
 			},
 			envelope: &clairV1.LayerEnvelope{
@@ -142,11 +142,11 @@ func TestPopulateLayersWithScan(t *testing.T) {
 					},
 				},
 			},
-			expectedLayers: []*v1.ImageLayer{
+			expectedLayers: []*storage.ImageLayer{
 				{},
 				{},
 				{
-					Components: []*v1.ImageScanComponent{{Name: "b-name"}},
+					Components: []*storage.ImageScanComponent{{Name: "b-name"}},
 				},
 			},
 		},
@@ -154,7 +154,7 @@ func TestPopulateLayersWithScan(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			img := &v1.Image{Metadata: c.metadata}
+			img := &storage.Image{Metadata: c.metadata}
 			PopulateLayersWithScan(img, c.envelope)
 
 			require.Len(t, img.Metadata.GetV1().GetLayers(), len(c.expectedLayers))

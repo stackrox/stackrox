@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
 
@@ -30,7 +31,7 @@ type registryMatcherImpl struct {
 	registryRegex *regexp.Regexp
 }
 
-func (p *registryMatcherImpl) match(name *v1.ImageName) []*v1.Alert_Violation {
+func (p *registryMatcherImpl) match(name *storage.ImageName) []*v1.Alert_Violation {
 	var violations []*v1.Alert_Violation
 	if name.GetRegistry() != "" && p.registryRegex.MatchString(name.GetRegistry()) {
 		v := &v1.Alert_Violation{

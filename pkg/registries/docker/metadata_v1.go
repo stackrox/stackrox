@@ -10,7 +10,7 @@ import (
 	"github.com/docker/docker/image"
 	"github.com/gogo/protobuf/types"
 	"github.com/opencontainers/go-digest"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	instructionTypes "github.com/stackrox/rox/pkg/registries/types"
 )
@@ -38,7 +38,7 @@ func lineToInstructionAndValue(line string) (instruction string, value string) {
 	return
 }
 
-func convertImageToDockerFileLine(img *image.V1Image) *v1.ImageLayer {
+func convertImageToDockerFileLine(img *image.V1Image) *storage.ImageLayer {
 	line := strings.Join(img.ContainerConfig.Cmd, " ")
 	line = strings.Join(strings.Fields(line), " ")
 	instruction, value := lineToInstructionAndValue(line)
@@ -46,7 +46,7 @@ func convertImageToDockerFileLine(img *image.V1Image) *v1.ImageLayer {
 	if err != nil {
 		log.Error(err)
 	}
-	return &v1.ImageLayer{
+	return &storage.ImageLayer{
 		Instruction: instruction,
 		Value:       value,
 		Created:     protoTS,
@@ -54,10 +54,10 @@ func convertImageToDockerFileLine(img *image.V1Image) *v1.ImageLayer {
 	}
 }
 
-func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, ref string) (*v1.ImageMetadata, error) {
+func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, ref string) (*storage.ImageMetadata, error) {
 	// Get the latest layer and author
-	var latest v1.ImageLayer
-	var layers []*v1.ImageLayer
+	var latest storage.ImageLayer
+	var layers []*storage.ImageLayer
 	for i := len(manifest.History) - 1; i > -1; i-- {
 		historyLayer := manifest.History[i]
 		var v1Image image.V1Image
@@ -76,8 +76,8 @@ func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, 
 		fsLayers = append(fsLayers, manifest.FSLayers[i].BlobSum.String())
 	}
 
-	return &v1.ImageMetadata{
-		V1: &v1.V1Metadata{
+	return &storage.ImageMetadata{
+		V1: &storage.V1Metadata{
 			Digest:  ref,
 			Created: latest.Created,
 			Author:  latest.Author,
@@ -87,7 +87,7 @@ func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, 
 	}, nil
 }
 
-func (r *Registry) handleV1SignedManifest(remote, ref string) (*v1.ImageMetadata, error) {
+func (r *Registry) handleV1SignedManifest(remote, ref string) (*storage.ImageMetadata, error) {
 	manifest, err := r.client.SignedManifest(remote, ref)
 	if err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ func (r *Registry) handleV1SignedManifest(remote, ref string) (*v1.ImageMetadata
 	return r.populateV1DataFromManifest(manifest, ref)
 }
 
-func (r *Registry) handleV1Manifest(remote, ref string) (*v1.ImageMetadata, error) {
+func (r *Registry) handleV1Manifest(remote, ref string) (*storage.ImageMetadata, error) {
 	manifest, err := r.client.Manifest(remote, ref)
 	if err != nil {
 		return nil, err
@@ -103,7 +103,7 @@ func (r *Registry) handleV1Manifest(remote, ref string) (*v1.ImageMetadata, erro
 	return r.populateV1DataFromManifest(manifest, ref)
 }
 
-func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*v1.V1Metadata, error) {
+func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*storage.V1Metadata, error) {
 	v1r, err := r.client.DownloadLayer(remote, ref)
 	if err != nil {
 		return nil, err
@@ -117,11 +117,11 @@ func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*v1.
 		return nil, err
 	}
 
-	var layers []*v1.ImageLayer
+	var layers []*storage.ImageLayer
 	for _, h := range img.History {
 		// See github.com/moby/moby/image/image.go
 		instruction, value := lineToInstructionAndValue(h.CreatedBy)
-		layers = append(layers, &v1.ImageLayer{
+		layers = append(layers, &storage.ImageLayer{
 			Created:     protoconv.ConvertTimeToTimestamp(h.Created),
 			Author:      h.Author,
 			Instruction: instruction,
@@ -129,7 +129,7 @@ func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*v1.
 			Empty:       h.EmptyLayer,
 		})
 	}
-	var metadata = &v1.V1Metadata{}
+	var metadata = &storage.V1Metadata{}
 	if len(layers) != 0 {
 		lastLayer := layers[len(layers)-1]
 		metadata.Author = lastLayer.Author

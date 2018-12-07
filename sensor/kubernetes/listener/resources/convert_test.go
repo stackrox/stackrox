@@ -7,6 +7,7 @@ import (
 
 	timestamp "github.com/gogo/protobuf/types"
 	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/sensor/kubernetes/volumes"
 	"github.com/stretchr/testify/assert"
@@ -257,8 +258,8 @@ func TestConvert(t *testing.T) {
 								},
 							},
 						},
-						Image: &pkgV1.Image{
-							Name: &pkgV1.ImageName{
+						Image: &storage.Image{
+							Name: &storage.ImageName{
 								Registry: "docker.io",
 								Remote:   "stackrox/kafka",
 								Tag:      "latest",
@@ -327,9 +328,9 @@ func TestConvert(t *testing.T) {
 							},
 							Uid: 0,
 						},
-						Image: &pkgV1.Image{
+						Image: &storage.Image{
 							Id: "sha256:6b561c3bb9fed1b028520cce3852e6c9a6a91161df9b92ca0c3a20ebecc0581a",
-							Name: &pkgV1.ImageName{
+							Name: &storage.ImageName{
 								Registry: "docker.io",
 								Remote:   "stackrox/policy-engine",
 								Tag:      "1.3",

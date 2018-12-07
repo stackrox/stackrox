@@ -6,6 +6,7 @@ import (
 
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func init() {
@@ -27,7 +28,7 @@ type ageMatcherImpl struct {
 	scanAgeDays *int64
 }
 
-func (p *ageMatcherImpl) match(scan *v1.ImageScan) []*v1.Alert_Violation {
+func (p *ageMatcherImpl) match(scan *storage.ImageScan) []*v1.Alert_Violation {
 	var violations []*v1.Alert_Violation
 	deadline := time.Now().AddDate(0, 0, -int(*p.scanAgeDays))
 	scanned := scan.GetScanTime()

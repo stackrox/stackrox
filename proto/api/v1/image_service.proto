@@ -8,137 +8,17 @@ import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
 import "api/v1/search_service.proto";
 import "api/v1/empty.proto";
+import "storage/image.proto";
 
 package v1;
 
-message ImageLayer {
-    string instruction                     = 1;
-    string value                           = 2;
-    google.protobuf.Timestamp created      = 3;
-    string author                          = 4;
-    repeated ImageScanComponent components = 5;
-    bool empty                             = 6;
-}
-
-message V1Metadata {
-    string                    digest    = 1;
-    google.protobuf.Timestamp created   = 2;
-    string                    author    = 3;
-    repeated ImageLayer       layers    = 4;
-}
-
-message V2Metadata {
-    string                    digest = 1;
-}
-
-message ImageMetadata {
-    // V1Metadata contains all of the V1 docker data. In the normal case we will get this because the image is a
-    // V1 image OR because the v2 manifest has a link to it in it's config.
-    // See https://docs.docker.com/registry/spec/manifest-v2-2/#image-manifest-field-descriptions
-    // The only time we will not get it is in the rare caseof a strictly V2 image schema
-    V1Metadata                v1         = 1;
-    // We should always get V2 metadata unless the registry is old or the image is strictly V1
-    V2Metadata                v2         = 2;
-    // We never need both sets of layers so consolidate them. They will be ordered by oldest->newest
-    repeated string           layer_shas = 3;
-}
-
-message License {
-    string name = 1;
-    string type = 2;
-    string url  = 3;
-}
-
-message CVSSV2 {
-    enum Impact {
-        IMPACT_NONE     = 0;
-        IMPACT_PARTIAL  = 1;
-        IMPACT_COMPLETE = 2;
-    }
-    enum AttackVector {
-        ATTACK_LOCAL    = 0;
-        ATTACK_ADJACENT = 1;
-        ATTACK_NETWORK  = 2;
-    }
-    enum AccessComplexity {
-        ACCESS_HIGH   = 0;
-        ACCESS_MEDIUM = 1;
-        ACCESS_LOW    = 2;
-    }
-    enum Authentication {
-        AUTH_MULTIPLE = 0;
-        AUTH_SINGLE   = 1;
-        AUTH_NONE     = 2;
-    }
-    string           vector            = 1;
-    AttackVector     attack_vector     = 2;
-    AccessComplexity access_complexity = 3;
-    Authentication   authentication    = 4;
-    Impact           confidentiality   = 5;
-    Impact           integrity         = 6;
-    Impact           availability      = 7;
-}
-
-message Vulnerability {
-    string cve          = 1;
-    float  cvss         = 2;
-    string summary      = 3;
-    string link         = 4;
-    oneof set_fixed_by {
-        string fixed_by = 5;
-    }
-    CVSSV2 cvss_v2      = 6;
-}
-
-message ImageScanComponent {
-    string name                  = 1;
-    string version               = 2;
-    License license              = 3;
-    repeated Vulnerability vulns = 4;
-}
-
-message ImageName {
-    string registry                         = 1;
-    string remote                           = 2;
-    string tag                              = 3;
-    string full_name                        = 4;
-}
-
-message ImageScan {
-    google.protobuf.Timestamp   scan_time  = 1;
-    repeated ImageScanComponent components = 2;
-}
-
-message Image {
-    string    id            = 4;
-    ImageName name          = 1;
-
-    ImageMetadata metadata  = 2;
-    ImageScan     scan      = 3;
-}
-
-message ListImage {
-    string id                         = 7;
-    string name                       = 2;
-    oneof set_components {
-        int32 components              = 3;
-    }
-    oneof set_cves {
-        int32 cves                    = 4;
-    }
-    oneof set_fixable {
-        int32 fixable_cves            = 5;
-    }
-    google.protobuf.Timestamp created = 6;
-}
-
 message ListImagesResponse {
-    repeated ListImage images = 1;
+    repeated storage.ListImage images = 1;
 }
 
 service ImageService {
 
-    rpc GetImage (ResourceByID) returns (Image) {
+    rpc GetImage (ResourceByID) returns (storage.Image) {
         option (google.api.http) = {
             get: "/v1/images/{id}"
         };

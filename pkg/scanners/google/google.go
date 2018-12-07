@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -146,7 +147,7 @@ func (g *googleScanner) Test() error {
 	return err
 }
 
-func getResourceURL(image *v1.Image) string {
+func getResourceURL(image *storage.Image) string {
 	return fmt.Sprintf("https://%s/%s@%s", image.GetName().GetRegistry(), image.GetName().GetRemote(), image.GetId())
 }
 
@@ -160,8 +161,8 @@ func generalizeName(name string) string {
 // getComponents returns a map of cpeURIs -> map of generalized component names to components
 // the cpeURIs are for determining which summary is correct for the distribution
 // The names are generalized because google doesn't do direct correlation so pkg mysql should match mysql-5.5
-func (g *googleScanner) getComponents(image *v1.Image) (map[string]map[string]*v1.ImageScanComponent, error) {
-	cpeToComponentMap := make(map[string]map[string]*v1.ImageScanComponent)
+func (g *googleScanner) getComponents(image *storage.Image) (map[string]map[string]*storage.ImageScanComponent, error) {
+	cpeToComponentMap := make(map[string]map[string]*storage.ImageScanComponent)
 	filter := fmt.Sprintf(`kind="PACKAGE_MANAGER" AND resourceUrl="%s"`, getResourceURL(image))
 	occurenceReq := &containeranalysis.ListOccurrencesRequest{
 		Parent:   "projects/" + g.project,
@@ -179,7 +180,7 @@ func (g *googleScanner) getComponents(image *v1.Image) (map[string]map[string]*v
 		cpeURI, component := g.convertComponentFromPackageManagerOccurrence(occurrence)
 
 		if _, ok := cpeToComponentMap[cpeURI]; !ok {
-			cpeToComponentMap[cpeURI] = make(map[string]*v1.ImageScanComponent)
+			cpeToComponentMap[cpeURI] = make(map[string]*storage.ImageScanComponent)
 		}
 		cpeToComponentMap[cpeURI][generalizeName(component.GetName())] = component
 	}
@@ -188,7 +189,7 @@ func (g *googleScanner) getComponents(image *v1.Image) (map[string]map[string]*v
 
 // this function matches against package substrings in an attempt to limit the number of vulns that cannot be correlated to matches
 // this function is expensive
-func vulnSubstringMatch(componentMap map[string]*v1.ImageScanComponent, pkg string) (*v1.ImageScanComponent, bool) {
+func vulnSubstringMatch(componentMap map[string]*storage.ImageScanComponent, pkg string) (*storage.ImageScanComponent, bool) {
 	for k, comp := range componentMap {
 		if strings.Contains(k, pkg) {
 			return comp, true
@@ -197,7 +198,7 @@ func vulnSubstringMatch(componentMap map[string]*v1.ImageScanComponent, pkg stri
 	return nil, false
 }
 
-func (g *googleScanner) getVulnsForImage(image *v1.Image) ([]*containeranalysis.Occurrence, error) {
+func (g *googleScanner) getVulnsForImage(image *storage.Image) ([]*containeranalysis.Occurrence, error) {
 	filter := fmt.Sprintf(`kind="PACKAGE_VULNERABILITY" AND resourceUrl="%s"`, getResourceURL(image))
 	occurenceReq := &containeranalysis.ListOccurrencesRequest{
 		Parent:   "projects/" + g.project,
@@ -221,7 +222,7 @@ func (g *googleScanner) getOccurrenceNote(name string) (*containeranalysis.Note,
 }
 
 // addVulnsToComponents takes in the cpeToComponentMap and uses it to correlate its vulns to the components
-func (g *googleScanner) addVulnsToComponents(cpeToComponentMap map[string]map[string]*v1.ImageScanComponent, image *v1.Image) error {
+func (g *googleScanner) addVulnsToComponents(cpeToComponentMap map[string]map[string]*storage.ImageScanComponent, image *storage.Image) error {
 	// This retrieves all the vulnerabilities for the image through a request to the API
 	pkgVulnOccurences, err := g.getVulnsForImage(image)
 	if err != nil {
@@ -241,11 +242,11 @@ func (g *googleScanner) addVulnsToComponents(cpeToComponentMap map[string]map[st
 	return nil
 }
 
-func (g *googleScanner) joinVulnToComponent(cpeToComponentMap map[string]map[string]*v1.ImageScanComponent, occurrence *containeranalysis.Occurrence, note *containeranalysis.Note) {
+func (g *googleScanner) joinVulnToComponent(cpeToComponentMap map[string]map[string]*storage.ImageScanComponent, occurrence *containeranalysis.Occurrence, note *containeranalysis.Note) {
 	cpeURI, pkg, vuln := g.convertVulnerabilityFromPackageVulnerabilityOccurrence(occurrence, note)
 	_, ok := cpeToComponentMap[cpeURI]
 	if !ok {
-		cpeToComponentMap[cpeURI] = make(map[string]*v1.ImageScanComponent)
+		cpeToComponentMap[cpeURI] = make(map[string]*storage.ImageScanComponent)
 	}
 	componentNameToComponents := cpeToComponentMap[cpeURI]
 
@@ -254,7 +255,7 @@ func (g *googleScanner) joinVulnToComponent(cpeToComponentMap map[string]map[str
 		if matchedComponent, ok := vulnSubstringMatch(componentNameToComponents, pkg); ok {
 			componentNameToComponents[pkg] = matchedComponent
 		} else {
-			componentNameToComponents[pkg] = &v1.ImageScanComponent{
+			componentNameToComponents[pkg] = &storage.ImageScanComponent{
 				Name: pkg,
 			}
 		}
@@ -264,7 +265,7 @@ func (g *googleScanner) joinVulnToComponent(cpeToComponentMap map[string]map[str
 }
 
 // GetLastScan retrieves the most recent scan
-func (g *googleScanner) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
+func (g *googleScanner) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
 	log.Infof("Retrieving scans for image %s", image.GetName().GetFullName())
 	cpeToComponentMap, err := g.getComponents(image)
 	if err != nil {
@@ -276,19 +277,19 @@ func (g *googleScanner) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 	if err := g.addVulnsToComponents(cpeToComponentMap, image); err != nil {
 		return nil, fmt.Errorf("failed to add vulns to components: %s", err)
 	}
-	var components []*v1.ImageScanComponent
+	var components []*storage.ImageScanComponent
 	for _, v := range cpeToComponentMap {
 		for _, component := range v {
 			components = append(components, component)
 		}
 	}
-	return &v1.ImageScan{
+	return &storage.ImageScan{
 		Components: components,
 	}, nil
 }
 
 // Match decides if the image is contained within this scanner
-func (g *googleScanner) Match(image *v1.Image) bool {
+func (g *googleScanner) Match(image *storage.Image) bool {
 	return image.GetName().GetRegistry() == g.registry && strings.HasPrefix(image.GetName().GetRemote(), g.project)
 }
 

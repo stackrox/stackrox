@@ -9,6 +9,7 @@ import (
 
 	clairV1 "github.com/coreos/clair/api/v1"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair/mock"
 	"github.com/stretchr/testify/suite"
 )
@@ -69,13 +70,13 @@ func (suite *ClairSuite) TestScanTest() {
 }
 
 func (suite *ClairSuite) TestGetLastScan() {
-	image := &v1.Image{
-		Name: &v1.ImageName{
+	image := &storage.Image{
+		Name: &storage.ImageName{
 			Registry: "quay.io",
 			Remote:   "integration/nginx",
 			Tag:      "1.10",
 		},
-		Metadata: &v1.ImageMetadata{
+		Metadata: &storage.ImageMetadata{
 			LayerShas: []string{
 				"sha256:randomhashthatshouldnotbeused",
 				"sha256:0346349a1a640da9535acfc0f68be9d9b81e85957725ecb76f3b522f4e2f0455",

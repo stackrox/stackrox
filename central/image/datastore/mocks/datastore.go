@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
 
@@ -47,9 +48,9 @@ func (mr *MockDataStoreMockRecorder) CountImages() *gomock.Call {
 }
 
 // GetImage mocks base method
-func (m *MockDataStore) GetImage(arg0 string) (*v1.Image, bool, error) {
+func (m *MockDataStore) GetImage(arg0 string) (*storage.Image, bool, error) {
 	ret := m.ctrl.Call(m, "GetImage", arg0)
-	ret0, _ := ret[0].(*v1.Image)
+	ret0, _ := ret[0].(*storage.Image)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -61,9 +62,9 @@ func (mr *MockDataStoreMockRecorder) GetImage(arg0 interface{}) *gomock.Call {
 }
 
 // GetImages mocks base method
-func (m *MockDataStore) GetImages() ([]*v1.Image, error) {
+func (m *MockDataStore) GetImages() ([]*storage.Image, error) {
 	ret := m.ctrl.Call(m, "GetImages")
-	ret0, _ := ret[0].([]*v1.Image)
+	ret0, _ := ret[0].([]*storage.Image)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -74,9 +75,9 @@ func (mr *MockDataStoreMockRecorder) GetImages() *gomock.Call {
 }
 
 // GetImagesBatch mocks base method
-func (m *MockDataStore) GetImagesBatch(arg0 []string) ([]*v1.Image, error) {
+func (m *MockDataStore) GetImagesBatch(arg0 []string) ([]*storage.Image, error) {
 	ret := m.ctrl.Call(m, "GetImagesBatch", arg0)
-	ret0, _ := ret[0].([]*v1.Image)
+	ret0, _ := ret[0].([]*storage.Image)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -87,9 +88,9 @@ func (mr *MockDataStoreMockRecorder) GetImagesBatch(arg0 interface{}) *gomock.Ca
 }
 
 // ListImage mocks base method
-func (m *MockDataStore) ListImage(arg0 string) (*v1.ListImage, bool, error) {
+func (m *MockDataStore) ListImage(arg0 string) (*storage.ListImage, bool, error) {
 	ret := m.ctrl.Call(m, "ListImage", arg0)
-	ret0, _ := ret[0].(*v1.ListImage)
+	ret0, _ := ret[0].(*storage.ListImage)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -101,9 +102,9 @@ func (mr *MockDataStoreMockRecorder) ListImage(arg0 interface{}) *gomock.Call {
 }
 
 // ListImages mocks base method
-func (m *MockDataStore) ListImages() ([]*v1.ListImage, error) {
+func (m *MockDataStore) ListImages() ([]*storage.ListImage, error) {
 	ret := m.ctrl.Call(m, "ListImages")
-	ret0, _ := ret[0].([]*v1.ListImage)
+	ret0, _ := ret[0].([]*storage.ListImage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -127,9 +128,9 @@ func (mr *MockDataStoreMockRecorder) SearchImages(arg0 interface{}) *gomock.Call
 }
 
 // SearchListImages mocks base method
-func (m *MockDataStore) SearchListImages(arg0 *v1.Query) ([]*v1.ListImage, error) {
+func (m *MockDataStore) SearchListImages(arg0 *v1.Query) ([]*storage.ListImage, error) {
 	ret := m.ctrl.Call(m, "SearchListImages", arg0)
-	ret0, _ := ret[0].([]*v1.ListImage)
+	ret0, _ := ret[0].([]*storage.ListImage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -140,9 +141,9 @@ func (mr *MockDataStoreMockRecorder) SearchListImages(arg0 interface{}) *gomock.
 }
 
 // SearchRawImages mocks base method
-func (m *MockDataStore) SearchRawImages(arg0 *v1.Query) ([]*v1.Image, error) {
+func (m *MockDataStore) SearchRawImages(arg0 *v1.Query) ([]*storage.Image, error) {
 	ret := m.ctrl.Call(m, "SearchRawImages", arg0)
-	ret0, _ := ret[0].([]*v1.Image)
+	ret0, _ := ret[0].([]*storage.Image)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -153,7 +154,7 @@ func (mr *MockDataStoreMockRecorder) SearchRawImages(arg0 interface{}) *gomock.C
 }
 
 // UpsertImage mocks base method
-func (m *MockDataStore) UpsertImage(arg0 *v1.Image) error {
+func (m *MockDataStore) UpsertImage(arg0 *storage.Image) error {
 	ret := m.ctrl.Call(m, "UpsertImage", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0

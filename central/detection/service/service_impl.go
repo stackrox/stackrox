@@ -8,6 +8,7 @@ import (
 	buildtimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -46,7 +47,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // DetectBuildTime runs detection on a built image.
-func (s *serviceImpl) DetectBuildTime(ctx context.Context, image *v1.Image) (*v1.DetectionResponse, error) {
+func (s *serviceImpl) DetectBuildTime(ctx context.Context, image *storage.Image) (*v1.DetectionResponse, error) {
 	if image.GetName() == nil {
 		return nil, fmt.Errorf("image name contents missing")
 	}

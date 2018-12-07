@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/image/check/report"
@@ -110,7 +111,7 @@ func getAlerts(imageStr string) ([]*v1.Alert, error) {
 }
 
 // Use inputs to generate an image name for request.
-func buildRequest(image string) (*v1.Image, error) {
+func buildRequest(image string) (*storage.Image, error) {
 	img, err := utils.GenerateImageFromStringWithError(image)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse image '%s': %s", image, err)

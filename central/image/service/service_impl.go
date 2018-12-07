@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -51,7 +52,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetImage returns an image with given sha if it exists.
-func (s *serviceImpl) GetImage(ctx context.Context, request *v1.ResourceByID) (*v1.Image, error) {
+func (s *serviceImpl) GetImage(ctx context.Context, request *v1.ResourceByID) (*storage.Image, error) {
 	image, exists, err := s.datastore.GetImage(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -66,7 +67,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.ResourceByID) (*
 // ListImages retrieves all images in minimal form.
 func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1.ListImagesResponse, error) {
 	var err error
-	var images []*v1.ListImage
+	var images []*storage.ListImage
 	if request.GetQuery() == "" {
 		images, err = s.datastore.ListImages()
 	} else {

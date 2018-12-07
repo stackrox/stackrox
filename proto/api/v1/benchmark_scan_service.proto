@@ -24,7 +24,7 @@ message BenchmarkScan {
     string id = 1;
     message Check {
         BenchmarkCheckDefinition   definition         = 1;
-        map<string,int32> aggregated_results = 2;
+        map<string, int32> aggregated_results = 2;
     }
     repeated Check checks = 2;
 }

@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
 
@@ -30,7 +31,7 @@ type remoteMatcherImpl struct {
 	remoteRegex *regexp.Regexp
 }
 
-func (p *remoteMatcherImpl) match(name *v1.ImageName) []*v1.Alert_Violation {
+func (p *remoteMatcherImpl) match(name *storage.ImageName) []*v1.Alert_Violation {
 	remote := name.GetRemote()
 
 	var violations []*v1.Alert_Violation

@@ -2,7 +2,7 @@ package store
 
 import (
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
@@ -15,15 +15,15 @@ const (
 // Store provides storage functionality for alerts.
 //go:generate mockgen-wrapper Store
 type Store interface {
-	ListImage(sha string) (*v1.ListImage, bool, error)
-	ListImages() ([]*v1.ListImage, error)
+	ListImage(sha string) (*storage.ListImage, bool, error)
+	ListImages() ([]*storage.ListImage, error)
 
-	GetImages() ([]*v1.Image, error)
+	GetImages() ([]*storage.Image, error)
 	CountImages() (int, error)
-	GetImage(sha string) (*v1.Image, bool, error)
-	GetImagesBatch(shas []string) ([]*v1.Image, error)
+	GetImage(sha string) (*storage.Image, bool, error)
+	GetImagesBatch(shas []string) ([]*storage.Image, error)
 
-	UpsertImage(image *v1.Image) error
+	UpsertImage(image *storage.Image) error
 	DeleteImage(sha string) error
 }
 

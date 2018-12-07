@@ -9,6 +9,7 @@ import (
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
@@ -153,8 +154,8 @@ func (suite *PipelineTestSuite) TestUpdateImagesSkipped() {
 		Id: "id1",
 		Containers: []*v1.Container{
 			{
-				Image: &v1.Image{
-					Name: &v1.ImageName{
+				Image: &storage.Image{
+					Name: &storage.ImageName{
 						FullName: "derp",
 					},
 				},
@@ -195,7 +196,7 @@ func fakeDeploymentEvents() []*v1.SensorEvent {
 					Id: "id1",
 					Containers: []*v1.Container{
 						{
-							Image: &v1.Image{
+							Image: &storage.Image{
 								Id: "sha1",
 							},
 						},
@@ -210,7 +211,7 @@ func fakeDeploymentEvents() []*v1.SensorEvent {
 					Id: "id2",
 					Containers: []*v1.Container{
 						{
-							Image: &v1.Image{
+							Image: &storage.Image{
 								Id: "sha1",
 							},
 						},
@@ -225,7 +226,7 @@ func fakeDeploymentEvents() []*v1.SensorEvent {
 					Id: "id3",
 					Containers: []*v1.Container{
 						{
-							Image: &v1.Image{
+							Image: &storage.Image{
 								Id: "sha2",
 							},
 						},
@@ -240,12 +241,12 @@ func fakeDeploymentEvents() []*v1.SensorEvent {
 					Id: "id4",
 					Containers: []*v1.Container{
 						{
-							Image: &v1.Image{
+							Image: &storage.Image{
 								Id: "sha2",
 							},
 						},
 						{
-							Image: &v1.Image{
+							Image: &storage.Image{
 								Id: "sha2",
 							},
 						},

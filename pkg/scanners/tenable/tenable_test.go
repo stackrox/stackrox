@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -120,8 +121,8 @@ func (suite *TenableSuite) TestTestFunction() {
 }
 
 func (suite *TenableSuite) TestGetLastScan() {
-	image := &v1.Image{
-		Name: &v1.ImageName{
+	image := &storage.Image{
+		Name: &storage.ImageName{
 			Registry: "",
 			Remote:   "docker/nginx",
 			Tag:      "1.10",

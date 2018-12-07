@@ -10,6 +10,7 @@ import (
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	"github.com/stackrox/rox/central/searchbasedpolicies/builders"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
@@ -289,8 +290,8 @@ func getDeployments() []*v1.Deployment {
 			Name: "deployment1",
 			Containers: []*v1.Container{
 				{
-					Image: &v1.Image{
-						Name: &v1.ImageName{
+					Image: &storage.Image{
+						Name: &storage.ImageName{
 							Tag:    "latest1",
 							Remote: "stackrox/health",
 						},
@@ -302,8 +303,8 @@ func getDeployments() []*v1.Deployment {
 			Name: "deployment2",
 			Containers: []*v1.Container{
 				{
-					Image: &v1.Image{
-						Name: &v1.ImageName{
+					Image: &storage.Image{
+						Name: &storage.ImageName{
 							Tag:    "latest2",
 							Remote: "stackrox/health",
 						},
@@ -315,8 +316,8 @@ func getDeployments() []*v1.Deployment {
 			Name: "deployment3",
 			Containers: []*v1.Container{
 				{
-					Image: &v1.Image{
-						Name: &v1.ImageName{
+					Image: &storage.Image{
+						Name: &storage.ImageName{
 							Tag:    "latest3",
 							Remote: "stackrox/health",
 						},

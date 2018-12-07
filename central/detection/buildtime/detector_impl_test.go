@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/detection/image"
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stretchr/testify/assert"
@@ -34,19 +35,19 @@ func TestDetector(t *testing.T) {
 	require.NoError(t, policySet.UpsertPolicy(getPolicy(defaultPolicies, "Latest tag", t)))
 
 	for _, testCase := range []struct {
-		image          *v1.Image
+		image          *storage.Image
 		expectedAlerts int
 	}{
 		{
-			image:          &v1.Image{Name: &v1.ImageName{Tag: "latest"}},
+			image:          &storage.Image{Name: &storage.ImageName{Tag: "latest"}},
 			expectedAlerts: 1,
 		},
 		{
-			image:          &v1.Image{Id: "AAA", Name: &v1.ImageName{Tag: "latest"}},
+			image:          &storage.Image{Id: "AAA", Name: &storage.ImageName{Tag: "latest"}},
 			expectedAlerts: 1,
 		},
 		{
-			image:          &v1.Image{Id: "AAA", Name: &v1.ImageName{Tag: "OLDEST"}},
+			image:          &storage.Image{Id: "AAA", Name: &storage.ImageName{Tag: "OLDEST"}},
 			expectedAlerts: 0,
 		},
 	} {

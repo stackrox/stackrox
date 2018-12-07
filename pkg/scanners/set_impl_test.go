@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners/mocks"
 	"github.com/stretchr/testify/assert"
@@ -19,7 +20,7 @@ type fakeScanner struct {
 	global bool
 }
 
-func (*fakeScanner) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
+func (*fakeScanner) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
 	panic("implement me")
 }
 
@@ -27,7 +28,7 @@ func (f *fakeScanner) Global() bool {
 	return f.global
 }
 
-func (*fakeScanner) Match(image *v1.Image) bool {
+func (*fakeScanner) Match(image *storage.Image) bool {
 	panic("implement me")
 }
 

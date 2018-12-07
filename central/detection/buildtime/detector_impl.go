@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/image/index"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -24,7 +25,7 @@ type detectorImpl struct {
 }
 
 // Detect runs detection on an image, returning any generated alerts.
-func (d *detectorImpl) Detect(image *v1.Image) ([]*v1.Alert, error) {
+func (d *detectorImpl) Detect(image *storage.Image) ([]*v1.Alert, error) {
 	if image == nil {
 		return nil, errors.New("cannot detect on a nil image")
 	}

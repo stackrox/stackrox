@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -59,9 +60,9 @@ func executeTemplate(temp *template.Template, fields map[string]interface{}) ([]
 	return buf.Bytes(), nil
 }
 
-func generateCollectorImage(mainImageName *v1.ImageName, tag string) *v1.ImageName {
+func generateCollectorImage(mainImageName *storage.ImageName, tag string) *storage.ImageName {
 	// Populate the tag
-	collectorName := &v1.ImageName{
+	collectorName := &storage.ImageName{
 		Tag: tag,
 	}
 	// Populate Registry

@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/image/index/mappings"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
 	"github.com/stackrox/rox/pkg/images/types"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -21,18 +22,18 @@ type indexerImpl struct {
 }
 
 type imageWrapper struct {
-	*v1.Image `json:"image"`
-	Type      string `json:"type"`
+	*storage.Image `json:"image"`
+	Type           string `json:"type"`
 }
 
 // AddImage adds the image to the index
-func (i *indexerImpl) AddImage(image *v1.Image) error {
+func (i *indexerImpl) AddImage(image *storage.Image) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "Image")
 	digest := types.NewDigest(image.GetId()).Digest()
 	return i.index.Index(digest, &imageWrapper{Type: v1.SearchCategory_IMAGES.String(), Image: image})
 }
 
-func (i *indexerImpl) processBatch(images []*v1.Image) error {
+func (i *indexerImpl) processBatch(images []*storage.Image) error {
 	batch := i.index.NewBatch()
 	for _, image := range images {
 		digest := types.NewDigest(image.GetId()).Digest()
@@ -42,7 +43,7 @@ func (i *indexerImpl) processBatch(images []*v1.Image) error {
 }
 
 // AddImages adds the images to the index
-func (i *indexerImpl) AddImages(images []*v1.Image) error {
+func (i *indexerImpl) AddImages(images []*storage.Image) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "Image")
 	batchManager := batcher.New(len(images), batchSize)
 	for {

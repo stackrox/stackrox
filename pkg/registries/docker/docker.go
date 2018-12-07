@@ -8,6 +8,7 @@ import (
 	"github.com/docker/distribution/manifest/schema2"
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -99,7 +100,7 @@ func newRegistry(integration *v1.ImageIntegration) (*Registry, error) {
 }
 
 // Match decides if the image is contained within this registry
-func (r *Registry) Match(image *v1.Image) bool {
+func (r *Registry) Match(image *storage.Image) bool {
 	return r.registry == image.GetName().GetRegistry()
 }
 
@@ -109,7 +110,7 @@ func (r *Registry) Global() bool {
 }
 
 // Metadata returns the metadata via this registries implementation
-func (r *Registry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
+func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
 	log.Infof("Getting metadata for image %s", image.GetName().GetFullName())
 	if image == nil {
 		return nil, nil

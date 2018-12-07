@@ -6,6 +6,7 @@ import (
 	"testing" // This is needed to register Docker registries.
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries"
 	_ "github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stretchr/testify/suite"
@@ -43,8 +44,8 @@ func (suite *ClairIntegrationSuite) TestScanTest() {
 }
 
 func (suite *ClairIntegrationSuite) TestGetLastScan() {
-	image := &v1.Image{
-		Name: &v1.ImageName{
+	image := &storage.Image{
+		Name: &storage.ImageName{
 			Remote: "library/nginx",
 			Tag:    "1.13",
 		},

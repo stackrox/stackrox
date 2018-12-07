@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -31,8 +32,8 @@ func TestECRIntegration(t *testing.T) {
 
 	assert.NoError(t, ecr.Test())
 
-	metadata, err := ecr.Metadata(&v1.Image{
-		Name: &v1.ImageName{
+	metadata, err := ecr.Metadata(&storage.Image{
+		Name: &storage.ImageName{
 			Registry: fmt.Sprintf("%s.dkr.ecr.us-west-2.amazonaws.com", registryID),
 			Remote:   "testing",
 			Tag:      "latest",

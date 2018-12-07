@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	clairV1 "github.com/coreos/clair/api/v1"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	cvssconv "github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scans"
@@ -22,15 +22,15 @@ type cvss struct {
 }
 
 // ConvertVulnerability converts a clair vulnerability to a proto vulnerability
-func ConvertVulnerability(v clairV1.Vulnerability) *v1.Vulnerability {
+func ConvertVulnerability(v clairV1.Vulnerability) *storage.Vulnerability {
 	if v.Link == "" {
 		v.Link = scans.GetVulnLink(v.Name)
 	}
-	vul := &v1.Vulnerability{
+	vul := &storage.Vulnerability{
 		Cve:     v.Name,
 		Summary: v.Description,
 		Link:    v.Link,
-		SetFixedBy: &v1.Vulnerability_FixedBy{
+		SetFixedBy: &storage.Vulnerability_FixedBy{
 			FixedBy: v.FixedBy,
 		},
 	}
@@ -52,7 +52,7 @@ func ConvertVulnerability(v clairV1.Vulnerability) *v1.Vulnerability {
 }
 
 // PopulateLayersWithScan derives the layers from the Clair layer envelope
-func PopulateLayersWithScan(image *v1.Image, envelope *clairV1.LayerEnvelope) {
+func PopulateLayersWithScan(image *storage.Image, envelope *clairV1.LayerEnvelope) {
 	// if the image metadata is empty then simply return
 	if len(image.GetMetadata().GetLayerShas()) == 0 || image.GetMetadata().GetV1() == nil {
 		return
@@ -60,7 +60,7 @@ func PopulateLayersWithScan(image *v1.Image, envelope *clairV1.LayerEnvelope) {
 
 	// Generate a map of layer shas -> components with CVEs
 	// Not all of the layers will be represent (only ones with components and vulnerabilities)
-	layers := make(map[string][]*v1.ImageScanComponent)
+	layers := make(map[string][]*storage.ImageScanComponent)
 	for _, f := range envelope.Layer.Features {
 		layers[f.AddedBy] = append(layers[f.AddedBy], convertFeature(f))
 	}
@@ -71,7 +71,7 @@ func PopulateLayersWithScan(image *v1.Image, envelope *clairV1.LayerEnvelope) {
 
 	// Create a slice that is ordered by the layer SHAs so that we can attribute them to the V1 SHAs
 	// This will allow us to interpolate the version of the layers
-	var layerOrdering [][]*v1.ImageScanComponent
+	var layerOrdering [][]*storage.ImageScanComponent
 	for _, l := range image.GetMetadata().GetLayerShas() {
 		layerOrdering = append(layerOrdering, layers[l])
 	}
@@ -98,12 +98,12 @@ func PopulateLayersWithScan(image *v1.Image, envelope *clairV1.LayerEnvelope) {
 	}
 }
 
-func convertFeature(feature clairV1.Feature) *v1.ImageScanComponent {
-	component := &v1.ImageScanComponent{
+func convertFeature(feature clairV1.Feature) *storage.ImageScanComponent {
+	component := &storage.ImageScanComponent{
 		Name:    feature.Name,
 		Version: feature.Version,
 	}
-	component.Vulns = make([]*v1.Vulnerability, 0, len(feature.Vulnerabilities))
+	component.Vulns = make([]*storage.Vulnerability, 0, len(feature.Vulnerabilities))
 	for _, v := range feature.Vulnerabilities {
 		component.Vulns = append(component.GetVulns(), ConvertVulnerability(v))
 	}
@@ -111,8 +111,8 @@ func convertFeature(feature clairV1.Feature) *v1.ImageScanComponent {
 }
 
 // ConvertFeatures converts clair features to proto components
-func ConvertFeatures(features []clairV1.Feature) (components []*v1.ImageScanComponent) {
-	components = make([]*v1.ImageScanComponent, 0, len(features))
+func ConvertFeatures(features []clairV1.Feature) (components []*storage.ImageScanComponent) {
+	components = make([]*storage.ImageScanComponent, 0, len(features))
 	for _, feature := range features {
 		components = append(components, convertFeature(feature))
 	}

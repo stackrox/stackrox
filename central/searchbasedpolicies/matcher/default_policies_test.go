@@ -21,6 +21,7 @@ import (
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/defaults"
@@ -101,39 +102,39 @@ func (suite *DefaultPoliciesTestSuite) mustIndexDepAndImages(deployment *v1.Depl
 	}
 }
 
-func imageWithComponents(components []*v1.ImageScanComponent) *v1.Image {
-	return &v1.Image{
+func imageWithComponents(components []*storage.ImageScanComponent) *storage.Image {
+	return &storage.Image{
 		Id:   uuid.NewV4().String(),
-		Name: &v1.ImageName{FullName: "ASFASF"},
-		Scan: &v1.ImageScan{
+		Name: &storage.ImageName{FullName: "ASFASF"},
+		Scan: &storage.ImageScan{
 			Components: components,
 		},
 	}
 }
 
-func imageWithLayers(layers []*v1.ImageLayer) *v1.Image {
-	return &v1.Image{
+func imageWithLayers(layers []*storage.ImageLayer) *storage.Image {
+	return &storage.Image{
 		Id: uuid.NewV4().String(),
-		Metadata: &v1.ImageMetadata{
-			V1: &v1.V1Metadata{
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
 				Layers: layers,
 			},
 		},
 	}
 }
 
-func deploymentWithImage(img *v1.Image) *v1.Deployment {
+func deploymentWithImage(img *storage.Image) *v1.Deployment {
 	return &v1.Deployment{
 		Id:         uuid.NewV4().String(),
 		Containers: []*v1.Container{{Image: img}},
 	}
 }
 
-func deploymentWithComponents(components []*v1.ImageScanComponent) *v1.Deployment {
+func deploymentWithComponents(components []*storage.ImageScanComponent) *v1.Deployment {
 	return deploymentWithImage(imageWithComponents(components))
 }
 
-func deploymentWithLayers(layers []*v1.ImageLayer) *v1.Deployment {
+func deploymentWithLayers(layers []*storage.ImageLayer) *v1.Deployment {
 	return deploymentWithImage(imageWithLayers(layers))
 }
 
@@ -175,9 +176,9 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	fixtureDep := fixtures.GetDeployment()
 	suite.mustIndexDepAndImages(fixtureDep)
 
-	nginx110 := &v1.Image{
+	nginx110 := &storage.Image{
 		Id: "SHANGINX110",
-		Name: &v1.ImageName{
+		Name: &storage.ImageName{
 			Registry: "docker.io",
 			Remote:   "library/nginx",
 			Tag:      "1.10",
@@ -192,9 +193,9 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	suite.mustIndexDepAndImages(nginx110Dep)
 
 	oldScannedTime := time.Now().Add(-31 * 24 * time.Hour)
-	oldScannedImage := &v1.Image{
+	oldScannedImage := &storage.Image{
 		Id: "SHAOLDSCANNED",
-		Scan: &v1.ImageScan{
+		Scan: &storage.ImageScan{
 			ScanTime: protoconv.ConvertTimeToTimestamp(oldScannedTime),
 		},
 	}
@@ -206,7 +207,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.mustIndexDepAndImages(oldScannedDep)
 
-	addDockerFileDep := deploymentWithLayers([]*v1.ImageLayer{
+	addDockerFileDep := deploymentWithLayers([]*storage.ImageLayer{
 		{
 			Instruction: "ADD",
 			Value:       "deploy.sh",
@@ -218,7 +219,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	})
 	suite.mustIndexDepAndImages(addDockerFileDep)
 
-	imagePort22Dep := deploymentWithLayers([]*v1.ImageLayer{
+	imagePort22Dep := deploymentWithLayers([]*storage.ImageLayer{
 		{
 			Instruction: "EXPOSE",
 			Value:       "22/tcp",
@@ -226,7 +227,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	})
 	suite.mustIndexDepAndImages(imagePort22Dep)
 
-	insecureCMDDep := deploymentWithLayers([]*v1.ImageLayer{
+	insecureCMDDep := deploymentWithLayers([]*storage.ImageLayer{
 		{
 			Instruction: "CMD",
 			Value:       "do an insecure thing",
@@ -234,7 +235,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	})
 	suite.mustIndexDepAndImages(insecureCMDDep)
 
-	runSecretsDep := deploymentWithLayers([]*v1.ImageLayer{
+	runSecretsDep := deploymentWithLayers([]*storage.ImageLayer{
 		{
 			Instruction: "VOLUME",
 			Value:       "/run/secrets",
@@ -243,10 +244,10 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	suite.mustIndexDepAndImages(runSecretsDep)
 
 	oldImageCreationTime := time.Now().Add(-100 * 24 * time.Hour)
-	oldCreatedImage := &v1.Image{
+	oldCreatedImage := &storage.Image{
 		Id: "SHA:OLDCREATEDIMAGE",
-		Metadata: &v1.ImageMetadata{
-			V1: &v1.V1Metadata{
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
 				Created: protoconv.ConvertTimeToTimestamp(oldImageCreationTime),
 			},
 		},
@@ -257,13 +258,13 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.mustIndexDepAndImages(oldImageDep)
 
-	apkDep := deploymentWithComponents([]*v1.ImageScanComponent{
+	apkDep := deploymentWithComponents([]*storage.ImageScanComponent{
 		{Name: "apk", Version: "1.2"},
 		{Name: "asfa", Version: "1.5"},
 	})
 	suite.mustIndexDepAndImages(apkDep)
 
-	curlDep := deploymentWithComponents([]*v1.ImageScanComponent{
+	curlDep := deploymentWithComponents([]*storage.ImageScanComponent{
 		{Name: "curl", Version: "1.3"},
 		{Name: "curlwithextra", Version: "0.9"},
 	})
@@ -271,7 +272,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	componentDeps := make(map[string]*v1.Deployment)
 	for _, component := range []string{"apt", "dnf", "wget"} {
-		dep := deploymentWithComponents([]*v1.ImageScanComponent{
+		dep := deploymentWithComponents([]*storage.ImageScanComponent{
 			{Name: component},
 		})
 		suite.mustIndexDepAndImages(dep)
@@ -283,11 +284,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		Containers: []*v1.Container{
 			{
 				SecurityContext: &v1.SecurityContext{Privileged: true},
-				Image: &v1.Image{
+				Image: &storage.Image{
 					Id: "HEARTBLEEDDEPSHA",
-					Scan: &v1.ImageScan{
-						Components: []*v1.ImageScanComponent{
-							{Name: "heartbleed", Version: "1.2", Vulns: []*v1.Vulnerability{
+					Scan: &storage.ImageScan{
+						Components: []*storage.ImageScanComponent{
+							{Name: "heartbleed", Version: "1.2", Vulns: []*storage.Vulnerability{
 								{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6},
 							}},
 						},
@@ -298,26 +299,26 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.mustIndexDepAndImages(heartbleedDep)
 
-	shellshockDep := deploymentWithComponents([]*v1.ImageScanComponent{
-		{Name: "shellshock", Version: "1.2", Vulns: []*v1.Vulnerability{
+	shellshockDep := deploymentWithComponents([]*storage.ImageScanComponent{
+		{Name: "shellshock", Version: "1.2", Vulns: []*storage.Vulnerability{
 			{Cve: "CVE-2014-6271", Link: "https://shellshock", Cvss: 6},
 			{Cve: "CVE-ARBITRARY", Link: "https://notshellshock"},
 		}},
 	})
 	suite.mustIndexDepAndImages(shellshockDep)
 
-	strutsDep := deploymentWithComponents([]*v1.ImageScanComponent{
-		{Name: "struts", Version: "1.2", Vulns: []*v1.Vulnerability{
+	strutsDep := deploymentWithComponents([]*storage.ImageScanComponent{
+		{Name: "struts", Version: "1.2", Vulns: []*storage.Vulnerability{
 			{Cve: "CVE-2017-5638", Link: "https://struts", Cvss: 8},
 		}},
-		{Name: "OTHER", Version: "1.3", Vulns: []*v1.Vulnerability{
+		{Name: "OTHER", Version: "1.3", Vulns: []*storage.Vulnerability{
 			{Cve: "CVE-1223-451", Link: "https://cvefake"},
 		}},
 	})
 	suite.mustIndexDepAndImages(strutsDep)
 
-	depWithNonSeriousVulns := deploymentWithComponents([]*v1.ImageScanComponent{
-		{Name: "NOSERIOUS", Version: "2.3", Vulns: []*v1.Vulnerability{
+	depWithNonSeriousVulns := deploymentWithComponents([]*storage.ImageScanComponent{
+		{Name: "NOSERIOUS", Version: "2.3", Vulns: []*storage.Vulnerability{
 			{Cve: "CVE-1234-5678", Link: "https://abcdefgh"},
 			{Cve: "CVE-5678-1234", Link: "https://lmnopqrst"},
 		}},

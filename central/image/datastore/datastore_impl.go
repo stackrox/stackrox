@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/image/search"
 	"github.com/stackrox/rox/central/image/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
@@ -26,27 +27,27 @@ func (ds *datastoreImpl) SearchImages(q *v1.Query) ([]*v1.SearchResult, error) {
 }
 
 // SearchRawImages delegates to the underlying searcher.
-func (ds *datastoreImpl) SearchRawImages(q *v1.Query) ([]*v1.Image, error) {
+func (ds *datastoreImpl) SearchRawImages(q *v1.Query) ([]*storage.Image, error) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
 	return ds.searcher.SearchRawImages(q)
 }
 
-func (ds *datastoreImpl) SearchListImages(q *v1.Query) ([]*v1.ListImage, error) {
+func (ds *datastoreImpl) SearchListImages(q *v1.Query) ([]*storage.ListImage, error) {
 	return ds.searcher.SearchListImages(q)
 }
 
-func (ds *datastoreImpl) ListImage(sha string) (*v1.ListImage, bool, error) {
+func (ds *datastoreImpl) ListImage(sha string) (*storage.ListImage, bool, error) {
 	return ds.storage.ListImage(sha)
 }
 
-func (ds *datastoreImpl) ListImages() ([]*v1.ListImage, error) {
+func (ds *datastoreImpl) ListImages() ([]*storage.ListImage, error) {
 	return ds.storage.ListImages()
 }
 
 // GetImages delegates to the underlying store.
-func (ds *datastoreImpl) GetImages() ([]*v1.Image, error) {
+func (ds *datastoreImpl) GetImages() ([]*storage.Image, error) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
@@ -62,7 +63,7 @@ func (ds *datastoreImpl) CountImages() (int, error) {
 }
 
 // GetImage delegates to the underlying store.
-func (ds *datastoreImpl) GetImage(sha string) (*v1.Image, bool, error) {
+func (ds *datastoreImpl) GetImage(sha string) (*storage.Image, bool, error) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
@@ -70,7 +71,7 @@ func (ds *datastoreImpl) GetImage(sha string) (*v1.Image, bool, error) {
 }
 
 // GetImagesBatch delegates to the underlying store.
-func (ds *datastoreImpl) GetImagesBatch(shas []string) ([]*v1.Image, error) {
+func (ds *datastoreImpl) GetImagesBatch(shas []string) ([]*storage.Image, error) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
@@ -78,7 +79,7 @@ func (ds *datastoreImpl) GetImagesBatch(shas []string) ([]*v1.Image, error) {
 }
 
 // UpsertImage dedupes the image with the underlying storage and adds the image to the index.
-func (ds *datastoreImpl) UpsertImage(image *v1.Image) error {
+func (ds *datastoreImpl) UpsertImage(image *storage.Image) error {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
@@ -96,7 +97,7 @@ func (ds *datastoreImpl) UpsertImage(image *v1.Image) error {
 }
 
 // merge adds the most up to date data from the two inputs to the first input.
-func merge(mergeTo *v1.Image, mergeWith *v1.Image) {
+func merge(mergeTo *storage.Image, mergeWith *storage.Image) {
 	// If the image currently in the DB has more up to date info, swap it out.
 	if protoconv.CompareProtoTimestamps(mergeWith.GetMetadata().GetV1().GetCreated(), mergeTo.GetMetadata().GetV1().GetCreated()) > 0 {
 		mergeTo.Metadata = mergeWith.GetMetadata()

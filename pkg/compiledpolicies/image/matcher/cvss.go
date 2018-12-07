@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func init() {
@@ -24,7 +25,7 @@ type cvssMatcherImpl struct {
 	cvss *v1.NumericalPolicy
 }
 
-func (p *cvssMatcherImpl) match(image *v1.Image) (violations []*v1.Alert_Violation) {
+func (p *cvssMatcherImpl) match(image *storage.Image) (violations []*v1.Alert_Violation) {
 	var maxCVSS float32
 
 	for _, component := range image.GetScan().GetComponents() {

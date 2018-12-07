@@ -3,6 +3,7 @@ package index
 import (
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -14,8 +15,8 @@ var (
 // Indexer provides indexing of Alert objects.
 //go:generate mockgen-wrapper Indexer
 type Indexer interface {
-	AddImage(image *v1.Image) error
-	AddImages(imageList []*v1.Image) error
+	AddImage(image *storage.Image) error
+	AddImages(imageList []*storage.Image) error
 	DeleteImage(id string) error
 	Search(q *v1.Query) ([]search.Result, error)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func init() {
@@ -22,7 +23,7 @@ func newScanExistsMatcher(policy *v1.Policy) (Matcher, error) {
 type scanExistsMatcherImpl struct {
 }
 
-func (p *scanExistsMatcherImpl) match(image *v1.Image) []*v1.Alert_Violation {
+func (p *scanExistsMatcherImpl) match(image *storage.Image) []*v1.Alert_Violation {
 	var violations []*v1.Alert_Violation
 	if image.GetScan() == nil {
 		violations = append(violations, &v1.Alert_Violation{

@@ -6,12 +6,12 @@ import (
 	"time"
 
 	ptypes "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scans"
 	"github.com/stretchr/testify/assert"
 )
 
-func getFindingsAndPackages() ([]*finding, []pkg, []*v1.ImageScanComponent) {
+func getFindingsAndPackages() ([]*finding, []pkg, []*storage.ImageScanComponent) {
 	findings := []*finding{
 		{
 			NVDFinding: nvdFinding{
@@ -97,23 +97,23 @@ func getFindingsAndPackages() ([]*finding, []pkg, []*v1.ImageScanComponent) {
 		},
 	}
 
-	components := []*v1.ImageScanComponent{
+	components := []*storage.ImageScanComponent{
 		{
 			Name:    "libssl1.0.0",
 			Version: "1.0.1t-1+deb8u6",
-			Vulns: []*v1.Vulnerability{
+			Vulns: []*storage.Vulnerability{
 				{
 					Cve:     "CVE-2016-2109",
 					Cvss:    10.0,
 					Summary: "CVE Description",
 					Link:    scans.GetVulnLink("CVE-2016-2109"),
-					CvssV2: &v1.CVSSV2{
-						AttackVector:     v1.CVSSV2_ATTACK_NETWORK,
-						AccessComplexity: v1.CVSSV2_ACCESS_LOW,
-						Authentication:   v1.CVSSV2_AUTH_NONE,
-						Availability:     v1.CVSSV2_IMPACT_COMPLETE,
-						Confidentiality:  v1.CVSSV2_IMPACT_COMPLETE,
-						Integrity:        v1.CVSSV2_IMPACT_COMPLETE,
+					CvssV2: &storage.CVSSV2{
+						AttackVector:     storage.CVSSV2_ATTACK_NETWORK,
+						AccessComplexity: storage.CVSSV2_ACCESS_LOW,
+						Authentication:   storage.CVSSV2_AUTH_NONE,
+						Availability:     storage.CVSSV2_IMPACT_COMPLETE,
+						Confidentiality:  storage.CVSSV2_IMPACT_COMPLETE,
+						Integrity:        storage.CVSSV2_IMPACT_COMPLETE,
 					},
 				},
 			},
@@ -121,19 +121,19 @@ func getFindingsAndPackages() ([]*finding, []pkg, []*v1.ImageScanComponent) {
 		{
 			Name:    "openssl",
 			Version: "1.0.1t-1+deb8u6",
-			Vulns: []*v1.Vulnerability{
+			Vulns: []*storage.Vulnerability{
 				{
 					Cve:     "CVE-2016-2109",
 					Cvss:    10.0,
 					Summary: "CVE Description",
 					Link:    scans.GetVulnLink("CVE-2016-2109"),
-					CvssV2: &v1.CVSSV2{
-						AttackVector:     v1.CVSSV2_ATTACK_NETWORK,
-						AccessComplexity: v1.CVSSV2_ACCESS_LOW,
-						Authentication:   v1.CVSSV2_AUTH_NONE,
-						Availability:     v1.CVSSV2_IMPACT_COMPLETE,
-						Confidentiality:  v1.CVSSV2_IMPACT_COMPLETE,
-						Integrity:        v1.CVSSV2_IMPACT_COMPLETE,
+					CvssV2: &storage.CVSSV2{
+						AttackVector:     storage.CVSSV2_ATTACK_NETWORK,
+						AccessComplexity: storage.CVSSV2_ACCESS_LOW,
+						Authentication:   storage.CVSSV2_AUTH_NONE,
+						Availability:     storage.CVSSV2_IMPACT_COMPLETE,
+						Confidentiality:  storage.CVSSV2_IMPACT_COMPLETE,
+						Integrity:        storage.CVSSV2_IMPACT_COMPLETE,
 					},
 				},
 			},
@@ -141,19 +141,19 @@ func getFindingsAndPackages() ([]*finding, []pkg, []*v1.ImageScanComponent) {
 		{
 			Name:    "libtiff5",
 			Version: "4.0.3-12.3+deb8u2",
-			Vulns: []*v1.Vulnerability{
+			Vulns: []*storage.Vulnerability{
 				{
 					Cve:     "CVE-2017-9936",
 					Cvss:    5.0,
 					Summary: "Description 2",
 					Link:    scans.GetVulnLink("CVE-2017-9936"),
-					CvssV2: &v1.CVSSV2{
-						AttackVector:     v1.CVSSV2_ATTACK_NETWORK,
-						AccessComplexity: v1.CVSSV2_ACCESS_LOW,
-						Authentication:   v1.CVSSV2_AUTH_NONE,
-						Availability:     v1.CVSSV2_IMPACT_PARTIAL,
-						Confidentiality:  v1.CVSSV2_IMPACT_NONE,
-						Integrity:        v1.CVSSV2_IMPACT_NONE,
+					CvssV2: &storage.CVSSV2{
+						AttackVector:     storage.CVSSV2_ATTACK_NETWORK,
+						AccessComplexity: storage.CVSSV2_ACCESS_LOW,
+						Authentication:   storage.CVSSV2_AUTH_NONE,
+						Availability:     storage.CVSSV2_IMPACT_PARTIAL,
+						Confidentiality:  storage.CVSSV2_IMPACT_NONE,
+						Integrity:        storage.CVSSV2_IMPACT_NONE,
 					},
 				},
 			},
@@ -166,7 +166,7 @@ func getFindingsAndPackages() ([]*finding, []pkg, []*v1.ImageScanComponent) {
 	return findings, packages, components
 }
 
-func sortComponents(c []*v1.ImageScanComponent) {
+func sortComponents(c []*storage.ImageScanComponent) {
 	sort.SliceStable(c, func(i, j int) bool { return c[i].Name < c[j].Name })
 }
 
@@ -204,8 +204,8 @@ func TestConvertScanToImageScan(t *testing.T) {
 		Findings:          findings,
 	}
 
-	image := &v1.Image{
-		Name: &v1.ImageName{
+	image := &storage.Image{
+		Name: &storage.ImageName{
 			Registry: "",
 			Remote:   "srox/nginx",
 			Tag:      "1.10",
@@ -214,7 +214,7 @@ func TestConvertScanToImageScan(t *testing.T) {
 
 	scanTime, err := ptypes.TimestampProto(updated)
 	assert.NoError(t, err)
-	expectedScan := &v1.ImageScan{
+	expectedScan := &storage.ImageScan{
 		Components: components,
 		ScanTime:   scanTime,
 	}

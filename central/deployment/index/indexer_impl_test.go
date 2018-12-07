@@ -10,6 +10,7 @@ import (
 	processIndicatorIndex "github.com/stackrox/rox/central/processindicator/index"
 	secretIndex "github.com/stackrox/rox/central/secret/index"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -45,8 +46,8 @@ func (suite *DeploymentIndexTestSuite) TearDownTest() {
 // and request highlights from the search, the highlights we get
 // actually match the value in the deployments.
 func (suite *DeploymentIndexTestSuite) TestHighlighting() {
-	img22 := &v1.Image{Id: "SHA22", Name: &v1.ImageName{Tag: "2.2"}}
-	img221 := &v1.Image{Id: "SHA221", Name: &v1.ImageName{Tag: "2.2.1"}}
+	img22 := &storage.Image{Id: "SHA22", Name: &storage.ImageName{Tag: "2.2"}}
+	img221 := &storage.Image{Id: "SHA221", Name: &storage.ImageName{Tag: "2.2.1"}}
 
 	deployment22 := &v1.Deployment{
 		Id: "22",
@@ -67,7 +68,7 @@ func (suite *DeploymentIndexTestSuite) TestHighlighting() {
 	}
 
 	suite.NoError(suite.indexer.AddDeployments([]*v1.Deployment{deployment22, deployment221, depWithBoth22And221}))
-	suite.NoError(suite.imageIndexer.AddImages([]*v1.Image{img22, img221}))
+	suite.NoError(suite.imageIndexer.AddImages([]*storage.Image{img22, img221}))
 
 	cases := []struct {
 		q                    *v1.Query
@@ -192,8 +193,8 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	}
 	suite.NoError(suite.indexer.AddDeployment(containerPort22Dep))
 
-	img110 := &v1.Image{Id: "SHA110", Name: &v1.ImageName{Tag: "1.10"}}
-	imgNginx := &v1.Image{Id: "SHANGINX", Name: &v1.ImageName{Remote: "nginx"}}
+	img110 := &storage.Image{Id: "SHA110", Name: &storage.ImageName{Tag: "1.10"}}
+	imgNginx := &storage.Image{Id: "SHANGINX", Name: &storage.ImageName{Remote: "nginx"}}
 	notNginx110Dep := &v1.Deployment{
 		Id:         "NOTNGINX110ID",
 		Name:       "NOT110",
@@ -204,7 +205,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	suite.NoError(suite.imageIndexer.AddImage(img110))
 	suite.NoError(suite.imageIndexer.AddImage(imgNginx))
 
-	imgNginx110 := &v1.Image{Id: "SHANGINX110", Name: &v1.ImageName{Tag: "1.10", Remote: "nginx"}}
+	imgNginx110 := &storage.Image{Id: "SHANGINX110", Name: &storage.ImageName{Tag: "1.10", Remote: "nginx"}}
 	nginx110Dep := &v1.Deployment{
 		Id:         "NGINX110ID",
 		Name:       "YES110",

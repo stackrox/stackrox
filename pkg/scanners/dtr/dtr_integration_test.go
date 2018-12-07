@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -47,8 +48,8 @@ func (suite *DTRIntegrationSuite) SetupSuite() {
 func (suite *DTRIntegrationSuite) TearDownSuite() {}
 
 func (suite *DTRIntegrationSuite) TestGetScans() {
-	image := &v1.Image{
-		Name: &v1.ImageName{
+	image := &storage.Image{
+		Name: &storage.ImageName{
 			Registry: dtrServer,
 			Remote:   "srox/nginx",
 			Tag:      "1.12",
@@ -61,8 +62,8 @@ func (suite *DTRIntegrationSuite) TestGetScans() {
 }
 
 func (suite *DTRIntegrationSuite) TestGetLastScan() {
-	image := &v1.Image{
-		Name: &v1.ImageName{
+	image := &storage.Image{
+		Name: &storage.ImageName{
 			Registry: dtrServer,
 			Remote:   "srox/nginx",
 			Tag:      "1.12",

@@ -4,20 +4,20 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
-func getVulnsPerComponent(componentIndex int) []*v1.Vulnerability {
+func getVulnsPerComponent(componentIndex int) []*storage.Vulnerability {
 	numVulnsPerComponent := 5
-	vulnsPerComponent := make([]*v1.Vulnerability, 0, numVulnsPerComponent)
+	vulnsPerComponent := make([]*storage.Vulnerability, 0, numVulnsPerComponent)
 	for i := 0; i < numVulnsPerComponent; i++ {
 		cveName := fmt.Sprintf("CVE-2014-62%d%d", componentIndex, i)
-		vulnsPerComponent = append(vulnsPerComponent, &v1.Vulnerability{
+		vulnsPerComponent = append(vulnsPerComponent, &storage.Vulnerability{
 			Cve:     cveName,
 			Cvss:    5,
 			Summary: "GNU Bash through 4.3 processes trailing strings after function definitions in the values of environment variables, which allows remote attackers to execute arbitrary code via a crafted environment, as demonstrated by vectors involving the ForceCommand feature in OpenSSH sshd, the mod_cgi and mod_cgid modules in the Apache HTTP Server, scripts executed by unspecified DHCP clients, and other situations in which setting the environment occurs across a privilege boundary from Bash execution, aka \"ShellShock.\"  NOTE: the original fix for this issue was incorrect; CVE-2014-7169 has been assigned to cover the vulnerability that is still present after the incorrect fix.",
 			Link:    fmt.Sprintf("https://nvd.nist.gov/vuln/detail/%s", cveName),
-			SetFixedBy: &v1.Vulnerability_FixedBy{
+			SetFixedBy: &storage.Vulnerability_FixedBy{
 				FixedBy: "abcdefg",
 			},
 		})
@@ -26,14 +26,14 @@ func getVulnsPerComponent(componentIndex int) []*v1.Vulnerability {
 }
 
 // GetImage returns a Mock Image
-func GetImage() *v1.Image {
+func GetImage() *storage.Image {
 	numComponentsPerImage := 50
-	componentsPerImage := make([]*v1.ImageScanComponent, 0, numComponentsPerImage)
+	componentsPerImage := make([]*storage.ImageScanComponent, 0, numComponentsPerImage)
 	for i := 0; i < numComponentsPerImage; i++ {
-		componentsPerImage = append(componentsPerImage, &v1.ImageScanComponent{
+		componentsPerImage = append(componentsPerImage, &storage.ImageScanComponent{
 			Name:    "name",
 			Version: "1.2.3.4",
-			License: &v1.License{
+			License: &storage.License{
 				Name: "blah",
 				Type: "GPL",
 			},
@@ -41,18 +41,18 @@ func GetImage() *v1.Image {
 		})
 	}
 	author := "author"
-	return &v1.Image{
+	return &storage.Image{
 		Id: "sha256:SHA2",
-		Name: &v1.ImageName{
+		Name: &storage.ImageName{
 			Registry: "stackrox.io",
 			Remote:   "srox/mongo",
 			Tag:      "latest",
 		},
-		Metadata: &v1.ImageMetadata{
-			V1: &v1.V1Metadata{
+		Metadata: &storage.ImageMetadata{
+			V1: &storage.V1Metadata{
 				Author:  author,
 				Created: types.TimestampNow(),
-				Layers: []*v1.ImageLayer{
+				Layers: []*storage.ImageLayer{
 					{
 						Instruction: "CMD",
 						Value:       `["nginx" "-g" "daemon off;"]`,
@@ -101,7 +101,7 @@ func GetImage() *v1.Image {
 					},
 				},
 			},
-			V2: &v1.V2Metadata{
+			V2: &storage.V2Metadata{
 				Digest: "sha256:0346349a1a640da9535acfc0f68be9d9b81e85957725ecb76f3b522f4e2f0455",
 			},
 			LayerShas: []string{
@@ -110,7 +110,7 @@ func GetImage() *v1.Image {
 				"sha256:556c62bb43ac9073f4dfc95383e83f8048633a041cb9e7eb2c1f346ba39a5183",
 			},
 		},
-		Scan: &v1.ImageScan{
+		Scan: &storage.ImageScan{
 			ScanTime:   types.TimestampNow(),
 			Components: componentsPerImage,
 		},

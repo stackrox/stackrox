@@ -3,6 +3,7 @@ package fixtures
 import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // LightweightDeployment returns a mock deployment which doesn't have all the crazy images.
@@ -21,16 +22,16 @@ func LightweightDeployment() *v1.Deployment {
 		},
 		Containers: []*v1.Container{
 			{
-				Image: &v1.Image{
+				Image: &storage.Image{
 					Id: "sha256:SHA1",
-					Name: &v1.ImageName{
+					Name: &storage.ImageName{
 						Registry: "docker.io",
 						Remote:   "library/nginx",
 						Tag:      "1.10",
 					},
-					Metadata: &v1.ImageMetadata{
-						V1: &v1.V1Metadata{
-							Layers: []*v1.ImageLayer{
+					Metadata: &storage.ImageMetadata{
+						V1: &storage.V1Metadata{
+							Layers: []*storage.ImageLayer{
 								{
 									Instruction: "ADD",
 									Value:       "FILE:blah",
@@ -38,12 +39,12 @@ func LightweightDeployment() *v1.Deployment {
 							},
 						},
 					},
-					Scan: &v1.ImageScan{
+					Scan: &storage.ImageScan{
 						ScanTime: types.TimestampNow(),
-						Components: []*v1.ImageScanComponent{
+						Components: []*storage.ImageScanComponent{
 							{
 								Name: "name",
-								Vulns: []*v1.Vulnerability{
+								Vulns: []*storage.Vulnerability{
 									{
 										Cve:     "cve",
 										Cvss:    5,

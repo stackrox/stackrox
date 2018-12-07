@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
 
@@ -30,7 +31,7 @@ type cveMatcherImpl struct {
 	cveRegex *regexp.Regexp
 }
 
-func (p *cveMatcherImpl) match(image *v1.Image) (violations []*v1.Alert_Violation) {
+func (p *cveMatcherImpl) match(image *storage.Image) (violations []*v1.Alert_Violation) {
 	for _, component := range image.GetScan().GetComponents() {
 		for _, vuln := range component.GetVulns() {
 			if p.cveRegex.MatchString(vuln.GetCve()) {

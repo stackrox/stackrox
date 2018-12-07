@@ -129,17 +129,17 @@ func getMockDeployment() *v1.Deployment {
 					},
 					Privileged: true,
 				},
-				Image: &v1.Image{
-					Name: &v1.ImageName{
+				Image: &storage.Image{
+					Name: &storage.ImageName{
 						FullName: "docker.io/library/nginx:1.10",
 						Registry: "docker.io",
 						Remote:   "library/nginx",
 						Tag:      "1.10",
 					},
-					Scan: &v1.ImageScan{
-						Components: []*v1.ImageScanComponent{
+					Scan: &storage.ImageScan{
+						Components: []*storage.ImageScanComponent{
 							{
-								Vulns: []*v1.Vulnerability{
+								Vulns: []*storage.Vulnerability{
 									{
 										Cvss: 5,
 									},

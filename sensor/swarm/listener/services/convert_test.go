@@ -11,6 +11,7 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -158,8 +159,8 @@ func TestAsDeployment(t *testing.T) {
 							Directory: "/bin",
 							User:      "root",
 						},
-						Image: &v1.Image{
-							Name: &v1.ImageName{
+						Image: &storage.Image{
+							Name: &storage.ImageName{
 								Registry: "docker.io",
 								Remote:   "library/nginx",
 								Tag:      "latest",
@@ -340,8 +341,8 @@ func TestAsDeployment(t *testing.T) {
 							Directory: "/bin",
 							User:      "root",
 						},
-						Image: &v1.Image{
-							Name: &v1.ImageName{
+						Image: &storage.Image{
+							Name: &storage.ImageName{
 								Registry: "docker.io",
 								Remote:   "library/nginx",
 								Tag:      "latest",

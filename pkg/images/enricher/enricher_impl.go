@@ -3,7 +3,7 @@ package enricher
 import (
 	"context"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/integration"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
@@ -24,13 +24,13 @@ type enricherImpl struct {
 }
 
 // EnrichImage enriches an image with the integration set present.
-func (e *enricherImpl) EnrichImage(image *v1.Image) bool {
+func (e *enricherImpl) EnrichImage(image *storage.Image) bool {
 	updatedMetadata := e.enrichWithMetadata(image)
 	updatedScan := e.enrichWithScan(image)
 	return updatedMetadata || updatedScan
 }
 
-func (e *enricherImpl) enrichWithMetadata(image *v1.Image) bool {
+func (e *enricherImpl) enrichWithMetadata(image *storage.Image) bool {
 	for _, registry := range e.integrations.RegistrySet().GetAll() {
 		if updated := e.enrichImageWithRegistry(image, registry); updated {
 			return true
@@ -39,7 +39,7 @@ func (e *enricherImpl) enrichWithMetadata(image *v1.Image) bool {
 	return false
 }
 
-func (e *enricherImpl) enrichImageWithRegistry(image *v1.Image, registry registryTypes.ImageRegistry) bool {
+func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry registryTypes.ImageRegistry) bool {
 	if !registry.Global() {
 		return false
 	}
@@ -48,7 +48,7 @@ func (e *enricherImpl) enrichImageWithRegistry(image *v1.Image, registry registr
 	}
 
 	if metadataValue := e.metadataCache.Get(image.GetId()); metadataValue != nil {
-		image.Metadata = metadataValue.(*v1.ImageMetadata)
+		image.Metadata = metadataValue.(*storage.ImageMetadata)
 		return true
 	}
 
@@ -64,7 +64,7 @@ func (e *enricherImpl) enrichImageWithRegistry(image *v1.Image, registry registr
 	return true
 }
 
-func (e *enricherImpl) enrichWithScan(image *v1.Image) bool {
+func (e *enricherImpl) enrichWithScan(image *storage.Image) bool {
 	for _, scanner := range e.integrations.ScannerSet().GetAll() {
 		if updated := e.enrichImageWithScanner(image, scanner); updated {
 			return true
@@ -73,7 +73,7 @@ func (e *enricherImpl) enrichWithScan(image *v1.Image) bool {
 	return false
 }
 
-func (e *enricherImpl) enrichImageWithScanner(image *v1.Image, scanner scannerTypes.ImageScanner) bool {
+func (e *enricherImpl) enrichImageWithScanner(image *storage.Image, scanner scannerTypes.ImageScanner) bool {
 	if !scanner.Global() {
 		return false
 	}
@@ -81,7 +81,7 @@ func (e *enricherImpl) enrichImageWithScanner(image *v1.Image, scanner scannerTy
 		return false
 	}
 	if scanValue := e.scanCache.Get(image.GetId()); scanValue != nil {
-		image.Scan = scanValue.(*v1.ImageScan)
+		image.Scan = scanValue.(*storage.ImageScan)
 		return true
 	}
 	// Wait until limiter allows entrance

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -130,7 +131,7 @@ func teardownAlpineDeployment(t *testing.T) {
 }
 
 func verifyNoMetadata(t *testing.T, conn *grpc.ClientConn) {
-	if assertion := verifyMetadata(t, conn, func(metadata *v1.ImageMetadata) bool { return metadata == nil }); !assertion {
+	if assertion := verifyMetadata(t, conn, func(metadata *storage.ImageMetadata) bool { return metadata == nil }); !assertion {
 		t.Error("image metadata is not nil")
 	}
 }
@@ -146,7 +147,7 @@ func verifyMetadataPopulated(t *testing.T, conn *grpc.ClientConn) {
 	for {
 		select {
 		case <-ticker.C:
-			if verifyMetadata(t, conn, func(metadata *v1.ImageMetadata) bool { return metadata != nil }) {
+			if verifyMetadata(t, conn, func(metadata *storage.ImageMetadata) bool { return metadata != nil }) {
 				return
 			}
 		case <-timer.C:
@@ -156,7 +157,7 @@ func verifyMetadataPopulated(t *testing.T, conn *grpc.ClientConn) {
 	}
 }
 
-func verifyMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*v1.ImageMetadata) bool) bool {
+func verifyMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*storage.ImageMetadata) bool) bool {
 	if assertion := verifyImageMetadata(t, conn, assertFunc); !assertion {
 		return false
 	}
@@ -210,7 +211,7 @@ func verifyMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*v1.Ima
 	return true
 }
 
-func verifyImageMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*v1.ImageMetadata) bool) bool {
+func verifyImageMetadata(t *testing.T, conn *grpc.ClientConn, assertFunc func(*storage.ImageMetadata) bool) bool {
 	imageService := v1.NewImageServiceClient(conn)
 
 	ticker := time.NewTicker(500 * time.Millisecond)

@@ -6,6 +6,7 @@ import (
 	manifestV2 "github.com/docker/distribution/manifest/schema2"
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -91,7 +92,7 @@ func newRegistry(integration *v1.ImageIntegration) (*tenableRegistry, error) {
 }
 
 // Metadata returns the metadata via this registries implementation
-func (d *tenableRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
+func (d *tenableRegistry) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
 	if image == nil {
 		return nil, nil
 	}
@@ -104,8 +105,8 @@ func (d *tenableRegistry) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
 	for _, layer := range manifest.Layers {
 		layers = append(layers, layer.Digest.String())
 	}
-	return &v1.ImageMetadata{
-		V2: &v1.V2Metadata{
+	return &storage.ImageMetadata{
+		V2: &storage.V2Metadata{
 			Digest: digest,
 		},
 		LayerShas: layers,
@@ -119,7 +120,7 @@ func (d *tenableRegistry) Test() error {
 }
 
 // Match decides if the image is contained within this registry
-func (d *tenableRegistry) Match(image *v1.Image) bool {
+func (d *tenableRegistry) Match(image *storage.Image) bool {
 	return remote == image.GetName().GetRegistry()
 }
 

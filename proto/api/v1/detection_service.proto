@@ -5,7 +5,7 @@ option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
 import "api/v1/alert_service.proto";
-import "api/v1/image_service.proto";
+import "storage/image.proto";
 
 package v1;
 
@@ -15,7 +15,7 @@ message DetectionResponse {
 
 service DetectionService {
 
-    rpc DetectBuildTime(Image) returns (DetectionResponse) {
+    rpc DetectBuildTime(storage.Image) returns (DetectionResponse) {
         option (google.api.http) = {
             post: "/v1/detect/build"
             body: "*"

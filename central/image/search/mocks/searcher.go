@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
 
@@ -47,9 +48,9 @@ func (mr *MockSearcherMockRecorder) SearchImages(arg0 interface{}) *gomock.Call 
 }
 
 // SearchListImages mocks base method
-func (m *MockSearcher) SearchListImages(arg0 *v1.Query) ([]*v1.ListImage, error) {
+func (m *MockSearcher) SearchListImages(arg0 *v1.Query) ([]*storage.ListImage, error) {
 	ret := m.ctrl.Call(m, "SearchListImages", arg0)
-	ret0, _ := ret[0].([]*v1.ListImage)
+	ret0, _ := ret[0].([]*storage.ListImage)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -60,9 +61,9 @@ func (mr *MockSearcherMockRecorder) SearchListImages(arg0 interface{}) *gomock.C
 }
 
 // SearchRawImages mocks base method
-func (m *MockSearcher) SearchRawImages(arg0 *v1.Query) ([]*v1.Image, error) {
+func (m *MockSearcher) SearchRawImages(arg0 *v1.Query) ([]*storage.Image, error) {
 	ret := m.ctrl.Call(m, "SearchRawImages", arg0)
-	ret0, _ := ret[0].([]*v1.Image)
+	ret0, _ := ret[0].([]*storage.Image)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

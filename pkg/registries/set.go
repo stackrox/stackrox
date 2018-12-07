@@ -2,14 +2,15 @@ package registries
 
 import (
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/types"
 )
 
 // Set provides an interface for reading the active set of image integrations.
 type Set interface {
 	GetAll() []types.ImageRegistry
-	Match(image *v1.Image) bool
-	GetRegistryMetadataByImage(image *v1.Image) *types.Config
+	Match(image *storage.Image) bool
+	GetRegistryMetadataByImage(image *storage.Image) *types.Config
 
 	Clear()
 	UpdateImageIntegration(integration *v1.ImageIntegration) error

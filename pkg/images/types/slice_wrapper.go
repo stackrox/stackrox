@@ -3,11 +3,11 @@ package types
 import (
 	"strings"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // SliceWrapper provides helper functions for a slice of images.
-type SliceWrapper []*v1.Image
+type SliceWrapper []*storage.Image
 
 func (s SliceWrapper) String() string {
 	output := make([]string, len(s))

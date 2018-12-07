@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -29,7 +29,7 @@ func benchmarkAddImageNumThen1(b *testing.B, numImages int) {
 	}
 }
 
-func addImages(indexer Indexer, image *v1.Image, numImages int) {
+func addImages(indexer Indexer, image *storage.Image, numImages int) {
 	for i := 0; i < numImages; i++ {
 		image.Id = fmt.Sprintf("%d", i)
 		indexer.AddImage(image)

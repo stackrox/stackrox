@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsECR "github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/docker"
@@ -93,7 +94,7 @@ func (e *ecr) refreshDockerClient() error {
 }
 
 // Metadata returns the metadata via this registries implementation
-func (e *ecr) Metadata(image *v1.Image) (*v1.ImageMetadata, error) {
+func (e *ecr) Metadata(image *storage.Image) (*storage.ImageMetadata, error) {
 	if err := e.refreshDockerClient(); err != nil {
 		return nil, err
 	}

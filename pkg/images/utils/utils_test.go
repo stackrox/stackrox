@@ -3,20 +3,20 @@ package utils
 import (
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewImage(t *testing.T) {
 	var cases = []struct {
 		ImageString   string
-		ExpectedImage *v1.Image
+		ExpectedImage *storage.Image
 	}{
 		{
 			ImageString: "nginx:latest@sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
-			ExpectedImage: &v1.Image{
+			ExpectedImage: &storage.Image{
 				Id: "sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
-				Name: &v1.ImageName{
+				Name: &storage.ImageName{
 					Registry: "docker.io",
 					Remote:   "library/nginx",
 					Tag:      "latest",
@@ -26,9 +26,9 @@ func TestNewImage(t *testing.T) {
 		},
 		{
 			ImageString: "stackrox.io/main:1.0@sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
-			ExpectedImage: &v1.Image{
+			ExpectedImage: &storage.Image{
 				Id: "sha256:adea4f68096fded167603ba6663ed615a80e090da68eb3c9e2508c15c8368401",
-				Name: &v1.ImageName{
+				Name: &storage.ImageName{
 					Registry: "stackrox.io",
 					Remote:   "main",
 					Tag:      "1.0",
@@ -38,8 +38,8 @@ func TestNewImage(t *testing.T) {
 		},
 		{
 			ImageString: "nginx",
-			ExpectedImage: &v1.Image{
-				Name: &v1.ImageName{
+			ExpectedImage: &storage.Image{
+				Name: &storage.ImageName{
 					Registry: "docker.io",
 					Remote:   "library/nginx",
 					Tag:      "latest",

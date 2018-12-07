@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
@@ -176,7 +177,7 @@ func TestImages(t *testing.T) {
 
 	require.NotEmpty(t, images.GetImages())
 
-	imageMap := make(map[string][]*v1.Image)
+	imageMap := make(map[string][]*storage.Image)
 	for _, img := range images.GetImages() {
 		image, err := service.GetImage(ctx, &v1.ResourceByID{Id: img.GetId()})
 		assert.NoError(t, err)

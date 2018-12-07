@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/clairify/client"
 	"github.com/stackrox/clairify/types"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	clairConv "github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/registries"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
@@ -69,14 +70,14 @@ func validateConfig(c *v1.ClairifyConfig) error {
 	return nil
 }
 
-func convertLayerToImageScan(image *v1.Image, layerEnvelope *clairV1.LayerEnvelope) *v1.ImageScan {
+func convertLayerToImageScan(image *storage.Image, layerEnvelope *clairV1.LayerEnvelope) *storage.ImageScan {
 	clairConv.PopulateLayersWithScan(image, layerEnvelope)
-	return &v1.ImageScan{
+	return &storage.ImageScan{
 		Components: clairConv.ConvertFeatures(layerEnvelope.Layer.Features),
 	}
 }
 
-func v1ImageToClairifyImage(i *v1.Image) *types.Image {
+func v1ImageToClairifyImage(i *storage.Image) *types.Image {
 	return &types.Image{
 		SHA:      i.GetId(),
 		Registry: i.GetName().GetRegistry(),
@@ -90,7 +91,7 @@ func (c *clairify) getScanBySHA(sha string) (*clairV1.LayerEnvelope, error) {
 }
 
 // Try many ways to retrieve a sha
-func (c *clairify) getScan(image *v1.Image) (*clairV1.LayerEnvelope, error) {
+func (c *clairify) getScan(image *storage.Image) (*clairV1.LayerEnvelope, error) {
 	if env, err := c.getScanBySHA(image.GetId()); err == nil {
 		return env, nil
 	}
@@ -106,7 +107,7 @@ func (c *clairify) getScan(image *v1.Image) (*clairV1.LayerEnvelope, error) {
 }
 
 // GetLastScan retrieves the most recent scan
-func (c *clairify) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
+func (c *clairify) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
 	env, err := c.getScan(image)
 	// If not found, then should trigger a scan
 	if err != nil {
@@ -124,7 +125,7 @@ func (c *clairify) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 	return convertLayerToImageScan(image, env), nil
 }
 
-func (c *clairify) scan(image *v1.Image) error {
+func (c *clairify) scan(image *storage.Image) error {
 	rc := c.activeRegistries.GetRegistryMetadataByImage(image)
 	if rc == nil {
 		return nil
@@ -138,7 +139,7 @@ func (c *clairify) scan(image *v1.Image) error {
 }
 
 // Match decides if the image is contained within this scanner
-func (c *clairify) Match(image *v1.Image) bool {
+func (c *clairify) Match(image *storage.Image) bool {
 	return c.activeRegistries.Match(image)
 }
 

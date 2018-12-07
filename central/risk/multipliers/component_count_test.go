@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +15,7 @@ func TestComponentCountScore(t *testing.T) {
 	deployment := getMockDeployment()
 	components := deployment.Containers[0].Image.Scan.Components
 	for i := 0; i < 14; i++ {
-		components = append(components, &v1.ImageScanComponent{
+		components = append(components, &storage.ImageScanComponent{
 			Name:    string(i),
 			Version: "1.0",
 		})

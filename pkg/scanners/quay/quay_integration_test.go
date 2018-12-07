@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -47,14 +48,14 @@ func (suite *QuayIntegrationSuite) TestScanTest() {
 }
 
 func (suite *QuayIntegrationSuite) TestGetLastScan() {
-	image := &v1.Image{
-		Name: &v1.ImageName{
+	image := &storage.Image{
+		Name: &storage.ImageName{
 			Sha:      "sha256:d088ff453bb180ade5c97c8e7961afbbb6921f0131982563de431e8d3d9bb606",
 			Registry: "quay.io",
 			Remote:   "integration/nginx",
 			Tag:      "1.10",
 		},
-		Metadata: &v1.ImageMetadata{
+		Metadata: &storage.ImageMetadata{
 			RegistrySha: "sha256:d088ff453bb180ade5c97c8e7961afbbb6921f0131982563de431e8d3d9bb606",
 		},
 	}

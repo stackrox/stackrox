@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -69,6 +70,6 @@ func (c *componentCountMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Res
 	}
 }
 
-func componentKey(comp *v1.ImageScanComponent) string {
+func componentKey(comp *storage.ImageScanComponent) string {
 	return fmt.Sprintf("%s:%s", comp.GetName(), comp.GetVersion())
 }

@@ -5,7 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/schema"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func init() {
@@ -38,7 +38,7 @@ func (resolver *Resolver) Image(ctx context.Context, args struct{ Sha graphql.ID
 		resolver.ImageDataStore.GetImage(string(args.Sha)))
 }
 
-func (resolver *Resolver) getImage(id string) *v1.Image {
+func (resolver *Resolver) getImage(id string) *storage.Image {
 	alert, ok, err := resolver.ImageDataStore.GetImage(id)
 	if err != nil || !ok {
 		return nil

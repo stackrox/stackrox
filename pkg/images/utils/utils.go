@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/docker/distribution/reference"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -13,9 +13,9 @@ var logger = logging.LoggerForModule()
 
 // GenerateImageFromStringWithError generates an image type from a common string format and returns an error if
 // there was an issue parsing it
-func GenerateImageFromStringWithError(imageStr string) (*v1.Image, error) {
-	image := &v1.Image{
-		Name: &v1.ImageName{
+func GenerateImageFromStringWithError(imageStr string) (*storage.Image, error) {
+	image := &storage.Image{
+		Name: &storage.ImageName{
 			FullName: imageStr,
 		},
 	}
@@ -55,7 +55,7 @@ func GenerateImageFromStringWithError(imageStr string) (*v1.Image, error) {
 }
 
 // Reference returns what to use as the reference when talking to registries
-func Reference(img *v1.Image) string {
+func Reference(img *storage.Image) string {
 	// If the image id is empty, then use the tag as the reference
 	if img.GetId() != "" {
 		return img.GetId()
@@ -66,7 +66,7 @@ func Reference(img *v1.Image) string {
 }
 
 // GenerateImageFromString generates an image type from a common string format
-func GenerateImageFromString(imageStr string) *v1.Image {
+func GenerateImageFromString(imageStr string) *storage.Image {
 	image, err := GenerateImageFromStringWithError(imageStr)
 	if err != nil {
 		logger.Error(err)

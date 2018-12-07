@@ -3,22 +3,22 @@ package google
 import (
 	"strings"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cvss"
 	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1alpha1"
 )
 
-func (g *googleScanner) convertComponentFromPackageManagerOccurrence(occurrence *containeranalysis.Occurrence) (string, *v1.ImageScanComponent) {
+func (g *googleScanner) convertComponentFromPackageManagerOccurrence(occurrence *containeranalysis.Occurrence) (string, *storage.ImageScanComponent) {
 	location := occurrence.GetInstallation().GetLocation()[0]
 	version := location.GetVersion()
-	component := &v1.ImageScanComponent{
+	component := &storage.ImageScanComponent{
 		Name:    occurrence.GetInstallation().GetName(),
 		Version: version.GetName() + "-" + version.GetRevision(),
 	}
 	return location.GetCpeUri(), component
 }
 
-func (g *googleScanner) convertVulnerabilityFromPackageVulnerabilityOccurrence(occurrence *containeranalysis.Occurrence, note *containeranalysis.Note) (string, string, *v1.Vulnerability) {
+func (g *googleScanner) convertVulnerabilityFromPackageVulnerabilityOccurrence(occurrence *containeranalysis.Occurrence, note *containeranalysis.Note) (string, string, *storage.Vulnerability) {
 	packageIssues := occurrence.GetVulnerabilityDetails().GetPackageIssue()
 	if len(packageIssues) == 0 {
 		return "", "", nil
@@ -32,12 +32,12 @@ func (g *googleScanner) convertVulnerabilityFromPackageVulnerabilityOccurrence(o
 	}
 	summary := g.getSummary(note.GetVulnerabilityType().GetDetails(), affectedLocation.GetCpeUri())
 
-	vuln := &v1.Vulnerability{
+	vuln := &storage.Vulnerability{
 		Cve:     note.GetShortDescription(),
 		Link:    link,
 		Cvss:    occurrence.GetVulnerabilityDetails().GetCvssScore(),
 		Summary: summary,
-		SetFixedBy: &v1.Vulnerability_FixedBy{
+		SetFixedBy: &storage.Vulnerability_FixedBy{
 			FixedBy: pkgIssue.GetFixedLocation().GetVersion().GetRevision(),
 		},
 	}

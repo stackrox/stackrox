@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,8 +26,8 @@ func TestGoogle(t *testing.T) {
 	if err != nil {
 		require.NoError(t, err)
 	}
-	image := &v1.Image{
-		Name: &v1.ImageName{
+	image := &storage.Image{
+		Name: &storage.ImageName{
 			Registry: "us.gcr.io",
 			Remote:   os.Getenv("PROJECT") + "/music-nginx",
 			Sha:      "158d3d219e6efd9c6e25e8b25b5ad04b726880bff6c102973c07bbf5156c7181",

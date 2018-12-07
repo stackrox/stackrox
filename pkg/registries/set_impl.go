@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/types"
 )
 
@@ -27,7 +28,7 @@ func (e *setImpl) GetAll() []types.ImageRegistry {
 }
 
 // GetRegistryMetadataByImage returns the config for a registry that contains the input image.
-func (e *setImpl) GetRegistryMetadataByImage(image *v1.Image) *types.Config {
+func (e *setImpl) GetRegistryMetadataByImage(image *storage.Image) *types.Config {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 
@@ -40,7 +41,7 @@ func (e *setImpl) GetRegistryMetadataByImage(image *v1.Image) *types.Config {
 }
 
 // Match returns whether a registry in the set has the given image.
-func (e *setImpl) Match(image *v1.Image) bool {
+func (e *setImpl) Match(image *storage.Image) bool {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 

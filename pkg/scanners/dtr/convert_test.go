@@ -5,12 +5,12 @@ import (
 	"time"
 
 	ptypes "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scans"
 	"github.com/stretchr/testify/assert"
 )
 
-func getTestVulns() ([]*vulnerabilityDetails, []*v1.Vulnerability) {
+func getTestVulns() ([]*vulnerabilityDetails, []*storage.Vulnerability) {
 	dockerVulnDetails := []*vulnerabilityDetails{
 		{
 			Vulnerability: &vulnerability{
@@ -27,7 +27,7 @@ func getTestVulns() ([]*vulnerabilityDetails, []*v1.Vulnerability) {
 			},
 		},
 	}
-	v1Vulns := []*v1.Vulnerability{
+	v1Vulns := []*storage.Vulnerability{
 		{
 			Cve:     "CVE-2016-0682",
 			Cvss:    6.9,
@@ -44,14 +44,14 @@ func getTestVulns() ([]*vulnerabilityDetails, []*v1.Vulnerability) {
 	return dockerVulnDetails, v1Vulns
 }
 
-func getTestLicense() (*license, *v1.License) {
+func getTestLicense() (*license, *storage.License) {
 	dockerLicense := &license{
 		Name: "name",
 		Type: "copyleft",
 		URL:  "url",
 	}
 
-	v1License := &v1.License{
+	v1License := &storage.License{
 		Name: "name",
 		Type: "copyleft",
 		Url:  "url",
@@ -59,7 +59,7 @@ func getTestLicense() (*license, *v1.License) {
 	return dockerLicense, v1License
 }
 
-func getTestComponents() ([]*component, []*v1.ImageScanComponent) {
+func getTestComponents() ([]*component, []*storage.ImageScanComponent) {
 	dockerLicense, v1License := getTestLicense()
 	dockerVulns, v1Vulns := getTestVulns()
 
@@ -71,7 +71,7 @@ func getTestComponents() ([]*component, []*v1.ImageScanComponent) {
 			Vulnerabilities: dockerVulns,
 		},
 	}
-	v1Components := []*v1.ImageScanComponent{
+	v1Components := []*storage.ImageScanComponent{
 		{
 			Name:    "berkeleydb",
 			Version: "5.3.28-9",
@@ -82,7 +82,7 @@ func getTestComponents() ([]*component, []*v1.ImageScanComponent) {
 	return dockerComponents, v1Components
 }
 
-func getTestLayers() ([]*detailedSummary, []*v1.ImageScanComponent) {
+func getTestLayers() ([]*detailedSummary, []*storage.ImageScanComponent) {
 	dockerComponents, v1Components := getTestComponents()
 
 	dockerLayers := []*detailedSummary{
@@ -126,7 +126,7 @@ func TestConvertTagScanSummariesToImageScans(t *testing.T) {
 		CheckCompletedAt: time.Unix(0, 1000),
 	}
 	protoTime, _ := ptypes.TimestampProto(time.Unix(0, 1000))
-	expectedScan := &v1.ImageScan{
+	expectedScan := &storage.ImageScan{
 		Components: expectedComponents,
 		ScanTime:   protoTime,
 	}

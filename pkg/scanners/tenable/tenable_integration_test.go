@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -49,8 +49,8 @@ func (suite *TenableIntegrationSuite) TestTestFunction() {
 }
 
 func (suite *TenableIntegrationSuite) TestGetLastScan() {
-	image := &v1.Image{
-		Name: &v1.ImageName{
+	image := &storage.Image{
+		Name: &storage.ImageName{
 			Sha:      "0346349a1a640da9535acfc0f68be9d9b81e85957725ecb76f3b522f4e2f0455",
 			Registry: registry,
 			Remote:   "srox/nginx",

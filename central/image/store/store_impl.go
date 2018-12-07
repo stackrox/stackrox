@@ -7,7 +7,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
@@ -17,13 +17,13 @@ type storeImpl struct {
 }
 
 // ListImage returns ListImage with given id.
-func (b *storeImpl) ListImage(id string) (image *v1.ListImage, exists bool, err error) {
+func (b *storeImpl) ListImage(id string) (image *storage.ListImage, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ListImage")
 
 	digest := types.NewDigest(id).Digest()
 	err = b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(listImageBucket))
-		image = new(v1.ListImage)
+		image = new(storage.ListImage)
 		val := bucket.Get([]byte(digest))
 		if val == nil {
 			return nil
@@ -35,13 +35,13 @@ func (b *storeImpl) ListImage(id string) (image *v1.ListImage, exists bool, err 
 }
 
 // ListImages returns all ListImages
-func (b *storeImpl) ListImages() (images []*v1.ListImage, err error) {
+func (b *storeImpl) ListImages() (images []*storage.ListImage, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListImage")
 
 	err = b.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(listImageBucket))
 		return b.ForEach(func(k, v []byte) error {
-			var image v1.ListImage
+			var image storage.ListImage
 			if err := proto.Unmarshal(v, &image); err != nil {
 				return err
 			}
@@ -53,7 +53,7 @@ func (b *storeImpl) ListImages() (images []*v1.ListImage, err error) {
 }
 
 // GetImages returns all images regardless of request
-func (b *storeImpl) GetImages() (images []*v1.Image, err error) {
+func (b *storeImpl) GetImages() (images []*storage.Image, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "Image")
 
 	err = b.db.View(func(tx *bolt.Tx) error {
@@ -75,7 +75,7 @@ func (b *storeImpl) CountImages() (count int, err error) {
 }
 
 // GetImage returns image with given id.
-func (b *storeImpl) GetImage(id string) (image *v1.Image, exists bool, err error) {
+func (b *storeImpl) GetImage(id string) (image *storage.Image, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Image")
 
 	err = b.db.View(func(tx *bolt.Tx) error {
@@ -90,7 +90,7 @@ func (b *storeImpl) GetImage(id string) (image *v1.Image, exists bool, err error
 }
 
 // GetImagesBatch returns image with given sha.
-func (b *storeImpl) GetImagesBatch(shas []string) (images []*v1.Image, err error) {
+func (b *storeImpl) GetImagesBatch(shas []string) (images []*storage.Image, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Image")
 
 	err = b.db.View(func(tx *bolt.Tx) error {
@@ -107,7 +107,7 @@ func (b *storeImpl) GetImagesBatch(shas []string) (images []*v1.Image, err error
 }
 
 // UpdateImage updates a image to bolt.
-func (b *storeImpl) UpsertImage(image *v1.Image) error {
+func (b *storeImpl) UpsertImage(image *storage.Image) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "Image")
 
 	return b.db.Update(func(tx *bolt.Tx) error {
@@ -139,15 +139,15 @@ func idForSha(sha string) string {
 	return types.NewDigest(sha).Digest()
 }
 
-func convertImageToListImage(i *v1.Image) *v1.ListImage {
-	listImage := &v1.ListImage{
+func convertImageToListImage(i *storage.Image) *storage.ListImage {
+	listImage := &storage.ListImage{
 		Id:      i.GetId(),
 		Name:    i.GetName().GetFullName(),
 		Created: i.GetMetadata().GetV1().GetCreated(),
 	}
 
 	if i.GetScan() != nil {
-		listImage.SetComponents = &v1.ListImage_Components{
+		listImage.SetComponents = &storage.ListImage_Components{
 			Components: int32(len(i.GetScan().GetComponents())),
 		}
 		var numVulns int32
@@ -164,11 +164,11 @@ func convertImageToListImage(i *v1.Image) *v1.ListImage {
 				}
 			}
 		}
-		listImage.SetCves = &v1.ListImage_Cves{
+		listImage.SetCves = &storage.ListImage_Cves{
 			Cves: numVulns,
 		}
 		if numVulns == 0 || fixedByProvided {
-			listImage.SetFixable = &v1.ListImage_FixableCves{
+			listImage.SetFixable = &storage.ListImage_FixableCves{
 				FixableCves: numFixableVulns,
 			}
 		}
@@ -180,7 +180,7 @@ func convertImageToListImage(i *v1.Image) *v1.ListImage {
 ///////////////////////////////////
 
 // readAllImages reads all the images in the DB within a transaction.
-func readAllImages(tx *bolt.Tx) (images []*v1.Image, err error) {
+func readAllImages(tx *bolt.Tx) (images []*storage.Image, err error) {
 	bucket := tx.Bucket([]byte(imageBucket))
 	err = bucket.ForEach(func(k, v []byte) error {
 		image, err := readImage(tx, k)
@@ -206,7 +206,7 @@ func hasImage(tx *bolt.Tx, id []byte) bool {
 }
 
 // readImage reads a image within a transaction.
-func readImage(tx *bolt.Tx, id []byte) (image *v1.Image, err error) {
+func readImage(tx *bolt.Tx, id []byte) (image *storage.Image, err error) {
 	bucket := tx.Bucket([]byte(imageBucket))
 
 	bytes := bucket.Get(id)
@@ -215,13 +215,13 @@ func readImage(tx *bolt.Tx, id []byte) (image *v1.Image, err error) {
 		return
 	}
 
-	image = new(v1.Image)
+	image = new(storage.Image)
 	err = proto.Unmarshal(bytes, image)
 	return
 }
 
 // writeImage writes an image within a transaction.
-func writeImage(tx *bolt.Tx, image *v1.Image) (err error) {
+func writeImage(tx *bolt.Tx, image *storage.Image) (err error) {
 	bucket := tx.Bucket([]byte(imageBucket))
 
 	id := []byte(idForSha(image.GetId()))
@@ -242,7 +242,7 @@ func deleteImage(tx *bolt.Tx, id []byte) (err error) {
 	return
 }
 
-func upsertListImage(tx *bolt.Tx, image *v1.Image) error {
+func upsertListImage(tx *bolt.Tx, image *storage.Image) error {
 	bucket := tx.Bucket([]byte(listImageBucket))
 	listImage := convertImageToListImage(image)
 	bytes, err := proto.Marshal(listImage)

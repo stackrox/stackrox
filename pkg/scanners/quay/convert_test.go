@@ -4,14 +4,14 @@ import (
 	"testing"
 
 	clairV1 "github.com/coreos/clair/api/v1"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair/mock"
 	"github.com/stretchr/testify/assert"
 )
 
-func getTestScan() (*scanResult, *v1.ImageScan, *v1.Image) {
-	image := &v1.Image{
-		Name: &v1.ImageName{
+func getTestScan() (*scanResult, *storage.ImageScan, *storage.Image) {
+	image := &storage.Image{
+		Name: &storage.ImageName{
 			Registry: "quay.io",
 			Remote:   "integration/nginx",
 			Tag:      "1.10",
@@ -27,7 +27,7 @@ func getTestScan() (*scanResult, *v1.ImageScan, *v1.Image) {
 			},
 		},
 	}
-	protoScan := &v1.ImageScan{
+	protoScan := &storage.ImageScan{
 		Components: protoComponents,
 	}
 	return quayScan, protoScan, image

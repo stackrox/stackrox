@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,8 +31,8 @@ func TestGoogle(t *testing.T) {
 	registry, err := newRegistry(integration)
 	require.NoError(t, err)
 
-	metadata, err := registry.Metadata(&v1.Image{
-		Name: &v1.ImageName{
+	metadata, err := registry.Metadata(&storage.Image{
+		Name: &storage.ImageName{
 			Registry: "us.gcr.io",
 			Remote:   os.Getenv("PROJECT") + "/music-nginx",
 			Tag:      "latest",

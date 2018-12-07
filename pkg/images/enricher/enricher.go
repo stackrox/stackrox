@@ -3,7 +3,7 @@ package enricher
 import (
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/logging"
@@ -17,7 +17,7 @@ var (
 
 // ImageEnricher provides functions for enriching images with integrations.
 type ImageEnricher interface {
-	EnrichImage(image *v1.Image) bool
+	EnrichImage(image *storage.Image) bool
 }
 
 // New returns a new ImageEnricher instance for the given subsystem.

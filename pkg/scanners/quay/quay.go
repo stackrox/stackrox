@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
 	quayRegistry "github.com/stackrox/rox/pkg/registries/quay"
@@ -103,7 +104,7 @@ func (q *quay) Test() error {
 }
 
 // GetLastScan retrieves the most recent scan
-func (q *quay) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
+func (q *quay) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
 	if image == nil || image.GetName().GetRemote() == "" || image.GetName().GetTag() == "" {
 		return nil, nil
 	}
@@ -129,7 +130,7 @@ func (q *quay) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 }
 
 // Match decides if the image is contained within this scanner
-func (q *quay) Match(image *v1.Image) bool {
+func (q *quay) Match(image *storage.Image) bool {
 	return q.registry.Match(image)
 }
 

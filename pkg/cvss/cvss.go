@@ -4,36 +4,36 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
-var attackVectorMap = map[string]v1.CVSSV2_AttackVector{
-	"L": v1.CVSSV2_ATTACK_LOCAL,
-	"A": v1.CVSSV2_ATTACK_ADJACENT,
-	"N": v1.CVSSV2_ATTACK_NETWORK,
+var attackVectorMap = map[string]storage.CVSSV2_AttackVector{
+	"L": storage.CVSSV2_ATTACK_LOCAL,
+	"A": storage.CVSSV2_ATTACK_ADJACENT,
+	"N": storage.CVSSV2_ATTACK_NETWORK,
 }
 
-var accessComplexityMap = map[string]v1.CVSSV2_AccessComplexity{
-	"H": v1.CVSSV2_ACCESS_HIGH,
-	"M": v1.CVSSV2_ACCESS_MEDIUM,
-	"L": v1.CVSSV2_ACCESS_LOW,
+var accessComplexityMap = map[string]storage.CVSSV2_AccessComplexity{
+	"H": storage.CVSSV2_ACCESS_HIGH,
+	"M": storage.CVSSV2_ACCESS_MEDIUM,
+	"L": storage.CVSSV2_ACCESS_LOW,
 }
 
-var authenticationMap = map[string]v1.CVSSV2_Authentication{
-	"M": v1.CVSSV2_AUTH_MULTIPLE,
-	"S": v1.CVSSV2_AUTH_SINGLE,
-	"N": v1.CVSSV2_AUTH_NONE,
+var authenticationMap = map[string]storage.CVSSV2_Authentication{
+	"M": storage.CVSSV2_AUTH_MULTIPLE,
+	"S": storage.CVSSV2_AUTH_SINGLE,
+	"N": storage.CVSSV2_AUTH_NONE,
 }
 
-var impactMap = map[string]v1.CVSSV2_Impact{
-	"N": v1.CVSSV2_IMPACT_NONE,
-	"P": v1.CVSSV2_IMPACT_PARTIAL,
-	"C": v1.CVSSV2_IMPACT_COMPLETE,
+var impactMap = map[string]storage.CVSSV2_Impact{
+	"N": storage.CVSSV2_IMPACT_NONE,
+	"P": storage.CVSSV2_IMPACT_PARTIAL,
+	"C": storage.CVSSV2_IMPACT_COMPLETE,
 }
 
 // ParseCVSSV2 parses the vector string and returns an internal representation of CVSS V2
-func ParseCVSSV2(vectorStr string) (*v1.CVSSV2, error) {
-	cvssV2 := &v1.CVSSV2{
+func ParseCVSSV2(vectorStr string) (*storage.CVSSV2, error) {
+	cvssV2 := &storage.CVSSV2{
 		Vector: vectorStr,
 	}
 

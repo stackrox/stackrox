@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
 
@@ -30,7 +31,7 @@ type nameMatcherImpl struct {
 	nameRegex *regexp.Regexp
 }
 
-func (p *nameMatcherImpl) match(component *v1.ImageScanComponent) []*v1.Alert_Violation {
+func (p *nameMatcherImpl) match(component *storage.ImageScanComponent) []*v1.Alert_Violation {
 	if p.nameRegex.MatchString(component.GetName()) {
 		return append(([]*v1.Alert_Violation)(nil), &v1.Alert_Violation{
 			Message: fmt.Sprintf("Component '%v:%v' matches %s", component.GetName(), component.GetVersion(), p.nameRegex),

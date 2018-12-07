@@ -5,23 +5,24 @@ import (
 	"github.com/stackrox/rox/central/image/search"
 	"github.com/stackrox/rox/central/image/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // DataStore is an intermediary to AlertStorage.
 //go:generate mockgen-wrapper DataStore
 type DataStore interface {
-	SearchListImages(q *v1.Query) ([]*v1.ListImage, error)
-	ListImage(sha string) (*v1.ListImage, bool, error)
-	ListImages() ([]*v1.ListImage, error)
+	SearchListImages(q *v1.Query) ([]*storage.ListImage, error)
+	ListImage(sha string) (*storage.ListImage, bool, error)
+	ListImages() ([]*storage.ListImage, error)
 
 	SearchImages(q *v1.Query) ([]*v1.SearchResult, error)
-	SearchRawImages(q *v1.Query) ([]*v1.Image, error)
+	SearchRawImages(q *v1.Query) ([]*storage.Image, error)
 
-	GetImages() ([]*v1.Image, error)
+	GetImages() ([]*storage.Image, error)
 	CountImages() (int, error)
-	GetImage(sha string) (*v1.Image, bool, error)
-	GetImagesBatch(shas []string) ([]*v1.Image, error)
-	UpsertImage(image *v1.Image) error
+	GetImage(sha string) (*storage.Image, bool, error)
+	GetImagesBatch(shas []string) ([]*storage.Image, error)
+	UpsertImage(image *storage.Image) error
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.

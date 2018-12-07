@@ -8,6 +8,7 @@ import (
 
 	dockerRegistry "github.com/heroku/docker-registry-client/registry"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
@@ -121,7 +122,7 @@ func (d *tenable) Test() error {
 }
 
 // GetLastScan retrieves the most recent scan
-func (d *tenable) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
+func (d *tenable) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
 	if image == nil || image.GetName().GetRemote() == "" || image.GetName().GetTag() == "" {
 		return nil, nil
 	}
@@ -143,7 +144,7 @@ func (d *tenable) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
 }
 
 // Match decides if the image is contained within this registry
-func (d *tenable) Match(image *v1.Image) bool {
+func (d *tenable) Match(image *storage.Image) bool {
 	return registry == image.GetName().GetRegistry()
 }
 

@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	reflect "reflect"
 )
@@ -35,7 +36,7 @@ func (m *MockIndexer) EXPECT() *MockIndexerMockRecorder {
 }
 
 // AddImage mocks base method
-func (m *MockIndexer) AddImage(arg0 *v1.Image) error {
+func (m *MockIndexer) AddImage(arg0 *storage.Image) error {
 	ret := m.ctrl.Call(m, "AddImage", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -47,7 +48,7 @@ func (mr *MockIndexerMockRecorder) AddImage(arg0 interface{}) *gomock.Call {
 }
 
 // AddImages mocks base method
-func (m *MockIndexer) AddImages(arg0 []*v1.Image) error {
+func (m *MockIndexer) AddImages(arg0 []*storage.Image) error {
 	ret := m.ctrl.Call(m, "AddImages", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0

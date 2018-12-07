@@ -3,12 +3,12 @@ package types
 import (
 	"strings"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Wrapper provides helper functions for an image.
 type Wrapper struct {
-	*v1.Image
+	*storage.Image
 }
 
 // Namespace returns the namespace of the image

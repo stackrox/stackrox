@@ -1,13 +1,13 @@
 package quay
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair"
 )
 
-func convertScanToImageScan(image *v1.Image, s *scanResult) *v1.ImageScan {
+func convertScanToImageScan(image *storage.Image, s *scanResult) *storage.ImageScan {
 	components := clair.ConvertFeatures(s.Data.Layer.Features)
-	return &v1.ImageScan{
+	return &storage.ImageScan{
 		Components: components,
 	}
 }

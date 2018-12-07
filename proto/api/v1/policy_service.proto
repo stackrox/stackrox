@@ -11,6 +11,7 @@ import "api/v1/image_service.proto";
 import "api/v1/deployment_service.proto";
 import "api/v1/search_service.proto";
 import "storage/scope.proto";
+import "storage/image.proto";
 
 package v1;
 
@@ -49,7 +50,7 @@ enum EnforcementAction {
 message Whitelist {
     string                    name       = 1;
     message Container {
-        ImageName image_name = 3;
+        storage.ImageName image_name = 3;
     }
     Container                 container  = 2;
     message Deployment {

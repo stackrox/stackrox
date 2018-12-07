@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
 
@@ -31,7 +32,7 @@ type tagMatcherImpl struct {
 	tagRegex *regexp.Regexp
 }
 
-func (p *tagMatcherImpl) match(name *v1.ImageName) []*v1.Alert_Violation {
+func (p *tagMatcherImpl) match(name *storage.ImageName) []*v1.Alert_Violation {
 	var violations []*v1.Alert_Violation
 	if name.GetTag() != "" && p.tagRegex.MatchString(name.GetTag()) {
 		v := &v1.Alert_Violation{

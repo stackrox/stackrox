@@ -7,7 +7,7 @@ import (
 	indexMock "github.com/stackrox/rox/central/image/index/mocks"
 	searchMock "github.com/stackrox/rox/central/image/search/mocks"
 	storeMock "github.com/stackrox/rox/central/image/store/mocks"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -44,11 +44,11 @@ func (suite *ImageDataStoreTestSuite) TearDownTest() {
 // Scenario: We have a new image with a sha and no scan or metadata. And no previously matched registry shas.
 // Outcome: Image should be upserted and indexed unchanged.
 func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithoutMetadata() {
-	image := &v1.Image{
+	image := &storage.Image{
 		Id: "sha1",
 	}
 
-	suite.mockStore.EXPECT().GetImage("sha1").Return((*v1.Image)(nil), false, nil)
+	suite.mockStore.EXPECT().GetImage("sha1").Return((*storage.Image)(nil), false, nil)
 
 	suite.mockStore.EXPECT().UpsertImage(image).Return(nil)
 	suite.mockIndexer.EXPECT().AddImage(image).Return(nil)
@@ -60,16 +60,16 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithoutMetadata() {
 // Scenario: We have a new image with metadata, but its sha and the registry sha do not match.
 // Outcome: The sha should be changed to the registry sha, and the mapping added to the store.
 func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithMetadata() {
-	newImage := &v1.Image{
+	newImage := &storage.Image{
 		Id:       "sha1",
-		Metadata: &v1.ImageMetadata{},
+		Metadata: &storage.ImageMetadata{},
 	}
-	upsertedImage := &v1.Image{
+	upsertedImage := &storage.Image{
 		Id:       "sha1",
-		Metadata: &v1.ImageMetadata{},
+		Metadata: &storage.ImageMetadata{},
 	}
 
-	suite.mockStore.EXPECT().GetImage("sha1").Return((*v1.Image)(nil), false, nil)
+	suite.mockStore.EXPECT().GetImage("sha1").Return((*storage.Image)(nil), false, nil)
 	suite.mockStore.EXPECT().UpsertImage(upsertedImage).Return(nil)
 	suite.mockIndexer.EXPECT().AddImage(upsertedImage).Return(nil)
 

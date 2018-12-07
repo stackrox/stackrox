@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
@@ -29,19 +30,19 @@ func getMockDeployment() *v1.Deployment {
 					},
 					Privileged: true,
 				},
-				Image: &v1.Image{
-					Name: &v1.ImageName{
+				Image: &storage.Image{
+					Name: &storage.ImageName{
 						FullName: "docker.io/library/nginx:1.10",
 						Registry: "docker.io",
 						Remote:   "library/nginx",
 						Tag:      "1.10",
 					},
-					Scan: &v1.ImageScan{
-						Components: []*v1.ImageScanComponent{
+					Scan: &storage.ImageScan{
+						Components: []*storage.ImageScanComponent{
 							{
 								Name:    "comp1",
 								Version: "1.1.1",
-								Vulns: []*v1.Vulnerability{
+								Vulns: []*storage.Vulnerability{
 									{
 										Cvss: 5,
 									},
@@ -53,7 +54,7 @@ func getMockDeployment() *v1.Deployment {
 							{
 								Name:    "comp1",
 								Version: "1.1.1",
-								Vulns: []*v1.Vulnerability{
+								Vulns: []*storage.Vulnerability{
 									{
 										Cvss: 5,
 									},
@@ -64,8 +65,8 @@ func getMockDeployment() *v1.Deployment {
 							},
 						},
 					},
-					Metadata: &v1.ImageMetadata{
-						V1: &v1.V1Metadata{
+					Metadata: &storage.ImageMetadata{
+						V1: &storage.V1Metadata{
 							Created: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(180 * 24 * time.Hour))),
 						},
 					},
@@ -92,9 +93,9 @@ func getMockDeployment() *v1.Deployment {
 				},
 			},
 			{
-				Image: &v1.Image{
-					Metadata: &v1.ImageMetadata{
-						V1: &v1.V1Metadata{
+				Image: &storage.Image{
+					Metadata: &storage.ImageMetadata{
+						V1: &storage.V1Metadata{
 							Created: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(90 * 24 * time.Hour))),
 						},
 					},

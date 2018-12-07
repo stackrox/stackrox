@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -65,7 +66,7 @@ func assertElementAtJSONPathExistsAndIsOfType(t *testing.T, obj interface{}, pat
 
 	// We keep dereferencing pointers and slices until we get to a struct.
 	// Examples:
-	// *v1.Image -> v1.Image
+	// *storage.Image -> storage.Image
 	// []*v1.Container -> *v1.Container -> v1.Container
 	for typ.Kind() == reflect.Ptr || typ.Kind() == reflect.Slice {
 		typ = typ.Elem()
@@ -113,7 +114,7 @@ func TestCategoryToOptionsMap(t *testing.T) {
 	}{
 		v1.SearchCategory_ALERTS:             {"alert", v1.Alert{}},
 		v1.SearchCategory_DEPLOYMENTS:        {"deployment", v1.Deployment{}},
-		v1.SearchCategory_IMAGES:             {"image", v1.Image{}},
+		v1.SearchCategory_IMAGES:             {"image", storage.Image{}},
 		v1.SearchCategory_POLICIES:           {"policy", v1.Policy{}},
 		v1.SearchCategory_SECRETS:            {"secret", v1.Secret{}},
 		v1.SearchCategory_PROCESS_INDICATORS: {"process_indicator", v1.ProcessIndicator{}},

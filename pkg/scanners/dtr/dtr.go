@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners/types"
@@ -116,7 +117,7 @@ func (d *dtr) sendRequest(client *http.Client, method, urlPrefix string) ([]byte
 }
 
 // getScan takes in an id and returns the image scan for that id if applicable
-func (d *dtr) getScan(image *v1.Image) (*v1.ImageScan, error) {
+func (d *dtr) getScan(image *storage.Image) (*storage.ImageScan, error) {
 	if image == nil || image.GetName().GetRemote() == "" || image.GetName().GetTag() == "" {
 		return nil, nil
 	}
@@ -189,13 +190,13 @@ func (d *dtr) Test() error {
 }
 
 // GetLastScan retrieves the most recent scan
-func (d *dtr) GetLastScan(image *v1.Image) (*v1.ImageScan, error) {
+func (d *dtr) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
 	log.Infof("Getting latest scan for image %v", image.GetName().GetFullName())
 	return d.getScan(image)
 }
 
 // Match decides if the image is contained within this registry
-func (d *dtr) Match(image *v1.Image) bool {
+func (d *dtr) Match(image *storage.Image) bool {
 	return d.registry == image.GetName().GetRegistry()
 }
 

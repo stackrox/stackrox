@@ -14,8 +14,6 @@ import io.stackrox.proto.api.v1.DetectionServiceGrpc
 import io.stackrox.proto.api.v1.ImageIntegrationServiceGrpc
 import io.stackrox.proto.api.v1.ImageIntegrationServiceOuterClass
 import io.stackrox.proto.api.v1.ImageIntegrationServiceOuterClass.ImageIntegration
-import io.stackrox.proto.api.v1.ImageServiceOuterClass
-import io.stackrox.proto.api.v1.ImageServiceOuterClass.Image
 import io.stackrox.proto.api.v1.NotifierServiceGrpc
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.api.v1.PolicyServiceGrpc
@@ -35,6 +33,7 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.api.v1.NetworkPolicyServiceGrpc
 import io.stackrox.proto.api.v1.SecretServiceGrpc
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass
+import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 
 class Services extends BaseService {
@@ -275,8 +274,8 @@ class Services extends BaseService {
 
     static requestBuildImageScan(String registry, String remote, String tag) {
         return getDetectionClient().detectBuildTime(
-                        Image.newBuilder()
-                                    .setName(ImageServiceOuterClass.ImageName.newBuilder()
+                        ImageOuterClass.Image.newBuilder()
+                                    .setName(ImageOuterClass.ImageName.newBuilder()
                                     .setRegistry(registry)
                                     .setRemote(remote)
                                     .setTag(tag)

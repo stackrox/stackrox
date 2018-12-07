@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stretchr/testify/suite"
 )
@@ -106,8 +107,8 @@ func (suite *DTRSuite) TestTestFunc() {
 func (suite *DTRSuite) TestGetScans() {
 	d := suite.dtr.(*dtr)
 
-	image := &v1.Image{
-		Name: &v1.ImageName{
+	image := &storage.Image{
+		Name: &storage.ImageName{
 			Registry: "",
 			Remote:   "docker/nginx",
 			Tag:      "1.10",
@@ -127,8 +128,8 @@ func (suite *DTRSuite) TestGetScans() {
 func (suite *DTRSuite) TestGetLastScan() {
 	d := suite.dtr.(*dtr)
 
-	image := &v1.Image{
-		Name: &v1.ImageName{
+	image := &storage.Image{
+		Name: &storage.ImageName{
 			Registry: "",
 			Remote:   "docker/nginx",
 			Tag:      "1.10",
