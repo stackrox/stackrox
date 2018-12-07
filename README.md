@@ -196,7 +196,7 @@ non-patch or patch.
 
 #### Non-patch Release
 These steps assume that the tip of `origin/master` is what you plan to release
-and that all the builds for that commit have completed successfully.
+and that **all the builds for that commit have completed successfully**.
 
 ```bash
 git checkout master
@@ -235,16 +235,38 @@ the image as `stackrox/main:[your-release-tag]`,
 for example `stackrox/main:1.0` and `stackrox.io/main:1.0`.
 
 ### Update JIRA release
-Mark this version "Released" in [JIRA](https://stack-rox.atlassian.net/projects/ROX?orderField=RANK&selectedItem=com.atlassian.jira.jira-projects-plugin%3Arelease-page&status=unreleased).
-Create the next one if it does not exist.
+*Note: Jira [doesn't have](https://community.atlassian.com/t5/Jira-questions/How-do-I-assign-the-permission-to-create-Versions-to-a/qaq-p/677499)
+version / release specific permissions, therefore request Jira admins to assign
+to you a "Release Manager" project role (at least temporaly) to perform some of
+the Jira actions below.*
 
-Find all bugs that are still open and affect a previous release.
-Add this release to the "Affects Version(s)" list for those bugs.
+<details><summary>Steps to update Jira</summary>
+
+**Important Note**: When doing bulk operations review the lists, that's your
+best chance to catch mistakes from the past release cycle or find out that
+something unexpected landed in the upcoming release.
+
+  1. Add the version being released to "Fix Version(s)" for completed items that
+don't have it ([filter](https://stack-rox.atlassian.net/issues/?filter=15720)).
+  1. Add the version being released to "Affected Version(s)" for bugs that have
+  this field empty ([filter](https://stack-rox.atlassian.net/issues/?filter=15719)).
+  1. Add the version being released to "Affected Version(s)" for all the bugs
+  that affect previous release and are still not fixed ([filter](https://stack-rox.atlassian.net/issues/?filter=15728)).
+  1. Find the version that is being released [here](https://stack-rox.atlassian.net/projects/ROX?orderField=RANK&selectedItem=com.atlassian.jira.jira-projects-plugin%3Arelease-page&status=released-unreleased),
+  review that there are no issues under this version w/o code being merged
+  (otherwise it may mean that the release is being blocked, or that you need
+  to remove the version being released from their "Fix Version(s)" field, you
+  may need to update "Affected Version(s)" as well). Finally mark the version as
+released.
+  1. Create next version in Jira if it doesn't exist (for non-patch releases
+  only), order it properly among other versions.
+
+</details>
 
 ### Create Release Notes
 1. Go the [releases page on GitHub](https://github.com/stackrox/rox/releases).
 1. Edit the corresponding tag and write release notes based on JIRA issues that
-went into the current release.
+went into the current release ([filter](https://stack-rox.atlassian.net/issues/?jql=project%20%3D%20ROX%20AND%20fixVersion%20%3D%20latestReleasedVersion()%20AND%20resolution%20not%20in%20(%22Won%27t%20Do%22%2C%20%22Won%27t%20Fix%22%2C%20%22Invalid%20Ticket%22%2C%20%22Not%20a%20Bug%22%2C%20Duplicate%2C%20%22Duplicate%20Ticket%22%2C%20%22Cannot%20Reproduce%22))).
 1. Mark the release as "Pre-release" if QA verification is pending.
 
 ### Promote the Release for Demos / POCs
