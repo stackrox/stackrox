@@ -1605,7 +1605,6 @@
     "github.com/blevesearch/bleve/mapping",
     "github.com/blevesearch/bleve/search",
     "github.com/blevesearch/bleve/search/query",
-    "github.com/boltdb/bolt",
     "github.com/cloudflare/cfssl/certinfo",
     "github.com/cloudflare/cfssl/config",
     "github.com/cloudflare/cfssl/csr",

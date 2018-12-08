@@ -5,7 +5,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/boltdb/bolt"
+	bolt "github.com/etcd-io/bbolt"
 	pb "github.com/stackrox/rox/generated/api/v1"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"google.golang.org/grpc"
@@ -39,7 +39,9 @@ func (s *signalServer) PushSignals(stream sensorAPI.SignalService_PushSignalsSer
 		}
 
 		fmt.Printf("%v\n", signal.GetSignal().GetProcessSignal())
-		s.Update(processSignal)
+		if err := s.Update(processSignal); err != nil {
+			return err
+		}
 	}
 }
 
@@ -49,11 +51,10 @@ func boltDB(path string) (db *bolt.DB, err error) {
 }
 
 func (s *signalServer) Update(processSignal *pb.ProcessSignal) error {
-	s.db.Update(func(tx *bolt.Tx) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
 		b, _ := tx.CreateBucketIfNotExists([]byte(processBucket))
 		return b.Put([]byte(processSignal.Name), []byte(processSignal.ExecFilePath))
 	})
-	return nil
 }
 
 func main() {
