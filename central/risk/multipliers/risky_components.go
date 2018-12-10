@@ -13,10 +13,10 @@ const (
 	// RiskyComponentCountHeading is the risk result name for scores calculated by this multiplier.
 	RiskyComponentCountHeading = "Components Useful for Attackers"
 
-	componentCountFloor     = 0
-	componentCountCeil      = 10
-	maxScore                = 1.5
-	maxComnponentsInMessage = 5
+	riskyComponentCountFloor = 0
+	riskyComponentCountCeil  = 10
+	maxRiskyScore            = 1.5
+	maxComponentsInMessage   = 5
 )
 
 var riskyComponents = set.NewStringSet(
@@ -67,9 +67,9 @@ func (c *riskyComponentCountMultiplier) Score(deployment *v1.Deployment) *v1.Ris
 	}
 
 	// Linear increase between 10 components and 20 components from weight of 1 to 1.5.
-	score := float32(1.0) + float32(largestRiskySet.Cardinality()-componentCountFloor)/float32(componentCountCeil-componentCountFloor)/float32(2)
-	if score > maxScore {
-		score = maxScore
+	score := float32(1.0) + float32(largestRiskySet.Cardinality()-riskyComponentCountFloor)/float32(riskyComponentCountCeil-riskyComponentCountFloor)/float32(2)
+	if score > maxRiskyScore {
+		score = maxRiskyScore
 	}
 
 	return &v1.Risk_Result{
@@ -88,10 +88,10 @@ func generateMessage(largestRiskySet []string) string {
 	})
 
 	// If we have more than 5 risky components, prune the message.
-	if len(largestRiskySet) > 5 {
+	if len(largestRiskySet) > maxComponentsInMessage {
 		componentsInMessage := largestRiskySet[:5]
 		componentsString := strings.Join(componentsInMessage, ", ")
-		diff := len(largestRiskySet) - 5
+		diff := len(largestRiskySet) - maxComponentsInMessage
 		return fmt.Sprintf("an image contains components: %s and %d other(s) that are useful for attackers", componentsString, diff)
 	}
 

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,31 +14,31 @@ func TestRiskyComponentCountScore(t *testing.T) {
 
 	// Add some risky components to the deployment
 	components := deployment.Containers[0].Image.Scan.Components
-	components = append(components, &v1.ImageScanComponent{
+	components = append(components, &storage.ImageScanComponent{
 		Name:    "apk",
 		Version: "1.0",
 	})
-	components = append(components, &v1.ImageScanComponent{
+	components = append(components, &storage.ImageScanComponent{
 		Name:    "apk",
 		Version: "1.2",
 	})
-	components = append(components, &v1.ImageScanComponent{
+	components = append(components, &storage.ImageScanComponent{
 		Name:    "tcsh",
 		Version: "1.0",
 	})
-	components = append(components, &v1.ImageScanComponent{
+	components = append(components, &storage.ImageScanComponent{
 		Name:    "curl",
 		Version: "1.0",
 	})
-	components = append(components, &v1.ImageScanComponent{
+	components = append(components, &storage.ImageScanComponent{
 		Name:    "wget",
 		Version: "1.0",
 	})
-	components = append(components, &v1.ImageScanComponent{
+	components = append(components, &storage.ImageScanComponent{
 		Name:    "telnet",
 		Version: "1.0",
 	})
-	components = append(components, &v1.ImageScanComponent{
+	components = append(components, &storage.ImageScanComponent{
 		Name:    "yum",
 		Version: "1.0",
 	})
