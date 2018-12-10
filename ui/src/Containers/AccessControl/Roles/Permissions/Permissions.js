@@ -42,7 +42,9 @@ class Permissions extends Component {
         const headerText = selectedRole.name
             ? `"${selectedRole.name}" Permissions`
             : 'Create New Role';
-        const headerComponents = defaultRoles[selectedRole.name] ? null : (
+        const headerComponents = defaultRoles[selectedRole.name] ? (
+            <span className="uppercase text-base-500 leading-normal font-700">default</span>
+        ) : (
             <Button isEditing={isEditing} onEdit={onEdit} onSave={onSave} />
         );
         const panelHeaderClassName = `${headerClassName} bg-base-100`;

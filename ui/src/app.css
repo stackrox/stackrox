@@ -685,13 +685,13 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .ReactTable .rt-thead {
-position: sticky;
-@apply .pin-t .bg-base-100 !important;
-z-index: 4 !important;
+    position: sticky;
+    @apply .pin-t .bg-base-100 !important;
+    z-index: 4 !important;
 }
 
 .ReactTable .rt-tbody {
-overflow: initial !important;
+    overflow: initial !important;
 }
 
 .ReactTable .rt-thead .rt-th:focus {
@@ -739,7 +739,8 @@ overflow: initial !important;
 }
 
 .ReactTable .rt-tbody .rt-tr:hover .rt-td {
-    @apply .bg-base-200 .z-1 !important;
+    @apply .bg-base-200 !important;
+    z-index: 3 !important;
     box-shadow: 0px -1px 0 0 config('colors.base-400'), inset 0px -1px 0 0 config('colors.base-400');
 }
 
@@ -747,7 +748,7 @@ overflow: initial !important;
 .ReactTable .rt-tbody .rt-tr.row-active .rt-td, .ReactTable .rt-tbody .rt-tr.row-active:hover .rt-td {
     @apply .text-tertiary-700 .bg-tertiary-200 !important;
     box-shadow: 0px -1px 0 0 config('colors.tertiary-400'), inset 0px -1px 0 0 config('colors.tertiary-400');
-    z-index: 2 !important;
+    z-index: 3 !important;
 }
 
 .ReactTable .rt-tbody .rt-tr-group {

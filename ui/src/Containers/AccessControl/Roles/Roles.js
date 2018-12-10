@@ -21,7 +21,8 @@ class Roles extends Component {
             globalAccess: PropTypes.string
         }),
         selectRole: PropTypes.func.isRequired,
-        saveRole: PropTypes.func.isRequired
+        saveRole: PropTypes.func.isRequired,
+        deleteRole: PropTypes.func.isRequired
     };
 
     static defaultProps = {
@@ -53,6 +54,11 @@ class Roles extends Component {
         this.setState({ isEditing: false });
     };
 
+    onDelete = role => {
+        this.props.deleteRole(role.id);
+        this.setState({ isEditing: false });
+    };
+
     renderSideBar = () => {
         const header = 'StackRox Roles';
         const { roles } = this.props;
@@ -62,6 +68,7 @@ class Roles extends Component {
                 rows={roles}
                 onCreateNewRole={this.onCreateNewRole}
                 onCancel={this.onCancel}
+                onDelete={this.onDelete}
             />
         );
     };
@@ -92,7 +99,8 @@ const mapStateToProps = createStructuredSelector({
 
 const mapDispatchToProps = {
     selectRole: actions.selectRole,
-    saveRole: actions.saveRole
+    saveRole: actions.saveRole,
+    deleteRole: actions.deleteRole
 };
 
 export default connect(
