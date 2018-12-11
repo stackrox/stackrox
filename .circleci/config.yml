@@ -1,6 +1,6 @@
 defaults: &defaults
   docker:
-    - image: docker.io/stackrox/apollo-ci:0.1.11-17-g9eb32a3547
+    - image: docker.io/stackrox/apollo-ci:0.1.11-20-g6058930140
       auth:
         username: $DOCKERHUB_USERNAME
         password: $DOCKERHUB_PASSWORD
@@ -33,6 +33,13 @@ restoreUI: &restoreUI
     keys:
       - *uiCacheKey
       - v1-rox-ui-deps
+
+setupHelm: &setupHelm
+  run:
+    name: Setup tiller by default in GKE Cluster
+    command:  |
+       kubectl apply -f ./deploy/k8s/tillerbind.yaml
+       helm init --service-account helm
 
 setupGCP: &setupGCP
   run:
@@ -410,6 +417,7 @@ jobs:
       - LOCAL_PORT: 8000
       - RUNTIME_SUPPORT: true
       - MONITORING_SUPPORT: true
+      - OUTPUT_FORMAT: helm
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
     steps:
       - checkout
@@ -429,6 +437,7 @@ jobs:
 
       - *setupGCP
       - *createGKE
+      - *setupHelm
       - *deployGKE
       - *setupCIMonitoring
       - *waitForAPI
