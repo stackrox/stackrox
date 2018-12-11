@@ -5,55 +5,75 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cvss"
-	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1alpha1"
+	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/grafeas"
 )
 
-func (g *googleScanner) convertComponentFromPackageManagerOccurrence(occurrence *containeranalysis.Occurrence) (string, *storage.ImageScanComponent) {
-	location := occurrence.GetInstallation().GetLocation()[0]
-	version := location.GetVersion()
+func (c *googleScanner) convertComponentFromPackageAndVersion(pv packageAndVersion) *storage.ImageScanComponent {
 	component := &storage.ImageScanComponent{
-		Name:    occurrence.GetInstallation().GetName(),
-		Version: version.GetName() + "-" + version.GetRevision(),
+		Name:    pv.name,
+		Version: pv.version,
 	}
-	return location.GetCpeUri(), component
+	return component
 }
 
-func (g *googleScanner) convertVulnerabilityFromPackageVulnerabilityOccurrence(occurrence *containeranalysis.Occurrence, note *containeranalysis.Note) (string, string, *storage.Vulnerability) {
-	packageIssues := occurrence.GetVulnerabilityDetails().GetPackageIssue()
-	if len(packageIssues) == 0 {
-		return "", "", nil
-	}
+func (c *googleScanner) processOccurrences(o *grafeas.Occurrence, convertChan chan *storage.Vulnerability) {
+	convertChan <- c.convertVulnsFromOccurrence(o)
+}
 
-	pkgIssue := packageIssues[0]
-	affectedLocation := pkgIssue.GetAffectedLocation()
-	var link string
-	if len(note.GetRelatedUrl()) != 0 {
-		link = note.GetRelatedUrl()[0].GetUrl()
+func (c *googleScanner) convertVulnsFromOccurrences(occurrences []*grafeas.Occurrence) []*storage.Vulnerability {
+	// Parallelize this as it makes a bunch of calls to the API
+	convertChan := make(chan *storage.Vulnerability)
+	vulns := make([]*storage.Vulnerability, 0, len(occurrences))
+	for _, o := range occurrences {
+		go c.processOccurrences(o, convertChan)
 	}
-	summary := g.getSummary(note.GetVulnerabilityType().GetDetails(), affectedLocation.GetCpeUri())
+	for range occurrences {
+		vulns = append(vulns, <-convertChan)
+	}
+	return vulns
+}
+
+func (c *googleScanner) getSummary(occurrence *grafeas.Occurrence) string {
+	ctx, cancel := grpcContext()
+	defer cancel()
+	note, err := c.betaClient.GetOccurrenceNote(ctx, &grafeas.GetOccurrenceNoteRequest{Name: occurrence.GetName()})
+	if err != nil {
+		return "Unknown CVE description"
+	}
+	for _, l := range note.GetVulnerability().GetDetails() {
+		if l.CpeUri == occurrence.GetVulnerability().GetPackageIssue()[0].GetAffectedLocation().GetCpeUri() {
+			return l.Description
+		}
+	}
+	return "Unknown CVE description"
+}
+
+func (c *googleScanner) convertVulnsFromOccurrence(occurrence *grafeas.Occurrence) *storage.Vulnerability {
+	vulnerability := occurrence.GetVulnerability()
+
+	packageIssues := vulnerability.GetPackageIssue()
+	if len(packageIssues) == 0 {
+		return nil
+	}
+	pkgIssue := packageIssues[0]
+
+	var link string
+	if len(vulnerability.RelatedUrls) != 0 {
+		link = vulnerability.GetRelatedUrls()[0].GetUrl()
+	}
 
 	vuln := &storage.Vulnerability{
-		Cve:     note.GetShortDescription(),
+		Cve:     vulnerability.GetShortDescription(),
 		Link:    link,
-		Cvss:    occurrence.GetVulnerabilityDetails().GetCvssScore(),
-		Summary: summary,
+		Cvss:    vulnerability.GetCvssScore(),
+		Summary: c.getSummary(occurrence),
 		SetFixedBy: &storage.Vulnerability_FixedBy{
 			FixedBy: pkgIssue.GetFixedLocation().GetVersion().GetRevision(),
 		},
 	}
 
-	if cvssVector, err := cvss.ParseCVSSV2(strings.TrimPrefix(note.LongDescription, "NIST vectors: ")); err == nil {
+	if cvssVector, err := cvss.ParseCVSSV2(strings.TrimPrefix(vulnerability.LongDescription, "NIST vectors: ")); err == nil {
 		vuln.CvssV2 = cvssVector
 	}
-	return affectedLocation.GetCpeUri(), affectedLocation.GetPackage(), vuln
-}
-
-// getSummary searches through the details and returns the summary that matches the cpeURI
-func (g googleScanner) getSummary(details []*containeranalysis.VulnerabilityType_Detail, cpeURI string) string {
-	for _, detail := range details {
-		if detail.CpeUri == cpeURI {
-			return detail.Description
-		}
-	}
-	return ""
+	return vuln
 }
