@@ -15,7 +15,22 @@ import io.grpc.netty.NettyChannelBuilder
 import io.netty.handler.ssl.SslContext
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 
+import java.util.concurrent.TimeUnit
+
 class BaseService {
+
+    private static String apiToken = null
+    private static Boolean tokenUpdated = false
+
+    static useApiToken(String apiToken) {
+        this.apiToken = apiToken
+        tokenUpdated = true
+    }
+
+    static useBasicAuth() {
+        apiToken = null
+        tokenUpdated = true
+    }
 
     private static class CallWithAuthorizationHeader<ReqT, RespT>
             extends ClientInterceptors.CheckedForwardingClientCall<ReqT, RespT> {
@@ -45,6 +60,10 @@ class BaseService {
                     (username + ":" + password).getBytes("UTF-8"))
         }
 
+        AuthInterceptor(String apiToken) {
+            authHeaderContents = "Bearer " + apiToken
+        }
+
         public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(
                 MethodDescriptor<ReqT, RespT> method, CallOptions callOptions, Channel next) {
             return new CallWithAuthorizationHeader<>(next.newCall(method, callOptions), authHeaderContents)
@@ -55,9 +74,13 @@ class BaseService {
         String username = System.getenv("ROX_USERNAME") ?: ""
         String password = System.getenv("ROX_PASSWORD") ?: ""
         def interceptors = new ArrayList<ClientInterceptor>()
-        if (!username.empty && !password.empty) {
+
+        if (apiToken != null) {
+            interceptors.add(new AuthInterceptor(apiToken))
+        } else if (!username.empty && !password.empty) {
             interceptors.add(new AuthInterceptor(username, password))
         }
+
         return interceptors
     }
 
@@ -82,6 +105,15 @@ class BaseService {
     static getChannel() {
         if (channelInstance == null) {
             initializeChannel()
+        } else if (tokenUpdated) {
+            channelInstance.shutdownNow()
+            try {
+                channelInstance.awaitTermination(30, TimeUnit.SECONDS)
+            } catch (InterruptedException ie) {
+                println "Channel did not terminate within timeout...: ${ie}"
+            }
+            initializeChannel()
+            tokenUpdated = false
         }
         return channelInstance
     }

@@ -7,6 +7,7 @@ import orchestratormanager.OrchestratorTypes
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
+import services.BaseService
 import spock.lang.Shared
 import spock.lang.Specification
 import testrailintegration.TestRailconfig
@@ -73,5 +74,10 @@ class BaseSpecification extends Specification {
             Integer testcaseId = Integer.parseInt(entry.value.toString());
             tc.addStatusForCase(testcaseId, status);
         }*/
+    }
+
+    def cleanup() {
+        //Always make sure to revert back to basic auth after each test
+        BaseService.useBasicAuth()
     }
 }
