@@ -15,25 +15,20 @@ import (
 var (
 	once sync.Once
 
-	indexer  index.Indexer
-	storage  store.Store
-	searcher search.Searcher
-
 	ad DataStore
 
 	logger = logging.LoggerForModule()
 )
 
 func initialize() {
-	indexer = index.New(globalindex.GetGlobalIndex())
+	indexer := index.New(globalindex.GetGlobalIndex())
 
-	var err error
-	storage, err = store.New(globaldb.GetGlobalDB())
+	storage, err := store.New(globaldb.GetGlobalDB())
 	if err != nil {
 		logger.Panicf("Failed to initialize deployment store: %s", err)
 	}
 
-	searcher, err = search.New(storage, indexer)
+	searcher, err := search.New(storage, indexer)
 	if err != nil {
 		logger.Panicf("Failed to load deployment index %s", err)
 	}

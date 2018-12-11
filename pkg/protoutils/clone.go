@@ -5,7 +5,7 @@ import (
 )
 
 // ProtoCloneType represents a generic proto type that we clone.
-//go:generate genny -in=$GOFILE -imp=github.com/stackrox/rox/generated/v1 -out=gen-$GOFILE gen "ProtoCloneType=*v1.Policy,*v1.Deployment,*v1.Alert"
+//go:generate genny -in=$GOFILE -imp=github.com/stackrox/rox/generated/api/v1 -imp=github.com/stackrox/rox/generated/storage -out=gen-$GOFILE gen "ProtoCloneType=*v1.Policy,*storage.Deployment,*v1.Alert"
 type ProtoCloneType generic.Type
 
 // CloneProtoCloneType is a (generic) wrapper around proto.Clone that is strongly typed.

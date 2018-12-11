@@ -9,6 +9,7 @@ import (
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -91,7 +92,7 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 	return builder.Build(), nil
 }
 
-func filterNetworkFlowsByDeployments(flows []*v1.NetworkFlow, deployments []*v1.Deployment) (filtered []*v1.NetworkFlow) {
+func filterNetworkFlowsByDeployments(flows []*v1.NetworkFlow, deployments []*storage.Deployment) (filtered []*v1.NetworkFlow) {
 
 	filtered = flows[:0]
 	deploymentIDMap := make(map[string]bool)
@@ -130,7 +131,7 @@ func filterNetworkFlowsByTime(flows []*v1.NetworkFlow, since timestamp.MicroTS) 
 	return
 }
 
-func (s *serviceImpl) getDeployments(clusterID string, query string) (deployments []*v1.Deployment, err error) {
+func (s *serviceImpl) getDeployments(clusterID string, query string) (deployments []*storage.Deployment, err error) {
 	clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 
 	q := clusterQuery

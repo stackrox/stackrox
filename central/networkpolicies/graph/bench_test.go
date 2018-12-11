@@ -5,10 +5,11 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
-func getMockDeployment(id string) *v1.Deployment {
-	return &v1.Deployment{
+func getMockDeployment(id string) *storage.Deployment {
+	return &storage.Deployment{
 		Id:        id,
 		Namespace: "default",
 		Labels:    deploymentLabels("app", "web"),
@@ -23,7 +24,7 @@ func getMockNetworkPolicy(name string) *v1.NetworkPolicy {
 
 func benchmarkEvaluateCluster(b *testing.B, numDeployments, numNetworkPolicies int) {
 	m := newMockGraphEvaluator()
-	deployments := make([]*v1.Deployment, 0, numDeployments)
+	deployments := make([]*storage.Deployment, 0, numDeployments)
 	for i := 0; i < numDeployments; i++ {
 		deployments = append(deployments, getMockDeployment(fmt.Sprintf("%d", i)))
 	}

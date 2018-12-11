@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
 
@@ -25,6 +26,6 @@ type resourceMatcherImpl struct {
 	resourcePolicy *v1.ResourcePolicy
 }
 
-func (p *resourceMatcherImpl) match(container *v1.Container) []*v1.Alert_Violation {
+func (p *resourceMatcherImpl) match(container *storage.Container) []*v1.Alert_Violation {
 	return utils.MatchResources(p.resourcePolicy, container.GetResources(), fmt.Sprintf("container %s", container.GetImage().GetName().GetRemote()))
 }

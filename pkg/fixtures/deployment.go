@@ -2,13 +2,12 @@ package fixtures
 
 import (
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
 // LightweightDeployment returns a mock deployment which doesn't have all the crazy images.
-func LightweightDeployment() *v1.Deployment {
-	return &v1.Deployment{
+func LightweightDeployment() *storage.Deployment {
+	return &storage.Deployment{
 		Name:        "nginx_server",
 		Id:          "s79mdvmb6dsl",
 		ClusterId:   "prod cluster",
@@ -20,7 +19,7 @@ func LightweightDeployment() *v1.Deployment {
 			"email":                         "vv@stackrox.com",
 			"owner":                         "stackrox",
 		},
-		Containers: []*v1.Container{
+		Containers: []*storage.Container{
 			{
 				Image: &storage.Image{
 					Id: "sha256:SHA1",
@@ -55,21 +54,21 @@ func LightweightDeployment() *v1.Deployment {
 						},
 					},
 				},
-				SecurityContext: &v1.SecurityContext{
+				SecurityContext: &storage.SecurityContext{
 					Privileged:       true,
 					AddCapabilities:  []string{"SYS_ADMIN"},
 					DropCapabilities: []string{"SYS_MODULE"},
 				},
-				Resources: &v1.Resources{CpuCoresRequest: 0.9},
-				Config: &v1.ContainerConfig{
-					Env: []*v1.ContainerConfig_EnvironmentConfig{
+				Resources: &storage.Resources{CpuCoresRequest: 0.9},
+				Config: &storage.ContainerConfig{
+					Env: []*storage.ContainerConfig_EnvironmentConfig{
 						{
 							Key:   "envkey",
 							Value: "envvalue",
 						},
 					},
 				},
-				Volumes: []*v1.Volume{
+				Volumes: []*storage.Volume{
 					{
 						Name:        "vol1",
 						Source:      "/vol1",
@@ -78,7 +77,7 @@ func LightweightDeployment() *v1.Deployment {
 						ReadOnly:    true,
 					},
 				},
-				Secrets: []*v1.EmbeddedSecret{
+				Secrets: []*storage.EmbeddedSecret{
 					{
 						Name: "secretname",
 						Path: "/var/lib/stackrox",
@@ -90,8 +89,8 @@ func LightweightDeployment() *v1.Deployment {
 }
 
 // GetDeployment returns a Mock Deployment
-func GetDeployment() *v1.Deployment {
+func GetDeployment() *storage.Deployment {
 	dep := LightweightDeployment()
-	dep.Containers = append(dep.Containers, &v1.Container{Image: GetImage()})
+	dep.Containers = append(dep.Containers, &storage.Container{Image: GetImage()})
 	return dep
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +15,7 @@ func TestGetDeployment(t *testing.T) {
 	mocks := mockResolver(t)
 	testClusterID := "testClusterID"
 	testDeploymentID := "testDeploymentID"
-	mocks.deployment.EXPECT().GetDeployment(testDeploymentID).Return(&v1.Deployment{
+	mocks.deployment.EXPECT().GetDeployment(testDeploymentID).Return(&storage.Deployment{
 		Id: testDeploymentID, ClusterId: testClusterID, Name: "deployment name", Type: "deployment type",
 	}, true, nil)
 	mocks.cluster.EXPECT().GetCluster(testClusterID).Return(&v1.Cluster{
@@ -32,7 +33,7 @@ func TestGetDeployment(t *testing.T) {
 
 func TestGetDeployments(t *testing.T) {
 	mocks := mockResolver(t)
-	mocks.deployment.EXPECT().ListDeployments().Return([]*v1.ListDeployment{
+	mocks.deployment.EXPECT().ListDeployments().Return([]*storage.ListDeployment{
 		{
 			Id: "one", Name: "one name",
 		},
@@ -62,7 +63,7 @@ const processQuery = `query d($d:ID) {
 func TestGetDeploymentProcessGroup(t *testing.T) {
 	testDeploymentID := "deploymentId"
 	mocks := mockResolver(t)
-	mocks.deployment.EXPECT().GetDeployment(testDeploymentID).Return(&v1.Deployment{
+	mocks.deployment.EXPECT().GetDeployment(testDeploymentID).Return(&storage.Deployment{
 		Id: testDeploymentID,
 	}, true, nil)
 	mocks.process.EXPECT().SearchRawProcessIndicators(gomock.Any()).Return([]*v1.ProcessIndicator{

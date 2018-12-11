@@ -2,7 +2,7 @@ package deploymentevents
 
 import (
 	"github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func newClusterEnrichment(clusters datastore.DataStore) *clusterEnrichmentImpl {
@@ -15,7 +15,7 @@ type clusterEnrichmentImpl struct {
 	clusters datastore.DataStore
 }
 
-func (s *clusterEnrichmentImpl) do(d *v1.Deployment) error {
+func (s *clusterEnrichmentImpl) do(d *storage.Deployment) error {
 	d.ClusterName = ""
 
 	cluster, clusterExists, err := s.clusters.GetCluster(d.ClusterId)

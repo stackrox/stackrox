@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
 
@@ -46,7 +47,7 @@ func (mr *MockEvaluatorMockRecorder) Epoch() *gomock.Call {
 }
 
 // GetGraph mocks base method
-func (m *MockEvaluator) GetGraph(arg0 []*v1.Deployment, arg1 []*v1.NetworkPolicy) *v1.NetworkGraph {
+func (m *MockEvaluator) GetGraph(arg0 []*storage.Deployment, arg1 []*v1.NetworkPolicy) *v1.NetworkGraph {
 	ret := m.ctrl.Call(m, "GetGraph", arg0, arg1)
 	ret0, _ := ret[0].(*v1.NetworkGraph)
 	return ret0

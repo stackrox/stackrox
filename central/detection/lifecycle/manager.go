@@ -11,6 +11,7 @@ import (
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"golang.org/x/time/rate"
 )
@@ -29,10 +30,10 @@ type Manager interface {
 	IndicatorAdded(indicator *v1.ProcessIndicator, injector pipeline.EnforcementInjector) error
 	// DeploymentUpdated processes a new or updated deployment, generating and updating alerts in the store and returning
 	// enforcement action.
-	DeploymentUpdated(deployment *v1.Deployment) (string, v1.EnforcementAction, error)
+	DeploymentUpdated(deployment *storage.Deployment) (string, v1.EnforcementAction, error)
 	UpsertPolicy(policy *v1.Policy) error
 
-	DeploymentRemoved(deployment *v1.Deployment) error
+	DeploymentRemoved(deployment *storage.Deployment) error
 	RemovePolicy(policyID string) error
 }
 

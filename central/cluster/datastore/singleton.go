@@ -14,13 +14,11 @@ import (
 var (
 	once sync.Once
 
-	storage store.Store
-
 	ad DataStore
 )
 
 func initialize() {
-	storage = store.New(globaldb.GetGlobalDB())
+	storage := store.New(globaldb.GetGlobalDB())
 
 	ad = New(storage, alertDataStore.Singleton(), deploymentDataStore.Singleton(), nodeStore.Singleton(), secretDataStore.Singleton())
 }

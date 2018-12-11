@@ -3,7 +3,7 @@ package enrichanddetect
 import (
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	"github.com/stackrox/rox/central/enrichment"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type enricherAndDetectorImpl struct {
@@ -12,7 +12,7 @@ type enricherAndDetectorImpl struct {
 }
 
 // EnrichAndDetect runs enrichment and detection on a deployment.
-func (e *enricherAndDetectorImpl) EnrichAndDetect(deployment *v1.Deployment) error {
+func (e *enricherAndDetectorImpl) EnrichAndDetect(deployment *storage.Deployment) error {
 	updated, err := e.enricher.Enrich(deployment)
 	if err != nil {
 		return err

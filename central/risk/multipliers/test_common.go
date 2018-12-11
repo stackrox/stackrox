@@ -3,28 +3,27 @@ package multipliers
 import (
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
-func getMockDeployment() *v1.Deployment {
-	return &v1.Deployment{
+func getMockDeployment() *storage.Deployment {
+	return &storage.Deployment{
 		ClusterId: "cluster",
-		Containers: []*v1.Container{
+		Containers: []*storage.Container{
 			{
-				Volumes: []*v1.Volume{
+				Volumes: []*storage.Volume{
 					{
 						Name:     "readonly",
 						ReadOnly: true,
 					},
 				},
-				Secrets: []*v1.EmbeddedSecret{
+				Secrets: []*storage.EmbeddedSecret{
 					{
 						Name: "secret",
 					},
 				},
-				SecurityContext: &v1.SecurityContext{
+				SecurityContext: &storage.SecurityContext{
 					AddCapabilities: []string{
 						"ALL",
 					},
@@ -71,23 +70,23 @@ func getMockDeployment() *v1.Deployment {
 						},
 					},
 				},
-				Ports: []*v1.PortConfig{
+				Ports: []*storage.PortConfig{
 					{
 						Name:          "Port1",
 						ContainerPort: 22,
-						Exposure:      v1.PortConfig_EXTERNAL,
+						Exposure:      storage.PortConfig_EXTERNAL,
 						ExposedPort:   8082,
 					},
 					{
 						Name:          "Port2",
 						ContainerPort: 23,
-						Exposure:      v1.PortConfig_INTERNAL,
+						Exposure:      storage.PortConfig_INTERNAL,
 						ExposedPort:   8083,
 					},
 					{
 						Name:          "Port3",
 						ContainerPort: 24,
-						Exposure:      v1.PortConfig_NODE,
+						Exposure:      storage.PortConfig_NODE,
 						ExposedPort:   8084,
 					},
 				},
@@ -100,12 +99,12 @@ func getMockDeployment() *v1.Deployment {
 						},
 					},
 				},
-				Volumes: []*v1.Volume{
+				Volumes: []*storage.Volume{
 					{
 						Name: "rw volume",
 					},
 				},
-				SecurityContext: &v1.SecurityContext{},
+				SecurityContext: &storage.SecurityContext{},
 			},
 		},
 	}

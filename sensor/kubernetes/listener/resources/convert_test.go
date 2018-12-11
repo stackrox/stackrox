@@ -29,7 +29,7 @@ func TestConvert(t *testing.T) {
 		deploymentType     string
 		action             pkgV1.ResourceAction
 		podLister          *mockPodLister
-		expectedDeployment *pkgV1.Deployment
+		expectedDeployment *storage.Deployment
 	}{
 		{
 			name: "Not top-level replica set",
@@ -226,7 +226,7 @@ func TestConvert(t *testing.T) {
 					},
 				},
 			},
-			expectedDeployment: &pkgV1.Deployment{
+			expectedDeployment: &storage.Deployment{
 				Id:               "FooID",
 				Name:             "deployment",
 				Namespace:        "namespace",
@@ -244,14 +244,14 @@ func TestConvert(t *testing.T) {
 					"annotationkey2": "annotationvalue2",
 				},
 				UpdatedAt: &timestamp.Timestamp{Seconds: 1000},
-				Containers: []*pkgV1.Container{
+				Containers: []*storage.Container{
 					{
 						Id:   "FooID:container1",
 						Name: "container1",
-						Config: &pkgV1.ContainerConfig{
+						Config: &storage.ContainerConfig{
 							Command: []string{"hello", "world"},
 							Args:    []string{"lorem", "ipsum"},
-							Env: []*pkgV1.ContainerConfig_EnvironmentConfig{
+							Env: []*storage.ContainerConfig_EnvironmentConfig{
 								{
 									Key:   "envName",
 									Value: "envValue",
@@ -266,45 +266,45 @@ func TestConvert(t *testing.T) {
 								FullName: "docker.io/stackrox/kafka:latest",
 							},
 						},
-						Ports: []*pkgV1.PortConfig{
+						Ports: []*storage.PortConfig{
 							{
 								Name:          "api",
 								ContainerPort: 9092,
 								ExposedPort:   9092,
 								Protocol:      "TCP",
-								Exposure:      pkgV1.PortConfig_INTERNAL,
+								Exposure:      storage.PortConfig_INTERNAL,
 							},
 							{
 								Name:          "status",
 								ContainerPort: 443,
 								ExposedPort:   443,
 								Protocol:      "UCP",
-								Exposure:      pkgV1.PortConfig_INTERNAL,
+								Exposure:      storage.PortConfig_INTERNAL,
 							},
 						},
-						Secrets: []*pkgV1.EmbeddedSecret{
+						Secrets: []*storage.EmbeddedSecret{
 							{
 								Name: "private_key",
 								Path: "/var/secrets",
 							},
 						},
-						SecurityContext: &pkgV1.SecurityContext{
-							Selinux: &pkgV1.SecurityContext_SELinux{
+						SecurityContext: &storage.SecurityContext{
+							Selinux: &storage.SecurityContext_SELinux{
 								User:  "user",
 								Role:  "role",
 								Type:  "type",
 								Level: "level",
 							},
 						},
-						Resources: &pkgV1.Resources{
+						Resources: &storage.Resources{
 							CpuCoresRequest: 0.1,
 							CpuCoresLimit:   0.2,
 							MemoryMbRequest: 1024.00,
 							MemoryMbLimit:   2048.00,
 						},
-						Instances: []*pkgV1.ContainerInstance{
+						Instances: []*storage.ContainerInstance{
 							{
-								InstanceId: &pkgV1.ContainerInstanceID{
+								InstanceId: &storage.ContainerInstanceID{
 									Node: "mynode",
 								},
 								ContainingPodId: "deployment-blah-blah.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
@@ -314,9 +314,9 @@ func TestConvert(t *testing.T) {
 					{
 						Id:   "FooID:container2",
 						Name: "container2",
-						Config: &pkgV1.ContainerConfig{
+						Config: &storage.ContainerConfig{
 							Args: []string{"--flag"},
-							Env: []*pkgV1.ContainerConfig_EnvironmentConfig{
+							Env: []*storage.ContainerConfig_EnvironmentConfig{
 								{
 									Key:   "ROX_ENV_VAR",
 									Value: "rox",
@@ -337,11 +337,11 @@ func TestConvert(t *testing.T) {
 								FullName: "docker.io/stackrox/policy-engine:1.3",
 							},
 						},
-						SecurityContext: &pkgV1.SecurityContext{
+						SecurityContext: &storage.SecurityContext{
 							Privileged:      true,
 							AddCapabilities: []string{"IPC_LOCK", "SYS_RESOURCE"},
 						},
-						Volumes: []*pkgV1.Volume{
+						Volumes: []*storage.Volume{
 
 							{
 								Name:        "hostMountVol1",
@@ -350,11 +350,11 @@ func TestConvert(t *testing.T) {
 								Type:        "HostPath",
 							},
 						},
-						Resources: &pkgV1.Resources{},
-						Instances: []*pkgV1.ContainerInstance{
+						Resources: &storage.Resources{},
+						Instances: []*storage.ContainerInstance{
 							{
-								InstanceId: &pkgV1.ContainerInstanceID{
-									ContainerRuntime: pkgV1.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
+								InstanceId: &storage.ContainerInstanceID{
+									ContainerRuntime: storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
 									Id:               "35669191c32a9cfb532e5d79b09f2b0926c0faf27e7543f1fbe433bd94ae78d7",
 									Node:             "mynode",
 								},

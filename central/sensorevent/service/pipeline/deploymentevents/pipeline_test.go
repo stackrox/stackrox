@@ -150,9 +150,9 @@ func (suite *PipelineTestSuite) TestUpdateImages() {
 }
 
 func (suite *PipelineTestSuite) TestUpdateImagesSkipped() {
-	deployment := &v1.Deployment{
+	deployment := &storage.Deployment{
 		Id: "id1",
-		Containers: []*v1.Container{
+		Containers: []*storage.Container{
 			{
 				Image: &storage.Image{
 					Name: &storage.ImageName{
@@ -192,9 +192,9 @@ func fakeDeploymentEvents() []*v1.SensorEvent {
 	return []*v1.SensorEvent{
 		{
 			Resource: &v1.SensorEvent_Deployment{
-				Deployment: &v1.Deployment{
+				Deployment: &storage.Deployment{
 					Id: "id1",
-					Containers: []*v1.Container{
+					Containers: []*storage.Container{
 						{
 							Image: &storage.Image{
 								Id: "sha1",
@@ -207,9 +207,9 @@ func fakeDeploymentEvents() []*v1.SensorEvent {
 		},
 		{
 			Resource: &v1.SensorEvent_Deployment{
-				Deployment: &v1.Deployment{
+				Deployment: &storage.Deployment{
 					Id: "id2",
-					Containers: []*v1.Container{
+					Containers: []*storage.Container{
 						{
 							Image: &storage.Image{
 								Id: "sha1",
@@ -222,9 +222,9 @@ func fakeDeploymentEvents() []*v1.SensorEvent {
 		},
 		{
 			Resource: &v1.SensorEvent_Deployment{
-				Deployment: &v1.Deployment{
+				Deployment: &storage.Deployment{
 					Id: "id3",
-					Containers: []*v1.Container{
+					Containers: []*storage.Container{
 						{
 							Image: &storage.Image{
 								Id: "sha2",
@@ -237,9 +237,9 @@ func fakeDeploymentEvents() []*v1.SensorEvent {
 		},
 		{
 			Resource: &v1.SensorEvent_Deployment{
-				Deployment: &v1.Deployment{
+				Deployment: &storage.Deployment{
 					Id: "id4",
-					Containers: []*v1.Container{
+					Containers: []*storage.Container{
 						{
 							Image: &storage.Image{
 								Id: "sha2",
@@ -263,12 +263,12 @@ type mockDetector struct {
 	mock.Mock
 }
 
-func (d *mockDetector) DeploymentUpdated(deployment *v1.Deployment) (alertID string, enforcement v1.EnforcementAction, err error) {
+func (d *mockDetector) DeploymentUpdated(deployment *storage.Deployment) (alertID string, enforcement v1.EnforcementAction, err error) {
 	args := d.Called(deployment)
 	return args.Get(0).(string), args.Get(1).(v1.EnforcementAction), args.Error(2)
 }
 
-func (d *mockDetector) DeploymentRemoved(deployment *v1.Deployment) error {
+func (d *mockDetector) DeploymentRemoved(deployment *storage.Deployment) error {
 	args := d.Called(deployment)
 	return args.Error(0)
 }

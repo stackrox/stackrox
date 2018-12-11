@@ -5,11 +5,12 @@ import (
 	"math"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // MatchResources returns violations based on the input resource policy and actual resource configuration.
-func MatchResources(policy *v1.ResourcePolicy, resource *v1.Resources, identifier string) []*v1.Alert_Violation {
-	matchFunctions := []func(*v1.ResourcePolicy, *v1.Resources, string) ([]*v1.Alert_Violation, bool){
+func MatchResources(policy *v1.ResourcePolicy, resource *storage.Resources, identifier string) []*v1.Alert_Violation {
+	matchFunctions := []func(*v1.ResourcePolicy, *storage.Resources, string) ([]*v1.Alert_Violation, bool){
 		matchCPUResourceRequest,
 		matchCPUResourceLimit,
 		matchMemoryResourceRequest,
@@ -25,25 +26,25 @@ func MatchResources(policy *v1.ResourcePolicy, resource *v1.Resources, identifie
 	return violations
 }
 
-func matchCPUResourceRequest(rp *v1.ResourcePolicy, resources *v1.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
+func matchCPUResourceRequest(rp *v1.ResourcePolicy, resources *storage.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
 	violations, policyExists = matchNumericalPolicy("CPU resource request",
 		id, resources.GetCpuCoresRequest(), rp.GetCpuResourceRequest())
 	return
 }
 
-func matchCPUResourceLimit(rp *v1.ResourcePolicy, resources *v1.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
+func matchCPUResourceLimit(rp *v1.ResourcePolicy, resources *storage.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
 	violations, policyExists = matchNumericalPolicy("CPU resource limit",
 		id, resources.GetCpuCoresLimit(), rp.GetCpuResourceLimit())
 	return
 }
 
-func matchMemoryResourceRequest(rp *v1.ResourcePolicy, resources *v1.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
+func matchMemoryResourceRequest(rp *v1.ResourcePolicy, resources *storage.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
 	violations, policyExists = matchNumericalPolicy("Memory resource request",
 		id, resources.GetMemoryMbRequest(), rp.GetMemoryResourceRequest())
 	return
 }
 
-func matchMemoryResourceLimit(rp *v1.ResourcePolicy, resources *v1.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
+func matchMemoryResourceLimit(rp *v1.ResourcePolicy, resources *storage.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
 	violations, policyExists = matchNumericalPolicy("Memory resource limit",
 		id, resources.GetMemoryMbLimit(), rp.GetMemoryResourceLimit())
 	return

@@ -1,0 +1,157 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+import "storage/image.proto";
+
+package storage;
+
+enum ContainerRuntime {
+    UNKNOWN_CONTAINER_RUNTIME = 0;
+    DOCKER_CONTAINER_RUNTIME  = 1;
+}
+
+message Deployment {
+    string id                                  = 1;
+    string name                                = 2;
+    string version                             = 3;
+    string type                                = 4;
+    string namespace                           = 5;
+    int64 replicas                             = 6;
+    map<string, string> labels                 = 7;
+    google.protobuf.Timestamp updated_at       = 8;
+    string cluster_id                          = 9;
+    string cluster_name                        = 10;
+
+    repeated Container containers              = 11;
+    Risk risk                                  = 12;
+    map<string, string> annotations            = 14;
+    int64 priority                             = 15;
+    bool inactive                              = 16;
+    repeated string image_pull_secrets         = 17;
+    string service_account                     = 18;
+}
+
+message Container {
+    string id                           = 1;
+    ContainerConfig config              = 2;
+    Image image                         = 3;
+    SecurityContext security_context    = 4;
+    repeated Volume volumes             = 5;
+    repeated PortConfig ports           = 6;
+    repeated EmbeddedSecret secrets     = 7;
+    Resources resources                 = 8;
+
+    repeated ContainerInstance instances = 9;
+    string name                          = 10;
+}
+
+message Resources {
+    float cpu_cores_request = 1;
+    float cpu_cores_limit   = 2;
+    float memory_mb_request = 3;
+    float memory_mb_limit   = 4;
+}
+
+message Volume {
+    string name         = 1;
+    string source       = 2;
+    string destination  = 3;
+    bool read_only      = 4;
+    string type         = 5;
+}
+
+
+// ContainerInstanceID allows to uniquely identify a container within a cluster.
+message ContainerInstance {
+    // The instance ID of this container.
+    ContainerInstanceID instance_id    = 1;
+
+    // The pod containing this container instance (kubernetes only).
+    string containing_pod_id           = 2;
+
+    // The IP addresses of this container.
+    repeated string container_ips      = 3;
+}
+
+message ContainerInstanceID {
+    // The runtime running this container.
+    ContainerRuntime container_runtime = 1;
+    // The ID of the container, specific to the given runtime.
+    string id                          = 2;
+    // The node on which this container runs.
+    string node                        = 3;
+}
+
+
+message EmbeddedSecret {
+    string name = 1;
+    string path = 2;
+}
+
+message PortConfig {
+    string name             = 1;
+    int32 container_port    = 2;
+    string protocol         = 3;
+    enum Exposure {
+        UNSET    = 0;
+        EXTERNAL = 1;
+        NODE     = 2;
+        INTERNAL = 3;
+    }
+    Exposure exposure       = 4;
+    int32 exposed_port      = 5;
+}
+
+message ContainerConfig {
+    message EnvironmentConfig {
+        string key      = 1;
+        string value    = 2;
+    }
+    repeated EnvironmentConfig env  = 1;
+    repeated string command         = 2;
+    repeated string args            = 3;
+    string directory                = 4;
+    string user                     = 5;
+    int64 uid                       = 6;
+}
+
+message SecurityContext {
+    bool privileged                     = 1;
+    message SELinux {
+        string user     = 1;
+        string role     = 2;
+        string type     = 3;
+        string level    = 4;
+    }
+    SELinux selinux                     = 2;
+    repeated string drop_capabilities   = 3;
+    repeated string add_capabilities    = 4;
+}
+
+message Risk {
+    float           score   = 1;
+    message Result {
+        message Factor {
+            string message = 1;
+            string url     = 2;
+        }
+
+        string name             = 1;
+        repeated Factor factors = 2;
+        float score             = 3;
+    }
+    repeated Result results = 2;
+}
+
+message ListDeployment {
+    string                    id         = 1;
+    string                    name       = 2;
+    string                    cluster    = 3;
+    string                    cluster_id = 4;
+    string                    namespace  = 5;
+    google.protobuf.Timestamp updated_at = 6;
+    int64                     priority   = 7;
+}

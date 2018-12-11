@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -29,7 +29,7 @@ func benchmarkAddDeploymentNumThen1(b *testing.B, numDeployments int) {
 	}
 }
 
-func addDeployments(indexer Indexer, deployment *v1.Deployment, numDeployments int) {
+func addDeployments(indexer Indexer, deployment *storage.Deployment, numDeployments int) {
 	for i := 0; i < numDeployments; i++ {
 		deployment.Id = fmt.Sprintf("%d", i)
 		indexer.AddDeployment(deployment)

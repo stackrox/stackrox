@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -18,14 +18,14 @@ var (
 
 // Store provides storage functionality for alerts.
 type Store interface {
-	ListDeployment(id string) (*v1.ListDeployment, bool, error)
-	ListDeployments() ([]*v1.ListDeployment, error)
+	ListDeployment(id string) (*storage.ListDeployment, bool, error)
+	ListDeployments() ([]*storage.ListDeployment, error)
 
-	GetDeployment(id string) (*v1.Deployment, bool, error)
-	GetDeployments() ([]*v1.Deployment, error)
+	GetDeployment(id string) (*storage.Deployment, bool, error)
+	GetDeployments() ([]*storage.Deployment, error)
 	CountDeployments() (int, error)
-	UpsertDeployment(deployment *v1.Deployment) error
-	UpdateDeployment(deployment *v1.Deployment) error
+	UpsertDeployment(deployment *storage.Deployment) error
+	UpdateDeployment(deployment *storage.Deployment) error
 	RemoveDeployment(id string) error
 }
 

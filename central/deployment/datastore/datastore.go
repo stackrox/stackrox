@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/store"
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -14,21 +15,21 @@ import (
 type DataStore interface {
 	Search(q *v1.Query) ([]pkgSearch.Result, error)
 	SearchDeployments(q *v1.Query) ([]*v1.SearchResult, error)
-	SearchRawDeployments(q *v1.Query) ([]*v1.Deployment, error)
-	SearchListDeployments(q *v1.Query) ([]*v1.ListDeployment, error)
+	SearchRawDeployments(q *v1.Query) ([]*storage.Deployment, error)
+	SearchListDeployments(q *v1.Query) ([]*storage.ListDeployment, error)
 
-	ListDeployment(id string) (*v1.ListDeployment, bool, error)
-	ListDeployments() ([]*v1.ListDeployment, error)
+	ListDeployment(id string) (*storage.ListDeployment, bool, error)
+	ListDeployments() ([]*storage.ListDeployment, error)
 
-	GetDeployment(id string) (*v1.Deployment, bool, error)
-	GetDeployments() ([]*v1.Deployment, error)
+	GetDeployment(id string) (*storage.Deployment, bool, error)
+	GetDeployments() ([]*storage.Deployment, error)
 	CountDeployments() (int, error)
 	// UpsertDeployment adds or updates a deployment. It should only be called the caller
 	// is okay with inserting the passed deployment if it doesn't already exist in the store.
 	// If you only want to update a deployment if it exists, call UpdateDeployment below.
-	UpsertDeployment(deployment *v1.Deployment) error
+	UpsertDeployment(deployment *storage.Deployment) error
 	// UpdateDeployment updates a deployment, erroring out if it doesn't exist.
-	UpdateDeployment(deployment *v1.Deployment) error
+	UpdateDeployment(deployment *storage.Deployment) error
 	RemoveDeployment(id string) error
 }
 

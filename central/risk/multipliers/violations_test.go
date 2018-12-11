@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/risk/getters"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,7 +13,7 @@ func TestViolationsScore(t *testing.T) {
 	cases := []struct {
 		name     string
 		alerts   []*v1.ListAlert
-		expected *v1.Risk_Result
+		expected *storage.Risk_Result
 	}{
 		{
 			name:     "No alerts",
@@ -29,9 +30,9 @@ func TestViolationsScore(t *testing.T) {
 					},
 				},
 			},
-			expected: &v1.Risk_Result{
+			expected: &storage.Risk_Result{
 				Name: PolicyViolationsHeading,
-				Factors: []*v1.Risk_Result_Factor{
+				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Policy 1 (severity: Critical)"},
 				},
 				Score: 1.96,
@@ -47,9 +48,9 @@ func TestViolationsScore(t *testing.T) {
 					},
 				},
 			},
-			expected: &v1.Risk_Result{
+			expected: &storage.Risk_Result{
 				Name: PolicyViolationsHeading,
-				Factors: []*v1.Risk_Result_Factor{
+				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Policy 1 (severity: Critical)"},
 				},
 				Score: 1.96,
@@ -77,9 +78,9 @@ func TestViolationsScore(t *testing.T) {
 					},
 				},
 			},
-			expected: &v1.Risk_Result{
+			expected: &storage.Risk_Result{
 				Name: PolicyViolationsHeading,
-				Factors: []*v1.Risk_Result_Factor{
+				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Policy 1 (severity: High)"},
 					{Message: "Policy 2 (severity: Medium)"},
 					{Message: "Policy 3 (severity: Low)"},
@@ -109,9 +110,9 @@ func TestViolationsScore(t *testing.T) {
 					},
 				},
 			},
-			expected: &v1.Risk_Result{
+			expected: &storage.Risk_Result{
 				Name: PolicyViolationsHeading,
-				Factors: []*v1.Risk_Result_Factor{
+				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Policy 1 (severity: Critical)"},
 					{Message: "Policy 2 (severity: High)"},
 					{Message: "Policy 3 (severity: Low)"},
@@ -162,9 +163,9 @@ func TestViolationsScore(t *testing.T) {
 					State: v1.ViolationState_RESOLVED,
 				},
 			},
-			expected: &v1.Risk_Result{
+			expected: &storage.Risk_Result{
 				Name: PolicyViolationsHeading,
-				Factors: []*v1.Risk_Result_Factor{
+				Factors: []*storage.Risk_Result_Factor{
 					{Message: "Policy 3 (severity: Critical)"},
 					{Message: "Policy 2 (severity: High)"},
 					{Message: "Policy 1 (severity: Low)"},

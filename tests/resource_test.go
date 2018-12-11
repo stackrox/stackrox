@@ -69,7 +69,7 @@ func TestDeployments(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, deployments.GetDeployments(), 2)
 
-	var centralDeployment, sensorDeployment *v1.Deployment
+	var centralDeployment, sensorDeployment *storage.Deployment
 
 	for _, d := range deployments.GetDeployments() {
 		if d.GetName() == `central` {
@@ -96,7 +96,7 @@ func TestDeployments(t *testing.T) {
 	assert.Equal(t, sensorDeployment, sensorByID)
 }
 
-func verifyCentralDeployment(t *testing.T, centralDeployment *v1.Deployment) {
+func verifyCentralDeployment(t *testing.T, centralDeployment *storage.Deployment) {
 	verifyDeployment(t, centralDeployment)
 	assert.Equal(t, "central", centralDeployment.GetLabels()["app"])
 
@@ -135,7 +135,7 @@ func verifyCentralDeployment(t *testing.T, centralDeployment *v1.Deployment) {
 	assert.Equal(t, "TCP", p.GetProtocol())
 }
 
-func verifySensorDeployment(t *testing.T, sensorDeployment *v1.Deployment) {
+func verifySensorDeployment(t *testing.T, sensorDeployment *storage.Deployment) {
 	verifyDeployment(t, sensorDeployment)
 	assert.Equal(t, "sensor", sensorDeployment.GetLabels()["app"])
 
@@ -155,7 +155,7 @@ func verifySensorDeployment(t *testing.T, sensorDeployment *v1.Deployment) {
 	assert.True(t, strings.HasPrefix(s.GetPath(), "/run/secrets/stackrox.io/"))
 }
 
-func verifyDeployment(t *testing.T, deployment *v1.Deployment) {
+func verifyDeployment(t *testing.T, deployment *storage.Deployment) {
 	assert.Equal(t, "Deployment", deployment.GetType())
 	assert.Equal(t, int64(1), deployment.GetReplicas())
 	assert.NotEmpty(t, deployment.GetId())

@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -44,7 +44,7 @@ func NewRiskyComponents() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on image component counts.
-func (c *riskyComponentCountMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
+func (c *riskyComponentCountMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
 	// Get the largest number of risky components in an image
 	var largestRiskySet *set.StringSet
 	for _, container := range deployment.GetContainers() {
@@ -72,9 +72,9 @@ func (c *riskyComponentCountMultiplier) Score(deployment *v1.Deployment) *v1.Ris
 		score = maxRiskyScore
 	}
 
-	return &v1.Risk_Result{
+	return &storage.Risk_Result{
 		Name: RiskyComponentCountHeading,
-		Factors: []*v1.Risk_Result_Factor{
+		Factors: []*storage.Risk_Result_Factor{
 			{Message: generateMessage(largestRiskySet.AsSlice())},
 		},
 		Score: score,

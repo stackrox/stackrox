@@ -2,6 +2,7 @@ package matcher
 
 import (
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	securityContextMatcher "github.com/stackrox/rox/pkg/compiledpolicies/securitycontext/matcher"
 )
 
@@ -17,7 +18,7 @@ func newSecurityContextMatcher(policy *v1.Policy) (Matcher, error) {
 		return nil, nil
 	}
 
-	return func(container *v1.Container) []*v1.Alert_Violation {
+	return func(container *storage.Container) []*v1.Alert_Violation {
 		return matcher(container.GetSecurityContext())
 	}, nil
 }

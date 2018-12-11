@@ -5,14 +5,12 @@ import (
 
 	"github.com/stackrox/rox/central/globaldb"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/store"
-	"github.com/stackrox/rox/central/networkpolicies/store"
 )
 
 var (
 	once sync.Once
 
-	storage store.Store
-	ge      *evaluatorImpl
+	ge *evaluatorImpl
 )
 
 func initialize() {

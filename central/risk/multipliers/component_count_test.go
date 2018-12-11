@@ -3,7 +3,6 @@ package multipliers
 import (
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
@@ -22,9 +21,9 @@ func TestComponentCountScore(t *testing.T) {
 	}
 	deployment.Containers[0].Image.Scan.Components = components
 
-	expectedScore := &v1.Risk_Result{
+	expectedScore := &storage.Risk_Result{
 		Name: ComponentCountHeading,
-		Factors: []*v1.Risk_Result_Factor{
+		Factors: []*storage.Risk_Result_Factor{
 			{Message: "image docker.io/library/nginx:1.10 contains 15 components"},
 		},
 		Score: 1.25,

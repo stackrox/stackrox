@@ -10,7 +10,6 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/swarm"
 	timestamp "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
@@ -35,7 +34,7 @@ func TestAsDeployment(t *testing.T) {
 	cases := []struct {
 		service  swarm.Service
 		tasks    []swarm.Task
-		expected *v1.Deployment
+		expected *storage.Deployment
 	}{
 		{
 			service: swarm.Service{
@@ -128,7 +127,7 @@ func TestAsDeployment(t *testing.T) {
 					},
 				},
 			},
-			expected: &v1.Deployment{
+			expected: &storage.Deployment{
 				Id:        "fooID",
 				Name:      "foo",
 				Version:   "100",
@@ -140,12 +139,12 @@ func TestAsDeployment(t *testing.T) {
 					"question": "answer",
 				},
 				UpdatedAt: &timestamp.Timestamp{Seconds: 100},
-				Containers: []*v1.Container{
+				Containers: []*storage.Container{
 					{
 						Id: "c_fooID",
-						Config: &v1.ContainerConfig{
+						Config: &storage.ContainerConfig{
 							Args: []string{"--flags", "--args"},
-							Env: []*v1.ContainerConfig_EnvironmentConfig{
+							Env: []*storage.ContainerConfig_EnvironmentConfig{
 								{
 									Key:   "LOGLEVEL",
 									Value: "Warn",
@@ -167,30 +166,30 @@ func TestAsDeployment(t *testing.T) {
 								FullName: "docker.io/library/nginx:latest",
 							},
 						},
-						Secrets: []*v1.EmbeddedSecret{
+						Secrets: []*storage.EmbeddedSecret{
 							{
 								Name: "name",
 								Path: "/run/secrets/path",
 							},
 						},
-						SecurityContext: &v1.SecurityContext{
-							Selinux: &v1.SecurityContext_SELinux{
+						SecurityContext: &storage.SecurityContext{
+							Selinux: &storage.SecurityContext_SELinux{
 								User:  "user",
 								Role:  "role",
 								Type:  "type",
 								Level: "level",
 							},
 						},
-						Ports: []*v1.PortConfig{
+						Ports: []*storage.PortConfig{
 							{
 								Name:          "api",
 								ContainerPort: 80,
 								Protocol:      "tcp",
-								Exposure:      v1.PortConfig_EXTERNAL,
+								Exposure:      storage.PortConfig_EXTERNAL,
 								ExposedPort:   8080,
 							},
 						},
-						Volumes: []*v1.Volume{
+						Volumes: []*storage.Volume{
 							{
 								Name:        "volumeSource",
 								Type:        "volume",
@@ -199,16 +198,16 @@ func TestAsDeployment(t *testing.T) {
 								Destination: "/var/data",
 							},
 						},
-						Resources: &v1.Resources{
+						Resources: &storage.Resources{
 							CpuCoresRequest: 1,
 							CpuCoresLimit:   2,
 							MemoryMbRequest: 1.00,
 							MemoryMbLimit:   2.00,
 						},
-						Instances: []*v1.ContainerInstance{
+						Instances: []*storage.ContainerInstance{
 							{
-								InstanceId: &v1.ContainerInstanceID{
-									ContainerRuntime: v1.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
+								InstanceId: &storage.ContainerInstanceID{
+									ContainerRuntime: storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
 									Id:               "35669191c32a9cfb532e5d79b09f2b0926c0faf27e7543f1fbe433bd94ae78d7",
 									Node:             "mynode",
 								},
@@ -310,7 +309,7 @@ func TestAsDeployment(t *testing.T) {
 					},
 				},
 			},
-			expected: &v1.Deployment{
+			expected: &storage.Deployment{
 				Id:        "fooID",
 				Name:      "foo",
 				Version:   "100",
@@ -322,12 +321,12 @@ func TestAsDeployment(t *testing.T) {
 					"question": "answer",
 				},
 				UpdatedAt: &timestamp.Timestamp{Seconds: 100},
-				Containers: []*v1.Container{
+				Containers: []*storage.Container{
 					{
 						Id: "c_fooID",
-						Config: &v1.ContainerConfig{
+						Config: &storage.ContainerConfig{
 							Args: []string{"--flags", "--args"},
-							Env: []*v1.ContainerConfig_EnvironmentConfig{
+							Env: []*storage.ContainerConfig_EnvironmentConfig{
 								{
 									Key:   "LOGLEVEL",
 									Value: "Warn",
@@ -349,30 +348,30 @@ func TestAsDeployment(t *testing.T) {
 								FullName: "docker.io/library/nginx:latest",
 							},
 						},
-						Secrets: []*v1.EmbeddedSecret{
+						Secrets: []*storage.EmbeddedSecret{
 							{
 								Name: "name",
 								Path: "/run/secrets/path",
 							},
 						},
-						SecurityContext: &v1.SecurityContext{
-							Selinux: &v1.SecurityContext_SELinux{
+						SecurityContext: &storage.SecurityContext{
+							Selinux: &storage.SecurityContext_SELinux{
 								User:  "user",
 								Role:  "role",
 								Type:  "type",
 								Level: "level",
 							},
 						},
-						Ports: []*v1.PortConfig{
+						Ports: []*storage.PortConfig{
 							{
 								Name:          "api",
 								ContainerPort: 80,
 								Protocol:      "tcp",
-								Exposure:      v1.PortConfig_EXTERNAL,
+								Exposure:      storage.PortConfig_EXTERNAL,
 								ExposedPort:   8080,
 							},
 						},
-						Volumes: []*v1.Volume{
+						Volumes: []*storage.Volume{
 							{
 								Name:        "volumeSource",
 								Type:        "volume",
@@ -381,16 +380,16 @@ func TestAsDeployment(t *testing.T) {
 								Destination: "/var/data",
 							},
 						},
-						Resources: &v1.Resources{
+						Resources: &storage.Resources{
 							CpuCoresRequest: 1,
 							CpuCoresLimit:   2,
 							MemoryMbRequest: 1.00,
 							MemoryMbLimit:   2.00,
 						},
-						Instances: []*v1.ContainerInstance{
+						Instances: []*storage.ContainerInstance{
 							{
-								InstanceId: &v1.ContainerInstanceID{
-									ContainerRuntime: v1.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
+								InstanceId: &storage.ContainerInstanceID{
+									ContainerRuntime: storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
 									Id:               "35669191c32a9cfb532e5d79b09f2b0926c0faf27e7543f1fbe433bd94ae78d8",
 									Node:             "mynode2",
 								},

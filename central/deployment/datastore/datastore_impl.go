@@ -8,6 +8,7 @@ import (
 	deploymentStore "github.com/stackrox/rox/central/deployment/store"
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containerid"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
@@ -24,16 +25,16 @@ func (ds *datastoreImpl) Search(q *v1.Query) ([]pkgSearch.Result, error) {
 	return ds.deploymentSearcher.Search(q)
 }
 
-func (ds *datastoreImpl) ListDeployment(id string) (*v1.ListDeployment, bool, error) {
+func (ds *datastoreImpl) ListDeployment(id string) (*storage.ListDeployment, bool, error) {
 	return ds.deploymentStore.ListDeployment(id)
 }
 
-func (ds *datastoreImpl) SearchListDeployments(q *v1.Query) ([]*v1.ListDeployment, error) {
+func (ds *datastoreImpl) SearchListDeployments(q *v1.Query) ([]*storage.ListDeployment, error) {
 	return ds.deploymentSearcher.SearchListDeployments(q)
 }
 
 // ListDeployments returns all deploymentStore in their minimal form
-func (ds *datastoreImpl) ListDeployments() ([]*v1.ListDeployment, error) {
+func (ds *datastoreImpl) ListDeployments() ([]*storage.ListDeployment, error) {
 	return ds.deploymentStore.ListDeployments()
 }
 
@@ -43,17 +44,17 @@ func (ds *datastoreImpl) SearchDeployments(q *v1.Query) ([]*v1.SearchResult, err
 }
 
 // SearchRawDeployments
-func (ds *datastoreImpl) SearchRawDeployments(q *v1.Query) ([]*v1.Deployment, error) {
+func (ds *datastoreImpl) SearchRawDeployments(q *v1.Query) ([]*storage.Deployment, error) {
 	return ds.deploymentSearcher.SearchRawDeployments(q)
 }
 
 // GetDeployment
-func (ds *datastoreImpl) GetDeployment(id string) (*v1.Deployment, bool, error) {
+func (ds *datastoreImpl) GetDeployment(id string) (*storage.Deployment, bool, error) {
 	return ds.deploymentStore.GetDeployment(id)
 }
 
 // GetDeployments
-func (ds *datastoreImpl) GetDeployments() ([]*v1.Deployment, error) {
+func (ds *datastoreImpl) GetDeployments() ([]*storage.Deployment, error) {
 	return ds.deploymentStore.GetDeployments()
 }
 
@@ -62,7 +63,7 @@ func (ds *datastoreImpl) CountDeployments() (int, error) {
 	return ds.deploymentStore.CountDeployments()
 }
 
-func containerIds(deployment *v1.Deployment) (ids []string) {
+func containerIds(deployment *storage.Deployment) (ids []string) {
 	for _, container := range deployment.GetContainers() {
 		for _, instance := range container.GetInstances() {
 			containerID := containerid.ShortContainerIDFromInstance(instance)
@@ -75,7 +76,7 @@ func containerIds(deployment *v1.Deployment) (ids []string) {
 }
 
 // UpsertDeployment inserts a deployment into deploymentStore and into the deploymentIndexer
-func (ds *datastoreImpl) UpsertDeployment(deployment *v1.Deployment) error {
+func (ds *datastoreImpl) UpsertDeployment(deployment *storage.Deployment) error {
 	if err := ds.deploymentStore.UpsertDeployment(deployment); err != nil {
 		return fmt.Errorf("inserting deployment '%s' to store: %s", deployment.GetId(), err)
 	}
@@ -91,7 +92,7 @@ func (ds *datastoreImpl) UpsertDeployment(deployment *v1.Deployment) error {
 }
 
 // UpdateDeployment updates a deployment in deploymentStore and in the deploymentIndexer
-func (ds *datastoreImpl) UpdateDeployment(deployment *v1.Deployment) error {
+func (ds *datastoreImpl) UpdateDeployment(deployment *storage.Deployment) error {
 	if err := ds.deploymentStore.UpdateDeployment(deployment); err != nil {
 		return err
 	}

@@ -3,7 +3,7 @@ package multipliers
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 const (
@@ -24,9 +24,9 @@ func NewReachability() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on the service configuration
-func (s *reachabilityMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
+func (s *reachabilityMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
 	var score float32
-	riskResult := &v1.Risk_Result{
+	riskResult := &storage.Risk_Result{
 		Name: ReachabilityHeading,
 	}
 	for _, c := range deployment.GetContainers() {
@@ -34,7 +34,7 @@ func (s *reachabilityMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Resul
 			score += exposureValue(p.GetExposure())
 
 			riskResult.Factors = append(riskResult.Factors,
-				&v1.Risk_Result_Factor{Message: fmt.Sprintf("Container %s exposes port %d %s",
+				&storage.Risk_Result_Factor{Message: fmt.Sprintf("Container %s exposes port %d %s",
 					c.GetImage().GetName().GetRemote(), p.GetExposedPort(), exposureString(p.GetExposure()))})
 		}
 	}
@@ -45,26 +45,26 @@ func (s *reachabilityMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Resul
 	return riskResult
 }
 
-func exposureValue(exposure v1.PortConfig_Exposure) float32 {
+func exposureValue(exposure storage.PortConfig_Exposure) float32 {
 	switch exposure {
-	case v1.PortConfig_EXTERNAL:
+	case storage.PortConfig_EXTERNAL:
 		return 3
-	case v1.PortConfig_NODE:
+	case storage.PortConfig_NODE:
 		return 2
-	case v1.PortConfig_INTERNAL:
+	case storage.PortConfig_INTERNAL:
 		return 1
 	default:
 		return 0
 	}
 }
 
-func exposureString(exposure v1.PortConfig_Exposure) string {
+func exposureString(exposure storage.PortConfig_Exposure) string {
 	switch exposure {
-	case v1.PortConfig_INTERNAL:
+	case storage.PortConfig_INTERNAL:
 		return "in the cluster"
-	case v1.PortConfig_NODE:
+	case storage.PortConfig_NODE:
 		return "on node interfaces"
-	case v1.PortConfig_EXTERNAL:
+	case storage.PortConfig_EXTERNAL:
 		return "to external clients"
 	default:
 		return "in an unknown manner"

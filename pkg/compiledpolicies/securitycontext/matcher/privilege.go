@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func init() {
@@ -25,7 +26,7 @@ type privilegeMatcherImpl struct {
 	privileged *bool
 }
 
-func (p *privilegeMatcherImpl) match(security *v1.SecurityContext) []*v1.Alert_Violation {
+func (p *privilegeMatcherImpl) match(security *storage.SecurityContext) []*v1.Alert_Violation {
 	if security == nil || security.GetPrivileged() != *p.privileged {
 		return nil
 	}

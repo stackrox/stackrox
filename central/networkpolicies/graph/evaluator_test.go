@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stretchr/testify/assert"
 	k8sV1 "k8s.io/api/networking/v1"
@@ -110,25 +111,25 @@ func TestDoesNamespaceMatchLabel(t *testing.T) {
 func TestDoesPodLabelsMatchLabel(t *testing.T) {
 	cases := []struct {
 		name       string
-		deployment *v1.Deployment
+		deployment *storage.Deployment
 		selector   *v1.LabelSelector
 		expected   bool
 	}{
 		{
 			name:       "No values in selector - no deployment labels",
-			deployment: &v1.Deployment{},
+			deployment: &storage.Deployment{},
 			selector:   &v1.LabelSelector{},
 			expected:   true,
 		},
 		{
 			name:       "No values in selector - some deployment labels",
-			deployment: &v1.Deployment{},
+			deployment: &storage.Deployment{},
 			selector:   &v1.LabelSelector{},
 			expected:   true,
 		},
 		{
 			name: "matching values in selector",
-			deployment: &v1.Deployment{
+			deployment: &storage.Deployment{
 				Labels: map[string]string{
 					"hello": "hi",
 				},
@@ -142,7 +143,7 @@ func TestDoesPodLabelsMatchLabel(t *testing.T) {
 		},
 		{
 			name: "non matching values in selector",
-			deployment: &v1.Deployment{
+			deployment: &storage.Deployment{
 				Labels: map[string]string{
 					"hello": "hi1",
 				},
@@ -238,20 +239,20 @@ func TestMatchPolicyPeer(t *testing.T) {
 
 	cases := []struct {
 		name            string
-		deployment      *v1.Deployment
+		deployment      *storage.Deployment
 		peer            *v1.NetworkPolicyPeer
 		policyNamespace string
 		expected        bool
 	}{
 		{
 			name:       "ip block",
-			deployment: &v1.Deployment{},
+			deployment: &storage.Deployment{},
 			peer:       &v1.NetworkPolicyPeer{IpBlock: &v1.IPBlock{}},
 			expected:   false,
 		},
 		{
 			name: "non match pod selector",
-			deployment: &v1.Deployment{
+			deployment: &storage.Deployment{
 
 				Labels: map[string]string{
 					"key": "value1",
@@ -268,7 +269,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 		},
 		{
 			name: "match pod selector",
-			deployment: &v1.Deployment{
+			deployment: &storage.Deployment{
 				Labels: map[string]string{
 					"key": "value",
 				},
@@ -284,7 +285,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 		},
 		{
 			name: "match namespace selector",
-			deployment: &v1.Deployment{
+			deployment: &storage.Deployment{
 				Namespace: "default",
 			},
 			peer: &v1.NetworkPolicyPeer{
@@ -299,7 +300,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 		},
 		{
 			name: "non match namespace selector",
-			deployment: &v1.Deployment{
+			deployment: &storage.Deployment{
 				Namespace: "default",
 			},
 			peer: &v1.NetworkPolicyPeer{
@@ -314,7 +315,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 		},
 		{
 			name: "different namespaces",
-			deployment: &v1.Deployment{
+			deployment: &storage.Deployment{
 				Namespace: "default",
 			},
 			peer: &v1.NetworkPolicyPeer{
@@ -340,13 +341,13 @@ func TestMatchPolicyPeer(t *testing.T) {
 func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 	cases := []struct {
 		name     string
-		d        *v1.Deployment
+		d        *storage.Deployment
 		np       *v1.NetworkPolicy
 		expected bool
 	}{
 		{
 			name: "namespace doesn't match source",
-			d: &v1.Deployment{
+			d: &storage.Deployment{
 				Namespace: "default",
 			},
 			np: &v1.NetworkPolicy{
@@ -356,7 +357,7 @@ func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		},
 		{
 			name: "pod selector doesn't match",
-			d: &v1.Deployment{
+			d: &storage.Deployment{
 				Labels: map[string]string{
 					"key1": "value1",
 				},
@@ -376,7 +377,7 @@ func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		},
 		{
 			name: "all matches - has ingress",
-			d: &v1.Deployment{
+			d: &storage.Deployment{
 				Labels: map[string]string{
 					"key1": "value1",
 				},
@@ -396,7 +397,7 @@ func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		},
 		{
 			name: "all matches - doesn't have ingress",
-			d: &v1.Deployment{
+			d: &storage.Deployment{
 				Labels: map[string]string{
 					"key1": "value1",
 				},
@@ -426,14 +427,14 @@ func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 	cases := []struct {
 		name           string
-		d              *v1.Deployment
+		d              *storage.Deployment
 		np             *v1.NetworkPolicy
 		expected       bool
 		internetAccess bool
 	}{
 		{
 			name: "namespace doesn't match source",
-			d: &v1.Deployment{
+			d: &storage.Deployment{
 				Namespace: "default",
 			},
 			np: &v1.NetworkPolicy{
@@ -443,7 +444,7 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		},
 		{
 			name: "pod selector doesn't match",
-			d: &v1.Deployment{
+			d: &storage.Deployment{
 				Labels: map[string]string{
 					"key1": "value1",
 				},
@@ -463,7 +464,7 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		},
 		{
 			name: "all matches - doesn't have egress",
-			d: &v1.Deployment{
+			d: &storage.Deployment{
 				Labels: map[string]string{
 					"key1": "value1",
 				},
@@ -483,7 +484,7 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		},
 		{
 			name: "all matches - has egress",
-			d: &v1.Deployment{
+			d: &storage.Deployment{
 				Labels: map[string]string{
 					"key1": "value1",
 				},
@@ -504,7 +505,7 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		},
 		{
 			name: "all matches - has egress and ip block",
-			d: &v1.Deployment{
+			d: &storage.Deployment{
 				Labels: map[string]string{
 					"key1": "value1",
 				},
@@ -632,14 +633,14 @@ func TestEvaluateClusters(t *testing.T) {
 	// Seems like a good way to verify that the logic is correct
 	cases := []struct {
 		name        string
-		deployments []*v1.Deployment
+		deployments []*storage.Deployment
 		nps         []*v1.NetworkPolicy
 		edges       []edge
 		nodes       []*v1.NetworkNode
 	}{
 		{
 			name: "No policies - fully connected",
-			deployments: []*v1.Deployment{
+			deployments: []*storage.Deployment{
 				{
 					Id: "d1",
 				},
@@ -655,7 +656,7 @@ func TestEvaluateClusters(t *testing.T) {
 		},
 		{
 			name: "deny all to app=web",
-			deployments: []*v1.Deployment{
+			deployments: []*storage.Deployment{
 				{
 					Id:        "d1",
 					Namespace: "default",
@@ -685,7 +686,7 @@ func TestEvaluateClusters(t *testing.T) {
 		},
 		{
 			name: "limit traffic to application",
-			deployments: []*v1.Deployment{
+			deployments: []*storage.Deployment{
 				{
 					Id:        "d1",
 					Namespace: "default",
@@ -718,7 +719,7 @@ func TestEvaluateClusters(t *testing.T) {
 		},
 		{
 			name: "allow all ingress even if deny all",
-			deployments: []*v1.Deployment{
+			deployments: []*storage.Deployment{
 				{
 					Id:        "d1",
 					Namespace: "default",
@@ -748,7 +749,7 @@ func TestEvaluateClusters(t *testing.T) {
 		},
 		{
 			name: "DENY all non-whitelisted traffic to a namespace",
-			deployments: []*v1.Deployment{
+			deployments: []*storage.Deployment{
 				{
 					Id:        "d1",
 					Namespace: "default",
@@ -778,7 +779,7 @@ func TestEvaluateClusters(t *testing.T) {
 		},
 		{
 			name: "DENY all traffic from other namespaces",
-			deployments: []*v1.Deployment{
+			deployments: []*storage.Deployment{
 				{
 					Id:        "d1",
 					Namespace: "default",
@@ -808,7 +809,7 @@ func TestEvaluateClusters(t *testing.T) {
 		},
 		{
 			name: "Web allow all traffic from other namespaces",
-			deployments: []*v1.Deployment{
+			deployments: []*storage.Deployment{
 				{
 					Id:        "d1",
 					Namespace: "default",
@@ -840,7 +841,7 @@ func TestEvaluateClusters(t *testing.T) {
 		},
 		{
 			name: "Web allow all traffic from other namespaces",
-			deployments: []*v1.Deployment{
+			deployments: []*storage.Deployment{
 				{
 					Id:        "d1",
 					Namespace: "default",
@@ -871,7 +872,7 @@ func TestEvaluateClusters(t *testing.T) {
 		},
 		{
 			name: "Allow traffic from apps using multiple selectors",
-			deployments: []*v1.Deployment{
+			deployments: []*storage.Deployment{
 				{
 					Id:        "d1",
 					Namespace: "default",
@@ -909,7 +910,7 @@ func TestEvaluateClusters(t *testing.T) {
 		},
 		{
 			name: "web deny egress",
-			deployments: []*v1.Deployment{
+			deployments: []*storage.Deployment{
 				{
 					Id:        "d1",
 					Namespace: "default",
@@ -933,7 +934,7 @@ func TestEvaluateClusters(t *testing.T) {
 		},
 		{
 			name: "deny egress from namespace",
-			deployments: []*v1.Deployment{
+			deployments: []*storage.Deployment{
 				{
 					Id:        "d1",
 					Namespace: "default",
@@ -962,7 +963,7 @@ func TestEvaluateClusters(t *testing.T) {
 		},
 		{
 			name: "deny internetAccess egress from cluster",
-			deployments: []*v1.Deployment{
+			deployments: []*storage.Deployment{
 				{
 					Id:        "d1",
 					Namespace: "default",
@@ -991,7 +992,7 @@ func TestEvaluateClusters(t *testing.T) {
 		},
 		{
 			name: "deny all ingress except for app = web",
-			deployments: []*v1.Deployment{
+			deployments: []*storage.Deployment{
 				{
 					Id:        "d1",
 					Namespace: "qa",

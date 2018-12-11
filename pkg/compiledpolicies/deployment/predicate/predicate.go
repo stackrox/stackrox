@@ -1,11 +1,11 @@
 package predicate
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Predicate is a function that indicates whether (true) or not (false) a deployment should be processed.
-type Predicate func(*v1.Deployment) bool
+type Predicate func(*storage.Deployment) bool
 
 // Or returns a new Predicate that is the logical OR of this Predicate and the given Predicate.
 func (c Predicate) Or(gen Predicate) Predicate {
@@ -39,7 +39,7 @@ func orPredicate(p1, p2 Predicate) Predicate {
 	return orPredicateImpl{p1, p2}.do
 }
 
-func (f orPredicateImpl) do(deployment *v1.Deployment) bool {
+func (f orPredicateImpl) do(deployment *storage.Deployment) bool {
 	return f.p1(deployment) || f.p2(deployment)
 }
 
@@ -55,6 +55,6 @@ func andPredicate(p1, p2 Predicate) Predicate {
 	return andPredicateImpl{p1, p2}.do
 }
 
-func (f andPredicateImpl) do(deployment *v1.Deployment) bool {
+func (f andPredicateImpl) do(deployment *storage.Deployment) bool {
 	return f.p1(deployment) && f.p2(deployment)
 }

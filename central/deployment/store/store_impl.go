@@ -8,7 +8,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/ranking"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
@@ -31,7 +31,7 @@ func (b *storeImpl) initializeRanker() error {
 }
 
 // GetListDeployment returns a list deployment with given id.
-func (b *storeImpl) ListDeployment(id string) (deployment *v1.ListDeployment, exists bool, err error) {
+func (b *storeImpl) ListDeployment(id string) (deployment *storage.ListDeployment, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ListDeployment")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentListBucket))
@@ -40,7 +40,7 @@ func (b *storeImpl) ListDeployment(id string) (deployment *v1.ListDeployment, ex
 			return nil
 		}
 		exists = true
-		deployment = new(v1.ListDeployment)
+		deployment = new(storage.ListDeployment)
 		err := proto.Unmarshal(val, deployment)
 		if err != nil {
 			return err
@@ -52,13 +52,13 @@ func (b *storeImpl) ListDeployment(id string) (deployment *v1.ListDeployment, ex
 }
 
 // GetDeployments retrieves deployments matching the request from bolt
-func (b *storeImpl) ListDeployments() ([]*v1.ListDeployment, error) {
+func (b *storeImpl) ListDeployments() ([]*storage.ListDeployment, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListDeployment")
-	var deployments []*v1.ListDeployment
+	var deployments []*storage.ListDeployment
 	err := b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentListBucket))
 		return bucket.ForEach(func(k, v []byte) error {
-			var deployment v1.ListDeployment
+			var deployment storage.ListDeployment
 			if err := proto.Unmarshal(v, &deployment); err != nil {
 				return err
 			}
@@ -71,7 +71,7 @@ func (b *storeImpl) ListDeployments() ([]*v1.ListDeployment, error) {
 }
 
 // Note: This is called within a txn and do not require an Update or View
-func (b *storeImpl) upsertListDeployment(bucket *bolt.Bucket, deployment *v1.Deployment) error {
+func (b *storeImpl) upsertListDeployment(bucket *bolt.Bucket, deployment *storage.Deployment) error {
 	listDeployment := convertDeploymentToDeploymentList(deployment)
 	bytes, err := proto.Marshal(listDeployment)
 	if err != nil {
@@ -86,8 +86,8 @@ func (b *storeImpl) removeListDeployment(tx *bolt.Tx, id string) error {
 	return bucket.Delete([]byte(id))
 }
 
-func convertDeploymentToDeploymentList(d *v1.Deployment) *v1.ListDeployment {
-	return &v1.ListDeployment{
+func convertDeploymentToDeploymentList(d *storage.Deployment) *storage.ListDeployment {
+	return &storage.ListDeployment{
 		Id:        d.GetId(),
 		Name:      d.GetName(),
 		Cluster:   d.GetClusterName(),
@@ -98,8 +98,8 @@ func convertDeploymentToDeploymentList(d *v1.Deployment) *v1.ListDeployment {
 	}
 }
 
-func (b *storeImpl) getDeployment(id string, bucket *bolt.Bucket) (deployment *v1.Deployment, exists bool, err error) {
-	deployment = new(v1.Deployment)
+func (b *storeImpl) getDeployment(id string, bucket *bolt.Bucket) (deployment *storage.Deployment, exists bool, err error) {
+	deployment = new(storage.Deployment)
 	val := bucket.Get([]byte(id))
 	if val == nil {
 		return
@@ -110,7 +110,7 @@ func (b *storeImpl) getDeployment(id string, bucket *bolt.Bucket) (deployment *v
 }
 
 // GetDeployment returns deployment with given id.
-func (b *storeImpl) GetDeployment(id string) (deployment *v1.Deployment, exists bool, err error) {
+func (b *storeImpl) GetDeployment(id string) (deployment *storage.Deployment, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Deployment")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentBucket))
@@ -128,13 +128,13 @@ func (b *storeImpl) GetDeployment(id string) (deployment *v1.Deployment, exists 
 }
 
 // GetDeployments retrieves deployments matching the request from bolt
-func (b *storeImpl) GetDeployments() ([]*v1.Deployment, error) {
+func (b *storeImpl) GetDeployments() ([]*storage.Deployment, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Deployment")
-	var deployments []*v1.Deployment
+	var deployments []*storage.Deployment
 	err := b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(deploymentBucket))
 		return bucket.ForEach(func(k, v []byte) error {
-			var deployment v1.Deployment
+			var deployment storage.Deployment
 			if err := proto.Unmarshal(v, &deployment); err != nil {
 				return err
 			}
@@ -158,7 +158,7 @@ func (b *storeImpl) CountDeployments() (count int, err error) {
 	return
 }
 
-func (b *storeImpl) upsertDeployment(deployment *v1.Deployment, bucket *bolt.Bucket) error {
+func (b *storeImpl) upsertDeployment(deployment *storage.Deployment, bucket *bolt.Bucket) error {
 	bytes, err := proto.Marshal(deployment)
 	if err != nil {
 		return err
@@ -168,7 +168,7 @@ func (b *storeImpl) upsertDeployment(deployment *v1.Deployment, bucket *bolt.Buc
 
 // This needs to be called within an Update transaction, and is the common code between
 // upsert and update.
-func (b *storeImpl) putDeployment(deployment *v1.Deployment, tx *bolt.Tx, errorIfNotExists bool) error {
+func (b *storeImpl) putDeployment(deployment *storage.Deployment, tx *bolt.Tx, errorIfNotExists bool) error {
 	bucket := tx.Bucket([]byte(deploymentBucket))
 	_, exists, err := b.getDeployment(deployment.GetId(), bucket)
 	if err != nil {
@@ -186,7 +186,7 @@ func (b *storeImpl) putDeployment(deployment *v1.Deployment, tx *bolt.Tx, errorI
 }
 
 // UpsertDeployment adds a deployment to bolt, or updates it if it exists already.
-func (b *storeImpl) UpsertDeployment(deployment *v1.Deployment) error {
+func (b *storeImpl) UpsertDeployment(deployment *storage.Deployment) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Deployment")
 	return b.Update(func(tx *bolt.Tx) error {
 		return b.putDeployment(deployment, tx, false)
@@ -194,7 +194,7 @@ func (b *storeImpl) UpsertDeployment(deployment *v1.Deployment) error {
 }
 
 // UpdateDeployment updates a deployment to bolt
-func (b *storeImpl) UpdateDeployment(deployment *v1.Deployment) error {
+func (b *storeImpl) UpdateDeployment(deployment *storage.Deployment) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Deployment")
 	return b.Update(func(tx *bolt.Tx) error {
 		return b.putDeployment(deployment, tx, true)

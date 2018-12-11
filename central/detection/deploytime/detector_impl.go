@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/detection/deployment"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -33,7 +34,7 @@ func (d *detectorImpl) RemovePolicy(policyID string) error {
 
 }
 
-func (d *detectorImpl) AlertsForDeployment(deployment *v1.Deployment) ([]*v1.Alert, error) {
+func (d *detectorImpl) AlertsForDeployment(deployment *storage.Deployment) ([]*v1.Alert, error) {
 	// Get the new and old alerts for the deployment.
 	var newAlerts []*v1.Alert
 	err := d.policySet.ForEach(func(p *v1.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
@@ -87,14 +88,14 @@ func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*v1.Alert, error) {
 }
 
 // policyDeploymentAndViolationsToAlert constructs an alert.
-func policyDeploymentAndViolationsToAlert(policy *v1.Policy, deployment *v1.Deployment, violations []*v1.Alert_Violation) *v1.Alert {
+func policyDeploymentAndViolationsToAlert(policy *v1.Policy, deployment *storage.Deployment, violations []*v1.Alert_Violation) *v1.Alert {
 	if len(violations) == 0 {
 		return nil
 	}
 	alert := &v1.Alert{
 		Id:             uuid.NewV4().String(),
 		LifecycleStage: v1.LifecycleStage_DEPLOY,
-		Deployment:     protoutils.CloneV1Deployment(deployment),
+		Deployment:     protoutils.CloneStorageDeployment(deployment),
 		Policy:         protoutils.CloneV1Policy(policy),
 		Violations:     violations,
 		Time:           ptypes.TimestampNow(),
@@ -109,7 +110,7 @@ func policyDeploymentAndViolationsToAlert(policy *v1.Policy, deployment *v1.Depl
 }
 
 // policyAndDeploymentToEnforcement returns enforcement info for a deployment violating a policy.
-func policyAndDeploymentToEnforcement(policy *v1.Policy, deployment *v1.Deployment) (enforcement v1.EnforcementAction, message string) {
+func policyAndDeploymentToEnforcement(policy *v1.Policy, deployment *storage.Deployment) (enforcement v1.EnforcementAction, message string) {
 	for _, enforcementAction := range policy.GetEnforcementActions() {
 		if enforcementAction == v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT && scaleToZeroEnabled(deployment) {
 			return v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT, fmt.Sprintf("Deployment %s scaled to 0 replicas in response to policy violation", deployment.GetName())
@@ -126,7 +127,7 @@ const (
 	daemonSetDeployment = "DaemonSet"
 )
 
-func scaleToZeroEnabled(deployment *v1.Deployment) bool {
+func scaleToZeroEnabled(deployment *storage.Deployment) bool {
 	if deployment.GetType() == globalDeployment || deployment.GetType() == daemonSetDeployment {
 		return false
 	}

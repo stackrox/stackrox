@@ -2,10 +2,11 @@ package deploymentevents
 
 import (
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
-func newCreateResponse(onUpdate func(deployment *v1.Deployment) (string, v1.EnforcementAction, error),
-	onRemove func(deployment *v1.Deployment) error) *createResponseImpl {
+func newCreateResponse(onUpdate func(deployment *storage.Deployment) (string, v1.EnforcementAction, error),
+	onRemove func(deployment *storage.Deployment) error) *createResponseImpl {
 	return &createResponseImpl{
 		onUpdate: onUpdate,
 		onRemove: onRemove,
@@ -13,11 +14,11 @@ func newCreateResponse(onUpdate func(deployment *v1.Deployment) (string, v1.Enfo
 }
 
 type createResponseImpl struct {
-	onUpdate func(deployment *v1.Deployment) (string, v1.EnforcementAction, error)
-	onRemove func(deployment *v1.Deployment) error
+	onUpdate func(deployment *storage.Deployment) (string, v1.EnforcementAction, error)
+	onRemove func(deployment *storage.Deployment) error
 }
 
-func (s *createResponseImpl) do(deployment *v1.Deployment, action v1.ResourceAction) *v1.SensorEnforcement {
+func (s *createResponseImpl) do(deployment *storage.Deployment, action v1.ResourceAction) *v1.SensorEnforcement {
 	var alertID string
 	var enforcement v1.EnforcementAction
 	var err error

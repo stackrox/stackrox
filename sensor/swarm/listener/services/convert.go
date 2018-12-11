@@ -12,7 +12,7 @@ import (
 	"github.com/docker/docker/client"
 	ptypes "github.com/gogo/protobuf/types"
 	timestamp "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
@@ -47,7 +47,7 @@ func (s serviceWrap) getNetworkName(client *client.Client, id string) (string, e
 	return network.Name, nil
 }
 
-func (s serviceWrap) asDeployment(client dockerClientLite, retryGetImageSha bool) *v1.Deployment {
+func (s serviceWrap) asDeployment(client dockerClientLite, retryGetImageSha bool) *storage.Deployment {
 	var updatedTime *timestamp.Timestamp
 	up := s.UpdateStatus
 	var err error
@@ -88,7 +88,7 @@ func (s serviceWrap) asDeployment(client dockerClientLite, retryGetImageSha bool
 		tasks = s.getTasks(client)
 	}
 
-	return &v1.Deployment{
+	return &storage.Deployment{
 		Id:        s.ID,
 		Name:      s.Spec.Name,
 		Namespace: defaultNamespace,
@@ -97,7 +97,7 @@ func (s serviceWrap) asDeployment(client dockerClientLite, retryGetImageSha bool
 		Replicas:  m.asReplica(),
 		Labels:    s.Spec.Labels,
 		UpdatedAt: updatedTime,
-		Containers: []*v1.Container{
+		Containers: []*storage.Container{
 			{
 				Config:          s.getContainerConfig(),
 				Image:           image,
@@ -113,8 +113,8 @@ func (s serviceWrap) asDeployment(client dockerClientLite, retryGetImageSha bool
 	}
 }
 
-func (s serviceWrap) getContainerInstances(tasks []swarm.Task) []*v1.ContainerInstance {
-	result := make([]*v1.ContainerInstance, len(tasks))
+func (s serviceWrap) getContainerInstances(tasks []swarm.Task) []*storage.ContainerInstance {
+	result := make([]*storage.ContainerInstance, len(tasks))
 	for i, task := range tasks {
 		var allIPs []string
 		for _, na := range task.NetworksAttachments {
@@ -126,9 +126,9 @@ func (s serviceWrap) getContainerInstances(tasks []swarm.Task) []*v1.ContainerIn
 				allIPs = append(allIPs, addr)
 			}
 		}
-		instance := &v1.ContainerInstance{
-			InstanceId: &v1.ContainerInstanceID{
-				ContainerRuntime: v1.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
+		instance := &storage.ContainerInstance{
+			InstanceId: &storage.ContainerInstanceID{
+				ContainerRuntime: storage.ContainerRuntime_DOCKER_CONTAINER_RUNTIME,
 				Id:               task.Status.ContainerStatus.ContainerID,
 				Node:             task.NodeID,
 			},
@@ -147,12 +147,12 @@ func convertMemoryBytesToMb(bytes int64) float32 {
 	return float32(float64(bytes) / megabyte)
 }
 
-func (s serviceWrap) getResources() *v1.Resources {
+func (s serviceWrap) getResources() *storage.Resources {
 	resources := s.Spec.TaskTemplate.Resources
 	if resources == nil {
-		return &v1.Resources{}
+		return &storage.Resources{}
 	}
-	var v1Resources v1.Resources
+	var v1Resources storage.Resources
 	if resources.Limits != nil {
 		v1Resources.CpuCoresLimit = convertNanoCPUsToCores(resources.Limits.NanoCPUs)
 		v1Resources.MemoryMbLimit = convertMemoryBytesToMb(resources.Limits.MemoryBytes)
@@ -164,21 +164,21 @@ func (s serviceWrap) getResources() *v1.Resources {
 	return &v1Resources
 }
 
-func (s serviceWrap) getContainerConfig() *v1.ContainerConfig {
+func (s serviceWrap) getContainerConfig() *storage.ContainerConfig {
 	spec := s.Spec.TaskTemplate.ContainerSpec
 
-	envSlice := make([]*v1.ContainerConfig_EnvironmentConfig, 0, len(spec.Env))
+	envSlice := make([]*storage.ContainerConfig_EnvironmentConfig, 0, len(spec.Env))
 	for _, env := range spec.Env {
 		parts := strings.SplitN(env, `=`, 2)
 		if len(parts) == 2 {
-			envSlice = append(envSlice, &v1.ContainerConfig_EnvironmentConfig{
+			envSlice = append(envSlice, &storage.ContainerConfig_EnvironmentConfig{
 				Key:   parts[0],
 				Value: parts[1],
 			})
 		}
 	}
 
-	return &v1.ContainerConfig{
+	return &storage.ContainerConfig{
 		Args:      spec.Args,
 		Command:   spec.Command,
 		Directory: spec.Dir,
@@ -187,15 +187,15 @@ func (s serviceWrap) getContainerConfig() *v1.ContainerConfig {
 	}
 }
 
-func (s serviceWrap) getSecurityContext() *v1.SecurityContext {
+func (s serviceWrap) getSecurityContext() *storage.SecurityContext {
 	spec := s.Spec.TaskTemplate.ContainerSpec
 
 	if spec.Privileges == nil || spec.Privileges.SELinuxContext == nil {
 		return nil
 	}
 
-	return &v1.SecurityContext{
-		Selinux: &v1.SecurityContext_SELinux{
+	return &storage.SecurityContext{
+		Selinux: &storage.SecurityContext_SELinux{
 			User:  spec.Privileges.SELinuxContext.User,
 			Role:  spec.Privileges.SELinuxContext.Role,
 			Type:  spec.Privileges.SELinuxContext.Type,
@@ -204,10 +204,10 @@ func (s serviceWrap) getSecurityContext() *v1.SecurityContext {
 	}
 }
 
-func (s serviceWrap) getPorts() []*v1.PortConfig {
-	output := make([]*v1.PortConfig, len(s.Endpoint.Ports))
+func (s serviceWrap) getPorts() []*storage.PortConfig {
+	output := make([]*storage.PortConfig, len(s.Endpoint.Ports))
 	for i, p := range s.Endpoint.Ports {
-		output[i] = &v1.PortConfig{
+		output[i] = &storage.PortConfig{
 			Name:          p.Name,
 			ExposedPort:   int32(p.PublishedPort),
 			ContainerPort: int32(p.TargetPort),
@@ -219,23 +219,23 @@ func (s serviceWrap) getPorts() []*v1.PortConfig {
 	return output
 }
 
-func isPublished(port swarm.PortConfig) v1.PortConfig_Exposure {
+func isPublished(port swarm.PortConfig) storage.PortConfig_Exposure {
 	if port.PublishedPort == 0 {
-		return v1.PortConfig_INTERNAL
+		return storage.PortConfig_INTERNAL
 	}
 	if port.PublishMode == swarm.PortConfigPublishModeHost {
-		return v1.PortConfig_NODE
+		return storage.PortConfig_NODE
 	}
-	return v1.PortConfig_EXTERNAL
+	return storage.PortConfig_EXTERNAL
 }
 
-func (s serviceWrap) getVolumes() []*v1.Volume {
+func (s serviceWrap) getVolumes() []*storage.Volume {
 	spec := s.Spec.TaskTemplate.ContainerSpec
 
-	output := make([]*v1.Volume, len(spec.Mounts))
+	output := make([]*storage.Volume, len(spec.Mounts))
 
 	for i, m := range spec.Mounts {
-		output[i] = &v1.Volume{
+		output[i] = &storage.Volume{
 			Name:        m.Source,
 			Source:      m.Source,
 			Destination: m.Target,
@@ -246,15 +246,15 @@ func (s serviceWrap) getVolumes() []*v1.Volume {
 	return output
 }
 
-func (s serviceWrap) getSecrets() []*v1.EmbeddedSecret {
+func (s serviceWrap) getSecrets() []*storage.EmbeddedSecret {
 	spec := s.Spec.TaskTemplate.ContainerSpec
-	secrets := make([]*v1.EmbeddedSecret, 0, len(spec.Secrets))
+	secrets := make([]*storage.EmbeddedSecret, 0, len(spec.Secrets))
 	for _, secret := range spec.Secrets {
 		path := ""
 		if secret.File != nil {
 			path = `/run/secrets/` + secret.File.Name
 		}
-		secrets = append(secrets, &v1.EmbeddedSecret{
+		secrets = append(secrets, &storage.EmbeddedSecret{
 			Name: secret.SecretName,
 			Path: path,
 		})

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func init() {
@@ -31,7 +32,7 @@ type dropCapMatcherImpl struct {
 	dropCap map[string]struct{}
 }
 
-func (p *dropCapMatcherImpl) match(security *v1.SecurityContext) []*v1.Alert_Violation {
+func (p *dropCapMatcherImpl) match(security *storage.SecurityContext) []*v1.Alert_Violation {
 	if security == nil {
 		return nil
 	}

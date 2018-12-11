@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
 
@@ -31,7 +32,7 @@ type userMatcherImpl struct {
 	userRegex *regexp.Regexp
 }
 
-func (p *userMatcherImpl) match(config *v1.ContainerConfig) []*v1.Alert_Violation {
+func (p *userMatcherImpl) match(config *storage.ContainerConfig) []*v1.Alert_Violation {
 	var violations []*v1.Alert_Violation
 	if p.userRegex.MatchString(config.GetUser()) {
 		v := &v1.Alert_Violation{

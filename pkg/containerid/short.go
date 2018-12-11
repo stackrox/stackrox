@@ -1,7 +1,7 @@
 package containerid
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 const (
@@ -10,7 +10,7 @@ const (
 
 // ShortContainerIDFromInstance returns a short container id from the given container instance.
 // It returns an empty string if the container id doesn't exist or is too short.
-func ShortContainerIDFromInstance(instance *v1.ContainerInstance) string {
+func ShortContainerIDFromInstance(instance *storage.ContainerInstance) string {
 	id := instance.GetInstanceId().GetId()
 	if len(id) < collectorContainerIDLength {
 		return ""

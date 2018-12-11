@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/index/mappings"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -20,17 +21,17 @@ type indexerImpl struct {
 }
 
 type deploymentWrapper struct {
-	*v1.Deployment `json:"deployment"`
-	Type           string `json:"type"`
+	*storage.Deployment `json:"deployment"`
+	Type                string `json:"type"`
 }
 
 // AddDeployment adds the deployment to the index
-func (b *indexerImpl) AddDeployment(deployment *v1.Deployment) error {
+func (b *indexerImpl) AddDeployment(deployment *storage.Deployment) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "Deployment")
 	return b.index.Index(deployment.GetId(), &deploymentWrapper{Type: v1.SearchCategory_DEPLOYMENTS.String(), Deployment: deployment})
 }
 
-func (b *indexerImpl) processBatch(deployments []*v1.Deployment) error {
+func (b *indexerImpl) processBatch(deployments []*storage.Deployment) error {
 	batch := b.index.NewBatch()
 	for _, deployment := range deployments {
 		batch.Index(deployment.GetId(), &deploymentWrapper{Type: v1.SearchCategory_DEPLOYMENTS.String(), Deployment: deployment})
@@ -39,7 +40,7 @@ func (b *indexerImpl) processBatch(deployments []*v1.Deployment) error {
 }
 
 // AddDeployments adds the deployments to the index
-func (b *indexerImpl) AddDeployments(deployments []*v1.Deployment) error {
+func (b *indexerImpl) AddDeployments(deployments []*storage.Deployment) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "Deployment")
 	batchManager := batcher.New(len(deployments), batchSize)
 	for {

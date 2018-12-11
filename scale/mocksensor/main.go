@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -94,7 +95,7 @@ func getGeneratedDeploymentID(i int) string {
 }
 
 func deploymentSensorEvent(bigDepRate float64) *v1.SensorEvent {
-	var deployment *v1.Deployment
+	var deployment *storage.Deployment
 	if rand.Float64() < bigDepRate {
 		deployment = fixtures.GetDeployment()
 	} else {

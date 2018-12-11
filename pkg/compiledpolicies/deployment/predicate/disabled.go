@@ -2,6 +2,7 @@ package predicate
 
 import (
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func init() {
@@ -16,6 +17,6 @@ func newDisabledPredicate(policy *v1.Policy) (Predicate, error) {
 }
 
 // If the policy is disabled, we create a predicate that always returns false.
-func shouldProcess(*v1.Deployment) bool {
+func shouldProcess(*storage.Deployment) bool {
 	return false
 }

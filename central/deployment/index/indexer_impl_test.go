@@ -49,25 +49,25 @@ func (suite *DeploymentIndexTestSuite) TestHighlighting() {
 	img22 := &storage.Image{Id: "SHA22", Name: &storage.ImageName{Tag: "2.2"}}
 	img221 := &storage.Image{Id: "SHA221", Name: &storage.ImageName{Tag: "2.2.1"}}
 
-	deployment22 := &v1.Deployment{
+	deployment22 := &storage.Deployment{
 		Id: "22",
-		Containers: []*v1.Container{
-			{Image: img22, Volumes: []*v1.Volume{{Name: "volume22a"}, {Name: "volume22b"}, {Name: "nomatch"}}},
+		Containers: []*storage.Container{
+			{Image: img22, Volumes: []*storage.Volume{{Name: "volume22a"}, {Name: "volume22b"}, {Name: "nomatch"}}},
 		},
 	}
-	deployment221 := &v1.Deployment{
+	deployment221 := &storage.Deployment{
 		Id: "221",
-		Containers: []*v1.Container{
-			{Image: img221, Volumes: []*v1.Volume{{Name: "volume221a"}}, Resources: &v1.Resources{CpuCoresRequest: 0.1}},
-			{Resources: &v1.Resources{CpuCoresRequest: 0.75}},
+		Containers: []*storage.Container{
+			{Image: img221, Volumes: []*storage.Volume{{Name: "volume221a"}}, Resources: &storage.Resources{CpuCoresRequest: 0.1}},
+			{Resources: &storage.Resources{CpuCoresRequest: 0.75}},
 		},
 	}
-	depWithBoth22And221 := &v1.Deployment{
+	depWithBoth22And221 := &storage.Deployment{
 		Id:         "Dep22And221",
-		Containers: []*v1.Container{{Image: img22}, {Image: img221}},
+		Containers: []*storage.Container{{Image: img22}, {Image: img221}},
 	}
 
-	suite.NoError(suite.indexer.AddDeployments([]*v1.Deployment{deployment22, deployment221, depWithBoth22And221}))
+	suite.NoError(suite.indexer.AddDeployments([]*storage.Deployment{deployment22, deployment221, depWithBoth22And221}))
 	suite.NoError(suite.imageIndexer.AddImages([]*storage.Image{img22, img221}))
 
 	cases := []struct {
@@ -182,10 +182,10 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 		}
 	}
 
-	containerPort22Dep := &v1.Deployment{
+	containerPort22Dep := &storage.Deployment{
 		Id: "CONTAINERPORT22DEP",
-		Containers: []*v1.Container{
-			{Ports: []*v1.PortConfig{
+		Containers: []*storage.Container{
+			{Ports: []*storage.PortConfig{
 				{Protocol: "tcp", ContainerPort: 22},
 				{Protocol: "udp", ContainerPort: 4125},
 			}},
@@ -195,10 +195,10 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 
 	img110 := &storage.Image{Id: "SHA110", Name: &storage.ImageName{Tag: "1.10"}}
 	imgNginx := &storage.Image{Id: "SHANGINX", Name: &storage.ImageName{Remote: "nginx"}}
-	notNginx110Dep := &v1.Deployment{
+	notNginx110Dep := &storage.Deployment{
 		Id:         "NOTNGINX110ID",
 		Name:       "NOT110",
-		Containers: []*v1.Container{{Image: img110}, {Image: imgNginx}},
+		Containers: []*storage.Container{{Image: img110}, {Image: imgNginx}},
 	}
 
 	suite.NoError(suite.indexer.AddDeployment(notNginx110Dep))
@@ -206,15 +206,15 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	suite.NoError(suite.imageIndexer.AddImage(imgNginx))
 
 	imgNginx110 := &storage.Image{Id: "SHANGINX110", Name: &storage.ImageName{Tag: "1.10", Remote: "nginx"}}
-	nginx110Dep := &v1.Deployment{
+	nginx110Dep := &storage.Deployment{
 		Id:         "NGINX110ID",
 		Name:       "YES110",
-		Containers: []*v1.Container{{Image: imgNginx110}},
+		Containers: []*storage.Container{{Image: imgNginx110}},
 	}
 	suite.NoError(suite.indexer.AddDeployment(nginx110Dep))
 	suite.NoError(suite.imageIndexer.AddImage(imgNginx110))
 
-	badEmailDep := &v1.Deployment{
+	badEmailDep := &storage.Deployment{
 		Id:     "BADEMAILID",
 		Labels: map[string]string{"email": "INVALIDEMAIL"},
 	}
@@ -552,7 +552,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 }
 
 func (suite *DeploymentIndexTestSuite) TestBatches() {
-	deployments := []*v1.Deployment{
+	deployments := []*storage.Deployment{
 		fixtures.GetDeployment(),
 		fixtures.GetDeployment(),
 		fixtures.GetDeployment(),

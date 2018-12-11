@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 const (
@@ -24,7 +24,7 @@ func NewVulnerabilities() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on vulnerabilties
-func (c *vulnerabilitiesMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
+func (c *vulnerabilitiesMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
 	var cvssSum float32
 	cvssMin := math.MaxFloat64
 	cvssMax := -math.MaxFloat64
@@ -48,9 +48,9 @@ func (c *vulnerabilitiesMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Re
 		return nil
 	}
 	score := normalizeScore(cvssSum, vulnSaturation, vulnMaxScore)
-	return &v1.Risk_Result{
+	return &storage.Risk_Result{
 		Name: VulnsHeading,
-		Factors: []*v1.Risk_Result_Factor{
+		Factors: []*storage.Risk_Result_Factor{
 			{Message: fmt.Sprintf("Image contains %d CVEs with CVSS scores ranging between %0.1f and %0.1f", numCVEs, cvssMin, cvssMax)},
 		},
 		Score: score,

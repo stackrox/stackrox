@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,13 +13,13 @@ func TestLabelsMap(t *testing.T) {
 
 	cases := []struct {
 		name           string
-		deployments    []*v1.Deployment
+		deployments    []*storage.Deployment
 		expectedMap    map[string]*v1.DeploymentLabelsResponse_LabelValues
 		expectedValues []string
 	}{
 		{
 			name: "one deployment",
-			deployments: []*v1.Deployment{
+			deployments: []*storage.Deployment{
 				{
 					Labels: map[string]string{
 						"key": "value",
@@ -36,7 +37,7 @@ func TestLabelsMap(t *testing.T) {
 		},
 		{
 			name: "multiple deployments",
-			deployments: []*v1.Deployment{
+			deployments: []*storage.Deployment{
 				{
 					Labels: map[string]string{
 						"key":   "value",

@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -344,7 +345,7 @@ func (s *serviceImpl) getPolicyCategorySet() (map[string]struct{}, error) {
 	return categorySet, nil
 }
 
-func (s *serviceImpl) reprocessDeployments(deployments []*v1.Deployment) {
+func (s *serviceImpl) reprocessDeployments(deployments []*storage.Deployment) {
 	for _, deployment := range deployments {
 		s.enricherAndDetector.EnrichAndDetect(deployment)
 	}

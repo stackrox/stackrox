@@ -11,6 +11,7 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	openshift_appsv1 "github.com/openshift/api/apps/v1"
 	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containers"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -56,10 +57,10 @@ func getKubeProxyDeploymentID() string {
 }
 
 type deploymentWrap struct {
-	*pkgV1.Deployment
+	*storage.Deployment
 	original    interface{}
 	podLabels   map[string]string
-	portConfigs map[portRef]*pkgV1.PortConfig
+	portConfigs map[portRef]*storage.PortConfig
 	pods        []*v1.Pod
 	podSelector labels.Selector
 }
@@ -115,7 +116,7 @@ func newWrap(meta metav1.Object, kind string) *deploymentWrap {
 		logger.Error(err)
 	}
 	return &deploymentWrap{
-		Deployment: &pkgV1.Deployment{
+		Deployment: &storage.Deployment{
 			Id:          string(meta.GetUID()),
 			Name:        meta.GetName(),
 			Type:        kind,
@@ -210,7 +211,7 @@ func (w *deploymentWrap) populateFields(obj interface{}, action pkgV1.ResourceAc
 	}
 }
 
-func (w *deploymentWrap) GetDeployment() *pkgV1.Deployment {
+func (w *deploymentWrap) GetDeployment() *storage.Deployment {
 	if w == nil {
 		return nil
 	}
@@ -218,9 +219,9 @@ func (w *deploymentWrap) GetDeployment() *pkgV1.Deployment {
 }
 
 func (w *deploymentWrap) populateContainers(podSpec v1.PodSpec) {
-	w.Deployment.Containers = make([]*pkgV1.Container, 0, len(podSpec.Containers))
+	w.Deployment.Containers = make([]*storage.Container, 0, len(podSpec.Containers))
 	for _, c := range podSpec.Containers {
-		w.Deployment.Containers = append(w.Deployment.Containers, &pkgV1.Container{
+		w.Deployment.Containers = append(w.Deployment.Containers, &storage.Container{
 			Name: c.Name,
 		})
 	}
@@ -391,15 +392,15 @@ func (w *deploymentWrap) populateContainerConfigs(podSpec v1.PodSpec) {
 			continue
 		}
 
-		config := &pkgV1.ContainerConfig{
+		config := &storage.ContainerConfig{
 			Command:   c.Command,
 			Args:      c.Args,
 			Directory: c.WorkingDir,
 		}
 
-		envSlice := make([]*pkgV1.ContainerConfig_EnvironmentConfig, len(c.Env))
+		envSlice := make([]*storage.ContainerConfig_EnvironmentConfig, len(c.Env))
 		for i, env := range c.Env {
-			envSlice[i] = &pkgV1.ContainerConfig_EnvironmentConfig{
+			envSlice[i] = &storage.ContainerConfig_EnvironmentConfig{
 				Key:   env.Name,
 				Value: env.Value,
 			}
@@ -427,14 +428,14 @@ func (w *deploymentWrap) populateImages(podSpec v1.PodSpec) {
 func (w *deploymentWrap) populateSecurityContext(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
 		if s := c.SecurityContext; s != nil {
-			sc := &pkgV1.SecurityContext{}
+			sc := &storage.SecurityContext{}
 
 			if p := s.Privileged; p != nil {
 				sc.Privileged = *p
 			}
 
 			if SELinux := s.SELinuxOptions; SELinux != nil {
-				sc.Selinux = &pkgV1.SecurityContext_SELinux{
+				sc.Selinux = &storage.SecurityContext_SELinux{
 					User:  SELinux.User,
 					Role:  SELinux.Role,
 					Type:  SELinux.Type,
@@ -491,7 +492,7 @@ func convertQuantityToMb(q *resource.Quantity) float32 {
 
 func (w *deploymentWrap) populateResources(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
-		w.Deployment.Containers[i].Resources = &pkgV1.Resources{
+		w.Deployment.Containers[i].Resources = &storage.Resources{
 			CpuCoresRequest: convertQuantityToCores(c.Resources.Requests.Cpu()),
 			CpuCoresLimit:   convertQuantityToCores(c.Resources.Limits.Cpu()),
 			MemoryMbRequest: convertQuantityToMb(c.Resources.Requests.Memory()),
@@ -509,13 +510,13 @@ func (w *deploymentWrap) populateVolumesAndSecrets(podSpec v1.PodSpec) {
 				sourceVolume = &volumes.Unimplemented{}
 			}
 			if sourceVolume.Type() == "Secret" {
-				w.Deployment.Containers[i].Secrets = append(w.Deployment.Containers[i].Secrets, &pkgV1.EmbeddedSecret{
+				w.Deployment.Containers[i].Secrets = append(w.Deployment.Containers[i].Secrets, &storage.EmbeddedSecret{
 					Name: sourceVolume.Source(),
 					Path: v.MountPath,
 				})
 				continue
 			}
-			w.Deployment.Containers[i].Volumes = append(w.Deployment.Containers[i].Volumes, &pkgV1.Volume{
+			w.Deployment.Containers[i].Volumes = append(w.Deployment.Containers[i].Volumes, &storage.Volume{
 				Name:        v.Name,
 				Source:      sourceVolume.Source(),
 				Destination: v.MountPath,
@@ -527,7 +528,7 @@ func (w *deploymentWrap) populateVolumesAndSecrets(podSpec v1.PodSpec) {
 }
 
 func (w *deploymentWrap) populatePorts(podSpec v1.PodSpec) {
-	w.portConfigs = make(map[portRef]*pkgV1.PortConfig)
+	w.portConfigs = make(map[portRef]*storage.PortConfig)
 	for i, c := range podSpec.Containers {
 		for _, p := range c.Ports {
 			exposedPort := p.ContainerPort
@@ -536,12 +537,12 @@ func (w *deploymentWrap) populatePorts(podSpec v1.PodSpec) {
 				exposedPort = p.HostPort
 			}
 
-			portConfig := &pkgV1.PortConfig{
+			portConfig := &storage.PortConfig{
 				Name:          p.Name,
 				ContainerPort: p.ContainerPort,
 				ExposedPort:   exposedPort,
 				Protocol:      string(p.Protocol),
-				Exposure:      pkgV1.PortConfig_INTERNAL,
+				Exposure:      storage.PortConfig_INTERNAL,
 			}
 			w.Deployment.Containers[i].Ports = append(w.Deployment.Containers[i].Ports, portConfig)
 			w.portConfigs[portRef{Port: intstr.FromInt(int(p.ContainerPort)), Protocol: p.Protocol}] = portConfig
@@ -564,8 +565,8 @@ func (w *deploymentWrap) toEvent(action pkgV1.ResourceAction) *pkgV1.SensorEvent
 
 func (w *deploymentWrap) resetPortExposure() (updated bool) {
 	for _, portCfg := range w.portConfigs {
-		if portCfg.Exposure != pkgV1.PortConfig_INTERNAL {
-			portCfg.Exposure = pkgV1.PortConfig_INTERNAL
+		if portCfg.Exposure != storage.PortConfig_INTERNAL {
+			portCfg.Exposure = storage.PortConfig_INTERNAL
 			updated = true
 		}
 	}

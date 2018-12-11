@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/central/risk/getters"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -36,7 +37,7 @@ func NewViolations(getter getters.AlertGetter) *ViolationsMultiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on policy violations.
-func (v *ViolationsMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
+func (v *ViolationsMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
 	qb := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String())
 
 	alerts, err := v.getter.ListAlerts(&v1.ListAlertsRequest{
@@ -64,7 +65,7 @@ func (v *ViolationsMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result 
 		return nil
 	}
 	score := normalizeScore(severitySum, policySaturation, policyMaxValue)
-	return &v1.Risk_Result{
+	return &storage.Risk_Result{
 		Name:    PolicyViolationsHeading,
 		Factors: policyFactors(factors),
 		Score:   score,
@@ -80,7 +81,7 @@ func severityString(s v1.Severity) string {
 	return strings.ToUpper(trim[:1]) + strings.ToLower(trim[1:])
 }
 
-func policyFactors(pfs []policyFactor) (factors []*v1.Risk_Result_Factor) {
+func policyFactors(pfs []policyFactor) (factors []*storage.Risk_Result_Factor) {
 	sort.Slice(pfs, func(i, j int) bool {
 		if pfs[i].severity == pfs[j].severity {
 			// Break ties using the name.
@@ -90,10 +91,10 @@ func policyFactors(pfs []policyFactor) (factors []*v1.Risk_Result_Factor) {
 		return severityImpact(pfs[i].severity) > severityImpact(pfs[j].severity)
 	})
 
-	factors = make([]*v1.Risk_Result_Factor, 0, len(pfs))
+	factors = make([]*storage.Risk_Result_Factor, 0, len(pfs))
 	for _, pf := range pfs {
 		factors = append(factors,
-			&v1.Risk_Result_Factor{Message: fmt.Sprintf("%s (severity: %s)", pf.name, severityString(pf.severity))})
+			&storage.Risk_Result_Factor{Message: fmt.Sprintf("%s (severity: %s)", pf.name, severityString(pf.severity))})
 	}
 	return
 }

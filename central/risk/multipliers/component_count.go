@@ -3,7 +3,6 @@ package multipliers
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -26,7 +25,7 @@ func NewComponentCount() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on image component counts.
-func (c *componentCountMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
+func (c *componentCountMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
 	// Get the number of components in the image.
 	components := set.NewStringSet()
 	var maxCount int
@@ -61,9 +60,9 @@ func (c *componentCountMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Res
 		message = fmt.Sprintf("image %s contains %d components", maxImage, maxCount)
 	}
 
-	return &v1.Risk_Result{
+	return &storage.Risk_Result{
 		Name: ComponentCountHeading,
-		Factors: []*v1.Risk_Result_Factor{
+		Factors: []*storage.Risk_Result_Factor{
 			{Message: message},
 		},
 		Score: score,

@@ -9,6 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/deduper"
@@ -220,7 +221,7 @@ func (s *sensor) processResponse(ctx context.Context, enforcement *v1.SensorEnfo
 	}
 }
 
-func (s *sensor) enrichImages(deployment *v1.Deployment) {
+func (s *sensor) enrichImages(deployment *storage.Deployment) {
 	if deployment == nil || len(deployment.GetContainers()) == 0 {
 		return
 	}

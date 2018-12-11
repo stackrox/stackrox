@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/stackrox/rox/central/risk/multipliers"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -18,9 +17,9 @@ type scoreImpl struct {
 }
 
 // Score takes a deployment and evaluates its risk
-func (s *scoreImpl) Score(deployment *v1.Deployment) *v1.Risk {
+func (s *scoreImpl) Score(deployment *storage.Deployment) *storage.Risk {
 	riskResults, score := s.score(deployment)
-	return &v1.Risk{
+	return &storage.Risk{
 		Score:   score,
 		Results: riskResults,
 	}
@@ -42,12 +41,12 @@ func (s *scoreImpl) RemoveUserDefinedMultiplier(id string) {
 	delete(s.UserDefinedMultipliers, id)
 }
 
-func (s *scoreImpl) userDefinedScore(deployment *v1.Deployment) ([]*v1.Risk_Result, float32) {
+func (s *scoreImpl) userDefinedScore(deployment *storage.Deployment) ([]*storage.Risk_Result, float32) {
 	s.multiplierLock.RLock()
 	defer s.multiplierLock.RUnlock()
 
 	score := float32(1.0)
-	userDefinedRiskResults := make([]*v1.Risk_Result, 0, len(s.UserDefinedMultipliers))
+	userDefinedRiskResults := make([]*storage.Risk_Result, 0, len(s.UserDefinedMultipliers))
 	for _, mult := range s.UserDefinedMultipliers {
 		if riskResult := mult.Score(deployment); riskResult != nil {
 			score *= riskResult.GetScore()
@@ -58,14 +57,14 @@ func (s *scoreImpl) userDefinedScore(deployment *v1.Deployment) ([]*v1.Risk_Resu
 }
 
 // Scores from user defined multiplies are sorted in descending order of risk score.
-func (s *scoreImpl) sortedUserDefinedScore(deployment *v1.Deployment) ([]*v1.Risk_Result, float32) {
+func (s *scoreImpl) sortedUserDefinedScore(deployment *storage.Deployment) ([]*storage.Risk_Result, float32) {
 	results, score := s.userDefinedScore(deployment)
 	sort.SliceStable(results, func(i, j int) bool { return results[i].Score > results[j].Score })
 	return results, score
 }
 
-func (s *scoreImpl) score(deployment *v1.Deployment) ([]*v1.Risk_Result, float32) {
-	riskResults := make([]*v1.Risk_Result, 0, len(s.ConfiguredMultipliers))
+func (s *scoreImpl) score(deployment *storage.Deployment) ([]*storage.Risk_Result, float32) {
+	riskResults := make([]*storage.Risk_Result, 0, len(s.ConfiguredMultipliers))
 	overallScore := float32(1.0)
 	for _, mult := range s.ConfiguredMultipliers {
 		if riskResult := mult.Score(deployment); riskResult != nil {

@@ -14,6 +14,7 @@ import (
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/set"
@@ -146,7 +147,7 @@ func (m *managerImpl) IndicatorAdded(indicator *v1.ProcessIndicator, injector pi
 	return nil
 }
 
-func (m *managerImpl) DeploymentUpdated(deployment *v1.Deployment) (string, v1.EnforcementAction, error) {
+func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string, v1.EnforcementAction, error) {
 	// Attempt to enrich the image before detection.
 	if _, err := m.enricher.Enrich(deployment); err != nil {
 		logger.Errorf("Error enriching deployment %s: %s", deployment.GetName(), err)
@@ -213,7 +214,7 @@ func (m *managerImpl) UpsertPolicy(policy *v1.Policy) error {
 	return m.alertManager.AlertAndNotify(presentAlerts, alertmanager.WithPolicyID(policy.GetId()))
 }
 
-func (m *managerImpl) DeploymentRemoved(deployment *v1.Deployment) error {
+func (m *managerImpl) DeploymentRemoved(deployment *storage.Deployment) error {
 	return m.alertManager.AlertAndNotify(nil, alertmanager.WithDeploymentIDs(deployment.GetId()))
 }
 
@@ -274,7 +275,7 @@ func containersToKill(alerts []*v1.Alert, indicatorsToInfo map[string]indicatorW
 	return containersSet
 }
 
-func createEnforcementAction(deployment *v1.Deployment, containerID string) *v1.SensorEnforcement {
+func createEnforcementAction(deployment *storage.Deployment, containerID string) *v1.SensorEnforcement {
 	containers := deployment.GetContainers()
 	for _, container := range containers {
 		for _, instance := range container.GetInstances() {

@@ -3,6 +3,7 @@ package index
 import (
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -13,8 +14,8 @@ var (
 
 // Indexer provides indexing of Deployment objects.
 type Indexer interface {
-	AddDeployment(deployment *v1.Deployment) error
-	AddDeployments(deployments []*v1.Deployment) error
+	AddDeployment(deployment *storage.Deployment) error
+	AddDeployments(deployments []*storage.Deployment) error
 	DeleteDeployment(id string) error
 	Search(q *v1.Query) ([]search.Result, error)
 }

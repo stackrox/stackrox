@@ -2,6 +2,7 @@ package resources
 
 import (
 	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -18,14 +19,14 @@ func wrapService(svc *v1.Service) *serviceWrap {
 	}
 }
 
-func (s *serviceWrap) exposure() pkgV1.PortConfig_Exposure {
+func (s *serviceWrap) exposure() storage.PortConfig_Exposure {
 	switch s.Spec.Type {
 	case v1.ServiceTypeLoadBalancer:
-		return pkgV1.PortConfig_EXTERNAL
+		return storage.PortConfig_EXTERNAL
 	case v1.ServiceTypeNodePort:
-		return pkgV1.PortConfig_NODE
+		return storage.PortConfig_NODE
 	default:
-		return pkgV1.PortConfig_INTERNAL
+		return storage.PortConfig_INTERNAL
 	}
 }
 

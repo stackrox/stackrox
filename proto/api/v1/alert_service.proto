@@ -8,9 +8,9 @@ import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
 import "api/v1/policy_service.proto";
-import "api/v1/deployment_service.proto";
 import "api/v1/indicator.proto";
 import "api/v1/empty.proto";
+import "storage/deployment.proto";
 
 package v1;
 
@@ -18,7 +18,7 @@ message Alert {
     string id                                = 1;
     Policy policy                            = 2;
     LifecycleStage lifecycle_stage           = 3;
-    Deployment deployment                    = 4;
+    storage.Deployment deployment                    = 4;
 
     message Violation {
         string message                       = 1;

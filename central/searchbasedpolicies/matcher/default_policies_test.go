@@ -93,7 +93,7 @@ func (suite *DefaultPoliciesTestSuite) MustGetPolicy(name string) *v1.Policy {
 	return p
 }
 
-func (suite *DefaultPoliciesTestSuite) mustIndexDepAndImages(deployment *v1.Deployment) {
+func (suite *DefaultPoliciesTestSuite) mustIndexDepAndImages(deployment *storage.Deployment) {
 	suite.NoError(suite.deploymentIndexer.AddDeployment(deployment))
 	for _, container := range deployment.GetContainers() {
 		if container.GetImage() != nil {
@@ -123,22 +123,22 @@ func imageWithLayers(layers []*storage.ImageLayer) *storage.Image {
 	}
 }
 
-func deploymentWithImage(img *storage.Image) *v1.Deployment {
-	return &v1.Deployment{
+func deploymentWithImage(img *storage.Image) *storage.Deployment {
+	return &storage.Deployment{
 		Id:         uuid.NewV4().String(),
-		Containers: []*v1.Container{{Image: img}},
+		Containers: []*storage.Container{{Image: img}},
 	}
 }
 
-func deploymentWithComponents(components []*storage.ImageScanComponent) *v1.Deployment {
+func deploymentWithComponents(components []*storage.ImageScanComponent) *storage.Deployment {
 	return deploymentWithImage(imageWithComponents(components))
 }
 
-func deploymentWithLayers(layers []*storage.ImageLayer) *v1.Deployment {
+func deploymentWithLayers(layers []*storage.ImageLayer) *storage.Deployment {
 	return deploymentWithImage(imageWithLayers(layers))
 }
 
-func (suite *DefaultPoliciesTestSuite) imageIDFromDep(deployment *v1.Deployment) string {
+func (suite *DefaultPoliciesTestSuite) imageIDFromDep(deployment *storage.Deployment) string {
 	suite.Require().Len(deployment.GetContainers(), 1, "This function only supports deployments with exactly one container")
 	id := deployment.GetContainers()[0].GetImage().GetId()
 	suite.NotEmpty(id, "Deployment '%s' had no image id", proto.MarshalTextString(deployment))
@@ -184,9 +184,9 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			Tag:      "1.10",
 		},
 	}
-	nginx110Dep := &v1.Deployment{
+	nginx110Dep := &storage.Deployment{
 		Id: "nginx110",
-		Containers: []*v1.Container{
+		Containers: []*storage.Container{
 			{Image: nginx110},
 		},
 	}
@@ -199,9 +199,9 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			ScanTime: protoconv.ConvertTimeToTimestamp(oldScannedTime),
 		},
 	}
-	oldScannedDep := &v1.Deployment{
+	oldScannedDep := &storage.Deployment{
 		Id: "oldscanned",
-		Containers: []*v1.Container{
+		Containers: []*storage.Container{
 			{Image: oldScannedImage},
 		},
 	}
@@ -252,9 +252,9 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 	}
-	oldImageDep := &v1.Deployment{
+	oldImageDep := &storage.Deployment{
 		Id:         "oldimagedep",
-		Containers: []*v1.Container{{Image: oldCreatedImage}},
+		Containers: []*storage.Container{{Image: oldCreatedImage}},
 	}
 	suite.mustIndexDepAndImages(oldImageDep)
 
@@ -270,7 +270,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	})
 	suite.mustIndexDepAndImages(curlDep)
 
-	componentDeps := make(map[string]*v1.Deployment)
+	componentDeps := make(map[string]*storage.Deployment)
 	for _, component := range []string{"apt", "dnf", "wget"} {
 		dep := deploymentWithComponents([]*storage.ImageScanComponent{
 			{Name: component},
@@ -279,11 +279,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		componentDeps[component] = dep
 	}
 
-	heartbleedDep := &v1.Deployment{
+	heartbleedDep := &storage.Deployment{
 		Id: "HEARTBLEEDDEPID",
-		Containers: []*v1.Container{
+		Containers: []*storage.Container{
 			{
-				SecurityContext: &v1.SecurityContext{Privileged: true},
+				SecurityContext: &storage.SecurityContext{Privileged: true},
 				Image: &storage.Image{
 					Id: "HEARTBLEEDDEPSHA",
 					Scan: &storage.ImageScan{
@@ -325,10 +325,10 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	})
 	suite.mustIndexDepAndImages(depWithNonSeriousVulns)
 
-	dockerSockDep := &v1.Deployment{
+	dockerSockDep := &storage.Deployment{
 		Id: "DOCKERSOCDEP",
-		Containers: []*v1.Container{
-			{Volumes: []*v1.Volume{
+		Containers: []*storage.Container{
+			{Volumes: []*storage.Volume{
 				{Source: "/var/run/docker.sock", Name: "DOCKERSOCK"},
 				{Source: "NOTDOCKERSOCK"},
 			}},
@@ -336,10 +336,10 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.mustIndexDepAndImages(dockerSockDep)
 
-	containerPort22Dep := &v1.Deployment{
+	containerPort22Dep := &storage.Deployment{
 		Id: "CONTAINERPORT22DEP",
-		Containers: []*v1.Container{
-			{Ports: []*v1.PortConfig{
+		Containers: []*storage.Container{
+			{Ports: []*storage.PortConfig{
 				{Protocol: "tcp", ContainerPort: 22},
 				{Protocol: "udp", ContainerPort: 4125},
 			}},
@@ -347,11 +347,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.mustIndexDepAndImages(containerPort22Dep)
 
-	secretEnvDep := &v1.Deployment{
+	secretEnvDep := &storage.Deployment{
 		Id: "SECRETENVDEP",
-		Containers: []*v1.Container{
-			{Config: &v1.ContainerConfig{
-				Env: []*v1.ContainerConfig_EnvironmentConfig{
+		Containers: []*storage.Container{
+			{Config: &storage.ContainerConfig{
+				Env: []*storage.ContainerConfig_EnvironmentConfig{
 					{Key: "THIS_IS_SECRET_VAR", Value: "stealthmode"},
 					{Key: "HOME", Value: "/home/stackrox"},
 				},
@@ -362,9 +362,9 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	// Fake deployment that shouldn't match anything, just to make sure
 	// that none of our queries will accidentally match it.
-	suite.mustIndexDepAndImages(&v1.Deployment{Id: "FAKEID", Name: "FAKENAME"})
+	suite.mustIndexDepAndImages(&storage.Deployment{Id: "FAKEID", Name: "FAKENAME"})
 
-	depWithGoodEmailAnnotation := &v1.Deployment{
+	depWithGoodEmailAnnotation := &storage.Deployment{
 		Id: "GOODEMAILDEPID",
 		Annotations: map[string]string{
 			"email": "vv@stackrox.com",
@@ -372,7 +372,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.mustIndexDepAndImages(depWithGoodEmailAnnotation)
 
-	depWithOwnerAnnotation := &v1.Deployment{
+	depWithOwnerAnnotation := &storage.Deployment{
 		Id: "OWNERANNOTATIONDEP",
 		Annotations: map[string]string{
 			"owner": "IOWNTHIS",
@@ -381,7 +381,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.mustIndexDepAndImages(depWithOwnerAnnotation)
 
-	depWitharbitraryAnnotations := &v1.Deployment{
+	depWitharbitraryAnnotations := &storage.Deployment{
 		Id: "ARBITRARYANNOTATIONDEPID",
 		Annotations: map[string]string{
 			"emailnot": "vv@stackrox.com",
@@ -392,7 +392,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.mustIndexDepAndImages(depWitharbitraryAnnotations)
 
-	depWithBadEmailAnnotation := &v1.Deployment{
+	depWithBadEmailAnnotation := &storage.Deployment{
 		Id: "BADEMAILDEPID",
 		Annotations: map[string]string{
 			"email": "NOTANEMAIL",
@@ -400,11 +400,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.mustIndexDepAndImages(depWithBadEmailAnnotation)
 
-	sysAdminDep := &v1.Deployment{
+	sysAdminDep := &storage.Deployment{
 		Id: "SYSADMINDEPID",
-		Containers: []*v1.Container{
+		Containers: []*storage.Container{
 			{
-				SecurityContext: &v1.SecurityContext{
+				SecurityContext: &storage.SecurityContext{
 					AddCapabilities: []string{"CAP_SYS_ADMIN"},
 				},
 			},
@@ -412,10 +412,10 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.mustIndexDepAndImages(sysAdminDep)
 
-	depWithAllResourceLimitsRequestsSpecified := &v1.Deployment{
+	depWithAllResourceLimitsRequestsSpecified := &storage.Deployment{
 		Id: "ALLRESOURCESANDLIMITSDEP",
-		Containers: []*v1.Container{
-			{Resources: &v1.Resources{
+		Containers: []*storage.Container{
+			{Resources: &storage.Resources{
 				CpuCoresRequest: 0.1,
 				CpuCoresLimit:   0.3,
 				MemoryMbLimit:   100,

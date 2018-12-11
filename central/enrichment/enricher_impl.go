@@ -6,7 +6,6 @@ import (
 	imageIntegrationDS "github.com/stackrox/rox/central/imageintegration/datastore"
 	multiplierDS "github.com/stackrox/rox/central/multiplier/store"
 	"github.com/stackrox/rox/central/risk"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -35,7 +34,7 @@ func (e *enricherImpl) initializeMultipliers() error {
 }
 
 // Enrich enriches a deployment with data from registries and scanners.
-func (e *enricherImpl) Enrich(deployment *v1.Deployment) (bool, error) {
+func (e *enricherImpl) Enrich(deployment *storage.Deployment) (bool, error) {
 	var deploymentUpdated bool
 	for _, c := range deployment.GetContainers() {
 		if c.GetImage().GetId() == "" {
@@ -87,9 +86,9 @@ func (e *enricherImpl) ReprocessRiskAsync() {
 }
 
 // ReprocessDeploymentRisk will reprocess the passed deployments risk and save the results
-func (e *enricherImpl) ReprocessDeploymentRiskAsync(deployment *v1.Deployment) {
+func (e *enricherImpl) ReprocessDeploymentRiskAsync(deployment *storage.Deployment) {
 	go func() {
-		deployment = protoutils.CloneV1Deployment(deployment)
+		deployment = protoutils.CloneStorageDeployment(deployment)
 		if err := e.addRiskToDeployment(deployment); err != nil {
 			logger.Errorf("Error reprocessing risk for deployment %s: %s", deployment.GetName(), err)
 		}
@@ -97,7 +96,7 @@ func (e *enricherImpl) ReprocessDeploymentRiskAsync(deployment *v1.Deployment) {
 }
 
 // addRiskToDeployment will add the risk
-func (e *enricherImpl) addRiskToDeployment(deployment *v1.Deployment) error {
+func (e *enricherImpl) addRiskToDeployment(deployment *storage.Deployment) error {
 	deployment.Risk = e.scorer.Score(deployment)
 	return e.deploymentStorage.UpdateDeployment(deployment)
 }

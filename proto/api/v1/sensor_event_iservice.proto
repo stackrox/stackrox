@@ -3,13 +3,13 @@ syntax = "proto3";
 option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
-import "api/v1/deployment_service.proto";
 import "api/v1/indicator.proto";
 import "api/v1/network_policy_service.proto";
 import "api/v1/node.proto";
 import "api/v1/policy_service.proto";
 import "api/v1/secret_service.proto";
 
+import "storage/deployment.proto";
 
 package v1;
 
@@ -28,7 +28,7 @@ message SensorEvent {
 
     oneof resource {
         NetworkPolicy    network_policy    = 4;
-        Deployment       deployment        = 5;
+        storage.Deployment       deployment        = 5;
         Namespace        namespace         = 6;
         Secret           secret            = 7;
         Node             node              = 9;

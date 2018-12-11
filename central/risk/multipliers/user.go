@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scopecomp"
 )
@@ -22,14 +21,14 @@ func NewUserDefined(mult *storage.Multiplier) Multiplier {
 }
 
 // Score returns a risk result
-func (u *userDefinedMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
+func (u *userDefinedMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
 	if !scopecomp.WithinScope(u.GetScope(), deployment) {
 		return nil
 	}
-	return &v1.Risk_Result{
+	return &storage.Risk_Result{
 		Name:  u.GetName(),
 		Score: u.GetValue(),
-		Factors: []*v1.Risk_Result_Factor{
+		Factors: []*storage.Risk_Result_Factor{
 			{Message: fmt.Sprintf("Deployment matched scope '%s'", formatScope(u.GetScope()))},
 		},
 	}

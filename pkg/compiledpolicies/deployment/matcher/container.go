@@ -2,6 +2,7 @@ package matcher
 
 import (
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	containerMatcher "github.com/stackrox/rox/pkg/compiledpolicies/container/matcher"
 )
 
@@ -17,7 +18,7 @@ func newContainerMatcher(policy *v1.Policy) (Matcher, error) {
 		return nil, nil
 	}
 
-	return func(deployment *v1.Deployment) []*v1.Alert_Violation {
+	return func(deployment *storage.Deployment) []*v1.Alert_Violation {
 		var violations []*v1.Alert_Violation
 		for _, container := range deployment.GetContainers() {
 			violations = append(violations, matcher(container)...)

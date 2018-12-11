@@ -2,6 +2,7 @@ package predicate
 
 import (
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
 
@@ -26,12 +27,12 @@ type whitelistWrapper struct {
 	whitelist *v1.Whitelist_Container
 }
 
-func (w *whitelistWrapper) shouldProcess(container *v1.Container) bool {
+func (w *whitelistWrapper) shouldProcess(container *storage.Container) bool {
 	return !MatchesWhitelist(w.whitelist, container)
 }
 
 // MatchesWhitelist returns if the given container matches the given whitelist.
-func MatchesWhitelist(whitelist *v1.Whitelist_Container, container *v1.Container) bool {
+func MatchesWhitelist(whitelist *v1.Whitelist_Container, container *storage.Container) bool {
 	whitelistName := whitelist.GetImageName()
 	containerName := container.GetImage().GetName()
 

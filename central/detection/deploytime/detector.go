@@ -4,11 +4,12 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/deployment"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Detector provides an interface for getting and managing alerts and enforcements on deployments.
 type Detector interface {
-	AlertsForDeployment(deployment *v1.Deployment) ([]*v1.Alert, error)
+	AlertsForDeployment(deployment *storage.Deployment) ([]*v1.Alert, error)
 	AlertsForPolicy(policyID string) ([]*v1.Alert, error)
 	UpsertPolicy(policy *v1.Policy) error
 	RemovePolicy(policyID string) error

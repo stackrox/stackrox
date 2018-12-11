@@ -11,6 +11,7 @@ import (
 	npStoreMocks "github.com/stackrox/rox/central/networkpolicies/store/mocks"
 	notifierStoreMocks "github.com/stackrox/rox/central/notifier/store/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -139,7 +140,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 		Return(cluster, true, nil)
 
 	// Mock that we receive deployments for the cluster
-	deps := make([]*v1.Deployment, 0)
+	deps := make([]*storage.Deployment, 0)
 	suite.deployments.EXPECT().SearchRawDeployments(deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
@@ -173,7 +174,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 		Return(cluster, true, nil)
 
 	// Mock that we receive deployments for the cluster
-	deps := make([]*v1.Deployment, 0)
+	deps := make([]*storage.Deployment, 0)
 	suite.deployments.EXPECT().SearchRawDeployments(deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
@@ -212,7 +213,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 		Return(cluster, true, nil)
 
 	// Mock that we receive deployments for the cluster
-	deps := make([]*v1.Deployment, 0)
+	deps := make([]*storage.Deployment, 0)
 	suite.deployments.EXPECT().SearchRawDeployments(deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
@@ -249,7 +250,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 		Return(cluster, true, nil)
 
 	// Mock that we receive deployments for the cluster
-	deps := make([]*v1.Deployment, 0)
+	deps := make([]*storage.Deployment, 0)
 	suite.deployments.EXPECT().SearchRawDeployments(deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
@@ -288,7 +289,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 		Return(cluster, true, nil)
 
 	// Mock that we receive deployments for the cluster
-	deps := make([]*v1.Deployment, 0)
+	deps := make([]*storage.Deployment, 0)
 	suite.deployments.EXPECT().SearchRawDeployments(deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 

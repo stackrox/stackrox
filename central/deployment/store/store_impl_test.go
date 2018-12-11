@@ -6,7 +6,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	ptypes "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/dberrors"
 	"github.com/stretchr/testify/suite"
@@ -40,7 +40,7 @@ func (suite *DeploymentStoreTestSuite) TearDownSuite() {
 	os.Remove(suite.db.Path())
 }
 
-func (suite *DeploymentStoreTestSuite) verifyDeploymentsAre(store Store, deployments ...*v1.Deployment) {
+func (suite *DeploymentStoreTestSuite) verifyDeploymentsAre(store Store, deployments ...*storage.Deployment) {
 	for _, d := range deployments {
 		// Test retrieval of full objects
 		got, exists, err := store.GetDeployment(d.GetId())
@@ -52,7 +52,7 @@ func (suite *DeploymentStoreTestSuite) verifyDeploymentsAre(store Store, deploym
 		gotList, exists, err := store.ListDeployment(d.GetId())
 		suite.NoError(err)
 		suite.True(exists)
-		suite.Equal(&v1.ListDeployment{
+		suite.Equal(&storage.ListDeployment{
 			Id:        d.GetId(),
 			Name:      d.GetName(),
 			UpdatedAt: d.GetUpdatedAt(),
@@ -67,14 +67,14 @@ func (suite *DeploymentStoreTestSuite) verifyDeploymentsAre(store Store, deploym
 }
 
 func (suite *DeploymentStoreTestSuite) TestDeployments() {
-	deployments := []*v1.Deployment{
+	deployments := []*storage.Deployment{
 		{
 			Id:        "fooID",
 			Name:      "foo",
 			Version:   "100",
 			Type:      "Replicated",
 			UpdatedAt: ptypes.TimestampNow(),
-			Risk:      &v1.Risk{Score: 10},
+			Risk:      &storage.Risk{Score: 10},
 		},
 		{
 			Id:        "barID",
@@ -82,7 +82,7 @@ func (suite *DeploymentStoreTestSuite) TestDeployments() {
 			Version:   "400",
 			Type:      "Global",
 			UpdatedAt: ptypes.TimestampNow(),
-			Risk:      &v1.Risk{Score: 9},
+			Risk:      &storage.Risk{Score: 9},
 		},
 	}
 

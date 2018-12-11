@@ -7,7 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	enrichAndDetectorMocks "github.com/stackrox/rox/central/enrichanddetect/mocks"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
 )
@@ -39,7 +39,7 @@ func (suite *loopTestSuite) expectCalls(times int, allowMore bool) {
 	if allowMore {
 		timesSpec = (*gomock.Call).MinTimes
 	}
-	timesSpec(suite.mockDeployments.EXPECT().GetDeployments(), times).Return([]*v1.Deployment{deployment}, nil)
+	timesSpec(suite.mockDeployments.EXPECT().GetDeployments(), times).Return([]*storage.Deployment{deployment}, nil)
 	timesSpec(suite.mockEnricher.EXPECT().EnrichAndDetect(deployment), times).Return(nil)
 }
 

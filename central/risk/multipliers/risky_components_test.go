@@ -3,7 +3,6 @@ package multipliers
 import (
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
@@ -45,9 +44,9 @@ func TestRiskyComponentCountScore(t *testing.T) {
 
 	deployment.Containers[0].Image.Scan.Components = components
 
-	expectedScore := &v1.Risk_Result{
+	expectedScore := &storage.Risk_Result{
 		Name: RiskyComponentCountHeading,
-		Factors: []*v1.Risk_Result_Factor{
+		Factors: []*storage.Risk_Result_Factor{
 			{Message: "an image contains components: apk, curl, tcsh, telnet, wget and 1 other(s) that are useful for attackers"},
 		},
 		Score: 1.3,

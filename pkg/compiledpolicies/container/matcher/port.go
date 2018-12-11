@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func init() {
@@ -25,7 +26,7 @@ type portMatcherImpl struct {
 	portPolicy *v1.PortPolicy
 }
 
-func (p *portMatcherImpl) match(container *v1.Container) []*v1.Alert_Violation {
+func (p *portMatcherImpl) match(container *storage.Container) []*v1.Alert_Violation {
 	ports := container.GetPorts()
 	var violations []*v1.Alert_Violation
 	for _, port := range ports {
@@ -34,7 +35,7 @@ func (p *portMatcherImpl) match(container *v1.Container) []*v1.Alert_Violation {
 	return violations
 }
 
-func (p *portMatcherImpl) matchPort(port *v1.PortConfig) []*v1.Alert_Violation {
+func (p *portMatcherImpl) matchPort(port *storage.PortConfig) []*v1.Alert_Violation {
 	if p.portPolicy.GetPort() != 0 && p.portPolicy.GetPort() != port.GetContainerPort() {
 		return nil
 	}

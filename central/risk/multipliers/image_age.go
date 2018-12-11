@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
@@ -32,7 +32,7 @@ func NewImageAge() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on vulnerabilties
-func (c *imageAgeMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
+func (c *imageAgeMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
 	// Get the earliest created time in the container images, and find the duration since then.
 	earliestImageCreated := getOldestCreatedTime(deployment)
 	if earliestImageCreated.IsZero() {
@@ -59,9 +59,9 @@ func (c *imageAgeMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
 		score = maxMultiplier
 	}
 
-	return &v1.Risk_Result{
+	return &storage.Risk_Result{
 		Name: ImageAgeHeading,
-		Factors: []*v1.Risk_Result_Factor{
+		Factors: []*storage.Risk_Result_Factor{
 			{Message: fmt.Sprintf("Deployment contains an image %d days old", daysSinceCreated)},
 		},
 		Score: score,
@@ -69,7 +69,7 @@ func (c *imageAgeMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
 }
 
 // Fetches the creation time of the oldest image in the deployment.
-func getOldestCreatedTime(deployment *v1.Deployment) time.Time {
+func getOldestCreatedTime(deployment *storage.Deployment) time.Time {
 	var earliest time.Time
 	for _, container := range deployment.GetContainers() {
 		// Get the time for the containers image.

@@ -6,6 +6,7 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 	dockerClient "github.com/docker/docker/client"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
 )
 
@@ -42,7 +43,7 @@ func (s *Handler) HandleMessage(msg events.Message) {
 	id := msg.Actor.ID
 
 	var resourceAction v1.ResourceAction
-	var deployment *v1.Deployment
+	var deployment *storage.Deployment
 	var originalSpec swarm.Service
 	var err error
 
@@ -64,7 +65,7 @@ func (s *Handler) HandleMessage(msg events.Message) {
 	case "remove":
 		resourceAction = v1.ResourceAction_REMOVE_RESOURCE
 
-		deployment = &v1.Deployment{
+		deployment = &storage.Deployment{
 			Id: id,
 		}
 	default:
@@ -92,7 +93,7 @@ func (s *Handler) getNewExistingDeployments() ([]*v1.SensorEvent, error) {
 	return deployments, nil
 }
 
-func deploymentEventWrap(action v1.ResourceAction, deployment *v1.Deployment, obj interface{}) *v1.SensorEvent {
+func deploymentEventWrap(action v1.ResourceAction, deployment *storage.Deployment, obj interface{}) *v1.SensorEvent {
 	return &v1.SensorEvent{
 		Id:     deployment.GetId(),
 		Action: action,
@@ -102,7 +103,7 @@ func deploymentEventWrap(action v1.ResourceAction, deployment *v1.Deployment, ob
 	}
 }
 
-func (s *Handler) getDeploymentFromServiceID(id string) (*v1.Deployment, swarm.Service, error) {
+func (s *Handler) getDeploymentFromServiceID(id string) (*storage.Deployment, swarm.Service, error) {
 	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
 

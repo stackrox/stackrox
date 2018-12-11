@@ -24,7 +24,7 @@ type scopeWrapper struct {
 	scope *storage.Scope
 }
 
-func (p *scopeWrapper) shouldProcess(deployment *v1.Deployment) bool {
+func (p *scopeWrapper) shouldProcess(deployment *storage.Deployment) bool {
 	if scopecomp.WithinScope(p.scope, deployment) {
 		return true
 	}

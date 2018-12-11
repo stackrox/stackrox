@@ -26,13 +26,14 @@ import io.stackrox.proto.api.v1.SearchServiceGrpc
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.Alert
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
-import io.stackrox.proto.api.v1.DeploymentServiceOuterClass.ListDeployment
-import io.stackrox.proto.api.v1.DeploymentServiceOuterClass.Deployment
+
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.api.v1.NetworkPolicyServiceGrpc
 import io.stackrox.proto.api.v1.SecretServiceGrpc
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass
+import io.stackrox.proto.storage.DeploymentOuterClass.ListDeployment
+import io.stackrox.proto.storage.DeploymentOuterClass.Deployment
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.ScopeOuterClass
 

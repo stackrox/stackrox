@@ -1,16 +1,18 @@
 package containers
 
-import "github.com/stackrox/rox/generated/api/v1"
+import (
+	"github.com/stackrox/rox/generated/storage"
+)
 
 // IncreasedExposureLevel returns whether the new level carries increased exposure.
-func IncreasedExposureLevel(old, new v1.PortConfig_Exposure) bool {
+func IncreasedExposureLevel(old, new storage.PortConfig_Exposure) bool {
 	switch old {
-	case v1.PortConfig_UNSET:
+	case storage.PortConfig_UNSET:
 		return true
-	case v1.PortConfig_INTERNAL:
-		return new == v1.PortConfig_NODE || new == v1.PortConfig_EXTERNAL
-	case v1.PortConfig_NODE:
-		return new == v1.PortConfig_EXTERNAL
+	case storage.PortConfig_INTERNAL:
+		return new == storage.PortConfig_NODE || new == storage.PortConfig_EXTERNAL
+	case storage.PortConfig_NODE:
+		return new == storage.PortConfig_EXTERNAL
 	default:
 		return false
 	}

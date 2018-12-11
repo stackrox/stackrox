@@ -6,7 +6,6 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
@@ -35,7 +34,7 @@ func (m *MockEnricher) EXPECT() *MockEnricherMockRecorder {
 }
 
 // Enrich mocks base method
-func (m *MockEnricher) Enrich(arg0 *v1.Deployment) (bool, error) {
+func (m *MockEnricher) Enrich(arg0 *storage.Deployment) (bool, error) {
 	ret := m.ctrl.Call(m, "Enrich", arg0)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
@@ -58,7 +57,7 @@ func (mr *MockEnricherMockRecorder) RemoveMultiplier(arg0 interface{}) *gomock.C
 }
 
 // ReprocessDeploymentRiskAsync mocks base method
-func (m *MockEnricher) ReprocessDeploymentRiskAsync(arg0 *v1.Deployment) {
+func (m *MockEnricher) ReprocessDeploymentRiskAsync(arg0 *storage.Deployment) {
 	m.ctrl.Call(m, "ReprocessDeploymentRiskAsync", arg0)
 }
 

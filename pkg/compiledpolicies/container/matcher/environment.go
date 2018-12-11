@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
 
@@ -40,7 +41,7 @@ type environmentMatcherImpl struct {
 	value *regexp.Regexp
 }
 
-func (p *environmentMatcherImpl) match(container *v1.Container) []*v1.Alert_Violation {
+func (p *environmentMatcherImpl) match(container *storage.Container) []*v1.Alert_Violation {
 	config := container.GetConfig()
 	var violations []*v1.Alert_Violation
 	for _, env := range config.GetEnv() {

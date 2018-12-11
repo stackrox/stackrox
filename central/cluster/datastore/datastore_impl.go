@@ -10,6 +10,7 @@ import (
 	nodeStore "github.com/stackrox/rox/central/node/store"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -119,13 +120,13 @@ func (ds *datastoreImpl) getSecrets(cluster *v1.Cluster) ([]*v1.ListSecret, erro
 }
 
 // RemoveCluster removes an cluster from the storage and the indexer
-func (ds *datastoreImpl) getDeployments(cluster *v1.Cluster) ([]*v1.ListDeployment, error) {
+func (ds *datastoreImpl) getDeployments(cluster *v1.Cluster) ([]*storage.ListDeployment, error) {
 	deployments, err := ds.dds.ListDeployments()
 	if err != nil {
 		return nil, err
 	}
 
-	wantedDeployments := make([]*v1.ListDeployment, 0)
+	wantedDeployments := make([]*storage.ListDeployment, 0)
 	for _, d := range deployments {
 		if d.GetClusterId() == cluster.GetId() {
 			wantedDeployments = append(wantedDeployments, d)
@@ -135,7 +136,7 @@ func (ds *datastoreImpl) getDeployments(cluster *v1.Cluster) ([]*v1.ListDeployme
 }
 
 // TODO(cgorman) Make this a search once the document mapping goes in
-func (ds *datastoreImpl) getAlerts(deployment *v1.ListDeployment) ([]*v1.ListAlert, error) {
+func (ds *datastoreImpl) getAlerts(deployment *storage.ListDeployment) ([]*v1.ListAlert, error) {
 	qb := search.NewQueryBuilder().AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String()).AddExactMatches(search.DeploymentID, deployment.GetId())
 
 	existingAlerts, err := ds.ads.ListAlerts(&v1.ListAlertsRequest{

@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
 
@@ -30,7 +31,7 @@ type commandMatcherImpl struct {
 	commandsRegex *regexp.Regexp
 }
 
-func (p *commandMatcherImpl) match(config *v1.ContainerConfig) []*v1.Alert_Violation {
+func (p *commandMatcherImpl) match(config *storage.ContainerConfig) []*v1.Alert_Violation {
 	var violations []*v1.Alert_Violation
 	if !p.matchArg(config.GetCommand()) {
 		v := &v1.Alert_Violation{

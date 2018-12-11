@@ -3,6 +3,7 @@ package deploymentevents
 import (
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func newPersistDeployment(deployments datastore.DataStore) *persistDeploymentImpl {
@@ -15,7 +16,7 @@ type persistDeploymentImpl struct {
 	deployments datastore.DataStore
 }
 
-func (s *persistDeploymentImpl) do(action v1.ResourceAction, deployment *v1.Deployment) error {
+func (s *persistDeploymentImpl) do(action v1.ResourceAction, deployment *storage.Deployment) error {
 	switch action {
 	case v1.ResourceAction_CREATE_RESOURCE:
 		if err := s.deployments.UpsertDeployment(deployment); err != nil {

@@ -2,7 +2,7 @@ package deploymentevents
 
 import (
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func newUpdateImages(images imageDataStore.DataStore) *updateImagesImpl {
@@ -15,7 +15,7 @@ type updateImagesImpl struct {
 	images imageDataStore.DataStore
 }
 
-func (s *updateImagesImpl) do(deployment *v1.Deployment) {
+func (s *updateImagesImpl) do(deployment *storage.Deployment) {
 	for _, c := range deployment.GetContainers() {
 		image := c.GetImage()
 		if image.GetId() == "" {

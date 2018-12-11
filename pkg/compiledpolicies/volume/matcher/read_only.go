@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func init() {
@@ -25,7 +26,7 @@ type readOnlyMatcherImpl struct {
 	readOnly *bool
 }
 
-func (p *readOnlyMatcherImpl) match(volume *v1.Volume) []*v1.Alert_Violation {
+func (p *readOnlyMatcherImpl) match(volume *storage.Volume) []*v1.Alert_Violation {
 	var violations []*v1.Alert_Violation
 	if *p.readOnly != volume.GetReadOnly() {
 		v := &v1.Alert_Violation{

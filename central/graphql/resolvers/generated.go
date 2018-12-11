@@ -689,17 +689,17 @@ func (resolver *componentResolver) Version() string {
 
 type containerResolver struct {
 	root *Resolver
-	data *v1.Container
+	data *storage.Container
 }
 
-func (resolver *Resolver) wrapContainer(value *v1.Container, ok bool, err error) (*containerResolver, error) {
+func (resolver *Resolver) wrapContainer(value *storage.Container, ok bool, err error) (*containerResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &containerResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapContainers(values []*v1.Container, err error) ([]*containerResolver, error) {
+func (resolver *Resolver) wrapContainers(values []*storage.Container, err error) ([]*containerResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -762,17 +762,17 @@ func (resolver *containerResolver) Volumes() ([]*volumeResolver, error) {
 
 type containerConfigResolver struct {
 	root *Resolver
-	data *v1.ContainerConfig
+	data *storage.ContainerConfig
 }
 
-func (resolver *Resolver) wrapContainerConfig(value *v1.ContainerConfig, ok bool, err error) (*containerConfigResolver, error) {
+func (resolver *Resolver) wrapContainerConfig(value *storage.ContainerConfig, ok bool, err error) (*containerConfigResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &containerConfigResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapContainerConfigs(values []*v1.ContainerConfig, err error) ([]*containerConfigResolver, error) {
+func (resolver *Resolver) wrapContainerConfigs(values []*storage.ContainerConfig, err error) ([]*containerConfigResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -815,17 +815,17 @@ func (resolver *containerConfigResolver) User() string {
 
 type containerConfig_EnvironmentConfigResolver struct {
 	root *Resolver
-	data *v1.ContainerConfig_EnvironmentConfig
+	data *storage.ContainerConfig_EnvironmentConfig
 }
 
-func (resolver *Resolver) wrapContainerConfig_EnvironmentConfig(value *v1.ContainerConfig_EnvironmentConfig, ok bool, err error) (*containerConfig_EnvironmentConfigResolver, error) {
+func (resolver *Resolver) wrapContainerConfig_EnvironmentConfig(value *storage.ContainerConfig_EnvironmentConfig, ok bool, err error) (*containerConfig_EnvironmentConfigResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &containerConfig_EnvironmentConfigResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapContainerConfig_EnvironmentConfigs(values []*v1.ContainerConfig_EnvironmentConfig, err error) ([]*containerConfig_EnvironmentConfigResolver, error) {
+func (resolver *Resolver) wrapContainerConfig_EnvironmentConfigs(values []*storage.ContainerConfig_EnvironmentConfig, err error) ([]*containerConfig_EnvironmentConfigResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -848,17 +848,17 @@ func (resolver *containerConfig_EnvironmentConfigResolver) Value() string {
 
 type containerInstanceResolver struct {
 	root *Resolver
-	data *v1.ContainerInstance
+	data *storage.ContainerInstance
 }
 
-func (resolver *Resolver) wrapContainerInstance(value *v1.ContainerInstance, ok bool, err error) (*containerInstanceResolver, error) {
+func (resolver *Resolver) wrapContainerInstance(value *storage.ContainerInstance, ok bool, err error) (*containerInstanceResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &containerInstanceResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapContainerInstances(values []*v1.ContainerInstance, err error) ([]*containerInstanceResolver, error) {
+func (resolver *Resolver) wrapContainerInstances(values []*storage.ContainerInstance, err error) ([]*containerInstanceResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -886,17 +886,17 @@ func (resolver *containerInstanceResolver) InstanceId() (*containerInstanceIDRes
 
 type containerInstanceIDResolver struct {
 	root *Resolver
-	data *v1.ContainerInstanceID
+	data *storage.ContainerInstanceID
 }
 
-func (resolver *Resolver) wrapContainerInstanceID(value *v1.ContainerInstanceID, ok bool, err error) (*containerInstanceIDResolver, error) {
+func (resolver *Resolver) wrapContainerInstanceID(value *storage.ContainerInstanceID, ok bool, err error) (*containerInstanceIDResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &containerInstanceIDResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapContainerInstanceIDs(values []*v1.ContainerInstanceID, err error) ([]*containerInstanceIDResolver, error) {
+func (resolver *Resolver) wrapContainerInstanceIDs(values []*storage.ContainerInstanceID, err error) ([]*containerInstanceIDResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -922,18 +922,18 @@ func (resolver *containerInstanceIDResolver) Node() string {
 	return value
 }
 
-func toContainerRuntime(value *string) v1.ContainerRuntime {
+func toContainerRuntime(value *string) storage.ContainerRuntime {
 	if value != nil {
-		return v1.ContainerRuntime(v1.ContainerRuntime_value[*value])
+		return storage.ContainerRuntime(storage.ContainerRuntime_value[*value])
 	}
-	return v1.ContainerRuntime(0)
+	return storage.ContainerRuntime(0)
 }
 
-func toContainerRuntimes(values *[]string) []v1.ContainerRuntime {
+func toContainerRuntimes(values *[]string) []storage.ContainerRuntime {
 	if values == nil {
 		return nil
 	}
-	output := make([]v1.ContainerRuntime, len(*values))
+	output := make([]storage.ContainerRuntime, len(*values))
 	for i, v := range *values {
 		output[i] = toContainerRuntime(&v)
 	}
@@ -942,18 +942,18 @@ func toContainerRuntimes(values *[]string) []v1.ContainerRuntime {
 
 type deploymentResolver struct {
 	root *Resolver
-	data *v1.Deployment
-	list *v1.ListDeployment
+	data *storage.Deployment
+	list *storage.ListDeployment
 }
 
-func (resolver *Resolver) wrapDeployment(value *v1.Deployment, ok bool, err error) (*deploymentResolver, error) {
+func (resolver *Resolver) wrapDeployment(value *storage.Deployment, ok bool, err error) (*deploymentResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &deploymentResolver{resolver, value, nil}, nil
 }
 
-func (resolver *Resolver) wrapDeployments(values []*v1.Deployment, err error) ([]*deploymentResolver, error) {
+func (resolver *Resolver) wrapDeployments(values []*storage.Deployment, err error) ([]*deploymentResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -964,7 +964,7 @@ func (resolver *Resolver) wrapDeployments(values []*v1.Deployment, err error) ([
 	return output, nil
 }
 
-func (resolver *Resolver) wrapListDeployments(values []*v1.ListDeployment, err error) ([]*deploymentResolver, error) {
+func (resolver *Resolver) wrapListDeployments(values []*storage.ListDeployment, err error) ([]*deploymentResolver, error) {
 	if err != nil || values == nil {
 		return nil, err
 	}
@@ -1188,17 +1188,17 @@ func (resolver *emailResolver) Username() string {
 
 type embeddedSecretResolver struct {
 	root *Resolver
-	data *v1.EmbeddedSecret
+	data *storage.EmbeddedSecret
 }
 
-func (resolver *Resolver) wrapEmbeddedSecret(value *v1.EmbeddedSecret, ok bool, err error) (*embeddedSecretResolver, error) {
+func (resolver *Resolver) wrapEmbeddedSecret(value *storage.EmbeddedSecret, ok bool, err error) (*embeddedSecretResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &embeddedSecretResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapEmbeddedSecrets(values []*v1.EmbeddedSecret, err error) ([]*embeddedSecretResolver, error) {
+func (resolver *Resolver) wrapEmbeddedSecrets(values []*storage.EmbeddedSecret, err error) ([]*embeddedSecretResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2443,17 +2443,17 @@ func (resolver *policyFieldsResolver) VolumePolicy() (*volumePolicyResolver, err
 
 type portConfigResolver struct {
 	root *Resolver
-	data *v1.PortConfig
+	data *storage.PortConfig
 }
 
-func (resolver *Resolver) wrapPortConfig(value *v1.PortConfig, ok bool, err error) (*portConfigResolver, error) {
+func (resolver *Resolver) wrapPortConfig(value *storage.PortConfig, ok bool, err error) (*portConfigResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &portConfigResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapPortConfigs(values []*v1.PortConfig, err error) ([]*portConfigResolver, error) {
+func (resolver *Resolver) wrapPortConfigs(values []*storage.PortConfig, err error) ([]*portConfigResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2489,18 +2489,18 @@ func (resolver *portConfigResolver) Protocol() string {
 	return value
 }
 
-func toPortConfig_Exposure(value *string) v1.PortConfig_Exposure {
+func toPortConfig_Exposure(value *string) storage.PortConfig_Exposure {
 	if value != nil {
-		return v1.PortConfig_Exposure(v1.PortConfig_Exposure_value[*value])
+		return storage.PortConfig_Exposure(storage.PortConfig_Exposure_value[*value])
 	}
-	return v1.PortConfig_Exposure(0)
+	return storage.PortConfig_Exposure(0)
 }
 
-func toPortConfig_Exposures(values *[]string) []v1.PortConfig_Exposure {
+func toPortConfig_Exposures(values *[]string) []storage.PortConfig_Exposure {
 	if values == nil {
 		return nil
 	}
-	output := make([]v1.PortConfig_Exposure, len(*values))
+	output := make([]storage.PortConfig_Exposure, len(*values))
 	for i, v := range *values {
 		output[i] = toPortConfig_Exposure(&v)
 	}
@@ -2815,17 +2815,17 @@ func (resolver *resourcePolicyResolver) MemoryResourceRequest() (*numericalPolic
 
 type resourcesResolver struct {
 	root *Resolver
-	data *v1.Resources
+	data *storage.Resources
 }
 
-func (resolver *Resolver) wrapResources(value *v1.Resources, ok bool, err error) (*resourcesResolver, error) {
+func (resolver *Resolver) wrapResources(value *storage.Resources, ok bool, err error) (*resourcesResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &resourcesResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapResourceses(values []*v1.Resources, err error) ([]*resourcesResolver, error) {
+func (resolver *Resolver) wrapResourceses(values []*storage.Resources, err error) ([]*resourcesResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2858,17 +2858,17 @@ func (resolver *resourcesResolver) MemoryMbRequest() float64 {
 
 type riskResolver struct {
 	root *Resolver
-	data *v1.Risk
+	data *storage.Risk
 }
 
-func (resolver *Resolver) wrapRisk(value *v1.Risk, ok bool, err error) (*riskResolver, error) {
+func (resolver *Resolver) wrapRisk(value *storage.Risk, ok bool, err error) (*riskResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &riskResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapRisks(values []*v1.Risk, err error) ([]*riskResolver, error) {
+func (resolver *Resolver) wrapRisks(values []*storage.Risk, err error) ([]*riskResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2891,17 +2891,17 @@ func (resolver *riskResolver) Score() float64 {
 
 type risk_ResultResolver struct {
 	root *Resolver
-	data *v1.Risk_Result
+	data *storage.Risk_Result
 }
 
-func (resolver *Resolver) wrapRisk_Result(value *v1.Risk_Result, ok bool, err error) (*risk_ResultResolver, error) {
+func (resolver *Resolver) wrapRisk_Result(value *storage.Risk_Result, ok bool, err error) (*risk_ResultResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &risk_ResultResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapRisk_Results(values []*v1.Risk_Result, err error) ([]*risk_ResultResolver, error) {
+func (resolver *Resolver) wrapRisk_Results(values []*storage.Risk_Result, err error) ([]*risk_ResultResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2929,17 +2929,17 @@ func (resolver *risk_ResultResolver) Score() float64 {
 
 type risk_Result_FactorResolver struct {
 	root *Resolver
-	data *v1.Risk_Result_Factor
+	data *storage.Risk_Result_Factor
 }
 
-func (resolver *Resolver) wrapRisk_Result_Factor(value *v1.Risk_Result_Factor, ok bool, err error) (*risk_Result_FactorResolver, error) {
+func (resolver *Resolver) wrapRisk_Result_Factor(value *storage.Risk_Result_Factor, ok bool, err error) (*risk_Result_FactorResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &risk_Result_FactorResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapRisk_Result_Factors(values []*v1.Risk_Result_Factor, err error) ([]*risk_Result_FactorResolver, error) {
+func (resolver *Resolver) wrapRisk_Result_Factors(values []*storage.Risk_Result_Factor, err error) ([]*risk_Result_FactorResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3420,17 +3420,17 @@ func toSecretTypes(values *[]string) []v1.SecretType {
 
 type securityContextResolver struct {
 	root *Resolver
-	data *v1.SecurityContext
+	data *storage.SecurityContext
 }
 
-func (resolver *Resolver) wrapSecurityContext(value *v1.SecurityContext, ok bool, err error) (*securityContextResolver, error) {
+func (resolver *Resolver) wrapSecurityContext(value *storage.SecurityContext, ok bool, err error) (*securityContextResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &securityContextResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapSecurityContexts(values []*v1.SecurityContext, err error) ([]*securityContextResolver, error) {
+func (resolver *Resolver) wrapSecurityContexts(values []*storage.SecurityContext, err error) ([]*securityContextResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3463,17 +3463,17 @@ func (resolver *securityContextResolver) Selinux() (*securityContext_SELinuxReso
 
 type securityContext_SELinuxResolver struct {
 	root *Resolver
-	data *v1.SecurityContext_SELinux
+	data *storage.SecurityContext_SELinux
 }
 
-func (resolver *Resolver) wrapSecurityContext_SELinux(value *v1.SecurityContext_SELinux, ok bool, err error) (*securityContext_SELinuxResolver, error) {
+func (resolver *Resolver) wrapSecurityContext_SELinux(value *storage.SecurityContext_SELinux, ok bool, err error) (*securityContext_SELinuxResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &securityContext_SELinuxResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapSecurityContext_SELinuxs(values []*v1.SecurityContext_SELinux, err error) ([]*securityContext_SELinuxResolver, error) {
+func (resolver *Resolver) wrapSecurityContext_SELinuxs(values []*storage.SecurityContext_SELinux, err error) ([]*securityContext_SELinuxResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3732,17 +3732,17 @@ func toViolationStates(values *[]string) []v1.ViolationState {
 
 type volumeResolver struct {
 	root *Resolver
-	data *v1.Volume
+	data *storage.Volume
 }
 
-func (resolver *Resolver) wrapVolume(value *v1.Volume, ok bool, err error) (*volumeResolver, error) {
+func (resolver *Resolver) wrapVolume(value *storage.Volume, ok bool, err error) (*volumeResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &volumeResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapVolumes(values []*v1.Volume, err error) ([]*volumeResolver, error) {
+func (resolver *Resolver) wrapVolumes(values []*storage.Volume, err error) ([]*volumeResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}

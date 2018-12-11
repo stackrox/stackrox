@@ -65,7 +65,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetDeployment returns the deployment with given id.
-func (s *serviceImpl) GetDeployment(ctx context.Context, request *v1.ResourceByID) (*v1.Deployment, error) {
+func (s *serviceImpl) GetDeployment(ctx context.Context, request *v1.ResourceByID) (*storage.Deployment, error) {
 	deployment, exists, err := s.datastore.GetDeployment(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -78,7 +78,7 @@ func (s *serviceImpl) GetDeployment(ctx context.Context, request *v1.ResourceByI
 
 // ListDeployments returns ListDeployments according to the request.
 func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery) (*v1.ListDeploymentsResponse, error) {
-	var deployments []*v1.ListDeployment
+	var deployments []*storage.ListDeployment
 	var err error
 	if request.GetQuery() == "" {
 		deployments, err = s.datastore.ListDeployments()
@@ -118,7 +118,7 @@ func (s *serviceImpl) GetLabels(context.Context, *v1.Empty) (*v1.DeploymentLabel
 	}, nil
 }
 
-func labelsMapFromDeployments(deployments []*v1.Deployment) (keyValuesMap map[string]*v1.DeploymentLabelsResponse_LabelValues, values []string) {
+func labelsMapFromDeployments(deployments []*storage.Deployment) (keyValuesMap map[string]*v1.DeploymentLabelsResponse_LabelValues, values []string) {
 	tempSet := make(map[string]set.StringSet)
 	globalValueSet := set.NewStringSet()
 

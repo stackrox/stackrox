@@ -12,6 +12,7 @@ import (
 	nodeMocks "github.com/stackrox/rox/central/node/store/mocks"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -107,7 +108,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingCluster() {
 // operations on either deployments or alerts.
 func (suite *ClusterDataStoreTestSuite) TestHandlesNoDeployments() {
 	// Return an error trying to fetch the deployments for a cluster.
-	suite.deployments.EXPECT().ListDeployments().Return(([]*v1.ListDeployment)(nil), nil)
+	suite.deployments.EXPECT().ListDeployments().Return(([]*storage.ListDeployment)(nil), nil)
 
 	// Return a cluster with an id that matches the deployments we want to tombstone.
 	cluster := &v1.Cluster{
@@ -129,7 +130,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesNoDeployments() {
 func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingDeployments() {
 	// Return an error trying to fetch the deployments for a cluster.
 	expectedErr := fmt.Errorf("issues need tissues")
-	suite.deployments.EXPECT().ListDeployments().Return(([]*v1.ListDeployment)(nil), expectedErr)
+	suite.deployments.EXPECT().ListDeployments().Return(([]*storage.ListDeployment)(nil), expectedErr)
 
 	// Return a cluster with an id that matches the deployments we want to tombstone.
 	cluster := &v1.Cluster{
@@ -267,10 +268,10 @@ func getAlerts(count int) []*v1.ListAlert {
 	return alerts
 }
 
-func getDeployments(deploymentToCluster map[string]string) []*v1.ListDeployment {
-	deployments := make([]*v1.ListDeployment, 0)
+func getDeployments(deploymentToCluster map[string]string) []*storage.ListDeployment {
+	deployments := make([]*storage.ListDeployment, 0)
 	for deploymentID, clusterID := range deploymentToCluster {
-		deployment := &v1.ListDeployment{
+		deployment := &storage.ListDeployment{
 			Id:        deploymentID,
 			ClusterId: clusterID,
 		}

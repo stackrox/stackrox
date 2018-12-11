@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
 
@@ -39,6 +40,6 @@ type requiredAnnotationMatcherImpl struct {
 	value *regexp.Regexp
 }
 
-func (p *requiredAnnotationMatcherImpl) match(deployment *v1.Deployment) []*v1.Alert_Violation {
+func (p *requiredAnnotationMatcherImpl) match(deployment *storage.Deployment) []*v1.Alert_Violation {
 	return utils.MatchRequiredMap(deployment.GetAnnotations(), p.key, p.value, "annotation")
 }

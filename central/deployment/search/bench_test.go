@@ -15,6 +15,7 @@ import (
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/defaults"
@@ -63,8 +64,8 @@ func setup(b require.TestingT) (processIndicatorDataStore.DataStore, imageIndexe
 	return processDataStore, imageIdx, deploymentIndexer
 }
 
-func getDeployments(num int) (deployments []*v1.Deployment) {
-	deployments = make([]*v1.Deployment, 0, num)
+func getDeployments(num int) (deployments []*storage.Deployment) {
+	deployments = make([]*storage.Deployment, 0, num)
 	for i := 0; i < num; i++ {
 		deployment := fixtures.GetDeployment()
 		deployment.Id = fmt.Sprintf("%d", i)

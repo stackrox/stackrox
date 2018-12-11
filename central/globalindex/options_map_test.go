@@ -67,7 +67,7 @@ func assertElementAtJSONPathExistsAndIsOfType(t *testing.T, obj interface{}, pat
 	// We keep dereferencing pointers and slices until we get to a struct.
 	// Examples:
 	// *storage.Image -> storage.Image
-	// []*v1.Container -> *v1.Container -> v1.Container
+	// []*storage.Container -> *storage.Container -> storage.Container
 	for typ.Kind() == reflect.Ptr || typ.Kind() == reflect.Slice {
 		typ = typ.Elem()
 	}
@@ -113,7 +113,7 @@ func TestCategoryToOptionsMap(t *testing.T) {
 		protoObj interface{}
 	}{
 		v1.SearchCategory_ALERTS:             {"alert", v1.Alert{}},
-		v1.SearchCategory_DEPLOYMENTS:        {"deployment", v1.Deployment{}},
+		v1.SearchCategory_DEPLOYMENTS:        {"deployment", storage.Deployment{}},
 		v1.SearchCategory_IMAGES:             {"image", storage.Image{}},
 		v1.SearchCategory_POLICIES:           {"policy", v1.Policy{}},
 		v1.SearchCategory_SECRETS:            {"secret", v1.Secret{}},

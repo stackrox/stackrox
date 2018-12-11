@@ -3,7 +3,6 @@ package scopecomp
 import (
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
@@ -12,13 +11,13 @@ func TestWithinScope(t *testing.T) {
 	subtests := []struct {
 		name       string
 		scope      *storage.Scope
-		deployment *v1.Deployment
+		deployment *storage.Deployment
 		result     bool
 	}{
 		{
 			name:       "empty scope",
 			scope:      &storage.Scope{},
-			deployment: &v1.Deployment{},
+			deployment: &storage.Deployment{},
 			result:     true,
 		},
 		{
@@ -26,7 +25,7 @@ func TestWithinScope(t *testing.T) {
 			scope: &storage.Scope{
 				Cluster: "cluster",
 			},
-			deployment: &v1.Deployment{
+			deployment: &storage.Deployment{
 				ClusterId: "cluster",
 			},
 			result: true,
@@ -36,7 +35,7 @@ func TestWithinScope(t *testing.T) {
 			scope: &storage.Scope{
 				Cluster: "cluster1",
 			},
-			deployment: &v1.Deployment{
+			deployment: &storage.Deployment{
 				ClusterId: "cluster",
 			},
 			result: false,
@@ -46,7 +45,7 @@ func TestWithinScope(t *testing.T) {
 			scope: &storage.Scope{
 				Namespace: "namespace",
 			},
-			deployment: &v1.Deployment{
+			deployment: &storage.Deployment{
 				Namespace: "namespace",
 			},
 			result: true,
@@ -56,7 +55,7 @@ func TestWithinScope(t *testing.T) {
 			scope: &storage.Scope{
 				Namespace: "namespace1",
 			},
-			deployment: &v1.Deployment{
+			deployment: &storage.Deployment{
 				Namespace: "namespace",
 			},
 			result: false,
@@ -69,7 +68,7 @@ func TestWithinScope(t *testing.T) {
 					Value: "value",
 				},
 			},
-			deployment: &v1.Deployment{
+			deployment: &storage.Deployment{
 				Labels: map[string]string{
 					"key":  "value",
 					"key2": "value2",
@@ -85,7 +84,7 @@ func TestWithinScope(t *testing.T) {
 					Value: "value",
 				},
 			},
-			deployment: &v1.Deployment{
+			deployment: &storage.Deployment{
 				Labels: map[string]string{
 					"key":  "value1",
 					"key2": "value2",
@@ -101,7 +100,7 @@ func TestWithinScope(t *testing.T) {
 					Value: "value",
 				},
 			},
-			deployment: &v1.Deployment{
+			deployment: &storage.Deployment{
 				Labels: map[string]string{
 					"key":  "value1",
 					"key2": "value2",
@@ -119,7 +118,7 @@ func TestWithinScope(t *testing.T) {
 					Value: "value",
 				},
 			},
-			deployment: &v1.Deployment{
+			deployment: &storage.Deployment{
 				ClusterId: "cluster",
 				Namespace: "namespace",
 				Labels: map[string]string{

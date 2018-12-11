@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkentity"
 )
 
@@ -49,7 +50,7 @@ func (b *flowGraphBuilder) getNode(entity networkentity.Entity, addIfMissing boo
 	return idx, node, true
 }
 
-func (b *flowGraphBuilder) AddDeployments(deployments []*v1.Deployment) {
+func (b *flowGraphBuilder) AddDeployments(deployments []*storage.Deployment) {
 	for _, deployment := range deployments {
 		key := networkentity.Entity{
 			Type: v1.NetworkEntityInfo_DEPLOYMENT,

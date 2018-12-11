@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	reflect "reflect"
 )
@@ -48,9 +49,9 @@ func (mr *MockDataStoreMockRecorder) CountDeployments() *gomock.Call {
 }
 
 // GetDeployment mocks base method
-func (m *MockDataStore) GetDeployment(arg0 string) (*v1.Deployment, bool, error) {
+func (m *MockDataStore) GetDeployment(arg0 string) (*storage.Deployment, bool, error) {
 	ret := m.ctrl.Call(m, "GetDeployment", arg0)
-	ret0, _ := ret[0].(*v1.Deployment)
+	ret0, _ := ret[0].(*storage.Deployment)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -62,9 +63,9 @@ func (mr *MockDataStoreMockRecorder) GetDeployment(arg0 interface{}) *gomock.Cal
 }
 
 // GetDeployments mocks base method
-func (m *MockDataStore) GetDeployments() ([]*v1.Deployment, error) {
+func (m *MockDataStore) GetDeployments() ([]*storage.Deployment, error) {
 	ret := m.ctrl.Call(m, "GetDeployments")
-	ret0, _ := ret[0].([]*v1.Deployment)
+	ret0, _ := ret[0].([]*storage.Deployment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -75,9 +76,9 @@ func (mr *MockDataStoreMockRecorder) GetDeployments() *gomock.Call {
 }
 
 // ListDeployment mocks base method
-func (m *MockDataStore) ListDeployment(arg0 string) (*v1.ListDeployment, bool, error) {
+func (m *MockDataStore) ListDeployment(arg0 string) (*storage.ListDeployment, bool, error) {
 	ret := m.ctrl.Call(m, "ListDeployment", arg0)
-	ret0, _ := ret[0].(*v1.ListDeployment)
+	ret0, _ := ret[0].(*storage.ListDeployment)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -89,9 +90,9 @@ func (mr *MockDataStoreMockRecorder) ListDeployment(arg0 interface{}) *gomock.Ca
 }
 
 // ListDeployments mocks base method
-func (m *MockDataStore) ListDeployments() ([]*v1.ListDeployment, error) {
+func (m *MockDataStore) ListDeployments() ([]*storage.ListDeployment, error) {
 	ret := m.ctrl.Call(m, "ListDeployments")
-	ret0, _ := ret[0].([]*v1.ListDeployment)
+	ret0, _ := ret[0].([]*storage.ListDeployment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -140,9 +141,9 @@ func (mr *MockDataStoreMockRecorder) SearchDeployments(arg0 interface{}) *gomock
 }
 
 // SearchListDeployments mocks base method
-func (m *MockDataStore) SearchListDeployments(arg0 *v1.Query) ([]*v1.ListDeployment, error) {
+func (m *MockDataStore) SearchListDeployments(arg0 *v1.Query) ([]*storage.ListDeployment, error) {
 	ret := m.ctrl.Call(m, "SearchListDeployments", arg0)
-	ret0, _ := ret[0].([]*v1.ListDeployment)
+	ret0, _ := ret[0].([]*storage.ListDeployment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -153,9 +154,9 @@ func (mr *MockDataStoreMockRecorder) SearchListDeployments(arg0 interface{}) *go
 }
 
 // SearchRawDeployments mocks base method
-func (m *MockDataStore) SearchRawDeployments(arg0 *v1.Query) ([]*v1.Deployment, error) {
+func (m *MockDataStore) SearchRawDeployments(arg0 *v1.Query) ([]*storage.Deployment, error) {
 	ret := m.ctrl.Call(m, "SearchRawDeployments", arg0)
-	ret0, _ := ret[0].([]*v1.Deployment)
+	ret0, _ := ret[0].([]*storage.Deployment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -166,7 +167,7 @@ func (mr *MockDataStoreMockRecorder) SearchRawDeployments(arg0 interface{}) *gom
 }
 
 // UpdateDeployment mocks base method
-func (m *MockDataStore) UpdateDeployment(arg0 *v1.Deployment) error {
+func (m *MockDataStore) UpdateDeployment(arg0 *storage.Deployment) error {
 	ret := m.ctrl.Call(m, "UpdateDeployment", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -178,7 +179,7 @@ func (mr *MockDataStoreMockRecorder) UpdateDeployment(arg0 interface{}) *gomock.
 }
 
 // UpsertDeployment mocks base method
-func (m *MockDataStore) UpsertDeployment(arg0 *v1.Deployment) error {
+func (m *MockDataStore) UpsertDeployment(arg0 *storage.Deployment) error {
 	ret := m.ctrl.Call(m, "UpsertDeployment", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0

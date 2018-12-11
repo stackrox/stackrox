@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -25,38 +25,38 @@ func NewServiceConfig() Multiplier {
 }
 
 // Score takes a deployment and evaluates its risk based on the service configuration
-func (s *serviceConfigMultiplier) Score(deployment *v1.Deployment) *v1.Risk_Result {
-	riskResult := &v1.Risk_Result{
+func (s *serviceConfigMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
+	riskResult := &storage.Risk_Result{
 		Name: ServiceConfigHeading,
 	}
 	var overallScore float32
 	if volumeFactor := s.scoreVolumes(deployment); volumeFactor != "" {
 		overallScore++
-		riskResult.Factors = append(riskResult.Factors, &v1.Risk_Result_Factor{Message: volumeFactor})
+		riskResult.Factors = append(riskResult.Factors, &storage.Risk_Result_Factor{Message: volumeFactor})
 	}
 	if secretFactor := s.scoreSecrets(deployment); secretFactor != "" {
 		overallScore++
-		riskResult.Factors = append(riskResult.Factors, &v1.Risk_Result_Factor{Message: secretFactor})
+		riskResult.Factors = append(riskResult.Factors, &storage.Risk_Result_Factor{Message: secretFactor})
 	}
 	capAddFactor, capDropFactor := s.scoreCapabilities(deployment)
 	if capAddFactor != "" {
 		overallScore++
-		riskResult.Factors = append(riskResult.Factors, &v1.Risk_Result_Factor{Message: capAddFactor})
+		riskResult.Factors = append(riskResult.Factors, &storage.Risk_Result_Factor{Message: capAddFactor})
 	}
 	if capDropFactor != "" {
 		overallScore++
-		riskResult.Factors = append(riskResult.Factors, &v1.Risk_Result_Factor{Message: capDropFactor})
+		riskResult.Factors = append(riskResult.Factors, &storage.Risk_Result_Factor{Message: capDropFactor})
 	}
 	if factor := s.scorePrivilege(deployment); factor != "" {
 		overallScore *= 2
-		riskResult.Factors = append(riskResult.Factors, &v1.Risk_Result_Factor{Message: factor})
+		riskResult.Factors = append(riskResult.Factors, &storage.Risk_Result_Factor{Message: factor})
 	}
 	// riskResult.Score is the normalized [1.0,2.0] score
 	riskResult.Score = normalizeScore(overallScore, configSaturation, configMaxScore)
 	return riskResult
 }
 
-func (s *serviceConfigMultiplier) scoreVolumes(deployment *v1.Deployment) string {
+func (s *serviceConfigMultiplier) scoreVolumes(deployment *storage.Deployment) string {
 	var volumeNames []string
 	for _, container := range deployment.GetContainers() {
 		for _, volume := range container.GetVolumes() {
@@ -71,7 +71,7 @@ func (s *serviceConfigMultiplier) scoreVolumes(deployment *v1.Deployment) string
 	return ""
 }
 
-func (s *serviceConfigMultiplier) scoreSecrets(deployment *v1.Deployment) string {
+func (s *serviceConfigMultiplier) scoreSecrets(deployment *storage.Deployment) string {
 	var secrets []string
 	for _, container := range deployment.GetContainers() {
 		for _, secret := range container.GetSecrets() {
@@ -91,7 +91,7 @@ var relevantCapAdds = set.NewStringSet(
 	"CAP_SYS_MODULE",
 )
 
-func (s *serviceConfigMultiplier) scoreCapabilities(deployment *v1.Deployment) (capAddFactor, capDropFactor string) {
+func (s *serviceConfigMultiplier) scoreCapabilities(deployment *storage.Deployment) (capAddFactor, capDropFactor string) {
 	capsAdded := set.NewStringSet()
 	capsDropped := set.NewStringSet()
 	for _, container := range deployment.GetContainers() {
@@ -115,7 +115,7 @@ func (s *serviceConfigMultiplier) scoreCapabilities(deployment *v1.Deployment) (
 	return
 }
 
-func (s *serviceConfigMultiplier) scorePrivilege(deployment *v1.Deployment) string {
+func (s *serviceConfigMultiplier) scorePrivilege(deployment *storage.Deployment) string {
 	for _, container := range deployment.GetContainers() {
 		if container.GetSecurityContext().GetPrivileged() {
 			return "A container in the deployment is privileged"

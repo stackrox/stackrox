@@ -27,22 +27,22 @@ func TestScore(t *testing.T) {
 
 	// Without user defined function
 	expectedRiskScore := 7.2128
-	expectedRiskResults := []*v1.Risk_Result{
+	expectedRiskResults := []*storage.Risk_Result{
 		{
 			Name:    multipliers.PolicyViolationsHeading,
-			Factors: []*v1.Risk_Result_Factor{{Message: "Test (severity: Critical)"}},
+			Factors: []*storage.Risk_Result_Factor{{Message: "Test (severity: Critical)"}},
 			Score:   1.96,
 		},
 		{
 			Name: multipliers.VulnsHeading,
-			Factors: []*v1.Risk_Result_Factor{
+			Factors: []*storage.Risk_Result_Factor{
 				{Message: "Image contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0"},
 			},
 			Score: 1.15,
 		},
 		{
 			Name: multipliers.ServiceConfigHeading,
-			Factors: []*v1.Risk_Result_Factor{
+			Factors: []*storage.Risk_Result_Factor{
 				{Message: "Volumes rw volume were mounted RW"},
 				{Message: "Secrets secret are used inside the deployment"},
 				{Message: "Capabilities ALL were added"},
@@ -53,7 +53,7 @@ func TestScore(t *testing.T) {
 		},
 		{
 			Name: multipliers.ReachabilityHeading,
-			Factors: []*v1.Risk_Result_Factor{
+			Factors: []*storage.Risk_Result_Factor{
 				{Message: "Container library/nginx exposes port 8082 to external clients"},
 				{Message: "Container library/nginx exposes port 8083 in the cluster"},
 				{Message: "Container library/nginx exposes port 8084 on node interfaces"},
@@ -79,24 +79,24 @@ func TestScore(t *testing.T) {
 	}
 
 	expectedRiskScore = 43.2768
-	expectedRiskResults = append(expectedRiskResults, []*v1.Risk_Result{
+	expectedRiskResults = append(expectedRiskResults, []*storage.Risk_Result{
 		{
 			Name: "Cluster multiplier 3",
-			Factors: []*v1.Risk_Result_Factor{
+			Factors: []*storage.Risk_Result_Factor{
 				{Message: "Deployment matched scope 'cluster:cluster'"},
 			},
 			Score: 3.0,
 		},
 		{
 			Name: "Cluster multiplier 2",
-			Factors: []*v1.Risk_Result_Factor{
+			Factors: []*storage.Risk_Result_Factor{
 				{Message: "Deployment matched scope 'cluster:cluster'"},
 			},
 			Score: 2.0,
 		},
 		{
 			Name: "Cluster multiplier 1",
-			Factors: []*v1.Risk_Result_Factor{
+			Factors: []*storage.Risk_Result_Factor{
 				{Message: "Deployment matched scope 'cluster:cluster'"},
 			},
 			Score: 1.0,
@@ -107,23 +107,23 @@ func TestScore(t *testing.T) {
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
 }
 
-func getMockDeployment() *v1.Deployment {
-	return &v1.Deployment{
+func getMockDeployment() *storage.Deployment {
+	return &storage.Deployment{
 		ClusterId: "cluster",
-		Containers: []*v1.Container{
+		Containers: []*storage.Container{
 			{
-				Volumes: []*v1.Volume{
+				Volumes: []*storage.Volume{
 					{
 						Name:     "readonly",
 						ReadOnly: true,
 					},
 				},
-				Secrets: []*v1.EmbeddedSecret{
+				Secrets: []*storage.EmbeddedSecret{
 					{
 						Name: "secret",
 					},
 				},
-				SecurityContext: &v1.SecurityContext{
+				SecurityContext: &storage.SecurityContext{
 					AddCapabilities: []string{
 						"ALL",
 					},
@@ -151,34 +151,34 @@ func getMockDeployment() *v1.Deployment {
 						},
 					},
 				},
-				Ports: []*v1.PortConfig{
+				Ports: []*storage.PortConfig{
 					{
 						Name:          "Port1",
 						ContainerPort: 22,
-						Exposure:      v1.PortConfig_EXTERNAL,
+						Exposure:      storage.PortConfig_EXTERNAL,
 						ExposedPort:   8082,
 					},
 					{
 						Name:          "Port2",
 						ContainerPort: 23,
-						Exposure:      v1.PortConfig_INTERNAL,
+						Exposure:      storage.PortConfig_INTERNAL,
 						ExposedPort:   8083,
 					},
 					{
 						Name:          "Port3",
 						ContainerPort: 24,
-						Exposure:      v1.PortConfig_NODE,
+						Exposure:      storage.PortConfig_NODE,
 						ExposedPort:   8084,
 					},
 				},
 			},
 			{
-				Volumes: []*v1.Volume{
+				Volumes: []*storage.Volume{
 					{
 						Name: "rw volume",
 					},
 				},
-				SecurityContext: &v1.SecurityContext{},
+				SecurityContext: &storage.SecurityContext{},
 			},
 		},
 	}

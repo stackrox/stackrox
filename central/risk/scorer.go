@@ -3,7 +3,6 @@ package risk
 import (
 	"github.com/stackrox/rox/central/risk/getters"
 	"github.com/stackrox/rox/central/risk/multipliers"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -14,7 +13,7 @@ var (
 
 // Scorer is the object that encompasses the multipliers for evaluating risk
 type Scorer interface {
-	Score(deployment *v1.Deployment) *v1.Risk
+	Score(deployment *storage.Deployment) *storage.Risk
 
 	UpdateUserDefinedMultiplier(mult *storage.Multiplier)
 	RemoveUserDefinedMultiplier(id string)

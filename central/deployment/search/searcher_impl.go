@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -29,7 +30,7 @@ func (ds *searcherImpl) buildIndex() error {
 }
 
 // SearchRawDeployments retrieves deployments from the indexer and storage
-func (ds *searcherImpl) SearchRawDeployments(q *v1.Query) ([]*v1.Deployment, error) {
+func (ds *searcherImpl) SearchRawDeployments(q *v1.Query) ([]*storage.Deployment, error) {
 	deployments, err := ds.searchDeployments(q)
 	if err != nil {
 		return nil, err
@@ -38,7 +39,7 @@ func (ds *searcherImpl) SearchRawDeployments(q *v1.Query) ([]*v1.Deployment, err
 }
 
 // SearchRawDeployments retrieves deployments from the indexer and storage
-func (ds *searcherImpl) SearchListDeployments(q *v1.Query) ([]*v1.ListDeployment, error) {
+func (ds *searcherImpl) SearchListDeployments(q *v1.Query) ([]*storage.ListDeployment, error) {
 	deployments, _, err := ds.searchListDeployments(q)
 	if err != nil {
 		return nil, err
@@ -46,12 +47,12 @@ func (ds *searcherImpl) SearchListDeployments(q *v1.Query) ([]*v1.ListDeployment
 	return deployments, err
 }
 
-func (ds *searcherImpl) searchListDeployments(q *v1.Query) ([]*v1.ListDeployment, []search.Result, error) {
+func (ds *searcherImpl) searchListDeployments(q *v1.Query) ([]*storage.ListDeployment, []search.Result, error) {
 	results, err := ds.Search(q)
 	if err != nil {
 		return nil, nil, err
 	}
-	var deployments []*v1.ListDeployment
+	var deployments []*storage.ListDeployment
 	var newResults []search.Result
 	for _, result := range results {
 		deployment, exists, err := ds.storage.ListDeployment(result.ID)
@@ -81,12 +82,12 @@ func (ds *searcherImpl) SearchDeployments(q *v1.Query) ([]*v1.SearchResult, erro
 	return protoResults, nil
 }
 
-func (ds *searcherImpl) searchDeployments(q *v1.Query) ([]*v1.Deployment, error) {
+func (ds *searcherImpl) searchDeployments(q *v1.Query) ([]*storage.Deployment, error) {
 	results, err := ds.Search(q)
 	if err != nil {
 		return nil, err
 	}
-	var deployments []*v1.Deployment
+	var deployments []*storage.Deployment
 	for _, result := range results {
 		deployment, exists, err := ds.storage.GetDeployment(result.ID)
 		if err != nil {
@@ -102,7 +103,7 @@ func (ds *searcherImpl) searchDeployments(q *v1.Query) ([]*v1.Deployment, error)
 }
 
 // ConvertDeployment returns proto search result from a deployment object and the internal search result
-func convertDeployment(deployment *v1.ListDeployment, result search.Result) *v1.SearchResult {
+func convertDeployment(deployment *storage.ListDeployment, result search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_DEPLOYMENTS,
 		Id:             deployment.GetId(),

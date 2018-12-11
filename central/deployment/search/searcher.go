@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -16,8 +17,8 @@ var (
 type Searcher interface {
 	Search(q *v1.Query) ([]search.Result, error)
 	SearchDeployments(q *v1.Query) ([]*v1.SearchResult, error)
-	SearchRawDeployments(q *v1.Query) ([]*v1.Deployment, error)
-	SearchListDeployments(q *v1.Query) ([]*v1.ListDeployment, error)
+	SearchRawDeployments(q *v1.Query) ([]*storage.Deployment, error)
+	SearchListDeployments(q *v1.Query) ([]*storage.ListDeployment, error)
 }
 
 // New returns a new instance of Searcher for the given storage and indexer.

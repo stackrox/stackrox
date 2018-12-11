@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -14,7 +15,7 @@ var logger = logging.LoggerForModule()
 // Evaluator implements the interface for the network graph generator
 //go:generate mockgen-wrapper Evaluator
 type Evaluator interface {
-	GetGraph(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) *v1.NetworkGraph
+	GetGraph(deployments []*storage.Deployment, networkPolicies []*v1.NetworkPolicy) *v1.NetworkGraph
 	IncrementEpoch()
 	Epoch() uint32
 }
@@ -48,7 +49,7 @@ func (g *evaluatorImpl) Epoch() uint32 {
 }
 
 // GetGraph generates a network graph for the input deployments based on the input policies.
-func (g *evaluatorImpl) GetGraph(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) *v1.NetworkGraph {
+func (g *evaluatorImpl) GetGraph(deployments []*storage.Deployment, networkPolicies []*v1.NetworkPolicy) *v1.NetworkGraph {
 	nodes := g.evaluate(deployments, networkPolicies)
 	return &v1.NetworkGraph{
 		Epoch: g.Epoch(),
@@ -66,8 +67,8 @@ type nodeData struct {
 	index int
 }
 
-func (g *evaluatorImpl) evaluate(deployments []*v1.Deployment, networkPolicies []*v1.NetworkPolicy) []*v1.NetworkNode {
-	nodeDataMap := make(map[*v1.Deployment]*nodeData, len(deployments))
+func (g *evaluatorImpl) evaluate(deployments []*storage.Deployment, networkPolicies []*v1.NetworkPolicy) []*v1.NetworkNode {
+	nodeDataMap := make(map[*storage.Deployment]*nodeData, len(deployments))
 	nodes := make([]*v1.NetworkNode, 0, len(deployments))
 
 	for i, d := range deployments {
@@ -168,7 +169,7 @@ func (g *evaluatorImpl) evaluate(deployments []*v1.Deployment, networkPolicies [
 	return nodes
 }
 
-func egressNetworkPolicySelectorAppliesToDeployment(d *v1.Deployment, np *v1.NetworkPolicy) (applies bool, internetAccess bool) {
+func egressNetworkPolicySelectorAppliesToDeployment(d *storage.Deployment, np *v1.NetworkPolicy) (applies bool, internetAccess bool) {
 	spec := np.GetSpec()
 	// Check if the src matches the pod selector and deployment then the egress rules actually apply to that deployment
 	if !doesPodLabelsMatchLabel(d, spec.GetPodSelector()) || d.GetNamespace() != np.GetNamespace() {
@@ -192,7 +193,7 @@ func egressNetworkPolicySelectorAppliesToDeployment(d *v1.Deployment, np *v1.Net
 	return
 }
 
-func ingressNetworkPolicySelectorAppliesToDeployment(d *v1.Deployment, np *v1.NetworkPolicy) bool {
+func ingressNetworkPolicySelectorAppliesToDeployment(d *storage.Deployment, np *v1.NetworkPolicy) bool {
 	spec := np.GetSpec()
 	// Check if the src matches the pod selector and deployment then the egress rules actually apply to that deployment
 	if !doesPodLabelsMatchLabel(d, spec.GetPodSelector()) || d.GetNamespace() != np.GetNamespace() {
@@ -202,7 +203,7 @@ func ingressNetworkPolicySelectorAppliesToDeployment(d *v1.Deployment, np *v1.Ne
 	return hasIngress(spec.GetPolicyTypes())
 }
 
-func (g *evaluatorImpl) doesEgressNetworkPolicyRuleMatchDeployment(src *v1.Deployment, np *v1.NetworkPolicy) bool {
+func (g *evaluatorImpl) doesEgressNetworkPolicyRuleMatchDeployment(src *storage.Deployment, np *v1.NetworkPolicy) bool {
 	for _, egressRule := range np.GetSpec().GetEgress() {
 		if g.matchPolicyPeers(src, np.GetNamespace(), egressRule.GetTo()) {
 			return true
@@ -211,7 +212,7 @@ func (g *evaluatorImpl) doesEgressNetworkPolicyRuleMatchDeployment(src *v1.Deplo
 	return false
 }
 
-func (g *evaluatorImpl) doesIngressNetworkPolicyRuleMatchDeployment(src *v1.Deployment, np *v1.NetworkPolicy) bool {
+func (g *evaluatorImpl) doesIngressNetworkPolicyRuleMatchDeployment(src *storage.Deployment, np *v1.NetworkPolicy) bool {
 	for _, ingressRule := range np.GetSpec().GetIngress() {
 		if g.matchPolicyPeers(src, np.GetNamespace(), ingressRule.GetFrom()) {
 			return true
@@ -220,7 +221,7 @@ func (g *evaluatorImpl) doesIngressNetworkPolicyRuleMatchDeployment(src *v1.Depl
 	return false
 }
 
-func (g *evaluatorImpl) matchPolicyPeers(d *v1.Deployment, namespace string, peers []*v1.NetworkPolicyPeer) bool {
+func (g *evaluatorImpl) matchPolicyPeers(d *storage.Deployment, namespace string, peers []*v1.NetworkPolicyPeer) bool {
 	if len(peers) == 0 {
 		return true
 	}
@@ -232,7 +233,7 @@ func (g *evaluatorImpl) matchPolicyPeers(d *v1.Deployment, namespace string, pee
 	return false
 }
 
-func (g *evaluatorImpl) matchPolicyPeer(deployment *v1.Deployment, policyNamespace string, peer *v1.NetworkPolicyPeer) bool {
+func (g *evaluatorImpl) matchPolicyPeer(deployment *storage.Deployment, policyNamespace string, peer *v1.NetworkPolicyPeer) bool {
 	if peer.IpBlock != nil {
 		logger.Infof("IP Block network policy is currently not handled")
 		return false
@@ -255,7 +256,7 @@ func (g *evaluatorImpl) matchPolicyPeer(deployment *v1.Deployment, policyNamespa
 	return true
 }
 
-func (g *evaluatorImpl) getNamespace(deployment *v1.Deployment) *v1.Namespace {
+func (g *evaluatorImpl) getNamespace(deployment *storage.Deployment) *v1.Namespace {
 	namespaces, err := g.namespaceStore.GetNamespaces()
 	if err != nil {
 		return &v1.Namespace{
@@ -284,7 +285,7 @@ func doesNamespaceMatchLabel(namespace *v1.Namespace, selector *v1.LabelSelector
 	return false
 }
 
-func doesPodLabelsMatchLabel(deployment *v1.Deployment, podSelector *v1.LabelSelector) bool {
+func doesPodLabelsMatchLabel(deployment *storage.Deployment, podSelector *v1.LabelSelector) bool {
 	// No values equals match all
 	if len(podSelector.GetMatchLabels()) == 0 {
 		return true

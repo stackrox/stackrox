@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
 
@@ -34,7 +34,7 @@ func (m *MockEnricherAndDetector) EXPECT() *MockEnricherAndDetectorMockRecorder 
 }
 
 // EnrichAndDetect mocks base method
-func (m *MockEnricherAndDetector) EnrichAndDetect(arg0 *v1.Deployment) error {
+func (m *MockEnricherAndDetector) EnrichAndDetect(arg0 *storage.Deployment) error {
 	ret := m.ctrl.Call(m, "EnrichAndDetect", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0

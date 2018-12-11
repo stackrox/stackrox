@@ -2,6 +2,7 @@ package predicate
 
 import (
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 	"github.com/stackrox/rox/pkg/scopecomp"
 )
@@ -26,12 +27,12 @@ type whitelistWrapper struct {
 	whitelist *v1.Whitelist_Deployment
 }
 
-func (w *whitelistWrapper) shouldProcess(deployment *v1.Deployment) bool {
+func (w *whitelistWrapper) shouldProcess(deployment *storage.Deployment) bool {
 	return !MatchesWhitelist(w.whitelist, deployment)
 }
 
 // MatchesWhitelist returns true if the given deployment matches the given whitelist.
-func MatchesWhitelist(whitelist *v1.Whitelist_Deployment, deployment *v1.Deployment) bool {
+func MatchesWhitelist(whitelist *v1.Whitelist_Deployment, deployment *storage.Deployment) bool {
 	if whitelist == nil {
 		return false
 	}

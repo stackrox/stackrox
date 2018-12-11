@@ -6,7 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -62,7 +62,7 @@ func BenchmarkListDeployment(b *testing.B) {
 
 // This really isn't a benchmark, but just prints out how many ListDeployments can be returned in an API call
 func BenchmarkListDeployments(b *testing.B) {
-	listDeployment := &v1.ListDeployment{
+	listDeployment := &storage.ListDeployment{
 		Id:        uuid.NewDummy().String(),
 		Name:      "quizzical_cat",
 		Cluster:   "Production k8s",
