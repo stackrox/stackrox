@@ -266,10 +266,9 @@ func (w *deploymentWrap) populateReplicas(spec reflect.Value) {
 }
 
 func matchesOwnerName(name string, p *v1.Pod) bool {
-	// Edge case that ideally shouldn't happen
+	// Edge case that happens for Standalone Pods
 	if len(p.GetOwnerReferences()) == 0 {
-		logger.Warnf("Trying to match pod %q with owner, but has no owner references", p.GetName())
-		return false
+		return true
 	}
 	kind := p.GetOwnerReferences()[0].Kind
 	var numExpectedDashes int
