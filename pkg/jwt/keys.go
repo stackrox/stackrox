@@ -79,7 +79,6 @@ type singleKeyStore struct {
 }
 
 func (s *singleKeyStore) Key(id string) interface{} {
-	logger.Infof("looking up key %s", id)
 	if id == s.keyID {
 		return s.key
 	}
