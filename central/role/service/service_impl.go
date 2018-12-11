@@ -67,16 +67,31 @@ func (s *serviceImpl) GetRole(ctx context.Context, id *v1.ResourceByID) (*v1.Rol
 }
 
 func (s *serviceImpl) CreateRole(ctx context.Context, role *v1.Role) (*v1.Empty, error) {
+	if role.GetGlobalAccess() != v1.Access_NO_ACCESS {
+		return nil, status.Errorf(codes.InvalidArgument, "Setting global access is not supported.")
+	}
 	err := s.roleStore.AddRole(role)
-	return &v1.Empty{}, err
+	if err != nil {
+		return nil, err
+	}
+	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) UpdateRole(ctx context.Context, role *v1.Role) (*v1.Empty, error) {
+	if role.GetGlobalAccess() != v1.Access_NO_ACCESS {
+		return nil, status.Errorf(codes.InvalidArgument, "Setting global access is not supported.")
+	}
 	err := s.roleStore.UpdateRole(role)
-	return &v1.Empty{}, err
+	if err != nil {
+		return nil, err
+	}
+	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) DeleteRole(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
 	err := s.roleStore.RemoveRole(id.GetId())
-	return &v1.Empty{}, err
+	if err != nil {
+		return nil, err
+	}
+	return &v1.Empty{}, nil
 }
