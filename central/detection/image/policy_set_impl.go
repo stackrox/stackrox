@@ -7,20 +7,20 @@ import (
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoutils"
 )
 
 type setImpl struct {
 	lock sync.RWMutex
 
-	policyIDToPolicy  map[string]*v1.Policy
+	policyIDToPolicy  map[string]*storage.Policy
 	policyIDToMatcher map[string]searchbasedpolicies.Matcher
 	policyStore       policyDatastore.DataStore
 }
 
 // ForEach runs the given function on all present policies.
-func (p *setImpl) ForEach(fe func(*v1.Policy, searchbasedpolicies.Matcher) error) error {
+func (p *setImpl) ForEach(fe func(*storage.Policy, searchbasedpolicies.Matcher) error) error {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
@@ -33,11 +33,11 @@ func (p *setImpl) ForEach(fe func(*v1.Policy, searchbasedpolicies.Matcher) error
 }
 
 // UpsertPolicy adds or updates a policy in the set.
-func (p *setImpl) UpsertPolicy(policy *v1.Policy) error {
+func (p *setImpl) UpsertPolicy(policy *storage.Policy) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	cloned := protoutils.CloneV1Policy(policy)
+	cloned := protoutils.CloneStoragePolicy(policy)
 
 	searchBasedMatcher, err := matcher.ForPolicy(cloned, mappings.OptionsMap, nil)
 	if err != nil {

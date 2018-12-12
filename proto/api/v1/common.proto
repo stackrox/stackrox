@@ -7,14 +7,6 @@ import weak "google/api/annotations.proto";
 
 package v1;
 
-enum Severity {
-    UNSET_SEVERITY    = 0;
-    LOW_SEVERITY      = 1;
-    MEDIUM_SEVERITY   = 2;
-    HIGH_SEVERITY     = 3;
-    CRITICAL_SEVERITY = 4;
-}
-
 message ResourceByID {
     string id = 1;
 }

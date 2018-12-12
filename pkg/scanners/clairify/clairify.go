@@ -6,7 +6,6 @@ import (
 	clairV1 "github.com/coreos/clair/api/v1"
 	"github.com/stackrox/clairify/client"
 	"github.com/stackrox/clairify/types"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	clairConv "github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/registries"
@@ -17,8 +16,8 @@ import (
 const typeString = "clairify"
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
-func Creator(set registries.Set) (string, func(integration *v1.ImageIntegration) (scannerTypes.ImageScanner, error)) {
-	return typeString, func(integration *v1.ImageIntegration) (scannerTypes.ImageScanner, error) {
+func Creator(set registries.Set) (string, func(integration *storage.ImageIntegration) (scannerTypes.ImageScanner, error)) {
+	return typeString, func(integration *storage.ImageIntegration) (scannerTypes.ImageScanner, error) {
 		scan, err := newScanner(integration, set)
 		return scan, err
 	}
@@ -26,13 +25,13 @@ func Creator(set registries.Set) (string, func(integration *v1.ImageIntegration)
 
 type clairify struct {
 	client                *client.Clairify
-	conf                  *v1.ClairifyConfig
-	protoImageIntegration *v1.ImageIntegration
+	conf                  *storage.ClairifyConfig
+	protoImageIntegration *storage.ImageIntegration
 	activeRegistries      registries.Set
 }
 
-func newScanner(protoImageIntegration *v1.ImageIntegration, activeRegistries registries.Set) (*clairify, error) {
-	clairifyConfig, ok := protoImageIntegration.IntegrationConfig.(*v1.ImageIntegration_Clairify)
+func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistries registries.Set) (*clairify, error) {
+	clairifyConfig, ok := protoImageIntegration.IntegrationConfig.(*storage.ImageIntegration_Clairify)
 	if !ok {
 		return nil, fmt.Errorf("Clairify configuration required")
 	}
@@ -63,7 +62,7 @@ func (c *clairify) Test() error {
 	return c.client.Ping()
 }
 
-func validateConfig(c *v1.ClairifyConfig) error {
+func validateConfig(c *storage.ClairifyConfig) error {
 	if c.GetEndpoint() == "" {
 		return fmt.Errorf("endpoint parameter must be defined for Clairify")
 	}

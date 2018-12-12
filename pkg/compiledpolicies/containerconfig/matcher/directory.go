@@ -13,7 +13,7 @@ func init() {
 	compilers = append(compilers, newDirectoryMatcher)
 }
 
-func newDirectoryMatcher(policy *v1.Policy) (Matcher, error) {
+func newDirectoryMatcher(policy *storage.Policy) (Matcher, error) {
 	directory := policy.GetFields().GetDirectory()
 	if directory == "" {
 		return nil, nil

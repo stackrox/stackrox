@@ -1,7 +1,6 @@
 package predicate
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scopecomp"
 )
@@ -11,7 +10,7 @@ func init() {
 }
 
 // Return true if the deployment is within any scope present.
-func newScopePredicate(policy *v1.Policy) (Predicate, error) {
+func newScopePredicate(policy *storage.Policy) (Predicate, error) {
 	var predicate Predicate
 	for _, scope := range policy.GetScope() {
 		wrap := &scopeWrapper{scope: scope}

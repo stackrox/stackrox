@@ -11,7 +11,7 @@ func init() {
 	compilers = append(compilers, newScanExistsMatcher)
 }
 
-func newScanExistsMatcher(policy *v1.Policy) (Matcher, error) {
+func newScanExistsMatcher(policy *storage.Policy) (Matcher, error) {
 	noScanExists := policy.GetFields().GetNoScanExists()
 	if !noScanExists {
 		return nil, nil

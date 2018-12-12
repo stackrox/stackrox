@@ -10,6 +10,7 @@ import (
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	datastoreMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
@@ -41,7 +42,7 @@ func (suite *SecretServiceTestSuite) SetupTest() {
 func (suite *SecretServiceTestSuite) TestGetSecret() {
 	secretID := "id1"
 
-	expectedSecret := &v1.Secret{
+	expectedSecret := &storage.Secret{
 		Id:        secretID,
 		Name:      "secretname",
 		ClusterId: "cluster",
@@ -64,8 +65,8 @@ func (suite *SecretServiceTestSuite) TestGetSecret() {
 
 	suite.mockDeploymentStore.EXPECT().SearchDeployments(psr).Return(results, nil)
 
-	expectedRelationship := &v1.SecretRelationship{
-		DeploymentRelationships: []*v1.SecretDeploymentRelationship{
+	expectedRelationship := &storage.SecretRelationship{
+		DeploymentRelationships: []*storage.SecretDeploymentRelationship{
 			{
 				Id:   "d1",
 				Name: "deployment1",
@@ -83,7 +84,7 @@ func (suite *SecretServiceTestSuite) TestGetSecret() {
 func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreSecretNotExists() {
 	secretID := "id1"
 
-	suite.mockSecretStore.EXPECT().GetSecret(secretID).Return((*v1.Secret)(nil), false, nil)
+	suite.mockSecretStore.EXPECT().GetSecret(secretID).Return((*storage.Secret)(nil), false, nil)
 
 	_, err := suite.service.GetSecret((context.Context)(nil), &v1.ResourceByID{Id: secretID})
 	suite.Error(err)
@@ -94,7 +95,7 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreSecretFailure() {
 	secretID := "id1"
 
 	expectedErr := fmt.Errorf("failure")
-	suite.mockSecretStore.EXPECT().GetSecret(secretID).Return((*v1.Secret)(nil), true, expectedErr)
+	suite.mockSecretStore.EXPECT().GetSecret(secretID).Return((*storage.Secret)(nil), true, expectedErr)
 
 	_, actualErr := suite.service.GetSecret((context.Context)(nil), &v1.ResourceByID{Id: secretID})
 	suite.Error(actualErr)
@@ -104,7 +105,7 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreSecretFailure() {
 func (suite *SecretServiceTestSuite) TestGetSecretsWithNoRelationship() {
 	secretID := "id1"
 
-	expectedSecret := &v1.Secret{
+	expectedSecret := &storage.Secret{
 		Id:        secretID,
 		Name:      "secretname",
 		ClusterId: "cluster",
@@ -128,7 +129,7 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithNoRelationship() {
 func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreRelationshipFailure() {
 	secretID := "id1"
 
-	expectedSecret := &v1.Secret{
+	expectedSecret := &storage.Secret{
 		Id:        secretID,
 		Name:      "secretname",
 		ClusterId: "cluster",
@@ -151,7 +152,7 @@ func (suite *SecretServiceTestSuite) TestGetSecretsWithStoreRelationshipFailure(
 
 // Test happy path for searching secrets and relationships
 func (suite *SecretServiceTestSuite) TestSearchSecret() {
-	expectedReturns := []*v1.ListSecret{
+	expectedReturns := []*storage.ListSecret{
 		{Id: "id1"},
 	}
 
@@ -165,7 +166,7 @@ func (suite *SecretServiceTestSuite) TestSearchSecret() {
 func (suite *SecretServiceTestSuite) TestSearchSecretFailure() {
 	expectedError := fmt.Errorf("failure")
 
-	suite.mockSecretStore.EXPECT().ListSecrets().Return(([]*v1.ListSecret)(nil), expectedError)
+	suite.mockSecretStore.EXPECT().ListSecrets().Return(([]*storage.ListSecret)(nil), expectedError)
 
 	_, actualErr := suite.service.ListSecrets((context.Context)(nil), &v1.RawQuery{})
 	suite.True(strings.Contains(actualErr.Error(), expectedError.Error()))

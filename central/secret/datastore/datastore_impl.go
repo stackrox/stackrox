@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/central/secret/search"
 	"github.com/stackrox/rox/central/secret/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type datastoreImpl struct {
@@ -13,7 +14,7 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
-func (d *datastoreImpl) ListSecrets() ([]*v1.ListSecret, error) {
+func (d *datastoreImpl) ListSecrets() ([]*storage.ListSecret, error) {
 	return d.storage.ListAllSecrets()
 }
 
@@ -25,7 +26,7 @@ func (d *datastoreImpl) buildIndex() error {
 	return d.indexer.UpsertSecrets(secrets...)
 }
 
-func (d *datastoreImpl) GetSecret(id string) (*v1.Secret, bool, error) {
+func (d *datastoreImpl) GetSecret(id string) (*storage.Secret, bool, error) {
 	return d.storage.GetSecret(id)
 }
 
@@ -33,7 +34,7 @@ func (d *datastoreImpl) SearchSecrets(q *v1.Query) ([]*v1.SearchResult, error) {
 	return d.searcher.SearchSecrets(q)
 }
 
-func (d *datastoreImpl) SearchListSecrets(request *v1.Query) ([]*v1.ListSecret, error) {
+func (d *datastoreImpl) SearchListSecrets(request *v1.Query) ([]*storage.ListSecret, error) {
 	return d.searcher.SearchListSecrets(request)
 }
 
@@ -41,7 +42,7 @@ func (d *datastoreImpl) CountSecrets() (int, error) {
 	return d.storage.CountSecrets()
 }
 
-func (d *datastoreImpl) UpsertSecret(request *v1.Secret) error {
+func (d *datastoreImpl) UpsertSecret(request *storage.Secret) error {
 	if err := d.storage.UpsertSecret(request); err != nil {
 		return err
 	}

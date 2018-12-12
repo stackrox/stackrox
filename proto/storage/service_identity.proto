@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+package storage;
+
+message ServiceIdentity {
+    int64       serial   = 1;
+    string      id       = 2;
+    ServiceType type     = 3;
+}
+
+enum ServiceType {
+    UNKNOWN_SERVICE           = 0;
+    SENSOR_SERVICE            = 1;
+    CENTRAL_SERVICE           = 2;
+    REMOTE_SERVICE            = 3;
+    COLLECTOR_SERVICE         = 4;
+    MONITORING_UI_SERVICE     = 5;
+    MONITORING_DB_SERVICE     = 6;
+    MONITORING_CLIENT_SERVICE = 7;
+}

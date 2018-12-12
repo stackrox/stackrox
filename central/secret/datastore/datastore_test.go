@@ -9,6 +9,7 @@ import (
 	secretSearch "github.com/stackrox/rox/central/secret/search"
 	"github.com/stackrox/rox/central/secret/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
@@ -49,7 +50,7 @@ func (suite *SecretDataStoreTestSuite) TearDownSuite() {
 	suite.bleveIndex.Close()
 }
 
-func (suite *SecretDataStoreTestSuite) assertSearchResults(q *v1.Query, s *v1.Secret) {
+func (suite *SecretDataStoreTestSuite) assertSearchResults(q *v1.Query, s *storage.Secret) {
 	results, err := suite.datastore.SearchSecrets(q)
 	suite.Require().NoError(err)
 	if s != nil {

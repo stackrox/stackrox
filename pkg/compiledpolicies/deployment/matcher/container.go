@@ -10,7 +10,7 @@ func init() {
 	compilers = append(compilers, newContainerMatcher)
 }
 
-func newContainerMatcher(policy *v1.Policy) (Matcher, error) {
+func newContainerMatcher(policy *storage.Policy) (Matcher, error) {
 	matcher, err := containerMatcher.Compile(policy)
 	if err != nil {
 		return nil, err

@@ -8,7 +8,6 @@ import (
 	"unicode"
 
 	"cloud.google.com/go/containeranalysis/apiv1beta1"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -34,8 +33,8 @@ var (
 )
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
-func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageScanner, error)) {
-	return typeString, func(integration *v1.ImageIntegration) (types.ImageScanner, error) {
+func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageScanner, error)) {
+	return typeString, func(integration *storage.ImageIntegration) (types.ImageScanner, error) {
 		scan, err := newScanner(integration)
 		return scan, err
 	}
@@ -46,10 +45,10 @@ type googleScanner struct {
 
 	project          string
 	registry         string
-	protoIntegration *v1.ImageIntegration
+	protoIntegration *storage.ImageIntegration
 }
 
-func validate(google *v1.GoogleConfig) error {
+func validate(google *storage.GoogleConfig) error {
 	errorList := errorhelpers.NewErrorList("Google Validation")
 	if google.GetEndpoint() == "" {
 		errorList.AddString("Endpoint must be specified for Google Container Analysis (e.g. gcr.io, us.gcr.io, eu.gcr.io)")
@@ -63,8 +62,8 @@ func validate(google *v1.GoogleConfig) error {
 	return errorList.ToError()
 }
 
-func newScanner(integration *v1.ImageIntegration) (*googleScanner, error) {
-	googleConfig, ok := integration.IntegrationConfig.(*v1.ImageIntegration_Google)
+func newScanner(integration *storage.ImageIntegration) (*googleScanner, error) {
+	googleConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Google)
 	if !ok {
 		return nil, fmt.Errorf("Google Container Analysis configuration required")
 	}

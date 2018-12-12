@@ -1,7 +1,6 @@
 package predicate
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 	"github.com/stackrox/rox/pkg/scopecomp"
@@ -11,7 +10,7 @@ func init() {
 	compilers = append(compilers, newWhitelistPredicate)
 }
 
-func newWhitelistPredicate(policy *v1.Policy) (Predicate, error) {
+func newWhitelistPredicate(policy *storage.Policy) (Predicate, error) {
 	var predicate Predicate
 	for _, whitelist := range policy.GetWhitelists() {
 		// Only compile deployment whitelists which have not expired.
@@ -24,7 +23,7 @@ func newWhitelistPredicate(policy *v1.Policy) (Predicate, error) {
 }
 
 type whitelistWrapper struct {
-	whitelist *v1.Whitelist_Deployment
+	whitelist *storage.Whitelist_Deployment
 }
 
 func (w *whitelistWrapper) shouldProcess(deployment *storage.Deployment) bool {
@@ -32,7 +31,7 @@ func (w *whitelistWrapper) shouldProcess(deployment *storage.Deployment) bool {
 }
 
 // MatchesWhitelist returns true if the given deployment matches the given whitelist.
-func MatchesWhitelist(whitelist *v1.Whitelist_Deployment, deployment *storage.Deployment) bool {
+func MatchesWhitelist(whitelist *storage.Whitelist_Deployment, deployment *storage.Deployment) bool {
 	if whitelist == nil {
 		return false
 	}

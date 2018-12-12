@@ -48,7 +48,7 @@ func (suite *PipelineTestSuite) TestCreateResponseForUpdate() {
 
 	// Expect that our enforcement generator is called with expected data.
 	suite.detector.On("DeploymentUpdated", events[0].GetDeployment()).
-		Return("a1", v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT, nil)
+		Return("a1", storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT, nil)
 
 	// Call function.
 	tested := &createResponseImpl{
@@ -263,9 +263,9 @@ type mockDetector struct {
 	mock.Mock
 }
 
-func (d *mockDetector) DeploymentUpdated(deployment *storage.Deployment) (alertID string, enforcement v1.EnforcementAction, err error) {
+func (d *mockDetector) DeploymentUpdated(deployment *storage.Deployment) (alertID string, enforcement storage.EnforcementAction, err error) {
 	args := d.Called(deployment)
-	return args.Get(0).(string), args.Get(1).(v1.EnforcementAction), args.Error(2)
+	return args.Get(0).(string), args.Get(1).(storage.EnforcementAction), args.Error(2)
 }
 
 func (d *mockDetector) DeploymentRemoved(deployment *storage.Deployment) error {

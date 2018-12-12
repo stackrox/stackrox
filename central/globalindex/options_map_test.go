@@ -115,8 +115,8 @@ func TestCategoryToOptionsMap(t *testing.T) {
 		v1.SearchCategory_ALERTS:             {"alert", v1.Alert{}},
 		v1.SearchCategory_DEPLOYMENTS:        {"deployment", storage.Deployment{}},
 		v1.SearchCategory_IMAGES:             {"image", storage.Image{}},
-		v1.SearchCategory_POLICIES:           {"policy", v1.Policy{}},
-		v1.SearchCategory_SECRETS:            {"secret", v1.Secret{}},
+		v1.SearchCategory_POLICIES:           {"policy", storage.Policy{}},
+		v1.SearchCategory_SECRETS:            {"secret", storage.Secret{}},
 		v1.SearchCategory_PROCESS_INDICATORS: {"process_indicator", v1.ProcessIndicator{}},
 	}
 

@@ -2,6 +2,7 @@ package resources
 
 import (
 	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"k8s.io/api/core/v1"
 )
 
@@ -37,7 +38,7 @@ func (h *nodeHandler) Process(node *v1.Node, action pkgV1.ResourceAction) []*pkg
 		h.endpointManager.OnNodeUpdateOrRemove(node.Name)
 	}
 
-	nodeResource := &pkgV1.Node{
+	nodeResource := &storage.Node{
 		Id:   string(node.UID),
 		Name: node.Name,
 	}

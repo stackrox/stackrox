@@ -7,31 +7,32 @@ import (
 
 	"github.com/cloudflare/cfssl/certinfo"
 	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"k8s.io/api/core/v1"
 )
 
-var dataTypeMap = map[string]pkgV1.SecretType{
-	"-----BEGIN CERTIFICATE-----":              pkgV1.SecretType_PUBLIC_CERTIFICATE,
-	"-----BEGIN NEW CERTIFICATE REQUEST-----":  pkgV1.SecretType_CERTIFICATE_REQUEST,
-	"-----BEGIN PRIVACY-ENHANCED MESSAGE-----": pkgV1.SecretType_PRIVACY_ENHANCED_MESSAGE,
-	"-----BEGIN OPENSSH PRIVATE KEY-----":      pkgV1.SecretType_OPENSSH_PRIVATE_KEY,
-	"-----BEGIN PGP PRIVATE KEY BLOCK-----":    pkgV1.SecretType_PGP_PRIVATE_KEY,
-	"-----BEGIN EC PRIVATE KEY-----":           pkgV1.SecretType_EC_PRIVATE_KEY,
-	"-----BEGIN RSA PRIVATE KEY-----":          pkgV1.SecretType_RSA_PRIVATE_KEY,
-	"-----BEGIN DSA PRIVATE KEY-----":          pkgV1.SecretType_DSA_PRIVATE_KEY,
-	"-----BEGIN PRIVATE KEY-----":              pkgV1.SecretType_CERT_PRIVATE_KEY,
-	"-----BEGIN ENCRYPTED PRIVATE KEY-----":    pkgV1.SecretType_ENCRYPTED_PRIVATE_KEY,
+var dataTypeMap = map[string]storage.SecretType{
+	"-----BEGIN CERTIFICATE-----":              storage.SecretType_PUBLIC_CERTIFICATE,
+	"-----BEGIN NEW CERTIFICATE REQUEST-----":  storage.SecretType_CERTIFICATE_REQUEST,
+	"-----BEGIN PRIVACY-ENHANCED MESSAGE-----": storage.SecretType_PRIVACY_ENHANCED_MESSAGE,
+	"-----BEGIN OPENSSH PRIVATE KEY-----":      storage.SecretType_OPENSSH_PRIVATE_KEY,
+	"-----BEGIN PGP PRIVATE KEY BLOCK-----":    storage.SecretType_PGP_PRIVATE_KEY,
+	"-----BEGIN EC PRIVATE KEY-----":           storage.SecretType_EC_PRIVATE_KEY,
+	"-----BEGIN RSA PRIVATE KEY-----":          storage.SecretType_RSA_PRIVATE_KEY,
+	"-----BEGIN DSA PRIVATE KEY-----":          storage.SecretType_DSA_PRIVATE_KEY,
+	"-----BEGIN PRIVATE KEY-----":              storage.SecretType_CERT_PRIVATE_KEY,
+	"-----BEGIN ENCRYPTED PRIVATE KEY-----":    storage.SecretType_ENCRYPTED_PRIVATE_KEY,
 }
 
-func getSecretType(data string) pkgV1.SecretType {
+func getSecretType(data string) storage.SecretType {
 	data = strings.TrimSpace(data)
 	for dataPrefix, t := range dataTypeMap {
 		if strings.HasPrefix(data, dataPrefix) {
 			return t
 		}
 	}
-	return pkgV1.SecretType_UNDETERMINED
+	return storage.SecretType_UNDETERMINED
 }
 
 func convertInterfaceSliceToStringSlice(i []interface{}) []string {
@@ -42,8 +43,8 @@ func convertInterfaceSliceToStringSlice(i []interface{}) []string {
 	return strSlice
 }
 
-func convertCFSSLName(name certinfo.Name) *pkgV1.CertName {
-	return &pkgV1.CertName{
+func convertCFSSLName(name certinfo.Name) *storage.CertName {
+	return &storage.CertName{
 		CommonName:       name.CommonName,
 		Country:          name.Country,
 		Organization:     name.Organization,
@@ -56,12 +57,12 @@ func convertCFSSLName(name certinfo.Name) *pkgV1.CertName {
 	}
 }
 
-func parseCertData(data string) *pkgV1.Cert {
+func parseCertData(data string) *storage.Cert {
 	info, err := certinfo.ParseCertificatePEM([]byte(data))
 	if err != nil {
 		return nil
 	}
-	return &pkgV1.Cert{
+	return &storage.Cert{
 		Subject:   convertCFSSLName(info.Subject),
 		Issuer:    convertCFSSLName(info.Issuer),
 		Sans:      info.SANs,
@@ -71,10 +72,10 @@ func parseCertData(data string) *pkgV1.Cert {
 	}
 }
 
-func populateTypeData(secret *pkgV1.Secret, dataFiles map[string][]byte) {
+func populateTypeData(secret *storage.Secret, dataFiles map[string][]byte) {
 	for file, rawData := range dataFiles {
 		// Try to base64 decode and if it fails then try the raw value
-		var secretType pkgV1.SecretType
+		var secretType storage.SecretType
 		var data string
 		decoded, err := base64.StdEncoding.DecodeString(string(rawData))
 		if err != nil {
@@ -84,14 +85,14 @@ func populateTypeData(secret *pkgV1.Secret, dataFiles map[string][]byte) {
 		}
 		secretType = getSecretType(data)
 
-		file := &pkgV1.SecretDataFile{
+		file := &storage.SecretDataFile{
 			Name: file,
 			Type: secretType,
 		}
 
 		switch secretType {
-		case pkgV1.SecretType_PUBLIC_CERTIFICATE:
-			file.Metadata = &pkgV1.SecretDataFile_Cert{
+		case storage.SecretType_PUBLIC_CERTIFICATE:
+			file.Metadata = &storage.SecretDataFile_Cert{
 				Cert: parseCertData(data),
 			}
 		}
@@ -116,7 +117,7 @@ func (*secretHandler) Process(secret *v1.Secret, action pkgV1.ResourceAction) []
 		return nil
 	}
 
-	protoSecret := &pkgV1.Secret{
+	protoSecret := &storage.Secret{
 		Id:          string(secret.GetUID()),
 		Name:        secret.GetName(),
 		Namespace:   secret.GetNamespace(),

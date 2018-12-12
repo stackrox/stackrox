@@ -27,9 +27,9 @@ type DTRIntegrationSuite struct {
 }
 
 func (suite *DTRIntegrationSuite) SetupSuite() {
-	integration := &v1.ImageIntegration{
+	integration := &storage.ImageIntegration{
 		IntegrationConfig: &v1.ImageIntegration_Dtr{
-			Dtr: &v1.DTRConfig{
+			Dtr: &storage.DTRConfig{
 				Username: user,
 				Password: password,
 				Endpoint: dtrServer,

@@ -19,7 +19,7 @@ func TestScore(t *testing.T) {
 				Deployment: &v1.ListAlertDeployment{},
 				Policy: &v1.ListAlertPolicy{
 					Name:     "Test",
-					Severity: v1.Severity_CRITICAL_SEVERITY,
+					Severity: storage.Severity_CRITICAL_SEVERITY,
 				},
 			},
 		},

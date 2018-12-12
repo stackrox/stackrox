@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 const (
@@ -43,17 +44,17 @@ func BenchmarkLink(endpoint string) string {
 }
 
 // SeverityString is the nice form of the Severity enum
-func SeverityString(s v1.Severity) string {
+func SeverityString(s storage.Severity) string {
 	switch s {
-	case v1.Severity_UNSET_SEVERITY:
+	case storage.Severity_UNSET_SEVERITY:
 		return "Unset"
-	case v1.Severity_LOW_SEVERITY:
+	case storage.Severity_LOW_SEVERITY:
 		return "Low"
-	case v1.Severity_MEDIUM_SEVERITY:
+	case storage.Severity_MEDIUM_SEVERITY:
 		return "Medium"
-	case v1.Severity_HIGH_SEVERITY:
+	case storage.Severity_HIGH_SEVERITY:
 		return "High"
-	case v1.Severity_CRITICAL_SEVERITY:
+	case storage.Severity_CRITICAL_SEVERITY:
 		return "Critical"
 	default:
 		panic("The severity enum has been updated, but this switch statement hasn't")

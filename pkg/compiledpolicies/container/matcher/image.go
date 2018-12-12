@@ -10,7 +10,7 @@ func init() {
 	compilers = append(compilers, newImageMatcher)
 }
 
-func newImageMatcher(policy *v1.Policy) (Matcher, error) {
+func newImageMatcher(policy *storage.Policy) (Matcher, error) {
 	matcher, err := imageMatcher.Compile(policy)
 	if err != nil {
 		return nil, err

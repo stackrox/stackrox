@@ -3,7 +3,6 @@ package registries
 import (
 	"sync"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/types"
 )
@@ -62,7 +61,7 @@ func (e *setImpl) Clear() {
 }
 
 // UpdateImageIntegration updates the integration with the matching id to a new configuration.
-func (e *setImpl) UpdateImageIntegration(integration *v1.ImageIntegration) error {
+func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) error {
 	i, err := e.factory.CreateRegistry(integration)
 	if err != nil {
 		return err

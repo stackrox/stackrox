@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -233,15 +234,15 @@ func postMessage(url string, jsonPayload []byte) (err error) {
 }
 
 // GetAttachmentColor returns the corresponding color for each severity.
-func GetAttachmentColor(s v1.Severity) string {
+func GetAttachmentColor(s storage.Severity) string {
 	switch s {
-	case v1.Severity_LOW_SEVERITY:
+	case storage.Severity_LOW_SEVERITY:
 		return colorLowAlert
-	case v1.Severity_MEDIUM_SEVERITY:
+	case storage.Severity_MEDIUM_SEVERITY:
 		return colorMediumAlert
-	case v1.Severity_HIGH_SEVERITY:
+	case storage.Severity_HIGH_SEVERITY:
 		return colorHighAlert
-	case v1.Severity_CRITICAL_SEVERITY:
+	case storage.Severity_CRITICAL_SEVERITY:
 		return colorCriticalAlert
 	default:
 		return colorDefault

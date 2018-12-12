@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/suite"
 )
@@ -39,15 +39,15 @@ func (suite *PolicyStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *PolicyStoreTestSuite) TestPolicies() {
-	policy1 := &v1.Policy{
+	policy1 := &storage.Policy{
 		Name:     "policy1",
-		Severity: v1.Severity_LOW_SEVERITY,
+		Severity: storage.Severity_LOW_SEVERITY,
 	}
-	policy2 := &v1.Policy{
+	policy2 := &storage.Policy{
 		Name:     "policy2",
-		Severity: v1.Severity_HIGH_SEVERITY,
+		Severity: storage.Severity_HIGH_SEVERITY,
 	}
-	policies := []*v1.Policy{policy1, policy2}
+	policies := []*storage.Policy{policy1, policy2}
 	for _, p := range policies {
 		id, err := suite.store.AddPolicy(p)
 		suite.NoError(err)
@@ -61,7 +61,7 @@ func (suite *PolicyStoreTestSuite) TestPolicies() {
 
 	// Update policies with new severity and name.
 	for _, p := range policies {
-		p.Severity = v1.Severity_MEDIUM_SEVERITY
+		p.Severity = storage.Severity_MEDIUM_SEVERITY
 		p.Name = p.Name + " "
 		suite.NoError(suite.store.UpdatePolicy(p))
 	}

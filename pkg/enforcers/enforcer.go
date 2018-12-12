@@ -3,6 +3,7 @@ package enforcers
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -22,7 +23,7 @@ type Enforcer interface {
 }
 
 // CreateEnforcer creates a new enforcer that performs the given enforcement actions.
-func CreateEnforcer(enforcementMap map[v1.EnforcementAction]EnforceFunc) Enforcer {
+func CreateEnforcer(enforcementMap map[storage.EnforcementAction]EnforceFunc) Enforcer {
 	return &enforcer{
 		enforcementMap: enforcementMap,
 		actionsC:       make(chan *v1.SensorEnforcement, 10),
@@ -32,7 +33,7 @@ func CreateEnforcer(enforcementMap map[v1.EnforcementAction]EnforceFunc) Enforce
 }
 
 type enforcer struct {
-	enforcementMap map[v1.EnforcementAction]EnforceFunc
+	enforcementMap map[storage.EnforcementAction]EnforceFunc
 	actionsC       chan *v1.SensorEnforcement
 	stopC          concurrency.Signal
 	stoppedC       concurrency.Signal

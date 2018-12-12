@@ -7,7 +7,7 @@ package mocks
 import (
 	types "github.com/gogo/protobuf/types"
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	timestamp "github.com/stackrox/rox/pkg/timestamp"
 	reflect "reflect"
 )
@@ -36,9 +36,9 @@ func (m *MockFlowStore) EXPECT() *MockFlowStoreMockRecorder {
 }
 
 // GetAllFlows mocks base method
-func (m *MockFlowStore) GetAllFlows() ([]*v1.NetworkFlow, types.Timestamp, error) {
+func (m *MockFlowStore) GetAllFlows() ([]*storage.NetworkFlow, types.Timestamp, error) {
 	ret := m.ctrl.Call(m, "GetAllFlows")
-	ret0, _ := ret[0].([]*v1.NetworkFlow)
+	ret0, _ := ret[0].([]*storage.NetworkFlow)
 	ret1, _ := ret[1].(types.Timestamp)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -50,9 +50,9 @@ func (mr *MockFlowStoreMockRecorder) GetAllFlows() *gomock.Call {
 }
 
 // GetFlow mocks base method
-func (m *MockFlowStore) GetFlow(arg0 *v1.NetworkFlowProperties) (*v1.NetworkFlow, error) {
+func (m *MockFlowStore) GetFlow(arg0 *storage.NetworkFlowProperties) (*storage.NetworkFlow, error) {
 	ret := m.ctrl.Call(m, "GetFlow", arg0)
-	ret0, _ := ret[0].(*v1.NetworkFlow)
+	ret0, _ := ret[0].(*storage.NetworkFlow)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -63,7 +63,7 @@ func (mr *MockFlowStoreMockRecorder) GetFlow(arg0 interface{}) *gomock.Call {
 }
 
 // RemoveFlow mocks base method
-func (m *MockFlowStore) RemoveFlow(arg0 *v1.NetworkFlowProperties) error {
+func (m *MockFlowStore) RemoveFlow(arg0 *storage.NetworkFlowProperties) error {
 	ret := m.ctrl.Call(m, "RemoveFlow", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -75,7 +75,7 @@ func (mr *MockFlowStoreMockRecorder) RemoveFlow(arg0 interface{}) *gomock.Call {
 }
 
 // UpsertFlows mocks base method
-func (m *MockFlowStore) UpsertFlows(arg0 []*v1.NetworkFlow, arg1 timestamp.MicroTS) error {
+func (m *MockFlowStore) UpsertFlows(arg0 []*storage.NetworkFlow, arg1 timestamp.MicroTS) error {
 	ret := m.ctrl.Call(m, "UpsertFlows", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0

@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func getPolicies(b require.TestingT) []*v1.Policy {
+func getPolicies(b require.TestingT) []*storage.Policy {
 	defaults.PoliciesPath = policies.Directory()
 	defaultPolicies, err := defaults.Policies()
 	require.NoError(b, err)
@@ -33,7 +33,7 @@ func getPolicies(b require.TestingT) []*v1.Policy {
 policyLoop:
 	for _, p := range defaultPolicies {
 		for _, ls := range p.GetLifecycleStages() {
-			if ls != v1.LifecycleStage_BUILD {
+			if ls != storage.LifecycleStage_BUILD {
 				deployAndRuntimePolicies = append(deployAndRuntimePolicies, p)
 				continue policyLoop
 			}

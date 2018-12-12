@@ -5,14 +5,14 @@ import (
 )
 
 var (
-	storage Store
-	once    sync.Once
+	as   Store
+	once sync.Once
 )
 
 // Singleton returns the singleton user role mapper.
 func Singleton() Store {
 	once.Do(func() {
-		storage = New()
+		as = New()
 	})
-	return storage
+	return as
 }

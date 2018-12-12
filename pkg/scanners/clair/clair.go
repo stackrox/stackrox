@@ -10,7 +10,6 @@ import (
 	"time"
 
 	clairV1 "github.com/coreos/clair/api/v1"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -29,8 +28,8 @@ var (
 )
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
-func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageScanner, error)) {
-	return typeString, func(integration *v1.ImageIntegration) (types.ImageScanner, error) {
+func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageScanner, error)) {
+	return typeString, func(integration *storage.ImageIntegration) (types.ImageScanner, error) {
 		scan, err := newScanner(integration)
 		return scan, err
 	}
@@ -39,10 +38,10 @@ func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageScann
 type clair struct {
 	client                *http.Client
 	endpoint              string
-	protoImageIntegration *v1.ImageIntegration
+	protoImageIntegration *storage.ImageIntegration
 }
 
-func validate(clair *v1.ClairConfig) error {
+func validate(clair *storage.ClairConfig) error {
 	errorList := errorhelpers.NewErrorList("Clair Validation")
 	if clair.GetEndpoint() == "" {
 		errorList.AddString("Endpoint must be specified")
@@ -50,8 +49,8 @@ func validate(clair *v1.ClairConfig) error {
 	return errorList.ToError()
 }
 
-func newScanner(integration *v1.ImageIntegration) (*clair, error) {
-	clairConfig, ok := integration.IntegrationConfig.(*v1.ImageIntegration_Clair)
+func newScanner(integration *storage.ImageIntegration) (*clair, error) {
+	clairConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Clair)
 	if !ok {
 		return nil, fmt.Errorf("Clair configuration required")
 	}

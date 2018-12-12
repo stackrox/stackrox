@@ -23,9 +23,9 @@ type ClairIntegrationSuite struct {
 }
 
 func (suite *ClairIntegrationSuite) SetupSuite() {
-	protoImageIntegration := &v1.ImageIntegration{
+	protoImageIntegration := &storage.ImageIntegration{
 		IntegrationConfig: &v1.ImageIntegration_Clair{
-			Clair: &v1.ClairConfig{
+			Clair: &storage.ClairConfig{
 				Endpoint: "http://localhost:6060",
 			},
 		},
@@ -52,9 +52,9 @@ func (suite *ClairIntegrationSuite) TestGetLastScan() {
 	}
 
 	creator := registries.Registry["docker"]
-	s, err := creator(&v1.ImageIntegration{
+	s, err := creator(&storage.ImageIntegration{
 		IntegrationConfig: &v1.ImageIntegration_Clair{
-			Clair: &v1.ClairConfig{
+			Clair: &storage.ClairConfig{
 				Endpoint: "registry-1.docker.io",
 			},
 		},

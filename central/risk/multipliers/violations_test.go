@@ -25,7 +25,7 @@ func TestViolationsScore(t *testing.T) {
 			alerts: []*v1.ListAlert{
 				{
 					Policy: &v1.ListAlertPolicy{
-						Severity: v1.Severity_CRITICAL_SEVERITY,
+						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy 1",
 					},
 				},
@@ -43,7 +43,7 @@ func TestViolationsScore(t *testing.T) {
 			alerts: []*v1.ListAlert{
 				{
 					Policy: &v1.ListAlertPolicy{
-						Severity: v1.Severity_CRITICAL_SEVERITY,
+						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy 1",
 					},
 				},
@@ -61,19 +61,19 @@ func TestViolationsScore(t *testing.T) {
 			alerts: []*v1.ListAlert{
 				{
 					Policy: &v1.ListAlertPolicy{
-						Severity: v1.Severity_HIGH_SEVERITY,
+						Severity: storage.Severity_HIGH_SEVERITY,
 						Name:     "Policy 1",
 					},
 				},
 				{
 					Policy: &v1.ListAlertPolicy{
-						Severity: v1.Severity_MEDIUM_SEVERITY,
+						Severity: storage.Severity_MEDIUM_SEVERITY,
 						Name:     "Policy 2",
 					},
 				},
 				{
 					Policy: &v1.ListAlertPolicy{
-						Severity: v1.Severity_LOW_SEVERITY,
+						Severity: storage.Severity_LOW_SEVERITY,
 						Name:     "Policy 3",
 					},
 				},
@@ -93,19 +93,19 @@ func TestViolationsScore(t *testing.T) {
 			alerts: []*v1.ListAlert{
 				{
 					Policy: &v1.ListAlertPolicy{
-						Severity: v1.Severity_CRITICAL_SEVERITY,
+						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy 1",
 					},
 				},
 				{
 					Policy: &v1.ListAlertPolicy{
-						Severity: v1.Severity_HIGH_SEVERITY,
+						Severity: storage.Severity_HIGH_SEVERITY,
 						Name:     "Policy 2",
 					},
 				},
 				{
 					Policy: &v1.ListAlertPolicy{
-						Severity: v1.Severity_LOW_SEVERITY,
+						Severity: storage.Severity_LOW_SEVERITY,
 						Name:     "Policy 3",
 					},
 				},
@@ -125,39 +125,39 @@ func TestViolationsScore(t *testing.T) {
 			alerts: []*v1.ListAlert{
 				{
 					Policy: &v1.ListAlertPolicy{
-						Severity: v1.Severity_CRITICAL_SEVERITY,
+						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy 3",
 					},
 				},
 				{
 					Policy: &v1.ListAlertPolicy{
-						Severity: v1.Severity_HIGH_SEVERITY,
+						Severity: storage.Severity_HIGH_SEVERITY,
 						Name:     "Policy 2",
 					},
 				},
 				{
 					Policy: &v1.ListAlertPolicy{
-						Severity: v1.Severity_LOW_SEVERITY,
+						Severity: storage.Severity_LOW_SEVERITY,
 						Name:     "Policy 1",
 					},
 				},
 				{
 					Policy: &v1.ListAlertPolicy{
-						Severity: v1.Severity_CRITICAL_SEVERITY,
+						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy Don't Show Me!",
 					},
 					State: v1.ViolationState_RESOLVED,
 				},
 				{
 					Policy: &v1.ListAlertPolicy{
-						Severity: v1.Severity_HIGH_SEVERITY,
+						Severity: storage.Severity_HIGH_SEVERITY,
 						Name:     "Policy Don't Show Me!",
 					},
 					State: v1.ViolationState_RESOLVED,
 				},
 				{
 					Policy: &v1.ListAlertPolicy{
-						Severity: v1.Severity_LOW_SEVERITY,
+						Severity: storage.Severity_LOW_SEVERITY,
 						Name:     "Policy Don't Show Me!",
 					},
 					State: v1.ViolationState_RESOLVED,

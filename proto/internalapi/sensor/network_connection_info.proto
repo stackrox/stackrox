@@ -5,6 +5,7 @@ option cc_enable_arenas = true;
 
 import "google/protobuf/timestamp.proto";
 import "api/v1/network_enums.proto";
+import "storage/network_flow.proto";
 
 package sensor;
 
@@ -22,7 +23,7 @@ message NetworkConnection {
     v1.SocketFamily socket_family       = 1;
     NetworkAddress local_address        = 2;
     NetworkAddress remote_address       = 3;
-    v1.L4Protocol protocol            = 4;
+    storage.L4Protocol protocol            = 4;
     v1.ClientServerRole role            = 5;
     string container_id                 = 6;
 

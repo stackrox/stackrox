@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/central/policy/search"
 	"github.com/stackrox/rox/central/policy/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type datastoreImpl struct {
@@ -19,20 +20,20 @@ func (ds *datastoreImpl) SearchPolicies(q *v1.Query) ([]*v1.SearchResult, error)
 }
 
 // SearchRawPolicies
-func (ds *datastoreImpl) SearchRawPolicies(q *v1.Query) ([]*v1.Policy, error) {
+func (ds *datastoreImpl) SearchRawPolicies(q *v1.Query) ([]*storage.Policy, error) {
 	return ds.searcher.SearchRawPolicies(q)
 }
 
-func (ds *datastoreImpl) GetPolicy(id string) (*v1.Policy, bool, error) {
+func (ds *datastoreImpl) GetPolicy(id string) (*storage.Policy, bool, error) {
 	return ds.storage.GetPolicy(id)
 }
 
-func (ds *datastoreImpl) GetPolicies() ([]*v1.Policy, error) {
+func (ds *datastoreImpl) GetPolicies() ([]*storage.Policy, error) {
 	return ds.storage.GetPolicies()
 }
 
 // AddPolicy inserts a policy into the storage and the indexer
-func (ds *datastoreImpl) AddPolicy(policy *v1.Policy) (string, error) {
+func (ds *datastoreImpl) AddPolicy(policy *storage.Policy) (string, error) {
 	id, err := ds.storage.AddPolicy(policy)
 	if err != nil {
 		return id, err
@@ -41,7 +42,7 @@ func (ds *datastoreImpl) AddPolicy(policy *v1.Policy) (string, error) {
 }
 
 // UpdatePolicy updates a policy from the storage and the indexer
-func (ds *datastoreImpl) UpdatePolicy(policy *v1.Policy) error {
+func (ds *datastoreImpl) UpdatePolicy(policy *storage.Policy) error {
 	if err := ds.storage.UpdatePolicy(policy); err != nil {
 		return err
 	}

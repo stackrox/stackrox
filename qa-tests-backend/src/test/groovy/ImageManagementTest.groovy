@@ -2,7 +2,7 @@ import groups.BAT
 import groups.Integration
 import org.junit.experimental.categories.Category
 import spock.lang.Unroll
-import io.stackrox.proto.api.v1.PolicyServiceOuterClass.LifecycleStage
+import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 
 class ImageManagementTest extends BaseSpecification {
     @Unroll

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/logging"
@@ -18,20 +19,20 @@ import (
 )
 
 var (
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Name:        "test policy " + fmt.Sprintf("%d", time.Now().UnixNano()),
 		Description: "description",
-		LifecycleStages: []v1.LifecycleStage{
-			v1.LifecycleStage_DEPLOY,
+		LifecycleStages: []storage.LifecycleStage{
+			storage.LifecycleStage_DEPLOY,
 		},
-		Severity:   v1.Severity_HIGH_SEVERITY,
+		Severity:   storage.Severity_HIGH_SEVERITY,
 		Categories: []string{"Image Assurance", "Privileges Capabilities"},
 		Disabled:   false,
-		Fields: &v1.PolicyFields{
-			ImageName: &v1.ImageNamePolicy{
+		Fields: &storage.PolicyFields{
+			ImageName: &storage.ImageNamePolicy{
 				Tag: "latest",
 			},
-			SetPrivileged: &v1.PolicyFields_Privileged{
+			SetPrivileged: &storage.PolicyFields_Privileged{
 				Privileged: true,
 			},
 		},
@@ -40,7 +41,7 @@ var (
 	logger = logging.LoggerForModule()
 )
 
-func getPolicy(service v1.PolicyServiceClient, id string) (*v1.Policy, error) {
+func getPolicy(service v1.PolicyServiceClient, id string) (*storage.Policy, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	return service.GetPolicy(ctx, &v1.ResourceByID{Id: id})
@@ -61,7 +62,7 @@ func TestDefaultPolicies(t *testing.T) {
 	listResp, err := service.ListPolicies(ctx, &v1.RawQuery{})
 	require.NoError(t, err)
 
-	policiesMap := make(map[string]*v1.Policy)
+	policiesMap := make(map[string]*storage.Policy)
 	for _, listPolicy := range listResp.GetPolicies() {
 		policy, err := getPolicy(service, listPolicy.GetId())
 		assert.NoError(t, err)
@@ -142,10 +143,10 @@ func verifyReadPolicy(t *testing.T, service v1.PolicyServiceClient) {
 }
 
 func verifyUpdatePolicy(t *testing.T, service v1.PolicyServiceClient) {
-	policy.Severity = v1.Severity_LOW_SEVERITY
+	policy.Severity = storage.Severity_LOW_SEVERITY
 	policy.Description = "updated description"
 	policy.Disabled = true
-	policy.Fields.SetScanAgeDays = &v1.PolicyFields_ScanAgeDays{ScanAgeDays: 10}
+	policy.Fields.SetScanAgeDays = &storage.PolicyFields_ScanAgeDays{ScanAgeDays: 10}
 	policy.Fields.AddCapabilities = []string{"CAP_SYS_MODULE"}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)

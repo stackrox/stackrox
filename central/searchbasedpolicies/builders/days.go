@@ -7,6 +7,7 @@ import (
 
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/readable"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -14,10 +15,10 @@ import (
 type dayQueryBuilder struct {
 	fieldLabel         search.FieldLabel
 	fieldHumanName     string
-	retrieveFieldValue func(*v1.PolicyFields) (int64, bool)
+	retrieveFieldValue func(*storage.PolicyFields) (int64, bool)
 }
 
-func (d *dayQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
+func (d *dayQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	days, exists := d.retrieveFieldValue(fields)
 	if !exists {
 		return
@@ -50,7 +51,7 @@ func (d *dayQueryBuilder) Name() string {
 // NewDaysQueryBuilder returns a query builder for matching fields that check whether a field value is at least a
 // certain number of days ago.
 func NewDaysQueryBuilder(fieldLabel search.FieldLabel, fieldHumanName string,
-	retrieveFieldValue func(*v1.PolicyFields) (int64, bool)) searchbasedpolicies.PolicyQueryBuilder {
+	retrieveFieldValue func(*storage.PolicyFields) (int64, bool)) searchbasedpolicies.PolicyQueryBuilder {
 	return &dayQueryBuilder{
 		fieldLabel:         fieldLabel,
 		fieldHumanName:     fieldHumanName,

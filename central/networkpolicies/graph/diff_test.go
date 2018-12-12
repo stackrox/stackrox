@@ -6,6 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -37,11 +38,11 @@ func (m nodeSpecMap) toGraph() *v1.NetworkGraph {
 	}
 	for node, spec := range m {
 		result.Nodes = append(result.Nodes, &v1.NetworkNode{
-			Entity: &v1.NetworkEntityInfo{
-				Type: v1.NetworkEntityInfo_DEPLOYMENT,
+			Entity: &storage.NetworkEntityInfo{
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
 				Id:   node,
-				Desc: &v1.NetworkEntityInfo_Deployment_{
-					Deployment: &v1.NetworkEntityInfo_Deployment{
+				Desc: &storage.NetworkEntityInfo_Deployment_{
+					Deployment: &storage.NetworkEntityInfo_Deployment{
 						Name: node,
 					},
 				},

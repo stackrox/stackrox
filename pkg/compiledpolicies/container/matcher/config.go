@@ -10,7 +10,7 @@ func init() {
 	compilers = append(compilers, newConfigMatcher)
 }
 
-func newConfigMatcher(policy *v1.Policy) (Matcher, error) {
+func newConfigMatcher(policy *storage.Policy) (Matcher, error) {
 	matcher, err := configMatcher.Compile(policy)
 	if err != nil {
 		return nil, err

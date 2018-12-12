@@ -4,7 +4,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -42,7 +42,7 @@ func (e *setImpl) Clear() {
 }
 
 // UpdateImageIntegration updates the integration with the matching id to a new configuration.
-func (e *setImpl) UpdateImageIntegration(integration *v1.ImageIntegration) (err error) {
+func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) (err error) {
 	i, err := e.factory.CreateScanner(integration)
 	if err != nil {
 		return err

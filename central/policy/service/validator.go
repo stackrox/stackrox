@@ -12,7 +12,6 @@ import (
 	imageMappings "github.com/stackrox/rox/central/image/index/mappings"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/policies"
@@ -35,7 +34,7 @@ type policyValidator struct {
 	descriptionValidator *regexp.Regexp
 }
 
-func (s *policyValidator) validate(policy *v1.Policy) error {
+func (s *policyValidator) validate(policy *storage.Policy) error {
 	s.removeEnforcementsForMissingLifecycles(policy)
 
 	errorList := errorhelpers.NewErrorList("policy invalid")
@@ -50,21 +49,21 @@ func (s *policyValidator) validate(policy *v1.Policy) error {
 	return errorList.ToError()
 }
 
-func (s *policyValidator) validateName(policy *v1.Policy) error {
+func (s *policyValidator) validateName(policy *storage.Policy) error {
 	if policy.GetName() == "" || !s.nameValidator.MatchString(policy.GetName()) {
 		return errors.New("policy must have a name, at least 5 chars long, and contain no punctuation or special characters")
 	}
 	return nil
 }
 
-func (s *policyValidator) validateDescription(policy *v1.Policy) error {
+func (s *policyValidator) validateDescription(policy *storage.Policy) error {
 	if policy.GetDescription() != "" && !s.descriptionValidator.MatchString(policy.GetDescription()) {
 		return errors.New("description, when present, should be of sentence form, and not contain more than 200 characters")
 	}
 	return nil
 }
 
-func (s *policyValidator) validateCompilableForLifecycle(policy *v1.Policy) error {
+func (s *policyValidator) validateCompilableForLifecycle(policy *storage.Policy) error {
 	if len(policy.GetLifecycleStages()) == 0 {
 		return fmt.Errorf("a policy must apply to at least one lifecycle stage")
 	}
@@ -82,26 +81,26 @@ func (s *policyValidator) validateCompilableForLifecycle(policy *v1.Policy) erro
 	return errorList.ToError()
 }
 
-func (s *policyValidator) removeEnforcementsForMissingLifecycles(policy *v1.Policy) {
+func (s *policyValidator) removeEnforcementsForMissingLifecycles(policy *storage.Policy) {
 	if !policies.AppliesAtBuildTime(policy) {
-		removeEnforcementForLifecycle(policy, v1.LifecycleStage_BUILD)
+		removeEnforcementForLifecycle(policy, storage.LifecycleStage_BUILD)
 	}
 	if !policies.AppliesAtDeployTime(policy) {
-		removeEnforcementForLifecycle(policy, v1.LifecycleStage_DEPLOY)
+		removeEnforcementForLifecycle(policy, storage.LifecycleStage_DEPLOY)
 	}
 	if !policies.AppliesAtRunTime(policy) {
-		removeEnforcementForLifecycle(policy, v1.LifecycleStage_RUNTIME)
+		removeEnforcementForLifecycle(policy, storage.LifecycleStage_RUNTIME)
 	}
 }
 
-func (s *policyValidator) validateSeverity(policy *v1.Policy) error {
-	if policy.GetSeverity() == v1.Severity_UNSET_SEVERITY {
+func (s *policyValidator) validateSeverity(policy *storage.Policy) error {
+	if policy.GetSeverity() == storage.Severity_UNSET_SEVERITY {
 		return errors.New("a policy must have a severity")
 	}
 	return nil
 }
 
-func (s *policyValidator) validateCapabilities(policy *v1.Policy) error {
+func (s *policyValidator) validateCapabilities(policy *storage.Policy) error {
 	set := mapset.NewSet()
 	for _, s := range policy.GetFields().GetAddCapabilities() {
 		set.Add(s)
@@ -118,7 +117,7 @@ func (s *policyValidator) validateCapabilities(policy *v1.Policy) error {
 	return nil
 }
 
-func (s *policyValidator) validateCategories(policy *v1.Policy) error {
+func (s *policyValidator) validateCategories(policy *storage.Policy) error {
 	if len(policy.GetCategories()) == 0 {
 		return errors.New("a policy must have one of Image Policy, Configuration Policy, or Privilege Policy")
 	}
@@ -132,7 +131,7 @@ func (s *policyValidator) validateCategories(policy *v1.Policy) error {
 	return nil
 }
 
-func (s *policyValidator) validateNotifiers(policy *v1.Policy) error {
+func (s *policyValidator) validateNotifiers(policy *storage.Policy) error {
 	for _, n := range policy.GetNotifiers() {
 		_, exists, err := s.notifierStorage.GetNotifier(n)
 		if err != nil {
@@ -145,7 +144,7 @@ func (s *policyValidator) validateNotifiers(policy *v1.Policy) error {
 	return nil
 }
 
-func (s *policyValidator) validateScopes(policy *v1.Policy) error {
+func (s *policyValidator) validateScopes(policy *storage.Policy) error {
 	for _, scope := range policy.GetScope() {
 		if err := s.validateScope(scope); err != nil {
 			return err
@@ -154,7 +153,7 @@ func (s *policyValidator) validateScopes(policy *v1.Policy) error {
 	return nil
 }
 
-func (s *policyValidator) validateWhitelists(policy *v1.Policy) error {
+func (s *policyValidator) validateWhitelists(policy *storage.Policy) error {
 	for _, whitelist := range policy.GetWhitelists() {
 		if err := s.validateWhitelist(whitelist); err != nil {
 			return err
@@ -163,7 +162,7 @@ func (s *policyValidator) validateWhitelists(policy *v1.Policy) error {
 	return nil
 }
 
-func (s *policyValidator) validateWhitelist(whitelist *v1.Whitelist) error {
+func (s *policyValidator) validateWhitelist(whitelist *storage.Whitelist) error {
 	// TODO(cgorman) once we have real whitelist support in UI, add validation for whitelist name
 	if whitelist.GetContainer() == nil && whitelist.GetDeployment() == nil {
 		return errors.New("all whitelists must have some criteria to match on")
@@ -181,7 +180,7 @@ func (s *policyValidator) validateWhitelist(whitelist *v1.Whitelist) error {
 	return nil
 }
 
-func (s *policyValidator) validateContainerWhitelist(whitelist *v1.Whitelist) error {
+func (s *policyValidator) validateContainerWhitelist(whitelist *storage.Whitelist) error {
 	imageName := whitelist.GetContainer().GetImageName()
 	if imageName == nil {
 		return errors.New("if container whitelist is defined, then image name must also be defined")
@@ -192,7 +191,7 @@ func (s *policyValidator) validateContainerWhitelist(whitelist *v1.Whitelist) er
 	return nil
 }
 
-func (s *policyValidator) validateDeploymentWhitelist(whitelist *v1.Whitelist) error {
+func (s *policyValidator) validateDeploymentWhitelist(whitelist *storage.Whitelist) error {
 	deployment := whitelist.GetDeployment()
 	if deployment.GetScope() == nil && deployment.GetName() == "" {
 		return errors.New("at least one field of deployment whitelist must be defined")
@@ -219,7 +218,7 @@ func (s *policyValidator) validateScope(scope *storage.Scope) error {
 	return nil
 }
 
-func compilesForBuildTime(policy *v1.Policy) error {
+func compilesForBuildTime(policy *storage.Policy) error {
 	m, err := matcher.ForPolicy(policy, imageMappings.OptionsMap, nil)
 	if err != nil {
 		return fmt.Errorf("policy configuration is invalid for build time: %s", err)
@@ -230,7 +229,7 @@ func compilesForBuildTime(policy *v1.Policy) error {
 	return nil
 }
 
-func compilesForDeployTime(policy *v1.Policy) error {
+func compilesForDeployTime(policy *storage.Policy) error {
 	m, err := matcher.ForPolicy(policy, deploymentMappings.OptionsMap, nil)
 	if err != nil {
 		return fmt.Errorf("policy configuration is invalid for deploy time: %s", err)
@@ -244,7 +243,7 @@ func compilesForDeployTime(policy *v1.Policy) error {
 	return nil
 }
 
-func compilesForRunTime(policy *v1.Policy) error {
+func compilesForRunTime(policy *storage.Policy) error {
 	m, err := matcher.ForPolicy(policy, deploymentMappings.OptionsMap, nil)
 	if err != nil {
 		return fmt.Errorf("policy configuration is invalid for run time: %s", err)
@@ -258,14 +257,14 @@ func compilesForRunTime(policy *v1.Policy) error {
 	return nil
 }
 
-var enforcementToLifecycle = map[v1.EnforcementAction]v1.LifecycleStage{
-	v1.EnforcementAction_FAIL_BUILD_ENFORCEMENT:                    v1.LifecycleStage_BUILD,
-	v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT:                 v1.LifecycleStage_DEPLOY,
-	v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: v1.LifecycleStage_DEPLOY,
-	v1.EnforcementAction_KILL_POD_ENFORCEMENT:                      v1.LifecycleStage_RUNTIME,
+var enforcementToLifecycle = map[storage.EnforcementAction]storage.LifecycleStage{
+	storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT:                    storage.LifecycleStage_BUILD,
+	storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT:                 storage.LifecycleStage_DEPLOY,
+	storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: storage.LifecycleStage_DEPLOY,
+	storage.EnforcementAction_KILL_POD_ENFORCEMENT:                      storage.LifecycleStage_RUNTIME,
 }
 
-func removeEnforcementForLifecycle(policy *v1.Policy, stage v1.LifecycleStage) {
+func removeEnforcementForLifecycle(policy *storage.Policy, stage storage.LifecycleStage) {
 	newActions := policy.EnforcementActions[:0]
 	for _, ea := range policy.GetEnforcementActions() {
 		if enforcementToLifecycle[ea] != stage {

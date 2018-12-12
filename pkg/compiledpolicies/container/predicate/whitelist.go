@@ -1,7 +1,6 @@
 package predicate
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
@@ -11,7 +10,7 @@ func init() {
 }
 
 // NewWhitelistPredicate true if the container does not match any whitelists.
-func NewWhitelistPredicate(policy *v1.Policy) (Predicate, error) {
+func NewWhitelistPredicate(policy *storage.Policy) (Predicate, error) {
 	var predicate Predicate
 	for _, whitelist := range policy.GetWhitelists() {
 		// Only compile container whitelists which have not expired.
@@ -24,7 +23,7 @@ func NewWhitelistPredicate(policy *v1.Policy) (Predicate, error) {
 }
 
 type whitelistWrapper struct {
-	whitelist *v1.Whitelist_Container
+	whitelist *storage.Whitelist_Container
 }
 
 func (w *whitelistWrapper) shouldProcess(container *storage.Container) bool {
@@ -32,7 +31,7 @@ func (w *whitelistWrapper) shouldProcess(container *storage.Container) bool {
 }
 
 // MatchesWhitelist returns if the given container matches the given whitelist.
-func MatchesWhitelist(whitelist *v1.Whitelist_Container, container *storage.Container) bool {
+func MatchesWhitelist(whitelist *storage.Whitelist_Container, container *storage.Container) bool {
 	whitelistName := whitelist.GetImageName()
 	containerName := container.GetImage().GetName()
 

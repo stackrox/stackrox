@@ -13,7 +13,7 @@ func init() {
 	compilers = append(compilers, newEnvironmentMatcher)
 }
 
-func newEnvironmentMatcher(policy *v1.Policy) (Matcher, error) {
+func newEnvironmentMatcher(policy *storage.Policy) (Matcher, error) {
 	env := policy.GetFields().GetEnv()
 	if env == nil {
 		return nil, nil

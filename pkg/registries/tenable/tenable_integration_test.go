@@ -17,9 +17,9 @@ const (
 )
 
 func TestTenable(t *testing.T) {
-	protoImageIntegration := &v1.ImageIntegration{
+	protoImageIntegration := &storage.ImageIntegration{
 		IntegrationConfig: &v1.ImageIntegration_Tenable{
-			Tenable: &v1.TenableConfig{
+			Tenable: &storage.TenableConfig{
 				AccessKey: accessKey,
 				SecretKey: secretKey,
 			},

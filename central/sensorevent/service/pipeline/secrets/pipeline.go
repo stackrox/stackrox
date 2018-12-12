@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -44,7 +45,7 @@ func (s *pipelineImpl) Run(event *v1.SensorEvent, _ pipeline.EnforcementInjector
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *v1.Secret) error {
+func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *storage.Secret) error {
 	// Validate the the event we receive has necessary fields set.
 	if err := s.validateInput(event); err != nil {
 		return err
@@ -59,7 +60,7 @@ func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *v1.Sec
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, secret *v1.Secret) error {
+func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, secret *storage.Secret) error {
 	if err := s.validateInput(secret); err != nil {
 		return err
 	}
@@ -75,7 +76,7 @@ func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, secret *v1.S
 	return nil
 }
 
-func (s *pipelineImpl) validateInput(secret *v1.Secret) error {
+func (s *pipelineImpl) validateInput(secret *storage.Secret) error {
 	// validate input.
 	if secret == nil {
 		return fmt.Errorf("secret must not be empty")
@@ -83,7 +84,7 @@ func (s *pipelineImpl) validateInput(secret *v1.Secret) error {
 	return nil
 }
 
-func (s *pipelineImpl) enrichCluster(secret *v1.Secret) error {
+func (s *pipelineImpl) enrichCluster(secret *storage.Secret) error {
 	secret.ClusterName = ""
 
 	cluster, clusterExists, err := s.clusters.GetCluster(secret.GetClusterId())
@@ -98,7 +99,7 @@ func (s *pipelineImpl) enrichCluster(secret *v1.Secret) error {
 	return nil
 }
 
-func (s *pipelineImpl) persistSecret(action v1.ResourceAction, secret *v1.Secret) error {
+func (s *pipelineImpl) persistSecret(action v1.ResourceAction, secret *storage.Secret) error {
 	switch action {
 	case v1.ResourceAction_CREATE_RESOURCE, v1.ResourceAction_UPDATE_RESOURCE:
 		return s.secrets.UpsertSecret(secret)

@@ -204,7 +204,7 @@ func (s *sensor) processResponse(ctx context.Context, enforcement *v1.SensorEnfo
 		return
 	}
 
-	if enforcement.GetEnforcement() == v1.EnforcementAction_UNSET_ENFORCEMENT {
+	if enforcement.GetEnforcement() == storage.EnforcementAction_UNSET_ENFORCEMENT {
 		log.Errorf("received enforcement with unset action: %s", proto.MarshalTextString(enforcement))
 		if deployment := enforcement.GetDeployment(); deployment != nil {
 			log.Infof("deployment processed but no enforcement needed: deployment %s", deployment.GetDeploymentId())

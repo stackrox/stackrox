@@ -2,14 +2,14 @@ package secrets
 
 import (
 	"github.com/docker/docker/api/types/swarm"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 type secretWrap swarm.Secret
 
-func (s secretWrap) asSecret() *v1.Secret {
-	return &v1.Secret{
+func (s secretWrap) asSecret() *storage.Secret {
+	return &storage.Secret{
 		Id:          s.ID,
 		Name:        s.Spec.Name,
 		Namespace:   "default",

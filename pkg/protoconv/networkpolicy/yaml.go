@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"io"
 
-	roxV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	k8sV1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
@@ -32,7 +32,7 @@ func (y YamlWrap) ToKubernetesNetworkPolicies() (k8sPolicies []*k8sV1.NetworkPol
 }
 
 // ToRoxNetworkPolicies outputs the stackrox NetworkPolicy protos described by the input yaml.
-func (y YamlWrap) ToRoxNetworkPolicies() (roxPolicies []*roxV1.NetworkPolicy, err error) {
+func (y YamlWrap) ToRoxNetworkPolicies() (roxPolicies []*storage.NetworkPolicy, err error) {
 	var k8sPolicies []*k8sV1.NetworkPolicy
 	k8sPolicies, err = y.ToKubernetesNetworkPolicies()
 	if err != nil {

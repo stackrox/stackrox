@@ -2,6 +2,7 @@ package resources
 
 import (
 	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"k8s.io/api/core/v1"
 )
 
@@ -34,7 +35,7 @@ func (h *namespaceHandler) Process(ns *v1.Namespace, action pkgV1.ResourceAction
 		Id:     string(ns.GetUID()),
 		Action: action,
 		Resource: &pkgV1.SensorEvent_Namespace{
-			Namespace: &pkgV1.Namespace{
+			Namespace: &storage.Namespace{
 				Id:     string(ns.GetUID()),
 				Name:   ns.GetName(),
 				Labels: ns.GetLabels(),

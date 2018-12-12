@@ -1,13 +1,15 @@
 package store
 
-import "github.com/stackrox/rox/generated/api/v1"
+import (
+	"github.com/stackrox/rox/generated/storage"
+)
 
 // Store implements a store of all nodes in a cluster.
 type Store interface {
-	ListNodes() ([]*v1.Node, error)
-	GetNode(id string) (*v1.Node, error)
+	ListNodes() ([]*storage.Node, error)
+	GetNode(id string) (*storage.Node, error)
 	CountNodes() (int, error)
 
-	UpsertNode(node *v1.Node) error
+	UpsertNode(node *storage.Node) error
 	RemoveNode(id string) error
 }

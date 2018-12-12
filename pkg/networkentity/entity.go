@@ -1,23 +1,25 @@
 package networkentity
 
-import "github.com/stackrox/rox/generated/api/v1"
+import (
+	"github.com/stackrox/rox/generated/storage"
+)
 
 // Entity represents a network entity in a form that is suitable for use as a map key.
 type Entity struct {
-	Type v1.NetworkEntityInfo_Type
+	Type storage.NetworkEntityInfo_Type
 	ID   string
 }
 
-// ToProto converts the Entity struct to a v1.NetworkEntityInfo proto.
-func (e Entity) ToProto() *v1.NetworkEntityInfo {
-	return &v1.NetworkEntityInfo{
+// ToProto converts the Entity struct to a storage.NetworkEntityInfo proto.
+func (e Entity) ToProto() *storage.NetworkEntityInfo {
+	return &storage.NetworkEntityInfo{
 		Type: e.Type,
 		Id:   e.ID,
 	}
 }
 
-// FromProto converts a v1.NetworkEntityInfo proto to an Entity struct.
-func FromProto(protoEnt *v1.NetworkEntityInfo) Entity {
+// FromProto converts a storage.NetworkEntityInfo proto to an Entity struct.
+func FromProto(protoEnt *storage.NetworkEntityInfo) Entity {
 	return Entity{
 		Type: protoEnt.GetType(),
 		ID:   protoEnt.GetId(),
@@ -27,7 +29,7 @@ func FromProto(protoEnt *v1.NetworkEntityInfo) Entity {
 // ForDeployment returns an Entity struct for the deployment with the given ID.
 func ForDeployment(id string) Entity {
 	return Entity{
-		Type: v1.NetworkEntityInfo_DEPLOYMENT,
+		Type: storage.NetworkEntityInfo_DEPLOYMENT,
 		ID:   id,
 	}
 }

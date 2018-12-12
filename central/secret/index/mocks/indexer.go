@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
 
@@ -46,7 +46,7 @@ func (mr *MockIndexerMockRecorder) RemoveSecret(arg0 interface{}) *gomock.Call {
 }
 
 // UpsertSecret mocks base method
-func (m *MockIndexer) UpsertSecret(arg0 *v1.Secret) error {
+func (m *MockIndexer) UpsertSecret(arg0 *storage.Secret) error {
 	ret := m.ctrl.Call(m, "UpsertSecret", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -58,7 +58,7 @@ func (mr *MockIndexerMockRecorder) UpsertSecret(arg0 interface{}) *gomock.Call {
 }
 
 // UpsertSecrets mocks base method
-func (m *MockIndexer) UpsertSecrets(arg0 ...*v1.Secret) error {
+func (m *MockIndexer) UpsertSecrets(arg0 ...*storage.Secret) error {
 	varargs := []interface{}{}
 	for _, a := range arg0 {
 		varargs = append(varargs, a)

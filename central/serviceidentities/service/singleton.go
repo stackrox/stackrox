@@ -10,13 +10,11 @@ import (
 var (
 	once sync.Once
 
-	storage store.Store
-
 	as Service
 )
 
 func initialize() {
-	storage = store.New(globaldb.GetGlobalDB())
+	storage := store.New(globaldb.GetGlobalDB())
 
 	as = New(storage)
 }

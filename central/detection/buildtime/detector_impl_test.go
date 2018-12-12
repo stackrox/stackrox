@@ -7,7 +7,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/detection/image"
 	"github.com/stackrox/rox/central/policy/datastore/mocks"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/defaults"
@@ -15,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func getPolicy(defaultPolicies []*v1.Policy, name string, t *testing.T) *v1.Policy {
+func getPolicy(defaultPolicies []*storage.Policy, name string, t *testing.T) *storage.Policy {
 	for _, policy := range defaultPolicies {
 		if policy.GetName() == name {
 			return policy

@@ -12,7 +12,7 @@ func init() {
 	compilers = append(compilers, newCVSSMatcher)
 }
 
-func newCVSSMatcher(policy *v1.Policy) (Matcher, error) {
+func newCVSSMatcher(policy *storage.Policy) (Matcher, error) {
 	cvss := policy.GetFields().GetCvss()
 	if cvss == nil {
 		return nil, nil
@@ -22,7 +22,7 @@ func newCVSSMatcher(policy *v1.Policy) (Matcher, error) {
 }
 
 type cvssMatcherImpl struct {
-	cvss *v1.NumericalPolicy
+	cvss *storage.NumericalPolicy
 }
 
 func (p *cvssMatcherImpl) match(image *storage.Image) (violations []*v1.Alert_Violation) {
@@ -37,19 +37,19 @@ func (p *cvssMatcherImpl) match(image *storage.Image) (violations []*v1.Alert_Vi
 	var comparatorFunc func(x, y float32) bool
 	var comparatorChar string
 	switch p.cvss.GetOp() {
-	case v1.Comparator_LESS_THAN:
+	case storage.Comparator_LESS_THAN:
 		comparatorFunc = func(x, y float32) bool { return x < y }
 		comparatorChar = "<"
-	case v1.Comparator_LESS_THAN_OR_EQUALS:
+	case storage.Comparator_LESS_THAN_OR_EQUALS:
 		comparatorFunc = func(x, y float32) bool { return x <= y }
 		comparatorChar = "<="
-	case v1.Comparator_EQUALS:
+	case storage.Comparator_EQUALS:
 		comparatorFunc = func(x, y float32) bool { return x == y }
 		comparatorChar = "="
-	case v1.Comparator_GREATER_THAN_OR_EQUALS:
+	case storage.Comparator_GREATER_THAN_OR_EQUALS:
 		comparatorFunc = func(x, y float32) bool { return x >= y }
 		comparatorChar = ">="
-	case v1.Comparator_GREATER_THAN:
+	case storage.Comparator_GREATER_THAN:
 		comparatorFunc = func(x, y float32) bool { return x > y }
 		comparatorChar = ">"
 	}

@@ -6,6 +6,7 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 	dockerClient "github.com/docker/docker/client"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -39,7 +40,7 @@ func NewHandler(client *dockerClient.Client, eventsC chan *v1.SensorEvent) *Hand
 	}
 }
 
-func (s *Handler) getSecretFromSecretID(id string) (*v1.Secret, swarm.Secret, error) {
+func (s *Handler) getSecretFromSecretID(id string) (*storage.Secret, swarm.Secret, error) {
 	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
 
@@ -56,7 +57,7 @@ func (s *Handler) HandleMessage(msg events.Message) {
 	id := msg.Actor.ID
 
 	var resourceAction v1.ResourceAction
-	var secret *v1.Secret
+	var secret *storage.Secret
 	var originalSpec swarm.Secret
 	var err error
 
@@ -75,7 +76,7 @@ func (s *Handler) HandleMessage(msg events.Message) {
 		}
 	case "remove":
 		resourceAction = v1.ResourceAction_REMOVE_RESOURCE
-		secret = &v1.Secret{
+		secret = &storage.Secret{
 			Id: id,
 		}
 	default:
@@ -103,7 +104,7 @@ func (s *Handler) getExistingSecrets() ([]*v1.SensorEvent, error) {
 	return events, nil
 }
 
-func secretEventWrap(action v1.ResourceAction, secret *v1.Secret, obj interface{}) *v1.SensorEvent {
+func secretEventWrap(action v1.ResourceAction, secret *storage.Secret, obj interface{}) *v1.SensorEvent {
 	return &v1.SensorEvent{
 		Id:     secret.GetId(),
 		Action: action,

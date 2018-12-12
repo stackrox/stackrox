@@ -12,7 +12,6 @@ import (
 	"github.com/cloudflare/cfssl/initca"
 	cflog "github.com/cloudflare/cfssl/log"
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -64,7 +63,7 @@ func generateMTLSFiles(fileMap map[string][]byte) (cert, key []byte, err error) 
 }
 
 func generateMonitoringFiles(fileMap map[string][]byte, caCert, caKey []byte) error {
-	monitoringCert, monitoringKey, err := mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: v1.ServiceType_MONITORING_DB_SERVICE, Identifier: "Monitoring DB"},
+	monitoringCert, monitoringKey, err := mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: storage.ServiceType_MONITORING_DB_SERVICE, Identifier: "Monitoring DB"},
 		caCert, caKey)
 	if err != nil {
 		return err
@@ -72,7 +71,7 @@ func generateMonitoringFiles(fileMap map[string][]byte, caCert, caKey []byte) er
 	fileMap["monitoring-db-cert.pem"] = monitoringCert
 	fileMap["monitoring-db-key.pem"] = monitoringKey
 
-	monitoringCert, monitoringKey, err = mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: v1.ServiceType_MONITORING_UI_SERVICE, Identifier: "Monitoring UI"},
+	monitoringCert, monitoringKey, err = mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: storage.ServiceType_MONITORING_UI_SERVICE, Identifier: "Monitoring UI"},
 		caCert, caKey)
 	if err != nil {
 		return err
@@ -81,7 +80,7 @@ func generateMonitoringFiles(fileMap map[string][]byte, caCert, caKey []byte) er
 	fileMap["monitoring-ui-cert.pem"] = monitoringCert
 	fileMap["monitoring-ui-key.pem"] = monitoringKey
 
-	monitoringCert, monitoringKey, err = mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: v1.ServiceType_MONITORING_CLIENT_SERVICE, Identifier: "Monitoring Client"},
+	monitoringCert, monitoringKey, err = mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: storage.ServiceType_MONITORING_CLIENT_SERVICE, Identifier: "Monitoring Client"},
 		caCert, caKey)
 	if err != nil {
 		return err

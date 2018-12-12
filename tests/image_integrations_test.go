@@ -22,37 +22,37 @@ const (
 )
 
 var (
-	integration = &v1.ImageIntegration{
+	integration = &storage.ImageIntegration{
 		Name: "public dockerhub",
 		Type: "docker",
-		IntegrationConfig: &v1.ImageIntegration_Docker{
-			Docker: &v1.DockerConfig{
+		IntegrationConfig: &storage.ImageIntegration_Docker{
+			Docker: &storage.DockerConfig{
 				Endpoint: "registry-1.docker.io",
 			},
 		},
-		Categories: []v1.ImageIntegrationCategory{v1.ImageIntegrationCategory_REGISTRY},
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 	}
-	integrationWithInvalidCluster = &v1.ImageIntegration{
+	integrationWithInvalidCluster = &storage.ImageIntegration{
 		Name: "public dockerhub",
 		Type: "docker",
-		IntegrationConfig: &v1.ImageIntegration_Docker{
-			Docker: &v1.DockerConfig{
+		IntegrationConfig: &storage.ImageIntegration_Docker{
+			Docker: &storage.DockerConfig{
 				Endpoint: "registry-1.docker.io",
 			},
 		},
 		Clusters:   []string{"foo"},
-		Categories: []v1.ImageIntegrationCategory{v1.ImageIntegrationCategory_REGISTRY},
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
 	}
-	integrationWithNoCategories = &v1.ImageIntegration{
+	integrationWithNoCategories = &storage.ImageIntegration{
 		Name: "public dockerhub",
 		Type: "docker",
-		IntegrationConfig: &v1.ImageIntegration_Docker{
-			Docker: &v1.DockerConfig{
+		IntegrationConfig: &storage.ImageIntegration_Docker{
+			Docker: &storage.DockerConfig{
 				Endpoint: "registry-1.docker.io",
 			},
 		},
 		Clusters:   []string{"remote"},
-		Categories: []v1.ImageIntegrationCategory{},
+		Categories: []storage.ImageIntegrationCategory{},
 	}
 )
 

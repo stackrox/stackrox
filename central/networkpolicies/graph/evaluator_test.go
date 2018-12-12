@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
-var networkPolicyFixtures = map[string]*v1.NetworkPolicy{}
+var networkPolicyFixtures = map[string]*storage.NetworkPolicy{}
 
 func init() {
 	for _, policyYAML := range networkPolicyFixtureYAMLs {
@@ -28,8 +28,8 @@ func init() {
 
 type namespaceGetter struct{}
 
-func (n *namespaceGetter) GetNamespaces() ([]*v1.Namespace, error) {
-	return []*v1.Namespace{
+func (n *namespaceGetter) GetNamespaces() ([]*storage.Namespace, error) {
+	return []*storage.Namespace{
 		{
 			Name: "default",
 			Labels: map[string]string{
@@ -55,30 +55,30 @@ func newMockGraphEvaluator() *evaluatorImpl {
 func TestDoesNamespaceMatchLabel(t *testing.T) {
 	cases := []struct {
 		name      string
-		namespace *v1.Namespace
-		selector  *v1.LabelSelector
+		namespace *storage.Namespace
+		selector  *storage.LabelSelector
 		expected  bool
 	}{
 		{
 			name:      "No values in selector - no namespace labels",
-			namespace: &v1.Namespace{},
-			selector:  &v1.LabelSelector{},
+			namespace: &storage.Namespace{},
+			selector:  &storage.LabelSelector{},
 			expected:  true,
 		},
 		{
 			name:      "No values in selector - some namespace labels",
-			namespace: &v1.Namespace{},
-			selector:  &v1.LabelSelector{},
+			namespace: &storage.Namespace{},
+			selector:  &storage.LabelSelector{},
 			expected:  true,
 		},
 		{
 			name: "matching values in selector",
-			namespace: &v1.Namespace{
+			namespace: &storage.Namespace{
 				Labels: map[string]string{
 					"hello": "hi",
 				},
 			},
-			selector: &v1.LabelSelector{
+			selector: &storage.LabelSelector{
 				MatchLabels: map[string]string{
 					"hello": "hi",
 				},
@@ -87,12 +87,12 @@ func TestDoesNamespaceMatchLabel(t *testing.T) {
 		},
 		{
 			name: "non matching values in selector",
-			namespace: &v1.Namespace{
+			namespace: &storage.Namespace{
 				Labels: map[string]string{
 					"hello": "hi1",
 				},
 			},
-			selector: &v1.LabelSelector{
+			selector: &storage.LabelSelector{
 				MatchLabels: map[string]string{
 					"hello": "hi",
 				},
@@ -112,19 +112,19 @@ func TestDoesPodLabelsMatchLabel(t *testing.T) {
 	cases := []struct {
 		name       string
 		deployment *storage.Deployment
-		selector   *v1.LabelSelector
+		selector   *storage.LabelSelector
 		expected   bool
 	}{
 		{
 			name:       "No values in selector - no deployment labels",
 			deployment: &storage.Deployment{},
-			selector:   &v1.LabelSelector{},
+			selector:   &storage.LabelSelector{},
 			expected:   true,
 		},
 		{
 			name:       "No values in selector - some deployment labels",
 			deployment: &storage.Deployment{},
-			selector:   &v1.LabelSelector{},
+			selector:   &storage.LabelSelector{},
 			expected:   true,
 		},
 		{
@@ -134,7 +134,7 @@ func TestDoesPodLabelsMatchLabel(t *testing.T) {
 					"hello": "hi",
 				},
 			},
-			selector: &v1.LabelSelector{
+			selector: &storage.LabelSelector{
 				MatchLabels: map[string]string{
 					"hello": "hi",
 				},
@@ -148,7 +148,7 @@ func TestDoesPodLabelsMatchLabel(t *testing.T) {
 					"hello": "hi1",
 				},
 			},
-			selector: &v1.LabelSelector{
+			selector: &storage.LabelSelector{
 				MatchLabels: map[string]string{
 					"hello": "hi",
 				},
@@ -167,27 +167,27 @@ func TestDoesPodLabelsMatchLabel(t *testing.T) {
 func TestHasEgress(t *testing.T) {
 	cases := []struct {
 		name        string
-		policyTypes []v1.NetworkPolicyType
+		policyTypes []storage.NetworkPolicyType
 		expected    bool
 	}{
 		{
 			name:        "no values",
-			policyTypes: []v1.NetworkPolicyType{},
+			policyTypes: []storage.NetworkPolicyType{},
 			expected:    false,
 		},
 		{
 			name:        "ingress only",
-			policyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
+			policyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
 			expected:    false,
 		},
 		{
 			name:        "egress only",
-			policyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
+			policyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
 			expected:    true,
 		},
 		{
 			name:        "ingress + egress only",
-			policyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE, v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
+			policyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE, storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
 			expected:    true,
 		},
 	}
@@ -202,27 +202,27 @@ func TestHasEgress(t *testing.T) {
 func TestHasIngress(t *testing.T) {
 	cases := []struct {
 		name        string
-		policyTypes []v1.NetworkPolicyType
+		policyTypes []storage.NetworkPolicyType
 		expected    bool
 	}{
 		{
 			name:        "no values",
-			policyTypes: []v1.NetworkPolicyType{},
+			policyTypes: []storage.NetworkPolicyType{},
 			expected:    true,
 		},
 		{
 			name:        "ingress only",
-			policyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
+			policyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE},
 			expected:    true,
 		},
 		{
 			name:        "egress only",
-			policyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
+			policyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
 			expected:    false,
 		},
 		{
 			name:        "ingress + egress only",
-			policyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE, v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
+			policyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE, storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
 			expected:    true,
 		},
 	}
@@ -240,14 +240,14 @@ func TestMatchPolicyPeer(t *testing.T) {
 	cases := []struct {
 		name            string
 		deployment      *storage.Deployment
-		peer            *v1.NetworkPolicyPeer
+		peer            *storage.NetworkPolicyPeer
 		policyNamespace string
 		expected        bool
 	}{
 		{
 			name:       "ip block",
 			deployment: &storage.Deployment{},
-			peer:       &v1.NetworkPolicyPeer{IpBlock: &v1.IPBlock{}},
+			peer:       &storage.NetworkPolicyPeer{IpBlock: &storage.IPBlock{}},
 			expected:   false,
 		},
 		{
@@ -258,8 +258,8 @@ func TestMatchPolicyPeer(t *testing.T) {
 					"key": "value1",
 				},
 			},
-			peer: &v1.NetworkPolicyPeer{
-				PodSelector: &v1.LabelSelector{
+			peer: &storage.NetworkPolicyPeer{
+				PodSelector: &storage.LabelSelector{
 					MatchLabels: map[string]string{
 						"key": "value",
 					},
@@ -274,8 +274,8 @@ func TestMatchPolicyPeer(t *testing.T) {
 					"key": "value",
 				},
 			},
-			peer: &v1.NetworkPolicyPeer{
-				PodSelector: &v1.LabelSelector{
+			peer: &storage.NetworkPolicyPeer{
+				PodSelector: &storage.LabelSelector{
 					MatchLabels: map[string]string{
 						"key": "value",
 					},
@@ -288,8 +288,8 @@ func TestMatchPolicyPeer(t *testing.T) {
 			deployment: &storage.Deployment{
 				Namespace: "default",
 			},
-			peer: &v1.NetworkPolicyPeer{
-				NamespaceSelector: &v1.LabelSelector{
+			peer: &storage.NetworkPolicyPeer{
+				NamespaceSelector: &storage.LabelSelector{
 					MatchLabels: map[string]string{
 						"name": "default",
 					},
@@ -303,8 +303,8 @@ func TestMatchPolicyPeer(t *testing.T) {
 			deployment: &storage.Deployment{
 				Namespace: "default",
 			},
-			peer: &v1.NetworkPolicyPeer{
-				NamespaceSelector: &v1.LabelSelector{
+			peer: &storage.NetworkPolicyPeer{
+				NamespaceSelector: &storage.LabelSelector{
 					MatchLabels: map[string]string{
 						"key": "value1",
 					},
@@ -318,8 +318,8 @@ func TestMatchPolicyPeer(t *testing.T) {
 			deployment: &storage.Deployment{
 				Namespace: "default",
 			},
-			peer: &v1.NetworkPolicyPeer{
-				NamespaceSelector: &v1.LabelSelector{
+			peer: &storage.NetworkPolicyPeer{
+				NamespaceSelector: &storage.LabelSelector{
 					MatchLabels: map[string]string{
 						"key": "value1",
 					},
@@ -342,7 +342,7 @@ func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 	cases := []struct {
 		name     string
 		d        *storage.Deployment
-		np       *v1.NetworkPolicy
+		np       *storage.NetworkPolicy
 		expected bool
 	}{
 		{
@@ -350,7 +350,7 @@ func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 			d: &storage.Deployment{
 				Namespace: "default",
 			},
-			np: &v1.NetworkPolicy{
+			np: &storage.NetworkPolicy{
 				Namespace: "stackrox",
 			},
 			expected: false,
@@ -363,10 +363,10 @@ func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 				},
 				Namespace: "default",
 			},
-			np: &v1.NetworkPolicy{
+			np: &storage.NetworkPolicy{
 				Namespace: "default",
-				Spec: &v1.NetworkPolicySpec{
-					PodSelector: &v1.LabelSelector{
+				Spec: &storage.NetworkPolicySpec{
+					PodSelector: &storage.LabelSelector{
 						MatchLabels: map[string]string{
 							"key1": "value2",
 						},
@@ -383,10 +383,10 @@ func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 				},
 				Namespace: "default",
 			},
-			np: &v1.NetworkPolicy{
+			np: &storage.NetworkPolicy{
 				Namespace: "default",
-				Spec: &v1.NetworkPolicySpec{
-					PodSelector: &v1.LabelSelector{
+				Spec: &storage.NetworkPolicySpec{
+					PodSelector: &storage.LabelSelector{
 						MatchLabels: map[string]string{
 							"key1": "value1",
 						},
@@ -403,15 +403,15 @@ func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 				},
 				Namespace: "default",
 			},
-			np: &v1.NetworkPolicy{
+			np: &storage.NetworkPolicy{
 				Namespace: "default",
-				Spec: &v1.NetworkPolicySpec{
-					PodSelector: &v1.LabelSelector{
+				Spec: &storage.NetworkPolicySpec{
+					PodSelector: &storage.LabelSelector{
 						MatchLabels: map[string]string{
 							"key1": "value1",
 						},
 					},
-					PolicyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
+					PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
 				},
 			},
 			expected: false,
@@ -428,7 +428,7 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 	cases := []struct {
 		name           string
 		d              *storage.Deployment
-		np             *v1.NetworkPolicy
+		np             *storage.NetworkPolicy
 		expected       bool
 		internetAccess bool
 	}{
@@ -437,7 +437,7 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 			d: &storage.Deployment{
 				Namespace: "default",
 			},
-			np: &v1.NetworkPolicy{
+			np: &storage.NetworkPolicy{
 				Namespace: "stackrox",
 			},
 			expected: false,
@@ -450,10 +450,10 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 				},
 				Namespace: "default",
 			},
-			np: &v1.NetworkPolicy{
+			np: &storage.NetworkPolicy{
 				Namespace: "default",
-				Spec: &v1.NetworkPolicySpec{
-					PodSelector: &v1.LabelSelector{
+				Spec: &storage.NetworkPolicySpec{
+					PodSelector: &storage.LabelSelector{
 						MatchLabels: map[string]string{
 							"key1": "value2",
 						},
@@ -470,10 +470,10 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 				},
 				Namespace: "default",
 			},
-			np: &v1.NetworkPolicy{
+			np: &storage.NetworkPolicy{
 				Namespace: "default",
-				Spec: &v1.NetworkPolicySpec{
-					PodSelector: &v1.LabelSelector{
+				Spec: &storage.NetworkPolicySpec{
+					PodSelector: &storage.LabelSelector{
 						MatchLabels: map[string]string{
 							"key1": "value1",
 						},
@@ -490,15 +490,15 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 				},
 				Namespace: "default",
 			},
-			np: &v1.NetworkPolicy{
+			np: &storage.NetworkPolicy{
 				Namespace: "default",
-				Spec: &v1.NetworkPolicySpec{
-					PodSelector: &v1.LabelSelector{
+				Spec: &storage.NetworkPolicySpec{
+					PodSelector: &storage.LabelSelector{
 						MatchLabels: map[string]string{
 							"key1": "value1",
 						},
 					},
-					PolicyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
+					PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
 				},
 			},
 			expected: true,
@@ -511,26 +511,26 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 				},
 				Namespace: "default",
 			},
-			np: &v1.NetworkPolicy{
+			np: &storage.NetworkPolicy{
 				Namespace: "default",
-				Spec: &v1.NetworkPolicySpec{
-					PodSelector: &v1.LabelSelector{
+				Spec: &storage.NetworkPolicySpec{
+					PodSelector: &storage.LabelSelector{
 						MatchLabels: map[string]string{
 							"key1": "value1",
 						},
 					},
-					Egress: []*v1.NetworkPolicyEgressRule{
+					Egress: []*storage.NetworkPolicyEgressRule{
 						{
-							To: []*v1.NetworkPolicyPeer{
+							To: []*storage.NetworkPolicyPeer{
 								{
-									IpBlock: &v1.IPBlock{
+									IpBlock: &storage.IPBlock{
 										Cidr: "127.0.0.1/32",
 									},
 								},
 							},
 						},
 					},
-					PolicyTypes: []v1.NetworkPolicyType{v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
+					PolicyTypes: []storage.NetworkPolicyType{storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE},
 				},
 			},
 			expected:       true,
@@ -546,7 +546,7 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 	}
 }
 
-func getExamplePolicy(name string) *v1.NetworkPolicy {
+func getExamplePolicy(name string) *storage.NetworkPolicy {
 	np, ok := networkPolicyFixtures[name]
 	if !ok {
 		panic(name)
@@ -600,11 +600,11 @@ func createNode(node string, namespace string, internetAccess bool, policies ...
 		policies = []string{}
 	}
 	return &v1.NetworkNode{
-		Entity: &v1.NetworkEntityInfo{
-			Type: v1.NetworkEntityInfo_DEPLOYMENT,
+		Entity: &storage.NetworkEntityInfo{
+			Type: storage.NetworkEntityInfo_DEPLOYMENT,
 			Id:   node,
-			Desc: &v1.NetworkEntityInfo_Deployment_{
-				Deployment: &v1.NetworkEntityInfo_Deployment{
+			Desc: &storage.NetworkEntityInfo_Deployment_{
+				Deployment: &storage.NetworkEntityInfo_Deployment{
 					Namespace: namespace,
 				},
 			},
@@ -634,7 +634,7 @@ func TestEvaluateClusters(t *testing.T) {
 	cases := []struct {
 		name        string
 		deployments []*storage.Deployment
-		nps         []*v1.NetworkPolicy
+		nps         []*storage.NetworkPolicy
 		edges       []edge
 		nodes       []*v1.NetworkNode
 	}{
@@ -675,7 +675,7 @@ func TestEvaluateClusters(t *testing.T) {
 				egressEdges("d1", "d2", "d3"),
 				fullyConnectedEdges("d2", "d3"),
 			),
-			nps: []*v1.NetworkPolicy{
+			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("web-deny-all"),
 			},
 			nodes: []*v1.NetworkNode{
@@ -708,7 +708,7 @@ func TestEvaluateClusters(t *testing.T) {
 				fullyConnectedEdges("d2", "d3"),
 				ingressEdges("d3", "d1"),
 			),
-			nps: []*v1.NetworkPolicy{
+			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("limit-traffic"),
 			},
 			nodes: []*v1.NetworkNode{
@@ -737,7 +737,7 @@ func TestEvaluateClusters(t *testing.T) {
 			edges: flattenEdges(
 				fullyConnectedEdges("d1", "d2", "d3"),
 			),
-			nps: []*v1.NetworkPolicy{
+			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("web-deny-all"),
 				getExamplePolicy("web-allow-all"),
 			},
@@ -768,7 +768,7 @@ func TestEvaluateClusters(t *testing.T) {
 				egressEdges("d1", "d3"),
 				egressEdges("d2", "d3"),
 			),
-			nps: []*v1.NetworkPolicy{
+			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("default-deny-all"),
 			},
 			nodes: []*v1.NetworkNode{
@@ -798,7 +798,7 @@ func TestEvaluateClusters(t *testing.T) {
 				egressEdges("d1", "d3"),
 				egressEdges("d2", "d3"),
 			),
-			nps: []*v1.NetworkPolicy{
+			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("deny-from-other-namespaces"),
 			},
 			nodes: []*v1.NetworkNode{
@@ -829,7 +829,7 @@ func TestEvaluateClusters(t *testing.T) {
 				fullyConnectedEdges("d1", "d3"),
 				egressEdges("d2", "d3"),
 			),
-			nps: []*v1.NetworkPolicy{
+			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("deny-from-other-namespaces"),
 				getExamplePolicy("web-allow-all-namespaces"),
 			},
@@ -861,7 +861,7 @@ func TestEvaluateClusters(t *testing.T) {
 				fullyConnectedEdges("d2", "d3"),
 				egressEdges("d1", "d2"),
 			),
-			nps: []*v1.NetworkPolicy{
+			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("web-allow-stackrox"),
 			},
 			nodes: []*v1.NetworkNode{
@@ -897,7 +897,7 @@ func TestEvaluateClusters(t *testing.T) {
 				fullyConnectedEdges("d2", "d3", "d4"),
 				egressEdges("d1", "d2", "d3", "d4"),
 			),
-			nps: []*v1.NetworkPolicy{
+			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("web-deny-all"),
 				getExamplePolicy("allow-traffic-from-apps-using-multiple-selectors"),
 			},
@@ -924,7 +924,7 @@ func TestEvaluateClusters(t *testing.T) {
 			edges: flattenEdges(
 				ingressEdges("d1", "d2"),
 			),
-			nps: []*v1.NetworkPolicy{
+			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("web-deny-egress"),
 			},
 			nodes: []*v1.NetworkNode{
@@ -952,7 +952,7 @@ func TestEvaluateClusters(t *testing.T) {
 			edges: flattenEdges(
 				egressEdges("d3", "d1", "d2"),
 			),
-			nps: []*v1.NetworkPolicy{
+			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("default-deny-all-egress"),
 			},
 			nodes: []*v1.NetworkNode{
@@ -981,7 +981,7 @@ func TestEvaluateClusters(t *testing.T) {
 			edges: flattenEdges(
 				fullyConnectedEdges("d1", "d2", "d3"),
 			),
-			nps: []*v1.NetworkPolicy{
+			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("web-deny-external-egress"),
 			},
 			nodes: []*v1.NetworkNode{
@@ -1017,7 +1017,7 @@ func TestEvaluateClusters(t *testing.T) {
 				ingressEdges("d3", "d1", "d2", "d4"),
 				ingressEdges("d4", "d1", "d2", "d3"),
 			),
-			nps: []*v1.NetworkPolicy{
+			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("deny-all-ingress"),
 				getExamplePolicy("allow-ingress-to-web"),
 			},

@@ -5,7 +5,6 @@ import (
 
 	manifestV2 "github.com/docker/distribution/manifest/schema2"
 	"github.com/heroku/docker-registry-client/registry"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
@@ -20,19 +19,19 @@ var (
 )
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageRegistry, error)) {
-	return "tenable", func(integration *v1.ImageIntegration) (types.ImageRegistry, error) {
+func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageRegistry, error)) {
+	return "tenable", func(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
 		reg, err := newRegistry(integration)
 		return reg, err
 	}
 }
 
 type tenableRegistry struct {
-	protoImageIntegration *v1.ImageIntegration
+	protoImageIntegration *storage.ImageIntegration
 
 	client *registry.Registry
 
-	config    *v1.TenableConfig
+	config    *storage.TenableConfig
 	transport *transports.PersistentTokenTransport
 }
 
@@ -53,7 +52,7 @@ func (n nilClient) Repositories() ([]string, error) {
 	return nil, n.error
 }
 
-func validate(config *v1.TenableConfig) error {
+func validate(config *storage.TenableConfig) error {
 	errorList := errorhelpers.NewErrorList("Tenable Validation")
 	if config.GetAccessKey() == "" {
 		errorList.AddString("Access key must be specified for Tenable scanner")
@@ -64,8 +63,8 @@ func validate(config *v1.TenableConfig) error {
 	return errorList.ToError()
 }
 
-func newRegistry(integration *v1.ImageIntegration) (*tenableRegistry, error) {
-	tenableConfig, ok := integration.IntegrationConfig.(*v1.ImageIntegration_Tenable)
+func newRegistry(integration *storage.ImageIntegration) (*tenableRegistry, error) {
+	tenableConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Tenable)
 	if !ok {
 		return nil, fmt.Errorf("Tenable configuration required")
 	}

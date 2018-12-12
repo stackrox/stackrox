@@ -4,12 +4,13 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import "api/v1/indicator.proto";
-import "api/v1/network_policy_service.proto";
-import "api/v1/node.proto";
-import "api/v1/policy_service.proto";
-import "api/v1/secret_service.proto";
 
 import "storage/deployment.proto";
+import "storage/namespace.proto";
+import "storage/network_policy.proto";
+import "storage/node.proto";
+import "storage/secret.proto";
+import "storage/policy.proto";
 
 package v1;
 
@@ -27,11 +28,11 @@ message SensorEvent {
     string         cluster_id                   = 3;
 
     oneof resource {
-        NetworkPolicy    network_policy    = 4;
+        storage.NetworkPolicy    network_policy    = 4;
         storage.Deployment       deployment        = 5;
-        Namespace        namespace         = 6;
-        Secret           secret            = 7;
-        Node             node              = 9;
+        storage.Namespace        namespace         = 6;
+        storage.Secret           secret            = 7;
+        storage.Node             node              = 9;
 
         // Indicators
         ProcessIndicator process_indicator = 8;
@@ -39,7 +40,7 @@ message SensorEvent {
 }
 
 message SensorEnforcement {
-    EnforcementAction enforcement = 1;
+    storage.EnforcementAction enforcement = 1;
 
     oneof resource {
         DeploymentEnforcement        deployment         = 2;

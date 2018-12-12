@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkentity"
@@ -16,17 +16,17 @@ import (
 
 var log = logging.LoggerForModule()
 
-func getFlows(maxNetworkFlows int) []*v1.NetworkFlow {
+func getFlows(maxNetworkFlows int) []*storage.NetworkFlow {
 	numDeployments := int(math.Sqrt(float64(maxNetworkFlows)))
 
-	flows := make([]*v1.NetworkFlow, 0, numDeployments*numDeployments)
+	flows := make([]*storage.NetworkFlow, 0, numDeployments*numDeployments)
 	for i := 0; i < numDeployments; i++ {
 		for j := 0; j < numDeployments; j++ {
-			flow := &v1.NetworkFlow{
-				Props: &v1.NetworkFlowProperties{
+			flow := &storage.NetworkFlow{
+				Props: &storage.NetworkFlowProperties{
 					SrcEntity:  networkentity.ForDeployment(fmt.Sprintf("%d", i)).ToProto(),
 					DstEntity:  networkentity.ForDeployment(fmt.Sprintf("%d", j)).ToProto(),
-					L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
+					L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 					DstPort:    80,
 				},
 			}
@@ -84,11 +84,11 @@ func BenchmarkLeveledFlows(b *testing.B) {
 }
 
 func BenchmarkGetID(b *testing.B) {
-	props := &v1.NetworkFlowProperties{
+	props := &storage.NetworkFlowProperties{
 		SrcEntity:  networkentity.ForDeployment(uuid.NewV4().String()).ToProto(),
 		DstEntity:  networkentity.ForDeployment(uuid.NewV4().String()).ToProto(),
 		DstPort:    9999,
-		L4Protocol: v1.L4Protocol_L4_PROTOCOL_UDP,
+		L4Protocol: storage.L4Protocol_L4_PROTOCOL_UDP,
 	}
 	for i := 0; i < b.N; i++ {
 		getID(props)

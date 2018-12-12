@@ -13,19 +13,14 @@ import (
 var (
 	once sync.Once
 
-	indexer  index.Indexer
-	storage  store.Store
-	searcher search.Searcher
-
 	ad DataStore
 )
 
 func initialize() {
-	storage = store.New(globaldb.GetGlobalDB())
-	indexer = index.New(globalindex.GetGlobalIndex())
+	storage := store.New(globaldb.GetGlobalDB())
+	indexer := index.New(globalindex.GetGlobalIndex())
 
-	var err error
-	searcher, err = search.New(storage, indexer)
+	searcher, err := search.New(storage, indexer)
 	if err != nil {
 		panic("unable to load search index for alerts")
 	}

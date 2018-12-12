@@ -3,7 +3,7 @@ package integration
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners"
@@ -42,7 +42,7 @@ func (e *setImpl) Clear() {
 }
 
 // UpdateImageIntegration updates the integration with the matching id to a new configuration.
-func (e *setImpl) UpdateImageIntegration(integration *v1.ImageIntegration) (err error) {
+func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) (err error) {
 	err = validateCommonFields(integration)
 	if err != nil {
 		return
@@ -50,9 +50,9 @@ func (e *setImpl) UpdateImageIntegration(integration *v1.ImageIntegration) (err 
 
 	for _, category := range integration.GetCategories() {
 		switch category {
-		case v1.ImageIntegrationCategory_REGISTRY:
+		case storage.ImageIntegrationCategory_REGISTRY:
 			err = e.registrySet.UpdateImageIntegration(integration)
-		case v1.ImageIntegrationCategory_SCANNER:
+		case storage.ImageIntegrationCategory_SCANNER:
 			err = e.scannerSet.UpdateImageIntegration(integration)
 		default:
 			err = fmt.Errorf("Source category '%s' has not been implemented", category)
@@ -71,7 +71,7 @@ func (e *setImpl) RemoveImageIntegration(id string) (err error) {
 	return
 }
 
-func validateCommonFields(source *v1.ImageIntegration) error {
+func validateCommonFields(source *storage.ImageIntegration) error {
 	errorList := errorhelpers.NewErrorList("Validation")
 	if source.GetName() == "" {
 		errorList.AddString("Source name must be defined")

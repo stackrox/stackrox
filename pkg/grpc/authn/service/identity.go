@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/mtls"
 )
@@ -13,7 +14,7 @@ type identity struct {
 	id mtls.Identity
 }
 
-func (i identity) Service() *v1.ServiceIdentity {
+func (i identity) Service() *storage.ServiceIdentity {
 	return i.id.V1()
 }
 

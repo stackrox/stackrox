@@ -4,7 +4,7 @@ import (
 	"strconv"
 
 	"github.com/stackrox/rox/central/searchbasedpolicies/builders"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -14,7 +14,7 @@ var (
 			{
 				FieldLabel:     search.Port,
 				FieldHumanName: "Port",
-				RetrieveFieldValue: func(fields *v1.PolicyFields) string {
+				RetrieveFieldValue: func(fields *storage.PolicyFields) string {
 					port := fields.GetPortPolicy().GetPort()
 					if port == 0 {
 						return ""
@@ -25,7 +25,7 @@ var (
 			{
 				FieldLabel:     search.PortProtocol,
 				FieldHumanName: "Protocol",
-				RetrieveFieldValue: func(fields *v1.PolicyFields) string {
+				RetrieveFieldValue: func(fields *storage.PolicyFields) string {
 					return fields.GetPortPolicy().GetProtocol()
 				},
 			},

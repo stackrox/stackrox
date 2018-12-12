@@ -5,16 +5,17 @@ import (
 
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 type resourcePolicyBuilder struct {
-	extractFieldValue func(fields *v1.PolicyFields) *v1.NumericalPolicy
+	extractFieldValue func(fields *storage.PolicyFields) *storage.NumericalPolicy
 	fieldLabel        search.FieldLabel
 	fieldHumanName    string
 }
 
-func (r *resourcePolicyBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
+func (r *resourcePolicyBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	numericalPolicy := r.extractFieldValue(fields)
 	if numericalPolicy == nil {
 		return
@@ -38,7 +39,7 @@ func (r *resourcePolicyBuilder) Name() string {
 }
 
 // NewResourcePolicyBuilder returns a resource policy builder with the specified parameters.
-func NewResourcePolicyBuilder(extractFieldValue func(fields *v1.PolicyFields) *v1.NumericalPolicy, fieldLabel search.FieldLabel, fieldHumanName string) searchbasedpolicies.PolicyQueryBuilder {
+func NewResourcePolicyBuilder(extractFieldValue func(fields *storage.PolicyFields) *storage.NumericalPolicy, fieldLabel search.FieldLabel, fieldHumanName string) searchbasedpolicies.PolicyQueryBuilder {
 	return &resourcePolicyBuilder{
 		extractFieldValue: extractFieldValue,
 		fieldHumanName:    fieldHumanName,

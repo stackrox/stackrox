@@ -10,6 +10,7 @@ import (
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/searchbasedpolicies/builders"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -99,7 +100,7 @@ func getMostRecentProcessTimestampInAlerts(alerts ...*v1.Alert) (ts *ptypes.Time
 // It returns a bool indicating whether the alert contained only resolved processes -- in which case
 // we don't want to generate an alert at all.
 func (d *alertManagerImpl) trimResolvedProcessesFromRuntimeAlert(alert *v1.Alert) (isFullyResolved bool) {
-	if alert.GetLifecycleStage() != v1.LifecycleStage_RUNTIME {
+	if alert.GetLifecycleStage() != storage.LifecycleStage_RUNTIME {
 		return false
 	}
 
@@ -187,7 +188,7 @@ func mergeProcessesFromOldIntoNew(old, newAlert *v1.Alert) (newAlertHasNewProces
 
 // MergeAlerts merges two alerts.
 func mergeAlerts(old, newAlert *v1.Alert) *v1.Alert {
-	if old.GetLifecycleStage() == v1.LifecycleStage_RUNTIME && newAlert.GetLifecycleStage() == v1.LifecycleStage_RUNTIME {
+	if old.GetLifecycleStage() == storage.LifecycleStage_RUNTIME && newAlert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME {
 		newAlertHasNewProcesses := mergeProcessesFromOldIntoNew(old, newAlert)
 		// This ensures that we don't keep updating an old runtime alert, so that we have idempotent checks.
 		if !newAlertHasNewProcesses {
@@ -197,7 +198,7 @@ func mergeAlerts(old, newAlert *v1.Alert) *v1.Alert {
 
 	newAlert.Id = old.GetId()
 	// Updated deploy-time alerts continue to have the same enforcement action.
-	if newAlert.GetLifecycleStage() == v1.LifecycleStage_DEPLOY && old.GetLifecycleStage() == v1.LifecycleStage_DEPLOY {
+	if newAlert.GetLifecycleStage() == storage.LifecycleStage_DEPLOY && old.GetLifecycleStage() == storage.LifecycleStage_DEPLOY {
 		newAlert.Enforcement = old.GetEnforcement()
 		// Don't keep updating the timestamp of the violation _unless_ the violations are actually different.
 		if protoutils.EqualV1Alert_ViolationSlices(newAlert.GetViolations(), old.GetViolations()) {
@@ -254,7 +255,7 @@ func (d *alertManagerImpl) shouldMarkAlertStale(alert *v1.Alert, presentAlerts [
 
 	// Only runtime alerts should not be marked stale when they are no longer produced.
 	// (Deploy time alerts should disappear along with deployments, for example.)
-	if alert.GetLifecycleStage() != v1.LifecycleStage_RUNTIME {
+	if alert.GetLifecycleStage() != storage.LifecycleStage_RUNTIME {
 		return true
 	}
 

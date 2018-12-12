@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 )
 
@@ -26,7 +27,7 @@ func (i *roleBasedIdentity) Role() *v1.Role {
 	return i.role
 }
 
-func (i *roleBasedIdentity) Service() *v1.ServiceIdentity {
+func (i *roleBasedIdentity) Service() *storage.ServiceIdentity {
 	return nil
 }
 

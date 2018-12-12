@@ -1,7 +1,7 @@
 package registries
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	artifactoryFactory "github.com/stackrox/rox/pkg/registries/artifactory"
 	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
 	dtrFactory "github.com/stackrox/rox/pkg/registries/dtr"
@@ -13,11 +13,11 @@ import (
 )
 
 // Creator is the func stub that defines how to instantiate an image registry.
-type Creator func(scanner *v1.ImageIntegration) (types.ImageRegistry, error)
+type Creator func(scanner *storage.ImageIntegration) (types.ImageRegistry, error)
 
 // Factory provides a centralized location for creating ImageScanner from v1.ImageIntegrations.
 type Factory interface {
-	CreateRegistry(source *v1.ImageIntegration) (types.ImageRegistry, error)
+	CreateRegistry(source *storage.ImageIntegration) (types.ImageRegistry, error)
 }
 
 // NewFactory creates a new scanner factory.

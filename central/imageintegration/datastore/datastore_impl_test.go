@@ -7,6 +7,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -50,19 +51,19 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrations() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsFiltering() {
-	integrations := []*v1.ImageIntegration{
+	integrations := []*storage.ImageIntegration{
 		{
 			Name: "registry1",
-			IntegrationConfig: &v1.ImageIntegration_Docker{
-				Docker: &v1.DockerConfig{
+			IntegrationConfig: &storage.ImageIntegration_Docker{
+				Docker: &storage.DockerConfig{
 					Endpoint: "https://endpoint1",
 				},
 			},
 		},
 		{
 			Name: "registry2",
-			IntegrationConfig: &v1.ImageIntegration_Docker{
-				Docker: &v1.DockerConfig{
+			IntegrationConfig: &storage.ImageIntegration_Docker{
+				Docker: &storage.DockerConfig{
 					Endpoint: "https://endpoint2",
 				},
 			},
@@ -82,19 +83,19 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsFiltering() {
 }
 
 func testIntegrations(t *testing.T, insertStorage, retrievalStorage store.Store) {
-	integrations := []*v1.ImageIntegration{
+	integrations := []*storage.ImageIntegration{
 		{
 			Name: "registry1",
-			IntegrationConfig: &v1.ImageIntegration_Docker{
-				Docker: &v1.DockerConfig{
+			IntegrationConfig: &storage.ImageIntegration_Docker{
+				Docker: &storage.DockerConfig{
 					Endpoint: "https://endpoint1",
 				},
 			},
 		},
 		{
 			Name: "registry2",
-			IntegrationConfig: &v1.ImageIntegration_Docker{
-				Docker: &v1.DockerConfig{
+			IntegrationConfig: &storage.ImageIntegration_Docker{
+				Docker: &storage.DockerConfig{
 					Endpoint: "https://endpoint2",
 				},
 			},

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 const (
@@ -27,12 +28,12 @@ const (
 )
 
 var (
-	comparatorRepresentation = map[v1.Comparator]string{
-		v1.Comparator_LESS_THAN:              "<",
-		v1.Comparator_LESS_THAN_OR_EQUALS:    "<=",
-		v1.Comparator_EQUALS:                 "",
-		v1.Comparator_GREATER_THAN_OR_EQUALS: ">=",
-		v1.Comparator_GREATER_THAN:           ">",
+	comparatorRepresentation = map[storage.Comparator]string{
+		storage.Comparator_LESS_THAN:              "<",
+		storage.Comparator_LESS_THAN_OR_EQUALS:    "<=",
+		storage.Comparator_EQUALS:                 "",
+		storage.Comparator_GREATER_THAN_OR_EQUALS: ">=",
+		storage.Comparator_GREATER_THAN:           ">",
 	}
 )
 
@@ -57,7 +58,7 @@ func NullQueryString() string {
 }
 
 // NumericQueryString converts a numeric query to the string query format.
-func NumericQueryString(comparator v1.Comparator, value float32) string {
+func NumericQueryString(comparator storage.Comparator, value float32) string {
 	return fmt.Sprintf("%s%.2f", comparatorRepresentation[comparator], value)
 }
 
@@ -218,12 +219,12 @@ func (qb *QueryBuilder) AddBools(k FieldLabel, v ...bool) *QueryBuilder {
 }
 
 // AddNumericField adds a numeric field.
-func (qb *QueryBuilder) AddNumericField(k FieldLabel, comparator v1.Comparator, value float32) *QueryBuilder {
+func (qb *QueryBuilder) AddNumericField(k FieldLabel, comparator storage.Comparator, value float32) *QueryBuilder {
 	return qb.AddStrings(k, NumericQueryString(comparator, value))
 }
 
 // AddNumericFieldHighlighted is a convenience wrapper to AddNumericField and MarkHighlighted.
-func (qb *QueryBuilder) AddNumericFieldHighlighted(k FieldLabel, comparator v1.Comparator, value float32) *QueryBuilder {
+func (qb *QueryBuilder) AddNumericFieldHighlighted(k FieldLabel, comparator storage.Comparator, value float32) *QueryBuilder {
 	return qb.AddNumericField(k, comparator, value).MarkHighlighted(k)
 }
 

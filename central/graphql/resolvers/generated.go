@@ -376,17 +376,17 @@ func toCVSSV2_Impacts(values *[]string) []storage.CVSSV2_Impact {
 
 type certResolver struct {
 	root *Resolver
-	data *v1.Cert
+	data *storage.Cert
 }
 
-func (resolver *Resolver) wrapCert(value *v1.Cert, ok bool, err error) (*certResolver, error) {
+func (resolver *Resolver) wrapCert(value *storage.Cert, ok bool, err error) (*certResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &certResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapCerts(values []*v1.Cert, err error) ([]*certResolver, error) {
+func (resolver *Resolver) wrapCerts(values []*storage.Cert, err error) ([]*certResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -429,17 +429,17 @@ func (resolver *certResolver) Subject() (*certNameResolver, error) {
 
 type certNameResolver struct {
 	root *Resolver
-	data *v1.CertName
+	data *storage.CertName
 }
 
-func (resolver *Resolver) wrapCertName(value *v1.CertName, ok bool, err error) (*certNameResolver, error) {
+func (resolver *Resolver) wrapCertName(value *storage.CertName, ok bool, err error) (*certNameResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &certNameResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapCertNames(values []*v1.CertName, err error) ([]*certNameResolver, error) {
+func (resolver *Resolver) wrapCertNames(values []*storage.CertName, err error) ([]*certNameResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -636,18 +636,18 @@ func (resolver *commonKubernetesParamsResolver) Namespace() string {
 	return value
 }
 
-func toComparator(value *string) v1.Comparator {
+func toComparator(value *string) storage.Comparator {
 	if value != nil {
-		return v1.Comparator(v1.Comparator_value[*value])
+		return storage.Comparator(storage.Comparator_value[*value])
 	}
-	return v1.Comparator(0)
+	return storage.Comparator(0)
 }
 
-func toComparators(values *[]string) []v1.Comparator {
+func toComparators(values *[]string) []storage.Comparator {
 	if values == nil {
 		return nil
 	}
-	output := make([]v1.Comparator, len(*values))
+	output := make([]storage.Comparator, len(*values))
 	for i, v := range *values {
 		output[i] = toComparator(&v)
 	}
@@ -656,17 +656,17 @@ func toComparators(values *[]string) []v1.Comparator {
 
 type componentResolver struct {
 	root *Resolver
-	data *v1.Component
+	data *storage.Component
 }
 
-func (resolver *Resolver) wrapComponent(value *v1.Component, ok bool, err error) (*componentResolver, error) {
+func (resolver *Resolver) wrapComponent(value *storage.Component, ok bool, err error) (*componentResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &componentResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapComponents(values []*v1.Component, err error) ([]*componentResolver, error) {
+func (resolver *Resolver) wrapComponents(values []*storage.Component, err error) ([]*componentResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1097,17 +1097,17 @@ func (resolver *deploymentResolver) Version() string {
 
 type dockerfileLineRuleFieldResolver struct {
 	root *Resolver
-	data *v1.DockerfileLineRuleField
+	data *storage.DockerfileLineRuleField
 }
 
-func (resolver *Resolver) wrapDockerfileLineRuleField(value *v1.DockerfileLineRuleField, ok bool, err error) (*dockerfileLineRuleFieldResolver, error) {
+func (resolver *Resolver) wrapDockerfileLineRuleField(value *storage.DockerfileLineRuleField, ok bool, err error) (*dockerfileLineRuleFieldResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &dockerfileLineRuleFieldResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapDockerfileLineRuleFields(values []*v1.DockerfileLineRuleField, err error) ([]*dockerfileLineRuleFieldResolver, error) {
+func (resolver *Resolver) wrapDockerfileLineRuleFields(values []*storage.DockerfileLineRuleField, err error) ([]*dockerfileLineRuleFieldResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1219,18 +1219,18 @@ func (resolver *embeddedSecretResolver) Path() string {
 	return value
 }
 
-func toEnforcementAction(value *string) v1.EnforcementAction {
+func toEnforcementAction(value *string) storage.EnforcementAction {
 	if value != nil {
-		return v1.EnforcementAction(v1.EnforcementAction_value[*value])
+		return storage.EnforcementAction(storage.EnforcementAction_value[*value])
 	}
-	return v1.EnforcementAction(0)
+	return storage.EnforcementAction(0)
 }
 
-func toEnforcementActions(values *[]string) []v1.EnforcementAction {
+func toEnforcementActions(values *[]string) []storage.EnforcementAction {
 	if values == nil {
 		return nil
 	}
-	output := make([]v1.EnforcementAction, len(*values))
+	output := make([]storage.EnforcementAction, len(*values))
 	for i, v := range *values {
 		output[i] = toEnforcementAction(&v)
 	}
@@ -1544,17 +1544,17 @@ func (resolver *imageNameResolver) Tag() string {
 
 type imageNamePolicyResolver struct {
 	root *Resolver
-	data *v1.ImageNamePolicy
+	data *storage.ImageNamePolicy
 }
 
-func (resolver *Resolver) wrapImageNamePolicy(value *v1.ImageNamePolicy, ok bool, err error) (*imageNamePolicyResolver, error) {
+func (resolver *Resolver) wrapImageNamePolicy(value *storage.ImageNamePolicy, ok bool, err error) (*imageNamePolicyResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &imageNamePolicyResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapImageNamePolicies(values []*v1.ImageNamePolicy, err error) ([]*imageNamePolicyResolver, error) {
+func (resolver *Resolver) wrapImageNamePolicies(values []*storage.ImageNamePolicy, err error) ([]*imageNamePolicyResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1701,17 +1701,17 @@ func (resolver *jiraResolver) Username() string {
 
 type keyValuePolicyResolver struct {
 	root *Resolver
-	data *v1.KeyValuePolicy
+	data *storage.KeyValuePolicy
 }
 
-func (resolver *Resolver) wrapKeyValuePolicy(value *v1.KeyValuePolicy, ok bool, err error) (*keyValuePolicyResolver, error) {
+func (resolver *Resolver) wrapKeyValuePolicy(value *storage.KeyValuePolicy, ok bool, err error) (*keyValuePolicyResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &keyValuePolicyResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapKeyValuePolicies(values []*v1.KeyValuePolicy, err error) ([]*keyValuePolicyResolver, error) {
+func (resolver *Resolver) wrapKeyValuePolicies(values []*storage.KeyValuePolicy, err error) ([]*keyValuePolicyResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1760,18 +1760,18 @@ func (resolver *kubernetesParamsResolver) Params() (*commonKubernetesParamsResol
 	return resolver.root.wrapCommonKubernetesParams(value, true, nil)
 }
 
-func toL4Protocol(value *string) v1.L4Protocol {
+func toL4Protocol(value *string) storage.L4Protocol {
 	if value != nil {
-		return v1.L4Protocol(v1.L4Protocol_value[*value])
+		return storage.L4Protocol(storage.L4Protocol_value[*value])
 	}
-	return v1.L4Protocol(0)
+	return storage.L4Protocol(0)
 }
 
-func toL4Protocols(values *[]string) []v1.L4Protocol {
+func toL4Protocols(values *[]string) []storage.L4Protocol {
 	if values == nil {
 		return nil
 	}
-	output := make([]v1.L4Protocol, len(*values))
+	output := make([]storage.L4Protocol, len(*values))
 	for i, v := range *values {
 		output[i] = toL4Protocol(&v)
 	}
@@ -1816,18 +1816,18 @@ func (resolver *licenseResolver) Url() string {
 	return value
 }
 
-func toLifecycleStage(value *string) v1.LifecycleStage {
+func toLifecycleStage(value *string) storage.LifecycleStage {
 	if value != nil {
-		return v1.LifecycleStage(v1.LifecycleStage_value[*value])
+		return storage.LifecycleStage(storage.LifecycleStage_value[*value])
 	}
-	return v1.LifecycleStage(0)
+	return storage.LifecycleStage(0)
 }
 
-func toLifecycleStages(values *[]string) []v1.LifecycleStage {
+func toLifecycleStages(values *[]string) []storage.LifecycleStage {
 	if values == nil {
 		return nil
 	}
-	output := make([]v1.LifecycleStage, len(*values))
+	output := make([]storage.LifecycleStage, len(*values))
 	for i, v := range *values {
 		output[i] = toLifecycleStage(&v)
 	}
@@ -1864,17 +1864,17 @@ func (resolver *metadataResolver) Version() string {
 
 type networkEntityInfoResolver struct {
 	root *Resolver
-	data *v1.NetworkEntityInfo
+	data *storage.NetworkEntityInfo
 }
 
-func (resolver *Resolver) wrapNetworkEntityInfo(value *v1.NetworkEntityInfo, ok bool, err error) (*networkEntityInfoResolver, error) {
+func (resolver *Resolver) wrapNetworkEntityInfo(value *storage.NetworkEntityInfo, ok bool, err error) (*networkEntityInfoResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &networkEntityInfoResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapNetworkEntityInfos(values []*v1.NetworkEntityInfo, err error) ([]*networkEntityInfoResolver, error) {
+func (resolver *Resolver) wrapNetworkEntityInfos(values []*storage.NetworkEntityInfo, err error) ([]*networkEntityInfoResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1913,17 +1913,17 @@ func (resolver *networkEntityInfoDescResolver) ToNetworkEntityInfo_Deployment() 
 
 type networkEntityInfo_DeploymentResolver struct {
 	root *Resolver
-	data *v1.NetworkEntityInfo_Deployment
+	data *storage.NetworkEntityInfo_Deployment
 }
 
-func (resolver *Resolver) wrapNetworkEntityInfo_Deployment(value *v1.NetworkEntityInfo_Deployment, ok bool, err error) (*networkEntityInfo_DeploymentResolver, error) {
+func (resolver *Resolver) wrapNetworkEntityInfo_Deployment(value *storage.NetworkEntityInfo_Deployment, ok bool, err error) (*networkEntityInfo_DeploymentResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &networkEntityInfo_DeploymentResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapNetworkEntityInfo_Deployments(values []*v1.NetworkEntityInfo_Deployment, err error) ([]*networkEntityInfo_DeploymentResolver, error) {
+func (resolver *Resolver) wrapNetworkEntityInfo_Deployments(values []*storage.NetworkEntityInfo_Deployment, err error) ([]*networkEntityInfo_DeploymentResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1949,18 +1949,18 @@ func (resolver *networkEntityInfo_DeploymentResolver) Namespace() string {
 	return value
 }
 
-func toNetworkEntityInfo_Type(value *string) v1.NetworkEntityInfo_Type {
+func toNetworkEntityInfo_Type(value *string) storage.NetworkEntityInfo_Type {
 	if value != nil {
-		return v1.NetworkEntityInfo_Type(v1.NetworkEntityInfo_Type_value[*value])
+		return storage.NetworkEntityInfo_Type(storage.NetworkEntityInfo_Type_value[*value])
 	}
-	return v1.NetworkEntityInfo_Type(0)
+	return storage.NetworkEntityInfo_Type(0)
 }
 
-func toNetworkEntityInfo_Types(values *[]string) []v1.NetworkEntityInfo_Type {
+func toNetworkEntityInfo_Types(values *[]string) []storage.NetworkEntityInfo_Type {
 	if values == nil {
 		return nil
 	}
-	output := make([]v1.NetworkEntityInfo_Type, len(*values))
+	output := make([]storage.NetworkEntityInfo_Type, len(*values))
 	for i, v := range *values {
 		output[i] = toNetworkEntityInfo_Type(&v)
 	}
@@ -1969,17 +1969,17 @@ func toNetworkEntityInfo_Types(values *[]string) []v1.NetworkEntityInfo_Type {
 
 type networkFlowResolver struct {
 	root *Resolver
-	data *v1.NetworkFlow
+	data *storage.NetworkFlow
 }
 
-func (resolver *Resolver) wrapNetworkFlow(value *v1.NetworkFlow, ok bool, err error) (*networkFlowResolver, error) {
+func (resolver *Resolver) wrapNetworkFlow(value *storage.NetworkFlow, ok bool, err error) (*networkFlowResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &networkFlowResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapNetworkFlows(values []*v1.NetworkFlow, err error) ([]*networkFlowResolver, error) {
+func (resolver *Resolver) wrapNetworkFlows(values []*storage.NetworkFlow, err error) ([]*networkFlowResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2002,17 +2002,17 @@ func (resolver *networkFlowResolver) Props() (*networkFlowPropertiesResolver, er
 
 type networkFlowPropertiesResolver struct {
 	root *Resolver
-	data *v1.NetworkFlowProperties
+	data *storage.NetworkFlowProperties
 }
 
-func (resolver *Resolver) wrapNetworkFlowProperties(value *v1.NetworkFlowProperties, ok bool, err error) (*networkFlowPropertiesResolver, error) {
+func (resolver *Resolver) wrapNetworkFlowProperties(value *storage.NetworkFlowProperties, ok bool, err error) (*networkFlowPropertiesResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &networkFlowPropertiesResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapNetworkFlowPropertieses(values []*v1.NetworkFlowProperties, err error) ([]*networkFlowPropertiesResolver, error) {
+func (resolver *Resolver) wrapNetworkFlowPropertieses(values []*storage.NetworkFlowProperties, err error) ([]*networkFlowPropertiesResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2045,17 +2045,17 @@ func (resolver *networkFlowPropertiesResolver) SrcEntity() (*networkEntityInfoRe
 
 type nodeResolver struct {
 	root *Resolver
-	data *v1.Node
+	data *storage.Node
 }
 
-func (resolver *Resolver) wrapNode(value *v1.Node, ok bool, err error) (*nodeResolver, error) {
+func (resolver *Resolver) wrapNode(value *storage.Node, ok bool, err error) (*nodeResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &nodeResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapNodes(values []*v1.Node, err error) ([]*nodeResolver, error) {
+func (resolver *Resolver) wrapNodes(values []*storage.Node, err error) ([]*nodeResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2176,17 +2176,17 @@ func (resolver *notifierConfigResolver) ToSplunk() (*splunkResolver, bool) {
 
 type numericalPolicyResolver struct {
 	root *Resolver
-	data *v1.NumericalPolicy
+	data *storage.NumericalPolicy
 }
 
-func (resolver *Resolver) wrapNumericalPolicy(value *v1.NumericalPolicy, ok bool, err error) (*numericalPolicyResolver, error) {
+func (resolver *Resolver) wrapNumericalPolicy(value *storage.NumericalPolicy, ok bool, err error) (*numericalPolicyResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &numericalPolicyResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapNumericalPolicies(values []*v1.NumericalPolicy, err error) ([]*numericalPolicyResolver, error) {
+func (resolver *Resolver) wrapNumericalPolicies(values []*storage.NumericalPolicy, err error) ([]*numericalPolicyResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2237,17 +2237,17 @@ func (resolver *openshiftParamsResolver) Params() (*commonKubernetesParamsResolv
 
 type policyResolver struct {
 	root *Resolver
-	data *v1.Policy
+	data *storage.Policy
 }
 
-func (resolver *Resolver) wrapPolicy(value *v1.Policy, ok bool, err error) (*policyResolver, error) {
+func (resolver *Resolver) wrapPolicy(value *storage.Policy, ok bool, err error) (*policyResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &policyResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapPolicies(values []*v1.Policy, err error) ([]*policyResolver, error) {
+func (resolver *Resolver) wrapPolicies(values []*storage.Policy, err error) ([]*policyResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2330,17 +2330,17 @@ func (resolver *policyResolver) Whitelists() ([]*whitelistResolver, error) {
 
 type policyFieldsResolver struct {
 	root *Resolver
-	data *v1.PolicyFields
+	data *storage.PolicyFields
 }
 
-func (resolver *Resolver) wrapPolicyFields(value *v1.PolicyFields, ok bool, err error) (*policyFieldsResolver, error) {
+func (resolver *Resolver) wrapPolicyFields(value *storage.PolicyFields, ok bool, err error) (*policyFieldsResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &policyFieldsResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapPolicyFieldses(values []*v1.PolicyFields, err error) ([]*policyFieldsResolver, error) {
+func (resolver *Resolver) wrapPolicyFieldses(values []*storage.PolicyFields, err error) ([]*policyFieldsResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2509,17 +2509,17 @@ func toPortConfig_Exposures(values *[]string) []storage.PortConfig_Exposure {
 
 type portPolicyResolver struct {
 	root *Resolver
-	data *v1.PortPolicy
+	data *storage.PortPolicy
 }
 
-func (resolver *Resolver) wrapPortPolicy(value *v1.PortPolicy, ok bool, err error) (*portPolicyResolver, error) {
+func (resolver *Resolver) wrapPortPolicy(value *storage.PortPolicy, ok bool, err error) (*portPolicyResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &portPolicyResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapPortPolicies(values []*v1.PortPolicy, err error) ([]*portPolicyResolver, error) {
+func (resolver *Resolver) wrapPortPolicies(values []*storage.PortPolicy, err error) ([]*portPolicyResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2666,17 +2666,17 @@ func (resolver *processNameGroupResolver) TimesExecuted() int32 {
 
 type processPolicyResolver struct {
 	root *Resolver
-	data *v1.ProcessPolicy
+	data *storage.ProcessPolicy
 }
 
-func (resolver *Resolver) wrapProcessPolicy(value *v1.ProcessPolicy, ok bool, err error) (*processPolicyResolver, error) {
+func (resolver *Resolver) wrapProcessPolicy(value *storage.ProcessPolicy, ok bool, err error) (*processPolicyResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &processPolicyResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapProcessPolicies(values []*v1.ProcessPolicy, err error) ([]*processPolicyResolver, error) {
+func (resolver *Resolver) wrapProcessPolicies(values []*storage.ProcessPolicy, err error) ([]*processPolicyResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2772,17 +2772,17 @@ func (resolver *processSignalResolver) Uid() int32 {
 
 type resourcePolicyResolver struct {
 	root *Resolver
-	data *v1.ResourcePolicy
+	data *storage.ResourcePolicy
 }
 
-func (resolver *Resolver) wrapResourcePolicy(value *v1.ResourcePolicy, ok bool, err error) (*resourcePolicyResolver, error) {
+func (resolver *Resolver) wrapResourcePolicy(value *storage.ResourcePolicy, ok bool, err error) (*resourcePolicyResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &resourcePolicyResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapResourcePolicies(values []*v1.ResourcePolicy, err error) ([]*resourcePolicyResolver, error) {
+func (resolver *Resolver) wrapResourcePolicies(values []*storage.ResourcePolicy, err error) ([]*resourcePolicyResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3132,18 +3132,18 @@ func (resolver *searchResultResolver) Score() float64 {
 
 type secretResolver struct {
 	root *Resolver
-	data *v1.Secret
-	list *v1.ListSecret
+	data *storage.Secret
+	list *storage.ListSecret
 }
 
-func (resolver *Resolver) wrapSecret(value *v1.Secret, ok bool, err error) (*secretResolver, error) {
+func (resolver *Resolver) wrapSecret(value *storage.Secret, ok bool, err error) (*secretResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &secretResolver{resolver, value, nil}, nil
 }
 
-func (resolver *Resolver) wrapSecrets(values []*v1.Secret, err error) ([]*secretResolver, error) {
+func (resolver *Resolver) wrapSecrets(values []*storage.Secret, err error) ([]*secretResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3154,7 +3154,7 @@ func (resolver *Resolver) wrapSecrets(values []*v1.Secret, err error) ([]*secret
 	return output, nil
 }
 
-func (resolver *Resolver) wrapListSecrets(values []*v1.ListSecret, err error) ([]*secretResolver, error) {
+func (resolver *Resolver) wrapListSecrets(values []*storage.ListSecret, err error) ([]*secretResolver, error) {
 	if err != nil || values == nil {
 		return nil, err
 	}
@@ -3249,17 +3249,17 @@ func (resolver *secretResolver) Type() string {
 
 type secretContainerRelationshipResolver struct {
 	root *Resolver
-	data *v1.SecretContainerRelationship
+	data *storage.SecretContainerRelationship
 }
 
-func (resolver *Resolver) wrapSecretContainerRelationship(value *v1.SecretContainerRelationship, ok bool, err error) (*secretContainerRelationshipResolver, error) {
+func (resolver *Resolver) wrapSecretContainerRelationship(value *storage.SecretContainerRelationship, ok bool, err error) (*secretContainerRelationshipResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &secretContainerRelationshipResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapSecretContainerRelationships(values []*v1.SecretContainerRelationship, err error) ([]*secretContainerRelationshipResolver, error) {
+func (resolver *Resolver) wrapSecretContainerRelationships(values []*storage.SecretContainerRelationship, err error) ([]*secretContainerRelationshipResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3282,17 +3282,17 @@ func (resolver *secretContainerRelationshipResolver) Path() string {
 
 type secretDataFileResolver struct {
 	root *Resolver
-	data *v1.SecretDataFile
+	data *storage.SecretDataFile
 }
 
-func (resolver *Resolver) wrapSecretDataFile(value *v1.SecretDataFile, ok bool, err error) (*secretDataFileResolver, error) {
+func (resolver *Resolver) wrapSecretDataFile(value *storage.SecretDataFile, ok bool, err error) (*secretDataFileResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &secretDataFileResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapSecretDataFiles(values []*v1.SecretDataFile, err error) ([]*secretDataFileResolver, error) {
+func (resolver *Resolver) wrapSecretDataFiles(values []*storage.SecretDataFile, err error) ([]*secretDataFileResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3331,17 +3331,17 @@ func (resolver *secretDataFileMetadataResolver) ToCert() (*certResolver, bool) {
 
 type secretDeploymentRelationshipResolver struct {
 	root *Resolver
-	data *v1.SecretDeploymentRelationship
+	data *storage.SecretDeploymentRelationship
 }
 
-func (resolver *Resolver) wrapSecretDeploymentRelationship(value *v1.SecretDeploymentRelationship, ok bool, err error) (*secretDeploymentRelationshipResolver, error) {
+func (resolver *Resolver) wrapSecretDeploymentRelationship(value *storage.SecretDeploymentRelationship, ok bool, err error) (*secretDeploymentRelationshipResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &secretDeploymentRelationshipResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapSecretDeploymentRelationships(values []*v1.SecretDeploymentRelationship, err error) ([]*secretDeploymentRelationshipResolver, error) {
+func (resolver *Resolver) wrapSecretDeploymentRelationships(values []*storage.SecretDeploymentRelationship, err error) ([]*secretDeploymentRelationshipResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3364,17 +3364,17 @@ func (resolver *secretDeploymentRelationshipResolver) Name() string {
 
 type secretRelationshipResolver struct {
 	root *Resolver
-	data *v1.SecretRelationship
+	data *storage.SecretRelationship
 }
 
-func (resolver *Resolver) wrapSecretRelationship(value *v1.SecretRelationship, ok bool, err error) (*secretRelationshipResolver, error) {
+func (resolver *Resolver) wrapSecretRelationship(value *storage.SecretRelationship, ok bool, err error) (*secretRelationshipResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &secretRelationshipResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapSecretRelationships(values []*v1.SecretRelationship, err error) ([]*secretRelationshipResolver, error) {
+func (resolver *Resolver) wrapSecretRelationships(values []*storage.SecretRelationship, err error) ([]*secretRelationshipResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3400,18 +3400,18 @@ func (resolver *secretRelationshipResolver) Id() graphql.ID {
 	return graphql.ID(value)
 }
 
-func toSecretType(value *string) v1.SecretType {
+func toSecretType(value *string) storage.SecretType {
 	if value != nil {
-		return v1.SecretType(v1.SecretType_value[*value])
+		return storage.SecretType(storage.SecretType_value[*value])
 	}
-	return v1.SecretType(0)
+	return storage.SecretType(0)
 }
 
-func toSecretTypes(values *[]string) []v1.SecretType {
+func toSecretTypes(values *[]string) []storage.SecretType {
 	if values == nil {
 		return nil
 	}
-	output := make([]v1.SecretType, len(*values))
+	output := make([]storage.SecretType, len(*values))
 	for i, v := range *values {
 		output[i] = toSecretType(&v)
 	}
@@ -3504,18 +3504,18 @@ func (resolver *securityContext_SELinuxResolver) User() string {
 	return value
 }
 
-func toSeverity(value *string) v1.Severity {
+func toSeverity(value *string) storage.Severity {
 	if value != nil {
-		return v1.Severity(v1.Severity_value[*value])
+		return storage.Severity(storage.Severity_value[*value])
 	}
-	return v1.Severity(0)
+	return storage.Severity(0)
 }
 
-func toSeverities(values *[]string) []v1.Severity {
+func toSeverities(values *[]string) []storage.Severity {
 	if values == nil {
 		return nil
 	}
-	output := make([]v1.Severity, len(*values))
+	output := make([]storage.Severity, len(*values))
 	for i, v := range *values {
 		output[i] = toSeverity(&v)
 	}
@@ -3780,17 +3780,17 @@ func (resolver *volumeResolver) Type() string {
 
 type volumePolicyResolver struct {
 	root *Resolver
-	data *v1.VolumePolicy
+	data *storage.VolumePolicy
 }
 
-func (resolver *Resolver) wrapVolumePolicy(value *v1.VolumePolicy, ok bool, err error) (*volumePolicyResolver, error) {
+func (resolver *Resolver) wrapVolumePolicy(value *storage.VolumePolicy, ok bool, err error) (*volumePolicyResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &volumePolicyResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapVolumePolicies(values []*v1.VolumePolicy, err error) ([]*volumePolicyResolver, error) {
+func (resolver *Resolver) wrapVolumePolicies(values []*storage.VolumePolicy, err error) ([]*volumePolicyResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3871,17 +3871,17 @@ func (resolver *vulnerabilityResolver) Summary() string {
 
 type whitelistResolver struct {
 	root *Resolver
-	data *v1.Whitelist
+	data *storage.Whitelist
 }
 
-func (resolver *Resolver) wrapWhitelist(value *v1.Whitelist, ok bool, err error) (*whitelistResolver, error) {
+func (resolver *Resolver) wrapWhitelist(value *storage.Whitelist, ok bool, err error) (*whitelistResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &whitelistResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapWhitelists(values []*v1.Whitelist, err error) ([]*whitelistResolver, error) {
+func (resolver *Resolver) wrapWhitelists(values []*storage.Whitelist, err error) ([]*whitelistResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3914,17 +3914,17 @@ func (resolver *whitelistResolver) Name() string {
 
 type whitelist_ContainerResolver struct {
 	root *Resolver
-	data *v1.Whitelist_Container
+	data *storage.Whitelist_Container
 }
 
-func (resolver *Resolver) wrapWhitelist_Container(value *v1.Whitelist_Container, ok bool, err error) (*whitelist_ContainerResolver, error) {
+func (resolver *Resolver) wrapWhitelist_Container(value *storage.Whitelist_Container, ok bool, err error) (*whitelist_ContainerResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &whitelist_ContainerResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapWhitelist_Containers(values []*v1.Whitelist_Container, err error) ([]*whitelist_ContainerResolver, error) {
+func (resolver *Resolver) wrapWhitelist_Containers(values []*storage.Whitelist_Container, err error) ([]*whitelist_ContainerResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3942,17 +3942,17 @@ func (resolver *whitelist_ContainerResolver) ImageName() (*imageNameResolver, er
 
 type whitelist_DeploymentResolver struct {
 	root *Resolver
-	data *v1.Whitelist_Deployment
+	data *storage.Whitelist_Deployment
 }
 
-func (resolver *Resolver) wrapWhitelist_Deployment(value *v1.Whitelist_Deployment, ok bool, err error) (*whitelist_DeploymentResolver, error) {
+func (resolver *Resolver) wrapWhitelist_Deployment(value *storage.Whitelist_Deployment, ok bool, err error) (*whitelist_DeploymentResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &whitelist_DeploymentResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapWhitelist_Deployments(values []*v1.Whitelist_Deployment, err error) ([]*whitelist_DeploymentResolver, error) {
+func (resolver *Resolver) wrapWhitelist_Deployments(values []*storage.Whitelist_Deployment, err error) ([]*whitelist_DeploymentResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}

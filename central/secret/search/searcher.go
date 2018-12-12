@@ -4,6 +4,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/secret/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -15,7 +16,7 @@ var (
 //go:generate mockgen-wrapper Searcher
 type Searcher interface {
 	SearchSecrets(*v1.Query) ([]*v1.SearchResult, error)
-	SearchListSecrets(query *v1.Query) ([]*v1.ListSecret, error)
+	SearchListSecrets(query *v1.Query) ([]*storage.ListSecret, error)
 }
 
 // New returns a new instance of Searcher for the given storage and index.

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -271,13 +272,13 @@ func countAlerts(alerts []*v1.ListAlert, groupByFunc func(*v1.ListAlert) []strin
 	return
 }
 
-func getMapOfAlertCounts(alerts []*v1.ListAlert, groupByFunc func(alert *v1.ListAlert) []string) (groups map[string]map[v1.Severity]int) {
-	groups = make(map[string]map[v1.Severity]int)
+func getMapOfAlertCounts(alerts []*v1.ListAlert, groupByFunc func(alert *v1.ListAlert) []string) (groups map[string]map[storage.Severity]int) {
+	groups = make(map[string]map[storage.Severity]int)
 
 	for _, a := range alerts {
 		for _, g := range groupByFunc(a) {
 			if groups[g] == nil {
-				groups[g] = make(map[v1.Severity]int)
+				groups[g] = make(map[storage.Severity]int)
 			}
 
 			groups[g][a.GetPolicy().GetSeverity()]++
@@ -287,12 +288,12 @@ func getMapOfAlertCounts(alerts []*v1.ListAlert, groupByFunc func(alert *v1.List
 	return
 }
 
-func getGroupToAlertEvents(alerts []*v1.ListAlert) (clusters map[string]map[v1.Severity][]*v1.AlertEvent) {
-	clusters = make(map[string]map[v1.Severity][]*v1.AlertEvent)
+func getGroupToAlertEvents(alerts []*v1.ListAlert) (clusters map[string]map[storage.Severity][]*v1.AlertEvent) {
+	clusters = make(map[string]map[storage.Severity][]*v1.AlertEvent)
 	for _, a := range alerts {
 		alertCluster := a.GetDeployment().GetClusterName()
 		if clusters[alertCluster] == nil {
-			clusters[alertCluster] = make(map[v1.Severity][]*v1.AlertEvent)
+			clusters[alertCluster] = make(map[storage.Severity][]*v1.AlertEvent)
 		}
 		eventList := clusters[alertCluster][a.GetPolicy().GetSeverity()]
 		eventList = append(eventList, &v1.AlertEvent{Time: a.GetTime().GetSeconds() * 1000, Id: a.GetId(), Type: v1.Type_CREATED})

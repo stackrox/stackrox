@@ -27,8 +27,8 @@ func (a *alertSlice) append(alerts ...*v1.Alert) {
 	a.alerts = append(a.alerts, alerts...)
 }
 
-func (d *detectorImpl) policyMatcher(alerts *alertSlice, deploymentIDs ...string) func(*v1.Policy, searchbasedpolicies.Matcher, predicate.Predicate) error {
-	return func(p *v1.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
+func (d *detectorImpl) policyMatcher(alerts *alertSlice, deploymentIDs ...string) func(*storage.Policy, searchbasedpolicies.Matcher, predicate.Predicate) error {
+	return func(p *storage.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
 		var err error
 		var violationsByDeployment map[string][]*v1.Alert_Violation
 		if len(deploymentIDs) == 0 {
@@ -78,7 +78,7 @@ func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*v1.Alert, error) {
 }
 
 func (d *detectorImpl) DeploymentWhitelistedForPolicy(deploymentID, policyID string) (isWhitelisted bool) {
-	err := d.policySet.ForOne(policyID, func(p *v1.Policy, _ searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
+	err := d.policySet.ForOne(policyID, func(p *storage.Policy, _ searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
 		if p.GetDisabled() {
 			isWhitelisted = true
 			return nil
@@ -106,7 +106,7 @@ func (d *detectorImpl) DeploymentWhitelistedForPolicy(deploymentID, policyID str
 	return
 }
 
-func (d *detectorImpl) UpsertPolicy(policy *v1.Policy) error {
+func (d *detectorImpl) UpsertPolicy(policy *storage.Policy) error {
 	return d.policySet.UpsertPolicy(policy)
 }
 
@@ -115,19 +115,19 @@ func (d *detectorImpl) RemovePolicy(policyID string) error {
 }
 
 // PolicyDeploymentAndViolationsToAlert constructs an alert.
-func policyDeploymentAndViolationsToAlert(policy *v1.Policy, deployment *storage.Deployment, violations []*v1.Alert_Violation) *v1.Alert {
+func policyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *storage.Deployment, violations []*v1.Alert_Violation) *v1.Alert {
 	if len(violations) == 0 {
 		return nil
 	}
 	alert := &v1.Alert{
 		Id:             uuid.NewV4().String(),
-		LifecycleStage: v1.LifecycleStage_RUNTIME,
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Deployment:     protoutils.CloneStorageDeployment(deployment),
-		Policy:         protoutils.CloneV1Policy(policy),
+		Policy:         protoutils.CloneStoragePolicy(policy),
 		Violations:     violations,
 		Time:           ptypes.TimestampNow(),
 	}
-	if action, msg := policyAndDeploymentToEnforcement(policy, deployment); action != v1.EnforcementAction_UNSET_ENFORCEMENT {
+	if action, msg := policyAndDeploymentToEnforcement(policy, deployment); action != storage.EnforcementAction_UNSET_ENFORCEMENT {
 		alert.Enforcement = &v1.Alert_Enforcement{
 			Action:  action,
 			Message: msg,
@@ -137,11 +137,11 @@ func policyDeploymentAndViolationsToAlert(policy *v1.Policy, deployment *storage
 }
 
 // policyAndDeploymentToEnforcement returns enforcement info for a deployment violating a policy.
-func policyAndDeploymentToEnforcement(policy *v1.Policy, deployment *storage.Deployment) (enforcement v1.EnforcementAction, message string) {
+func policyAndDeploymentToEnforcement(policy *storage.Policy, deployment *storage.Deployment) (enforcement storage.EnforcementAction, message string) {
 	for _, enforcementAction := range policy.GetEnforcementActions() {
-		if enforcementAction == v1.EnforcementAction_KILL_POD_ENFORCEMENT {
-			return v1.EnforcementAction_KILL_POD_ENFORCEMENT, fmt.Sprintf("Deployment %s has pods killed in response to policy violation", deployment.GetName())
+		if enforcementAction == storage.EnforcementAction_KILL_POD_ENFORCEMENT {
+			return storage.EnforcementAction_KILL_POD_ENFORCEMENT, fmt.Sprintf("Deployment %s has pods killed in response to policy violation", deployment.GetName())
 		}
 	}
-	return v1.EnforcementAction_UNSET_ENFORCEMENT, ""
+	return storage.EnforcementAction_UNSET_ENFORCEMENT, ""
 }

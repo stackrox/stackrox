@@ -114,7 +114,7 @@ func (ds *datastoreImpl) RemoveCluster(id string) error {
 }
 
 // RemoveCluster removes an cluster from the storage and the indexer
-func (ds *datastoreImpl) getSecrets(cluster *storage.Cluster) ([]*v1.ListSecret, error) {
+func (ds *datastoreImpl) getSecrets(cluster *storage.Cluster) ([]*storage.ListSecret, error) {
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).ProtoQuery()
 	return ds.ss.SearchListSecrets(q)
 }

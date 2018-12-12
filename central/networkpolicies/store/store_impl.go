@@ -7,6 +7,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -14,7 +15,7 @@ type storeImpl struct {
 	*bolt.DB
 }
 
-func (b *storeImpl) upsertNetworkPolicy(np *v1.NetworkPolicy) error {
+func (b *storeImpl) upsertNetworkPolicy(np *storage.NetworkPolicy) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(networkPolicyBucket))
 		bytes, err := proto.Marshal(np)
@@ -26,11 +27,11 @@ func (b *storeImpl) upsertNetworkPolicy(np *v1.NetworkPolicy) error {
 }
 
 // GetNetworkPolicy returns network policy with given id.
-func (b *storeImpl) GetNetworkPolicy(id string) (np *v1.NetworkPolicy, exists bool, err error) {
+func (b *storeImpl) GetNetworkPolicy(id string) (np *storage.NetworkPolicy, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "NetworkPolicy")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(networkPolicyBucket))
-		np = new(v1.NetworkPolicy)
+		np = new(storage.NetworkPolicy)
 		val := bucket.Get([]byte(id))
 		if val == nil {
 			return nil
@@ -42,13 +43,13 @@ func (b *storeImpl) GetNetworkPolicy(id string) (np *v1.NetworkPolicy, exists bo
 }
 
 // GetNetworkPolicies retrieves network policies matching the request from bolt
-func (b *storeImpl) GetNetworkPolicies(request *v1.GetNetworkPoliciesRequest) ([]*v1.NetworkPolicy, error) {
+func (b *storeImpl) GetNetworkPolicies(request *v1.GetNetworkPoliciesRequest) ([]*storage.NetworkPolicy, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "NetworkPolicy")
-	var policies []*v1.NetworkPolicy
+	var policies []*storage.NetworkPolicy
 	err := b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(networkPolicyBucket))
 		return bucket.ForEach(func(k, v []byte) error {
-			var np v1.NetworkPolicy
+			var np storage.NetworkPolicy
 			if err := proto.Unmarshal(v, &np); err != nil {
 				return err
 			}
@@ -74,13 +75,13 @@ func (b *storeImpl) CountNetworkPolicies() (count int, err error) {
 }
 
 // AddNetworkPolicy adds a network policy to bolt
-func (b *storeImpl) AddNetworkPolicy(np *v1.NetworkPolicy) error {
+func (b *storeImpl) AddNetworkPolicy(np *storage.NetworkPolicy) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "NetworkPolicy")
 	return b.upsertNetworkPolicy(np)
 }
 
 // UpdateNetworkPolicy updates a network policy to bolt
-func (b *storeImpl) UpdateNetworkPolicy(np *v1.NetworkPolicy) error {
+func (b *storeImpl) UpdateNetworkPolicy(np *storage.NetworkPolicy) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "NetworkPolicy")
 	return b.upsertNetworkPolicy(np)
 }

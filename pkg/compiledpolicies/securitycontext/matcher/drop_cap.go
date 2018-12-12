@@ -12,7 +12,7 @@ func init() {
 	compilers = append(compilers, newDropCapMatcher)
 }
 
-func newDropCapMatcher(policy *v1.Policy) (Matcher, error) {
+func newDropCapMatcher(policy *storage.Policy) (Matcher, error) {
 	fields := policy.GetFields()
 	if len(fields.GetDropCapabilities()) == 0 {
 		return nil, nil
@@ -27,7 +27,7 @@ func newDropCapMatcher(policy *v1.Policy) (Matcher, error) {
 }
 
 type dropCapMatcherImpl struct {
-	proto *v1.Policy
+	proto *storage.Policy
 
 	dropCap map[string]struct{}
 }

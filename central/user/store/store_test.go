@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -26,10 +26,10 @@ func (s *UserStoreTestSuite) SetupSuite() {
 }
 
 func (s *UserStoreTestSuite) TestUserStore() {
-	users := []*v1.User{
+	users := []*storage.User{
 		{
 			Id: "user1",
-			Attributes: []*v1.UserAttribute{
+			Attributes: []*storage.UserAttribute{
 				{
 					Key:   "name",
 					Value: "user1",
@@ -42,7 +42,7 @@ func (s *UserStoreTestSuite) TestUserStore() {
 		},
 		{
 			Id: "user2",
-			Attributes: []*v1.UserAttribute{
+			Attributes: []*storage.UserAttribute{
 				{
 					Key:   "name",
 					Value: "user2",
@@ -51,7 +51,7 @@ func (s *UserStoreTestSuite) TestUserStore() {
 		},
 		{
 			Id: "user3",
-			Attributes: []*v1.UserAttribute{
+			Attributes: []*storage.UserAttribute{
 				{
 					Key:   "groups",
 					Value: "squad",

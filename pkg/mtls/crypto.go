@@ -18,7 +18,7 @@ import (
 	"github.com/cloudflare/cfssl/helpers"
 	cfsigner "github.com/cloudflare/cfssl/signer"
 	"github.com/cloudflare/cfssl/signer/local"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 const (
@@ -41,10 +41,10 @@ const (
 
 var (
 	// CentralSubject is the identity used in certificates for Central.
-	CentralSubject = Subject{ServiceType: v1.ServiceType_CENTRAL_SERVICE, Identifier: "Central"}
+	CentralSubject = Subject{ServiceType: storage.ServiceType_CENTRAL_SERVICE, Identifier: "Central"}
 
 	// SensorSubject is the identity used in certificates for Sensor.
-	SensorSubject = Subject{ServiceType: v1.ServiceType_SENSOR_SERVICE, Identifier: "Sensor"}
+	SensorSubject = Subject{ServiceType: storage.ServiceType_SENSOR_SERVICE, Identifier: "Sensor"}
 
 	readCAOnce sync.Once
 	caCert     *x509.Certificate
@@ -137,7 +137,7 @@ func signingPolicy() *config.Signing {
 
 // serviceIdentityStorage represents any object that stores a service identity.
 type serviceIdentityStorage interface {
-	AddServiceIdentity(identity *v1.ServiceIdentity) error
+	AddServiceIdentity(identity *storage.ServiceIdentity) error
 }
 
 // IssueNewCertFromCA issues a certificate from the CA that is passed in
@@ -184,8 +184,8 @@ func IssueNewCertFromCA(subj Subject, caCert, caKey []byte) (certPEM, keyPEM []b
 }
 
 // IssueNewCert generates a new key and certificate chain for a sensor.
-func IssueNewCert(subj Subject, storage serviceIdentityStorage) (certPEM, keyPEM []byte, identity *v1.ServiceIdentity, err error) {
-	returnErr := func(err error, prefix string) ([]byte, []byte, *v1.ServiceIdentity, error) {
+func IssueNewCert(subj Subject, store serviceIdentityStorage) (certPEM, keyPEM []byte, identity *storage.ServiceIdentity, err error) {
+	returnErr := func(err error, prefix string) ([]byte, []byte, *storage.ServiceIdentity, error) {
 		return nil, nil, nil, fmt.Errorf("%s: %s", prefix, err)
 	}
 
@@ -224,8 +224,8 @@ func IssueNewCert(subj Subject, storage serviceIdentityStorage) (certPEM, keyPEM
 	keyPEM = keyBytes
 
 	id := generateIdentity(subj, serial)
-	if storage != nil {
-		err = storage.AddServiceIdentity(id)
+	if store != nil {
+		err = store.AddServiceIdentity(id)
 		if err != nil {
 			return returnErr(err, "identity storage")
 		}
@@ -242,8 +242,8 @@ func randomSerial() (int64, error) {
 	return serial.Int64(), nil
 }
 
-func generateIdentity(subj Subject, serial int64) *v1.ServiceIdentity {
-	return &v1.ServiceIdentity{
+func generateIdentity(subj Subject, serial int64) *storage.ServiceIdentity {
+	return &storage.ServiceIdentity{
 		Id:     subj.Identifier,
 		Type:   subj.ServiceType,
 		Serial: serial,

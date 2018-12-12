@@ -19,9 +19,9 @@ func TestGoogle(t *testing.T) {
 	if os.Getenv("PROJECT") == "" {
 		t.Fatal("PROJECT env variable required")
 	}
-	integration := &v1.ImageIntegration{
+	integration := &storage.ImageIntegration{
 		IntegrationConfig: &v1.ImageIntegration_Google{
-			Google: &v1.GoogleConfig{
+			Google: &storage.GoogleConfig{
 				Endpoint:       "us.gcr.io",
 				ServiceAccount: os.Getenv("SERVICE_ACCOUNT"),
 			},

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/net"
@@ -45,12 +46,12 @@ type networkConnIndicator struct {
 	srcEntity networkentity.Entity
 	dstEntity networkentity.Entity
 	dstPort   uint16
-	protocol  v1.L4Protocol
+	protocol  storage.L4Protocol
 }
 
-func (i networkConnIndicator) toProto(ts timestamp.MicroTS) *v1.NetworkFlow {
-	proto := &v1.NetworkFlow{
-		Props: &v1.NetworkFlowProperties{
+func (i networkConnIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkFlow {
+	proto := &storage.NetworkFlow{
+		Props: &storage.NetworkFlowProperties{
 			SrcEntity:  i.srcEntity.ToProto(),
 			DstEntity:  i.dstEntity.ToProto(),
 			DstPort:    uint32(i.dstPort),
@@ -158,7 +159,7 @@ func (m *networkFlowManager) currentEnrichedConns() map[networkConnIndicator]tim
 			lookupResults = []clusterentities.LookupResult{
 				{
 					Entity: networkentity.Entity{
-						Type: v1.NetworkEntityInfo_INTERNET,
+						Type: storage.NetworkEntityInfo_INTERNET,
 					},
 					ContainerPorts: []uint16{port},
 				},
@@ -200,7 +201,7 @@ func (m *networkFlowManager) currentEnrichedConns() map[networkConnIndicator]tim
 }
 
 func computeUpdateMessage(current map[networkConnIndicator]timestamp.MicroTS, previous map[networkConnIndicator]timestamp.MicroTS) *central.NetworkFlowUpdate {
-	var updates []*v1.NetworkFlow
+	var updates []*storage.NetworkFlow
 
 	for conn, currTS := range current {
 		prevTS, ok := previous[conn]

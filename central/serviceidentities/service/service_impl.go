@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/serviceidentities/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -70,7 +71,7 @@ func (s *serviceImpl) CreateServiceIdentity(ctx context.Context, request *v1.Cre
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "ID must be nonempty")
 	}
-	if request.GetType() == v1.ServiceType_UNKNOWN_SERVICE {
+	if request.GetType() == storage.ServiceType_UNKNOWN_SERVICE {
 		return nil, status.Error(codes.InvalidArgument, "Service type must be nonempty")
 	}
 	cert, key, id, err := mtls.IssueNewCert(mtls.Subject{ServiceType: request.GetType(), Identifier: request.GetId()}, s.storage)

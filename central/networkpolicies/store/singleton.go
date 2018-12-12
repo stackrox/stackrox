@@ -9,15 +9,15 @@ import (
 var (
 	once sync.Once
 
-	storage Store
+	as Store
 )
 
 func initialize() {
-	storage = New(globaldb.GetGlobalDB())
+	as = New(globaldb.GetGlobalDB())
 }
 
 // Singleton provides the interface for non-service external interaction.
 func Singleton() Store {
 	once.Do(initialize)
-	return storage
+	return as
 }

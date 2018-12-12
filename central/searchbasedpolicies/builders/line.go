@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -17,7 +18,7 @@ func (c *dockerFileLineFieldQueryBuilder) Name() string {
 	return fmt.Sprintf("query builder for docker file lines")
 }
 
-func (c *dockerFileLineFieldQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
+func (c *dockerFileLineFieldQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	lineRule := fields.GetLineRule()
 	if lineRule == nil {
 		return

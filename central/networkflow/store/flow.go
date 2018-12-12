@@ -2,18 +2,16 @@ package store
 
 import (
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
-
-const networkFlowBucket = "networkFlows"
 
 // FlowStore stores all of the flows for a single cluster.
 //go:generate mockgen-wrapper FlowStore
 type FlowStore interface {
-	GetAllFlows() ([]*v1.NetworkFlow, types.Timestamp, error)
-	GetFlow(props *v1.NetworkFlowProperties) (*v1.NetworkFlow, error)
+	GetAllFlows() ([]*storage.NetworkFlow, types.Timestamp, error)
+	GetFlow(props *storage.NetworkFlowProperties) (*storage.NetworkFlow, error)
 
-	UpsertFlows(flows []*v1.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
-	RemoveFlow(props *v1.NetworkFlowProperties) error
+	UpsertFlows(flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
+	RemoveFlow(props *storage.NetworkFlowProperties) error
 }

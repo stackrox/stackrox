@@ -11,7 +11,7 @@ import (
 type Detector interface {
 	AlertsForDeployment(deployment *storage.Deployment) ([]*v1.Alert, error)
 	AlertsForPolicy(policyID string) ([]*v1.Alert, error)
-	UpsertPolicy(policy *v1.Policy) error
+	UpsertPolicy(policy *storage.Policy) error
 	RemovePolicy(policyID string) error
 }
 

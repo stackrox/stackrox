@@ -74,9 +74,9 @@ func (rm *mapperImpl) rolesForGroups(groups []*storage.Group) ([]*v1.Role, error
 // Helpers
 //////////
 
-func (rm *mapperImpl) createUser(claims *tokens.Claims) *v1.User {
+func (rm *mapperImpl) createUser(claims *tokens.Claims) *storage.User {
 	// Create a user.
-	user := &v1.User{
+	user := &storage.User{
 		Id:             claims.ExternalUser.UserID,
 		AuthProviderId: rm.authProviderID,
 	}
@@ -84,13 +84,13 @@ func (rm *mapperImpl) createUser(claims *tokens.Claims) *v1.User {
 	return user
 }
 
-func addAttributesToUser(user *v1.User, attributes map[string][]string) {
+func addAttributesToUser(user *storage.User, attributes map[string][]string) {
 	if len(attributes) == 0 {
 		return
 	}
 	for k, vs := range attributes {
 		for _, v := range vs {
-			user.Attributes = append(user.Attributes, &v1.UserAttribute{Key: k, Value: v})
+			user.Attributes = append(user.Attributes, &storage.UserAttribute{Key: k, Value: v})
 		}
 	}
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -14,7 +15,7 @@ type RegexField struct {
 	FieldLabel         search.FieldLabel
 	FieldHumanName     string
 	AllowSubstrings    bool
-	RetrieveFieldValue func(*v1.PolicyFields) string
+	RetrieveFieldValue func(*storage.PolicyFields) string
 }
 
 // A RegexQueryBuilder builds a policy query builder from a set of linked regex fields.
@@ -28,7 +29,7 @@ func (r RegexQueryBuilder) Name() string {
 }
 
 // Query implements the PolicyQueryBuilder interface.
-func (r RegexQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
+func (r RegexQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	type presentFieldInfo struct {
 		policyVal      string
 		searchField    *v1.SearchField

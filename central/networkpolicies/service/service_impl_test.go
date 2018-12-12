@@ -145,7 +145,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 		Return(deps, nil)
 
 	// Mock that we have network policies in effect for the cluster.
-	pols := make([]*v1.NetworkPolicy, 0)
+	pols := make([]*storage.NetworkPolicy, 0)
 	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID)).
 		Return(pols, nil)
 
@@ -180,7 +180,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 
 	// Mock that we have network policies in effect for the cluster.
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML1}.ToRoxNetworkPolicies()
-	pols := []*v1.NetworkPolicy{
+	pols := []*storage.NetworkPolicy{
 		compiledPolicies[0],
 	}
 	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID)).
@@ -339,7 +339,7 @@ func networkPolicyGetIsForCluster(clusterID string) gomock.Matcher {
 // checkHasPolicies returns a function that returns true if the input is a slice of network policies, containing
 // exactly one policy for every input (policyNames).
 func checkHasPolicies(policyNames ...string) gomock.Matcher {
-	return testutils.PredMatcher("has policies", func(networkPolicies []*v1.NetworkPolicy) bool {
+	return testutils.PredMatcher("has policies", func(networkPolicies []*storage.NetworkPolicy) bool {
 		if len(networkPolicies) != len(policyNames) {
 			return false
 		}

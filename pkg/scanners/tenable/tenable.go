@@ -7,7 +7,6 @@ import (
 	"time"
 
 	dockerRegistry "github.com/heroku/docker-registry-client/registry"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
@@ -34,8 +33,8 @@ var (
 )
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
-func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageScanner, error)) {
-	return typeString, func(integration *v1.ImageIntegration) (types.ImageScanner, error) {
+func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageScanner, error)) {
+	return typeString, func(integration *storage.ImageIntegration) (types.ImageScanner, error) {
 		scan, err := newScanner(integration)
 		return scan, err
 	}
@@ -44,14 +43,14 @@ func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageScann
 type tenable struct {
 	client *http.Client
 
-	config *v1.TenableConfig
+	config *storage.TenableConfig
 
 	reg *dockerRegistry.Registry
 
-	protoImageIntegration *v1.ImageIntegration
+	protoImageIntegration *storage.ImageIntegration
 }
 
-func validate(config *v1.TenableConfig) error {
+func validate(config *storage.TenableConfig) error {
 	errorList := errorhelpers.NewErrorList("Tenable Validation")
 	if config.GetAccessKey() == "" {
 		errorList.AddString("Access key must be specified for Tenable scanner")
@@ -62,8 +61,8 @@ func validate(config *v1.TenableConfig) error {
 	return errorList.ToError()
 }
 
-func newScanner(integration *v1.ImageIntegration) (*tenable, error) {
-	tenableConfig, ok := integration.IntegrationConfig.(*v1.ImageIntegration_Tenable)
+func newScanner(integration *storage.ImageIntegration) (*tenable, error) {
+	tenableConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Tenable)
 	if !ok {
 		return nil, fmt.Errorf("Tenable configuration required")
 	}

@@ -47,7 +47,7 @@ func (mr *MockEvaluatorMockRecorder) Epoch() *gomock.Call {
 }
 
 // GetGraph mocks base method
-func (m *MockEvaluator) GetGraph(arg0 []*storage.Deployment, arg1 []*v1.NetworkPolicy) *v1.NetworkGraph {
+func (m *MockEvaluator) GetGraph(arg0 []*storage.Deployment, arg1 []*storage.NetworkPolicy) *v1.NetworkGraph {
 	ret := m.ctrl.Call(m, "GetGraph", arg0, arg1)
 	ret0, _ := ret[0].(*v1.NetworkGraph)
 	return ret0

@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -13,7 +14,7 @@ type PrivilegedQueryBuilder struct {
 }
 
 // Query implements the PolicyQueryBuilder interface.
-func (p PrivilegedQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
+func (p PrivilegedQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	// We don't match on privileged = false, because that seems pointless.
 	if !fields.GetPrivileged() {
 		return

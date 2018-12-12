@@ -3,6 +3,7 @@ package processor
 import (
 	"github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 )
@@ -26,19 +27,19 @@ type Processor interface {
 	UpdateNotifier(notifier notifiers.Notifier)
 	RemoveNotifier(id string)
 
-	GetIntegratedPolicies(notifierID string) (output []*v1.Policy)
-	UpdatePolicy(policy *v1.Policy)
-	RemovePolicy(policy *v1.Policy)
+	GetIntegratedPolicies(notifierID string) (output []*storage.Policy)
+	UpdatePolicy(policy *storage.Policy)
+	RemovePolicy(policy *storage.Policy)
 }
 
 // New returns a new Processor
-func New(storage store.Store) (Processor, error) {
+func New(s store.Store) (Processor, error) {
 	processor := &processorImpl{
 		alertChan:           make(chan *v1.Alert, alertChanSize),
 		benchmarkChan:       make(chan *v1.BenchmarkSchedule, benchmarkChanSize),
 		notifiers:           make(map[string]notifiers.Notifier),
-		notifiersToPolicies: make(map[string]map[string]*v1.Policy),
-		storage:             storage,
+		notifiersToPolicies: make(map[string]map[string]*storage.Policy),
+		storage:             s,
 	}
 	err := processor.initializeNotifiers()
 	return processor, err

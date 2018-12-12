@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -12,7 +13,7 @@ import (
 type addCapQueryBuilder struct {
 }
 
-func (c addCapQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
+func (c addCapQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	addCaps := fields.GetAddCapabilities()
 	if len(addCaps) == 0 {
 		return
@@ -39,7 +40,7 @@ func (c addCapQueryBuilder) Name() string {
 type dropCapQueryBuilder struct {
 }
 
-func (c dropCapQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
+func (c dropCapQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	dropCaps := fields.GetDropCapabilities()
 	if len(dropCaps) == 0 {
 		return

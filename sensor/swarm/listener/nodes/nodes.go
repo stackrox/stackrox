@@ -5,6 +5,7 @@ import (
 	"github.com/docker/docker/api/types/events"
 	dockerClient "github.com/docker/docker/client"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -46,7 +47,7 @@ func NewHandler(client *dockerClient.Client, eventsC chan<- *v1.SensorEvent) *Ha
 	}
 }
 
-func (s *Handler) getExistingNodes() ([]*v1.Node, error) {
+func (s *Handler) getExistingNodes() ([]*storage.Node, error) {
 	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
 
@@ -54,9 +55,9 @@ func (s *Handler) getExistingNodes() ([]*v1.Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	nodes := make([]*v1.Node, len(swarmNodes))
+	nodes := make([]*storage.Node, len(swarmNodes))
 	for i, swarmNode := range swarmNodes {
-		nodes[i] = &v1.Node{
+		nodes[i] = &storage.Node{
 			Id:   swarmNode.ID,
 			Name: swarmNode.Description.Hostname,
 		}
@@ -84,7 +85,7 @@ func (s *Handler) HandleMessage(msg events.Message) {
 		return
 	}
 
-	node := &v1.Node{
+	node := &storage.Node{
 		Id:   msg.Actor.ID,
 		Name: msg.Actor.Attributes["name"],
 	}

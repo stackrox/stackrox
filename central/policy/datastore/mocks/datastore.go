@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
 
@@ -34,7 +35,7 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // AddPolicy mocks base method
-func (m *MockDataStore) AddPolicy(arg0 *v1.Policy) (string, error) {
+func (m *MockDataStore) AddPolicy(arg0 *storage.Policy) (string, error) {
 	ret := m.ctrl.Call(m, "AddPolicy", arg0)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
@@ -59,9 +60,9 @@ func (mr *MockDataStoreMockRecorder) DeletePolicyCategory(arg0 interface{}) *gom
 }
 
 // GetPolicies mocks base method
-func (m *MockDataStore) GetPolicies() ([]*v1.Policy, error) {
+func (m *MockDataStore) GetPolicies() ([]*storage.Policy, error) {
 	ret := m.ctrl.Call(m, "GetPolicies")
-	ret0, _ := ret[0].([]*v1.Policy)
+	ret0, _ := ret[0].([]*storage.Policy)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -72,9 +73,9 @@ func (mr *MockDataStoreMockRecorder) GetPolicies() *gomock.Call {
 }
 
 // GetPolicy mocks base method
-func (m *MockDataStore) GetPolicy(arg0 string) (*v1.Policy, bool, error) {
+func (m *MockDataStore) GetPolicy(arg0 string) (*storage.Policy, bool, error) {
 	ret := m.ctrl.Call(m, "GetPolicy", arg0)
-	ret0, _ := ret[0].(*v1.Policy)
+	ret0, _ := ret[0].(*storage.Policy)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -123,9 +124,9 @@ func (mr *MockDataStoreMockRecorder) SearchPolicies(arg0 interface{}) *gomock.Ca
 }
 
 // SearchRawPolicies mocks base method
-func (m *MockDataStore) SearchRawPolicies(arg0 *v1.Query) ([]*v1.Policy, error) {
+func (m *MockDataStore) SearchRawPolicies(arg0 *v1.Query) ([]*storage.Policy, error) {
 	ret := m.ctrl.Call(m, "SearchRawPolicies", arg0)
-	ret0, _ := ret[0].([]*v1.Policy)
+	ret0, _ := ret[0].([]*storage.Policy)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -136,7 +137,7 @@ func (mr *MockDataStoreMockRecorder) SearchRawPolicies(arg0 interface{}) *gomock
 }
 
 // UpdatePolicy mocks base method
-func (m *MockDataStore) UpdatePolicy(arg0 *v1.Policy) error {
+func (m *MockDataStore) UpdatePolicy(arg0 *storage.Policy) error {
 	ret := m.ctrl.Call(m, "UpdatePolicy", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0

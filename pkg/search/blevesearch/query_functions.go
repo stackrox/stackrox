@@ -8,6 +8,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -107,19 +108,19 @@ func newBoolQuery(_ v1.SearchCategory, field string, value string) (query.Query,
 }
 
 func newSeverityQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
-	return evaluateEnum(value, field, v1.Severity_name)
+	return evaluateEnum(value, field, storage.Severity_name)
 }
 
 func newEnforcementQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
-	return evaluateEnum(value, field, v1.EnforcementAction_name)
+	return evaluateEnum(value, field, storage.EnforcementAction_name)
 }
 
 func newLifecycleStageQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
-	return evaluateEnum(value, field, v1.LifecycleStage_name)
+	return evaluateEnum(value, field, storage.LifecycleStage_name)
 }
 
 func newSecretTypeQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
-	return evaluateEnum(value, field, v1.SecretType_name)
+	return evaluateEnum(value, field, storage.SecretType_name)
 }
 
 func newViolationStateQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {

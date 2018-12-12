@@ -13,7 +13,7 @@ func init() {
 	compilers = append(compilers, newCVEMatcher)
 }
 
-func newCVEMatcher(policy *v1.Policy) (Matcher, error) {
+func newCVEMatcher(policy *storage.Policy) (Matcher, error) {
 	cve := policy.GetFields().GetCve()
 	if cve == "" {
 		return nil, nil

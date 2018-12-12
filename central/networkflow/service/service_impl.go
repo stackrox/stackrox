@@ -92,7 +92,7 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 	return builder.Build(), nil
 }
 
-func filterNetworkFlowsByDeployments(flows []*v1.NetworkFlow, deployments []*storage.Deployment) (filtered []*v1.NetworkFlow) {
+func filterNetworkFlowsByDeployments(flows []*storage.NetworkFlow, deployments []*storage.Deployment) (filtered []*storage.NetworkFlow) {
 
 	filtered = flows[:0]
 	deploymentIDMap := make(map[string]bool)
@@ -104,10 +104,10 @@ func filterNetworkFlowsByDeployments(flows []*v1.NetworkFlow, deployments []*sto
 		srcEnt := flow.GetProps().GetSrcEntity()
 		dstEnt := flow.GetProps().GetDstEntity()
 
-		if srcEnt.GetType() == v1.NetworkEntityInfo_DEPLOYMENT && !deploymentIDMap[srcEnt.GetId()] {
+		if srcEnt.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && !deploymentIDMap[srcEnt.GetId()] {
 			continue
 		}
-		if dstEnt.GetType() == v1.NetworkEntityInfo_DEPLOYMENT && !deploymentIDMap[dstEnt.GetId()] {
+		if dstEnt.GetType() == storage.NetworkEntityInfo_DEPLOYMENT && !deploymentIDMap[dstEnt.GetId()] {
 			continue
 		}
 
@@ -117,7 +117,7 @@ func filterNetworkFlowsByDeployments(flows []*v1.NetworkFlow, deployments []*sto
 	return
 }
 
-func filterNetworkFlowsByTime(flows []*v1.NetworkFlow, since timestamp.MicroTS) (filtered []*v1.NetworkFlow) {
+func filterNetworkFlowsByTime(flows []*storage.NetworkFlow, since timestamp.MicroTS) (filtered []*storage.NetworkFlow) {
 	filtered = flows[:0]
 
 	for _, flow := range flows {

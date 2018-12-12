@@ -13,7 +13,7 @@ func init() {
 	compilers = append(compilers, newVersionMatcher)
 }
 
-func newVersionMatcher(policy *v1.Policy) (Matcher, error) {
+func newVersionMatcher(policy *storage.Policy) (Matcher, error) {
 	versionPolicy := policy.GetFields().GetComponent().GetVersion()
 	if versionPolicy == "" {
 		return nil, nil

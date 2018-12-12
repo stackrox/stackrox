@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
 
@@ -47,9 +47,9 @@ func (mr *MockStoreMockRecorder) CountSecrets() *gomock.Call {
 }
 
 // GetAllSecrets mocks base method
-func (m *MockStore) GetAllSecrets() ([]*v1.Secret, error) {
+func (m *MockStore) GetAllSecrets() ([]*storage.Secret, error) {
 	ret := m.ctrl.Call(m, "GetAllSecrets")
-	ret0, _ := ret[0].([]*v1.Secret)
+	ret0, _ := ret[0].([]*storage.Secret)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -60,9 +60,9 @@ func (mr *MockStoreMockRecorder) GetAllSecrets() *gomock.Call {
 }
 
 // GetSecret mocks base method
-func (m *MockStore) GetSecret(arg0 string) (*v1.Secret, bool, error) {
+func (m *MockStore) GetSecret(arg0 string) (*storage.Secret, bool, error) {
 	ret := m.ctrl.Call(m, "GetSecret", arg0)
-	ret0, _ := ret[0].(*v1.Secret)
+	ret0, _ := ret[0].(*storage.Secret)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -74,9 +74,9 @@ func (mr *MockStoreMockRecorder) GetSecret(arg0 interface{}) *gomock.Call {
 }
 
 // ListAllSecrets mocks base method
-func (m *MockStore) ListAllSecrets() ([]*v1.ListSecret, error) {
+func (m *MockStore) ListAllSecrets() ([]*storage.ListSecret, error) {
 	ret := m.ctrl.Call(m, "ListAllSecrets")
-	ret0, _ := ret[0].([]*v1.ListSecret)
+	ret0, _ := ret[0].([]*storage.ListSecret)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -87,9 +87,9 @@ func (mr *MockStoreMockRecorder) ListAllSecrets() *gomock.Call {
 }
 
 // ListSecrets mocks base method
-func (m *MockStore) ListSecrets(arg0 []string) ([]*v1.ListSecret, error) {
+func (m *MockStore) ListSecrets(arg0 []string) ([]*storage.ListSecret, error) {
 	ret := m.ctrl.Call(m, "ListSecrets", arg0)
-	ret0, _ := ret[0].([]*v1.ListSecret)
+	ret0, _ := ret[0].([]*storage.ListSecret)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -112,7 +112,7 @@ func (mr *MockStoreMockRecorder) RemoveSecret(arg0 interface{}) *gomock.Call {
 }
 
 // UpsertSecret mocks base method
-func (m *MockStore) UpsertSecret(arg0 *v1.Secret) error {
+func (m *MockStore) UpsertSecret(arg0 *storage.Secret) error {
 	ret := m.ctrl.Call(m, "UpsertSecret", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0

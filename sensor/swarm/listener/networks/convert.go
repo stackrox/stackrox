@@ -2,46 +2,46 @@ package networks
 
 import (
 	"github.com/docker/docker/api/types"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type networkWrap types.NetworkResource
 
-func (n networkWrap) asNetworkPolicy() *v1.NetworkPolicy {
+func (n networkWrap) asNetworkPolicy() *storage.NetworkPolicy {
 	// Swarm doesn't have network policies so this network policy implements the network segmentation
 	// it blocks both ingress and egress out of the network
-	return &v1.NetworkPolicy{
+	return &storage.NetworkPolicy{
 		Id:        n.ID,
 		Name:      n.Name,
 		Namespace: n.Name,
-		Spec: &v1.NetworkPolicySpec{
-			PodSelector: &v1.LabelSelector{},
-			Ingress: []*v1.NetworkPolicyIngressRule{
+		Spec: &storage.NetworkPolicySpec{
+			PodSelector: &storage.LabelSelector{},
+			Ingress: []*storage.NetworkPolicyIngressRule{
 				{
-					From: []*v1.NetworkPolicyPeer{
+					From: []*storage.NetworkPolicyPeer{
 						{
-							PodSelector: &v1.LabelSelector{},
+							PodSelector: &storage.LabelSelector{},
 						},
 					},
 				},
 			},
-			Egress: []*v1.NetworkPolicyEgressRule{
+			Egress: []*storage.NetworkPolicyEgressRule{
 				{
-					To: []*v1.NetworkPolicyPeer{
+					To: []*storage.NetworkPolicyPeer{
 						{
-							PodSelector: &v1.LabelSelector{},
+							PodSelector: &storage.LabelSelector{},
 						},
 						{
-							IpBlock: &v1.IPBlock{
+							IpBlock: &storage.IPBlock{
 								Cidr: "0.0.0.0/32",
 							},
 						},
 					},
 				},
 			},
-			PolicyTypes: []v1.NetworkPolicyType{
-				v1.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE,
-				v1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE,
+			PolicyTypes: []storage.NetworkPolicyType{
+				storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE,
+				storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE,
 			},
 		},
 	}

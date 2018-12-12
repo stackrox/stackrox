@@ -1,7 +1,7 @@
 package alertmanager
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -44,7 +44,7 @@ func WithDeploymentIDs(deploymentIDs ...string) AlertFilterOption {
 }
 
 // WithLifecycleStage returns an AlertFilterOptions that filters by lifecycle stage.
-func WithLifecycleStage(lifecycleStage v1.LifecycleStage) AlertFilterOption {
+func WithLifecycleStage(lifecycleStage storage.LifecycleStage) AlertFilterOption {
 	return &alertFilterOptionImpl{
 		applyFunc: func(qb *search.QueryBuilder) {
 			qb.AddStrings(search.LifecycleStage, lifecycleStage.String())

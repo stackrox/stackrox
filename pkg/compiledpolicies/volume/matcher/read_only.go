@@ -11,7 +11,7 @@ func init() {
 	compilers = append(compilers, newReadOnlyMatcher)
 }
 
-func newReadOnlyMatcher(policy *v1.Policy) (Matcher, error) {
+func newReadOnlyMatcher(policy *storage.Policy) (Matcher, error) {
 	volumePolicy := policy.GetFields().GetVolumePolicy()
 	if volumePolicy.GetSetReadOnly() == nil {
 		return nil, nil

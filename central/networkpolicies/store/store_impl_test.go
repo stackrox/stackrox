@@ -7,6 +7,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/suite"
 )
@@ -39,7 +40,7 @@ func (suite *NetworkPolicyStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *NetworkPolicyStoreTestSuite) TestNetworkPolicies() {
-	networkPolicies := []*v1.NetworkPolicy{
+	networkPolicies := []*storage.NetworkPolicy{
 		{
 			Id:        "1fooID",
 			ClusterId: "1",

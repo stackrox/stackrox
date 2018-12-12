@@ -9,8 +9,8 @@ import (
 )
 
 // MatchResources returns violations based on the input resource policy and actual resource configuration.
-func MatchResources(policy *v1.ResourcePolicy, resource *storage.Resources, identifier string) []*v1.Alert_Violation {
-	matchFunctions := []func(*v1.ResourcePolicy, *storage.Resources, string) ([]*v1.Alert_Violation, bool){
+func MatchResources(policy *storage.ResourcePolicy, resource *storage.Resources, identifier string) []*v1.Alert_Violation {
+	matchFunctions := []func(*storage.ResourcePolicy, *storage.Resources, string) ([]*v1.Alert_Violation, bool){
 		matchCPUResourceRequest,
 		matchCPUResourceLimit,
 		matchMemoryResourceRequest,
@@ -26,31 +26,31 @@ func MatchResources(policy *v1.ResourcePolicy, resource *storage.Resources, iden
 	return violations
 }
 
-func matchCPUResourceRequest(rp *v1.ResourcePolicy, resources *storage.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
+func matchCPUResourceRequest(rp *storage.ResourcePolicy, resources *storage.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
 	violations, policyExists = matchNumericalPolicy("CPU resource request",
 		id, resources.GetCpuCoresRequest(), rp.GetCpuResourceRequest())
 	return
 }
 
-func matchCPUResourceLimit(rp *v1.ResourcePolicy, resources *storage.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
+func matchCPUResourceLimit(rp *storage.ResourcePolicy, resources *storage.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
 	violations, policyExists = matchNumericalPolicy("CPU resource limit",
 		id, resources.GetCpuCoresLimit(), rp.GetCpuResourceLimit())
 	return
 }
 
-func matchMemoryResourceRequest(rp *v1.ResourcePolicy, resources *storage.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
+func matchMemoryResourceRequest(rp *storage.ResourcePolicy, resources *storage.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
 	violations, policyExists = matchNumericalPolicy("Memory resource request",
 		id, resources.GetMemoryMbRequest(), rp.GetMemoryResourceRequest())
 	return
 }
 
-func matchMemoryResourceLimit(rp *v1.ResourcePolicy, resources *storage.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
+func matchMemoryResourceLimit(rp *storage.ResourcePolicy, resources *storage.Resources, id string) (violations []*v1.Alert_Violation, policyExists bool) {
 	violations, policyExists = matchNumericalPolicy("Memory resource limit",
 		id, resources.GetMemoryMbLimit(), rp.GetMemoryResourceLimit())
 	return
 }
 
-func matchNumericalPolicy(prefix, id string, value float32, p *v1.NumericalPolicy) (violations []*v1.Alert_Violation, policyExists bool) {
+func matchNumericalPolicy(prefix, id string, value float32, p *storage.NumericalPolicy) (violations []*v1.Alert_Violation, policyExists bool) {
 	if p == nil {
 		return
 	}
@@ -58,19 +58,19 @@ func matchNumericalPolicy(prefix, id string, value float32, p *v1.NumericalPolic
 	var comparatorFunc func(x, y float32) bool
 	var comparatorString string
 	switch p.GetOp() {
-	case v1.Comparator_LESS_THAN:
+	case storage.Comparator_LESS_THAN:
 		comparatorFunc = func(x, y float32) bool { return x < y }
 		comparatorString = "less than"
-	case v1.Comparator_LESS_THAN_OR_EQUALS:
+	case storage.Comparator_LESS_THAN_OR_EQUALS:
 		comparatorFunc = func(x, y float32) bool { return x <= y }
 		comparatorString = "less than or equal to"
-	case v1.Comparator_EQUALS:
+	case storage.Comparator_EQUALS:
 		comparatorFunc = func(x, y float32) bool { return math.Abs(float64(x-y)) <= 1e-5 }
 		comparatorString = "equal to"
-	case v1.Comparator_GREATER_THAN_OR_EQUALS:
+	case storage.Comparator_GREATER_THAN_OR_EQUALS:
 		comparatorFunc = func(x, y float32) bool { return x >= y }
 		comparatorString = "greater than or equal to"
-	case v1.Comparator_GREATER_THAN:
+	case storage.Comparator_GREATER_THAN:
 		comparatorFunc = func(x, y float32) bool { return x > y }
 		comparatorString = "greater than"
 	}

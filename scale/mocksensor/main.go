@@ -176,7 +176,7 @@ func generateNetworkFlowUpdate(maxNetworkFlows int, flowDeleteRate float64) *cen
 		numFlows = maxNetworkFlows
 	}
 
-	flows := make([]*v1.NetworkFlow, numFlows)
+	flows := make([]*storage.NetworkFlow, numFlows)
 	for i := range flows {
 		srcIndex := rand.Int() % deploymentCount
 		dstIndex := rand.Int() % (deploymentCount - 1)
@@ -184,11 +184,11 @@ func generateNetworkFlowUpdate(maxNetworkFlows int, flowDeleteRate float64) *cen
 			dstIndex++
 		}
 
-		flow := &v1.NetworkFlow{
-			Props: &v1.NetworkFlowProperties{
+		flow := &storage.NetworkFlow{
+			Props: &storage.NetworkFlowProperties{
 				SrcEntity:  networkentity.ForDeployment(getGeneratedDeploymentID(srcIndex)).ToProto(),
 				DstEntity:  networkentity.ForDeployment(getGeneratedDeploymentID(dstIndex)).ToProto(),
-				L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 				DstPort:    80,
 			},
 		}

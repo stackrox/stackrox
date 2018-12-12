@@ -6,7 +6,7 @@ import (
 	"time"
 
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -40,22 +40,22 @@ func (suite *FlowStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *FlowStoreTestSuite) TestStore() {
-	flows := []*v1.NetworkFlow{
+	flows := []*storage.NetworkFlow{
 		{
-			Props: &v1.NetworkFlowProperties{
-				SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-				DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
 				DstPort:    1,
-				L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
 		},
 		{
-			Props: &v1.NetworkFlowProperties{
-				SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode1"},
-				DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode1"},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
 				DstPort:    2,
-				L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
 		},
@@ -68,7 +68,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	err = suite.tested.UpsertFlows(flows, timestamp.Now())
 	suite.NoError(err, "upsert should succeed on second insert")
 
-	err = suite.tested.RemoveFlow(&v1.NetworkFlowProperties{
+	err = suite.tested.RemoveFlow(&storage.NetworkFlowProperties{
 		SrcEntity:  flows[1].GetProps().GetSrcEntity(),
 		DstEntity:  flows[1].GetProps().GetDstEntity(),
 		DstPort:    flows[1].GetProps().GetDstPort(),
@@ -76,7 +76,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	})
 	suite.NoError(err, "remove should succeed when present")
 
-	err = suite.tested.RemoveFlow(&v1.NetworkFlowProperties{
+	err = suite.tested.RemoveFlow(&storage.NetworkFlowProperties{
 		SrcEntity:  flows[1].GetProps().GetSrcEntity(),
 		DstEntity:  flows[1].GetProps().GetDstEntity(),
 		DstPort:    flows[1].GetProps().GetDstPort(),
@@ -84,7 +84,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	})
 	suite.NoError(err, "remove should succeed when not present")
 
-	var actualFlows []*v1.NetworkFlow
+	var actualFlows []*storage.NetworkFlow
 	actualFlows, _, err = suite.tested.GetAllFlows()
 	suite.Equal(1, len(actualFlows), "only flows[0] should be present")
 	suite.Equal(flows[0], actualFlows[0], "flows should be equal")

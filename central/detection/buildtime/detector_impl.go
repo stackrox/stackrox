@@ -43,7 +43,7 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*v1.Alert, error) {
 	}
 
 	var alerts []*v1.Alert
-	err = d.policySet.ForEach(func(p *v1.Policy, matcher searchbasedpolicies.Matcher) error {
+	err = d.policySet.ForEach(func(p *storage.Policy, matcher searchbasedpolicies.Matcher) error {
 		violations, err := matcher.MatchOne(tempIndexer, types.NewDigest(image.GetId()).Digest())
 		if err != nil {
 			return fmt.Errorf("matching against policy %s: %s", p.GetName(), err)
@@ -59,14 +59,14 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*v1.Alert, error) {
 	return alerts, nil
 }
 
-func policyAndViolationsToAlert(policy *v1.Policy, violations []*v1.Alert_Violation) *v1.Alert {
+func policyAndViolationsToAlert(policy *storage.Policy, violations []*v1.Alert_Violation) *v1.Alert {
 	if len(violations) == 0 {
 		return nil
 	}
 	alert := &v1.Alert{
 		Id:             uuid.NewV4().String(),
-		LifecycleStage: v1.LifecycleStage_BUILD,
-		Policy:         protoutils.CloneV1Policy(policy),
+		LifecycleStage: storage.LifecycleStage_BUILD,
+		Policy:         protoutils.CloneStoragePolicy(policy),
 		Violations:     violations,
 		Time:           ptypes.TimestampNow(),
 	}

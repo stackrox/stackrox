@@ -3,7 +3,7 @@ package net
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // L4Proto represents the L4 protocol (TCP, UDP etc).
@@ -30,28 +30,28 @@ func (p L4Proto) String() string {
 	}
 }
 
-// ToProtobuf translates this L4Proto to a protobuf `v1.L4Protocol` enum.
-func (p L4Proto) ToProtobuf() v1.L4Protocol {
+// ToProtobuf translates this L4Proto to a protobuf `storage.L4Protocol` enum.
+func (p L4Proto) ToProtobuf() storage.L4Protocol {
 	switch p {
 	case TCP:
-		return v1.L4Protocol_L4_PROTOCOL_TCP
+		return storage.L4Protocol_L4_PROTOCOL_TCP
 	case UDP:
-		return v1.L4Protocol_L4_PROTOCOL_UDP
+		return storage.L4Protocol_L4_PROTOCOL_UDP
 	case ICMP:
-		return v1.L4Protocol_L4_PROTOCOL_ICMP
+		return storage.L4Protocol_L4_PROTOCOL_ICMP
 	default:
-		return v1.L4Protocol_L4_PROTOCOL_RAW
+		return storage.L4Protocol_L4_PROTOCOL_RAW
 	}
 }
 
-// L4ProtoFromProtobuf translate a protobuf `v1.L4Protocol` enum to an L4Proto.
-func L4ProtoFromProtobuf(l4proto v1.L4Protocol) L4Proto {
+// L4ProtoFromProtobuf translate a protobuf `storage.L4Protocol` enum to an L4Proto.
+func L4ProtoFromProtobuf(l4proto storage.L4Protocol) L4Proto {
 	switch l4proto {
-	case v1.L4Protocol_L4_PROTOCOL_TCP:
+	case storage.L4Protocol_L4_PROTOCOL_TCP:
 		return TCP
-	case v1.L4Protocol_L4_PROTOCOL_UDP:
+	case storage.L4Protocol_L4_PROTOCOL_UDP:
 		return UDP
-	case v1.L4Protocol_L4_PROTOCOL_ICMP:
+	case storage.L4Protocol_L4_PROTOCOL_ICMP:
 		return ICMP
 	default:
 		return L4Proto(-1)

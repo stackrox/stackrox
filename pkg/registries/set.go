@@ -1,7 +1,6 @@
 package registries
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/types"
 )
@@ -13,7 +12,7 @@ type Set interface {
 	GetRegistryMetadataByImage(image *storage.Image) *types.Config
 
 	Clear()
-	UpdateImageIntegration(integration *v1.ImageIntegration) error
+	UpdateImageIntegration(integration *storage.ImageIntegration) error
 	RemoveImageIntegration(id string) error
 }
 

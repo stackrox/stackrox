@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	clairV1 "github.com/coreos/clair/api/v1"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clair/mock"
 	"github.com/stretchr/testify/suite"
@@ -44,9 +43,9 @@ func (suite *ClairSuite) SetupSuite() {
 	// Set the global variable of the Clair endpoint
 	suite.server = masterServer
 
-	protoScanner := &v1.ImageIntegration{
-		IntegrationConfig: &v1.ImageIntegration_Clair{
-			Clair: &v1.ClairConfig{
+	protoScanner := &storage.ImageIntegration{
+		IntegrationConfig: &storage.ImageIntegration_Clair{
+			Clair: &storage.ClairConfig{
 				Endpoint: "http://" + masterServer.Listener.Addr().String(),
 			},
 		},

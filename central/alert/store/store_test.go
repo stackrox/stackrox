@@ -6,6 +6,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/suite"
 )
@@ -42,16 +43,16 @@ func (s *alertStoreTestSuite) TestAlerts() {
 	alerts := []*v1.Alert{
 		{
 			Id:             "id1",
-			LifecycleStage: v1.LifecycleStage_RUNTIME,
-			Policy: &v1.Policy{
-				Severity: v1.Severity_LOW_SEVERITY,
+			LifecycleStage: storage.LifecycleStage_RUNTIME,
+			Policy: &storage.Policy{
+				Severity: storage.Severity_LOW_SEVERITY,
 			},
 		},
 		{
 			Id:             "id2",
-			LifecycleStage: v1.LifecycleStage_DEPLOY,
-			Policy: &v1.Policy{
-				Severity: v1.Severity_HIGH_SEVERITY,
+			LifecycleStage: storage.LifecycleStage_DEPLOY,
+			Policy: &storage.Policy{
+				Severity: storage.Severity_HIGH_SEVERITY,
 			},
 			State: v1.ViolationState_RESOLVED,
 		},
@@ -80,7 +81,7 @@ func (s *alertStoreTestSuite) TestAlerts() {
 	}
 
 	for _, a := range alerts {
-		a.Policy.Severity = v1.Severity_MEDIUM_SEVERITY
+		a.Policy.Severity = storage.Severity_MEDIUM_SEVERITY
 		s.NoError(s.store.UpdateAlert(a))
 	}
 

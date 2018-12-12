@@ -17,9 +17,9 @@ func TestECRIntegration(t *testing.T) {
 	accessID := os.Getenv("ACCESS_ID")
 	accessKey := os.Getenv("ACCESS_KEY")
 	registryID := os.Getenv("REGISTRY_ID")
-	integration := &v1.ImageIntegration{
+	integration := &storage.ImageIntegration{
 		IntegrationConfig: &v1.ImageIntegration_Ecr{
-			Ecr: &v1.ECRConfig{
+			Ecr: &storage.ECRConfig{
 				Region:          "us-west-2",
 				RegistryId:      registryID,
 				AccessKeyId:     accessID,

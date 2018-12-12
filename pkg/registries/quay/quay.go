@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -19,8 +19,8 @@ const (
 )
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageRegistry, error)) {
-	return "quay", func(integration *v1.ImageIntegration) (types.ImageRegistry, error) {
+func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageRegistry, error)) {
+	return "quay", func(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
 		reg, err := newRegistry(integration)
 		return reg, err
 	}
@@ -29,10 +29,10 @@ func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageRegis
 // Quay is the implementation of the Docker Registry for Quay
 type Quay struct {
 	*docker.Registry
-	config *v1.QuayConfig
+	config *storage.QuayConfig
 }
 
-func validate(quay *v1.QuayConfig) error {
+func validate(quay *storage.QuayConfig) error {
 	if quay.GetEndpoint() == "" {
 		return fmt.Errorf("Quay endpoint must be specified")
 	}
@@ -41,7 +41,7 @@ func validate(quay *v1.QuayConfig) error {
 }
 
 // NewRegistryFromConfig returns a new instantiation of the Quay registry
-func NewRegistryFromConfig(config *v1.QuayConfig, integration *v1.ImageIntegration) (types.ImageRegistry, error) {
+func NewRegistryFromConfig(config *storage.QuayConfig, integration *storage.ImageIntegration) (types.ImageRegistry, error) {
 	if err := validate(config); err != nil {
 		return nil, err
 	}
@@ -66,8 +66,8 @@ func NewRegistryFromConfig(config *v1.QuayConfig, integration *v1.ImageIntegrati
 	}, nil
 }
 
-func newRegistry(integration *v1.ImageIntegration) (types.ImageRegistry, error) {
-	quayConfig, ok := integration.IntegrationConfig.(*v1.ImageIntegration_Quay)
+func newRegistry(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
+	quayConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Quay)
 	if !ok {
 		return nil, fmt.Errorf("Quay config must be specified")
 	}

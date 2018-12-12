@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
@@ -26,8 +25,8 @@ const (
 var log = logging.LoggerForModule()
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
-func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageScanner, error)) {
-	return typeString, func(integration *v1.ImageIntegration) (types.ImageScanner, error) {
+func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageScanner, error)) {
+	return typeString, func(integration *storage.ImageIntegration) (types.ImageScanner, error) {
 		scan, err := newScanner(integration)
 		return scan, err
 	}
@@ -40,11 +39,11 @@ type quay struct {
 	oauthToken string
 	registry   registryTypes.ImageRegistry
 
-	protoImageIntegration *v1.ImageIntegration
+	protoImageIntegration *storage.ImageIntegration
 }
 
-func newScanner(protoImageIntegration *v1.ImageIntegration) (*quay, error) {
-	quayConfig, ok := protoImageIntegration.IntegrationConfig.(*v1.ImageIntegration_Quay)
+func newScanner(protoImageIntegration *storage.ImageIntegration) (*quay, error) {
+	quayConfig, ok := protoImageIntegration.IntegrationConfig.(*storage.ImageIntegration_Quay)
 	if !ok {
 		return nil, fmt.Errorf("Quay config must be specified")
 	}

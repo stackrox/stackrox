@@ -7,6 +7,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/suite"
 )
@@ -55,16 +56,16 @@ func (s *MessageCrudTestSuite) TestCreate() {
 	alerts := []*v1.Alert{
 		{
 			Id:             "createId1",
-			LifecycleStage: v1.LifecycleStage_RUNTIME,
-			Policy: &v1.Policy{
-				Severity: v1.Severity_LOW_SEVERITY,
+			LifecycleStage: storage.LifecycleStage_RUNTIME,
+			Policy: &storage.Policy{
+				Severity: storage.Severity_LOW_SEVERITY,
 			},
 		},
 		{
 			Id:             "createId2",
-			LifecycleStage: v1.LifecycleStage_DEPLOY,
-			Policy: &v1.Policy{
-				Severity: v1.Severity_HIGH_SEVERITY,
+			LifecycleStage: storage.LifecycleStage_DEPLOY,
+			Policy: &storage.Policy{
+				Severity: storage.Severity_HIGH_SEVERITY,
 			},
 			State: v1.ViolationState_RESOLVED,
 		},
@@ -93,16 +94,16 @@ func (s *MessageCrudTestSuite) TestUpdate() {
 	alerts := []*v1.Alert{
 		{
 			Id:             "updateId1",
-			LifecycleStage: v1.LifecycleStage_RUNTIME,
-			Policy: &v1.Policy{
-				Severity: v1.Severity_LOW_SEVERITY,
+			LifecycleStage: storage.LifecycleStage_RUNTIME,
+			Policy: &storage.Policy{
+				Severity: storage.Severity_LOW_SEVERITY,
 			},
 		},
 		{
 			Id:             "updateId2",
-			LifecycleStage: v1.LifecycleStage_DEPLOY,
-			Policy: &v1.Policy{
-				Severity: v1.Severity_HIGH_SEVERITY,
+			LifecycleStage: storage.LifecycleStage_DEPLOY,
+			Policy: &storage.Policy{
+				Severity: storage.Severity_HIGH_SEVERITY,
 			},
 			State: v1.ViolationState_RESOLVED,
 		},
@@ -116,16 +117,16 @@ func (s *MessageCrudTestSuite) TestUpdate() {
 	updatedAlerts := []*v1.Alert{
 		{
 			Id:             "updateId1",
-			LifecycleStage: v1.LifecycleStage_RUNTIME,
-			Policy: &v1.Policy{
-				Severity: v1.Severity_MEDIUM_SEVERITY,
+			LifecycleStage: storage.LifecycleStage_RUNTIME,
+			Policy: &storage.Policy{
+				Severity: storage.Severity_MEDIUM_SEVERITY,
 			},
 		},
 		{
 			Id:             "updateId2",
-			LifecycleStage: v1.LifecycleStage_DEPLOY,
-			Policy: &v1.Policy{
-				Severity: v1.Severity_MEDIUM_SEVERITY,
+			LifecycleStage: storage.LifecycleStage_DEPLOY,
+			Policy: &storage.Policy{
+				Severity: storage.Severity_MEDIUM_SEVERITY,
 			},
 			State: v1.ViolationState_RESOLVED,
 		},
@@ -150,16 +151,16 @@ func (s *MessageCrudTestSuite) TestUpsert() {
 	alerts := []*v1.Alert{
 		{
 			Id:             "upsertId1",
-			LifecycleStage: v1.LifecycleStage_RUNTIME,
-			Policy: &v1.Policy{
-				Severity: v1.Severity_LOW_SEVERITY,
+			LifecycleStage: storage.LifecycleStage_RUNTIME,
+			Policy: &storage.Policy{
+				Severity: storage.Severity_LOW_SEVERITY,
 			},
 		},
 		{
 			Id:             "upsertId2",
-			LifecycleStage: v1.LifecycleStage_DEPLOY,
-			Policy: &v1.Policy{
-				Severity: v1.Severity_HIGH_SEVERITY,
+			LifecycleStage: storage.LifecycleStage_DEPLOY,
+			Policy: &storage.Policy{
+				Severity: storage.Severity_HIGH_SEVERITY,
 			},
 			State: v1.ViolationState_RESOLVED,
 		},
@@ -172,16 +173,16 @@ func (s *MessageCrudTestSuite) TestUpsert() {
 	updatedAlerts := []*v1.Alert{
 		{
 			Id:             "upsertId1",
-			LifecycleStage: v1.LifecycleStage_RUNTIME,
-			Policy: &v1.Policy{
-				Severity: v1.Severity_MEDIUM_SEVERITY,
+			LifecycleStage: storage.LifecycleStage_RUNTIME,
+			Policy: &storage.Policy{
+				Severity: storage.Severity_MEDIUM_SEVERITY,
 			},
 		},
 		{
 			Id:             "upsertId2",
-			LifecycleStage: v1.LifecycleStage_DEPLOY,
-			Policy: &v1.Policy{
-				Severity: v1.Severity_MEDIUM_SEVERITY,
+			LifecycleStage: storage.LifecycleStage_DEPLOY,
+			Policy: &storage.Policy{
+				Severity: storage.Severity_MEDIUM_SEVERITY,
 			},
 			State: v1.ViolationState_RESOLVED,
 		},
@@ -206,16 +207,16 @@ func (s *MessageCrudTestSuite) TestDelete() {
 	alerts := []*v1.Alert{
 		{
 			Id:             "deleteId1",
-			LifecycleStage: v1.LifecycleStage_RUNTIME,
-			Policy: &v1.Policy{
-				Severity: v1.Severity_LOW_SEVERITY,
+			LifecycleStage: storage.LifecycleStage_RUNTIME,
+			Policy: &storage.Policy{
+				Severity: storage.Severity_LOW_SEVERITY,
 			},
 		},
 		{
 			Id:             "deleteId2",
-			LifecycleStage: v1.LifecycleStage_DEPLOY,
-			Policy: &v1.Policy{
-				Severity: v1.Severity_HIGH_SEVERITY,
+			LifecycleStage: storage.LifecycleStage_DEPLOY,
+			Policy: &storage.Policy{
+				Severity: storage.Severity_HIGH_SEVERITY,
 			},
 			State: v1.ViolationState_RESOLVED,
 		},
@@ -238,16 +239,16 @@ func (s *MessageCrudTestSuite) TestDeleteBatch() {
 	alerts := []*v1.Alert{
 		{
 			Id:             "deleteBatchId1",
-			LifecycleStage: v1.LifecycleStage_RUNTIME,
-			Policy: &v1.Policy{
-				Severity: v1.Severity_LOW_SEVERITY,
+			LifecycleStage: storage.LifecycleStage_RUNTIME,
+			Policy: &storage.Policy{
+				Severity: storage.Severity_LOW_SEVERITY,
 			},
 		},
 		{
 			Id:             "deleteBatchId2",
-			LifecycleStage: v1.LifecycleStage_DEPLOY,
-			Policy: &v1.Policy{
-				Severity: v1.Severity_HIGH_SEVERITY,
+			LifecycleStage: storage.LifecycleStage_DEPLOY,
+			Policy: &storage.Policy{
+				Severity: storage.Severity_HIGH_SEVERITY,
 			},
 			State: v1.ViolationState_RESOLVED,
 		},

@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+
+package storage;
+
+message NetworkPolicy {
+    string                    id            = 1;
+    string                    name          = 2;
+    string                    cluster_id    = 3;
+    string                    cluster_name  = 4;
+    string                    namespace     = 5;
+    map<string, string>       labels        = 6;
+    map<string, string>       annotations   = 7;
+
+    NetworkPolicySpec         spec          = 8;
+    string                    yaml          = 9;
+    string                    api_version   = 10;
+    google.protobuf.Timestamp created       = 11;
+}
+
+message NetworkPolicySpec {
+    LabelSelector                     pod_selector = 1;
+    repeated NetworkPolicyIngressRule ingress      = 2;
+    repeated NetworkPolicyEgressRule  egress       = 3;
+    repeated NetworkPolicyType        policy_types = 4;
+}
+
+message NetworkPolicyEgressRule {
+    repeated NetworkPolicyPort ports = 1;
+    repeated NetworkPolicyPeer to    = 2;
+}
+
+message NetworkPolicyPeer {
+    LabelSelector pod_selector       = 1;
+    LabelSelector namespace_selector = 2;
+    IPBlock       ip_block           = 3;
+}
+
+message LabelSelector {
+    map<string, string> match_labels = 1;
+}
+
+message IPBlock {
+    string          cidr   = 1;
+    repeated string except = 2;
+}
+
+message NetworkPolicyPort {
+    Protocol protocol = 1;
+    int32    port     = 2;
+}
+
+enum Protocol {
+    UNSET_PROTOCOL = 0;
+    TCP_PROTOCOL   = 1;
+    UDP_PROTOCOL   = 2;
+}
+
+enum NetworkPolicyType {
+    UNSET_NETWORK_POLICY_TYPE   = 0;
+    INGRESS_NETWORK_POLICY_TYPE = 1;
+    EGRESS_NETWORK_POLICY_TYPE  = 2;
+}
+
+message NetworkPolicyIngressRule {
+    repeated NetworkPolicyPort ports = 1;
+    repeated NetworkPolicyPeer from  = 2;
+}

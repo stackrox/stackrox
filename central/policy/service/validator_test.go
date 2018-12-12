@@ -38,43 +38,43 @@ func (suite *PolicyValidatorTestSuite) TearDownTest() {
 }
 
 func (suite *PolicyValidatorTestSuite) TestValidatesName() {
-	policy := &v1.Policy{
+	policy := &storage.Policy{
 		Name: "Robert",
 	}
 	err := suite.validator.validateName(policy)
 	suite.NoError(err, "\"Robert\" should be a valid name")
 
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Name: "Jim-Bob",
 	}
 	err = suite.validator.validateName(policy)
 	suite.NoError(err, "\"Jim-Bob\" should be a valid name")
 
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Name: "Jimmy_John",
 	}
 	err = suite.validator.validateName(policy)
 	suite.NoError(err, "\"Jimmy_John\" should be a valid name")
 
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Name: "",
 	}
 	err = suite.validator.validateName(policy)
 	suite.Error(err, "a name should be required")
 
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Name: "Rob",
 	}
 	err = suite.validator.validateName(policy)
 	suite.Error(err, "names that are too short should not be supported")
 
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Name: "RobertIsTheCoolestDudeEverToLiveUnlessYouCountMrTBecauseHeIsEvenDoper",
 	}
 	err = suite.validator.validateName(policy)
 	suite.Error(err, "names that are more than 64 chars are not supported")
 
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Name: "Rob$",
 	}
 	err = suite.validator.validateName(policy)
@@ -119,8 +119,8 @@ func (suite *PolicyValidatorTestSuite) TestsValidateCapabilities() {
 
 	for _, c := range cases {
 		suite.T().Run(c.name, func(t *testing.T) {
-			policy := &v1.Policy{
-				Fields: &v1.PolicyFields{
+			policy := &storage.Policy{
+				Fields: &storage.PolicyFields{
 					AddCapabilities:  c.adds,
 					DropCapabilities: c.drops,
 				},
@@ -131,25 +131,25 @@ func (suite *PolicyValidatorTestSuite) TestsValidateCapabilities() {
 }
 
 func (suite *PolicyValidatorTestSuite) TestValidateDescription() {
-	policy := &v1.Policy{
+	policy := &storage.Policy{
 		Description: "",
 	}
 	err := suite.validator.validateDescription(policy)
 	suite.NoError(err, "descriptions are not required")
 
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Description: "Yo",
 	}
 	err = suite.validator.validateDescription(policy)
 	suite.NoError(err, "descriptions can be as short as they like")
 
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Description: "This policy is the stop when an image is terrible and will cause us to lose lots-o-dough. Why? Cause Money!",
 	}
 	err = suite.validator.validateDescription(policy)
 	suite.NoError(err, "descriptions should take the form of a sentence")
 
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Description: `This policy is the stop when an image is terrible and will cause us to lose lots-o-dough. Why? Cause Money!
 			Oh, and I almost forgot that this is also to help the good people of nowhere-ville get back on their 
 			feet after that tornado ripped their town to shreds and left them nothing but pineapple and gum.`,
@@ -157,7 +157,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateDescription() {
 	err = suite.validator.validateDescription(policy)
 	suite.Error(err, "descriptions should be no more than 256 chars")
 
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Description: "This$Rox",
 	}
 	err = suite.validator.validateDescription(policy)
@@ -167,19 +167,19 @@ func (suite *PolicyValidatorTestSuite) TestValidateDescription() {
 func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 	testCases := []struct {
 		description string
-		p           *v1.Policy
+		p           *storage.Policy
 		errExpected bool
 	}{
 		{
 			description: "Build time policy with non-image fields",
-			p: &v1.Policy{
-				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_BUILD,
+			p: &storage.Policy{
+				LifecycleStages: []storage.LifecycleStage{
+					storage.LifecycleStage_BUILD,
 				},
-				Fields: &v1.PolicyFields{
-					ImageName: &v1.ImageNamePolicy{Remote: "blah"},
-					ContainerResourcePolicy: &v1.ResourcePolicy{
-						CpuResourceLimit: &v1.NumericalPolicy{
+				Fields: &storage.PolicyFields{
+					ImageName: &storage.ImageNamePolicy{Remote: "blah"},
+					ContainerResourcePolicy: &storage.ResourcePolicy{
+						CpuResourceLimit: &storage.NumericalPolicy{
 							Value: 1.0,
 						},
 					},
@@ -189,21 +189,21 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 		},
 		{
 			description: "Build time policy with no image fields",
-			p: &v1.Policy{
-				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_BUILD,
+			p: &storage.Policy{
+				LifecycleStages: []storage.LifecycleStage{
+					storage.LifecycleStage_BUILD,
 				},
 			},
 			errExpected: true,
 		},
 		{
 			description: "valid build time",
-			p: &v1.Policy{
-				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_BUILD,
+			p: &storage.Policy{
+				LifecycleStages: []storage.LifecycleStage{
+					storage.LifecycleStage_BUILD,
 				},
-				Fields: &v1.PolicyFields{
-					ImageName: &v1.ImageNamePolicy{
+				Fields: &storage.PolicyFields{
+					ImageName: &storage.ImageNamePolicy{
 						Tag: "latest",
 					},
 				},
@@ -211,39 +211,39 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 		},
 		{
 			description: "deploy time with no fields",
-			p: &v1.Policy{
-				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_DEPLOY,
+			p: &storage.Policy{
+				LifecycleStages: []storage.LifecycleStage{
+					storage.LifecycleStage_DEPLOY,
 				},
 			},
 			errExpected: true,
 		},
 		{
 			description: "deploy time with runtime fields",
-			p: &v1.Policy{
-				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_DEPLOY,
+			p: &storage.Policy{
+				LifecycleStages: []storage.LifecycleStage{
+					storage.LifecycleStage_DEPLOY,
 				},
-				Fields: &v1.PolicyFields{
-					ImageName: &v1.ImageNamePolicy{
+				Fields: &storage.PolicyFields{
+					ImageName: &storage.ImageNamePolicy{
 						Tag: "latest",
 					},
-					ProcessPolicy: &v1.ProcessPolicy{Name: "BLAH"},
+					ProcessPolicy: &storage.ProcessPolicy{Name: "BLAH"},
 				},
 			},
 			errExpected: true,
 		},
 		{
 			description: "Valid deploy time",
-			p: &v1.Policy{
-				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_DEPLOY,
+			p: &storage.Policy{
+				LifecycleStages: []storage.LifecycleStage{
+					storage.LifecycleStage_DEPLOY,
 				},
-				Fields: &v1.PolicyFields{
-					ImageName: &v1.ImageNamePolicy{
+				Fields: &storage.PolicyFields{
+					ImageName: &storage.ImageNamePolicy{
 						Tag: "latest",
 					},
-					VolumePolicy: &v1.VolumePolicy{
+					VolumePolicy: &storage.VolumePolicy{
 						Name: "Asfasf",
 					},
 				},
@@ -251,24 +251,24 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 		},
 		{
 			description: "Run time with no fields",
-			p: &v1.Policy{
-				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_RUNTIME,
+			p: &storage.Policy{
+				LifecycleStages: []storage.LifecycleStage{
+					storage.LifecycleStage_RUNTIME,
 				},
 			},
 			errExpected: true,
 		},
 		{
 			description: "Run time with only deploy-time fields",
-			p: &v1.Policy{
-				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_RUNTIME,
+			p: &storage.Policy{
+				LifecycleStages: []storage.LifecycleStage{
+					storage.LifecycleStage_RUNTIME,
 				},
-				Fields: &v1.PolicyFields{
-					ImageName: &v1.ImageNamePolicy{
+				Fields: &storage.PolicyFields{
+					ImageName: &storage.ImageNamePolicy{
 						Tag: "latest",
 					},
-					VolumePolicy: &v1.VolumePolicy{
+					VolumePolicy: &storage.VolumePolicy{
 						Name: "Asfasf",
 					},
 				},
@@ -277,29 +277,29 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 		},
 		{
 			description: "Valid Run time with just process fields",
-			p: &v1.Policy{
-				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_RUNTIME,
+			p: &storage.Policy{
+				LifecycleStages: []storage.LifecycleStage{
+					storage.LifecycleStage_RUNTIME,
 				},
-				Fields: &v1.PolicyFields{
-					ProcessPolicy: &v1.ProcessPolicy{Name: "asfasfaa"},
+				Fields: &storage.PolicyFields{
+					ProcessPolicy: &storage.ProcessPolicy{Name: "asfasfaa"},
 				},
 			},
 		},
 		{
 			description: "Valid Run time with all sorts of fields",
-			p: &v1.Policy{
-				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_RUNTIME,
+			p: &storage.Policy{
+				LifecycleStages: []storage.LifecycleStage{
+					storage.LifecycleStage_RUNTIME,
 				},
-				Fields: &v1.PolicyFields{
-					ImageName: &v1.ImageNamePolicy{
+				Fields: &storage.PolicyFields{
+					ImageName: &storage.ImageNamePolicy{
 						Tag: "latest",
 					},
-					VolumePolicy: &v1.VolumePolicy{
+					VolumePolicy: &storage.VolumePolicy{
 						Name: "Asfasf",
 					},
-					ProcessPolicy: &v1.ProcessPolicy{Name: "asfasfaa"},
+					ProcessPolicy: &storage.ProcessPolicy{Name: "asfasfaa"},
 				},
 			},
 		},
@@ -321,77 +321,77 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 func (suite *PolicyValidatorTestSuite) TestValidateLifeCycleEnforcementCombination() {
 	testCases := []struct {
 		description  string
-		p            *v1.Policy
+		p            *storage.Policy
 		expectedSize int
 	}{
 		{
 			description: "Remove invalid enforcement with runtime lifecycle",
-			p: &v1.Policy{
-				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_RUNTIME,
+			p: &storage.Policy{
+				LifecycleStages: []storage.LifecycleStage{
+					storage.LifecycleStage_RUNTIME,
 				},
-				Fields: &v1.PolicyFields{
-					ImageName: &v1.ImageNamePolicy{
+				Fields: &storage.PolicyFields{
+					ImageName: &storage.ImageNamePolicy{
 						Tag: "latest",
 					},
-					VolumePolicy: &v1.VolumePolicy{
+					VolumePolicy: &storage.VolumePolicy{
 						Name: "Asfasf",
 					},
-					ProcessPolicy: &v1.ProcessPolicy{Name: "asfasfaa"},
+					ProcessPolicy: &storage.ProcessPolicy{Name: "asfasfaa"},
 				},
-				EnforcementActions: []v1.EnforcementAction{
-					v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
-					v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
-					v1.EnforcementAction_FAIL_BUILD_ENFORCEMENT,
-					v1.EnforcementAction_KILL_POD_ENFORCEMENT,
+				EnforcementActions: []storage.EnforcementAction{
+					storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
+					storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
+					storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT,
+					storage.EnforcementAction_KILL_POD_ENFORCEMENT,
 				},
 			},
 			expectedSize: 1,
 		},
 		{
 			description: "Remove invalid enforcement with build lifecycle",
-			p: &v1.Policy{
-				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_BUILD,
+			p: &storage.Policy{
+				LifecycleStages: []storage.LifecycleStage{
+					storage.LifecycleStage_BUILD,
 				},
-				Fields: &v1.PolicyFields{
-					ImageName: &v1.ImageNamePolicy{
+				Fields: &storage.PolicyFields{
+					ImageName: &storage.ImageNamePolicy{
 						Tag: "latest",
 					},
-					VolumePolicy: &v1.VolumePolicy{
+					VolumePolicy: &storage.VolumePolicy{
 						Name: "Asfasf",
 					},
-					ProcessPolicy: &v1.ProcessPolicy{Name: "asfasfaa"},
+					ProcessPolicy: &storage.ProcessPolicy{Name: "asfasfaa"},
 				},
-				EnforcementActions: []v1.EnforcementAction{
-					v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
-					v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
-					v1.EnforcementAction_FAIL_BUILD_ENFORCEMENT,
-					v1.EnforcementAction_KILL_POD_ENFORCEMENT,
+				EnforcementActions: []storage.EnforcementAction{
+					storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
+					storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
+					storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT,
+					storage.EnforcementAction_KILL_POD_ENFORCEMENT,
 				},
 			},
 			expectedSize: 1,
 		},
 		{
 			description: "Remove invalid enforcement with deployment lifecycle",
-			p: &v1.Policy{
-				LifecycleStages: []v1.LifecycleStage{
-					v1.LifecycleStage_DEPLOY,
+			p: &storage.Policy{
+				LifecycleStages: []storage.LifecycleStage{
+					storage.LifecycleStage_DEPLOY,
 				},
-				Fields: &v1.PolicyFields{
-					ImageName: &v1.ImageNamePolicy{
+				Fields: &storage.PolicyFields{
+					ImageName: &storage.ImageNamePolicy{
 						Tag: "latest",
 					},
-					VolumePolicy: &v1.VolumePolicy{
+					VolumePolicy: &storage.VolumePolicy{
 						Name: "Asfasf",
 					},
-					ProcessPolicy: &v1.ProcessPolicy{Name: "asfasfaa"},
+					ProcessPolicy: &storage.ProcessPolicy{Name: "asfasfaa"},
 				},
-				EnforcementActions: []v1.EnforcementAction{
-					v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
-					v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
-					v1.EnforcementAction_FAIL_BUILD_ENFORCEMENT,
-					v1.EnforcementAction_KILL_POD_ENFORCEMENT,
+				EnforcementActions: []storage.EnforcementAction{
+					storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT,
+					storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT,
+					storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT,
+					storage.EnforcementAction_KILL_POD_ENFORCEMENT,
 				},
 			},
 			expectedSize: 2,
@@ -408,25 +408,25 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycleEnforcementCombinati
 }
 
 func (suite *PolicyValidatorTestSuite) TestValidateSeverity() {
-	policy := &v1.Policy{
-		Severity: v1.Severity_LOW_SEVERITY,
+	policy := &storage.Policy{
+		Severity: storage.Severity_LOW_SEVERITY,
 	}
 	err := suite.validator.validateSeverity(policy)
 	suite.NoError(err, "severity should pass when set")
 
-	policy = &v1.Policy{
-		Severity: v1.Severity_UNSET_SEVERITY,
+	policy = &storage.Policy{
+		Severity: storage.Severity_UNSET_SEVERITY,
 	}
 	err = suite.validator.validateSeverity(policy)
 	suite.Error(err, "severity should fail when not set")
 }
 
 func (suite *PolicyValidatorTestSuite) TestValidateCategories() {
-	policy := &v1.Policy{}
+	policy := &storage.Policy{}
 	err := suite.validator.validateCategories(policy)
 	suite.Error(err, "at least one category should be required")
 
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Categories: []string{
 			"cat1",
 			"cat2",
@@ -436,7 +436,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateCategories() {
 	err = suite.validator.validateCategories(policy)
 	suite.Error(err, "duplicate categories should fail")
 
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Categories: []string{
 			"cat1",
 			"cat2",
@@ -447,7 +447,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateCategories() {
 }
 
 func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
-	policy := &v1.Policy{
+	policy := &storage.Policy{
 		Notifiers: []string{
 			"id1",
 		},
@@ -456,7 +456,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
 	err := suite.validator.validateNotifiers(policy)
 	suite.NoError(err, "severity should pass when set")
 
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Notifiers: []string{
 			"id2",
 		},
@@ -465,7 +465,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
 	err = suite.validator.validateNotifiers(policy)
 	suite.Error(err, "should fail when it does not exist")
 
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Notifiers: []string{
 			"id3",
 		},
@@ -476,14 +476,14 @@ func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
 }
 
 func (suite *PolicyValidatorTestSuite) TestValidateScopes() {
-	policy := &v1.Policy{}
+	policy := &storage.Policy{}
 	err := suite.validator.validateScopes(policy)
 	suite.NoError(err, "scopes should not be required")
 
 	scope := &storage.Scope{
 		Cluster: "cluster1",
 	}
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Scope: []*storage.Scope{
 			scope,
 		},
@@ -493,7 +493,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateScopes() {
 	suite.NoError(err, "valid scope definition")
 
 	scope = &storage.Scope{}
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Scope: []*storage.Scope{
 			scope,
 		},
@@ -504,7 +504,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateScopes() {
 	scope = &storage.Scope{
 		Cluster: "cluster2",
 	}
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Scope: []*storage.Scope{
 			scope,
 		},
@@ -516,7 +516,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateScopes() {
 	scope = &storage.Scope{
 		Cluster: "cluster3",
 	}
-	policy = &v1.Policy{
+	policy = &storage.Policy{
 		Scope: []*storage.Scope{
 			scope,
 		},
@@ -527,27 +527,27 @@ func (suite *PolicyValidatorTestSuite) TestValidateScopes() {
 }
 
 func (suite *PolicyValidatorTestSuite) TestValidateWhitelists() {
-	policy := &v1.Policy{}
+	policy := &storage.Policy{}
 	err := suite.validator.validateWhitelists(policy)
 	suite.NoError(err, "whitelists should not be required")
 
-	deployment := &v1.Whitelist_Deployment{
+	deployment := &storage.Whitelist_Deployment{
 		Name: "that phat cluster",
 	}
-	deploymentWhitelist := &v1.Whitelist{
+	deploymentWhitelist := &storage.Whitelist{
 		Deployment: deployment,
 	}
-	policy = &v1.Policy{
-		Whitelists: []*v1.Whitelist{
+	policy = &storage.Policy{
+		Whitelists: []*storage.Whitelist{
 			deploymentWhitelist,
 		},
 	}
 	err = suite.validator.validateWhitelists(policy)
 	suite.NoError(err, "valid to whitelist by deployment name")
 
-	emptyWhitelist := &v1.Whitelist{}
-	policy = &v1.Policy{
-		Whitelists: []*v1.Whitelist{
+	emptyWhitelist := &storage.Whitelist{}
+	policy = &storage.Policy{
+		Whitelists: []*storage.Whitelist{
 			emptyWhitelist,
 		},
 	}

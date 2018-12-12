@@ -56,10 +56,10 @@ func (s *MapperTestSuite) TearDownTest() {
 
 func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 	// The user information we expect to be upserted.
-	expectedUser := &v1.User{
+	expectedUser := &storage.User{
 		Id:             "coolguysid",
 		AuthProviderId: fakeAuthProvider,
-		Attributes: []*v1.UserAttribute{
+		Attributes: []*storage.UserAttribute{
 			{
 				Key:   "email",
 				Value: "coolguy@yahoo",
@@ -115,10 +115,10 @@ func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 
 func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 	// The user information we expect to be upserted.
-	expectedUser := &v1.User{
+	expectedUser := &storage.User{
 		Id:             "coolguysid",
 		AuthProviderId: fakeAuthProvider,
-		Attributes: []*v1.UserAttribute{
+		Attributes: []*storage.UserAttribute{
 			{
 				Key:   "email",
 				Value: "coolguy@yahoo",
@@ -191,10 +191,10 @@ func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 
 func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
 	// The user information we expect to be upserted.
-	expectedUser := &v1.User{
+	expectedUser := &storage.User{
 		Id:             "coolguysid",
 		AuthProviderId: fakeAuthProvider,
-		Attributes: []*v1.UserAttribute{
+		Attributes: []*storage.UserAttribute{
 			{
 				Key:   "email",
 				Value: "coolguy@yahoo",
@@ -250,10 +250,10 @@ func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
 
 func (s *MapperTestSuite) TestGroupWalkFailureCausesError() {
 	// The user information we expect to be upserted.
-	expectedUser := &v1.User{
+	expectedUser := &storage.User{
 		Id:             "coolguysid",
 		AuthProviderId: fakeAuthProvider,
-		Attributes: []*v1.UserAttribute{
+		Attributes: []*storage.UserAttribute{
 			{
 				Key:   "email",
 				Value: "coolguy@yahoo",
@@ -289,10 +289,10 @@ func (s *MapperTestSuite) TestGroupWalkFailureCausesError() {
 
 func (s *MapperTestSuite) TestRoleFetchFailureCausesError() {
 	// The user information we expect to be upserted.
-	expectedUser := &v1.User{
+	expectedUser := &storage.User{
 		Id:             "coolguysid",
 		AuthProviderId: fakeAuthProvider,
-		Attributes: []*v1.UserAttribute{
+		Attributes: []*storage.UserAttribute{
 			{
 				Key:   "email",
 				Value: "coolguy@yahoo",

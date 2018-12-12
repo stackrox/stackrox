@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+package storage;
+
+message ImageIntegration {
+    string id                                    = 1;
+    string name                                  = 2;
+    string type                                  = 3;
+    // If a list of clusters is provided, the integration will only be accessed from the specified clusters' sensors.
+    repeated string clusters                     = 5;
+    repeated ImageIntegrationCategory categories = 6;
+    oneof IntegrationConfig {
+        DTRConfig      dtr      = 7;
+        ClairifyConfig clairify = 8;
+        DockerConfig   docker   = 9;
+        QuayConfig     quay     = 10;
+        ECRConfig      ecr      = 11;
+        TenableConfig  tenable  = 12;
+        GoogleConfig   google   = 13;
+        ClairConfig    clair    = 14;
+    }
+}
+
+message QuayConfig {
+    string endpoint   = 1;
+    string oauthToken = 2;
+}
+
+message ClairConfig {
+    string endpoint = 1;
+}
+
+message ClairifyConfig {
+    string endpoint              = 1;
+}
+
+message DockerConfig {
+    string endpoint = 1;
+    string username = 2;
+    string password = 3;
+    bool insecure   = 4;
+}
+
+message ECRConfig {
+    string registry_id       = 1;
+    string access_key_id     = 2;
+    string secret_access_key = 3;
+    string region            = 4;
+}
+
+message DTRConfig {
+    string username = 1;
+    string password = 2;
+    string endpoint = 3;
+    bool insecure   = 4;
+}
+
+message GoogleConfig {
+    string endpoint        = 1;
+    string service_account = 2;
+    string project         = 3;
+}
+
+message TenableConfig {
+    string access_key = 1;
+    string secret_key = 2;
+}
+
+enum ImageIntegrationCategory {
+    REGISTRY = 0;
+    SCANNER  = 1;
+}

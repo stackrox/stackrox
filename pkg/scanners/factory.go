@@ -1,7 +1,7 @@
 package scanners
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries"
 	clairScanner "github.com/stackrox/rox/pkg/scanners/clair"
 	clairifyScanner "github.com/stackrox/rox/pkg/scanners/clairify"
@@ -13,12 +13,12 @@ import (
 )
 
 // Creator is the func stub that defines how to instantiate an image scanner.
-type Creator func(scanner *v1.ImageIntegration) (types.ImageScanner, error)
+type Creator func(scanner *storage.ImageIntegration) (types.ImageScanner, error)
 
 // Factory provides a centralized location for creating ImageScanner from v1.ImageIntegrations.
 //go:generate mockgen-wrapper Factory
 type Factory interface {
-	CreateScanner(source *v1.ImageIntegration) (types.ImageScanner, error)
+	CreateScanner(source *storage.ImageIntegration) (types.ImageScanner, error)
 }
 
 // NewFactory creates a new scanner factory.

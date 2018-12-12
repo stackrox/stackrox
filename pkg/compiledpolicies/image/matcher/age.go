@@ -13,7 +13,7 @@ func init() {
 	compilers = append(compilers, newAgeMatcher)
 }
 
-func newAgeMatcher(policy *v1.Policy) (Matcher, error) {
+func newAgeMatcher(policy *storage.Policy) (Matcher, error) {
 	hasImageAge := policy.GetFields().GetSetImageAgeDays()
 	if hasImageAge == nil {
 		return nil, nil

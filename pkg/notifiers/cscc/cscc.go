@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/notifiers/cscc/client"
@@ -70,26 +71,26 @@ func (c *cscc) getAlertDescription(alert *v1.Alert) string {
 	return strings.Join(distinctSlice, " ")
 }
 
-func transformSeverity(s v1.Severity) string {
+func transformSeverity(s storage.Severity) string {
 	switch s {
-	case v1.Severity_LOW_SEVERITY:
+	case storage.Severity_LOW_SEVERITY:
 		return "low"
-	case v1.Severity_MEDIUM_SEVERITY:
+	case storage.Severity_MEDIUM_SEVERITY:
 		return "medium"
-	case v1.Severity_HIGH_SEVERITY:
+	case storage.Severity_HIGH_SEVERITY:
 		return "high"
-	case v1.Severity_CRITICAL_SEVERITY:
+	case storage.Severity_CRITICAL_SEVERITY:
 		return "critical"
 	default:
 		return "info"
 	}
 }
 
-func transformEnforcement(a v1.EnforcementAction) string {
+func transformEnforcement(a storage.EnforcementAction) string {
 	switch a {
-	case v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT:
+	case storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT:
 		return "Scaled to zero replicas"
-	case v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT:
+	case storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT:
 		return "Unsatisfiable node constraint added to prevent deployment"
 	default:
 		return a.String()
@@ -97,7 +98,7 @@ func transformEnforcement(a v1.EnforcementAction) string {
 }
 
 func alertEnforcement(alert *v1.Alert) []findings.Enforcement {
-	if alert.GetEnforcement().GetAction() == v1.EnforcementAction_UNSET_ENFORCEMENT {
+	if alert.GetEnforcement().GetAction() == storage.EnforcementAction_UNSET_ENFORCEMENT {
 		return nil
 	}
 	return []findings.Enforcement{

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	cfcsr "github.com/cloudflare/cfssl/csr"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 )
 
@@ -28,8 +28,8 @@ func IdentityFromCert(cert requestinfo.CertInfo) Identity {
 }
 
 // V1 returns the identity represented as a v1 API ServiceIdentity.
-func (id Identity) V1() *v1.ServiceIdentity {
-	return &v1.ServiceIdentity{
+func (id Identity) V1() *storage.ServiceIdentity {
+	return &storage.ServiceIdentity{
 		Serial: id.Serial.Int64(),
 		Type:   id.Subject.ServiceType,
 		Id:     id.Subject.Identifier,
@@ -38,7 +38,7 @@ func (id Identity) V1() *v1.ServiceIdentity {
 
 // Subject encodes the parts of a certificate's identity.
 type Subject struct {
-	ServiceType v1.ServiceType
+	ServiceType storage.ServiceType
 	Identifier  string
 }
 
@@ -53,7 +53,7 @@ func (s Subject) Hostname() string {
 	return fmt.Sprintf("%s.stackrox", hostname(s.ServiceType))
 }
 
-func hostname(t v1.ServiceType) string {
+func hostname(t storage.ServiceType) string {
 	return strings.ToLower(strings.Split(t.String(), "_")[0])
 }
 
@@ -74,7 +74,7 @@ func SubjectFromCommonName(s string) Subject {
 	parts := strings.SplitN(s, ":", 2)
 	if len(parts) == 2 {
 		return Subject{
-			ServiceType: v1.ServiceType(v1.ServiceType_value[parts[0]]),
+			ServiceType: storage.ServiceType(storage.ServiceType_value[parts[0]]),
 			Identifier:  strings.TrimSpace(parts[1]),
 		}
 	}

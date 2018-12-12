@@ -18,10 +18,3 @@ enum SocketFamily {
 	SOCKET_FAMILY_IPV6    = 2;
 }
 
-enum L4Protocol {
-	L4_PROTOCOL_UNKNOWN = 0;
-	L4_PROTOCOL_TCP     = 1;
-	L4_PROTOCOL_UDP     = 2;
-	L4_PROTOCOL_ICMP    = 3;
-	L4_PROTOCOL_RAW     = 4;
-}

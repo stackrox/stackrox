@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	cfcsr "github.com/cloudflare/cfssl/csr"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +17,7 @@ func TestSubject(t *testing.T) {
 		name     cfcsr.Name
 	}{
 		{
-			input:    Subject{ServiceType: v1.ServiceType_CENTRAL_SERVICE, Identifier: "Central"},
+			input:    Subject{ServiceType: storage.ServiceType_CENTRAL_SERVICE, Identifier: "Central"},
 			cn:       "CENTRAL_SERVICE: Central",
 			hostname: "central.stackrox",
 			ou:       "CENTRAL_SERVICE",
@@ -26,7 +26,7 @@ func TestSubject(t *testing.T) {
 			},
 		},
 		{
-			input:    Subject{ServiceType: v1.ServiceType_SENSOR_SERVICE, Identifier: "1234"},
+			input:    Subject{ServiceType: storage.ServiceType_SENSOR_SERVICE, Identifier: "1234"},
 			cn:       "SENSOR_SERVICE: 1234",
 			hostname: "sensor.stackrox",
 			ou:       "SENSOR_SERVICE",
@@ -35,7 +35,7 @@ func TestSubject(t *testing.T) {
 			},
 		},
 		{
-			input:    Subject{ServiceType: v1.ServiceType_COLLECTOR_SERVICE, Identifier: "456"},
+			input:    Subject{ServiceType: storage.ServiceType_COLLECTOR_SERVICE, Identifier: "456"},
 			cn:       "COLLECTOR_SERVICE: 456",
 			hostname: "collector.stackrox",
 			ou:       "COLLECTOR_SERVICE",
@@ -63,21 +63,21 @@ func TestCommonNameFromString(t *testing.T) {
 		{
 			input: "SENSOR_SERVICE: de23cc85-4fb0-4ba4-9092-771cb4f23b97",
 			expected: Subject{
-				ServiceType: v1.ServiceType_SENSOR_SERVICE,
+				ServiceType: storage.ServiceType_SENSOR_SERVICE,
 				Identifier:  "de23cc85-4fb0-4ba4-9092-771cb4f23b97",
 			},
 		},
 		{
 			input: "Something Malformed",
 			expected: Subject{
-				ServiceType: v1.ServiceType_UNKNOWN_SERVICE,
+				ServiceType: storage.ServiceType_UNKNOWN_SERVICE,
 				Identifier:  "Something Malformed",
 			},
 		},
 		{
 			input: "UNKNOWN_SOMETHING_OR_OTHER: de23cc85-4fb0-4ba4-9092-771cb4f23b97",
 			expected: Subject{
-				ServiceType: v1.ServiceType_UNKNOWN_SERVICE,
+				ServiceType: storage.ServiceType_UNKNOWN_SERVICE,
 				Identifier:  "de23cc85-4fb0-4ba4-9092-771cb4f23b97",
 			},
 		},

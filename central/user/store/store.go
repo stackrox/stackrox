@@ -3,17 +3,17 @@ package store
 import (
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
 )
 
 // Store is the storage and tracking mechanism for users.
 //go:generate mockgen-wrapper Store
 type Store interface {
-	GetUser(id string) (*v1.User, error)
-	GetAllUsers() ([]*v1.User, error)
+	GetUser(id string) (*storage.User, error)
+	GetAllUsers() ([]*storage.User, error)
 
-	Upsert(*v1.User) error
+	Upsert(*storage.User) error
 }
 
 // New returns a new instance of a Store.

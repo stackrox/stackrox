@@ -4,7 +4,7 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
-import "api/v1/node.proto";
+import "storage/node.proto";
 
 package v1;
 
@@ -13,7 +13,7 @@ message ListNodesRequest {
 }
 
 message ListNodesResponse {
-    repeated Node nodes = 1;
+    repeated storage.Node nodes = 1;
 }
 
 message GetNodeRequest {
@@ -21,7 +21,7 @@ message GetNodeRequest {
     string node_id = 2;
 }
 
-// Node represents information about a node in the cluster.
+// storage.Node represents information about a node in the cluster.
 service NodeService {
 
     rpc ListNodes(ListNodesRequest) returns (ListNodesResponse) {
@@ -30,7 +30,7 @@ service NodeService {
         };
     }
 
-    rpc GetNode(GetNodeRequest) returns (Node) {
+    rpc GetNode(GetNodeRequest) returns (storage.Node) {
         option (google.api.http) = {
             get: "/v1/nodes/{cluster_id}/{node_id}"
         };

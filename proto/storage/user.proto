@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+package storage;
+
+
+// User is an object that allows us to track the roles a user is tied to, and how they logged in.
+message User {
+    string id = 1;
+    string auth_provider_id = 2;
+
+    repeated UserAttribute attributes = 3;
+}
+
+message UserAttribute {
+    string key = 1;
+    string value = 2;
+}

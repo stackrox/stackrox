@@ -8,7 +8,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
@@ -17,7 +17,7 @@ type storeImpl struct {
 	db *bolt.DB
 }
 
-func getListSecret(tx *bolt.Tx, id string) (secret *v1.ListSecret, err error) {
+func getListSecret(tx *bolt.Tx, id string) (secret *storage.ListSecret, err error) {
 	bucket := tx.Bucket([]byte(secretListBucket))
 	bytes := bucket.Get([]byte(id))
 	if bytes == nil {
@@ -25,7 +25,7 @@ func getListSecret(tx *bolt.Tx, id string) (secret *v1.ListSecret, err error) {
 		return
 	}
 
-	secret = new(v1.ListSecret)
+	secret = new(storage.ListSecret)
 	err = proto.Unmarshal(bytes, secret)
 	return
 }
@@ -37,7 +37,7 @@ func removeListSecret(tx *bolt.Tx, id string) error {
 }
 
 // Note: This is called within a txn and do not require an Update or View
-func upsertListSecret(tx *bolt.Tx, secret *v1.Secret) error {
+func upsertListSecret(tx *bolt.Tx, secret *storage.Secret) error {
 	bucket := tx.Bucket([]byte(secretListBucket))
 	listSecret := convertSecretToSecretList(secret)
 	bytes, err := proto.Marshal(listSecret)
@@ -47,9 +47,9 @@ func upsertListSecret(tx *bolt.Tx, secret *v1.Secret) error {
 	return bucket.Put([]byte(secret.Id), bytes)
 }
 
-func convertSecretToSecretList(s *v1.Secret) *v1.ListSecret {
+func convertSecretToSecretList(s *storage.Secret) *storage.ListSecret {
 	typeSet := mapset.NewSet()
-	var typeSlice []v1.SecretType
+	var typeSlice []storage.SecretType
 	for _, f := range s.GetFiles() {
 		if !typeSet.Contains(f.GetType()) {
 			typeSlice = append(typeSlice, f.GetType())
@@ -57,10 +57,10 @@ func convertSecretToSecretList(s *v1.Secret) *v1.ListSecret {
 		}
 	}
 	if len(typeSlice) == 0 {
-		typeSlice = append(typeSlice, v1.SecretType_UNDETERMINED)
+		typeSlice = append(typeSlice, storage.SecretType_UNDETERMINED)
 	}
 
-	return &v1.ListSecret{
+	return &storage.ListSecret{
 		Id:          s.GetId(),
 		Name:        s.GetName(),
 		ClusterName: s.GetClusterName(),
@@ -81,23 +81,24 @@ func (s *storeImpl) CountSecrets() (count int, err error) {
 }
 
 // GetAllSecrets returns all secrets in the given db.
-func (s *storeImpl) GetAllSecrets() (secrets []*v1.Secret, err error) {
+func (s *storeImpl) GetAllSecrets() (secrets []*storage.Secret, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "Secret")
 
-	s.db.View(func(tx *bolt.Tx) error {
+	err = s.db.View(func(tx *bolt.Tx) error {
+		var err error
 		secrets, err = readAllSecrets(tx)
 		return err
 	})
 	return secrets, err
 }
 
-func (s *storeImpl) ListAllSecrets() (secrets []*v1.ListSecret, err error) {
+func (s *storeImpl) ListAllSecrets() (secrets []*storage.ListSecret, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.List, "Secret")
 
 	err = s.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(secretListBucket))
 		return bucket.ForEach(func(k, v []byte) error {
-			secret := new(v1.ListSecret)
+			secret := new(storage.ListSecret)
 			err := proto.Unmarshal(v, secret)
 			if err != nil {
 				return err
@@ -114,7 +115,7 @@ func (s *storeImpl) ListAllSecrets() (secrets []*v1.ListSecret, err error) {
 }
 
 // GetSecret returns the secret for the given id.
-func (s *storeImpl) GetSecret(id string) (secret *v1.Secret, exists bool, err error) {
+func (s *storeImpl) GetSecret(id string) (secret *storage.Secret, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Secret")
 
 	err = s.db.View(func(tx *bolt.Tx) error {
@@ -128,9 +129,9 @@ func (s *storeImpl) GetSecret(id string) (secret *v1.Secret, exists bool, err er
 }
 
 // ListSecrets returns a list of secrets from the given ids.
-func (s *storeImpl) ListSecrets(ids []string) ([]*v1.ListSecret, error) {
+func (s *storeImpl) ListSecrets(ids []string) ([]*storage.ListSecret, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListSecret")
-	secrets := make([]*v1.ListSecret, 0, len(ids))
+	secrets := make([]*storage.ListSecret, 0, len(ids))
 	err := s.db.View(func(tx *bolt.Tx) error {
 		for _, id := range ids {
 			secret, err := getListSecret(tx, id)
@@ -145,7 +146,7 @@ func (s *storeImpl) ListSecrets(ids []string) ([]*v1.ListSecret, error) {
 }
 
 // UpsertSecret adds or updates the secret in the db.
-func (s *storeImpl) UpsertSecret(secret *v1.Secret) error {
+func (s *storeImpl) UpsertSecret(secret *storage.Secret) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "Secret")
 
 	return s.db.Update(func(tx *bolt.Tx) error {
@@ -184,10 +185,10 @@ func hasSecret(tx *bolt.Tx, id string) bool {
 }
 
 // readAllSecrets reads all the secrets in the DB within a transaction.
-func readAllSecrets(tx *bolt.Tx) (secrets []*v1.Secret, err error) {
+func readAllSecrets(tx *bolt.Tx) (secrets []*storage.Secret, err error) {
 	bucket := tx.Bucket([]byte(secretBucket))
 	err = bucket.ForEach(func(k, v []byte) error {
-		secret := new(v1.Secret)
+		secret := new(storage.Secret)
 		err = proto.Unmarshal(v, secret)
 		if err != nil {
 			return err
@@ -199,7 +200,7 @@ func readAllSecrets(tx *bolt.Tx) (secrets []*v1.Secret, err error) {
 }
 
 // readSecret reads a secret within a transaction.
-func readSecret(tx *bolt.Tx, id string) (secret *v1.Secret, err error) {
+func readSecret(tx *bolt.Tx, id string) (secret *storage.Secret, err error) {
 	bucket := tx.Bucket([]byte(secretBucket))
 
 	bytes := bucket.Get([]byte(id))
@@ -208,13 +209,13 @@ func readSecret(tx *bolt.Tx, id string) (secret *v1.Secret, err error) {
 		return
 	}
 
-	secret = new(v1.Secret)
+	secret = new(storage.Secret)
 	err = proto.Unmarshal(bytes, secret)
 	return
 }
 
 // writeSecret writes a secret within a transaction.
-func writeSecret(tx *bolt.Tx, secret *v1.Secret) (err error) {
+func writeSecret(tx *bolt.Tx, secret *storage.Secret) (err error) {
 	bucket := tx.Bucket([]byte(secretBucket))
 
 	bytes, err := proto.Marshal(secret)

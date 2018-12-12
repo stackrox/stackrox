@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
@@ -83,9 +82,9 @@ func (suite *QuaySuite) SetupSuite() {
 	// Set the global variable of the Tenable endpoint
 	suite.server = masterServer
 
-	protoImageIntegration := &v1.ImageIntegration{
-		IntegrationConfig: &v1.ImageIntegration_Quay{
-			Quay: &v1.QuayConfig{
+	protoImageIntegration := &storage.ImageIntegration{
+		IntegrationConfig: &storage.ImageIntegration_Quay{
+			Quay: &storage.QuayConfig{
 				OauthToken: "token",
 				Endpoint:   "http://" + masterServer.Listener.Addr().String(),
 			},

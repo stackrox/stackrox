@@ -7,11 +7,12 @@ import (
 	"github.com/stackrox/rox/central/searchbasedpolicies/builders"
 	"github.com/stackrox/rox/central/searchbasedpolicies/fields"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 // ForPolicy returns a matcher for the given policy.
-func ForPolicy(policy *v1.Policy, optionsMap map[search.FieldLabel]*v1.SearchField, processGetter searchbasedpolicies.ProcessIndicatorGetter) (searchbasedpolicies.Matcher, error) {
+func ForPolicy(policy *storage.Policy, optionsMap map[search.FieldLabel]*v1.SearchField, processGetter searchbasedpolicies.ProcessIndicatorGetter) (searchbasedpolicies.Matcher, error) {
 	if policy.GetName() == "" {
 		return nil, fmt.Errorf("policy %+v doesn't have a name", policy)
 	}

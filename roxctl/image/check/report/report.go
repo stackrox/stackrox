@@ -7,7 +7,7 @@ import (
 	"text/template"
 
 	"github.com/mitchellh/go-wordwrap"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 const (
@@ -59,7 +59,7 @@ var (
 
 // JSON renders the given list of policies as JSON, and writes that to the
 // output stream.
-func JSON(output io.Writer, policies []*v1.Policy) error {
+func JSON(output io.Writer, policies []*storage.Policy) error {
 	// Just pipe out the violated policies as JSON.
 	body, err := json.MarshalIndent(policies, "", "  ")
 	if err != nil {
@@ -72,7 +72,7 @@ func JSON(output io.Writer, policies []*v1.Policy) error {
 
 // Pretty renders the given list of policies in a human-friendly format, and
 // writes that to the output stream.
-func Pretty(output io.Writer, policies []*v1.Policy) error {
+func Pretty(output io.Writer, policies []*storage.Policy) error {
 	switch len(policies) {
 	case 0:
 		return passedTpl.Execute(output, policies)
@@ -84,9 +84,9 @@ func Pretty(output io.Writer, policies []*v1.Policy) error {
 // EnforcementFailedBuild returns true if the given policy has an enforcement
 // action that fails the CI build. Intended to be uses as a test template
 // function.
-func EnforcementFailedBuild(policy *v1.Policy) bool {
+func EnforcementFailedBuild(policy *storage.Policy) bool {
 	for _, action := range policy.GetEnforcementActions() {
-		if action == v1.EnforcementAction_FAIL_BUILD_ENFORCEMENT {
+		if action == storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT {
 			return true
 		}
 	}

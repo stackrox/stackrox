@@ -14,7 +14,7 @@ func init() {
 	compilers = append(compilers, newLineMatcher)
 }
 
-func newLineMatcher(policy *v1.Policy) (Matcher, error) {
+func newLineMatcher(policy *storage.Policy) (Matcher, error) {
 	line := policy.GetFields().GetLineRule()
 	if line == nil {
 		return nil, nil

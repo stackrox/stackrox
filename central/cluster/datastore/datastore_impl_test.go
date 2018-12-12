@@ -77,7 +77,7 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveTombstonesDeploymentsAndMarksA
 
 	suite.nodes.EXPECT().RemoveClusterNodeStore(fakeClusterID).Times(1).Return(nil)
 
-	suite.secrets.EXPECT().SearchListSecrets(search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).ProtoQuery()).Return([]*v1.ListSecret{}, nil)
+	suite.secrets.EXPECT().SearchListSecrets(search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).ProtoQuery()).Return([]*storage.ListSecret{}, nil)
 
 	// run removal.
 	suite.clusterDataStore.RemoveCluster(fakeClusterID)
@@ -119,7 +119,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesNoDeployments() {
 
 	suite.nodes.EXPECT().RemoveClusterNodeStore(fakeClusterID).Times(1).Return(nil)
 
-	suite.secrets.EXPECT().SearchListSecrets(search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).ProtoQuery()).Return([]*v1.ListSecret{}, nil)
+	suite.secrets.EXPECT().SearchListSecrets(search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).ProtoQuery()).Return([]*storage.ListSecret{}, nil)
 
 	// run removal.
 	suite.clusterDataStore.RemoveCluster(fakeClusterID)
@@ -200,7 +200,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesNoAlerts() {
 
 	suite.nodes.EXPECT().RemoveClusterNodeStore(fakeClusterID).Times(1).Return(nil)
 
-	suite.secrets.EXPECT().SearchListSecrets(search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).ProtoQuery()).Return([]*v1.ListSecret{}, nil)
+	suite.secrets.EXPECT().SearchListSecrets(search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).ProtoQuery()).Return([]*storage.ListSecret{}, nil)
 
 	// run removal.
 	suite.clusterDataStore.RemoveCluster(fakeClusterID)

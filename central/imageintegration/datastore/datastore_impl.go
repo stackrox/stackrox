@@ -3,6 +3,7 @@ package datastore
 import (
 	"github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -11,12 +12,12 @@ type datastoreImpl struct {
 }
 
 // GetImageIntegration is pass-through to the underlying store.
-func (ds *datastoreImpl) GetImageIntegration(id string) (*v1.ImageIntegration, bool, error) {
+func (ds *datastoreImpl) GetImageIntegration(id string) (*storage.ImageIntegration, bool, error) {
 	return ds.storage.GetImageIntegration(id)
 }
 
 // GetImageIntegrations provides an in memory layer on top of the underlying DB based storage.
-func (ds *datastoreImpl) GetImageIntegrations(request *v1.GetImageIntegrationsRequest) ([]*v1.ImageIntegration, error) {
+func (ds *datastoreImpl) GetImageIntegrations(request *v1.GetImageIntegrationsRequest) ([]*storage.ImageIntegration, error) {
 	integrations, err := ds.storage.GetImageIntegrations(request)
 	if err != nil {
 		return nil, err
@@ -37,12 +38,12 @@ func (ds *datastoreImpl) GetImageIntegrations(request *v1.GetImageIntegrationsRe
 }
 
 // AddImageIntegration is pass-through to the underlying store.
-func (ds *datastoreImpl) AddImageIntegration(integration *v1.ImageIntegration) (string, error) {
+func (ds *datastoreImpl) AddImageIntegration(integration *storage.ImageIntegration) (string, error) {
 	return ds.storage.AddImageIntegration(integration)
 }
 
 // UpdateImageIntegration is pass-through to the underlying store.
-func (ds *datastoreImpl) UpdateImageIntegration(integration *v1.ImageIntegration) error {
+func (ds *datastoreImpl) UpdateImageIntegration(integration *storage.ImageIntegration) error {
 	return ds.storage.UpdateImageIntegration(integration)
 }
 

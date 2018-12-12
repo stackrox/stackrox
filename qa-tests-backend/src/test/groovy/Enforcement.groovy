@@ -6,8 +6,8 @@ import objects.Deployment
 import org.junit.experimental.categories.Category
 import spock.lang.Unroll
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
-import io.stackrox.proto.api.v1.PolicyServiceOuterClass
-import io.stackrox.proto.api.v1.PolicyServiceOuterClass.EnforcementAction
+import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
+import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 
 class Enforcement extends BaseSpecification {
     private final static String CONTAINER_PORT_22_POLICY = "Secure Shell (ssh) Port Exposed"
@@ -182,7 +182,7 @@ class Enforcement extends BaseSpecification {
         "Apply policy at Build time"
         def startlifeCycle = Services.updatePolicyLifecycleStage(
                 LATEST_TAG,
-                [PolicyServiceOuterClass.LifecycleStage.BUILD,]
+                [LifecycleStage.BUILD,]
         )
         "Add node constraint enforcement to an existing policy"
         def startEnforcements = Services.updatePolicyEnforcement(
@@ -356,36 +356,36 @@ class Enforcement extends BaseSpecification {
 
         lifecycles                                        | policy         | allowed
 
-        [PolicyServiceOuterClass.LifecycleStage.BUILD,]   | LATEST_TAG     | true
+        [LifecycleStage.BUILD,]   | LATEST_TAG     | true
 
-        [PolicyServiceOuterClass.LifecycleStage.DEPLOY,]  | LATEST_TAG     | true
+        [LifecycleStage.DEPLOY,]  | LATEST_TAG     | true
 
-        [PolicyServiceOuterClass.LifecycleStage.BUILD,
-         PolicyServiceOuterClass.LifecycleStage.DEPLOY,]  | LATEST_TAG     | true
+        [LifecycleStage.BUILD,
+         LifecycleStage.DEPLOY,]  | LATEST_TAG     | true
 
-        [PolicyServiceOuterClass.LifecycleStage.RUNTIME,] | APT_GET_POLICY | true
+        [LifecycleStage.RUNTIME,] | APT_GET_POLICY | true
 
-        [PolicyServiceOuterClass.LifecycleStage.RUNTIME,] | LATEST_TAG     | false
+        [LifecycleStage.RUNTIME,] | LATEST_TAG     | false
 
-        [PolicyServiceOuterClass.LifecycleStage.BUILD,
-         PolicyServiceOuterClass.LifecycleStage.RUNTIME,] | LATEST_TAG     | false
+        [LifecycleStage.BUILD,
+         LifecycleStage.RUNTIME,] | LATEST_TAG     | false
 
-        [PolicyServiceOuterClass.LifecycleStage.BUILD,
-         PolicyServiceOuterClass.LifecycleStage.RUNTIME,] | APT_GET_POLICY | false
+        [LifecycleStage.BUILD,
+         LifecycleStage.RUNTIME,] | APT_GET_POLICY | false
 
-        [PolicyServiceOuterClass.LifecycleStage.DEPLOY,
-         PolicyServiceOuterClass.LifecycleStage.RUNTIME,] | LATEST_TAG     | false
+        [LifecycleStage.DEPLOY,
+         LifecycleStage.RUNTIME,] | LATEST_TAG     | false
 
-        [PolicyServiceOuterClass.LifecycleStage.DEPLOY,
-         PolicyServiceOuterClass.LifecycleStage.RUNTIME,] | APT_GET_POLICY | false
+        [LifecycleStage.DEPLOY,
+         LifecycleStage.RUNTIME,] | APT_GET_POLICY | false
 
-        [PolicyServiceOuterClass.LifecycleStage.BUILD,
-         PolicyServiceOuterClass.LifecycleStage.DEPLOY,
-         PolicyServiceOuterClass.LifecycleStage.RUNTIME,] | LATEST_TAG     | false
+        [LifecycleStage.BUILD,
+         LifecycleStage.DEPLOY,
+         LifecycleStage.RUNTIME,] | LATEST_TAG     | false
 
-        [PolicyServiceOuterClass.LifecycleStage.BUILD,
-         PolicyServiceOuterClass.LifecycleStage.DEPLOY,
-         PolicyServiceOuterClass.LifecycleStage.RUNTIME,] | APT_GET_POLICY | false
+        [LifecycleStage.BUILD,
+         LifecycleStage.DEPLOY,
+         LifecycleStage.RUNTIME,] | APT_GET_POLICY | false
     }
 
     @Unroll
@@ -424,23 +424,23 @@ class Enforcement extends BaseSpecification {
         /*
             all-in-one:
          */
-        [PolicyServiceOuterClass.LifecycleStage.BUILD,]                        |
+        [LifecycleStage.BUILD,]                        |
                 [EnforcementAction.FAIL_BUILD_ENFORCEMENT]                     |
                 LATEST_TAG
 
-        [PolicyServiceOuterClass.LifecycleStage.DEPLOY,]                       |
+        [LifecycleStage.DEPLOY,]                       |
                 [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,
                  EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT]  |
                 LATEST_TAG
 
-        [PolicyServiceOuterClass.LifecycleStage.BUILD,
-         PolicyServiceOuterClass.LifecycleStage.DEPLOY]                        |
+        [LifecycleStage.BUILD,
+         LifecycleStage.DEPLOY]                        |
                 [EnforcementAction.FAIL_BUILD_ENFORCEMENT,
                  EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,
                  EnforcementAction.UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT]  |
                 LATEST_TAG
 
-        [PolicyServiceOuterClass.LifecycleStage.RUNTIME,]                      |
+        [LifecycleStage.RUNTIME,]                      |
                 [EnforcementAction.KILL_POD_ENFORCEMENT]                       |
                 APT_GET_POLICY
     }

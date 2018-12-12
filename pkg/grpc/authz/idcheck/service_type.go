@@ -1,13 +1,13 @@
 package idcheck
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 )
 
 // A serviceType Authorizer checks that the client has the desired service type.
-type serviceType v1.ServiceType
+type serviceType storage.ServiceType
 
 // Authorized checks whether the TLS identity has the required service context.
 func (s serviceType) AuthorizeByIdentity(id authn.Identity) error {
@@ -15,7 +15,7 @@ func (s serviceType) AuthorizeByIdentity(id authn.Identity) error {
 	if svc == nil {
 		return authz.ErrNoCredentials
 	}
-	if svc.GetType() != v1.ServiceType(s) {
+	if svc.GetType() != storage.ServiceType(s) {
 		return authz.ErrNotAuthorized("service source type not allowed")
 	}
 	return nil

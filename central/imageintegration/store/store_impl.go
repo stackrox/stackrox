@@ -8,6 +8,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/secondarykey"
@@ -18,8 +19,8 @@ type storeImpl struct {
 	*bolt.DB
 }
 
-func (b *storeImpl) getImageIntegration(id string, bucket *bolt.Bucket) (integration *v1.ImageIntegration, exists bool, err error) {
-	integration = new(v1.ImageIntegration)
+func (b *storeImpl) getImageIntegration(id string, bucket *bolt.Bucket) (integration *storage.ImageIntegration, exists bool, err error) {
+	integration = new(storage.ImageIntegration)
 	val := bucket.Get([]byte(id))
 	if val == nil {
 		return
@@ -30,7 +31,7 @@ func (b *storeImpl) getImageIntegration(id string, bucket *bolt.Bucket) (integra
 }
 
 // GetImageIntegration returns integration with given id.
-func (b *storeImpl) GetImageIntegration(id string) (integration *v1.ImageIntegration, exists bool, err error) {
+func (b *storeImpl) GetImageIntegration(id string) (integration *storage.ImageIntegration, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ImageIntegration")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(imageIntegrationBucket))
@@ -41,13 +42,13 @@ func (b *storeImpl) GetImageIntegration(id string) (integration *v1.ImageIntegra
 }
 
 // GetImageIntegrations retrieves integrations from bolt
-func (b *storeImpl) GetImageIntegrations(request *v1.GetImageIntegrationsRequest) ([]*v1.ImageIntegration, error) {
+func (b *storeImpl) GetImageIntegrations(request *v1.GetImageIntegrationsRequest) ([]*storage.ImageIntegration, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ImageIntegration")
-	var integrations []*v1.ImageIntegration
+	var integrations []*storage.ImageIntegration
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(imageIntegrationBucket))
 		return b.ForEach(func(k, v []byte) error {
-			var integration v1.ImageIntegration
+			var integration storage.ImageIntegration
 			if err := proto.Unmarshal(v, &integration); err != nil {
 				return err
 			}
@@ -59,7 +60,7 @@ func (b *storeImpl) GetImageIntegrations(request *v1.GetImageIntegrationsRequest
 }
 
 // AddImageIntegration adds a integration into bolt
-func (b *storeImpl) AddImageIntegration(integration *v1.ImageIntegration) (string, error) {
+func (b *storeImpl) AddImageIntegration(integration *storage.ImageIntegration) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "ImageIntegration")
 	integration.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
@@ -84,7 +85,7 @@ func (b *storeImpl) AddImageIntegration(integration *v1.ImageIntegration) (strin
 }
 
 // UpdateImageIntegration upserts a integration into bolt
-func (b *storeImpl) UpdateImageIntegration(integration *v1.ImageIntegration) error {
+func (b *storeImpl) UpdateImageIntegration(integration *storage.ImageIntegration) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "ImageIntegration")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(imageIntegrationBucket))

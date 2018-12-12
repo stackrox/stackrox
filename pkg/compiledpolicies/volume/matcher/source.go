@@ -13,7 +13,7 @@ func init() {
 	compilers = append(compilers, newSourceMatcher)
 }
 
-func newSourceMatcher(policy *v1.Policy) (Matcher, error) {
+func newSourceMatcher(policy *storage.Policy) (Matcher, error) {
 	source := policy.GetFields().GetVolumePolicy().GetSource()
 	if source == "" {
 		return nil, nil

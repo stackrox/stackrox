@@ -6,7 +6,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	protobuf "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/networkflow/store"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkentity"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
@@ -17,7 +17,7 @@ type flowStoreUpdaterImpl struct {
 }
 
 // update updates the FlowStore with the given network flow updates.
-func (s *flowStoreUpdaterImpl) update(newFlows []*v1.NetworkFlow, updateTS *protobuf.Timestamp) error {
+func (s *flowStoreUpdaterImpl) update(newFlows []*storage.NetworkFlow, updateTS *protobuf.Timestamp) error {
 	updatedFlows := make(map[networkFlowProperties]timestamp.MicroTS, len(newFlows))
 
 	// Add existing untermintated flows from the store if this is the first run.
@@ -48,7 +48,7 @@ func (s *flowStoreUpdaterImpl) addExistingNonTerminatedFlows(updatedFlows map[ne
 	return nil
 }
 
-func addNewFlows(updatedFlows map[networkFlowProperties]timestamp.MicroTS, newFlows []*v1.NetworkFlow, updateTS *protobuf.Timestamp) {
+func addNewFlows(updatedFlows map[networkFlowProperties]timestamp.MicroTS, newFlows []*storage.NetworkFlow, updateTS *protobuf.Timestamp) {
 	tsOffset := timestamp.Now() - timestamp.FromProtobuf(updateTS)
 	for _, newFlow := range newFlows {
 		t := timestamp.FromProtobuf(newFlow.LastSeenTimestamp)
@@ -59,10 +59,10 @@ func addNewFlows(updatedFlows map[networkFlowProperties]timestamp.MicroTS, newFl
 	}
 }
 
-func convertToFlows(updatedFlows map[networkFlowProperties]timestamp.MicroTS) []*v1.NetworkFlow {
-	flowsToBeUpserted := make([]*v1.NetworkFlow, 0, len(updatedFlows))
+func convertToFlows(updatedFlows map[networkFlowProperties]timestamp.MicroTS) []*storage.NetworkFlow {
+	flowsToBeUpserted := make([]*storage.NetworkFlow, 0, len(updatedFlows))
 	for props, ts := range updatedFlows {
-		toBeUpserted := &v1.NetworkFlow{
+		toBeUpserted := &storage.NetworkFlow{
 			Props:             props.toProto(),
 			LastSeenTimestamp: convertTS(ts),
 		}
@@ -85,10 +85,10 @@ type networkFlowProperties struct {
 	srcEntity networkentity.Entity
 	dstEntity networkentity.Entity
 	dstPort   uint32
-	protocol  v1.L4Protocol
+	protocol  storage.L4Protocol
 }
 
-func fromProto(protoProps *v1.NetworkFlowProperties) networkFlowProperties {
+func fromProto(protoProps *storage.NetworkFlowProperties) networkFlowProperties {
 	return networkFlowProperties{
 		srcEntity: networkentity.FromProto(protoProps.SrcEntity),
 		dstEntity: networkentity.FromProto(protoProps.DstEntity),
@@ -97,8 +97,8 @@ func fromProto(protoProps *v1.NetworkFlowProperties) networkFlowProperties {
 	}
 }
 
-func (n *networkFlowProperties) toProto() *v1.NetworkFlowProperties {
-	return &v1.NetworkFlowProperties{
+func (n *networkFlowProperties) toProto() *storage.NetworkFlowProperties {
+	return &storage.NetworkFlowProperties{
 		SrcEntity:  n.srcEntity.ToProto(),
 		DstEntity:  n.dstEntity.ToProto(),
 		DstPort:    n.dstPort,

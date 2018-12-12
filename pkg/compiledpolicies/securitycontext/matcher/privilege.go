@@ -11,7 +11,7 @@ func init() {
 	compilers = append(compilers, newPrivilegeMatcher)
 }
 
-func newPrivilegeMatcher(policy *v1.Policy) (Matcher, error) {
+func newPrivilegeMatcher(policy *storage.Policy) (Matcher, error) {
 	fields := policy.GetFields()
 	if fields.GetSetPrivileged() == nil {
 		return nil, nil

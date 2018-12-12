@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/policy/index/mappings"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -18,18 +19,18 @@ type indexerImpl struct {
 }
 
 type policyWrapper struct {
-	*v1.Policy `json:"policy"`
-	Type       string `json:"type"`
+	*storage.Policy `json:"policy"`
+	Type            string `json:"type"`
 }
 
 // AddPolicy adds the policy to the index
-func (b *indexerImpl) AddPolicy(policy *v1.Policy) error {
+func (b *indexerImpl) AddPolicy(policy *storage.Policy) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "Policy")
 	return b.index.Index(policy.GetId(), &policyWrapper{Type: v1.SearchCategory_POLICIES.String(), Policy: policy})
 }
 
 // AddPolicies adds the policies to the indexer
-func (b *indexerImpl) AddPolicies(policies []*v1.Policy) error {
+func (b *indexerImpl) AddPolicies(policies []*storage.Policy) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "Policy")
 	batch := b.index.NewBatch()
 	for _, policy := range policies {

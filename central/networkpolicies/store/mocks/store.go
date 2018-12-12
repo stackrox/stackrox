@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
 
@@ -34,7 +35,7 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // AddNetworkPolicy mocks base method
-func (m *MockStore) AddNetworkPolicy(arg0 *v1.NetworkPolicy) error {
+func (m *MockStore) AddNetworkPolicy(arg0 *storage.NetworkPolicy) error {
 	ret := m.ctrl.Call(m, "AddNetworkPolicy", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -59,9 +60,9 @@ func (mr *MockStoreMockRecorder) CountNetworkPolicies() *gomock.Call {
 }
 
 // GetNetworkPolicies mocks base method
-func (m *MockStore) GetNetworkPolicies(arg0 *v1.GetNetworkPoliciesRequest) ([]*v1.NetworkPolicy, error) {
+func (m *MockStore) GetNetworkPolicies(arg0 *v1.GetNetworkPoliciesRequest) ([]*storage.NetworkPolicy, error) {
 	ret := m.ctrl.Call(m, "GetNetworkPolicies", arg0)
-	ret0, _ := ret[0].([]*v1.NetworkPolicy)
+	ret0, _ := ret[0].([]*storage.NetworkPolicy)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -72,9 +73,9 @@ func (mr *MockStoreMockRecorder) GetNetworkPolicies(arg0 interface{}) *gomock.Ca
 }
 
 // GetNetworkPolicy mocks base method
-func (m *MockStore) GetNetworkPolicy(arg0 string) (*v1.NetworkPolicy, bool, error) {
+func (m *MockStore) GetNetworkPolicy(arg0 string) (*storage.NetworkPolicy, bool, error) {
 	ret := m.ctrl.Call(m, "GetNetworkPolicy", arg0)
-	ret0, _ := ret[0].(*v1.NetworkPolicy)
+	ret0, _ := ret[0].(*storage.NetworkPolicy)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -98,7 +99,7 @@ func (mr *MockStoreMockRecorder) RemoveNetworkPolicy(arg0 interface{}) *gomock.C
 }
 
 // UpdateNetworkPolicy mocks base method
-func (m *MockStore) UpdateNetworkPolicy(arg0 *v1.NetworkPolicy) error {
+func (m *MockStore) UpdateNetworkPolicy(arg0 *storage.NetworkPolicy) error {
 	ret := m.ctrl.Call(m, "UpdateNetworkPolicy", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0

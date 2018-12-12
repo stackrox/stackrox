@@ -12,7 +12,7 @@ func init() {
 	compilers = append(compilers, newResourceMatcher)
 }
 
-func newResourceMatcher(policy *v1.Policy) (Matcher, error) {
+func newResourceMatcher(policy *storage.Policy) (Matcher, error) {
 	resourcePolicy := policy.GetFields().GetContainerResourcePolicy()
 	if resourcePolicy == nil {
 		return nil, nil
@@ -23,7 +23,7 @@ func newResourceMatcher(policy *v1.Policy) (Matcher, error) {
 }
 
 type resourceMatcherImpl struct {
-	resourcePolicy *v1.ResourcePolicy
+	resourcePolicy *storage.ResourcePolicy
 }
 
 func (p *resourceMatcherImpl) match(container *storage.Container) []*v1.Alert_Violation {

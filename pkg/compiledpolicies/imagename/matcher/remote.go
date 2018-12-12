@@ -13,7 +13,7 @@ func init() {
 	compilers = append(compilers, newRemoteMatcher)
 }
 
-func newRemoteMatcher(policy *v1.Policy) (Matcher, error) {
+func newRemoteMatcher(policy *storage.Policy) (Matcher, error) {
 	remotePolicy := policy.GetFields().GetImageName().GetRemote()
 	if remotePolicy == "" {
 		return nil, nil

@@ -68,12 +68,12 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func scrubImageIntegration(i *v1.ImageIntegration) {
+func scrubImageIntegration(i *storage.ImageIntegration) {
 	secrets.ScrubSecretsFromStruct(i)
 }
 
 // GetImageIntegration retrieves the integration based on the id passed
-func (s *serviceImpl) GetImageIntegration(ctx context.Context, request *v1.ResourceByID) (*v1.ImageIntegration, error) {
+func (s *serviceImpl) GetImageIntegration(ctx context.Context, request *v1.ResourceByID) (*storage.ImageIntegration, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Image integration id must be provided")
 	}
@@ -98,7 +98,7 @@ func (s *serviceImpl) GetImageIntegrations(ctx context.Context, request *v1.GetI
 	identity := authn.IdentityFromContext(ctx)
 	if identity != nil {
 		svc := identity.Service()
-		if svc != nil && svc.GetType() == v1.ServiceType_SENSOR_SERVICE {
+		if svc != nil && svc.GetType() == storage.ServiceType_SENSOR_SERVICE {
 			return &v1.GetImageIntegrationsResponse{Integrations: integrations}, nil
 		}
 	}
@@ -110,14 +110,14 @@ func (s *serviceImpl) GetImageIntegrations(ctx context.Context, request *v1.GetI
 	return &v1.GetImageIntegrationsResponse{Integrations: integrations}, nil
 }
 
-func sortCategories(categories []v1.ImageIntegrationCategory) {
+func sortCategories(categories []storage.ImageIntegrationCategory) {
 	sort.SliceStable(categories, func(i, j int) bool {
 		return int32(categories[i]) < int32(categories[j])
 	})
 }
 
 // PutImageIntegration updates an image integration in the system
-func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*v1.Empty, error) {
+func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *storage.ImageIntegration) (*v1.Empty, error) {
 	err := s.validateClustersAndCategories(request)
 	if err != nil {
 		return nil, err
@@ -135,7 +135,7 @@ func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *v1.Image
 }
 
 // PostImageIntegration inserts a new image integration into the system if it doesn't already exist
-func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*v1.ImageIntegration, error) {
+func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage.ImageIntegration) (*storage.ImageIntegration, error) {
 	if request.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new image integration")
 	}
@@ -174,19 +174,19 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 }
 
 // TestImageIntegration tests to see if the config is setup properly
-func (s *serviceImpl) TestImageIntegration(ctx context.Context, request *v1.ImageIntegration) (*v1.Empty, error) {
+func (s *serviceImpl) TestImageIntegration(ctx context.Context, request *storage.ImageIntegration) (*v1.Empty, error) {
 	err := s.validateClustersAndCategories(request)
 	if err != nil {
 		return nil, err
 	}
 	for _, category := range request.GetCategories() {
-		if category == v1.ImageIntegrationCategory_REGISTRY {
+		if category == storage.ImageIntegrationCategory_REGISTRY {
 			err = s.testRegistryIntegration(request)
 			if err != nil {
 				return nil, status.Error(codes.InvalidArgument, err.Error())
 			}
 		}
-		if category == v1.ImageIntegrationCategory_SCANNER {
+		if category == storage.ImageIntegrationCategory_SCANNER {
 			err = s.testScannerIntegration(request)
 			if err != nil {
 				return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -196,7 +196,7 @@ func (s *serviceImpl) TestImageIntegration(ctx context.Context, request *v1.Imag
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) testRegistryIntegration(integration *v1.ImageIntegration) error {
+func (s *serviceImpl) testRegistryIntegration(integration *storage.ImageIntegration) error {
 	registry, err := s.registryFactory.CreateRegistry(integration)
 	if err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())
@@ -207,7 +207,7 @@ func (s *serviceImpl) testRegistryIntegration(integration *v1.ImageIntegration) 
 	return nil
 }
 
-func (s *serviceImpl) testScannerIntegration(integration *v1.ImageIntegration) error {
+func (s *serviceImpl) testScannerIntegration(integration *storage.ImageIntegration) error {
 	scanner, err := s.scannerFactory.CreateScanner(integration)
 	if err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())
@@ -218,7 +218,7 @@ func (s *serviceImpl) testScannerIntegration(integration *v1.ImageIntegration) e
 	return nil
 }
 
-func (s *serviceImpl) validateClustersAndCategories(request *v1.ImageIntegration) error {
+func (s *serviceImpl) validateClustersAndCategories(request *storage.ImageIntegration) error {
 	if len(request.GetCategories()) == 0 {
 		return status.Error(codes.InvalidArgument, "integrations require a category")
 	}

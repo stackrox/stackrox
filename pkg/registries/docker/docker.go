@@ -7,7 +7,6 @@ import (
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/distribution/manifest/schema2"
 	"github.com/heroku/docker-registry-client/registry"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -20,8 +19,8 @@ var (
 )
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageRegistry, error)) {
-	return "docker", func(integration *v1.ImageIntegration) (types.ImageRegistry, error) {
+func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageRegistry, error)) {
+	return "docker", func(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
 		reg, err := newRegistry(integration)
 		return reg, err
 	}
@@ -30,7 +29,7 @@ func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageRegis
 // Registry is the basic docker registry implementation
 type Registry struct {
 	cfg                   Config
-	protoImageIntegration *v1.ImageIntegration
+	protoImageIntegration *storage.ImageIntegration
 
 	client *registry.Registry
 
@@ -52,7 +51,7 @@ type Config struct {
 
 // NewDockerRegistry creates a new instantiation of the docker registry
 // TODO(cgorman) AP-386 - properly put the base docker registry into another pkg
-func NewDockerRegistry(cfg Config, integration *v1.ImageIntegration) (*Registry, error) {
+func NewDockerRegistry(cfg Config, integration *storage.ImageIntegration) (*Registry, error) {
 	url, err := urlfmt.FormatURL(cfg.Endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if err != nil {
 		return nil, err
@@ -85,8 +84,8 @@ func NewDockerRegistry(cfg Config, integration *v1.ImageIntegration) (*Registry,
 	}, nil
 }
 
-func newRegistry(integration *v1.ImageIntegration) (*Registry, error) {
-	dockerConfig, ok := integration.IntegrationConfig.(*v1.ImageIntegration_Docker)
+func newRegistry(integration *storage.ImageIntegration) (*Registry, error) {
+	dockerConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Docker)
 	if !ok {
 		return nil, fmt.Errorf("Docker configuration required")
 	}

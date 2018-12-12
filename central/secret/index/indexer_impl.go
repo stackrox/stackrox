@@ -6,6 +6,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
@@ -14,11 +15,11 @@ const batchSize = 5000
 
 type secretWrapper struct {
 	// Json name of this field must match what is used in secret/search/options/map
-	*v1.Secret `json:"secret"`
-	Type       string `json:"type"`
+	*storage.Secret `json:"secret"`
+	Type            string `json:"type"`
 }
 
-func wrap(secret *v1.Secret) *secretWrapper {
+func wrap(secret *storage.Secret) *secretWrapper {
 	return &secretWrapper{Type: v1.SearchCategory_SECRETS.String(), Secret: secret}
 }
 
@@ -26,12 +27,12 @@ type indexerImpl struct {
 	index bleve.Index
 }
 
-func (i *indexerImpl) UpsertSecret(secret *v1.Secret) error {
+func (i *indexerImpl) UpsertSecret(secret *storage.Secret) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "Secret")
 	return i.index.Index(secret.GetId(), wrap(secret))
 }
 
-func (i *indexerImpl) processBatch(secrets []*v1.Secret) error {
+func (i *indexerImpl) processBatch(secrets []*storage.Secret) error {
 	batch := i.index.NewBatch()
 	for _, secret := range secrets {
 		batch.Index(secret.GetId(), wrap(secret))
@@ -39,7 +40,7 @@ func (i *indexerImpl) processBatch(secrets []*v1.Secret) error {
 	return i.index.Batch(batch)
 }
 
-func (i *indexerImpl) UpsertSecrets(secrets ...*v1.Secret) error {
+func (i *indexerImpl) UpsertSecrets(secrets ...*storage.Secret) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "Secret")
 	batchManager := batcher.New(len(secrets), batchSize)
 	for {

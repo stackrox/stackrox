@@ -25,9 +25,9 @@ type QuayIntegrationSuite struct {
 }
 
 func (suite *QuayIntegrationSuite) SetupSuite() {
-	protoImageIntegration := &v1.ImageIntegration{
+	protoImageIntegration := &storage.ImageIntegration{
 		IntegrationConfig: &v1.ImageIntegration_Quay{
-			Quay: &v1.QuayConfig{
+			Quay: &storage.QuayConfig{
 				OauthToken: testOauthToken,
 				Endpoint:   "quay.io",
 			},

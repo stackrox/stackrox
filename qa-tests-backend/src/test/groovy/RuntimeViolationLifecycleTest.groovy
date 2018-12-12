@@ -11,7 +11,7 @@ import java.util.stream.Collectors
 import objects.Deployment
 import org.junit.experimental.categories.Category
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
-import io.stackrox.proto.api.v1.PolicyServiceOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass
 
 class RuntimeViolationLifecycleTest extends BaseSpecification  {
     static final private String APTGETPOLICY = "Ubuntu Package Manager Execution"
@@ -53,7 +53,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         assert violations?.size() == 1
         def violation = violations[0]
         assert violation.getDeployment().getId() == deploymentUid
-        assert violation.getLifecycleStage() == PolicyServiceOuterClass.LifecycleStage.RUNTIME
+        assert violation.getLifecycleStage() == PolicyOuterClass.LifecycleStage.RUNTIME
         def alert = getViolation(violation.getId())
         assert alert.getState() == AlertServiceOuterClass.ViolationState.ACTIVE
         return true
@@ -79,7 +79,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         assert violations?.size() == 1
         def violation = violations[0]
         assert violation.getDeployment().getId() == DEPLOYMENT.getDeploymentUid()
-        assert violation.getLifecycleStage() == PolicyServiceOuterClass.LifecycleStage.RUNTIME
+        assert violation.getLifecycleStage() == PolicyOuterClass.LifecycleStage.RUNTIME
 
         when:
         "Fetch the alert corresponding to the original apt-get violation"
@@ -117,7 +117,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         checkPolicyExists(APTGETPOLICY)
 
         // We update the apt-get policy in this test, and keep the original here so we can restore it.
-        PolicyServiceOuterClass.Policy originalAptGetPolicy = null
+        PolicyOuterClass.Policy originalAptGetPolicy = null
 
         when:
         "Get initial violations"
@@ -128,7 +128,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         assert aptGetViolations?.size() == 1
         def originalAptGetViolation = aptGetViolations[0]
         assert originalAptGetViolation.getDeployment().getId() == DEPLOYMENT.getDeploymentUid()
-        assert originalAptGetViolation.getLifecycleStage() == PolicyServiceOuterClass.LifecycleStage.RUNTIME
+        assert originalAptGetViolation.getLifecycleStage() == PolicyOuterClass.LifecycleStage.RUNTIME
 
         when:
         "Fetch the alert corresponding to the original apt-get violation"
@@ -139,7 +139,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         assert originalAptGetAlert != null
         assert originalAptGetAlert.getState() == AlertServiceOuterClass.ViolationState.ACTIVE
         assert originalAptGetAlert.getDeployment().getId() == DEPLOYMENT.getDeploymentUid()
-        assert originalAptGetAlert.getLifecycleStage() == PolicyServiceOuterClass.LifecycleStage.RUNTIME
+        assert originalAptGetAlert.getLifecycleStage() == PolicyOuterClass.LifecycleStage.RUNTIME
         assert originalAptGetAlert.getViolationsCount() == 1
         def subViolation = originalAptGetAlert.getViolations(0)
         assert subViolation.getProcessesCount() > 0

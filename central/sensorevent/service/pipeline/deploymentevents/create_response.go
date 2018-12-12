@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-func newCreateResponse(onUpdate func(deployment *storage.Deployment) (string, v1.EnforcementAction, error),
+func newCreateResponse(onUpdate func(deployment *storage.Deployment) (string, storage.EnforcementAction, error),
 	onRemove func(deployment *storage.Deployment) error) *createResponseImpl {
 	return &createResponseImpl{
 		onUpdate: onUpdate,
@@ -14,13 +14,13 @@ func newCreateResponse(onUpdate func(deployment *storage.Deployment) (string, v1
 }
 
 type createResponseImpl struct {
-	onUpdate func(deployment *storage.Deployment) (string, v1.EnforcementAction, error)
+	onUpdate func(deployment *storage.Deployment) (string, storage.EnforcementAction, error)
 	onRemove func(deployment *storage.Deployment) error
 }
 
 func (s *createResponseImpl) do(deployment *storage.Deployment, action v1.ResourceAction) *v1.SensorEnforcement {
 	var alertID string
-	var enforcement v1.EnforcementAction
+	var enforcement storage.EnforcementAction
 	var err error
 	if action == v1.ResourceAction_REMOVE_RESOURCE {
 		err = s.onRemove(deployment)
@@ -34,7 +34,7 @@ func (s *createResponseImpl) do(deployment *storage.Deployment, action v1.Resour
 		log.Errorf("updating from deployment failed: %s", err)
 	}
 
-	if enforcement == v1.EnforcementAction_UNSET_ENFORCEMENT {
+	if enforcement == storage.EnforcementAction_UNSET_ENFORCEMENT {
 		return nil
 	}
 

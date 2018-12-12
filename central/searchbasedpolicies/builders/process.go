@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -16,7 +17,7 @@ type ProcessQueryBuilder struct {
 }
 
 // Query implements the PolicyQueryBuilder interface.
-func (p ProcessQueryBuilder) Query(fields *v1.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
+func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	processName := fields.GetProcessPolicy().GetName()
 	processArgs := fields.GetProcessPolicy().GetArgs()
 	if processName == "" && processArgs == "" {

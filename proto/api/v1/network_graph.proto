@@ -5,14 +5,13 @@ option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
-import "api/v1/network_enums.proto";
-import "api/v1/network_flow.proto";
+import "storage/network_flow.proto";
 
 package v1;
 
 message NetworkEdgeProperties {
     uint32     port     = 1;
-    L4Protocol protocol = 2;
+    storage.L4Protocol protocol = 2;
 
     google.protobuf.Timestamp last_active_timestamp = 3;
 }
@@ -22,7 +21,7 @@ message NetworkEdgePropertiesBundle {
 }
 
 message NetworkNode {
-    NetworkEntityInfo entity          = 1;
+    storage.NetworkEntityInfo entity          = 1;
     bool              internet_access = 2;
     repeated string   policy_ids      = 3;
 

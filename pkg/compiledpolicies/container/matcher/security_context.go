@@ -10,7 +10,7 @@ func init() {
 	compilers = append(compilers, newSecurityContextMatcher)
 }
 
-func newSecurityContextMatcher(policy *v1.Policy) (Matcher, error) {
+func newSecurityContextMatcher(policy *storage.Policy) (Matcher, error) {
 	matcher, err := securityContextMatcher.Compile(policy)
 	if err != nil {
 		return nil, err

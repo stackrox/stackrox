@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stretchr/testify/suite"
@@ -77,9 +76,9 @@ func (suite *DTRSuite) SetupSuite() {
 	masterServer := httptest.NewServer(masterRouter)
 	suite.server = masterServer
 
-	protoImageIntegration := &v1.ImageIntegration{
-		IntegrationConfig: &v1.ImageIntegration_Dtr{
-			Dtr: &v1.DTRConfig{
+	protoImageIntegration := &storage.ImageIntegration{
+		IntegrationConfig: &storage.ImageIntegration_Dtr{
+			Dtr: &storage.DTRConfig{
 				Username: "user",
 				Password: "password",
 				Endpoint: "http://" + masterServer.Listener.Addr().String(),

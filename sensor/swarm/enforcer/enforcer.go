@@ -9,6 +9,7 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 	dockerClient "github.com/docker/docker/client"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/enforcers"
 )
@@ -45,10 +46,10 @@ func New() (enforcers.Enforcer, error) {
 	e := &enforcerImpl{
 		Client: dc,
 	}
-	enforcementMap := map[v1.EnforcementAction]enforcers.EnforceFunc{
-		v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT:                 e.scaleToZero,
-		v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: e.unsatisfiableNodeConstraint,
-		v1.EnforcementAction_KILL_POD_ENFORCEMENT:                      e.kill,
+	enforcementMap := map[storage.EnforcementAction]enforcers.EnforceFunc{
+		storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT:                 e.scaleToZero,
+		storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: e.unsatisfiableNodeConstraint,
+		storage.EnforcementAction_KILL_POD_ENFORCEMENT:                      e.kill,
 	}
 
 	return enforcers.CreateEnforcer(enforcementMap), nil

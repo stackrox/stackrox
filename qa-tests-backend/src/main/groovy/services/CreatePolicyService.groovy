@@ -2,7 +2,7 @@ package services
 
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceGrpc
-import io.stackrox.proto.api.v1.PolicyServiceOuterClass.Policy
+import io.stackrox.proto.storage.PolicyOuterClass.Policy
 
 class CreatePolicyService extends BaseService {
 

@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+package storage;
+
+message Namespace {
+    string              id           = 1;
+    string              name         = 2;
+    string              cluster_id   = 3;
+    string              cluster_name = 4;
+    map<string, string> labels       = 5;
+}

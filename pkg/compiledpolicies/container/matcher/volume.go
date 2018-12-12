@@ -10,7 +10,7 @@ func init() {
 	compilers = append(compilers, newVolumeMatcher)
 }
 
-func newVolumeMatcher(policy *v1.Policy) (Matcher, error) {
+func newVolumeMatcher(policy *storage.Policy) (Matcher, error) {
 	matcher, err := volumeMatcher.Compile(policy)
 	if err != nil {
 		return nil, err

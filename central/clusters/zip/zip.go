@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/central/monitoring"
 	serviceIdentitiesService "github.com/stackrox/rox/central/serviceidentities/service"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/zip"
 	"google.golang.org/grpc/codes"
@@ -101,7 +102,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	idReq := &v1.CreateServiceIdentityRequest{
 		Id:   cluster.GetId(),
-		Type: v1.ServiceType_SENSOR_SERVICE,
+		Type: storage.ServiceType_SENSOR_SERVICE,
 	}
 	id, err := z.identityService.CreateServiceIdentity(ctx, idReq)
 	if err != nil {
@@ -120,7 +121,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		defer cancel()
 		idReq = &v1.CreateServiceIdentityRequest{
 			Id:   cluster.GetId(),
-			Type: v1.ServiceType_COLLECTOR_SERVICE,
+			Type: storage.ServiceType_COLLECTOR_SERVICE,
 		}
 		id, err = z.identityService.CreateServiceIdentity(ctx, idReq)
 		if err != nil {
@@ -140,7 +141,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		defer cancel()
 		idReq = &v1.CreateServiceIdentityRequest{
 			Id:   cluster.GetId(),
-			Type: v1.ServiceType_MONITORING_CLIENT_SERVICE,
+			Type: storage.ServiceType_MONITORING_CLIENT_SERVICE,
 		}
 		id, err = z.identityService.CreateServiceIdentity(ctx, idReq)
 		if err != nil {

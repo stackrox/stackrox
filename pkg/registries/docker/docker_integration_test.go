@@ -3,7 +3,6 @@ package docker
 import (
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/require"
 )
@@ -14,9 +13,9 @@ var (
 )
 
 func TestGetMetadataIntegration(t *testing.T) {
-	dockerHubClient, err := newRegistry(&v1.ImageIntegration{
-		IntegrationConfig: &v1.ImageIntegration_Docker{
-			Docker: &v1.DockerConfig{
+	dockerHubClient, err := newRegistry(&storage.ImageIntegration{
+		IntegrationConfig: &storage.ImageIntegration_Docker{
+			Docker: &storage.DockerConfig{
 				Endpoint: "https://k8s.gcr.io",
 			},
 		},

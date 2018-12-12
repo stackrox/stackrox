@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/policy/index"
 	"github.com/stackrox/rox/central/policy/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -22,7 +23,7 @@ func (ds *searcherImpl) buildIndex() error {
 }
 
 // SearchRawPolicies retrieves Policies from the indexer and storage
-func (ds *searcherImpl) SearchRawPolicies(q *v1.Query) ([]*v1.Policy, error) {
+func (ds *searcherImpl) SearchRawPolicies(q *v1.Query) ([]*storage.Policy, error) {
 	policies, _, err := ds.searchPolicies(q)
 	return policies, err
 }
@@ -40,12 +41,12 @@ func (ds *searcherImpl) SearchPolicies(q *v1.Query) ([]*v1.SearchResult, error) 
 	return protoResults, nil
 }
 
-func (ds *searcherImpl) searchPolicies(q *v1.Query) ([]*v1.Policy, []search.Result, error) {
+func (ds *searcherImpl) searchPolicies(q *v1.Query) ([]*storage.Policy, []search.Result, error) {
 	results, err := ds.indexer.SearchPolicies(q)
 	if err != nil {
 		return nil, nil, err
 	}
-	var policies []*v1.Policy
+	var policies []*storage.Policy
 	var newResults []search.Result
 	for _, result := range results {
 		policy, exists, err := ds.storage.GetPolicy(result.ID)
@@ -63,7 +64,7 @@ func (ds *searcherImpl) searchPolicies(q *v1.Query) ([]*v1.Policy, []search.Resu
 }
 
 // ConvertPolicy returns proto search result from a policy object and the internal search result
-func convertPolicy(policy *v1.Policy, result search.Result) *v1.SearchResult {
+func convertPolicy(policy *storage.Policy, result search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_POLICIES,
 		Id:             policy.GetId(),

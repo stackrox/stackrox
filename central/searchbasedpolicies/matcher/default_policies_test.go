@@ -51,7 +51,7 @@ type DefaultPoliciesTestSuite struct {
 	imageIndexer      imageIndex.Indexer
 	processDataStore  processIndicatorDataStore.DataStore
 
-	defaultPolicies map[string]*v1.Policy
+	defaultPolicies map[string]*storage.Policy
 }
 
 func (suite *DefaultPoliciesTestSuite) SetupTest() {
@@ -75,7 +75,7 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 	defaultPolicies, err := defaults.Policies()
 	suite.Require().NoError(err)
 
-	suite.defaultPolicies = make(map[string]*v1.Policy, len(defaultPolicies))
+	suite.defaultPolicies = make(map[string]*storage.Policy, len(defaultPolicies))
 	for _, p := range defaultPolicies {
 		suite.defaultPolicies[p.GetName()] = p
 	}
@@ -87,7 +87,7 @@ func (suite *DefaultPoliciesTestSuite) TearDownTest() {
 	os.Remove(suite.db.Path())
 }
 
-func (suite *DefaultPoliciesTestSuite) MustGetPolicy(name string) *v1.Policy {
+func (suite *DefaultPoliciesTestSuite) MustGetPolicy(name string) *storage.Policy {
 	p, ok := suite.defaultPolicies[name]
 	suite.Require().True(ok, "Policy %s not found", name)
 	return p

@@ -5,16 +5,16 @@ option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
-import "api/v1/service_identity_service.proto";
 
 import "api/v1/empty.proto";
+import "storage/service_identity.proto";
 
 package v1;
 
 message AuthStatus {
     oneof id {
         string                user_id     = 1;
-        ServiceIdentity       service_id  = 2;
+        storage.ServiceIdentity       service_id  = 2;
     }
     google.protobuf.Timestamp expires     = 3;
     string                    refresh_url = 4;

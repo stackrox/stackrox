@@ -1,23 +1,25 @@
 package policies
 
-import "github.com/stackrox/rox/generated/api/v1"
+import (
+	"github.com/stackrox/rox/generated/storage"
+)
 
 // AppliesAtBuildTime returns if a policy applies at build time.
-func AppliesAtBuildTime(policy *v1.Policy) bool {
-	return appliesAt(policy, v1.LifecycleStage_BUILD)
+func AppliesAtBuildTime(policy *storage.Policy) bool {
+	return appliesAt(policy, storage.LifecycleStage_BUILD)
 }
 
 // AppliesAtDeployTime returns if a policy applies at deploy time.
-func AppliesAtDeployTime(policy *v1.Policy) bool {
-	return appliesAt(policy, v1.LifecycleStage_DEPLOY)
+func AppliesAtDeployTime(policy *storage.Policy) bool {
+	return appliesAt(policy, storage.LifecycleStage_DEPLOY)
 }
 
 // AppliesAtRunTime returns if a policy applies at run time.
-func AppliesAtRunTime(policy *v1.Policy) bool {
-	return appliesAt(policy, v1.LifecycleStage_RUNTIME)
+func AppliesAtRunTime(policy *storage.Policy) bool {
+	return appliesAt(policy, storage.LifecycleStage_RUNTIME)
 }
 
-func appliesAt(policy *v1.Policy, lc v1.LifecycleStage) bool {
+func appliesAt(policy *storage.Policy, lc storage.LifecycleStage) bool {
 	for _, stage := range policy.GetLifecycleStages() {
 		if stage == lc {
 			return true

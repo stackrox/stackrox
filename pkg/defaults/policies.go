@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -19,7 +19,7 @@ var (
 )
 
 // Policies returns a list of default policies.
-func Policies() (policies []*v1.Policy, err error) {
+func Policies() (policies []*storage.Policy, err error) {
 	dir := path.Join(PoliciesPath, "files")
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -33,7 +33,7 @@ func Policies() (policies []*v1.Policy, err error) {
 			continue
 		}
 
-		var p *v1.Policy
+		var p *storage.Policy
 		p, err = readPolicyFile(path.Join(dir, f.Name()))
 		if err != nil {
 			return
@@ -45,14 +45,14 @@ func Policies() (policies []*v1.Policy, err error) {
 	return
 }
 
-func readPolicyFile(path string) (*v1.Policy, error) {
+func readPolicyFile(path string) (*storage.Policy, error) {
 	contents, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Errorf("Unable to read file %s: %s", path, err)
 		return nil, err
 	}
 
-	r := new(v1.Policy)
+	r := new(storage.Policy)
 	err = jsonpb.Unmarshal(bytes.NewReader(contents), r)
 	if err != nil {
 		log.Errorf("Unable to unmarshal policy json: %s", err)

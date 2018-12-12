@@ -90,7 +90,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetPolicy returns a policy by name.
-func (s *serviceImpl) GetPolicy(ctx context.Context, request *v1.ResourceByID) (*v1.Policy, error) {
+func (s *serviceImpl) GetPolicy(ctx context.Context, request *v1.ResourceByID) (*storage.Policy, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Policy id must be provided")
 	}
@@ -107,10 +107,10 @@ func (s *serviceImpl) GetPolicy(ctx context.Context, request *v1.ResourceByID) (
 	return policy, nil
 }
 
-func convertPoliciesToListPolicies(policies []*v1.Policy) []*v1.ListPolicy {
-	listPolicies := make([]*v1.ListPolicy, 0, len(policies))
+func convertPoliciesToListPolicies(policies []*storage.Policy) []*storage.ListPolicy {
+	listPolicies := make([]*storage.ListPolicy, 0, len(policies))
 	for _, p := range policies {
-		listPolicies = append(listPolicies, &v1.ListPolicy{
+		listPolicies = append(listPolicies, &storage.ListPolicy{
 			Id:              p.GetId(),
 			Name:            p.GetName(),
 			Description:     p.GetDescription(),
@@ -147,7 +147,7 @@ func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*
 }
 
 // PostPolicy inserts a new policy into the system.
-func (s *serviceImpl) PostPolicy(ctx context.Context, request *v1.Policy) (*v1.Policy, error) {
+func (s *serviceImpl) PostPolicy(ctx context.Context, request *storage.Policy) (*storage.Policy, error) {
 	if request.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new policy")
 	}
@@ -168,7 +168,7 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *v1.Policy) (*v1.P
 }
 
 // PutPolicy updates a current policy in the system.
-func (s *serviceImpl) PutPolicy(ctx context.Context, request *v1.Policy) (*v1.Empty, error) {
+func (s *serviceImpl) PutPolicy(ctx context.Context, request *storage.Policy) (*v1.Empty, error) {
 	if err := s.validator.validate(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -235,7 +235,7 @@ func (s *serviceImpl) ReassessPolicies(context.Context, *v1.Empty) (*v1.Empty, e
 }
 
 // DryRunPolicy runs a dry run of the policy and determines what deployments would violate it
-func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *v1.Policy) (*v1.DryRunResponse, error) {
+func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *storage.Policy) (*v1.DryRunResponse, error) {
 	if err := s.validator.validate(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -351,7 +351,7 @@ func (s *serviceImpl) reprocessDeployments(deployments []*storage.Deployment) {
 	}
 }
 
-func (s *serviceImpl) addActivePolicy(policy *v1.Policy) error {
+func (s *serviceImpl) addActivePolicy(policy *storage.Policy) error {
 	s.processor.UpdatePolicy(policy)
 
 	errorList := errorhelpers.NewErrorList("error adding policy to detection caches: ")
@@ -366,7 +366,7 @@ func (s *serviceImpl) addActivePolicy(policy *v1.Policy) error {
 	return errorList.ToError()
 }
 
-func (s *serviceImpl) removeActivePolicy(policy *v1.Policy) error {
+func (s *serviceImpl) removeActivePolicy(policy *storage.Policy) error {
 	s.processor.RemovePolicy(policy)
 
 	errorList := errorhelpers.NewErrorList("error removing policy from detection: ")

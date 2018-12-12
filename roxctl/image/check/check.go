@@ -72,13 +72,13 @@ func checkImage(image string, json bool) error {
 }
 
 // Fetch the alerts for the inputs and convert them to a list of Policies that are violated.
-func getViolatedPolicies(image string) ([]*v1.Policy, error) {
+func getViolatedPolicies(image string) ([]*storage.Policy, error) {
 	alerts, err := getAlerts(image)
 	if err != nil {
 		return nil, err
 	}
 
-	var policies []*v1.Policy
+	var policies []*storage.Policy
 	for _, alert := range alerts {
 		policies = append(policies, alert.GetPolicy())
 	}

@@ -1,10 +1,12 @@
 package fixtures
 
-import "github.com/stackrox/rox/generated/api/v1"
+import (
+	"github.com/stackrox/rox/generated/storage"
+)
 
 // GetSecret returns a mock Secret
-func GetSecret() *v1.Secret {
-	return &v1.Secret{
+func GetSecret() *storage.Secret {
+	return &storage.Secret{
 		Id:          "ID",
 		ClusterId:   "clusterid",
 		ClusterName: "clustername",

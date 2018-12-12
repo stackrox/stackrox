@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -26,8 +25,8 @@ var (
 )
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
-func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageScanner, error)) {
-	return typeString, func(integration *v1.ImageIntegration) (types.ImageScanner, error) {
+func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageScanner, error)) {
+	return typeString, func(integration *storage.ImageIntegration) (types.ImageScanner, error) {
 		scan, err := newScanner(integration)
 		return scan, err
 	}
@@ -39,10 +38,10 @@ type dtr struct {
 	conf     config
 	registry string
 
-	protoImageIntegration *v1.ImageIntegration
+	protoImageIntegration *storage.ImageIntegration
 }
 
-type config v1.DTRConfig
+type config storage.DTRConfig
 
 func (c config) validate() error {
 	errorList := errorhelpers.NewErrorList("Validation")
@@ -58,8 +57,8 @@ func (c config) validate() error {
 	return errorList.ToError()
 }
 
-func newScanner(protoImageIntegration *v1.ImageIntegration) (*dtr, error) {
-	dtrConfig, ok := protoImageIntegration.IntegrationConfig.(*v1.ImageIntegration_Dtr)
+func newScanner(protoImageIntegration *storage.ImageIntegration) (*dtr, error) {
+	dtrConfig, ok := protoImageIntegration.IntegrationConfig.(*storage.ImageIntegration_Dtr)
 	if !ok {
 		return nil, fmt.Errorf("DTR configuration required")
 	}

@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners/mocks"
@@ -52,20 +51,20 @@ func TestSetOrdering(t *testing.T) {
 	scannerFactory := NewFactory(registrySet)
 	scannerSet := NewSet(scannerFactory)
 
-	clairifyIntegration := &v1.ImageIntegration{
+	clairifyIntegration := &storage.ImageIntegration{
 		Id:   "clairify",
 		Type: "clairify",
-		IntegrationConfig: &v1.ImageIntegration_Clairify{
-			Clairify: &v1.ClairifyConfig{
+		IntegrationConfig: &storage.ImageIntegration_Clairify{
+			Clairify: &storage.ClairifyConfig{
 				Endpoint: server.URL,
 			},
 		},
 	}
-	dtrIntegration := &v1.ImageIntegration{
+	dtrIntegration := &storage.ImageIntegration{
 		Id:   "dtr",
 		Type: "dtr",
-		IntegrationConfig: &v1.ImageIntegration_Dtr{
-			Dtr: &v1.DTRConfig{
+		IntegrationConfig: &storage.ImageIntegration_Dtr{
+			Dtr: &storage.DTRConfig{
 				Username: "user",
 				Password: "password",
 				Endpoint: server.URL,
@@ -89,10 +88,10 @@ func TestSet(t *testing.T) {
 	mockFactory := mocks.NewMockFactory(ctrl)
 	s := NewSet(mockFactory)
 
-	goodIntegration := &v1.ImageIntegration{Id: "GOOD"}
+	goodIntegration := &storage.ImageIntegration{Id: "GOOD"}
 	mockFactory.EXPECT().CreateScanner(goodIntegration).Return(&fakeScanner{global: true}, nil).Times(2)
 
-	badIntegration := &v1.ImageIntegration{Id: "BAD"}
+	badIntegration := &storage.ImageIntegration{Id: "BAD"}
 	var nilFS *fakeScanner
 	mockFactory.EXPECT().CreateScanner(badIntegration).Return(nilFS, errors.New(errText))
 

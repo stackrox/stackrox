@@ -6,7 +6,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -15,9 +15,9 @@ type storeImpl struct {
 }
 
 // GetNamespace returns namespace with given id.
-func (b *storeImpl) GetNamespace(id string) (namespace *v1.Namespace, exists bool, err error) {
+func (b *storeImpl) GetNamespace(id string) (namespace *storage.Namespace, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Namespace")
-	namespace = new(v1.Namespace)
+	namespace = new(storage.Namespace)
 	err = b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(namespaceBucket))
 		val := b.Get([]byte(id))
@@ -32,13 +32,13 @@ func (b *storeImpl) GetNamespace(id string) (namespace *v1.Namespace, exists boo
 }
 
 // GetNamespaces retrieves namespaces matching the request from bolt
-func (b *storeImpl) GetNamespaces() ([]*v1.Namespace, error) {
+func (b *storeImpl) GetNamespaces() ([]*storage.Namespace, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Namespace")
-	var namespaces []*v1.Namespace
+	var namespaces []*storage.Namespace
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(namespaceBucket))
 		return b.ForEach(func(k, v []byte) error {
-			var namespace v1.Namespace
+			var namespace storage.Namespace
 			if err := proto.Unmarshal(v, &namespace); err != nil {
 				return err
 			}
@@ -50,7 +50,7 @@ func (b *storeImpl) GetNamespaces() ([]*v1.Namespace, error) {
 }
 
 // AddNamespace adds a namespace to bolt
-func (b *storeImpl) AddNamespace(namespace *v1.Namespace) error {
+func (b *storeImpl) AddNamespace(namespace *storage.Namespace) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Namespace")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespaceBucket))
@@ -64,7 +64,7 @@ func (b *storeImpl) AddNamespace(namespace *v1.Namespace) error {
 }
 
 // UpdateNamespace updates a namespace to bolt
-func (b *storeImpl) UpdateNamespace(namespace *v1.Namespace) error {
+func (b *storeImpl) UpdateNamespace(namespace *storage.Namespace) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Namespace")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespaceBucket))

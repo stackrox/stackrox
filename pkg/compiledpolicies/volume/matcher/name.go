@@ -13,7 +13,7 @@ func init() {
 	compilers = append(compilers, newNameMatcher)
 }
 
-func newNameMatcher(policy *v1.Policy) (Matcher, error) {
+func newNameMatcher(policy *storage.Policy) (Matcher, error) {
 	name := policy.GetFields().GetVolumePolicy().GetName()
 	if name == "" {
 		return nil, nil

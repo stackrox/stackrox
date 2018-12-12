@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	notifiers "github.com/stackrox/rox/pkg/notifiers"
 	reflect "reflect"
 )
@@ -35,9 +36,9 @@ func (m *MockProcessor) EXPECT() *MockProcessorMockRecorder {
 }
 
 // GetIntegratedPolicies mocks base method
-func (m *MockProcessor) GetIntegratedPolicies(arg0 string) []*v1.Policy {
+func (m *MockProcessor) GetIntegratedPolicies(arg0 string) []*storage.Policy {
 	ret := m.ctrl.Call(m, "GetIntegratedPolicies", arg0)
-	ret0, _ := ret[0].([]*v1.Policy)
+	ret0, _ := ret[0].([]*storage.Policy)
 	return ret0
 }
 
@@ -77,7 +78,7 @@ func (mr *MockProcessorMockRecorder) RemoveNotifier(arg0 interface{}) *gomock.Ca
 }
 
 // RemovePolicy mocks base method
-func (m *MockProcessor) RemovePolicy(arg0 *v1.Policy) {
+func (m *MockProcessor) RemovePolicy(arg0 *storage.Policy) {
 	m.ctrl.Call(m, "RemovePolicy", arg0)
 }
 
@@ -107,7 +108,7 @@ func (mr *MockProcessorMockRecorder) UpdateNotifier(arg0 interface{}) *gomock.Ca
 }
 
 // UpdatePolicy mocks base method
-func (m *MockProcessor) UpdatePolicy(arg0 *v1.Policy) {
+func (m *MockProcessor) UpdatePolicy(arg0 *storage.Policy) {
 	m.ctrl.Call(m, "UpdatePolicy", arg0)
 }
 

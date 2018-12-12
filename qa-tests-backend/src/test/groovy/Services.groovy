@@ -9,32 +9,30 @@ import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsResponse
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsGroupResponse
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertTimeseriesResponse
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlert
+import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.DeploymentServiceGrpc
 import io.stackrox.proto.api.v1.DetectionServiceGrpc
 import io.stackrox.proto.api.v1.ImageIntegrationServiceGrpc
-import io.stackrox.proto.api.v1.ImageIntegrationServiceOuterClass
-import io.stackrox.proto.api.v1.ImageIntegrationServiceOuterClass.ImageIntegration
 import io.stackrox.proto.api.v1.NotifierServiceGrpc
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.api.v1.PolicyServiceGrpc
-import io.stackrox.proto.api.v1.PolicyServiceOuterClass
-import io.stackrox.proto.api.v1.PolicyServiceOuterClass.EnforcementAction
-import io.stackrox.proto.api.v1.PolicyServiceOuterClass.LifecycleStage
-import io.stackrox.proto.api.v1.PolicyServiceOuterClass.ListPolicy
-import io.stackrox.proto.api.v1.PolicyServiceOuterClass.Policy
 import io.stackrox.proto.api.v1.SearchServiceGrpc
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.Alert
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
-
-import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
-import io.stackrox.proto.api.v1.NetworkPolicyServiceGrpc
 import io.stackrox.proto.api.v1.SecretServiceGrpc
+import io.stackrox.proto.api.v1.NetworkPolicyServiceGrpc
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass
 import io.stackrox.proto.storage.DeploymentOuterClass.ListDeployment
 import io.stackrox.proto.storage.DeploymentOuterClass.Deployment
+import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.ImageOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
+import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
+import io.stackrox.proto.storage.PolicyOuterClass.ListPolicy
+import io.stackrox.proto.storage.PolicyOuterClass.Policy
+import io.stackrox.proto.storage.PolicyOuterClass.Whitelist
 import io.stackrox.proto.storage.ScopeOuterClass
 
 class Services extends BaseService {
@@ -198,12 +196,12 @@ class Services extends BaseService {
 
     static String addGenericDockerRegistry() {
         return getIntegrationClient().postImageIntegration(
-                        ImageIntegration.newBuilder()
+                        ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                                     .setName("dockerhub")
-                                    .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.REGISTRY)
+                                    .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
                                     .setType("docker")
                                     .setDocker(
-                                    ImageIntegrationServiceOuterClass.DockerConfig.newBuilder()
+                                    ImageIntegrationOuterClass.DockerConfig.newBuilder()
                                                 .setUsername("")
                                                 .setPassword("")
                                                 .setEndpoint("registry-1.docker.io")
@@ -225,12 +223,12 @@ class Services extends BaseService {
 
     static String addDockerTrustedRegistry() {
         return getIntegrationClient().postImageIntegration(
-                        ImageIntegration.newBuilder()
+                        ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                                     .setName("dtr")
                                     .setType("dtr")
-                                    .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.REGISTRY)
-                                    .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.SCANNER)
-                                    .setDtr(ImageIntegrationServiceOuterClass.DTRConfig.newBuilder()
+                                    .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
+                                    .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER)
+                                    .setDtr(ImageIntegrationOuterClass.DTRConfig.newBuilder()
                                     .setEndpoint("https://apollo-dtr.rox.systems/")
                                     .setUsername("qa")
                                     .setPassword("W3g9xOPKyLTkBBMj")
@@ -252,11 +250,11 @@ class Services extends BaseService {
 
     static String addClairifyScanner(String clairifyEndpoint) {
         return getIntegrationClient().postImageIntegration(
-                        ImageIntegration.newBuilder()
+                        ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                                     .setName("clairify")
                                     .setType("clairify")
-                                    .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.SCANNER)
-                                    .setClairify(ImageIntegrationServiceOuterClass.ClairifyConfig.newBuilder()
+                                    .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER)
+                                    .setClairify(ImageIntegrationOuterClass.ClairifyConfig.newBuilder()
                                     .setEndpoint(clairifyEndpoint)
                                     .build()
                         )
@@ -299,8 +297,8 @@ class Services extends BaseService {
 
         def policyDef = Policy.
             newBuilder(policyMeta).
-            addWhitelists(PolicyServiceOuterClass.Whitelist.newBuilder().
-                setDeployment(PolicyServiceOuterClass.Whitelist.Deployment.newBuilder().
+            addWhitelists(Whitelist.newBuilder().
+                setDeployment(Whitelist.Deployment.newBuilder().
                     setName(deployment.getName()).
                     setScope(ScopeOuterClass.Scope.newBuilder().
                         setNamespace(deployment.getNamespace())
@@ -515,13 +513,13 @@ class Services extends BaseService {
 
         try {
             gcrId = getIntegrationClient().postImageIntegration(
-                ImageIntegration.newBuilder()
+                ImageIntegrationOuterClass.ImageIntegration.newBuilder()
                     .setName("gcr")
                     .setType("google")
-                    .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.REGISTRY)
-                    .addCategories(ImageIntegrationServiceOuterClass.ImageIntegrationCategory.SCANNER)
+                    .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
+                    .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER)
                         .setGoogle(
-                        ImageIntegrationServiceOuterClass.GoogleConfig.newBuilder()
+                        ImageIntegrationOuterClass.GoogleConfig.newBuilder()
                                 .setEndpoint("us.gcr.io")
                                 .setProject("ultra-current-825")
                                 .setServiceAccount(serviceAccount)

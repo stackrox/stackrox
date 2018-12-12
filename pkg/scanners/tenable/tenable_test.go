@@ -7,7 +7,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
@@ -94,9 +93,9 @@ func (suite *TenableSuite) SetupSuite() {
 
 	suite.server = masterServer
 
-	protoImageIntegration := &v1.ImageIntegration{
-		IntegrationConfig: &v1.ImageIntegration_Tenable{
-			Tenable: &v1.TenableConfig{
+	protoImageIntegration := &storage.ImageIntegration{
+		IntegrationConfig: &storage.ImageIntegration_Tenable{
+			Tenable: &storage.TenableConfig{
 				AccessKey: "key1",
 				SecretKey: "key2",
 			},

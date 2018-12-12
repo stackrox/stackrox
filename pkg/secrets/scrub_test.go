@@ -3,7 +3,7 @@ package secrets
 import (
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,14 +40,14 @@ func TestScrubFromNestedStruct(t *testing.T) {
 
 func TestScrubEmbeddedConfig(t *testing.T) {
 	// Test an embedded config
-	dtrIntegration := &v1.ImageIntegration{
+	dtrIntegration := &storage.ImageIntegration{
 		Name: "hi",
-		IntegrationConfig: &v1.ImageIntegration_Dtr{
-			Dtr: &v1.DTRConfig{
+		IntegrationConfig: &storage.ImageIntegration_Dtr{
+			Dtr: &storage.DTRConfig{
 				Password: "pass",
 			},
 		},
 	}
 	ScrubSecretsFromStruct(dtrIntegration)
-	assert.Empty(t, dtrIntegration.IntegrationConfig.(*v1.ImageIntegration_Dtr).Dtr.Password)
+	assert.Empty(t, dtrIntegration.IntegrationConfig.(*storage.ImageIntegration_Dtr).Dtr.Password)
 }

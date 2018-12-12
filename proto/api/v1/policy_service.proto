@@ -4,179 +4,12 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
-import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
-import "api/v1/image_service.proto";
-import "api/v1/deployment_service.proto";
 import "api/v1/search_service.proto";
-import "storage/scope.proto";
-import "storage/image.proto";
+import "storage/policy.proto";
 
 package v1;
-
-// Top level policy object.
-///////////////////////////
-
-message Policy {
-    string id                                   = 1;
-    string name                                 = 2;
-    string description                          = 3;
-    string rationale                            = 4;
-    string remediation                          = 5;
-    bool disabled                               = 6;
-    repeated string categories                  = 7;
-    PolicyFields fields                         = 8;
-
-    repeated LifecycleStage lifecycle_stages       = 9;
-    repeated Whitelist whitelists                  = 10;
-    repeated storage.Scope scope                   = 11;
-    Severity severity                              = 12;
-    repeated EnforcementAction enforcement_actions = 13;
-    repeated string notifiers                      = 14;
-}
-
-// Policy components.
-/////////////////////
-
-enum EnforcementAction {
-    UNSET_ENFORCEMENT                         = 0;
-    SCALE_TO_ZERO_ENFORCEMENT                 = 1;
-    UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT = 2;
-    KILL_POD_ENFORCEMENT                      = 3;
-    FAIL_BUILD_ENFORCEMENT                    = 4;
-}
-
-message Whitelist {
-    string                    name       = 1;
-    message Container {
-        storage.ImageName image_name = 3;
-    }
-    Container                 container  = 2;
-    message Deployment {
-        string                name       = 3;
-        storage.Scope         scope      = 4;
-    }
-    Deployment                deployment = 5;
-    google.protobuf.Timestamp expiration = 6;
-}
-
-message DockerfileLineRuleField {
-    string instruction  = 1;
-    string value        = 2;
-}
-
-enum Comparator {
-    LESS_THAN              = 0;
-    LESS_THAN_OR_EQUALS    = 1;
-    EQUALS                 = 2;
-    GREATER_THAN_OR_EQUALS = 3;
-    GREATER_THAN           = 4;
-}
-
-enum LifecycleStage {
-    DEPLOY    = 0;
-    BUILD     = 1;
-    RUNTIME   = 2;
-}
-
-message NumericalPolicy {
-    Comparator op  = 1;
-    float value    = 3;
-}
-
-// Image Name
-message ImageNamePolicy {
-    string registry        = 1; // e.g. docker.io
-    string remote          = 2; // e.g. stackrox/container-summarizer
-    string tag             = 3; // e.g. latest
-}
-
-message Component {
-    string name    = 1;
-    string version = 2;
-}
-
-message KeyValuePolicy {
-    string key   = 1;
-    string value = 2;
-}
-
-message VolumePolicy {
-    string name         = 1;
-    string source       = 2;
-    string destination  = 3;
-    oneof set_read_only {
-        bool read_only  = 4;
-    }
-    string type         = 5;
-}
-
-message PortPolicy {
-    int32 port          = 1;
-    string protocol     = 2;
-}
-
-message ResourcePolicy {
-    NumericalPolicy cpu_resource_request    = 1;
-    NumericalPolicy cpu_resource_limit      = 2;
-    NumericalPolicy memory_resource_request = 3;
-    NumericalPolicy memory_resource_limit   = 4;
-}
-
-message ProcessPolicy {
-    string name = 1;
-    string args = 2;
-}
-
-message PolicyFields {
-    ImageNamePolicy image_name          = 1;
-
-    // Registry metadata
-    oneof set_image_age_days {
-        int64 image_age_days            = 2;
-    }
-    DockerfileLineRuleField line_rule   = 3;
-
-    // Scan Metadata
-    NumericalPolicy cvss                = 4;
-    string cve                          = 5;
-
-    Component component                 = 6;
-    oneof set_scan_age_days {
-        int64 scan_age_days             = 7;
-    }
-
-    // Whether to alert if no scan exists for an image.
-    oneof set_no_scan_exists {
-        bool no_scan_exists              = 8;
-    }
-
-    KeyValuePolicy env                   = 9;
-    string command                       = 10;
-    string args                          = 11;
-    string directory                     = 12;
-    string user                          = 13;
-
-    VolumePolicy volume_policy           = 14;
-
-    PortPolicy port_policy                = 15;
-    KeyValuePolicy required_label         = 16;
-    KeyValuePolicy required_annotation    = 17;
-
-    oneof set_privileged {
-        bool privileged                   = 18;
-    }
-    repeated string drop_capabilities     = 19;
-    repeated string add_capabilities      = 20;
-
-    ResourcePolicy container_resource_policy = 21;
-
-    ProcessPolicy process_policy = 23;
-}
-
-// API supporting messages.
-///////////////////////////
 
 message DryRunResponse {
     message Alert {
@@ -186,7 +19,7 @@ message DryRunResponse {
     repeated Alert alerts = 1;
     message Excluded {
         string deployment   = 1;
-        Whitelist whitelist = 2;
+        storage.Whitelist whitelist = 2;
     }
     repeated Excluded excluded     = 2;
 }
@@ -204,17 +37,8 @@ message DeletePolicyCategoryRequest {
     string category = 1;
 }
 
-message ListPolicy {
-    string   id                                 = 1;
-    string   name                               = 2;
-    string   description                        = 3;
-    Severity severity                           = 4;
-    bool     disabled                           = 5;
-    repeated LifecycleStage lifecycle_stages    = 6;
-}
-
 message ListPoliciesResponse {
-    repeated ListPolicy policies = 1;
+    repeated storage.ListPolicy policies = 1;
 }
 
 message PatchPolicyRequest {
@@ -226,7 +50,7 @@ message PatchPolicyRequest {
 
 service PolicyService {
 
-    rpc GetPolicy (ResourceByID) returns (Policy) {
+    rpc GetPolicy (ResourceByID) returns (storage.Policy) {
         option (google.api.http) = {
             get: "/v1/policies/{id}"
         };
@@ -238,14 +62,14 @@ service PolicyService {
         };
     }
 
-    rpc PostPolicy (Policy) returns (Policy) {
+    rpc PostPolicy (storage.Policy) returns (storage.Policy) {
         option (google.api.http) = {
             post: "/v1/policies"
             body: "*"
         };
     }
 
-    rpc PutPolicy (Policy) returns (Empty) {
+    rpc PutPolicy (storage.Policy) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/policies/{id}"
             body: "*"
@@ -271,7 +95,7 @@ service PolicyService {
         };
     }
 
-    rpc DryRunPolicy (Policy) returns (DryRunResponse) {
+    rpc DryRunPolicy (storage.Policy) returns (DryRunResponse) {
         option (google.api.http) = {
             post: "/v1/policies/dryrun"
             body: "*"

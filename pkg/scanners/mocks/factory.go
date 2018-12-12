@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	types "github.com/stackrox/rox/pkg/scanners/types"
 	reflect "reflect"
 )
@@ -35,7 +35,7 @@ func (m *MockFactory) EXPECT() *MockFactoryMockRecorder {
 }
 
 // CreateScanner mocks base method
-func (m *MockFactory) CreateScanner(arg0 *v1.ImageIntegration) (types.ImageScanner, error) {
+func (m *MockFactory) CreateScanner(arg0 *storage.ImageIntegration) (types.ImageScanner, error) {
 	ret := m.ctrl.Call(m, "CreateScanner", arg0)
 	ret0, _ := ret[0].(types.ImageScanner)
 	ret1, _ := ret[1].(error)

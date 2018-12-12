@@ -2,14 +2,14 @@ package index
 
 import (
 	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Indexer indexes secret information.
 //go:generate mockgen-wrapper Indexer
 type Indexer interface {
-	UpsertSecret(*v1.Secret) error
-	UpsertSecrets(...*v1.Secret) error
+	UpsertSecret(*storage.Secret) error
+	UpsertSecrets(...*storage.Secret) error
 	RemoveSecret(id string) error
 }
 

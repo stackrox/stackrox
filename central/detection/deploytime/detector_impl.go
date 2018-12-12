@@ -24,7 +24,7 @@ type detectorImpl struct {
 }
 
 // UpsertPolicy adds or updates a policy in the set.
-func (d *detectorImpl) UpsertPolicy(policy *v1.Policy) error {
+func (d *detectorImpl) UpsertPolicy(policy *storage.Policy) error {
 	return d.policySet.UpsertPolicy(policy)
 }
 
@@ -37,7 +37,7 @@ func (d *detectorImpl) RemovePolicy(policyID string) error {
 func (d *detectorImpl) AlertsForDeployment(deployment *storage.Deployment) ([]*v1.Alert, error) {
 	// Get the new and old alerts for the deployment.
 	var newAlerts []*v1.Alert
-	err := d.policySet.ForEach(func(p *v1.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
+	err := d.policySet.ForEach(func(p *storage.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
 		if shouldProcess != nil && !shouldProcess(deployment) {
 			return nil
 		}
@@ -60,7 +60,7 @@ func (d *detectorImpl) AlertsForDeployment(deployment *storage.Deployment) ([]*v
 
 func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*v1.Alert, error) {
 	var newAlerts []*v1.Alert
-	err := d.policySet.ForOne(policyID, func(p *v1.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
+	err := d.policySet.ForOne(policyID, func(p *storage.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
 		violationsByDeployment, err := matcher.Match(d.deployments)
 		if err != nil {
 			return err
@@ -88,19 +88,19 @@ func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*v1.Alert, error) {
 }
 
 // policyDeploymentAndViolationsToAlert constructs an alert.
-func policyDeploymentAndViolationsToAlert(policy *v1.Policy, deployment *storage.Deployment, violations []*v1.Alert_Violation) *v1.Alert {
+func policyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *storage.Deployment, violations []*v1.Alert_Violation) *v1.Alert {
 	if len(violations) == 0 {
 		return nil
 	}
 	alert := &v1.Alert{
 		Id:             uuid.NewV4().String(),
-		LifecycleStage: v1.LifecycleStage_DEPLOY,
+		LifecycleStage: storage.LifecycleStage_DEPLOY,
 		Deployment:     protoutils.CloneStorageDeployment(deployment),
-		Policy:         protoutils.CloneV1Policy(policy),
+		Policy:         protoutils.CloneStoragePolicy(policy),
 		Violations:     violations,
 		Time:           ptypes.TimestampNow(),
 	}
-	if action, msg := policyAndDeploymentToEnforcement(policy, deployment); action != v1.EnforcementAction_UNSET_ENFORCEMENT {
+	if action, msg := policyAndDeploymentToEnforcement(policy, deployment); action != storage.EnforcementAction_UNSET_ENFORCEMENT {
 		alert.Enforcement = &v1.Alert_Enforcement{
 			Action:  action,
 			Message: msg,
@@ -110,16 +110,16 @@ func policyDeploymentAndViolationsToAlert(policy *v1.Policy, deployment *storage
 }
 
 // policyAndDeploymentToEnforcement returns enforcement info for a deployment violating a policy.
-func policyAndDeploymentToEnforcement(policy *v1.Policy, deployment *storage.Deployment) (enforcement v1.EnforcementAction, message string) {
+func policyAndDeploymentToEnforcement(policy *storage.Policy, deployment *storage.Deployment) (enforcement storage.EnforcementAction, message string) {
 	for _, enforcementAction := range policy.GetEnforcementActions() {
-		if enforcementAction == v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT && scaleToZeroEnabled(deployment) {
-			return v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT, fmt.Sprintf("Deployment %s scaled to 0 replicas in response to policy violation", deployment.GetName())
+		if enforcementAction == storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT && scaleToZeroEnabled(deployment) {
+			return storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT, fmt.Sprintf("Deployment %s scaled to 0 replicas in response to policy violation", deployment.GetName())
 		}
-		if enforcementAction == v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT {
-			return v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, fmt.Sprintf("Unsatisfiable node constraint applied to deployment %s", deployment.GetName())
+		if enforcementAction == storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT {
+			return storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, fmt.Sprintf("Unsatisfiable node constraint applied to deployment %s", deployment.GetName())
 		}
 	}
-	return v1.EnforcementAction_UNSET_ENFORCEMENT, ""
+	return storage.EnforcementAction_UNSET_ENFORCEMENT, ""
 }
 
 const (

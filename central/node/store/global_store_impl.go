@@ -5,7 +5,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
 )
@@ -19,11 +19,11 @@ type globalStoreImpl struct {
 }
 
 func alloc() proto.Message {
-	return new(v1.Node)
+	return new(storage.Node)
 }
 
 func key(msg proto.Message) []byte {
-	return []byte(msg.(*v1.Node).GetId())
+	return []byte(msg.(*storage.Node).GetId())
 }
 
 func (s *globalStoreImpl) GetClusterNodeStore(clusterID string) (Store, error) {

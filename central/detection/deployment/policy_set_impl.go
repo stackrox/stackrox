@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stackrox/rox/pkg/protoutils"
 )
@@ -24,7 +24,7 @@ type predicatedMatcher struct {
 type setImpl struct {
 	lock sync.RWMutex
 
-	policyIDToPolicy map[string]*v1.Policy
+	policyIDToPolicy map[string]*storage.Policy
 	policyStore      policyDatastore.DataStore
 
 	processStore datastore.DataStore
@@ -32,7 +32,7 @@ type setImpl struct {
 	policyIDToSearchBasedMatcher map[string]predicatedMatcher
 }
 
-func (p *setImpl) ForEach(f func(*v1.Policy, searchbasedpolicies.Matcher, predicate.Predicate) error) error {
+func (p *setImpl) ForEach(f func(*storage.Policy, searchbasedpolicies.Matcher, predicate.Predicate) error) error {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 	for id, matcher := range p.policyIDToSearchBasedMatcher {
@@ -45,7 +45,7 @@ func (p *setImpl) ForEach(f func(*v1.Policy, searchbasedpolicies.Matcher, predic
 	return nil
 }
 
-func (p *setImpl) ForOne(pID string, f func(*v1.Policy, searchbasedpolicies.Matcher, predicate.Predicate) error) error {
+func (p *setImpl) ForOne(pID string, f func(*storage.Policy, searchbasedpolicies.Matcher, predicate.Predicate) error) error {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
@@ -57,11 +57,11 @@ func (p *setImpl) ForOne(pID string, f func(*v1.Policy, searchbasedpolicies.Matc
 }
 
 // UpsertPolicy adds or updates a policy in the set.
-func (p *setImpl) UpsertPolicy(policy *v1.Policy) error {
+func (p *setImpl) UpsertPolicy(policy *storage.Policy) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	cloned := protoutils.CloneV1Policy(policy)
+	cloned := protoutils.CloneStoragePolicy(policy)
 
 	searchBasedMatcher, err := matcher.ForPolicy(cloned, mappings.OptionsMap, p.processStore)
 	if err != nil {

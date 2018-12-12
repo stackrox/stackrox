@@ -3,12 +3,12 @@ package utils
 import (
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
 // WhitelistIsExpired returns true when the input whitelist is expired.
-func WhitelistIsExpired(whitelist *v1.Whitelist) bool {
+func WhitelistIsExpired(whitelist *storage.Whitelist) bool {
 	if whitelist.GetExpiration() == nil {
 		return false
 	}

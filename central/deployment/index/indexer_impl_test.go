@@ -221,7 +221,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	suite.NoError(suite.indexer.AddDeployment(badEmailDep))
 
 	secretIndexer := secretIndex.New(suite.bleveIndex)
-	suite.NoError(secretIndexer.UpsertSecret(&v1.Secret{
+	suite.NoError(secretIndexer.UpsertSecret(&storage.Secret{
 		Id: "ABC",
 	}))
 

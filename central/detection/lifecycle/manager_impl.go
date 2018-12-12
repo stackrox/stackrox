@@ -94,7 +94,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 		return
 	}
 
-	err = m.alertManager.AlertAndNotify(newAlerts, alertmanager.WithLifecycleStage(v1.LifecycleStage_RUNTIME), alertmanager.WithDeploymentIDs(deploymentIDs...))
+	err = m.alertManager.AlertAndNotify(newAlerts, alertmanager.WithLifecycleStage(storage.LifecycleStage_RUNTIME), alertmanager.WithDeploymentIDs(deploymentIDs...))
 	if err != nil {
 		logger.Errorf("Couldn't alert and notify: %s", err)
 	}
@@ -147,7 +147,7 @@ func (m *managerImpl) IndicatorAdded(indicator *v1.ProcessIndicator, injector pi
 	return nil
 }
 
-func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string, v1.EnforcementAction, error) {
+func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string, storage.EnforcementAction, error) {
 	// Attempt to enrich the image before detection.
 	if _, err := m.enricher.Enrich(deployment); err != nil {
 		logger.Errorf("Error enriching deployment %s: %s", deployment.GetName(), err)
@@ -158,12 +158,12 @@ func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string,
 
 	presentAlerts, err := m.deploytimeDetector.AlertsForDeployment(deployment)
 	if err != nil {
-		return "", v1.EnforcementAction_UNSET_ENFORCEMENT, fmt.Errorf("fetching deploy time alerts: %s", err)
+		return "", storage.EnforcementAction_UNSET_ENFORCEMENT, fmt.Errorf("fetching deploy time alerts: %s", err)
 	}
 
 	if err := m.alertManager.AlertAndNotify(presentAlerts,
-		alertmanager.WithLifecycleStage(v1.LifecycleStage_DEPLOY), alertmanager.WithDeploymentIDs(deployment.GetId())); err != nil {
-		return "", v1.EnforcementAction_UNSET_ENFORCEMENT, err
+		alertmanager.WithLifecycleStage(storage.LifecycleStage_DEPLOY), alertmanager.WithDeploymentIDs(deployment.GetId())); err != nil {
+		return "", storage.EnforcementAction_UNSET_ENFORCEMENT, err
 	}
 
 	// Generate enforcement actions based on the currently generated alerts.
@@ -171,7 +171,7 @@ func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string,
 	return alertToEnforce, enforcementAction, nil
 }
 
-func (m *managerImpl) UpsertPolicy(policy *v1.Policy) error {
+func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 	// Asynchronously update all deployments' risk after processing.
 	defer m.enricher.ReprocessRiskAsync()
 
@@ -229,13 +229,13 @@ func (m *managerImpl) RemovePolicy(policyID string) error {
 }
 
 // determineEnforcement returns the alert and its enforcement action to use from the input list (if any have enforcement).
-func determineEnforcement(alerts []*v1.Alert) (alertID string, action v1.EnforcementAction) {
+func determineEnforcement(alerts []*v1.Alert) (alertID string, action storage.EnforcementAction) {
 	for _, alert := range alerts {
-		if alert.GetEnforcement().GetAction() == v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT {
-			return alert.GetId(), v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT
+		if alert.GetEnforcement().GetAction() == storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT {
+			return alert.GetId(), storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT
 		}
 
-		if alert.GetEnforcement().GetAction() != v1.EnforcementAction_UNSET_ENFORCEMENT {
+		if alert.GetEnforcement().GetAction() != storage.EnforcementAction_UNSET_ENFORCEMENT {
 			alertID = alert.GetId()
 			action = alert.GetEnforcement().GetAction()
 		}
@@ -259,7 +259,7 @@ func containersToKill(alerts []*v1.Alert, indicatorsToInfo map[string]indicatorW
 	containersSet := make(map[string]indicatorWithInjector)
 
 	for _, alert := range alerts {
-		if alert.GetEnforcement().GetAction() != v1.EnforcementAction_KILL_POD_ENFORCEMENT {
+		if alert.GetEnforcement().GetAction() != storage.EnforcementAction_KILL_POD_ENFORCEMENT {
 			continue
 		}
 		violations := alert.GetViolations()
@@ -290,7 +290,7 @@ func createEnforcementAction(deployment *storage.Deployment, containerID string)
 					},
 				}
 				return &v1.SensorEnforcement{
-					Enforcement: v1.EnforcementAction_KILL_POD_ENFORCEMENT,
+					Enforcement: storage.EnforcementAction_KILL_POD_ENFORCEMENT,
 					Resource:    resource,
 				}
 			}

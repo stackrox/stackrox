@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
 
@@ -34,9 +35,9 @@ func (m *MockSearcher) EXPECT() *MockSearcherMockRecorder {
 }
 
 // SearchListSecrets mocks base method
-func (m *MockSearcher) SearchListSecrets(arg0 *v1.Query) ([]*v1.ListSecret, error) {
+func (m *MockSearcher) SearchListSecrets(arg0 *v1.Query) ([]*storage.ListSecret, error) {
 	ret := m.ctrl.Call(m, "SearchListSecrets", arg0)
-	ret0, _ := ret[0].([]*v1.ListSecret)
+	ret0, _ := ret[0].([]*storage.ListSecret)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

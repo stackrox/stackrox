@@ -10,6 +10,7 @@ import (
 
 	jiraLib "github.com/andygrunwald/go-jira"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -110,7 +111,7 @@ func (j *jira) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 			},
 			Description: description,
 			Priority: &jiraLib.Priority{
-				Name: severityToPriority(v1.Severity_MEDIUM_SEVERITY),
+				Name: severityToPriority(storage.Severity_MEDIUM_SEVERITY),
 			},
 		},
 	}
@@ -135,7 +136,7 @@ func (j *jira) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
 			},
 			Description: description,
 			Priority: &jiraLib.Priority{
-				Name: severityToPriority(v1.Severity_LOW_SEVERITY),
+				Name: severityToPriority(storage.Severity_LOW_SEVERITY),
 			},
 		},
 	}
@@ -224,22 +225,22 @@ func (j *jira) Test() error {
 			},
 			Summary: "This is a test issue created to test integration with StackRox.",
 			Priority: &jiraLib.Priority{
-				Name: severityToPriority(v1.Severity_LOW_SEVERITY),
+				Name: severityToPriority(storage.Severity_LOW_SEVERITY),
 			},
 		},
 	}
 	return j.createIssue(i)
 }
 
-func severityToPriority(sev v1.Severity) string {
+func severityToPriority(sev storage.Severity) string {
 	switch sev {
-	case v1.Severity_CRITICAL_SEVERITY:
+	case storage.Severity_CRITICAL_SEVERITY:
 		return "P0-Highest"
-	case v1.Severity_HIGH_SEVERITY:
+	case storage.Severity_HIGH_SEVERITY:
 		return "P1-High"
-	case v1.Severity_MEDIUM_SEVERITY:
+	case storage.Severity_MEDIUM_SEVERITY:
 		return "P2-Medium"
-	case v1.Severity_LOW_SEVERITY:
+	case storage.Severity_LOW_SEVERITY:
 		return "P3-Low"
 	default:
 		return "P4-Lowest"

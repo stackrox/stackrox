@@ -13,7 +13,7 @@ func init() {
 	compilers = append(compilers, newArgsMatcher)
 }
 
-func newArgsMatcher(policy *v1.Policy) (Matcher, error) {
+func newArgsMatcher(policy *storage.Policy) (Matcher, error) {
 	args := policy.GetFields().GetArgs()
 	if args == "" {
 		return nil, nil

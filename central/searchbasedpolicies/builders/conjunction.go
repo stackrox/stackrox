@@ -3,6 +3,7 @@ package builders
 import (
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -10,7 +11,7 @@ type conjunctionFieldQueryBuilder struct {
 	qbs []searchbasedpolicies.PolicyQueryBuilder
 }
 
-func (c *conjunctionFieldQueryBuilder) Query(fields *v1.PolicyFields,
+func (c *conjunctionFieldQueryBuilder) Query(fields *storage.PolicyFields,
 	optionsMap map[search.FieldLabel]*v1.SearchField) (*v1.Query, searchbasedpolicies.ViolationPrinter, error) {
 
 	conjuncts, printers, err := presentQueriesAndPrinters(c.qbs, fields, optionsMap)

@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsECR "github.com/aws/aws-sdk-go/service/ecr"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -23,15 +22,15 @@ var logger = logging.LoggerForModule()
 type ecr struct {
 	*docker.Registry
 
-	config      *v1.ECRConfig
-	integration *v1.ImageIntegration
+	config      *storage.ECRConfig
+	integration *storage.ImageIntegration
 
 	endpoint   string
 	service    *awsECR.ECR
 	expiryTime time.Time
 }
 
-func validate(ecr *v1.ECRConfig) error {
+func validate(ecr *storage.ECRConfig) error {
 	errorList := errorhelpers.NewErrorList("ECR Validation")
 	if ecr.GetRegistryId() == "" {
 		errorList.AddString("Registry ID must be specified")
@@ -110,15 +109,15 @@ func (e *ecr) Test() error {
 }
 
 // Creator provides the type and registries.Creator to add to the registries Registry.
-func Creator() (string, func(integration *v1.ImageIntegration) (types.ImageRegistry, error)) {
-	return "ecr", func(integration *v1.ImageIntegration) (types.ImageRegistry, error) {
+func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageRegistry, error)) {
+	return "ecr", func(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
 		reg, err := newRegistry(integration)
 		return reg, err
 	}
 }
 
-func newRegistry(integration *v1.ImageIntegration) (*ecr, error) {
-	ecrConfig, ok := integration.IntegrationConfig.(*v1.ImageIntegration_Ecr)
+func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
+	ecrConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Ecr)
 	if !ok {
 		return nil, fmt.Errorf("ECR configuration required")
 	}

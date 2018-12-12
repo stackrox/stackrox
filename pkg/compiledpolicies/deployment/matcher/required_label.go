@@ -13,7 +13,7 @@ func init() {
 	compilers = append(compilers, newRequiredLabelMatcher)
 }
 
-func newRequiredLabelMatcher(policy *v1.Policy) (Matcher, error) {
+func newRequiredLabelMatcher(policy *storage.Policy) (Matcher, error) {
 	env := policy.GetFields().GetRequiredLabel()
 	if env == nil {
 		return nil, nil

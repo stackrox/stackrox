@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"google.golang.org/grpc"
 )
@@ -13,7 +14,7 @@ type pollerImpl struct {
 	centralConn *grpc.ClientConn
 
 	clusterID string
-	onUpdate  func([]*v1.ImageIntegration) error
+	onUpdate  func([]*storage.ImageIntegration) error
 
 	updateTicker *time.Ticker
 	stop         concurrency.Signal

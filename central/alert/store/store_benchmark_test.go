@@ -7,6 +7,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -55,7 +56,7 @@ func BenchmarkListAlerts(b *testing.B) {
 		Policy: &v1.ListAlertPolicy{
 			Id:          uuid.NewV4().String(),
 			Name:        "this is my policy name",
-			Severity:    v1.Severity_MEDIUM_SEVERITY,
+			Severity:    storage.Severity_MEDIUM_SEVERITY,
 			Description: "this is my description and it's fairly long, but typically descriptions are fairly long",
 			Categories:  []string{"Category 1", "Category 2", "Category 3"},
 		},

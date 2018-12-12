@@ -3,7 +3,7 @@ package quay
 import (
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,9 +13,9 @@ const (
 )
 
 func TestQuay(t *testing.T) {
-	integration := &v1.ImageIntegration{
-		IntegrationConfig: &v1.ImageIntegration_Quay{
-			Quay: &v1.QuayConfig{
+	integration := &storage.ImageIntegration{
+		IntegrationConfig: &storage.ImageIntegration_Quay{
+			Quay: &storage.QuayConfig{
 				OauthToken: testOauthToken,
 				Endpoint:   "quay.io",
 			},

@@ -13,7 +13,7 @@ import org.junit.experimental.categories.Category
 import services.NetworkGraphService
 import spock.lang.Unroll
 import util.NetworkGraphUtil
-import io.stackrox.proto.api.v1.NetworkEnums
+import io.stackrox.proto.storage.NetworkFlowOuterClass
 import io.stackrox.proto.api.v1.NetworkGraphOuterClass.NetworkGraph
 import com.google.protobuf.util.Timestamps
 
@@ -189,9 +189,9 @@ class NetworkFlowTest extends BaseSpecification {
         "Data is:"
 
         sourceDeployment     | targetDeployment      | protocol
-        UDPCONNECTIONSOURCE  | UDPCONNECTIONTARGET   | NetworkEnums.L4Protocol.L4_PROTOCOL_UDP
-        TCPCONNECTIONSOURCE  | TCPCONNECTIONTARGET   | NetworkEnums.L4Protocol.L4_PROTOCOL_TCP
-        //ICMPCONNECTIONSOURCE | NGINXCONNECTIONTARGET | NetworkEnums.L4Protocol.L4_PROTOCOL_ICMP
+        UDPCONNECTIONSOURCE  | UDPCONNECTIONTARGET   | NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_UDP
+        TCPCONNECTIONSOURCE  | TCPCONNECTIONTARGET   | NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_TCP
+        //ICMPCONNECTIONSOURCE | NGINXCONNECTIONTARGET | NetworkFlowOuterClass.L4Protocol.L4_PROTOCOL_ICMP
     }
 
     @Category([NetworkFlowVisualization])

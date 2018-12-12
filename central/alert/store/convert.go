@@ -2,6 +2,7 @@ package store
 
 import (
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -39,13 +40,13 @@ func addEnforcementCount(alert *v1.Alert, listAlert *v1.ListAlert) {
 
 	// Since runtime enforcement is killing a pod, we can determine how many times
 	// a runtime policy has been enforced.
-	if alert.GetLifecycleStage() == v1.LifecycleStage_RUNTIME {
+	if alert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME {
 		listAlert.EnforcementCount = determineRuntimeEnforcementCount(alert.GetViolations())
 		return
 	}
 	// We assume for a given deploy time alert with enforcement, that it is currently being
 	// enforced.
-	if alert.GetLifecycleStage() == v1.LifecycleStage_DEPLOY {
+	if alert.GetLifecycleStage() == storage.LifecycleStage_DEPLOY {
 		listAlert.EnforcementCount = 1
 		return
 	}

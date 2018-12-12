@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -47,7 +48,7 @@ func (s *pipelineImpl) Run(event *v1.SensorEvent, _ pipeline.EnforcementInjector
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *v1.Namespace) error {
+func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *storage.Namespace) error {
 	// Validate the the event we receive has necessary fields set.
 	if err := s.validateInput(event); err != nil {
 		return err
@@ -63,7 +64,7 @@ func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *v1.Nam
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, ns *v1.Namespace) error {
+func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, ns *storage.Namespace) error {
 	if err := s.validateInput(ns); err != nil {
 		return err
 	}
@@ -80,7 +81,7 @@ func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, ns *v1.Names
 	return nil
 }
 
-func (s *pipelineImpl) validateInput(np *v1.Namespace) error {
+func (s *pipelineImpl) validateInput(np *storage.Namespace) error {
 	// validate input.
 	if np == nil {
 		return fmt.Errorf("namespace must not be empty")
@@ -88,7 +89,7 @@ func (s *pipelineImpl) validateInput(np *v1.Namespace) error {
 	return nil
 }
 
-func (s *pipelineImpl) enrichCluster(ns *v1.Namespace) error {
+func (s *pipelineImpl) enrichCluster(ns *storage.Namespace) error {
 	ns.ClusterName = ""
 
 	cluster, clusterExists, err := s.clusters.GetCluster(ns.ClusterId)
@@ -103,7 +104,7 @@ func (s *pipelineImpl) enrichCluster(ns *v1.Namespace) error {
 	return nil
 }
 
-func (s *pipelineImpl) persistNamespace(action v1.ResourceAction, ns *v1.Namespace) error {
+func (s *pipelineImpl) persistNamespace(action v1.ResourceAction, ns *storage.Namespace) error {
 	switch action {
 	case v1.ResourceAction_CREATE_RESOURCE:
 		return s.namespaces.AddNamespace(ns)

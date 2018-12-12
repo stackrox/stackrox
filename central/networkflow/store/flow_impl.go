@@ -9,7 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -23,7 +23,7 @@ type flowStoreImpl struct {
 const updatedTSKey = "\x00"
 
 // GetAllFlows returns all the flows in the store.
-func (s *flowStoreImpl) GetAllFlows() (flows []*v1.NetworkFlow, ts types.Timestamp, err error) {
+func (s *flowStoreImpl) GetAllFlows() (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
 
 	err = s.flowsBucket.View(func(b *bolt.Bucket) error {
@@ -36,7 +36,7 @@ func (s *flowStoreImpl) GetAllFlows() (flows []*v1.NetworkFlow, ts types.Timesta
 }
 
 // GetFlow returns the flow for the source and destination, or nil if none exists.
-func (s *flowStoreImpl) GetFlow(props *v1.NetworkFlowProperties) (flow *v1.NetworkFlow, err error) {
+func (s *flowStoreImpl) GetFlow(props *storage.NetworkFlowProperties) (flow *storage.NetworkFlow, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "NetworkFlow")
 
 	id := getID(flow.GetProps())
@@ -52,7 +52,7 @@ func (s *flowStoreImpl) GetFlow(props *v1.NetworkFlowProperties) (flow *v1.Netwo
 }
 
 // UpsertFlow updates an flow to the store, adding it if not already present.
-func (s *flowStoreImpl) UpsertFlows(flows []*v1.NetworkFlow, lastUpdatedTS timestamp.MicroTS) error {
+func (s *flowStoreImpl) UpsertFlows(flows []*storage.NetworkFlow, lastUpdatedTS timestamp.MicroTS) error {
 	tsData, err := protoconv.ConvertTimeToTimestamp(lastUpdatedTS.GoTime()).Marshal()
 	if err != nil {
 		return err
@@ -78,7 +78,7 @@ func (s *flowStoreImpl) UpsertFlows(flows []*v1.NetworkFlow, lastUpdatedTS times
 }
 
 // RemoveFlow removes an flow from the store if it is present.
-func (s *flowStoreImpl) RemoveFlow(props *v1.NetworkFlowProperties) error {
+func (s *flowStoreImpl) RemoveFlow(props *storage.NetworkFlowProperties) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
 
 	id := getID(props)
@@ -91,12 +91,12 @@ func (s *flowStoreImpl) RemoveFlow(props *v1.NetworkFlowProperties) error {
 // Static helper functions.
 /////////////////////////
 
-func readAllFlows(bucket *bolt.Bucket) (flows []*v1.NetworkFlow, lastUpdateTS types.Timestamp, err error) {
+func readAllFlows(bucket *bolt.Bucket) (flows []*storage.NetworkFlow, lastUpdateTS types.Timestamp, err error) {
 	err = bucket.ForEach(func(k, v []byte) error {
 		if bytes.Equal(k, []byte(updatedTSKey)) {
 			return proto.Unmarshal(v, &lastUpdateTS)
 		}
-		flow := new(v1.NetworkFlow)
+		flow := new(storage.NetworkFlow)
 
 		err = proto.Unmarshal(v, flow)
 		if err != nil {
@@ -109,13 +109,13 @@ func readAllFlows(bucket *bolt.Bucket) (flows []*v1.NetworkFlow, lastUpdateTS ty
 	return
 }
 
-func readFlow(bucket *bolt.Bucket, id []byte) (flow *v1.NetworkFlow, err error) {
+func readFlow(bucket *bolt.Bucket, id []byte) (flow *storage.NetworkFlow, err error) {
 	v := bucket.Get(id)
 	if v == nil {
 		return
 	}
 
-	flow = new(v1.NetworkFlow)
+	flow = new(storage.NetworkFlow)
 	err = proto.Unmarshal(v, flow)
 	if err != nil {
 		return nil, err
@@ -123,6 +123,6 @@ func readFlow(bucket *bolt.Bucket, id []byte) (flow *v1.NetworkFlow, err error) 
 	return
 }
 
-func getID(props *v1.NetworkFlowProperties) []byte {
+func getID(props *storage.NetworkFlowProperties) []byte {
 	return []byte(fmt.Sprintf("%x:%s:%x:%s:%x:%x", props.GetSrcEntity().GetType(), props.GetSrcEntity().GetId(), props.GetDstEntity().GetType(), props.GetDstEntity().GetId(), props.GetDstPort(), props.GetL4Protocol()))
 }

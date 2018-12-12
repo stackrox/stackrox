@@ -12,7 +12,7 @@ func init() {
 	compilers = append(compilers, newAddCapMatcher)
 }
 
-func newAddCapMatcher(policy *v1.Policy) (Matcher, error) {
+func newAddCapMatcher(policy *storage.Policy) (Matcher, error) {
 	fields := policy.GetFields()
 	if len(fields.GetAddCapabilities()) == 0 {
 		return nil, nil
@@ -27,7 +27,7 @@ func newAddCapMatcher(policy *v1.Policy) (Matcher, error) {
 }
 
 type addCapMatcherImpl struct {
-	proto *v1.Policy
+	proto *storage.Policy
 
 	addCap map[string]struct{}
 }

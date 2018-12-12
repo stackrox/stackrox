@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/node/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -65,7 +66,7 @@ func (s *nodeServiceImpl) ListNodes(ctx context.Context, req *v1.ListNodesReques
 	}, nil
 }
 
-func (s *nodeServiceImpl) GetNode(ctx context.Context, req *v1.GetNodeRequest) (*v1.Node, error) {
+func (s *nodeServiceImpl) GetNode(ctx context.Context, req *v1.GetNodeRequest) (*storage.Node, error) {
 	clusterLocalStore, err := s.nodeStore.GetClusterNodeStore(req.GetClusterId())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "could not access per-cluster node store for cluster %q: %v", req.GetClusterId(), err)

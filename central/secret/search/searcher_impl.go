@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/secret/search/options"
 	"github.com/stackrox/rox/central/secret/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
@@ -27,7 +28,7 @@ func (ds *searcherImpl) SearchSecrets(q *v1.Query) ([]*v1.SearchResult, error) {
 }
 
 // SearchSecrets returns the secrets and relationships that match the query.
-func (ds *searcherImpl) SearchListSecrets(q *v1.Query) ([]*v1.ListSecret, error) {
+func (ds *searcherImpl) SearchListSecrets(q *v1.Query) ([]*storage.ListSecret, error) {
 	results, err := ds.getSearchResults(q)
 	if err != nil {
 		return nil, err
@@ -44,7 +45,7 @@ func (ds *searcherImpl) getSearchResults(q *v1.Query) ([]search.Result, error) {
 }
 
 // ToSecrets returns the secrets from the db for the given search results.
-func (ds *searcherImpl) resultsToListSecrets(results []search.Result) ([]*v1.ListSecret, error) {
+func (ds *searcherImpl) resultsToListSecrets(results []search.Result) ([]*storage.ListSecret, error) {
 	ids := make([]string, len(results), len(results))
 	for index, result := range results {
 		ids[index] = result.ID
@@ -61,7 +62,7 @@ func (ds *searcherImpl) resultsToSearchResults(results []search.Result) ([]*v1.S
 	return convertMany(sars, results), nil
 }
 
-func convertMany(secrets []*v1.ListSecret, results []search.Result) []*v1.SearchResult {
+func convertMany(secrets []*storage.ListSecret, results []search.Result) []*v1.SearchResult {
 	outputResults := make([]*v1.SearchResult, len(secrets), len(secrets))
 	for index, sar := range secrets {
 		outputResults[index] = convertOne(sar, &results[index])
@@ -69,7 +70,7 @@ func convertMany(secrets []*v1.ListSecret, results []search.Result) []*v1.Search
 	return outputResults
 }
 
-func convertOne(secret *v1.ListSecret, result *search.Result) *v1.SearchResult {
+func convertOne(secret *storage.ListSecret, result *search.Result) *v1.SearchResult {
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_SECRETS,
 		Id:             secret.GetId(),

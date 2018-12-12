@@ -2,7 +2,7 @@ package store
 
 import (
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
@@ -10,10 +10,10 @@ const namespaceBucket = "namespaces"
 
 // Store provides storage functionality for alerts.
 type Store interface {
-	GetNamespace(id string) (*v1.Namespace, bool, error)
-	GetNamespaces() ([]*v1.Namespace, error)
-	AddNamespace(*v1.Namespace) error
-	UpdateNamespace(*v1.Namespace) error
+	GetNamespace(id string) (*storage.Namespace, bool, error)
+	GetNamespaces() ([]*storage.Namespace, error)
+	AddNamespace(*storage.Namespace) error
+	UpdateNamespace(*storage.Namespace) error
 	RemoveNamespace(id string) error
 }
 

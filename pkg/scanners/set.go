@@ -1,7 +1,7 @@
 package scanners
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scanners/types"
 )
 
@@ -10,7 +10,7 @@ type Set interface {
 	GetAll() []types.ImageScanner
 
 	Clear()
-	UpdateImageIntegration(integration *v1.ImageIntegration) error
+	UpdateImageIntegration(integration *storage.ImageIntegration) error
 	RemoveImageIntegration(id string) error
 }
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -13,12 +14,12 @@ import (
 var (
 	logger = logging.LoggerForModule()
 
-	opToHumanReadable = map[v1.Comparator]string{
-		v1.Comparator_LESS_THAN:              "less than",
-		v1.Comparator_LESS_THAN_OR_EQUALS:    "less than or equal to",
-		v1.Comparator_EQUALS:                 "equal to",
-		v1.Comparator_GREATER_THAN_OR_EQUALS: "greater than or equal to",
-		v1.Comparator_GREATER_THAN:           "greater than",
+	opToHumanReadable = map[storage.Comparator]string{
+		storage.Comparator_LESS_THAN:              "less than",
+		storage.Comparator_LESS_THAN_OR_EQUALS:    "less than or equal to",
+		storage.Comparator_EQUALS:                 "equal to",
+		storage.Comparator_GREATER_THAN_OR_EQUALS: "greater than or equal to",
+		storage.Comparator_GREATER_THAN:           "greater than",
 	}
 )
 
@@ -65,7 +66,7 @@ func violationPrinterForField(fieldPath string, matchToMessage func(match string
 	}
 }
 
-func printKeyValuePolicy(kvp *v1.KeyValuePolicy) string {
+func printKeyValuePolicy(kvp *storage.KeyValuePolicy) string {
 	sb := strings.Builder{}
 	if kvp.GetKey() != "" {
 		sb.WriteString(fmt.Sprintf("key = '%s'", kvp.GetKey()))
@@ -88,7 +89,7 @@ func concatenatingPrinter(printers []searchbasedpolicies.ViolationPrinter) searc
 	}
 }
 
-func presentQueriesAndPrinters(qbs []searchbasedpolicies.PolicyQueryBuilder, fields *v1.PolicyFields,
+func presentQueriesAndPrinters(qbs []searchbasedpolicies.PolicyQueryBuilder, fields *storage.PolicyFields,
 	optionsMap map[search.FieldLabel]*v1.SearchField) (queries []*v1.Query, printers []searchbasedpolicies.ViolationPrinter, err error) {
 	for _, qb := range qbs {
 		var q *v1.Query
@@ -110,6 +111,6 @@ func presentQueriesAndPrinters(qbs []searchbasedpolicies.PolicyQueryBuilder, fie
 	return
 }
 
-func readableOp(op v1.Comparator) string {
+func readableOp(op storage.Comparator) string {
 	return opToHumanReadable[op]
 }

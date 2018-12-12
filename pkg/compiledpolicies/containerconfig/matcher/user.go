@@ -13,7 +13,7 @@ func init() {
 	compilers = append(compilers, newUserMatcher)
 }
 
-func newUserMatcher(policy *v1.Policy) (Matcher, error) {
+func newUserMatcher(policy *storage.Policy) (Matcher, error) {
 	user := policy.GetFields().GetUser()
 
 	if user == "" {

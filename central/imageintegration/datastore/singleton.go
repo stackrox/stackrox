@@ -12,14 +12,12 @@ import (
 var (
 	once sync.Once
 
-	storage store.Store
-
 	ad DataStore
 )
 
 func initialize() {
 	// Create underlying store and datastore.
-	storage = store.New(globaldb.GetGlobalDB())
+	storage := store.New(globaldb.GetGlobalDB())
 	ad = New(storage)
 
 	// Initialize the integration set with all present integrations.

@@ -13,7 +13,7 @@ func init() {
 	compilers = append(compilers, newDestinationMatcher)
 }
 
-func newDestinationMatcher(policy *v1.Policy) (Matcher, error) {
+func newDestinationMatcher(policy *storage.Policy) (Matcher, error) {
 	destination := policy.GetFields().GetVolumePolicy().GetDestination()
 	if destination == "" {
 		return nil, nil

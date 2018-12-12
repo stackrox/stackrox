@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/notifiers"
 )
 
@@ -16,7 +17,7 @@ type processorImpl struct {
 	notifiers     map[string]notifiers.Notifier
 	notifiersLock sync.RWMutex
 
-	notifiersToPolicies     map[string]map[string]*v1.Policy
+	notifiersToPolicies     map[string]map[string]*storage.Policy
 	notifiersToPoliciesLock sync.RWMutex
 
 	storage store.Store
@@ -115,7 +116,7 @@ func (p *processorImpl) UpdateNotifier(notifier notifiers.Notifier) {
 }
 
 // GetIntegratedPolicies returns a list of policies that use provided notifier.
-func (p *processorImpl) GetIntegratedPolicies(notifierID string) (output []*v1.Policy) {
+func (p *processorImpl) GetIntegratedPolicies(notifierID string) (output []*storage.Policy) {
 	p.notifiersToPoliciesLock.RLock()
 	defer p.notifiersToPoliciesLock.RUnlock()
 
@@ -123,7 +124,7 @@ func (p *processorImpl) GetIntegratedPolicies(notifierID string) (output []*v1.P
 		return
 	}
 
-	output = make([]*v1.Policy, 0, len(p.notifiersToPolicies[notifierID]))
+	output = make([]*storage.Policy, 0, len(p.notifiersToPolicies[notifierID]))
 	for _, policy := range p.notifiersToPolicies[notifierID] {
 		output = append(output, policy)
 	}
@@ -132,7 +133,7 @@ func (p *processorImpl) GetIntegratedPolicies(notifierID string) (output []*v1.P
 }
 
 // UpdatePolicy updates the mapping of notifiers to policies.
-func (p *processorImpl) UpdatePolicy(policy *v1.Policy) {
+func (p *processorImpl) UpdatePolicy(policy *storage.Policy) {
 	p.notifiersToPoliciesLock.Lock()
 	defer p.notifiersToPoliciesLock.Unlock()
 
@@ -146,7 +147,7 @@ func (p *processorImpl) UpdatePolicy(policy *v1.Policy) {
 
 	for _, n := range policy.GetNotifiers() {
 		if p.notifiersToPolicies[n] == nil {
-			p.notifiersToPolicies[n] = make(map[string]*v1.Policy)
+			p.notifiersToPolicies[n] = make(map[string]*storage.Policy)
 		}
 
 		p.notifiersToPolicies[n][policy.GetId()] = policy
@@ -154,7 +155,7 @@ func (p *processorImpl) UpdatePolicy(policy *v1.Policy) {
 }
 
 // RemovePolicy removes policy from notifiers to policies map.
-func (p *processorImpl) RemovePolicy(policy *v1.Policy) {
+func (p *processorImpl) RemovePolicy(policy *storage.Policy) {
 	p.notifiersToPoliciesLock.Lock()
 	defer p.notifiersToPoliciesLock.Unlock()
 

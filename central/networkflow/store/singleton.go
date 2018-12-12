@@ -9,14 +9,14 @@ import (
 var (
 	once sync.Once
 
-	storage ClusterStore
+	as ClusterStore
 )
 
 // Singleton provides the instance of ClusterStore to use for storing and fetching stored graphs and their associated
 // information.
 func Singleton() ClusterStore {
 	once.Do(func() {
-		storage = NewClusterStore(globaldb.GetGlobalDB())
+		as = NewClusterStore(globaldb.GetGlobalDB())
 	})
-	return storage
+	return as
 }

@@ -7,17 +7,17 @@ option java_package = "io.stackrox.proto.api.v1";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
-import "api/v1/policy_service.proto";
 import "api/v1/indicator.proto";
 import "api/v1/empty.proto";
 import "storage/deployment.proto";
+import "storage/policy.proto";
 
 package v1;
 
 message Alert {
     string id                                = 1;
-    Policy policy                            = 2;
-    LifecycleStage lifecycle_stage           = 3;
+    storage.Policy policy                            = 2;
+    storage.LifecycleStage lifecycle_stage           = 3;
     storage.Deployment deployment                    = 4;
 
     message Violation {
@@ -28,7 +28,7 @@ message Alert {
     repeated Violation violations            = 5;
 
     message Enforcement {
-        EnforcementAction action = 1;
+        storage.EnforcementAction action = 1;
         string message           = 2;
     }
     Enforcement enforcement                  = 6;
@@ -47,7 +47,7 @@ message ListAlertsRequest {
 message ListAlertPolicy {
     string id                                   = 1;
     string name                                 = 2;
-    Severity severity                           = 3;
+    storage.Severity severity                           = 3;
     string description                          = 4;
     repeated string categories                  = 5;
 }
@@ -62,7 +62,7 @@ message ListAlertDeployment {
 
 message ListAlert {
     string id                               = 1;
-    LifecycleStage lifecycle_stage          = 2;
+    storage.LifecycleStage lifecycle_stage          = 2;
     google.protobuf.Timestamp time          = 3;
     ListAlertPolicy policy                  = 4;
     ListAlertDeployment deployment          = 5;
@@ -112,7 +112,7 @@ message GetAlertsCountsResponse {
     message AlertGroup {
         string group                    = 1;
         message AlertCounts {
-            Severity severity   = 1;
+            storage.Severity severity   = 1;
             int64 count         = 2;
         }
         repeated AlertCounts counts     = 2;
@@ -135,7 +135,7 @@ message GetAlertTimeseriesResponse {
     message ClusterAlerts {
         string cluster                   = 1;
         message AlertEvents {
-            Severity severity          = 1;
+            storage.Severity severity          = 1;
             repeated AlertEvent events = 2;
         }
         repeated AlertEvents severities  = 2;

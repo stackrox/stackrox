@@ -10,7 +10,7 @@ func init() {
 	compilers = append(compilers, newComponentMatcher)
 }
 
-func newComponentMatcher(policy *v1.Policy) (Matcher, error) {
+func newComponentMatcher(policy *storage.Policy) (Matcher, error) {
 	matcher, err := componentMatcher.Compile(policy)
 	if err != nil {
 		return nil, err

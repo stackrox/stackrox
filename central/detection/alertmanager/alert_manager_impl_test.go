@@ -38,7 +38,7 @@ func getFakeRuntimeAlert(indicators ...*v1.ProcessIndicator) *v1.Alert {
 	v := &v1.Alert_Violation{Processes: indicators}
 	builders.UpdateRuntimeAlertViolationMessage(v)
 	return &v1.Alert{
-		LifecycleStage: v1.LifecycleStage_RUNTIME,
+		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Violations:     []*v1.Alert_Violation{v},
 	}
 }
@@ -329,15 +329,15 @@ func getDeployments() []*storage.Deployment {
 }
 
 // Policies are set up so that policy one is violated by deployment 1, 2 is violated by 2, etc.
-func getPolicies() []*v1.Policy {
-	return []*v1.Policy{
+func getPolicies() []*storage.Policy {
+	return []*storage.Policy{
 		{
 			Id:         "policy1",
 			Name:       "latest1",
-			Severity:   v1.Severity_LOW_SEVERITY,
+			Severity:   storage.Severity_LOW_SEVERITY,
 			Categories: []string{"Image Assurance", "Privileges Capabilities"},
-			Fields: &v1.PolicyFields{
-				ImageName: &v1.ImageNamePolicy{
+			Fields: &storage.PolicyFields{
+				ImageName: &storage.ImageNamePolicy{
 					Tag: "latest1",
 				},
 			},
@@ -345,10 +345,10 @@ func getPolicies() []*v1.Policy {
 		{
 			Id:         "policy2",
 			Name:       "latest2",
-			Severity:   v1.Severity_LOW_SEVERITY,
+			Severity:   storage.Severity_LOW_SEVERITY,
 			Categories: []string{"Image Assurance", "Privileges Capabilities"},
-			Fields: &v1.PolicyFields{
-				ImageName: &v1.ImageNamePolicy{
+			Fields: &storage.PolicyFields{
+				ImageName: &storage.ImageNamePolicy{
 					Tag: "latest2",
 				},
 			},
@@ -356,10 +356,10 @@ func getPolicies() []*v1.Policy {
 		{
 			Id:         "policy3",
 			Name:       "latest3",
-			Severity:   v1.Severity_LOW_SEVERITY,
+			Severity:   storage.Severity_LOW_SEVERITY,
 			Categories: []string{"Image Assurance", "Privileges Capabilities"},
-			Fields: &v1.PolicyFields{
-				ImageName: &v1.ImageNamePolicy{
+			Fields: &storage.PolicyFields{
+				ImageName: &storage.ImageNamePolicy{
 					Tag: "latest3",
 				},
 			},

@@ -7,24 +7,12 @@ option java_package = "io.stackrox.proto.api.v1";
 import weak "google/api/annotations.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
+import "storage/user.proto";
 
 package v1;
 
-message UserAttribute {
-    string key = 1;
-    string value = 2;
-}
-
-// User is an object that allows us to track the roles a user is tied to, and how they logged in.
-message User {
-    string id = 1;
-    string auth_provider_id = 2;
-
-    repeated UserAttribute attributes = 3;
-}
-
 message GetUsersResponse {
-    repeated User users = 1;
+    repeated storage.User users = 1;
 }
 
 service UserService {
@@ -35,7 +23,7 @@ service UserService {
         };
     }
 
-    rpc GetUser (ResourceByID) returns (User) {
+    rpc GetUser (ResourceByID) returns (storage.User) {
         option (google.api.http) = {
             get: "/v1/users/{id}"
         };

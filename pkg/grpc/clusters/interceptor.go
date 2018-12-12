@@ -6,7 +6,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -74,7 +73,7 @@ func (cw ClusterWatcher) recordCheckin(ctx context.Context) error {
 		return nil
 	}
 
-	if svc.GetType() != v1.ServiceType_SENSOR_SERVICE {
+	if svc.GetType() != storage.ServiceType_SENSOR_SERVICE {
 		return nil
 	}
 

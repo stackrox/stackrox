@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/require"
 )
@@ -50,9 +51,9 @@ func verifyNoAlertForWhitelist(t *testing.T) {
 		Id: resp.GetPolicies()[0].GetId(),
 	})
 
-	latestPolicy.Whitelists = []*v1.Whitelist{
+	latestPolicy.Whitelists = []*storage.Whitelist{
 		{
-			Deployment: &v1.Whitelist_Deployment{
+			Deployment: &storage.Whitelist_Deployment{
 				Name: nginxDeploymentName,
 			},
 		},

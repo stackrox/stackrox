@@ -1,7 +1,6 @@
 package predicate
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -9,7 +8,7 @@ func init() {
 	compilers = append(compilers, newDisabledPredicate)
 }
 
-func newDisabledPredicate(policy *v1.Policy) (Predicate, error) {
+func newDisabledPredicate(policy *storage.Policy) (Predicate, error) {
 	if !policy.GetDisabled() {
 		return nil, nil
 	}

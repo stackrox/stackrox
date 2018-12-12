@@ -53,15 +53,15 @@ func (b *flowGraphBuilder) getNode(entity networkentity.Entity, addIfMissing boo
 func (b *flowGraphBuilder) AddDeployments(deployments []*storage.Deployment) {
 	for _, deployment := range deployments {
 		key := networkentity.Entity{
-			Type: v1.NetworkEntityInfo_DEPLOYMENT,
+			Type: storage.NetworkEntityInfo_DEPLOYMENT,
 			ID:   deployment.GetId(),
 		}
 		_, node, added := b.getNode(key, true)
 		if !added {
 			continue
 		}
-		node.Entity.Desc = &v1.NetworkEntityInfo_Deployment_{
-			Deployment: &v1.NetworkEntityInfo_Deployment{
+		node.Entity.Desc = &storage.NetworkEntityInfo_Deployment_{
+			Deployment: &storage.NetworkEntityInfo_Deployment{
 				Name:      deployment.GetName(),
 				Namespace: deployment.GetNamespace(),
 				Cluster:   deployment.GetClusterName(),
@@ -70,16 +70,16 @@ func (b *flowGraphBuilder) AddDeployments(deployments []*storage.Deployment) {
 	}
 }
 
-func (b *flowGraphBuilder) AddFlows(flows []*v1.NetworkFlow) {
+func (b *flowGraphBuilder) AddFlows(flows []*storage.NetworkFlow) {
 	for _, flow := range flows {
 		props := flow.GetProps()
 		srcEnt := networkentity.FromProto(props.GetSrcEntity())
-		_, srcNode, added := b.getNode(srcEnt, srcEnt.Type != v1.NetworkEntityInfo_DEPLOYMENT)
+		_, srcNode, added := b.getNode(srcEnt, srcEnt.Type != storage.NetworkEntityInfo_DEPLOYMENT)
 		if srcNode == nil {
 			continue
 		}
 		dstEnt := networkentity.FromProto(props.GetDstEntity())
-		dstIdx, _, _ := b.getNode(dstEnt, dstEnt.Type != v1.NetworkEntityInfo_DEPLOYMENT)
+		dstIdx, _, _ := b.getNode(dstEnt, dstEnt.Type != storage.NetworkEntityInfo_DEPLOYMENT)
 		if dstIdx == -1 {
 			if added {
 				b.removeLastNode()

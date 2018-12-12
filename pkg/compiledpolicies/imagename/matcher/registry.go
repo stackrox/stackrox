@@ -13,7 +13,7 @@ func init() {
 	compilers = append(compilers, newRegistryMatcher)
 }
 
-func newRegistryMatcher(policy *v1.Policy) (Matcher, error) {
+func newRegistryMatcher(policy *storage.Policy) (Matcher, error) {
 	registryPolicy := policy.GetFields().GetImageName().GetRegistry()
 	if registryPolicy == "" {
 		return nil, nil

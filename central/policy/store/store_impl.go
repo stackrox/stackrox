@@ -9,6 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/secondarykey"
@@ -19,8 +20,8 @@ type storeImpl struct {
 	*bolt.DB
 }
 
-func (b *storeImpl) getPolicy(id string, bucket *bolt.Bucket) (policy *v1.Policy, exists bool, err error) {
-	policy = new(v1.Policy)
+func (b *storeImpl) getPolicy(id string, bucket *bolt.Bucket) (policy *storage.Policy, exists bool, err error) {
+	policy = new(storage.Policy)
 	val := bucket.Get([]byte(id))
 	if val == nil {
 		return
@@ -31,9 +32,9 @@ func (b *storeImpl) getPolicy(id string, bucket *bolt.Bucket) (policy *v1.Policy
 }
 
 // GetPolicy returns policy with given id.
-func (b *storeImpl) GetPolicy(id string) (policy *v1.Policy, exists bool, err error) {
+func (b *storeImpl) GetPolicy(id string) (policy *storage.Policy, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Policy")
-	policy = new(v1.Policy)
+	policy = new(storage.Policy)
 	err = b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(policyBucket))
 		val := b.Get([]byte(id))
@@ -48,13 +49,13 @@ func (b *storeImpl) GetPolicy(id string) (policy *v1.Policy, exists bool, err er
 }
 
 // GetPolicies retrieves policies matching the request from bolt
-func (b *storeImpl) GetPolicies() ([]*v1.Policy, error) {
+func (b *storeImpl) GetPolicies() ([]*storage.Policy, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Policy")
-	var policies []*v1.Policy
+	var policies []*storage.Policy
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(policyBucket))
 		return b.ForEach(func(k, v []byte) error {
-			var policy v1.Policy
+			var policy storage.Policy
 			if err := proto.Unmarshal(v, &policy); err != nil {
 				return err
 			}
@@ -66,7 +67,7 @@ func (b *storeImpl) GetPolicies() ([]*v1.Policy, error) {
 }
 
 // AddPolicy adds a policy to bolt
-func (b *storeImpl) AddPolicy(policy *v1.Policy) (string, error) {
+func (b *storeImpl) AddPolicy(policy *storage.Policy) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Policy")
 	policy.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
@@ -91,7 +92,7 @@ func (b *storeImpl) AddPolicy(policy *v1.Policy) (string, error) {
 }
 
 // UpdatePolicy updates a policy to bolt
-func (b *storeImpl) UpdatePolicy(policy *v1.Policy) error {
+func (b *storeImpl) UpdatePolicy(policy *storage.Policy) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Policy")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(policyBucket))
@@ -131,7 +132,7 @@ func (b *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(policyBucket))
 		return b.ForEach(func(k, v []byte) error {
-			var policy v1.Policy
+			var policy storage.Policy
 			if err := proto.Unmarshal(v, &policy); err != nil {
 				return err
 			}
@@ -163,7 +164,7 @@ func (b *storeImpl) DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(policyBucket))
 		return b.ForEach(func(k, v []byte) error {
-			var policy v1.Policy
+			var policy storage.Policy
 			if err := proto.Unmarshal(v, &policy); err != nil {
 				return err
 			}

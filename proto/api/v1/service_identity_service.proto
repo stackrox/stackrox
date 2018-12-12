@@ -4,39 +4,22 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
-import "api/v1/common.proto";
 import "api/v1/empty.proto";
+import "storage/service_identity.proto";
 
 package v1;
 
-enum ServiceType {
-    UNKNOWN_SERVICE           = 0;
-    SENSOR_SERVICE            = 1;
-    CENTRAL_SERVICE           = 2;
-    REMOTE_SERVICE            = 3;
-    COLLECTOR_SERVICE         = 4;
-    MONITORING_UI_SERVICE     = 5;
-    MONITORING_DB_SERVICE     = 6;
-    MONITORING_CLIENT_SERVICE = 7;
-}
-
-message ServiceIdentity {
-    int64       serial   = 1;
-    string      id       = 2;
-    ServiceType type     = 3;
-}
-
 message ServiceIdentityResponse {
-    repeated ServiceIdentity identities = 1;
+    repeated storage.ServiceIdentity identities = 1;
 }
 
 message CreateServiceIdentityRequest {
     string      id = 1;
-    ServiceType type = 2;
+    storage.ServiceType type = 2;
 }
 
 message CreateServiceIdentityResponse {
-    ServiceIdentity identity       = 1;
+    storage.ServiceIdentity identity       = 1;
     bytes          certificate_pem = 2;
     bytes          private_key_pem = 3;
 }

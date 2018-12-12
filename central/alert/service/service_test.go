@@ -17,6 +17,7 @@ import (
 	storeMocks "github.com/stackrox/rox/central/alert/store/mocks"
 	"github.com/stackrox/rox/central/alerttest"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc/codes"
@@ -267,7 +268,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
 				Categories: []string{"Image Assurance"},
 				Id:         "id1",
 				Name:       "policy1",
-				Severity:   v1.Severity_LOW_SEVERITY,
+				Severity:   storage.Severity_LOW_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 300},
 		},
@@ -277,7 +278,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
 				Categories: []string{"Image Assurance"},
 				Id:         "id2",
 				Name:       "policy2",
-				Severity:   v1.Severity_HIGH_SEVERITY,
+				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 200},
 		},
@@ -287,7 +288,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
 				Categories: []string{"Image Assurance"},
 				Id:         "id1",
 				Name:       "policy1",
-				Severity:   v1.Severity_LOW_SEVERITY,
+				Severity:   storage.Severity_LOW_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 100},
 		},
@@ -300,7 +301,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
 					Categories: []string{"Image Assurance"},
 					Id:         "id1",
 					Name:       "policy1",
-					Severity:   v1.Severity_LOW_SEVERITY,
+					Severity:   storage.Severity_LOW_SEVERITY,
 				},
 				NumAlerts: 2,
 			},
@@ -309,7 +310,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
 					Categories: []string{"Image Assurance"},
 					Id:         "id2",
 					Name:       "policy2",
-					Severity:   v1.Severity_HIGH_SEVERITY,
+					Severity:   storage.Severity_HIGH_SEVERITY,
 				},
 				NumAlerts: 1,
 			},
@@ -327,7 +328,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 				Categories: []string{"Image Assurance"},
 				Id:         "id1",
 				Name:       "policy1",
-				Severity:   v1.Severity_LOW_SEVERITY,
+				Severity:   storage.Severity_LOW_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 300},
 		},
@@ -337,7 +338,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 				Categories: []string{"Image Assurance", "Privileges Capabilities"},
 				Id:         "id2",
 				Name:       "policy2",
-				Severity:   v1.Severity_HIGH_SEVERITY,
+				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 200},
 		},
@@ -347,7 +348,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 				Categories: []string{"Container Configuration"},
 				Id:         "id30",
 				Name:       "policy30",
-				Severity:   v1.Severity_CRITICAL_SEVERITY,
+				Severity:   storage.Severity_CRITICAL_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 150},
 		},
@@ -357,7 +358,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 				Categories: []string{"Image Assurance"},
 				Id:         "id1",
 				Name:       "policy1",
-				Severity:   v1.Severity_LOW_SEVERITY,
+				Severity:   storage.Severity_LOW_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 100},
 		},
@@ -370,7 +371,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 					Categories: []string{"Image Assurance"},
 					Id:         "id1",
 					Name:       "policy1",
-					Severity:   v1.Severity_LOW_SEVERITY,
+					Severity:   storage.Severity_LOW_SEVERITY,
 				},
 				NumAlerts: 2,
 			},
@@ -379,7 +380,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 					Categories: []string{"Image Assurance", "Privileges Capabilities"},
 					Id:         "id2",
 					Name:       "policy2",
-					Severity:   v1.Severity_HIGH_SEVERITY,
+					Severity:   storage.Severity_HIGH_SEVERITY,
 				},
 				NumAlerts: 1,
 			},
@@ -388,7 +389,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 					Categories: []string{"Container Configuration"},
 					Id:         "id30",
 					Name:       "policy30",
-					Severity:   v1.Severity_CRITICAL_SEVERITY,
+					Severity:   storage.Severity_CRITICAL_SEVERITY,
 				},
 				NumAlerts: 1,
 			},
@@ -431,7 +432,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Name:       "policy1",
-				Severity:   v1.Severity_LOW_SEVERITY,
+				Severity:   storage.Severity_LOW_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 300},
 		},
@@ -440,7 +441,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Container Configuration"},
 				Name:       "policy2",
-				Severity:   v1.Severity_CRITICAL_SEVERITY,
+				Severity:   storage.Severity_CRITICAL_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 200},
 		},
@@ -449,7 +450,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Name:       "policy1",
-				Severity:   v1.Severity_LOW_SEVERITY,
+				Severity:   storage.Severity_LOW_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 130},
 		},
@@ -458,7 +459,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Privileges Capabilities"},
 				Name:       "policy3",
-				Severity:   v1.Severity_MEDIUM_SEVERITY,
+				Severity:   storage.Severity_MEDIUM_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 120},
 		},
@@ -467,7 +468,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Image Assurance", "Container Configuration"},
 				Name:       "policy4",
-				Severity:   v1.Severity_HIGH_SEVERITY,
+				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 120},
 		},
@@ -476,7 +477,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Image Assurance", "Container Configuration"},
 				Name:       "policy4",
-				Severity:   v1.Severity_HIGH_SEVERITY,
+				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 110},
 		},
@@ -488,19 +489,19 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 				Group: "",
 				Counts: []*v1.GetAlertsCountsResponse_AlertGroup_AlertCounts{
 					{
-						Severity: v1.Severity_LOW_SEVERITY,
+						Severity: storage.Severity_LOW_SEVERITY,
 						Count:    2,
 					},
 					{
-						Severity: v1.Severity_MEDIUM_SEVERITY,
+						Severity: storage.Severity_MEDIUM_SEVERITY,
 						Count:    1,
 					},
 					{
-						Severity: v1.Severity_HIGH_SEVERITY,
+						Severity: storage.Severity_HIGH_SEVERITY,
 						Count:    2,
 					},
 					{
-						Severity: v1.Severity_CRITICAL_SEVERITY,
+						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Count:    1,
 					},
 				},
@@ -518,7 +519,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Name:       "policy1",
-				Severity:   v1.Severity_LOW_SEVERITY,
+				Severity:   storage.Severity_LOW_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 300},
 		},
@@ -527,7 +528,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Container Configuration"},
 				Name:       "policy2",
-				Severity:   v1.Severity_CRITICAL_SEVERITY,
+				Severity:   storage.Severity_CRITICAL_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 200},
 		},
@@ -536,7 +537,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Name:       "policy1",
-				Severity:   v1.Severity_LOW_SEVERITY,
+				Severity:   storage.Severity_LOW_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 130},
 		},
@@ -545,7 +546,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Privileges Capabilities"},
 				Name:       "policy3",
-				Severity:   v1.Severity_MEDIUM_SEVERITY,
+				Severity:   storage.Severity_MEDIUM_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 120},
 		},
@@ -554,7 +555,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Image Assurance", "Container Configuration"},
 				Name:       "policy4",
-				Severity:   v1.Severity_HIGH_SEVERITY,
+				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 120},
 		},
@@ -563,7 +564,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Image Assurance", "Container Configuration"},
 				Name:       "policy4",
-				Severity:   v1.Severity_HIGH_SEVERITY,
+				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
 			Time: &timestamp.Timestamp{Seconds: 110},
 		},
@@ -575,11 +576,11 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 				Group: "Container Configuration",
 				Counts: []*v1.GetAlertsCountsResponse_AlertGroup_AlertCounts{
 					{
-						Severity: v1.Severity_HIGH_SEVERITY,
+						Severity: storage.Severity_HIGH_SEVERITY,
 						Count:    2,
 					},
 					{
-						Severity: v1.Severity_CRITICAL_SEVERITY,
+						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Count:    1,
 					},
 				},
@@ -588,11 +589,11 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 				Group: "Image Assurance",
 				Counts: []*v1.GetAlertsCountsResponse_AlertGroup_AlertCounts{
 					{
-						Severity: v1.Severity_LOW_SEVERITY,
+						Severity: storage.Severity_LOW_SEVERITY,
 						Count:    2,
 					},
 					{
-						Severity: v1.Severity_HIGH_SEVERITY,
+						Severity: storage.Severity_HIGH_SEVERITY,
 						Count:    2,
 					},
 				},
@@ -601,7 +602,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 				Group: "Privileges Capabilities",
 				Counts: []*v1.GetAlertsCountsResponse_AlertGroup_AlertCounts{
 					{
-						Severity: v1.Severity_MEDIUM_SEVERITY,
+						Severity: storage.Severity_MEDIUM_SEVERITY,
 						Count:    1,
 					},
 				},
@@ -619,7 +620,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Name:       "policy1",
-				Severity:   v1.Severity_LOW_SEVERITY,
+				Severity:   storage.Severity_LOW_SEVERITY,
 			},
 			Deployment: &v1.ListAlertDeployment{
 				ClusterName: "test",
@@ -631,7 +632,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Container Configuration"},
 				Name:       "policy2",
-				Severity:   v1.Severity_CRITICAL_SEVERITY,
+				Severity:   storage.Severity_CRITICAL_SEVERITY,
 			},
 			Deployment: &v1.ListAlertDeployment{
 				ClusterName: "test",
@@ -643,7 +644,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Name:       "policy1",
-				Severity:   v1.Severity_LOW_SEVERITY,
+				Severity:   storage.Severity_LOW_SEVERITY,
 			},
 			Deployment: &v1.ListAlertDeployment{
 				ClusterName: "prod",
@@ -655,7 +656,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Privileges Capabilities"},
 				Name:       "policy3",
-				Severity:   v1.Severity_MEDIUM_SEVERITY,
+				Severity:   storage.Severity_MEDIUM_SEVERITY,
 			},
 			Deployment: &v1.ListAlertDeployment{
 				ClusterName: "prod",
@@ -667,7 +668,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Image Assurance", "Container Configuration"},
 				Name:       "policy4",
-				Severity:   v1.Severity_HIGH_SEVERITY,
+				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
 			Deployment: &v1.ListAlertDeployment{
 				ClusterName: "prod",
@@ -679,7 +680,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Image Assurance", "Container Configuration"},
 				Name:       "policy4",
-				Severity:   v1.Severity_HIGH_SEVERITY,
+				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
 			Deployment: &v1.ListAlertDeployment{
 				ClusterName: "test",
@@ -694,15 +695,15 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 				Group: "prod",
 				Counts: []*v1.GetAlertsCountsResponse_AlertGroup_AlertCounts{
 					{
-						Severity: v1.Severity_LOW_SEVERITY,
+						Severity: storage.Severity_LOW_SEVERITY,
 						Count:    1,
 					},
 					{
-						Severity: v1.Severity_MEDIUM_SEVERITY,
+						Severity: storage.Severity_MEDIUM_SEVERITY,
 						Count:    1,
 					},
 					{
-						Severity: v1.Severity_HIGH_SEVERITY,
+						Severity: storage.Severity_HIGH_SEVERITY,
 						Count:    1,
 					},
 				},
@@ -711,15 +712,15 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 				Group: "test",
 				Counts: []*v1.GetAlertsCountsResponse_AlertGroup_AlertCounts{
 					{
-						Severity: v1.Severity_LOW_SEVERITY,
+						Severity: storage.Severity_LOW_SEVERITY,
 						Count:    1,
 					},
 					{
-						Severity: v1.Severity_HIGH_SEVERITY,
+						Severity: storage.Severity_HIGH_SEVERITY,
 						Count:    1,
 					},
 					{
-						Severity: v1.Severity_CRITICAL_SEVERITY,
+						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Count:    1,
 					},
 				},
@@ -750,7 +751,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Name:       "policy1",
-				Severity:   v1.Severity_LOW_SEVERITY,
+				Severity:   storage.Severity_LOW_SEVERITY,
 			},
 			Deployment: &v1.ListAlertDeployment{
 				ClusterName: "test",
@@ -762,7 +763,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Container Configuration"},
 				Name:       "policy2",
-				Severity:   v1.Severity_CRITICAL_SEVERITY,
+				Severity:   storage.Severity_CRITICAL_SEVERITY,
 			},
 			Deployment: &v1.ListAlertDeployment{
 				ClusterName: "test",
@@ -774,7 +775,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Name:       "policy1",
-				Severity:   v1.Severity_LOW_SEVERITY,
+				Severity:   storage.Severity_LOW_SEVERITY,
 			},
 			Deployment: &v1.ListAlertDeployment{
 				ClusterName: "prod",
@@ -786,7 +787,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Privileges Capabilities"},
 				Name:       "policy3",
-				Severity:   v1.Severity_MEDIUM_SEVERITY,
+				Severity:   storage.Severity_MEDIUM_SEVERITY,
 			},
 			Deployment: &v1.ListAlertDeployment{
 				ClusterName: "prod",
@@ -798,7 +799,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Image Assurance", "Container Configuration"},
 				Name:       "policy4",
-				Severity:   v1.Severity_HIGH_SEVERITY,
+				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
 			Deployment: &v1.ListAlertDeployment{
 				ClusterName: "prod",
@@ -810,7 +811,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 			Policy: &v1.ListAlertPolicy{
 				Categories: []string{"Image Assurance", "Container Configuration"},
 				Name:       "policy4",
-				Severity:   v1.Severity_HIGH_SEVERITY,
+				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
 			Deployment: &v1.ListAlertDeployment{
 				ClusterName: "test",
@@ -853,7 +854,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 			},
 			State:      v1.ViolationState_RESOLVED,
 			Deployment: &v1.ListAlertDeployment{ClusterName: "dev"},
-			Policy:     &v1.ListAlertPolicy{Severity: v1.Severity_CRITICAL_SEVERITY},
+			Policy:     &v1.ListAlertPolicy{Severity: storage.Severity_CRITICAL_SEVERITY},
 		},
 		{
 			Id: "id2",
@@ -861,7 +862,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 				Seconds: 6,
 			},
 			Deployment: &v1.ListAlertDeployment{ClusterName: "dev"},
-			Policy:     &v1.ListAlertPolicy{Severity: v1.Severity_HIGH_SEVERITY},
+			Policy:     &v1.ListAlertPolicy{Severity: storage.Severity_HIGH_SEVERITY},
 		},
 		{
 			Id: "id3",
@@ -870,7 +871,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 			},
 			State:      v1.ViolationState_RESOLVED,
 			Deployment: &v1.ListAlertDeployment{ClusterName: "prod"},
-			Policy:     &v1.ListAlertPolicy{Severity: v1.Severity_LOW_SEVERITY},
+			Policy:     &v1.ListAlertPolicy{Severity: storage.Severity_LOW_SEVERITY},
 		},
 		{
 			Id: "id4",
@@ -878,7 +879,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 				Seconds: 6,
 			},
 			Deployment: &v1.ListAlertDeployment{ClusterName: "prod"},
-			Policy:     &v1.ListAlertPolicy{Severity: v1.Severity_MEDIUM_SEVERITY},
+			Policy:     &v1.ListAlertPolicy{Severity: storage.Severity_MEDIUM_SEVERITY},
 		},
 	}
 
@@ -888,7 +889,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 				Cluster: "dev",
 				Severities: []*v1.GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents{
 					{
-						Severity: v1.Severity_HIGH_SEVERITY,
+						Severity: storage.Severity_HIGH_SEVERITY,
 						Events: []*v1.AlertEvent{
 							{
 								Time: 6000,
@@ -898,7 +899,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 						},
 					},
 					{
-						Severity: v1.Severity_CRITICAL_SEVERITY,
+						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Events: []*v1.AlertEvent{
 							{
 								Time: 1000,
@@ -918,7 +919,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 				Cluster: "prod",
 				Severities: []*v1.GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents{
 					{
-						Severity: v1.Severity_LOW_SEVERITY,
+						Severity: storage.Severity_LOW_SEVERITY,
 						Events: []*v1.AlertEvent{
 							{
 								Time: 1000,
@@ -933,7 +934,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 						},
 					},
 					{
-						Severity: v1.Severity_MEDIUM_SEVERITY,
+						Severity: storage.Severity_MEDIUM_SEVERITY,
 						Events: []*v1.AlertEvent{
 							{
 								Time: 6000,

@@ -13,7 +13,7 @@ func init() {
 	compilers = append(compilers, newRequiredAnnotationMatcher)
 }
 
-func newRequiredAnnotationMatcher(policy *v1.Policy) (Matcher, error) {
+func newRequiredAnnotationMatcher(policy *storage.Policy) (Matcher, error) {
 	env := policy.GetFields().GetRequiredAnnotation()
 	if env == nil {
 		return nil, nil

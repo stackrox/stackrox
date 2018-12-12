@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/policy/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
 	"golang.org/x/net/context"
@@ -22,15 +23,15 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	GetPolicy(ctx context.Context, request *v1.ResourceByID) (*v1.Policy, error)
+	GetPolicy(ctx context.Context, request *v1.ResourceByID) (*storage.Policy, error)
 	ListPolicies(ctx context.Context, request *v1.RawQuery) (*v1.ListPoliciesResponse, error)
-	PostPolicy(ctx context.Context, request *v1.Policy) (*v1.Policy, error)
-	PutPolicy(ctx context.Context, request *v1.Policy) (*v1.Empty, error)
+	PostPolicy(ctx context.Context, request *storage.Policy) (*storage.Policy, error)
+	PutPolicy(ctx context.Context, request *storage.Policy) (*v1.Empty, error)
 	PatchPolicy(ctx context.Context, request *v1.PatchPolicyRequest) (*v1.Empty, error)
 	DeletePolicy(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error)
 
 	ReassessPolicies(context.Context, *v1.Empty) (*v1.Empty, error)
-	DryRunPolicy(ctx context.Context, request *v1.Policy) (*v1.DryRunResponse, error)
+	DryRunPolicy(ctx context.Context, request *storage.Policy) (*v1.DryRunResponse, error)
 
 	GetPolicyCategories(context.Context, *v1.Empty) (*v1.PolicyCategoriesResponse, error)
 	RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) (*v1.Empty, error)

@@ -12,7 +12,7 @@ func init() {
 	compilers = append(compilers, newPortMatcher)
 }
 
-func newPortMatcher(policy *v1.Policy) (Matcher, error) {
+func newPortMatcher(policy *storage.Policy) (Matcher, error) {
 	portPolicy := policy.GetFields().GetPortPolicy()
 	if portPolicy == nil {
 		return nil, nil
@@ -23,7 +23,7 @@ func newPortMatcher(policy *v1.Policy) (Matcher, error) {
 }
 
 type portMatcherImpl struct {
-	portPolicy *v1.PortPolicy
+	portPolicy *storage.PortPolicy
 }
 
 func (p *portMatcherImpl) match(container *storage.Container) []*v1.Alert_Violation {

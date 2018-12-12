@@ -3,6 +3,7 @@ package store
 import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/logging"
@@ -14,10 +15,10 @@ const policyBucket = "policies"
 
 // Store provides storage functionality for alerts.
 type Store interface {
-	GetPolicy(id string) (*v1.Policy, bool, error)
-	GetPolicies() ([]*v1.Policy, error)
-	AddPolicy(*v1.Policy) (string, error)
-	UpdatePolicy(*v1.Policy) error
+	GetPolicy(id string) (*storage.Policy, bool, error)
+	GetPolicies() ([]*storage.Policy, error)
+	AddPolicy(*storage.Policy) (string, error)
+	UpdatePolicy(*storage.Policy) error
 	RemovePolicy(id string) error
 	RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error
 	DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error

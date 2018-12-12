@@ -1,18 +1,18 @@
 package predicate
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Compiler is a function that takes in a policy and returns a prefdicte that returns TRUE if the policy should
 // be evaluated on the input.
-type compiler func(*v1.Policy) (Predicate, error)
+type compiler func(*storage.Policy) (Predicate, error)
 
 // compilers are all of the different Predicate creation functions that are registered.
 var compilers []compiler
 
 // Compile creates a new deployment predicate for the input policy.
-func Compile(policy *v1.Policy) (Predicate, error) {
+func Compile(policy *storage.Policy) (Predicate, error) {
 	var pred Predicate
 	for _, compiler := range compilers {
 		shouldProcessFunction, err := compiler(policy)

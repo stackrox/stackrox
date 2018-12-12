@@ -26,7 +26,7 @@ type ViolationsMultiplier struct {
 
 type policyFactor struct {
 	name     string
-	severity v1.Severity
+	severity storage.Severity
 }
 
 // NewViolations scores the data based on the number and severity of policy violations.
@@ -72,11 +72,11 @@ func (v *ViolationsMultiplier) Score(deployment *storage.Deployment) *storage.Ri
 	}
 }
 
-func severityImpact(severity v1.Severity) float32 {
+func severityImpact(severity storage.Severity) float32 {
 	return float32(severity) * float32(severity)
 }
 
-func severityString(s v1.Severity) string {
+func severityString(s storage.Severity) string {
 	trim := strings.TrimSuffix(s.String(), "_SEVERITY")
 	return strings.ToUpper(trim[:1]) + strings.ToLower(trim[1:])
 }

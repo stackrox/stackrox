@@ -1,7 +1,7 @@
 package util
 
 import io.stackrox.proto.api.v1.NetworkGraphOuterClass.NetworkNode
-import io.stackrox.proto.api.v1.NetworkFlowOuterClass.NetworkEntityInfo
+import io.stackrox.proto.storage.NetworkFlowOuterClass.NetworkEntityInfo
 
 class NetworkNodeExtension {
     static String getDeploymentId(NetworkNode self) {

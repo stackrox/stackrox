@@ -1,7 +1,7 @@
 package enforcer
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/logging"
 	"k8s.io/client-go/kubernetes"
@@ -36,10 +36,10 @@ func New() (enforcers.Enforcer, error) {
 		client: c,
 	}
 
-	enforcementMap := map[v1.EnforcementAction]enforcers.EnforceFunc{
-		v1.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT:                 e.scaleToZero,
-		v1.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: e.unsatisfiableNodeConstraint,
-		v1.EnforcementAction_KILL_POD_ENFORCEMENT:                      e.kill,
+	enforcementMap := map[storage.EnforcementAction]enforcers.EnforceFunc{
+		storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT:                 e.scaleToZero,
+		storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: e.unsatisfiableNodeConstraint,
+		storage.EnforcementAction_KILL_POD_ENFORCEMENT:                      e.kill,
 	}
 
 	return enforcers.CreateEnforcer(enforcementMap), nil

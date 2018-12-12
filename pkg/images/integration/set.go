@@ -1,7 +1,7 @@
 package integration
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners"
 )
@@ -15,7 +15,7 @@ type Set interface {
 	ScannerSet() scanners.Set
 
 	Clear()
-	UpdateImageIntegration(integration *v1.ImageIntegration) error
+	UpdateImageIntegration(integration *storage.ImageIntegration) error
 	RemoveImageIntegration(id string) error
 }
 

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -16,8 +15,8 @@ func getMockDeployment(id string) *storage.Deployment {
 	}
 }
 
-func getMockNetworkPolicy(name string) *v1.NetworkPolicy {
-	return &v1.NetworkPolicy{
+func getMockNetworkPolicy(name string) *storage.NetworkPolicy {
+	return &storage.NetworkPolicy{
 		Name: name,
 	}
 }
@@ -28,7 +27,7 @@ func benchmarkEvaluateCluster(b *testing.B, numDeployments, numNetworkPolicies i
 	for i := 0; i < numDeployments; i++ {
 		deployments = append(deployments, getMockDeployment(fmt.Sprintf("%d", i)))
 	}
-	networkPolicies := make([]*v1.NetworkPolicy, 0, numDeployments)
+	networkPolicies := make([]*storage.NetworkPolicy, 0, numDeployments)
 	for i := 0; i < numNetworkPolicies; i++ {
 		networkPolicies = append(networkPolicies, getMockNetworkPolicy(fmt.Sprintf("%d", i)))
 	}

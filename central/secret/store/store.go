@@ -2,7 +2,7 @@ package store
 
 import (
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
@@ -15,13 +15,13 @@ const (
 // Store provides access and update functions for secrets.
 //go:generate mockgen-wrapper Store
 type Store interface {
-	ListSecrets(id []string) ([]*v1.ListSecret, error)
-	ListAllSecrets() ([]*v1.ListSecret, error)
+	ListSecrets(id []string) ([]*storage.ListSecret, error)
+	ListAllSecrets() ([]*storage.ListSecret, error)
 
 	CountSecrets() (int, error)
-	GetAllSecrets() ([]*v1.Secret, error)
-	GetSecret(id string) (*v1.Secret, bool, error)
-	UpsertSecret(secret *v1.Secret) error
+	GetAllSecrets() ([]*storage.Secret, error)
+	GetSecret(id string) (*storage.Secret, bool, error)
+	UpsertSecret(secret *storage.Secret) error
 	RemoveSecret(id string) error
 }
 

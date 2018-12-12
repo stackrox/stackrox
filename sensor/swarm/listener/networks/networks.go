@@ -6,6 +6,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	dockerClient "github.com/docker/docker/client"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -39,7 +40,7 @@ func NewHandler(client *dockerClient.Client, eventsC chan *v1.SensorEvent) *Hand
 	}
 }
 
-func (s *Handler) getNetworkPolicyFromNetworkID(id string) (*v1.NetworkPolicy, types.NetworkResource, error) {
+func (s *Handler) getNetworkPolicyFromNetworkID(id string) (*storage.NetworkPolicy, types.NetworkResource, error) {
 	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
 
@@ -56,7 +57,7 @@ func (s *Handler) HandleMessage(msg events.Message) {
 	id := msg.Actor.ID
 
 	var resourceAction v1.ResourceAction
-	var np *v1.NetworkPolicy
+	var np *storage.NetworkPolicy
 	var originalSpec types.NetworkResource
 	var err error
 
@@ -75,7 +76,7 @@ func (s *Handler) HandleMessage(msg events.Message) {
 		}
 	case "remove":
 		resourceAction = v1.ResourceAction_REMOVE_RESOURCE
-		np = &v1.NetworkPolicy{
+		np = &storage.NetworkPolicy{
 			Id: id,
 		}
 	default:
@@ -117,7 +118,7 @@ func (s *Handler) getExistingNetworks() ([]*v1.SensorEvent, error) {
 	return events, nil
 }
 
-func networkPolicyEventWrap(action v1.ResourceAction, networkPolicy *v1.NetworkPolicy, obj interface{}) *v1.SensorEvent {
+func networkPolicyEventWrap(action v1.ResourceAction, networkPolicy *storage.NetworkPolicy, obj interface{}) *v1.SensorEvent {
 	return &v1.SensorEvent{
 		Id:     networkPolicy.GetId(),
 		Action: action,

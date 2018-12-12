@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -49,7 +50,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetSecret returns the secret for the id.
-func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (*v1.Secret, error) {
+func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (*storage.Secret, error) {
 	secret, exists, err := s.storage.GetSecret(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -69,14 +70,14 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 		return nil, err
 	}
 
-	var deployments []*v1.SecretDeploymentRelationship
+	var deployments []*storage.SecretDeploymentRelationship
 	for _, r := range deploymentResults {
-		deployments = append(deployments, &v1.SecretDeploymentRelationship{
+		deployments = append(deployments, &storage.SecretDeploymentRelationship{
 			Id:   r.Id,
 			Name: r.Name,
 		})
 	}
-	secret.Relationship = &v1.SecretRelationship{
+	secret.Relationship = &storage.SecretRelationship{
 		DeploymentRelationships: deployments,
 	}
 	return secret, nil
@@ -84,7 +85,7 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 
 // ListSecrets returns all secrets that match the query.
 func (s *serviceImpl) ListSecrets(ctx context.Context, rawQuery *v1.RawQuery) (*v1.ListSecretsResponse, error) {
-	var secrets []*v1.ListSecret
+	var secrets []*storage.ListSecret
 	var err error
 	if rawQuery.GetQuery() == "" {
 		secrets, err = s.storage.ListSecrets()

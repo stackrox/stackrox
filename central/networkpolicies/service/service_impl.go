@@ -67,7 +67,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func populateYAML(np *v1.NetworkPolicy) {
+func populateYAML(np *storage.NetworkPolicy) {
 	k8sNetworkPolicy := networkPolicyConversion.RoxNetworkPolicyWrap{NetworkPolicy: np}.ToKubernetesNetworkPolicy()
 	encoder := json.NewYAMLSerializer(json.DefaultMetaFactory, nil, nil)
 
@@ -80,7 +80,7 @@ func populateYAML(np *v1.NetworkPolicy) {
 	np.Yaml = stringBuilder.String()
 }
 
-func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.ResourceByID) (*v1.NetworkPolicy, error) {
+func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.ResourceByID) (*storage.NetworkPolicy, error) {
 	networkPolicy, exists, err := s.networkPolicies.GetNetworkPolicy(request.GetId())
 	if err != nil {
 		return nil, err
@@ -174,8 +174,8 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 	}
 
 	// Generate the base graph.
-	newPolicies := make([]*v1.NetworkPolicy, 0, len(networkPoliciesInSimulation))
-	oldPolicies := make([]*v1.NetworkPolicy, 0, len(networkPoliciesInSimulation))
+	newPolicies := make([]*storage.NetworkPolicy, 0, len(networkPoliciesInSimulation))
+	oldPolicies := make([]*storage.NetworkPolicy, 0, len(networkPoliciesInSimulation))
 	var hasChanges bool
 	for _, policyInSim := range networkPoliciesInSimulation {
 		switch policyInSim.GetStatus() {
@@ -285,7 +285,7 @@ type networkPolicyRef struct {
 	Name, Namespace string
 }
 
-func getRef(policy *v1.NetworkPolicy) networkPolicyRef {
+func getRef(policy *storage.NetworkPolicy) networkPolicyRef {
 	return networkPolicyRef{
 		Name:      policy.GetName(),
 		Namespace: policy.GetNamespace(),
@@ -297,7 +297,7 @@ func getRef(policy *v1.NetworkPolicy) networkPolicyRef {
 // replacement.
 // If oldPolicies does not contain a network policy with a matching namespace and name, we consider it a new additional
 // policy.
-func replaceOrAddPolicies(newPolicies []*v1.NetworkPolicy, oldPolicies []*v1.NetworkPolicy) (outputPolicies []*v1.NetworkPolicyInSimulation) {
+func replaceOrAddPolicies(newPolicies []*storage.NetworkPolicy, oldPolicies []*storage.NetworkPolicy) (outputPolicies []*v1.NetworkPolicyInSimulation) {
 	outputPolicies = make([]*v1.NetworkPolicyInSimulation, 0, len(newPolicies)+len(oldPolicies))
 	policiesByRef := make(map[networkPolicyRef]*v1.NetworkPolicyInSimulation, len(oldPolicies))
 	for _, oldPolicy := range oldPolicies {
@@ -340,8 +340,8 @@ func replaceOrAddPolicies(newPolicies []*v1.NetworkPolicy, oldPolicies []*v1.Net
 	return
 }
 
-// compileValidateYaml compiles the YAML into a v1.NetworkPolicy, and verifies that a valid namespace exists.
-func compileValidateYaml(simulationYaml string) ([]*v1.NetworkPolicy, error) {
+// compileValidateYaml compiles the YAML into a storage.NetworkPolicy, and verifies that a valid namespace exists.
+func compileValidateYaml(simulationYaml string) ([]*storage.NetworkPolicy, error) {
 	if simulationYaml == "" {
 		return nil, nil
 	}

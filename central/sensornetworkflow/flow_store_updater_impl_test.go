@@ -7,7 +7,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/mock/gomock"
 	flowStoreMocks "github.com/stackrox/rox/central/networkflow/store/mocks"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -38,76 +38,76 @@ func (suite *FlowStoreUpdaterTestSuite) TearDownSuite() {
 
 func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 	firstTimestamp := protoconv.ConvertTimeToTimestamp(time.Now())
-	storedFlows := []*v1.NetworkFlow{
+	storedFlows := []*storage.NetworkFlow{
 		{
-			Props: &v1.NetworkFlowProperties{
-				SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-				DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
 				DstPort:    1,
-				L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: firstTimestamp,
 		},
 		{
-			Props: &v1.NetworkFlowProperties{
-				SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode1"},
-				DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode1"},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
 				DstPort:    2,
-				L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 		},
 		{
-			Props: &v1.NetworkFlowProperties{
-				SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-				DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
 				DstPort:    2,
-				L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: firstTimestamp,
 		},
 	}
 
 	secondTimestamp := protoconv.ConvertTimeToTimestamp(time.Now())
-	newFlows := []*v1.NetworkFlow{
+	newFlows := []*storage.NetworkFlow{
 		{
-			Props: &v1.NetworkFlowProperties{
-				SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-				DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
 				DstPort:    1,
-				L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: nil,
 		},
 		{
-			Props: &v1.NetworkFlowProperties{
-				SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-				DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
 				DstPort:    2,
-				L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
 			LastSeenTimestamp: secondTimestamp,
 		},
 	}
 
 	// The properties of the flows we expect updates to. Properties identify flows uniquely.
-	expectedUpdateProps := []*v1.NetworkFlowProperties{
+	expectedUpdateProps := []*storage.NetworkFlowProperties{
 		{
-			SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-			DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
+			SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode2"},
 			DstPort:    1,
-			L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
+			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
 		{
-			SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode1"},
-			DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+			SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode1"},
+			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
 			DstPort:    2,
-			L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
+			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
 		{
-			SrcEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
-			DstEntity:  &v1.NetworkEntityInfo{Type: v1.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
+			SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someNode1"},
+			DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "someOtherNode2"},
 			DstPort:    2,
-			L4Protocol: v1.L4Protocol_L4_PROTOCOL_TCP,
+			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
 	}
 
@@ -115,7 +115,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 	suite.mockFlowStore.EXPECT().GetAllFlows().Return(storedFlows, *firstTimestamp, nil)
 
 	// Check that the given write matches expectations.
-	suite.mockFlowStore.EXPECT().UpsertFlows(testutils.PredMatcher("matches expected updates", func(actualUpdates []*v1.NetworkFlow) bool {
+	suite.mockFlowStore.EXPECT().UpsertFlows(testutils.PredMatcher("matches expected updates", func(actualUpdates []*storage.NetworkFlow) bool {
 		if len(actualUpdates) != len(expectedUpdateProps) {
 			return false
 		}

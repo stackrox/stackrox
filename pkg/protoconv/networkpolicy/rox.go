@@ -3,7 +3,7 @@ package networkpolicy
 import (
 	"strings"
 
-	roxV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	k8sCoreV1 "k8s.io/api/core/v1"
@@ -18,7 +18,7 @@ var logger = logging.LoggerForModule()
 
 // RoxNetworkPolicyWrap wraps a proto network policy so you can convert it to a kubernetes network policy
 type RoxNetworkPolicyWrap struct {
-	*roxV1.NetworkPolicy
+	*storage.NetworkPolicy
 }
 
 // ToYaml produces a string holding a JSON formatted yaml for the network policy.
@@ -61,7 +61,7 @@ func (np RoxNetworkPolicyWrap) ToKubernetesNetworkPolicy() *k8sV1.NetworkPolicy 
 	}
 }
 
-func (np RoxNetworkPolicyWrap) convertSelector(sel *roxV1.LabelSelector) *k8sMetaV1.LabelSelector {
+func (np RoxNetworkPolicyWrap) convertSelector(sel *storage.LabelSelector) *k8sMetaV1.LabelSelector {
 	if sel == nil {
 		return nil
 	}
@@ -70,14 +70,14 @@ func (np RoxNetworkPolicyWrap) convertSelector(sel *roxV1.LabelSelector) *k8sMet
 	}
 }
 
-func (np RoxNetworkPolicyWrap) convertProtocol(p roxV1.Protocol) *k8sCoreV1.Protocol {
+func (np RoxNetworkPolicyWrap) convertProtocol(p storage.Protocol) *k8sCoreV1.Protocol {
 	var retProtocol k8sCoreV1.Protocol
 	switch p {
-	case roxV1.Protocol_UNSET_PROTOCOL:
+	case storage.Protocol_UNSET_PROTOCOL:
 		return nil
-	case roxV1.Protocol_TCP_PROTOCOL:
+	case storage.Protocol_TCP_PROTOCOL:
 		retProtocol = k8sCoreV1.ProtocolTCP
-	case roxV1.Protocol_UDP_PROTOCOL:
+	case storage.Protocol_UDP_PROTOCOL:
 		retProtocol = k8sCoreV1.ProtocolUDP
 	default:
 		logger.Warnf("Network protocol %s is not handled", p)
@@ -86,7 +86,7 @@ func (np RoxNetworkPolicyWrap) convertProtocol(p roxV1.Protocol) *k8sCoreV1.Prot
 	return &retProtocol
 }
 
-func (np RoxNetworkPolicyWrap) convertPorts(protoPorts []*roxV1.NetworkPolicyPort) []k8sV1.NetworkPolicyPort {
+func (np RoxNetworkPolicyWrap) convertPorts(protoPorts []*storage.NetworkPolicyPort) []k8sV1.NetworkPolicyPort {
 	ports := make([]k8sV1.NetworkPolicyPort, 0, len(protoPorts))
 	for _, p := range protoPorts {
 		var intString *intstr.IntOrString
@@ -102,7 +102,7 @@ func (np RoxNetworkPolicyWrap) convertPorts(protoPorts []*roxV1.NetworkPolicyPor
 	return ports
 }
 
-func (np RoxNetworkPolicyWrap) convertIPBlock(ipBlock *roxV1.IPBlock) *k8sV1.IPBlock {
+func (np RoxNetworkPolicyWrap) convertIPBlock(ipBlock *storage.IPBlock) *k8sV1.IPBlock {
 	if ipBlock == nil {
 		return nil
 	}
@@ -112,7 +112,7 @@ func (np RoxNetworkPolicyWrap) convertIPBlock(ipBlock *roxV1.IPBlock) *k8sV1.IPB
 	}
 }
 
-func (np RoxNetworkPolicyWrap) convertNetworkPolicyPeer(protoPeers []*roxV1.NetworkPolicyPeer) []k8sV1.NetworkPolicyPeer {
+func (np RoxNetworkPolicyWrap) convertNetworkPolicyPeer(protoPeers []*storage.NetworkPolicyPeer) []k8sV1.NetworkPolicyPeer {
 	peers := make([]k8sV1.NetworkPolicyPeer, 0, len(protoPeers))
 	for _, peer := range protoPeers {
 		peers = append(peers, k8sV1.NetworkPolicyPeer{
@@ -124,7 +124,7 @@ func (np RoxNetworkPolicyWrap) convertNetworkPolicyPeer(protoPeers []*roxV1.Netw
 	return peers
 }
 
-func (np RoxNetworkPolicyWrap) convertIngressRules(protoIngressRules []*roxV1.NetworkPolicyIngressRule) []k8sV1.NetworkPolicyIngressRule {
+func (np RoxNetworkPolicyWrap) convertIngressRules(protoIngressRules []*storage.NetworkPolicyIngressRule) []k8sV1.NetworkPolicyIngressRule {
 	if protoIngressRules == nil {
 		return nil
 	}
@@ -138,7 +138,7 @@ func (np RoxNetworkPolicyWrap) convertIngressRules(protoIngressRules []*roxV1.Ne
 	return ingressRules
 }
 
-func (np RoxNetworkPolicyWrap) convertEgressRules(protoEgressRules []*roxV1.NetworkPolicyEgressRule) []k8sV1.NetworkPolicyEgressRule {
+func (np RoxNetworkPolicyWrap) convertEgressRules(protoEgressRules []*storage.NetworkPolicyEgressRule) []k8sV1.NetworkPolicyEgressRule {
 	if protoEgressRules == nil {
 		return nil
 	}
@@ -152,11 +152,11 @@ func (np RoxNetworkPolicyWrap) convertEgressRules(protoEgressRules []*roxV1.Netw
 	return egressRules
 }
 
-func (np RoxNetworkPolicyWrap) convertPolicyType(t roxV1.NetworkPolicyType) k8sV1.PolicyType {
+func (np RoxNetworkPolicyWrap) convertPolicyType(t storage.NetworkPolicyType) k8sV1.PolicyType {
 	switch t {
-	case roxV1.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE:
+	case storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE:
 		return k8sV1.PolicyTypeIngress
-	case roxV1.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE:
+	case storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE:
 		return k8sV1.PolicyTypeEgress
 	default:
 		logger.Warnf("network policy type %s is not handled", t)
@@ -164,7 +164,7 @@ func (np RoxNetworkPolicyWrap) convertPolicyType(t roxV1.NetworkPolicyType) k8sV
 	}
 }
 
-func (np RoxNetworkPolicyWrap) convertPolicyTypes(protoTypes []roxV1.NetworkPolicyType) []k8sV1.PolicyType {
+func (np RoxNetworkPolicyWrap) convertPolicyTypes(protoTypes []storage.NetworkPolicyType) []k8sV1.PolicyType {
 	if protoTypes == nil {
 		return nil
 	}

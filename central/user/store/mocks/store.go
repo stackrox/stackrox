@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
 
@@ -34,9 +34,9 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // GetAllUsers mocks base method
-func (m *MockStore) GetAllUsers() ([]*v1.User, error) {
+func (m *MockStore) GetAllUsers() ([]*storage.User, error) {
 	ret := m.ctrl.Call(m, "GetAllUsers")
-	ret0, _ := ret[0].([]*v1.User)
+	ret0, _ := ret[0].([]*storage.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -47,9 +47,9 @@ func (mr *MockStoreMockRecorder) GetAllUsers() *gomock.Call {
 }
 
 // GetUser mocks base method
-func (m *MockStore) GetUser(arg0 string) (*v1.User, error) {
+func (m *MockStore) GetUser(arg0 string) (*storage.User, error) {
 	ret := m.ctrl.Call(m, "GetUser", arg0)
-	ret0, _ := ret[0].(*v1.User)
+	ret0, _ := ret[0].(*storage.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -60,7 +60,7 @@ func (mr *MockStoreMockRecorder) GetUser(arg0 interface{}) *gomock.Call {
 }
 
 // Upsert mocks base method
-func (m *MockStore) Upsert(arg0 *v1.User) error {
+func (m *MockStore) Upsert(arg0 *storage.User) error {
 	ret := m.ctrl.Call(m, "Upsert", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0

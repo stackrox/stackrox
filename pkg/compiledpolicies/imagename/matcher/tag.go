@@ -14,7 +14,7 @@ func init() {
 }
 
 // NewTagMatcher should not be exposed.
-func NewTagMatcher(policy *v1.Policy) (Matcher, error) {
+func NewTagMatcher(policy *storage.Policy) (Matcher, error) {
 	tagPolicy := policy.GetFields().GetImageName().GetTag()
 	if tagPolicy == "" {
 		return nil, nil

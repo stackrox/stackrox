@@ -6,6 +6,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +16,7 @@ import (
 
 const (
 	fakeID       = "FAKEID"
-	fakeSeverity = v1.Severity_HIGH_SEVERITY
+	fakeSeverity = storage.Severity_HIGH_SEVERITY
 )
 
 func TestPolicyIndex(t *testing.T) {
@@ -43,7 +44,7 @@ func (suite *PolicyIndexTestSuite) SetupSuite() {
 	secondPolicy := fixtures.GetPolicy()
 	secondPolicy.Id = fakeID
 	secondPolicy.Severity = fakeSeverity
-	suite.NoError(suite.indexer.AddPolicies([]*v1.Policy{secondPolicy}))
+	suite.NoError(suite.indexer.AddPolicies([]*storage.Policy{secondPolicy}))
 }
 
 func (suite *PolicyIndexTestSuite) TestPolicySearch() {

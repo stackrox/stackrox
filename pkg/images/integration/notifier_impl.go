@@ -3,19 +3,19 @@ package integration
 import (
 	"sync"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 type notifierImpl struct {
 	lock sync.Mutex
 
-	onUpdates []func(*v1.ImageIntegration) error
+	onUpdates []func(*storage.ImageIntegration) error
 	onRemoves []func(id string) error
 }
 
 // NotifyUpdated notifies the receivers of an updated image integration.
-func (c *notifierImpl) NotifyUpdated(integration *v1.ImageIntegration) error {
+func (c *notifierImpl) NotifyUpdated(integration *storage.ImageIntegration) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -43,7 +43,7 @@ func (c *notifierImpl) NotifyRemoved(id string) error {
 }
 
 // addOnUpdate adds a receiver for updates.
-func (c *notifierImpl) addOnUpdate(onUpdate func(*v1.ImageIntegration) error) {
+func (c *notifierImpl) addOnUpdate(onUpdate func(*storage.ImageIntegration) error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 

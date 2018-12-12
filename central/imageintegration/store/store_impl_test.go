@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/suite"
 )
@@ -39,19 +39,19 @@ func (suite *ImageIntegrationStoreTestSuite) TearDownTest() {
 }
 
 func (suite *ImageIntegrationStoreTestSuite) TestIntegrations() {
-	integration := []*v1.ImageIntegration{
+	integration := []*storage.ImageIntegration{
 		{
 			Name: "registry1",
-			IntegrationConfig: &v1.ImageIntegration_Docker{
-				Docker: &v1.DockerConfig{
+			IntegrationConfig: &storage.ImageIntegration_Docker{
+				Docker: &storage.DockerConfig{
 					Endpoint: "https://endpoint1",
 				},
 			},
 		},
 		{
 			Name: "registry2",
-			IntegrationConfig: &v1.ImageIntegration_Docker{
-				Docker: &v1.DockerConfig{
+			IntegrationConfig: &storage.ImageIntegration_Docker{
+				Docker: &storage.DockerConfig{
 					Endpoint: "https://endpoint2",
 				},
 			},

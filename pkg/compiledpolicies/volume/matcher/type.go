@@ -13,7 +13,7 @@ func init() {
 	compilers = append(compilers, newTypeMatcher)
 }
 
-func newTypeMatcher(policy *v1.Policy) (Matcher, error) {
+func newTypeMatcher(policy *storage.Policy) (Matcher, error) {
 	vtype := policy.GetFields().GetVolumePolicy().GetType()
 	if vtype == "" {
 		return nil, nil
