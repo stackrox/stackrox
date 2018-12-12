@@ -40,10 +40,6 @@ const K8sDetails = ({ cluster }) => (
             label="Namespace"
             value={get(cluster, 'kubernetes.params.namespace', 'N/A')}
         />
-        <LabeledValue
-            label="Image Pull Secret Name"
-            value={get(cluster, 'kubernetes.imagePullSecret', 'N/A')}
-        />
         <LabeledValue label="Monitoring Endpoint" value={cluster.monitoringEndpoint || 'N/A'} />
     </React.Fragment>
 );
