@@ -9,6 +9,7 @@ import (
 	btDataStore "github.com/stackrox/rox/central/benchmarktrigger/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -53,7 +54,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // Trigger triggers a benchmark launch asynchronously.
-func (s *serviceImpl) Trigger(ctx context.Context, request *v1.BenchmarkTrigger) (*v1.Empty, error) {
+func (s *serviceImpl) Trigger(ctx context.Context, request *storage.BenchmarkTrigger) (*v1.Empty, error) {
 	_, exists, err := s.storage.GetBenchmark(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())

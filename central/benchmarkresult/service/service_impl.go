@@ -7,6 +7,7 @@ import (
 	benchmarkscheduleStore "github.com/stackrox/rox/central/benchmarkschedule/store"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -37,11 +38,11 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // PostBenchmarkResult inserts a new benchmark result into the system
-func (s *serviceImpl) PostBenchmarkResult(ctx context.Context, request *v1.BenchmarkResult) (*v1.Empty, error) {
+func (s *serviceImpl) PostBenchmarkResult(ctx context.Context, request *storage.BenchmarkResult) (*v1.Empty, error) {
 	if err := s.resultStore.AddBenchmarkResult(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	if request.GetReason() == v1.BenchmarkReason_SCHEDULED {
+	if request.GetReason() == storage.BenchmarkReason_SCHEDULED {
 		if _, ok := s.cache.Get(request.GetScanId()); ok {
 			// This means that the scan id has already been processed and an alert about benchmarks coming in was already sent
 			return &v1.Empty{}, nil

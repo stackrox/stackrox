@@ -2,21 +2,21 @@ package dockerdaemonconfiguration
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type restrictContainerPrivilegesBenchmark struct{}
 
 func (c *restrictContainerPrivilegesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 2.18",
 			Description: "Ensure containers are restricted from acquiring new privileges",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *restrictContainerPrivilegesBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *restrictContainerPrivilegesBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	if opts, ok := utils.DockerConfig["no-new-privileges"]; !ok {
 		utils.Warn(&result)
 		utils.AddNotes(&result, "Running containers are not prevented from acquiring new privileges by default")

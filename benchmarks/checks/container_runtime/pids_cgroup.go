@@ -2,21 +2,21 @@ package containerruntime
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type pidCgroupBenchmark struct{}
 
 func (c *pidCgroupBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.28",
 			Description: "Ensure PIDs cgroup limit is used",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *pidCgroupBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *pidCgroupBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.PidsLimit <= 0 {

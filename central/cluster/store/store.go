@@ -4,7 +4,7 @@ import (
 	"time"
 
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
@@ -16,11 +16,11 @@ const (
 // Store provides storage functionality for alerts.
 //go:generate mockgen-wrapper Store
 type Store interface {
-	GetCluster(id string) (*v1.Cluster, bool, error)
-	GetClusters() ([]*v1.Cluster, error)
+	GetCluster(id string) (*storage.Cluster, bool, error)
+	GetClusters() ([]*storage.Cluster, error)
 	CountClusters() (int, error)
-	AddCluster(cluster *v1.Cluster) (string, error)
-	UpdateCluster(cluster *v1.Cluster) error
+	AddCluster(cluster *storage.Cluster) (string, error)
+	UpdateCluster(cluster *storage.Cluster) error
 	RemoveCluster(id string) error
 	UpdateClusterContactTime(id string, t time.Time) error
 }

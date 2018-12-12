@@ -5,21 +5,21 @@ import (
 
 	"github.com/stackrox/rox/benchmarks/checks"
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type securePort struct{}
 
 func (a *securePort) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Kubernetes v1.2.0 - 1.1.7",
 			Description: "Ensure that the --secure-port argument is not set to 0",
 		}, Dependencies: []utils.Dependency{utils.InitKubeAPIServerConfig},
 	}
 }
 
-func (a *securePort) Run() (result v1.BenchmarkCheckResult) {
+func (a *securePort) Run() (result storage.BenchmarkCheckResult) {
 	if params, ok := utils.KubeAPIServerConfig["secure-port"]; ok {
 		port, err := strconv.Atoi(params.String())
 		if err != nil || port < 1 || port > 65535 {

@@ -488,7 +488,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateScopes() {
 			scope,
 		},
 	}
-	suite.cStorage.EXPECT().GetCluster("cluster1").Return((*v1.Cluster)(nil), true, nil)
+	suite.cStorage.EXPECT().GetCluster("cluster1").Return((*storage.Cluster)(nil), true, nil)
 	err = suite.validator.validateScopes(policy)
 	suite.NoError(err, "valid scope definition")
 
@@ -509,7 +509,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateScopes() {
 			scope,
 		},
 	}
-	suite.cStorage.EXPECT().GetCluster("cluster2").Return((*v1.Cluster)(nil), false, nil)
+	suite.cStorage.EXPECT().GetCluster("cluster2").Return((*storage.Cluster)(nil), false, nil)
 	err = suite.validator.validateScopes(policy)
 	suite.Error(err, "scopes whose clusters can't be found should fail")
 
@@ -521,7 +521,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateScopes() {
 			scope,
 		},
 	}
-	suite.cStorage.EXPECT().GetCluster("cluster3").Return((*v1.Cluster)(nil), true, fmt.Errorf("dang boi"))
+	suite.cStorage.EXPECT().GetCluster("cluster3").Return((*storage.Cluster)(nil), true, fmt.Errorf("dang boi"))
 	err = suite.validator.validateScopes(policy)
 	suite.Error(err, "scopes whose clusters fail to be found should fail")
 }

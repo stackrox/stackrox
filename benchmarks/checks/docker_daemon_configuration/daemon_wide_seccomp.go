@@ -2,21 +2,21 @@ package dockerdaemonconfiguration
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type daemonWideSeccompBenchmark struct{}
 
 func (c *daemonWideSeccompBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 2.16",
 			Description: "Ensure daemon-wide custom seccomp profile is applied, if needed",
 		}, Dependencies: []utils.Dependency{utils.InitInfo},
 	}
 }
 
-func (c *daemonWideSeccompBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *daemonWideSeccompBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	for _, opt := range utils.DockerInfo.SecurityOptions {
 		if opt == "default" {
 			utils.Warn(&result)

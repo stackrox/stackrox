@@ -2,7 +2,7 @@ package hostconfiguration
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type systemdAudit struct {
@@ -13,14 +13,14 @@ type systemdAudit struct {
 
 func (s *systemdAudit) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        s.Name,
 			Description: s.Description,
 		},
 	}
 }
 
-func (s *systemdAudit) Run() (result v1.BenchmarkCheckResult) {
+func (s *systemdAudit) Run() (result storage.BenchmarkCheckResult) {
 	path, err := utils.GetSystemdFile(s.Service)
 	if err != nil {
 		utils.Note(&result)

@@ -1,8 +1,6 @@
 package env
 
-import (
-	"github.com/stackrox/rox/generated/api/v1"
-)
+import "github.com/stackrox/rox/generated/storage"
 
 var (
 	// ScanID is used to provide the benchmark services with the current scan
@@ -18,5 +16,5 @@ var (
 	BenchmarkCompletion = NewSetting("ROX_BENCHMARK_COMPLETION")
 
 	// BenchmarkReason is used to provide the benchmark service with why the benchmark was run (e.g. SCHEDULED or TRIGGERED)
-	BenchmarkReason = NewSetting("ROX_BENCHMARK_REASON", WithDefault(v1.BenchmarkReason_SCHEDULED.String()), AllowEmpty())
+	BenchmarkReason = NewSetting("ROX_BENCHMARK_REASON", WithDefault(storage.BenchmarkReason_SCHEDULED.String()), AllowEmpty())
 )

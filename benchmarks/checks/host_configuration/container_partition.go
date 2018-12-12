@@ -4,21 +4,21 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type containerPartitionBenchmark struct{}
 
 func (c *containerPartitionBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 1.1",
 			Description: "Ensure a separate partition for containers has been created",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *containerPartitionBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *containerPartitionBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	fstab, err := utils.ReadFile(utils.ContainerPath("/etc/fstab"))
 	if err != nil {
 		utils.Warn(&result)

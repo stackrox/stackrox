@@ -2,14 +2,14 @@ package swarm
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type hostInterfaceBind struct{}
 
 func (c *hostInterfaceBind) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 7.3",
 			Description: "Ensure swarm services are binded to a specific host interface",
 		},
@@ -17,7 +17,7 @@ func (c *hostInterfaceBind) Definition() utils.Definition {
 	}
 }
 
-func (c *hostInterfaceBind) Run() (result v1.BenchmarkCheckResult) {
+func (c *hostInterfaceBind) Run() (result storage.BenchmarkCheckResult) {
 	_, exists := utils.DockerConfig.Get("swarm-default-advertise-addr")
 	if !exists {
 		utils.Warn(&result)

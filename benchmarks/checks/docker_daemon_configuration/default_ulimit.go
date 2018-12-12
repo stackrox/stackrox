@@ -2,21 +2,21 @@ package dockerdaemonconfiguration
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type defaultUlimitBenchmark struct{}
 
 func (c *defaultUlimitBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 2.7",
 			Description: "Ensure the default ulimit is configured appropriately",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *defaultUlimitBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *defaultUlimitBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	if _, ok := utils.DockerConfig["default-ulimit"]; !ok {
 		utils.Warn(&result)
 		utils.AddNotes(&result, "No default-ulimit values are set")

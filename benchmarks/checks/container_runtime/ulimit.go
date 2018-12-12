@@ -2,21 +2,21 @@ package containerruntime
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type ulimitBenchmark struct{}
 
 func (c *ulimitBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.18",
 			Description: "Ensure the default ulimit is overwritten at runtime, only if needed",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *ulimitBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *ulimitBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	utils.Note(&result)
 	for _, container := range utils.ContainersRunning {
 		if len(container.HostConfig.Ulimits) > 0 {

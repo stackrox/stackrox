@@ -18,10 +18,10 @@ var (
 		IncludedTypes: []reflect.Type{
 			reflect.TypeOf((*v1.Alert)(nil)),
 			reflect.TypeOf((*v1.ListAlert)(nil)),
-			reflect.TypeOf((*v1.Cluster)(nil)),
+			reflect.TypeOf((*storage.Cluster)(nil)),
 			reflect.TypeOf((*storage.Deployment)(nil)),
 			reflect.TypeOf((*storage.ListDeployment)(nil)),
-			reflect.TypeOf((*v1.Group)(nil)),
+			reflect.TypeOf((*storage.Group)(nil)),
 			reflect.TypeOf((*storage.Image)(nil)),
 			reflect.TypeOf((*storage.ListImage)(nil)),
 			reflect.TypeOf((*v1.Metadata)(nil)),

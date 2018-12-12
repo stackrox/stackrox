@@ -2,21 +2,21 @@ package containerruntime
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type cgroupBenchmark struct{}
 
 func (c *cgroupBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.24",
 			Description: "Ensure cgroup usage is confirmed",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *cgroupBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *cgroupBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if container.HostConfig.CgroupParent != "docker" && container.HostConfig.CgroupParent != "" {

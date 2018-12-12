@@ -7,6 +7,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -42,27 +43,27 @@ func (suite *BenchmarkScanStoreTestSuite) TearDownSuite() {
 func (suite *BenchmarkScanStoreTestSuite) TestResults() {
 	cluster1 := uuid.NewV4().String()
 	cluster2 := uuid.NewV4().String()
-	scanMetadata := []*v1.BenchmarkScanMetadata{
+	scanMetadata := []*storage.BenchmarkScanMetadata{
 		{
 			ScanId:      "scan1",
 			BenchmarkId: "benchmark1",
 			ClusterIds:  []string{cluster1, cluster2},
 			Checks:      []string{"check1", "check2"},
-			Reason:      v1.BenchmarkReason_SCHEDULED,
+			Reason:      storage.BenchmarkReason_SCHEDULED,
 		},
 		{
 			ScanId:      "scan2",
 			BenchmarkId: "benchmark2",
 			ClusterIds:  []string{cluster1, cluster2},
 			Checks:      []string{"check1", "check2"},
-			Reason:      v1.BenchmarkReason_SCHEDULED,
+			Reason:      storage.BenchmarkReason_SCHEDULED,
 		},
 	}
 	for _, m := range scanMetadata {
 		suite.NoError(suite.store.AddScan(m))
 	}
 
-	benchmarks := []*v1.BenchmarkResult{
+	benchmarks := []*storage.BenchmarkResult{
 		{
 			BenchmarkId: "benchmark1",
 			ScanId:      "scan1",
@@ -70,20 +71,20 @@ func (suite *BenchmarkScanStoreTestSuite) TestResults() {
 			EndTime:     ptypes.TimestampNow(),
 			Host:        "host1",
 			ClusterId:   cluster1,
-			Results: []*v1.BenchmarkCheckResult{
+			Results: []*storage.BenchmarkCheckResult{
 				{
-					Definition: &v1.BenchmarkCheckDefinition{
+					Definition: &storage.BenchmarkCheckDefinition{
 						Name:        "check1",
 						Description: "desc1",
 					},
-					Result: v1.BenchmarkCheckStatus_PASS,
+					Result: storage.BenchmarkCheckStatus_PASS,
 				},
 				{
-					Definition: &v1.BenchmarkCheckDefinition{
+					Definition: &storage.BenchmarkCheckDefinition{
 						Name:        "check2",
 						Description: "desc2",
 					},
-					Result: v1.BenchmarkCheckStatus_PASS,
+					Result: storage.BenchmarkCheckStatus_PASS,
 				},
 			},
 		},
@@ -94,21 +95,21 @@ func (suite *BenchmarkScanStoreTestSuite) TestResults() {
 			EndTime:     ptypes.TimestampNow(),
 			Host:        "host2",
 			ClusterId:   cluster2,
-			Results: []*v1.BenchmarkCheckResult{
+			Results: []*storage.BenchmarkCheckResult{
 				{
-					Definition: &v1.BenchmarkCheckDefinition{
+					Definition: &storage.BenchmarkCheckDefinition{
 						Name:        "check1",
 						Description: "desc1",
 					},
-					Result: v1.BenchmarkCheckStatus_WARN,
+					Result: storage.BenchmarkCheckStatus_WARN,
 					Notes:  []string{"note1"},
 				},
 				{
-					Definition: &v1.BenchmarkCheckDefinition{
+					Definition: &storage.BenchmarkCheckDefinition{
 						Name:        "check2",
 						Description: "desc2",
 					},
-					Result: v1.BenchmarkCheckStatus_WARN,
+					Result: storage.BenchmarkCheckStatus_WARN,
 					Notes:  []string{"note2"},
 				},
 			},
@@ -128,27 +129,27 @@ func (suite *BenchmarkScanStoreTestSuite) TestResults() {
 	suite.NoError(err)
 	suite.True(exists)
 
-	expectedScan := &v1.BenchmarkScan{
+	expectedScan := &storage.BenchmarkScan{
 		Id: "scan1",
-		Checks: []*v1.BenchmarkScan_Check{
+		Checks: []*storage.BenchmarkScan_Check{
 			{
-				Definition: &v1.BenchmarkCheckDefinition{
+				Definition: &storage.BenchmarkCheckDefinition{
 					Name:        "check1",
 					Description: "desc1",
 				},
 				AggregatedResults: map[string]int32{
-					v1.BenchmarkCheckStatus_PASS.String(): 1,
-					v1.BenchmarkCheckStatus_WARN.String(): 1,
+					storage.BenchmarkCheckStatus_PASS.String(): 1,
+					storage.BenchmarkCheckStatus_WARN.String(): 1,
 				},
 			},
 			{
-				Definition: &v1.BenchmarkCheckDefinition{
+				Definition: &storage.BenchmarkCheckDefinition{
 					Name:        "check2",
 					Description: "desc2",
 				},
 				AggregatedResults: map[string]int32{
-					v1.BenchmarkCheckStatus_PASS.String(): 1,
-					v1.BenchmarkCheckStatus_WARN.String(): 1,
+					storage.BenchmarkCheckStatus_PASS.String(): 1,
+					storage.BenchmarkCheckStatus_WARN.String(): 1,
 				},
 			},
 		},

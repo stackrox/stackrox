@@ -4,21 +4,21 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type privilegedDockerExecBenchmark struct{}
 
 func (c *privilegedDockerExecBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.22",
 			Description: "Ensure docker exec commands are not used with privileged option",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *privilegedDockerExecBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *privilegedDockerExecBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	auditLog, err := utils.ReadFile(utils.ContainerPath("/var/log/audit/audit.log"))
 	if err != nil {

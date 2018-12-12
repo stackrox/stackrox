@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type filePermissionsCheck struct {
@@ -18,14 +18,14 @@ type filePermissionsCheck struct {
 
 func (f *filePermissionsCheck) Definition() Definition {
 	return Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        f.Name,
 			Description: f.Description,
 		},
 	}
 }
 
-func compareFilePermissions(file string, permissionLevel uint32, includesLower bool) (result v1.BenchmarkCheckResult) {
+func compareFilePermissions(file string, permissionLevel uint32, includesLower bool) (result storage.BenchmarkCheckResult) {
 	info, err := os.Stat(ContainerPath(file))
 	if os.IsNotExist(err) {
 		Note(&result)
@@ -46,7 +46,7 @@ func compareFilePermissions(file string, permissionLevel uint32, includesLower b
 	return
 }
 
-func (f *filePermissionsCheck) Run() (result v1.BenchmarkCheckResult) {
+func (f *filePermissionsCheck) Run() (result storage.BenchmarkCheckResult) {
 	if f.File == "" {
 		Note(&result)
 		AddNotes(&result, "Test is not applicable. File is not defined")
@@ -88,13 +88,13 @@ func NewSystemdPermissionsCheck(name, description, service string, permissionLev
 
 func (s *systemdPermissionsCheck) Definition() Definition {
 	return Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{Name: s.Name,
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{Name: s.Name,
 			Description: s.Description,
 		},
 	}
 }
 
-func (s *systemdPermissionsCheck) Run() (result v1.BenchmarkCheckResult) {
+func (s *systemdPermissionsCheck) Run() (result storage.BenchmarkCheckResult) {
 	if s.Service == "" {
 		Note(&result)
 		AddNotes(&result, "Test is not applicable. Service is not defined")
@@ -120,14 +120,14 @@ type recursivePermissionsCheck struct {
 
 func (r *recursivePermissionsCheck) Definition() Definition {
 	return Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        r.Name,
 			Description: r.Description,
 		},
 	}
 }
 
-func (r *recursivePermissionsCheck) Run() (result v1.BenchmarkCheckResult) {
+func (r *recursivePermissionsCheck) Run() (result storage.BenchmarkCheckResult) {
 	Pass(&result)
 	if r.Directory == "" {
 		Note(&result)
@@ -147,7 +147,7 @@ func (r *recursivePermissionsCheck) Run() (result v1.BenchmarkCheckResult) {
 	}
 	for _, file := range files {
 		tempResult := compareFilePermissions(filepath.Join(r.Directory, file.Name()), r.PermissionLevel, r.IncludesLower)
-		if tempResult.Result != v1.BenchmarkCheckStatus_PASS {
+		if tempResult.Result != storage.BenchmarkCheckStatus_PASS {
 			AddNotes(&result, tempResult.Notes...)
 			result.Result = tempResult.Result
 		}

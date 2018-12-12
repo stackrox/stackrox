@@ -8,6 +8,7 @@ import (
 	benchmarkscheduleStore "github.com/stackrox/rox/central/benchmarkschedule/store"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -24,7 +25,7 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	PostBenchmarkResult(ctx context.Context, request *v1.BenchmarkResult) (*v1.Empty, error)
+	PostBenchmarkResult(ctx context.Context, request *storage.BenchmarkResult) (*v1.Empty, error)
 }
 
 // New returns a new instance of Service using the input storage and processing mechanisms.

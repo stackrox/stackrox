@@ -3,6 +3,7 @@ package datastore
 import (
 	"github.com/stackrox/rox/central/benchmark/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -12,10 +13,10 @@ var (
 
 // DataStore is the entry point for modifying Cluster data.
 type DataStore interface {
-	GetBenchmark(id string) (*v1.Benchmark, bool, error)
-	GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*v1.Benchmark, error)
-	AddBenchmark(benchmark *v1.Benchmark) (string, error)
-	UpdateBenchmark(benchmark *v1.Benchmark) error
+	GetBenchmark(id string) (*storage.Benchmark, bool, error)
+	GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*storage.Benchmark, error)
+	AddBenchmark(benchmark *storage.Benchmark) (string, error)
+	UpdateBenchmark(benchmark *storage.Benchmark) error
 	RemoveBenchmark(id string) error
 }
 

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -41,7 +41,7 @@ func TestCompareFilePermissions(t *testing.T) {
 
 	// Test file not existing
 	file := "/tmp/idontexist"
-	expectedResult := v1.BenchmarkCheckResult{Result: v1.BenchmarkCheckStatus_NOTE}
+	expectedResult := storage.BenchmarkCheckResult{Result: storage.BenchmarkCheckStatus_NOTE}
 	result := compareFilePermissions(file, 0777, true)
 	assert.Equal(t, expectedResult.Result, result.Result)
 	assert.Equal(t, 1, len(result.Notes))
@@ -52,21 +52,21 @@ func TestCompareFilePermissions(t *testing.T) {
 	// Check equality
 	err = os.Chmod(file, 0777)
 	require.Nil(t, err)
-	expectedResult = v1.BenchmarkCheckResult{Result: v1.BenchmarkCheckStatus_PASS}
+	expectedResult = storage.BenchmarkCheckResult{Result: storage.BenchmarkCheckStatus_PASS}
 	result = compareFilePermissions(file, 0777, true)
 	assert.Equal(t, expectedResult, result)
 
 	// Check less than with includesLower: true
 	err = os.Chmod(file, 0666)
 	require.Nil(t, err)
-	expectedResult = v1.BenchmarkCheckResult{Result: v1.BenchmarkCheckStatus_PASS}
+	expectedResult = storage.BenchmarkCheckResult{Result: storage.BenchmarkCheckStatus_PASS}
 	result = compareFilePermissions(file, 0777, true)
 	assert.Equal(t, expectedResult, result)
 
 	// Check less than with includesLower: false
 	err = os.Chmod(file, 0666)
 	require.Nil(t, err)
-	expectedResult = v1.BenchmarkCheckResult{Result: v1.BenchmarkCheckStatus_WARN}
+	expectedResult = storage.BenchmarkCheckResult{Result: storage.BenchmarkCheckStatus_WARN}
 	result = compareFilePermissions(file, 0777, false)
 	assert.Equal(t, expectedResult.Result, result.Result)
 	assert.Equal(t, 1, len(result.Notes))
@@ -75,7 +75,7 @@ func TestCompareFilePermissions(t *testing.T) {
 	// Check less than with includesLower: false
 	err = os.Chmod(file, 0777)
 	require.Nil(t, err)
-	expectedResult = v1.BenchmarkCheckResult{Result: v1.BenchmarkCheckStatus_WARN}
+	expectedResult = storage.BenchmarkCheckResult{Result: storage.BenchmarkCheckStatus_WARN}
 	result = compareFilePermissions(file, 0666, false)
 	assert.Equal(t, expectedResult.Result, result.Result)
 	assert.Equal(t, 1, len(result.Notes))
@@ -85,7 +85,7 @@ func TestPermissionsCheck(t *testing.T) {
 	ContainerPathPrefix = ""
 
 	// Test empty file
-	expectedResult := v1.BenchmarkCheckResult{Result: v1.BenchmarkCheckStatus_NOTE}
+	expectedResult := storage.BenchmarkCheckResult{Result: storage.BenchmarkCheckStatus_NOTE}
 	benchmark := NewPermissionsCheck("bench", "desc", "", 0777, true)
 	result := benchmark.Run()
 	assert.Equal(t, expectedResult.Result, result.Result)
@@ -96,7 +96,7 @@ func TestPermissionsCheck(t *testing.T) {
 	require.Nil(t, err)
 	err = os.Chmod(file, 0777)
 	require.Nil(t, err)
-	expectedResult = v1.BenchmarkCheckResult{Result: v1.BenchmarkCheckStatus_PASS}
+	expectedResult = storage.BenchmarkCheckResult{Result: storage.BenchmarkCheckStatus_PASS}
 	benchmark = NewPermissionsCheck("bench", "desc", file, 0777, true)
 	result = benchmark.Run()
 	assert.Equal(t, expectedResult, result)
@@ -105,7 +105,7 @@ func TestPermissionsCheck(t *testing.T) {
 func TestRecursivePermissionsCheck(t *testing.T) {
 	ContainerPathPrefix = ""
 	// Test empty file
-	expectedResult := v1.BenchmarkCheckResult{Result: v1.BenchmarkCheckStatus_NOTE}
+	expectedResult := storage.BenchmarkCheckResult{Result: storage.BenchmarkCheckStatus_NOTE}
 	benchmark := NewRecursivePermissionsCheck("bench", "desc", "", 0777, true)
 	result := benchmark.Run()
 	assert.Equal(t, expectedResult.Result, result.Result)
@@ -120,14 +120,14 @@ func TestRecursivePermissionsCheck(t *testing.T) {
 	require.Nil(t, err)
 
 	// Happy path
-	expectedResult = v1.BenchmarkCheckResult{Result: v1.BenchmarkCheckStatus_PASS}
+	expectedResult = storage.BenchmarkCheckResult{Result: storage.BenchmarkCheckStatus_PASS}
 	benchmark = NewRecursivePermissionsCheck("bench", "desc", dir, 0666, true)
 	result = benchmark.Run()
 	assert.Equal(t, expectedResult, result)
 
 	// One file has the wrong permissions
 	err = os.Chmod(fileB, 0777)
-	expectedResult = v1.BenchmarkCheckResult{Result: v1.BenchmarkCheckStatus_WARN}
+	expectedResult = storage.BenchmarkCheckResult{Result: storage.BenchmarkCheckStatus_WARN}
 	benchmark = NewRecursivePermissionsCheck("bench", "desc", dir, 0666, true)
 	result = benchmark.Run()
 	assert.Equal(t, expectedResult.Result, result.Result)

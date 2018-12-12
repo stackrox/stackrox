@@ -2,6 +2,7 @@ package services
 
 import io.stackrox.proto.api.v1.ClustersServiceGrpc
 import io.stackrox.proto.api.v1.Common
+import io.stackrox.proto.storage.ClusterOuterClass.Cluster
 
 class ClusterService extends BaseService {
     static getClusterServiceClient() {
@@ -13,7 +14,7 @@ class ClusterService extends BaseService {
     }
 
     static createCluster(String name, String mainImage, String centralEndpoint) {
-        return getClusterServiceClient().postCluster(io.stackrox.proto.api.v1.ClusterService.Cluster.newBuilder()
+        return getClusterServiceClient().postCluster(Cluster.newBuilder()
                 .setName(name)
                 .setMainImage(mainImage)
                 .setCentralApiEndpoint(centralEndpoint)

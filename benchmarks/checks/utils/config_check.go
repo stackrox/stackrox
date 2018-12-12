@@ -3,7 +3,7 @@ package utils
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // EvaluationFunc describes which function we want to apply when checking the configuration
@@ -54,14 +54,14 @@ func matches(c ConfigParams, value string) bool {
 // Definition returns the definition of the check
 func (c *CommandCheck) Definition() Definition {
 	return Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        c.Name,
 			Description: c.Description,
 		},
 	}
 }
 
-func (c *CommandCheck) contains(result *v1.BenchmarkCheckResult, actualValue ConfigParams, exists bool) {
+func (c *CommandCheck) contains(result *storage.BenchmarkCheckResult, actualValue ConfigParams, exists bool) {
 	Pass(result)
 	if contains(actualValue, c.DesiredValue) {
 		Warn(result)
@@ -69,7 +69,7 @@ func (c *CommandCheck) contains(result *v1.BenchmarkCheckResult, actualValue Con
 	}
 }
 
-func (c *CommandCheck) notContains(result *v1.BenchmarkCheckResult, actualValue ConfigParams, exists bool) {
+func (c *CommandCheck) notContains(result *storage.BenchmarkCheckResult, actualValue ConfigParams, exists bool) {
 	Pass(result)
 	if contains(actualValue, c.DesiredValue) {
 		Warn(result)
@@ -77,7 +77,7 @@ func (c *CommandCheck) notContains(result *v1.BenchmarkCheckResult, actualValue 
 	}
 }
 
-func (c *CommandCheck) matches(result *v1.BenchmarkCheckResult, actualValue ConfigParams, exists bool) {
+func (c *CommandCheck) matches(result *storage.BenchmarkCheckResult, actualValue ConfigParams, exists bool) {
 	Pass(result)
 	if !matches(actualValue, c.DesiredValue) {
 		Warn(result)
@@ -85,7 +85,7 @@ func (c *CommandCheck) matches(result *v1.BenchmarkCheckResult, actualValue Conf
 	}
 }
 
-func (c *CommandCheck) notMatches(result *v1.BenchmarkCheckResult, actualValue ConfigParams, exists bool) {
+func (c *CommandCheck) notMatches(result *storage.BenchmarkCheckResult, actualValue ConfigParams, exists bool) {
 	Pass(result)
 	if !matches(actualValue, c.DesiredValue) {
 		Warn(result)
@@ -93,7 +93,7 @@ func (c *CommandCheck) notMatches(result *v1.BenchmarkCheckResult, actualValue C
 	}
 }
 
-func (c *CommandCheck) set(result *v1.BenchmarkCheckResult, actualValue ConfigParams, exists bool) {
+func (c *CommandCheck) set(result *storage.BenchmarkCheckResult, actualValue ConfigParams, exists bool) {
 	Pass(result)
 	if !exists {
 		Warn(result)
@@ -101,7 +101,7 @@ func (c *CommandCheck) set(result *v1.BenchmarkCheckResult, actualValue ConfigPa
 	}
 }
 
-func (c *CommandCheck) unset(result *v1.BenchmarkCheckResult, actualValue ConfigParams, exists bool) {
+func (c *CommandCheck) unset(result *storage.BenchmarkCheckResult, actualValue ConfigParams, exists bool) {
 	Pass(result)
 	if exists {
 		Warn(result)
@@ -109,7 +109,7 @@ func (c *CommandCheck) unset(result *v1.BenchmarkCheckResult, actualValue Config
 	}
 }
 
-func (c *CommandCheck) setAsAppropriate(result *v1.BenchmarkCheckResult, actualValue ConfigParams, exists bool) {
+func (c *CommandCheck) setAsAppropriate(result *storage.BenchmarkCheckResult, actualValue ConfigParams, exists bool) {
 	Pass(result)
 	if exists {
 		Info(result)
@@ -119,7 +119,7 @@ func (c *CommandCheck) setAsAppropriate(result *v1.BenchmarkCheckResult, actualV
 	c.note(result, actualValue.String(), exists, "be set as appropriate")
 }
 
-func (c *CommandCheck) note(result *v1.BenchmarkCheckResult, actualValue string, exists bool, verb string) {
+func (c *CommandCheck) note(result *storage.BenchmarkCheckResult, actualValue string, exists bool, verb string) {
 	defaultFmt := "no default"
 	if len(c.Default) != 0 {
 		defaultFmt = fmt.Sprintf("default '%v'", c.Default)
@@ -132,7 +132,7 @@ func (c *CommandCheck) note(result *v1.BenchmarkCheckResult, actualValue string,
 }
 
 // Run evaluates the check
-func (c *CommandCheck) Run() (result v1.BenchmarkCheckResult) {
+func (c *CommandCheck) Run() (result storage.BenchmarkCheckResult) {
 	if c.EvalFunc == Skip {
 		Note(&result)
 		AddNotes(&result, c.Description)
@@ -184,7 +184,7 @@ type MultipleCommandChecks struct {
 // Definition returns the definition of the check
 func (c *MultipleCommandChecks) Definition() Definition {
 	return Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        c.Name,
 			Description: c.Description,
 		},
@@ -192,14 +192,14 @@ func (c *MultipleCommandChecks) Definition() Definition {
 }
 
 // Run evaluates the check
-func (c *MultipleCommandChecks) Run() (result v1.BenchmarkCheckResult) {
+func (c *MultipleCommandChecks) Run() (result storage.BenchmarkCheckResult) {
 	Pass(&result)
 	for _, check := range c.Checks {
 		check.ConfigGetter = c.ConfigGetter
 		check.Description = c.Description
 		check.Process = c.Process
 		res := check.Run()
-		if res.Result != v1.BenchmarkCheckStatus_PASS {
+		if res.Result != storage.BenchmarkCheckStatus_PASS {
 			result.Result = res.Result
 		}
 		AddNotes(&result, res.GetNotes()...)

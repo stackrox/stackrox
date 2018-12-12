@@ -6,14 +6,9 @@ option java_package = "io.stackrox.proto.api.v1";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/empty.proto";
+import "storage/benchmark_trigger.proto";
 
 package v1;
-
-message BenchmarkTrigger {
-    string id                      = 1;
-    google.protobuf.Timestamp time = 2;
-    repeated string cluster_ids    = 3;
-}
 
 message GetBenchmarkTriggersRequest {
     repeated string ids                 = 1;
@@ -24,7 +19,7 @@ message GetBenchmarkTriggersRequest {
 }
 
 message GetBenchmarkTriggersResponse {
-    repeated BenchmarkTrigger triggers = 1;
+    repeated storage.BenchmarkTrigger triggers = 1;
 }
 
 service BenchmarkTriggerService {
@@ -35,7 +30,7 @@ service BenchmarkTriggerService {
         };
     }
 
-    rpc Trigger (BenchmarkTrigger) returns (Empty) {
+    rpc Trigger (storage.BenchmarkTrigger) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/benchmarks/triggers/{id}"
             body: "*"

@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
-func validate(group *v1.Group) error {
+func validate(group *storage.Group) error {
 	if err := validateProps(group.GetProps()); err != nil {
 		return err
 	}
@@ -17,7 +17,7 @@ func validate(group *v1.Group) error {
 	return nil
 }
 
-func validateProps(props *v1.GroupProperties) error {
+func validateProps(props *storage.GroupProperties) error {
 	if props.GetKey() == "" && props.GetValue() != "" {
 		return fmt.Errorf("cannot have a value without a key in group properties: %s", proto.MarshalTextString(props))
 	}

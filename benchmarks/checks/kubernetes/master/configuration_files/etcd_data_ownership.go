@@ -3,21 +3,21 @@ package masterconfigurationfiles
 import (
 	"github.com/stackrox/rox/benchmarks/checks"
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type etcdDataOwnership struct{}
 
 func (c *etcdDataOwnership) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Kubernetes v1.2.0 - 1.4.12",
 			Description: "Ensure that the etcd data directory ownership is set to etcd:etcd",
 		}, Dependencies: []utils.Dependency{utils.InitEtcdConfig},
 	}
 }
 
-func (c *etcdDataOwnership) Run() (result v1.BenchmarkCheckResult) {
+func (c *etcdDataOwnership) Run() (result storage.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	var dir string
 	params, ok := utils.EtcdConfig.Get("data-dir")

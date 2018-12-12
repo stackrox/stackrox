@@ -2,21 +2,21 @@ package containerimagesandbuild
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type containerUserBenchmark struct{}
 
 func (c *containerUserBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 4.1",
 			Description: "Ensure a user for the container has been created",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *containerUserBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *containerUserBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		if container.Config.User == "" || container.Config.User == "root" {

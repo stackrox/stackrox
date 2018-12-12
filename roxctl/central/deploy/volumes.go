@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
 )
 
@@ -48,7 +48,7 @@ func noVolume() *cobra.Command {
 	return c
 }
 
-func hostPathVolume(cluster v1.ClusterType) *cobra.Command {
+func hostPathVolume(cluster storage.ClusterType) *cobra.Command {
 	hostpath := new(renderer.HostPathPersistence)
 	c := volumeCommand("hostpath")
 	c.RunE = func(c *cobra.Command, args []string) error {
@@ -62,9 +62,9 @@ func hostPathVolume(cluster v1.ClusterType) *cobra.Command {
 
 	var defaultSelector string
 	switch cluster {
-	case v1.ClusterType_SWARM_CLUSTER, v1.ClusterType_DOCKER_EE_CLUSTER:
+	case storage.ClusterType_SWARM_CLUSTER, storage.ClusterType_DOCKER_EE_CLUSTER:
 		defaultSelector = "node.hostname"
-	case v1.ClusterType_KUBERNETES_CLUSTER, v1.ClusterType_OPENSHIFT_CLUSTER:
+	case storage.ClusterType_KUBERNETES_CLUSTER, storage.ClusterType_OPENSHIFT_CLUSTER:
 		defaultSelector = "kubernetes.io/hostname"
 	}
 	c.Flags().StringVarP(&hostpath.NodeSelectorKey, "node-selector-key", "", "", fmt.Sprintf("node selector key (e.g. %s)", defaultSelector))

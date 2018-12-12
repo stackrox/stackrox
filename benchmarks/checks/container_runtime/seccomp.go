@@ -4,21 +4,21 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type seccompBenchmark struct{}
 
 func (c *seccompBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.21",
 			Description: "Ensure the default seccomp profile is not Disabled",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *seccompBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *seccompBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		for _, opt := range container.HostConfig.SecurityOpt {

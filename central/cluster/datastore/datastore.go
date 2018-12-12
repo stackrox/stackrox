@@ -8,7 +8,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	nodeStore "github.com/stackrox/rox/central/node/store"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -19,12 +19,12 @@ var (
 // DataStore is the entry point for modifying Cluster data.
 //go:generate mockgen-wrapper DataStore
 type DataStore interface {
-	GetCluster(id string) (*v1.Cluster, bool, error)
-	GetClusters() ([]*v1.Cluster, error)
+	GetCluster(id string) (*storage.Cluster, bool, error)
+	GetClusters() ([]*storage.Cluster, error)
 	CountClusters() (int, error)
 
-	AddCluster(cluster *v1.Cluster) (string, error)
-	UpdateCluster(cluster *v1.Cluster) error
+	AddCluster(cluster *storage.Cluster) (string, error)
+	UpdateCluster(cluster *storage.Cluster) error
 	RemoveCluster(id string) error
 	UpdateClusterContactTime(id string, t time.Time) error
 }

@@ -3,7 +3,7 @@ package kubelet
 import (
 	"github.com/stackrox/rox/benchmarks/checks"
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 /*
@@ -22,14 +22,14 @@ type kubeletSystemdPermissions struct{}
 
 func (c *kubeletSystemdPermissions) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Kubernetes v1.2.0 - 2.2.3",
 			Description: "Ensure that the kubelet service file permissions are set to 644 or more restrictive",
 		},
 	}
 }
 
-func (c *kubeletSystemdPermissions) Run() (result v1.BenchmarkCheckResult) {
+func (c *kubeletSystemdPermissions) Run() (result storage.BenchmarkCheckResult) {
 	utils.Pass(&result)
 
 	systemdPath, err := utils.GetSystemdFile("kubelet.service")
@@ -42,7 +42,7 @@ func (c *kubeletSystemdPermissions) Run() (result v1.BenchmarkCheckResult) {
 	result = utils.NewPermissionsCheck("", "", systemdPath, 0644, true).Run()
 
 	res := utils.NewRecursivePermissionsCheck("", "", systemdPath+".d", 0644, true).Run()
-	if result.Result != v1.BenchmarkCheckStatus_PASS {
+	if result.Result != storage.BenchmarkCheckStatus_PASS {
 		result.Result = res.Result
 	}
 	utils.AddNotes(&result, res.Notes...)

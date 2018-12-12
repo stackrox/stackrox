@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+
+package storage;
+
+enum ClusterType {
+    GENERIC_CLUSTER    = 0;
+    KUBERNETES_CLUSTER = 1;
+    OPENSHIFT_CLUSTER  = 2;
+    SWARM_CLUSTER      = 3;
+    DOCKER_EE_CLUSTER  = 4;
+}
+
+message Cluster {
+    string                    id                   = 1;
+    string                    name                 = 2;
+    ClusterType               type                 = 3;
+    string                    main_image           = 4;
+    string                    central_api_endpoint = 5;
+    google.protobuf.Timestamp last_contact         = 6;
+    bool                      runtime_support      = 7;
+    string                    monitoring_endpoint  = 8;
+
+    oneof orchestrator_params {
+        KubernetesParams kubernetes = 9;
+        SwarmParams      swarm      = 10;
+        OpenshiftParams  openshift  = 11;
+    }
+}
+
+message KubernetesParams {
+    CommonKubernetesParams params = 1;
+}
+
+message CommonKubernetesParams {
+    string namespace         = 1;
+}
+
+message OpenshiftParams {
+    CommonKubernetesParams params = 1;
+}
+
+message SwarmParams {
+    bool disable_swarm_tls = 1;
+}

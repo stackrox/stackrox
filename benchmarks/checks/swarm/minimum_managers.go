@@ -5,7 +5,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
 )
 
@@ -13,7 +13,7 @@ type minimumManagers struct{}
 
 func (c *minimumManagers) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 7.2",
 			Description: "Ensure the minimum number of manager nodes have been created in a swarm",
 		},
@@ -21,7 +21,7 @@ func (c *minimumManagers) Definition() utils.Definition {
 	}
 }
 
-func (c *minimumManagers) Run() (result v1.BenchmarkCheckResult) {
+func (c *minimumManagers) Run() (result storage.BenchmarkCheckResult) {
 	if !utils.DockerInfo.Swarm.ControlAvailable {
 		utils.NotApplicable(&result)
 		utils.AddNotes(&result, "Checking minimum managers applies only to Swarm managers and this node is not a Swarm Manager")

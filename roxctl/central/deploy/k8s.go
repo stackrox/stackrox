@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
 )
 
@@ -40,7 +40,7 @@ Output is a zip file printed to stdout.`, shortName, longName),
 	return c
 }
 
-func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName string, cluster v1.ClusterType) *cobra.Command {
+func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName string, cluster storage.ClusterType) *cobra.Command {
 	c := orchestratorCommand(shortName, longName)
 	c.PersistentPreRun = func(*cobra.Command, []string) {
 		cfg.K8sConfig = k8sConfig
@@ -75,7 +75,7 @@ func newK8sConfig(monitoringDefault renderer.MonitoringType) *renderer.K8sConfig
 
 func k8s() *cobra.Command {
 	k8sConfig := newK8sConfig(renderer.OnPrem)
-	c := k8sBasedOrchestrator(k8sConfig, "k8s", "Kubernetes", v1.ClusterType_KUBERNETES_CLUSTER)
+	c := k8sBasedOrchestrator(k8sConfig, "k8s", "Kubernetes", storage.ClusterType_KUBERNETES_CLUSTER)
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
 
 	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (lb, np, none)", "central")
@@ -87,7 +87,7 @@ func k8s() *cobra.Command {
 
 func openshift() *cobra.Command {
 	k8sConfig := newK8sConfig(renderer.OnPrem)
-	c := k8sBasedOrchestrator(k8sConfig, "openshift", "Openshift", v1.ClusterType_OPENSHIFT_CLUSTER)
+	c := k8sBasedOrchestrator(k8sConfig, "openshift", "Openshift", storage.ClusterType_OPENSHIFT_CLUSTER)
 
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
 

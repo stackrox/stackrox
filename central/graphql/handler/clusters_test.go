@@ -5,20 +5,20 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetClusters(t *testing.T) {
 	mocks := mockResolver(t)
-	mocks.cluster.EXPECT().GetClusters().Return([]*v1.Cluster{
+	mocks.cluster.EXPECT().GetClusters().Return([]*storage.Cluster{
 		{
 			Id:   fakeClusterID,
 			Name: "fake cluster",
-			Type: v1.ClusterType_KUBERNETES_CLUSTER,
-			OrchestratorParams: &v1.Cluster_Kubernetes{
-				Kubernetes: &v1.KubernetesParams{
-					Params: &v1.CommonKubernetesParams{Namespace: "stackrox"},
+			Type: storage.ClusterType_KUBERNETES_CLUSTER,
+			OrchestratorParams: &storage.Cluster_Kubernetes{
+				Kubernetes: &storage.KubernetesParams{
+					Params: &storage.CommonKubernetesParams{Namespace: "stackrox"},
 				},
 			},
 		},
@@ -31,10 +31,10 @@ func TestGetClusters(t *testing.T) {
 
 func TestGetCluster(t *testing.T) {
 	mocks := mockResolver(t)
-	mocks.cluster.EXPECT().GetCluster(fakeClusterID).Return(&v1.Cluster{
+	mocks.cluster.EXPECT().GetCluster(fakeClusterID).Return(&storage.Cluster{
 		Id:   fakeClusterID,
 		Name: "fake cluster",
-		Type: v1.ClusterType_KUBERNETES_CLUSTER,
+		Type: storage.ClusterType_KUBERNETES_CLUSTER,
 	}, true, nil)
 	response := executeTestQuery(t, mocks, fmt.Sprintf(`{cluster(id: "%s") { id name type}}`, fakeClusterID))
 	assert.Equal(t, 200, response.Code)

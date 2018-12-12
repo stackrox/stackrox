@@ -3,7 +3,7 @@ package deploy
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
 )
 
@@ -28,11 +28,11 @@ func validateHostPath(hostpath *renderer.HostPathPersistence) error {
 	return nil
 }
 
-func validateExternal(ext *renderer.ExternalPersistence, cluster v1.ClusterType) error {
+func validateExternal(ext *renderer.ExternalPersistence, cluster storage.ClusterType) error {
 	if ext == nil {
 		return nil
 	}
-	if cluster == v1.ClusterType_SWARM_CLUSTER && ext.Name == "" {
+	if cluster == storage.ClusterType_SWARM_CLUSTER && ext.Name == "" {
 		return fmt.Errorf("name must be specified for external volume in Swarm")
 	}
 	return nil

@@ -1,13 +1,13 @@
 package clusters
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/zip"
 )
 
 func init() {
-	deployers[v1.ClusterType_KUBERNETES_CLUSTER] = newKubernetes()
+	deployers[storage.ClusterType_KUBERNETES_CLUSTER] = newKubernetes()
 }
 
 type kubernetes struct{}
@@ -16,7 +16,7 @@ func newKubernetes() Deployer {
 	return &kubernetes{}
 }
 
-func addCommonKubernetesParams(params *v1.CommonKubernetesParams, fields map[string]interface{}) {
+func addCommonKubernetesParams(params *storage.CommonKubernetesParams, fields map[string]interface{}) {
 	fields["Namespace"] = params.GetNamespace()
 	fields["NamespaceEnv"] = env.Namespace.EnvVar()
 }
@@ -26,8 +26,8 @@ var monitoringFilenames = []string{
 }
 
 func (k *kubernetes) Render(c Wrap) ([]*zip.File, error) {
-	var kubernetesParams *v1.KubernetesParams
-	clusterKube, ok := c.OrchestratorParams.(*v1.Cluster_Kubernetes)
+	var kubernetesParams *storage.KubernetesParams
+	clusterKube, ok := c.OrchestratorParams.(*storage.Cluster_Kubernetes)
 	if ok {
 		kubernetesParams = clusterKube.Kubernetes
 	}

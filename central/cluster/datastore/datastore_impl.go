@@ -25,12 +25,12 @@ type datastoreImpl struct {
 }
 
 // GetCluster is a pass through function to the underlying storage.
-func (ds *datastoreImpl) GetCluster(id string) (*v1.Cluster, bool, error) {
+func (ds *datastoreImpl) GetCluster(id string) (*storage.Cluster, bool, error) {
 	return ds.storage.GetCluster(id)
 }
 
 // GetCluster is a pass through function to the underlying storage.
-func (ds *datastoreImpl) GetClusters() ([]*v1.Cluster, error) {
+func (ds *datastoreImpl) GetClusters() ([]*storage.Cluster, error) {
 	return ds.storage.GetClusters()
 }
 
@@ -40,12 +40,12 @@ func (ds *datastoreImpl) CountClusters() (int, error) {
 }
 
 // GetCluster is a pass through function to the underlying storage.
-func (ds *datastoreImpl) AddCluster(cluster *v1.Cluster) (string, error) {
+func (ds *datastoreImpl) AddCluster(cluster *storage.Cluster) (string, error) {
 	return ds.storage.AddCluster(cluster)
 }
 
 // GetCluster is a pass through function to the underlying storage.
-func (ds *datastoreImpl) UpdateCluster(cluster *v1.Cluster) error {
+func (ds *datastoreImpl) UpdateCluster(cluster *storage.Cluster) error {
 	return ds.storage.UpdateCluster(cluster)
 }
 
@@ -114,13 +114,13 @@ func (ds *datastoreImpl) RemoveCluster(id string) error {
 }
 
 // RemoveCluster removes an cluster from the storage and the indexer
-func (ds *datastoreImpl) getSecrets(cluster *v1.Cluster) ([]*v1.ListSecret, error) {
+func (ds *datastoreImpl) getSecrets(cluster *storage.Cluster) ([]*v1.ListSecret, error) {
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, cluster.GetId()).ProtoQuery()
 	return ds.ss.SearchListSecrets(q)
 }
 
 // RemoveCluster removes an cluster from the storage and the indexer
-func (ds *datastoreImpl) getDeployments(cluster *v1.Cluster) ([]*storage.ListDeployment, error) {
+func (ds *datastoreImpl) getDeployments(cluster *storage.Cluster) ([]*storage.ListDeployment, error) {
 	deployments, err := ds.dds.ListDeployments()
 	if err != nil {
 		return nil, err

@@ -5,21 +5,21 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type caCertificates struct{}
 
 func (c *caCertificates) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 7.9",
 			Description: "Ensure CA certificates are rotated as appropriate",
 		},
 	}
 }
 
-func (c *caCertificates) Run() (result v1.BenchmarkCheckResult) {
+func (c *caCertificates) Run() (result storage.BenchmarkCheckResult) {
 	utils.Note(&result)
 	info, err := os.Stat(utils.ContainerPath("/var/lib/docker/swarm/certificates/swarm-root-ca.crt"))
 	if err != nil {

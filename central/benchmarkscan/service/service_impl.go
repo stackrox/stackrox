@@ -10,6 +10,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -59,7 +60,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // PostBenchmarkScan inserts a scan into the database
-func (s *serviceImpl) PostBenchmarkScan(ctx context.Context, scan *v1.BenchmarkScanMetadata) (*v1.Empty, error) {
+func (s *serviceImpl) PostBenchmarkScan(ctx context.Context, scan *storage.BenchmarkScanMetadata) (*v1.Empty, error) {
 	return &v1.Empty{}, s.benchmarkScanStorage.AddScan(scan)
 }
 
@@ -75,7 +76,7 @@ func (s *serviceImpl) ListBenchmarkScans(ctx context.Context, request *v1.ListBe
 }
 
 // GetBenchmarkScan retrieves a specific benchmark scan
-func (s *serviceImpl) GetBenchmarkScan(ctx context.Context, request *v1.GetBenchmarkScanRequest) (*v1.BenchmarkScan, error) {
+func (s *serviceImpl) GetBenchmarkScan(ctx context.Context, request *v1.GetBenchmarkScanRequest) (*storage.BenchmarkScan, error) {
 	if request.GetScanId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Scan ID must be defined when retrieving a scan")
 	}
@@ -89,12 +90,12 @@ func (s *serviceImpl) GetBenchmarkScan(ctx context.Context, request *v1.GetBench
 	return scan, nil
 }
 
-func (s *serviceImpl) convertScanDataToBenchmarkGroup(benchmarkName string, scan *v1.BenchmarkScan) (*v1.BenchmarkGroup, error) {
-	var scanMap = map[v1.BenchmarkCheckStatus]int64{
-		v1.BenchmarkCheckStatus_PASS: 0,
-		v1.BenchmarkCheckStatus_NOTE: 0,
-		v1.BenchmarkCheckStatus_INFO: 0,
-		v1.BenchmarkCheckStatus_WARN: 0,
+func (s *serviceImpl) convertScanDataToBenchmarkGroup(benchmarkName string, scan *storage.BenchmarkScan) (*v1.BenchmarkGroup, error) {
+	var scanMap = map[storage.BenchmarkCheckStatus]int64{
+		storage.BenchmarkCheckStatus_PASS: 0,
+		storage.BenchmarkCheckStatus_NOTE: 0,
+		storage.BenchmarkCheckStatus_INFO: 0,
+		storage.BenchmarkCheckStatus_WARN: 0,
 	}
 	for _, c := range scan.Checks {
 		results, exists, err := s.benchmarkScanStorage.GetHostResults(&v1.GetHostResultsRequest{
@@ -125,7 +126,7 @@ func (s *serviceImpl) convertScanDataToBenchmarkGroup(benchmarkName string, scan
 	}, nil
 }
 
-func (s *serviceImpl) getMostRecentScanData(clusterID string, benchmark *v1.Benchmark) (*v1.BenchmarkGroup, error) {
+func (s *serviceImpl) getMostRecentScanData(clusterID string, benchmark *storage.Benchmark) (*v1.BenchmarkGroup, error) {
 	scansMetadata, err := s.benchmarkScanStorage.ListBenchmarkScans(&v1.ListBenchmarkScansRequest{
 		ClusterIds:  []string{clusterID},
 		BenchmarkId: benchmark.GetId(),
@@ -133,7 +134,7 @@ func (s *serviceImpl) getMostRecentScanData(clusterID string, benchmark *v1.Benc
 	if err != nil {
 		return nil, err
 	}
-	var scan *v1.BenchmarkScan
+	var scan *storage.BenchmarkScan
 	for _, metadata := range scansMetadata {
 		var exists bool
 		scan, exists, err = s.benchmarkScanStorage.GetBenchmarkScan(&v1.GetBenchmarkScanRequest{
@@ -153,7 +154,7 @@ func (s *serviceImpl) getMostRecentScanData(clusterID string, benchmark *v1.Benc
 	return s.convertScanDataToBenchmarkGroup(benchmark.GetName(), scan)
 }
 
-func (s *serviceImpl) getBenchmarkScansSummaryResponse(clusters []*v1.Cluster, benchmarks []*v1.Benchmark) (*v1.GetBenchmarkScansSummaryResponse, error) {
+func (s *serviceImpl) getBenchmarkScansSummaryResponse(clusters []*storage.Cluster, benchmarks []*storage.Benchmark) (*v1.GetBenchmarkScansSummaryResponse, error) {
 	response := new(v1.GetBenchmarkScansSummaryResponse)
 	for _, c := range clusters {
 		clusterGroup := &v1.ClusterGroup{

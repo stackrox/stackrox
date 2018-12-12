@@ -1,13 +1,13 @@
 package renderer
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/zip"
 )
 
 func init() {
-	Deployers[v1.ClusterType_SWARM_CLUSTER] = newSwarm()
-	Deployers[v1.ClusterType_DOCKER_EE_CLUSTER] = newSwarm()
+	Deployers[storage.ClusterType_SWARM_CLUSTER] = newSwarm()
+	Deployers[storage.ClusterType_DOCKER_EE_CLUSTER] = newSwarm()
 }
 
 type swarm struct{}

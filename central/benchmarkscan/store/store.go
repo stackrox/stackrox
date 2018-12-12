@@ -3,6 +3,7 @@ package store
 import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
@@ -15,11 +16,11 @@ const (
 
 // Store provides storage functionality for alerts.
 type Store interface {
-	AddScan(request *v1.BenchmarkScanMetadata) error
-	ListBenchmarkScans(*v1.ListBenchmarkScansRequest) ([]*v1.BenchmarkScanMetadata, error)
-	GetBenchmarkScan(request *v1.GetBenchmarkScanRequest) (*v1.BenchmarkScan, bool, error)
+	AddScan(request *storage.BenchmarkScanMetadata) error
+	ListBenchmarkScans(*v1.ListBenchmarkScansRequest) ([]*storage.BenchmarkScanMetadata, error)
+	GetBenchmarkScan(request *v1.GetBenchmarkScanRequest) (*storage.BenchmarkScan, bool, error)
 	GetHostResults(request *v1.GetHostResultsRequest) (*v1.HostResults, bool, error)
-	AddBenchmarkResult(benchmark *v1.BenchmarkResult) error
+	AddBenchmarkResult(benchmark *storage.BenchmarkResult) error
 }
 
 // New returns a new Store instance using the provided bolt DB instance.

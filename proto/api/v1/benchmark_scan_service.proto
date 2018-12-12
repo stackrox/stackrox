@@ -4,35 +4,15 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
-import "google/protobuf/timestamp.proto";
-import "api/v1/benchmark_service.proto";
-import "api/v1/benchmark_results_service.proto";
 import "api/v1/empty.proto";
+import "storage/benchmark_scan.proto";
 
 package v1;
-
-message BenchmarkScanMetadata {
-    string                    scan_id       = 1;
-    string                    benchmark_id  = 2;
-    repeated string           cluster_ids   = 3;
-    repeated string           checks        = 4;
-    google.protobuf.Timestamp time          = 5;
-    BenchmarkReason           reason        = 6;
-}
-
-message BenchmarkScan {
-    string id = 1;
-    message Check {
-        BenchmarkCheckDefinition   definition         = 1;
-        map<string, int32> aggregated_results = 2;
-    }
-    repeated Check checks = 2;
-}
 
 message HostResults {
     message HostResult {
         string          host   = 1;
-        BenchmarkCheckStatus     result = 2;
+        storage.BenchmarkCheckStatus     result = 2;
         repeated string notes  = 3;
     }
     repeated HostResult host_results = 1;
@@ -49,7 +29,7 @@ message ListBenchmarkScansRequest {
 }
 
 message ListBenchmarkScansResponse {
-    repeated BenchmarkScanMetadata scan_metadata = 1;
+    repeated storage.BenchmarkScanMetadata scan_metadata = 1;
 }
 
 message GetBenchmarkScanRequest {
@@ -59,7 +39,7 @@ message GetBenchmarkScanRequest {
 }
 
 message StatusCount {
-    BenchmarkCheckStatus status = 1;
+    storage.BenchmarkCheckStatus status = 1;
     int64       count  = 2;
 }
 
@@ -80,7 +60,7 @@ message GetBenchmarkScansSummaryResponse {
 
 service BenchmarkScanService {
 
-    rpc PostBenchmarkScan (BenchmarkScanMetadata) returns (Empty) {
+    rpc PostBenchmarkScan (storage.BenchmarkScanMetadata) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/benchmarks/scans"
             body: "*"
@@ -93,7 +73,7 @@ service BenchmarkScanService {
         };
     }
 
-    rpc GetBenchmarkScan (GetBenchmarkScanRequest) returns (BenchmarkScan) {
+    rpc GetBenchmarkScan (GetBenchmarkScanRequest) returns (storage.BenchmarkScan) {
         option (google.api.http) = {
             get: "/v1/benchmarks/scans/{scan_id}"
         };

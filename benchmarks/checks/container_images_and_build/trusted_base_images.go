@@ -2,21 +2,21 @@ package containerimagesandbuild
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type trustedBaseImagesBenchmark struct{}
 
 func (c *trustedBaseImagesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 4.2",
 			Description: "Ensure that containers use trusted base images",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *trustedBaseImagesBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *trustedBaseImagesBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	utils.Note(&result)
 	utils.AddNotes(&result, "Verification of trusted base images requires user specification")
 	return

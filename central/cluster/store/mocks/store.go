@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 	time "time"
 )
@@ -35,7 +35,7 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // AddCluster mocks base method
-func (m *MockStore) AddCluster(arg0 *v1.Cluster) (string, error) {
+func (m *MockStore) AddCluster(arg0 *storage.Cluster) (string, error) {
 	ret := m.ctrl.Call(m, "AddCluster", arg0)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
@@ -61,9 +61,9 @@ func (mr *MockStoreMockRecorder) CountClusters() *gomock.Call {
 }
 
 // GetCluster mocks base method
-func (m *MockStore) GetCluster(arg0 string) (*v1.Cluster, bool, error) {
+func (m *MockStore) GetCluster(arg0 string) (*storage.Cluster, bool, error) {
 	ret := m.ctrl.Call(m, "GetCluster", arg0)
-	ret0, _ := ret[0].(*v1.Cluster)
+	ret0, _ := ret[0].(*storage.Cluster)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -75,9 +75,9 @@ func (mr *MockStoreMockRecorder) GetCluster(arg0 interface{}) *gomock.Call {
 }
 
 // GetClusters mocks base method
-func (m *MockStore) GetClusters() ([]*v1.Cluster, error) {
+func (m *MockStore) GetClusters() ([]*storage.Cluster, error) {
 	ret := m.ctrl.Call(m, "GetClusters")
-	ret0, _ := ret[0].([]*v1.Cluster)
+	ret0, _ := ret[0].([]*storage.Cluster)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -100,7 +100,7 @@ func (mr *MockStoreMockRecorder) RemoveCluster(arg0 interface{}) *gomock.Call {
 }
 
 // UpdateCluster mocks base method
-func (m *MockStore) UpdateCluster(arg0 *v1.Cluster) error {
+func (m *MockStore) UpdateCluster(arg0 *storage.Cluster) error {
 	ret := m.ctrl.Call(m, "UpdateCluster", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0

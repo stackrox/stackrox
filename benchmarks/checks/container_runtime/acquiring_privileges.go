@@ -4,21 +4,21 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type acquiringPrivilegesBenchmark struct{}
 
 func (c *acquiringPrivilegesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.25",
 			Description: "Ensure the container is restricted from acquiring additional privileges",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *acquiringPrivilegesBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *acquiringPrivilegesBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	utils.Pass(&result)
 LOOP:
 	for _, container := range utils.ContainersRunning {

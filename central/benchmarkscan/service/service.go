@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/benchmarkscan/store"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -21,9 +22,9 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	PostBenchmarkScan(ctx context.Context, scan *v1.BenchmarkScanMetadata) (*v1.Empty, error)
+	PostBenchmarkScan(ctx context.Context, scan *storage.BenchmarkScanMetadata) (*v1.Empty, error)
 	ListBenchmarkScans(ctx context.Context, request *v1.ListBenchmarkScansRequest) (*v1.ListBenchmarkScansResponse, error)
-	GetBenchmarkScan(ctx context.Context, request *v1.GetBenchmarkScanRequest) (*v1.BenchmarkScan, error)
+	GetBenchmarkScan(ctx context.Context, request *v1.GetBenchmarkScanRequest) (*storage.BenchmarkScan, error)
 	GetBenchmarkScansSummary(context.Context, *v1.Empty) (*v1.GetBenchmarkScansSummaryResponse, error)
 	GetHostResults(ctx context.Context, request *v1.GetHostResultsRequest) (*v1.HostResults, error)
 }

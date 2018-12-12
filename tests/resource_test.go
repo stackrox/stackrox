@@ -35,7 +35,7 @@ func TestClusters(t *testing.T) {
 	require.Len(t, clusters.GetClusters(), 1)
 
 	c := clusters.GetClusters()[0]
-	assert.Equal(t, v1.ClusterType_KUBERNETES_CLUSTER, c.GetType())
+	assert.Equal(t, storage.ClusterType_KUBERNETES_CLUSTER, c.GetType())
 	assert.Equal(t, `remote`, c.GetName())
 
 	img := utils.GenerateImageFromString(c.GetMainImage())

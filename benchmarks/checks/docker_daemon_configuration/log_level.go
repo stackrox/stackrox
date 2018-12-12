@@ -2,21 +2,21 @@ package dockerdaemonconfiguration
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type logLevelBenchmark struct{}
 
 func (c *logLevelBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 2.2",
 			Description: "Ensure the logging level is set to 'info'",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *logLevelBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *logLevelBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	if vals, ok := utils.DockerConfig["log-level"]; ok {
 		if _, exists := vals.Contains("info"); !exists {
 			utils.Warn(&result)

@@ -9,6 +9,7 @@ import (
 	roleStore "github.com/stackrox/rox/central/role/store"
 	userStore "github.com/stackrox/rox/central/user/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/set"
@@ -57,7 +58,7 @@ func (rm *mapperImpl) getRole(claims *tokens.Claims) (*v1.Role, error) {
 	return permissions.NewUnionRole(roles), nil
 }
 
-func (rm *mapperImpl) rolesForGroups(groups []*v1.Group) ([]*v1.Role, error) {
+func (rm *mapperImpl) rolesForGroups(groups []*storage.Group) ([]*v1.Role, error) {
 	// Get the roles in all of the groups.
 	roleNameSet := set.NewStringSet()
 	for _, group := range groups {

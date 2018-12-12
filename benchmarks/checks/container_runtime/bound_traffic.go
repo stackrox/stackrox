@@ -4,21 +4,21 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type specificHostInterfaceBenchmark struct{}
 
 func (c *specificHostInterfaceBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.13",
 			Description: "Ensure incoming container traffic is binded to a specific host interface",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *specificHostInterfaceBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *specificHostInterfaceBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		for containerPort, hostBinding := range container.NetworkSettings.Ports {

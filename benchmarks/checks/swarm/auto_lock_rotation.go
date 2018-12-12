@@ -2,14 +2,14 @@ package swarm
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type autoLockRotation struct{}
 
 func (c *autoLockRotation) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 7.7",
 			Description: "Ensure swarm manager auto-lock key is rotated periodically",
 		},
@@ -17,7 +17,7 @@ func (c *autoLockRotation) Definition() utils.Definition {
 	}
 }
 
-func (c *autoLockRotation) Run() (result v1.BenchmarkCheckResult) {
+func (c *autoLockRotation) Run() (result storage.BenchmarkCheckResult) {
 	if !utils.DockerInfo.Swarm.ControlAvailable {
 		utils.NotApplicable(&result)
 		utils.AddNotes(&result, "Autolock applies only to Swarm managers and this node is not a Swarm Manager")

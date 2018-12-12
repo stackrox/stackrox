@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type fileOwnershipCheck struct {
@@ -22,14 +22,14 @@ type fileOwnershipCheck struct {
 
 func (f *fileOwnershipCheck) Definition() Definition {
 	return Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        f.Name,
 			Description: f.Description,
 		},
 	}
 }
 
-func compareFileOwnership(file string, expectedUser string, expectedGroup string) (result v1.BenchmarkCheckResult) {
+func compareFileOwnership(file string, expectedUser string, expectedGroup string) (result storage.BenchmarkCheckResult) {
 	info, err := os.Stat(ContainerPath(file))
 	if os.IsNotExist(err) {
 		Note(&result)
@@ -74,7 +74,7 @@ func compareFileOwnership(file string, expectedUser string, expectedGroup string
 	return
 }
 
-func (f *fileOwnershipCheck) Run() (result v1.BenchmarkCheckResult) {
+func (f *fileOwnershipCheck) Run() (result storage.BenchmarkCheckResult) {
 	if f.File == "" {
 		Note(&result)
 		AddNotes(&result, "Test is not applicable. File is not defined")
@@ -116,14 +116,14 @@ func NewSystemdOwnershipCheck(name, description, service, user, group string) Ch
 
 func (s *systemdOwnershipCheck) Definition() Definition {
 	return Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        s.Name,
 			Description: s.Description,
 		},
 	}
 }
 
-func (s *systemdOwnershipCheck) Run() (result v1.BenchmarkCheckResult) {
+func (s *systemdOwnershipCheck) Run() (result storage.BenchmarkCheckResult) {
 	if s.Service == "" {
 		Note(&result)
 		AddNotes(&result, "Test is not applicable. Service is not defined")
@@ -149,13 +149,13 @@ type recursiveOwnershipCheck struct {
 
 func (r *recursiveOwnershipCheck) Definition() Definition {
 	return Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{Name: r.Name,
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{Name: r.Name,
 			Description: r.Description,
 		},
 	}
 }
 
-func (r *recursiveOwnershipCheck) Run() (result v1.BenchmarkCheckResult) {
+func (r *recursiveOwnershipCheck) Run() (result storage.BenchmarkCheckResult) {
 	Pass(&result)
 	if r.Directory == "" {
 		Note(&result)
@@ -175,7 +175,7 @@ func (r *recursiveOwnershipCheck) Run() (result v1.BenchmarkCheckResult) {
 	}
 	for _, file := range files {
 		tempResult := compareFileOwnership(filepath.Join(r.Directory, file.Name()), r.User, r.Group)
-		if tempResult.Result != v1.BenchmarkCheckStatus_PASS {
+		if tempResult.Result != storage.BenchmarkCheckStatus_PASS {
 			AddNotes(&result, tempResult.Notes...)
 			result.Result = tempResult.Result
 		}

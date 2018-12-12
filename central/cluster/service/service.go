@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -20,8 +21,8 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	PostCluster(ctx context.Context, request *v1.Cluster) (*v1.ClusterResponse, error)
-	PutCluster(ctx context.Context, request *v1.Cluster) (*v1.ClusterResponse, error)
+	PostCluster(ctx context.Context, request *storage.Cluster) (*v1.ClusterResponse, error)
+	PutCluster(ctx context.Context, request *storage.Cluster) (*v1.ClusterResponse, error)
 	GetCluster(ctx context.Context, request *v1.ResourceByID) (*v1.ClusterResponse, error)
 	GetClusters(ctx context.Context, _ *v1.Empty) (*v1.ClustersList, error)
 	DeleteCluster(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error)

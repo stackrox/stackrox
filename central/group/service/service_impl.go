@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/group/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -55,7 +56,7 @@ func (s *serviceImpl) GetGroups(context.Context, *v1.Empty) (*v1.GetGroupsRespon
 	return &v1.GetGroupsResponse{Groups: groups}, nil
 }
 
-func (s *serviceImpl) GetGroup(ctx context.Context, props *v1.GroupProperties) (*v1.Group, error) {
+func (s *serviceImpl) GetGroup(ctx context.Context, props *storage.GroupProperties) (*storage.Group, error) {
 	group, err := s.groupStore.Get(props)
 	if err != nil {
 		return nil, err
@@ -66,7 +67,7 @@ func (s *serviceImpl) GetGroup(ctx context.Context, props *v1.GroupProperties) (
 	return group, nil
 }
 
-func (s *serviceImpl) CreateGroup(ctx context.Context, group *v1.Group) (*v1.Empty, error) {
+func (s *serviceImpl) CreateGroup(ctx context.Context, group *storage.Group) (*v1.Empty, error) {
 	if err := validate(group); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
@@ -77,7 +78,7 @@ func (s *serviceImpl) CreateGroup(ctx context.Context, group *v1.Group) (*v1.Emp
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) UpdateGroup(ctx context.Context, group *v1.Group) (*v1.Empty, error) {
+func (s *serviceImpl) UpdateGroup(ctx context.Context, group *storage.Group) (*v1.Empty, error) {
 	if err := validate(group); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, err.Error())
 	}
@@ -88,7 +89,7 @@ func (s *serviceImpl) UpdateGroup(ctx context.Context, group *v1.Group) (*v1.Emp
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) DeleteGroup(ctx context.Context, props *v1.GroupProperties) (*v1.Empty, error) {
+func (s *serviceImpl) DeleteGroup(ctx context.Context, props *storage.GroupProperties) (*v1.Empty, error) {
 	err := s.groupStore.Remove(props)
 	if err != nil {
 		return nil, err

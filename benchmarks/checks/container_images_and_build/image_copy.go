@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
 )
 
@@ -12,14 +12,14 @@ type imageCopyBenchmark struct{}
 
 func (c *imageCopyBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 4.9",
 			Description: "Ensure COPY is used instead of ADD in Dockerfile",
 		}, Dependencies: []utils.Dependency{utils.InitImages},
 	}
 }
 
-func (c *imageCopyBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *imageCopyBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, image := range utils.Images {
 		ctx, cancel := docker.TimeoutContext()

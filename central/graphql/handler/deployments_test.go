@@ -18,7 +18,7 @@ func TestGetDeployment(t *testing.T) {
 	mocks.deployment.EXPECT().GetDeployment(testDeploymentID).Return(&storage.Deployment{
 		Id: testDeploymentID, ClusterId: testClusterID, Name: "deployment name", Type: "deployment type",
 	}, true, nil)
-	mocks.cluster.EXPECT().GetCluster(testClusterID).Return(&v1.Cluster{
+	mocks.cluster.EXPECT().GetCluster(testClusterID).Return(&storage.Cluster{
 		Id: testClusterID, Name: "cluster name",
 	}, true, nil)
 

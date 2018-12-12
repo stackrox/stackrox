@@ -2,21 +2,21 @@ package dockerdaemonconfiguration
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type disableUserlandProxyBenchmark struct{}
 
 func (c *disableUserlandProxyBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 2.15",
 			Description: "Ensure Userland Proxy is Disabled",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *disableUserlandProxyBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *disableUserlandProxyBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	opts, ok := utils.DockerConfig["userland-proxy"]
 	if !ok {
 		utils.Warn(&result)

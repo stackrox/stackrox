@@ -497,17 +497,17 @@ func (resolver *certNameResolver) StreetAddress() string {
 
 type clusterResolver struct {
 	root *Resolver
-	data *v1.Cluster
+	data *storage.Cluster
 }
 
-func (resolver *Resolver) wrapCluster(value *v1.Cluster, ok bool, err error) (*clusterResolver, error) {
+func (resolver *Resolver) wrapCluster(value *storage.Cluster, ok bool, err error) (*clusterResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &clusterResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapClusters(values []*v1.Cluster, err error) ([]*clusterResolver, error) {
+func (resolver *Resolver) wrapClusters(values []*storage.Cluster, err error) ([]*clusterResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -590,18 +590,18 @@ func (resolver *clusterOrchestratorParamsResolver) ToOpenshiftParams() (*openshi
 	return nil, false
 }
 
-func toClusterType(value *string) v1.ClusterType {
+func toClusterType(value *string) storage.ClusterType {
 	if value != nil {
-		return v1.ClusterType(v1.ClusterType_value[*value])
+		return storage.ClusterType(storage.ClusterType_value[*value])
 	}
-	return v1.ClusterType(0)
+	return storage.ClusterType(0)
 }
 
-func toClusterTypes(values *[]string) []v1.ClusterType {
+func toClusterTypes(values *[]string) []storage.ClusterType {
 	if values == nil {
 		return nil
 	}
-	output := make([]v1.ClusterType, len(*values))
+	output := make([]storage.ClusterType, len(*values))
 	for i, v := range *values {
 		output[i] = toClusterType(&v)
 	}
@@ -610,17 +610,17 @@ func toClusterTypes(values *[]string) []v1.ClusterType {
 
 type commonKubernetesParamsResolver struct {
 	root *Resolver
-	data *v1.CommonKubernetesParams
+	data *storage.CommonKubernetesParams
 }
 
-func (resolver *Resolver) wrapCommonKubernetesParams(value *v1.CommonKubernetesParams, ok bool, err error) (*commonKubernetesParamsResolver, error) {
+func (resolver *Resolver) wrapCommonKubernetesParams(value *storage.CommonKubernetesParams, ok bool, err error) (*commonKubernetesParamsResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &commonKubernetesParamsResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapCommonKubernetesParamses(values []*v1.CommonKubernetesParams, err error) ([]*commonKubernetesParamsResolver, error) {
+func (resolver *Resolver) wrapCommonKubernetesParamses(values []*storage.CommonKubernetesParams, err error) ([]*commonKubernetesParamsResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1272,17 +1272,17 @@ func (resolver *generateTokenResponseResolver) Token() string {
 
 type groupResolver struct {
 	root *Resolver
-	data *v1.Group
+	data *storage.Group
 }
 
-func (resolver *Resolver) wrapGroup(value *v1.Group, ok bool, err error) (*groupResolver, error) {
+func (resolver *Resolver) wrapGroup(value *storage.Group, ok bool, err error) (*groupResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &groupResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapGroups(values []*v1.Group, err error) ([]*groupResolver, error) {
+func (resolver *Resolver) wrapGroups(values []*storage.Group, err error) ([]*groupResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1305,17 +1305,17 @@ func (resolver *groupResolver) RoleName() string {
 
 type groupPropertiesResolver struct {
 	root *Resolver
-	data *v1.GroupProperties
+	data *storage.GroupProperties
 }
 
-func (resolver *Resolver) wrapGroupProperties(value *v1.GroupProperties, ok bool, err error) (*groupPropertiesResolver, error) {
+func (resolver *Resolver) wrapGroupProperties(value *storage.GroupProperties, ok bool, err error) (*groupPropertiesResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &groupPropertiesResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapGroupPropertieses(values []*v1.GroupProperties, err error) ([]*groupPropertiesResolver, error) {
+func (resolver *Resolver) wrapGroupPropertieses(values []*storage.GroupProperties, err error) ([]*groupPropertiesResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1734,17 +1734,17 @@ func (resolver *keyValuePolicyResolver) Value() string {
 
 type kubernetesParamsResolver struct {
 	root *Resolver
-	data *v1.KubernetesParams
+	data *storage.KubernetesParams
 }
 
-func (resolver *Resolver) wrapKubernetesParams(value *v1.KubernetesParams, ok bool, err error) (*kubernetesParamsResolver, error) {
+func (resolver *Resolver) wrapKubernetesParams(value *storage.KubernetesParams, ok bool, err error) (*kubernetesParamsResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &kubernetesParamsResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapKubernetesParamses(values []*v1.KubernetesParams, err error) ([]*kubernetesParamsResolver, error) {
+func (resolver *Resolver) wrapKubernetesParamses(values []*storage.KubernetesParams, err error) ([]*kubernetesParamsResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2209,17 +2209,17 @@ func (resolver *numericalPolicyResolver) Value() float64 {
 
 type openshiftParamsResolver struct {
 	root *Resolver
-	data *v1.OpenshiftParams
+	data *storage.OpenshiftParams
 }
 
-func (resolver *Resolver) wrapOpenshiftParams(value *v1.OpenshiftParams, ok bool, err error) (*openshiftParamsResolver, error) {
+func (resolver *Resolver) wrapOpenshiftParams(value *storage.OpenshiftParams, ok bool, err error) (*openshiftParamsResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &openshiftParamsResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapOpenshiftParamses(values []*v1.OpenshiftParams, err error) ([]*openshiftParamsResolver, error) {
+func (resolver *Resolver) wrapOpenshiftParamses(values []*storage.OpenshiftParams, err error) ([]*openshiftParamsResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3562,17 +3562,17 @@ func (resolver *splunkResolver) Insecure() bool {
 
 type swarmParamsResolver struct {
 	root *Resolver
-	data *v1.SwarmParams
+	data *storage.SwarmParams
 }
 
-func (resolver *Resolver) wrapSwarmParams(value *v1.SwarmParams, ok bool, err error) (*swarmParamsResolver, error) {
+func (resolver *Resolver) wrapSwarmParams(value *storage.SwarmParams, ok bool, err error) (*swarmParamsResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &swarmParamsResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapSwarmParamses(values []*v1.SwarmParams, err error) ([]*swarmParamsResolver, error) {
+func (resolver *Resolver) wrapSwarmParamses(values []*storage.SwarmParams, err error) ([]*swarmParamsResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}

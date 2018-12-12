@@ -3,21 +3,21 @@ package kubelet
 import (
 	"github.com/stackrox/rox/benchmarks/checks"
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type kubeconfigFileOwnership struct{}
 
 func (c *kubeconfigFileOwnership) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Kubernetes v1.2.0 - 2.2.6",
 			Description: "Ensure that the proxy kubeconfig file ownership is set to root:root",
 		}, Dependencies: []utils.Dependency{utils.InitKubeProxyConfig},
 	}
 }
 
-func (c *kubeconfigFileOwnership) Run() (result v1.BenchmarkCheckResult) {
+func (c *kubeconfigFileOwnership) Run() (result storage.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	params, ok := utils.KubeletConfig.Get("kubeconfig")
 	if !ok {

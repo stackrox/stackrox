@@ -4,21 +4,21 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type seLinuxBenchmark struct{}
 
 func (c *seLinuxBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.2",
 			Description: "Ensure SELinux security options are set, if applicable",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig, utils.InitContainers},
 	}
 }
 
-func checkContainersForSELinux() (result v1.BenchmarkCheckResult) {
+func checkContainersForSELinux() (result storage.BenchmarkCheckResult) {
 	utils.Pass(&result)
 LOOP:
 	for _, container := range utils.ContainersRunning {
@@ -33,7 +33,7 @@ LOOP:
 	return
 }
 
-func (c *seLinuxBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *seLinuxBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	if values, ok := utils.DockerConfig["selinux-enabled"]; ok && (values.Matches("") || values.Matches("true")) {
 		result = checkContainersForSELinux()
 		return

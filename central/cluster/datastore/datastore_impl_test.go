@@ -69,7 +69,7 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveTombstonesDeploymentsAndMarksA
 	suite.deployments.EXPECT().RemoveDeployment("deployment1").Return(nil)
 
 	// Return a cluster with an id that matches the deployments we want to tombstone.
-	cluster := &v1.Cluster{
+	cluster := &storage.Cluster{
 		Id: fakeClusterID,
 	}
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return(cluster, true, nil)
@@ -86,7 +86,7 @@ func (suite *ClusterDataStoreTestSuite) TestRemoveTombstonesDeploymentsAndMarksA
 //// Test that when the cluster we try to remove does not exist, we return an error.
 func (suite *ClusterDataStoreTestSuite) TestHandlesClusterDoesNotExist() {
 	// Return false for the cluster not existing.
-	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return((*v1.Cluster)(nil), false, nil)
+	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return((*storage.Cluster)(nil), false, nil)
 
 	// run removal.
 	err := suite.clusterDataStore.RemoveCluster(fakeClusterID)
@@ -97,7 +97,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesClusterDoesNotExist() {
 func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingCluster() {
 	// Return an error trying to fetch the cluster.
 	expectedErr := fmt.Errorf("issues need tissues")
-	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return((*v1.Cluster)(nil), true, expectedErr)
+	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return((*storage.Cluster)(nil), true, expectedErr)
 
 	// run removal.
 	err := suite.clusterDataStore.RemoveCluster(fakeClusterID)
@@ -111,7 +111,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesNoDeployments() {
 	suite.deployments.EXPECT().ListDeployments().Return(([]*storage.ListDeployment)(nil), nil)
 
 	// Return a cluster with an id that matches the deployments we want to tombstone.
-	cluster := &v1.Cluster{
+	cluster := &storage.Cluster{
 		Id: fakeClusterID,
 	}
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return(cluster, true, nil)
@@ -133,7 +133,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingDeployments() {
 	suite.deployments.EXPECT().ListDeployments().Return(([]*storage.ListDeployment)(nil), expectedErr)
 
 	// Return a cluster with an id that matches the deployments we want to tombstone.
-	cluster := &v1.Cluster{
+	cluster := &storage.Cluster{
 		Id: fakeClusterID,
 	}
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return(cluster, true, nil)
@@ -169,7 +169,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorTombstoningDeployments()
 	suite.deployments.EXPECT().RemoveDeployment("deployment2").Return(nil)
 
 	// Return a cluster with an id that matches the deployments we want to tombstone.
-	cluster := &v1.Cluster{
+	cluster := &storage.Cluster{
 		Id: fakeClusterID,
 	}
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return(cluster, true, nil)
@@ -192,7 +192,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesNoAlerts() {
 	suite.deployments.EXPECT().RemoveDeployment("deployment1").Return(nil)
 
 	// Return a cluster with an id that matches the deployments we want to tombstone.
-	cluster := &v1.Cluster{
+	cluster := &storage.Cluster{
 		Id: fakeClusterID,
 	}
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return(cluster, true, nil)
@@ -219,7 +219,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingAlerts() {
 	suite.deployments.EXPECT().ListDeployments().Return(deployments, nil)
 
 	// Return a cluster with an id that matches the deployments we want to tombstone.
-	cluster := &v1.Cluster{
+	cluster := &storage.Cluster{
 		Id: fakeClusterID,
 	}
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return(cluster, true, nil)
@@ -247,7 +247,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorUpdatingAlert() {
 	suite.deployments.EXPECT().ListDeployments().Return(deployments, nil)
 
 	// Return a cluster with an id that matches the deployments we want to tombstone.
-	cluster := &v1.Cluster{
+	cluster := &storage.Cluster{
 		Id: fakeClusterID,
 	}
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return(cluster, true, nil)

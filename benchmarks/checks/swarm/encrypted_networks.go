@@ -4,7 +4,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
 )
 
@@ -12,7 +12,7 @@ type encryptedNetworks struct{}
 
 func (c *encryptedNetworks) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 7.4",
 			Description: "Ensure data exchanged between containers are encrypted on different nodes on the overlay network",
 		},
@@ -20,7 +20,7 @@ func (c *encryptedNetworks) Definition() utils.Definition {
 	}
 }
 
-func (c *encryptedNetworks) Run() (result v1.BenchmarkCheckResult) {
+func (c *encryptedNetworks) Run() (result storage.BenchmarkCheckResult) {
 	if !utils.DockerInfo.Swarm.ControlAvailable {
 		utils.NotApplicable(&result)
 		utils.AddNotes(&result, "Checking encrypted networks applies only to Swarm managers and this node is not a Swarm Manager")

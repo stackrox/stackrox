@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/suite"
 )
@@ -39,9 +39,9 @@ func (s *GroupStoreTestSuite) TearDownSuite() {
 }
 
 func (s *GroupStoreTestSuite) TestAdd() {
-	groups := []*v1.Group{
+	groups := []*storage.Group{
 		{
-			Props: &v1.GroupProperties{
+			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute",
 				Value:          "IsCaptain",
@@ -49,7 +49,7 @@ func (s *GroupStoreTestSuite) TestAdd() {
 			RoleName: "captain",
 		},
 		{
-			Props: &v1.GroupProperties{
+			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute",
 				Value:          "IsAlsoCaptain",
@@ -57,7 +57,7 @@ func (s *GroupStoreTestSuite) TestAdd() {
 			RoleName: "captain",
 		},
 		{
-			Props: &v1.GroupProperties{
+			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
 				Key:            "DifferentAttribute",
 				Value:          "IsCaptain",
@@ -90,9 +90,9 @@ func (s *GroupStoreTestSuite) TestAdd() {
 }
 
 func (s *GroupStoreTestSuite) TestUpdate() {
-	groups := []*v1.Group{
+	groups := []*storage.Group{
 		{
-			Props: &v1.GroupProperties{
+			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute",
 				Value:          "IsCaptain",
@@ -100,7 +100,7 @@ func (s *GroupStoreTestSuite) TestUpdate() {
 			RoleName: "captain",
 		},
 		{
-			Props: &v1.GroupProperties{
+			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute",
 				Value:          "IsAlsoCaptain",
@@ -108,7 +108,7 @@ func (s *GroupStoreTestSuite) TestUpdate() {
 			RoleName: "captain",
 		},
 		{
-			Props: &v1.GroupProperties{
+			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
 				Key:            "DifferentAttribute",
 				Value:          "IsCaptain",
@@ -145,9 +145,9 @@ func (s *GroupStoreTestSuite) TestUpdate() {
 }
 
 func (s *GroupStoreTestSuite) TestUpsert() {
-	groups := []*v1.Group{
+	groups := []*storage.Group{
 		{
-			Props: &v1.GroupProperties{
+			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute",
 				Value:          "IsCaptain",
@@ -155,7 +155,7 @@ func (s *GroupStoreTestSuite) TestUpsert() {
 			RoleName: "captain",
 		},
 		{
-			Props: &v1.GroupProperties{
+			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute",
 				Value:          "IsAlsoCaptain",
@@ -163,7 +163,7 @@ func (s *GroupStoreTestSuite) TestUpsert() {
 			RoleName: "captain",
 		},
 		{
-			Props: &v1.GroupProperties{
+			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
 				Key:            "DifferentAttribute",
 				Value:          "IsCaptain",
@@ -196,25 +196,25 @@ func (s *GroupStoreTestSuite) TestUpsert() {
 }
 
 func (s *GroupStoreTestSuite) TestWalk() {
-	groups := []*v1.Group{
+	groups := []*storage.Group{
 		{
 			RoleName: "role1",
 		},
 		{
-			Props: &v1.GroupProperties{
+			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
 			},
 			RoleName: "role2",
 		},
 		{
-			Props: &v1.GroupProperties{
+			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute1",
 			},
 			RoleName: "role3",
 		},
 		{
-			Props: &v1.GroupProperties{
+			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute1",
 				Value:          "Value1",
@@ -222,7 +222,7 @@ func (s *GroupStoreTestSuite) TestWalk() {
 			RoleName: "role4",
 		},
 		{
-			Props: &v1.GroupProperties{
+			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvider1",
 				Key:            "Attribute2",
 				Value:          "Value1",
@@ -230,7 +230,7 @@ func (s *GroupStoreTestSuite) TestWalk() {
 			RoleName: "role5",
 		},
 		{
-			Props: &v1.GroupProperties{
+			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvide2",
 				Key:            "Attribute1",
 				Value:          "Value1",
@@ -238,7 +238,7 @@ func (s *GroupStoreTestSuite) TestWalk() {
 			RoleName: "role6",
 		},
 		{
-			Props: &v1.GroupProperties{
+			Props: &storage.GroupProperties{
 				AuthProviderId: "authProvide2",
 				Key:            "Attribute2",
 				Value:          "Value1",
@@ -247,7 +247,7 @@ func (s *GroupStoreTestSuite) TestWalk() {
 		},
 	}
 
-	expectedGroups := []*v1.Group{
+	expectedGroups := []*storage.Group{
 		groups[0],
 		groups[1],
 		groups[2],

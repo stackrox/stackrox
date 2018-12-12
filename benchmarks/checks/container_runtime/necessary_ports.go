@@ -2,21 +2,21 @@ package containerruntime
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type necessaryPortsBenchmark struct{}
 
 func (c *necessaryPortsBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.8",
 			Description: "Ensure only needed ports are open on the container",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
 	}
 }
 
-func (c *necessaryPortsBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *necessaryPortsBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	utils.Note(&result)
 	for _, container := range utils.ContainersRunning {
 		for containerPort, hostBinding := range container.NetworkSettings.Ports {

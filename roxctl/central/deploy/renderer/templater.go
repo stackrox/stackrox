@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -130,7 +131,7 @@ type SwarmConfig struct {
 
 // Config configures the deployer for the central service.
 type Config struct {
-	ClusterType v1.ClusterType
+	ClusterType storage.ClusterType
 	K8sConfig   *K8sConfig
 	SwarmConfig *SwarmConfig
 
@@ -153,7 +154,7 @@ type deployer interface {
 }
 
 // Deployers contains all implementations for central deployment generators.
-var Deployers = make(map[v1.ClusterType]deployer)
+var Deployers = make(map[storage.ClusterType]deployer)
 
 func executeRawTemplate(raw string, c *Config) ([]byte, error) {
 	t, err := template.New("temp").Parse(raw)

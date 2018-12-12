@@ -2,7 +2,7 @@ package hostconfiguration
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
 )
 
@@ -10,14 +10,14 @@ type dockerUpdated struct{}
 
 func (c *dockerUpdated) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 1.3",
 			Description: "Ensure Docker is up to date",
 		}, Dependencies: []utils.Dependency{utils.InitDockerClient},
 	}
 }
 
-func (c *dockerUpdated) Run() (result v1.BenchmarkCheckResult) {
+func (c *dockerUpdated) Run() (result storage.BenchmarkCheckResult) {
 	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
 	version, err := utils.DockerClient.ServerVersion(ctx)

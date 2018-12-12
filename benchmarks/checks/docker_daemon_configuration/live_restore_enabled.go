@@ -2,21 +2,21 @@ package dockerdaemonconfiguration
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type liveRestoreEnabledBenchmark struct{}
 
 func (c *liveRestoreEnabledBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 2.14",
 			Description: "Ensure live restore is Enabled",
 		}, Dependencies: []utils.Dependency{utils.InitDockerClient},
 	}
 }
 
-func (c *liveRestoreEnabledBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *liveRestoreEnabledBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	if !utils.DockerInfo.LiveRestoreEnabled {
 		utils.Warn(&result)
 		utils.AddNotes(&result, "Live restore is not enabled")

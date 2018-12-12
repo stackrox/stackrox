@@ -9,7 +9,7 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/benchmarks/checks"
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -22,7 +22,7 @@ var (
 )
 
 // RunBenchmark runs a benchmark based on environment variables
-func RunBenchmark() *v1.BenchmarkResult {
+func RunBenchmark() *storage.BenchmarkResult {
 	hostname, err := getHostname()
 	if err != nil {
 		log.Fatalf("Could not find this node's hostname: %+v", err)
@@ -30,7 +30,7 @@ func RunBenchmark() *v1.BenchmarkResult {
 	protoStartTime := ptypes.TimestampNow()
 	checkResults := runBenchmark()
 	protoEndTime := ptypes.TimestampNow()
-	result := &v1.BenchmarkResult{
+	result := &storage.BenchmarkResult{
 		Id:          uuid.NewV4().String(),
 		Results:     checkResults,
 		StartTime:   protoStartTime,
@@ -38,24 +38,24 @@ func RunBenchmark() *v1.BenchmarkResult {
 		Host:        hostname,
 		ScanId:      env.ScanID.Setting(),
 		BenchmarkId: env.BenchmarkID.Setting(),
-		Reason:      v1.BenchmarkReason(v1.BenchmarkReason_value[env.BenchmarkReason.Setting()]),
+		Reason:      storage.BenchmarkReason(storage.BenchmarkReason_value[env.BenchmarkReason.Setting()]),
 	}
 	return result
 }
 
-func runBenchmark() []*v1.BenchmarkCheckResult {
+func runBenchmark() []*storage.BenchmarkCheckResult {
 	checks := renderChecks()
 
-	results := make([]*v1.BenchmarkCheckResult, 0, len(checks))
+	results := make([]*storage.BenchmarkCheckResult, 0, len(checks))
 Loop:
 	for _, check := range checks {
 		definition := check.Definition().BenchmarkCheckDefinition
 		for _, dep := range check.Definition().Dependencies {
 			if err := dep(); err != nil {
 				msg := fmt.Sprintf("Skipping Test %v due to err in dependency: %+v", check.Definition().Name, err)
-				result := &v1.BenchmarkCheckResult{
+				result := &storage.BenchmarkCheckResult{
 					Definition: &definition,
-					Result:     v1.BenchmarkCheckStatus_NOTE,
+					Result:     storage.BenchmarkCheckStatus_NOTE,
 					Notes:      []string{msg},
 				}
 				results = append(results, result)

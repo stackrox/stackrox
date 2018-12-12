@@ -3,21 +3,21 @@ package kubelet
 import (
 	"github.com/stackrox/rox/benchmarks/checks"
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type caFileOwnership struct{}
 
 func (c *caFileOwnership) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Kubernetes v1.2.0 - 2.2.8",
 			Description: "Ensure that the client certificate authorities file ownership is set to root:root",
 		}, Dependencies: []utils.Dependency{utils.InitKubeletConfig},
 	}
 }
 
-func (c *caFileOwnership) Run() (result v1.BenchmarkCheckResult) {
+func (c *caFileOwnership) Run() (result storage.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	params, ok := utils.KubeletConfig.Get("client-ca-file")
 	if !ok {

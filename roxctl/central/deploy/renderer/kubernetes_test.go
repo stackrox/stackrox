@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/templates"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -15,7 +16,7 @@ import (
 
 func getBaseConfig() Config {
 	return Config{
-		ClusterType: v1.ClusterType_KUBERNETES_CLUSTER,
+		ClusterType: storage.ClusterType_KUBERNETES_CLUSTER,
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{
 				MainImage:     "stackrox/main:2.2.11.0-57-g392c0f5bed-dirty",
@@ -94,7 +95,7 @@ func (suite *renderSuite) testWithLoadBalancers(t *testing.T, c Config) {
 }
 
 func (suite *renderSuite) TestRenderMultiple() {
-	for _, orch := range []v1.ClusterType{v1.ClusterType_KUBERNETES_CLUSTER, v1.ClusterType_OPENSHIFT_CLUSTER} {
+	for _, orch := range []storage.ClusterType{storage.ClusterType_KUBERNETES_CLUSTER, storage.ClusterType_OPENSHIFT_CLUSTER} {
 		for _, format := range []v1.DeploymentFormat{v1.DeploymentFormat_KUBECTL, v1.DeploymentFormat_HELM} {
 			suite.T().Run(fmt.Sprintf("%s-%s", orch, format), func(t *testing.T) {
 				conf := getBaseConfig()

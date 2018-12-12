@@ -5,14 +5,15 @@ import (
 	"sort"
 	"time"
 
-	"github.com/deckarep/golang-set"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -24,7 +25,7 @@ type storeImpl struct {
 // It inserts data into two buckets.
 // The first bucket is the benchmarksToScansBucket which is a mapping of benchmark identifier (currently Name) -> Scan Ids
 // The second bucket is the scanMetadataBucket which is a mapping of scan IDs -> scan metadata
-func (b *storeImpl) AddScan(request *v1.BenchmarkScanMetadata) error {
+func (b *storeImpl) AddScan(request *storage.BenchmarkScanMetadata) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Scan")
 	return b.Update(func(tx *bolt.Tx) error {
 		// Create benchmark bucket if does not already exist
@@ -53,7 +54,7 @@ func (b *storeImpl) AddScan(request *v1.BenchmarkScanMetadata) error {
 // The schema of the addition is as follows:
 // 1. scansToCheckBucket consists of ( scan id -> buckets based on top level check identifier (name for now, e.g. CIS 1.1). Inside that bucket is check result id -> empty
 // 2. Flat check results bucket is a mapping of check result id -> check result
-func (b *storeImpl) AddBenchmarkResult(result *v1.BenchmarkResult) error {
+func (b *storeImpl) AddBenchmarkResult(result *storage.BenchmarkResult) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "BenchmarkResult")
 	return b.Update(func(tx *bolt.Tx) error {
 		// iterate over all checks and add them into buckets with key (Name)
@@ -92,44 +93,44 @@ func (b *storeImpl) AddBenchmarkResult(result *v1.BenchmarkResult) error {
 	})
 }
 
-func (b *storeImpl) getScanMetadata(tx *bolt.Tx, scanID string) (*v1.BenchmarkScanMetadata, error) {
+func (b *storeImpl) getScanMetadata(tx *bolt.Tx, scanID string) (*storage.BenchmarkScanMetadata, error) {
 	metadataBucket := tx.Bucket([]byte(scanMetadataBucket))
 	bytes := metadataBucket.Get([]byte(scanID))
 	if bytes == nil {
 		return nil, dberrors.ErrNotFound{Type: "Scan", ID: scanID}
 	}
-	var result v1.BenchmarkScanMetadata
+	var result storage.BenchmarkScanMetadata
 	if err := proto.Unmarshal(bytes, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
-func (b *storeImpl) getCheckResult(tx *bolt.Tx, k []byte) (*v1.BenchmarkCheckResult, error) {
+func (b *storeImpl) getCheckResult(tx *bolt.Tx, k []byte) (*storage.BenchmarkCheckResult, error) {
 	checkBucket := tx.Bucket([]byte(checkResultsBucket))
 	bytes := checkBucket.Get(k)
-	var result v1.BenchmarkCheckResult
+	var result storage.BenchmarkCheckResult
 	if err := proto.Unmarshal(bytes, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
-func (b *storeImpl) fillScanCheck(check *v1.BenchmarkScan_Check, result *v1.BenchmarkCheckResult) {
+func (b *storeImpl) fillScanCheck(check *storage.BenchmarkScan_Check, result *storage.BenchmarkCheckResult) {
 	check.Definition = result.GetDefinition()
 	check.AggregatedResults[result.GetResult().String()]++
 }
 
 // GetBenchmarkScan retrieves a scan from the database
-func (b *storeImpl) GetBenchmarkScan(request *v1.GetBenchmarkScanRequest) (scan *v1.BenchmarkScan, exists bool, err error) {
+func (b *storeImpl) GetBenchmarkScan(request *v1.GetBenchmarkScanRequest) (scan *storage.BenchmarkScan, exists bool, err error) {
 	if request.GetScanId() == "" {
 		err = fmt.Errorf("Scan id must be defined when retrieving results")
 		return
 	}
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "BenchmarkScan")
-	clusterSet := newStringSet(request.GetClusterIds())
-	hostSet := newStringSet(request.GetHosts())
-	scan = &v1.BenchmarkScan{
+	clusterSet := set.NewStringSet(request.GetClusterIds()...)
+	hostSet := set.NewStringSet(request.GetHosts()...)
+	scan = &storage.BenchmarkScan{
 		Id: request.GetScanId(),
 	}
 	err = b.View(func(tx *bolt.Tx) error {
@@ -145,10 +146,10 @@ func (b *storeImpl) GetBenchmarkScan(request *v1.GetBenchmarkScanRequest) (scan 
 			return dberrors.ErrNotFound{Type: "Results for scan", ID: request.GetScanId()}
 		}
 
-		scan.Checks = make([]*v1.BenchmarkScan_Check, 0, len(metadata.GetChecks()))
+		scan.Checks = make([]*storage.BenchmarkScan_Check, 0, len(metadata.GetChecks()))
 		for _, check := range metadata.GetChecks() {
 			// Initialize aggregated results
-			scanCheck := &v1.BenchmarkScan_Check{
+			scanCheck := &storage.BenchmarkScan_Check{
 				AggregatedResults: make(map[string]int32),
 			}
 
@@ -183,13 +184,13 @@ func (b *storeImpl) GetBenchmarkScan(request *v1.GetBenchmarkScanRequest) (scan 
 }
 
 // ListBenchmarkScans filters the scans by the request parameters
-func (b *storeImpl) ListBenchmarkScans(request *v1.ListBenchmarkScansRequest) ([]*v1.BenchmarkScanMetadata, error) {
+func (b *storeImpl) ListBenchmarkScans(request *v1.ListBenchmarkScansRequest) ([]*storage.BenchmarkScanMetadata, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.List, "BenchmarkScan")
-	var scansMetadata []*v1.BenchmarkScanMetadata
+	var scansMetadata []*storage.BenchmarkScanMetadata
 	err := b.View(func(tx *bolt.Tx) error {
 		scanBucket := tx.Bucket([]byte(scanMetadataBucket))
 		err := scanBucket.ForEach(func(k, v []byte) error {
-			var metadata v1.BenchmarkScanMetadata
+			var metadata storage.BenchmarkScanMetadata
 			if err := proto.Unmarshal(v, &metadata); err != nil {
 				return err
 			}
@@ -203,13 +204,13 @@ func (b *storeImpl) ListBenchmarkScans(request *v1.ListBenchmarkScansRequest) ([
 	}
 
 	// Filter the schedule metadata
-	clusterSet := newStringSet(request.GetClusterIds())
+	clusterSet := set.NewStringSet(request.GetClusterIds()...)
 	filtered := scansMetadata[:0]
 	for _, scan := range scansMetadata {
 		if request.GetBenchmarkId() != "" && request.GetBenchmarkId() != scan.GetBenchmarkId() {
 			continue
 		}
-		scanClusterSet := newStringSet(scan.GetClusterIds())
+		scanClusterSet := set.NewStringSet(scan.GetClusterIds()...)
 		// This means none of the items intersect in the two clusters so we should skip this scan
 		if clusterSet.Cardinality() != 0 && clusterSet.Intersect(scanClusterSet).Cardinality() == 0 {
 			continue
@@ -261,12 +262,4 @@ func (b *storeImpl) GetHostResults(request *v1.GetHostResultsRequest) (*v1.HostR
 		return nil, false, err
 	}
 	return hostResults, true, nil
-}
-
-func newStringSet(strs []string) mapset.Set {
-	set := mapset.NewSet()
-	for _, s := range strs {
-		set.Add(s)
-	}
-	return set
 }

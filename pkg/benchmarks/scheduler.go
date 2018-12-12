@@ -10,6 +10,7 @@ import (
 	"github.com/deckarep/golang-set"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -60,10 +61,10 @@ type SchedulerClient struct {
 	done concurrency.Signal
 
 	schedules map[string]*scheduleMetadata
-	triggers  map[string]*v1.BenchmarkTrigger
+	triggers  map[string]*storage.BenchmarkTrigger
 
 	// Channel for enqueuing Scans (note: checks will be populated by the consumer)
-	benchmarkChan chan *v1.BenchmarkScanMetadata
+	benchmarkChan chan *storage.BenchmarkScanMetadata
 }
 
 // NewSchedulerClient returns a new scheduler
@@ -78,9 +79,9 @@ func NewSchedulerClient(orchestrator orchestrators.Orchestrator, advertisedEndpo
 		conn:               conn,
 
 		schedules: make(map[string]*scheduleMetadata),
-		triggers:  make(map[string]*v1.BenchmarkTrigger),
+		triggers:  make(map[string]*storage.BenchmarkTrigger),
 
-		benchmarkChan: make(chan *v1.BenchmarkScanMetadata, 512),
+		benchmarkChan: make(chan *storage.BenchmarkScanMetadata, 512),
 	}, nil
 }
 
@@ -114,7 +115,7 @@ func (s *SchedulerClient) benchmarkScanExists(scanID, benchmarkName string) (boo
 	return len(scan.GetChecks()) > 0, nil
 }
 
-func (s *SchedulerClient) getTriggers() ([]*v1.BenchmarkTrigger, error) {
+func (s *SchedulerClient) getTriggers() ([]*storage.BenchmarkTrigger, error) {
 	ctx, cancel := grpcContext()
 	defer cancel()
 
@@ -176,7 +177,7 @@ func (s *SchedulerClient) waitForBenchmarkToFinish(serviceName string) {
 
 // Launch triggers a run of the benchmark immediately.
 // The stateLock must be held by the caller until this function returns.
-func (s *SchedulerClient) Launch(scan *v1.BenchmarkScanMetadata) error {
+func (s *SchedulerClient) Launch(scan *storage.BenchmarkScanMetadata) error {
 	service := orchestrators.SystemService{
 		Name: benchmarkServiceName,
 		Envs: []string{
@@ -258,12 +259,12 @@ func (s *SchedulerClient) updateTriggers() {
 			scanID := uniqueScanID(t, trigger.GetId(), "triggered")
 			log.Infof("Adding %v to the benchmark queue", scanID)
 
-			s.benchmarkChan <- &v1.BenchmarkScanMetadata{
+			s.benchmarkChan <- &storage.BenchmarkScanMetadata{
 				ScanId:      scanID,
 				BenchmarkId: trigger.GetId(),
 				ClusterIds:  trigger.GetClusterIds(),
 				Time:        trigger.GetTime(),
-				Reason:      v1.BenchmarkReason_TRIGGERED,
+				Reason:      storage.BenchmarkReason_TRIGGERED,
 			}
 			s.triggers[key] = trigger
 		}
@@ -312,12 +313,12 @@ func (s *SchedulerClient) updateSchedules() {
 			scanID := uniqueScanID(nextScanTime, benchmarkID, "scheduled")
 			// Add benchmark to the queue to be scheduled
 			log.Infof("Adding %v to the benchmark queue", scanID)
-			s.benchmarkChan <- &v1.BenchmarkScanMetadata{
+			s.benchmarkChan <- &storage.BenchmarkScanMetadata{
 				ScanId:      scanID,
 				BenchmarkId: scheduleMetadata.GetBenchmarkId(),
 				ClusterIds:  scheduleMetadata.GetClusterIds(),
 				Time:        protoTime,
-				Reason:      v1.BenchmarkReason_SCHEDULED,
+				Reason:      storage.BenchmarkReason_SCHEDULED,
 			}
 
 			// Schedule the scan next week
@@ -327,7 +328,7 @@ func (s *SchedulerClient) updateSchedules() {
 	}
 }
 
-func (s *SchedulerClient) launchBenchmark(scan *v1.BenchmarkScanMetadata) error {
+func (s *SchedulerClient) launchBenchmark(scan *storage.BenchmarkScanMetadata) error {
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
 	benchmark, err := v1.NewBenchmarkServiceClient(s.conn).GetBenchmark(ctx, &v1.ResourceByID{Id: scan.GetBenchmarkId()})

@@ -108,7 +108,7 @@ func (suite *ServiceTestSuite) TestFailsIfClusterIsNotSet() {
 func (suite *ServiceTestSuite) TestFailsIfClusterDoesNotExist() {
 	// Mock that cluster exists.
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).
-		Return((*v1.Cluster)(nil), false, nil)
+		Return((*storage.Cluster)(nil), false, nil)
 
 	// Make the request to the service and check that it did not err.
 	request := &v1.SimulateNetworkGraphRequest{
@@ -120,7 +120,7 @@ func (suite *ServiceTestSuite) TestFailsIfClusterDoesNotExist() {
 
 func (suite *ServiceTestSuite) TestRejectsYamlWithoutNamespace() {
 	// Mock that cluster exists.
-	cluster := &v1.Cluster{Id: fakeClusterID}
+	cluster := &storage.Cluster{Id: fakeClusterID}
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).
 		Return(cluster, true, nil)
 
@@ -135,7 +135,7 @@ func (suite *ServiceTestSuite) TestRejectsYamlWithoutNamespace() {
 
 func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 	// Mock that cluster exists.
-	cluster := &v1.Cluster{Id: fakeClusterID}
+	cluster := &storage.Cluster{Id: fakeClusterID}
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).
 		Return(cluster, true, nil)
 
@@ -169,7 +169,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 
 func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 	// Mock that cluster exists.
-	cluster := &v1.Cluster{Id: fakeClusterID}
+	cluster := &storage.Cluster{Id: fakeClusterID}
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).
 		Return(cluster, true, nil)
 
@@ -208,7 +208,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 
 func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 	// Mock that cluster exists.
-	cluster := &v1.Cluster{Id: fakeClusterID}
+	cluster := &storage.Cluster{Id: fakeClusterID}
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).
 		Return(cluster, true, nil)
 
@@ -245,7 +245,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 
 func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 	// Mock that cluster exists.
-	cluster := &v1.Cluster{Id: fakeClusterID}
+	cluster := &storage.Cluster{Id: fakeClusterID}
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).
 		Return(cluster, true, nil)
 
@@ -284,7 +284,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 
 func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 	// Mock that cluster exists.
-	cluster := &v1.Cluster{Id: fakeClusterID}
+	cluster := &storage.Cluster{Id: fakeClusterID}
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).
 		Return(cluster, true, nil)
 

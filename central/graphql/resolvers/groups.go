@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/graphql/schema"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func init() {
@@ -27,7 +27,7 @@ func (resolver *Resolver) Group(ctx context.Context, args struct{ AuthProviderID
 	if err != nil {
 		return nil, err
 	}
-	props := &v1.GroupProperties{}
+	props := &storage.GroupProperties{}
 	if args.AuthProviderID != nil {
 		props.AuthProviderId = *args.AuthProviderID
 	}

@@ -2,7 +2,7 @@ package hostconfiguration
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type pathAudit struct {
@@ -13,14 +13,14 @@ type pathAudit struct {
 
 func (s *pathAudit) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        s.Name,
 			Description: s.Description,
 		},
 	}
 }
 
-func (s *pathAudit) Run() (result v1.BenchmarkCheckResult) {
+func (s *pathAudit) Run() (result storage.BenchmarkCheckResult) {
 	result = utils.CheckAudit(s.Path)
 	return
 }

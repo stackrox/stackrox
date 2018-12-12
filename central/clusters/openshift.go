@@ -1,13 +1,13 @@
 package clusters
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/zip"
 )
 
 func init() {
-	deployers[v1.ClusterType_OPENSHIFT_CLUSTER] = newOpenshift()
+	deployers[storage.ClusterType_OPENSHIFT_CLUSTER] = newOpenshift()
 }
 
 type openshift struct{}
@@ -17,8 +17,8 @@ func newOpenshift() Deployer {
 }
 
 func (o *openshift) Render(c Wrap) ([]*zip.File, error) {
-	var openshiftParams *v1.OpenshiftParams
-	clusterOpenshift, ok := c.OrchestratorParams.(*v1.Cluster_Openshift)
+	var openshiftParams *storage.OpenshiftParams
+	clusterOpenshift, ok := c.OrchestratorParams.(*storage.Cluster_Openshift)
 	if ok {
 		openshiftParams = clusterOpenshift.Openshift
 	}

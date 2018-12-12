@@ -5,21 +5,21 @@ import (
 
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/role"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 var (
-	storage Store
-	once    sync.Once
+	as   Store
+	once sync.Once
 )
 
 // Singleton returns the singleton group role mapper.
 func Singleton() Store {
 	once.Do(func() {
-		storage = New(globaldb.GetGlobalDB())
+		as = New(globaldb.GetGlobalDB())
 
 		// Check to see that a global default exists.
-		globalDefault, err := storage.Get(&v1.GroupProperties{})
+		globalDefault, err := as.Get(&storage.GroupProperties{})
 		if err != nil {
 			panic(err)
 		}
@@ -28,10 +28,10 @@ func Singleton() Store {
 		}
 
 		// If not, add admin as global default.
-		err = storage.Upsert(&v1.Group{RoleName: role.Admin})
+		err = as.Upsert(&storage.Group{RoleName: role.Admin})
 		if err != nil {
 			panic(err)
 		}
 	})
-	return storage
+	return as
 }

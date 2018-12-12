@@ -7,7 +7,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	ptypes "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/suite"
 )
@@ -47,7 +47,7 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 	ts2, err := ptypes.TimestampProto(checkin2)
 	suite.NoError(err)
 
-	clusters := []*v1.Cluster{
+	clusters := []*storage.Cluster{
 		{
 			Name:        "cluster1",
 			MainImage:   "test-dtr.example.com/main",

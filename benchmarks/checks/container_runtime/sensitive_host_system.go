@@ -2,14 +2,14 @@ package containerruntime
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type sensitiveHostMountsBenchmark struct{}
 
 func (c *sensitiveHostMountsBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 5.5",
 			Description: "Ensure sensitive host system directories are not mounted on containers",
 		}, Dependencies: []utils.Dependency{utils.InitContainers},
@@ -27,7 +27,7 @@ var sensitiveMountMap = map[string]struct{}{
 	"/usr":  {},
 }
 
-func (c *sensitiveHostMountsBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *sensitiveHostMountsBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, container := range utils.ContainersRunning {
 		for _, mount := range container.Mounts {

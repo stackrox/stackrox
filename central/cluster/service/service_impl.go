@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/central/monitoring"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -62,7 +63,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func normalizeCluster(cluster *v1.Cluster) {
+func normalizeCluster(cluster *storage.Cluster) {
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "http://")
 }
@@ -80,7 +81,7 @@ func validateDNS1123Field(fieldName, value string) error {
 	return errorList.ToError()
 }
 
-func validateInput(cluster *v1.Cluster) error {
+func validateInput(cluster *storage.Cluster) error {
 	errorList := errorhelpers.NewErrorList("Cluster Validation")
 	if cluster.GetName() == "" {
 		errorList.AddString("Cluster name is required")
@@ -98,12 +99,12 @@ func validateInput(cluster *v1.Cluster) error {
 		errorList.AddString("Central API endpoint cannot contain whitespace")
 	}
 	switch orchSpecific := cluster.GetOrchestratorParams().(type) {
-	case *v1.Cluster_Kubernetes:
+	case *storage.Cluster_Kubernetes:
 		// Kube validates namespaces and secret names using the DNS1123 Label validator.
 		errorList.AddError(validateDNS1123Field("namespace", orchSpecific.Kubernetes.GetParams().GetNamespace()))
-	case *v1.Cluster_Openshift:
+	case *storage.Cluster_Openshift:
 		errorList.AddError(validateDNS1123Field("namespace", orchSpecific.Openshift.GetParams().GetNamespace()))
-	case *v1.Cluster_Swarm:
+	case *storage.Cluster_Swarm:
 		if cluster.GetRuntimeSupport() {
 			errorList.AddError(errors.New("runtime is not supported with Swarm"))
 		}
@@ -120,7 +121,7 @@ func validateInput(cluster *v1.Cluster) error {
 }
 
 // PostCluster creates a new cluster.
-func (s *serviceImpl) PostCluster(ctx context.Context, request *v1.Cluster) (*v1.ClusterResponse, error) {
+func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster) (*v1.ClusterResponse, error) {
 	if request.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new cluster")
 	}
@@ -137,7 +138,7 @@ func (s *serviceImpl) PostCluster(ctx context.Context, request *v1.Cluster) (*v1
 }
 
 // PutCluster creates a new cluster.
-func (s *serviceImpl) PutCluster(ctx context.Context, request *v1.Cluster) (*v1.ClusterResponse, error) {
+func (s *serviceImpl) PutCluster(ctx context.Context, request *storage.Cluster) (*v1.ClusterResponse, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Id must be provided")
 	}

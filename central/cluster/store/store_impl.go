@@ -9,7 +9,7 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -26,7 +26,7 @@ type storeImpl struct {
 }
 
 // GetCluster returns cluster with given id.
-func (b *storeImpl) GetCluster(id string) (cluster *v1.Cluster, exists bool, err error) {
+func (b *storeImpl) GetCluster(id string) (cluster *storage.Cluster, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Cluster")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(clusterBucket))
@@ -37,13 +37,13 @@ func (b *storeImpl) GetCluster(id string) (cluster *v1.Cluster, exists bool, err
 }
 
 // GetClusters retrieves clusters matching the request from bolt
-func (b *storeImpl) GetClusters() ([]*v1.Cluster, error) {
+func (b *storeImpl) GetClusters() ([]*storage.Cluster, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Cluster")
-	var clusters []*v1.Cluster
+	var clusters []*storage.Cluster
 	err := b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(clusterBucket))
 		return bucket.ForEach(func(k, v []byte) error {
-			var cluster v1.Cluster
+			var cluster storage.Cluster
 			if err := proto.Unmarshal(v, &cluster); err != nil {
 				return err
 			}
@@ -70,7 +70,7 @@ func (b *storeImpl) CountClusters() (count int, err error) {
 }
 
 // AddCluster adds a cluster to bolt
-func (b *storeImpl) AddCluster(cluster *v1.Cluster) (string, error) {
+func (b *storeImpl) AddCluster(cluster *storage.Cluster) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Cluster")
 	cluster.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
@@ -96,7 +96,7 @@ func (b *storeImpl) AddCluster(cluster *v1.Cluster) (string, error) {
 }
 
 // UpdateCluster updates a cluster to bolt
-func (b *storeImpl) UpdateCluster(cluster *v1.Cluster) error {
+func (b *storeImpl) UpdateCluster(cluster *storage.Cluster) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Cluster")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(clusterBucket))
@@ -152,8 +152,8 @@ func (b *storeImpl) UpdateClusterContactTime(id string, t time.Time) error {
 	})
 }
 
-func (b *storeImpl) getCluster(tx *bolt.Tx, id string, bucket *bolt.Bucket) (cluster *v1.Cluster, exists bool, err error) {
-	cluster = new(v1.Cluster)
+func (b *storeImpl) getCluster(tx *bolt.Tx, id string, bucket *bolt.Bucket) (cluster *storage.Cluster, exists bool, err error) {
+	cluster = new(storage.Cluster)
 	val := bucket.Get([]byte(id))
 	if val == nil {
 		return
@@ -167,7 +167,7 @@ func (b *storeImpl) getCluster(tx *bolt.Tx, id string, bucket *bolt.Bucket) (clu
 	return
 }
 
-func (b *storeImpl) populateProtoContactTime(tx *bolt.Tx, cluster *v1.Cluster) {
+func (b *storeImpl) populateProtoContactTime(tx *bolt.Tx, cluster *storage.Cluster) {
 	t, err := b.getClusterContactTime(tx, cluster.GetId())
 	if err != nil {
 		log.Warnf("Could not get cluster last-contact time for '%s': %s", cluster.GetId(), err)

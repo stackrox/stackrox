@@ -4,21 +4,21 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type remoteLoggingBenchmark struct{}
 
 func (c *remoteLoggingBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 2.12",
 			Description: "Ensure centralized and remote logging is configured",
 		}, Dependencies: []utils.Dependency{utils.InitInfo},
 	}
 }
 
-func (c *remoteLoggingBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *remoteLoggingBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	if utils.DockerInfo.LoggingDriver == "json-file" {
 		utils.Warn(&result)
 		utils.AddNotes(&result,

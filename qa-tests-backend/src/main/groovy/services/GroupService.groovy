@@ -1,8 +1,8 @@
 package services
 
 import io.stackrox.proto.api.v1.GroupServiceGrpc
-import io.stackrox.proto.api.v1.GroupServiceOuterClass.Group
-import io.stackrox.proto.api.v1.GroupServiceOuterClass.GroupProperties
+import io.stackrox.proto.storage.GroupOuterClass.Group
+import io.stackrox.proto.storage.GroupOuterClass.GroupProperties
 
 class GroupService extends BaseService {
     static getGroupService() {

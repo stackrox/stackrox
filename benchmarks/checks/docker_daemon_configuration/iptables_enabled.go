@@ -2,21 +2,21 @@ package dockerdaemonconfiguration
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type ipTablesEnabledBenchmark struct{}
 
 func (c *ipTablesEnabledBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 2.3",
 			Description: "Ensure Docker is allowed to make changes to iptables",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig},
 	}
 }
 
-func (c *ipTablesEnabledBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *ipTablesEnabledBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	values, ok := utils.DockerConfig["iptables"]
 	if !ok {
 		utils.Pass(&result)

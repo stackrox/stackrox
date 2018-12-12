@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/utils"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/netutil"
@@ -16,8 +17,8 @@ const (
 )
 
 func init() {
-	Deployers[v1.ClusterType_KUBERNETES_CLUSTER] = newKubernetes()
-	Deployers[v1.ClusterType_OPENSHIFT_CLUSTER] = newKubernetes()
+	Deployers[storage.ClusterType_KUBERNETES_CLUSTER] = newKubernetes()
+	Deployers[storage.ClusterType_OPENSHIFT_CLUSTER] = newKubernetes()
 }
 
 type kubernetes struct{}
@@ -67,7 +68,7 @@ func (k *kubernetes) Render(c Config) ([]*zip.File, error) {
 	for k, v := range c.SecretsByteMap {
 		c.SecretsBase64Map[k] = base64.StdEncoding.EncodeToString(v)
 	}
-	if c.ClusterType == v1.ClusterType_KUBERNETES_CLUSTER {
+	if c.ClusterType == storage.ClusterType_KUBERNETES_CLUSTER {
 		c.K8sConfig.Command = "kubectl"
 	} else {
 		c.K8sConfig.Command = "oc"

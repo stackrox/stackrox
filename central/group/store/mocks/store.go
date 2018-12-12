@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
 
@@ -34,7 +34,7 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // Add mocks base method
-func (m *MockStore) Add(arg0 *v1.Group) error {
+func (m *MockStore) Add(arg0 *storage.Group) error {
 	ret := m.ctrl.Call(m, "Add", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -46,9 +46,9 @@ func (mr *MockStoreMockRecorder) Add(arg0 interface{}) *gomock.Call {
 }
 
 // Get mocks base method
-func (m *MockStore) Get(arg0 *v1.GroupProperties) (*v1.Group, error) {
+func (m *MockStore) Get(arg0 *storage.GroupProperties) (*storage.Group, error) {
 	ret := m.ctrl.Call(m, "Get", arg0)
-	ret0, _ := ret[0].(*v1.Group)
+	ret0, _ := ret[0].(*storage.Group)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -59,9 +59,9 @@ func (mr *MockStoreMockRecorder) Get(arg0 interface{}) *gomock.Call {
 }
 
 // GetAll mocks base method
-func (m *MockStore) GetAll() ([]*v1.Group, error) {
+func (m *MockStore) GetAll() ([]*storage.Group, error) {
 	ret := m.ctrl.Call(m, "GetAll")
-	ret0, _ := ret[0].([]*v1.Group)
+	ret0, _ := ret[0].([]*storage.Group)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -72,7 +72,7 @@ func (mr *MockStoreMockRecorder) GetAll() *gomock.Call {
 }
 
 // Remove mocks base method
-func (m *MockStore) Remove(arg0 *v1.GroupProperties) error {
+func (m *MockStore) Remove(arg0 *storage.GroupProperties) error {
 	ret := m.ctrl.Call(m, "Remove", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -84,7 +84,7 @@ func (mr *MockStoreMockRecorder) Remove(arg0 interface{}) *gomock.Call {
 }
 
 // Update mocks base method
-func (m *MockStore) Update(arg0 *v1.Group) error {
+func (m *MockStore) Update(arg0 *storage.Group) error {
 	ret := m.ctrl.Call(m, "Update", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -96,7 +96,7 @@ func (mr *MockStoreMockRecorder) Update(arg0 interface{}) *gomock.Call {
 }
 
 // Upsert mocks base method
-func (m *MockStore) Upsert(arg0 *v1.Group) error {
+func (m *MockStore) Upsert(arg0 *storage.Group) error {
 	ret := m.ctrl.Call(m, "Upsert", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -108,9 +108,9 @@ func (mr *MockStoreMockRecorder) Upsert(arg0 interface{}) *gomock.Call {
 }
 
 // Walk mocks base method
-func (m *MockStore) Walk(arg0 string, arg1 map[string][]string) ([]*v1.Group, error) {
+func (m *MockStore) Walk(arg0 string, arg1 map[string][]string) ([]*storage.Group, error) {
 	ret := m.ctrl.Call(m, "Walk", arg0, arg1)
-	ret0, _ := ret[0].([]*v1.Group)
+	ret0, _ := ret[0].([]*storage.Group)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

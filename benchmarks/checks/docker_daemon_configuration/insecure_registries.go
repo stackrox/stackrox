@@ -4,21 +4,21 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type insecureRegistriesBenchmark struct{}
 
 func (c *insecureRegistriesBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 2.4",
 			Description: "Ensure insecure registries are not used",
 		}, Dependencies: []utils.Dependency{utils.InitInfo},
 	}
 }
 
-func (c *insecureRegistriesBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *insecureRegistriesBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, registry := range utils.DockerInfo.RegistryConfig.InsecureRegistryCIDRs {
 		if strings.HasPrefix(registry.String(), "127.") { // Localhost prefix can be ignored

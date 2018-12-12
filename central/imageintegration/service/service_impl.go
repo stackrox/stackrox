@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/imageintegration/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -236,7 +237,7 @@ func (s *serviceImpl) validateClustersAndCategories(request *v1.ImageIntegration
 	return nil
 }
 
-func (s *serviceImpl) clusterExists(name string, clusters []*v1.Cluster) bool {
+func (s *serviceImpl) clusterExists(name string, clusters []*storage.Cluster) bool {
 	for _, c := range clusters {
 		if name == c.GetName() {
 			return true

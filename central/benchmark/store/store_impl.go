@@ -8,6 +8,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/secondarykey"
@@ -18,8 +19,8 @@ type storeImpl struct {
 	*bolt.DB
 }
 
-func (b *storeImpl) getBenchmark(id string, bucket *bolt.Bucket) (benchmark *v1.Benchmark, exists bool, err error) {
-	benchmark = new(v1.Benchmark)
+func (b *storeImpl) getBenchmark(id string, bucket *bolt.Bucket) (benchmark *storage.Benchmark, exists bool, err error) {
+	benchmark = new(storage.Benchmark)
 	val := bucket.Get([]byte(id))
 	if val == nil {
 		return
@@ -30,7 +31,7 @@ func (b *storeImpl) getBenchmark(id string, bucket *bolt.Bucket) (benchmark *v1.
 }
 
 // GetBenchmark returns benchmark with given id.
-func (b *storeImpl) GetBenchmark(id string) (benchmark *v1.Benchmark, exists bool, err error) {
+func (b *storeImpl) GetBenchmark(id string) (benchmark *storage.Benchmark, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Benchmark")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(benchmarkBucket))
@@ -41,13 +42,13 @@ func (b *storeImpl) GetBenchmark(id string) (benchmark *v1.Benchmark, exists boo
 }
 
 // GetBenchmarks retrieves benchmarks matching the request from bolt
-func (b *storeImpl) GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*v1.Benchmark, error) {
+func (b *storeImpl) GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*storage.Benchmark, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Benchmark")
-	var benchmarks []*v1.Benchmark
+	var benchmarks []*storage.Benchmark
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(benchmarkBucket))
 		return b.ForEach(func(k, v []byte) error {
-			var benchmark v1.Benchmark
+			var benchmark storage.Benchmark
 			if err := proto.Unmarshal(v, &benchmark); err != nil {
 				return err
 			}
@@ -59,7 +60,7 @@ func (b *storeImpl) GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*v1.Bench
 }
 
 // AddBenchmark adds a benchmark to bolt
-func (b *storeImpl) AddBenchmark(benchmark *v1.Benchmark) (string, error) {
+func (b *storeImpl) AddBenchmark(benchmark *storage.Benchmark) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Benchmark")
 	benchmark.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
@@ -84,7 +85,7 @@ func (b *storeImpl) AddBenchmark(benchmark *v1.Benchmark) (string, error) {
 }
 
 // UpdateBenchmark updates a benchmark to bolt
-func (b *storeImpl) UpdateBenchmark(benchmark *v1.Benchmark) error {
+func (b *storeImpl) UpdateBenchmark(benchmark *storage.Benchmark) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Benchmark")
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(benchmarkBucket))

@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/golang-lru"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
@@ -23,7 +24,7 @@ const (
 type Relayer interface {
 	Start()
 	Stop()
-	Accept(payload *v1.BenchmarkResult)
+	Accept(payload *storage.BenchmarkResult)
 }
 
 // An LRURelayer sends received benchmark payloads onto StackRox Central.
@@ -75,12 +76,12 @@ func (r *LRURelayer) Stop() {
 	r.stopSig.Signal()
 }
 
-func payloadKey(payload *v1.BenchmarkResult) string {
+func payloadKey(payload *storage.BenchmarkResult) string {
 	return strings.Join([]string{payload.GetScanId(), payload.GetHost(), payload.GetStartTime().String()}, "-")
 }
 
 // Accept accepts a new payload, tries to relay it, and caches if unsuccessful.
-func (r *LRURelayer) Accept(payload *v1.BenchmarkResult) {
+func (r *LRURelayer) Accept(payload *storage.BenchmarkResult) {
 	err := r.relay(payload)
 	if err != nil {
 		r.logger.Warnf("Couldn't send %s: %s", payloadKey(payload), err)
@@ -95,7 +96,7 @@ func (r *LRURelayer) run() {
 			// Must have been evicted. Nothing more we can do about that.
 			continue
 		}
-		err := r.relay(obj.(*v1.BenchmarkResult))
+		err := r.relay(obj.(*storage.BenchmarkResult))
 		if err != nil {
 			r.logger.Warnf("Couldn't retry %s: %s", k, err)
 		} else {
@@ -104,7 +105,7 @@ func (r *LRURelayer) run() {
 	}
 }
 
-func (r *LRURelayer) relay(payload *v1.BenchmarkResult) error {
+func (r *LRURelayer) relay(payload *storage.BenchmarkResult) error {
 	cli := v1.NewBenchmarkResultsServiceClient(r.conn)
 
 	r.logger.Infof("Relaying payload %s", payloadKey(payload))

@@ -2,14 +2,14 @@ package swarm
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type autoLock struct{}
 
 func (c *autoLock) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 7.6",
 			Description: "Ensure swarm manager is run in auto-lock mode",
 		},
@@ -17,7 +17,7 @@ func (c *autoLock) Definition() utils.Definition {
 	}
 }
 
-func (c *autoLock) Run() (result v1.BenchmarkCheckResult) {
+func (c *autoLock) Run() (result storage.BenchmarkCheckResult) {
 	if !utils.DockerInfo.Swarm.ControlAvailable {
 		utils.NotApplicable(&result)
 		utils.AddNotes(&result, "Autolock applies only to Swarm managers and this node is not a Swarm Manager")

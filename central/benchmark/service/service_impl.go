@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/benchmark/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -54,7 +55,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetBenchmark returns the benchmark by the passed name
-func (s *serviceImpl) GetBenchmark(ctx context.Context, request *v1.ResourceByID) (*v1.Benchmark, error) {
+func (s *serviceImpl) GetBenchmark(ctx context.Context, request *v1.ResourceByID) (*storage.Benchmark, error) {
 	benchmark, exists, err := s.datastore.GetBenchmark(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -80,7 +81,7 @@ func (s *serviceImpl) GetBenchmarks(ctx context.Context, request *v1.GetBenchmar
 }
 
 // PostBenchmark creates a new benchmark
-func (s *serviceImpl) PostBenchmark(ctx context.Context, request *v1.Benchmark) (*v1.Benchmark, error) {
+func (s *serviceImpl) PostBenchmark(ctx context.Context, request *storage.Benchmark) (*storage.Benchmark, error) {
 	if request.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new benchmark")
 	}
@@ -94,7 +95,7 @@ func (s *serviceImpl) PostBenchmark(ctx context.Context, request *v1.Benchmark) 
 }
 
 // PutBenchmark updates a benchmark
-func (s *serviceImpl) PutBenchmark(ctx context.Context, request *v1.Benchmark) (*v1.Empty, error) {
+func (s *serviceImpl) PutBenchmark(ctx context.Context, request *storage.Benchmark) (*v1.Empty, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be specified when updating a benchmark")
 	}

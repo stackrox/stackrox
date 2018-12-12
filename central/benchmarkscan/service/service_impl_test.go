@@ -4,14 +4,15 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 type mockStorage struct{}
 
-func (*mockStorage) ListBenchmarkScans(req *v1.ListBenchmarkScansRequest) ([]*v1.BenchmarkScanMetadata, error) {
-	return []*v1.BenchmarkScanMetadata{
+func (*mockStorage) ListBenchmarkScans(req *v1.ListBenchmarkScansRequest) ([]*storage.BenchmarkScanMetadata, error) {
+	return []*storage.BenchmarkScanMetadata{
 		{
 			ScanId: "scan1",
 		},
@@ -20,7 +21,7 @@ func (*mockStorage) ListBenchmarkScans(req *v1.ListBenchmarkScansRequest) ([]*v1
 		},
 	}, nil
 }
-func (*mockStorage) GetBenchmarkScan(req *v1.GetBenchmarkScanRequest) (*v1.BenchmarkScan, bool, error) {
+func (*mockStorage) GetBenchmarkScan(req *v1.GetBenchmarkScanRequest) (*storage.BenchmarkScan, bool, error) {
 	switch req.GetScanId() {
 	case "scan1":
 		return scan, true, nil
@@ -33,10 +34,10 @@ func (*mockStorage) GetHostResults(request *v1.GetHostResultsRequest) (*v1.HostR
 	case "check1":
 		return &v1.HostResults{HostResults: []*v1.HostResults_HostResult{
 			{
-				Result: v1.BenchmarkCheckStatus_PASS,
+				Result: storage.BenchmarkCheckStatus_PASS,
 			},
 			{
-				Result: v1.BenchmarkCheckStatus_INFO,
+				Result: storage.BenchmarkCheckStatus_INFO,
 			},
 		},
 		}, true, nil
@@ -44,28 +45,28 @@ func (*mockStorage) GetHostResults(request *v1.GetHostResultsRequest) (*v1.HostR
 		return &v1.HostResults{
 			HostResults: []*v1.HostResults_HostResult{
 				{
-					Result: v1.BenchmarkCheckStatus_WARN,
+					Result: storage.BenchmarkCheckStatus_WARN,
 				},
 				{
-					Result: v1.BenchmarkCheckStatus_WARN,
+					Result: storage.BenchmarkCheckStatus_WARN,
 				},
 			},
 		}, true, nil
 	}
 	return nil, false, nil
 }
-func (*mockStorage) AddScan(*v1.BenchmarkScanMetadata) error      { return nil }
-func (*mockStorage) AddBenchmarkResult(*v1.BenchmarkResult) error { return nil }
+func (*mockStorage) AddScan(*storage.BenchmarkScanMetadata) error      { return nil }
+func (*mockStorage) AddBenchmarkResult(*storage.BenchmarkResult) error { return nil }
 
-var scan = &v1.BenchmarkScan{
-	Checks: []*v1.BenchmarkScan_Check{
+var scan = &storage.BenchmarkScan{
+	Checks: []*storage.BenchmarkScan_Check{
 		{
-			Definition: &v1.BenchmarkCheckDefinition{
+			Definition: &storage.BenchmarkCheckDefinition{
 				Name: "check1",
 			},
 		},
 		{
-			Definition: &v1.BenchmarkCheckDefinition{
+			Definition: &storage.BenchmarkCheckDefinition{
 				Name: "check2",
 			},
 		},
@@ -76,28 +77,27 @@ var expectedGroup = &v1.BenchmarkGroup{
 	Benchmark: "benchmark",
 	Counts: []*v1.StatusCount{
 		{
-			Status: v1.BenchmarkCheckStatus_INFO,
+			Status: storage.BenchmarkCheckStatus_INFO,
 			Count:  1,
 		},
 		{
-			Status: v1.BenchmarkCheckStatus_WARN,
+			Status: storage.BenchmarkCheckStatus_WARN,
 			Count:  2,
 		},
 		{
-			Status: v1.BenchmarkCheckStatus_NOTE,
+			Status: storage.BenchmarkCheckStatus_NOTE,
 			Count:  0,
 		},
 		{
-			Status: v1.BenchmarkCheckStatus_PASS,
+			Status: storage.BenchmarkCheckStatus_PASS,
 			Count:  1,
 		},
 	},
 }
 
 func TestConvertScanDataToBenchmarkGroup(t *testing.T) {
-	storage := &mockStorage{}
 	service := &serviceImpl{
-		benchmarkScanStorage: storage,
+		benchmarkScanStorage: &mockStorage{},
 	}
 	actualGroup, err := service.convertScanDataToBenchmarkGroup("benchmark", scan)
 	assert.NoError(t, err)
@@ -105,11 +105,10 @@ func TestConvertScanDataToBenchmarkGroup(t *testing.T) {
 }
 
 func TestGetMostRecentScanData(t *testing.T) {
-	storage := &mockStorage{}
 	service := &serviceImpl{
-		benchmarkScanStorage: storage,
+		benchmarkScanStorage: &mockStorage{},
 	}
-	benchmark := &v1.Benchmark{
+	benchmark := &storage.Benchmark{
 		Name: "benchmark",
 		Id:   "benchmarkID",
 	}
@@ -119,12 +118,11 @@ func TestGetMostRecentScanData(t *testing.T) {
 }
 
 func TestGetBenchmarkScansSummary(t *testing.T) {
-	benchmarks := []*v1.Benchmark{{Name: "benchmark"}}
-	clusters := []*v1.Cluster{{Id: "clusterID", Name: "cluster"}}
+	benchmarks := []*storage.Benchmark{{Name: "benchmark"}}
+	clusters := []*storage.Cluster{{Id: "clusterID", Name: "cluster"}}
 
-	storage := &mockStorage{}
 	service := &serviceImpl{
-		benchmarkScanStorage: storage,
+		benchmarkScanStorage: &mockStorage{},
 	}
 	resp, err := service.getBenchmarkScansSummaryResponse(clusters, benchmarks)
 	require.NoError(t, err)

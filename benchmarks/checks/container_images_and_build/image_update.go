@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
 )
 
@@ -19,14 +19,14 @@ var updateCmds = []string{
 
 func (c *imageUpdateInstructionsBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 4.7",
 			Description: "Ensure update instructions are not use alone in the Dockerfile",
 		}, Dependencies: []utils.Dependency{utils.InitImages},
 	}
 }
 
-func (c *imageUpdateInstructionsBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *imageUpdateInstructionsBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	for _, image := range utils.Images {
 		ctx, cancel := docker.TimeoutContext()

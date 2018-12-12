@@ -6,21 +6,21 @@ import (
 	"os"
 
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type contentTrustBenchmark struct{}
 
 func (c *contentTrustBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 4.5",
 			Description: "Ensure Content trust for Docker is Enabled",
 		},
 	}
 }
 
-func (c *contentTrustBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *contentTrustBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	trust := os.Getenv("DOCKER_CONTENT_TRUST")
 	if trust == "" {

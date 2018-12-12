@@ -7,6 +7,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/suite"
 )
@@ -37,7 +38,7 @@ func (suite *BenchmarkTriggerStoreTestSuite) TearDownTest() {
 }
 
 func (suite *BenchmarkTriggerStoreTestSuite) TestTriggers() {
-	triggers := []*v1.BenchmarkTrigger{
+	triggers := []*storage.BenchmarkTrigger{
 		{
 			Id:   "trigger1",
 			Time: ptypes.TimestampNow(),

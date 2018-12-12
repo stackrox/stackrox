@@ -3,21 +3,21 @@ package kubelet
 import (
 	"github.com/stackrox/rox/benchmarks/checks"
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type kubeconfigFilePermissions struct{}
 
 func (c *kubeconfigFilePermissions) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Kubernetes v1.2.0 - 2.2.5",
 			Description: "Ensure that the proxy kubeconfig file permissions are set to 644 or more restrictive",
 		}, Dependencies: []utils.Dependency{utils.InitKubeProxyConfig},
 	}
 }
 
-func (c *kubeconfigFilePermissions) Run() (result v1.BenchmarkCheckResult) {
+func (c *kubeconfigFilePermissions) Run() (result storage.BenchmarkCheckResult) {
 	utils.Pass(&result)
 	params, ok := utils.KubeletConfig.Get("kubeconfig")
 	if !ok {

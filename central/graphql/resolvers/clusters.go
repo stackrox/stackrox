@@ -5,17 +5,17 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/schema"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 func init() {
 	schema.AddQuery("clusters: [Cluster!]!")
 	schema.AddQuery("cluster(id: ID!): Cluster")
-	schema.AddResolver(&v1.Cluster{}, `alerts: [Alert!]!`)
-	schema.AddResolver(&v1.Cluster{}, `deployments: [Deployment!]!`)
-	schema.AddResolver(&v1.Cluster{}, `nodes: [Node!]!`)
-	schema.AddResolver(&v1.Cluster{}, `node(node: ID!): Node`)
+	schema.AddResolver(&storage.Cluster{}, `alerts: [Alert!]!`)
+	schema.AddResolver(&storage.Cluster{}, `deployments: [Deployment!]!`)
+	schema.AddResolver(&storage.Cluster{}, `nodes: [Node!]!`)
+	schema.AddResolver(&storage.Cluster{}, `node(node: ID!): Node`)
 }
 
 // Cluster returns a GraphQL resolver for the given cluster

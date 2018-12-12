@@ -9,6 +9,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/central/benchmark/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 var (
@@ -40,7 +41,7 @@ func (ds *datastoreImpl) loadDefaults() error {
 	return nil
 }
 
-func (ds *datastoreImpl) getDefaultBenchmarks() (benchmarks []*v1.Benchmark, err error) {
+func (ds *datastoreImpl) getDefaultBenchmarks() (benchmarks []*storage.Benchmark, err error) {
 	files, err := ioutil.ReadDir(defaultBenchmarksPath)
 	if err != nil {
 		log.Errorf("Unable to list files in directory: %s", err)
@@ -53,7 +54,7 @@ func (ds *datastoreImpl) getDefaultBenchmarks() (benchmarks []*v1.Benchmark, err
 			continue
 		}
 
-		var p *v1.Benchmark
+		var p *storage.Benchmark
 		p, err = ds.readBenchmarkFile(path.Join(defaultBenchmarksPath, f.Name()))
 		if err == nil {
 			benchmarks = append(benchmarks, p)
@@ -65,14 +66,14 @@ func (ds *datastoreImpl) getDefaultBenchmarks() (benchmarks []*v1.Benchmark, err
 	return
 }
 
-func (ds *datastoreImpl) readBenchmarkFile(path string) (*v1.Benchmark, error) {
+func (ds *datastoreImpl) readBenchmarkFile(path string) (*storage.Benchmark, error) {
 	contents, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Errorf("Unable to read file %s: %s", path, err)
 		return nil, err
 	}
 
-	r := new(v1.Benchmark)
+	r := new(storage.Benchmark)
 	err = jsonpb.Unmarshal(bytes.NewReader(contents), r)
 	if err != nil {
 		log.Errorf("Unable to unmarshal benchmark json: %s", err)
@@ -82,19 +83,19 @@ func (ds *datastoreImpl) readBenchmarkFile(path string) (*v1.Benchmark, error) {
 	return r, nil
 }
 
-func (ds *datastoreImpl) GetBenchmark(id string) (*v1.Benchmark, bool, error) {
+func (ds *datastoreImpl) GetBenchmark(id string) (*storage.Benchmark, bool, error) {
 	return ds.storage.GetBenchmark(id)
 }
 
-func (ds *datastoreImpl) GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*v1.Benchmark, error) {
+func (ds *datastoreImpl) GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*storage.Benchmark, error) {
 	return ds.storage.GetBenchmarks(request)
 }
 
-func (ds *datastoreImpl) AddBenchmark(benchmark *v1.Benchmark) (string, error) {
+func (ds *datastoreImpl) AddBenchmark(benchmark *storage.Benchmark) (string, error) {
 	return ds.storage.AddBenchmark(benchmark)
 }
 
-func (ds *datastoreImpl) UpdateBenchmark(benchmark *v1.Benchmark) error {
+func (ds *datastoreImpl) UpdateBenchmark(benchmark *storage.Benchmark) error {
 	return ds.storage.UpdateBenchmark(benchmark)
 }
 

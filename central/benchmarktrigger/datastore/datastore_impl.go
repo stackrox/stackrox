@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/benchmarktrigger/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -14,7 +15,7 @@ type datastoreImpl struct {
 }
 
 // GetBenchmarkTriggers returns a slice of triggers based on the request
-func (ds *datastoreImpl) GetBenchmarkTriggers(request *v1.GetBenchmarkTriggersRequest) ([]*v1.BenchmarkTrigger, error) {
+func (ds *datastoreImpl) GetBenchmarkTriggers(request *v1.GetBenchmarkTriggersRequest) ([]*storage.BenchmarkTrigger, error) {
 	triggers, err := ds.storage.GetBenchmarkTriggers(request)
 	if err != nil {
 		return nil, err
@@ -67,6 +68,6 @@ func (ds *datastoreImpl) GetBenchmarkTriggers(request *v1.GetBenchmarkTriggersRe
 	return filteredTriggers, nil
 }
 
-func (ds *datastoreImpl) AddBenchmarkTrigger(trigger *v1.BenchmarkTrigger) error {
+func (ds *datastoreImpl) AddBenchmarkTrigger(trigger *storage.BenchmarkTrigger) error {
 	return ds.storage.AddBenchmarkTrigger(trigger)
 }

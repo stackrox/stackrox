@@ -8,6 +8,7 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/benchmarktrigger/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -47,7 +48,7 @@ func (suite *BenchmarkTriggerDataStoreTestSuite) TestBenchmarkTriggers() {
 	triggerTime2 := ptypes.TimestampNow()
 	triggerTime2.Seconds += 1000
 
-	triggers := []*v1.BenchmarkTrigger{
+	triggers := []*storage.BenchmarkTrigger{
 		{
 			Id:   "trigger1",
 			Time: triggerTime1,
@@ -75,22 +76,22 @@ func (suite *BenchmarkTriggerDataStoreTestSuite) TestBenchmarkTriggersFiltering(
 	cluster2a := uuid.NewV4().String()
 	cluster2b := uuid.NewV4().String()
 
-	trigger1 := &v1.BenchmarkTrigger{
+	trigger1 := &storage.BenchmarkTrigger{
 		Id:         "trigger1",
 		Time:       triggerTime1,
 		ClusterIds: []string{cluster1},
 	}
-	trigger2 := &v1.BenchmarkTrigger{
+	trigger2 := &storage.BenchmarkTrigger{
 		Id:         "trigger2",
 		Time:       triggerTime2,
 		ClusterIds: []string{cluster2a, cluster2b},
 	}
 	// trigger with no cluster
-	trigger3 := &v1.BenchmarkTrigger{
+	trigger3 := &storage.BenchmarkTrigger{
 		Id:   "trigger3",
 		Time: triggerTime3,
 	}
-	triggers := []*v1.BenchmarkTrigger{
+	triggers := []*storage.BenchmarkTrigger{
 		trigger1,
 		trigger2,
 		trigger3,
@@ -109,11 +110,11 @@ func (suite *BenchmarkTriggerDataStoreTestSuite) TestBenchmarkTriggersFiltering(
 		Ids: []string{"trigger1"},
 	})
 	suite.NoError(err)
-	suite.Equal([]*v1.BenchmarkTrigger{trigger1}, actualTriggers)
+	suite.Equal([]*storage.BenchmarkTrigger{trigger1}, actualTriggers)
 
 	actualTriggers, err = suite.datastore.GetBenchmarkTriggers(&v1.GetBenchmarkTriggersRequest{
 		ClusterIds: []string{cluster1},
 	})
 	suite.NoError(err)
-	suite.Equal([]*v1.BenchmarkTrigger{trigger1, trigger3}, actualTriggers)
+	suite.Equal([]*storage.BenchmarkTrigger{trigger1, trigger3}, actualTriggers)
 }

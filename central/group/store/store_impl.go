@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // We use custom serialization for speed since this store will need to be 'Walked'
@@ -14,7 +14,7 @@ type storeImpl struct {
 }
 
 // Get returns a group matching the given properties if it exists from the store.
-func (s *storeImpl) Get(props *v1.GroupProperties) (grp *v1.Group, err error) {
+func (s *storeImpl) Get(props *storage.GroupProperties) (grp *storage.Group, err error) {
 	s.db.View(func(tx *bolt.Tx) error {
 		buc := tx.Bucket([]byte(groupsBucket))
 		k := serializeKey(props)
@@ -29,7 +29,7 @@ func (s *storeImpl) Get(props *v1.GroupProperties) (grp *v1.Group, err error) {
 }
 
 // GetAll return all groups currently in the store.
-func (s *storeImpl) GetAll() (grps []*v1.Group, err error) {
+func (s *storeImpl) GetAll() (grps []*storage.Group, err error) {
 	err = s.db.View(func(tx *bolt.Tx) error {
 		buc := tx.Bucket([]byte(groupsBucket))
 		buc.ForEach(func(k, v []byte) error {
@@ -51,7 +51,7 @@ func (s *storeImpl) GetAll() (grps []*v1.Group, err error) {
 //
 // When given an auth provider, and map, we will look for all key and key/value pairs that exist
 // in the store both for the given auth provider, and for no auth provider (applies to all auth providers.)
-func (s *storeImpl) Walk(authProviderID string, attributes map[string][]string) (grps []*v1.Group, err error) {
+func (s *storeImpl) Walk(authProviderID string, attributes map[string][]string) (grps []*storage.Group, err error) {
 	// Build list to search
 	toSearch := getPossibleGroupProperties(authProviderID, attributes)
 
@@ -75,7 +75,7 @@ func (s *storeImpl) Walk(authProviderID string, attributes map[string][]string) 
 
 // Add adds a group to the store.
 // Returns an error if a group with the same properties already exists.
-func (s *storeImpl) Add(group *v1.Group) error {
+func (s *storeImpl) Add(group *storage.Group) error {
 	key, value := serialize(group)
 
 	return s.db.Update(func(tx *bolt.Tx) error {
@@ -90,7 +90,7 @@ func (s *storeImpl) Add(group *v1.Group) error {
 
 // Update updates a group in the store.
 // Returns an error if a group with the same properties does not already exist.
-func (s *storeImpl) Update(group *v1.Group) error {
+func (s *storeImpl) Update(group *storage.Group) error {
 	key, value := serialize(group)
 
 	return s.db.Update(func(tx *bolt.Tx) error {
@@ -104,7 +104,7 @@ func (s *storeImpl) Update(group *v1.Group) error {
 }
 
 // Upsert adds or updates a group in the store.
-func (s *storeImpl) Upsert(group *v1.Group) error {
+func (s *storeImpl) Upsert(group *storage.Group) error {
 	key, value := serialize(group)
 
 	return s.db.Update(func(tx *bolt.Tx) error {
@@ -116,7 +116,7 @@ func (s *storeImpl) Upsert(group *v1.Group) error {
 
 // Remove removes the group with matching properties from the store.
 // Does not return an error if no such group exists.
-func (s *storeImpl) Remove(props *v1.GroupProperties) error {
+func (s *storeImpl) Remove(props *storage.GroupProperties) error {
 	key := serializeKey(props)
 
 	return s.db.Update(func(tx *bolt.Tx) error {
@@ -129,18 +129,18 @@ func (s *storeImpl) Remove(props *v1.GroupProperties) error {
 // Helpers
 //////////
 
-func getPossibleGroupProperties(authProviderID string, attributes map[string][]string) (props []*v1.GroupProperties) {
+func getPossibleGroupProperties(authProviderID string, attributes map[string][]string) (props []*storage.GroupProperties) {
 	// We need to consider no provider, and the provider given.
 	possibleAuthProviders := []string{"", authProviderID}
 	for _, ap := range possibleAuthProviders {
 		// Need to consider no key.
-		props = append(props, &v1.GroupProperties{AuthProviderId: ap})
+		props = append(props, &storage.GroupProperties{AuthProviderId: ap})
 		for key, values := range attributes {
 			// Need to consider key with no value
-			props = append(props, &v1.GroupProperties{AuthProviderId: ap, Key: key})
+			props = append(props, &storage.GroupProperties{AuthProviderId: ap, Key: key})
 			// Consider all Key/Value pairs present.
 			for _, value := range values {
-				props = append(props, &v1.GroupProperties{AuthProviderId: ap, Key: key, Value: value})
+				props = append(props, &storage.GroupProperties{AuthProviderId: ap, Key: key, Value: value})
 			}
 		}
 	}

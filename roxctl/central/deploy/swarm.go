@@ -2,11 +2,11 @@ package deploy
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
 )
 
-func dockerBasedOrchestrator(shortName, longName string, cluster v1.ClusterType) *cobra.Command {
+func dockerBasedOrchestrator(shortName, longName string, cluster storage.ClusterType) *cobra.Command {
 	swarmConfig := new(renderer.SwarmConfig)
 
 	c := orchestratorCommand(shortName, longName)

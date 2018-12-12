@@ -4,49 +4,14 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
-import "google/protobuf/timestamp.proto";
-import "api/v1/benchmark_service.proto";
 import "api/v1/empty.proto";
+import "storage/benchmark_scan.proto";
 
 package v1;
 
-enum BenchmarkCheckStatus {
-    INFO           = 0;
-    WARN           = 1;
-    NOTE           = 2;
-    PASS           = 3;
-    NOT_APPLICABLE = 4;
-}
-
-enum BenchmarkReason {
-    SCHEDULED = 0;
-    TRIGGERED = 1;
-}
-
-message BenchmarkCheckResult {
-    string id                  = 1;
-    string host                = 2;
-    string cluster_id          = 3;
-    BenchmarkCheckDefinition definition = 4;
-    BenchmarkCheckStatus result         = 5;
-    repeated string notes      = 6;
-}
-
-message BenchmarkResult {
-    string id                            = 1;
-    string benchmark_id                  = 2;
-    repeated BenchmarkCheckResult results         = 3;
-    google.protobuf.Timestamp start_time = 4;
-    google.protobuf.Timestamp end_time   = 5;
-    string host                          = 6;
-    string scan_id                       = 7;
-    string cluster_id                    = 8;
-    BenchmarkReason reason               = 9;
-}
-
 service BenchmarkResultsService {
 
-    rpc PostBenchmarkResult(BenchmarkResult) returns (Empty) {
+    rpc PostBenchmarkResult(storage.BenchmarkResult) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/benchmarks/results"
             body: "*"

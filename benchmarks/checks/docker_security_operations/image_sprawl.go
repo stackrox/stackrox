@@ -2,21 +2,21 @@ package dockersecurityoperations
 
 import (
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 type imageSprawlBenchmark struct{}
 
 func (c *imageSprawlBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 6.1",
 			Description: "Ensure image sprawl is avoided",
 		}, Dependencies: []utils.Dependency{utils.InitImages, utils.InitContainers},
 	}
 }
 
-func (c *imageSprawlBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *imageSprawlBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	utils.Info(&result)
 	m := make(map[string]struct{})
 	for _, container := range utils.ContainersRunning {

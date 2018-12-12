@@ -3,7 +3,7 @@ package apiserver
 import (
 	"github.com/stackrox/rox/benchmarks/checks"
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"gopkg.in/yaml.v2"
 	"k8s.io/apiserver/pkg/server/options/encryptionconfig"
 )
@@ -12,14 +12,14 @@ type encryptionProvider struct{}
 
 func (c *encryptionProvider) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Kubernetes v1.2.0 - 1.1.34",
 			Description: "Ensure that the encryption provider is set to aescbc",
 		}, Dependencies: []utils.Dependency{utils.InitKubeAPIServerConfig},
 	}
 }
 
-func (c *encryptionProvider) Run() (result v1.BenchmarkCheckResult) {
+func (c *encryptionProvider) Run() (result storage.BenchmarkCheckResult) {
 	params, ok := utils.KubeAPIServerConfig.Get("experimental-encryption-provider-config")
 	if !ok {
 		utils.Warn(&result)

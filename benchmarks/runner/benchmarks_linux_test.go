@@ -8,7 +8,7 @@ import (
 
 	"github.com/stackrox/rox/benchmarks/checks/container_runtime"
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -111,38 +111,38 @@ func TestRuntimeBenchmarksWarn(t *testing.T) {
 		containerruntime.NewDockerSocketMountBenchmark(),
 	}
 
-	expectedResults := []v1.BenchmarkCheckStatus{
-		v1.BenchmarkCheckStatus_WARN, // 1
-		v1.BenchmarkCheckStatus_WARN,
-		v1.BenchmarkCheckStatus_INFO,
-		v1.BenchmarkCheckStatus_WARN,
-		v1.BenchmarkCheckStatus_WARN, // 5
-		v1.BenchmarkCheckStatus_NOTE,
-		v1.BenchmarkCheckStatus_WARN,
-		v1.BenchmarkCheckStatus_NOTE,
-		v1.BenchmarkCheckStatus_PASS, // Cannot use both bridge and host network at the same time. Bridge removes port binding so allow host network test to pass
-		v1.BenchmarkCheckStatus_WARN, // 10
-		v1.BenchmarkCheckStatus_WARN,
-		v1.BenchmarkCheckStatus_WARN,
-		v1.BenchmarkCheckStatus_WARN,
-		v1.BenchmarkCheckStatus_WARN,
-		v1.BenchmarkCheckStatus_WARN, // 15
-		v1.BenchmarkCheckStatus_WARN,
-		v1.BenchmarkCheckStatus_WARN,
-		v1.BenchmarkCheckStatus_NOTE,
-		v1.BenchmarkCheckStatus_WARN,
-		v1.BenchmarkCheckStatus_WARN, // 20
-		v1.BenchmarkCheckStatus_WARN,
-		//v1.BenchmarkCheckStatus_WARN, // Docker exec audits are commented out
-		//v1.BenchmarkCheckStatus_WARN, // Docker exec audits are commented out
-		v1.BenchmarkCheckStatus_WARN,
-		v1.BenchmarkCheckStatus_WARN, // 25
-		v1.BenchmarkCheckStatus_WARN,
-		v1.BenchmarkCheckStatus_NOTE,
-		v1.BenchmarkCheckStatus_WARN,
-		v1.BenchmarkCheckStatus_WARN,
-		v1.BenchmarkCheckStatus_WARN, // 30
-		v1.BenchmarkCheckStatus_WARN,
+	expectedResults := []storage.BenchmarkCheckStatus{
+		storage.BenchmarkCheckStatus_WARN, // 1
+		storage.BenchmarkCheckStatus_WARN,
+		storage.BenchmarkCheckStatus_INFO,
+		storage.BenchmarkCheckStatus_WARN,
+		storage.BenchmarkCheckStatus_WARN, // 5
+		storage.BenchmarkCheckStatus_NOTE,
+		storage.BenchmarkCheckStatus_WARN,
+		storage.BenchmarkCheckStatus_NOTE,
+		storage.BenchmarkCheckStatus_PASS, // Cannot use both bridge and host network at the same time. Bridge removes port binding so allow host network test to pass
+		storage.BenchmarkCheckStatus_WARN, // 10
+		storage.BenchmarkCheckStatus_WARN,
+		storage.BenchmarkCheckStatus_WARN,
+		storage.BenchmarkCheckStatus_WARN,
+		storage.BenchmarkCheckStatus_WARN,
+		storage.BenchmarkCheckStatus_WARN, // 15
+		storage.BenchmarkCheckStatus_WARN,
+		storage.BenchmarkCheckStatus_WARN,
+		storage.BenchmarkCheckStatus_NOTE,
+		storage.BenchmarkCheckStatus_WARN,
+		storage.BenchmarkCheckStatus_WARN, // 20
+		storage.BenchmarkCheckStatus_WARN,
+		//storage.BenchmarkCheckStatus_WARN, // Docker exec audits are commented out
+		//storage.BenchmarkCheckStatus_WARN, // Docker exec audits are commented out
+		storage.BenchmarkCheckStatus_WARN,
+		storage.BenchmarkCheckStatus_WARN, // 25
+		storage.BenchmarkCheckStatus_WARN,
+		storage.BenchmarkCheckStatus_NOTE,
+		storage.BenchmarkCheckStatus_WARN,
+		storage.BenchmarkCheckStatus_WARN,
+		storage.BenchmarkCheckStatus_WARN, // 30
+		storage.BenchmarkCheckStatus_WARN,
 	}
 	require.Equal(t, len(benchmarks), len(expectedResults))
 
@@ -230,38 +230,38 @@ func TestRuntimeBenchmarksPass(t *testing.T) {
 		containerruntime.NewDockerSocketMountBenchmark(),
 	}
 
-	expectedResults := []v1.BenchmarkCheckStatus{
-		v1.BenchmarkCheckStatus_PASS, // 1
-		v1.BenchmarkCheckStatus_PASS,
-		v1.BenchmarkCheckStatus_INFO,
-		v1.BenchmarkCheckStatus_PASS,
-		v1.BenchmarkCheckStatus_PASS, // 5
-		v1.BenchmarkCheckStatus_NOTE,
-		v1.BenchmarkCheckStatus_PASS,
-		v1.BenchmarkCheckStatus_NOTE,
-		v1.BenchmarkCheckStatus_PASS,
-		v1.BenchmarkCheckStatus_PASS, // 10
-		v1.BenchmarkCheckStatus_PASS,
-		v1.BenchmarkCheckStatus_PASS,
-		v1.BenchmarkCheckStatus_PASS,
-		v1.BenchmarkCheckStatus_PASS,
-		v1.BenchmarkCheckStatus_PASS, // 15
-		v1.BenchmarkCheckStatus_PASS,
-		v1.BenchmarkCheckStatus_PASS,
-		v1.BenchmarkCheckStatus_NOTE,
-		v1.BenchmarkCheckStatus_PASS,
-		v1.BenchmarkCheckStatus_PASS, // 20
-		v1.BenchmarkCheckStatus_PASS,
-		// v1.BenchmarkCheckStatus_PASS, // Docker exec audits are commented out
-		// v1.BenchmarkCheckStatus_PASS, // Docker exec audits are commented out
-		v1.BenchmarkCheckStatus_PASS,
-		v1.BenchmarkCheckStatus_PASS, // 25
-		v1.BenchmarkCheckStatus_PASS,
-		v1.BenchmarkCheckStatus_NOTE,
-		v1.BenchmarkCheckStatus_PASS,
-		v1.BenchmarkCheckStatus_PASS,
-		v1.BenchmarkCheckStatus_PASS, // 30
-		v1.BenchmarkCheckStatus_PASS,
+	expectedResults := []storage.BenchmarkCheckStatus{
+		storage.BenchmarkCheckStatus_PASS, // 1
+		storage.BenchmarkCheckStatus_PASS,
+		storage.BenchmarkCheckStatus_INFO,
+		storage.BenchmarkCheckStatus_PASS,
+		storage.BenchmarkCheckStatus_PASS, // 5
+		storage.BenchmarkCheckStatus_NOTE,
+		storage.BenchmarkCheckStatus_PASS,
+		storage.BenchmarkCheckStatus_NOTE,
+		storage.BenchmarkCheckStatus_PASS,
+		storage.BenchmarkCheckStatus_PASS, // 10
+		storage.BenchmarkCheckStatus_PASS,
+		storage.BenchmarkCheckStatus_PASS,
+		storage.BenchmarkCheckStatus_PASS,
+		storage.BenchmarkCheckStatus_PASS,
+		storage.BenchmarkCheckStatus_PASS, // 15
+		storage.BenchmarkCheckStatus_PASS,
+		storage.BenchmarkCheckStatus_PASS,
+		storage.BenchmarkCheckStatus_NOTE,
+		storage.BenchmarkCheckStatus_PASS,
+		storage.BenchmarkCheckStatus_PASS, // 20
+		storage.BenchmarkCheckStatus_PASS,
+		// storage.BenchmarkCheckStatus_PASS, // Docker exec audits are commented out
+		// storage.BenchmarkCheckStatus_PASS, // Docker exec audits are commented out
+		storage.BenchmarkCheckStatus_PASS,
+		storage.BenchmarkCheckStatus_PASS, // 25
+		storage.BenchmarkCheckStatus_PASS,
+		storage.BenchmarkCheckStatus_NOTE,
+		storage.BenchmarkCheckStatus_PASS,
+		storage.BenchmarkCheckStatus_PASS,
+		storage.BenchmarkCheckStatus_PASS, // 30
+		storage.BenchmarkCheckStatus_PASS,
 	}
 	require.Equal(t, len(benchmarks), len(expectedResults))
 	// Set the containers manually to work around sync.Once
@@ -281,7 +281,7 @@ func TestRuntimeBenchmarksPass(t *testing.T) {
 			benchmark.Definition().Name,
 			benchmark.Definition().Description,
 		)
-		if result.Result == v1.BenchmarkCheckStatus_WARN {
+		if result.Result == storage.BenchmarkCheckStatus_WARN {
 			log.Infof("%+v", result.Notes)
 		}
 	}

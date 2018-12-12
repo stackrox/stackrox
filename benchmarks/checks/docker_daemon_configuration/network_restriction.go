@@ -4,7 +4,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/stackrox/rox/benchmarks/checks/utils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
 )
 
@@ -12,14 +12,14 @@ type networkRestrictionBenchmark struct{}
 
 func (c *networkRestrictionBenchmark) Definition() utils.Definition {
 	return utils.Definition{
-		BenchmarkCheckDefinition: v1.BenchmarkCheckDefinition{
+		BenchmarkCheckDefinition: storage.BenchmarkCheckDefinition{
 			Name:        "CIS Docker v1.1.0 - 2.1",
 			Description: "Ensure network traffic is restricted between containers on the default bridge",
 		}, Dependencies: []utils.Dependency{utils.InitDockerConfig, utils.InitDockerClient},
 	}
 }
 
-func (c *networkRestrictionBenchmark) Run() (result v1.BenchmarkCheckResult) {
+func (c *networkRestrictionBenchmark) Run() (result storage.BenchmarkCheckResult) {
 	listFilters := filters.NewArgs()
 	listFilters.Add("Name", "bridge")
 	ctx, cancel := docker.TimeoutContext()

@@ -7,6 +7,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -15,13 +16,13 @@ type storeImpl struct {
 }
 
 // GetBenchmarkTriggers retrieves benchmark triggers from bolt
-func (b *storeImpl) GetBenchmarkTriggers(request *v1.GetBenchmarkTriggersRequest) ([]*v1.BenchmarkTrigger, error) {
+func (b *storeImpl) GetBenchmarkTriggers(request *v1.GetBenchmarkTriggersRequest) ([]*storage.BenchmarkTrigger, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "BenchmarkTrigger")
-	var triggers []*v1.BenchmarkTrigger
+	var triggers []*storage.BenchmarkTrigger
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(benchmarkTriggerBucket))
 		return b.ForEach(func(k, v []byte) error {
-			var trigger v1.BenchmarkTrigger
+			var trigger storage.BenchmarkTrigger
 			if err := proto.Unmarshal(v, &trigger); err != nil {
 				return err
 			}
@@ -33,7 +34,7 @@ func (b *storeImpl) GetBenchmarkTriggers(request *v1.GetBenchmarkTriggersRequest
 }
 
 // AddBenchmarkTrigger inserts a benchmark trigger into Bolt
-func (b *storeImpl) AddBenchmarkTrigger(trigger *v1.BenchmarkTrigger) error {
+func (b *storeImpl) AddBenchmarkTrigger(trigger *storage.BenchmarkTrigger) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "BenchmarkTrigger")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(benchmarkTriggerBucket))

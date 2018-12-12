@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
@@ -22,7 +23,7 @@ var (
 // This interface encapsulates the access the ClusterWatcher needs to
 // a cluster store.
 type clusterStore interface {
-	GetCluster(id string) (*v1.Cluster, bool, error)
+	GetCluster(id string) (*storage.Cluster, bool, error)
 	UpdateClusterContactTime(id string, t time.Time) error
 }
 

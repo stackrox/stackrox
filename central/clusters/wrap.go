@@ -8,7 +8,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -30,11 +29,11 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Wrap adds additional functionality to a v1.Cluster.
-type Wrap v1.Cluster
+// Wrap adds additional functionality to a storage.Cluster.
+type Wrap storage.Cluster
 
 // NewDeployer takes in a cluster and returns the cluster implementation
-func NewDeployer(c *v1.Cluster) (Deployer, error) {
+func NewDeployer(c *storage.Cluster) (Deployer, error) {
 	dep, ok := deployers[c.Type]
 	if !ok {
 		return nil, status.Errorf(codes.Unimplemented, "Cluster type %s is not currently implemented", c.Type.String())
@@ -47,7 +46,7 @@ type Deployer interface {
 	Render(Wrap) ([]*zip.File, error)
 }
 
-var deployers = make(map[v1.ClusterType]Deployer)
+var deployers = make(map[storage.ClusterType]Deployer)
 
 func executeTemplate(temp *template.Template, fields map[string]interface{}) ([]byte, error) {
 	var b []byte

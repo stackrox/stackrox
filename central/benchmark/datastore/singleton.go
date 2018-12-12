@@ -10,13 +10,11 @@ import (
 var (
 	once sync.Once
 
-	storage store.Store
-
 	ad DataStore
 )
 
 func initialize() {
-	storage = store.New(globaldb.GetGlobalDB())
+	storage := store.New(globaldb.GetGlobalDB())
 
 	var err error
 	ad, err = New(storage)

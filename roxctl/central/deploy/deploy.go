@@ -13,6 +13,7 @@ import (
 	cflog "github.com/cloudflare/cfssl/log"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/version"
@@ -199,7 +200,7 @@ func Command() *cobra.Command {
 
 	c.AddCommand(k8s())
 	c.AddCommand(openshift())
-	c.AddCommand(dockerBasedOrchestrator("swarm", "Docker Swarm", v1.ClusterType_SWARM_CLUSTER))
+	c.AddCommand(dockerBasedOrchestrator("swarm", "Docker Swarm", storage.ClusterType_SWARM_CLUSTER))
 	return c
 }
 
