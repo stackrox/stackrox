@@ -23,12 +23,17 @@ type Scorer interface {
 func NewScorer(alertGetter getters.AlertGetter) Scorer {
 	return &scoreImpl{
 		// These multipliers are intentionally ordered based on the order that we want them to be displayed in.
-		// Please do not re-order willy-nilly.
+		// Order aligns with the maximum output multiplier value, which would make sense to correlate
+		// with how important a specific multiplier is.
+		// DO NOT REORDER WITHOUT THOUGHT.
 		ConfiguredMultipliers: []multipliers.Multiplier{
 			multipliers.NewViolations(alertGetter),
 			multipliers.NewVulnerabilities(),
 			multipliers.NewServiceConfig(),
 			multipliers.NewReachability(),
+			multipliers.NewRiskyComponents(),
+			multipliers.NewComponentCount(),
+			multipliers.NewImageAge(),
 		},
 		UserDefinedMultipliers: make(map[string]multipliers.Multiplier),
 	}

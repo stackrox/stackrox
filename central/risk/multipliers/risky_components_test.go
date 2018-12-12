@@ -8,7 +8,7 @@ import (
 )
 
 func TestRiskyComponentCountScore(t *testing.T) {
-	portMultiplier := NewRiskyComponents()
+	riskyMultiplier := NewRiskyComponents()
 	deployment := getMockDeployment()
 
 	// Add some risky components to the deployment
@@ -51,6 +51,6 @@ func TestRiskyComponentCountScore(t *testing.T) {
 		},
 		Score: 1.3,
 	}
-	score := portMultiplier.Score(deployment)
+	score := riskyMultiplier.Score(deployment)
 	assert.Equal(t, expectedScore, score)
 }

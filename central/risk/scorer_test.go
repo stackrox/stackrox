@@ -3,11 +3,13 @@ package risk
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/central/risk/getters"
 	"github.com/stackrox/rox/central/risk/multipliers"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,7 +28,7 @@ func TestScore(t *testing.T) {
 	})
 
 	// Without user defined function
-	expectedRiskScore := 7.2128
+	expectedRiskScore := 9.016
 	expectedRiskResults := []*storage.Risk_Result{
 		{
 			Name:    multipliers.PolicyViolationsHeading,
@@ -60,6 +62,13 @@ func TestScore(t *testing.T) {
 			},
 			Score: 1.6,
 		},
+		{
+			Name: multipliers.ImageAgeHeading,
+			Factors: []*storage.Risk_Result_Factor{
+				{Message: "Deployment contains an image 180 days old"},
+			},
+			Score: 1.25,
+		},
 	}
 	actualRisk := scorer.Score(deployment)
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
@@ -78,7 +87,7 @@ func TestScore(t *testing.T) {
 		scorer.UpdateUserDefinedMultiplier(mult)
 	}
 
-	expectedRiskScore = 43.2768
+	expectedRiskScore = 54.096
 	expectedRiskResults = append(expectedRiskResults, []*storage.Risk_Result{
 		{
 			Name: "Cluster multiplier 3",
@@ -148,6 +157,11 @@ func getMockDeployment() *storage.Deployment {
 									},
 								},
 							},
+						},
+					},
+					Metadata: &storage.ImageMetadata{
+						V1: &storage.V1Metadata{
+							Created: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(180 * 24 * time.Hour))),
 						},
 					},
 				},

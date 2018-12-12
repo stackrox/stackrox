@@ -62,7 +62,7 @@ func (c *riskyComponentCountMultiplier) Score(deployment *storage.Deployment) *s
 			largestRiskySet = &riskySet
 		}
 	}
-	if largestRiskySet == nil {
+	if largestRiskySet == nil || largestRiskySet.Cardinality() == 0 {
 		return nil
 	}
 

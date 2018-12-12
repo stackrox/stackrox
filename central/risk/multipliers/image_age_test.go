@@ -8,7 +8,7 @@ import (
 )
 
 func TestImageAgeScore(t *testing.T) {
-	portMultiplier := NewImageAge()
+	imageAgeMultiplier := NewImageAge()
 
 	deployment := getMockDeployment()
 	expectedScore := &storage.Risk_Result{
@@ -18,6 +18,6 @@ func TestImageAgeScore(t *testing.T) {
 		},
 		Score: 1.25,
 	}
-	score := portMultiplier.Score(deployment)
+	score := imageAgeMultiplier.Score(deployment)
 	assert.Equal(t, expectedScore, score)
 }

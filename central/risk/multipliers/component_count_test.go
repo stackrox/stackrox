@@ -8,7 +8,7 @@ import (
 )
 
 func TestComponentCountScore(t *testing.T) {
-	portMultiplier := NewComponentCount()
+	countMultiplier := NewComponentCount()
 
 	// We need 14 components added for the count tobe 15 (the two already in the deployment are duplicates of each other)
 	deployment := getMockDeployment()
@@ -28,6 +28,6 @@ func TestComponentCountScore(t *testing.T) {
 		},
 		Score: 1.25,
 	}
-	score := portMultiplier.Score(deployment)
+	score := countMultiplier.Score(deployment)
 	assert.Equal(t, expectedScore, score)
 }
