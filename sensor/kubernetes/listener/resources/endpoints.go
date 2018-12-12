@@ -101,6 +101,7 @@ func (m *endpointManager) endpointDataForDeployment(w *deploymentWrap) *clustere
 				DeploymentID:  w.GetId(),
 				PodID:         podID,
 				ContainerName: c.GetName(),
+				ContainerID:   id,
 			})
 		}
 	}

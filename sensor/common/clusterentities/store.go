@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkentity"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // ContainerMetadata is the container metadata that is stored per instance
@@ -12,6 +13,7 @@ type ContainerMetadata struct {
 	DeploymentID  string
 	PodID         string
 	ContainerName string
+	ContainerID   string
 }
 
 // Store is a store for managing cluster entities (currently deployments only) and allows looking them up by
@@ -30,6 +32,10 @@ type Store struct {
 	reverseEndpointMap map[string]map[net.NumericEndpoint]struct{}
 	// reverseContainerIDMap maps deployment ids to sets of container IDs associated with this deployment.
 	reverseContainerIDMap map[string]map[string]struct{}
+	// callbackContainerIDSet is a set of container ID's to be resolved
+	callbackContainerIDSet set.StringSet
+	// callbackChannel is a channel to send container metadata upon resolution
+	callbackChannel chan ContainerMetadata
 
 	mutex sync.RWMutex
 }
@@ -39,12 +45,13 @@ type Store struct {
 // `StoreInstance()`.
 func NewStore() *Store {
 	return &Store{
-		ipMap:                 make(map[net.IPAddress]map[string]struct{}),
-		endpointMap:           make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{}),
-		containerIDMap:        make(map[string]ContainerMetadata),
-		reverseIPMap:          make(map[string]map[net.IPAddress]struct{}),
-		reverseEndpointMap:    make(map[string]map[net.NumericEndpoint]struct{}),
-		reverseContainerIDMap: make(map[string]map[string]struct{}),
+		ipMap:                  make(map[net.IPAddress]map[string]struct{}),
+		endpointMap:            make(map[net.NumericEndpoint]map[string]map[EndpointTargetInfo]struct{}),
+		containerIDMap:         make(map[string]ContainerMetadata),
+		reverseIPMap:           make(map[string]map[net.IPAddress]struct{}),
+		reverseEndpointMap:     make(map[string]map[net.NumericEndpoint]struct{}),
+		reverseContainerIDMap:  make(map[string]map[string]struct{}),
+		callbackContainerIDSet: set.NewStringSet(),
 	}
 }
 
@@ -181,6 +188,21 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 		}
 		reverseContainerIDs[containerID] = struct{}{}
 		e.containerIDMap[containerID] = metadata
+		if found := e.callbackContainerIDSet.Contains(containerID); found {
+			e.callbackChannel <- metadata
+			e.callbackContainerIDSet.Remove(containerID)
+		}
+	}
+}
+
+// AddCallbackForContainerMetadata adds a channel to send the container metadata when available.
+func (e *Store) AddCallbackForContainerMetadata(containerID string, sendChan chan ContainerMetadata) {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+
+	e.callbackContainerIDSet.Add(containerID)
+	if e.callbackChannel == nil {
+		e.callbackChannel = sendChan
 	}
 }
 

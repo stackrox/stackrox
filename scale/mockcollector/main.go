@@ -110,11 +110,9 @@ func collector(sensorEndpoint string, maxProcesses int, processInterval time.Dur
 			defer cancel()
 			continue
 		}
-		log.Infof("streamMsg: %+v\n", streamMsg)
 		processCount++
 	}
-
-	fmt.Printf("Finished writing %d processes\n", processCount)
+	log.Infof("Successfully sent %d process indicators\n", processCount)
 }
 
 func generateSignals(containerID string) *sensor.SignalStreamMessage {
