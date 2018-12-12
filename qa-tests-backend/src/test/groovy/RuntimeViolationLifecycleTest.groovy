@@ -11,6 +11,7 @@ import java.util.stream.Collectors
 import objects.Deployment
 import org.junit.experimental.categories.Category
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
+import io.stackrox.proto.api.v1.Indicator
 import io.stackrox.proto.storage.PolicyOuterClass
 
 class RuntimeViolationLifecycleTest extends BaseSpecification  {
@@ -143,10 +144,12 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         assert originalAptGetAlert.getViolationsCount() == 1
         def subViolation = originalAptGetAlert.getViolations(0)
         assert subViolation.getProcessesCount() > 0
-        def violatingProcess = subViolation.getProcessesList().
-            find { p -> p.getSignal().getName() == "apt-get" }
-        assert violatingProcess != null
-        assert violatingProcess.getSignal().getArgs() == "-y update"
+        for (Indicator.ProcessIndicator process : subViolation.getProcessesList()) {
+            assert process.getSignal().getName() in ["apt-get", "dpkg", "apt"]
+            if (process.getSignal().getName() == "apt-get") {
+                assert process.getSignal().getArgs() == "-y update"
+            }
+        }
 
         when:
         "Whitelist the deployment, get the alert again"
