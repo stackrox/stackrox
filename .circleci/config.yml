@@ -39,7 +39,7 @@ setupHelm: &setupHelm
     name: Setup tiller by default in GKE Cluster
     command:  |
        kubectl apply -f ./deploy/k8s/tillerbind.yaml
-       helm init --service-account helm
+       helm init --service-account helm --wait
 
 setupGCP: &setupGCP
   run:

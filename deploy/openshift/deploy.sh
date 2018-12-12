@@ -16,4 +16,4 @@ echo "RUNTIME_SUPPORT set to $RUNTIME_SUPPORT"
 
 launch_central "$K8S_DIR" "$MAIN_IMAGE"
 
-launch_sensor "$K8S_DIR" "$CLUSTER" "$MAIN_IMAGE" "$CLUSTER_API_ENDPOINT" "$RUNTIME_SUPPORT"
+launch_sensor "$K8S_DIR"

@@ -19,6 +19,9 @@ echo "CLUSTER set to $CLUSTER"
 export STORAGE="${STORAGE:-none}"
 echo "STORAGE set to ${STORAGE}"
 
+export OUTPUT_FORMAT="${OUTPUT_FORMAT:-kubectl}"
+echo "OUTPUT_FORMAT set to ${OUTPUT_FORMAT}"
+
 LOAD_BALANCER="${LOAD_BALANCER:-none}"
 echo "LOAD_BALANCER set to ${LOAD_BALANCER}"
 

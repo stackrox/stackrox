@@ -13,4 +13,4 @@ if [[ -z $CLUSTER ]]; then
 fi
 echo "CLUSTER set to $CLUSTER"
 
-launch_sensor "$K8S_DIR" "$CLUSTER" "$MAIN_IMAGE" "$CLUSTER_API_ENDPOINT" "$RUNTIME_SUPPORT"
+launch_sensor "$K8S_DIR"

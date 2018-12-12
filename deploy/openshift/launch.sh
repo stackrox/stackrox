@@ -2,7 +2,6 @@
 
 function launch_central {
     local openshift_dir="$1"
-    local main_image="$2"
 
     set -u
 
@@ -11,7 +10,7 @@ function launch_central {
         extra_args+=("--monitoring-type=none")
     fi
 
-    docker run  -e ROX_HTPASSWD_AUTH "$main_image" central generate openshift ${extra_args[@]+"${extra_args[@]}"} --monitoring-password stackrox -i "$main_image" none > $openshift_dir/central.zip
+    docker run  -e ROX_HTPASSWD_AUTH "$MAIN_IMAGE" central generate openshift ${extra_args[@]+"${extra_args[@]}"} --monitoring-password stackrox -i "$MAIN_IMAGE" none > $openshift_dir/central.zip
     local unzip_dir="$openshift_dir/central-deploy/"
     rm -rf "${unzip_dir}"
     unzip "$openshift_dir/central.zip" -d "${unzip_dir}"
@@ -47,10 +46,6 @@ function launch_central {
 
 function launch_sensor {
     local openshift_dir="$1"
-    local cluster="$2"
-    local main_image="$3"
-    local cluster_api_endpoint="$4"
-    local runtime_support="$5"
 
     local common_params="{ \"params\" : { \"namespace\": \"stackrox\" } }"
 
@@ -60,7 +55,7 @@ function launch_sensor {
     fi
     extra_config+="\"openshift\": $common_params}"
 
-    get_cluster_zip localhost:8000 "$cluster" OPENSHIFT_CLUSTER "$main_image" "$cluster_api_endpoint" "$openshift_dir" "$runtime_support" "$extra_config"
+    get_cluster_zip localhost:8000 "$CLUSTER" OPENSHIFT_CLUSTER "$MAIN_IMAGE" "$CLUSTER_API_ENDPOINT" "$openshift_dir" "$RUNTIME_SUPPORT" "$extra_config"
 
     echo "Deploying Sensor..."
     local unzip_dir="$openshift_dir/sensor-deploy/"
