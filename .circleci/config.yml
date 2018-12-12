@@ -93,7 +93,7 @@ setupCIMonitoring: &setupCIMonitoring
       envsubst <telegraf.conf.template >telegraf.conf
       envsubst <monitoring.yaml.template >monitoring.yaml
       kubectl -n stackrox create secret generic influxdb-ci-proxy-config --from-file=./telegraf.conf
-      kubectl -n stackrox replace -f ./monitoring.yaml
+      kubectl -n stackrox replace --force -f ./monitoring.yaml
 
       echo "Set up CI monitoring to write to ${INFLUXDB_URL}."
 
