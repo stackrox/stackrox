@@ -67,7 +67,7 @@ func readUserInputFromFlag(f *pflag.Flag) (string, error) {
 }
 
 func promptUserForSection(prompt string) (bool, error) {
-	prompt += " [y/N]"
+	prompt += " [y/N] "
 	text, err := readUserInput(prompt)
 	if err != nil {
 		return false, err
@@ -188,6 +188,9 @@ func walkTree(c *cobra.Command) (args []string) {
 			}
 		}
 		for _, flag := range fg.flags {
+			if flag.Hidden {
+				continue
+			}
 			if val := processFlag(flag); val != "" {
 				args = append(args, val)
 			}

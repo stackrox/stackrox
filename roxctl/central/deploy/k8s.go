@@ -54,9 +54,9 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
 
 	// Adds k8s specific flags
-	flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", "the output format from the installer (kubectl, helm)", "central")
+	flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", "the deployment tool to use (kubectl, helm)", "central")
 	flagWrap.StringVarP(&k8sConfig.Namespace, "namespace", "n", "stackrox", "namespace", "central")
-	flagWrap.StringVarP(&k8sConfig.MainImage, "main-image", "i", "stackrox.io/"+mainImage, "Image to use", "central")
+	flagWrap.StringVarP(&k8sConfig.MainImage, "main-image", "i", "stackrox.io/"+mainImage, "main image to use", "central")
 
 	flagWrap.StringVarP(&k8sConfig.MonitoringEndpoint, "monitoring-endpoint", "", "monitoring.stackrox:443", "monitoring endpoint", "monitoring")
 	flagWrap.Var(&monitoringWrapper{Monitoring: &k8sConfig.MonitoringType}, "monitoring-type", "where to host the monitoring (on-prem, none)", "monitoring")

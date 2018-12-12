@@ -9,5 +9,5 @@ export MAIN_IMAGE_TAG='{{.Env.TAG}}'
 📦 You can also generate an installation bundle with:
 
 ```sh
-docker run -i --rm stackrox/main:{{.Env.TAG}} interactive > bundle.zip
+docker run -i --rm stackrox/main:{{.Env.TAG}} central generate interactive > bundle.zip
 ```
