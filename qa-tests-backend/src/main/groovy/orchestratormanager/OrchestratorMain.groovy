@@ -32,6 +32,7 @@ interface OrchestratorMain {
     def wasContainerKilled(String containerName, String namespace)
     def isKubeProxyPresent()
     def isKubeDashboardRunning()
+    def getContainerlogs(Deployment deployment)
 
     //Services
     def deleteService(String serviceName, String namespace)

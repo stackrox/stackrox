@@ -341,7 +341,7 @@ ruleset {
     
     // rulesets/size.xml
     // AbcMetric   // Requires the GMetrics jar
-    ClassSize
+    // ClassSize
     // CrapMetric   // Requires the GMetrics jar and a Cobertura coverage file
     // CyclomaticComplexity   // Requires the GMetrics jar
     // MethodCount

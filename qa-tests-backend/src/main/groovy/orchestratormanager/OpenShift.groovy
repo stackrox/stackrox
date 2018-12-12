@@ -298,6 +298,10 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
         return kubeDashboards.size() > 0
     }
 
+    def getContainerlogs(Deployment deployment) {
+        println "get logs not supported on openshift: ${deployment.name}"
+    }
+
     /*
         Service Methods
     */

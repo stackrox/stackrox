@@ -191,4 +191,8 @@ class DockerEE extends OrchestratorCommon {
     @Override
     def isKubeDashboardRunning() {
     }
+
+    @Override
+    def getContainerlogs(Deployment deployment) {
+    }
 }

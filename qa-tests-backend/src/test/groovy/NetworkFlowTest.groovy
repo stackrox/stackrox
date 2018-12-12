@@ -94,7 +94,7 @@ class NetworkFlowTest extends BaseSpecification {
                     .setArgs(["apt-get update && " +
                                       "apt-get install socat -y && " +
                                       "while sleep 5; " +
-                                      "do socat -s STDIN UDP:${UDPCONNECTIONTARGET}:8080; " +
+                                      "do socat -d -d -d -d -s STDIN UDP:${UDPCONNECTIONTARGET}:8080; " +
                                       "done" as String,]),
             new Deployment()
                     .setName(TCPCONNECTIONSOURCE)
@@ -104,7 +104,7 @@ class NetworkFlowTest extends BaseSpecification {
                     .setArgs(["apt-get update && " +
                                       "apt-get install socat -y && " +
                                       "while sleep 5; " +
-                                      "do socat -s STDIN TCP:${TCPCONNECTIONTARGET}:80; " +
+                                      "do socat -d -d -d -d -s STDIN TCP:${TCPCONNECTIONTARGET}:80; " +
                                       "done" as String,]),
             new Deployment()
                     .setName(MULTIPLEPORTSCONNECTION)
@@ -171,6 +171,16 @@ class NetworkFlowTest extends BaseSpecification {
         "Check for edge in network graph"
         println "Checking for edge between ${sourceDeployment} and ${targetDeployment}"
         List<Edge> edges = checkForEdge(sourceUid, targetUid)
+
+        // Due to flakey tests, adding some debugging logging in the event that we don't find the expected edge
+        if (edges == null) {
+            println "*** SOURCE LOGS ***\n" +
+                    orchestrator.getContainerlogs(DEPLOYMENTS.find { it.name == sourceDeployment })
+            println "*** TARGET LOGS ***\n" +
+                    orchestrator.getContainerlogs(DEPLOYMENTS.find { it.name == targetDeployment })
+            println "*** NETWORK GRAPH ***\n" +
+                    NetworkGraphService.getNetworkGraph()
+        }
         assert edges
         assert edges.get(0).protocol == protocol
         assert DEPLOYMENTS.find { it.name == targetDeployment }?.ports?.keySet()?.contains(edges.get(0).port)

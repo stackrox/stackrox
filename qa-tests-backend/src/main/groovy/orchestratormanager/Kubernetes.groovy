@@ -421,6 +421,39 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         return kubeDashboards.size() > 0
     }
 
+    def getContainerlogs(Deployment deployment) {
+        V1PodList pods = api.listNamespacedPod(
+                deployment.namespace,
+                null,
+                null,
+                null,
+                false,
+                null,
+                null,
+                null,
+                null,
+                false
+        )
+        V1Pod pod = pods.getItems().find { it.getMetadata().getName().startsWith(deployment.name) }
+
+        try {
+            return api.readNamespacedPodLog(
+                    pod.metadata.name,
+                    pod.metadata.namespace,
+                    pod.spec.containers.get(0).name,
+                    false,
+                    null,
+                    "false",
+                    false,
+                    null,
+                    null,
+                    null
+            )
+        } catch (Exception e) {
+            println "Error getting container logs: ${e.toString()}"
+        }
+    }
+
     /*
         Service Methods
     */
@@ -727,6 +760,13 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
 
     private createDeploymentNoWait(Deployment deployment) {
         deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
+
+        // Create service if needed
+        if (deployment.exposeAsService) {
+            createService(deployment)
+            createLoadBalancer(deployment)
+        }
+
         ExtensionsV1beta1Deployment k8sDeployment = new ExtensionsV1beta1Deployment()
                 .metadata(
                 new V1ObjectMeta()
@@ -764,12 +804,6 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                     deployment.skipReplicaWait
             )
             updateDeploymentDetails(deployment)
-
-            // Create service if needed
-            if (deployment.exposeAsService) {
-                createService(deployment)
-                createLoadBalancer(deployment)
-            }
         } catch (Exception e) {
             println("Error while waiting for deployment/populating deployment info: " + e.toString())
         }
