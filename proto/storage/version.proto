@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+package storage;
+
+message Version {
+    // This is a strictly incrementing integer describing the DB version.
+    int32 seq_num = 1;
+    // Associated version metadata. (For example, the corresponding product version.)
+    string version = 2;
+}
