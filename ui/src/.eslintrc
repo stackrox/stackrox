@@ -35,7 +35,7 @@
 
         // disallow use of console in favor of raven-js for error capturing
         "no-console": "error",
-        
+
         // stepping away from Airbnb and into more inconsistent world to avoid huge refactoring
         "react/destructuring-assignment": ["off"],
         

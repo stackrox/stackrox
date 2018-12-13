@@ -41,54 +41,6 @@ dependencies:
     attribution:
     - Sasha Koss
 
-  ui/node_modules/enzyme:
-    url: https://github.com/airbnb/enzyme
-    license: MIT
-    files:
-      package.json:
-        author: e09d2f153a94a06625d99f86d1c54c0b5227e194cc36fd7d0a0b8084ad86900c
-        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
-    attribution:
-    - 2015 Airbnb, Inc.
-    - Leland Richardson
-
-  ui/node_modules/enzyme-adapter-react-16:
-    url: https://github.com/airbnb/enzyme/tree/master/packages/enzyme-adapter-react-16
-    license: MIT
-    files:
-      package.json:
-        author: e09d2f153a94a06625d99f86d1c54c0b5227e194cc36fd7d0a0b8084ad86900c
-        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
-    attribution:
-    - 2015 Airbnb, Inc.
-    - Leland Richardson
-
-  ui/node_modules/eslint-plugin-prettier:
-    url: https://github.com/prettier/eslint-plugin-prettier
-    license: MIT
-    files:
-      LICENSE.md: 20e80c18f6f0a93b7aa35170293eca4f2adc1e357aa20b534c8768081e836f89
-      package.json:
-        author: 4155dabcee84b1947c03f1e8a9c0f7d01474095231365fb6b21f858ef6f6cf05
-        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
-    attribution:
-    - 2017 Andres Suarez
-    - 2017 Teddy Katz
-
-  ui/node_modules/express:
-    url: https://github.com/expressjs/express
-    license: MIT
-    files:
-      LICENSE: 95a5762890e5c1c9808921cef095661fc482c5e1f0bba31446ac85595df6237c
-      package.json:
-        author: f47e98463a84862d4061b8eca537515693beeb19f88e67da95f0225b81f30958
-        contributors: 1b1f36889e9319c39720c54fdeebba47ab31ae9d8b004a9b7a81f27c286347ac
-        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
-    attribution:
-    - 2009-2014 TJ Holowaychuk
-    - 2013-2014 Roman Shtylman
-    - 2014-2015 Douglas Christopher Wilson
-
   ui/node_modules/file-saver:
     url: https://github.com/eligrey/FileSaver.js
     license: MIT
@@ -122,17 +74,6 @@ dependencies:
     attribution:
     - React Training 2016-2018
     - Michael Jackson
-
-  ui/node_modules/http-proxy-middleware:
-    url: https://github.com/chimurai/http-proxy-middleware
-    license: MIT
-    files:
-      LICENSE: 055a5aff6eb633954d747443104ffa0652d04db950ef47aa70e17f15d2ced001
-      package.json:
-        author: f3c630d96089392b54b154c97fabdac69b732ac346fadedef50ecc9465d78de7
-        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
-    attribution:
-    - 2015 Steven Chim
 
   ui/node_modules/lodash:
     url: https://github.com/lodash/lodash
@@ -575,19 +516,6 @@ dependencies:
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
     - 2016-present Glen Maddern and Maximilian Stoiber
-
-  ui/node_modules/tailwindcss:
-    url: https://github.com/tailwindcss/tailwindcss
-    license: MIT
-    files:
-      LICENSE: 9e3e31668eee20e6583fa578f3b3cea76a94dbd80bf93043f98c123136b25907
-      package.json:
-        contributors: 24b64c5761ef841181844107512d964408c9ceea2bc7a0631b458a2841c40e5c
-        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
-    attribution:
-    - Adam Wathan
-    - Jonathan Reinink
-    - David Hemphill
 
   ui/node_modules/three:
     url: https://github.com/mrdoob/three.js

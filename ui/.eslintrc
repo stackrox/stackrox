@@ -14,11 +14,23 @@
       "singleQuote": true,
       "tabWidth": 4
     }],
+
     "jsx-a11y/label-has-for": [ "error", {
       "required": {
         "some": [ "nesting", "id"  ]
       }
     }],
-    "mocha/no-exclusive-tests": "error"
+
+    "mocha/no-exclusive-tests": "error",
+
+    "import/no-extraneous-dependencies": [ "error", {
+      "devDependencies": [
+          "**/*.test.js",
+          "cypress/**",
+          "src/setupTests.js",
+          "src/setupProxy.js"
+      ],
+      "optionalDependencies": false
+    }]
   }
 }
