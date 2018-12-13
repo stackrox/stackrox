@@ -59,7 +59,7 @@ func AddAuthToRequest(req *http.Request) {
 // GetURL adds the endpoint to the passed path
 func GetURL(path string) string {
 	if !strings.HasPrefix(path, "/") {
-		path += "/"
+		path = "/" + path
 	}
 	return fmt.Sprintf("https://%s"+path, endpoint)
 }

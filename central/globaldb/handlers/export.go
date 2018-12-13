@@ -8,6 +8,7 @@ import (
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/secrets"
 )
 
 // Export returns a compacted backup of the database.
@@ -79,6 +80,7 @@ func clearImageIntegrationConfigs(db *bolt.DB) error {
 		return err
 	}
 	for _, d := range integrations {
+		secrets.ScrubSecretsFromStruct(d)
 		if err := store.UpdateImageIntegration(d); err != nil {
 			return err
 		}

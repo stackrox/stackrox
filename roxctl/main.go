@@ -42,7 +42,6 @@ func main() {
 	common.AddAuthFlags(c)
 
 	if err := c.Execute(); err != nil {
-		fmt.Println(err)
 		os.Exit(1)
 	}
 }

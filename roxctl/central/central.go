@@ -2,6 +2,7 @@ package central
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/roxctl/central/db"
 	"github.com/stackrox/rox/roxctl/central/deploy"
 )
 
@@ -17,5 +18,6 @@ func Command() *cobra.Command {
 	}
 
 	c.AddCommand(deploy.Command())
+	c.AddCommand(db.Command())
 	return c
 }

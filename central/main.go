@@ -248,6 +248,11 @@ func (c *central) customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
+			Route:         "/db/restore",
+			Authorizer:    dbExportOrBackupAuthorizer(),
+			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB()),
+		},
+		{
 			Route:         "/metrics",
 			Authorizer:    allow.Anonymous(),
 			ServerHandler: promhttp.Handler(),
