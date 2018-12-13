@@ -7,6 +7,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/alert/index/mappings"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -91,6 +92,22 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, s.authorizer.Authorized(ctx, fullMethodName)
 }
 
+// Special case alerts because they have a default search param of state:unresolved
+// TODO(cgorman) rework the options for global search to allow for transitive connections (policy <-> deployment, etc)
+func shouldProcessAlerts(q *v1.Query) (shouldProcess bool) {
+	fn := func(bq *v1.BaseQuery) {
+		mfq, ok := bq.Query.(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+		if _, ok := mappings.OptionsMap[search.FieldLabel(mfq.MatchFieldQuery.Field)]; ok {
+			shouldProcess = true
+		}
+	}
+	search.ApplyFnToAllBaseQueries(q, fn)
+	return
+}
+
 // Search implements the ability to search through indexes for data
 func (s *serviceImpl) Search(ctx context.Context, request *v1.RawSearchRequest) (*v1.SearchResponse, error) {
 	parsedRequest, err := search.ParseRawQuery(request.GetQuery())
@@ -104,6 +121,10 @@ func (s *serviceImpl) Search(ctx context.Context, request *v1.RawSearchRequest) 
 		categories = GetAllSearchableCategories()
 	}
 	for _, category := range categories {
+		if category == v1.SearchCategory_ALERTS && !shouldProcessAlerts(parsedRequest) {
+			response.Counts = append(response.Counts, &v1.SearchResponse_Count{Category: category, Count: 0})
+			continue
+		}
 		searchFunc, ok := searchFuncMap[category]
 		if !ok {
 			return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("Search category '%s' is not implemented", category.String()))

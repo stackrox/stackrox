@@ -67,7 +67,8 @@ class GlobalSearch extends BaseSpecification {
             assert searchCategories.toSet() == presentCategories
         } else {
             // Else, we just make sure that the expectedCategories passed in all exist in the results.
-            assert presentCategories.containsAll(expectedCategoriesInResult)
+            assert presentCategories.containsAll(expectedCategoriesInResult) \
+                && presentCategories.size() == expectedCategoriesInResult.size()
         }
 
         where:
@@ -96,8 +97,7 @@ class GlobalSearch extends BaseSpecification {
                 [SearchServiceOuterClass.SearchCategory.DEPLOYMENTS, SearchServiceOuterClass.SearchCategory.ALERTS]
 
         "Image:docker.io/library/nginx:latest" | [] | "" |
-                [SearchServiceOuterClass.SearchCategory.IMAGES, SearchServiceOuterClass.SearchCategory.DEPLOYMENTS,
-                 SearchServiceOuterClass.SearchCategory.ALERTS]
+                [SearchServiceOuterClass.SearchCategory.IMAGES, SearchServiceOuterClass.SearchCategory.DEPLOYMENTS]
     }
 
 }
