@@ -1,10 +1,18 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import Table from 'Components/Table';
+import Table, { defaultColumnClassName } from 'Components/Table';
 
 function List(props) {
-    const { columns, rows, selectRow, selectedListItem, selectedIdAttribute } = props;
+    const { rows, selectRow, selectedListItem, selectedIdAttribute } = props;
+    if (!rows.length) return null;
+    const columns = [
+        {
+            id: selectedIdAttribute,
+            accessor: selectedIdAttribute,
+            className: `${defaultColumnClassName}`
+        }
+    ];
     return (
         <Table
             columns={columns}
@@ -19,7 +27,6 @@ function List(props) {
 }
 
 List.propTypes = {
-    columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     rows: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     selectRow: PropTypes.func.isRequired,
     selectedListItem: PropTypes.shape({}),

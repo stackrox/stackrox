@@ -30,11 +30,11 @@ class FieldGroupCards extends Component {
         };
     }
 
-    addFormField = jsonpath => {
+    addFormField = option => {
         let fieldToAdd = {};
         Object.keys(this.props.policyFormFields).forEach(fieldGroup => {
             const field = this.props.policyFormFields[fieldGroup].descriptor.find(
-                obj => obj.jsonpath === jsonpath
+                obj => obj.jsonpath === option.value
             );
             if (field) fieldToAdd = field;
         });
@@ -97,12 +97,14 @@ class FieldGroupCards extends Component {
     };
 
     renderFieldsDropdown = (formFields, formData) => {
-        const availableFields = formFields.filter(
-            field =>
-                !this.state.fields.find(jsonpath => jsonpath === field.jsonpath) &&
-                !field.default &&
-                !formData.find(jsonpath => jsonpath.includes(field.jsonpath))
-        );
+        const availableFields = formFields
+            .filter(
+                field =>
+                    !this.state.fields.find(jsonpath => jsonpath === field.jsonpath) &&
+                    !field.default &&
+                    !formData.find(jsonpath => jsonpath.includes(field.jsonpath))
+            )
+            .map(field => ({ label: field.label, value: field.jsonpath }));
         const placeholder = 'Add a field';
         if (!availableFields.length) return '';
         return (

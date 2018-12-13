@@ -1,0 +1,39 @@
+import { combineReducers } from 'redux';
+
+import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
+
+export const types = {
+    FETCH_RULE_GROUPS: createFetchingActionTypes('groups/FETCH_RULE_GROUPS'),
+    SAVE_RULE_GROUP: 'groups/SAVE_RULE_GROUP',
+    DELETE_RULE_GROUP: 'groups/DELETE_RULE_GROUP'
+};
+
+export const actions = {
+    fetchGroups: createFetchingActions(types.FETCH_RULE_GROUPS),
+    saveRuleGroup: group => ({
+        type: types.SAVE_RULE_GROUP,
+        group
+    }),
+    deleteRuleGroup: group => ({
+        type: types.DELETE_RULE_GROUP,
+        group
+    })
+};
+
+const groups = (state = [], action) => {
+    if (action.type === types.FETCH_RULE_GROUPS.SUCCESS) {
+        return action.response.groups;
+    }
+    return state;
+};
+const reducer = combineReducers({
+    groups
+});
+
+const getRuleGroups = state => state.groups;
+
+export const selectors = {
+    getRuleGroups
+};
+
+export default reducer;

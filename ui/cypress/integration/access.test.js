@@ -6,6 +6,7 @@ describe('Roles and Permissions', () => {
 
     beforeEach(() => {
         cy.visit(url);
+        cy.get(selectors.tabs.roles).click();
     });
 
     const selectRole = roleName => {

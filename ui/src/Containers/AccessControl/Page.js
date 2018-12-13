@@ -4,12 +4,12 @@ import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
 import PageHeader from 'Components/PageHeader';
 import Roles from 'Containers/AccessControl/Roles/Roles';
-import IdentityProviders from 'Containers/AccessControl/IdentityProviders/IdentityProviders';
+import AuthProviders from 'Containers/AccessControl/AuthProviders/AuthProviders';
 
 function Page() {
     const tabHeaders = [
-        { text: 'Roles and Permissions', disabled: false },
-        { text: 'Identity Provider Rules', disabled: false }
+        { text: 'Auth Provider Rules', disabled: false },
+        { text: 'Roles and Permissions', disabled: false }
     ];
     return (
         <section className="flex flex-col h-full">
@@ -17,10 +17,10 @@ function Page() {
             <div className="flex h-full">
                 <Tabs headers={tabHeaders}>
                     <TabContent>
-                        <Roles />
+                        <AuthProviders />
                     </TabContent>
                     <TabContent>
-                        <IdentityProviders />
+                        <Roles />
                     </TabContent>
                 </Tabs>
             </div>

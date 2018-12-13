@@ -119,9 +119,7 @@ describe('Policies page', () => {
     it('should allow floats for CPU and CVSS configuration fields', () => {
         const addCPUField = () => {
             editPolicy();
-            cy.get(selectors.configurationField.select).select(
-                'fields.containerResourcePolicy.cpuResourceRequest'
-            );
+            cy.get(selectors.configurationField.select).select('Container CPU Request');
             cy.get(selectors.configurationField.selectArrow)
                 .first() // TODO-ivan: should we instead create a new policy?
                 .click();
@@ -162,7 +160,7 @@ describe('Policies page', () => {
     it('should allow updating image fields in a policy', () => {
         cy.get(selectors.policies.scanImage).click({ force: true });
         editPolicy();
-        cy.get(selectors.form.select).select('fields.imageName.registry');
+        cy.get(selectors.form.select).select('Image Registry');
         cy.get(selectors.imageRegistry.input).type('docker.io');
         savePolicy();
         cy.get(selectors.imageRegistry.value).should(
@@ -215,7 +213,7 @@ describe('Policies page', () => {
     it('should allow updating days since image scanned in a policy', () => {
         cy.get(selectors.policies.scanImage).click({ force: true });
         editPolicy();
-        cy.get(selectors.form.select).select('fields.scanAgeDays');
+        cy.get(selectors.form.select).select('Days since Image scanned');
         cy.get(selectors.scanAgeDays.input).type('50');
         savePolicy();
         cy.get(selectors.scanAgeDays.value).should('have.text', '50 Days ago');

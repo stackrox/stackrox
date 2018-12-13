@@ -9,5 +9,8 @@ export const selectors = {
     addNewRoleButton: 'button:contains("Add New Role")',
     input: {
         roleName: 'input[type=text]'
+    },
+    tabs: {
+        roles: '.tab:contains("Roles and Permissions")'
     }
 };

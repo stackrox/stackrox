@@ -117,20 +117,20 @@ class BenchmarksPage extends Component {
         this.props.selectBenchmarkHostResult(null);
     };
 
-    onScheduleDayChange = value => {
+    onScheduleDayChange = option => {
         this.props.selectBenchmarkScheduleDay(
             this.props.benchmarkId,
             this.props.benchmarkName,
-            value,
+            option.label,
             this.props.clusterId
         );
     };
 
-    onScheduleHourChange = value => {
+    onScheduleHourChange = option => {
         this.props.selectBenchmarkScheduleHour(
             this.props.benchmarkId,
             this.props.benchmarkName,
-            value,
+            option.label,
             this.props.clusterId
         );
     };

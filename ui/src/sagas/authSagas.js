@@ -2,6 +2,7 @@ import { all, take, call, fork, put, takeLatest, takeEvery, select } from 'redux
 import { delay } from 'redux-saga';
 import { push } from 'react-router-redux';
 import queryString from 'query-string';
+import Raven from 'raven-js';
 
 import { loginPath, integrationsPath, authResponsePrefix } from 'routePaths';
 import { takeEveryLocation } from 'utils/sagaEffects';
@@ -152,8 +153,46 @@ function* handleHttpError(action) {
     }
 }
 
+function* saveAuthProvider(action) {
+    try {
+        const { authProvider } = action;
+        const authProviders = yield select(selectors.getAuthProviders);
+        const isNewAuthProvider = !authProviders.filter(
+            currAuthProvider => currAuthProvider.name === authProvider.name
+        ).length;
+        if (isNewAuthProvider) {
+            yield call(AuthService.saveAuthProvider, authProvider);
+            yield call(getAuthProviders);
+            yield put(actions.selectAuthProvider(authProvider));
+        } else {
+            yield call(AuthService.saveAuthProvider, authProvider);
+            yield call(getAuthProviders);
+            yield put(actions.selectAuthProvider(authProvider));
+        }
+    } catch (error) {
+        Raven.captureException(error);
+    }
+}
+
+function* deleteAuthProvider(action) {
+    const { id } = action;
+    try {
+        yield call(AuthService.deleteAuthProvider, id);
+    } catch (error) {
+        Raven.captureException(error);
+    }
+}
+
 function* watchAuthHttpErrors() {
     yield takeEvery(types.AUTH_HTTP_ERROR, handleHttpError);
+}
+
+function* watchSaveAuthProvider() {
+    yield takeLatest(types.SAVE_AUTH_PROVIDER, saveAuthProvider);
+}
+
+function* watchDeleteAuthProvider() {
+    yield takeLatest(types.DELETE_AUTH_PROVIDER, deleteAuthProvider);
 }
 
 export default function* auth() {
@@ -175,6 +214,8 @@ export default function* auth() {
     yield all([
         takeEveryLocation(integrationsPath, getAuthProviders),
         takeEveryLocation(loginPath, handleLoginPageRedirect),
+        fork(watchSaveAuthProvider),
+        fork(watchDeleteAuthProvider),
         fork(watchAuthProvidersFetchRequest),
         fork(watchLogout),
         fork(watchAuthHttpErrors)

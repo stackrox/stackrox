@@ -10,7 +10,7 @@ function Button(props) {
                 Edit
             </button>
         );
-    return <SaveButton formName="role-form" />;
+    return <SaveButton formName="auth-provider-form" />;
 }
 
 Button.propTypes = {
