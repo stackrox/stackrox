@@ -40,6 +40,11 @@ func (e *ErrorList) AddString(err string) {
 	e.errors = append(e.errors, err)
 }
 
+// AddStringf adds a templated string
+func (e *ErrorList) AddStringf(t string, args ...interface{}) {
+	e.errors = append(e.errors, fmt.Sprintf(t, args...))
+}
+
 // AddStrings adds multiple string based errors to the list.
 func (e *ErrorList) AddStrings(errs ...string) {
 	e.errors = append(e.errors, errs...)

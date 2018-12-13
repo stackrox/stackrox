@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
@@ -118,7 +119,7 @@ func sortCategories(categories []storage.ImageIntegrationCategory) {
 
 // PutImageIntegration updates an image integration in the system
 func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *storage.ImageIntegration) (*v1.Empty, error) {
-	err := s.validateClustersAndCategories(request)
+	err := s.validateIntegration(request)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +141,7 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new image integration")
 	}
 
-	err := s.validateClustersAndCategories(request)
+	err := s.validateIntegration(request)
 	if err != nil {
 		return nil, err
 	}
@@ -175,10 +176,11 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 
 // TestImageIntegration tests to see if the config is setup properly
 func (s *serviceImpl) TestImageIntegration(ctx context.Context, request *storage.ImageIntegration) (*v1.Empty, error) {
-	err := s.validateClustersAndCategories(request)
+	err := s.validateIntegration(request)
 	if err != nil {
 		return nil, err
 	}
+
 	for _, category := range request.GetCategories() {
 		if category == storage.ImageIntegrationCategory_REGISTRY {
 			err = s.testRegistryIntegration(request)
@@ -218,9 +220,10 @@ func (s *serviceImpl) testScannerIntegration(integration *storage.ImageIntegrati
 	return nil
 }
 
-func (s *serviceImpl) validateClustersAndCategories(request *storage.ImageIntegration) error {
+func (s *serviceImpl) validateIntegration(request *storage.ImageIntegration) error {
+	errorList := errorhelpers.NewErrorList("Validation")
 	if len(request.GetCategories()) == 0 {
-		return status.Error(codes.InvalidArgument, "integrations require a category")
+		errorList.AddStrings("integrations require a category")
 	}
 
 	clustersRequested := request.GetClusters()
@@ -230,11 +233,24 @@ func (s *serviceImpl) validateClustersAndCategories(request *storage.ImageIntegr
 	}
 	for _, req := range clustersRequested {
 		if !s.clusterExists(req, existingClusters) {
-			return status.Error(codes.InvalidArgument, fmt.Sprintf("Cluster %s does not exist", req))
+			errorList.AddStringf("Cluster %s does not exist", req)
 		}
 	}
 
-	return nil
+	// Validate if there is a name. If there isn't, then skip the DB name check by returning the accumulated errors
+	if request.GetName() == "" {
+		errorList.AddString("Name for integration is required")
+		return errorList.ToError()
+	}
+
+	integrations, err := s.datastore.GetImageIntegrations(&v1.GetImageIntegrationsRequest{Name: request.GetName()})
+	if err != nil {
+		return status.Errorf(codes.Internal, err.Error())
+	}
+	if len(integrations) != 0 && request.GetId() != integrations[0].GetId() {
+		errorList.AddStringf("Integration with name %q already exists", request.GetName())
+	}
+	return errorList.ToError()
 }
 
 func (s *serviceImpl) clusterExists(name string, clusters []*storage.Cluster) bool {
