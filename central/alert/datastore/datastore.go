@@ -5,21 +5,22 @@ import (
 	"github.com/stackrox/rox/central/alert/search"
 	"github.com/stackrox/rox/central/alert/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // DataStore is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert objects.
 //go:generate mockgen-wrapper DataStore
 type DataStore interface {
 	SearchAlerts(q *v1.Query) ([]*v1.SearchResult, error)
-	SearchRawAlerts(q *v1.Query) ([]*v1.Alert, error)
-	SearchListAlerts(q *v1.Query) ([]*v1.ListAlert, error)
+	SearchRawAlerts(q *v1.Query) ([]*storage.Alert, error)
+	SearchListAlerts(q *v1.Query) ([]*storage.ListAlert, error)
 
-	ListAlerts(request *v1.ListAlertsRequest) ([]*v1.ListAlert, error)
+	ListAlerts(request *v1.ListAlertsRequest) ([]*storage.ListAlert, error)
 
-	GetAlert(id string) (*v1.Alert, bool, error)
+	GetAlert(id string) (*storage.Alert, bool, error)
 	CountAlerts() (int, error)
-	AddAlert(alert *v1.Alert) error
-	UpdateAlert(alert *v1.Alert) error
+	AddAlert(alert *storage.Alert) error
+	UpdateAlert(alert *storage.Alert) error
 	MarkAlertStale(id string) error
 }
 

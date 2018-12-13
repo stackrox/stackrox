@@ -7,7 +7,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -16,11 +16,11 @@ type storeImpl struct {
 }
 
 // GetAlert returns an alert with given id.
-func (b *storeImpl) ListAlert(id string) (alert *v1.ListAlert, exists bool, err error) {
+func (b *storeImpl) ListAlert(id string) (alert *storage.ListAlert, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ListAlert")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(alertListBucket))
-		alert = new(v1.ListAlert)
+		alert = new(storage.ListAlert)
 		val := bucket.Get([]byte(id))
 		if val == nil {
 			return nil
@@ -34,14 +34,14 @@ func (b *storeImpl) ListAlert(id string) (alert *v1.ListAlert, exists bool, err 
 }
 
 // GetAlerts ignores the request and gives all values
-func (b *storeImpl) ListAlerts() ([]*v1.ListAlert, error) {
+func (b *storeImpl) ListAlerts() ([]*storage.ListAlert, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListAlert")
 
-	var alerts []*v1.ListAlert
+	var alerts []*storage.ListAlert
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(alertListBucket))
 		return b.ForEach(func(k, v []byte) error {
-			var alert v1.ListAlert
+			var alert storage.ListAlert
 			if err := proto.Unmarshal(v, &alert); err != nil {
 				return err
 			}
@@ -53,7 +53,7 @@ func (b *storeImpl) ListAlerts() ([]*v1.ListAlert, error) {
 }
 
 // GetAlert returns an alert with given id.
-func (b *storeImpl) GetAlert(id string) (alert *v1.Alert, exists bool, err error) {
+func (b *storeImpl) GetAlert(id string) (alert *storage.Alert, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Alert")
 
 	err = b.View(func(tx *bolt.Tx) error {
@@ -66,14 +66,14 @@ func (b *storeImpl) GetAlert(id string) (alert *v1.Alert, exists bool, err error
 }
 
 // GetAlerts ignores the request and gives all values
-func (b *storeImpl) GetAlerts() ([]*v1.Alert, error) {
+func (b *storeImpl) GetAlerts() ([]*storage.Alert, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Alert")
 
-	var alerts []*v1.Alert
+	var alerts []*storage.Alert
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(alertBucket))
 		return b.ForEach(func(k, v []byte) error {
-			var alert v1.Alert
+			var alert storage.Alert
 			if err := proto.Unmarshal(v, &alert); err != nil {
 				return err
 			}
@@ -85,7 +85,7 @@ func (b *storeImpl) GetAlerts() ([]*v1.Alert, error) {
 }
 
 // AddAlert adds an alert into Bolt
-func (b *storeImpl) AddAlert(alert *v1.Alert) error {
+func (b *storeImpl) AddAlert(alert *storage.Alert) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Alert")
 
 	bytes, err := proto.Marshal(alert)
@@ -112,7 +112,7 @@ func (b *storeImpl) AddAlert(alert *v1.Alert) error {
 }
 
 // UpdateAlert upserts an alert into Bolt
-func (b *storeImpl) UpdateAlert(alert *v1.Alert) error {
+func (b *storeImpl) UpdateAlert(alert *storage.Alert) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Alert")
 
 	bytes, err := proto.Marshal(alert)
@@ -135,8 +135,8 @@ func (b *storeImpl) UpdateAlert(alert *v1.Alert) error {
 	})
 }
 
-func getAlert(id string, bucket *bolt.Bucket) (alert *v1.Alert, exists bool, err error) {
-	alert = new(v1.Alert)
+func getAlert(id string, bucket *bolt.Bucket) (alert *storage.Alert, exists bool, err error) {
+	alert = new(storage.Alert)
 	val := bucket.Get([]byte(id))
 	if val == nil {
 		return
@@ -146,7 +146,7 @@ func getAlert(id string, bucket *bolt.Bucket) (alert *v1.Alert, exists bool, err
 	return
 }
 
-func marshalAsListAlert(alert *v1.Alert) ([]byte, error) {
+func marshalAsListAlert(alert *storage.Alert) ([]byte, error) {
 	listAlert := convertAlertsToListAlerts(alert)
 	return proto.Marshal(listAlert)
 }

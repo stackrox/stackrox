@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
@@ -31,12 +30,12 @@ type remoteMatcherImpl struct {
 	remoteRegex *regexp.Regexp
 }
 
-func (p *remoteMatcherImpl) match(name *storage.ImageName) []*v1.Alert_Violation {
+func (p *remoteMatcherImpl) match(name *storage.ImageName) []*storage.Alert_Violation {
 	remote := name.GetRemote()
 
-	var violations []*v1.Alert_Violation
+	var violations []*storage.Alert_Violation
 	if remote != "" && p.remoteRegex.MatchString(remote) {
-		v := &v1.Alert_Violation{
+		v := &storage.Alert_Violation{
 			Message: fmt.Sprintf("Image remote matched: %s", p.remoteRegex),
 		}
 		violations = append(violations, v)

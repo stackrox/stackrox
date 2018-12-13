@@ -1,7 +1,6 @@
 package matcher
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	componentMatcher "github.com/stackrox/rox/pkg/compiledpolicies/imagescancomponent/matcher"
 )
@@ -18,8 +17,8 @@ func newComponentMatcher(policy *storage.Policy) (Matcher, error) {
 		return nil, nil
 	}
 
-	return func(scan *storage.ImageScan) []*v1.Alert_Violation {
-		var violations []*v1.Alert_Violation
+	return func(scan *storage.ImageScan) []*storage.Alert_Violation {
+		var violations []*storage.Alert_Violation
 		for _, component := range scan.GetComponents() {
 			violations = append(violations, matcher(component)...)
 		}

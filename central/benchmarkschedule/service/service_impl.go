@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/benchmarkschedule/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/benchmarks"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -58,7 +59,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetBenchmarkSchedule returns the current benchmark schedules
-func (s *serviceImpl) GetBenchmarkSchedule(ctx context.Context, request *v1.ResourceByID) (*v1.BenchmarkSchedule, error) {
+func (s *serviceImpl) GetBenchmarkSchedule(ctx context.Context, request *v1.ResourceByID) (*storage.BenchmarkSchedule, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Name field must be specified when retrieving a benchmark schedule")
 	}
@@ -72,7 +73,7 @@ func (s *serviceImpl) GetBenchmarkSchedule(ctx context.Context, request *v1.Reso
 	return schedule, nil
 }
 
-func (s *serviceImpl) validateBenchmarkSchedule(request *v1.BenchmarkSchedule) error {
+func (s *serviceImpl) validateBenchmarkSchedule(request *storage.BenchmarkSchedule) error {
 	errorList := errorhelpers.NewErrorList("Validation")
 	if request.GetBenchmarkId() == "" {
 		errorList.AddString("Benchmark id must be defined ")
@@ -97,7 +98,7 @@ func (s *serviceImpl) validateBenchmarkSchedule(request *v1.BenchmarkSchedule) e
 }
 
 // PostBenchmarkSchedule adds a new schedule
-func (s *serviceImpl) PostBenchmarkSchedule(ctx context.Context, request *v1.BenchmarkSchedule) (*v1.BenchmarkSchedule, error) {
+func (s *serviceImpl) PostBenchmarkSchedule(ctx context.Context, request *storage.BenchmarkSchedule) (*storage.BenchmarkSchedule, error) {
 	if err := s.validateBenchmarkSchedule(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -111,7 +112,7 @@ func (s *serviceImpl) PostBenchmarkSchedule(ctx context.Context, request *v1.Ben
 }
 
 // PutBenchmarkSchedule updates a current schedule
-func (s *serviceImpl) PutBenchmarkSchedule(ctx context.Context, request *v1.BenchmarkSchedule) (*v1.Empty, error) {
+func (s *serviceImpl) PutBenchmarkSchedule(ctx context.Context, request *storage.BenchmarkSchedule) (*v1.Empty, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "id must be defined")
 	}

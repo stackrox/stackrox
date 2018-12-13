@@ -6,7 +6,6 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/suite"
@@ -36,11 +35,11 @@ func (s *MessageCrudTestSuite) SetupSuite() {
 
 	// Function that provides the key for a given instance.
 	keyFunc := func(msg proto.Message) []byte {
-		return []byte(msg.(*v1.Alert).GetId())
+		return []byte(msg.(*storage.Alert).GetId())
 	}
 	// Function that provide a new empty instance when wanted.
 	allocFunc := func() proto.Message {
-		return &v1.Alert{}
+		return &storage.Alert{}
 	}
 	s.crud = NewMessageCrud(db, "testBucket", keyFunc, allocFunc)
 }
@@ -53,7 +52,7 @@ func (s *MessageCrudTestSuite) TearDownSuite() {
 }
 
 func (s *MessageCrudTestSuite) TestCreate() {
-	alerts := []*v1.Alert{
+	alerts := []*storage.Alert{
 		{
 			Id:             "createId1",
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
@@ -67,7 +66,7 @@ func (s *MessageCrudTestSuite) TestCreate() {
 			Policy: &storage.Policy{
 				Severity: storage.Severity_HIGH_SEVERITY,
 			},
-			State: v1.ViolationState_RESOLVED,
+			State: storage.ViolationState_RESOLVED,
 		},
 	}
 
@@ -91,7 +90,7 @@ func (s *MessageCrudTestSuite) TestCreate() {
 }
 
 func (s *MessageCrudTestSuite) TestUpdate() {
-	alerts := []*v1.Alert{
+	alerts := []*storage.Alert{
 		{
 			Id:             "updateId1",
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
@@ -105,7 +104,7 @@ func (s *MessageCrudTestSuite) TestUpdate() {
 			Policy: &storage.Policy{
 				Severity: storage.Severity_HIGH_SEVERITY,
 			},
-			State: v1.ViolationState_RESOLVED,
+			State: storage.ViolationState_RESOLVED,
 		},
 	}
 
@@ -114,7 +113,7 @@ func (s *MessageCrudTestSuite) TestUpdate() {
 		s.NoError(s.crud.Create(a))
 	}
 
-	updatedAlerts := []*v1.Alert{
+	updatedAlerts := []*storage.Alert{
 		{
 			Id:             "updateId1",
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
@@ -128,7 +127,7 @@ func (s *MessageCrudTestSuite) TestUpdate() {
 			Policy: &storage.Policy{
 				Severity: storage.Severity_MEDIUM_SEVERITY,
 			},
-			State: v1.ViolationState_RESOLVED,
+			State: storage.ViolationState_RESOLVED,
 		},
 	}
 
@@ -148,7 +147,7 @@ func (s *MessageCrudTestSuite) TestUpdate() {
 }
 
 func (s *MessageCrudTestSuite) TestUpsert() {
-	alerts := []*v1.Alert{
+	alerts := []*storage.Alert{
 		{
 			Id:             "upsertId1",
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
@@ -162,7 +161,7 @@ func (s *MessageCrudTestSuite) TestUpsert() {
 			Policy: &storage.Policy{
 				Severity: storage.Severity_HIGH_SEVERITY,
 			},
-			State: v1.ViolationState_RESOLVED,
+			State: storage.ViolationState_RESOLVED,
 		},
 	}
 
@@ -170,7 +169,7 @@ func (s *MessageCrudTestSuite) TestUpsert() {
 		s.NoError(s.crud.Upsert(a))
 	}
 
-	updatedAlerts := []*v1.Alert{
+	updatedAlerts := []*storage.Alert{
 		{
 			Id:             "upsertId1",
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
@@ -184,7 +183,7 @@ func (s *MessageCrudTestSuite) TestUpsert() {
 			Policy: &storage.Policy{
 				Severity: storage.Severity_MEDIUM_SEVERITY,
 			},
-			State: v1.ViolationState_RESOLVED,
+			State: storage.ViolationState_RESOLVED,
 		},
 	}
 
@@ -204,7 +203,7 @@ func (s *MessageCrudTestSuite) TestUpsert() {
 }
 
 func (s *MessageCrudTestSuite) TestDelete() {
-	alerts := []*v1.Alert{
+	alerts := []*storage.Alert{
 		{
 			Id:             "deleteId1",
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
@@ -218,7 +217,7 @@ func (s *MessageCrudTestSuite) TestDelete() {
 			Policy: &storage.Policy{
 				Severity: storage.Severity_HIGH_SEVERITY,
 			},
-			State: v1.ViolationState_RESOLVED,
+			State: storage.ViolationState_RESOLVED,
 		},
 	}
 
@@ -236,7 +235,7 @@ func (s *MessageCrudTestSuite) TestDelete() {
 }
 
 func (s *MessageCrudTestSuite) TestDeleteBatch() {
-	alerts := []*v1.Alert{
+	alerts := []*storage.Alert{
 		{
 			Id:             "deleteBatchId1",
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
@@ -250,7 +249,7 @@ func (s *MessageCrudTestSuite) TestDeleteBatch() {
 			Policy: &storage.Policy{
 				Severity: storage.Severity_HIGH_SEVERITY,
 			},
-			State: v1.ViolationState_RESOLVED,
+			State: storage.ViolationState_RESOLVED,
 		},
 	}
 

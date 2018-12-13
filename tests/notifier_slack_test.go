@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/notifiers/slack"
 	"github.com/stackrox/rox/pkg/search"
@@ -46,11 +47,11 @@ func TestNotification(t *testing.T) {
 	defer teardownTestNotification(t)
 	setupTestNotification(t)
 
-	raisedAlert := &v1.Alert{}
+	raisedAlert := &storage.Alert{}
 
 	subtests := []struct {
 		name string
-		test func(t *testing.T, alert *v1.Alert)
+		test func(t *testing.T, alert *storage.Alert)
 	}{
 		{
 			name: "alerts",
@@ -168,13 +169,13 @@ func verifyPolicyHasNoNotifier(t *testing.T, conn *grpc.ClientConn) {
 	assert.Empty(t, p.GetNotifiers())
 }
 
-func verifyAlertsForLatestTag(t *testing.T, alert *v1.Alert) {
+func verifyAlertsForLatestTag(t *testing.T, alert *storage.Alert) {
 	conn, err := grpcConnection()
 	require.NoError(t, err)
 
 	service := v1.NewAlertServiceClient(conn)
 
-	qb := search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, expectedLatestTagPolicy).AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String())
+	qb := search.NewQueryBuilder().AddStrings(search.DeploymentName, nginxDeploymentName).AddStrings(search.PolicyName, expectedLatestTagPolicy).AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	alerts, err := service.ListAlerts(ctx, &v1.ListAlertsRequest{
 		Query: qb.Query(),
@@ -189,7 +190,7 @@ func verifyAlertsForLatestTag(t *testing.T, alert *v1.Alert) {
 	*alert = *newAlert
 }
 
-func verifySlack(t *testing.T, alert *v1.Alert) {
+func verifySlack(t *testing.T, alert *storage.Alert) {
 	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 	timer := time.NewTimer(time.Minute)
@@ -244,7 +245,7 @@ func getSlackMessages(t *testing.T, oldest int64) []slackMessageResponse {
 	return slackResp.Messages
 }
 
-func verifySlackMessagesHasAlert(t *testing.T, messages []slackMessageResponse, alert *v1.Alert) (hasAlert bool) {
+func verifySlackMessagesHasAlert(t *testing.T, messages []slackMessageResponse, alert *storage.Alert) (hasAlert bool) {
 	for _, m := range messages {
 		if m.Type != `message` || m.Subtype != `bot_message` || m.BotID != slackBotID {
 			continue
@@ -261,7 +262,7 @@ func verifySlackMessagesHasAlert(t *testing.T, messages []slackMessageResponse, 
 	return
 }
 
-func verifySlackMessageMatchesAlert(t *testing.T, attachment slackAttachmentResponse, alert *v1.Alert) {
+func verifySlackMessageMatchesAlert(t *testing.T, attachment slackAttachmentResponse, alert *storage.Alert) {
 	assert.Contains(t, attachment.Text, notifierConfig.GetUiEndpoint())
 	assert.Contains(t, attachment.Text, alert.GetId())
 	assert.Contains(t, attachment.Text, notifiers.SeverityString(alert.GetPolicy().GetSeverity()))

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	ptypes "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -28,8 +27,8 @@ type ageMatcherImpl struct {
 	scanAgeDays *int64
 }
 
-func (p *ageMatcherImpl) match(scan *storage.ImageScan) []*v1.Alert_Violation {
-	var violations []*v1.Alert_Violation
+func (p *ageMatcherImpl) match(scan *storage.ImageScan) []*storage.Alert_Violation {
+	var violations []*storage.Alert_Violation
 	deadline := time.Now().AddDate(0, 0, -int(*p.scanAgeDays))
 	scanned := scan.GetScanTime()
 	if scanned == nil {
@@ -41,7 +40,7 @@ func (p *ageMatcherImpl) match(scan *storage.ImageScan) []*v1.Alert_Violation {
 		return nil
 	}
 	if scannedTime.Before(deadline) {
-		violations = append(violations, &v1.Alert_Violation{
+		violations = append(violations, &storage.Alert_Violation{
 			Message: fmt.Sprintf("Scan Age '%v' is %0.2f days past the deadline", scannedTime, deadline.Sub(scannedTime).Hours()/24),
 		})
 	}

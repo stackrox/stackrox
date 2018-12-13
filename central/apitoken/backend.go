@@ -39,7 +39,7 @@ func BackendSingleton() Backend {
 type Backend interface {
 	GetTokenOrNil(tokenID string) (*storage.TokenMetadata, error)
 	GetTokens(req *v1.GetAPITokensRequest) ([]*storage.TokenMetadata, error)
-	IssueRoleToken(name string, role *v1.Role) (string, *storage.TokenMetadata, error)
+	IssueRoleToken(name string, role *storage.Role) (string, *storage.TokenMetadata, error)
 	RevokeToken(tokenID string) (bool, error)
 }
 
@@ -63,7 +63,7 @@ func newBackend(issuerFactory tokens.IssuerFactory, tokenStore store.Store) (*ba
 	}, nil
 }
 
-func (c *backend) IssueRoleToken(name string, role *v1.Role) (string, *storage.TokenMetadata, error) {
+func (c *backend) IssueRoleToken(name string, role *storage.Role) (string, *storage.TokenMetadata, error) {
 	tokenInfo, err := c.issuer.Issue(tokens.RoxClaims{RoleName: role.GetName()})
 	if err != nil {
 		return "", nil, err

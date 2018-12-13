@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/pruner/mocks"
 	processSearch "github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -60,7 +60,7 @@ func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
 	suite.datastore = New(suite.storage, suite.indexer, suite.searcher, nil)
 }
 
-func (suite *IndicatorDataStoreTestSuite) verifyIndicatorsAre(indicators ...*v1.ProcessIndicator) {
+func (suite *IndicatorDataStoreTestSuite) verifyIndicatorsAre(indicators ...*storage.ProcessIndicator) {
 	indexResults, err := suite.indexer.SearchProcessIndicators(search.EmptyQuery())
 	suite.NoError(err)
 	suite.Len(indexResults, len(indicators))
@@ -80,15 +80,15 @@ func (suite *IndicatorDataStoreTestSuite) verifyIndicatorsAre(indicators ...*v1.
 	suite.ElementsMatch(boltResults, indicators)
 }
 
-func getIndicators() (indicators []*v1.ProcessIndicator, repeatIndicator *v1.ProcessIndicator) {
-	repeatedSignal := &v1.ProcessSignal{
+func getIndicators() (indicators []*storage.ProcessIndicator, repeatIndicator *storage.ProcessIndicator) {
+	repeatedSignal := &storage.ProcessSignal{
 		Args:         "da_args",
 		ContainerId:  "aa",
 		Name:         "blah",
 		ExecFilePath: "file",
 	}
 
-	indicators = []*v1.ProcessIndicator{
+	indicators = []*storage.ProcessIndicator{
 		{
 			Id:           "id1",
 			DeploymentId: "d1",
@@ -99,14 +99,14 @@ func getIndicators() (indicators []*v1.ProcessIndicator, repeatIndicator *v1.Pro
 			Id:           "id2",
 			DeploymentId: "d2",
 
-			Signal: &v1.ProcessSignal{
+			Signal: &storage.ProcessSignal{
 				Name: "blah",
 				Args: "args2",
 			},
 		},
 	}
 
-	repeatIndicator = &v1.ProcessIndicator{
+	repeatIndicator = &storage.ProcessIndicator{
 		Id:           "id3",
 		DeploymentId: "d1",
 		Signal:       repeatedSignal,
@@ -147,14 +147,14 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorAddOneByOne() {
 	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
 }
 
-func generateIndicators(deploymentIDs []string, containerIDs []string) []*v1.ProcessIndicator {
-	var indicators []*v1.ProcessIndicator
+func generateIndicators(deploymentIDs []string, containerIDs []string) []*storage.ProcessIndicator {
+	var indicators []*storage.ProcessIndicator
 	for _, d := range deploymentIDs {
 		for _, c := range containerIDs {
-			indicators = append(indicators, &v1.ProcessIndicator{
+			indicators = append(indicators, &storage.ProcessIndicator{
 				Id:           fmt.Sprintf("indicator_id_%s_%s", d, c),
 				DeploymentId: d,
-				Signal: &v1.ProcessSignal{
+				Signal: &storage.ProcessSignal{
 					ContainerId:  fmt.Sprintf("%s_%s", d, c),
 					ExecFilePath: fmt.Sprintf("EXECFILE_%s_%s", d, c),
 				},

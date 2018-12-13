@@ -3,7 +3,6 @@ package matcher
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -23,10 +22,10 @@ func newScanExistsMatcher(policy *storage.Policy) (Matcher, error) {
 type scanExistsMatcherImpl struct {
 }
 
-func (p *scanExistsMatcherImpl) match(image *storage.Image) []*v1.Alert_Violation {
-	var violations []*v1.Alert_Violation
+func (p *scanExistsMatcherImpl) match(image *storage.Image) []*storage.Alert_Violation {
+	var violations []*storage.Alert_Violation
 	if image.GetScan() == nil {
-		violations = append(violations, &v1.Alert_Violation{
+		violations = append(violations, &storage.Alert_Violation{
 			Message: fmt.Sprintf("Image '%s' has not been scanned", image.GetName().GetFullName()),
 		})
 	}

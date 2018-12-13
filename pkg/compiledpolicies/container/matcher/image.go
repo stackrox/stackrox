@@ -1,7 +1,6 @@
 package matcher
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	imageMatcher "github.com/stackrox/rox/pkg/compiledpolicies/image/matcher"
 )
@@ -18,7 +17,7 @@ func newImageMatcher(policy *storage.Policy) (Matcher, error) {
 		return nil, nil
 	}
 
-	return func(container *storage.Container) []*v1.Alert_Violation {
+	return func(container *storage.Container) []*storage.Alert_Violation {
 		return matcher(container.GetImage())
 	}, nil
 }

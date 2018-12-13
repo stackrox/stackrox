@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/golang-lru"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/metrics"
 )
@@ -17,11 +17,11 @@ const (
 type enricher struct {
 	lru             *lru.Cache
 	clusterEntities *clusterentities.Store
-	indicators      chan *v1.ProcessIndicator
+	indicators      chan *storage.ProcessIndicator
 	sendChan        chan clusterentities.ContainerMetadata
 }
 
-func newEnricher(clusterEntities *clusterentities.Store, indicators chan *v1.ProcessIndicator) *enricher {
+func newEnricher(clusterEntities *clusterentities.Store, indicators chan *storage.ProcessIndicator) *enricher {
 	evictfunc := func(key interface{}, value interface{}) {
 		metrics.IncrementProcessEnrichmentDrops()
 	}
@@ -39,14 +39,14 @@ func newEnricher(clusterEntities *clusterentities.Store, indicators chan *v1.Pro
 	return e
 }
 
-func (e *enricher) Add(indicator *v1.ProcessIndicator) {
-	var indicatorSlice []*v1.ProcessIndicator
+func (e *enricher) Add(indicator *storage.ProcessIndicator) {
+	var indicatorSlice []*storage.ProcessIndicator
 	if indicator == nil {
 		return
 	}
 	indicatorObj, _ := e.lru.Get(indicator.GetSignal().GetContainerId())
 	if indicatorObj != nil {
-		indicatorSlice = indicatorObj.([]*v1.ProcessIndicator)
+		indicatorSlice = indicatorObj.([]*storage.ProcessIndicator)
 	}
 	indicatorSlice = append(indicatorSlice, indicator)
 	e.lru.Add(indicator.GetSignal().GetContainerId(), indicatorSlice)
@@ -75,14 +75,14 @@ func (e *enricher) processLoop() {
 // scans the cache and enriches indicators that have metadata.
 func (e *enricher) scanAndEnrich(metadata clusterentities.ContainerMetadata) {
 	if indicatorSet, ok := e.lru.Get(metadata.ContainerID); ok {
-		for _, indicator := range indicatorSet.([]*v1.ProcessIndicator) {
+		for _, indicator := range indicatorSet.([]*storage.ProcessIndicator) {
 			e.enrich(indicator, metadata)
 		}
 		e.lru.Remove(metadata.ContainerID)
 	}
 }
 
-func (e *enricher) enrich(indicator *v1.ProcessIndicator, metadata clusterentities.ContainerMetadata) {
+func (e *enricher) enrich(indicator *storage.ProcessIndicator, metadata clusterentities.ContainerMetadata) {
 	populateIndicatorFromCachedContainer(indicator, metadata)
 	e.indicators <- indicator
 	metrics.IncrementProcessEnrichmentHits()

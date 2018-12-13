@@ -11,6 +11,7 @@ import (
 	storeMocks "github.com/stackrox/rox/central/alert/store/mocks"
 	"github.com/stackrox/rox/central/alerttest"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 )
@@ -53,12 +54,12 @@ func (s *alertDataStoreTestSuite) TestSearchAlerts() {
 }
 
 func (s *alertDataStoreTestSuite) TestSearchRawAlerts() {
-	s.searcher.EXPECT().SearchRawAlerts(&v1.Query{}).Return([]*v1.Alert{{Id: alerttest.FakeAlertID}}, errFake)
+	s.searcher.EXPECT().SearchRawAlerts(&v1.Query{}).Return([]*storage.Alert{{Id: alerttest.FakeAlertID}}, errFake)
 
 	result, err := s.dataStore.SearchRawAlerts(&v1.Query{})
 
 	s.Equal(errFake, err)
-	s.Equal([]*v1.Alert{{Id: alerttest.FakeAlertID}}, result)
+	s.Equal([]*storage.Alert{{Id: alerttest.FakeAlertID}}, result)
 }
 
 func (s *alertDataStoreTestSuite) TestSearchListAlerts() {
@@ -71,7 +72,7 @@ func (s *alertDataStoreTestSuite) TestSearchListAlerts() {
 }
 
 func (s *alertDataStoreTestSuite) TestCountAlerts() {
-	expectedQ := search.NewQueryBuilder().AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String()).ProtoQuery()
+	expectedQ := search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
 	s.searcher.EXPECT().SearchListAlerts(expectedQ).Return(alerttest.NewFakeListAlertSlice(), errFake)
 
 	result, err := s.dataStore.CountAlerts()
@@ -124,7 +125,7 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStale() {
 	err := s.dataStore.MarkAlertStale(alerttest.FakeAlertID)
 	s.NoError(err)
 
-	s.Equal(v1.ViolationState_RESOLVED, fakeAlert.GetState())
+	s.Equal(storage.ViolationState_RESOLVED, fakeAlert.GetState())
 }
 
 func (s *alertDataStoreTestSuite) TestMarkAlertStaleWhenStorageFails() {

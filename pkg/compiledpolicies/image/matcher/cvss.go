@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -25,7 +24,7 @@ type cvssMatcherImpl struct {
 	cvss *storage.NumericalPolicy
 }
 
-func (p *cvssMatcherImpl) match(image *storage.Image) (violations []*v1.Alert_Violation) {
+func (p *cvssMatcherImpl) match(image *storage.Image) (violations []*storage.Alert_Violation) {
 	var maxCVSS float32
 
 	for _, component := range image.GetScan().GetComponents() {
@@ -54,7 +53,7 @@ func (p *cvssMatcherImpl) match(image *storage.Image) (violations []*v1.Alert_Vi
 		comparatorChar = ">"
 	}
 	if comparatorFunc(maxCVSS, p.cvss.GetValue()) {
-		violations = append(violations, &v1.Alert_Violation{
+		violations = append(violations, &storage.Alert_Violation{
 			Message: fmt.Sprintf("Max CVSS = %v, which is %v threshold of %v", maxCVSS, comparatorChar, p.cvss.GetValue()),
 		})
 	}

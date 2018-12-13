@@ -7,7 +7,6 @@ import (
 	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/store/mocks"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -452,7 +451,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
 			"id1",
 		},
 	}
-	suite.nStorage.EXPECT().GetNotifier("id1").Return((*v1.Notifier)(nil), true, nil)
+	suite.nStorage.EXPECT().GetNotifier("id1").Return((*storage.Notifier)(nil), true, nil)
 	err := suite.validator.validateNotifiers(policy)
 	suite.NoError(err, "severity should pass when set")
 
@@ -461,7 +460,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
 			"id2",
 		},
 	}
-	suite.nStorage.EXPECT().GetNotifier("id2").Return((*v1.Notifier)(nil), false, nil)
+	suite.nStorage.EXPECT().GetNotifier("id2").Return((*storage.Notifier)(nil), false, nil)
 	err = suite.validator.validateNotifiers(policy)
 	suite.Error(err, "should fail when it does not exist")
 
@@ -470,7 +469,7 @@ func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
 			"id3",
 		},
 	}
-	suite.nStorage.EXPECT().GetNotifier("id3").Return((*v1.Notifier)(nil), true, fmt.Errorf("oh noes"))
+	suite.nStorage.EXPECT().GetNotifier("id3").Return((*storage.Notifier)(nil), true, fmt.Errorf("oh noes"))
 	err = suite.validator.validateNotifiers(policy)
 	suite.Error(err, "should fail when an error is thrown")
 }

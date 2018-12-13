@@ -10,9 +10,9 @@ import groups.BAT
 import java.util.stream.Collectors
 import objects.Deployment
 import org.junit.experimental.categories.Category
-import io.stackrox.proto.api.v1.AlertServiceOuterClass
-import io.stackrox.proto.api.v1.Indicator
+import io.stackrox.proto.storage.AlertOuterClass.ViolationState
 import io.stackrox.proto.storage.PolicyOuterClass
+import io.stackrox.proto.storage.ProcessIndicatorOuterClass.ProcessIndicator
 
 class RuntimeViolationLifecycleTest extends BaseSpecification  {
     static final private String APTGETPOLICY = "Ubuntu Package Manager Execution"
@@ -56,7 +56,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         assert violation.getDeployment().getId() == deploymentUid
         assert violation.getLifecycleStage() == PolicyOuterClass.LifecycleStage.RUNTIME
         def alert = getViolation(violation.getId())
-        assert alert.getState() == AlertServiceOuterClass.ViolationState.ACTIVE
+        assert alert.getState() == ViolationState.ACTIVE
         return true
     }
 
@@ -88,7 +88,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
         then:
         "Ensure the alert is active"
-        assert alert.getState() == AlertServiceOuterClass.ViolationState.ACTIVE
+        assert alert.getState() == ViolationState.ACTIVE
 
         when:
         "Resolve the alert, get it again"
@@ -98,7 +98,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
         then:
         "Ensure the alert is now resolved"
-        assert resolvedAlert.getState() == AlertServiceOuterClass.ViolationState.RESOLVED
+        assert resolvedAlert.getState() == ViolationState.RESOLVED
 
         cleanup:
         if (deploymentCreated) {
@@ -138,13 +138,13 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         then:
         "Assert that the alert has the fields we expect"
         assert originalAptGetAlert != null
-        assert originalAptGetAlert.getState() == AlertServiceOuterClass.ViolationState.ACTIVE
+        assert originalAptGetAlert.getState() == ViolationState.ACTIVE
         assert originalAptGetAlert.getDeployment().getId() == DEPLOYMENT.getDeploymentUid()
         assert originalAptGetAlert.getLifecycleStage() == PolicyOuterClass.LifecycleStage.RUNTIME
         assert originalAptGetAlert.getViolationsCount() == 1
         def subViolation = originalAptGetAlert.getViolations(0)
         assert subViolation.getProcessesCount() > 0
-        for (Indicator.ProcessIndicator process : subViolation.getProcessesList()) {
+        for (ProcessIndicator process : subViolation.getProcessesList()) {
             assert process.getSignal().getName() in ["apt-get", "dpkg", "apt"]
             if (process.getSignal().getName() == "apt-get") {
                 assert process.getSignal().getArgs() == "-y update"
@@ -160,7 +160,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         then:
         "Verify the alert is now resolved"
         assert updatedAptGetAlert != null
-        assert updatedAptGetAlert.getState() == AlertServiceOuterClass.ViolationState.RESOLVED
+        assert updatedAptGetAlert.getState() == ViolationState.RESOLVED
 
         cleanup:
         if (deploymentCreated) {

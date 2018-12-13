@@ -8,6 +8,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/secondarykey"
@@ -18,8 +19,8 @@ type storeImpl struct {
 	*bolt.DB
 }
 
-func (b *storeImpl) getNotifier(id string, bucket *bolt.Bucket) (notifier *v1.Notifier, exists bool, err error) {
-	notifier = new(v1.Notifier)
+func (b *storeImpl) getNotifier(id string, bucket *bolt.Bucket) (notifier *storage.Notifier, exists bool, err error) {
+	notifier = new(storage.Notifier)
 	val := bucket.Get([]byte(id))
 	if val == nil {
 		return
@@ -30,7 +31,7 @@ func (b *storeImpl) getNotifier(id string, bucket *bolt.Bucket) (notifier *v1.No
 }
 
 // GetNotifier returns notifier with given id.
-func (b *storeImpl) GetNotifier(id string) (notifier *v1.Notifier, exists bool, err error) {
+func (b *storeImpl) GetNotifier(id string) (notifier *storage.Notifier, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Notifier")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(notifierBucket))
@@ -41,13 +42,13 @@ func (b *storeImpl) GetNotifier(id string) (notifier *v1.Notifier, exists bool, 
 }
 
 // GetNotifiers retrieves notifiers matching the request from bolt
-func (b *storeImpl) GetNotifiers(request *v1.GetNotifiersRequest) ([]*v1.Notifier, error) {
+func (b *storeImpl) GetNotifiers(request *v1.GetNotifiersRequest) ([]*storage.Notifier, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Notifier")
-	var notifiers []*v1.Notifier
+	var notifiers []*storage.Notifier
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(notifierBucket))
 		return b.ForEach(func(k, v []byte) error {
-			var notifier v1.Notifier
+			var notifier storage.Notifier
 			if err := proto.Unmarshal(v, &notifier); err != nil {
 				return err
 			}
@@ -59,7 +60,7 @@ func (b *storeImpl) GetNotifiers(request *v1.GetNotifiersRequest) ([]*v1.Notifie
 }
 
 // AddNotifier adds a notifier to bolt
-func (b *storeImpl) AddNotifier(notifier *v1.Notifier) (string, error) {
+func (b *storeImpl) AddNotifier(notifier *storage.Notifier) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Notifier")
 	notifier.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
@@ -84,7 +85,7 @@ func (b *storeImpl) AddNotifier(notifier *v1.Notifier) (string, error) {
 }
 
 // UpdateNotifier updates a notifier to bolt
-func (b *storeImpl) UpdateNotifier(notifier *v1.Notifier) error {
+func (b *storeImpl) UpdateNotifier(notifier *storage.Notifier) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Notifier")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(notifierBucket))

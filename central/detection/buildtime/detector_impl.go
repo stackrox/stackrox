@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/image/index"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -25,7 +24,7 @@ type detectorImpl struct {
 }
 
 // Detect runs detection on an image, returning any generated alerts.
-func (d *detectorImpl) Detect(image *storage.Image) ([]*v1.Alert, error) {
+func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 	if image == nil {
 		return nil, errors.New("cannot detect on a nil image")
 	}
@@ -42,7 +41,7 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*v1.Alert, error) {
 		return nil, fmt.Errorf("inserting into temp index: %s", err)
 	}
 
-	var alerts []*v1.Alert
+	var alerts []*storage.Alert
 	err = d.policySet.ForEach(func(p *storage.Policy, matcher searchbasedpolicies.Matcher) error {
 		violations, err := matcher.MatchOne(tempIndexer, types.NewDigest(image.GetId()).Digest())
 		if err != nil {
@@ -59,11 +58,11 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*v1.Alert, error) {
 	return alerts, nil
 }
 
-func policyAndViolationsToAlert(policy *storage.Policy, violations []*v1.Alert_Violation) *v1.Alert {
+func policyAndViolationsToAlert(policy *storage.Policy, violations []*storage.Alert_Violation) *storage.Alert {
 	if len(violations) == 0 {
 		return nil
 	}
-	alert := &v1.Alert{
+	alert := &storage.Alert{
 		Id:             uuid.NewV4().String(),
 		LifecycleStage: storage.LifecycleStage_BUILD,
 		Policy:         protoutils.CloneStoragePolicy(policy),

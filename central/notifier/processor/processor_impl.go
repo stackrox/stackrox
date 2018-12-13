@@ -12,8 +12,8 @@ import (
 
 // Processor takes in alerts and sends the notifications tied to that alert
 type processorImpl struct {
-	alertChan     chan *v1.Alert
-	benchmarkChan chan *v1.BenchmarkSchedule
+	alertChan     chan *storage.Alert
+	benchmarkChan chan *storage.BenchmarkSchedule
 	notifiers     map[string]notifiers.Notifier
 	notifiersLock sync.RWMutex
 
@@ -38,7 +38,7 @@ func (p *processorImpl) initializeNotifiers() error {
 	return nil
 }
 
-func (p *processorImpl) notifyAlert(alert *v1.Alert) {
+func (p *processorImpl) notifyAlert(alert *storage.Alert) {
 	p.notifiersLock.RLock()
 	defer p.notifiersLock.RUnlock()
 	for _, id := range alert.Policy.Notifiers {
@@ -53,7 +53,7 @@ func (p *processorImpl) notifyAlert(alert *v1.Alert) {
 	}
 }
 
-func (p *processorImpl) notifyBenchmark(schedule *v1.BenchmarkSchedule) {
+func (p *processorImpl) notifyBenchmark(schedule *storage.BenchmarkSchedule) {
 	p.notifiersLock.RLock()
 	defer p.notifiersLock.RUnlock()
 	for _, id := range schedule.Notifiers {
@@ -87,12 +87,12 @@ func (p *processorImpl) Start() {
 }
 
 // ProcessAlert pushes the alert into a channel to be processed
-func (p *processorImpl) ProcessAlert(alert *v1.Alert) {
+func (p *processorImpl) ProcessAlert(alert *storage.Alert) {
 	p.alertChan <- alert
 }
 
 // ProcessBenchmark pushes the alert into a channel to be processed
-func (p *processorImpl) ProcessBenchmark(schedule *v1.BenchmarkSchedule) {
+func (p *processorImpl) ProcessBenchmark(schedule *storage.BenchmarkSchedule) {
 	p.benchmarkChan <- schedule
 }
 

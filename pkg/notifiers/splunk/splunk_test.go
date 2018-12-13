@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -35,10 +36,10 @@ func skip(t *testing.T) (token string, endpoint string) {
 func getSplunk(t *testing.T) *splunk {
 	token, endpoint := skip(t)
 
-	notifier := &v1.Notifier{
+	notifier := &storage.Notifier{
 		UiEndpoint: "http://google.com",
 		Config: &v1.Notifier_Splunk{
-			Splunk: &v1.Splunk{
+			Splunk: &storage.Splunk{
 				Token:        token,
 				HttpEndpoint: endpoint,
 			},
@@ -68,7 +69,7 @@ func TestSplunkTest(t *testing.T) {
 
 func TestSplunkBenchmarkNotify(t *testing.T) {
 	s := getSplunk(t)
-	schedule := &v1.BenchmarkSchedule{
+	schedule := &storage.BenchmarkSchedule{
 		BenchmarkName: "CIS Docker Benchmark",
 	}
 	assert.NoError(t, s.BenchmarkNotify(schedule))

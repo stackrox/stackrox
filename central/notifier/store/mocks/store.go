@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
 
@@ -34,7 +35,7 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // AddNotifier mocks base method
-func (m *MockStore) AddNotifier(arg0 *v1.Notifier) (string, error) {
+func (m *MockStore) AddNotifier(arg0 *storage.Notifier) (string, error) {
 	ret := m.ctrl.Call(m, "AddNotifier", arg0)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
@@ -47,9 +48,9 @@ func (mr *MockStoreMockRecorder) AddNotifier(arg0 interface{}) *gomock.Call {
 }
 
 // GetNotifier mocks base method
-func (m *MockStore) GetNotifier(arg0 string) (*v1.Notifier, bool, error) {
+func (m *MockStore) GetNotifier(arg0 string) (*storage.Notifier, bool, error) {
 	ret := m.ctrl.Call(m, "GetNotifier", arg0)
-	ret0, _ := ret[0].(*v1.Notifier)
+	ret0, _ := ret[0].(*storage.Notifier)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -61,9 +62,9 @@ func (mr *MockStoreMockRecorder) GetNotifier(arg0 interface{}) *gomock.Call {
 }
 
 // GetNotifiers mocks base method
-func (m *MockStore) GetNotifiers(arg0 *v1.GetNotifiersRequest) ([]*v1.Notifier, error) {
+func (m *MockStore) GetNotifiers(arg0 *v1.GetNotifiersRequest) ([]*storage.Notifier, error) {
 	ret := m.ctrl.Call(m, "GetNotifiers", arg0)
-	ret0, _ := ret[0].([]*v1.Notifier)
+	ret0, _ := ret[0].([]*storage.Notifier)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -86,7 +87,7 @@ func (mr *MockStoreMockRecorder) RemoveNotifier(arg0 interface{}) *gomock.Call {
 }
 
 // UpdateNotifier mocks base method
-func (m *MockStore) UpdateNotifier(arg0 *v1.Notifier) error {
+func (m *MockStore) UpdateNotifier(arg0 *storage.Notifier) error {
 	ret := m.ctrl.Call(m, "UpdateNotifier", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0

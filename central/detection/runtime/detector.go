@@ -3,7 +3,6 @@ package runtime
 import (
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/deployment"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -14,8 +13,8 @@ var (
 
 // Detector provides an interface for performing runtime policy violation detection.
 type Detector interface {
-	AlertsForDeployments(deploymentIDs ...string) ([]*v1.Alert, error)
-	AlertsForPolicy(policyID string) ([]*v1.Alert, error)
+	AlertsForDeployments(deploymentIDs ...string) ([]*storage.Alert, error)
+	AlertsForPolicy(policyID string) ([]*storage.Alert, error)
 	DeploymentWhitelistedForPolicy(deploymentID, policyID string) bool
 	UpsertPolicy(policy *storage.Policy) error
 	RemovePolicy(policyID string) error

@@ -5,7 +5,6 @@
 
 package protoutils
 
-import "github.com/stackrox/rox/generated/api/v1"
 import "github.com/stackrox/rox/generated/storage"
 
 // *storage.Policy represents a generic proto type that we clone.
@@ -22,9 +21,9 @@ func CloneStorageDeployment(val *storage.Deployment) *storage.Deployment {
 	return protoCloneWrapper(val).(*storage.Deployment)
 }
 
-// *v1.Alert represents a generic proto type that we clone.
+// *storage.Alert represents a generic proto type that we clone.
 
-// CloneV1Alert is a (generic) wrapper around proto.Clone that is strongly typed.
-func CloneV1Alert(val *v1.Alert) *v1.Alert {
-	return protoCloneWrapper(val).(*v1.Alert)
+// CloneStorageAlert is a (generic) wrapper around proto.Clone that is strongly typed.
+func CloneStorageAlert(val *storage.Alert) *storage.Alert {
+	return protoCloneWrapper(val).(*storage.Alert)
 }

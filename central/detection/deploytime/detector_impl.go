@@ -7,7 +7,6 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/deployment"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stackrox/rox/pkg/logging"
@@ -34,9 +33,9 @@ func (d *detectorImpl) RemovePolicy(policyID string) error {
 
 }
 
-func (d *detectorImpl) AlertsForDeployment(deployment *storage.Deployment) ([]*v1.Alert, error) {
+func (d *detectorImpl) AlertsForDeployment(deployment *storage.Deployment) ([]*storage.Alert, error) {
 	// Get the new and old alerts for the deployment.
-	var newAlerts []*v1.Alert
+	var newAlerts []*storage.Alert
 	err := d.policySet.ForEach(func(p *storage.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
 		if shouldProcess != nil && !shouldProcess(deployment) {
 			return nil
@@ -58,8 +57,8 @@ func (d *detectorImpl) AlertsForDeployment(deployment *storage.Deployment) ([]*v
 	return newAlerts, nil
 }
 
-func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*v1.Alert, error) {
-	var newAlerts []*v1.Alert
+func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*storage.Alert, error) {
+	var newAlerts []*storage.Alert
 	err := d.policySet.ForOne(policyID, func(p *storage.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
 		violationsByDeployment, err := matcher.Match(d.deployments)
 		if err != nil {
@@ -88,11 +87,11 @@ func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*v1.Alert, error) {
 }
 
 // policyDeploymentAndViolationsToAlert constructs an alert.
-func policyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *storage.Deployment, violations []*v1.Alert_Violation) *v1.Alert {
+func policyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *storage.Deployment, violations []*storage.Alert_Violation) *storage.Alert {
 	if len(violations) == 0 {
 		return nil
 	}
-	alert := &v1.Alert{
+	alert := &storage.Alert{
 		Id:             uuid.NewV4().String(),
 		LifecycleStage: storage.LifecycleStage_DEPLOY,
 		Deployment:     protoutils.CloneStorageDeployment(deployment),
@@ -101,7 +100,7 @@ func policyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *st
 		Time:           ptypes.TimestampNow(),
 	}
 	if action, msg := policyAndDeploymentToEnforcement(policy, deployment); action != storage.EnforcementAction_UNSET_ENFORCEMENT {
-		alert.Enforcement = &v1.Alert_Enforcement{
+		alert.Enforcement = &storage.Alert_Enforcement{
 			Action:  action,
 			Message: msg,
 		}

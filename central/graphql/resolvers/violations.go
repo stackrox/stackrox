@@ -5,7 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/schema"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -39,7 +39,7 @@ func (resolver *Resolver) Violation(ctx context.Context, args struct{ graphql.ID
 		resolver.ViolationsDataStore.GetAlert(string(args.ID)))
 }
 
-func (resolver *Resolver) getAlert(id string) *v1.Alert {
+func (resolver *Resolver) getAlert(id string) *storage.Alert {
 	alert, ok, err := resolver.ViolationsDataStore.GetAlert(id)
 	if err != nil || !ok {
 		return nil

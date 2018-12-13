@@ -2,7 +2,7 @@ package role
 
 import (
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
@@ -25,10 +25,10 @@ const (
 )
 
 // DefaultRoles are the pre-defined roles available.
-var defaultRoles = []*v1.Role{
+var defaultRoles = []*storage.Role{
 	permissions.NewRoleWithPermissions(None),
-	permissions.NewRoleWithGlobalAccess(Admin, v1.Access_READ_WRITE_ACCESS),
-	permissions.NewRoleWithGlobalAccess(Analyst, v1.Access_READ_ACCESS),
+	permissions.NewRoleWithGlobalAccess(Admin, storage.Access_READ_WRITE_ACCESS),
+	permissions.NewRoleWithGlobalAccess(Analyst, storage.Access_READ_ACCESS),
 	permissions.NewRoleWithPermissions(ContinuousIntegration,
 		permissions.View(resources.Detection),
 	),
@@ -40,10 +40,10 @@ var defaultRoles = []*v1.Role{
 }
 
 // DefaultRolesByName holds the default roles mapped by name.
-var DefaultRolesByName map[string]*v1.Role
+var DefaultRolesByName map[string]*storage.Role
 
 func init() {
-	DefaultRolesByName = make(map[string]*v1.Role)
+	DefaultRolesByName = make(map[string]*storage.Role)
 	for _, role := range defaultRoles {
 		DefaultRolesByName[role.GetName()] = role
 	}

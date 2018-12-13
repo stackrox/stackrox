@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,10 +29,10 @@ func skip(t *testing.T) (string, string) {
 
 func getJira(t *testing.T) *jira {
 	user, password := skip(t)
-	notifier := &v1.Notifier{
+	notifier := &storage.Notifier{
 		UiEndpoint: "http://google.com",
-		Config: &v1.Notifier_Jira{
-			Jira: &v1.Jira{
+		Config: &storage.Notifier_Jira{
+			Jira: &storage.Jira{
 				Username:  user,
 				Password:  password,
 				IssueType: "Bug",
@@ -64,7 +64,7 @@ func TestJiraTest(t *testing.T) {
 
 func TestJiraBenchmarkNotify(t *testing.T) {
 	j := getJira(t)
-	schedule := &v1.BenchmarkSchedule{
+	schedule := &storage.BenchmarkSchedule{
 		BenchmarkName: "CIS Docker Benchmark",
 	}
 	assert.NoError(t, j.BenchmarkNotify(schedule))

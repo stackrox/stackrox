@@ -1,25 +1,24 @@
 package store
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 )
 
-func convertAlertsToListAlerts(alert *v1.Alert) *v1.ListAlert {
-	listAlert := &v1.ListAlert{
+func convertAlertsToListAlerts(alert *storage.Alert) *storage.ListAlert {
+	listAlert := &storage.ListAlert{
 		Id:             alert.GetId(),
 		Time:           alert.GetTime(),
 		State:          alert.GetState(),
 		LifecycleStage: alert.GetLifecycleStage(),
-		Policy: &v1.ListAlertPolicy{
+		Policy: &storage.ListAlertPolicy{
 			Id:          alert.GetPolicy().GetId(),
 			Name:        alert.GetPolicy().GetName(),
 			Severity:    alert.GetPolicy().GetSeverity(),
 			Description: alert.GetPolicy().GetDescription(),
 			Categories:  alert.GetPolicy().GetCategories(),
 		},
-		Deployment: &v1.ListAlertDeployment{
+		Deployment: &storage.ListAlertDeployment{
 			Id:          alert.GetDeployment().GetId(),
 			Name:        alert.GetDeployment().GetName(),
 			UpdatedAt:   alert.GetDeployment().GetUpdatedAt(),
@@ -27,13 +26,13 @@ func convertAlertsToListAlerts(alert *v1.Alert) *v1.ListAlert {
 			Namespace:   alert.GetDeployment().GetNamespace(),
 		},
 	}
-	if alert.GetState() == v1.ViolationState_ACTIVE {
+	if alert.GetState() == storage.ViolationState_ACTIVE {
 		addEnforcementCount(alert, listAlert)
 	}
 	return listAlert
 }
 
-func addEnforcementCount(alert *v1.Alert, listAlert *v1.ListAlert) {
+func addEnforcementCount(alert *storage.Alert, listAlert *storage.ListAlert) {
 	if alert.GetEnforcement() == nil {
 		return
 	}
@@ -52,7 +51,7 @@ func addEnforcementCount(alert *v1.Alert, listAlert *v1.ListAlert) {
 	}
 }
 
-func determineRuntimeEnforcementCount(violations []*v1.Alert_Violation) int32 {
+func determineRuntimeEnforcementCount(violations []*storage.Alert_Violation) int32 {
 	podIds := set.NewStringSet()
 	for _, violation := range violations {
 		for _, pi := range violation.GetProcesses() {

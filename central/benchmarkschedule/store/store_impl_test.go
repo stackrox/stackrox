@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -41,7 +41,7 @@ func (suite *BenchmarkScheduleStoreTestSuite) TearDownSuite() {
 func (suite *BenchmarkScheduleStoreTestSuite) TestSchedules() {
 	cluster1 := uuid.NewV4().String()
 	cluster2 := uuid.NewV4().String()
-	schedules := []*v1.BenchmarkSchedule{
+	schedules := []*storage.BenchmarkSchedule{
 		{
 			Id:          "id1",
 			BenchmarkId: "bench1",

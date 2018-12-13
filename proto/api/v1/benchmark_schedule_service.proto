@@ -4,23 +4,11 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
-import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
+import "storage/benchmark_schedule.proto";
 
 package v1;
-
-message BenchmarkSchedule {
-    string id                              = 1;
-    string benchmark_id                    = 2;
-    string benchmark_name                  = 3;
-    string day                             = 4;
-    string hour                            = 5;
-    int64 timezone_offset                  = 6;
-    google.protobuf.Timestamp last_updated = 7;
-    repeated string cluster_ids            = 8;
-    repeated string notifiers              = 9;
-}
 
 message GetBenchmarkSchedulesRequest {
     string benchmark_id           = 1;
@@ -28,12 +16,12 @@ message GetBenchmarkSchedulesRequest {
 }
 
 message GetBenchmarkSchedulesResponse {
-    repeated BenchmarkSchedule schedules = 1;
+    repeated storage.BenchmarkSchedule schedules = 1;
 }
 
 service BenchmarkScheduleService {
 
-    rpc GetBenchmarkSchedule (ResourceByID) returns (BenchmarkSchedule) {
+    rpc GetBenchmarkSchedule (ResourceByID) returns (storage.BenchmarkSchedule) {
         option (google.api.http) = {
             get: "/v1/benchmarks/schedules/{id}"
         };
@@ -45,14 +33,14 @@ service BenchmarkScheduleService {
         };
     }
 
-    rpc PostBenchmarkSchedule (BenchmarkSchedule) returns (BenchmarkSchedule) {
+    rpc PostBenchmarkSchedule (storage.BenchmarkSchedule) returns (storage.BenchmarkSchedule) {
         option (google.api.http) = {
             post: "/v1/benchmarks/schedules"
             body: "*"
         };
     }
 
-    rpc PutBenchmarkSchedule (BenchmarkSchedule) returns (Empty) {
+    rpc PutBenchmarkSchedule (storage.BenchmarkSchedule) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/benchmarks/schedules/{id}"
             body: "*"

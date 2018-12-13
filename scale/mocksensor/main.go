@@ -128,7 +128,7 @@ func sendDeployments(stream v1.SensorEventService_RecordEventClient, maxDeployme
 	signal.Signal()
 }
 
-func sensorEventFromIndicator(index int, indicator *v1.ProcessIndicator) *v1.SensorEvent {
+func sensorEventFromIndicator(index int, indicator *storage.ProcessIndicator) *v1.SensorEvent {
 	indicator.Id = uuid.NewV4().String()
 	indicator.DeploymentId = getDeploymentID()
 	indicator.Signal.ContainerId = getDeploymentID()

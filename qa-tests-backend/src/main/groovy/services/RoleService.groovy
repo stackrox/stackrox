@@ -3,7 +3,7 @@ package services
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.EmptyOuterClass
 import io.stackrox.proto.api.v1.RoleServiceGrpc
-import io.stackrox.proto.api.v1.RoleServiceOuterClass.Role
+import io.stackrox.proto.storage.RoleOuterClass.Role
 
 class RoleService extends BaseService {
     static getRoleService() {

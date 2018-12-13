@@ -100,7 +100,7 @@ func (s *getAlertTests) TestGetAlertWhenTheDataAccessLayerFails() {
 	result, err := s.service.GetAlert(context.Background(), s.fakeResourceByIDRequest)
 
 	s.Equal(status.Error(codes.Internal, "fake error"), err)
-	s.Equal((*v1.Alert)(nil), result)
+	s.Equal((*storage.Alert)(nil), result)
 }
 
 func (s *getAlertTests) TestGetAlertWhenAlertIsMissing() {
@@ -109,27 +109,27 @@ func (s *getAlertTests) TestGetAlertWhenAlertIsMissing() {
 	result, err := s.service.GetAlert(context.Background(), s.fakeResourceByIDRequest)
 
 	s.Equal(status.Errorf(codes.NotFound, "alert with id '%s' does not exist", alerttest.FakeAlertID), err)
-	s.Equal((*v1.Alert)(nil), result)
+	s.Equal((*storage.Alert)(nil), result)
 }
 
 type listAlertsTests struct {
 	baseSuite
 
-	fakeListAlertSlice         []*v1.ListAlert
+	fakeListAlertSlice         []*storage.ListAlert
 	expectedListAlertsResponse *v1.ListAlertsResponse
 }
 
 func (s *listAlertsTests) SetupTest() {
 	s.baseSuite.SetupTest()
 
-	s.fakeListAlertSlice = []*v1.ListAlert{
+	s.fakeListAlertSlice = []*storage.ListAlert{
 		{
 			Id: "id1",
 			Time: &types.Timestamp{
 				Seconds: 1,
 				Nanos:   2,
 			},
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Id: alerttest.FakePolicyID,
 			},
 		},
@@ -139,7 +139,7 @@ func (s *listAlertsTests) SetupTest() {
 				Seconds: 1,
 				Nanos:   1,
 			},
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Id: alerttest.FakePolicyID,
 			},
 		},
@@ -149,7 +149,7 @@ func (s *listAlertsTests) SetupTest() {
 				Seconds: 2,
 				Nanos:   0,
 			},
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Id: alerttest.FakePolicyID,
 			},
 		},
@@ -159,7 +159,7 @@ func (s *listAlertsTests) SetupTest() {
 				Seconds: 2,
 				Nanos:   0,
 			},
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Id: alerttest.FakePolicyID,
 			},
 		},
@@ -167,14 +167,14 @@ func (s *listAlertsTests) SetupTest() {
 
 	// expectedListAlertsResponse includes the slice of ListAlert objects sorted stably by descending timestamp
 	s.expectedListAlertsResponse = &v1.ListAlertsResponse{
-		Alerts: []*v1.ListAlert{
+		Alerts: []*storage.ListAlert{
 			{
 				Id: "id3",
 				Time: &types.Timestamp{
 					Seconds: 2,
 					Nanos:   0,
 				},
-				Policy: &v1.ListAlertPolicy{
+				Policy: &storage.ListAlertPolicy{
 					Id: alerttest.FakePolicyID,
 				},
 			},
@@ -184,7 +184,7 @@ func (s *listAlertsTests) SetupTest() {
 					Seconds: 2,
 					Nanos:   0,
 				},
-				Policy: &v1.ListAlertPolicy{
+				Policy: &storage.ListAlertPolicy{
 					Id: alerttest.FakePolicyID,
 				},
 			},
@@ -194,7 +194,7 @@ func (s *listAlertsTests) SetupTest() {
 					Seconds: 1,
 					Nanos:   2,
 				},
-				Policy: &v1.ListAlertPolicy{
+				Policy: &storage.ListAlertPolicy{
 					Id: alerttest.FakePolicyID,
 				},
 			},
@@ -204,7 +204,7 @@ func (s *listAlertsTests) SetupTest() {
 					Seconds: 1,
 					Nanos:   1,
 				},
-				Policy: &v1.ListAlertPolicy{
+				Policy: &storage.ListAlertPolicy{
 					Id: alerttest.FakePolicyID,
 				},
 			},
@@ -261,10 +261,10 @@ type getAlertsGroupsTests struct {
 }
 
 func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
-	fakeListAlertSlice := []*v1.ListAlert{
+	fakeListAlertSlice := []*storage.ListAlert{
 		{
 			Id: "id1",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Id:         "id1",
 				Name:       "policy1",
@@ -274,7 +274,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
 		},
 		{
 			Id: "id2",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Id:         "id2",
 				Name:       "policy2",
@@ -284,7 +284,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
 		},
 		{
 			Id: "id3",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Id:         "id1",
 				Name:       "policy1",
@@ -297,7 +297,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
 	expected := &v1.GetAlertsGroupResponse{
 		AlertsByPolicies: []*v1.GetAlertsGroupResponse_PolicyGroup{
 			{
-				Policy: &v1.ListAlertPolicy{
+				Policy: &storage.ListAlertPolicy{
 					Categories: []string{"Image Assurance"},
 					Id:         "id1",
 					Name:       "policy1",
@@ -306,7 +306,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
 				NumAlerts: 2,
 			},
 			{
-				Policy: &v1.ListAlertPolicy{
+				Policy: &storage.ListAlertPolicy{
 					Categories: []string{"Image Assurance"},
 					Id:         "id2",
 					Name:       "policy2",
@@ -321,10 +321,10 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForOneCategory() {
 }
 
 func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
-	fakeListAlertSlice := []*v1.ListAlert{
+	fakeListAlertSlice := []*storage.ListAlert{
 		{
 			Id: "id1",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Id:         "id1",
 				Name:       "policy1",
@@ -334,7 +334,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 		},
 		{
 			Id: "id2",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance", "Privileges Capabilities"},
 				Id:         "id2",
 				Name:       "policy2",
@@ -344,7 +344,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 		},
 		{
 			Id: "id3",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Container Configuration"},
 				Id:         "id30",
 				Name:       "policy30",
@@ -354,7 +354,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 		},
 		{
 			Id: "id4",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Id:         "id1",
 				Name:       "policy1",
@@ -367,7 +367,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 	expected := &v1.GetAlertsGroupResponse{
 		AlertsByPolicies: []*v1.GetAlertsGroupResponse_PolicyGroup{
 			{
-				Policy: &v1.ListAlertPolicy{
+				Policy: &storage.ListAlertPolicy{
 					Categories: []string{"Image Assurance"},
 					Id:         "id1",
 					Name:       "policy1",
@@ -376,7 +376,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 				NumAlerts: 2,
 			},
 			{
-				Policy: &v1.ListAlertPolicy{
+				Policy: &storage.ListAlertPolicy{
 					Categories: []string{"Image Assurance", "Privileges Capabilities"},
 					Id:         "id2",
 					Name:       "policy2",
@@ -385,7 +385,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 				NumAlerts: 1,
 			},
 			{
-				Policy: &v1.ListAlertPolicy{
+				Policy: &storage.ListAlertPolicy{
 					Categories: []string{"Container Configuration"},
 					Id:         "id30",
 					Name:       "policy30",
@@ -399,7 +399,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 	s.testGetAlertsGroupFor(fakeListAlertSlice, expected)
 }
 
-func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeListAlertSlice []*v1.ListAlert, expected *v1.GetAlertsGroupResponse) {
+func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeListAlertSlice []*storage.ListAlert, expected *v1.GetAlertsGroupResponse) {
 	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(fakeListAlertSlice, nil)
 
 	result, err := s.service.GetAlertsGroup(context.Background(), &v1.ListAlertsRequest{
@@ -426,10 +426,10 @@ type getAlertsCountsTests struct {
 }
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
-	fakeListAlertSlice := []*v1.ListAlert{
+	fakeListAlertSlice := []*storage.ListAlert{
 		{
 			Id: "id1",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
@@ -438,7 +438,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 		},
 		{
 			Id: "id2",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Container Configuration"},
 				Name:       "policy2",
 				Severity:   storage.Severity_CRITICAL_SEVERITY,
@@ -447,7 +447,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 		},
 		{
 			Id: "id3",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
@@ -456,7 +456,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 		},
 		{
 			Id: "id4",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Privileges Capabilities"},
 				Name:       "policy3",
 				Severity:   storage.Severity_MEDIUM_SEVERITY,
@@ -465,7 +465,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 		},
 		{
 			Id: "id5",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance", "Container Configuration"},
 				Name:       "policy4",
 				Severity:   storage.Severity_HIGH_SEVERITY,
@@ -474,7 +474,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 		},
 		{
 			Id: "id6",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance", "Container Configuration"},
 				Name:       "policy4",
 				Severity:   storage.Severity_HIGH_SEVERITY,
@@ -513,10 +513,10 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenAlertsAreNotGrouped() {
 }
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
-	fakeListAlertSlice := []*v1.ListAlert{
+	fakeListAlertSlice := []*storage.ListAlert{
 		{
 			Id: "id1",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
@@ -525,7 +525,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 		},
 		{
 			Id: "id2",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Container Configuration"},
 				Name:       "policy2",
 				Severity:   storage.Severity_CRITICAL_SEVERITY,
@@ -534,7 +534,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 		},
 		{
 			Id: "id3",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
@@ -543,7 +543,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 		},
 		{
 			Id: "id4",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Privileges Capabilities"},
 				Name:       "policy3",
 				Severity:   storage.Severity_MEDIUM_SEVERITY,
@@ -552,7 +552,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 		},
 		{
 			Id: "id5",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance", "Container Configuration"},
 				Name:       "policy4",
 				Severity:   storage.Severity_HIGH_SEVERITY,
@@ -561,7 +561,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 		},
 		{
 			Id: "id6",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance", "Container Configuration"},
 				Name:       "policy4",
 				Severity:   storage.Severity_HIGH_SEVERITY,
@@ -614,75 +614,75 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCategory() {
 }
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
-	fakeListAlertSlice := []*v1.ListAlert{
+	fakeListAlertSlice := []*storage.ListAlert{
 		{
 			Id: "id1",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
 			},
-			Deployment: &v1.ListAlertDeployment{
+			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "test",
 			},
 			Time: &timestamp.Timestamp{Seconds: 300},
 		},
 		{
 			Id: "id2",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Container Configuration"},
 				Name:       "policy2",
 				Severity:   storage.Severity_CRITICAL_SEVERITY,
 			},
-			Deployment: &v1.ListAlertDeployment{
+			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "test",
 			},
 			Time: &timestamp.Timestamp{Seconds: 200},
 		},
 		{
 			Id: "id3",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
 			},
-			Deployment: &v1.ListAlertDeployment{
+			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "prod",
 			},
 			Time: &timestamp.Timestamp{Seconds: 130},
 		},
 		{
 			Id: "id4",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Privileges Capabilities"},
 				Name:       "policy3",
 				Severity:   storage.Severity_MEDIUM_SEVERITY,
 			},
-			Deployment: &v1.ListAlertDeployment{
+			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "prod",
 			},
 			Time: &timestamp.Timestamp{Seconds: 120},
 		},
 		{
 			Id: "id5",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance", "Container Configuration"},
 				Name:       "policy4",
 				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
-			Deployment: &v1.ListAlertDeployment{
+			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "prod",
 			},
 			Time: &timestamp.Timestamp{Seconds: 120},
 		},
 		{
 			Id: "id6",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance", "Container Configuration"},
 				Name:       "policy4",
 				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
-			Deployment: &v1.ListAlertDeployment{
+			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "test",
 			},
 			Time: &timestamp.Timestamp{Seconds: 110},
@@ -731,7 +731,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 	s.testGetAlertCounts(fakeListAlertSlice, v1.GetAlertsCountsRequest_CLUSTER, expected)
 }
 
-func (s *getAlertsCountsTests) testGetAlertCounts(fakeListAlertSlice []*v1.ListAlert, groupBy v1.GetAlertsCountsRequest_RequestGroup, expected *v1.GetAlertsCountsResponse) {
+func (s *getAlertsCountsTests) testGetAlertCounts(fakeListAlertSlice []*storage.ListAlert, groupBy v1.GetAlertsCountsRequest_RequestGroup, expected *v1.GetAlertsCountsResponse) {
 	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(fakeListAlertSlice, nil)
 
 	result, err := s.service.GetAlertsCounts(context.Background(), &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
@@ -745,75 +745,75 @@ func (s *getAlertsCountsTests) testGetAlertCounts(fakeListAlertSlice []*v1.ListA
 func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 	const unknownGroupBy = v1.GetAlertsCountsRequest_RequestGroup(-99)
 
-	fakeListAlertSlice := []*v1.ListAlert{
+	fakeListAlertSlice := []*storage.ListAlert{
 		{
 			Id: "id1",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
 			},
-			Deployment: &v1.ListAlertDeployment{
+			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "test",
 			},
 			Time: &timestamp.Timestamp{Seconds: 300},
 		},
 		{
 			Id: "id2",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Container Configuration"},
 				Name:       "policy2",
 				Severity:   storage.Severity_CRITICAL_SEVERITY,
 			},
-			Deployment: &v1.ListAlertDeployment{
+			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "test",
 			},
 			Time: &timestamp.Timestamp{Seconds: 200},
 		},
 		{
 			Id: "id3",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance"},
 				Name:       "policy1",
 				Severity:   storage.Severity_LOW_SEVERITY,
 			},
-			Deployment: &v1.ListAlertDeployment{
+			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "prod",
 			},
 			Time: &timestamp.Timestamp{Seconds: 130},
 		},
 		{
 			Id: "id4",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Privileges Capabilities"},
 				Name:       "policy3",
 				Severity:   storage.Severity_MEDIUM_SEVERITY,
 			},
-			Deployment: &v1.ListAlertDeployment{
+			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "prod",
 			},
 			Time: &timestamp.Timestamp{Seconds: 120},
 		},
 		{
 			Id: "id5",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance", "Container Configuration"},
 				Name:       "policy4",
 				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
-			Deployment: &v1.ListAlertDeployment{
+			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "prod",
 			},
 			Time: &timestamp.Timestamp{Seconds: 120},
 		},
 		{
 			Id: "id6",
-			Policy: &v1.ListAlertPolicy{
+			Policy: &storage.ListAlertPolicy{
 				Categories: []string{"Image Assurance", "Container Configuration"},
 				Name:       "policy4",
 				Severity:   storage.Severity_HIGH_SEVERITY,
 			},
-			Deployment: &v1.ListAlertDeployment{
+			Deployment: &storage.ListAlertDeployment{
 				ClusterName: "test",
 			},
 			Time: &timestamp.Timestamp{Seconds: 110},
@@ -846,40 +846,40 @@ type getAlertTimeseriesTests struct {
 }
 
 func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
-	alerts := []*v1.ListAlert{
+	alerts := []*storage.ListAlert{
 		{
 			Id: "id1",
 			Time: &timestamp.Timestamp{
 				Seconds: 1,
 			},
-			State:      v1.ViolationState_RESOLVED,
-			Deployment: &v1.ListAlertDeployment{ClusterName: "dev"},
-			Policy:     &v1.ListAlertPolicy{Severity: storage.Severity_CRITICAL_SEVERITY},
+			State:      storage.ViolationState_RESOLVED,
+			Deployment: &storage.ListAlertDeployment{ClusterName: "dev"},
+			Policy:     &storage.ListAlertPolicy{Severity: storage.Severity_CRITICAL_SEVERITY},
 		},
 		{
 			Id: "id2",
 			Time: &timestamp.Timestamp{
 				Seconds: 6,
 			},
-			Deployment: &v1.ListAlertDeployment{ClusterName: "dev"},
-			Policy:     &v1.ListAlertPolicy{Severity: storage.Severity_HIGH_SEVERITY},
+			Deployment: &storage.ListAlertDeployment{ClusterName: "dev"},
+			Policy:     &storage.ListAlertPolicy{Severity: storage.Severity_HIGH_SEVERITY},
 		},
 		{
 			Id: "id3",
 			Time: &timestamp.Timestamp{
 				Seconds: 1,
 			},
-			State:      v1.ViolationState_RESOLVED,
-			Deployment: &v1.ListAlertDeployment{ClusterName: "prod"},
-			Policy:     &v1.ListAlertPolicy{Severity: storage.Severity_LOW_SEVERITY},
+			State:      storage.ViolationState_RESOLVED,
+			Deployment: &storage.ListAlertDeployment{ClusterName: "prod"},
+			Policy:     &storage.ListAlertPolicy{Severity: storage.Severity_LOW_SEVERITY},
 		},
 		{
 			Id: "id4",
 			Time: &timestamp.Timestamp{
 				Seconds: 6,
 			},
-			Deployment: &v1.ListAlertDeployment{ClusterName: "prod"},
-			Policy:     &v1.ListAlertPolicy{Severity: storage.Severity_MEDIUM_SEVERITY},
+			Deployment: &storage.ListAlertDeployment{ClusterName: "prod"},
+			Policy:     &storage.ListAlertPolicy{Severity: storage.Severity_MEDIUM_SEVERITY},
 		},
 	}
 
@@ -1001,7 +1001,7 @@ func (s *patchAlertTests) TestSnoozeAlert() {
 	_, err = s.service.SnoozeAlert(context.Background(), &v1.SnoozeAlertRequest{Id: alerttest.FakeAlertID, SnoozeTill: snoozeTill})
 	s.NoError(err)
 
-	s.Equal(fakeAlert.State, v1.ViolationState_SNOOZED)
+	s.Equal(fakeAlert.State, storage.ViolationState_SNOOZED)
 	s.Equal(fakeAlert.SnoozeTill, snoozeTill)
 }
 
@@ -1018,10 +1018,10 @@ func (s *patchAlertTests) TestSnoozeAlertWithSnoozeTillInThePast() {
 func (s *patchAlertTests) TestResolveAlert() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	fakeAlert.State = v1.ViolationState_RESOLVED
+	fakeAlert.State = storage.ViolationState_RESOLVED
 	s.storage.EXPECT().UpdateAlert(fakeAlert).Return(nil)
 	_, err := s.service.ResolveAlert(context.Background(), &v1.ResolveAlertRequest{Id: alerttest.FakeAlertID})
 	s.NoError(err)
 
-	s.Equal(fakeAlert.State, v1.ViolationState_RESOLVED)
+	s.Equal(fakeAlert.State, storage.ViolationState_RESOLVED)
 }

@@ -14,7 +14,6 @@ import (
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -74,8 +73,8 @@ func getDeployments(num int) (deployments []*storage.Deployment) {
 	return
 }
 
-func getProcesses(dNum, pNum int) (processes []*v1.ProcessIndicator) {
-	processes = make([]*v1.ProcessIndicator, 0, pNum)
+func getProcesses(dNum, pNum int) (processes []*storage.ProcessIndicator) {
+	processes = make([]*storage.ProcessIndicator, 0, pNum)
 	for i := 0; i < pNum; i++ {
 		indicator := fixtures.GetProcessIndicator()
 		indicator.Id = fmt.Sprintf("%d", i)

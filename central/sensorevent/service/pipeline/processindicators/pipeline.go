@@ -6,6 +6,7 @@ import (
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -39,6 +40,6 @@ func (s *pipelineImpl) Run(event *v1.SensorEvent, injector pipeline.EnforcementI
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) process(indicator *v1.ProcessIndicator, injector pipeline.EnforcementInjector) error {
+func (s *pipelineImpl) process(indicator *storage.ProcessIndicator, injector pipeline.EnforcementInjector) error {
 	return s.manager.IndicatorAdded(indicator, injector)
 }

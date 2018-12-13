@@ -5,7 +5,7 @@ import objects.DaemonSet
 import objects.Deployment
 import org.junit.experimental.categories.Category
 import spock.lang.Unroll
-import io.stackrox.proto.api.v1.AlertServiceOuterClass
+import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 
@@ -38,13 +38,13 @@ class Enforcement extends BaseSpecification {
 
         and:
         "get violation details"
-        List<AlertServiceOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
+        List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
                 d.name,
                 APT_GET_POLICY,
                 30
-        ) as List<AlertServiceOuterClass.ListAlert>
+        ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
-        AlertServiceOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
+        AlertOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
 
         then:
         "check pod was killed"
@@ -88,13 +88,13 @@ class Enforcement extends BaseSpecification {
 
         and:
         "get violation details"
-        List<AlertServiceOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
+        List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
                 d.name,
                 CONTAINER_PORT_22_POLICY,
                 30
-        ) as List<AlertServiceOuterClass.ListAlert>
+        ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
-        AlertServiceOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
+        AlertOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
 
         then:
         "check deployment was scaled-down to 0 replicas"
@@ -142,13 +142,13 @@ class Enforcement extends BaseSpecification {
 
         and:
         "get violation details"
-        List<AlertServiceOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
+        List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
                 d.name,
                 CONTAINER_PORT_22_POLICY,
                 30
-        ) as List<AlertServiceOuterClass.ListAlert>
+        ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
-        AlertServiceOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
+        AlertOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
 
         then:
         "check deployment set with unsatisfiable node constraint, and unavailable nodes = desired nodes"
@@ -239,13 +239,13 @@ class Enforcement extends BaseSpecification {
 
         and:
         "get violation details"
-        List<AlertServiceOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
+        List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
                 d.name,
                 CONTAINER_PORT_22_POLICY,
                 30
-        ) as List<AlertServiceOuterClass.ListAlert>
+        ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
-        AlertServiceOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
+        AlertOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
 
         then:
         "check deployment was scaled-down to 0 replicas and node selection was not applied"
@@ -298,13 +298,13 @@ class Enforcement extends BaseSpecification {
 
         and:
         "get violation details"
-        List<AlertServiceOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
+        List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
                 d.name,
                 CONTAINER_PORT_22_POLICY,
                 30
-        ) as List<AlertServiceOuterClass.ListAlert>
+        ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
-        AlertServiceOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
+        AlertOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
 
         then:
         "check deployment set with unsatisfiable node constraint, and unavailable nodes = desired nodes"

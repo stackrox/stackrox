@@ -42,7 +42,7 @@ var (
 )
 
 type scheduleMetadata struct {
-	*v1.BenchmarkSchedule
+	*storage.BenchmarkSchedule
 	NextScanTime time.Time
 }
 
@@ -89,7 +89,7 @@ func grpcContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), requestTimeout)
 }
 
-func (s *SchedulerClient) getSchedules() ([]*v1.BenchmarkSchedule, error) {
+func (s *SchedulerClient) getSchedules() ([]*storage.BenchmarkSchedule, error) {
 	ctx, cancel := grpcContext()
 	defer cancel()
 	scheduleResp, err := v1.NewBenchmarkScheduleServiceClient(s.conn).GetBenchmarkSchedules(ctx, &v1.GetBenchmarkSchedulesRequest{
@@ -225,7 +225,7 @@ func ValidDay(d string) bool {
 	return ok
 }
 
-func nextScheduledTime(schedule *v1.BenchmarkSchedule) (time.Time, error) {
+func nextScheduledTime(schedule *storage.BenchmarkSchedule) (time.Time, error) {
 	hourTime, err := ParseHour(schedule.GetHour())
 	if err != nil {
 		return hourTime, err

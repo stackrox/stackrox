@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
 
@@ -47,9 +48,9 @@ func (mr *MockSearcherMockRecorder) SearchAlerts(arg0 interface{}) *gomock.Call 
 }
 
 // SearchListAlerts mocks base method
-func (m *MockSearcher) SearchListAlerts(arg0 *v1.Query) ([]*v1.ListAlert, error) {
+func (m *MockSearcher) SearchListAlerts(arg0 *v1.Query) ([]*storage.ListAlert, error) {
 	ret := m.ctrl.Call(m, "SearchListAlerts", arg0)
-	ret0, _ := ret[0].([]*v1.ListAlert)
+	ret0, _ := ret[0].([]*storage.ListAlert)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -60,9 +61,9 @@ func (mr *MockSearcherMockRecorder) SearchListAlerts(arg0 interface{}) *gomock.C
 }
 
 // SearchRawAlerts mocks base method
-func (m *MockSearcher) SearchRawAlerts(arg0 *v1.Query) ([]*v1.Alert, error) {
+func (m *MockSearcher) SearchRawAlerts(arg0 *v1.Query) ([]*storage.Alert, error) {
 	ret := m.ctrl.Call(m, "SearchRawAlerts", arg0)
-	ret0, _ := ret[0].([]*v1.Alert)
+	ret0, _ := ret[0].([]*storage.Alert)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

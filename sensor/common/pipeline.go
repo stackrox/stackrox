@@ -1,8 +1,10 @@
 package common
 
-import "github.com/stackrox/rox/generated/api/v1"
+import (
+	"github.com/stackrox/rox/generated/storage"
+)
 
 // Pipeline defines the way to process a process signal
 type Pipeline interface {
-	Process(signal *v1.ProcessSignal)
+	Process(signal *storage.ProcessSignal)
 }

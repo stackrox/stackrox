@@ -3,7 +3,6 @@ package basic
 import (
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/tokens"
@@ -13,7 +12,7 @@ import (
 
 type identity struct {
 	username string
-	role     *v1.Role
+	role     *storage.Role
 }
 
 func (i identity) UID() string {
@@ -24,7 +23,7 @@ func (i identity) FriendlyName() string {
 	return i.username
 }
 
-func (i identity) Role() *v1.Role {
+func (i identity) Role() *storage.Role {
 	return i.role
 }
 

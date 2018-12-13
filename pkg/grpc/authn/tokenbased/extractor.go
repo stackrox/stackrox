@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
@@ -125,7 +125,7 @@ func (e *extractor) withExternalUser(token *tokens.TokenInfo) (authn.Identity, e
 	return id, nil
 }
 
-func createRoleBasedIdentity(role *v1.Role, token *tokens.TokenInfo) *roleBasedIdentity {
+func createRoleBasedIdentity(role *storage.Role, token *tokens.TokenInfo) *roleBasedIdentity {
 	id := &roleBasedIdentity{
 		uid:          fmt.Sprintf("sso:%s:%s", token.Sources[0].ID(), token.ExternalUser.UserID),
 		friendlyName: token.ExternalUser.FullName,

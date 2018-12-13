@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/suite"
 )
@@ -39,11 +39,11 @@ func (s *RoleStoreTestSuite) TearDownSuite() {
 }
 
 func (s *RoleStoreTestSuite) TestAdd() {
-	roles := []*v1.Role{
+	roles := []*storage.Role{
 		{
 			Name: "ship",
-			ResourceToAccess: map[string]v1.Access{
-				"Policy": v1.Access_READ_ACCESS,
+			ResourceToAccess: map[string]storage.Access{
+				"Policy": storage.Access_READ_ACCESS,
 			},
 		},
 		{
@@ -78,11 +78,11 @@ func (s *RoleStoreTestSuite) TestAdd() {
 }
 
 func (s *RoleStoreTestSuite) TestUpdate() {
-	roles := []*v1.Role{
+	roles := []*storage.Role{
 		{
 			Name: "ship",
-			ResourceToAccess: map[string]v1.Access{
-				"Policy": v1.Access_READ_ACCESS,
+			ResourceToAccess: map[string]storage.Access{
+				"Policy": storage.Access_READ_ACCESS,
 			},
 		},
 		{

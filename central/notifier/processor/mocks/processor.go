@@ -6,7 +6,6 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	notifiers "github.com/stackrox/rox/pkg/notifiers"
 	reflect "reflect"
@@ -48,7 +47,7 @@ func (mr *MockProcessorMockRecorder) GetIntegratedPolicies(arg0 interface{}) *go
 }
 
 // ProcessAlert mocks base method
-func (m *MockProcessor) ProcessAlert(arg0 *v1.Alert) {
+func (m *MockProcessor) ProcessAlert(arg0 *storage.Alert) {
 	m.ctrl.Call(m, "ProcessAlert", arg0)
 }
 
@@ -58,7 +57,7 @@ func (mr *MockProcessorMockRecorder) ProcessAlert(arg0 interface{}) *gomock.Call
 }
 
 // ProcessBenchmark mocks base method
-func (m *MockProcessor) ProcessBenchmark(arg0 *v1.BenchmarkSchedule) {
+func (m *MockProcessor) ProcessBenchmark(arg0 *storage.BenchmarkSchedule) {
 	m.ctrl.Call(m, "ProcessBenchmark", arg0)
 }
 

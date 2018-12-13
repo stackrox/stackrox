@@ -6,6 +6,7 @@ import (
 	benchmarkDataStore "github.com/stackrox/rox/central/benchmark/datastore"
 	"github.com/stackrox/rox/central/benchmarkschedule/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -19,10 +20,10 @@ type Service interface {
 	grpc.APIService
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
-	GetBenchmarkSchedule(ctx context.Context, request *v1.ResourceByID) (*v1.BenchmarkSchedule, error)
-	PostBenchmarkSchedule(ctx context.Context, request *v1.BenchmarkSchedule) (*v1.BenchmarkSchedule, error)
+	GetBenchmarkSchedule(ctx context.Context, request *v1.ResourceByID) (*storage.BenchmarkSchedule, error)
+	PostBenchmarkSchedule(ctx context.Context, request *storage.BenchmarkSchedule) (*storage.BenchmarkSchedule, error)
 
-	PutBenchmarkSchedule(ctx context.Context, request *v1.BenchmarkSchedule) (*v1.Empty, error)
+	PutBenchmarkSchedule(ctx context.Context, request *storage.BenchmarkSchedule) (*v1.Empty, error)
 	GetBenchmarkSchedules(ctx context.Context, request *v1.GetBenchmarkSchedulesRequest) (*v1.GetBenchmarkSchedulesResponse, error)
 	DeleteBenchmarkSchedule(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error)
 }

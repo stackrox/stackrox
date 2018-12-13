@@ -9,7 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
@@ -17,20 +17,20 @@ type storeImpl struct {
 	*bolt.DB
 }
 
-func getProcessIndicator(tx *bolt.Tx, id string) (indicator *v1.ProcessIndicator, exists bool, err error) {
+func getProcessIndicator(tx *bolt.Tx, id string) (indicator *storage.ProcessIndicator, exists bool, err error) {
 	b := tx.Bucket([]byte(processIndicatorBucket))
 	val := b.Get([]byte(id))
 	if val == nil {
 		return
 	}
-	indicator = new(v1.ProcessIndicator)
+	indicator = new(storage.ProcessIndicator)
 	exists = true
 	err = proto.Unmarshal(val, indicator)
 	return
 }
 
 // GetProcessIndicator returns indicator with given id.
-func (b *storeImpl) GetProcessIndicator(id string) (indicator *v1.ProcessIndicator, exists bool, err error) {
+func (b *storeImpl) GetProcessIndicator(id string) (indicator *storage.ProcessIndicator, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ProcessIndicator")
 	err = b.View(func(tx *bolt.Tx) error {
 		var err error
@@ -40,13 +40,13 @@ func (b *storeImpl) GetProcessIndicator(id string) (indicator *v1.ProcessIndicat
 	return
 }
 
-func (b *storeImpl) GetProcessIndicators() ([]*v1.ProcessIndicator, error) {
+func (b *storeImpl) GetProcessIndicators() ([]*storage.ProcessIndicator, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ProcessIndicator")
-	var indicators []*v1.ProcessIndicator
+	var indicators []*storage.ProcessIndicator
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(processIndicatorBucket))
 		return b.ForEach(func(k, v []byte) error {
-			var indicator v1.ProcessIndicator
+			var indicator storage.ProcessIndicator
 			if err := proto.Unmarshal(v, &indicator); err != nil {
 				return err
 			}
@@ -63,7 +63,7 @@ func (b *storeImpl) GetProcessInfoToArgs() (map[processindicator.ProcessWithCont
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(uniqueProcessesBucket))
 		return b.ForEach(func(k, v []byte) error {
-			uniqueKey := new(v1.ProcessIndicatorUniqueKey)
+			uniqueKey := new(storage.ProcessIndicatorUniqueKey)
 			if err := proto.Unmarshal(k, uniqueKey); err != nil {
 				return fmt.Errorf("key unmarshaling: %s", err)
 			}
@@ -86,8 +86,8 @@ func (b *storeImpl) GetProcessInfoToArgs() (map[processindicator.ProcessWithCont
 }
 
 // get the value of the secondary key
-func getSecondaryKey(indicator *v1.ProcessIndicator) ([]byte, error) {
-	uniqueKey := &v1.ProcessIndicatorUniqueKey{
+func getSecondaryKey(indicator *storage.ProcessIndicator) ([]byte, error) {
+	uniqueKey := &storage.ProcessIndicatorUniqueKey{
 		PodId:               indicator.GetPodId(),
 		ContainerName:       indicator.GetContainerName(),
 		ProcessExecFilePath: indicator.GetSignal().GetExecFilePath(),
@@ -97,7 +97,7 @@ func getSecondaryKey(indicator *v1.ProcessIndicator) ([]byte, error) {
 	return proto.Marshal(uniqueKey)
 }
 
-func (b *storeImpl) addProcessIndicator(tx *bolt.Tx, indicator *v1.ProcessIndicator, data []byte) (string, error) {
+func (b *storeImpl) addProcessIndicator(tx *bolt.Tx, indicator *storage.ProcessIndicator, data []byte) (string, error) {
 	indicatorBucket := tx.Bucket([]byte(processIndicatorBucket))
 	indicatorIDBytes := []byte(indicator.GetId())
 	if indicatorBucket.Get(indicatorIDBytes) != nil {
@@ -125,7 +125,7 @@ func (b *storeImpl) addProcessIndicator(tx *bolt.Tx, indicator *v1.ProcessIndica
 }
 
 // AddProcessIndicator returns the id of the indicator that was deduped or empty if none was deduped
-func (b *storeImpl) AddProcessIndicator(indicator *v1.ProcessIndicator) (string, error) {
+func (b *storeImpl) AddProcessIndicator(indicator *storage.ProcessIndicator) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "ProcessIndicator")
 	if indicator.GetId() == "" {
 		return "", errors.New("received malformed indicator with no id")
@@ -143,7 +143,7 @@ func (b *storeImpl) AddProcessIndicator(indicator *v1.ProcessIndicator) (string,
 	return oldIDString, nil
 }
 
-func (b *storeImpl) AddProcessIndicators(indicators ...*v1.ProcessIndicator) ([]string, error) {
+func (b *storeImpl) AddProcessIndicators(indicators ...*storage.ProcessIndicator) ([]string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.AddMany, "ProcessIndicator")
 	var deletedIndicators []string
 	dataBytes := make([][]byte, 0, len(indicators))

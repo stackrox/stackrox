@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
@@ -40,6 +39,6 @@ type requiredLabelMatcherMatcherImpl struct {
 	value *regexp.Regexp
 }
 
-func (p *requiredLabelMatcherMatcherImpl) match(deployment *storage.Deployment) []*v1.Alert_Violation {
+func (p *requiredLabelMatcherMatcherImpl) match(deployment *storage.Deployment) []*storage.Alert_Violation {
 	return utils.MatchRequiredMap(deployment.GetLabels(), p.key, p.value, "label")
 }

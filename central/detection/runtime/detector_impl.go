@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/deployment"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -20,17 +19,17 @@ type detectorImpl struct {
 }
 
 type alertSlice struct {
-	alerts []*v1.Alert
+	alerts []*storage.Alert
 }
 
-func (a *alertSlice) append(alerts ...*v1.Alert) {
+func (a *alertSlice) append(alerts ...*storage.Alert) {
 	a.alerts = append(a.alerts, alerts...)
 }
 
 func (d *detectorImpl) policyMatcher(alerts *alertSlice, deploymentIDs ...string) func(*storage.Policy, searchbasedpolicies.Matcher, predicate.Predicate) error {
 	return func(p *storage.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
 		var err error
-		var violationsByDeployment map[string][]*v1.Alert_Violation
+		var violationsByDeployment map[string][]*storage.Alert_Violation
 		if len(deploymentIDs) == 0 {
 			violationsByDeployment, err = matcher.Match(d.deployments)
 		} else {
@@ -59,7 +58,7 @@ func (d *detectorImpl) policyMatcher(alerts *alertSlice, deploymentIDs ...string
 	}
 }
 
-func (d *detectorImpl) AlertsForDeployments(deploymentIDs ...string) ([]*v1.Alert, error) {
+func (d *detectorImpl) AlertsForDeployments(deploymentIDs ...string) ([]*storage.Alert, error) {
 	alertSlice := &alertSlice{}
 	err := d.policySet.ForEach(d.policyMatcher(alertSlice, deploymentIDs...))
 	if err != nil {
@@ -68,7 +67,7 @@ func (d *detectorImpl) AlertsForDeployments(deploymentIDs ...string) ([]*v1.Aler
 	return alertSlice.alerts, nil
 }
 
-func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*v1.Alert, error) {
+func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*storage.Alert, error) {
 	alertSlice := &alertSlice{}
 	err := d.policySet.ForOne(policyID, d.policyMatcher(alertSlice))
 	if err != nil {
@@ -115,11 +114,11 @@ func (d *detectorImpl) RemovePolicy(policyID string) error {
 }
 
 // PolicyDeploymentAndViolationsToAlert constructs an alert.
-func policyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *storage.Deployment, violations []*v1.Alert_Violation) *v1.Alert {
+func policyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *storage.Deployment, violations []*storage.Alert_Violation) *storage.Alert {
 	if len(violations) == 0 {
 		return nil
 	}
-	alert := &v1.Alert{
+	alert := &storage.Alert{
 		Id:             uuid.NewV4().String(),
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
 		Deployment:     protoutils.CloneStorageDeployment(deployment),
@@ -128,7 +127,7 @@ func policyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *st
 		Time:           ptypes.TimestampNow(),
 	}
 	if action, msg := policyAndDeploymentToEnforcement(policy, deployment); action != storage.EnforcementAction_UNSET_ENFORCEMENT {
-		alert.Enforcement = &v1.Alert_Enforcement{
+		alert.Enforcement = &storage.Alert_Enforcement{
 			Action:  action,
 			Message: msg,
 		}

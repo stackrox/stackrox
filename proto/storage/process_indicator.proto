@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+
+package storage;
+
+message ProcessIndicator {
+    // A unique uuid for the Indicator message
+    string id = 1;
+
+    string deployment_id  = 2;
+    string container_name = 3;
+    string pod_id         = 4;
+
+    // The emit timestamp of the message. Used for measuring latency
+    google.protobuf.Timestamp emit_timestamp = 5;
+
+    // A process signal message passed from Collector to Sensor
+    ProcessSignal signal = 6;
+}
+
+// This is the unique key we store process indicators under in Bolt.
+// This is stored in the DB, so please follow proto compatibility rules for it,
+// OR discard existing values and repopulate it on startup.
+message ProcessIndicatorUniqueKey {
+    string pod_id                 = 1;
+    string container_name         = 2;
+    string process_name           = 3;
+    string process_exec_file_path = 4;
+    string process_args           = 5;
+}
+
+message ProcessSignal {
+    // A unique UUID for identifying the message
+    // We have this here instead of at the top level
+    // because we want to have each message to be
+    // self contained.
+    string id                      = 1;
+
+    // ID of container associated with this process
+    string container_id            = 2;
+
+    // Process creation time
+    google.protobuf.Timestamp time = 3;
+
+    // Process name
+    string name                    = 4;
+
+    // Process arguments
+    string args                    = 5;
+
+    // Process executable file path
+    string exec_file_path          = 6;
+
+    // Host process ID
+    uint32 pid                     = 7;
+
+    // Real user ID
+    uint32 uid                     = 8;
+
+    // Real group ID
+    uint32 gid                     = 9;
+
+    // Process Lineage
+    repeated string lineage        = 10;
+}

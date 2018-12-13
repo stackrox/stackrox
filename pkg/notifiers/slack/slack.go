@@ -10,7 +10,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -33,7 +32,7 @@ const (
 
 // slack notifier plugin
 type slack struct {
-	*v1.Notifier
+	*storage.Notifier
 }
 
 // notification json struct for richly-formatted notifications
@@ -60,7 +59,7 @@ type attachmentField struct {
 	Short bool   `json:"short"`
 }
 
-func (s *slack) getDescription(alert *v1.Alert) (string, error) {
+func (s *slack) getDescription(alert *storage.Alert) (string, error) {
 	tabSpace := "        "
 	dblTabSpace := tabSpace + tabSpace
 	funcMap := template.FuncMap{
@@ -85,7 +84,7 @@ func (s *slack) getDescription(alert *v1.Alert) (string, error) {
 }
 
 // AlertNotify takes in an alert and generates the Slack message
-func (s *slack) AlertNotify(alert *v1.Alert) error {
+func (s *slack) AlertNotify(alert *storage.Alert) error {
 	tagLine := fmt.Sprintf("*Deployment %v (%v) violates '%v' Policy*", alert.Deployment.Name, alert.Deployment.Id, alert.Policy.Name)
 	body, err := s.getDescription(alert)
 	if err != nil {
@@ -157,7 +156,7 @@ func (s *slack) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 }
 
 // BenchmarkNotify takes in an benchmark schedule and generates the Slack message
-func (s *slack) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
+func (s *slack) BenchmarkNotify(schedule *storage.BenchmarkSchedule) error {
 	body, err := notifiers.FormatBenchmark(schedule, notifiers.BenchmarkLink(s.UiEndpoint))
 	attachments := []attachment{
 		{
@@ -181,13 +180,13 @@ func (s *slack) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
 	return postMessage(webhook, jsonPayload)
 }
 
-func newSlack(notifier *v1.Notifier) (*slack, error) {
+func newSlack(notifier *storage.Notifier) (*slack, error) {
 	return &slack{
 		Notifier: notifier,
 	}, nil
 }
 
-func (s *slack) ProtoNotifier() *v1.Notifier {
+func (s *slack) ProtoNotifier() *storage.Notifier {
 	return s.Notifier
 }
 
@@ -250,7 +249,7 @@ func GetAttachmentColor(s storage.Severity) string {
 }
 
 func init() {
-	notifiers.Add("slack", func(notifier *v1.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add("slack", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		s, err := newSlack(notifier)
 		return s, err
 	})

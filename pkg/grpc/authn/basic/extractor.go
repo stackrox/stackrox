@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -16,7 +16,7 @@ import (
 
 type extractor struct {
 	hashFile *htpasswd.HashFile
-	userRole *v1.Role
+	userRole *storage.Role
 }
 
 func parseBasicAuthToken(basicAuthToken string) (string, string, error) {
@@ -61,7 +61,7 @@ func (e *extractor) IdentityForRequest(ri requestinfo.RequestInfo) (authn.Identi
 }
 
 // NewExtractor returns a new identity extractor for internal services.
-func NewExtractor(htpasswdFile string, userRole *v1.Role) (authn.IdentityExtractor, error) {
+func NewExtractor(htpasswdFile string, userRole *storage.Role) (authn.IdentityExtractor, error) {
 	f, err := os.Open(htpasswdFile)
 	if err != nil {
 		return nil, fmt.Errorf("could not open htpasswd file %q: %v", htpasswdFile, err)

@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -22,11 +23,11 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	GetNotifier(ctx context.Context, request *v1.ResourceByID) (*v1.Notifier, error)
+	GetNotifier(ctx context.Context, request *v1.ResourceByID) (*storage.Notifier, error)
 	GetNotifiers(ctx context.Context, request *v1.GetNotifiersRequest) (*v1.GetNotifiersResponse, error)
-	PutNotifier(ctx context.Context, request *v1.Notifier) (*v1.Empty, error)
-	PostNotifier(ctx context.Context, request *v1.Notifier) (*v1.Notifier, error)
-	TestNotifier(ctx context.Context, request *v1.Notifier) (*v1.Empty, error)
+	PutNotifier(ctx context.Context, request *storage.Notifier) (*v1.Empty, error)
+	PostNotifier(ctx context.Context, request *storage.Notifier) (*storage.Notifier, error)
+	TestNotifier(ctx context.Context, request *storage.Notifier) (*v1.Empty, error)
 	DeleteNotifier(ctx context.Context, request *v1.DeleteNotifierRequest) (*v1.Empty, error)
 }
 

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -29,7 +29,7 @@ func benchmarkAddAlertNumThen1(b *testing.B, numAlerts int) {
 	}
 }
 
-func addAlerts(indexer Indexer, alert *v1.Alert, numAlerts int) {
+func addAlerts(indexer Indexer, alert *storage.Alert, numAlerts int) {
 	for i := 0; i < numAlerts; i++ {
 		alert.Id = fmt.Sprintf("%d", i)
 		indexer.AddAlert(alert)

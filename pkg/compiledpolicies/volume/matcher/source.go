@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
@@ -31,10 +30,10 @@ type sourceMatcherImpl struct {
 	sourceRegex *regexp.Regexp
 }
 
-func (p *sourceMatcherImpl) match(volume *storage.Volume) []*v1.Alert_Violation {
-	var violations []*v1.Alert_Violation
+func (p *sourceMatcherImpl) match(volume *storage.Volume) []*storage.Alert_Violation {
+	var violations []*storage.Alert_Violation
 	if p.sourceRegex.MatchString(volume.GetSource()) {
-		v := &v1.Alert_Violation{
+		v := &storage.Alert_Violation{
 			Message: fmt.Sprintf("Volume source matched: %s", p.sourceRegex),
 		}
 		violations = append(violations, v)

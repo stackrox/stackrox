@@ -5,12 +5,12 @@
 
 package protoutils
 
-import "github.com/stackrox/rox/generated/api/v1"
+import "github.com/stackrox/rox/generated/storage"
 
-// *v1.Alert_Violation represents a generic type that we use in the function below.
+// *storage.Alert_Violation represents a generic type that we use in the function below.
 
-// EqualV1Alert_ViolationSlices returns whether the given two slices of proto objects (generically) have equal values.
-func EqualV1Alert_ViolationSlices(first, second []*v1.Alert_Violation) bool {
+// EqualStorageAlert_ViolationSlices returns whether the given two slices of proto objects (generically) have equal values.
+func EqualStorageAlert_ViolationSlices(first, second []*storage.Alert_Violation) bool {
 	if len(first) != len(second) {
 		return false
 	}

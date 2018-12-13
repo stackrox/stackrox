@@ -4,7 +4,7 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
-import "api/v1/indicator.proto";
+import "storage/process_indicator.proto";
 
 package v1;
 
@@ -13,12 +13,12 @@ message GetProcessesByDeploymentRequest {
 }
 
 message GetProcessesResponse {
-    repeated ProcessIndicator processes = 1;
+    repeated storage.ProcessIndicator processes = 1;
 }
 
 message ProcessGroup {
     string                    args    = 1;
-    repeated ProcessIndicator signals = 2;
+    repeated storage.ProcessIndicator signals = 2;
 }
 
 message ProcessNameGroup {

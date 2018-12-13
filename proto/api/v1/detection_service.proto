@@ -4,13 +4,13 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
-import "api/v1/alert_service.proto";
 import "storage/image.proto";
+import "storage/alert.proto";
 
 package v1;
 
 message DetectionResponse {
-    repeated Alert alerts = 1;
+    repeated storage.Alert alerts = 1;
 }
 
 service DetectionService {

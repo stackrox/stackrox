@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
@@ -41,25 +40,25 @@ type environmentMatcherImpl struct {
 	value *regexp.Regexp
 }
 
-func (p *environmentMatcherImpl) match(container *storage.Container) []*v1.Alert_Violation {
+func (p *environmentMatcherImpl) match(container *storage.Container) []*storage.Alert_Violation {
 	config := container.GetConfig()
-	var violations []*v1.Alert_Violation
+	var violations []*storage.Alert_Violation
 	for _, env := range config.GetEnv() {
 		if p.key != nil && p.value != nil {
 			if p.key.MatchString(env.GetKey()) && p.value.MatchString(env.GetValue()) {
-				violations = append(violations, &v1.Alert_Violation{
+				violations = append(violations, &storage.Alert_Violation{
 					Message: fmt.Sprintf("Container Environment (key='%s', value='%s') matched configured policy (key='%s', value='%s')", env.GetKey(), env.GetValue(), p.key, p.value),
 				})
 			}
 		} else if p.key != nil {
 			if p.key.MatchString(env.GetKey()) {
-				violations = append(violations, &v1.Alert_Violation{
+				violations = append(violations, &storage.Alert_Violation{
 					Message: fmt.Sprintf("Container Environment (key='%s', value='%s') matched configured policy (key='%s')", env.GetKey(), env.GetValue(), p.key),
 				})
 			}
 		} else if p.value != nil {
 			if p.value.MatchString(env.GetValue()) {
-				violations = append(violations, &v1.Alert_Violation{
+				violations = append(violations, &storage.Alert_Violation{
 					Message: fmt.Sprintf("Container Environment (key='%s', value='%s') matched configured policy (value='%s')", env.GetKey(), env.GetValue(), p.value),
 				})
 			}

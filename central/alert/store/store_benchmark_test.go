@@ -6,7 +6,6 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -50,17 +49,17 @@ func BenchmarkGetAlert(b *testing.B) {
 
 // This really isn't a benchmark, but just prints out how many ListAlerts can be returned in an API call
 func BenchmarkListAlerts(b *testing.B) {
-	listAlert := &v1.ListAlert{
+	listAlert := &storage.ListAlert{
 		Id:   uuid.NewDummy().String(),
 		Time: types.TimestampNow(),
-		Policy: &v1.ListAlertPolicy{
+		Policy: &storage.ListAlertPolicy{
 			Id:          uuid.NewV4().String(),
 			Name:        "this is my policy name",
 			Severity:    storage.Severity_MEDIUM_SEVERITY,
 			Description: "this is my description and it's fairly long, but typically descriptions are fairly long",
 			Categories:  []string{"Category 1", "Category 2", "Category 3"},
 		},
-		Deployment: &v1.ListAlertDeployment{
+		Deployment: &storage.ListAlertDeployment{
 			Id:          uuid.NewV4().String(),
 			Name:        "quizzical_cat",
 			UpdatedAt:   types.TimestampNow(),

@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -13,12 +14,12 @@ import (
 //go:generate mockgen-wrapper DataStore
 type DataStore interface {
 	Search(q *v1.Query) ([]pkgSearch.Result, error)
-	SearchRawProcessIndicators(q *v1.Query) ([]*v1.ProcessIndicator, error)
+	SearchRawProcessIndicators(q *v1.Query) ([]*storage.ProcessIndicator, error)
 
-	GetProcessIndicator(id string) (*v1.ProcessIndicator, bool, error)
-	GetProcessIndicators() ([]*v1.ProcessIndicator, error)
-	AddProcessIndicator(*v1.ProcessIndicator) error
-	AddProcessIndicators(...*v1.ProcessIndicator) error
+	GetProcessIndicator(id string) (*storage.ProcessIndicator, bool, error)
+	GetProcessIndicators() ([]*storage.ProcessIndicator, error)
+	AddProcessIndicator(*storage.ProcessIndicator) error
+	AddProcessIndicators(...*storage.ProcessIndicator) error
 	RemoveProcessIndicator(id string) error
 	RemoveProcessIndicatorsByDeployment(id string) error
 	RemoveProcessIndicatorsOfStaleContainers(deploymentID string, currentContainerIDs []string) error

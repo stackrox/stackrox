@@ -86,7 +86,7 @@ func getViolatedPolicies(image string) ([]*storage.Policy, error) {
 }
 
 // Get the alerts for the command line inputs.
-func getAlerts(imageStr string) ([]*v1.Alert, error) {
+func getAlerts(imageStr string) ([]*storage.Alert, error) {
 	// Attempt to construct the request first since it is the cheapest op.
 	image, err := buildRequest(imageStr)
 	if err != nil {

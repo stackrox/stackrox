@@ -12,7 +12,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -29,10 +29,10 @@ const (
 
 // email notifier plugin
 type email struct {
-	config     *v1.Email
+	config     *storage.Email
 	smtpServer smtpServer
 
-	notifier *v1.Notifier
+	notifier *storage.Notifier
 }
 
 type plainAuthUnencrypted struct {
@@ -79,7 +79,7 @@ func (s *smtpServer) endpoint() string {
 	return fmt.Sprintf("%v:%v", s.host, s.port)
 }
 
-func validate(email *v1.Email) error {
+func validate(email *storage.Email) error {
 	errorList := errorhelpers.NewErrorList("Email validation")
 	if email.GetServer() == "" {
 		errorList.AddString("SMTP Server must be specified")
@@ -96,8 +96,8 @@ func validate(email *v1.Email) error {
 	return errorList.ToError()
 }
 
-func newEmail(notifier *v1.Notifier) (*email, error) {
-	emailConfig, ok := notifier.GetConfig().(*v1.Notifier_Email)
+func newEmail(notifier *storage.Notifier) (*email, error) {
+	emailConfig, ok := notifier.GetConfig().(*storage.Notifier_Email)
 	if !ok {
 		return nil, fmt.Errorf("Email configuration required")
 	}
@@ -145,7 +145,7 @@ func (m message) Bytes() []byte {
 	return buf.Bytes()
 }
 
-func (e *email) plainTextAlert(alert *v1.Alert) (string, error) {
+func (e *email) plainTextAlert(alert *storage.Alert) (string, error) {
 	funcMap := template.FuncMap{
 		"header": func(s string) string {
 			return fmt.Sprintf("\r\n%s\r\n", s)
@@ -170,13 +170,13 @@ func (e *email) plainTextAlert(alert *v1.Alert) (string, error) {
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 
-func (e *email) plainTextBenchmark(schedule *v1.BenchmarkSchedule) (string, error) {
+func (e *email) plainTextBenchmark(schedule *storage.BenchmarkSchedule) (string, error) {
 	benchmarkLink := notifiers.BenchmarkLink(e.notifier.UiEndpoint)
 	return notifiers.FormatBenchmark(schedule, benchmarkLink)
 }
 
 // AlertNotify takes in an alert and generates the email
-func (e *email) AlertNotify(alert *v1.Alert) error {
+func (e *email) AlertNotify(alert *storage.Alert) error {
 	subject := fmt.Sprintf("Deployment %v (%v) violates '%v' Policy", alert.GetDeployment().GetName(),
 		alert.GetDeployment().GetId(), alert.GetPolicy().GetName())
 	body, err := e.plainTextAlert(alert)
@@ -204,7 +204,7 @@ func (e *email) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 }
 
 // BenchmarkNotify takes in an benchmark and generates the email
-func (e *email) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
+func (e *email) BenchmarkNotify(schedule *storage.BenchmarkSchedule) error {
 	subject := fmt.Sprintf("New Benchmark Results for %v", schedule.GetBenchmarkName())
 	body, err := e.plainTextBenchmark(schedule)
 	if err != nil {
@@ -364,12 +364,12 @@ func (e *email) tlsConfig() *tls.Config {
 	}
 }
 
-func (e *email) ProtoNotifier() *v1.Notifier {
+func (e *email) ProtoNotifier() *storage.Notifier {
 	return e.notifier
 }
 
 func init() {
-	notifiers.Add("email", func(notifier *v1.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add("email", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		e, err := newEmail(notifier)
 		return e, err
 	})

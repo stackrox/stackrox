@@ -6,53 +6,9 @@ option java_package = "io.stackrox.proto.api.v1";
 import weak "google/api/annotations.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
+import "storage/notifier.proto";
 
 package v1;
-
-message Jira {
-    string url        = 1;
-    string username   = 2;
-    string password   = 3;
-    string issue_type = 4;
-}
-
-message Email {
-    string server    = 1;
-    string sender    = 2;
-    string username  = 3;
-    string password  = 4;
-    bool disableTLS  = 5;
-    bool useSTARTTLS = 6;
-    string from      = 7;
-}
-
-message CSCC {
-    string service_account = 1;
-    string gcp_org_id      = 2;
-    string gcp_project     = 3;
-}
-
-message Splunk {
-    string http_token    = 1;
-    string http_endpoint = 2;
-    bool insecure        = 3;
-}
-
-message Notifier {
-    string id                  = 1;
-    string name                = 2;
-    string type                = 3;
-    string ui_endpoint         = 4;
-    bool enabled               = 5;
-    string label_key           = 8;
-    string label_default       = 9;
-    oneof config {
-        Jira  jira             = 10;
-        Email email            = 11;
-        CSCC  cscc             = 12;
-        Splunk splunk          = 13;
-    }
-}
 
 message GetNotifiersRequest {
     string name = 1;
@@ -60,7 +16,7 @@ message GetNotifiersRequest {
 }
 
 message GetNotifiersResponse {
-    repeated Notifier notifiers = 1;
+    repeated storage.Notifier notifiers = 1;
 }
 
 message DeleteNotifierRequest {
@@ -70,7 +26,7 @@ message DeleteNotifierRequest {
 
 service NotifierService {
 
-    rpc GetNotifier (ResourceByID) returns (Notifier) {
+    rpc GetNotifier (ResourceByID) returns (storage.Notifier) {
         option (google.api.http) = {
             get: "/v1/notifiers/{id}"
         };
@@ -82,21 +38,21 @@ service NotifierService {
         };
     }
 
-    rpc PutNotifier (Notifier) returns (Empty) {
+    rpc PutNotifier (storage.Notifier) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/notifiers/{id}"
             body: "*"
         };
     }
 
-    rpc PostNotifier (Notifier) returns (Notifier) {
+    rpc PostNotifier (storage.Notifier) returns (storage.Notifier) {
         option (google.api.http) = {
             post: "/v1/notifiers"
             body: "*"
         };
     }
 
-    rpc TestNotifier (Notifier) returns (Empty) {
+    rpc TestNotifier (storage.Notifier) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/notifiers/test"
             body: "*"

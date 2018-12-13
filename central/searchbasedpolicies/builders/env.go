@@ -36,19 +36,19 @@ func (e EnvQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sear
 		[]search.FieldLabel{search.EnvironmentKey, search.EnvironmentValue},
 		[]string{keyQuery, valueQuery}).ProtoQuery()
 
-	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) []*v1.Alert_Violation {
+	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) []*storage.Alert_Violation {
 		keyMatches := result.Matches[keySearchField.GetFieldPath()]
 		valueMatches := result.Matches[valueSearchField.GetFieldPath()]
 		if len(keyMatches) == 0 || len(valueMatches) == 0 {
 			return nil
 		}
-		violations := make([]*v1.Alert_Violation, 0, len(keyMatches))
+		violations := make([]*storage.Alert_Violation, 0, len(keyMatches))
 		for i, keyMatch := range keyMatches {
 			if i >= len(valueMatches) {
 				logger.Errorf("Mismatched number of key and value matches: %+v; %+v", keyMatches, valueMatches)
 				return violations
 			}
-			violations = append(violations, &v1.Alert_Violation{
+			violations = append(violations, &storage.Alert_Violation{
 				Message: fmt.Sprintf("Container Environment (key='%s', value='%s') matched environment policy (%s)",
 					keyMatch, valueMatches[i], printKeyValuePolicy(fields.GetEnv())),
 			})

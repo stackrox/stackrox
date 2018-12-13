@@ -1,13 +1,12 @@
 package matcher
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 )
 
 // Matcher is a function that provides alert violations.
-type Matcher func(*storage.Deployment) []*v1.Alert_Violation
+type Matcher func(*storage.Deployment) []*storage.Alert_Violation
 
 // ProcessIf adds a predicate to the matcher, only executing it if the predicate passes (returns true).
 func (c Matcher) ProcessIf(pred predicate.Predicate) Matcher {
@@ -49,7 +48,7 @@ func orMatcher(p1, p2 Matcher) Matcher {
 	return orMatcherImpl{p1, p2}.do
 }
 
-func (f orMatcherImpl) do(deployment *storage.Deployment) []*v1.Alert_Violation {
+func (f orMatcherImpl) do(deployment *storage.Deployment) []*storage.Alert_Violation {
 	violations1 := f.p1(deployment)
 	violations2 := f.p2(deployment)
 
@@ -73,7 +72,7 @@ func andMatcher(p1, p2 Matcher) Matcher {
 	return andMatcherImpl{p1, p2}.do
 }
 
-func (f andMatcherImpl) do(deployment *storage.Deployment) []*v1.Alert_Violation {
+func (f andMatcherImpl) do(deployment *storage.Deployment) []*storage.Alert_Violation {
 	violations1 := f.p1(deployment)
 	if violations1 == nil {
 		return nil
@@ -96,7 +95,7 @@ func predicatedMatcher(p predicate.Predicate, m Matcher) Matcher {
 	return predicatedMatcherImpl{p, m}.do
 }
 
-func (f predicatedMatcherImpl) do(deployment *storage.Deployment) []*v1.Alert_Violation {
+func (f predicatedMatcherImpl) do(deployment *storage.Deployment) []*storage.Alert_Violation {
 	if f.p(deployment) {
 		return f.m(deployment)
 	}

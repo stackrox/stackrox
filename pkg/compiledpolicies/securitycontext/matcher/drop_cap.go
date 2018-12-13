@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -32,7 +31,7 @@ type dropCapMatcherImpl struct {
 	dropCap map[string]struct{}
 }
 
-func (p *dropCapMatcherImpl) match(security *storage.SecurityContext) []*v1.Alert_Violation {
+func (p *dropCapMatcherImpl) match(security *storage.SecurityContext) []*storage.Alert_Violation {
 	if security == nil {
 		return nil
 	}
@@ -44,9 +43,9 @@ func (p *dropCapMatcherImpl) match(security *storage.SecurityContext) []*v1.Aler
 		}
 	}
 
-	var violations []*v1.Alert_Violation
+	var violations []*storage.Alert_Violation
 	if len(p.dropCap) == matchedCap {
-		violations = append(violations, &v1.Alert_Violation{
+		violations = append(violations, &storage.Alert_Violation{
 			Message: fmt.Sprintf("SecurityContext with add capabilities %+v matches policy %+v", security.GetDropCapabilities(), p.proto.GetFields().GetDropCapabilities()),
 		})
 	}

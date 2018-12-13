@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+package storage;
+
+message Notifier {
+    string id                  = 1;
+    string name                = 2;
+    string type                = 3;
+    string ui_endpoint         = 4;
+    bool enabled               = 5;
+    string label_key           = 8;
+    string label_default       = 9;
+    oneof config {
+        Jira  jira             = 10;
+        Email email            = 11;
+        CSCC  cscc             = 12;
+        Splunk splunk          = 13;
+    }
+}
+
+message CSCC {
+    string service_account = 1;
+    string gcp_org_id      = 2;
+    string gcp_project     = 3;
+}
+
+message Jira {
+    string url        = 1;
+    string username   = 2;
+    string password   = 3;
+    string issue_type = 4;
+}
+
+message Email {
+    string server    = 1;
+    string sender    = 2;
+    string username  = 3;
+    string password  = 4;
+    bool disableTLS  = 5;
+    bool useSTARTTLS = 6;
+    string from      = 7;
+}
+
+message Splunk {
+    string http_token    = 1;
+    string http_endpoint = 2;
+    bool insecure        = 3;
+}

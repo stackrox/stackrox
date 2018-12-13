@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -15,7 +16,7 @@ type matcherImpl struct {
 	processGetter    searchbasedpolicies.ProcessIndicatorGetter
 }
 
-func (m *matcherImpl) MatchMany(searcher searchbasedpolicies.Searcher, ids ...string) (map[string][]*v1.Alert_Violation, error) {
+func (m *matcherImpl) MatchMany(searcher searchbasedpolicies.Searcher, ids ...string) (map[string][]*storage.Alert_Violation, error) {
 	return m.violationsMapFromQuery(searcher, search.ConjunctionQuery(search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(), m.q))
 }
 
@@ -23,7 +24,7 @@ func (m *matcherImpl) errorPrefixForMatchOne(id string) string {
 	return fmt.Sprintf("matching policy %s against %s", m.policyName, id)
 }
 
-func (m *matcherImpl) MatchOne(searcher searchbasedpolicies.Searcher, id string) ([]*v1.Alert_Violation, error) {
+func (m *matcherImpl) MatchOne(searcher searchbasedpolicies.Searcher, id string) ([]*storage.Alert_Violation, error) {
 	q := search.ConjunctionQuery(search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(), m.q)
 	results, err := searcher.Search(q)
 	if err != nil {
@@ -47,11 +48,11 @@ func (m *matcherImpl) MatchOne(searcher searchbasedpolicies.Searcher, id string)
 	return violations, nil
 }
 
-func (m *matcherImpl) Match(searcher searchbasedpolicies.Searcher) (map[string][]*v1.Alert_Violation, error) {
+func (m *matcherImpl) Match(searcher searchbasedpolicies.Searcher) (map[string][]*storage.Alert_Violation, error) {
 	return m.violationsMapFromQuery(searcher, m.q)
 }
 
-func (m *matcherImpl) violationsMapFromQuery(searcher searchbasedpolicies.Searcher, q *v1.Query) (map[string][]*v1.Alert_Violation, error) {
+func (m *matcherImpl) violationsMapFromQuery(searcher searchbasedpolicies.Searcher, q *v1.Query) (map[string][]*storage.Alert_Violation, error) {
 	results, err := searcher.Search(q)
 	if err != nil {
 		return nil, err
@@ -61,7 +62,7 @@ func (m *matcherImpl) violationsMapFromQuery(searcher searchbasedpolicies.Search
 		return nil, nil
 	}
 
-	violationsMap := make(map[string][]*v1.Alert_Violation, len(results))
+	violationsMap := make(map[string][]*storage.Alert_Violation, len(results))
 	for _, result := range results {
 		if result.ID == "" {
 			return nil, fmt.Errorf("matching policy %s: got empty result id: %+v", m.policyName, result)

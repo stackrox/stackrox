@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
@@ -31,9 +30,9 @@ type versionMatcherImpl struct {
 	versionRegex *regexp.Regexp
 }
 
-func (p *versionMatcherImpl) match(component *storage.ImageScanComponent) []*v1.Alert_Violation {
+func (p *versionMatcherImpl) match(component *storage.ImageScanComponent) []*storage.Alert_Violation {
 	if p.versionRegex.MatchString(component.GetVersion()) {
-		return append(([]*v1.Alert_Violation)(nil), &v1.Alert_Violation{
+		return append(([]*storage.Alert_Violation)(nil), &storage.Alert_Violation{
 			Message: fmt.Sprintf("Component '%v:%v' matches %s", component.GetName(), component.GetVersion(), p.versionRegex),
 		})
 	}

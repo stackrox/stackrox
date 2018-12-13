@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"text/template"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
@@ -21,7 +21,7 @@ type splunk struct {
 	token    string
 	endpoint string
 	insecure bool
-	*v1.Notifier
+	*storage.Notifier
 }
 
 type notification struct {
@@ -29,7 +29,7 @@ type notification struct {
 	Source string `json:"source"`
 }
 
-func (s *splunk) alertStringFormat(alert *v1.Alert) (string, error) {
+func (s *splunk) alertStringFormat(alert *storage.Alert) (string, error) {
 	funcMap := template.FuncMap{
 		"header": func(s string) string {
 			return fmt.Sprintf("%s\r\n", s)
@@ -54,7 +54,7 @@ func (s *splunk) alertStringFormat(alert *v1.Alert) (string, error) {
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 
-func (s *splunk) AlertNotify(alert *v1.Alert) error {
+func (s *splunk) AlertNotify(alert *storage.Alert) error {
 	alertString, err := s.alertStringFormat(alert)
 	if err != nil {
 		return err
@@ -66,11 +66,11 @@ func (s *splunk) NetworkPolicyYAMLNotify(yaml string, clusterName string) error 
 	return nil
 }
 
-func (s *splunk) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
+func (s *splunk) BenchmarkNotify(schedule *storage.BenchmarkSchedule) error {
 	return nil
 }
 
-func (s *splunk) ProtoNotifier() *v1.Notifier {
+func (s *splunk) ProtoNotifier() *storage.Notifier {
 	return s.Notifier
 }
 
@@ -126,14 +126,14 @@ func (s *splunk) sendHTTPPayload(req *http.Request) (*http.Response, error) {
 }
 
 func init() {
-	notifiers.Add("splunk", func(notifier *v1.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add("splunk", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		s, err := newSplunk(notifier)
 		return s, err
 	})
 }
 
-func newSplunk(notifier *v1.Notifier) (*splunk, error) {
-	splunkConfig, ok := notifier.GetConfig().(*v1.Notifier_Splunk)
+func newSplunk(notifier *storage.Notifier) (*splunk, error) {
+	splunkConfig, ok := notifier.GetConfig().(*storage.Notifier_Splunk)
 	if !ok {
 		return nil, fmt.Errorf("Splunk configuration required")
 	}
@@ -152,7 +152,7 @@ func newSplunk(notifier *v1.Notifier) (*splunk, error) {
 		notifier}, nil
 }
 
-func validate(conf *v1.Splunk) error {
+func validate(conf *storage.Splunk) error {
 	if len(conf.HttpToken) == 0 {
 		return fmt.Errorf("Splunk HTTP Event Collector(HEC) token must be specified")
 	}

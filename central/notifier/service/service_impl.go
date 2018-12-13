@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -64,7 +65,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetNotifier retrieves all registries that matches the request filters
-func (s *serviceImpl) GetNotifier(ctx context.Context, request *v1.ResourceByID) (*v1.Notifier, error) {
+func (s *serviceImpl) GetNotifier(ctx context.Context, request *v1.ResourceByID) (*storage.Notifier, error) {
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Notifier id must be provided")
 	}
@@ -91,7 +92,7 @@ func (s *serviceImpl) GetNotifiers(ctx context.Context, request *v1.GetNotifiers
 	return &v1.GetNotifiersResponse{Notifiers: notifiers}, nil
 }
 
-func validateNotifier(notifier *v1.Notifier) error {
+func validateNotifier(notifier *storage.Notifier) error {
 	errorList := errorhelpers.NewErrorList("Validation")
 	if notifier.GetName() == "" {
 		errorList.AddString("Notifier name must be defined")
@@ -106,7 +107,7 @@ func validateNotifier(notifier *v1.Notifier) error {
 }
 
 // PutNotifier updates a notifier in the system
-func (s *serviceImpl) PutNotifier(ctx context.Context, request *v1.Notifier) (*v1.Empty, error) {
+func (s *serviceImpl) PutNotifier(ctx context.Context, request *storage.Notifier) (*v1.Empty, error) {
 	if err := validateNotifier(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -126,7 +127,7 @@ func (s *serviceImpl) PutNotifier(ctx context.Context, request *v1.Notifier) (*v
 }
 
 // PostNotifier inserts a new registry into the system if it doesn't already exist
-func (s *serviceImpl) PostNotifier(ctx context.Context, request *v1.Notifier) (*v1.Notifier, error) {
+func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifier) (*storage.Notifier, error) {
 	if err := validateNotifier(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -147,7 +148,7 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *v1.Notifier) (*
 }
 
 // TestNotifier tests to see if the config is setup properly
-func (s *serviceImpl) TestNotifier(ctx context.Context, request *v1.Notifier) (*v1.Empty, error) {
+func (s *serviceImpl) TestNotifier(ctx context.Context, request *storage.Notifier) (*v1.Empty, error) {
 	if err := validateNotifier(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}

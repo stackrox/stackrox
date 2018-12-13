@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/alert/index/mappings"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -20,17 +21,17 @@ type indexerImpl struct {
 }
 
 type alertWrapper struct {
-	*v1.Alert `json:"alert"`
-	Type      string `json:"type"`
+	*storage.Alert `json:"alert"`
+	Type           string `json:"type"`
 }
 
 // AddAlert adds the alert to the indexer
-func (b *indexerImpl) AddAlert(alert *v1.Alert) error {
+func (b *indexerImpl) AddAlert(alert *storage.Alert) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "Alert")
 	return b.index.Index(alert.GetId(), &alertWrapper{Type: v1.SearchCategory_ALERTS.String(), Alert: alert})
 }
 
-func (b *indexerImpl) processBatch(alerts []*v1.Alert) error {
+func (b *indexerImpl) processBatch(alerts []*storage.Alert) error {
 	batch := b.index.NewBatch()
 	for _, alert := range alerts {
 		batch.Index(alert.GetId(), &alertWrapper{Type: v1.SearchCategory_ALERTS.String(), Alert: alert})
@@ -39,7 +40,7 @@ func (b *indexerImpl) processBatch(alerts []*v1.Alert) error {
 }
 
 // AddAlerts adds the alerts to the indexer
-func (b *indexerImpl) AddAlerts(alerts []*v1.Alert) error {
+func (b *indexerImpl) AddAlerts(alerts []*storage.Alert) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "Alert")
 	batchManager := batcher.New(len(alerts), batchSize)
 	for {
@@ -77,7 +78,7 @@ func (b *indexerImpl) SearchAlerts(q *v1.Query) ([]search.Result, error) {
 
 	// By default, set stale to false.
 	if !querySpecifiesStateField {
-		q = search.ConjunctionQuery(q, search.NewQueryBuilder().AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String()).ProtoQuery())
+		q = search.ConjunctionQuery(q, search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
 	}
 
 	return blevesearch.RunSearchRequest(v1.SearchCategory_ALERTS, q, b.index, mappings.OptionsMap)

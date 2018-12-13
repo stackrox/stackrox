@@ -8,7 +8,6 @@ import (
 	groupStore "github.com/stackrox/rox/central/group/store"
 	roleStore "github.com/stackrox/rox/central/role/store"
 	userStore "github.com/stackrox/rox/central/user/store"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
@@ -23,7 +22,7 @@ type mapperImpl struct {
 }
 
 // FromTokenClaims interprets the given claim information and converts it to a role.
-func (rm *mapperImpl) FromTokenClaims(claims *tokens.Claims) (*v1.Role, error) {
+func (rm *mapperImpl) FromTokenClaims(claims *tokens.Claims) (*storage.Role, error) {
 	// Record the user we are creating a role for.
 	rm.recordUser(claims)
 	// Determine the role.
@@ -38,7 +37,7 @@ func (rm *mapperImpl) recordUser(claims *tokens.Claims) {
 	}
 }
 
-func (rm *mapperImpl) getRole(claims *tokens.Claims) (*v1.Role, error) {
+func (rm *mapperImpl) getRole(claims *tokens.Claims) (*storage.Role, error) {
 	// Get the groups for the user.
 	groups, err := rm.groupStore.Walk(rm.authProviderID, claims.ExternalUser.Attributes)
 	if err != nil {
@@ -58,7 +57,7 @@ func (rm *mapperImpl) getRole(claims *tokens.Claims) (*v1.Role, error) {
 	return permissions.NewUnionRole(roles), nil
 }
 
-func (rm *mapperImpl) rolesForGroups(groups []*storage.Group) ([]*v1.Role, error) {
+func (rm *mapperImpl) rolesForGroups(groups []*storage.Group) ([]*storage.Role, error) {
 	// Get the roles in all of the groups.
 	roleNameSet := set.NewStringSet()
 	for _, group := range groups {

@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/url"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -62,7 +61,7 @@ func SeverityString(s storage.Severity) string {
 }
 
 // GetLabelValue returns the value based on the label in the deployment or the default value if it does not exist
-func GetLabelValue(alert *v1.Alert, labelKey, def string) string {
+func GetLabelValue(alert *storage.Alert, labelKey, def string) string {
 	deployment := alert.GetDeployment()
 	// Annotations will most likely be used for k8s
 	if value, ok := deployment.GetAnnotations()[labelKey]; ok {

@@ -56,7 +56,7 @@ var (
 	}
 )
 
-func getAlert(service v1.AlertServiceClient, id string) (*v1.Alert, error) {
+func getAlert(service v1.AlertServiceClient, id string) (*storage.Alert, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	return service.GetAlert(ctx, &v1.ResourceByID{Id: id})

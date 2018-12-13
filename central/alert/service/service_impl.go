@@ -41,15 +41,15 @@ var (
 	})
 
 	// groupByFunctions provides a map of functions that group slices of ListAlet objects by category or by cluser.
-	groupByFunctions = map[v1.GetAlertsCountsRequest_RequestGroup]func(*v1.ListAlert) []string{
-		v1.GetAlertsCountsRequest_UNSET: func(*v1.ListAlert) []string { return []string{""} },
-		v1.GetAlertsCountsRequest_CATEGORY: func(a *v1.ListAlert) (output []string) {
+	groupByFunctions = map[v1.GetAlertsCountsRequest_RequestGroup]func(*storage.ListAlert) []string{
+		v1.GetAlertsCountsRequest_UNSET: func(*storage.ListAlert) []string { return []string{""} },
+		v1.GetAlertsCountsRequest_CATEGORY: func(a *storage.ListAlert) (output []string) {
 			for _, c := range a.GetPolicy().GetCategories() {
 				output = append(output, c)
 			}
 			return
 		},
-		v1.GetAlertsCountsRequest_CLUSTER: func(a *v1.ListAlert) []string { return []string{a.GetDeployment().GetClusterName()} },
+		v1.GetAlertsCountsRequest_CLUSTER: func(a *storage.ListAlert) []string { return []string{a.GetDeployment().GetClusterName()} },
 	}
 )
 
@@ -74,7 +74,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetAlert returns the alert with given id.
-func (s *serviceImpl) GetAlert(ctx context.Context, request *v1.ResourceByID) (*v1.Alert, error) {
+func (s *serviceImpl) GetAlert(ctx context.Context, request *v1.ResourceByID) (*storage.Alert, error) {
 	alert, exists, err := s.dataStore.GetAlert(request.GetId())
 	if err != nil {
 		log.Error(err)
@@ -144,7 +144,7 @@ func (s *serviceImpl) ResolveAlert(_ context.Context, req *v1.ResolveAlertReques
 		return nil, status.Errorf(codes.NotFound, "alert with id '%s' does not exist", req.GetId())
 	}
 	alert.SnoozeTill = nil
-	alert.State = v1.ViolationState_RESOLVED
+	alert.State = storage.ViolationState_RESOLVED
 	err = s.dataStore.UpdateAlert(alert)
 	if err != nil {
 		log.Error(err)
@@ -169,7 +169,7 @@ func (s *serviceImpl) SnoozeAlert(_ context.Context, req *v1.SnoozeAlertRequest)
 		return nil, status.Errorf(codes.NotFound, "alert with id '%s' does not exist", req.GetId())
 	}
 	alert.SnoozeTill = req.GetSnoozeTill()
-	alert.State = v1.ViolationState_SNOOZED
+	alert.State = storage.ViolationState_SNOOZED
 	err = s.dataStore.UpdateAlert(alert)
 	if err != nil {
 		log.Error(err)
@@ -178,9 +178,9 @@ func (s *serviceImpl) SnoozeAlert(_ context.Context, req *v1.SnoozeAlertRequest)
 	return &v1.Empty{}, nil
 }
 
-// alertsGroupResponseFrom returns a slice of v1.ListAlert objects translated into a v1.GetAlertsGroupResponse object.
-func alertsGroupResponseFrom(alerts []*v1.ListAlert) (output *v1.GetAlertsGroupResponse) {
-	policiesMap := make(map[string]*v1.ListAlertPolicy)
+// alertsGroupResponseFrom returns a slice of storage.ListAlert objects translated into a v1.GetAlertsGroupResponse object.
+func alertsGroupResponseFrom(alerts []*storage.ListAlert) (output *v1.GetAlertsGroupResponse) {
+	policiesMap := make(map[string]*storage.ListAlertPolicy)
 	alertCountsByPolicy := make(map[string]int)
 
 	for _, a := range alerts {
@@ -207,9 +207,9 @@ func alertsGroupResponseFrom(alerts []*v1.ListAlert) (output *v1.GetAlertsGroupR
 	return
 }
 
-// alertsCountsResponseFrom returns a slice of v1.ListAlert objects translated into a v1.GetAlertsCountsResponse
+// alertsCountsResponseFrom returns a slice of storage.ListAlert objects translated into a v1.GetAlertsCountsResponse
 // object. True is returned if the translation was successful; otherwise false when the requested group is unknown.
-func alertsCountsResponseFrom(alerts []*v1.ListAlert, groupBy v1.GetAlertsCountsRequest_RequestGroup) (*v1.GetAlertsCountsResponse, bool) {
+func alertsCountsResponseFrom(alerts []*storage.ListAlert, groupBy v1.GetAlertsCountsRequest_RequestGroup) (*v1.GetAlertsCountsResponse, bool) {
 	if groupByFunc, ok := groupByFunctions[groupBy]; ok {
 		response := countAlerts(alerts, groupByFunc)
 		return response, true
@@ -218,9 +218,9 @@ func alertsCountsResponseFrom(alerts []*v1.ListAlert, groupBy v1.GetAlertsCounts
 	return nil, false
 }
 
-// alertTimeseriesResponseFrom returns a slice of v1.ListAlert objects translated into a v1.GetAlertTimeseriesResponse
+// alertTimeseriesResponseFrom returns a slice of storage.ListAlert objects translated into a v1.GetAlertTimeseriesResponse
 // object.
-func alertTimeseriesResponseFrom(alerts []*v1.ListAlert) *v1.GetAlertTimeseriesResponse {
+func alertTimeseriesResponseFrom(alerts []*storage.ListAlert) *v1.GetAlertTimeseriesResponse {
 	response := new(v1.GetAlertTimeseriesResponse)
 	for cluster, severityMap := range getGroupToAlertEvents(alerts) {
 		alertCluster := &v1.GetAlertTimeseriesResponse_ClusterAlerts{Cluster: cluster}
@@ -239,7 +239,7 @@ func alertTimeseriesResponseFrom(alerts []*v1.ListAlert) *v1.GetAlertTimeseriesR
 	return response
 }
 
-func countAlerts(alerts []*v1.ListAlert, groupByFunc func(*v1.ListAlert) []string) (output *v1.GetAlertsCountsResponse) {
+func countAlerts(alerts []*storage.ListAlert, groupByFunc func(*storage.ListAlert) []string) (output *v1.GetAlertsCountsResponse) {
 	groups := getMapOfAlertCounts(alerts, groupByFunc)
 
 	output = new(v1.GetAlertsCountsResponse)
@@ -272,7 +272,7 @@ func countAlerts(alerts []*v1.ListAlert, groupByFunc func(*v1.ListAlert) []strin
 	return
 }
 
-func getMapOfAlertCounts(alerts []*v1.ListAlert, groupByFunc func(alert *v1.ListAlert) []string) (groups map[string]map[storage.Severity]int) {
+func getMapOfAlertCounts(alerts []*storage.ListAlert, groupByFunc func(alert *storage.ListAlert) []string) (groups map[string]map[storage.Severity]int) {
 	groups = make(map[string]map[storage.Severity]int)
 
 	for _, a := range alerts {
@@ -288,7 +288,7 @@ func getMapOfAlertCounts(alerts []*v1.ListAlert, groupByFunc func(alert *v1.List
 	return
 }
 
-func getGroupToAlertEvents(alerts []*v1.ListAlert) (clusters map[string]map[storage.Severity][]*v1.AlertEvent) {
+func getGroupToAlertEvents(alerts []*storage.ListAlert) (clusters map[string]map[storage.Severity][]*v1.AlertEvent) {
 	clusters = make(map[string]map[storage.Severity][]*v1.AlertEvent)
 	for _, a := range alerts {
 		alertCluster := a.GetDeployment().GetClusterName()
@@ -297,7 +297,7 @@ func getGroupToAlertEvents(alerts []*v1.ListAlert) (clusters map[string]map[stor
 		}
 		eventList := clusters[alertCluster][a.GetPolicy().GetSeverity()]
 		eventList = append(eventList, &v1.AlertEvent{Time: a.GetTime().GetSeconds() * 1000, Id: a.GetId(), Type: v1.Type_CREATED})
-		if a.GetState() == v1.ViolationState_RESOLVED {
+		if a.GetState() == storage.ViolationState_RESOLVED {
 			eventList = append(eventList, &v1.AlertEvent{Time: a.GetTime().GetSeconds() * 1000, Id: a.GetId(), Type: v1.Type_REMOVED})
 		}
 		clusters[alertCluster][a.GetPolicy().GetSeverity()] = eventList

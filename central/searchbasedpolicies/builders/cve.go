@@ -42,7 +42,7 @@ func (c CVEQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sear
 		[]search.FieldLabel{search.CVE, search.CVELink},
 		[]string{search.RegexQueryString(cve), search.WildcardString}).
 		ProtoQuery()
-	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) []*v1.Alert_Violation {
+	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) []*storage.Alert_Violation {
 		cveMatches := result.Matches[cveSearchField.GetFieldPath()]
 		cveLinkMatches := result.Matches[cveLinkSearchField.GetFieldPath()]
 		if len(cveMatches) != len(cveLinkMatches) {
@@ -51,13 +51,13 @@ func (c CVEQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sear
 		if len(cveMatches) == 0 {
 			return nil
 		}
-		violations := make([]*v1.Alert_Violation, 0, len(cveMatches))
+		violations := make([]*storage.Alert_Violation, 0, len(cveMatches))
 		for i, cveMatch := range cveMatches {
 			var link string
 			if len(cveLinkMatches) > i {
 				link = cveLinkMatches[i]
 			}
-			violations = append(violations, &v1.Alert_Violation{
+			violations = append(violations, &storage.Alert_Violation{
 				Message: fmt.Sprintf("CVE %s matched regex '%s'", cveMatch, cve),
 				Link:    link,
 			})

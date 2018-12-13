@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -26,16 +25,16 @@ type portMatcherImpl struct {
 	portPolicy *storage.PortPolicy
 }
 
-func (p *portMatcherImpl) match(container *storage.Container) []*v1.Alert_Violation {
+func (p *portMatcherImpl) match(container *storage.Container) []*storage.Alert_Violation {
 	ports := container.GetPorts()
-	var violations []*v1.Alert_Violation
+	var violations []*storage.Alert_Violation
 	for _, port := range ports {
 		violations = append(violations, p.matchPort(port)...)
 	}
 	return violations
 }
 
-func (p *portMatcherImpl) matchPort(port *storage.PortConfig) []*v1.Alert_Violation {
+func (p *portMatcherImpl) matchPort(port *storage.PortConfig) []*storage.Alert_Violation {
 	if p.portPolicy.GetPort() != 0 && p.portPolicy.GetPort() != port.GetContainerPort() {
 		return nil
 	}
@@ -44,8 +43,8 @@ func (p *portMatcherImpl) matchPort(port *storage.PortConfig) []*v1.Alert_Violat
 		return nil
 	}
 
-	var violations []*v1.Alert_Violation
-	violations = append(violations, &v1.Alert_Violation{
+	var violations []*storage.Alert_Violation
+	violations = append(violations, &storage.Alert_Violation{
 		Message: fmt.Sprintf("Port %+v matched configured policy %s", port, p.portPolicy),
 	})
 	return violations

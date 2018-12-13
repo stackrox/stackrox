@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/utils"
 )
@@ -31,10 +30,10 @@ type commandMatcherImpl struct {
 	commandsRegex *regexp.Regexp
 }
 
-func (p *commandMatcherImpl) match(config *storage.ContainerConfig) []*v1.Alert_Violation {
-	var violations []*v1.Alert_Violation
+func (p *commandMatcherImpl) match(config *storage.ContainerConfig) []*storage.Alert_Violation {
+	var violations []*storage.Alert_Violation
 	if !p.matchArg(config.GetCommand()) {
-		v := &v1.Alert_Violation{
+		v := &storage.Alert_Violation{
 			Message: fmt.Sprintf("Commands matched configs policy: %s", p.commandsRegex),
 		}
 		violations = append(violations, v)

@@ -5,7 +5,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
@@ -43,7 +43,7 @@ func (suite *alertIndexTestSuite) TestDefaultStaleness() {
 
 	suite.NoError(suite.indexer.AddAlert(fixtures.GetAlertWithID(nonStaleID)))
 	staleAlert := fixtures.GetAlertWithID(staleID)
-	staleAlert.State = v1.ViolationState_RESOLVED
+	staleAlert.State = storage.ViolationState_RESOLVED
 	suite.NoError(suite.indexer.AddAlert(staleAlert))
 
 	var cases = []struct {
@@ -57,12 +57,12 @@ func (suite *alertIndexTestSuite) TestDefaultStaleness() {
 		},
 		{
 			name:             "state = active",
-			state:            v1.ViolationState_ACTIVE.String(),
+			state:            storage.ViolationState_ACTIVE.String(),
 			expectedAlertIDs: []string{nonStaleID},
 		},
 		{
 			name:             "state = stale",
-			state:            v1.ViolationState_RESOLVED.String(),
+			state:            storage.ViolationState_RESOLVED.String(),
 			expectedAlertIDs: []string{staleID},
 		},
 	}

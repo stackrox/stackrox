@@ -6,13 +6,13 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/readable"
 )
 
 type policyFormatStruct struct {
-	*v1.Alert
+	*storage.Alert
 
 	AlertLink string
 	CVSS      string
@@ -98,7 +98,7 @@ var requiredFunctions = map[string]struct{}{
 }
 
 // FormatPolicy takes in an alert, a link and funcMap that must define specific formatting functions
-func FormatPolicy(alert *v1.Alert, alertLink string, funcMap template.FuncMap) (string, error) {
+func FormatPolicy(alert *storage.Alert, alertLink string, funcMap template.FuncMap) (string, error) {
 	if funcMap == nil {
 		return "", fmt.Errorf("Function map passed to FormatPolicy cannot be nil")
 	}
@@ -136,7 +136,7 @@ func FormatPolicy(alert *v1.Alert, alertLink string, funcMap template.FuncMap) (
 }
 
 type benchmarkFormatStruct struct {
-	*v1.BenchmarkSchedule
+	*storage.BenchmarkSchedule
 
 	Link string
 }
@@ -146,7 +146,7 @@ New benchmark results for benchmark '{{.BenchmarkSchedule.BenchmarkName }}' have
 `
 
 // FormatBenchmark takes in a benchmark, and a link and generates the notification
-func FormatBenchmark(schedule *v1.BenchmarkSchedule, scheduleLink string) (string, error) {
+func FormatBenchmark(schedule *storage.BenchmarkSchedule, scheduleLink string) (string, error) {
 	funcMap := make(template.FuncMap)
 	funcMap["stringify"] = stringify
 	data := benchmarkFormatStruct{

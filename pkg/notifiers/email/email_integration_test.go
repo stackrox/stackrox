@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,10 +32,10 @@ func skip(t *testing.T) string {
 func getEmail(t *testing.T) *email {
 	recipient := skip(t)
 
-	notifier := &v1.Notifier{
+	notifier := &storage.Notifier{
 		UiEndpoint: "http://google.com",
 		Config: &v1.Notifier_Email{
-			Email: &v1.Email{
+			Email: &storage.Email{
 				Server:     server,
 				Sender:     user,
 				Username:   recipient,
@@ -67,7 +68,7 @@ func TestEmailTest(t *testing.T) {
 
 func TestEmailBenchmarkNotify(t *testing.T) {
 	e := getEmail(t)
-	schedule := &v1.BenchmarkSchedule{
+	schedule := &storage.BenchmarkSchedule{
 		BenchmarkName: "CIS Docker Benchmark",
 	}
 	assert.NoError(t, e.BenchmarkNotify(schedule))

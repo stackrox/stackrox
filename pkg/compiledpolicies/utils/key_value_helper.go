@@ -5,11 +5,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // MatchRequiredMap returns violations for the key values passed based on the input regex's.
-func MatchRequiredMap(m map[string]string, key, value *regexp.Regexp, name string) []*v1.Alert_Violation {
+func MatchRequiredMap(m map[string]string, key, value *regexp.Regexp, name string) []*storage.Alert_Violation {
 	for k, v := range m {
 		if key != nil && value != nil {
 			if key.MatchString(k) && value.MatchString(v) {
@@ -32,7 +32,7 @@ func MatchRequiredMap(m map[string]string, key, value *regexp.Regexp, name strin
 	if value != nil {
 		fields = append(fields, fmt.Sprintf("value='%s'", value))
 	}
-	return []*v1.Alert_Violation{
+	return []*storage.Alert_Violation{
 		{
 			Message: fmt.Sprintf("Could not find %s that matched required %s policy (%s)", name, name, strings.Join(fields, ",")),
 		},

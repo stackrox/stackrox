@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
 	reflect "reflect"
 )
@@ -35,7 +36,7 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // AddProcessIndicator mocks base method
-func (m *MockDataStore) AddProcessIndicator(arg0 *v1.ProcessIndicator) error {
+func (m *MockDataStore) AddProcessIndicator(arg0 *storage.ProcessIndicator) error {
 	ret := m.ctrl.Call(m, "AddProcessIndicator", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -47,7 +48,7 @@ func (mr *MockDataStoreMockRecorder) AddProcessIndicator(arg0 interface{}) *gomo
 }
 
 // AddProcessIndicators mocks base method
-func (m *MockDataStore) AddProcessIndicators(arg0 ...*v1.ProcessIndicator) error {
+func (m *MockDataStore) AddProcessIndicators(arg0 ...*storage.ProcessIndicator) error {
 	varargs := []interface{}{}
 	for _, a := range arg0 {
 		varargs = append(varargs, a)
@@ -63,9 +64,9 @@ func (mr *MockDataStoreMockRecorder) AddProcessIndicators(arg0 ...interface{}) *
 }
 
 // GetProcessIndicator mocks base method
-func (m *MockDataStore) GetProcessIndicator(arg0 string) (*v1.ProcessIndicator, bool, error) {
+func (m *MockDataStore) GetProcessIndicator(arg0 string) (*storage.ProcessIndicator, bool, error) {
 	ret := m.ctrl.Call(m, "GetProcessIndicator", arg0)
-	ret0, _ := ret[0].(*v1.ProcessIndicator)
+	ret0, _ := ret[0].(*storage.ProcessIndicator)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -77,9 +78,9 @@ func (mr *MockDataStoreMockRecorder) GetProcessIndicator(arg0 interface{}) *gomo
 }
 
 // GetProcessIndicators mocks base method
-func (m *MockDataStore) GetProcessIndicators() ([]*v1.ProcessIndicator, error) {
+func (m *MockDataStore) GetProcessIndicators() ([]*storage.ProcessIndicator, error) {
 	ret := m.ctrl.Call(m, "GetProcessIndicators")
-	ret0, _ := ret[0].([]*v1.ProcessIndicator)
+	ret0, _ := ret[0].([]*storage.ProcessIndicator)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -139,9 +140,9 @@ func (mr *MockDataStoreMockRecorder) Search(arg0 interface{}) *gomock.Call {
 }
 
 // SearchRawProcessIndicators mocks base method
-func (m *MockDataStore) SearchRawProcessIndicators(arg0 *v1.Query) ([]*v1.ProcessIndicator, error) {
+func (m *MockDataStore) SearchRawProcessIndicators(arg0 *v1.Query) ([]*storage.ProcessIndicator, error) {
 	ret := m.ctrl.Call(m, "SearchRawProcessIndicators", arg0)
-	ret0, _ := ret[0].([]*v1.ProcessIndicator)
+	ret0, _ := ret[0].([]*storage.ProcessIndicator)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

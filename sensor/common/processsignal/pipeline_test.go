@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stretchr/testify/assert"
 )
@@ -27,7 +28,7 @@ func TestProcessPipeline(t *testing.T) {
 
 	// 1. Signal which has metadata present in store
 	updateStore(containerID, deploymentID, containerMetadata, mockStore)
-	signal := v1.ProcessSignal{
+	signal := storage.ProcessSignal{
 		ContainerId: containerID,
 	}
 	p.Process(&signal)
@@ -38,7 +39,7 @@ func TestProcessPipeline(t *testing.T) {
 	deleteStore(deploymentID, mockStore)
 
 	// 2. Signal which does not have metadata.
-	signal = v1.ProcessSignal{
+	signal = storage.ProcessSignal{
 		ContainerId: containerID,
 	}
 	p.Process(&signal)
@@ -49,7 +50,7 @@ func TestProcessPipeline(t *testing.T) {
 	deleteStore(deploymentID, mockStore)
 
 	// 3. back to back signals
-	signal = v1.ProcessSignal{
+	signal = storage.ProcessSignal{
 		ContainerId: containerID,
 	}
 	p.Process(&signal)

@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
 )
@@ -24,7 +24,7 @@ func skip(t *testing.T) string {
 func TestSlackAlertNotify(t *testing.T) {
 	webhook := skip(t)
 	s := slack{
-		Notifier: &v1.Notifier{
+		Notifier: &storage.Notifier{
 			UiEndpoint:   "http://google.com",
 			LabelDefault: webhook,
 		},
@@ -35,7 +35,7 @@ func TestSlackAlertNotify(t *testing.T) {
 func TestSlackNetworkPolicyYAMLNotify(t *testing.T) {
 	webhook := skip(t)
 	s := slack{
-		Notifier: &v1.Notifier{
+		Notifier: &storage.Notifier{
 			UiEndpoint:   "http://google.com",
 			LabelDefault: webhook,
 		},
@@ -47,7 +47,7 @@ func TestSlackNetworkPolicyYAMLNotify(t *testing.T) {
 func TestSlackTest(t *testing.T) {
 	webhook := skip(t)
 	s := slack{
-		Notifier: &v1.Notifier{
+		Notifier: &storage.Notifier{
 			UiEndpoint:   "http://google.com",
 			LabelDefault: webhook,
 		},
@@ -58,12 +58,12 @@ func TestSlackTest(t *testing.T) {
 func TestSlackBenchmarkNotify(t *testing.T) {
 	webhook := skip(t)
 	s := slack{
-		Notifier: &v1.Notifier{
+		Notifier: &storage.Notifier{
 			UiEndpoint:   "http://google.com",
 			LabelDefault: webhook,
 		},
 	}
-	schedule := &v1.BenchmarkSchedule{
+	schedule := &storage.BenchmarkSchedule{
 		BenchmarkName: "CIS Docker Benchmark",
 	}
 	assert.NoError(t, s.BenchmarkNotify(schedule))

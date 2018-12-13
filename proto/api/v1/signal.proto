@@ -4,7 +4,7 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 option cc_enable_arenas = true;
 
-import "google/protobuf/timestamp.proto";
+import "storage/process_indicator.proto";
 
 package v1;
 
@@ -12,42 +12,6 @@ package v1;
 // Specifically, process launches and network connects/accepts.
 message Signal {
     oneof signal {
-        ProcessSignal process_signal = 1;
+        storage.ProcessSignal process_signal = 1;
     }
-}
-
-// ProcessSignal tracks process launches.
-message ProcessSignal {
-    // A unique UUID for identifying the message
-    // We have this here instead of at the top level
-    // because we want to have each message to be
-    // self contained.
-    string id                      = 1;
-
-    // ID of container associated with this process
-    string container_id            = 2;
-
-    // Process creation time
-    google.protobuf.Timestamp time = 3;
-
-    // Process name
-    string name                    = 4;
-
-    // Process arguments
-    string args                    = 5;
-
-    // Process executable file path
-    string exec_file_path          = 6;
-
-    // Host process ID
-    uint32 pid                     = 7;
-
-    // Real user ID
-    uint32 uid                     = 8;
-
-    // Real group ID
-    uint32 gid                     = 9;
-
-    // Process Lineage
-    repeated string lineage        = 10;
 }

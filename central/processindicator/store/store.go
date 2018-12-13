@@ -3,7 +3,7 @@ package store
 import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/processindicator"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -17,11 +17,11 @@ const (
 
 // Store provides storage functionality for alerts.
 type Store interface {
-	GetProcessIndicator(id string) (*v1.ProcessIndicator, bool, error)
-	GetProcessIndicators() ([]*v1.ProcessIndicator, error)
+	GetProcessIndicator(id string) (*storage.ProcessIndicator, bool, error)
+	GetProcessIndicators() ([]*storage.ProcessIndicator, error)
 	GetProcessInfoToArgs() (map[processindicator.ProcessWithContainerInfo][]processindicator.IDAndArgs, error)
-	AddProcessIndicator(*v1.ProcessIndicator) (string, error)
-	AddProcessIndicators(...*v1.ProcessIndicator) ([]string, error)
+	AddProcessIndicator(*storage.ProcessIndicator) (string, error)
+	AddProcessIndicators(...*storage.ProcessIndicator) ([]string, error)
 	RemoveProcessIndicator(id string) error
 }
 

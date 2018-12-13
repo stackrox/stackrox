@@ -3,7 +3,6 @@ package matcher
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -26,10 +25,10 @@ type readOnlyMatcherImpl struct {
 	readOnly *bool
 }
 
-func (p *readOnlyMatcherImpl) match(volume *storage.Volume) []*v1.Alert_Violation {
-	var violations []*v1.Alert_Violation
+func (p *readOnlyMatcherImpl) match(volume *storage.Volume) []*storage.Alert_Violation {
+	var violations []*storage.Alert_Violation
 	if *p.readOnly != volume.GetReadOnly() {
-		v := &v1.Alert_Violation{
+		v := &storage.Alert_Violation{
 			Message: fmt.Sprintf("Readony matched configs policy: %t", *p.readOnly),
 		}
 		violations = append(violations, v)

@@ -3,7 +3,7 @@ import org.junit.experimental.categories.Category
 import groups.BAT
 import spock.lang.Unroll
 import io.stackrox.proto.api.v1.EmptyOuterClass
-import io.stackrox.proto.api.v1.NotifierServiceOuterClass
+import io.stackrox.proto.storage.NotifierOuterClass
 
 class IntegrationsTest extends BaseSpecification {
     @Category(BAT)
@@ -47,7 +47,7 @@ class IntegrationsTest extends BaseSpecification {
     def "Verify Email Integration"() {
         given:
         "a configuration that is expected to work"
-        NotifierServiceOuterClass.Notifier notifier = Services.addEmailNotifier(
+        NotifierOuterClass.Notifier notifier = Services.addEmailNotifier(
                 "mailgun",
                 disableTLS,
                 startTLS,

@@ -85,10 +85,10 @@ func (r RegexQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[se
 		q = search.NewQueryBuilder().AddLinkedFieldsHighlighted(fieldLabels, fieldValues).ProtoQuery()
 	}
 
-	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) (violations []*v1.Alert_Violation) {
+	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) (violations []*storage.Alert_Violation) {
 		for _, presentFieldValue := range presentFieldValues {
 			for _, match := range result.Matches[presentFieldValue.searchField.GetFieldPath()] {
-				violations = append(violations, &v1.Alert_Violation{
+				violations = append(violations, &storage.Alert_Violation{
 					Message: fmt.Sprintf("%s '%s' matched %s", presentFieldValue.fieldHumanName, match, presentFieldValue.policyVal),
 				})
 			}

@@ -3,7 +3,6 @@ package tokenbased
 import (
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 )
@@ -11,7 +10,7 @@ import (
 type roleBasedIdentity struct {
 	uid          string
 	friendlyName string
-	role         *v1.Role
+	role         *storage.Role
 	expiry       time.Time
 }
 
@@ -23,7 +22,7 @@ func (i *roleBasedIdentity) FriendlyName() string {
 	return i.friendlyName
 }
 
-func (i *roleBasedIdentity) Role() *v1.Role {
+func (i *roleBasedIdentity) Role() *storage.Role {
 	return i.role
 }
 

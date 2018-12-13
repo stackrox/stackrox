@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/risk/getters"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
@@ -12,7 +11,7 @@ import (
 func TestViolationsScore(t *testing.T) {
 	cases := []struct {
 		name     string
-		alerts   []*v1.ListAlert
+		alerts   []*storage.ListAlert
 		expected *storage.Risk_Result
 	}{
 		{
@@ -22,9 +21,9 @@ func TestViolationsScore(t *testing.T) {
 		},
 		{
 			name: "One critical",
-			alerts: []*v1.ListAlert{
+			alerts: []*storage.ListAlert{
 				{
-					Policy: &v1.ListAlertPolicy{
+					Policy: &storage.ListAlertPolicy{
 						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy 1",
 					},
@@ -40,9 +39,9 @@ func TestViolationsScore(t *testing.T) {
 		},
 		{
 			name: "Two critical",
-			alerts: []*v1.ListAlert{
+			alerts: []*storage.ListAlert{
 				{
-					Policy: &v1.ListAlertPolicy{
+					Policy: &storage.ListAlertPolicy{
 						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy 1",
 					},
@@ -58,21 +57,21 @@ func TestViolationsScore(t *testing.T) {
 		},
 		{
 			name: "Mix of severities (1)",
-			alerts: []*v1.ListAlert{
+			alerts: []*storage.ListAlert{
 				{
-					Policy: &v1.ListAlertPolicy{
+					Policy: &storage.ListAlertPolicy{
 						Severity: storage.Severity_HIGH_SEVERITY,
 						Name:     "Policy 1",
 					},
 				},
 				{
-					Policy: &v1.ListAlertPolicy{
+					Policy: &storage.ListAlertPolicy{
 						Severity: storage.Severity_MEDIUM_SEVERITY,
 						Name:     "Policy 2",
 					},
 				},
 				{
-					Policy: &v1.ListAlertPolicy{
+					Policy: &storage.ListAlertPolicy{
 						Severity: storage.Severity_LOW_SEVERITY,
 						Name:     "Policy 3",
 					},
@@ -90,21 +89,21 @@ func TestViolationsScore(t *testing.T) {
 		},
 		{
 			name: "Mix of severities (2)",
-			alerts: []*v1.ListAlert{
+			alerts: []*storage.ListAlert{
 				{
-					Policy: &v1.ListAlertPolicy{
+					Policy: &storage.ListAlertPolicy{
 						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy 1",
 					},
 				},
 				{
-					Policy: &v1.ListAlertPolicy{
+					Policy: &storage.ListAlertPolicy{
 						Severity: storage.Severity_HIGH_SEVERITY,
 						Name:     "Policy 2",
 					},
 				},
 				{
-					Policy: &v1.ListAlertPolicy{
+					Policy: &storage.ListAlertPolicy{
 						Severity: storage.Severity_LOW_SEVERITY,
 						Name:     "Policy 3",
 					},
@@ -122,45 +121,45 @@ func TestViolationsScore(t *testing.T) {
 		},
 		{
 			name: "Don't include stale alerts",
-			alerts: []*v1.ListAlert{
+			alerts: []*storage.ListAlert{
 				{
-					Policy: &v1.ListAlertPolicy{
+					Policy: &storage.ListAlertPolicy{
 						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy 3",
 					},
 				},
 				{
-					Policy: &v1.ListAlertPolicy{
+					Policy: &storage.ListAlertPolicy{
 						Severity: storage.Severity_HIGH_SEVERITY,
 						Name:     "Policy 2",
 					},
 				},
 				{
-					Policy: &v1.ListAlertPolicy{
+					Policy: &storage.ListAlertPolicy{
 						Severity: storage.Severity_LOW_SEVERITY,
 						Name:     "Policy 1",
 					},
 				},
 				{
-					Policy: &v1.ListAlertPolicy{
+					Policy: &storage.ListAlertPolicy{
 						Severity: storage.Severity_CRITICAL_SEVERITY,
 						Name:     "Policy Don't Show Me!",
 					},
-					State: v1.ViolationState_RESOLVED,
+					State: storage.ViolationState_RESOLVED,
 				},
 				{
-					Policy: &v1.ListAlertPolicy{
+					Policy: &storage.ListAlertPolicy{
 						Severity: storage.Severity_HIGH_SEVERITY,
 						Name:     "Policy Don't Show Me!",
 					},
-					State: v1.ViolationState_RESOLVED,
+					State: storage.ViolationState_RESOLVED,
 				},
 				{
-					Policy: &v1.ListAlertPolicy{
+					Policy: &storage.ListAlertPolicy{
 						Severity: storage.Severity_LOW_SEVERITY,
 						Name:     "Policy Don't Show Me!",
 					},
-					State: v1.ViolationState_RESOLVED,
+					State: storage.ViolationState_RESOLVED,
 				},
 			},
 			expected: &storage.Risk_Result{

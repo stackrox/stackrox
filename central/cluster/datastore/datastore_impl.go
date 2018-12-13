@@ -136,8 +136,8 @@ func (ds *datastoreImpl) getDeployments(cluster *storage.Cluster) ([]*storage.Li
 }
 
 // TODO(cgorman) Make this a search once the document mapping goes in
-func (ds *datastoreImpl) getAlerts(deployment *storage.ListDeployment) ([]*v1.ListAlert, error) {
-	qb := search.NewQueryBuilder().AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String()).AddExactMatches(search.DeploymentID, deployment.GetId())
+func (ds *datastoreImpl) getAlerts(deployment *storage.ListDeployment) ([]*storage.ListAlert, error) {
+	qb := search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).AddExactMatches(search.DeploymentID, deployment.GetId())
 
 	existingAlerts, err := ds.ads.ListAlerts(&v1.ListAlertsRequest{
 		Query: qb.Query(),
@@ -149,7 +149,7 @@ func (ds *datastoreImpl) getAlerts(deployment *storage.ListDeployment) ([]*v1.Li
 	return existingAlerts, nil
 }
 
-func (ds *datastoreImpl) markAlertsStale(alerts []*v1.ListAlert) error {
+func (ds *datastoreImpl) markAlertsStale(alerts []*storage.ListAlert) error {
 	errorList := errorhelpers.NewErrorList("unable to mark some alerts stale")
 	for _, alert := range alerts {
 		errorList.AddError(ds.ads.MarkAlertStale(alert.GetId()))

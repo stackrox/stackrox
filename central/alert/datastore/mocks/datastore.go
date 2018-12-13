@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
 
@@ -34,7 +35,7 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // AddAlert mocks base method
-func (m *MockDataStore) AddAlert(arg0 *v1.Alert) error {
+func (m *MockDataStore) AddAlert(arg0 *storage.Alert) error {
 	ret := m.ctrl.Call(m, "AddAlert", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -59,9 +60,9 @@ func (mr *MockDataStoreMockRecorder) CountAlerts() *gomock.Call {
 }
 
 // GetAlert mocks base method
-func (m *MockDataStore) GetAlert(arg0 string) (*v1.Alert, bool, error) {
+func (m *MockDataStore) GetAlert(arg0 string) (*storage.Alert, bool, error) {
 	ret := m.ctrl.Call(m, "GetAlert", arg0)
-	ret0, _ := ret[0].(*v1.Alert)
+	ret0, _ := ret[0].(*storage.Alert)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -73,9 +74,9 @@ func (mr *MockDataStoreMockRecorder) GetAlert(arg0 interface{}) *gomock.Call {
 }
 
 // ListAlerts mocks base method
-func (m *MockDataStore) ListAlerts(arg0 *v1.ListAlertsRequest) ([]*v1.ListAlert, error) {
+func (m *MockDataStore) ListAlerts(arg0 *v1.ListAlertsRequest) ([]*storage.ListAlert, error) {
 	ret := m.ctrl.Call(m, "ListAlerts", arg0)
-	ret0, _ := ret[0].([]*v1.ListAlert)
+	ret0, _ := ret[0].([]*storage.ListAlert)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -111,9 +112,9 @@ func (mr *MockDataStoreMockRecorder) SearchAlerts(arg0 interface{}) *gomock.Call
 }
 
 // SearchListAlerts mocks base method
-func (m *MockDataStore) SearchListAlerts(arg0 *v1.Query) ([]*v1.ListAlert, error) {
+func (m *MockDataStore) SearchListAlerts(arg0 *v1.Query) ([]*storage.ListAlert, error) {
 	ret := m.ctrl.Call(m, "SearchListAlerts", arg0)
-	ret0, _ := ret[0].([]*v1.ListAlert)
+	ret0, _ := ret[0].([]*storage.ListAlert)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -124,9 +125,9 @@ func (mr *MockDataStoreMockRecorder) SearchListAlerts(arg0 interface{}) *gomock.
 }
 
 // SearchRawAlerts mocks base method
-func (m *MockDataStore) SearchRawAlerts(arg0 *v1.Query) ([]*v1.Alert, error) {
+func (m *MockDataStore) SearchRawAlerts(arg0 *v1.Query) ([]*storage.Alert, error) {
 	ret := m.ctrl.Call(m, "SearchRawAlerts", arg0)
-	ret0, _ := ret[0].([]*v1.Alert)
+	ret0, _ := ret[0].([]*storage.Alert)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -137,7 +138,7 @@ func (mr *MockDataStoreMockRecorder) SearchRawAlerts(arg0 interface{}) *gomock.C
 }
 
 // UpdateAlert mocks base method
-func (m *MockDataStore) UpdateAlert(arg0 *v1.Alert) error {
+func (m *MockDataStore) UpdateAlert(arg0 *storage.Alert) error {
 	ret := m.ctrl.Call(m, "UpdateAlert", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0

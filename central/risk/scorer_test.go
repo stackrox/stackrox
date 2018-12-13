@@ -7,7 +7,6 @@ import (
 
 	"github.com/stackrox/rox/central/risk/getters"
 	"github.com/stackrox/rox/central/risk/multipliers"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
@@ -16,10 +15,10 @@ import (
 func TestScore(t *testing.T) {
 	deployment := getMockDeployment()
 	scorer := NewScorer(&getters.MockAlertsGetter{
-		Alerts: []*v1.ListAlert{
+		Alerts: []*storage.ListAlert{
 			{
-				Deployment: &v1.ListAlertDeployment{},
-				Policy: &v1.ListAlertPolicy{
+				Deployment: &storage.ListAlertDeployment{},
+				Policy: &storage.ListAlertPolicy{
 					Name:     "Test",
 					Severity: storage.Severity_CRITICAL_SEVERITY,
 				},

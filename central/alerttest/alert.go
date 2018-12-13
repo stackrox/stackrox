@@ -1,7 +1,7 @@
 package alerttest
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // Constants for unit tests that need fake Alerts.
@@ -12,28 +12,28 @@ const (
 )
 
 // NewFakeListAlert constructs and returns a new V1.ListAlert object suitable for unit-testing.
-func NewFakeListAlert() *v1.ListAlert {
-	return &v1.ListAlert{
+func NewFakeListAlert() *storage.ListAlert {
+	return &storage.ListAlert{
 		Id: FakeAlertID,
-		Policy: &v1.ListAlertPolicy{
+		Policy: &storage.ListAlertPolicy{
 			Id: FakePolicyID,
 		},
-		Deployment: &v1.ListAlertDeployment{
+		Deployment: &storage.ListAlertDeployment{
 			ClusterName: FakeClusterName,
 		},
 	}
 }
 
-// NewFakeListAlertSlice constructs and returns a new slice of v1.ListAlert objects suitable for unit-testing.
-func NewFakeListAlertSlice() []*v1.ListAlert {
-	return []*v1.ListAlert{
+// NewFakeListAlertSlice constructs and returns a new slice of storage.ListAlert objects suitable for unit-testing.
+func NewFakeListAlertSlice() []*storage.ListAlert {
+	return []*storage.ListAlert{
 		NewFakeListAlert(),
 	}
 }
 
-// NewFakeAlert constructs and returns a new v1.Alert object suitable for unit-testing.
-func NewFakeAlert() *v1.Alert {
-	return &v1.Alert{
+// NewFakeAlert constructs and returns a new storage.Alert object suitable for unit-testing.
+func NewFakeAlert() *storage.Alert {
+	return &storage.Alert{
 		Id: FakeAlertID,
 	}
 }

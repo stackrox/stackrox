@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -24,12 +25,12 @@ func (s *searcherImpl) buildIndex() error {
 }
 
 // SearchRawIndicators retrieves Policies from the indexer and storage
-func (s *searcherImpl) SearchRawProcessIndicators(q *v1.Query) ([]*v1.ProcessIndicator, error) {
+func (s *searcherImpl) SearchRawProcessIndicators(q *v1.Query) ([]*storage.ProcessIndicator, error) {
 	results, err := s.indexer.SearchProcessIndicators(q)
 	if err != nil {
 		return nil, err
 	}
-	indicators := make([]*v1.ProcessIndicator, 0, len(results))
+	indicators := make([]*storage.ProcessIndicator, 0, len(results))
 	for _, result := range results {
 		indicator, exists, err := s.storage.GetProcessIndicator(result.ID)
 		if err != nil {

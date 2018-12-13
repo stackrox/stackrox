@@ -16,8 +16,8 @@ var (
 	// schema generation and resolver code generation
 	WalkParameters = generator.TypeWalkParameters{
 		IncludedTypes: []reflect.Type{
-			reflect.TypeOf((*v1.Alert)(nil)),
-			reflect.TypeOf((*v1.ListAlert)(nil)),
+			reflect.TypeOf((*storage.Alert)(nil)),
+			reflect.TypeOf((*storage.ListAlert)(nil)),
 			reflect.TypeOf((*storage.Cluster)(nil)),
 			reflect.TypeOf((*storage.Deployment)(nil)),
 			reflect.TypeOf((*storage.ListDeployment)(nil)),
@@ -27,9 +27,9 @@ var (
 			reflect.TypeOf((*v1.Metadata)(nil)),
 			reflect.TypeOf((*storage.NetworkFlow)(nil)),
 			reflect.TypeOf((*storage.Node)(nil)),
-			reflect.TypeOf((*v1.Notifier)(nil)),
+			reflect.TypeOf((*storage.Notifier)(nil)),
 			reflect.TypeOf((*v1.ProcessNameGroup)(nil)),
-			reflect.TypeOf((*v1.Role)(nil)),
+			reflect.TypeOf((*storage.Role)(nil)),
 			reflect.TypeOf((*v1.SearchResult)(nil)),
 			reflect.TypeOf((*storage.Secret)(nil)),
 			reflect.TypeOf((*storage.ListSecret)(nil)),

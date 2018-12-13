@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/suite"
 )
@@ -38,7 +38,7 @@ func (suite *NotifierStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *NotifierStoreTestSuite) TestNotifiers() {
-	notifiers := []*v1.Notifier{
+	notifiers := []*storage.Notifier{
 		{
 			Name:         "slack1",
 			Type:         "slack",

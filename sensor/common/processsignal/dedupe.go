@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/golang-lru"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"golang.org/x/time/rate"
 )
@@ -31,12 +31,12 @@ func newDeduper() *deduper {
 	}
 }
 
-func generateProcessSignalKey(indicator *v1.ProcessIndicator) string {
+func generateProcessSignalKey(indicator *storage.ProcessIndicator) string {
 	signal := indicator.GetSignal()
 	return fmt.Sprintf("%s %s %s %s %s", indicator.GetPodId(), indicator.GetContainerName(), signal.GetExecFilePath(), signal.GetName(), signal.GetArgs())
 }
 
-func (d *deduper) Allow(indicator *v1.ProcessIndicator) (allow bool) {
+func (d *deduper) Allow(indicator *storage.ProcessIndicator) (allow bool) {
 	defer func() {
 		if allow {
 			metrics.IncrementProcessDedupeCacheMisses()

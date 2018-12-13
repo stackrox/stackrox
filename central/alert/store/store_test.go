@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/suite"
@@ -40,7 +39,7 @@ func (s *alertStoreTestSuite) TearDownSuite() {
 }
 
 func (s *alertStoreTestSuite) TestAlerts() {
-	alerts := []*v1.Alert{
+	alerts := []*storage.Alert{
 		{
 			Id:             "id1",
 			LifecycleStage: storage.LifecycleStage_RUNTIME,
@@ -54,7 +53,7 @@ func (s *alertStoreTestSuite) TestAlerts() {
 			Policy: &storage.Policy{
 				Severity: storage.Severity_HIGH_SEVERITY,
 			},
-			State: v1.ViolationState_RESOLVED,
+			State: storage.ViolationState_RESOLVED,
 		},
 	}
 

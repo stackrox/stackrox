@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/suite"
 )
@@ -38,7 +38,7 @@ func (suite *IndicatorStoreTestSuite) TearDownSuite() {
 	os.Remove(suite.db.Path())
 }
 
-func (suite *IndicatorStoreTestSuite) verifyIndicatorsAre(indicators ...*v1.ProcessIndicator) {
+func (suite *IndicatorStoreTestSuite) verifyIndicatorsAre(indicators ...*storage.ProcessIndicator) {
 	for _, i := range indicators {
 		retrievedIndicator, exists, err := suite.store.GetProcessIndicator(i.GetId())
 		suite.NoError(err)
@@ -55,14 +55,14 @@ func (suite *IndicatorStoreTestSuite) verifyIndicatorsAre(indicators ...*v1.Proc
 }
 
 func (suite *IndicatorStoreTestSuite) TestIndicators() {
-	repeatedSignal := &v1.ProcessSignal{
+	repeatedSignal := &storage.ProcessSignal{
 		Args:         "da_args",
 		ContainerId:  "aa",
 		Name:         "blah",
 		ExecFilePath: "file",
 	}
 
-	indicators := []*v1.ProcessIndicator{
+	indicators := []*storage.ProcessIndicator{
 		{
 			Id:           "id1",
 			DeploymentId: "d1",
@@ -73,13 +73,13 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 			Id:           "id2",
 			DeploymentId: "d2",
 
-			Signal: &v1.ProcessSignal{
+			Signal: &storage.ProcessSignal{
 				Args: "args2",
 			},
 		},
 	}
 
-	repeatIndicator := &v1.ProcessIndicator{
+	repeatIndicator := &storage.ProcessIndicator{
 		Id:           "id3",
 		DeploymentId: "d1",
 		Signal:       repeatedSignal,
@@ -98,7 +98,7 @@ func (suite *IndicatorStoreTestSuite) TestIndicators() {
 	suite.Equal("id1", removed)
 	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
 
-	for _, i := range []*v1.ProcessIndicator{indicators[1], repeatIndicator} {
+	for _, i := range []*storage.ProcessIndicator{indicators[1], repeatIndicator} {
 		suite.NoError(suite.store.RemoveProcessIndicator(i.GetId()))
 	}
 	suite.verifyIndicatorsAre()

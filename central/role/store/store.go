@@ -3,7 +3,7 @@ package store
 import (
 	"github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	proto2 "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
 )
@@ -13,12 +13,12 @@ const rolesBucket = "roles"
 // Store is the store for roles.
 //go:generate mockgen-wrapper Store
 type Store interface {
-	GetRole(name string) (*v1.Role, error)
-	GetRolesBatch(names []string) ([]*v1.Role, error)
-	GetAllRoles() ([]*v1.Role, error)
+	GetRole(name string) (*storage.Role, error)
+	GetRolesBatch(names []string) ([]*storage.Role, error)
+	GetAllRoles() ([]*storage.Role, error)
 
-	AddRole(*v1.Role) error
-	UpdateRole(*v1.Role) error
+	AddRole(*storage.Role) error
+	UpdateRole(*storage.Role) error
 	RemoveRole(name string) error
 }
 
@@ -32,10 +32,10 @@ func New(db *bbolt.DB) Store {
 		roleCrud: proto2.NewMessageCrud(db,
 			rolesBucket,
 			func(msg proto.Message) []byte { // Roles stored by name.
-				return []byte(msg.(*v1.Role).GetName())
+				return []byte(msg.(*storage.Role).GetName())
 			},
 			func() proto.Message {
-				return &v1.Role{}
+				return &storage.Role{}
 			},
 		),
 	}

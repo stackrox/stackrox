@@ -2,14 +2,14 @@ package fixtures
 
 import (
 	ptypes "github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 // GetAlert returns a Mock Alert
-func GetAlert() *v1.Alert {
-	return &v1.Alert{
+func GetAlert() *storage.Alert {
+	return &storage.Alert{
 		Id: "Alert1",
-		Violations: []*v1.Alert_Violation{
+		Violations: []*storage.Alert_Violation{
 			{
 				Message: "Deployment is affected by 'CVE-2017-15804'",
 			},
@@ -24,7 +24,7 @@ func GetAlert() *v1.Alert {
 }
 
 // GetAlertWithID returns a mock alert with the specified id.
-func GetAlertWithID(id string) *v1.Alert {
+func GetAlertWithID(id string) *storage.Alert {
 	alert := GetAlert()
 	alert.Id = id
 	return alert

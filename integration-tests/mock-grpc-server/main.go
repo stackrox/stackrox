@@ -6,8 +6,8 @@ import (
 	"net"
 
 	bolt "github.com/etcd-io/bbolt"
-	pb "github.com/stackrox/rox/generated/api/v1"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 	"google.golang.org/grpc"
 )
 
@@ -33,7 +33,7 @@ func (s *signalServer) PushSignals(stream sensorAPI.SignalService_PushSignalsSer
 		if err != nil {
 			return err
 		}
-		var processSignal *pb.ProcessSignal
+		var processSignal *storage.ProcessSignal
 		if signal != nil && signal.GetSignal() != nil && signal.GetSignal().GetProcessSignal() != nil {
 			processSignal = signal.GetSignal().GetProcessSignal()
 		}
@@ -50,7 +50,7 @@ func boltDB(path string) (db *bolt.DB, err error) {
 	return db, err
 }
 
-func (s *signalServer) Update(processSignal *pb.ProcessSignal) error {
+func (s *signalServer) Update(processSignal *storage.ProcessSignal) error {
 	return s.db.Update(func(tx *bolt.Tx) error {
 		b, _ := tx.CreateBucketIfNotExists([]byte(processBucket))
 		return b.Put([]byte(processSignal.Name), []byte(processSignal.ExecFilePath))

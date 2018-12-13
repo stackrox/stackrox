@@ -7,73 +7,15 @@ option java_package = "io.stackrox.proto.api.v1";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
-import "api/v1/indicator.proto";
 import "api/v1/empty.proto";
-import "storage/deployment.proto";
 import "storage/policy.proto";
+import "storage/alert.proto";
 
 package v1;
-
-message Alert {
-    string id                                = 1;
-    storage.Policy policy                            = 2;
-    storage.LifecycleStage lifecycle_stage           = 3;
-    storage.Deployment deployment                    = 4;
-
-    message Violation {
-        string message                       = 1;
-        string link                          = 2;
-        repeated ProcessIndicator processes  = 3;
-    }
-    repeated Violation violations            = 5;
-
-    message Enforcement {
-        storage.EnforcementAction action = 1;
-        string message           = 2;
-    }
-    Enforcement enforcement                  = 6;
-
-    google.protobuf.Timestamp time           = 7;
-    google.protobuf.Timestamp first_occurred = 10;
-    ViolationState state                     = 11;
-    google.protobuf.Timestamp snooze_till    = 12;
-}
 
 message ListAlertsRequest {
     reserved 1 to 9; // Removed individual filtered fields and moved towards querying
     string query = 10;
-}
-
-message ListAlertPolicy {
-    string id                                   = 1;
-    string name                                 = 2;
-    storage.Severity severity                           = 3;
-    string description                          = 4;
-    repeated string categories                  = 5;
-}
-
-message ListAlertDeployment {
-    string id                                  = 1;
-    string name                                = 2;
-    google.protobuf.Timestamp updated_at       = 3;
-    string cluster_name                        = 4;
-    string namespace                           = 5;
-}
-
-message ListAlert {
-    string id                               = 1;
-    storage.LifecycleStage lifecycle_stage          = 2;
-    google.protobuf.Timestamp time          = 3;
-    ListAlertPolicy policy                  = 4;
-    ListAlertDeployment deployment          = 5;
-    ViolationState state                    = 6;
-    int32 enforcement_count                 = 7;
-}
-
-enum ViolationState {
-    ACTIVE = 0;
-    SNOOZED = 1;
-    RESOLVED = 2;
 }
 
 message ResolveAlertRequest {
@@ -86,12 +28,12 @@ message SnoozeAlertRequest {
 }
 
 message ListAlertsResponse {
-    repeated ListAlert alerts = 1;
+    repeated storage.ListAlert alerts = 1;
 }
 
 message GetAlertsGroupResponse {
     message PolicyGroup {
-        ListAlertPolicy policy = 1;
+        storage.ListAlertPolicy policy = 1;
         int64 num_alerts = 2;
     }
 
@@ -145,7 +87,7 @@ message GetAlertTimeseriesResponse {
 
 service AlertService {
 
-    rpc GetAlert (ResourceByID) returns (Alert) {
+    rpc GetAlert (ResourceByID) returns (storage.Alert) {
         option (google.api.http) = {
             get: "/v1/alerts/{id}"
         };

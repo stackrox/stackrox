@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+import "storage/deployment.proto";
+import "storage/policy.proto";
+import "storage/process_indicator.proto";
+
+package storage;
+
+message Alert {
+    string id                                = 1;
+    Policy policy                            = 2;
+    LifecycleStage lifecycle_stage           = 3;
+    Deployment deployment                    = 4;
+
+    message Violation {
+        string message                       = 1;
+        string link                          = 2;
+        repeated ProcessIndicator processes  = 3;
+    }
+    repeated Violation violations            = 5;
+
+    message Enforcement {
+        storage.EnforcementAction action = 1;
+        string message           = 2;
+    }
+    Enforcement enforcement                  = 6;
+
+    google.protobuf.Timestamp time           = 7;
+    google.protobuf.Timestamp first_occurred = 10;
+    ViolationState state                     = 11;
+    google.protobuf.Timestamp snooze_till    = 12;
+}
+
+message ListAlert {
+    string id                               = 1;
+    LifecycleStage lifecycle_stage          = 2;
+    google.protobuf.Timestamp time          = 3;
+    ListAlertPolicy policy                  = 4;
+    ListAlertDeployment deployment          = 5;
+    ViolationState state                    = 6;
+    int32 enforcement_count                 = 7;
+}
+
+message ListAlertPolicy {
+    string id                                   = 1;
+    string name                                 = 2;
+    Severity severity                           = 3;
+    string description                          = 4;
+    repeated string categories                  = 5;
+}
+
+message ListAlertDeployment {
+    string id                                  = 1;
+    string name                                = 2;
+    google.protobuf.Timestamp updated_at       = 3;
+    string cluster_name                        = 4;
+    string namespace                           = 5;
+}
+
+enum ViolationState {
+    ACTIVE = 0;
+    SNOOZED = 1;
+    RESOLVED = 2;
+}

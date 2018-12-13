@@ -8,7 +8,6 @@ import (
 	groupMocks "github.com/stackrox/rox/central/group/store/mocks"
 	roleMocks "github.com/stackrox/rox/central/role/store/mocks"
 	userMocks "github.com/stackrox/rox/central/user/store/mocks"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stretchr/testify/suite"
@@ -87,15 +86,15 @@ func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 		Return([]*storage.Group{expectedGroup}, nil)
 
 	// Expect the role to be fetched.
-	expectedRole := &v1.Role{
+	expectedRole := &storage.Role{
 		Name:         "TeamAwesome",
-		GlobalAccess: v1.Access_READ_ACCESS,
+		GlobalAccess: storage.Access_READ_ACCESS,
 	}
 	s.roleStoreMock.
 		EXPECT().
 		GetRolesBatch([]string{"TeamAwesome"}).
 		Times(1).
-		Return([]*v1.Role{expectedRole}, nil)
+		Return([]*storage.Role{expectedRole}, nil)
 
 	// Call the mapper for a user.
 	tokenClaims := &tokens.Claims{
@@ -154,19 +153,19 @@ func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 		Return([]*storage.Group{expectedGroup1, expectedGroup2}, nil)
 
 	// Expect the roles to be fetched, and make the second a superset of the first.
-	expectedRole1 := &v1.Role{
+	expectedRole1 := &storage.Role{
 		Name:         "TeamAwesome",
-		GlobalAccess: v1.Access_READ_ACCESS,
+		GlobalAccess: storage.Access_READ_ACCESS,
 	}
-	expectedRole2 := &v1.Role{
+	expectedRole2 := &storage.Role{
 		Name:         "TeamAwesome",
-		GlobalAccess: v1.Access_READ_WRITE_ACCESS,
+		GlobalAccess: storage.Access_READ_WRITE_ACCESS,
 	}
 	s.roleStoreMock.
 		EXPECT().
 		GetRolesBatch(gomock.Any()).
 		Times(1).
-		Return([]*v1.Role{expectedRole1, expectedRole2}, nil)
+		Return([]*storage.Role{expectedRole1, expectedRole2}, nil)
 
 	// Call the mapper for a user.
 	tokenClaims := &tokens.Claims{
@@ -183,8 +182,8 @@ func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 	s.NoError(err, "mapping should have succeeded")
 
 	// Permissions should be the two roles' permissions combined.
-	unionRole := &v1.Role{
-		GlobalAccess: v1.Access_READ_WRITE_ACCESS,
+	unionRole := &storage.Role{
+		GlobalAccess: storage.Access_READ_WRITE_ACCESS,
 	}
 	s.Equal(unionRole, role, "since a single role was mapped, that role should be returned")
 }
@@ -222,15 +221,15 @@ func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
 		Return([]*storage.Group{expectedGroup}, nil)
 
 	// Expect the role to be fetched.
-	expectedRole := &v1.Role{
+	expectedRole := &storage.Role{
 		Name:         "TeamAwesome",
-		GlobalAccess: v1.Access_READ_ACCESS,
+		GlobalAccess: storage.Access_READ_ACCESS,
 	}
 	s.roleStoreMock.
 		EXPECT().
 		GetRolesBatch([]string{"TeamAwesome"}).
 		Times(1).
-		Return([]*v1.Role{expectedRole}, nil)
+		Return([]*storage.Role{expectedRole}, nil)
 
 	// Call the mapper for a user.
 	tokenClaims := &tokens.Claims{
@@ -324,7 +323,7 @@ func (s *MapperTestSuite) TestRoleFetchFailureCausesError() {
 		EXPECT().
 		GetRolesBatch([]string{"TeamAwesome"}).
 		Times(1).
-		Return([]*v1.Role{}, fmt.Errorf("error should be returned"))
+		Return([]*storage.Role{}, fmt.Errorf("error should be returned"))
 
 	// Call the mapper for a user.
 	tokenClaims := &tokens.Claims{

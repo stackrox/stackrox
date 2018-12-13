@@ -3,6 +3,7 @@ package index
 import (
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 )
@@ -13,8 +14,8 @@ var (
 
 // Indexer provides indexing of Policy objects.
 type Indexer interface {
-	AddProcessIndicator(*v1.ProcessIndicator) error
-	AddProcessIndicators([]*v1.ProcessIndicator) error
+	AddProcessIndicator(*storage.ProcessIndicator) error
+	AddProcessIndicators([]*storage.ProcessIndicator) error
 	DeleteProcessIndicator(id string) error
 	DeleteProcessIndicators(ids ...string) error
 	SearchProcessIndicators(q *v1.Query) ([]search.Result, error)

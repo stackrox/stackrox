@@ -7,30 +7,19 @@ option java_package = "io.stackrox.proto.api.v1";
 import weak "google/api/annotations.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
+import "storage/role.proto";
 
 package v1;
 
-// Access values should be in escalating order. IE READ_WRITE means you have READ as well.
-enum Access {
-    NO_ACCESS = 0;
-    READ_ACCESS = 1;
-    READ_WRITE_ACCESS = 2;
-}
+// storage.Access values should be in escalating order. IE READ_WRITE means you have READ as well.
 
 message Permission {
     string resource = 1;
-    Access access = 2;
-}
-
-message Role {
-    string name = 1;
-    Access global_access = 2;
-
-    map<string, Access> resource_to_access = 3;
+    storage.Access access = 2;
 }
 
 message GetRolesResponse {
-    repeated Role roles = 1;
+    repeated storage.Role roles = 1;
 }
 
 service RoleService {
@@ -41,20 +30,20 @@ service RoleService {
         };
     }
 
-    rpc GetRole (ResourceByID) returns (Role) {
+    rpc GetRole (ResourceByID) returns (storage.Role) {
         option (google.api.http) = {
             get: "/v1/roles/{id}"
         };
     }
 
-    rpc CreateRole (Role) returns (Empty) {
+    rpc CreateRole (storage.Role) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/roles/{name}"
             body: "*"
         };
     }
 
-    rpc UpdateRole (Role) returns (Empty) {
+    rpc UpdateRole (storage.Role) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/roles/{name}"
             body: "*"

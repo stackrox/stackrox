@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator/index/mappings"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -21,17 +22,17 @@ type indexerImpl struct {
 }
 
 type indicatorWrapper struct {
-	*v1.ProcessIndicator `json:"process_indicator"`
-	Type                 string `json:"type"`
+	*storage.ProcessIndicator `json:"process_indicator"`
+	Type                      string `json:"type"`
 }
 
 // AddProcessIndicator adds the indicator to the index
-func (b *indexerImpl) AddProcessIndicator(indicator *v1.ProcessIndicator) error {
+func (b *indexerImpl) AddProcessIndicator(indicator *storage.ProcessIndicator) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "ProcessIndicator")
 	return b.index.Index(indicator.GetId(), &indicatorWrapper{Type: v1.SearchCategory_PROCESS_INDICATORS.String(), ProcessIndicator: indicator})
 }
 
-func (b *indexerImpl) processBatch(indicators []*v1.ProcessIndicator) error {
+func (b *indexerImpl) processBatch(indicators []*storage.ProcessIndicator) error {
 	batch := b.index.NewBatch()
 	for _, indicator := range indicators {
 		batch.Index(indicator.GetId(), &indicatorWrapper{Type: v1.SearchCategory_PROCESS_INDICATORS.String(), ProcessIndicator: indicator})
@@ -40,7 +41,7 @@ func (b *indexerImpl) processBatch(indicators []*v1.ProcessIndicator) error {
 }
 
 // AddIndicators adds the indicators to the indexer
-func (b *indexerImpl) AddProcessIndicators(indicators []*v1.ProcessIndicator) error {
+func (b *indexerImpl) AddProcessIndicators(indicators []*storage.ProcessIndicator) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "ProcessIndicator")
 	batchManager := batcher.New(len(indicators), batchSize)
 	for {

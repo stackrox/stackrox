@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/processindicator"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,10 +19,10 @@ const (
 )
 
 var (
-	deterministicRabbitMQProcess = &v1.ProcessIndicator{
+	deterministicRabbitMQProcess = &storage.ProcessIndicator{
 		Id:    uuid.NewV4().String(),
 		PodId: rabbitMQPodID,
-		Signal: &v1.ProcessSignal{
+		Signal: &storage.ProcessSignal{
 			ContainerId: rabbitMQContainerID,
 			Name:        "beam.smp",
 			Args: "-W w -A 64 -MBas ageffcbf -MHas ageffcbf -MBlmbcs 512 -MHlmbcs 512 -MMmcs 30 -P 1048576 " +
@@ -43,11 +43,11 @@ var (
 	}
 )
 
-func rabbitMQBeamSMPProcess() *v1.ProcessIndicator {
-	return &v1.ProcessIndicator{
+func rabbitMQBeamSMPProcess() *storage.ProcessIndicator {
+	return &storage.ProcessIndicator{
 		Id:    uuid.NewV4().String(),
 		PodId: rabbitMQPodID,
-		Signal: &v1.ProcessSignal{
+		Signal: &storage.ProcessSignal{
 			ContainerId:  rabbitMQContainerID,
 			Name:         "beam.smp",
 			Args:         fmt.Sprintf("-- -root /usr/lib/erlang -progname erl -- -home /var/lib/rabbitmq -- -sname epmd-starter-%d -noshell -eval halt()", rand.Intn(int(math.Pow10(9)))),
@@ -56,11 +56,11 @@ func rabbitMQBeamSMPProcess() *v1.ProcessIndicator {
 	}
 }
 
-func rabbitMQErlExecProcess() *v1.ProcessIndicator {
-	return &v1.ProcessIndicator{
+func rabbitMQErlExecProcess() *storage.ProcessIndicator {
+	return &storage.ProcessIndicator{
 		Id:    uuid.NewV4().String(),
 		PodId: rabbitMQPodID,
-		Signal: &v1.ProcessSignal{
+		Signal: &storage.ProcessSignal{
 			ContainerId:  rabbitMQContainerID,
 			Name:         "erlexec",
 			Args:         fmt.Sprintf("-sname epmd-starter-%d -noshell -eval halt().", rand.Intn(int(math.Pow10(9)))),
@@ -69,11 +69,11 @@ func rabbitMQErlExecProcess() *v1.ProcessIndicator {
 	}
 }
 
-func rabbitMQErlProcess() *v1.ProcessIndicator {
-	return &v1.ProcessIndicator{
+func rabbitMQErlProcess() *storage.ProcessIndicator {
+	return &storage.ProcessIndicator{
 		Id:    uuid.NewV4().String(),
 		PodId: rabbitMQPodID,
-		Signal: &v1.ProcessSignal{
+		Signal: &storage.ProcessSignal{
 			ContainerId:  rabbitMQContainerID,
 			Name:         "erl",
 			Args:         fmt.Sprintf("/usr/lib/erlang/erts-9.3.3.3/bin/erl -sname epmd-starter-%d -noshell -eval halt().", rand.Intn(int(math.Pow10(9)))),
@@ -82,7 +82,7 @@ func rabbitMQErlProcess() *v1.ProcessIndicator {
 	}
 }
 
-func processToIDAndArgs(process *v1.ProcessIndicator) processindicator.IDAndArgs {
+func processToIDAndArgs(process *storage.ProcessIndicator) processindicator.IDAndArgs {
 	return processindicator.IDAndArgs{
 		ID:   process.GetId(),
 		Args: process.GetSignal().GetArgs(),

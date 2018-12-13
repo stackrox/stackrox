@@ -8,7 +8,7 @@ import services.BaseService
 import services.ClusterService
 import services.RoleService
 import io.stackrox.proto.api.v1.ApiTokenService.GenerateTokenResponse
-import io.stackrox.proto.api.v1.RoleServiceOuterClass
+import io.stackrox.proto.storage.RoleOuterClass
 import spock.lang.Shared
 import spock.lang.Unroll
 
@@ -18,10 +18,10 @@ class RbacAuthTest extends BaseSpecification {
     //
     // TESTING NOTE: if you specify permissions for a resource in the BAT test, then you should make sure to have
     // this map filled in for that resource to ensure proper permission testing
-    static final private Map<String, Map<RoleServiceOuterClass.Access, Closure>> RESOURCE_FUNCTION_MAP = [
-            "Cluster": [(RoleServiceOuterClass.Access.READ_ACCESS):
+    static final private Map<String, Map<RoleOuterClass.Access, Closure>> RESOURCE_FUNCTION_MAP = [
+            "Cluster": [(RoleOuterClass.Access.READ_ACCESS):
                                 ( { ClusterService.getClusterId() }),
-                        (RoleServiceOuterClass.Access.READ_WRITE_ACCESS):
+                        (RoleOuterClass.Access.READ_WRITE_ACCESS):
                                 ( {
                                     ClusterService.createCluster(
                                         "automation",
@@ -41,12 +41,12 @@ class RbacAuthTest extends BaseSpecification {
     def cleanupSpec() {
     }
 
-    def hasReadAccess(String res, Map<String, RoleServiceOuterClass.Access> resource) {
-        return resource.get(res) >= RoleServiceOuterClass.Access.READ_ACCESS
+    def hasReadAccess(String res, Map<String, RoleOuterClass.Access> resource) {
+        return resource.get(res) >= RoleOuterClass.Access.READ_ACCESS
     }
 
-    def hasWriteAccess(String res, Map<String, RoleServiceOuterClass.Access> resource) {
-        return resource.get(res) == RoleServiceOuterClass.Access.READ_WRITE_ACCESS
+    def hasWriteAccess(String res, Map<String, RoleOuterClass.Access> resource) {
+        return resource.get(res) == RoleOuterClass.Access.READ_WRITE_ACCESS
     }
 
     def canDo(Closure closure, String token) {
@@ -66,7 +66,7 @@ class RbacAuthTest extends BaseSpecification {
     def "Verify RBAC with Role/Token combinations: #resourceAccess"() {
         when:
         "Create a test role"
-        def testRole = RoleServiceOuterClass.Role.newBuilder()
+        def testRole = RoleOuterClass.Role.newBuilder()
                 .setName("Automation Role")
                 .putAllResourceToAccess(resourceAccess)
                 .build()
@@ -82,8 +82,8 @@ class RbacAuthTest extends BaseSpecification {
         then:
         "verify RBAC permissions"
         for (String resource : RESOURCE_FUNCTION_MAP.keySet()) {
-            def readFunction = RESOURCE_FUNCTION_MAP.get(resource).get(RoleServiceOuterClass.Access.READ_ACCESS)
-            def writeFunction = RESOURCE_FUNCTION_MAP.get(resource).get(RoleServiceOuterClass.Access.READ_WRITE_ACCESS)
+            def readFunction = RESOURCE_FUNCTION_MAP.get(resource).get(RoleOuterClass.Access.READ_ACCESS)
+            def writeFunction = RESOURCE_FUNCTION_MAP.get(resource).get(RoleOuterClass.Access.READ_WRITE_ACCESS)
             assert hasReadAccess(resource, resourceAccess) == canDo(readFunction, token.token)
             assert hasWriteAccess(resource, resourceAccess) == canDo(writeFunction, token.token)
         }
@@ -104,8 +104,8 @@ class RbacAuthTest extends BaseSpecification {
 
         resourceAccess                                               | _
         [:]                                                          | _
-        ["Cluster": RoleServiceOuterClass.Access.NO_ACCESS]          | _
-        ["Cluster": RoleServiceOuterClass.Access.READ_ACCESS]        | _
-        ["Cluster": RoleServiceOuterClass.Access.READ_WRITE_ACCESS]  | _
+        ["Cluster": RoleOuterClass.Access.NO_ACCESS]          | _
+        ["Cluster": RoleOuterClass.Access.READ_ACCESS]        | _
+        ["Cluster": RoleOuterClass.Access.READ_WRITE_ACCESS]  | _
     }
 }

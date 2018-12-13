@@ -5,9 +5,9 @@ import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import org.junit.experimental.categories.Category
 import spock.lang.Unroll
-import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import util.NetworkGraphUtil
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass
+import io.stackrox.proto.storage.NotifierOuterClass
 
 class NetworkSimulator extends BaseSpecification {
 
@@ -487,7 +487,7 @@ class NetworkSimulator extends BaseSpecification {
     def "Verify Network Simulator Notifications"() {
         when:
         "create notifier"
-        NotifierServiceOuterClass.Notifier notifier
+        NotifierOuterClass.Notifier notifier
         switch (notifierType) {
             case "SLACK":
                 notifier = Services.addSlackNotifier("Slack Test")
@@ -536,7 +536,7 @@ class NetworkSimulator extends BaseSpecification {
     def "Verify invalid clusterId passed to notification API"() {
         when:
         "create slack notifier"
-        NotifierServiceOuterClass.Notifier notifier = Services.addSlackNotifier("Slack Test")
+        NotifierOuterClass.Notifier notifier = Services.addSlackNotifier("Slack Test")
 
         and:
         "create Netowrk Policy yaml"

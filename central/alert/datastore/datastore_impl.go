@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/alert/search"
 	"github.com/stackrox/rox/central/alert/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	searchCommon "github.com/stackrox/rox/pkg/search"
 )
 
@@ -19,11 +20,11 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
-func (ds *datastoreImpl) SearchListAlerts(q *v1.Query) ([]*v1.ListAlert, error) {
+func (ds *datastoreImpl) SearchListAlerts(q *v1.Query) ([]*storage.ListAlert, error) {
 	return ds.searcher.SearchListAlerts(q)
 }
 
-func (ds *datastoreImpl) ListAlerts(request *v1.ListAlertsRequest) ([]*v1.ListAlert, error) {
+func (ds *datastoreImpl) ListAlerts(request *v1.ListAlertsRequest) ([]*storage.ListAlert, error) {
 	var q *v1.Query
 	if request.GetQuery() == "" {
 		q = searchCommon.EmptyQuery()
@@ -55,23 +56,23 @@ func (ds *datastoreImpl) SearchAlerts(q *v1.Query) ([]*v1.SearchResult, error) {
 }
 
 // SearchRawAlerts returns search results for the given request in the form of a slice of alerts.
-func (ds *datastoreImpl) SearchRawAlerts(q *v1.Query) ([]*v1.Alert, error) {
+func (ds *datastoreImpl) SearchRawAlerts(q *v1.Query) ([]*storage.Alert, error) {
 	return ds.searcher.SearchRawAlerts(q)
 }
 
 // GetAlert returns an alert by id.
-func (ds *datastoreImpl) GetAlert(id string) (*v1.Alert, bool, error) {
+func (ds *datastoreImpl) GetAlert(id string) (*storage.Alert, bool, error) {
 	return ds.storage.GetAlert(id)
 }
 
 // CountAlerts returns the number of alerts that are active
 func (ds *datastoreImpl) CountAlerts() (int, error) {
-	alerts, err := ds.searcher.SearchListAlerts(searchCommon.NewQueryBuilder().AddStrings(searchCommon.ViolationState, v1.ViolationState_ACTIVE.String()).ProtoQuery())
+	alerts, err := ds.searcher.SearchListAlerts(searchCommon.NewQueryBuilder().AddStrings(searchCommon.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
 	return len(alerts), err
 }
 
 // AddAlert inserts an alert into storage and into the indexer
-func (ds *datastoreImpl) AddAlert(alert *v1.Alert) error {
+func (ds *datastoreImpl) AddAlert(alert *storage.Alert) error {
 	if err := ds.storage.AddAlert(alert); err != nil {
 		return err
 	}
@@ -79,7 +80,7 @@ func (ds *datastoreImpl) AddAlert(alert *v1.Alert) error {
 }
 
 // UpdateAlert updates an alert in storage and in the indexer
-func (ds *datastoreImpl) UpdateAlert(alert *v1.Alert) error {
+func (ds *datastoreImpl) UpdateAlert(alert *storage.Alert) error {
 	if err := ds.storage.UpdateAlert(alert); err != nil {
 		return err
 	}
@@ -94,6 +95,6 @@ func (ds *datastoreImpl) MarkAlertStale(id string) error {
 	if !exists {
 		return fmt.Errorf("alert with id '%s' does not exist", id)
 	}
-	alert.State = v1.ViolationState_RESOLVED
+	alert.State = storage.ViolationState_RESOLVED
 	return ds.UpdateAlert(alert)
 }

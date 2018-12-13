@@ -184,7 +184,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorTombstoningDeployments()
 func (suite *ClusterDataStoreTestSuite) TestHandlesNoAlerts() {
 	// If No alerts exist, everything should still work smoothly.
 	suite.alerts.EXPECT().ListAlerts(
-		testutils.PredMatcher("query for deployment1", func(req *v1.ListAlertsRequest) bool { return strings.Contains(req.Query, "deployment1") })).Return(([]*v1.ListAlert)(nil), nil)
+		testutils.PredMatcher("query for deployment1", func(req *v1.ListAlertsRequest) bool { return strings.Contains(req.Query, "deployment1") })).Return(([]*storage.ListAlert)(nil), nil)
 
 	// We expect deployments to be fetched, and only those for cluster1 to be tombstoned.
 	deployments := getDeployments(map[string]string{"deployment1": fakeClusterID, "deployment2": "cluster2"})
@@ -212,7 +212,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingAlerts() {
 	// We expect alerts to be fetched, and all to be updated.
 	expectedErr := fmt.Errorf("issues need tissues")
 	suite.alerts.EXPECT().ListAlerts(
-		testutils.PredMatcher("query for deployment1", func(req *v1.ListAlertsRequest) bool { return strings.Contains(req.Query, "deployment1") })).Return(([]*v1.ListAlert)(nil), expectedErr)
+		testutils.PredMatcher("query for deployment1", func(req *v1.ListAlertsRequest) bool { return strings.Contains(req.Query, "deployment1") })).Return(([]*storage.ListAlert)(nil), expectedErr)
 
 	// We expect deployments to be fetched, and only those for cluster1 to be tombstoned.
 	deployments := getDeployments(map[string]string{"deployment1": fakeClusterID, "deployment2": "cluster2"})
@@ -257,10 +257,10 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorUpdatingAlert() {
 	suite.Error(err, "if we can't mark an alert as stale, then then deployment and cluster should remain")
 }
 
-func getAlerts(count int) []*v1.ListAlert {
-	alerts := make([]*v1.ListAlert, 0)
+func getAlerts(count int) []*storage.ListAlert {
+	alerts := make([]*storage.ListAlert, 0)
 	for i := 0; i < count; i++ {
-		alert := &v1.ListAlert{
+		alert := &storage.ListAlert{
 			Id: string(i),
 		}
 		alerts = append(alerts, alert)

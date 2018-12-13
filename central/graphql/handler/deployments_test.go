@@ -6,7 +6,6 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
@@ -66,14 +65,14 @@ func TestGetDeploymentProcessGroup(t *testing.T) {
 	mocks.deployment.EXPECT().GetDeployment(testDeploymentID).Return(&storage.Deployment{
 		Id: testDeploymentID,
 	}, true, nil)
-	mocks.process.EXPECT().SearchRawProcessIndicators(gomock.Any()).Return([]*v1.ProcessIndicator{
+	mocks.process.EXPECT().SearchRawProcessIndicators(gomock.Any()).Return([]*storage.ProcessIndicator{
 		{
 			Id:            "processId",
 			ContainerName: "container_name",
 			DeploymentId:  testDeploymentID,
 			EmitTimestamp: &types.Timestamp{Seconds: 100},
 			PodId:         "podId",
-			Signal: &v1.ProcessSignal{
+			Signal: &storage.ProcessSignal{
 				Id:           "signalId",
 				Name:         "process",
 				Time:         &types.Timestamp{Seconds: 100},

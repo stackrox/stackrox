@@ -1,4 +1,5 @@
 import io.grpc.StatusRuntimeException
+import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import orchestratormanager.OrchestratorType
 import services.BaseService
 import services.ClusterService
@@ -8,26 +9,26 @@ import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsResponse
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsGroupResponse
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertTimeseriesResponse
-import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlert
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.DeploymentServiceGrpc
 import io.stackrox.proto.api.v1.DetectionServiceGrpc
 import io.stackrox.proto.api.v1.ImageIntegrationServiceGrpc
 import io.stackrox.proto.api.v1.NotifierServiceGrpc
-import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.api.v1.PolicyServiceGrpc
 import io.stackrox.proto.api.v1.SearchServiceGrpc
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
-import io.stackrox.proto.api.v1.AlertServiceOuterClass.Alert
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.api.v1.SecretServiceGrpc
 import io.stackrox.proto.api.v1.NetworkPolicyServiceGrpc
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass
+import io.stackrox.proto.storage.AlertOuterClass.Alert
+import io.stackrox.proto.storage.AlertOuterClass.ListAlert
 import io.stackrox.proto.storage.DeploymentOuterClass.ListDeployment
 import io.stackrox.proto.storage.DeploymentOuterClass.Deployment
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.ImageOuterClass
+import io.stackrox.proto.storage.NotifierOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 import io.stackrox.proto.storage.PolicyOuterClass.ListPolicy
@@ -394,7 +395,7 @@ class Services extends BaseService {
     static addSlackNotifier(String name) {
         try {
             return getNotifierClient().postNotifier(
-                    NotifierServiceOuterClass.Notifier.newBuilder()
+                    NotifierOuterClass.Notifier.newBuilder()
                             .setType("slack")
                             .setName(name)
                             .setLabelKey("#slack-test")
@@ -415,7 +416,7 @@ class Services extends BaseService {
     static addJiraNotifier(String name) {
         try {
             return getNotifierClient().postNotifier(
-                    NotifierServiceOuterClass.Notifier.newBuilder()
+                    NotifierOuterClass.Notifier.newBuilder()
                             .setType("jira")
                             .setName(name)
                             .setLabelKey("AJIT")
@@ -424,7 +425,7 @@ class Services extends BaseService {
                             .setUiEndpoint("https://" +
                                     System.getenv("HOSTNAME") +
                                     ":" + System.getenv("PORT"))
-                            .setJira(NotifierServiceOuterClass.Jira.newBuilder()
+                            .setJira(NotifierOuterClass.Jira.newBuilder()
                                     .setUsername("k+automation@stackrox.com")
                                     .setPassword("D7wU97n9CFYuesHt")
                                     .setUrl("https://stack-rox.atlassian.net")
@@ -439,9 +440,9 @@ class Services extends BaseService {
 
     static addEmailNotifier(String name, Boolean disableTLS = false, startTLS = false, Integer port = null) {
         try {
-            NotifierServiceOuterClass.Notifier.Builder builder =
-                    NotifierServiceOuterClass.Notifier.newBuilder()
-                            .setEmail(NotifierServiceOuterClass.Email.newBuilder())
+            NotifierOuterClass.Notifier.Builder builder =
+                    NotifierOuterClass.Notifier.newBuilder()
+                            .setEmail(NotifierOuterClass.Email.newBuilder())
             builder
                     .setType("email")
                     .setName(name)
@@ -468,7 +469,7 @@ class Services extends BaseService {
         }
     }
 
-    static testNotifier(NotifierServiceOuterClass.Notifier notifier) {
+    static testNotifier(NotifierOuterClass.Notifier notifier) {
         try {
             return getNotifierClient().testNotifier(notifier)
         } catch (Exception e) {

@@ -8,18 +8,18 @@ import (
 	"github.com/stackrox/rox/generated/storage" // end range imports
 )
 
-func toAccess(value *string) v1.Access {
+func toAccess(value *string) storage.Access {
 	if value != nil {
-		return v1.Access(v1.Access_value[*value])
+		return storage.Access(storage.Access_value[*value])
 	}
-	return v1.Access(0)
+	return storage.Access(0)
 }
 
-func toAccesses(values *[]string) []v1.Access {
+func toAccesses(values *[]string) []storage.Access {
 	if values == nil {
 		return nil
 	}
-	output := make([]v1.Access, len(*values))
+	output := make([]storage.Access, len(*values))
 	for i, v := range *values {
 		output[i] = toAccess(&v)
 	}
@@ -28,18 +28,18 @@ func toAccesses(values *[]string) []v1.Access {
 
 type alertResolver struct {
 	root *Resolver
-	data *v1.Alert
-	list *v1.ListAlert
+	data *storage.Alert
+	list *storage.ListAlert
 }
 
-func (resolver *Resolver) wrapAlert(value *v1.Alert, ok bool, err error) (*alertResolver, error) {
+func (resolver *Resolver) wrapAlert(value *storage.Alert, ok bool, err error) (*alertResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &alertResolver{resolver, value, nil}, nil
 }
 
-func (resolver *Resolver) wrapAlerts(values []*v1.Alert, err error) ([]*alertResolver, error) {
+func (resolver *Resolver) wrapAlerts(values []*storage.Alert, err error) ([]*alertResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (resolver *Resolver) wrapAlerts(values []*v1.Alert, err error) ([]*alertRes
 	return output, nil
 }
 
-func (resolver *Resolver) wrapListAlerts(values []*v1.ListAlert, err error) ([]*alertResolver, error) {
+func (resolver *Resolver) wrapListAlerts(values []*storage.ListAlert, err error) ([]*alertResolver, error) {
 	if err != nil || values == nil {
 		return nil, err
 	}
@@ -137,17 +137,17 @@ func (resolver *alertResolver) Violations() ([]*alert_ViolationResolver, error) 
 
 type alert_EnforcementResolver struct {
 	root *Resolver
-	data *v1.Alert_Enforcement
+	data *storage.Alert_Enforcement
 }
 
-func (resolver *Resolver) wrapAlert_Enforcement(value *v1.Alert_Enforcement, ok bool, err error) (*alert_EnforcementResolver, error) {
+func (resolver *Resolver) wrapAlert_Enforcement(value *storage.Alert_Enforcement, ok bool, err error) (*alert_EnforcementResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &alert_EnforcementResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapAlert_Enforcements(values []*v1.Alert_Enforcement, err error) ([]*alert_EnforcementResolver, error) {
+func (resolver *Resolver) wrapAlert_Enforcements(values []*storage.Alert_Enforcement, err error) ([]*alert_EnforcementResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -170,17 +170,17 @@ func (resolver *alert_EnforcementResolver) Message() string {
 
 type alert_ViolationResolver struct {
 	root *Resolver
-	data *v1.Alert_Violation
+	data *storage.Alert_Violation
 }
 
-func (resolver *Resolver) wrapAlert_Violation(value *v1.Alert_Violation, ok bool, err error) (*alert_ViolationResolver, error) {
+func (resolver *Resolver) wrapAlert_Violation(value *storage.Alert_Violation, ok bool, err error) (*alert_ViolationResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &alert_ViolationResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapAlert_Violations(values []*v1.Alert_Violation, err error) ([]*alert_ViolationResolver, error) {
+func (resolver *Resolver) wrapAlert_Violations(values []*storage.Alert_Violation, err error) ([]*alert_ViolationResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -208,17 +208,17 @@ func (resolver *alert_ViolationResolver) Processes() ([]*processIndicatorResolve
 
 type cSCCResolver struct {
 	root *Resolver
-	data *v1.CSCC
+	data *storage.CSCC
 }
 
-func (resolver *Resolver) wrapCSCC(value *v1.CSCC, ok bool, err error) (*cSCCResolver, error) {
+func (resolver *Resolver) wrapCSCC(value *storage.CSCC, ok bool, err error) (*cSCCResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &cSCCResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapCSCCs(values []*v1.CSCC, err error) ([]*cSCCResolver, error) {
+func (resolver *Resolver) wrapCSCCs(values []*storage.CSCC, err error) ([]*cSCCResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1135,17 +1135,17 @@ func (resolver *dockerfileLineRuleFieldResolver) Value() string {
 
 type emailResolver struct {
 	root *Resolver
-	data *v1.Email
+	data *storage.Email
 }
 
-func (resolver *Resolver) wrapEmail(value *v1.Email, ok bool, err error) (*emailResolver, error) {
+func (resolver *Resolver) wrapEmail(value *storage.Email, ok bool, err error) (*emailResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &emailResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapEmails(values []*v1.Email, err error) ([]*emailResolver, error) {
+func (resolver *Resolver) wrapEmails(values []*storage.Email, err error) ([]*emailResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -1696,17 +1696,17 @@ func (resolver *imageScanComponentResolver) Vulns() ([]*vulnerabilityResolver, e
 
 type jiraResolver struct {
 	root *Resolver
-	data *v1.Jira
+	data *storage.Jira
 }
 
-func (resolver *Resolver) wrapJira(value *v1.Jira, ok bool, err error) (*jiraResolver, error) {
+func (resolver *Resolver) wrapJira(value *storage.Jira, ok bool, err error) (*jiraResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &jiraResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapJiras(values []*v1.Jira, err error) ([]*jiraResolver, error) {
+func (resolver *Resolver) wrapJiras(values []*storage.Jira, err error) ([]*jiraResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2116,17 +2116,17 @@ func (resolver *nodeResolver) Name() string {
 
 type notifierResolver struct {
 	root *Resolver
-	data *v1.Notifier
+	data *storage.Notifier
 }
 
-func (resolver *Resolver) wrapNotifier(value *v1.Notifier, ok bool, err error) (*notifierResolver, error) {
+func (resolver *Resolver) wrapNotifier(value *storage.Notifier, ok bool, err error) (*notifierResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &notifierResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapNotifiers(values []*v1.Notifier, err error) ([]*notifierResolver, error) {
+func (resolver *Resolver) wrapNotifiers(values []*storage.Notifier, err error) ([]*notifierResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2613,17 +2613,17 @@ func (resolver *processGroupResolver) Signals() ([]*processIndicatorResolver, er
 
 type processIndicatorResolver struct {
 	root *Resolver
-	data *v1.ProcessIndicator
+	data *storage.ProcessIndicator
 }
 
-func (resolver *Resolver) wrapProcessIndicator(value *v1.ProcessIndicator, ok bool, err error) (*processIndicatorResolver, error) {
+func (resolver *Resolver) wrapProcessIndicator(value *storage.ProcessIndicator, ok bool, err error) (*processIndicatorResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &processIndicatorResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapProcessIndicators(values []*v1.ProcessIndicator, err error) ([]*processIndicatorResolver, error) {
+func (resolver *Resolver) wrapProcessIndicators(values []*storage.ProcessIndicator, err error) ([]*processIndicatorResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -2737,17 +2737,17 @@ func (resolver *processPolicyResolver) Name() string {
 
 type processSignalResolver struct {
 	root *Resolver
-	data *v1.ProcessSignal
+	data *storage.ProcessSignal
 }
 
-func (resolver *Resolver) wrapProcessSignal(value *v1.ProcessSignal, ok bool, err error) (*processSignalResolver, error) {
+func (resolver *Resolver) wrapProcessSignal(value *storage.ProcessSignal, ok bool, err error) (*processSignalResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &processSignalResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapProcessSignals(values []*v1.ProcessSignal, err error) ([]*processSignalResolver, error) {
+func (resolver *Resolver) wrapProcessSignals(values []*storage.ProcessSignal, err error) ([]*processSignalResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3049,17 +3049,17 @@ func (resolver *risk_Result_FactorResolver) Url() string {
 
 type roleResolver struct {
 	root *Resolver
-	data *v1.Role
+	data *storage.Role
 }
 
-func (resolver *Resolver) wrapRole(value *v1.Role, ok bool, err error) (*roleResolver, error) {
+func (resolver *Resolver) wrapRole(value *storage.Role, ok bool, err error) (*roleResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &roleResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapRoles(values []*v1.Role, err error) ([]*roleResolver, error) {
+func (resolver *Resolver) wrapRoles(values []*storage.Role, err error) ([]*roleResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3611,17 +3611,17 @@ func toSeverities(values *[]string) []storage.Severity {
 
 type splunkResolver struct {
 	root *Resolver
-	data *v1.Splunk
+	data *storage.Splunk
 }
 
-func (resolver *Resolver) wrapSplunk(value *v1.Splunk, ok bool, err error) (*splunkResolver, error) {
+func (resolver *Resolver) wrapSplunk(value *storage.Splunk, ok bool, err error) (*splunkResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
 	return &splunkResolver{resolver, value}, nil
 }
 
-func (resolver *Resolver) wrapSplunks(values []*v1.Splunk, err error) ([]*splunkResolver, error) {
+func (resolver *Resolver) wrapSplunks(values []*storage.Splunk, err error) ([]*splunkResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
@@ -3799,18 +3799,18 @@ func (resolver *v2MetadataResolver) Digest() string {
 	return value
 }
 
-func toViolationState(value *string) v1.ViolationState {
+func toViolationState(value *string) storage.ViolationState {
 	if value != nil {
-		return v1.ViolationState(v1.ViolationState_value[*value])
+		return storage.ViolationState(storage.ViolationState_value[*value])
 	}
-	return v1.ViolationState(0)
+	return storage.ViolationState(0)
 }
 
-func toViolationStates(values *[]string) []v1.ViolationState {
+func toViolationStates(values *[]string) []storage.ViolationState {
 	if values == nil {
 		return nil
 	}
-	output := make([]v1.ViolationState, len(*values))
+	output := make([]storage.ViolationState, len(*values))
 	for i, v := range *values {
 		output[i] = toViolationState(&v)
 	}

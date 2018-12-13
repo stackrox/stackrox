@@ -6,7 +6,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/notifiers"
@@ -31,7 +30,7 @@ type cscc struct {
 	// using a key from a separate project.
 	gcpProject string
 
-	*v1.Notifier
+	*storage.Notifier
 }
 
 type config struct {
@@ -56,7 +55,7 @@ func (c config) validate() error {
 	return nil
 }
 
-func (c *cscc) getAlertDescription(alert *v1.Alert) string {
+func (c *cscc) getAlertDescription(alert *storage.Alert) string {
 	distinct := make(map[string]struct{})
 	for _, v := range alert.GetViolations() {
 		if vText := v.GetMessage(); vText != "" {
@@ -97,7 +96,7 @@ func transformEnforcement(a storage.EnforcementAction) string {
 	}
 }
 
-func alertEnforcement(alert *v1.Alert) []findings.Enforcement {
+func alertEnforcement(alert *storage.Alert) []findings.Enforcement {
 	if alert.GetEnforcement().GetAction() == storage.EnforcementAction_UNSET_ENFORCEMENT {
 		return nil
 	}
@@ -116,7 +115,7 @@ func (c *cscc) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 }
 
 //AlertNotify takes in an alert and generates the notification
-func (c *cscc) AlertNotify(alert *v1.Alert) error {
+func (c *cscc) AlertNotify(alert *storage.Alert) error {
 	alertLink := notifiers.AlertLink(c.Notifier.UiEndpoint, alert.GetId())
 	summary := c.getAlertDescription(alert)
 
@@ -154,12 +153,12 @@ func (c *cscc) AlertNotify(alert *v1.Alert) error {
 
 // BenchmarkNotify does nothing currently, since we do not want to post
 // benchmarks to CSCC.
-func (c *cscc) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
+func (c *cscc) BenchmarkNotify(schedule *storage.BenchmarkSchedule) error {
 	return nil
 }
 
-func newCSCC(protoNotifier *v1.Notifier) (*cscc, error) {
-	csccConfig, ok := protoNotifier.GetConfig().(*v1.Notifier_Cscc)
+func newCSCC(protoNotifier *storage.Notifier) (*cscc, error) {
+	csccConfig, ok := protoNotifier.GetConfig().(*storage.Notifier_Cscc)
 	if !ok {
 		return nil, fmt.Errorf("CSCC config is required")
 	}
@@ -176,7 +175,7 @@ func newCSCC(protoNotifier *v1.Notifier) (*cscc, error) {
 	return newWithConfig(protoNotifier, cfg), nil
 }
 
-func newWithConfig(protoNotifier *v1.Notifier, cfg *config) *cscc {
+func newWithConfig(protoNotifier *storage.Notifier, cfg *config) *cscc {
 	return &cscc{
 		Notifier: protoNotifier,
 		client: client.Config{
@@ -188,7 +187,7 @@ func newWithConfig(protoNotifier *v1.Notifier, cfg *config) *cscc {
 	}
 }
 
-func (c *cscc) ProtoNotifier() *v1.Notifier {
+func (c *cscc) ProtoNotifier() *storage.Notifier {
 	return c.Notifier
 }
 
@@ -197,7 +196,7 @@ func (c *cscc) Test() error {
 }
 
 func init() {
-	notifiers.Add("cscc", func(notifier *v1.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add("cscc", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		j, err := newCSCC(notifier)
 		return j, err
 	})

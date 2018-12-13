@@ -9,7 +9,6 @@ import (
 	"time"
 
 	jiraLib "github.com/andygrunwald/go-jira"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -29,12 +28,12 @@ var (
 type jira struct {
 	client *jiraLib.Client
 
-	conf *v1.Jira
+	conf *storage.Jira
 
-	notifier *v1.Notifier
+	notifier *storage.Notifier
 }
 
-func (j *jira) getAlertDescription(alert *v1.Alert) (string, error) {
+func (j *jira) getAlertDescription(alert *storage.Alert) (string, error) {
 	funcMap := template.FuncMap{
 		"header": func(s string) string {
 			return fmt.Sprintf("\r\n h4. %v\r\n", s)
@@ -56,13 +55,13 @@ func (j *jira) getAlertDescription(alert *v1.Alert) (string, error) {
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 
-func (j *jira) getBenchmarkDescription(schedule *v1.BenchmarkSchedule) (string, error) {
+func (j *jira) getBenchmarkDescription(schedule *storage.BenchmarkSchedule) (string, error) {
 	benchmarkLink := notifiers.BenchmarkLink(j.notifier.UiEndpoint)
 	return notifiers.FormatBenchmark(schedule, benchmarkLink)
 }
 
 // AlertNotify takes in an alert and generates the notification
-func (j *jira) AlertNotify(alert *v1.Alert) error {
+func (j *jira) AlertNotify(alert *storage.Alert) error {
 	description, err := j.getAlertDescription(alert)
 	if err != nil {
 		return err
@@ -119,7 +118,7 @@ func (j *jira) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 }
 
 // BenchmarkNotify takes in a benchmark and generates the notification
-func (j *jira) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
+func (j *jira) BenchmarkNotify(schedule *storage.BenchmarkSchedule) error {
 	description, err := j.getBenchmarkDescription(schedule)
 	if err != nil {
 		return err
@@ -143,7 +142,7 @@ func (j *jira) BenchmarkNotify(schedule *v1.BenchmarkSchedule) error {
 	return j.createIssue(i)
 }
 
-func validate(jira *v1.Jira) error {
+func validate(jira *storage.Jira) error {
 	errorList := errorhelpers.NewErrorList("Jira validation")
 	if jira.GetIssueType() == "" {
 		errorList.AddString("Issue Type must be specified")
@@ -160,8 +159,8 @@ func validate(jira *v1.Jira) error {
 	return errorList.ToError()
 }
 
-func newJira(notifier *v1.Notifier) (*jira, error) {
-	jiraConfig, ok := notifier.GetConfig().(*v1.Notifier_Jira)
+func newJira(notifier *storage.Notifier) (*jira, error) {
+	jiraConfig, ok := notifier.GetConfig().(*storage.Notifier_Jira)
 	if !ok {
 		return nil, fmt.Errorf("Jira configuration required")
 	}
@@ -193,12 +192,12 @@ func newJira(notifier *v1.Notifier) (*jira, error) {
 
 	return &jira{
 		client:   client,
-		conf:     notifier.GetConfig().(*v1.Notifier_Jira).Jira,
+		conf:     notifier.GetConfig().(*storage.Notifier_Jira).Jira,
 		notifier: notifier,
 	}, nil
 }
 
-func (j *jira) ProtoNotifier() *v1.Notifier {
+func (j *jira) ProtoNotifier() *storage.Notifier {
 	return j.notifier
 }
 
@@ -248,7 +247,7 @@ func severityToPriority(sev storage.Severity) string {
 }
 
 func init() {
-	notifiers.Add("jira", func(notifier *v1.Notifier) (notifiers.Notifier, error) {
+	notifiers.Add("jira", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		j, err := newJira(notifier)
 		return j, err
 	})

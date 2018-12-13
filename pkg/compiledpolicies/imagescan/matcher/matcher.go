@@ -1,12 +1,11 @@
 package matcher
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
 // Matcher is a function that provides alert violations.
-type Matcher func(*storage.ImageScan) []*v1.Alert_Violation
+type Matcher func(*storage.ImageScan) []*storage.Alert_Violation
 
 // CanAlsoViolate adds the input matchers output to this matchers output.
 func (c Matcher) CanAlsoViolate(gen Matcher) Matcher {
@@ -40,7 +39,7 @@ func orMatcher(p1, p2 Matcher) Matcher {
 	return orMatcherImpl{p1, p2}.do
 }
 
-func (f orMatcherImpl) do(imageScan *storage.ImageScan) []*v1.Alert_Violation {
+func (f orMatcherImpl) do(imageScan *storage.ImageScan) []*storage.Alert_Violation {
 	violations1 := f.p1(imageScan)
 	violations2 := f.p2(imageScan)
 
@@ -64,7 +63,7 @@ func andMatcher(p1, p2 Matcher) Matcher {
 	return andMatcherImpl{p1, p2}.do
 }
 
-func (f andMatcherImpl) do(imageScan *storage.ImageScan) []*v1.Alert_Violation {
+func (f andMatcherImpl) do(imageScan *storage.ImageScan) []*storage.Alert_Violation {
 	violations1 := f.p1(imageScan)
 	if violations1 == nil {
 		return nil

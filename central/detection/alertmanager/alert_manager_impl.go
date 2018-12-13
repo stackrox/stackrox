@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/detection/runtime"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/searchbasedpolicies/builders"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
@@ -29,7 +28,7 @@ type alertManagerImpl struct {
 	runtimeDetector runtime.Detector
 }
 
-func (d *alertManagerImpl) AlertAndNotify(currentAlerts []*v1.Alert, oldAlertFilters ...AlertFilterOption) error {
+func (d *alertManagerImpl) AlertAndNotify(currentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) error {
 	// Merge the old and the new alerts.
 	newAlerts, updatedAlerts, staleAlerts, err := d.mergeManyAlerts(currentAlerts, oldAlertFilters...)
 	if err != nil {
@@ -47,7 +46,7 @@ func (d *alertManagerImpl) AlertAndNotify(currentAlerts []*v1.Alert, oldAlertFil
 }
 
 // UpdateBatch updates all of the alerts in the datastore.
-func (d *alertManagerImpl) updateBatch(alertsToMark []*v1.Alert) error {
+func (d *alertManagerImpl) updateBatch(alertsToMark []*storage.Alert) error {
 	errList := errorhelpers.NewErrorList("Error updating alerts: ")
 	for _, existingAlert := range alertsToMark {
 		errList.AddError(d.alerts.UpdateAlert(existingAlert))
@@ -56,7 +55,7 @@ func (d *alertManagerImpl) updateBatch(alertsToMark []*v1.Alert) error {
 }
 
 // MarkAlertsStale marks all of the input alerts stale in the input datastore.
-func (d *alertManagerImpl) markAlertsStale(alertsToMark []*v1.Alert) error {
+func (d *alertManagerImpl) markAlertsStale(alertsToMark []*storage.Alert) error {
 	errList := errorhelpers.NewErrorList("Error marking alerts as stale: ")
 	for _, existingAlert := range alertsToMark {
 		errList.AddError(d.alerts.MarkAlertStale(existingAlert.GetId()))
@@ -65,7 +64,7 @@ func (d *alertManagerImpl) markAlertsStale(alertsToMark []*v1.Alert) error {
 }
 
 // NotifyAndUpdateBatch runs the notifier on the input alerts then stores them.
-func (d *alertManagerImpl) notifyAndUpdateBatch(alertsToMark []*v1.Alert) error {
+func (d *alertManagerImpl) notifyAndUpdateBatch(alertsToMark []*storage.Alert) error {
 	for _, existingAlert := range alertsToMark {
 		d.notifier.ProcessAlert(existingAlert)
 	}
@@ -74,12 +73,12 @@ func (d *alertManagerImpl) notifyAndUpdateBatch(alertsToMark []*v1.Alert) error 
 
 // It is the caller's responsibility to not call this with an empty slice,
 // else this function will panic.
-func lastTimestamp(processes []*v1.ProcessIndicator) *ptypes.Timestamp {
+func lastTimestamp(processes []*storage.ProcessIndicator) *ptypes.Timestamp {
 	return processes[len(processes)-1].GetSignal().GetTime()
 }
 
 // This depends on the fact that we sort process indicators in increasing order of timestamp.
-func getMostRecentProcessTimestampInAlerts(alerts ...*v1.Alert) (ts *ptypes.Timestamp) {
+func getMostRecentProcessTimestampInAlerts(alerts ...*storage.Alert) (ts *ptypes.Timestamp) {
 	for _, alert := range alerts {
 		for _, violation := range alert.GetViolations() {
 			processes := violation.GetProcesses()
@@ -99,13 +98,13 @@ func getMostRecentProcessTimestampInAlerts(alerts ...*v1.Alert) (ts *ptypes.Time
 // if an alert was violated by a new indicator. This function trims old resolved processes from an alert.
 // It returns a bool indicating whether the alert contained only resolved processes -- in which case
 // we don't want to generate an alert at all.
-func (d *alertManagerImpl) trimResolvedProcessesFromRuntimeAlert(alert *v1.Alert) (isFullyResolved bool) {
+func (d *alertManagerImpl) trimResolvedProcessesFromRuntimeAlert(alert *storage.Alert) (isFullyResolved bool) {
 	if alert.GetLifecycleStage() != storage.LifecycleStage_RUNTIME {
 		return false
 	}
 
 	q := search.NewQueryBuilder().
-		AddStrings(search.ViolationState, v1.ViolationState_RESOLVED.String()).
+		AddStrings(search.ViolationState, storage.ViolationState_RESOLVED.String()).
 		AddExactMatches(search.DeploymentID, alert.GetDeployment().GetId()).
 		AddExactMatches(search.PolicyID, alert.GetPolicy().GetId()).
 		ProtoQuery()
@@ -145,9 +144,9 @@ func (d *alertManagerImpl) trimResolvedProcessesFromRuntimeAlert(alert *v1.Alert
 // which means they only exist in the old alert, and will not be in the new generated alert.
 // We don't want to lose them, though, so we keep all the processes from the old alert, and add ones from the new, if any.
 // Note that the old alert _was_ active which means that all the processes in it are guaranteed to violate the policy.
-func mergeProcessesFromOldIntoNew(old, newAlert *v1.Alert) (newAlertHasNewProcesses bool) {
+func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewProcesses bool) {
 	// There is exactly one sub-object which has processes.
-	var oldViolationWithProcesses *v1.Alert_Violation
+	var oldViolationWithProcesses *storage.Alert_Violation
 	for _, violation := range old.GetViolations() {
 		if len(violation.GetProcesses()) > 0 {
 			oldViolationWithProcesses = violation
@@ -187,7 +186,7 @@ func mergeProcessesFromOldIntoNew(old, newAlert *v1.Alert) (newAlertHasNewProces
 }
 
 // MergeAlerts merges two alerts.
-func mergeAlerts(old, newAlert *v1.Alert) *v1.Alert {
+func mergeAlerts(old, newAlert *storage.Alert) *storage.Alert {
 	if old.GetLifecycleStage() == storage.LifecycleStage_RUNTIME && newAlert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME {
 		newAlertHasNewProcesses := mergeProcessesFromOldIntoNew(old, newAlert)
 		// This ensures that we don't keep updating an old runtime alert, so that we have idempotent checks.
@@ -201,7 +200,7 @@ func mergeAlerts(old, newAlert *v1.Alert) *v1.Alert {
 	if newAlert.GetLifecycleStage() == storage.LifecycleStage_DEPLOY && old.GetLifecycleStage() == storage.LifecycleStage_DEPLOY {
 		newAlert.Enforcement = old.GetEnforcement()
 		// Don't keep updating the timestamp of the violation _unless_ the violations are actually different.
-		if protoutils.EqualV1Alert_ViolationSlices(newAlert.GetViolations(), old.GetViolations()) {
+		if protoutils.EqualStorageAlert_ViolationSlices(newAlert.GetViolations(), old.GetViolations()) {
 			newAlert.Time = old.GetTime()
 		}
 	}
@@ -211,8 +210,8 @@ func mergeAlerts(old, newAlert *v1.Alert) *v1.Alert {
 }
 
 // MergeManyAlerts merges two alerts.
-func (d *alertManagerImpl) mergeManyAlerts(presentAlerts []*v1.Alert, oldAlertFilters ...AlertFilterOption) (newAlerts, updatedAlerts, staleAlerts []*v1.Alert, err error) {
-	qb := search.NewQueryBuilder().AddStrings(search.ViolationState, v1.ViolationState_ACTIVE.String())
+func (d *alertManagerImpl) mergeManyAlerts(presentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (newAlerts, updatedAlerts, staleAlerts []*storage.Alert, err error) {
+	qb := search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
 	for _, filter := range oldAlertFilters {
 		filter.apply(qb)
 	}
@@ -247,7 +246,7 @@ func (d *alertManagerImpl) mergeManyAlerts(presentAlerts []*v1.Alert, oldAlertFi
 	return
 }
 
-func (d *alertManagerImpl) shouldMarkAlertStale(alert *v1.Alert, presentAlerts []*v1.Alert, oldAlertFilters ...AlertFilterOption) bool {
+func (d *alertManagerImpl) shouldMarkAlertStale(alert *storage.Alert, presentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) bool {
 	// If the alert is still being produced, don't mark it stale.
 	if matchingNew := findAlert(alert, presentAlerts); matchingNew != nil {
 		return false
@@ -280,7 +279,7 @@ func (d *alertManagerImpl) shouldMarkAlertStale(alert *v1.Alert, presentAlerts [
 	return d.runtimeDetector.DeploymentWhitelistedForPolicy(alert.GetDeployment().GetId(), alert.GetPolicy().GetId())
 }
 
-func findAlert(toFind *v1.Alert, alerts []*v1.Alert) *v1.Alert {
+func findAlert(toFind *storage.Alert, alerts []*storage.Alert) *storage.Alert {
 	for _, alert := range alerts {
 		if alertsAreForSamePolicyAndDeployment(alert, toFind) {
 			return alert
@@ -289,6 +288,6 @@ func findAlert(toFind *v1.Alert, alerts []*v1.Alert) *v1.Alert {
 	return nil
 }
 
-func alertsAreForSamePolicyAndDeployment(a1, a2 *v1.Alert) bool {
+func alertsAreForSamePolicyAndDeployment(a1, a2 *storage.Alert) bool {
 	return a1.GetPolicy().GetId() == a2.GetPolicy().GetId() && a1.GetDeployment().GetId() == a2.GetDeployment().GetId()
 }

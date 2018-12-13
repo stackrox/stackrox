@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -32,7 +31,7 @@ type addCapMatcherImpl struct {
 	addCap map[string]struct{}
 }
 
-func (p *addCapMatcherImpl) match(security *storage.SecurityContext) []*v1.Alert_Violation {
+func (p *addCapMatcherImpl) match(security *storage.SecurityContext) []*storage.Alert_Violation {
 	if security == nil {
 		return nil
 	}
@@ -44,9 +43,9 @@ func (p *addCapMatcherImpl) match(security *storage.SecurityContext) []*v1.Alert
 		}
 	}
 
-	var violations []*v1.Alert_Violation
+	var violations []*storage.Alert_Violation
 	if len(p.addCap) == matchedCap {
-		violations = append(violations, &v1.Alert_Violation{
+		violations = append(violations, &storage.Alert_Violation{
 			Message: fmt.Sprintf("Container with add capabilities %+v matches policy %+v", security.GetAddCapabilities(), p.proto.GetFields().GetAddCapabilities()),
 		})
 	}

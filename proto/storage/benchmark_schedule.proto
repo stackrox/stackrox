@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+
+package storage;
+
+message BenchmarkSchedule {
+    string id                              = 1;
+    string benchmark_id                    = 2;
+    string benchmark_name                  = 3;
+    string day                             = 4;
+    string hour                            = 5;
+    int64 timezone_offset                  = 6;
+    google.protobuf.Timestamp last_updated = 7;
+    repeated string cluster_ids            = 8;
+    repeated string notifiers              = 9;
+}

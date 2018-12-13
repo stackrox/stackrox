@@ -124,7 +124,7 @@ func newSecretTypeQuery(_ v1.SearchCategory, field string, value string) (query.
 }
 
 func newViolationStateQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
-	return evaluateEnum(value, field, v1.ViolationState_name)
+	return evaluateEnum(value, field, storage.ViolationState_name)
 }
 
 func typeQuery(category v1.SearchCategory) query.Query {

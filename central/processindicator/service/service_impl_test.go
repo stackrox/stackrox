@@ -4,20 +4,21 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestIndicatorsToGroupedResponses(t *testing.T) {
 	var cases = []struct {
 		name       string
-		indicators []*v1.ProcessIndicator
+		indicators []*storage.ProcessIndicator
 		nameGroups []*v1.ProcessNameGroup
 	}{
 		{
 			name: "test grouping",
-			indicators: []*v1.ProcessIndicator{
+			indicators: []*storage.ProcessIndicator{
 				{
-					Signal: &v1.ProcessSignal{
+					Signal: &storage.ProcessSignal{
 						Id:           "1",
 						ExecFilePath: "cat",
 						Args:         "hello",
@@ -25,7 +26,7 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 					},
 				},
 				{
-					Signal: &v1.ProcessSignal{
+					Signal: &storage.ProcessSignal{
 						Id:           "2",
 						ExecFilePath: "cat",
 						Args:         "hello",
@@ -33,7 +34,7 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 					},
 				},
 				{
-					Signal: &v1.ProcessSignal{
+					Signal: &storage.ProcessSignal{
 						Id:           "3",
 						ExecFilePath: "cat",
 						Args:         "boo",
@@ -41,7 +42,7 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 					},
 				},
 				{
-					Signal: &v1.ProcessSignal{
+					Signal: &storage.ProcessSignal{
 						Id:           "4",
 						ExecFilePath: "blah",
 						Args:         "boo",
@@ -56,9 +57,9 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 					Groups: []*v1.ProcessGroup{
 						{
 							Args: "boo",
-							Signals: []*v1.ProcessIndicator{
+							Signals: []*storage.ProcessIndicator{
 								{
-									Signal: &v1.ProcessSignal{
+									Signal: &storage.ProcessSignal{
 										Id:           "4",
 										ExecFilePath: "blah",
 										Args:         "boo",
@@ -75,9 +76,9 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 					Groups: []*v1.ProcessGroup{
 						{
 							Args: "boo",
-							Signals: []*v1.ProcessIndicator{
+							Signals: []*storage.ProcessIndicator{
 								{
-									Signal: &v1.ProcessSignal{
+									Signal: &storage.ProcessSignal{
 										Id:           "3",
 										ExecFilePath: "cat",
 										Args:         "boo",
@@ -88,9 +89,9 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 						},
 						{
 							Args: "hello",
-							Signals: []*v1.ProcessIndicator{
+							Signals: []*storage.ProcessIndicator{
 								{
-									Signal: &v1.ProcessSignal{
+									Signal: &storage.ProcessSignal{
 										Id:           "1",
 										ExecFilePath: "cat",
 										Args:         "hello",
@@ -98,7 +99,7 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 									},
 								},
 								{
-									Signal: &v1.ProcessSignal{
+									Signal: &storage.ProcessSignal{
 										Id:           "2",
 										ExecFilePath: "cat",
 										Args:         "hello",

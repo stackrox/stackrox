@@ -8,6 +8,7 @@ import (
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -65,7 +66,7 @@ func (s *serviceImpl) GetProcessesByDeployment(_ context.Context, req *v1.GetPro
 	}, nil
 }
 
-func sortIndicators(indicators []*v1.ProcessIndicator) {
+func sortIndicators(indicators []*storage.ProcessIndicator) {
 	sort.SliceStable(indicators, func(i, j int) bool {
 		i1, i2 := indicators[i], indicators[j]
 		return protoconv.CompareProtoTimestamps(i1.GetSignal().GetTime(), i2.GetSignal().GetTime()) == -1
@@ -73,14 +74,14 @@ func sortIndicators(indicators []*v1.ProcessIndicator) {
 }
 
 // IndicatorsToGroupedResponses rearranges process indicator storage items into API process name group items.
-func IndicatorsToGroupedResponses(indicators []*v1.ProcessIndicator) []*v1.ProcessNameGroup {
-	processGroups := make(map[string]map[string][]*v1.ProcessIndicator)
+func IndicatorsToGroupedResponses(indicators []*storage.ProcessIndicator) []*v1.ProcessNameGroup {
+	processGroups := make(map[string]map[string][]*storage.ProcessIndicator)
 	processNameToContainers := make(map[string]map[string]struct{})
 	for _, i := range indicators {
 		fullProcessName := i.GetSignal().GetExecFilePath()
 		nameMap, ok := processGroups[fullProcessName]
 		if !ok {
-			nameMap = make(map[string][]*v1.ProcessIndicator)
+			nameMap = make(map[string][]*storage.ProcessIndicator)
 			processGroups[fullProcessName] = nameMap
 			processNameToContainers[fullProcessName] = make(map[string]struct{})
 		}

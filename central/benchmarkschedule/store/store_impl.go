@@ -9,6 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -18,8 +19,8 @@ type storeImpl struct {
 	*bolt.DB
 }
 
-func (b *storeImpl) getBenchmarkSchedule(id string, bucket *bolt.Bucket) (schedule *v1.BenchmarkSchedule, exists bool, err error) {
-	schedule = new(v1.BenchmarkSchedule)
+func (b *storeImpl) getBenchmarkSchedule(id string, bucket *bolt.Bucket) (schedule *storage.BenchmarkSchedule, exists bool, err error) {
+	schedule = new(storage.BenchmarkSchedule)
 	val := bucket.Get([]byte(id))
 	if val == nil {
 		return
@@ -30,7 +31,7 @@ func (b *storeImpl) getBenchmarkSchedule(id string, bucket *bolt.Bucket) (schedu
 }
 
 // GetBenchmarkSchedule returns a benchmark schedule with given id.
-func (b *storeImpl) GetBenchmarkSchedule(id string) (schedule *v1.BenchmarkSchedule, exists bool, err error) {
+func (b *storeImpl) GetBenchmarkSchedule(id string) (schedule *storage.BenchmarkSchedule, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "BenchmarkSchedule")
 	err = b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(benchmarkScheduleBucket))
@@ -41,13 +42,13 @@ func (b *storeImpl) GetBenchmarkSchedule(id string) (schedule *v1.BenchmarkSched
 }
 
 // GetBenchmarkSchedules retrieves benchmark schedules matching the request from bolt
-func (b *storeImpl) GetBenchmarkSchedules(request *v1.GetBenchmarkSchedulesRequest) ([]*v1.BenchmarkSchedule, error) {
+func (b *storeImpl) GetBenchmarkSchedules(request *v1.GetBenchmarkSchedulesRequest) ([]*storage.BenchmarkSchedule, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "BenchmarkSchedule")
-	var schedules []*v1.BenchmarkSchedule
+	var schedules []*storage.BenchmarkSchedule
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(benchmarkScheduleBucket))
 		err := b.ForEach(func(k, v []byte) error {
-			var schedule v1.BenchmarkSchedule
+			var schedule storage.BenchmarkSchedule
 			if err := proto.Unmarshal(v, &schedule); err != nil {
 				return err
 			}
@@ -72,7 +73,7 @@ func (b *storeImpl) GetBenchmarkSchedules(request *v1.GetBenchmarkSchedulesReque
 }
 
 // AddBenchmarkSchedule adds a benchmark schedule to bolt
-func (b *storeImpl) AddBenchmarkSchedule(schedule *v1.BenchmarkSchedule) (string, error) {
+func (b *storeImpl) AddBenchmarkSchedule(schedule *storage.BenchmarkSchedule) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "BenchmarkSchedule")
 	schedule.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
@@ -95,7 +96,7 @@ func (b *storeImpl) AddBenchmarkSchedule(schedule *v1.BenchmarkSchedule) (string
 }
 
 // UpdateBenchmarkSchedule updates a benchmark schedule to bolt
-func (b *storeImpl) UpdateBenchmarkSchedule(schedule *v1.BenchmarkSchedule) error {
+func (b *storeImpl) UpdateBenchmarkSchedule(schedule *storage.BenchmarkSchedule) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "BenchmarkSchedule")
 	return b.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(benchmarkScheduleBucket))

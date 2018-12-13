@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/enrichment"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"golang.org/x/time/rate"
@@ -27,7 +26,7 @@ var (
 
 // A Manager manages deployment/policy lifecycle updates.
 type Manager interface {
-	IndicatorAdded(indicator *v1.ProcessIndicator, injector pipeline.EnforcementInjector) error
+	IndicatorAdded(indicator *storage.ProcessIndicator, injector pipeline.EnforcementInjector) error
 	// DeploymentUpdated processes a new or updated deployment, generating and updating alerts in the store and returning
 	// enforcement action.
 	DeploymentUpdated(deployment *storage.Deployment) (string, storage.EnforcementAction, error)

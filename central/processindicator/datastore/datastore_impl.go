@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -26,19 +27,19 @@ func (ds *datastoreImpl) Search(q *v1.Query) ([]pkgSearch.Result, error) {
 	return ds.searcher.Search(q)
 }
 
-func (ds *datastoreImpl) SearchRawProcessIndicators(q *v1.Query) ([]*v1.ProcessIndicator, error) {
+func (ds *datastoreImpl) SearchRawProcessIndicators(q *v1.Query) ([]*storage.ProcessIndicator, error) {
 	return ds.searcher.SearchRawProcessIndicators(q)
 }
 
-func (ds *datastoreImpl) GetProcessIndicator(id string) (*v1.ProcessIndicator, bool, error) {
+func (ds *datastoreImpl) GetProcessIndicator(id string) (*storage.ProcessIndicator, bool, error) {
 	return ds.storage.GetProcessIndicator(id)
 }
 
-func (ds *datastoreImpl) GetProcessIndicators() ([]*v1.ProcessIndicator, error) {
+func (ds *datastoreImpl) GetProcessIndicators() ([]*storage.ProcessIndicator, error) {
 	return ds.storage.GetProcessIndicators()
 }
 
-func (ds *datastoreImpl) AddProcessIndicators(indicators ...*v1.ProcessIndicator) error {
+func (ds *datastoreImpl) AddProcessIndicators(indicators ...*storage.ProcessIndicator) error {
 	removedIndicators, err := ds.storage.AddProcessIndicators(indicators...)
 	if err != nil {
 		return err
@@ -70,7 +71,7 @@ func (ds *datastoreImpl) AddProcessIndicators(indicators ...*v1.ProcessIndicator
 	return ds.indexer.AddProcessIndicators(filteredIndicators)
 }
 
-func (ds *datastoreImpl) AddProcessIndicator(i *v1.ProcessIndicator) error {
+func (ds *datastoreImpl) AddProcessIndicator(i *storage.ProcessIndicator) error {
 	removedIndicator, err := ds.storage.AddProcessIndicator(i)
 	if err != nil {
 		return fmt.Errorf("adding indicator to bolt: %s", err)

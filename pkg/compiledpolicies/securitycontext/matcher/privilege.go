@@ -3,7 +3,6 @@ package matcher
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -26,13 +25,13 @@ type privilegeMatcherImpl struct {
 	privileged *bool
 }
 
-func (p *privilegeMatcherImpl) match(security *storage.SecurityContext) []*v1.Alert_Violation {
+func (p *privilegeMatcherImpl) match(security *storage.SecurityContext) []*storage.Alert_Violation {
 	if security == nil || security.GetPrivileged() != *p.privileged {
 		return nil
 	}
 
-	var violations []*v1.Alert_Violation
-	violations = append(violations, &v1.Alert_Violation{
+	var violations []*storage.Alert_Violation
+	violations = append(violations, &storage.Alert_Violation{
 		Message: fmt.Sprintf("Container privileged set to %t matched configured policy", security.GetPrivileged()),
 	})
 	return violations

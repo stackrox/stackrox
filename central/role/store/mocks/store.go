@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
 
@@ -34,7 +34,7 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // AddRole mocks base method
-func (m *MockStore) AddRole(arg0 *v1.Role) error {
+func (m *MockStore) AddRole(arg0 *storage.Role) error {
 	ret := m.ctrl.Call(m, "AddRole", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
@@ -46,9 +46,9 @@ func (mr *MockStoreMockRecorder) AddRole(arg0 interface{}) *gomock.Call {
 }
 
 // GetAllRoles mocks base method
-func (m *MockStore) GetAllRoles() ([]*v1.Role, error) {
+func (m *MockStore) GetAllRoles() ([]*storage.Role, error) {
 	ret := m.ctrl.Call(m, "GetAllRoles")
-	ret0, _ := ret[0].([]*v1.Role)
+	ret0, _ := ret[0].([]*storage.Role)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -59,9 +59,9 @@ func (mr *MockStoreMockRecorder) GetAllRoles() *gomock.Call {
 }
 
 // GetRole mocks base method
-func (m *MockStore) GetRole(arg0 string) (*v1.Role, error) {
+func (m *MockStore) GetRole(arg0 string) (*storage.Role, error) {
 	ret := m.ctrl.Call(m, "GetRole", arg0)
-	ret0, _ := ret[0].(*v1.Role)
+	ret0, _ := ret[0].(*storage.Role)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -72,9 +72,9 @@ func (mr *MockStoreMockRecorder) GetRole(arg0 interface{}) *gomock.Call {
 }
 
 // GetRolesBatch mocks base method
-func (m *MockStore) GetRolesBatch(arg0 []string) ([]*v1.Role, error) {
+func (m *MockStore) GetRolesBatch(arg0 []string) ([]*storage.Role, error) {
 	ret := m.ctrl.Call(m, "GetRolesBatch", arg0)
-	ret0, _ := ret[0].([]*v1.Role)
+	ret0, _ := ret[0].([]*storage.Role)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -97,7 +97,7 @@ func (mr *MockStoreMockRecorder) RemoveRole(arg0 interface{}) *gomock.Call {
 }
 
 // UpdateRole mocks base method
-func (m *MockStore) UpdateRole(arg0 *v1.Role) error {
+func (m *MockStore) UpdateRole(arg0 *storage.Role) error {
 	ret := m.ctrl.Call(m, "UpdateRole", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0

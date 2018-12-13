@@ -12,6 +12,7 @@ import (
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -117,7 +118,7 @@ func collector(sensorEndpoint string, maxProcesses int, processInterval time.Dur
 
 func generateSignals(containerID string) *sensor.SignalStreamMessage {
 	processListSize := len(processList)
-	processSignal := v1.ProcessSignal{
+	processSignal := storage.ProcessSignal{
 		Id:           uuid.NewV4().String(),
 		ContainerId:  containerID,
 		Name:         fmt.Sprintf("%s-%d", processList[rand.Int()%(processListSize-1)], rand.Int()%processSize),

@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/role/store"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -55,7 +56,7 @@ func (s *serviceImpl) GetRoles(context.Context, *v1.Empty) (*v1.GetRolesResponse
 	return &v1.GetRolesResponse{Roles: roles}, nil
 }
 
-func (s *serviceImpl) GetRole(ctx context.Context, id *v1.ResourceByID) (*v1.Role, error) {
+func (s *serviceImpl) GetRole(ctx context.Context, id *v1.ResourceByID) (*storage.Role, error) {
 	role, err := s.roleStore.GetRole(id.GetId())
 	if err != nil {
 		return nil, err
@@ -66,8 +67,8 @@ func (s *serviceImpl) GetRole(ctx context.Context, id *v1.ResourceByID) (*v1.Rol
 	return role, nil
 }
 
-func (s *serviceImpl) CreateRole(ctx context.Context, role *v1.Role) (*v1.Empty, error) {
-	if role.GetGlobalAccess() != v1.Access_NO_ACCESS {
+func (s *serviceImpl) CreateRole(ctx context.Context, role *storage.Role) (*v1.Empty, error) {
+	if role.GetGlobalAccess() != storage.Access_NO_ACCESS {
 		return nil, status.Errorf(codes.InvalidArgument, "Setting global access is not supported.")
 	}
 	err := s.roleStore.AddRole(role)
@@ -77,8 +78,8 @@ func (s *serviceImpl) CreateRole(ctx context.Context, role *v1.Role) (*v1.Empty,
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) UpdateRole(ctx context.Context, role *v1.Role) (*v1.Empty, error) {
-	if role.GetGlobalAccess() != v1.Access_NO_ACCESS {
+func (s *serviceImpl) UpdateRole(ctx context.Context, role *storage.Role) (*v1.Empty, error) {
+	if role.GetGlobalAccess() != storage.Access_NO_ACCESS {
 		return nil, status.Errorf(codes.InvalidArgument, "Setting global access is not supported.")
 	}
 	err := s.roleStore.UpdateRole(role)

@@ -25,21 +25,21 @@ var (
 	twoDaysAgoProcess = getProcessIndicator(protoconv.ConvertTimeToTimestamp(time.Now().Add(-2 * 24 * time.Hour)))
 )
 
-func getProcessIndicator(timestamp *ptypes.Timestamp) *v1.ProcessIndicator {
-	return &v1.ProcessIndicator{
-		Signal: &v1.ProcessSignal{
+func getProcessIndicator(timestamp *ptypes.Timestamp) *storage.ProcessIndicator {
+	return &storage.ProcessIndicator{
+		Signal: &storage.ProcessSignal{
 			Name: "apt-get",
 			Time: timestamp,
 		},
 	}
 }
 
-func getFakeRuntimeAlert(indicators ...*v1.ProcessIndicator) *v1.Alert {
-	v := &v1.Alert_Violation{Processes: indicators}
+func getFakeRuntimeAlert(indicators ...*storage.ProcessIndicator) *storage.Alert {
+	v := &storage.Alert_Violation{Processes: indicators}
 	builders.UpdateRuntimeAlertViolationMessage(v)
-	return &v1.Alert{
+	return &storage.Alert{
 		LifecycleStage: storage.LifecycleStage_RUNTIME,
-		Violations:     []*v1.Alert_Violation{v},
+		Violations:     []*storage.Alert_Violation{v},
 	}
 }
 
@@ -99,14 +99,14 @@ func queryHasFields(fields ...search.FieldLabel) func(interface{}) bool {
 }
 
 func (suite *AlertManagerTestSuite) TestGetAlertsByPolicy() {
-	suite.alertsMock.EXPECT().SearchRawAlerts(testutils.PredMatcher("query for violation state, policy", queryHasFields(search.ViolationState, search.PolicyID))).Return(([]*v1.Alert)(nil), nil)
+	suite.alertsMock.EXPECT().SearchRawAlerts(testutils.PredMatcher("query for violation state, policy", queryHasFields(search.ViolationState, search.PolicyID))).Return(([]*storage.Alert)(nil), nil)
 
 	err := suite.alertManager.AlertAndNotify(nil, WithPolicyID("pid"))
 	suite.NoError(err, "update should succeed")
 }
 
 func (suite *AlertManagerTestSuite) TestGetAlertsByDeployment() {
-	suite.alertsMock.EXPECT().SearchRawAlerts(testutils.PredMatcher("query for violation state, deployment", queryHasFields(search.ViolationState, search.DeploymentID))).Return(([]*v1.Alert)(nil), nil)
+	suite.alertsMock.EXPECT().SearchRawAlerts(testutils.PredMatcher("query for violation state, deployment", queryHasFields(search.ViolationState, search.DeploymentID))).Return(([]*storage.Alert)(nil), nil)
 
 	err := suite.alertManager.AlertAndNotify(nil, WithDeploymentIDs("did"))
 	suite.NoError(err, "update should succeed")
@@ -158,7 +158,7 @@ func (suite *AlertManagerTestSuite) TestSendsNotificationsForNewAlerts() {
 	suite.NoError(err, "update should succeed")
 }
 
-func (suite *AlertManagerTestSuite) makeAlertsMockReturn(alerts ...*v1.Alert) {
+func (suite *AlertManagerTestSuite) makeAlertsMockReturn(alerts ...*storage.Alert) {
 	suite.alertsMock.EXPECT().SearchRawAlerts(
 		testutils.PredMatcher("query for violation state, deployment, policy", queryHasFields(search.ViolationState, search.DeploymentID, search.PolicyID))).
 		Return(alerts, nil)
@@ -171,7 +171,7 @@ func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesForNonRuntime() {
 func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithNoOldAlert() {
 	suite.makeAlertsMockReturn()
 	alert := getFakeRuntimeAlert(nowProcess)
-	clonedAlert := protoutils.CloneV1Alert(alert)
+	clonedAlert := protoutils.CloneStorageAlert(alert)
 	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(alert))
 	suite.Equal(clonedAlert, alert)
 }
@@ -184,7 +184,7 @@ func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithTheSameAlert() 
 func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithAnOldAlert() {
 	suite.makeAlertsMockReturn(getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess))
 	alert := getFakeRuntimeAlert(nowProcess)
-	clonedAlert := protoutils.CloneV1Alert(alert)
+	clonedAlert := protoutils.CloneStorageAlert(alert)
 	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(alert))
 	suite.Equal(clonedAlert, alert)
 }
@@ -202,7 +202,7 @@ func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesWithSuperOldAlert()
 func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesActuallyTrims() {
 	suite.makeAlertsMockReturn(getFakeRuntimeAlert(twoDaysAgoProcess, yesterdayProcess))
 	alert := getFakeRuntimeAlert(yesterdayProcess, nowProcess)
-	clonedAlert := protoutils.CloneV1Alert(alert)
+	clonedAlert := protoutils.CloneStorageAlert(alert)
 	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(alert))
 	suite.NotEqual(clonedAlert, alert)
 	suite.Len(alert.GetViolations()[0].GetProcesses(), 1)
@@ -212,9 +212,9 @@ func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesActuallyTrims() {
 func TestMergeProcessesFromOldIntoNew(t *testing.T) {
 	for _, c := range []struct {
 		desc           string
-		old            *v1.Alert
-		new            *v1.Alert
-		expectedNew    *v1.Alert
+		old            *storage.Alert
+		new            *storage.Alert
+		expectedNew    *storage.Alert
 		expectedOutput bool
 	}{
 		{
@@ -260,8 +260,8 @@ func TestMergeProcessesFromOldIntoNew(t *testing.T) {
 ///////////////////////////////////////
 
 // Policies are set up so that policy one is violated by deployment 1, 2 is violated by 2, etc.
-func getAlerts() []*v1.Alert {
-	return []*v1.Alert{
+func getAlerts() []*storage.Alert {
+	return []*storage.Alert{
 		{
 			Id:         "alert1",
 			Policy:     getPolicies()[0],

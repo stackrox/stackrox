@@ -4,11 +4,11 @@ import static Services.getPolicies
 import static Services.getViolations
 import static Services.waitForViolation
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
-import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlert
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest.RequestGroup
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsGroupResponse
+import io.stackrox.proto.storage.AlertOuterClass.ListAlert
 import org.junit.Assume
 
 import groups.BAT

@@ -22,7 +22,7 @@ import (
 )
 
 type indicatorWithInjector struct {
-	indicator           *v1.ProcessIndicator
+	indicator           *storage.ProcessIndicator
 	enforcementInjector pipeline.EnforcementInjector
 }
 
@@ -77,7 +77,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 	}
 
 	// Map copiedQueue to slice
-	indicatorSlice := make([]*v1.ProcessIndicator, 0, len(copiedQueue))
+	indicatorSlice := make([]*storage.ProcessIndicator, 0, len(copiedQueue))
 	for _, i := range copiedQueue {
 		indicatorSlice = append(indicatorSlice, i.indicator)
 	}
@@ -124,7 +124,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 	}
 }
 
-func (m *managerImpl) addToQueue(indicator *v1.ProcessIndicator, injector pipeline.EnforcementInjector) {
+func (m *managerImpl) addToQueue(indicator *storage.ProcessIndicator, injector pipeline.EnforcementInjector) {
 	m.queueLock.Lock()
 	defer m.queueLock.Unlock()
 
@@ -134,7 +134,7 @@ func (m *managerImpl) addToQueue(indicator *v1.ProcessIndicator, injector pipeli
 	}
 }
 
-func (m *managerImpl) IndicatorAdded(indicator *v1.ProcessIndicator, injector pipeline.EnforcementInjector) error {
+func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator, injector pipeline.EnforcementInjector) error {
 	if indicator.GetId() == "" {
 		return fmt.Errorf("invalid indicator received: %s, id was empty", proto.MarshalTextString(indicator))
 	}
@@ -175,7 +175,7 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 	// Asynchronously update all deployments' risk after processing.
 	defer m.enricher.ReprocessRiskAsync()
 
-	var presentAlerts []*v1.Alert
+	var presentAlerts []*storage.Alert
 
 	// Add policy to set.
 	if policies.AppliesAtDeployTime(policy) {
@@ -229,7 +229,7 @@ func (m *managerImpl) RemovePolicy(policyID string) error {
 }
 
 // determineEnforcement returns the alert and its enforcement action to use from the input list (if any have enforcement).
-func determineEnforcement(alerts []*v1.Alert) (alertID string, action storage.EnforcementAction) {
+func determineEnforcement(alerts []*storage.Alert) (alertID string, action storage.EnforcementAction) {
 	for _, alert := range alerts {
 		if alert.GetEnforcement().GetAction() == storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT {
 			return alert.GetId(), storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT
@@ -255,7 +255,7 @@ func uniqueDeploymentIDs(indicatorsToInfo map[string]indicatorWithInjector) []st
 	return m.AsSlice()
 }
 
-func containersToKill(alerts []*v1.Alert, indicatorsToInfo map[string]indicatorWithInjector) map[string]indicatorWithInjector {
+func containersToKill(alerts []*storage.Alert, indicatorsToInfo map[string]indicatorWithInjector) map[string]indicatorWithInjector {
 	containersSet := make(map[string]indicatorWithInjector)
 
 	for _, alert := range alerts {
