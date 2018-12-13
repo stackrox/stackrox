@@ -230,7 +230,7 @@ upload-coverage:
 
 	@echo 'mode: set' > combined_coverage.dat
 	@find ./bazel-testlogs/ -name 'coverage.dat' | xargs -I {} cat "{}" | grep -v 'mode: set' | grep -v vendor >> combined_coverage.dat
-	goveralls -coverprofile="combined_coverage.dat" -ignore 'central/graphql/resolvers/generated.go' -service=circle-ci -repotoken="$$COVERALLS_REPO_TOKEN"
+	goveralls -coverprofile="combined_coverage.dat" -ignore 'central/graphql/resolvers/generated.go,generated/storage/*,generated/*/*/*' -service=circle-ci -repotoken="$$COVERALLS_REPO_TOKEN"
 
 .PHONY: coverage
 coverage:
