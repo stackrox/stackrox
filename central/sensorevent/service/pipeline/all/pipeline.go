@@ -10,7 +10,8 @@ func NewPipeline(deploymentPipeline,
 	networkPolicyPipeline,
 	namespacePipeline,
 	secretPipeline,
-	clusterStatusPipeline pipeline.Pipeline) pipeline.Pipeline {
+	clusterStatusPipeline,
+	providerMetadataPipeline pipeline.Pipeline) pipeline.Pipeline {
 	return &pipelineImpl{
 		deploymentPipeline:       deploymentPipeline,
 		processIndicatorPipeline: processIndicatorPipeline,
@@ -18,5 +19,6 @@ func NewPipeline(deploymentPipeline,
 		namespacePipeline:        namespacePipeline,
 		secretPipeline:           secretPipeline,
 		nodePipeline:             clusterStatusPipeline,
+		providerMetadataPipeline: providerMetadataPipeline,
 	}
 }

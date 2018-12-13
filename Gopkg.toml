@@ -194,3 +194,7 @@ required = ["golang.org/x/tools/go/ast/astutil"]
 [[constraint]]
   name = "github.com/gobuffalo/packr"
   version = "v2.0.0-rc.12"
+
+[[constraint]]
+  name = "cloud.google.com/go"
+  version = "0.34.0"

@@ -4,13 +4,14 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import "api/v1/indicator.proto";
-
+import "storage/cluster.proto";
 import "storage/deployment.proto";
 import "storage/namespace.proto";
 import "storage/network_policy.proto";
 import "storage/node.proto";
 import "storage/secret.proto";
 import "storage/policy.proto";
+
 
 package v1;
 
@@ -36,6 +37,7 @@ message SensorEvent {
 
         // Indicators
         ProcessIndicator process_indicator = 8;
+        storage.ProviderMetadata provider_metadata = 10;
     }
 }
 

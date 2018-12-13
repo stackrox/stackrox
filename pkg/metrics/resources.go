@@ -14,4 +14,5 @@ const (
 	Namespace
 	NetworkPolicy
 	Node
+	ProviderMetadata
 )

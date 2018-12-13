@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/providers"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"k8s.io/client-go/informers"
@@ -107,7 +108,24 @@ func (h resourceEventHandler) OnDelete(obj interface{}) {
 	h.listener.sendResourceEvent(obj, pkgV1.ResourceAction_REMOVE_RESOURCE, h.deploymentType)
 }
 
+func (k *kubernetesListener) sendClusterMetadata() {
+	m := providers.GetMetadata()
+	if m != nil {
+		k.eventsC <- &pkgV1.SensorEvent{
+			Id:     "metadata",
+			Action: pkgV1.ResourceAction_UPDATE_RESOURCE, // updates a cluster object
+			Resource: &pkgV1.SensorEvent_ProviderMetadata{
+				ProviderMetadata: m,
+			},
+		}
+		return
+	}
+	logger.Infof("No Cloud Provider metadata is found")
+}
+
 func (k *kubernetesListener) Start() {
+	k.sendClusterMetadata()
+
 	k8sFactory := informers.NewSharedInformerFactory(k.clients.k8s, resyncPeriod)
 	podInformer := k8sFactory.Core().V1().Pods()
 	deploymentResources := map[string]informerGetter{

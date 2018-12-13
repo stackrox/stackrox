@@ -122,3 +122,15 @@ func (m *MockStore) UpdateClusterContactTime(arg0 string, arg1 time.Time) error 
 func (mr *MockStoreMockRecorder) UpdateClusterContactTime(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterContactTime", reflect.TypeOf((*MockStore)(nil).UpdateClusterContactTime), arg0, arg1)
 }
+
+// UpdateMetadata mocks base method
+func (m *MockStore) UpdateMetadata(arg0 string, arg1 *storage.ProviderMetadata) error {
+	ret := m.ctrl.Call(m, "UpdateMetadata", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateMetadata indicates an expected call of UpdateMetadata
+func (mr *MockStoreMockRecorder) UpdateMetadata(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMetadata", reflect.TypeOf((*MockStore)(nil).UpdateMetadata), arg0, arg1)
+}

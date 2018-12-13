@@ -27,6 +27,7 @@ type DataStore interface {
 	UpdateCluster(cluster *storage.Cluster) error
 	RemoveCluster(id string) error
 	UpdateClusterContactTime(id string, t time.Time) error
+	UpdateMetadata(id string, metadata *storage.ProviderMetadata) error
 }
 
 // New returns an instance of DataStore.

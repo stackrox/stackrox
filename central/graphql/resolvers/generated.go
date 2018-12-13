@@ -548,6 +548,11 @@ func (resolver *clusterResolver) Name() string {
 	return value
 }
 
+func (resolver *clusterResolver) ProviderMetadata() (*providerMetadataResolver, error) {
+	value := resolver.data.GetProviderMetadata()
+	return resolver.root.wrapProviderMetadata(value, true, nil)
+}
+
 func (resolver *clusterResolver) RuntimeSupport() bool {
 	value := resolver.data.GetRuntimeSupport()
 	return value
@@ -1267,6 +1272,39 @@ func (resolver *generateTokenResponseResolver) Metadata() (*tokenMetadataResolve
 
 func (resolver *generateTokenResponseResolver) Token() string {
 	value := resolver.data.GetToken()
+	return value
+}
+
+type googleProviderMetadataResolver struct {
+	root *Resolver
+	data *storage.GoogleProviderMetadata
+}
+
+func (resolver *Resolver) wrapGoogleProviderMetadata(value *storage.GoogleProviderMetadata, ok bool, err error) (*googleProviderMetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &googleProviderMetadataResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapGoogleProviderMetadatas(values []*storage.GoogleProviderMetadata, err error) ([]*googleProviderMetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*googleProviderMetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &googleProviderMetadataResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *googleProviderMetadataResolver) ClusterName() string {
+	value := resolver.data.GetClusterName()
+	return value
+}
+
+func (resolver *googleProviderMetadataResolver) Project() string {
+	value := resolver.data.GetProject()
 	return value
 }
 
@@ -2768,6 +2806,55 @@ func (resolver *processSignalResolver) Time() (graphql.Time, error) {
 func (resolver *processSignalResolver) Uid() int32 {
 	value := resolver.data.GetUid()
 	return int32(value)
+}
+
+type providerMetadataResolver struct {
+	root *Resolver
+	data *storage.ProviderMetadata
+}
+
+func (resolver *Resolver) wrapProviderMetadata(value *storage.ProviderMetadata, ok bool, err error) (*providerMetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &providerMetadataResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapProviderMetadatas(values []*storage.ProviderMetadata, err error) ([]*providerMetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*providerMetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &providerMetadataResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *providerMetadataResolver) Region() string {
+	value := resolver.data.GetRegion()
+	return value
+}
+
+func (resolver *providerMetadataResolver) Zone() string {
+	value := resolver.data.GetZone()
+	return value
+}
+
+type providerMetadataProviderResolver struct {
+	resolver *providerMetadataResolver
+}
+
+func (resolver *providerMetadataResolver) Provider() *providerMetadataProviderResolver {
+	return &providerMetadataProviderResolver{resolver}
+}
+
+func (resolver *providerMetadataProviderResolver) ToGoogleProviderMetadata() (*googleProviderMetadataResolver, bool) {
+	value := resolver.resolver.data.GetGoogle()
+	if value != nil {
+		return &googleProviderMetadataResolver{resolver.resolver.root, value}, true
+	}
+	return nil, false
 }
 
 type resourcePolicyResolver struct {

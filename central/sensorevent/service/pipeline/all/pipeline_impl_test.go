@@ -24,6 +24,7 @@ type PipelineTestSuite struct {
 	namMock *mocks.MockPipeline
 	secMock *mocks.MockPipeline
 	cstMock *mocks.MockPipeline
+	pmMock  *mocks.MockPipeline
 
 	tested pipeline.Pipeline
 
@@ -38,13 +39,15 @@ func (suite *PipelineTestSuite) SetupTest() {
 	suite.namMock = mocks.NewMockPipeline(suite.mockCtrl)
 	suite.secMock = mocks.NewMockPipeline(suite.mockCtrl)
 	suite.cstMock = mocks.NewMockPipeline(suite.mockCtrl)
+	suite.pmMock = mocks.NewMockPipeline(suite.mockCtrl)
 
 	suite.tested = NewPipeline(suite.depMock,
 		suite.proMock,
 		suite.netMock,
 		suite.namMock,
 		suite.secMock,
-		suite.cstMock)
+		suite.cstMock,
+		suite.pmMock)
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {

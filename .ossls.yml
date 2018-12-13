@@ -549,6 +549,15 @@ dependencies:
     attribution:
     - 2016 Jaume Sanchez
 
+  vendor/cloud.google.com/go:
+    url: https://github.com/googleapis/google-cloud-go
+    license: Apache-2.0
+    files:
+      AUTHORS: 10fdfb14495edfb4f075aa6730ca7a094f77e1b014e0aa396a20b63fa07bd014
+      LICENSE: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+    attribution:
+    - 2014 Google LLC
+
   vendor/github.com/NYTimes/gziphandler:
     url: https://github.com/NYTimes/gziphandler
     license: Apache-2.0

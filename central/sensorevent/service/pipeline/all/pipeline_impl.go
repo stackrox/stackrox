@@ -19,6 +19,7 @@ type pipelineImpl struct {
 	namespacePipeline        pipeline.Pipeline
 	secretPipeline           pipeline.Pipeline
 	nodePipeline             pipeline.Pipeline
+	providerMetadataPipeline pipeline.Pipeline
 }
 
 func actionToOperation(action v1.ResourceAction) metrics.Op {
@@ -60,6 +61,9 @@ func (s *pipelineImpl) Run(event *v1.SensorEvent, injector pipeline.EnforcementI
 	case *v1.SensorEvent_Node:
 		resource = metrics.Node
 		p = s.nodePipeline
+	case *v1.SensorEvent_ProviderMetadata:
+		resource = metrics.ProviderMetadata
+		p = s.providerMetadataPipeline
 	case nil:
 		return fmt.Errorf("Resource field is empty")
 	default:

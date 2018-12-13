@@ -1719,6 +1719,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "cloud.google.com/go/compute/metadata",
     "cloud.google.com/go/containeranalysis/apiv1beta1",
     "github.com/NYTimes/gziphandler",
     "github.com/andygrunwald/go-jira",

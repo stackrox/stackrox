@@ -15,6 +15,20 @@ enum ClusterType {
     DOCKER_EE_CLUSTER  = 4;
 }
 
+message GoogleProviderMetadata {
+    string project      = 1;
+    string cluster_name = 2;
+}
+
+message ProviderMetadata {
+    string region = 1;
+    string zone   = 2;
+
+    oneof Provider {
+        GoogleProviderMetadata google = 3;
+    }
+}
+
 message Cluster {
     string                    id                   = 1;
     string                    name                 = 2;
@@ -30,6 +44,8 @@ message Cluster {
         SwarmParams      swarm      = 10;
         OpenshiftParams  openshift  = 11;
     }
+
+    ProviderMetadata          provider_metadata    = 12;
 }
 
 message KubernetesParams {

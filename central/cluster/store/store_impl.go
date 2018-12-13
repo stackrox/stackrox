@@ -95,22 +95,26 @@ func (b *storeImpl) AddCluster(cluster *storage.Cluster) (string, error) {
 	return cluster.Id, err
 }
 
+func (b *storeImpl) updateCluster(tx *bolt.Tx, cluster *storage.Cluster) error {
+	bucket := tx.Bucket([]byte(clusterBucket))
+	// If the update is changing the name, check if the name has already been taken
+	if val, _ := secondarykey.GetCurrentUniqueKey(tx, clusterBucket, cluster.GetId()); val != cluster.GetName() {
+		if err := secondarykey.UpdateUniqueKey(tx, clusterBucket, cluster.GetId(), cluster.GetName()); err != nil {
+			return fmt.Errorf("Could not update cluster due to name validation: %s", err)
+		}
+	}
+	bytes, err := proto.Marshal(cluster)
+	if err != nil {
+		return err
+	}
+	return bucket.Put([]byte(cluster.GetId()), bytes)
+}
+
 // UpdateCluster updates a cluster to bolt
 func (b *storeImpl) UpdateCluster(cluster *storage.Cluster) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Cluster")
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(clusterBucket))
-		// If the update is changing the name, check if the name has already been taken
-		if val, _ := secondarykey.GetCurrentUniqueKey(tx, clusterBucket, cluster.GetId()); val != cluster.GetName() {
-			if err := secondarykey.UpdateUniqueKey(tx, clusterBucket, cluster.GetId(), cluster.GetName()); err != nil {
-				return fmt.Errorf("Could not update cluster due to name validation: %s", err)
-			}
-		}
-		bytes, err := proto.Marshal(cluster)
-		if err != nil {
-			return err
-		}
-		return b.Put([]byte(cluster.GetId()), bytes)
+		return b.updateCluster(tx, cluster)
 	})
 }
 
@@ -188,4 +192,21 @@ func (b *storeImpl) getClusterContactTime(tx *bolt.Tx, id string) (*timestamp.Ti
 		return nil, err
 	}
 	return t, nil
+}
+
+// UpdateMetadata updates the cluster with cloud provider metadata
+func (b *storeImpl) UpdateMetadata(id string, metadata *storage.ProviderMetadata) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Cluster")
+
+	return b.Update(func(tx *bolt.Tx) error {
+		cluster, exists, err := b.getCluster(tx, id, tx.Bucket([]byte(clusterBucket)))
+		if err != nil {
+			return err
+		}
+		if !exists {
+			return fmt.Errorf("could not enrich cluster with metadata. Cluster %q does not exist", id)
+		}
+		cluster.ProviderMetadata = metadata
+		return b.updateCluster(tx, cluster)
+	})
 }
