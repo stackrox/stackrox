@@ -41,6 +41,12 @@ setupHelm: &setupHelm
        kubectl apply -f ./deploy/k8s/tillerbind.yaml
        helm init --service-account helm --wait
 
+setupRoxctl: &setupRoxctl
+  run:
+    name: Setup Roxctl from bazel-bin
+    command: |
+      cp bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl $GOPATH/bin/roxctl
+
 setupGCP: &setupGCP
   run:
     name: Setup deployment env
@@ -317,6 +323,7 @@ jobs:
           - generated
           - ui/deps
           - vendor
+          - bazel-bin/roxctl/linux_amd64_pure_stripped
 
       - run:
           name: Comment on PR
@@ -380,6 +387,7 @@ jobs:
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
 
+      - *setupRoxctl
       - *setupGCP
       - *createGKE
       - *deployGKE
@@ -435,6 +443,7 @@ jobs:
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
 
+      - *setupRoxctl
       - *setupGCP
       - *createGKE
       - *setupHelm
@@ -489,6 +498,8 @@ jobs:
       - setup_remote_docker
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
+
+      - *setupRoxctl
       - *setupGCP
       - *createGKE
 
@@ -615,6 +626,7 @@ jobs:
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
 
+      - *setupRoxctl
       - run:
           name: Configure Deployment Environment
           command: |

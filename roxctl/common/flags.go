@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -53,4 +54,12 @@ func AddAuthToRequest(req *http.Request) {
 	} else {
 		req.SetBasicAuth(basic.DefaultUsername, password)
 	}
+}
+
+// GetURL adds the endpoint to the passed path
+func GetURL(path string) string {
+	if !strings.HasPrefix(path, "/") {
+		path += "/"
+	}
+	return fmt.Sprintf("https://%s"+path, endpoint)
 }

@@ -11,6 +11,14 @@ function launch_service {
     fi
 }
 
+function roxctl_cmd {
+    if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
+       roxctl $@
+    else
+       docker run --rm -e ROX_HTPASSWD_AUTH "$MAIN_IMAGE" $@
+    fi
+}
+
 function launch_central {
     local k8s_dir="$1"
 
@@ -24,8 +32,8 @@ function launch_central {
     fi
     EXTRA_ARGS+=("--lb-type=$LOAD_BALANCER")
 
-    docker run --rm -e ROX_HTPASSWD_AUTH "${MAIN_IMAGE}" central generate k8s ${EXTRA_ARGS[@]} --output-format="${OUTPUT_FORMAT}" \
-     --monitoring-password stackrox -i "${MAIN_IMAGE}" "${STORAGE}" > "${k8s_dir}/central.zip"
+    roxctl_cmd central generate k8s ${EXTRA_ARGS[@]} --output-format="${OUTPUT_FORMAT}" --monitoring-password=stackrox \
+     -i "${MAIN_IMAGE}" "${STORAGE}" > "${k8s_dir}/central.zip"
 
     local unzip_dir="${k8s_dir}/central-deploy/"
     rm -rf "${unzip_dir}"
@@ -62,21 +70,28 @@ function launch_central {
 function launch_sensor {
     local k8s_dir="$1"
 
-    local common_params="{ \"params\" : { \"namespace\": \"stackrox\" } }"
-
-    local extra_config=""
+    local extra_config=()
+    local extra_json_config=()
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then
-        extra_config+='"monitoringEndpoint": "monitoring.stackrox:443", '
+        extra_config+=("--monitoring-endpoint=monitoring.stackrox:443")
+        extra_json_config+='"monitoringEndpoint": "monitoring.stackrox:443", '
     fi
-    extra_config+="\"kubernetes\": $common_params }"
 
-    get_cluster_zip localhost:8000 "$CLUSTER" KUBERNETES_CLUSTER "$MAIN_IMAGE" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$RUNTIME_SUPPORT" "$extra_config"
+    # Delete path
+    rm -rf "sensor-${CLUSTER}"
+
+    if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
+        roxctl -p ${ROX_ADMIN_PASSWORD} --endpoint localhost:8000 sensor generate --image="${MAIN_IMAGE}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
+             --runtime="$RUNTIME_SUPPORT" "${extra_config[@]+"${extra_config[@]}"}" k8s
+    else
+        local common_params="{ \"params\" : { \"namespace\": \"stackrox\" } }"
+        extra_json_config+="\"kubernetes\": $common_params }"
+        get_cluster_zip localhost:8000 "$CLUSTER" KUBERNETES_CLUSTER "$MAIN_IMAGE" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$RUNTIME_SUPPORT" "$extra_json_config"
+        unzip "$k8s_dir/sensor-deploy.zip" -d "sensor-${CLUSTER}"
+    fi
 
     echo "Deploying Sensor..."
-    local unzip_dir="$k8s_dir/sensor-deploy/"
-    rm -rf "$unzip_dir"
-    unzip "$k8s_dir/sensor-deploy.zip" -d "$unzip_dir"
-    $unzip_dir/sensor.sh
+    "sensor-${CLUSTER}/sensor.sh"
     echo
 
 }

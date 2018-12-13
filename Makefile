@@ -80,6 +80,7 @@ dev:
 	@go get -u golang.org/x/tools/cmd/goimports
 	@go get -u github.com/jstemmer/go-junit-report
 	@go get -u github.com/golang/dep/cmd/dep
+	@go get -u github.com/gobuffalo/packr/packr
 
 
 #####################################
@@ -106,8 +107,18 @@ $(GENNY_BIN):
 	@echo "+ $@"
 	@$(BASE_PATH)/scripts/go-get-version.sh github.com/mauricelam/genny e937528877485c089aa62cfa9f60968749d650f1
 
+PACKR_BIN := $(GOPATH)/bin/packr
+$(PACKR_BIN):
+	@echo "+ $@"
+	@$(BASE_PATH)/scripts/go-get-version.sh github.com/gobuffalo/packr/packr 899fe0e4176fca9bca81763c810d74af82548c78
+
+.PHONY: go-packr-srcs
+go-packr-srcs: $(PACKR_BIN)
+	@echo "+ $@"
+	@packr
+
 .PHONY: go-generated-srcs
-go-generated-srcs: $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
+go-generated-srcs: go-packr-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
 	@echo "+ $@"
 	PATH=$(PATH):$(BASE_DIR)/tools/generate-helpers go generate ./...
 
@@ -142,7 +153,12 @@ PURE := --features=pure
 RACE := --features=race
 LINUX_AMD64 := --cpu=k8
 VARIABLE_STAMPS := --workspace_status_command=$(BASE_DIR)/status.sh
-PLATFORMS := --platforms=@io_bazel_rules_go//go/toolchain:darwin_amd64
+BAZEL_OS=linux
+ifeq ($(UNAME_S),Darwin)
+    BAZEL_OS=darwin
+endif
+PLATFORMS := --platforms=@io_bazel_rules_go//go/toolchain:$(BAZEL_OS)_amd64
+
 BAZEL_FLAGS := $(PURE) $(LINUX_AMD64) $(VARIABLE_STAMPS)
 cleanup:
 	@echo "Total BUILD.bazel files deleted: "
@@ -152,12 +168,25 @@ cleanup:
 gazelle: deps $(GENERATED_SRCS) cleanup
 	bazel run //:gazelle
 
-darwin-cli: gazelle
-	bazel build $(BAZEL_FLAGS) $(PLATFORMS) -- //roxctl
+cli: gazelle
+	bazel build $(BAZEL_FLAGS) --platforms=@io_bazel_rules_go//go/toolchain:darwin_amd64 -- //roxctl
+	bazel build $(BAZEL_FLAGS) --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 -- //roxctl
+
+	# Copy the user's specific OS into gopath
+	cp bazel-bin/roxctl/$(BAZEL_OS)_amd64_pure_stripped/roxctl $(GOPATH)/bin/roxctl
 
 .PHONY: build
-build: gazelle darwin-cli
-	bazel build $(BAZEL_FLAGS) -- //... -proto/... -qa-tests-backend/... -vendor/...
+build: gazelle cli
+	@echo "+ $@"
+	bazel build $(BAZEL_FLAGS) \
+		//central \
+		//benchmarks \
+		//benchmark-bootstrap \
+		//sensor/kubernetes \
+		//sensor/swarm \
+		//integration-tests/mock-grpc-server \
+		//scale/mocksensor \
+		//scale/mockcollector
 
 .PHONY: gendocs
 gendocs: $(GENERATED_API_DOCS)
@@ -180,11 +209,6 @@ bazel-test: gazelle
 	    -- \
 	    //... -benchmarks/... -proto/... -qa-tests-backend/... -tests/... -vendor/...
 
-.PHONY: deploy-test
-deploy-test:
-	@# The deploy tests don't work in Bazel yet.
-	@go test -tags=nobazel ./roxctl/central/deploy/renderer
-
 .PHONY: benchmarks-test
 benchmarks-test:
 	@# Benchmark tests don't work in Bazel yet.
@@ -196,7 +220,7 @@ ui-test:
 	make -C ui test
 
 .PHONY: test
-test: bazel-test benchmarks-test ui-test collector-tag deploy-test
+test: bazel-test benchmarks-test ui-test collector-tag
 
 upload-coverage:
 	@# 'mode: set' is repeated in each coverage file, but Coveralls only wants it
@@ -205,7 +229,7 @@ upload-coverage:
 	@#     https://docs.coveralls.io/parallel-build-webhook
 
 	@echo 'mode: set' > combined_coverage.dat
-	@find ./bazel-testlogs/ -name 'coverage.dat' | xargs -I {} cat "{}" | grep -v 'mode: set' >> combined_coverage.dat
+	@find ./bazel-testlogs/ -name 'coverage.dat' | xargs -I {} cat "{}" | grep -v 'mode: set' | grep -v vendor >> combined_coverage.dat
 	goveralls -coverprofile="combined_coverage.dat" -ignore 'central/graphql/resolvers/generated.go' -service=circle-ci -repotoken="$$COVERALLS_REPO_TOKEN"
 
 .PHONY: coverage
@@ -217,25 +241,14 @@ coverage:
 ###########
 ## Image ##
 ###########
-image: gazelle clean-image $(MERGED_API_SWAGGER_SPEC) darwin-cli
-	@echo "+ $@"
-	bazel build $(BAZEL_FLAGS) \
-		//central \
-		//roxctl \
-		//benchmarks \
-		//benchmark-bootstrap \
-		//sensor/kubernetes \
-		//sensor/swarm \
-		//integration-tests/mock-grpc-server \
-		//scale/mocksensor \
-		//scale/mockcollector
-
+image: build clean-image $(MERGED_API_SWAGGER_SPEC)
 	make -C ui build
 
 # TODO(cg): Replace with native bazel Docker build.
 	cp -r ui/build image/ui/
 	cp bazel-bin/central/linux_amd64_pure_stripped/central image/bin/central
-	cp bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl image/bin/roxctl
+	cp bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl image/bin/roxctl-linux
+	cp bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl image/bin/roxctl-darwin
 	cp bazel-bin/benchmarks/linux_amd64_pure_stripped/benchmarks image/bin/benchmarks
 	cp bazel-bin/benchmark-bootstrap/linux_amd64_pure_stripped/benchmark-bootstrap image/bin/benchmark-bootstrap
 	cp bazel-bin/sensor/swarm/linux_amd64_pure_stripped/swarm image/bin/swarm-sensor
@@ -247,6 +260,7 @@ image: gazelle clean-image $(MERGED_API_SWAGGER_SPEC) darwin-cli
 	echo "$(TAG)" > image/VERSION.txt
 	chmod +w image/bin/*
 	chmod +w scale/image/bin/*
+	chmod +w $(GOPATH)/bin/roxctl
 	docker build -t stackrox/main:$(TAG) image/
 	docker build -t stackrox/monitoring:$(TAG) monitoring
 	docker build -t stackrox/grpc-server:$(TAG) integration-tests/mock-grpc-server/image

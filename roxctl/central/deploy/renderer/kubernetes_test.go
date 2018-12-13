@@ -1,15 +1,11 @@
-// +build nobazel
-
 package renderer
 
 import (
 	"fmt"
-	"path/filepath"
 	"testing"
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/image/templates"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -46,11 +42,6 @@ type renderSuite struct {
 
 func (suite *renderSuite) SetupSuite() {
 	suite.kubernetes = &kubernetes{}
-	dir := templates.Directory()
-	monitoringChartPath = filepath.Join(dir, monitoringChartSuffix)
-	centralChartPath = filepath.Join(dir, centralChartSuffix)
-	clairifyChartPath = filepath.Join(dir, clairifyChartSuffix)
-	dockerAuthPath = filepath.Join(filepath.Dir(dir), "assets/docker-auth.sh")
 }
 
 func (suite *renderSuite) testWithHostPath(t *testing.T, c Config) {

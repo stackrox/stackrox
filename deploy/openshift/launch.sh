@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+function roxctl_cmd {
+    if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
+       roxctl $@
+    else
+       docker run --rm -e ROX_HTPASSWD_AUTH "$MAIN_IMAGE" $@
+    fi
+}
+
 function launch_central {
     local openshift_dir="$1"
 
@@ -10,7 +18,7 @@ function launch_central {
         extra_args+=("--monitoring-type=none")
     fi
 
-    docker run  -e ROX_HTPASSWD_AUTH "$MAIN_IMAGE" central generate openshift ${extra_args[@]+"${extra_args[@]}"} --monitoring-password stackrox -i "$MAIN_IMAGE" none > $openshift_dir/central.zip
+    roxctl_cmd central generate openshift ${extra_args[@]+"${extra_args[@]}"} --monitoring-password stackrox -i "$MAIN_IMAGE" none > $openshift_dir/central.zip
     local unzip_dir="$openshift_dir/central-deploy/"
     rm -rf "${unzip_dir}"
     unzip "$openshift_dir/central.zip" -d "${unzip_dir}"

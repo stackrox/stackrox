@@ -1,7 +1,10 @@
 package renderer
 
 import (
+	"strings"
+
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/zip"
 )
 
@@ -17,23 +20,32 @@ func newSwarm() deployer {
 }
 
 func (s *swarm) Render(c Config) ([]*zip.File, error) {
-
 	filenames := []string{
-		"swarm/central.yaml",
-		"swarm/central.sh",
-		"swarm/clairify.yaml",
-		"swarm/clairify.sh",
+		"central.yaml",
+		"central.sh",
+		"clairify.yaml",
+		"clairify.sh",
 	}
 
 	var files []*zip.File
 	for k, v := range c.SecretsByteMap {
 		files = append(files, zip.NewFile(k, v, zip.Sensitive))
 	}
-	renderedFiles, err := renderFilenames(filenames, &c, "/data/assets/docker-auth.sh")
-	if err != nil {
-		return nil, err
+
+	for _, f := range filenames {
+		data, err := executeRawTemplate(image.SwarmBox.String(f), &c)
+		if err != nil {
+			return nil, err
+		}
+		var flags zip.FileFlags
+		if strings.HasSuffix(f, ".sh") {
+			flags |= zip.Executable
+		}
+		// Trim the first section off of the path because it defines the orchestrator
+		files = append(files, zip.NewFile(f, data, flags))
 	}
-	return append(files, renderedFiles...), nil
+	files = append(files, dockerAuthFile)
+	return wrapFiles(files, &c)
 }
 
 func (s *swarm) Instructions(c Config) string {

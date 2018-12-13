@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/images/utils"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/netutil"
@@ -27,33 +28,20 @@ func newKubernetes() deployer {
 	return &kubernetes{}
 }
 
-const (
-	prefixPath            = "/data/templates/"
-	monitoringChartSuffix = "kubernetes/helm/monitoringchart"
-	centralChartSuffix    = "kubernetes/helm/centralchart"
-	clairifyChartSuffix   = "kubernetes/helm/clairifychart"
-)
-
-var (
-	monitoringChartPath = prefixPath + monitoringChartSuffix
-	centralChartPath    = prefixPath + centralChartSuffix
-	clairifyChartPath   = prefixPath + clairifyChartSuffix
-)
-
 func (k *kubernetes) renderKubectl(c Config) ([]*zip.File, error) {
-	renderedFiles, err := k.renderHelmFiles(c, centralChartPath, "central")
+	renderedFiles, err := k.renderHelmFiles(c, image.GetCentralChart(), "central")
 	if err != nil {
 		return nil, fmt.Errorf("error rendering central files: %v", err)
 	}
 
-	clairifyRenderedFiles, err := k.renderHelmFiles(c, clairifyChartPath, "clairify")
+	clairifyRenderedFiles, err := k.renderHelmFiles(c, image.GetClairifyChart(), "clairify")
 	if err != nil {
 		return nil, fmt.Errorf("error rendering clairify files: %v", err)
 	}
 	renderedFiles = append(renderedFiles, clairifyRenderedFiles...)
 
 	if c.K8sConfig.MonitoringType.OnPrem() {
-		monitoringFiles, err := k.renderHelmFiles(c, monitoringChartPath, "monitoring")
+		monitoringFiles, err := k.renderHelmFiles(c, image.GetMonitoringChart(), "monitoring")
 		if err != nil {
 			return nil, fmt.Errorf("error rendering monitoring files: %v", err)
 		}
@@ -92,7 +80,8 @@ func (k *kubernetes) Render(c Config) ([]*zip.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	return wrapFiles(renderedFiles, &c, dockerAuthPath)
+	renderedFiles = append(renderedFiles, dockerAuthFile)
+	return wrapFiles(renderedFiles, &c)
 }
 
 const instructionPrefix = `To deploy:

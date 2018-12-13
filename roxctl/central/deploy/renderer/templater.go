@@ -4,25 +4,30 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"path"
 	"strings"
 	"text/template"
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/zip"
 )
 
 var (
 	log = logging.LoggerForModule()
 
-	dockerAuthPath = "/data/assets/docker-auth.sh"
+	dockerAuthFile = func() *zip.File {
+		str, err := image.AssetBox.FindString("docker-auth.sh")
+		if err != nil {
+			log.Panicf("docker auth file could not be found: %v", err)
+		}
+		return zip.NewFile("docker-auth.sh", []byte(str), zip.Executable)
+	}()
 )
 
 // ExternalPersistence holds the data for a volume that is already created (e.g. docker volume, PV, etc)
@@ -185,50 +190,9 @@ func generateMonitoringImage(mainImage string) string {
 	return fmt.Sprintf("%s/%s:%s", img.GetName().GetRegistry(), remote, img.GetName().GetTag())
 }
 
-func wrapFiles(files []*zip.File, c *Config, staticFilenames ...string) ([]*zip.File, error) {
-	files = files[:len(files):len(files)]
-	for _, staticFilename := range staticFilenames {
-		var flags zip.FileFlags
-		if path.Ext(staticFilename) == ".sh" {
-			flags |= zip.Executable
-		}
-		f, err := zip.NewFromFile(staticFilename, path.Base(staticFilename), flags)
-		if err != nil {
-			return nil, err
-		}
-		files = append(files, f)
-	}
-	readmeText, err := generateReadme(c)
-	if err != nil {
-		return nil, err
-	}
-	files = append(files, zip.NewFile("README", []byte(standardizeWhitespace(readmeText)), 0))
-
+func wrapFiles(files []*zip.File, c *Config) ([]*zip.File, error) {
+	files = append(files, zip.NewFile("README", []byte(standardizeWhitespace(Deployers[c.ClusterType].Instructions(*c))), 0))
 	return files, nil
-}
-
-func renderFilenames(filenames []string, c *Config, staticFilenames ...string) ([]*zip.File, error) {
-	var files []*zip.File
-	for _, f := range filenames {
-		t, err := templates.ReadFileAndTemplate(f)
-		if err != nil {
-			return nil, err
-		}
-		d, err := executeTemplate(t, c)
-		if err != nil {
-			return nil, err
-		}
-
-		var flags zip.FileFlags
-		if strings.HasSuffix(f, ".sh") {
-			flags |= zip.Executable
-		}
-
-		// Trim the first section off of the path because it defines the orchestrator
-		path := f[strings.Index(f, "/")+1:]
-		files = append(files, zip.NewFile(path, d, flags))
-	}
-	return wrapFiles(files, c, staticFilenames...)
 }
 
 // WriteInstructions writes the instructions for the configured cluster

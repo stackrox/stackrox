@@ -6,8 +6,8 @@ import (
 
 	"github.com/ghodss/yaml"
 	google_protobuf "github.com/golang/protobuf/ptypes/any"
+	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/zip"
-	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 	"k8s.io/helm/pkg/renderutil"
 )
@@ -53,11 +53,7 @@ func getChartFile(prefix, filename string, data []byte) (*zip.File, bool) {
 
 // Helm charts consist of Chart.yaml, values.yaml and templates
 // We need to
-func (k *kubernetes) renderHelmFiles(c Config, path, prefix string) ([]*zip.File, error) {
-	ch, err := chartutil.Load(path)
-	if err != nil {
-		return nil, err
-	}
+func (k *kubernetes) renderHelmFiles(c Config, ch *chart.Chart, prefix string) ([]*zip.File, error) {
 	ch.Metadata = &chart.Metadata{
 		Name: prefix,
 	}
@@ -123,26 +119,18 @@ func chartToFiles(prefix string, ch *chart.Chart, c Config) ([]*zip.File, error)
 	return renderedFiles, nil
 }
 
-func (k *kubernetes) renderChart(name, path string, c Config) ([]*zip.File, error) {
-	ch, err := chartutil.Load(path)
-	if err != nil {
-		return nil, err
-	}
-	return chartToFiles(name, ch, c)
-}
-
 func (k *kubernetes) renderHelm(c Config) ([]*zip.File, error) {
-	renderedFiles, err := k.renderChart("central", centralChartPath, c)
+	renderedFiles, err := chartToFiles("central", image.GetCentralChart(), c)
 	if err != nil {
 		return nil, err
 	}
-	clairifyFiles, err := k.renderChart("clairify", clairifyChartPath, c)
+	clairifyFiles, err := chartToFiles("clairify", image.GetClairifyChart(), c)
 	if err != nil {
 		return nil, err
 	}
 	renderedFiles = append(renderedFiles, clairifyFiles...)
 	if c.K8sConfig.MonitoringType.OnPrem() {
-		monitoringFiles, err := k.renderChart("monitoring", monitoringChartPath, c)
+		monitoringFiles, err := chartToFiles("monitoring", image.GetMonitoringChart(), c)
 		if err != nil {
 			return nil, err
 		}

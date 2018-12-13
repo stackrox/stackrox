@@ -491,6 +491,38 @@
   revision = "9f0cb55181dd3a0a4c168d3dbc72d4aca4853126"
 
 [[projects]]
+  digest = "1:373397317168dd5ac00efda13940668f1947fd641f572b9cf386a86a99c63ca9"
+  name = "github.com/gobuffalo/envy"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "801d7253ade1f895f74596b9a96147ed2d3b087e"
+  version = "v1.6.11"
+
+[[projects]]
+  branch = "master"
+  digest = "1:57c7333ed4b856b569acae2590aea770b4e1ecbbd0ad04d59589b55ee14aa591"
+  name = "github.com/gobuffalo/packd"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "c49825f8f6f458178e241c985b37f979045e6879"
+
+[[projects]]
+  digest = "1:78e12cc30f199a47cc2e4eeb92b2313e0ca77ecaecc5966304e595a5d37d0474"
+  name = "github.com/gobuffalo/packr"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "9c1551c6d383e2f46eccabc1fa800798c54a9dfe"
+  version = "v2.0.0-rc.9"
+
+[[projects]]
+  branch = "master"
+  digest = "1:cc66a6ea07a8c9a8b95da5b0a78b90cd33cdbe3198ff9698f5b388876eee5464"
+  name = "github.com/gobuffalo/syncx"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "558ac7de985fc4f4057bff27c7bdf99e92fe0750"
+
+[[projects]]
   digest = "1:6a7159c5f8f8826207545407a458b43ab6599c1c8a2271465c2e979ecea1dcd4"
   name = "github.com/gobwas/glob"
   packages = [
@@ -748,6 +780,14 @@
   revision = "c2b33e84"
 
 [[projects]]
+  digest = "1:da62aa6632d04e080b8a8b85a59ed9ed1550842a0099a55f3ae3a20d02a3745a"
+  name = "github.com/joho/godotenv"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "23d116af351c84513e1946b527c88823e476be13"
+  version = "v1.3.0"
+
+[[projects]]
   digest = "1:6b1eae4bb93e5ccd23cb09d1e005ecb391316d27701b7a5264f8555a6e2f3d87"
   name = "github.com/jonboulle/clockwork"
   packages = ["."]
@@ -778,6 +818,14 @@
   pruneopts = "NUT"
   revision = "5c8c8bd35d3832f5d134ae1e1e375b69a4d25242"
   version = "v1.0.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:04ceda71def965b54370f9089593723a00f72db5062d377b9d5a11114c41ad1f"
+  name = "github.com/markbates/oncer"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "bf2de49a0be218916e69a11d22866e6cd0a560f2"
 
 [[projects]]
   digest = "1:d0164259ed17929689df11205194d80288e8ae25351778f7a3421a24774c36f8"
@@ -998,6 +1046,18 @@
   ]
   pruneopts = "NUT"
   revision = "1dc9a6cbc91aacc3e8b2d63db4d2e957a5394ac4"
+
+[[projects]]
+  digest = "1:efafa5160b1666d27e6e1ad4cd3fba27ce73aaaa1e99c3d02e14e55690a8878d"
+  name = "github.com/rogpeppe/go-internal"
+  packages = [
+    "modfile",
+    "module",
+    "semver",
+  ]
+  pruneopts = "NUT"
+  revision = "d87f08a7d80821c797ffc8eb8f4e01675f378736"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:53a982387e68e56a5d7c7f629b49260c2e1e4b099b6ff6392de4e48e32743dbf"
@@ -1703,6 +1763,8 @@
     "github.com/docker/go-units",
     "github.com/etcd-io/bbolt",
     "github.com/ghodss/yaml",
+    "github.com/gobuffalo/packd",
+    "github.com/gobuffalo/packr",
     "github.com/gogo/protobuf/proto",
     "github.com/gogo/protobuf/types",
     "github.com/golang/mock/gomock",

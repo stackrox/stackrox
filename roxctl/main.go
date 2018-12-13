@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/roxctl/central"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/image"
+	"github.com/stackrox/rox/roxctl/sensor"
 )
 
 func versionCommand() *cobra.Command {
@@ -34,6 +35,9 @@ func main() {
 
 	// Central Commands
 	c.AddCommand(central.Command())
+
+	// Sensor Commands
+	c.AddCommand(sensor.Command())
 
 	common.AddAuthFlags(c)
 

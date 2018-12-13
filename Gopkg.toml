@@ -190,3 +190,7 @@ required = ["golang.org/x/tools/go/ast/astutil"]
   name = "k8s.io/helm"
   source = "https://github.com/helm/helm.git"
   version = "2.11.0"
+
+[[constraint]]
+  name = "github.com/gobuffalo/packr"
+  version = "v2.0.0-rc.12"

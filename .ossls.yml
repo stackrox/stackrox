@@ -917,3 +917,11 @@ dependencies:
       LICENSE: 95c674e934e587e8f5a362f81acf829bd51218c6b393f848b4edf410787845ab
     attribution:
     - Richard Musiol
+
+  vendor/github.com/gobuffalo/packr:
+    url: "https://github.com/gobuffalo/packr"
+    license: MIT
+    files:
+      LICENSE.txt: 1299b0bd3492107a8c89944819b8d6c25f9471c54938f655c2822d5b7fdbc77d
+    attribution:
+    - Mark Bates

@@ -3,3 +3,4 @@ ui/src/images/globalSearchEmptyState.svg
 ui/yarn.lock
 central/graphql/resolvers/generated.go
 Gopkg.lock
+image/a_image-packr.go
