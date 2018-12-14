@@ -78,20 +78,21 @@ function launch_sensor {
     fi
 
     # Delete path
-    rm -rf "sensor-${CLUSTER}"
+    rm -rf "$k8s_dir/sensor-deploy"
 
     if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         roxctl -p ${ROX_ADMIN_PASSWORD} --endpoint localhost:8000 sensor generate --image="${MAIN_IMAGE}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
              --runtime="$RUNTIME_SUPPORT" "${extra_config[@]+"${extra_config[@]}"}" k8s
+        mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
     else
         local common_params="{ \"params\" : { \"namespace\": \"stackrox\" } }"
         extra_json_config+="\"kubernetes\": $common_params }"
         get_cluster_zip localhost:8000 "$CLUSTER" KUBERNETES_CLUSTER "$MAIN_IMAGE" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$RUNTIME_SUPPORT" "$extra_json_config"
-        unzip "$k8s_dir/sensor-deploy.zip" -d "sensor-${CLUSTER}"
+        unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"
     fi
 
     echo "Deploying Sensor..."
-    "sensor-${CLUSTER}/sensor.sh"
+    $k8s_dir/sensor-deploy/sensor.sh
     echo
 
 }
