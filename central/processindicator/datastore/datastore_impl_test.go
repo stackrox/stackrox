@@ -212,17 +212,12 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByContainerIDAgain
 	suite.verifyIndicatorsAre(generateIndicators([]string{"d2"}, []string{"c1", "c2"})...)
 }
 
-func (suite *IndicatorDataStoreTestSuite) TestPruningWithNoPruning() {
+func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 	const pruneDuration = 100 * time.Millisecond
 	suite.mockPruner.EXPECT().Period().Return(pruneDuration)
-	suite.datastore = New(suite.storage, suite.indexer, suite.searcher, suite.mockPruner)
-
 	indicators, _ := getIndicators()
-	suite.NoError(suite.datastore.AddProcessIndicators(indicators...))
-	suite.verifyIndicatorsAre(indicators...)
 
 	ch := make(chan struct{})
-
 	m := testutils.PredMatcher("id with args matcher", func(passed []processindicator.IDAndArgs) bool {
 		defer func() {
 			ch <- struct{}{}
@@ -247,14 +242,25 @@ func (suite *IndicatorDataStoreTestSuite) TestPruningWithNoPruning() {
 		}
 		return true
 	})
+	suite.datastore = New(suite.storage, suite.indexer, suite.searcher, suite.mockPruner)
+	suite.NoError(suite.datastore.AddProcessIndicators(indicators...))
+	suite.verifyIndicatorsAre(indicators...)
 
 	suite.mockPruner.EXPECT().Prune(m).Return(nil)
 	<-ch
-	time.Sleep(pruneDuration / 2)
+	for suite.datastore.(*datastoreImpl).numPrunesDone() < 1 {
+		time.Sleep(10 * time.Millisecond)
+	}
+	suite.Equal(suite.datastore.(*datastoreImpl).numPrunesDone(), int32(1))
 	suite.verifyIndicatorsAre(indicators...)
 
 	suite.mockPruner.EXPECT().Prune(m).Return([]string{indicators[0].GetId()})
 	<-ch
-	time.Sleep(pruneDuration / 2)
+	for suite.datastore.(*datastoreImpl).numPrunesDone() < 2 {
+		time.Sleep(10 * time.Millisecond)
+	}
+	suite.Equal(suite.datastore.(*datastoreImpl).numPrunesDone(), int32(2))
 	suite.verifyIndicatorsAre(indicators[1:]...)
+
+	suite.mockPruner.EXPECT().Prune(m).AnyTimes().Return(nil)
 }

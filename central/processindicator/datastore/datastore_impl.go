@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/stackrox/rox/central/metrics"
@@ -21,6 +22,9 @@ type datastoreImpl struct {
 	indexer  index.Indexer
 	searcher search.Searcher
 	pruner   pruner.Pruner
+
+	// Used for testing.
+	pruneCounter int32
 }
 
 func (ds *datastoreImpl) Search(q *v1.Query) ([]pkgSearch.Result, error) {
@@ -143,7 +147,12 @@ func (ds *datastoreImpl) prunePeriodically() {
 	defer t.Stop()
 	for range t.C {
 		ds.prune()
+		atomic.AddInt32(&ds.pruneCounter, 1)
 	}
+}
+
+func (ds *datastoreImpl) numPrunesDone() int32 {
+	return atomic.LoadInt32(&ds.pruneCounter)
 }
 
 func (ds *datastoreImpl) prune() {

@@ -43,7 +43,7 @@ func TempInitializeIndices(mossPath string) (bleve.Index, error) {
 	if err != nil {
 		return nil, err
 	}
-	return InitializeIndices(filepath.Join(tmpDir, mossPath))
+	return initializeIndices(filepath.Join(tmpDir, mossPath))
 }
 
 // MemOnlyIndex returns a temporary mem-only index.
@@ -53,6 +53,15 @@ func MemOnlyIndex() (bleve.Index, error) {
 
 // InitializeIndices initializes the index in the specified path.
 func InitializeIndices(mossPath string) (bleve.Index, error) {
+	globalIndex, err := initializeIndices(mossPath)
+	if err != nil {
+		return nil, err
+	}
+	go startMonitoring(globalIndex, mossPath)
+	return globalIndex, nil
+}
+
+func initializeIndices(mossPath string) (bleve.Index, error) {
 	indexMapping := getIndexMapping()
 
 	kvconfig := map[string]interface{}{
@@ -70,7 +79,7 @@ func InitializeIndices(mossPath string) (bleve.Index, error) {
 	if err != nil {
 		return nil, err
 	}
-	go startMonitoring(globalIndex, mossPath)
+
 	return globalIndex, nil
 }
 

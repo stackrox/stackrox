@@ -9,12 +9,12 @@ import (
 var (
 	once sync.Once
 
-	globalIndex bleve.Index
+	gi bleve.Index
 )
 
 func initialize() {
 	var err error
-	globalIndex, err = InitializeIndices("/tmp/search/scorch.bleve")
+	gi, err = InitializeIndices("/tmp/search/scorch.bleve")
 	if err != nil {
 		panic(err)
 	}
@@ -23,5 +23,5 @@ func initialize() {
 // GetGlobalIndex provides the global bleve index to use for indexing.
 func GetGlobalIndex() bleve.Index {
 	once.Do(initialize)
-	return globalIndex
+	return gi
 }
