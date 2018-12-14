@@ -43,7 +43,8 @@ describe('Authentication', () => {
         cy.url().should('contain', loginUrl);
     });
 
-    it('should logout user by request', () => {
+    // TODO(ROX-990): Fix and re-enable this test. It was flaky on OpenShift and K8s (failure rate was higher on OpenShift though).
+    xit('should logout user by request', () => {
         localStorage.setItem('access_token', 'my-token'); // authenticated user
         setupAuth(complianceUrl);
         cy.get('button:contains("Logout")').click();
