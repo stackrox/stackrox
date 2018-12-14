@@ -285,13 +285,17 @@ var tempUnavailable = uintptr(1)
 // For more information on weak references, see
 // http://www.programmr.com/blogs/what-every-java-developer-should-know-strong-and-weak-references
 type weakLoggerRef struct {
-	// This fields either holds the pointer to the logger, nil (if the logger has been garbage collected), or
-	// tempUnavailable to indicate the value is spin-locked.
-	ptr uintptr
+	// Note: The first two fields are used with atomic 64-bit operations. On i386, atomic 64-bit operations crash
+	// if the data is not 64-bit aligned. Go guarantees that the first field in an allocated struct is
+	// 64-bit aligned, so these have to appear first.
 
 	// These fields are protected by the spinlock on ptr
 	numGets         uint64
 	finalizeNumGets uint64
+
+	// This fields either holds the pointer to the logger, nil (if the logger has been garbage collected), or
+	// tempUnavailable to indicate the value is spin-locked.
+	ptr uintptr
 }
 
 // get converts a weak reference into a strong one.
