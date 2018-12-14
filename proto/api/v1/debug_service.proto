@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+package v1;
+
+message GetLogLevelRequest {
+    repeated string modules = 1;
+}
+
+message LogLevelRequest {
+    string          level   = 1;
+    repeated string modules = 2;
+}
+
+message ModuleLevel {
+    string module = 1;
+    string level  = 2;
+}
+
+message LogLevelResponse {
+    string               level         = 1;
+    repeated ModuleLevel module_levels = 2;
+}
+
+// APIs for debugging.
+service DebugService {
+
+    // Get the current logging level for StackRox services.
+    rpc GetLogLevel(GetLogLevelRequest) returns (LogLevelResponse) {
+        option (google.api.http) = {
+             get: "/v1/debug/loglevel"
+         };
+    }
+
+    // Set logging level for StackRox services.
+    rpc SetLogLevel(LogLevelRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+             patch: "/v1/debug/loglevel"
+             body: "*"
+         };
+    }
+
+}

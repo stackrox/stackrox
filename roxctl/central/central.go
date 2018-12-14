@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/central/db"
 	"github.com/stackrox/rox/roxctl/central/deploy"
+	"github.com/stackrox/rox/roxctl/debug"
 )
 
 // Command defines the central command tree
@@ -19,5 +20,6 @@ func Command() *cobra.Command {
 
 	c.AddCommand(deploy.Command())
 	c.AddCommand(db.Command())
+	c.AddCommand(debug.Command())
 	return c
 }

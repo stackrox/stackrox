@@ -504,6 +504,31 @@ func New(module string) *Logger {
 	return newLogger
 }
 
+// GetLoggerByModule returns the logger for the given module, or nil if no logger for that module was registered.
+func GetLoggerByModule(module string) *Logger {
+	knownLoggersLock.Lock()
+	defer knownLoggersLock.Unlock()
+
+	return loggersByName[module].get()
+}
+
+// GetLoggersByModule returns a list of loggers for the given modules. Any modules for which no loggers are registered
+// will be returned in the unknownModules return value.
+func GetLoggersByModule(modules []string) (loggers []*Logger, unknownModules []string) {
+	knownLoggersLock.Lock()
+	defer knownLoggersLock.Unlock()
+
+	loggers = make([]*Logger, 0, len(modules))
+	for _, module := range modules {
+		if l := loggersByName[module].get(); l != nil {
+			loggers = append(loggers, l)
+		} else {
+			unknownModules = append(unknownModules, module)
+		}
+	}
+	return
+}
+
 // GetModule retrieves the module of a logger.
 func (l *Logger) GetModule() string {
 	return l.module

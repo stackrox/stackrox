@@ -19,6 +19,7 @@ var (
 	BenchmarkTrigger  = newResource("BenchmarkTrigger")
 	Cluster           = newResource("Cluster")
 	DebugMetrics      = newResource("DebugMetrics")
+	DebugLogs         = newResource("DebugLogs")
 	Deployment        = newResource("Deployment")
 	Detection         = newResource("Detection")
 	Group             = newResource("Group")

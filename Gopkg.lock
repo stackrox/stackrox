@@ -1864,6 +1864,7 @@
     "golang.org/x/tools/go/ast/astutil",
     "google.golang.org/api/iterator",
     "google.golang.org/api/option",
+    "google.golang.org/genproto/googleapis/api/annotations",
     "google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/common",
     "google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/grafeas",
     "google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/package",

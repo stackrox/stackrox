@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
+	debugService "github.com/stackrox/rox/central/debug/service"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
 	detectionService "github.com/stackrox/rox/central/detection/service"
 	"github.com/stackrox/rox/central/docs"
@@ -177,6 +178,7 @@ func (c *central) startGRPCServer() {
 		brService.Singleton(),
 		btService.Singleton(),
 		clusterService.Singleton(),
+		debugService.Singleton(),
 		deploymentService.Singleton(),
 		detectionService.Singleton(),
 		groupService.Singleton(),
