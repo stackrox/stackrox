@@ -16,5 +16,5 @@ type Identity interface {
 	Service() *storage.ServiceIdentity
 
 	Expiry() time.Time
-	ExternalAuthProvider() authproviders.AuthProvider
+	ExternalAuthProvider() authproviders.Provider
 }

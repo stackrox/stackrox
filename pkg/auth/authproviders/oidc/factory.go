@@ -34,7 +34,7 @@ func NewFactory(urlPathPrefix string) authproviders.BackendFactory {
 	}
 }
 
-func (f *factory) CreateAuthProviderBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (authproviders.AuthProviderBackend, map[string]string, error) {
+func (f *factory) CreateAuthProviderBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (authproviders.Backend, map[string]string, error) {
 	return newProvider(ctx, id, uiEndpoints, f.callbackURLPath, config)
 }
 

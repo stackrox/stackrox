@@ -97,7 +97,7 @@ func (e *extractor) withExternalUser(token *tokens.TokenInfo) (authn.Identity, e
 		return nil, errors.New("external user tokens must originate from exactly one source")
 	}
 
-	authProviderSrc, ok := token.Sources[0].(authproviders.AuthProvider)
+	authProviderSrc, ok := token.Sources[0].(authproviders.Provider)
 	if !ok {
 		return nil, errors.New("external user tokens must originate from an authentication provider source")
 	}

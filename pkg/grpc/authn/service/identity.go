@@ -33,6 +33,6 @@ func (i identity) Expiry() time.Time {
 	return i.id.Expiry
 }
 
-func (i identity) ExternalAuthProvider() authproviders.AuthProvider {
+func (i identity) ExternalAuthProvider() authproviders.Provider {
 	return nil
 }

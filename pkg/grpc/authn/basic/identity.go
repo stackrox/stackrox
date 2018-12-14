@@ -35,7 +35,7 @@ func (i identity) Expiry() time.Time {
 	return timeutil.Max
 }
 
-func (i identity) ExternalAuthProvider() authproviders.AuthProvider {
+func (i identity) ExternalAuthProvider() authproviders.Provider {
 	return nil
 }
 

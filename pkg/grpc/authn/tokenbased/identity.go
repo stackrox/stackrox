@@ -34,6 +34,6 @@ func (i *roleBasedIdentity) Expiry() time.Time {
 	return i.expiry
 }
 
-func (i *roleBasedIdentity) ExternalAuthProvider() authproviders.AuthProvider {
+func (i *roleBasedIdentity) ExternalAuthProvider() authproviders.Provider {
 	return nil
 }
