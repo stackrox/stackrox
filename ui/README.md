@@ -32,7 +32,17 @@ The front end development environment consists of a local static file server use
 
 _ ** If your machine goes into sleep mode, you may lose the port forwarding set up during the deploy step. If this happens, run `yarn run forward` to restart port forwarding. _
 
+### Testing
 
+To run e2e tests locally, bring up `cypress` using the following instructions to get proper authorization:
+
+```
+curl -sk -u "admin:<insert_password>" "https://localhost:8000/v1/apitokens/generate" -X POST  -d '{"name": "cypress_tests", "role": "Admin"}' | jq -r '.token // ""'
+
+export CYPRESS_ROX_AUTH_TOKEN=<token_from_above>
+
+cypress open -p 4000
+```
 
 ### IDEs
 

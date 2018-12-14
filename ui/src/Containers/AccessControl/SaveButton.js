@@ -7,15 +7,24 @@ const onClickHandler = (dispatch, formName) => () => {
     dispatch(submit(formName));
 };
 
-const SaveButton = ({ dispatch, formName }) => (
-    <button className="btn btn-success" type="button" onClick={onClickHandler(dispatch, formName)}>
+const SaveButton = ({ dispatch, formName, className }) => (
+    <button
+        className={`btn btn-success ${className}`}
+        type="button"
+        onClick={onClickHandler(dispatch, formName)}
+    >
         Save
     </button>
 );
 
 SaveButton.propTypes = {
     dispatch: PropTypes.func.isRequired,
-    formName: PropTypes.string.isRequired
+    formName: PropTypes.string.isRequired,
+    className: PropTypes.string
+};
+
+SaveButton.defaultProps = {
+    className: ''
 };
 
 export default connect()(SaveButton);

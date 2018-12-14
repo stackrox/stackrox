@@ -26,3 +26,31 @@ export const availableAuthProviders = [
         value: 'saml'
     }
 ];
+
+export const defaultPermissions = {
+    APIToken: NO_ACCESS,
+    Alert: NO_ACCESS,
+    AuthProvider: NO_ACCESS,
+    Benchmark: NO_ACCESS,
+    BenchmarkScan: NO_ACCESS,
+    BenchmarkSchedule: NO_ACCESS,
+    BenchmarkTrigger: NO_ACCESS,
+    Cluster: NO_ACCESS,
+    DebugMetrics: NO_ACCESS,
+    Deployment: NO_ACCESS,
+    Detection: NO_ACCESS,
+    Group: NO_ACCESS,
+    Image: NO_ACCESS,
+    ImageIntegration: NO_ACCESS,
+    ImbuedLogs: NO_ACCESS,
+    Indicator: NO_ACCESS,
+    Node: NO_ACCESS,
+    Notifier: NO_ACCESS,
+    NetworkPolicy: NO_ACCESS,
+    NetworkGraph: NO_ACCESS,
+    Policy: NO_ACCESS,
+    Role: NO_ACCESS,
+    Secret: NO_ACCESS,
+    ServiceIdentity: NO_ACCESS,
+    User: NO_ACCESS
+};

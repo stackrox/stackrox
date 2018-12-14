@@ -8,7 +8,7 @@ export const selectors = {
     saveButton: 'button:contains("Save")',
     addNewRoleButton: 'button:contains("Add New Role")',
     input: {
-        roleName: 'input[type=text]'
+        roleName: 'div[data-test-id="role-name"] input'
     },
     tabs: {
         roles: '.tab:contains("Roles and Permissions")'

@@ -127,7 +127,7 @@ const formDescriptors = {
             { value: 'admin', label: 'Admin' },
             { value: 'analyst', label: 'Analyst' },
             { value: 'none', label: 'None' },
-            { value: 'Continuous', label: 'continuous' },
+            { value: 'continuous', label: 'Continuous' },
             { value: 'sensor creator', label: 'Sensor Creator' }
         ]
     }

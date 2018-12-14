@@ -6,10 +6,10 @@ const PermissionsMatrix = props => (
     <table className="w-full overflow-auto">
         <thead>
             <tr className="border-b border-base-300">
-                <th className="p-4" />
-                <th className="p-4">Read</th>
-                <th className="p-4">Write</th>
-                {props.isEditing && <th className="p-4">Edit</th>}
+                <th className="p-2" />
+                <th className="p-2">Read</th>
+                <th className="p-2">Write</th>
+                {props.isEditing && <th className="p-2">Edit</th>}
             </tr>
         </thead>
         <tbody>

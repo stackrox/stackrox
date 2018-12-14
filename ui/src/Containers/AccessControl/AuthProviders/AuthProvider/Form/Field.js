@@ -6,7 +6,7 @@ import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import ReduxTextAreaField from 'Components/forms/ReduxTextAreaField';
 
 const Field = props => {
-    const { label, jsonPath, placeholder, type, options, html } = props;
+    const { label, jsonPath, placeholder, type, options, html, customComponents } = props;
     let field = null;
     switch (type) {
         case 'text':
@@ -14,7 +14,12 @@ const Field = props => {
             break;
         case 'select':
             field = (
-                <ReduxSelectField name={jsonPath} options={options} placeholder={placeholder} />
+                <ReduxSelectField
+                    name={jsonPath}
+                    options={options}
+                    placeholder={placeholder}
+                    customComponents={customComponents}
+                />
             );
             break;
         case 'textarea':
@@ -45,7 +50,8 @@ Field.propTypes = {
             value: PropTypes.string
         })
     ),
-    html: PropTypes.element
+    html: PropTypes.element,
+    customComponents: PropTypes.shape({})
 };
 
 Field.defaultProps = {
@@ -53,7 +59,8 @@ Field.defaultProps = {
     jsonPath: '',
     placeholder: '',
     options: [],
-    html: <div />
+    html: <div />,
+    customComponents: {}
 };
 
 export default Field;

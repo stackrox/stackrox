@@ -3,7 +3,13 @@ import PropTypes from 'prop-types';
 import { Field } from 'redux-form';
 import Select from 'Components/ReactSelect';
 
-const ReduxSelect = ({ input: { name, value, onChange }, options, placeholder, disabled }) => (
+const ReduxSelect = ({
+    input: { name, value, onChange },
+    options,
+    placeholder,
+    disabled,
+    customComponents
+}) => (
     <Select
         key={name}
         onChange={onChange}
@@ -11,6 +17,7 @@ const ReduxSelect = ({ input: { name, value, onChange }, options, placeholder, d
         placeholder={placeholder}
         value={value}
         isDisabled={disabled}
+        components={customComponents}
     />
 );
 
@@ -22,18 +29,21 @@ ReduxSelect.propTypes = {
     }).isRequired,
     options: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     placeholder: PropTypes.string.isRequired,
-    disabled: PropTypes.bool
+    disabled: PropTypes.bool,
+    customComponents: PropTypes.shape({})
 };
 
 ReduxSelect.defaultProps = {
-    disabled: false
+    disabled: false,
+    customComponents: {}
 };
 
-const ReduxSelectField = ({ name, options, placeholder, disabled }) => (
+const ReduxSelectField = ({ name, options, placeholder, disabled, customComponents }) => (
     <Field
         key={name}
         name={name}
         options={options}
+        customComponents={customComponents}
         component={ReduxSelect}
         placeholder={placeholder}
         disabled={disabled}
@@ -45,12 +55,14 @@ ReduxSelectField.propTypes = {
     name: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]).isRequired,
     options: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     placeholder: PropTypes.string,
-    disabled: PropTypes.bool
+    disabled: PropTypes.bool,
+    customComponents: PropTypes.shape({})
 };
 
 ReduxSelectField.defaultProps = {
     placeholder: 'Select one...',
-    disabled: false
+    disabled: false,
+    customComponents: {}
 };
 
 export default ReduxSelectField;
