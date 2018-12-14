@@ -10,7 +10,7 @@ all: deps style test image
 ## Style ##
 ###########
 .PHONY: style
-style: fmt imports lint vet blanks crosspkgimports no-large-files ui-lint qa-tests-style
+style: fmt imports lint vet blanks crosspkgimports no-large-files only-store-storage-protos ui-lint qa-tests-style
 
 .PHONY: qa-tests-style
 qa-tests-style:
@@ -57,6 +57,11 @@ crosspkgimports:
 no-large-files:
 	@echo "+ $@"
 	@$(BASE_DIR)/tools/large-git-files/find.sh
+
+.PHONY: only-store-storage-protos
+only-store-storage-protos:
+	@echo "+ $@"
+	@go run $(BASE_DIR)/tools/storedprotos/verify.go $(shell go list github.com/stackrox/rox/central/...)
 
 .PHONY: lint
 lint:
