@@ -9,10 +9,10 @@ import (
 	"time"
 
 	jiraLib "github.com/andygrunwald/go-jira"
+	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
 

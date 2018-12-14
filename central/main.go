@@ -42,6 +42,7 @@ import (
 	networkPolicyService "github.com/stackrox/rox/central/networkpolicies/service"
 	nodeService "github.com/stackrox/rox/central/node/service"
 	notifierService "github.com/stackrox/rox/central/notifier/service"
+	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
 	pingService "github.com/stackrox/rox/central/ping/service"
 	policyService "github.com/stackrox/rox/central/policy/service"
 	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
@@ -74,7 +75,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
-	_ "github.com/stackrox/rox/pkg/notifiers/all" // These imports are required to register things from the respective packages.
 	"github.com/stackrox/rox/pkg/ui"
 )
 

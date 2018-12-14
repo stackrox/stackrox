@@ -229,18 +229,13 @@ func (resolver *Resolver) wrapCSCCs(values []*storage.CSCC, err error) ([]*cSCCR
 	return output, nil
 }
 
-func (resolver *cSCCResolver) GcpOrgId() string {
-	value := resolver.data.GetGcpOrgId()
-	return value
-}
-
-func (resolver *cSCCResolver) GcpProject() string {
-	value := resolver.data.GetGcpProject()
-	return value
-}
-
 func (resolver *cSCCResolver) ServiceAccount() string {
 	value := resolver.data.GetServiceAccount()
+	return value
+}
+
+func (resolver *cSCCResolver) SourceId() string {
+	value := resolver.data.GetSourceId()
 	return value
 }
 

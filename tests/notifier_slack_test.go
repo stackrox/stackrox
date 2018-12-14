@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/central/notifiers/slack"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/notifiers"
-	"github.com/stackrox/rox/pkg/notifiers/slack"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

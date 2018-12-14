@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/stackrox/rox/pkg/notifiers/cscc/findings"
+	"github.com/stackrox/rox/central/notifiers/cscc/findings"
 	"golang.org/x/oauth2/google"
 )
 
@@ -21,26 +21,28 @@ const (
 // Logger is the minimal interface we need to use to log data.
 type Logger interface {
 	Warnf(format string, args ...interface{})
+	Infof(format string, args ...interface{})
 	Debugf(format string, args ...interface{})
 }
 
-// A Config contains the necessary information to make a CSCC request.
+// A Config contains the necessary information to make a Cloud SCC request.
 type Config struct {
-	GCPOrganizationID string
-	ServiceAccount    []byte
-	Logger            Logger
+	SourceID       string // The Source ID is assigned by SCC when a Source is created for StackRox.
+	ServiceAccount []byte
+	Logger         Logger
 }
 
-func (c *Config) url() string {
+func (c *Config) postURL(findingID string) string {
 	return fmt.Sprintf(
-		"https://securitycenter.googleapis.com/v1alpha3/organizations/%s/findings",
-		c.GCPOrganizationID,
+		"https://securitycenter.googleapis.com/v1beta1/%s/findings?findingId=%s",
+		c.SourceID,
+		findingID,
 	)
 }
 
-// CreateFinding creates the provided SourceFinding.
-func (c *Config) CreateFinding(finding *findings.SourceFinding) error {
-	req, err := c.request(finding)
+// CreateFinding creates the provided Finding.
+func (c *Config) CreateFinding(finding *findings.Finding, id string) error {
+	req, err := c.request(finding, id)
 	if err != nil {
 		return fmt.Errorf("request creation: %s", err)
 	}
@@ -70,15 +72,14 @@ func (c *Config) CreateFinding(finding *findings.SourceFinding) error {
 	return c.handleResponse(resp)
 }
 
-func (c *Config) request(finding *findings.SourceFinding) (*http.Request, error) {
-	b, err := json.Marshal(&findings.CreateFindingMessage{
-		Finding: *finding,
-	})
+func (c *Config) request(finding *findings.Finding, id string) (*http.Request, error) {
+	b, err := json.Marshal(finding)
 	if err != nil {
 		return nil, fmt.Errorf("marshal: %s", err)
 	}
+	c.Logger.Debugf("Request: %s", string(b))
 
-	req, err := http.NewRequest("POST", c.url(), bytes.NewReader(b))
+	req, err := http.NewRequest("POST", c.postURL(id), bytes.NewReader(b))
 	if err != nil {
 		return nil, fmt.Errorf("build: %s", err)
 	}
@@ -90,7 +91,7 @@ func (c *Config) handleResponse(r *http.Response) error {
 	if err != nil {
 		c.Logger.Warnf("Response decoding failed: %s", err)
 	}
-	c.Logger.Debugf("CSCC response: %d %s; %s", r.StatusCode, r.Status, string(b))
+	c.Logger.Debugf("Cloud SCC response: %d %s; %s", r.StatusCode, r.Status, string(b))
 	if r.StatusCode >= 400 {
 		return fmt.Errorf("Unexpected response code %d: %s", r.StatusCode, string(b))
 	}

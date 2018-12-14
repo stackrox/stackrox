@@ -23,8 +23,9 @@ message Notifier {
 
 message CSCC {
     string service_account = 1;
-    string gcp_org_id      = 2;
-    string gcp_project     = 3;
+    reserved                 2; // Formerly gcp_org_id
+    reserved                 3; // Formerly gcp_project
+    string source_id       = 4;
 }
 
 message Jira {

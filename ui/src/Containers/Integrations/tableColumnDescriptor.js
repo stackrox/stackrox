@@ -43,7 +43,7 @@ const tableColumnDescriptor = Object.freeze({
         ],
         cscc: [
             { accessor: 'name', Header: 'Name' },
-            { accessor: 'cscc.gcpOrgId', Header: 'Google Cloud Platform Org ID' }
+            { accessor: 'cscc.sourceId', Header: 'Google Cloud SCC Source ID' }
         ],
         splunk: [
             { accessor: 'name', Header: 'Name' },

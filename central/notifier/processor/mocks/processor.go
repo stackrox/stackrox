@@ -6,8 +6,8 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	notifiers "github.com/stackrox/rox/central/notifiers"
 	storage "github.com/stackrox/rox/generated/storage"
-	notifiers "github.com/stackrox/rox/pkg/notifiers"
 	reflect "reflect"
 )
 

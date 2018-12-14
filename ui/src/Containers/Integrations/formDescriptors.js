@@ -257,25 +257,19 @@ const formDescriptors = {
                 label: 'Integration Name',
                 jsonpath: 'name',
                 type: 'text',
-                placeholder: 'CSCC'
+                placeholder: 'Cloud SCC'
             },
             {
-                label: 'GCP Organization ID Number',
-                jsonpath: 'cscc.gcpOrgId',
+                label: 'Cloud SCC Source ID',
+                jsonpath: 'cscc.sourceId',
                 type: 'text',
-                placeholder: ''
-            },
-            {
-                label: 'GCP Project',
-                jsonpath: 'cscc.gcpProject',
-                type: 'text',
-                placeholder: ''
+                placeholder: 'organizations/123/sources/456'
             },
             {
                 label: 'Service Account Key (JSON)',
                 jsonpath: 'cscc.serviceAccount',
                 type: 'text',
-                placeholder: ''
+                placeholder: '{"type": "service_account", "project_id": ...}'
             }
         ],
         splunk: [

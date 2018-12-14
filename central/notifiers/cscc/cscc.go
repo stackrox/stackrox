@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/central/notifiers/cscc/client"
+	"github.com/stackrox/rox/central/notifiers/cscc/findings"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/notifiers"
-	"github.com/stackrox/rox/pkg/notifiers/cscc/client"
-	"github.com/stackrox/rox/pkg/notifiers/cscc/findings"
 	"github.com/stackrox/rox/pkg/protoconv"
 )
 
@@ -18,39 +20,32 @@ var (
 	logger = logging.LoggerForModule()
 )
 
-// The CSCC notifier plugin integrates with Google's Cloud Security Command Center.
+// The Cloud SCC notifier plugin integrates with Google's Cloud Security Command Center.
 type cscc struct {
 	// The Service Account is a Google JSON service account key.
 	// The GCP Organization ID is a numeric identifier for the Google Cloud Platform
 	// organization. It is required so that we can tag findings to the right org.
 	client client.Config
-	// The GCP Project is a string identifier for the Google Cloud Platform
-	// project. It is required so that we can tag findings to the right org.
-	// This can be inferred from service accounts but in alpha testing we are
-	// using a key from a separate project.
-	gcpProject string
+	config *config
 
 	*storage.Notifier
+	clusters clusterDatastore.DataStore
 }
 
 type config struct {
 	ServiceAccount string `json:"serviceAccount"`
-	GCPOrgID       string `json:"gcpOrgID"`
-	GCPProject     string `json:"gcpProject"`
+	SourceID       string `json:"sourceID"`
 }
 
 func (c config) validate() error {
 	if c.ServiceAccount == "" {
-		return errors.New("serviceAccount must be defined in the CSCC Configuration")
+		return errors.New("serviceAccount must be defined in the Cloud SCC Configuration")
 	}
-	if c.GCPOrgID == "" {
-		return errors.New("gcpOrgID must be defined in the CSCC Configuration")
+	if c.SourceID == "" {
+		return errors.New("sourceID must be defined in the Cloud SCC Configuration")
 	}
-	if err := client.ValidateOrgID(c.GCPOrgID); err != nil {
+	if err := client.ValidateSourceID(c.SourceID); err != nil {
 		return err
-	}
-	if c.GCPProject == "" {
-		return errors.New("gcpProject must be defined in the CSCC Configuration")
 	}
 	return nil
 }
@@ -114,41 +109,71 @@ func (c *cscc) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 	return nil
 }
 
+// Cloud SCC requires that Finding IDs be alphanumeric (no special characters)
+// and 1-32 characters long. UUIDs are 32 characters if you remove hyphens.
+func processUUID(u string) string {
+	return strings.Replace(u, "-", "", -1)
+}
+
+func (c *cscc) getCluster(id string) (*storage.Cluster, error) {
+	cluster, exists, err := c.clusters.GetCluster(id)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, fmt.Errorf("Could not retrieve cluster %q because it does not exist", id)
+	}
+	if cluster.GetProviderMetadata().GetGoogle().GetProject() == "" {
+		return nil, fmt.Errorf("Could not find Google project for cluster %q", id)
+	}
+	if cluster.GetProviderMetadata().GetGoogle().GetClusterName() == "" {
+		return nil, fmt.Errorf("Could not find Google cluster name for cluster %q", id)
+	}
+	if cluster.GetProviderMetadata().GetZone() == "" {
+		return nil, fmt.Errorf("Could not find Google zone for cluster %q", id)
+	}
+	return cluster, nil
+}
+
 //AlertNotify takes in an alert and generates the notification
 func (c *cscc) AlertNotify(alert *storage.Alert) error {
 	alertLink := notifiers.AlertLink(c.Notifier.UiEndpoint, alert.GetId())
 	summary := c.getAlertDescription(alert)
 
+	findingID := processUUID(alert.GetId())
+
+	cluster, err := c.getCluster(alert.GetDeployment().GetClusterId())
+	if err != nil {
+		return err
+	}
+
 	category := alert.GetPolicy().GetName()
 	severity := transformSeverity(alert.GetPolicy().GetSeverity())
-	finding := &findings.SourceFinding{
-		ID:       alert.GetId(),
-		Category: category,
-		AssetIDs: []string{findings.ClusterID{
-			Org:     c.client.GCPOrganizationID,
-			Project: c.gcpProject,
-			ID:      alert.GetDeployment().GetClusterName(),
-		}.AssetID()},
-		SourceID:  findings.SourceID,
-		Timestamp: protoconv.ConvertGoGoProtoTimeToGolangProtoTime(alert.GetTime()),
+	finding := &findings.Finding{
+		ID:     fmt.Sprintf("%s/findings/%s", c.config.SourceID, findingID),
+		Parent: c.config.SourceID,
+		ResourceName: findings.ClusterID{
+			Project: cluster.GetProviderMetadata().GetGoogle().GetProject(),
+			Zone:    cluster.GetProviderMetadata().GetZone(),
+			Name:    cluster.GetProviderMetadata().GetGoogle().GetClusterName(),
+		}.ResourceName(),
+		State:     findings.StateActive,
+		Category:  category,
 		URL:       alertLink,
+		Timestamp: protoconv.ConvertTimestampToTimeOrNow(alert.GetTime()).Format(time.RFC3339Nano),
 		Properties: findings.Properties{
-			SCCCategory:     category,
-			SCCStatus:       "active",
-			SCCSeverity:     severity,
-			SCCSourceStatus: "active",
+			Severity: severity,
 
 			Namespace:      alert.GetDeployment().GetNamespace(),
 			Service:        alert.GetDeployment().GetName(),
 			DeploymentType: alert.GetDeployment().GetType(),
-			// Container info is not available for Prevent.
 
 			EnforcementActions: alertEnforcement(alert),
 			Summary:            summary,
 		}.Map(),
 	}
 
-	return c.client.CreateFinding(finding)
+	return c.client.CreateFinding(finding, findingID)
 }
 
 // BenchmarkNotify does nothing currently, since we do not want to post
@@ -157,33 +182,33 @@ func (c *cscc) BenchmarkNotify(schedule *storage.BenchmarkSchedule) error {
 	return nil
 }
 
-func newCSCC(protoNotifier *storage.Notifier) (*cscc, error) {
+func newCSCC(protoNotifier *storage.Notifier, clusters clusterDatastore.DataStore) (*cscc, error) {
 	csccConfig, ok := protoNotifier.GetConfig().(*storage.Notifier_Cscc)
 	if !ok {
-		return nil, fmt.Errorf("CSCC config is required")
+		return nil, fmt.Errorf("Cloud SCC config is required")
 	}
 	conf := csccConfig.Cscc
 
 	cfg := &config{
 		ServiceAccount: conf.ServiceAccount,
-		GCPOrgID:       conf.GcpOrgId,
-		GCPProject:     conf.GcpProject,
+		SourceID:       conf.SourceId,
 	}
 	if err := cfg.validate(); err != nil {
 		return nil, err
 	}
-	return newWithConfig(protoNotifier, cfg), nil
+	return newWithConfig(protoNotifier, clusters, cfg), nil
 }
 
-func newWithConfig(protoNotifier *storage.Notifier, cfg *config) *cscc {
+func newWithConfig(protoNotifier *storage.Notifier, clusters clusterDatastore.DataStore, cfg *config) *cscc {
 	return &cscc{
+		clusters: clusters,
 		Notifier: protoNotifier,
 		client: client.Config{
-			ServiceAccount:    []byte(cfg.ServiceAccount),
-			GCPOrganizationID: cfg.GCPOrgID,
-			Logger:            logger,
+			ServiceAccount: []byte(cfg.ServiceAccount),
+			SourceID:       cfg.SourceID,
+			Logger:         logger,
 		},
-		gcpProject: cfg.GCPProject,
+		config: cfg,
 	}
 }
 
@@ -192,12 +217,12 @@ func (c *cscc) ProtoNotifier() *storage.Notifier {
 }
 
 func (c *cscc) Test() error {
-	return errors.New("Test is not yet implemented for CSCC")
+	return errors.New("Test is not yet implemented for Cloud SCC")
 }
 
 func init() {
 	notifiers.Add("cscc", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
-		j, err := newCSCC(notifier)
+		j, err := newCSCC(notifier, clusterDatastore.Singleton())
 		return j, err
 	})
 }
