@@ -19,6 +19,7 @@ type Store interface {
 	Add(*storage.Group) error
 	Update(*storage.Group) error
 	Upsert(*storage.Group) error
+	Mutate(remove, update, add []*storage.Group) error
 	Remove(props *storage.GroupProperties) error
 }
 

@@ -11,8 +11,22 @@ import "storage/user.proto";
 
 package v1;
 
+// Next Tag: 2
 message GetUsersResponse {
     repeated storage.User users = 1;
+}
+
+// UserAttributeTuple descript the auth:key:value tuple that decides group membership.
+// Next Tag: 4
+message UserAttributeTuple {
+    string auth_provider_id = 1;
+    string key = 2;
+    string value = 3;
+}
+
+// Next Tag: 2
+message GetUsersAttributesResponse {
+    repeated UserAttributeTuple users_attributes = 1;
 }
 
 service UserService {
@@ -26,6 +40,12 @@ service UserService {
     rpc GetUser (ResourceByID) returns (storage.User) {
         option (google.api.http) = {
             get: "/v1/users/{id}"
+        };
+    }
+
+    rpc GetUsersAttributes (Empty) returns (GetUsersAttributesResponse) {
+        option (google.api.http) = {
+            get: "/v1/usersattributes"
         };
     }
 

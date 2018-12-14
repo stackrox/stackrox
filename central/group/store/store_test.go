@@ -195,6 +195,108 @@ func (s *GroupStoreTestSuite) TestUpsert() {
 	}
 }
 
+func (s *GroupStoreTestSuite) TestMutate() {
+	startingState := []*storage.Group{
+		{
+			Props: &storage.GroupProperties{
+				AuthProviderId: "authProvider1",
+				Key:            "Attribute",
+				Value:          "IsCaptain",
+			},
+			RoleName: "captain",
+		},
+		{
+			Props: &storage.GroupProperties{
+				AuthProviderId: "authProvider1",
+				Key:            "Attribute",
+				Value:          "IsAlsoCaptain",
+			},
+			RoleName: "captain",
+		},
+		{
+			Props: &storage.GroupProperties{
+				AuthProviderId: "authProvider1",
+				Key:            "DifferentAttribute",
+				Value:          "IsCaptain",
+			},
+			RoleName: "captain",
+		},
+	}
+
+	for _, a := range startingState {
+		s.NoError(s.sto.Add(a))
+	}
+
+	toRemove := []*storage.Group{
+		{
+			Props: &storage.GroupProperties{
+				AuthProviderId: "authProvider1",
+				Key:            "Attribute",
+				Value:          "IsCaptain",
+			},
+			RoleName: "captain",
+		},
+	}
+
+	toUpdate := []*storage.Group{
+		{
+			Props: &storage.GroupProperties{
+				AuthProviderId: "authProvider1",
+				Key:            "Attribute",
+				Value:          "IsAlsoCaptain",
+			},
+			RoleName: "notcaptain",
+		},
+	}
+
+	toAdd := []*storage.Group{
+		{
+			Props: &storage.GroupProperties{
+				AuthProviderId: "authProvider1",
+				Key:            "DifferentAttribute",
+				Value:          "IsNotCaptain",
+			},
+			RoleName: "notcaptain",
+		},
+	}
+
+	s.NoError(s.sto.Mutate(toRemove, toUpdate, toAdd))
+
+	// Last starting state should be untouched.
+	remainingStart, err := s.sto.Get(startingState[2].GetProps())
+	s.NoError(err)
+	s.Equal(startingState[2], remainingStart)
+
+	// Removed starting state should not be present.
+	for _, a := range toRemove {
+		full, err := s.sto.Get(a.GetProps())
+		s.NoError(err)
+		s.Equal((*storage.Group)(nil), full)
+	}
+
+	// Updated value check.
+	for _, a := range toUpdate {
+		full, err := s.sto.Get(a.GetProps())
+		s.NoError(err)
+		s.Equal(a, full)
+	}
+
+	// Added value check.
+	for _, a := range toAdd {
+		full, err := s.sto.Get(a.GetProps())
+		s.NoError(err)
+		s.Equal(a, full)
+	}
+
+	// Remove all remaining groups, should be 3 (starting state had one added and one removed).
+	retrievedGroups, err := s.sto.GetAll()
+	s.NoError(err)
+	s.Equal(3, len(retrievedGroups))
+	for _, a := range retrievedGroups {
+		s.NoError(s.sto.Remove(a.GetProps()))
+	}
+}
+
 func (s *GroupStoreTestSuite) TestWalk() {
 	groups := []*storage.Group{
 		{

@@ -71,6 +71,18 @@ func (mr *MockStoreMockRecorder) GetAll() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockStore)(nil).GetAll))
 }
 
+// Mutate mocks base method
+func (m *MockStore) Mutate(arg0, arg1, arg2 []*storage.Group) error {
+	ret := m.ctrl.Call(m, "Mutate", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Mutate indicates an expected call of Mutate
+func (mr *MockStoreMockRecorder) Mutate(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Mutate", reflect.TypeOf((*MockStore)(nil).Mutate), arg0, arg1, arg2)
+}
+
 // Remove mocks base method
 func (m *MockStore) Remove(arg0 *storage.GroupProperties) error {
 	ret := m.ctrl.Call(m, "Remove", arg0)

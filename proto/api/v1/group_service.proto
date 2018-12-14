@@ -12,8 +12,22 @@ package v1;
 
 
 // API for updating Groups and getting users.
+// Next Available Tag: 2
 message GetGroupsResponse {
     repeated storage.Group groups = 1;
+}
+
+// GroupBatchUpdateRequest is an in transaction batch update to the groups present.
+// Next Available Tag: 3
+message GroupBatchUpdateRequest {
+    // Previous groups are the groups expected to be present in the store.
+    // Performs a diff on the GroupProperties present in previous_groups and required_groups:
+    // 1) if in previous_groups but not required_groups, it gets deleted.
+    // 2) if in previous_groups and required_groups, it gets updated.
+    // 3) if not in previous_groups but in required_groups, it gets added.
+    repeated storage.Group previous_groups = 1;
+    // Required groups are the groups we want to mutate the previous groups into.
+    repeated storage.Group required_groups = 2;
 }
 
 service GroupService {
@@ -27,6 +41,13 @@ service GroupService {
     rpc GetGroup (storage.GroupProperties) returns (storage.Group) {
         option (google.api.http) = {
             get: "/v1/groups"
+        };
+    }
+
+    rpc BatchUpdate (GroupBatchUpdateRequest) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v1/groupsbatch"
+            body: "*"
         };
     }
 

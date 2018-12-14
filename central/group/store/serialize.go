@@ -7,6 +7,16 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
+// PropsKey is the key function for GroupProperties objects
+func PropsKey(props *storage.GroupProperties) string {
+	return StringKey(props.GetAuthProviderId(), props.GetKey(), props.GetValue())
+}
+
+// StringKey is the key function for GroupProperties objects with direct input values.
+func StringKey(authProviderID, attrKey, attrValue string) string {
+	return fmt.Sprintf("%s:%s:%s", authProviderID, attrKey, attrValue)
+}
+
 // Serialization
 ////////////////
 
@@ -15,11 +25,7 @@ func serialize(group *storage.Group) ([]byte, []byte) {
 }
 
 func serializeKey(props *storage.GroupProperties) []byte {
-	return serializeKeyProps(props.GetAuthProviderId(), props.GetKey(), props.GetValue())
-}
-
-func serializeKeyProps(authProviderID, key, value string) []byte {
-	return []byte(fmt.Sprintf("%s:%s:%s", authProviderID, key, value))
+	return []byte(PropsKey(props))
 }
 
 func serializeValue(group *storage.Group) []byte {

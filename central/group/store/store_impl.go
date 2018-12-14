@@ -79,12 +79,7 @@ func (s *storeImpl) Add(group *storage.Group) error {
 	key, value := serialize(group)
 
 	return s.db.Update(func(tx *bolt.Tx) error {
-		buc := tx.Bucket([]byte(groupsBucket))
-		if buc.Get(key) != nil {
-			return fmt.Errorf("group config for %s already exists", string(key))
-		}
-		buc.Put(key, value)
-		return nil
+		return addInTransaction(tx, key, value)
 	})
 }
 
@@ -94,12 +89,7 @@ func (s *storeImpl) Update(group *storage.Group) error {
 	key, value := serialize(group)
 
 	return s.db.Update(func(tx *bolt.Tx) error {
-		buc := tx.Bucket([]byte(groupsBucket))
-		if buc.Get(key) == nil {
-			return fmt.Errorf("group config for %s does not exist", string(key))
-		}
-		buc.Put(key, value)
-		return nil
+		return updateInTransaction(tx, key, value)
 	})
 }
 
@@ -109,25 +99,72 @@ func (s *storeImpl) Upsert(group *storage.Group) error {
 
 	return s.db.Update(func(tx *bolt.Tx) error {
 		buc := tx.Bucket([]byte(groupsBucket))
-		buc.Put(key, value)
-		return nil
+		return buc.Put(key, value)
 	})
 }
 
 // Remove removes the group with matching properties from the store.
-// Does not return an error if no such group exists.
+// Returns an error if no such group exists.
 func (s *storeImpl) Remove(props *storage.GroupProperties) error {
 	key := serializeKey(props)
 
 	return s.db.Update(func(tx *bolt.Tx) error {
-		buc := tx.Bucket([]byte(groupsBucket))
-		buc.Delete(key)
+		return removeInTransaction(tx, key)
+	})
+}
+
+// Mutate does a set of mutations to the store in a single transaction, returning an error if any affected
+// state is unexpected.
+func (s *storeImpl) Mutate(toRemove, toUpdate, toAdd []*storage.Group) error {
+	return s.db.Update(func(tx *bolt.Tx) error {
+		for _, group := range toRemove {
+			key := serializeKey(group.GetProps())
+			if err := removeInTransaction(tx, key); err != nil {
+				return fmt.Errorf("error removing during mutation: %s", err)
+			}
+		}
+		for _, group := range toUpdate {
+			key, value := serialize(group)
+			if err := updateInTransaction(tx, key, value); err != nil {
+				return fmt.Errorf("error updating during mutation: %s", err)
+			}
+		}
+		for _, group := range toAdd {
+			key, value := serialize(group)
+			if err := addInTransaction(tx, key, value); err != nil {
+				return fmt.Errorf("error adding during mutation: %s", err)
+			}
+		}
 		return nil
 	})
 }
 
 // Helpers
 //////////
+
+func addInTransaction(tx *bolt.Tx, key, value []byte) error {
+	buc := tx.Bucket([]byte(groupsBucket))
+	if buc.Get(key) != nil {
+		return fmt.Errorf("group config for %s already exists", key)
+	}
+	return buc.Put(key, value)
+}
+
+func updateInTransaction(tx *bolt.Tx, key, value []byte) error {
+	buc := tx.Bucket([]byte(groupsBucket))
+	if buc.Get(key) == nil {
+		return fmt.Errorf("group config for %s does not exist", key)
+	}
+	return buc.Put(key, value)
+}
+
+func removeInTransaction(tx *bolt.Tx, key []byte) error {
+	buc := tx.Bucket([]byte(groupsBucket))
+	if buc.Get(key) == nil {
+		return fmt.Errorf("group config for %s does not exist", key)
+	}
+	return buc.Delete(key)
+}
 
 func getPossibleGroupProperties(authProviderID string, attributes map[string][]string) (props []*storage.GroupProperties) {
 	// We need to consider no provider, and the provider given.
