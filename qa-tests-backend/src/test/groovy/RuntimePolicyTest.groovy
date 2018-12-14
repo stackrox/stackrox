@@ -15,12 +15,12 @@ class RuntimePolicyTest extends BaseSpecification  {
                     .setName (DEPLOYMENTAPTGET)
                     .setImage ("nginx@sha256:9ad0746d8f2ea6df3a17ba89eca40b48c47066dfab55a75e08e2b70fc80d929e")
                     .addLabel ( "app", "test" )
-                    .setCommand(["sh" , "-c" , "apt-get -y update"]),
+                    .setCommand(["sh" , "-c" , "apt-get -y update && sleep 600"]),
             new Deployment()
                     .setName (DEPLOYMENTAPT)
                     .setImage ("redis@sha256:911f976312f503692709ad9534f15e2564a0967f2aa6dd08a74c684fb1e53e1a")
                     .addLabel ( "app", "test" )
-                    .setCommand(["sh" , "-c" , "apt -y update"]),
+                    .setCommand(["sh" , "-c" , "apt -y update && sleep 600"]),
     ]
 
     def setupSpec() {
