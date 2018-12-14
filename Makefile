@@ -174,6 +174,7 @@ cli: gazelle
 
 	# Copy the user's specific OS into gopath
 	cp bazel-bin/roxctl/$(BAZEL_OS)_amd64_pure_stripped/roxctl $(GOPATH)/bin/roxctl
+	chmod u+w $(GOPATH)/bin/roxctl
 
 .PHONY: build
 build: gazelle cli
@@ -260,7 +261,6 @@ image: build clean-image $(MERGED_API_SWAGGER_SPEC)
 	echo "$(TAG)" > image/VERSION.txt
 	chmod +w image/bin/*
 	chmod +w scale/image/bin/*
-	chmod +w $(GOPATH)/bin/roxctl
 	docker build -t stackrox/main:$(TAG) image/
 	docker build -t stackrox/monitoring:$(TAG) monitoring
 	docker build -t stackrox/grpc-server:$(TAG) integration-tests/mock-grpc-server/image
