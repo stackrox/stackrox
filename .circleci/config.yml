@@ -52,11 +52,13 @@ setupGCP: &setupGCP
     name: Setup deployment env
     command: |
       docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
-      echo 'export REGISTRY_USERNAME="$DOCKERHUB_USERNAME"' >> $BASH_ENV
-      echo 'export REGISTRY_PASSWORD="$DOCKERHUB_PASSWORD"' >> $BASH_ENV
-      echo 'export MAIN_IMAGE_TAG="$(make tag)"' >> $BASH_ENV
+      cat >>"$BASH_ENV" <<EOF
+        export REGISTRY_USERNAME="$DOCKERHUB_USERNAME"
+        export REGISTRY_PASSWORD="$DOCKERHUB_PASSWORD"
+        export MAIN_IMAGE_TAG="$(make tag)"
+        export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json
+      EOF
       echo $GKE_SERVICE_ACCOUNT > /tmp/gcp.json
-      echo 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json' >> $BASH_ENV
       gcloud auth activate-service-account --key-file /tmp/gcp.json
       gcloud config set project stackrox-ci
       gcloud config set compute/zone us-central1-f
@@ -81,13 +83,11 @@ deployGKE: &deployGKE
       ./deploy/k8s/deploy.sh
       kubectl delete clusterrolebinding temporary-admin
 
-      if [[ -f ./deploy/k8s/central-deploy/password ]]; then
-        password="$(< ./deploy/k8s/central-deploy/password)"
-        cat >>"$BASH_ENV" <<-EOF
-          export ROX_USERNAME=admin
-          export ROX_PASSWORD="$password"
+      source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
+      cat >>"$BASH_ENV" <<EOF
+        export ROX_USERNAME="$ROX_USERNAME"
+        export ROX_PASSWORD="$ROX_PASSWORD"
       EOF
-      fi
 
 setupCIMonitoring: &setupCIMonitoring
   run:
@@ -155,18 +155,6 @@ runUIE2E: &runUIE2E
         export UI_BASE_URL="https://localhost:3000"
       else
         export UI_BASE_URL="https://localhost:${LOCAL_PORT}"
-      fi
-
-      if [[ -n "$ROX_USERNAME" && -n "$ROX_PASSWORD" ]]; then
-        export CYPRESS_ROX_AUTH_TOKEN="$(
-          curl -sk -u "${ROX_USERNAME}:${ROX_PASSWORD}" "https://localhost:${LOCAL_PORT}/v1/apitokens/generate" \
-            -X POST \
-            -d '{"name": "cypress_tests", "role": "Admin"}' \
-          | jq -r '.token // ""')"
-        if [[ -z "$CYPRESS_ROX_AUTH_TOKEN" ]]; then
-          echo >&2 "Could not issue auth token for UI tests"
-          exit 1
-        fi
       fi
 
       make -C ui test-e2e-ci
@@ -507,13 +495,13 @@ jobs:
           name: Launch Central only
           command: |
             ./deploy/k8s/central.sh
-            if [[ -f ./deploy/k8s/central-deploy/password ]]; then
-              password="$(< ./deploy/k8s/central-deploy/password)"
-              cat >>"$BASH_ENV" <<-EOF
-                export ROX_USERNAME=admin
-                export ROX_PASSWORD="$password"
+
+            source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
+            cat >>"$BASH_ENV" <<EOF
+              export ROX_USERNAME="$ROX_USERNAME"
+              export ROX_PASSWORD="$ROX_PASSWORD"
             EOF
-            fi
+
       - *setupCIMonitoring
       - *waitForAPI
 
@@ -627,15 +615,18 @@ jobs:
           at: /go/src/github.com/stackrox/rox
 
       - *setupRoxctl
+
       - run:
           name: Configure Deployment Environment
           command: |
-            echo "export CLAIRIFY_IMAGE_TAG=0.4"                            >> "$BASH_ENV"
-            echo "export OPENSHIFT_HOST=$(cat openshift/master)"            >> "$BASH_ENV"
-            echo "export ROX_IMAGE_REGISTRY=docker.io"                      >> "$BASH_ENV"
-            echo "export MAIN_IMAGE_TAG=$(make tag)"                        >> "$BASH_ENV"
-            echo "export REGISTRY_PASSWORD=$DOCKERHUB_PASSWORD"             >> "$BASH_ENV"
-            echo "export REGISTRY_USERNAME=$DOCKERHUB_USERNAME"             >> "$BASH_ENV"
+            cat >>"$BASH_ENV" <<EOF
+              export CLAIRIFY_IMAGE_TAG=0.5.2
+              export OPENSHIFT_HOST=$(cat openshift/master)
+              export ROX_IMAGE_REGISTRY=docker.io
+              export MAIN_IMAGE_TAG=$(make tag)
+              export REGISTRY_PASSWORD=$DOCKERHUB_PASSWORD
+              export REGISTRY_USERNAME=$DOCKERHUB_USERNAME
+            EOF
 
       - run:
           name: Configure Kubectl
@@ -664,13 +655,11 @@ jobs:
             ./deploy/openshift/deploy.sh
             oc -n stackrox get all
 
-            if [[ -f ./deploy/openshift/central-deploy/password ]]; then
-              password="$(< ./deploy/openshift/central-deploy/password)"
-              cat >>"$BASH_ENV" <<-EOF
-                export ROX_USERNAME=admin
-                export ROX_PASSWORD="$password"
+            source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/openshift/
+            cat >>"$BASH_ENV" <<EOF
+              export ROX_USERNAME="$ROX_USERNAME"
+              export ROX_PASSWORD="$ROX_PASSWORD"
             EOF
-            fi
 
       - *setupCIMonitoring
       - *waitForAPI

@@ -60,14 +60,14 @@
     "test": "NODE_PATH=src react-scripts test --coverage",
     "test-watch": "NODE_PATH=src react-scripts test",
     "lint": "NODE_PATH=src eslint src cypress",
-    "cypress-open": "cypress open",
-    "test-e2e-local": "cypress run",
-    "test-e2e-ci": "cypress run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.json",
-    "eject": "react-scripts eject",
-    "postinstall": "node ./scripts/spdy-issue47-quickfix.js",
+    "cypress-open": "CYPRESS_ROX_AUTH_TOKEN=$(./scripts/get-auth-token.sh) cypress open",
+    "test-e2e-local": "CYPRESS_ROX_AUTH_TOKEN=(./scripts/get-auth-token.sh) cypress run",
+    "test-e2e-ci": "CYPRESS_ROX_AUTH_TOKEN=$(./scripts/get-auth-token.sh) cypress run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.json",
     "connect": "../scripts/connect-ui.sh ${1}",
     "deploy": "../deploy/k8s/deploy.sh",
-    "forward": "../scripts/port-forward-ui.sh"
+    "forward": "../scripts/port-forward-ui.sh",
+    "eject": "react-scripts eject",
+    "postinstall": "node ./scripts/spdy-issue47-quickfix.js"
   },
   "devDependencies": {
     "cypress": "^3.1.0",
