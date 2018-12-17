@@ -4,7 +4,7 @@ option go_package = "sensor";
 option cc_enable_arenas = true;
 
 import "google/protobuf/timestamp.proto";
-import "api/v1/network_enums.proto";
+import "internalapi/sensor/network_enums.proto";
 import "storage/network_flow.proto";
 
 package sensor;
@@ -20,11 +20,11 @@ message NetworkConnectionInfo {
 // NetworkConnection tracks connection information about client and server.
 message NetworkConnection {
 
-    v1.SocketFamily socket_family       = 1;
+    SocketFamily socket_family       = 1;
     NetworkAddress local_address        = 2;
     NetworkAddress remote_address       = 3;
     storage.L4Protocol protocol            = 4;
-    v1.ClientServerRole role            = 5;
+    ClientServerRole role            = 5;
     string container_id                 = 6;
 
     // If this connection was closed, this gives the timestamp when it was closed. If this is unset, we treat it as an

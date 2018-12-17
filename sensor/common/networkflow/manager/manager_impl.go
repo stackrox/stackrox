@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -330,9 +329,9 @@ func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connec
 	for _, conn := range networkInfo.GetUpdatedConnections() {
 		var incoming bool
 		switch conn.Role {
-		case v1.ClientServerRole_ROLE_SERVER:
+		case sensor.ClientServerRole_ROLE_SERVER:
 			incoming = true
-		case v1.ClientServerRole_ROLE_CLIENT:
+		case sensor.ClientServerRole_ROLE_CLIENT:
 			incoming = false
 		default:
 			continue
