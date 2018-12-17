@@ -6,17 +6,7 @@ import { selectors } from 'reducers';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { Link } from 'react-router-dom';
 
-import Select from 'Components/ReactSelect';
-
-const selectMenuOnTopStyles = {
-    menu: base => ({
-        ...base,
-        position: 'absolute !important',
-        top: 'auto !important',
-        bottom: '100% !important',
-        'border-radius': '5px 5px 0px 0px !important'
-    })
-};
+import Select, { selectMenuOnTopStyles } from 'Components/ReactSelect';
 
 class SendNotificationSection extends Component {
     static propTypes = {

@@ -6,7 +6,7 @@ import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import ReduxTextAreaField from 'Components/forms/ReduxTextAreaField';
 
 const Field = props => {
-    const { label, jsonPath, placeholder, type, options, html, customComponents } = props;
+    const { label, jsonPath, placeholder, type, options, html, customComponents, styles } = props;
     let field = null;
     switch (type) {
         case 'text':
@@ -19,6 +19,7 @@ const Field = props => {
                     options={options}
                     placeholder={placeholder}
                     customComponents={customComponents}
+                    styles={styles}
                 />
             );
             break;
@@ -51,7 +52,8 @@ Field.propTypes = {
         })
     ),
     html: PropTypes.element,
-    customComponents: PropTypes.shape({})
+    customComponents: PropTypes.shape({}),
+    styles: PropTypes.shape({})
 };
 
 Field.defaultProps = {
@@ -60,7 +62,8 @@ Field.defaultProps = {
     placeholder: '',
     options: [],
     html: <div />,
-    customComponents: {}
+    customComponents: {},
+    styles: {}
 };
 
 export default Field;

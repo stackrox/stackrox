@@ -364,6 +364,14 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     padding-bottom: 84px;
 }
 
+/* Collapsible CSS */
+
+.Collapsible__trigger.is-open + .Collapsible__contentOuter {
+    overflow: visible !important;
+}
+
+/* React Select CSS */
+
 .react-select__single-value {
     color: inherit !important;
 }

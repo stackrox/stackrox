@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { components } from 'react-select';
 
 import * as Icon from 'react-feather';
+import { selectMenuOnTopStyles } from 'Components/ReactSelect';
 import Field from './Field';
 import formDescriptor from './formDescriptor';
 
@@ -53,6 +54,7 @@ class RuleGroups extends Component {
                                 type="select"
                                 label="Key"
                                 options={keyOptions}
+                                styles={selectMenuOnTopStyles}
                             />
                         </div>
                         <div className="w-full">
@@ -70,6 +72,7 @@ class RuleGroups extends Component {
                                 customComponents={{
                                     MenuList: this.renderMenuListComponent
                                 }}
+                                styles={selectMenuOnTopStyles}
                             />
                         </div>
                         <button className="pl-2 pr-2" type="button">

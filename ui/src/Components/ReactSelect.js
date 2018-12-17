@@ -9,6 +9,17 @@ const defaultComponentClassNames = {
     multiValue: 'bg-primary-200 border border-primary-300 text-primary-700'
 };
 
+export const selectMenuOnTopStyles = {
+    menu: base => ({
+        ...base,
+        position: 'absolute !important',
+        top: 'auto !important',
+        bottom: '100% !important',
+        zIndex: '100',
+        'border-radius': '5px 5px 0px 0px !important'
+    })
+};
+
 const Control = ({ className, ...props }) => (
     <selectComponents.Control
         {...props}

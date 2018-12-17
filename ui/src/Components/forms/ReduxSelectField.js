@@ -8,7 +8,8 @@ const ReduxSelect = ({
     options,
     placeholder,
     disabled,
-    customComponents
+    customComponents,
+    styles
 }) => (
     <Select
         key={name}
@@ -18,6 +19,7 @@ const ReduxSelect = ({
         value={value}
         isDisabled={disabled}
         components={customComponents}
+        styles={styles}
     />
 );
 
@@ -30,15 +32,17 @@ ReduxSelect.propTypes = {
     options: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     placeholder: PropTypes.string.isRequired,
     disabled: PropTypes.bool,
-    customComponents: PropTypes.shape({})
+    customComponents: PropTypes.shape({}),
+    styles: PropTypes.shape({})
 };
 
 ReduxSelect.defaultProps = {
     disabled: false,
-    customComponents: {}
+    customComponents: {},
+    styles: {}
 };
 
-const ReduxSelectField = ({ name, options, placeholder, disabled, customComponents }) => (
+const ReduxSelectField = ({ name, options, placeholder, disabled, customComponents, styles }) => (
     <Field
         key={name}
         name={name}
@@ -47,6 +51,7 @@ const ReduxSelectField = ({ name, options, placeholder, disabled, customComponen
         component={ReduxSelect}
         placeholder={placeholder}
         disabled={disabled}
+        styles={styles}
         className="border bg-base-100 border-base-300 text-base-600 p-3 pr-8 rounded-r-sm cursor-pointer z-50 focus:border-base-300 w-full font-400"
     />
 );
@@ -56,13 +61,15 @@ ReduxSelectField.propTypes = {
     options: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     placeholder: PropTypes.string,
     disabled: PropTypes.bool,
-    customComponents: PropTypes.shape({})
+    customComponents: PropTypes.shape({}),
+    styles: PropTypes.shape({})
 };
 
 ReduxSelectField.defaultProps = {
     placeholder: 'Select one...',
     disabled: false,
-    customComponents: {}
+    customComponents: {},
+    styles: {}
 };
 
 export default ReduxSelectField;
