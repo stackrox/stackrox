@@ -1,4 +1,5 @@
 import { combineReducers } from 'redux';
+import isEqual from 'lodash/isEqual';
 
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
 
@@ -26,14 +27,35 @@ const groups = (state = [], action) => {
     }
     return state;
 };
+
+const groupsByAuthProviderId = (state = {}, action) => {
+    if (action.type === types.FETCH_RULE_GROUPS.SUCCESS) {
+        const authProviderRuleGroups = {};
+        action.response.groups.forEach(group => {
+            if (group && group.props) {
+                if (!authProviderRuleGroups[group.props.authProviderId]) {
+                    authProviderRuleGroups[group.props.authProviderId] = [];
+                }
+                authProviderRuleGroups[group.props.authProviderId].push(group);
+            }
+        });
+        return isEqual(authProviderRuleGroups, state) ? state : authProviderRuleGroups;
+    }
+    return state;
+};
+
 const reducer = combineReducers({
-    groups
+    groups,
+    groupsByAuthProviderId
 });
 
 const getRuleGroups = state => state.groups;
 
+const getGroupsByAuthProviderId = state => state.groupsByAuthProviderId;
+
 export const selectors = {
-    getRuleGroups
+    getRuleGroups,
+    getGroupsByAuthProviderId
 };
 
 export default reducer;

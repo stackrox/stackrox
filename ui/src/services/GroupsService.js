@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const url = '/v1/groups';
+const updateUrl = '/v1/groupsbatch';
 
 /**
  * Fetches list of groups of rules
@@ -14,12 +15,12 @@ export function fetchGroups() {
 }
 
 /**
- * Creates a group rule.
+ * Update/Add a group rule.
  *
  * @returns {Promise<Object, Error>}
  */
-export function createGroup(data) {
-    return Promise.all(data.map(group => axios.post(`${url}`, group)));
+export function updateOrAddGroup({ oldGroups, newGroups }) {
+    return axios.post(updateUrl, { previous_groups: oldGroups, required_groups: newGroups });
 }
 
 /**

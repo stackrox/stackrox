@@ -1,8 +1,9 @@
-import { all, call, fork, put, takeLatest } from 'redux-saga/effects';
+import { all, call, fork, put, select, takeLatest } from 'redux-saga/effects';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 import { accessControlPath } from 'routePaths';
 import * as service from 'services/GroupsService';
 import { actions, types } from 'reducers/groups';
+import { selectors } from 'reducers';
 
 import Raven from 'raven-js';
 
@@ -18,7 +19,11 @@ function* getRuleGroups() {
 function* saveRuleGroup(action) {
     try {
         const { group } = action;
-        yield call(service.createGroup, group);
+        const existingGroups = yield select(selectors.getGroupsByAuthProviderId);
+        yield call(service.updateOrAddGroup, {
+            newGroups: group,
+            oldGroups: existingGroups[group[0].props.authProviderId]
+        });
         yield call(getRuleGroups);
     } catch (error) {
         Raven.captureException(error);
