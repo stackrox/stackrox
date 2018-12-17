@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 option go_package = "storage";
+option cc_enable_arenas = true;
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
