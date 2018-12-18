@@ -23,6 +23,7 @@ import route, { selectors as routeSelectors } from './routes';
 import network, { selectors as networkSelectors } from './network';
 import processes, { selectors as processSelectors } from './processes';
 import groups, { selectors as groupsSelectors } from './groups';
+import attributes, { selectors as attributesSelectors } from './attributes';
 
 // Reducers
 
@@ -46,7 +47,8 @@ const appReducer = combineReducers({
     metadata,
     network,
     processes,
-    groups
+    groups,
+    attributes
 });
 
 const rootReducer = combineReducers({
@@ -81,6 +83,7 @@ const getMetadata = state => getApp(state).metadata;
 const getNetwork = state => getApp(state).network;
 const getProcesses = state => getApp(state).processes;
 const getRuleGroups = state => getApp(state).groups;
+const getAttributes = state => getApp(state).attributes;
 
 const boundSelectors = {
     ...bindSelectors(getAlerts, alertSelectors),
@@ -103,7 +106,8 @@ const boundSelectors = {
     ...bindSelectors(getMetadata, metadataSelectors),
     ...bindSelectors(getNetwork, networkSelectors),
     ...bindSelectors(getProcesses, processSelectors),
-    ...bindSelectors(getRuleGroups, groupsSelectors)
+    ...bindSelectors(getRuleGroups, groupsSelectors),
+    ...bindSelectors(getAttributes, attributesSelectors)
 };
 
 export const selectors = {

@@ -7,6 +7,7 @@ import Raven from 'raven-js';
 import { loginPath, integrationsPath, authResponsePrefix } from 'routePaths';
 import { takeEveryLocation } from 'utils/sagaEffects';
 import * as AuthService from 'services/AuthService';
+import fetchUsersAttributes from 'services/AttributesService';
 import { selectors } from 'reducers';
 import { actions, types, AUTH_STATUS } from 'reducers/auth';
 import { types as locationActionTypes } from 'reducers/routes';
@@ -163,10 +164,12 @@ function* saveAuthProvider(action) {
         if (isNewAuthProvider) {
             yield call(AuthService.saveAuthProvider, authProvider);
             yield call(getAuthProviders);
+            yield call(fetchUsersAttributes);
             yield put(actions.selectAuthProvider(authProvider));
         } else {
             yield call(AuthService.saveAuthProvider, authProvider);
             yield call(getAuthProviders);
+            yield call(fetchUsersAttributes);
             yield put(actions.selectAuthProvider(authProvider));
         }
     } catch (error) {

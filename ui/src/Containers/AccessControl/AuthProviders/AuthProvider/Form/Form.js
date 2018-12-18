@@ -68,7 +68,7 @@ class Form extends Component {
                                 name="groups"
                                 component={this.renderRuleGroupsComponent}
                                 onDelete={onDelete}
-                                id={initialValues.id}
+                                initialValues={initialValues}
                             />
                         </CollapsibleCard>
                     </div>

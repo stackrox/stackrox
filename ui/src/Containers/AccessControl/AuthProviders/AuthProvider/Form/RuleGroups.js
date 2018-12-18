@@ -1,7 +1,12 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { components } from 'react-select';
+import { connect } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
+import { selectors } from 'reducers';
+import { formValues } from 'redux-form';
+import uniqBy from 'lodash/uniqBy';
 
+import { components } from 'react-select';
 import * as Icon from 'react-feather';
 import { selectMenuOnTopStyles } from 'Components/ReactSelect';
 import Field from './Field';
@@ -26,20 +31,54 @@ class RuleGroups extends Component {
     static propTypes = {
         fields: PropTypes.shape({}).isRequired,
         onDelete: PropTypes.func.isRequired,
-        id: PropTypes.string,
-        toggleModal: PropTypes.func.isRequired
+        initialValues: PropTypes.shape({
+            id: PropTypes.string
+        }),
+        toggleModal: PropTypes.func.isRequired,
+        usersAttributes: PropTypes.arrayOf(
+            PropTypes.shape({
+                authProviderId: PropTypes.string,
+                key: PropTypes.string,
+                value: PropTypes.string
+            })
+        ).isRequired
     };
 
     static defaultProps = {
-        id: ''
+        initialValues: {
+            id: ''
+        }
     };
 
     renderMenuListComponent = props => <MenuList toggleModal={this.props.toggleModal} {...props} />;
 
+    getFilteredValueOptions = (valueOptions, idx) => {
+        const { key } = this.props.groups[idx].props;
+        const result = valueOptions
+            .filter(option => option.key === key)
+            .map(option => ({ label: option.label, value: option.value }));
+        return result;
+    };
+
     render() {
-        const { fields, onDelete, id } = this.props;
+        const { fields, onDelete, initialValues, usersAttributes } = this.props;
         const { keyOptions, roleOptions } = formDescriptor.attrToRole;
-        const addRule = () => fields.push({ props: { auth_provider_id: id } });
+        let valueOptions = initialValues.groups.map(({ props: { key, value } }) => ({
+            key,
+            label: value,
+            value
+        }));
+        valueOptions = uniqBy(
+            usersAttributes
+                .map(({ key, value }) => ({
+                    key,
+                    label: value,
+                    value
+                }))
+                .concat(valueOptions),
+            'value'
+        );
+        const addRule = () => fields.push({ props: { auth_provider_id: initialValues.id } });
         const deleteRule = (group, idx) => () => {
             onDelete(group.get(idx));
             fields.remove(idx);
@@ -58,7 +97,13 @@ class RuleGroups extends Component {
                             />
                         </div>
                         <div className="w-full">
-                            <Field jsonPath={`${group}.props.value`} type="text" label="Value" />
+                            <Field
+                                jsonPath={`${group}.props.value`}
+                                type="selectcreatable"
+                                label="Value"
+                                options={this.getFilteredValueOptions(valueOptions, idx)}
+                                styles={selectMenuOnTopStyles}
+                            />
                         </div>
                         <div className="flex items-center">
                             <Icon.ArrowRight className="h-4 w-4" />
@@ -92,4 +137,13 @@ class RuleGroups extends Component {
     }
 }
 
-export default RuleGroups;
+const mapStateToProps = createStructuredSelector({
+    usersAttributes: selectors.getUsersAttributes
+});
+
+const mapDispatchToProps = {};
+
+export default connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(formValues('groups')(RuleGroups));

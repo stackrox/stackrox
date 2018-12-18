@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 
 import ReduxTextField from 'Components/forms/ReduxTextField';
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
+import ReduxSelectCreatableField from 'Components/forms/ReduxSelectCreatableField';
 import ReduxTextAreaField from 'Components/forms/ReduxTextAreaField';
 
 const Field = props => {
@@ -19,6 +20,16 @@ const Field = props => {
                     options={options}
                     placeholder={placeholder}
                     customComponents={customComponents}
+                    styles={styles}
+                />
+            );
+            break;
+        case 'selectcreatable':
+            field = (
+                <ReduxSelectCreatableField
+                    name={jsonPath}
+                    options={options}
+                    placeholder={placeholder}
                     styles={styles}
                 />
             );

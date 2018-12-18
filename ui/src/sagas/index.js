@@ -18,6 +18,7 @@ import network from './networkSagas';
 import metadata from './metadataSagas';
 import processes from './processSagas';
 import groups from './groupSagas';
+import attributes from './attributesSagas';
 
 export default function* root() {
     yield all([
@@ -38,6 +39,7 @@ export default function* root() {
         fork(network),
         fork(metadata),
         fork(processes),
-        fork(groups)
+        fork(groups),
+        fork(attributes)
     ]);
 }

@@ -65,7 +65,7 @@ function withAdjustedBehavior(SelectComponent) {
         };
 
         static defaultProps = {
-            getOptionValue: option => option.value,
+            getOptionValue: option => (option ? option.value : option),
             className: defaultClassName,
             classNamePrefix: 'react-select', // only for testing purposes, not for CSS creation
             onChange: () => {},
