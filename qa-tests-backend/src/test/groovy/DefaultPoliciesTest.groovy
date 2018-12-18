@@ -9,6 +9,9 @@ import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest.Re
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsGroupResponse
 import io.stackrox.proto.storage.AlertOuterClass.ListAlert
+import io.stackrox.proto.storage.DeploymentOuterClass
+import io.stackrox.proto.storage.DeploymentOuterClass.Risk.Result
+
 import org.junit.Assume
 
 import groups.BAT
@@ -38,7 +41,8 @@ class DefaultPoliciesTest extends BaseSpecification {
         new Deployment()
             .setName(STRUTS)
             .setImage("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-            .addLabel("app", "test"),
+            .addLabel("app", "test")
+            .addPort(80),
         new Deployment()
             .setName(SSL_TERMINATOR)
             .setImage("apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest")
@@ -224,5 +228,48 @@ class DefaultPoliciesTest extends BaseSpecification {
         flat["Latest tag"] != 0
         flat["Secure Shell (ssh) Port Exposed"] != 0
         flat["Don't use environment variables with secrets"] != 0
+    }
+
+    @Unroll
+    @Category([BAT])
+    def "Verify risk factors on struts deployment: #riskFactor"() {
+        given:
+        "The struts deployment details"
+        Deployment dep = DEPLOYMENTS.find { it.name == STRUTS }
+        DeploymentOuterClass.Deployment deployment = Services.getDeployment(dep.deploymentUid)
+
+        expect:
+        "Risk factors are present"
+        Result riskResult = deployment.risk.resultsList.find { it.name == riskFactor }
+        riskResult != null
+        riskResult.score <= maxScore
+        riskResult.score >= 1.0f
+        message == null ?: riskResult.factorsList.get(0).message == message
+
+        where:
+        "data inputs"
+
+        riskFactor                        | maxScore |
+                message
+        "Policy Violations"               | 4.0f     |
+                null
+
+        "Service Reachability"            | 2.0f     |
+                "Container legacy-apps/struts-app exposes port 80 in the cluster"
+
+        "Image Vulnerabilities"           | 4.0f     |
+                "Image contains 143 CVEs with CVSS scores ranging between 1.9 and 10.0"
+
+        "Service Configuration"           | 2.0f     |
+                "No capabilities were dropped"
+
+        "Components Useful for Attackers" | 1.5f     |
+                "an image contains component(s) useful for attackers: apt, bash, curl, wget"
+
+        "Number of Components in Image"   | 1.5f     |
+                "image apollo-dtr.rox.systems/legacy-apps/struts-app:latest contains 206 components"
+
+        "Image Freshness"                 | 1.5f     |
+                null
     }
 }
