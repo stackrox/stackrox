@@ -31,7 +31,7 @@ type MapperTestSuite struct {
 	roleStoreMock  *roleMocks.MockStore
 	userStoreMock  *userMocks.MockStore
 
-	mapper *mapperImpl
+	mapper *storeBasedMapperImpl
 }
 
 func (s *MapperTestSuite) SetupTest() {
@@ -41,7 +41,7 @@ func (s *MapperTestSuite) SetupTest() {
 	s.roleStoreMock = roleMocks.NewMockStore(s.mockCtrl)
 	s.userStoreMock = userMocks.NewMockStore(s.mockCtrl)
 
-	s.mapper = &mapperImpl{
+	s.mapper = &storeBasedMapperImpl{
 		authProviderID: fakeAuthProvider,
 		groupStore:     s.groupStoreMock,
 		roleStore:      s.roleStoreMock,

@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-type mapperImpl struct {
+type storeBasedMapperImpl struct {
 	authProviderID string
 	groupStore     groupStore.Store
 	roleStore      roleStore.Store
@@ -22,14 +22,14 @@ type mapperImpl struct {
 }
 
 // FromTokenClaims interprets the given claim information and converts it to a role.
-func (rm *mapperImpl) FromTokenClaims(claims *tokens.Claims) (*storage.Role, error) {
+func (rm *storeBasedMapperImpl) FromTokenClaims(claims *tokens.Claims) (*storage.Role, error) {
 	// Record the user we are creating a role for.
 	rm.recordUser(claims)
 	// Determine the role.
 	return rm.getRole(claims)
 }
 
-func (rm *mapperImpl) recordUser(claims *tokens.Claims) {
+func (rm *storeBasedMapperImpl) recordUser(claims *tokens.Claims) {
 	user := rm.createUser(claims)
 	if err := rm.userStore.Upsert(user); err != nil {
 		// Just log since we don't actually need the user information.
@@ -37,7 +37,7 @@ func (rm *mapperImpl) recordUser(claims *tokens.Claims) {
 	}
 }
 
-func (rm *mapperImpl) getRole(claims *tokens.Claims) (*storage.Role, error) {
+func (rm *storeBasedMapperImpl) getRole(claims *tokens.Claims) (*storage.Role, error) {
 	// Get the groups for the user.
 	groups, err := rm.groupStore.Walk(rm.authProviderID, claims.ExternalUser.Attributes)
 	if err != nil {
@@ -57,7 +57,7 @@ func (rm *mapperImpl) getRole(claims *tokens.Claims) (*storage.Role, error) {
 	return permissions.NewUnionRole(roles), nil
 }
 
-func (rm *mapperImpl) rolesForGroups(groups []*storage.Group) ([]*storage.Role, error) {
+func (rm *storeBasedMapperImpl) rolesForGroups(groups []*storage.Group) ([]*storage.Role, error) {
 	// Get the roles in all of the groups.
 	roleNameSet := set.NewStringSet()
 	for _, group := range groups {
@@ -73,7 +73,7 @@ func (rm *mapperImpl) rolesForGroups(groups []*storage.Group) ([]*storage.Role, 
 // Helpers
 //////////
 
-func (rm *mapperImpl) createUser(claims *tokens.Claims) *storage.User {
+func (rm *storeBasedMapperImpl) createUser(claims *tokens.Claims) *storage.User {
 	// Create a user.
 	user := &storage.User{
 		Id:             claims.ExternalUser.UserID,

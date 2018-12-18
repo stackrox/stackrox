@@ -9,7 +9,7 @@ import (
 type BackendFactory interface {
 	// CreateAuthProviderBackend creates a new backend instance for the given auth provider, using the specified
 	// configuration.
-	CreateAuthProviderBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (Backend, map[string]string, error)
+	CreateBackend(ctx context.Context, id string, uiEndpoints []string, config map[string]string) (Backend, map[string]string, error)
 
 	// ProcessHTTPRequest is the dispatcher for HTTP/1.1 requests to `<sso-prefix>/<provider-type>/...`. The envisioned
 	// workflow consists of extracting the specific auth provider ID from the request, usually via a `state` parameter,

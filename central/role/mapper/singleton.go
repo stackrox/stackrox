@@ -6,17 +6,18 @@ import (
 	groupStore "github.com/stackrox/rox/central/group/store"
 	roleStore "github.com/stackrox/rox/central/role/store"
 	userStore "github.com/stackrox/rox/central/user/store"
+	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
 var (
-	roleMapperFactory Factory
+	roleMapperFactory permissions.RoleMapperFactory
 	once              sync.Once
 )
 
 // FactorySingleton returns the singleton user role mapper factory.
-func FactorySingleton() Factory {
+func FactorySingleton() permissions.RoleMapperFactory {
 	once.Do(func() {
-		roleMapperFactory = NewFactory(groupStore.Singleton(), roleStore.Singleton(), userStore.Singleton())
+		roleMapperFactory = NewStoreBasedMapperFactory(groupStore.Singleton(), roleStore.Singleton(), userStore.Singleton())
 	})
 	return roleMapperFactory
 }

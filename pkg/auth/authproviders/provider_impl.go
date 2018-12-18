@@ -101,13 +101,13 @@ func (p *authProvider) update(name *string, enabled *bool) (bool, storage.AuthPr
 	return modified, p.baseInfo, oldName
 }
 
-func (p *authProvider) AsV1() *storage.AuthProvider {
+func (p *authProvider) StorageView() *storage.AuthProvider {
 	p.mutex.RLock()
 	defer p.mutex.RUnlock()
+
 	result := p.baseInfo
 	if p.backend == nil {
 		result.Enabled = false
 	}
-
 	return &result
 }

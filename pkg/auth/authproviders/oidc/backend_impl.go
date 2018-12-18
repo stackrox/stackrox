@@ -29,7 +29,7 @@ const (
 	modeConfigKey     = "mode"
 )
 
-type provider struct {
+type backendImpl struct {
 	id                 string
 	idTokenVerifier    *oidc.IDTokenVerifier
 	noncePool          cryptoutils.NoncePool
@@ -41,7 +41,7 @@ type provider struct {
 	baseOptions     []oauth2.AuthCodeOption
 }
 
-func (p *provider) ExchangeToken(ctx context.Context, externalRawToken, state string) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
+func (p *backendImpl) ExchangeToken(ctx context.Context, externalRawToken, state string) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
 	claim, opts, err := p.verifyIDToken(ctx, externalRawToken)
 	_, clientState := splitState(state)
 	if err != nil {
@@ -50,15 +50,15 @@ func (p *provider) ExchangeToken(ctx context.Context, externalRawToken, state st
 	return claim, opts, clientState, nil
 }
 
-func (p *provider) LoginURL(clientState string, ri *requestinfo.RequestInfo) string {
+func (p *backendImpl) LoginURL(clientState string, ri *requestinfo.RequestInfo) string {
 	return p.loginURL(clientState, ri)
 }
 
-func (p *provider) RefreshURL() string {
+func (p *backendImpl) RefreshURL() string {
 	return ""
 }
 
-func (p *provider) verifyIDToken(ctx context.Context, rawIDToken string) (*tokens.ExternalUserClaim, []tokens.Option, error) {
+func (p *backendImpl) verifyIDToken(ctx context.Context, rawIDToken string) (*tokens.ExternalUserClaim, []tokens.Option, error) {
 	idToken, err := p.idTokenVerifier.Verify(ctx, rawIDToken)
 	if err != nil {
 		return nil, nil, err
@@ -77,7 +77,7 @@ func (p *provider) verifyIDToken(ctx context.Context, rawIDToken string) (*token
 	return claim, []tokens.Option{tokens.WithExpiry(idToken.Expiry)}, nil
 }
 
-// The go-oidc library has two annoying characteristics when it comes to creating provider instances:
+// The go-oidc library has two annoying characteristics when it comes to creating backendImpl instances:
 // - The context is passed on to the remoteKeySource that is being created. Hence, we can't use a short-lived context
 //   (such as the request context), as otherwise subsequent verifications will fail because the keys have not been
 //   retrieved.
@@ -116,7 +116,7 @@ func createOIDCProvider(ctx context.Context, issuer string) (*oidc.Provider, str
 	}
 }
 
-func newProvider(ctx context.Context, id string, uiEndpoints []string, callbackURLPath string, config map[string]string) (*provider, map[string]string, error) {
+func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackURLPath string, config map[string]string) (*backendImpl, map[string]string, error) {
 	if len(uiEndpoints) == 0 {
 		return nil, nil, errors.New("OIDC requires a default UI endpoint")
 	}
@@ -146,7 +146,7 @@ func newProvider(ctx context.Context, id string, uiEndpoints []string, callbackU
 		return nil, nil, err
 	}
 
-	p := &provider{
+	p := &backendImpl{
 		id: id,
 		noncePool: cryptoutils.NewThreadSafeNoncePool(
 			cryptoutils.NewNonceGenerator(nonceByteLen, rand.Reader), nonceTTL),
@@ -192,7 +192,7 @@ func newProvider(ctx context.Context, id string, uiEndpoints []string, callbackU
 	return p, effectiveConfig, nil
 }
 
-func (p *provider) loginURL(clientState string, ri *requestinfo.RequestInfo) string {
+func (p *backendImpl) loginURL(clientState string, ri *requestinfo.RequestInfo) string {
 	nonce, err := p.noncePool.IssueNonce()
 	if err != nil {
 		log.Errorf("UNEXPECTED: could not issue nonce")
@@ -215,7 +215,7 @@ func (p *provider) loginURL(clientState string, ri *requestinfo.RequestInfo) str
 	return oauthCfg.AuthCodeURL(state, options...)
 }
 
-func (p *provider) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
+func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
 	// Form data is guaranteed to be parsed thanks to factory.ProcessHTTPRequest
 	rawIDToken := r.FormValue("id_token")
 	if rawIDToken == "" {

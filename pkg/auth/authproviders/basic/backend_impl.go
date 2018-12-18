@@ -34,16 +34,16 @@ var (
 	}
 )
 
-type provider struct {
+type backendImpl struct {
 	urlPathPrefix string
 	monoClock     monoclock.MonoClock
 }
 
-func (p *provider) ExchangeToken(ctx context.Context, externalRawToken, state string) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
+func (p *backendImpl) ExchangeToken(ctx context.Context, externalRawToken, state string) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
 	return nil, nil, "", status.Errorf(codes.Unimplemented, "basic auth provider does not implement ExchangeToken")
 }
 
-func (p *provider) LoginURL(clientState string, _ *requestinfo.RequestInfo) string {
+func (p *backendImpl) LoginURL(clientState string, _ *requestinfo.RequestInfo) string {
 	queryParams := url.Values{}
 	queryParams.Set(clientStateQueryParamName, clientState)
 	queryParams.Set("micro_ts", strconv.FormatInt(int64(p.monoClock.SinceEpoch()/time.Microsecond), 10))
@@ -54,19 +54,19 @@ func (p *provider) LoginURL(clientState string, _ *requestinfo.RequestInfo) stri
 	return u.String()
 }
 
-func (p *provider) RefreshURL() string {
+func (p *backendImpl) RefreshURL() string {
 	return ""
 }
 
-func newProvider(ctx context.Context, id string, uiEndpoints []string, urlPathPrefix string, config map[string]string) (*provider, map[string]string, error) {
-	provider := &provider{
+func newBackend(urlPathPrefix string) (*backendImpl, map[string]string, error) {
+	backendImpl := &backendImpl{
 		urlPathPrefix: urlPathPrefix,
 		monoClock:     monoclock.New(),
 	}
-	return provider, nil, nil
+	return backendImpl, nil, nil
 }
 
-func (p *provider) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
+func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
 	restPath := strings.TrimPrefix(r.URL.Path, p.urlPathPrefix)
 	if len(restPath) == len(r.URL.Path) {
 		return nil, nil, "", httputil.NewError(http.StatusNotFound, "Not Found")

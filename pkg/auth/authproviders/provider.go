@@ -16,8 +16,8 @@ type Provider interface {
 	Backend() Backend
 	RoleMapper() permissions.RoleMapper
 
-	// AsV1 returns a description of the authentication provider in protobuf format.
-	AsV1() *storage.AuthProvider
+	// StorageView returns a description of the authentication provider in protobuf format.
+	StorageView() *storage.AuthProvider
 
 	// RecordSuccess should be called the first time a user successfully logs in through an auth provider, to mark it as
 	// validated. This is used to prevent a user from accidentally locking themselves out of the system by setting up a

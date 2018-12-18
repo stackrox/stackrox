@@ -69,7 +69,7 @@ type storeBackedRegistry struct {
 // createAuthProviderAsync is called asynchronously when a new auth provider factory is registered, and providers have
 // already been read from the database but couldn't be instantiated due to the factory missing.
 func createAuthProviderAsync(factory BackendFactory, typ string, provider *authProvider) {
-	backend, effectiveConfig, err := factory.CreateAuthProviderBackend(context.Background(), provider.ID(), AllUIEndpoints(&provider.baseInfo), provider.baseInfo.Config)
+	backend, effectiveConfig, err := factory.CreateBackend(context.Background(), provider.ID(), AllUIEndpoints(&provider.baseInfo), provider.baseInfo.Config)
 	if err != nil {
 		log.Errorf("Failed to create auth provider of type %s: %v", typ, err)
 		return
@@ -152,7 +152,7 @@ func (r *storeBackedRegistry) createProvider(ctx context.Context, id, typ, name 
 	if factory == nil {
 		return nil, fmt.Errorf("unknown auth provider type %s", typ)
 	}
-	backend, effectiveConfig, err := factory.CreateAuthProviderBackend(ctx, id, uiEndpoints, config)
+	backend, effectiveConfig, err := factory.CreateBackend(ctx, id, uiEndpoints, config)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func (r *storeBackedRegistry) registerProvider(provider *authProvider) {
 	provider.issuer = issuer
 }
 
-func (r *storeBackedRegistry) CreateAuthProvider(ctx context.Context, typ, name string, uiEndpoints []string, enabled bool, validate bool, config map[string]string) (Provider, error) {
+func (r *storeBackedRegistry) CreateProvider(ctx context.Context, typ, name string, uiEndpoints []string, enabled bool, validate bool, config map[string]string) (Provider, error) {
 	id := uuid.NewV4().String()
 	newProvider, err := r.createProvider(ctx, id, typ, name, uiEndpoints, enabled, validate, config)
 	if err != nil {
@@ -209,7 +209,7 @@ func (r *storeBackedRegistry) CreateAuthProvider(ctx context.Context, typ, name 
 	return newProvider, nil
 }
 
-func (r *storeBackedRegistry) UpdateAuthProvider(ctx context.Context, id string, name *string, enabled *bool) (Provider, error) {
+func (r *storeBackedRegistry) UpdateProvider(ctx context.Context, id string, name *string, enabled *bool) (Provider, error) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -248,11 +248,11 @@ func (r *storeBackedRegistry) getAuthProvider(id string) *authProvider {
 	return r.providers[id]
 }
 
-func (r *storeBackedRegistry) GetAuthProvider(ctx context.Context, id string) Provider {
+func (r *storeBackedRegistry) GetProvider(ctx context.Context, id string) Provider {
 	return r.getAuthProvider(id)
 }
 
-func (r *storeBackedRegistry) GetAuthProviders(ctx context.Context, name, typ *string) []Provider {
+func (r *storeBackedRegistry) GetProviders(ctx context.Context, name, typ *string) []Provider {
 	var result []Provider
 
 	r.mutex.RLock()
@@ -271,7 +271,7 @@ func (r *storeBackedRegistry) GetAuthProviders(ctx context.Context, name, typ *s
 	return result
 }
 
-func (r *storeBackedRegistry) DeleteAuthProvider(ctx context.Context, id string) error {
+func (r *storeBackedRegistry) DeleteProvider(ctx context.Context, id string) error {
 	if err := r.store.RemoveAuthProvider(id); err != nil {
 		return err
 	}

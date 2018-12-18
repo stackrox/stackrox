@@ -18,11 +18,11 @@ type Registry interface {
 	// URLPathPrefix returns the path prefix (including a trailing slash) for URLs handled by this registry.
 	URLPathPrefix() string
 
-	CreateAuthProvider(ctx context.Context, typ, name string, uiEndpoints []string, enabled bool, validated bool, config map[string]string) (Provider, error)
-	UpdateAuthProvider(ctx context.Context, id string, name *string, enabled *bool) (Provider, error)
-	GetAuthProvider(ctx context.Context, id string) Provider
-	GetAuthProviders(ctx context.Context, name, typ *string) []Provider
-	DeleteAuthProvider(ctx context.Context, id string) error
+	CreateProvider(ctx context.Context, typ, name string, uiEndpoints []string, enabled bool, validated bool, config map[string]string) (Provider, error)
+	UpdateProvider(ctx context.Context, id string, name *string, enabled *bool) (Provider, error)
+	GetProvider(ctx context.Context, id string) Provider
+	GetProviders(ctx context.Context, name, typ *string) []Provider
+	DeleteProvider(ctx context.Context, id string) error
 	ExchangeToken(ctx context.Context, externalToken string, typ string, state string) (string, string, error)
 
 	// RegisterBackendFactory registers the given factory (creator) under the specified type. The creation of the

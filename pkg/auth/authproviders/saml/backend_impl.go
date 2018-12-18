@@ -18,13 +18,13 @@ var (
 	log = logging.LoggerForModule()
 )
 
-type provider struct {
+type backendImpl struct {
 	acsURLPath string
 	sp         saml2.SAMLServiceProvider
 	id         string
 }
 
-func (p *provider) loginURL(clientState string) (string, error) {
+func (p *backendImpl) loginURL(clientState string) (string, error) {
 	doc, err := p.sp.BuildAuthRequestDocument()
 	if err != nil {
 		return "", fmt.Errorf("could not construct auth request: %v", err)
@@ -36,11 +36,11 @@ func (p *provider) loginURL(clientState string) (string, error) {
 	return authURL, nil
 }
 
-func newProvider(ctx context.Context, acsURLPath string, id string, uiEndpoints []string, config map[string]string) (*provider, map[string]string, error) {
+func newBackend(ctx context.Context, acsURLPath string, id string, uiEndpoints []string, config map[string]string) (*backendImpl, map[string]string, error) {
 	if len(uiEndpoints) != 1 {
 		return nil, nil, errors.New("SAML requires exactly one UI endpoint")
 	}
-	p := &provider{
+	p := &backendImpl{
 		acsURLPath: acsURLPath,
 		id:         id,
 	}
@@ -85,7 +85,7 @@ func newProvider(ctx context.Context, acsURLPath string, id string, uiEndpoints 
 	return p, effectiveConfig, nil
 }
 
-func (p *provider) consumeSAMLResponse(samlResponse string) (*tokens.ExternalUserClaim, []tokens.Option, error) {
+func (p *backendImpl) consumeSAMLResponse(samlResponse string) (*tokens.ExternalUserClaim, []tokens.Option, error) {
 	ai, err := p.sp.RetrieveAssertionInfo(samlResponse)
 	if err != nil {
 		return nil, nil, err
@@ -100,7 +100,7 @@ func (p *provider) consumeSAMLResponse(samlResponse string) (*tokens.ExternalUse
 	return claim, opts, nil
 }
 
-func (p *provider) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
+func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
 	if r.URL.Path != p.acsURLPath {
 		return nil, nil, "", httputil.NewError(http.StatusNotFound, "Not Found")
 	}
@@ -124,15 +124,15 @@ func (p *provider) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) (*
 	return claims, opts, clientState, err
 }
 
-func (p *provider) ExchangeToken(ctx context.Context, externalToken, state string) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
+func (p *backendImpl) ExchangeToken(ctx context.Context, externalToken, state string) (*tokens.ExternalUserClaim, []tokens.Option, string, error) {
 	return nil, nil, "", errors.New("not implemented")
 }
 
-func (p *provider) RefreshURL() string {
+func (p *backendImpl) RefreshURL() string {
 	return ""
 }
 
-func (p *provider) LoginURL(clientState string, _ *requestinfo.RequestInfo) string {
+func (p *backendImpl) LoginURL(clientState string, _ *requestinfo.RequestInfo) string {
 	url, err := p.loginURL(clientState)
 	if err != nil {
 		log.Errorf("could not obtain the login URL: %v", err)
