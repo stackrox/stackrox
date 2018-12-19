@@ -6,7 +6,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/sensor/common/eventstream"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/sensor/common/messagestream"
 )
 
 func incrementSensorEvents(event *v1.SensorEvent, typ string) {
@@ -22,24 +23,33 @@ func incrementSensorEvents(event *v1.SensorEvent, typ string) {
 	sensorEvents.With(labels).Inc()
 }
 
-type countingEventStream struct {
+type countingMessageStream struct {
 	typ    string
-	stream eventstream.SensorEventStream
+	stream messagestream.SensorMessageStream
 }
 
-func (s countingEventStream) Send(event *v1.SensorEvent) error {
-	incrementSensorEvents(event, s.typ)
-	return s.stream.Send(event)
+func (s countingMessageStream) updateMetrics(msg *central.MsgFromSensor) {
+	switch m := msg.Msg.(type) {
+	case *central.MsgFromSensor_Event:
+		incrementSensorEvents(m.Event, s.typ)
+	default:
+		// we take care of metrics for network flows elsewhere
+	}
 }
 
-func (s countingEventStream) SendRaw(event *v1.SensorEvent, raw []byte) error {
-	incrementSensorEvents(event, s.typ)
-	return s.stream.SendRaw(event, raw)
+func (s countingMessageStream) Send(msg *central.MsgFromSensor) error {
+	s.updateMetrics(msg)
+	return s.stream.Send(msg)
 }
 
-// NewCountingEventStream returns a new SensorEventStream that automatically updates metrics counters.
-func NewCountingEventStream(stream eventstream.SensorEventStream, typ string) eventstream.SensorEventStream {
-	return countingEventStream{
+func (s countingMessageStream) SendRaw(msg *central.MsgFromSensor, raw []byte) error {
+	s.updateMetrics(msg)
+	return s.stream.SendRaw(msg, raw)
+}
+
+// NewCountingEventStream returns a new SensorMessageStream that automatically updates metrics counters.
+func NewCountingEventStream(stream messagestream.SensorMessageStream, typ string) messagestream.SensorMessageStream {
+	return countingMessageStream{
 		typ:    typ,
 		stream: stream,
 	}

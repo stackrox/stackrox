@@ -24,7 +24,7 @@ type streamerImpl struct {
 
 // Start sets up the channels and signals to start processing events input through the given stream, and return
 // enforcement actions to the given stream.
-func (s *streamerImpl) Start(stream v1.SensorEventService_RecordEventServer) {
+func (s *streamerImpl) Start(stream Stream) {
 	s.readFromStream(stream)
 	s.enqueueDequeue()
 	s.processWithPipeline()
@@ -34,19 +34,6 @@ func (s *streamerImpl) Start(stream v1.SensorEventService_RecordEventServer) {
 // WaitUntilEmpty waits until all items input from the sensor stream have been processed.
 func (s *streamerImpl) WaitUntilFinished() {
 	s.finishedSending.Wait()
-}
-
-// InjectEvent tries to add the event to the stream that is processed and generates enforcements and returns whether or
-// not it was successful.
-func (s *streamerImpl) InjectEvent(event *v1.SensorEvent) bool {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-
-	if s.eventsRead == nil {
-		return false
-	}
-	s.eventsRead <- event
-	return true
 }
 
 // InjectEnforcement tries to add the enforcement to the stream sent to sensor and returns whether or not it was
@@ -64,7 +51,7 @@ func (s *streamerImpl) InjectEnforcement(enforcement *v1.SensorEnforcement) bool
 
 // readFromStream reads from the given stream and forwards data to the output event channel.
 // When the stream is closed or the context canceled, the channel is closed.
-func (s *streamerImpl) readFromStream(stream v1.SensorEventService_RecordEventServer) {
+func (s *streamerImpl) readFromStream(stream Stream) {
 	s.eventsRead = make(chan *v1.SensorEvent)
 	whenReadingFinishes := func() {
 		s.lock.Lock()
@@ -118,7 +105,7 @@ func (s *streamerImpl) processWithPipeline() {
 
 // sendToStream reads from the input channel and sends received data out over the input stream. When the input channel
 // is closed, and all data is sent out over the stream, the output signal is signalled.
-func (s *streamerImpl) sendToStream(stream v1.SensorEventService_RecordEventServer) {
+func (s *streamerImpl) sendToStream(stream Stream) {
 	s.finishedSending = concurrency.NewSignal()
 	sendFinishedSignal := func() { s.finishedSending.Signal() }
 

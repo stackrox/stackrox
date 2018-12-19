@@ -1,7 +1,6 @@
 package common
 
 import (
-	"sync"
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
@@ -49,10 +48,10 @@ func NewSensor(centralConn *grpc.ClientConn, clusterID string) Sensor {
 		imageEnricher: imageEnricher,
 		poller:        poller,
 
-		// The Signal needs to be activated so Start() can detect callers that
+		// The ErrorSignal needs to be activated so Start() can detect callers that
 		// improperly call Start() repeatedly without calling Stop() first.
-		// The zero-value of Signal starts in an activated state.
-		stopped: concurrency.Signal{},
+		// The zero-value of ErrorSignal starts in an activated state.
+		stopped: concurrency.ErrorSignal{},
 	}
 }
 
@@ -64,11 +63,7 @@ type sensor struct {
 	imageEnricher enricher.ImageEnricher
 	poller        integration.Poller
 
-	stopped      concurrency.Signal
-	err          error
-	stoppingLock sync.Mutex
-
-	cancelFunc func()
+	stopped concurrency.ErrorSignal
 }
 
 // Start begins processing inputs and writing responses to the output channel.
@@ -79,40 +74,23 @@ func (s *sensor) Start(orchestratorInput <-chan *v1.SensorEvent, collectorInput 
 	if !s.stopped.Reset() {
 		panic("Sensor has already been started without stopping first")
 	}
-	s.err = nil
 
 	// The poller must be started so that its Stop() signal
 	// eventually returns.
 	go s.poller.Run()
 
-	go s.sendFlowMessages(networkFlowInput, central.NewNetworkFlowServiceClient(s.conn))
-	go s.sendEvents(orchestratorInput, collectorInput, output, v1.NewSensorEventServiceClient(s.conn))
+	go s.sendEvents(orchestratorInput, collectorInput, networkFlowInput, output, central.NewSensorServiceClient(s.conn))
 
 }
 
 // Stop stops the processing loops reading and writing to input and output, and closes the stream open with central.
 func (s *sensor) Stop(err error) {
-	s.stoppingLock.Lock()
-	defer s.stoppingLock.Unlock()
-
-	if s.cancelFunc != nil {
-		s.cancelFunc()
-		s.cancelFunc = nil
-		// It's not safe to call Stop() on a poller more than once.
+	if s.stopped.SignalWithError(err) {
 		s.poller.Stop()
-	}
-
-	if s.stopped.Signal() {
-		// Only save the error the first time we signal; later Stop()s may be nil.
-		s.err = err
 	}
 }
 
 // Wait blocks until the processing has stopped.
 func (s *sensor) Wait() error {
-	s.stopped.Wait()
-
-	s.stoppingLock.Lock()
-	defer s.stoppingLock.Unlock()
-	return s.err
+	return s.stopped.Wait()
 }

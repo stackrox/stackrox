@@ -5,8 +5,9 @@ import (
 	"reflect"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/sensor/common/eventstream"
+	"github.com/stackrox/rox/sensor/common/messagestream"
 )
 
 var (
@@ -21,19 +22,25 @@ type key struct {
 
 // deduper takes care of deduping sensor events.
 type deduper struct {
-	stream   eventstream.SensorEventStream
+	stream   messagestream.SensorMessageStream
 	lastSent map[key][]byte
 }
 
-// NewDedupingEventStream wraps
-func NewDedupingEventStream(stream eventstream.SensorEventStream) eventstream.SensorEventStream {
+// NewDedupingMessageStream wraps a SensorMessageStream and dedupes events. Other message types are forwarded as-is.
+func NewDedupingMessageStream(stream messagestream.SensorMessageStream) messagestream.SensorMessageStream {
 	return deduper{
 		stream:   stream,
 		lastSent: make(map[key][]byte),
 	}
 }
 
-func (d deduper) Send(event *v1.SensorEvent) error {
+func (d deduper) Send(msg *central.MsgFromSensor) error {
+	eventMsg, ok := msg.Msg.(*central.MsgFromSensor_Event)
+	if !ok {
+		// We only dedupe event messages, other messages get forwarded directly.
+		return d.stream.Send(msg)
+	}
+	event := eventMsg.Event
 	key := key{
 		id:           event.GetId(),
 		resourceType: reflect.TypeOf(event.GetResource()),
@@ -42,20 +49,26 @@ func (d deduper) Send(event *v1.SensorEvent) error {
 		delete(d.lastSent, key)
 	}
 	if event.GetAction() != v1.ResourceAction_UPDATE_RESOURCE {
-		return d.stream.Send(event)
+		return d.stream.Send(msg)
 	}
 
-	serialized, err := serializeDeterministic(event)
+	serialized, err := serializeDeterministic(msg)
 	if err != nil {
 		log.Warnf("Could not deterministically serialize event: %v", err)
 		delete(d.lastSent, key)
-		return d.stream.Send(event)
+		return d.stream.Send(msg)
 	}
 
-	return d.doSendRaw(event, key, serialized)
+	return d.doSendRaw(msg, key, serialized)
 }
 
-func (d deduper) SendRaw(event *v1.SensorEvent, raw []byte) error {
+func (d deduper) SendRaw(msg *central.MsgFromSensor, raw []byte) error {
+	eventMsg, ok := msg.Msg.(*central.MsgFromSensor_Event)
+	if !ok {
+		// We only dedupe event messages, other messages get forwarded directly.
+		return d.stream.Send(msg)
+	}
+	event := eventMsg.Event
 	key := key{
 		id:           event.GetId(),
 		resourceType: reflect.TypeOf(event.GetResource()),
@@ -64,17 +77,17 @@ func (d deduper) SendRaw(event *v1.SensorEvent, raw []byte) error {
 		delete(d.lastSent, key)
 	}
 	if event.GetAction() != v1.ResourceAction_UPDATE_RESOURCE {
-		return d.stream.SendRaw(event, raw)
+		return d.stream.SendRaw(msg, raw)
 	}
 
-	return d.doSendRaw(event, key, raw)
+	return d.doSendRaw(msg, key, raw)
 }
 
-func (d deduper) doSendRaw(event *v1.SensorEvent, key key, serialized []byte) error {
+func (d deduper) doSendRaw(msg *central.MsgFromSensor, key key, serialized []byte) error {
 	if bytes.Equal(d.lastSent[key], serialized) {
 		return nil
 	}
 	d.lastSent[key] = serialized
 
-	return d.stream.SendRaw(event, serialized)
+	return d.stream.SendRaw(msg, serialized)
 }

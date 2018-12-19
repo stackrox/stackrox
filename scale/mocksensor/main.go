@@ -49,15 +49,19 @@ func main() {
 		panic(err)
 	}
 
-	client := v1.NewSensorEventServiceClient(conn)
+	client := central.NewSensorServiceClient(conn)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	stream, err := client.RecordEvent(ctx)
+	communicateStream, err := client.Communicate(ctx)
 	if err != nil {
 		panic(err)
 	}
-	defer stream.CloseSend()
+	defer communicateStream.CloseSend()
+
+	stream := &threadSafeStream{
+		stream: communicateStream,
+	}
 
 	deploymentSignal := concurrency.NewSignal()
 	go sendDeployments(stream, *maxDeployments, *deploymentInterval, *bigDepRate, deploymentSignal)
@@ -67,16 +71,9 @@ func main() {
 	indicatorSignal := concurrency.NewSignal()
 	go sendIndicators(stream, *maxIndicators, *indicatorInterval, indicatorSignal)
 
-	nfClient := central.NewNetworkFlowServiceClient(conn)
-	nfStream, err := nfClient.PushNetworkFlows(ctx)
-
-	if err != nil {
-		panic(err)
-	}
-	defer nfStream.CloseSend()
 	networkFlowSignal := concurrency.NewSignal()
 
-	go sendNetworkFlows(nfStream, *networkFlowInterval, *maxNetworkFlows, *maxUpdates, *flowDeleteRate, &networkFlowSignal)
+	go sendNetworkFlows(stream, *networkFlowInterval, *maxNetworkFlows, *maxUpdates, *flowDeleteRate, &networkFlowSignal)
 
 	deploymentSignal.Wait()
 	indicatorSignal.Wait()
@@ -113,13 +110,13 @@ func deploymentSensorEvent(bigDepRate float64) *v1.SensorEvent {
 	}
 }
 
-func sendDeployments(stream v1.SensorEventService_RecordEventClient, maxDeployments int, deploymentInterval time.Duration, bigDepRate float64, signal concurrency.Signal) {
+func sendDeployments(stream *threadSafeStream, maxDeployments int, deploymentInterval time.Duration, bigDepRate float64, signal concurrency.Signal) {
 	ticker := time.NewTicker(deploymentInterval)
 	defer ticker.Stop()
 
 	for deploymentCount < maxDeployments {
 		<-ticker.C
-		if err := stream.Send(deploymentSensorEvent(bigDepRate)); err != nil {
+		if err := stream.SendEvent(deploymentSensorEvent(bigDepRate)); err != nil {
 			logger.Errorf("Error: %v", err)
 		}
 		deploymentCount++
@@ -142,12 +139,12 @@ func sensorEventFromIndicator(index int, indicator *storage.ProcessIndicator) *v
 	}
 }
 
-func sendIndicators(stream v1.SensorEventService_RecordEventClient, maxIndicators int, indicatorInterval time.Duration, signal concurrency.Signal) {
+func sendIndicators(stream *threadSafeStream, maxIndicators int, indicatorInterval time.Duration, signal concurrency.Signal) {
 	ticker := time.NewTicker(indicatorInterval)
 	defer ticker.Stop()
 	for indicatorCount := 0; indicatorCount < maxIndicators; indicatorCount++ {
 		<-ticker.C
-		if err := stream.Send(sensorEventFromIndicator(indicatorCount, fixtures.GetProcessIndicator())); err != nil {
+		if err := stream.SendEvent(sensorEventFromIndicator(indicatorCount, fixtures.GetProcessIndicator())); err != nil {
 			logger.Errorf("Error: %v", err)
 		}
 	}
@@ -155,14 +152,14 @@ func sendIndicators(stream v1.SensorEventService_RecordEventClient, maxIndicator
 	signal.Signal()
 }
 
-func sendNetworkFlows(stream central.NetworkFlowService_PushNetworkFlowsClient, networkFlowInterval time.Duration, maxNetworkFlows int, maxUpdates int, flowDeleteRate float64, signal *concurrency.Signal) {
+func sendNetworkFlows(stream *threadSafeStream, networkFlowInterval time.Duration, maxNetworkFlows int, maxUpdates int, flowDeleteRate float64, signal *concurrency.Signal) {
 	defer signal.Signal()
 
 	nextTick := time.Now()
 	for u := 0; u < maxUpdates; u++ {
 		time.Sleep(nextTick.Sub(time.Now()))
 		update := generateNetworkFlowUpdate(maxNetworkFlows, flowDeleteRate)
-		if err := stream.Send(update); err != nil {
+		if err := stream.SendNetworkFlows(update); err != nil {
 			logger.Errorf("Error: %v", err)
 		}
 		logger.Infof("Finished sending update %d with %d network flows", u, len(update.Updated))

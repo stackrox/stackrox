@@ -5,11 +5,8 @@ import (
 )
 
 // Manager provides functions for working with per cluster SensorEvent streams.
-// Layer of indirection allows us to inject data into the Sensor <-> Central stream.
 type Manager interface {
-	GetStreamer(clusterID string) Streamer
-	CreateStreamer(clusterID string) (Streamer, error)
-	RemoveStreamer(clusterID string) error
+	CreateStreamer(clusterID string) Streamer
 }
 
 // NewManager creates a new manager on top of the given event store and pipeline.
@@ -17,7 +14,5 @@ type Manager interface {
 func NewManager(pl pipeline.Pipeline) Manager {
 	return &managerImpl{
 		pl: pl,
-
-		clusterIDToStream: make(map[string]Streamer),
 	}
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/deduper"
-	"github.com/stackrox/rox/sensor/common/eventstream"
+	"github.com/stackrox/rox/sensor/common/messagestream"
 	"github.com/stackrox/rox/sensor/common/metrics"
 )
 
@@ -51,52 +51,7 @@ func logSendingEvent(sensorEvent *v1.SensorEvent) {
 	logger.Infof("Sending Sensor Event: Action: '%s'. Type '%s'. Name: '%s'", sensorEvent.GetAction(), resourceType, name)
 }
 
-func (s *sensor) sendFlowMessages(flows <-chan *central.NetworkFlowUpdate, flowClient central.NetworkFlowServiceClient) {
-	var err error
-	recoverable := true
-	for !s.stopped.IsDone() && recoverable {
-		if err != nil {
-			log.Errorf("Recoverable error sending flow updates: %v. Sleeping for %v", err, retryDelay)
-			if concurrency.WaitWithTimeout(&s.stopped, retryDelay) {
-				break
-			}
-		}
-		recoverable, err = s.sendFlowMessagesSingle(flows, flowClient)
-	}
-	// Sanity check - if we exit the loop, we should be done, otherwise panic.
-	if !concurrency.WaitWithTimeout(&s.stopped, gracePeriod) {
-		log.Panicf("Done sending flow updates, but sensor is not stopped. Last error: %v", err)
-	}
-}
-
-func (s *sensor) sendFlowMessagesSingle(flows <-chan *central.NetworkFlowUpdate, flowClient central.NetworkFlowServiceClient) (recoverable bool, err error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	stream, err := flowClient.PushNetworkFlows(ctx)
-	if err != nil {
-		return true, fmt.Errorf("opening stream: %v", err)
-	}
-	defer stream.CloseAndRecv()
-
-	for {
-		select {
-		case flowUpdate, ok := <-flows:
-			if !ok {
-				return false, errors.New("flows channel closed")
-			}
-			if err := stream.Send(flowUpdate); err != nil {
-				return true, err
-			}
-		case <-stream.Context().Done():
-			return true, stream.Context().Err()
-		case <-s.stopped.Done():
-			return false, nil
-		}
-	}
-}
-
-func (s *sensor) sendEvents(orchestratorEvents <-chan *v1.SensorEvent, signals <-chan *v1.SensorEvent, output chan<- *v1.SensorEnforcement, eventsClient v1.SensorEventServiceClient) {
+func (s *sensor) sendEvents(orchestratorEvents <-chan *v1.SensorEvent, signals <-chan *v1.SensorEvent, flows <-chan *central.NetworkFlowUpdate, output chan<- *v1.SensorEnforcement, client central.SensorServiceClient) {
 	var err error
 	recoverable := true
 	for !s.stopped.IsDone() && recoverable {
@@ -106,7 +61,7 @@ func (s *sensor) sendEvents(orchestratorEvents <-chan *v1.SensorEvent, signals <
 				break
 			}
 		}
-		recoverable, err = s.sendEventsSingle(orchestratorEvents, signals, output, eventsClient)
+		recoverable, err = s.sendEventsSingle(orchestratorEvents, signals, flows, output, client)
 	}
 	// Sanity check - if we exit the loop, we should be done, otherwise panic.
 	if !concurrency.WaitWithTimeout(&s.stopped, gracePeriod) {
@@ -117,13 +72,13 @@ func (s *sensor) sendEvents(orchestratorEvents <-chan *v1.SensorEvent, signals <
 func (s *sensor) sendEventsSingle(
 	orchestratorEvents <-chan *v1.SensorEvent,
 	signals <-chan *v1.SensorEvent,
+	flows <-chan *central.NetworkFlowUpdate,
 	output chan<- *v1.SensorEnforcement,
-	eventsClient v1.SensorEventServiceClient) (recoverable bool, err error) {
-
+	client central.SensorServiceClient) (recoverable bool, err error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	stream, err := eventsClient.RecordEvent(ctx)
+	stream, err := client.Communicate(ctx)
 	if err != nil {
 		return true, fmt.Errorf("opening stream: %v", err)
 	}
@@ -131,26 +86,40 @@ func (s *sensor) sendEventsSingle(
 
 	go s.receiveMessages(output, stream)
 
-	eventStream := eventstream.Wrap(stream)
-	eventStream = metrics.NewCountingEventStream(eventStream, "unique")
-	eventStream = deduper.NewDedupingEventStream(eventStream)
-	eventStream = metrics.NewCountingEventStream(eventStream, "total")
+	wrappedStream := messagestream.Wrap(stream)
+	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "unique")
+	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream)
+	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "total")
 
 	for {
+		var msg *central.MsgFromSensor
 		select {
 		case sig, ok := <-signals:
 			if !ok {
 				return false, errors.New("signals channel closed")
 			}
-			if err := stream.Send(sig); err != nil {
-				return true, err
+			msg = &central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_Event{
+					Event: sig,
+				},
 			}
 		case evt, ok := <-orchestratorEvents:
 			if !ok {
 				return false, errors.New("orchestrator events channel closed")
 			}
-			if err := eventStream.Send(evt); err != nil {
-				return true, err
+			msg = &central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_Event{
+					Event: evt,
+				},
+			}
+		case flowUpdate, ok := <-flows:
+			if !ok {
+				return false, errors.New("flow updates channel closed")
+			}
+			msg = &central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_NetworkFlowUpdate{
+					NetworkFlowUpdate: flowUpdate,
+				},
 			}
 		case <-stream.Context().Done():
 			return true, stream.Context().Err()
@@ -158,40 +127,52 @@ func (s *sensor) sendEventsSingle(
 			log.Infof("Sensor is stopped!")
 			return false, nil
 		}
+
+		if msg != nil {
+			if err := stream.Send(msg); err != nil {
+				return true, err
+			}
+		}
 	}
 }
 
-func (s *sensor) receiveMessages(output chan<- *v1.SensorEnforcement, stream v1.SensorEventService_RecordEventClient) {
+func (s *sensor) receiveMessages(output chan<- *v1.SensorEnforcement, stream central.SensorService_CommunicateClient) {
 	err := s.doReceiveMessages(output, stream)
 	if err != nil {
 		log.Errorf("Error receiving enforcements from central: %v", err)
 	}
+	s.stopped.SignalWithError(err)
 }
 
 // Take in data processed by central, run post processing, then send it to the output channel.
-func (s *sensor) doReceiveMessages(output chan<- *v1.SensorEnforcement, stream v1.SensorEventService_RecordEventClient) error {
+func (s *sensor) doReceiveMessages(output chan<- *v1.SensorEnforcement, stream central.SensorService_CommunicateClient) error {
 	for {
 		select {
 		case <-s.stopped.Done():
-			return nil
+			return s.stopped.Err()
 		case <-stream.Context().Done():
 			return stream.Context().Err()
 		default:
 			// Take in the responses from central and generate enforcements for the outbound channel.
 			// Note: Recv blocks until it receives something new, unless the stream closes.
-			var eventResp *v1.SensorEnforcement
-			eventResp, err := stream.Recv()
+			msg, err := stream.Recv()
 			// The loop exits when the stream from central is closed or returns an error.
 			if err != nil {
 				return err
 			}
 
-			// Just to avoid panics, but we currently don't handle any responses not from deployments
-			switch x := eventResp.Resource.(type) {
+			enforcementMsg, ok := msg.Msg.(*central.MsgToSensor_Enforcement)
+			if !ok {
+				logger.Errorf("Unsupported message from central of type %T: %+v", msg.Msg, msg.Msg)
+				continue
+			}
+			enforcement := enforcementMsg.Enforcement
+
+			switch x := enforcement.Resource.(type) {
 			case *v1.SensorEnforcement_Deployment:
-				s.processResponse(stream.Context(), eventResp, output)
+				s.processResponse(stream.Context(), enforcement, output)
 			case *v1.SensorEnforcement_ContainerInstance:
-				s.processResponse(stream.Context(), eventResp, output)
+				s.processResponse(stream.Context(), enforcement, output)
 			default:
 				logger.Errorf("Event response with type '%s' is not handled", x)
 			}

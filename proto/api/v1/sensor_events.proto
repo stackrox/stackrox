@@ -62,9 +62,3 @@ message ContainerInstanceEnforcement {
     string container_instance_id = 1;
     string pod_id                = 2;
 }
-
-service SensorEventService {
-
-    rpc RecordEvent(stream SensorEvent) returns (stream SensorEnforcement);
-
-}

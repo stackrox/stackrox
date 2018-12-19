@@ -95,6 +95,16 @@ func (s *ErrorSignal) Error() (Error, bool) {
 	return nil, false
 }
 
+// ErrorWithDefault returns the error that was stored when triggering the signal or, when the signal was triggered with
+// a nil error, the given `defaultErr`. If the signal has not been triggered, nil is returned.
+func (s *ErrorSignal) ErrorWithDefault(defaultErr error) error {
+	err, ok := s.Error()
+	if ok && err == nil {
+		err = defaultErr
+	}
+	return err
+}
+
 // WaitUntil waits until the signal is triggered or another condition is met. If the signal is triggered
 // before the condition is met, the stored error is returned along with a `true` boolean value. Otherwise,
 // a `nil` error and `false` are returned.

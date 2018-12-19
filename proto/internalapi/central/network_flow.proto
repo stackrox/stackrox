@@ -14,8 +14,3 @@ message NetworkFlowUpdate {
     google.protobuf.Timestamp time     = 2;
 
 }
-
-// A Central service that allows Sensor to send NetworkFlowUpdate messages
-service NetworkFlowService {
-    rpc PushNetworkFlows (stream NetworkFlowUpdate) returns (v1.Empty);
-}

@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+import "api/v1/sensor_events.proto";
+import "internalapi/central/network_flow.proto";
+
+package central;
+
+message MsgFromSensor {
+    oneof msg {
+        v1.SensorEvent event = 1;
+        NetworkFlowUpdate network_flow_update = 2;
+    }
+}
+
+message MsgToSensor {
+    oneof msg {
+        v1.SensorEnforcement enforcement = 1;
+    }
+}
+
+
+service SensorService {
+
+    rpc Communicate(stream MsgFromSensor) returns (stream MsgToSensor);
+
+}

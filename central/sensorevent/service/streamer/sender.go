@@ -6,7 +6,7 @@ import (
 
 // Sender represents an active client/server two way stream from senor to/from central.
 type Sender interface {
-	Start(in <-chan *v1.SensorEnforcement, stream v1.SensorEventService_RecordEventServer)
+	Start(in <-chan *v1.SensorEnforcement, stream Stream)
 }
 
 // NewSender creates a new instance of a Stream for the given data.
