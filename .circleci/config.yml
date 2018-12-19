@@ -313,6 +313,14 @@ jobs:
           - vendor
           - bazel-bin/roxctl/linux_amd64_pure_stripped
 
+      - store_artifacts:
+          path: bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl
+          destination: roxctl/roxctl-linux
+
+      - store_artifacts:
+          path: bazel-bin/roxctl/darwin_amd64_pure_stripped/roxctl
+          destination: roxctl/roxctl-darwin
+
       - run:
           name: Comment on PR
           command: |
