@@ -132,6 +132,57 @@ class DefaultPoliciesTest extends BaseSpecification {
         ).size() == 0
     }
 
+    @Unroll
+    @Category([BAT])
+    def "Verify risk factors on struts deployment: #riskFactor"() {
+        given:
+        "The struts deployment details"
+        Deployment dep = DEPLOYMENTS.find { it.name == STRUTS }
+        DeploymentOuterClass.Deployment deployment = Services.getDeployment(dep.deploymentUid)
+
+        expect:
+        "Risk factors are present"
+        Result riskResult = deployment.risk.resultsList.find { it.name == riskFactor }
+        def waitTime = 30000
+        def start = System.currentTimeMillis()
+        while (riskResult == null && (System.currentTimeMillis() - start) < waitTime) {
+            deployment = Services.getDeployment(dep.deploymentUid)
+            riskResult = deployment.risk.resultsList.find { it.name == riskFactor }
+            sleep 2000
+        }
+        riskResult != null
+        println "Risk Factor found in ${System.currentTimeMillis() - start}ms: ${riskFactor}"
+        riskResult.score <= maxScore
+        riskResult.score >= 1.0f
+        message == null ?: riskResult.factorsList.get(0).message == message
+
+        where:
+        "data inputs"
+
+        riskFactor                        | maxScore |
+                message
+        "Policy Violations"               | 4.0f     |
+                null
+
+        "Service Reachability"            | 2.0f     |
+                "Container legacy-apps/struts-app exposes port 80 in the cluster"
+
+        "Image Vulnerabilities"           | 4.0f     |
+                "Image contains 143 CVEs with CVSS scores ranging between 1.9 and 10.0"
+
+        "Service Configuration"           | 2.0f     |
+                "No capabilities were dropped"
+
+        "Components Useful for Attackers" | 1.5f     |
+                "An image contains component(s) useful for attackers: apt, bash, curl, wget"
+
+        "Number of Components in Image"   | 1.5f     |
+                "Image apollo-dtr.rox.systems/legacy-apps/struts-app:latest contains 206 components"
+
+        "Image Freshness"                 | 1.5f     |
+                null
+    }
+
     @Category(BAT)
     def "Verify that built-in services don't trigger unexpected alerts"() {
         expect:
@@ -228,48 +279,5 @@ class DefaultPoliciesTest extends BaseSpecification {
         flat["Latest tag"] != 0
         flat["Secure Shell (ssh) Port Exposed"] != 0
         flat["Don't use environment variables with secrets"] != 0
-    }
-
-    @Unroll
-    @Category([BAT])
-    def "Verify risk factors on struts deployment: #riskFactor"() {
-        given:
-        "The struts deployment details"
-        Deployment dep = DEPLOYMENTS.find { it.name == STRUTS }
-        DeploymentOuterClass.Deployment deployment = Services.getDeployment(dep.deploymentUid)
-
-        expect:
-        "Risk factors are present"
-        Result riskResult = deployment.risk.resultsList.find { it.name == riskFactor }
-        riskResult != null
-        riskResult.score <= maxScore
-        riskResult.score >= 1.0f
-        message == null ?: riskResult.factorsList.get(0).message == message
-
-        where:
-        "data inputs"
-
-        riskFactor                        | maxScore |
-                message
-        "Policy Violations"               | 4.0f     |
-                null
-
-        "Service Reachability"            | 2.0f     |
-                "Container legacy-apps/struts-app exposes port 80 in the cluster"
-
-        "Image Vulnerabilities"           | 4.0f     |
-                "Image contains 143 CVEs with CVSS scores ranging between 1.9 and 10.0"
-
-        "Service Configuration"           | 2.0f     |
-                "No capabilities were dropped"
-
-        "Components Useful for Attackers" | 1.5f     |
-                "An image contains component(s) useful for attackers: apt, bash, curl, wget"
-
-        "Number of Components in Image"   | 1.5f     |
-                "Image apollo-dtr.rox.systems/legacy-apps/struts-app:latest contains 206 components"
-
-        "Image Freshness"                 | 1.5f     |
-                null
     }
 }
