@@ -6,20 +6,24 @@ import { selectors } from 'reducers';
 import { actions } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
 
-import SideBar from 'Containers/AccessControl/AuthProviders/SideBar/SideBar';
+import SideBar from 'Containers/AccessControl/SideBar';
+import Select from 'Containers/AccessControl/AuthProviders/Select/Select';
 import AuthProvider from 'Containers/AccessControl/AuthProviders/AuthProvider/AuthProvider';
 
 class AuthProviders extends Component {
     static propTypes = {
+        authProviders: PropTypes.arrayOf(PropTypes.shape({})),
         selectedAuthProvider: PropTypes.shape({}),
         selectAuthProvider: PropTypes.func.isRequired,
         saveAuthProvider: PropTypes.func.isRequired,
+        deleteAuthProvider: PropTypes.func.isRequired,
         saveRuleGroup: PropTypes.func.isRequired,
         deleteRuleGroup: PropTypes.func.isRequired,
         groups: PropTypes.arrayOf(PropTypes.shape({})).isRequired
     };
 
     static defaultProps = {
+        authProviders: [],
         selectedAuthProvider: null
     };
 
@@ -50,13 +54,24 @@ class AuthProviders extends Component {
         this.setState({ isEditing: false });
     };
 
+    onDelete = authProvider => {
+        this.props.deleteAuthProvider(authProvider.id);
+        this.setState({ isEditing: false });
+    };
+
     renderSideBar = () => {
         const header = 'Auth Providers';
+        const { authProviders, selectedAuthProvider, selectAuthProvider } = this.props;
         return (
             <SideBar
                 header={header}
-                onCreateNewAuthProvider={this.onCreateNewAuthProvider}
+                rows={authProviders}
+                selected={selectedAuthProvider}
+                onSelectRow={selectAuthProvider}
+                addRowButton={<Select onChange={this.onCreateNewAuthProvider} />}
                 onCancel={this.onCancel}
+                onDelete={this.onDelete}
+                type="auth provider"
             />
         );
     };
@@ -87,7 +102,7 @@ class AuthProviders extends Component {
 }
 
 const mapStateToProps = createStructuredSelector({
-    authProviders: selectors.getAuthProviders,
+    authProviders: selectors.getAvailableAuthProviders,
     selectedAuthProvider: selectors.getSelectedAuthProvider,
     groups: selectors.getRuleGroups
 });
@@ -95,6 +110,7 @@ const mapStateToProps = createStructuredSelector({
 const mapDispatchToProps = {
     selectAuthProvider: actions.selectAuthProvider,
     saveAuthProvider: actions.saveAuthProvider,
+    deleteAuthProvider: actions.deleteAuthProvider,
     saveRuleGroup: groupActions.saveRuleGroup,
     deleteRuleGroup: groupActions.deleteRuleGroup
 };

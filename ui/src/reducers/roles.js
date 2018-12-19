@@ -40,7 +40,7 @@ const selectedRole = (state = null, action) => {
         }
         return state;
     }
-    if (action.type === types.SELECTED_ROLE) {
+    if (action.type === types.SELECTED_ROLE && action.role) {
         return isEqual(action.role, state) ? state : action.role;
     }
     return state;

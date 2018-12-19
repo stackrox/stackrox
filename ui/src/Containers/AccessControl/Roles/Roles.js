@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
+import { createStructuredSelector, createSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions } from 'reducers/roles';
 
-import SideBar from 'Containers/AccessControl/Roles/SideBar/SideBar';
+import SideBar from 'Containers/AccessControl/SideBar';
 import Permissions from 'Containers/AccessControl/Roles/Permissions/Permissions';
+import { defaultRoles } from 'constants/accessControl';
 
 class Roles extends Component {
     static propTypes = {
@@ -55,20 +56,29 @@ class Roles extends Component {
     };
 
     onDelete = role => {
-        this.props.deleteRole(role.id);
+        this.props.deleteRole(role.name);
         this.setState({ isEditing: false });
     };
 
+    renderAddRoleButton = () => (
+        <button className="btn btn-primary" type="button" onClick={this.onCreateNewRole}>
+            Add New Role
+        </button>
+    );
+
     renderSideBar = () => {
         const header = 'StackRox Roles';
-        const { roles } = this.props;
+        const { roles, selectedRole, selectRole } = this.props;
         return (
             <SideBar
                 header={header}
                 rows={roles}
-                onCreateNewRole={this.onCreateNewRole}
+                selected={selectedRole}
+                onSelectRow={selectRole}
+                addRowButton={this.renderAddRoleButton()}
                 onCancel={this.onCancel}
                 onDelete={this.onDelete}
+                type="role"
             />
         );
     };
@@ -92,8 +102,12 @@ class Roles extends Component {
     }
 }
 
+const getRolesWithDefault = createSelector([selectors.getRoles], roles =>
+    roles.map(role => Object.assign({}, role, { noAction: defaultRoles[role.name] }))
+);
+
 const mapStateToProps = createStructuredSelector({
-    roles: selectors.getRoles,
+    roles: getRolesWithDefault,
     selectedRole: selectors.getSelectedRole
 });
 

@@ -38,6 +38,19 @@ function* deleteRole(action) {
     const { id } = action;
     try {
         yield call(service.deleteRole, id);
+        yield put(actions.fetchRoles.request());
+    } catch (error) {
+        Raven.captureException(error);
+    }
+}
+
+function* selectRole(action) {
+    const { role } = action;
+    try {
+        if (!role) {
+            const roles = yield select(selectors.getRoles);
+            yield put(actions.selectRole(roles[0]));
+        }
     } catch (error) {
         Raven.captureException(error);
     }
@@ -51,11 +64,16 @@ function* watchDeleteRole() {
     yield takeLatest(types.DELETE_ROLE, deleteRole);
 }
 
+function* watchSelectRole() {
+    yield takeLatest(types.SELECTED_ROLE, selectRole);
+}
+
 export default function* integrations() {
     yield all([
         takeEveryNewlyMatchedLocation(accessControlPath, getRoles),
         takeLatest(types.FETCH_ROLES.REQUEST, getRoles),
         fork(watchSaveRole),
-        fork(watchDeleteRole)
+        fork(watchDeleteRole),
+        fork(watchSelectRole)
     ]);
 }

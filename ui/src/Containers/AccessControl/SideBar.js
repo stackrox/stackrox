@@ -1,13 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
-import { selectors } from 'reducers';
-import { actions } from 'reducers/roles';
 import Tooltip from 'rc-tooltip';
 import * as Icon from 'react-feather';
 
-import { defaultRoles } from 'constants/accessControl';
 import List from 'Components/List';
 import Panel, { headerClassName } from 'Components/Panel';
 import { defaultColumnClassName, rtTrActionsClassName } from 'Components/Table';
@@ -15,37 +10,40 @@ import { defaultColumnClassName, rtTrActionsClassName } from 'Components/Table';
 class SideBar extends Component {
     static propTypes = {
         header: PropTypes.string.isRequired,
-        roles: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-        selectedRole: PropTypes.shape({}),
-        selectRole: PropTypes.func.isRequired,
-        onCreateNewRole: PropTypes.func.isRequired,
+        rows: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+        selected: PropTypes.shape({}),
+        onSelectRow: PropTypes.func.isRequired,
+        addRowButton: PropTypes.node.isRequired,
         onCancel: PropTypes.func.isRequired,
-        onDelete: PropTypes.func.isRequired
+        onDelete: PropTypes.func.isRequired,
+        type: PropTypes.string.isRequired
     };
 
     static defaultProps = {
-        selectedRole: null
+        selected: null
     };
 
-    onRowSelectHandler = () => role => {
-        this.props.selectRole(role);
+    onRowSelectHandler = () => row => {
+        this.props.onSelectRow(row);
         this.props.onCancel();
     };
 
-    onDeleteHandler = role => e => {
+    onDeleteHandler = row => e => {
         e.stopPropagation();
-        this.props.onDelete(role);
+        this.props.onDelete(row);
+        this.props.onSelectRow();
     };
 
-    renderRowActionButtons = role => {
-        if (defaultRoles[role.name]) return null;
+    renderRowActionButtons = row => {
+        if (row.noAction) return null;
+        const { type } = this.props;
         return (
             <div className="border-2 border-base-400 bg-base-100 flex">
-                <Tooltip placement="top" overlay={<div>Delete role</div>} mouseLeaveDelay={0}>
+                <Tooltip placement="top" overlay={<div>Delete {type}</div>} mouseLeaveDelay={0}>
                     <button
                         type="button"
                         className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700"
-                        onClick={this.onDeleteHandler(role)}
+                        onClick={this.onDeleteHandler(row)}
                     >
                         <Icon.Trash2 className="mt-1 h-4 w-4" />
                     </button>
@@ -55,7 +53,7 @@ class SideBar extends Component {
     };
 
     render() {
-        const { header, roles, selectedRole, onCreateNewRole } = this.props;
+        const { header, rows, selected, addRowButton } = this.props;
         const panelHeaderClassName = `${headerClassName} bg-base-100`;
         const columns = [
             {
@@ -76,22 +74,14 @@ class SideBar extends Component {
                     <div className="overflow-auto">
                         <List
                             columns={columns}
-                            rows={roles}
+                            rows={rows}
                             selectRow={this.onRowSelectHandler()}
-                            selectedListItem={selectedRole}
+                            selectedListItem={selected}
                             selectedIdAttribute="name"
                         />
                     </div>
                     <div className="flex items-center justify-center p-4 border-t border-base-300">
-                        <div>
-                            <button
-                                className="btn btn-primary"
-                                type="button"
-                                onClick={onCreateNewRole}
-                            >
-                                Add New Role
-                            </button>
-                        </div>
+                        {addRowButton}
                     </div>
                 </div>
             </Panel>
@@ -99,16 +89,4 @@ class SideBar extends Component {
     }
 }
 
-const mapStateToProps = createStructuredSelector({
-    roles: selectors.getRoles,
-    selectedRole: selectors.getSelectedRole
-});
-
-const mapDispatchToProps = {
-    selectRole: actions.selectRole
-};
-
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(SideBar);
+export default SideBar;

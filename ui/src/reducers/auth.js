@@ -68,7 +68,7 @@ const selectedAuthProvider = (state = null, action) => {
         }
         return state;
     }
-    if (action.type === types.SELECTED_AUTH_PROVIDER) {
+    if (action.type === types.SELECTED_AUTH_PROVIDER && action.authProvider) {
         return isEqual(action.authProvider, state) ? state : action.authProvider;
     }
     return state;
