@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { components } from 'react-select';
 import * as Icon from 'react-feather';
 
-import Select, { Creatable } from 'Components/ReactSelect';
+import { Creatable } from 'Components/ReactSelect';
 
 const placeholderCreator = placeholderText => () => (
     <span className="text-base-500 flex h-full items-center pointer-events-none">
@@ -51,7 +51,12 @@ class SearchInput extends Component {
         setSearchOptions: PropTypes.func.isRequired,
         setSearchSuggestions: PropTypes.func.isRequired,
         onSearch: PropTypes.func,
-        isGlobal: PropTypes.bool
+        isGlobal: PropTypes.bool,
+        defaultOption: PropTypes.shape({
+            value: PropTypes.string,
+            label: PropTypes.string,
+            category: PropTypes.string
+        })
     };
 
     static defaultProps = {
@@ -61,7 +66,8 @@ class SearchInput extends Component {
         searchModifiers: [],
         searchSuggestions: [],
         onSearch: null,
-        isGlobal: false
+        isGlobal: false,
+        defaultOption: null
     };
 
     componentWillUnmount() {
@@ -69,6 +75,14 @@ class SearchInput extends Component {
     }
 
     setOptions = (_, searchOptions) => {
+        // If there is a default option and one search value given, then potentially prepend the default search option
+        if (
+            this.props.defaultOption &&
+            searchOptions.length === 1 &&
+            !this.props.searchModifiers.find(x => x.value === searchOptions[0].value)
+        ) {
+            searchOptions.unshift(this.props.defaultOption);
+        }
         this.props.setSearchOptions(searchOptions);
         if (this.props.onSearch) this.props.onSearch(searchOptions);
     };
@@ -97,11 +111,13 @@ class SearchInput extends Component {
             onChange: this.setOptions,
             isMulti: true,
             noOptionsMessage,
-            isValidNewOption: (inputValue, selectValue, selectOptions) =>
-                !selectOptions.length && inputValue
+            isValidNewOption: inputValue => {
+                if (!this.props.defaultOption && this.props.searchOptions.length === 0) {
+                    return false;
+                }
+                return inputValue;
+            }
         };
-        if (this.props.searchOptions.length === 0) return <Select {...props} autoFocus />;
-
         return <Creatable {...props} components={{ ...props.components }} autoFocus />;
     }
 }

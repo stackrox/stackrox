@@ -38,6 +38,7 @@ class Header extends Component {
 
     render() {
         const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
+        const defaultOption = this.props.searchModifiers.find(x => x.value === 'Policy:');
         return (
             <PageHeader header="Policies" subHeader={subHeader}>
                 <SearchInput
@@ -50,6 +51,7 @@ class Header extends Component {
                     setSearchModifiers={this.props.setSearchModifiers}
                     setSearchSuggestions={this.props.setSearchSuggestions}
                     onSearch={this.onSearch}
+                    defaultOption={defaultOption}
                 />
             </PageHeader>
         );

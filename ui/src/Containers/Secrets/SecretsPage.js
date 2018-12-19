@@ -146,6 +146,7 @@ class SecretPage extends Component {
 
     render() {
         const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
+        const defaultOption = this.props.searchModifiers.find(x => x.value === 'Secret:');
         return (
             <section className="flex flex-1 flex-col h-full">
                 <div className="flex flex-1 flex-col">
@@ -160,6 +161,7 @@ class SecretPage extends Component {
                             setSearchModifiers={this.props.setSearchModifiers}
                             setSearchSuggestions={this.props.setSearchSuggestions}
                             onSearch={this.onSearch}
+                            defaultOption={defaultOption}
                         />
                     </PageHeader>
                     <div className="flex flex-1 relative">
