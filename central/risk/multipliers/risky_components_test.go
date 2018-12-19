@@ -47,7 +47,7 @@ func TestRiskyComponentCountScore(t *testing.T) {
 	expectedScore := &storage.Risk_Result{
 		Name: RiskyComponentCountHeading,
 		Factors: []*storage.Risk_Result_Factor{
-			{Message: "an image contains components: apk, curl, tcsh, telnet, wget and 1 other(s) that are useful for attackers"},
+			{Message: "An image contains components: apk, curl, tcsh, telnet, wget and 1 other(s) that are useful for attackers"},
 		},
 		Score: 1.3,
 	}

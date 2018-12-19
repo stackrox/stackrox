@@ -92,10 +92,10 @@ func generateMessage(largestRiskySet []string) string {
 		componentsInMessage := largestRiskySet[:5]
 		componentsString := strings.Join(componentsInMessage, ", ")
 		diff := len(largestRiskySet) - maxComponentsInMessage
-		return fmt.Sprintf("an image contains components: %s and %d other(s) that are useful for attackers", componentsString, diff)
+		return fmt.Sprintf("An image contains components: %s and %d other(s) that are useful for attackers", componentsString, diff)
 	}
 
 	// Otherwise use all of the components in the message.
 	componentsString := strings.Join(largestRiskySet, ", ")
-	return fmt.Sprintf("an image contains component(s) useful for attackers: %s", componentsString)
+	return fmt.Sprintf("An image contains component(s) useful for attackers: %s", componentsString)
 }

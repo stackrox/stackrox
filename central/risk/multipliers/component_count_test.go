@@ -24,7 +24,7 @@ func TestComponentCountScore(t *testing.T) {
 	expectedScore := &storage.Risk_Result{
 		Name: ComponentCountHeading,
 		Factors: []*storage.Risk_Result_Factor{
-			{Message: "image docker.io/library/nginx:1.10 contains 15 components"},
+			{Message: "Image docker.io/library/nginx:1.10 contains 15 components"},
 		},
 		Score: 1.25,
 	}

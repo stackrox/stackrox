@@ -55,9 +55,9 @@ func (c *componentCountMultiplier) Score(deployment *storage.Deployment) *storag
 	// Generate a message depending on whether or not we have full name for the image.
 	var message string
 	if maxImage == "" {
-		message = fmt.Sprintf("an image contains %d components", maxCount)
+		message = fmt.Sprintf("An image contains %d components", maxCount)
 	} else {
-		message = fmt.Sprintf("image %s contains %d components", maxImage, maxCount)
+		message = fmt.Sprintf("Image %s contains %d components", maxImage, maxCount)
 	}
 
 	return &storage.Risk_Result{
