@@ -5,12 +5,11 @@ import (
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/sensor/common/messagestream"
 )
 
-func incrementSensorEvents(event *v1.SensorEvent, typ string) {
+func incrementSensorEvents(event *central.SensorEvent, typ string) {
 	resourceType := "none"
 	if event.GetResource() != nil {
 		resourceType = strings.TrimPrefix(reflect.TypeOf(event.GetResource()).Elem().Name(), "SensorEvent_")

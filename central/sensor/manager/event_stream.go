@@ -3,7 +3,6 @@ package manager
 import (
 	"io"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 )
 
@@ -17,7 +16,7 @@ func (c *sensorConnection) newEventStream() *eventStream {
 	}
 }
 
-func (s *eventStream) Send(enforcement *v1.SensorEnforcement) error {
+func (s *eventStream) Send(enforcement *central.SensorEnforcement) error {
 	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_Enforcement{
 			Enforcement: enforcement,
@@ -36,7 +35,7 @@ func (s *eventStream) Send(enforcement *v1.SensorEnforcement) error {
 	}
 }
 
-func (c *sensorConnection) injectEvent(event *v1.SensorEvent) error {
+func (c *sensorConnection) injectEvent(event *central.SensorEvent) error {
 	if err := c.stopSig.ErrorWithDefault(io.EOF); err != nil {
 		return err
 	}
@@ -49,7 +48,7 @@ func (c *sensorConnection) injectEvent(event *v1.SensorEvent) error {
 	}
 }
 
-func (s *eventStream) Recv() (*v1.SensorEvent, error) {
+func (s *eventStream) Recv() (*central.SensorEvent, error) {
 	if err := s.conn.stopSig.ErrorWithDefault(io.EOF); err != nil {
 		return nil, err
 	}

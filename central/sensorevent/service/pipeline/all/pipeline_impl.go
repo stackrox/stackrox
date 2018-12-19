@@ -5,7 +5,7 @@ import (
 
 	pkgMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 )
@@ -22,13 +22,13 @@ type pipelineImpl struct {
 	providerMetadataPipeline pipeline.Pipeline
 }
 
-func actionToOperation(action v1.ResourceAction) metrics.Op {
+func actionToOperation(action central.ResourceAction) metrics.Op {
 	switch action {
-	case v1.ResourceAction_CREATE_RESOURCE:
+	case central.ResourceAction_CREATE_RESOURCE:
 		return metrics.Add
-	case v1.ResourceAction_UPDATE_RESOURCE:
+	case central.ResourceAction_UPDATE_RESOURCE:
 		return metrics.Update
-	case v1.ResourceAction_REMOVE_RESOURCE:
+	case central.ResourceAction_REMOVE_RESOURCE:
 		return metrics.Remove
 	default:
 		log.Fatalf("Unknown action to operation '%s'", action)
@@ -38,30 +38,30 @@ func actionToOperation(action v1.ResourceAction) metrics.Op {
 }
 
 // sendMessages grabs items from the queue, processes them, and sends them back to sensor.
-func (s *pipelineImpl) Run(event *v1.SensorEvent, injector pipeline.EnforcementInjector) error {
+func (s *pipelineImpl) Run(event *central.SensorEvent, injector pipeline.EnforcementInjector) error {
 
 	var p pipeline.Pipeline
 	var resource metrics.Resource
 	switch x := event.Resource.(type) {
-	case *v1.SensorEvent_Deployment:
+	case *central.SensorEvent_Deployment:
 		resource = metrics.Deployment
 		p = s.deploymentPipeline
-	case *v1.SensorEvent_NetworkPolicy:
+	case *central.SensorEvent_NetworkPolicy:
 		resource = metrics.NetworkPolicy
 		p = s.networkPolicyPipeline
-	case *v1.SensorEvent_Namespace:
+	case *central.SensorEvent_Namespace:
 		resource = metrics.Namespace
 		p = s.namespacePipeline
-	case *v1.SensorEvent_ProcessIndicator:
+	case *central.SensorEvent_ProcessIndicator:
 		resource = metrics.ProcessIndicator
 		p = s.processIndicatorPipeline
-	case *v1.SensorEvent_Secret:
+	case *central.SensorEvent_Secret:
 		resource = metrics.Secret
 		p = s.secretPipeline
-	case *v1.SensorEvent_Node:
+	case *central.SensorEvent_Node:
 		resource = metrics.Node
 		p = s.nodePipeline
-	case *v1.SensorEvent_ProviderMetadata:
+	case *central.SensorEvent_ProviderMetadata:
 		resource = metrics.ProviderMetadata
 		p = s.providerMetadataPipeline
 	case nil:

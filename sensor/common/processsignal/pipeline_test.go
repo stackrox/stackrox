@@ -4,15 +4,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestProcessPipeline(t *testing.T) {
-	sensorEvents := make(chan *v1.SensorEvent)
-	actualEvents := make(chan *v1.SensorEvent)
+	sensorEvents := make(chan *central.SensorEvent)
+	actualEvents := make(chan *central.SensorEvent)
 	mockStore := clusterentities.NewStore()
 	p := NewProcessPipeline(sensorEvents, mockStore)
 	closeChan := make(chan bool)
@@ -67,7 +67,7 @@ func TestProcessPipeline(t *testing.T) {
 	closeChan <- true
 }
 
-func consumeEnrichedSignals(sensorEvents chan *v1.SensorEvent, results chan *v1.SensorEvent, closeChan chan bool) {
+func consumeEnrichedSignals(sensorEvents chan *central.SensorEvent, results chan *central.SensorEvent, closeChan chan bool) {
 	for {
 		select {
 		case event := <-sensorEvents:

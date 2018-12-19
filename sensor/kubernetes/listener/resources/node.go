@@ -1,7 +1,7 @@
 package resources
 
 import (
-	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"k8s.io/api/core/v1"
 )
@@ -22,19 +22,19 @@ func newNodeHandler(serviceStore *serviceStore, deploymentStore *deploymentStore
 	}
 }
 
-func (h *nodeHandler) Process(node *v1.Node, action pkgV1.ResourceAction) []*pkgV1.SensorEvent {
-	if action == pkgV1.ResourceAction_REMOVE_RESOURCE {
+func (h *nodeHandler) Process(node *v1.Node, action central.ResourceAction) []*central.SensorEvent {
+	if action == central.ResourceAction_REMOVE_RESOURCE {
 		h.nodeStore.removeNode(node)
 	} else {
 		wrap := wrapNode(node)
 		h.nodeStore.addOrUpdateNode(wrap)
 
-		if action == pkgV1.ResourceAction_CREATE_RESOURCE {
+		if action == central.ResourceAction_CREATE_RESOURCE {
 			h.endpointManager.OnNodeCreate(wrap)
 		}
 	}
 
-	if action != pkgV1.ResourceAction_CREATE_RESOURCE {
+	if action != central.ResourceAction_CREATE_RESOURCE {
 		h.endpointManager.OnNodeUpdateOrRemove(node.Name)
 	}
 
@@ -43,11 +43,11 @@ func (h *nodeHandler) Process(node *v1.Node, action pkgV1.ResourceAction) []*pkg
 		Name: node.Name,
 	}
 
-	events := []*pkgV1.SensorEvent{
+	events := []*central.SensorEvent{
 		{
 			Id:     nodeResource.GetId(),
 			Action: action,
-			Resource: &pkgV1.SensorEvent_Node{
+			Resource: &central.SensorEvent_Node{
 				Node: nodeResource,
 			},
 		},

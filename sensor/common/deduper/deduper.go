@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"reflect"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/messagestream"
@@ -45,10 +44,10 @@ func (d deduper) Send(msg *central.MsgFromSensor) error {
 		id:           event.GetId(),
 		resourceType: reflect.TypeOf(event.GetResource()),
 	}
-	if event.GetAction() == v1.ResourceAction_REMOVE_RESOURCE {
+	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		delete(d.lastSent, key)
 	}
-	if event.GetAction() != v1.ResourceAction_UPDATE_RESOURCE {
+	if event.GetAction() != central.ResourceAction_UPDATE_RESOURCE {
 		return d.stream.Send(msg)
 	}
 
@@ -73,10 +72,10 @@ func (d deduper) SendRaw(msg *central.MsgFromSensor, raw []byte) error {
 		id:           event.GetId(),
 		resourceType: reflect.TypeOf(event.GetResource()),
 	}
-	if event.GetAction() == v1.ResourceAction_REMOVE_RESOURCE {
+	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		delete(d.lastSent, key)
 	}
-	if event.GetAction() != v1.ResourceAction_UPDATE_RESOURCE {
+	if event.GetAction() != central.ResourceAction_UPDATE_RESOURCE {
 		return d.stream.SendRaw(msg, raw)
 	}
 

@@ -1,7 +1,7 @@
 package deployment
 
 import (
-	roxV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/common"
 	"k8s.io/api/extensions/v1beta1"
@@ -10,7 +10,7 @@ import (
 )
 
 // EnforceNodeConstraint reschedules the Deployment with unsatisfiable constraints.
-func EnforceNodeConstraint(client *kubernetes.Clientset, deploymentInfo *roxV1.DeploymentEnforcement) (err error) {
+func EnforceNodeConstraint(client *kubernetes.Clientset, deploymentInfo *central.DeploymentEnforcement) (err error) {
 	// Load the current Deployment.
 	var d *v1beta1.Deployment
 	d, err = client.ExtensionsV1beta1().Deployments(deploymentInfo.GetNamespace()).Get(deploymentInfo.GetDeploymentName(), metav1.GetOptions{})

@@ -3,7 +3,7 @@ package providermetadata
 import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -26,6 +26,6 @@ type pipelineImpl struct {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(event *v1.SensorEvent, _ pipeline.EnforcementInjector) error {
+func (s *pipelineImpl) Run(event *central.SensorEvent, _ pipeline.EnforcementInjector) error {
 	return s.clusters.UpdateMetadata(event.GetClusterId(), event.GetProviderMetadata())
 }

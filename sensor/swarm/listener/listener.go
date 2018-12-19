@@ -8,7 +8,7 @@ import (
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	dockerClient "github.com/docker/docker/client"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/listeners"
@@ -32,7 +32,7 @@ type ResourceHandler interface {
 // listener provides functionality for listening to deployment events.
 type listener struct {
 	*dockerClient.Client
-	eventsC    chan *v1.SensorEvent
+	eventsC    chan *central.SensorEvent
 	stopSig    concurrency.Signal
 	stoppedSig concurrency.Signal
 
@@ -57,7 +57,7 @@ func New() (listeners.Listener, error) {
 	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
 	dockerClient.NegotiateAPIVersion(ctx)
-	eventsC := make(chan *v1.SensorEvent, 10)
+	eventsC := make(chan *central.SensorEvent, 10)
 	return &listener{
 		Client:     dockerClient,
 		eventsC:    eventsC,
@@ -119,7 +119,7 @@ func (dl *listener) eventHandler() (<-chan (events.Message), <-chan error, conte
 }
 
 // Events is the mechanism through which the events are propagated back to the event loop
-func (dl *listener) Events() <-chan *v1.SensorEvent {
+func (dl *listener) Events() <-chan *central.SensorEvent {
 	return dl.eventsC
 }
 

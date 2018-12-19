@@ -5,7 +5,7 @@ import (
 
 	openshift "github.com/openshift/client-go/apps/clientset/versioned"
 	"github.com/openshift/client-go/apps/informers/externalversions"
-	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/kubernetes"
@@ -46,7 +46,7 @@ type clientSet struct {
 
 type kubernetesListener struct {
 	clients *clientSet
-	eventsC chan *pkgV1.SensorEvent
+	eventsC chan *central.SensorEvent
 
 	resourceEventsC chan resourceEvent
 
@@ -60,7 +60,7 @@ type kubernetesListener struct {
 func New() listeners.Listener {
 	k := &kubernetesListener{
 		clients:         createClient(),
-		eventsC:         make(chan *pkgV1.SensorEvent, 10),
+		eventsC:         make(chan *central.SensorEvent, 10),
 		resourceEventsC: make(chan resourceEvent),
 		stopSig:         concurrency.NewSignal(),
 	}
@@ -69,11 +69,11 @@ func New() listeners.Listener {
 
 type resourceEvent struct {
 	obj            interface{}
-	action         pkgV1.ResourceAction
+	action         central.ResourceAction
 	deploymentType string
 }
 
-func (k *kubernetesListener) sendResourceEvent(obj interface{}, action pkgV1.ResourceAction, deploymentType string) {
+func (k *kubernetesListener) sendResourceEvent(obj interface{}, action central.ResourceAction, deploymentType string) {
 	rev := resourceEvent{
 		obj:            obj,
 		action:         action,
@@ -81,8 +81,8 @@ func (k *kubernetesListener) sendResourceEvent(obj interface{}, action pkgV1.Res
 	}
 	// If the action is create, then it came from watchlister AddFunc.
 	// If we are listing the initial objects, then we treat them as updates so enforcement isn't done
-	if deploymentType != "" && action == pkgV1.ResourceAction_CREATE_RESOURCE && !k.initialObjectsConsumed.Get() {
-		rev.action = pkgV1.ResourceAction_UPDATE_RESOURCE
+	if deploymentType != "" && action == central.ResourceAction_CREATE_RESOURCE && !k.initialObjectsConsumed.Get() {
+		rev.action = central.ResourceAction_UPDATE_RESOURCE
 	}
 
 	select {
@@ -97,24 +97,24 @@ type resourceEventHandler struct {
 }
 
 func (h resourceEventHandler) OnAdd(obj interface{}) {
-	h.listener.sendResourceEvent(obj, pkgV1.ResourceAction_CREATE_RESOURCE, h.deploymentType)
+	h.listener.sendResourceEvent(obj, central.ResourceAction_CREATE_RESOURCE, h.deploymentType)
 }
 
 func (h resourceEventHandler) OnUpdate(oldObj, newObj interface{}) {
-	h.listener.sendResourceEvent(newObj, pkgV1.ResourceAction_UPDATE_RESOURCE, h.deploymentType)
+	h.listener.sendResourceEvent(newObj, central.ResourceAction_UPDATE_RESOURCE, h.deploymentType)
 }
 
 func (h resourceEventHandler) OnDelete(obj interface{}) {
-	h.listener.sendResourceEvent(obj, pkgV1.ResourceAction_REMOVE_RESOURCE, h.deploymentType)
+	h.listener.sendResourceEvent(obj, central.ResourceAction_REMOVE_RESOURCE, h.deploymentType)
 }
 
 func (k *kubernetesListener) sendClusterMetadata() {
 	m := providers.GetMetadata()
 	if m != nil {
-		k.eventsC <- &pkgV1.SensorEvent{
+		k.eventsC <- &central.SensorEvent{
 			Id:     "metadata",
-			Action: pkgV1.ResourceAction_UPDATE_RESOURCE, // updates a cluster object
-			Resource: &pkgV1.SensorEvent_ProviderMetadata{
+			Action: central.ResourceAction_UPDATE_RESOURCE, // updates a cluster object
+			Resource: &central.SensorEvent_ProviderMetadata{
 				ProviderMetadata: m,
 			},
 		}
@@ -217,7 +217,7 @@ func (k *kubernetesListener) Stop() {
 	k.stopSig.Signal()
 }
 
-func (k *kubernetesListener) Events() <-chan *pkgV1.SensorEvent {
+func (k *kubernetesListener) Events() <-chan *central.SensorEvent {
 	return k.eventsC
 }
 
@@ -236,7 +236,7 @@ func (k *kubernetesListener) processResourceEvents() {
 	}
 }
 
-func (k *kubernetesListener) sendEvents(evWraps ...*pkgV1.SensorEvent) {
+func (k *kubernetesListener) sendEvents(evWraps ...*central.SensorEvent) {
 	for _, evWrap := range evWraps {
 		select {
 		case k.eventsC <- evWrap:

@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -30,9 +30,9 @@ type pipelineImpl struct {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(event *v1.SensorEvent, injector pipeline.EnforcementInjector) error {
+func (s *pipelineImpl) Run(event *central.SensorEvent, injector pipeline.EnforcementInjector) error {
 	switch event.GetAction() {
-	case v1.ResourceAction_REMOVE_RESOURCE:
+	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.indicators.RemoveProcessIndicator(event.GetProcessIndicator().GetId())
 	default:
 		return s.process(event.GetProcessIndicator(), injector)

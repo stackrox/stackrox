@@ -1,7 +1,7 @@
 package processsignal
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -14,14 +14,14 @@ var logger = logging.LoggerForModule()
 // Pipeline is the struct that handles a process signal
 type Pipeline struct {
 	clusterEntities    *clusterentities.Store
-	indicators         chan *v1.SensorEvent
+	indicators         chan *central.SensorEvent
 	enrichedIndicators chan *storage.ProcessIndicator
 	deduper            *deduper
 	enricher           *enricher
 }
 
 // NewProcessPipeline defines how to process a ProcessIndicator
-func NewProcessPipeline(indicators chan *v1.SensorEvent, clusterEntities *clusterentities.Store) *Pipeline {
+func NewProcessPipeline(indicators chan *central.SensorEvent, clusterEntities *clusterentities.Store) *Pipeline {
 	enrichedIndicators := make(chan *storage.ProcessIndicator)
 	p := &Pipeline{
 		clusterEntities:    clusterEntities,
@@ -64,10 +64,10 @@ func (p *Pipeline) sendIndicatorEvent() {
 		if !p.deduper.Allow(indicator) {
 			continue
 		}
-		p.indicators <- &v1.SensorEvent{
+		p.indicators <- &central.SensorEvent{
 			Id:     indicator.GetId(),
-			Action: v1.ResourceAction_CREATE_RESOURCE,
-			Resource: &v1.SensorEvent_ProcessIndicator{
+			Action: central.ResourceAction_CREATE_RESOURCE,
+			Resource: &central.SensorEvent_ProcessIndicator{
 				ProcessIndicator: indicator,
 			},
 		}

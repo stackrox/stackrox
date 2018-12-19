@@ -2,7 +2,7 @@ package streamer
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 )
 
 // Service is the struct that manages the SensorEvent API
@@ -12,12 +12,12 @@ type senderImpl struct {
 
 // Start sets up the channels and signal to start processing events input through the given stream, and return
 // enforcement actions to the given stream.
-func (s *senderImpl) Start(in <-chan *v1.SensorEnforcement, stream Stream) {
+func (s *senderImpl) Start(in <-chan *central.SensorEnforcement, stream Stream) {
 	go s.pipelineToSend(in, stream)
 }
 
 // sendMessages grabs items from the queue, processes them, and sends them back to sensor.
-func (s *senderImpl) pipelineToSend(in <-chan *v1.SensorEnforcement, stream Stream) {
+func (s *senderImpl) pipelineToSend(in <-chan *central.SensorEnforcement, stream Stream) {
 	// When finished, close output stream and signal.
 	defer s.onFinish()
 

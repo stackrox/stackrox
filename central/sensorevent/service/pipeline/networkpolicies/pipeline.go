@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -35,12 +35,12 @@ type pipelineImpl struct {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(event *v1.SensorEvent, _ pipeline.EnforcementInjector) error {
+func (s *pipelineImpl) Run(event *central.SensorEvent, _ pipeline.EnforcementInjector) error {
 	networkPolicy := event.GetNetworkPolicy()
 	networkPolicy.ClusterId = event.GetClusterId()
 
 	switch event.GetAction() {
-	case v1.ResourceAction_REMOVE_RESOURCE:
+	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(event.GetAction(), networkPolicy)
 	default:
 		return s.runGeneralPipeline(event.GetAction(), networkPolicy)
@@ -48,7 +48,7 @@ func (s *pipelineImpl) Run(event *v1.SensorEvent, _ pipeline.EnforcementInjector
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *storage.NetworkPolicy) error {
+func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, event *storage.NetworkPolicy) error {
 	// Validate the the event we receive has necessary fields set.
 	if err := s.validateInput(event); err != nil {
 		return err
@@ -64,7 +64,7 @@ func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *storag
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, np *storage.NetworkPolicy) error {
+func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, np *storage.NetworkPolicy) error {
 	if err := s.validateInput(np); err != nil {
 		return err
 	}
@@ -104,13 +104,13 @@ func (s *pipelineImpl) enrichCluster(np *storage.NetworkPolicy) error {
 	return nil
 }
 
-func (s *pipelineImpl) persistNetworkPolicy(action v1.ResourceAction, np *storage.NetworkPolicy) error {
+func (s *pipelineImpl) persistNetworkPolicy(action central.ResourceAction, np *storage.NetworkPolicy) error {
 	switch action {
-	case v1.ResourceAction_CREATE_RESOURCE:
+	case central.ResourceAction_CREATE_RESOURCE:
 		return s.networkPolicies.AddNetworkPolicy(np)
-	case v1.ResourceAction_UPDATE_RESOURCE:
+	case central.ResourceAction_UPDATE_RESOURCE:
 		return s.networkPolicies.UpdateNetworkPolicy(np)
-	case v1.ResourceAction_REMOVE_RESOURCE:
+	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.networkPolicies.RemoveNetworkPolicy(string(np.GetId()))
 	default:
 		return fmt.Errorf("Event action '%s' for network policy does not exist", action)

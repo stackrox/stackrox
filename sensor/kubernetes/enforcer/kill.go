@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	roxV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/pod"
 )
 
-func (e *enforcerImpl) kill(enforcement *roxV1.SensorEnforcement) (err error) {
+func (e *enforcerImpl) kill(enforcement *central.SensorEnforcement) (err error) {
 	// Fetch the container info, fail if none present as we can only kill containers.
 	containerInfo := enforcement.GetContainerInstance()
 	if containerInfo == nil {

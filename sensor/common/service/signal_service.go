@@ -5,6 +5,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -24,12 +25,12 @@ type Service interface {
 	pkgGRPC.APIService
 	sensorAPI.SignalServiceServer
 
-	Indicators() <-chan *v1.SensorEvent
+	Indicators() <-chan *central.SensorEvent
 }
 
 type serviceImpl struct {
 	queue      chan *v1.Signal
-	indicators chan *v1.SensorEvent
+	indicators chan *central.SensorEvent
 
 	processPipeline sensor.Pipeline
 }
@@ -56,7 +57,7 @@ func (s *serviceImpl) PushSignals(stream sensorAPI.SignalService_PushSignalsServ
 	return nil
 }
 
-func (s *serviceImpl) Indicators() <-chan *v1.SensorEvent {
+func (s *serviceImpl) Indicators() <-chan *central.SensorEvent {
 	return s.indicators
 }
 

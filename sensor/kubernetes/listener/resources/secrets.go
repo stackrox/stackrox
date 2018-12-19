@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/cloudflare/cfssl/certinfo"
-	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"k8s.io/api/core/v1"
@@ -109,7 +109,7 @@ func newSecretHandler() *secretHandler {
 }
 
 // Process processes a secret resource event, and returns the sensor events to emit in response.
-func (*secretHandler) Process(secret *v1.Secret, action pkgV1.ResourceAction) []*pkgV1.SensorEvent {
+func (*secretHandler) Process(secret *v1.Secret, action central.ResourceAction) []*central.SensorEvent {
 	// Filter out service account tokens because we have a service account field.
 	// Also filter out DockerConfigJson/DockerCfgs because we don't really care about them.
 	switch secret.Type {
@@ -128,11 +128,11 @@ func (*secretHandler) Process(secret *v1.Secret, action pkgV1.ResourceAction) []
 
 	populateTypeData(protoSecret, secret.Data)
 
-	return []*pkgV1.SensorEvent{
+	return []*central.SensorEvent{
 		{
 			Id:     string(secret.GetUID()),
 			Action: action,
-			Resource: &pkgV1.SensorEvent_Secret{
+			Resource: &central.SensorEvent_Secret{
 				Secret: protoSecret,
 			},
 		},

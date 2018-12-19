@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -24,23 +23,23 @@ const (
 
 var logger = logging.LoggerForModule()
 
-func logSendingEvent(sensorEvent *v1.SensorEvent) {
+func logSendingEvent(sensorEvent *central.SensorEvent) {
 	var name string
 	var resourceType string
 	switch x := sensorEvent.GetResource().(type) {
-	case *v1.SensorEvent_Deployment:
+	case *central.SensorEvent_Deployment:
 		name = sensorEvent.GetDeployment().GetName()
 		resourceType = "Deployment"
-	case *v1.SensorEvent_NetworkPolicy:
+	case *central.SensorEvent_NetworkPolicy:
 		name = sensorEvent.GetNetworkPolicy().GetName()
 		resourceType = "NetworkPolicy"
-	case *v1.SensorEvent_Namespace:
+	case *central.SensorEvent_Namespace:
 		name = sensorEvent.GetNamespace().GetName()
 		resourceType = "Namespace"
-	case *v1.SensorEvent_ProcessIndicator:
+	case *central.SensorEvent_ProcessIndicator:
 		name = sensorEvent.GetProcessIndicator().GetSignal().GetExecFilePath()
 		resourceType = "ProcessIndicator"
-	case *v1.SensorEvent_Secret:
+	case *central.SensorEvent_Secret:
 		name = sensorEvent.GetSecret().GetName()
 		resourceType = "Secret"
 	case nil:
@@ -51,7 +50,7 @@ func logSendingEvent(sensorEvent *v1.SensorEvent) {
 	logger.Infof("Sending Sensor Event: Action: '%s'. Type '%s'. Name: '%s'", sensorEvent.GetAction(), resourceType, name)
 }
 
-func (s *sensor) sendEvents(orchestratorEvents <-chan *v1.SensorEvent, signals <-chan *v1.SensorEvent, flows <-chan *central.NetworkFlowUpdate, output chan<- *v1.SensorEnforcement, client central.SensorServiceClient) {
+func (s *sensor) sendEvents(orchestratorEvents <-chan *central.SensorEvent, signals <-chan *central.SensorEvent, flows <-chan *central.NetworkFlowUpdate, output chan<- *central.SensorEnforcement, client central.SensorServiceClient) {
 	var err error
 	recoverable := true
 	for !s.stopped.IsDone() && recoverable {
@@ -70,10 +69,10 @@ func (s *sensor) sendEvents(orchestratorEvents <-chan *v1.SensorEvent, signals <
 }
 
 func (s *sensor) sendEventsSingle(
-	orchestratorEvents <-chan *v1.SensorEvent,
-	signals <-chan *v1.SensorEvent,
+	orchestratorEvents <-chan *central.SensorEvent,
+	signals <-chan *central.SensorEvent,
 	flows <-chan *central.NetworkFlowUpdate,
-	output chan<- *v1.SensorEnforcement,
+	output chan<- *central.SensorEnforcement,
 	client central.SensorServiceClient) (recoverable bool, err error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -136,7 +135,7 @@ func (s *sensor) sendEventsSingle(
 	}
 }
 
-func (s *sensor) receiveMessages(output chan<- *v1.SensorEnforcement, stream central.SensorService_CommunicateClient) {
+func (s *sensor) receiveMessages(output chan<- *central.SensorEnforcement, stream central.SensorService_CommunicateClient) {
 	err := s.doReceiveMessages(output, stream)
 	if err != nil {
 		log.Errorf("Error receiving enforcements from central: %v", err)
@@ -145,7 +144,7 @@ func (s *sensor) receiveMessages(output chan<- *v1.SensorEnforcement, stream cen
 }
 
 // Take in data processed by central, run post processing, then send it to the output channel.
-func (s *sensor) doReceiveMessages(output chan<- *v1.SensorEnforcement, stream central.SensorService_CommunicateClient) error {
+func (s *sensor) doReceiveMessages(output chan<- *central.SensorEnforcement, stream central.SensorService_CommunicateClient) error {
 	for {
 		select {
 		case <-s.stopped.Done():
@@ -169,9 +168,9 @@ func (s *sensor) doReceiveMessages(output chan<- *v1.SensorEnforcement, stream c
 			enforcement := enforcementMsg.Enforcement
 
 			switch x := enforcement.Resource.(type) {
-			case *v1.SensorEnforcement_Deployment:
+			case *central.SensorEnforcement_Deployment:
 				s.processResponse(stream.Context(), enforcement, output)
-			case *v1.SensorEnforcement_ContainerInstance:
+			case *central.SensorEnforcement_ContainerInstance:
 				s.processResponse(stream.Context(), enforcement, output)
 			default:
 				logger.Errorf("Event response with type '%s' is not handled", x)
@@ -180,7 +179,7 @@ func (s *sensor) doReceiveMessages(output chan<- *v1.SensorEnforcement, stream c
 	}
 }
 
-func (s *sensor) processResponse(ctx context.Context, enforcement *v1.SensorEnforcement, output chan<- *v1.SensorEnforcement) {
+func (s *sensor) processResponse(ctx context.Context, enforcement *central.SensorEnforcement, output chan<- *central.SensorEnforcement) {
 	if enforcement == nil {
 		return
 	}

@@ -1,12 +1,12 @@
 package streamer
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 )
 
 // PullFromQueue provides an interface for pulling from a queue to a channel.
 type PullFromQueue interface {
-	Start(toPull pullable, outputChannel chan<- *v1.SensorEvent)
+	Start(toPull pullable, outputChannel chan<- *central.SensorEvent)
 }
 
 // NewPullFromQueue returns a new instance of the PullFromQueue interface.
@@ -18,5 +18,5 @@ func NewPullFromQueue(onEmpty func() bool, onFinish func()) PullFromQueue {
 }
 
 type pullable interface {
-	Pull() (*v1.SensorEvent, error)
+	Pull() (*central.SensorEvent, error)
 }

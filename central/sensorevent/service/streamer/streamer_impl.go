@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/central/sensorevent/service/queue"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 )
 
@@ -17,9 +17,9 @@ type streamerImpl struct {
 	pl        pipeline.Pipeline
 
 	lock               sync.RWMutex
-	eventsRead         chan *v1.SensorEvent
-	eventsQueued       chan *v1.SensorEvent
-	enforcementsToSend chan *v1.SensorEnforcement
+	eventsRead         chan *central.SensorEvent
+	eventsQueued       chan *central.SensorEvent
+	enforcementsToSend chan *central.SensorEnforcement
 }
 
 // Start sets up the channels and signals to start processing events input through the given stream, and return
@@ -38,7 +38,7 @@ func (s *streamerImpl) WaitUntilFinished() {
 
 // InjectEnforcement tries to add the enforcement to the stream sent to sensor and returns whether or not it was
 // successful.
-func (s *streamerImpl) InjectEnforcement(enforcement *v1.SensorEnforcement) bool {
+func (s *streamerImpl) InjectEnforcement(enforcement *central.SensorEnforcement) bool {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
@@ -52,7 +52,7 @@ func (s *streamerImpl) InjectEnforcement(enforcement *v1.SensorEnforcement) bool
 // readFromStream reads from the given stream and forwards data to the output event channel.
 // When the stream is closed or the context canceled, the channel is closed.
 func (s *streamerImpl) readFromStream(stream Stream) {
-	s.eventsRead = make(chan *v1.SensorEvent)
+	s.eventsRead = make(chan *central.SensorEvent)
 	whenReadingFinishes := func() {
 		s.lock.Lock()
 		defer s.lock.Unlock()
@@ -68,7 +68,7 @@ func (s *streamerImpl) readFromStream(stream Stream) {
 // enqueueDequeue reads from the given channel, and queues the inputs, outputing them on the returned channel.
 // The output channel is closed when the input channel is closed, and the queue is empty.
 func (s *streamerImpl) enqueueDequeue() {
-	s.eventsQueued = make(chan *v1.SensorEvent)
+	s.eventsQueued = make(chan *central.SensorEvent)
 	closeOutput := func() {
 		close(s.eventsQueued)
 	}
@@ -90,7 +90,7 @@ func (s *streamerImpl) enqueueDequeue() {
 // and outputs any results (errors are logged internally) to the output channel.
 // The output channel is closed when the input channel is closed.
 func (s *streamerImpl) processWithPipeline() {
-	s.enforcementsToSend = make(chan *v1.SensorEnforcement)
+	s.enforcementsToSend = make(chan *central.SensorEnforcement)
 	closeOutput := func() {
 		s.lock.Lock()
 		defer s.lock.Unlock()

@@ -6,7 +6,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -32,12 +32,12 @@ type pipelineImpl struct {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(event *v1.SensorEvent, _ pipeline.EnforcementInjector) error {
+func (s *pipelineImpl) Run(event *central.SensorEvent, _ pipeline.EnforcementInjector) error {
 	secret := event.GetSecret()
 	secret.ClusterId = event.GetClusterId()
 
 	switch event.GetAction() {
-	case v1.ResourceAction_REMOVE_RESOURCE:
+	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(event.GetAction(), secret)
 	default:
 		return s.runGeneralPipeline(event.GetAction(), secret)
@@ -45,7 +45,7 @@ func (s *pipelineImpl) Run(event *v1.SensorEvent, _ pipeline.EnforcementInjector
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *storage.Secret) error {
+func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, event *storage.Secret) error {
 	// Validate the the event we receive has necessary fields set.
 	if err := s.validateInput(event); err != nil {
 		return err
@@ -60,7 +60,7 @@ func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, event *storag
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, secret *storage.Secret) error {
+func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, secret *storage.Secret) error {
 	if err := s.validateInput(secret); err != nil {
 		return err
 	}
@@ -99,11 +99,11 @@ func (s *pipelineImpl) enrichCluster(secret *storage.Secret) error {
 	return nil
 }
 
-func (s *pipelineImpl) persistSecret(action v1.ResourceAction, secret *storage.Secret) error {
+func (s *pipelineImpl) persistSecret(action central.ResourceAction, secret *storage.Secret) error {
 	switch action {
-	case v1.ResourceAction_CREATE_RESOURCE, v1.ResourceAction_UPDATE_RESOURCE:
+	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE:
 		return s.secrets.UpsertSecret(secret)
-	case v1.ResourceAction_REMOVE_RESOURCE:
+	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.secrets.RemoveSecret(secret.GetId())
 	default:
 		return fmt.Errorf("Event action '%s' for secret does not exist", action)

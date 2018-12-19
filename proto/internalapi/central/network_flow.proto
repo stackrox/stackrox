@@ -2,7 +2,6 @@ syntax = "proto3";
 
 option go_package = "central";
 
-import "api/v1/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "storage/network_flow.proto";
 

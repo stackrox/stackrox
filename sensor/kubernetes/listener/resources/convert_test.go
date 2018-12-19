@@ -6,7 +6,7 @@ import (
 	"time"
 
 	timestamp "github.com/gogo/protobuf/types"
-	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/sensor/kubernetes/volumes"
@@ -27,7 +27,7 @@ func TestConvert(t *testing.T) {
 		name               string
 		inputObj           interface{}
 		deploymentType     string
-		action             pkgV1.ResourceAction
+		action             central.ResourceAction
 		podLister          *mockPodLister
 		expectedDeployment *storage.Deployment
 	}{
@@ -48,7 +48,7 @@ func TestConvert(t *testing.T) {
 				},
 			},
 			deploymentType:     kubernetes.ReplicaSet,
-			action:             pkgV1.ResourceAction_CREATE_RESOURCE,
+			action:             central.ResourceAction_CREATE_RESOURCE,
 			expectedDeployment: nil,
 		},
 		{
@@ -194,7 +194,7 @@ func TestConvert(t *testing.T) {
 				},
 			},
 			deploymentType: kubernetes.Deployment,
-			action:         pkgV1.ResourceAction_UPDATE_RESOURCE,
+			action:         central.ResourceAction_UPDATE_RESOURCE,
 			podLister: &mockPodLister{
 				pods: []*v1.Pod{
 					{

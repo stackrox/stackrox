@@ -8,7 +8,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -91,7 +90,7 @@ func getGeneratedDeploymentID(i int) string {
 	return fmt.Sprintf("%s%d", deploymentIDBase, i)
 }
 
-func deploymentSensorEvent(bigDepRate float64) *v1.SensorEvent {
+func deploymentSensorEvent(bigDepRate float64) *central.SensorEvent {
 	var deployment *storage.Deployment
 	if rand.Float64() < bigDepRate {
 		deployment = fixtures.GetDeployment()
@@ -101,10 +100,10 @@ func deploymentSensorEvent(bigDepRate float64) *v1.SensorEvent {
 	id := getDeploymentID()
 	deployment.Id = id
 	deployment.Name = fmt.Sprintf("nginx%d", deploymentCount)
-	return &v1.SensorEvent{
+	return &central.SensorEvent{
 		Id:     id,
-		Action: v1.ResourceAction_CREATE_RESOURCE,
-		Resource: &v1.SensorEvent_Deployment{
+		Action: central.ResourceAction_CREATE_RESOURCE,
+		Resource: &central.SensorEvent_Deployment{
 			Deployment: deployment,
 		},
 	}
@@ -125,15 +124,15 @@ func sendDeployments(stream *threadSafeStream, maxDeployments int, deploymentInt
 	signal.Signal()
 }
 
-func sensorEventFromIndicator(index int, indicator *storage.ProcessIndicator) *v1.SensorEvent {
+func sensorEventFromIndicator(index int, indicator *storage.ProcessIndicator) *central.SensorEvent {
 	indicator.Id = uuid.NewV4().String()
 	indicator.DeploymentId = getDeploymentID()
 	indicator.Signal.ContainerId = getDeploymentID()
 	indicator.Signal.ExecFilePath = fmt.Sprintf("EXECFILE%d", index)
-	return &v1.SensorEvent{
+	return &central.SensorEvent{
 		Id:     indicator.GetId(),
-		Action: v1.ResourceAction_CREATE_RESOURCE,
-		Resource: &v1.SensorEvent_ProcessIndicator{
+		Action: central.ResourceAction_CREATE_RESOURCE,
+		Resource: &central.SensorEvent_ProcessIndicator{
 			ProcessIndicator: indicator,
 		},
 	}

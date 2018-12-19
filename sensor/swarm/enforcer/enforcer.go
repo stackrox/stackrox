@@ -8,7 +8,7 @@ import (
 	swarmTypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	dockerClient "github.com/docker/docker/client"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/enforcers"
@@ -55,7 +55,7 @@ func New() (enforcers.Enforcer, error) {
 	return enforcers.CreateEnforcer(enforcementMap), nil
 }
 
-func (e *enforcerImpl) scaleToZero(enforcement *v1.SensorEnforcement) (err error) {
+func (e *enforcerImpl) scaleToZero(enforcement *central.SensorEnforcement) (err error) {
 	deploymentInfo := enforcement.GetDeployment()
 	if deploymentInfo == nil {
 		return fmt.Errorf("unable to apply constraint to non-deployment")
@@ -81,7 +81,7 @@ func (e *enforcerImpl) scaleToZero(enforcement *v1.SensorEnforcement) (err error
 	return
 }
 
-func (e *enforcerImpl) unsatisfiableNodeConstraint(enforcement *v1.SensorEnforcement) (err error) {
+func (e *enforcerImpl) unsatisfiableNodeConstraint(enforcement *central.SensorEnforcement) (err error) {
 	deploymentInfo := enforcement.GetDeployment()
 	if deploymentInfo == nil {
 		return fmt.Errorf("unable to apply constraint to non-deployment")
@@ -109,7 +109,7 @@ func (e *enforcerImpl) unsatisfiableNodeConstraint(enforcement *v1.SensorEnforce
 	return
 }
 
-func (e *enforcerImpl) kill(enforcement *v1.SensorEnforcement) (err error) {
+func (e *enforcerImpl) kill(enforcement *central.SensorEnforcement) (err error) {
 	containerInfo := enforcement.GetContainerInstance()
 	if containerInfo == nil {
 		return fmt.Errorf("unable to apply constraint to non-deployment")
@@ -125,7 +125,7 @@ func (e *enforcerImpl) kill(enforcement *v1.SensorEnforcement) (err error) {
 	return
 }
 
-func (e *enforcerImpl) loadService(deploymentInfo *v1.DeploymentEnforcement) (swarm.Service, error) {
+func (e *enforcerImpl) loadService(deploymentInfo *central.DeploymentEnforcement) (swarm.Service, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 

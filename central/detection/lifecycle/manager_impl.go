@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/central/enrichment"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/policies"
@@ -275,7 +275,7 @@ func containersToKill(alerts []*storage.Alert, indicatorsToInfo map[string]indic
 	return containersSet
 }
 
-func createEnforcementAction(deployment *storage.Deployment, containerID string) *v1.SensorEnforcement {
+func createEnforcementAction(deployment *storage.Deployment, containerID string) *central.SensorEnforcement {
 	containers := deployment.GetContainers()
 	for _, container := range containers {
 		for _, instance := range container.GetInstances() {
@@ -283,13 +283,13 @@ func createEnforcementAction(deployment *storage.Deployment, containerID string)
 				continue
 			}
 			if containerID == instance.GetInstanceId().GetId()[:12] {
-				resource := &v1.SensorEnforcement_ContainerInstance{
-					ContainerInstance: &v1.ContainerInstanceEnforcement{
+				resource := &central.SensorEnforcement_ContainerInstance{
+					ContainerInstance: &central.ContainerInstanceEnforcement{
 						ContainerInstanceId: instance.GetInstanceId().GetId(),
 						PodId:               instance.GetContainingPodId(),
 					},
 				}
-				return &v1.SensorEnforcement{
+				return &central.SensorEnforcement{
 					Enforcement: storage.EnforcementAction_KILL_POD_ENFORCEMENT,
 					Resource:    resource,
 				}

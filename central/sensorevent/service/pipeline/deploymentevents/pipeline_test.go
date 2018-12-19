@@ -8,7 +8,7 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -74,7 +74,7 @@ func (suite *PipelineTestSuite) TestCreateResponseForRemove() {
 		onUpdate: suite.detector.DeploymentUpdated,
 		onRemove: suite.detector.DeploymentRemoved,
 	}
-	response := tested.do(events[0].GetDeployment(), v1.ResourceAction_REMOVE_RESOURCE)
+	response := tested.do(events[0].GetDeployment(), central.ResourceAction_REMOVE_RESOURCE)
 
 	// Should be no response for remove since no enforcement should be needed.
 	suite.Nil(response)
@@ -83,7 +83,7 @@ func (suite *PipelineTestSuite) TestCreateResponseForRemove() {
 
 func (suite *PipelineTestSuite) TestPersistDeploymentCreate() {
 	events := fakeDeploymentEvents()
-	events[0].Action = v1.ResourceAction_CREATE_RESOURCE
+	events[0].Action = central.ResourceAction_CREATE_RESOURCE
 
 	// Expect that our enforcement generator is called with expected data.
 	suite.deployments.EXPECT().UpsertDeployment(events[0].GetDeployment()).Return(nil)
@@ -100,7 +100,7 @@ func (suite *PipelineTestSuite) TestPersistDeploymentCreate() {
 
 func (suite *PipelineTestSuite) TestPersistDeploymentUpdate() {
 	events := fakeDeploymentEvents()
-	events[0].Action = v1.ResourceAction_UPDATE_RESOURCE
+	events[0].Action = central.ResourceAction_UPDATE_RESOURCE
 
 	// Expect that our enforcement generator is called with expected data.
 	suite.deployments.EXPECT().UpsertDeployment(events[0].GetDeployment()).Return(nil)
@@ -117,7 +117,7 @@ func (suite *PipelineTestSuite) TestPersistDeploymentUpdate() {
 
 func (suite *PipelineTestSuite) TestPersistDeploymentRemove() {
 	events := fakeDeploymentEvents()
-	events[0].Action = v1.ResourceAction_REMOVE_RESOURCE
+	events[0].Action = central.ResourceAction_REMOVE_RESOURCE
 
 	// Expect that our enforcement generator is called with expected data.
 	suite.deployments.EXPECT().RemoveDeployment(events[0].GetDeployment().GetId()).Return(nil)
@@ -188,10 +188,10 @@ func (suite *PipelineTestSuite) TestValidateImages() {
 }
 
 // Create a set of fake deployments for testing.
-func fakeDeploymentEvents() []*v1.SensorEvent {
-	return []*v1.SensorEvent{
+func fakeDeploymentEvents() []*central.SensorEvent {
+	return []*central.SensorEvent{
 		{
-			Resource: &v1.SensorEvent_Deployment{
+			Resource: &central.SensorEvent_Deployment{
 				Deployment: &storage.Deployment{
 					Id: "id1",
 					Containers: []*storage.Container{
@@ -203,10 +203,10 @@ func fakeDeploymentEvents() []*v1.SensorEvent {
 					},
 				},
 			},
-			Action: v1.ResourceAction_CREATE_RESOURCE,
+			Action: central.ResourceAction_CREATE_RESOURCE,
 		},
 		{
-			Resource: &v1.SensorEvent_Deployment{
+			Resource: &central.SensorEvent_Deployment{
 				Deployment: &storage.Deployment{
 					Id: "id2",
 					Containers: []*storage.Container{
@@ -218,10 +218,10 @@ func fakeDeploymentEvents() []*v1.SensorEvent {
 					},
 				},
 			},
-			Action: v1.ResourceAction_CREATE_RESOURCE,
+			Action: central.ResourceAction_CREATE_RESOURCE,
 		},
 		{
-			Resource: &v1.SensorEvent_Deployment{
+			Resource: &central.SensorEvent_Deployment{
 				Deployment: &storage.Deployment{
 					Id: "id3",
 					Containers: []*storage.Container{
@@ -233,10 +233,10 @@ func fakeDeploymentEvents() []*v1.SensorEvent {
 					},
 				},
 			},
-			Action: v1.ResourceAction_CREATE_RESOURCE,
+			Action: central.ResourceAction_CREATE_RESOURCE,
 		},
 		{
-			Resource: &v1.SensorEvent_Deployment{
+			Resource: &central.SensorEvent_Deployment{
 				Deployment: &storage.Deployment{
 					Id: "id4",
 					Containers: []*storage.Container{
@@ -253,7 +253,7 @@ func fakeDeploymentEvents() []*v1.SensorEvent {
 					},
 				},
 			},
-			Action: v1.ResourceAction_CREATE_RESOURCE,
+			Action: central.ResourceAction_CREATE_RESOURCE,
 		},
 	}
 }

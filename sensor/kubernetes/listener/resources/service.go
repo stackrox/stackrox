@@ -1,7 +1,7 @@
 package resources
 
 import (
-	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -47,8 +47,8 @@ func newServiceHandler(serviceStore *serviceStore, deploymentStore *deploymentSt
 }
 
 // Process processes a service resource event, and returns the sensor events to emit in response.
-func (sh *serviceHandler) Process(svc *v1.Service, action pkgV1.ResourceAction) []*pkgV1.SensorEvent {
-	if action == pkgV1.ResourceAction_CREATE_RESOURCE {
+func (sh *serviceHandler) Process(svc *v1.Service, action central.ResourceAction) []*central.SensorEvent {
+	if action == central.ResourceAction_CREATE_RESOURCE {
 		return sh.processCreate(svc)
 	}
 	var sel selector
@@ -56,7 +56,7 @@ func (sh *serviceHandler) Process(svc *v1.Service, action pkgV1.ResourceAction) 
 	if oldWrap != nil {
 		sel = oldWrap.selector
 	}
-	if action == pkgV1.ResourceAction_UPDATE_RESOURCE {
+	if action == central.ResourceAction_UPDATE_RESOURCE {
 		newWrap := wrapService(svc)
 		sh.serviceStore.addOrUpdateService(newWrap)
 		if sel != nil {
@@ -68,22 +68,22 @@ func (sh *serviceHandler) Process(svc *v1.Service, action pkgV1.ResourceAction) 
 	return sh.updateDeploymentsFromStore(svc.Namespace, sel)
 }
 
-func (sh *serviceHandler) updateDeploymentsFromStore(namespace string, sel selector) (events []*pkgV1.SensorEvent) {
+func (sh *serviceHandler) updateDeploymentsFromStore(namespace string, sel selector) (events []*central.SensorEvent) {
 	for _, deploymentWrap := range sh.deploymentStore.getMatchingDeployments(namespace, sel) {
 		if deploymentWrap.updatePortExposureFromStore(sh.serviceStore) {
-			events = append(events, deploymentWrap.toEvent(pkgV1.ResourceAction_UPDATE_RESOURCE))
+			events = append(events, deploymentWrap.toEvent(central.ResourceAction_UPDATE_RESOURCE))
 		}
 	}
 	sh.endpointManager.OnServiceUpdateOrRemove(namespace, sel)
 	return
 }
 
-func (sh *serviceHandler) processCreate(svc *v1.Service) (events []*pkgV1.SensorEvent) {
+func (sh *serviceHandler) processCreate(svc *v1.Service) (events []*central.SensorEvent) {
 	wrap := wrapService(svc)
 	sh.serviceStore.addOrUpdateService(wrap)
 	for _, deploymentWrap := range sh.deploymentStore.getMatchingDeployments(svc.Namespace, wrap.selector) {
 		if deploymentWrap.updatePortExposure(wrap) {
-			events = append(events, deploymentWrap.toEvent(pkgV1.ResourceAction_UPDATE_RESOURCE))
+			events = append(events, deploymentWrap.toEvent(central.ResourceAction_UPDATE_RESOURCE))
 		}
 	}
 	sh.endpointManager.OnServiceCreate(wrap)

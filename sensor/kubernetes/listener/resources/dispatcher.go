@@ -1,7 +1,7 @@
 package resources
 
 import (
-	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"k8s.io/api/core/v1"
 	networkingV1 "k8s.io/api/networking/v1"
@@ -11,7 +11,7 @@ import (
 // Dispatcher is responsible for processing resource events, and returning the sensor events that should be emitted
 // in response.
 type Dispatcher interface {
-	ProcessEvent(obj interface{}, action pkgV1.ResourceAction, deploymentType string) []*pkgV1.SensorEvent
+	ProcessEvent(obj interface{}, action central.ResourceAction, deploymentType string) []*central.SensorEvent
 }
 
 // NewDispatcher creates and returns a new dispatcher.
@@ -40,7 +40,7 @@ type dispatcher struct {
 	nodeHandler          *nodeHandler
 }
 
-func (d *dispatcher) ProcessEvent(obj interface{}, action pkgV1.ResourceAction, deploymentType string) []*pkgV1.SensorEvent {
+func (d *dispatcher) ProcessEvent(obj interface{}, action central.ResourceAction, deploymentType string) []*central.SensorEvent {
 	if deploymentType != "" {
 		return d.deploymentHandler.Process(obj, action, deploymentType)
 	}

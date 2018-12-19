@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/central/sensorevent/service/streamer"
 	"github.com/stackrox/rox/central/sensornetworkflow"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
@@ -18,7 +17,7 @@ var (
 
 type sensorConnection struct {
 	sendChan     chan *central.MsgToSensor
-	eventsC      chan *v1.SensorEvent
+	eventsC      chan *central.SensorEvent
 	flowUpdatesC chan *central.NetworkFlowUpdate
 
 	stopSig concurrency.ErrorSignal
@@ -27,7 +26,7 @@ type sensorConnection struct {
 func newConnection() *sensorConnection {
 	conn := &sensorConnection{
 		sendChan:     make(chan *central.MsgToSensor),
-		eventsC:      make(chan *v1.SensorEvent),
+		eventsC:      make(chan *central.SensorEvent),
 		flowUpdatesC: make(chan *central.NetworkFlowUpdate),
 		stopSig:      concurrency.NewErrorSignal(),
 	}

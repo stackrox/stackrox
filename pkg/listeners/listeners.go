@@ -1,7 +1,7 @@
 package listeners
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -12,7 +12,7 @@ type Creator func() (Listener, error)
 
 // Listener is the interface that allows for propagation of events back from the orchestrator.
 type Listener interface {
-	Events() <-chan *v1.SensorEvent
+	Events() <-chan *central.SensorEvent
 	Start()
 	Stop()
 }

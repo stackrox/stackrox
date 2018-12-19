@@ -1,7 +1,7 @@
 package streamer
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 )
 
 type pullFromQueueImpl struct {
@@ -10,12 +10,12 @@ type pullFromQueueImpl struct {
 }
 
 // Start starts pulling from the queue and pushing to the output channel.
-func (s *pullFromQueueImpl) Start(toPull pullable, outputChannel chan<- *v1.SensorEvent) {
+func (s *pullFromQueueImpl) Start(toPull pullable, outputChannel chan<- *central.SensorEvent) {
 	go s.pullLoop(toPull, outputChannel)
 }
 
 // pullLoop grabs the next available output and pushes it to the channel when able.
-func (s *pullFromQueueImpl) pullLoop(toPull pullable, outputChannel chan<- *v1.SensorEvent) {
+func (s *pullFromQueueImpl) pullLoop(toPull pullable, outputChannel chan<- *central.SensorEvent) {
 	// notification that the loop has been exited.
 	defer s.onFinish()
 
@@ -25,7 +25,7 @@ func (s *pullFromQueueImpl) pullLoop(toPull pullable, outputChannel chan<- *v1.S
 	}
 }
 
-func (s *pullFromQueueImpl) pullUntilEmpty(toPull pullable, outputChannel chan<- *v1.SensorEvent) {
+func (s *pullFromQueueImpl) pullUntilEmpty(toPull pullable, outputChannel chan<- *central.SensorEvent) {
 	for {
 		// Pull the next item from the queue.
 		next, err := toPull.Pull()

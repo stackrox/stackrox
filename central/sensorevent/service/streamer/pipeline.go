@@ -2,12 +2,12 @@ package streamer
 
 import (
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 )
 
 // Pipeline represents a pipeline that reads and processes data from one channel, and outputs to the next.
 type Pipeline interface {
-	Start(eventsIn <-chan *v1.SensorEvent, pl pipeline.Pipeline, enforcementInjector pipeline.EnforcementInjector)
+	Start(eventsIn <-chan *central.SensorEvent, pl pipeline.Pipeline, enforcementInjector pipeline.EnforcementInjector)
 }
 
 // NewPipeline returns a new instance of a Pipeline using the given processing pipeline.

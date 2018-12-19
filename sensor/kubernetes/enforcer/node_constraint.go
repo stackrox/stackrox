@@ -3,7 +3,7 @@ package enforcer
 import (
 	"fmt"
 
-	roxV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/daemonset"
@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/statefulset"
 )
 
-func (e *enforcerImpl) unsatisfiableNodeConstraint(enforcement *roxV1.SensorEnforcement) (err error) {
+func (e *enforcerImpl) unsatisfiableNodeConstraint(enforcement *central.SensorEnforcement) (err error) {
 	deploymentInfo := enforcement.GetDeployment()
 	if deploymentInfo == nil {
 		return fmt.Errorf("unable to apply constraint to non-deployment")

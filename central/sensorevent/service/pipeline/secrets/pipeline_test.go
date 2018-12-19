@@ -7,7 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/suite"
@@ -44,11 +44,11 @@ func (suite *PipelineTestSuite) TestRun() {
 	suite.secrets.EXPECT().UpsertSecret(secret).Return(nil)
 
 	pipeline := NewPipeline(suite.clusters, suite.secrets)
-	sensorEvent := &v1.SensorEvent{
+	sensorEvent := &central.SensorEvent{
 		Id:        "secretid",
 		ClusterId: "clusterid",
-		Action:    v1.ResourceAction_CREATE_RESOURCE,
-		Resource: &v1.SensorEvent_Secret{
+		Action:    central.ResourceAction_CREATE_RESOURCE,
+		Resource: &central.SensorEvent_Secret{
 			Secret: secret,
 		},
 	}

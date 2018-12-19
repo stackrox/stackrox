@@ -7,7 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	pipeline "github.com/stackrox/rox/central/sensorevent/service/pipeline"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	central "github.com/stackrox/rox/generated/internalapi/central"
 	reflect "reflect"
 )
 
@@ -35,7 +35,7 @@ func (m *MockPipeline) EXPECT() *MockPipelineMockRecorder {
 }
 
 // Run mocks base method
-func (m *MockPipeline) Run(arg0 *v1.SensorEvent, arg1 pipeline.EnforcementInjector) error {
+func (m *MockPipeline) Run(arg0 *central.SensorEvent, arg1 pipeline.EnforcementInjector) error {
 	ret := m.ctrl.Call(m, "Run", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0

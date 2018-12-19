@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/node/store"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -28,7 +28,7 @@ type pipelineImpl struct {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (p *pipelineImpl) Run(event *v1.SensorEvent, _ pipeline.EnforcementInjector) error {
+func (p *pipelineImpl) Run(event *central.SensorEvent, _ pipeline.EnforcementInjector) error {
 	clusterID := event.GetClusterId()
 
 	store, err := p.nodeStore.GetClusterNodeStore(clusterID)
@@ -36,13 +36,13 @@ func (p *pipelineImpl) Run(event *v1.SensorEvent, _ pipeline.EnforcementInjector
 		return fmt.Errorf("getting cluster-local node store: %v", err)
 	}
 
-	nodeOneof, ok := event.Resource.(*v1.SensorEvent_Node)
+	nodeOneof, ok := event.Resource.(*central.SensorEvent_Node)
 	if !ok {
 		return fmt.Errorf("unexpected resource type %T for cluster status", event.Resource)
 	}
 	node := nodeOneof.Node
 
-	if event.GetAction() == v1.ResourceAction_REMOVE_RESOURCE {
+	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		return store.RemoveNode(node.GetId())
 	}
 	return store.UpsertNode(node)

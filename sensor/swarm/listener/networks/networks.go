@@ -5,7 +5,7 @@ import (
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/api/types/filters"
 	dockerClient "github.com/docker/docker/client"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/logging"
@@ -16,7 +16,7 @@ var logger = logging.LoggerForModule()
 // Handler implements the ResourceHandler interface
 type Handler struct {
 	client  *dockerClient.Client
-	eventsC chan *v1.SensorEvent
+	eventsC chan *central.SensorEvent
 }
 
 // SendExistingResources sends the current networks
@@ -33,7 +33,7 @@ func (s *Handler) SendExistingResources() {
 }
 
 // NewHandler instantiates the Handler for network events
-func NewHandler(client *dockerClient.Client, eventsC chan *v1.SensorEvent) *Handler {
+func NewHandler(client *dockerClient.Client, eventsC chan *central.SensorEvent) *Handler {
 	return &Handler{
 		client:  client,
 		eventsC: eventsC,
@@ -56,31 +56,31 @@ func (s *Handler) HandleMessage(msg events.Message) {
 	actor := msg.Type
 	id := msg.Actor.ID
 
-	var resourceAction v1.ResourceAction
+	var resourceAction central.ResourceAction
 	var np *storage.NetworkPolicy
 	var originalSpec types.NetworkResource
 	var err error
 
 	switch msg.Action {
 	case "create":
-		resourceAction = v1.ResourceAction_CREATE_RESOURCE
+		resourceAction = central.ResourceAction_CREATE_RESOURCE
 		if np, originalSpec, err = s.getNetworkPolicyFromNetworkID(id); err != nil {
 			logger.Errorf("unable to get deployment (actor=%v,id=%v): %s", actor, id, err)
 			return
 		}
 	case "update":
-		resourceAction = v1.ResourceAction_UPDATE_RESOURCE
+		resourceAction = central.ResourceAction_UPDATE_RESOURCE
 		if np, originalSpec, err = s.getNetworkPolicyFromNetworkID(id); err != nil {
 			logger.Errorf("unable to get deployment (actor=%v,id=%v): %s", actor, id, err)
 			return
 		}
 	case "remove":
-		resourceAction = v1.ResourceAction_REMOVE_RESOURCE
+		resourceAction = central.ResourceAction_REMOVE_RESOURCE
 		np = &storage.NetworkPolicy{
 			Id: id,
 		}
 	default:
-		resourceAction = v1.ResourceAction_UNSET_ACTION_RESOURCE
+		resourceAction = central.ResourceAction_UNSET_ACTION_RESOURCE
 		logger.Warnf("unknown action for network: %s", msg.Action)
 		return
 	}
@@ -88,7 +88,7 @@ func (s *Handler) HandleMessage(msg events.Message) {
 	s.eventsC <- networkPolicyEventWrap(resourceAction, np, originalSpec)
 }
 
-func (s *Handler) getExistingNetworks() ([]*v1.SensorEvent, error) {
+func (s *Handler) getExistingNetworks() ([]*central.SensorEvent, error) {
 	ctx, cancel := docker.TimeoutContext()
 	defer cancel()
 	filters := filters.NewArgs()
@@ -100,10 +100,10 @@ func (s *Handler) getExistingNetworks() ([]*v1.SensorEvent, error) {
 		return nil, err
 	}
 
-	var events []*v1.SensorEvent
+	var events []*central.SensorEvent
 	for _, network := range swarmNetworks {
 		n := networkWrap(network).asNetworkPolicy()
-		events = append(events, networkPolicyEventWrap(v1.ResourceAction_UPDATE_RESOURCE, n, network))
+		events = append(events, networkPolicyEventWrap(central.ResourceAction_UPDATE_RESOURCE, n, network))
 	}
 
 	// Add a network policy for default namespace so all randomly run services will at least be grouped nicely
@@ -112,17 +112,17 @@ func (s *Handler) getExistingNetworks() ([]*v1.SensorEvent, error) {
 		Name: "default",
 	}
 	events = append(events,
-		networkPolicyEventWrap(v1.ResourceAction_UPDATE_RESOURCE, networkWrap(defaultNetwork).asNetworkPolicy(), defaultNetwork),
+		networkPolicyEventWrap(central.ResourceAction_UPDATE_RESOURCE, networkWrap(defaultNetwork).asNetworkPolicy(), defaultNetwork),
 	)
 
 	return events, nil
 }
 
-func networkPolicyEventWrap(action v1.ResourceAction, networkPolicy *storage.NetworkPolicy, obj interface{}) *v1.SensorEvent {
-	return &v1.SensorEvent{
+func networkPolicyEventWrap(action central.ResourceAction, networkPolicy *storage.NetworkPolicy, obj interface{}) *central.SensorEvent {
+	return &central.SensorEvent{
 		Id:     networkPolicy.GetId(),
 		Action: action,
-		Resource: &v1.SensorEvent_NetworkPolicy{
+		Resource: &central.SensorEvent_NetworkPolicy{
 			NetworkPolicy: networkPolicy,
 		},
 	}

@@ -1,7 +1,7 @@
 package resources
 
 import (
-	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"k8s.io/api/core/v1"
 	v1listers "k8s.io/client-go/listers/core/v1"
 )
@@ -24,27 +24,27 @@ func newDeploymentHandler(serviceStore *serviceStore, deploymentStore *deploymen
 	}
 }
 
-func (d *deploymentHandler) maybeProcessPod(obj interface{}) []*pkgV1.SensorEvent {
+func (d *deploymentHandler) maybeProcessPod(obj interface{}) []*central.SensorEvent {
 	pod, ok := obj.(*v1.Pod)
 	if !ok {
 		return nil
 	}
 	owners := d.deploymentStore.getOwningDeployments(pod.Namespace, pod.Labels)
-	var events []*pkgV1.SensorEvent
+	var events []*central.SensorEvent
 	for _, owner := range owners {
-		events = append(events, d.Process(owner.original, pkgV1.ResourceAction_UPDATE_RESOURCE, owner.Type)...)
+		events = append(events, d.Process(owner.original, central.ResourceAction_UPDATE_RESOURCE, owner.Type)...)
 	}
 	return events
 }
 
 // Process processes a deployment resource events, and returns the sensor events to emit in response.
-func (d *deploymentHandler) Process(obj interface{}, action pkgV1.ResourceAction, deploymentType string) []*pkgV1.SensorEvent {
+func (d *deploymentHandler) Process(obj interface{}, action central.ResourceAction, deploymentType string) []*central.SensorEvent {
 	wrap := newDeploymentEventFromResource(obj, action, deploymentType, d.podLister)
 	if wrap == nil {
 		return d.maybeProcessPod(obj)
 	}
 	wrap.updatePortExposureFromStore(d.serviceStore)
-	if action != pkgV1.ResourceAction_REMOVE_RESOURCE {
+	if action != central.ResourceAction_REMOVE_RESOURCE {
 		d.deploymentStore.addOrUpdateDeployment(wrap)
 		d.endpointManager.OnDeploymentCreateOrUpdate(wrap)
 	} else {
@@ -52,5 +52,5 @@ func (d *deploymentHandler) Process(obj interface{}, action pkgV1.ResourceAction
 		d.endpointManager.OnDeploymentRemove(wrap)
 	}
 
-	return []*pkgV1.SensorEvent{wrap.toEvent(action)}
+	return []*central.SensorEvent{wrap.toEvent(action)}
 }

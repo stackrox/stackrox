@@ -4,7 +4,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	dockerClient "github.com/docker/docker/client"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/logging"
@@ -17,7 +17,7 @@ var (
 // Handler implements the ResourceHandler interface
 type Handler struct {
 	client  *dockerClient.Client
-	eventsC chan<- *v1.SensorEvent
+	eventsC chan<- *central.SensorEvent
 }
 
 // SendExistingResources sends the current node count.
@@ -29,10 +29,10 @@ func (s *Handler) SendExistingResources() {
 	}
 
 	for _, n := range existingNodes {
-		s.eventsC <- &v1.SensorEvent{
+		s.eventsC <- &central.SensorEvent{
 			Id:     n.GetId(),
-			Action: v1.ResourceAction_UPDATE_RESOURCE,
-			Resource: &v1.SensorEvent_Node{
+			Action: central.ResourceAction_UPDATE_RESOURCE,
+			Resource: &central.SensorEvent_Node{
 				Node: n,
 			},
 		}
@@ -40,7 +40,7 @@ func (s *Handler) SendExistingResources() {
 }
 
 // NewHandler instantiates the Handler for network events
-func NewHandler(client *dockerClient.Client, eventsC chan<- *v1.SensorEvent) *Handler {
+func NewHandler(client *dockerClient.Client, eventsC chan<- *central.SensorEvent) *Handler {
 	return &Handler{
 		client:  client,
 		eventsC: eventsC,
@@ -71,15 +71,15 @@ func (s *Handler) HandleMessage(msg events.Message) {
 		return
 	}
 
-	var resourceAction v1.ResourceAction
+	var resourceAction central.ResourceAction
 
 	switch msg.Action {
 	case "create":
-		resourceAction = v1.ResourceAction_CREATE_RESOURCE
+		resourceAction = central.ResourceAction_CREATE_RESOURCE
 	case "update":
-		resourceAction = v1.ResourceAction_UPDATE_RESOURCE
+		resourceAction = central.ResourceAction_UPDATE_RESOURCE
 	case "remove":
-		resourceAction = v1.ResourceAction_REMOVE_RESOURCE
+		resourceAction = central.ResourceAction_REMOVE_RESOURCE
 	default:
 		log.Warnf("unknown action for node: %s", msg.Action)
 		return
@@ -90,10 +90,10 @@ func (s *Handler) HandleMessage(msg events.Message) {
 		Name: msg.Actor.Attributes["name"],
 	}
 
-	event := &v1.SensorEvent{
+	event := &central.SensorEvent{
 		Id:     node.GetId(),
 		Action: resourceAction,
-		Resource: &v1.SensorEvent_Node{
+		Resource: &central.SensorEvent_Node{
 			Node: node,
 		},
 	}

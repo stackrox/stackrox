@@ -1,7 +1,7 @@
 package replicationcontroller
 
 import (
-	roxV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/common"
 	coreV1 "k8s.io/api/core/v1"
@@ -10,7 +10,7 @@ import (
 )
 
 // EnforceNodeConstraint reschedules the ReplicationController with unsatisfiable constraints.
-func EnforceNodeConstraint(client *kubernetes.Clientset, deploymentInfo *roxV1.DeploymentEnforcement) (err error) {
+func EnforceNodeConstraint(client *kubernetes.Clientset, deploymentInfo *central.DeploymentEnforcement) (err error) {
 	// Load the current ReplicationController for the deployment.
 	var rc *coreV1.ReplicationController
 	rc, err = client.CoreV1().ReplicationControllers(deploymentInfo.GetNamespace()).Get(deploymentInfo.GetDeploymentName(), metav1.GetOptions{})

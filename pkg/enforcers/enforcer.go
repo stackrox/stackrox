@@ -2,7 +2,7 @@ package enforcers
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
@@ -13,11 +13,11 @@ var (
 )
 
 // EnforceFunc represents an enforcement function.
-type EnforceFunc func(*v1.SensorEnforcement) error
+type EnforceFunc func(*central.SensorEnforcement) error
 
 // Enforcer is an abstraction for taking enforcement actions on deployments.
 type Enforcer interface {
-	Actions() chan<- *v1.SensorEnforcement
+	Actions() chan<- *central.SensorEnforcement
 	Start()
 	Stop()
 }
@@ -26,7 +26,7 @@ type Enforcer interface {
 func CreateEnforcer(enforcementMap map[storage.EnforcementAction]EnforceFunc) Enforcer {
 	return &enforcer{
 		enforcementMap: enforcementMap,
-		actionsC:       make(chan *v1.SensorEnforcement, 10),
+		actionsC:       make(chan *central.SensorEnforcement, 10),
 		stopC:          concurrency.NewSignal(),
 		stoppedC:       concurrency.NewSignal(),
 	}
@@ -34,12 +34,12 @@ func CreateEnforcer(enforcementMap map[storage.EnforcementAction]EnforceFunc) En
 
 type enforcer struct {
 	enforcementMap map[storage.EnforcementAction]EnforceFunc
-	actionsC       chan *v1.SensorEnforcement
+	actionsC       chan *central.SensorEnforcement
 	stopC          concurrency.Signal
 	stoppedC       concurrency.Signal
 }
 
-func (e *enforcer) Actions() chan<- *v1.SensorEnforcement {
+func (e *enforcer) Actions() chan<- *central.SensorEnforcement {
 	return e.actionsC
 }
 

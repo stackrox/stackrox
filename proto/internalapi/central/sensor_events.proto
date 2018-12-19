@@ -1,7 +1,6 @@
 syntax = "proto3";
 
-option go_package = "v1";
-option java_package = "io.stackrox.proto.api.v1";
+option go_package = "central";
 
 import "storage/cluster.proto";
 import "storage/deployment.proto";
@@ -13,7 +12,7 @@ import "storage/policy.proto";
 import "storage/process_indicator.proto";
 
 
-package v1;
+package central;
 
 enum ResourceAction {
     UNSET_ACTION_RESOURCE   = 0;

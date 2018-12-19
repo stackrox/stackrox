@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/processsignal"
 )
@@ -16,7 +17,7 @@ var (
 
 // newService creates a new streaming service with the collector. It should only be called once.
 func newService() Service {
-	indicators := make(chan *v1.SensorEvent)
+	indicators := make(chan *central.SensorEvent)
 
 	return &serviceImpl{
 		queue:           make(chan *v1.Signal, maxBufferSize),

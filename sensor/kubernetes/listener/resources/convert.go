@@ -10,7 +10,7 @@ import (
 
 	ptypes "github.com/gogo/protobuf/types"
 	openshift_appsv1 "github.com/openshift/api/apps/v1"
-	pkgV1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containers"
 	"github.com/stackrox/rox/pkg/env"
@@ -70,7 +70,7 @@ func doesFieldExist(value reflect.Value) bool {
 	return !reflect.DeepEqual(value, reflect.Value{})
 }
 
-func newDeploymentEventFromResource(obj interface{}, action pkgV1.ResourceAction, deploymentType string, lister v1listers.PodLister) (wrap *deploymentWrap) {
+func newDeploymentEventFromResource(obj interface{}, action central.ResourceAction, deploymentType string, lister v1listers.PodLister) (wrap *deploymentWrap) {
 	objMeta, err := meta.Accessor(obj)
 	if err != nil {
 		logger.Errorf("could not access metadata of object of type %T: %v", obj, err)
@@ -139,7 +139,7 @@ func (w *deploymentWrap) populateKubeProxyIfNecessary(o *v1.Pod) labels.Selector
 	return nil
 }
 
-func (w *deploymentWrap) populateFields(obj interface{}, action pkgV1.ResourceAction, lister v1listers.PodLister) {
+func (w *deploymentWrap) populateFields(obj interface{}, action central.ResourceAction, lister v1listers.PodLister) {
 	w.original = obj
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
 	spec := objValue.FieldByName("Spec")
@@ -198,7 +198,7 @@ func (w *deploymentWrap) populateFields(obj interface{}, action pkgV1.ResourceAc
 	w.podLabels = podLabels
 	w.populateContainers(podSpec)
 
-	if action != pkgV1.ResourceAction_REMOVE_RESOURCE {
+	if action != central.ResourceAction_REMOVE_RESOURCE {
 		// If we have a standalone pod, we cannot use the labels to try and select that pod so we must directly populate the pod data
 		// We need to special case kube-proxy because we are consolidating it into a deployment
 		if pod, ok := obj.(*v1.Pod); ok && w.Id != kubeProxyDeploymentID {
@@ -552,11 +552,11 @@ func (w *deploymentWrap) populatePorts(podSpec v1.PodSpec) {
 	}
 }
 
-func (w *deploymentWrap) toEvent(action pkgV1.ResourceAction) *pkgV1.SensorEvent {
-	return &pkgV1.SensorEvent{
+func (w *deploymentWrap) toEvent(action central.ResourceAction) *central.SensorEvent {
+	return &central.SensorEvent{
 		Id:     w.GetId(),
 		Action: action,
-		Resource: &pkgV1.SensorEvent_Deployment{
+		Resource: &central.SensorEvent_Deployment{
 			Deployment: w.Deployment,
 		},
 	}

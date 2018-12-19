@@ -8,7 +8,7 @@ import (
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -47,14 +47,14 @@ type pipelineImpl struct {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(event *v1.SensorEvent, injector pipeline.EnforcementInjector) error {
+func (s *pipelineImpl) Run(event *central.SensorEvent, injector pipeline.EnforcementInjector) error {
 	deployment := event.GetDeployment()
 	deployment.ClusterId = event.GetClusterId()
 
-	var resp *v1.SensorEnforcement
+	var resp *central.SensorEnforcement
 	var err error
 	switch event.GetAction() {
-	case v1.ResourceAction_REMOVE_RESOURCE:
+	case central.ResourceAction_REMOVE_RESOURCE:
 		resp, err = s.runRemovePipeline(event.GetAction(), deployment)
 	default:
 		resp, err = s.runGeneralPipeline(event.GetAction(), deployment)
@@ -72,7 +72,7 @@ func (s *pipelineImpl) Run(event *v1.SensorEvent, injector pipeline.EnforcementI
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, deployment *storage.Deployment) (*v1.SensorEnforcement, error) {
+func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, deployment *storage.Deployment) (*central.SensorEnforcement, error) {
 	// Validate the the deployment we receive has necessary fields set.
 	if err := s.validateInput.do(deployment); err != nil {
 		return nil, err
@@ -91,7 +91,7 @@ func (s *pipelineImpl) runRemovePipeline(action v1.ResourceAction, deployment *s
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(action v1.ResourceAction, deployment *storage.Deployment) (*v1.SensorEnforcement, error) {
+func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, deployment *storage.Deployment) (*central.SensorEnforcement, error) {
 	// Validate the the deployment we receive has necessary fields set.
 	if err := s.validateInput.do(deployment); err != nil {
 		return nil, err

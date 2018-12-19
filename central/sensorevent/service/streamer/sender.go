@@ -1,12 +1,12 @@
 package streamer
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 )
 
 // Sender represents an active client/server two way stream from senor to/from central.
 type Sender interface {
-	Start(in <-chan *v1.SensorEnforcement, stream Stream)
+	Start(in <-chan *central.SensorEnforcement, stream Stream)
 }
 
 // NewSender creates a new instance of a Stream for the given data.

@@ -1,7 +1,7 @@
 package streamer
 
 import (
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 )
 
 type pushToQueueImpl struct {
@@ -10,12 +10,12 @@ type pushToQueueImpl struct {
 }
 
 // Start starts pulling from the input channel and pushing to the queue.
-func (s *pushToQueueImpl) Start(inputChannel <-chan *v1.SensorEvent, toPush pushable) {
+func (s *pushToQueueImpl) Start(inputChannel <-chan *central.SensorEvent, toPush pushable) {
 	go s.pushLoop(inputChannel, toPush)
 }
 
 // pushLoop loops over the input and adds it to the DB or outgoing channel if the DB can be skipped.
-func (s *pushToQueueImpl) pushLoop(inputChannel <-chan *v1.SensorEvent, toPush pushable) {
+func (s *pushToQueueImpl) pushLoop(inputChannel <-chan *central.SensorEvent, toPush pushable) {
 	defer s.onFinish()
 
 	for {
@@ -27,7 +27,7 @@ func (s *pushToQueueImpl) pushLoop(inputChannel <-chan *v1.SensorEvent, toPush p
 	}
 }
 
-func (s *pushToQueueImpl) pushNext(inputChannel <-chan *v1.SensorEvent, toPush pushable) (keepPushing bool) {
+func (s *pushToQueueImpl) pushNext(inputChannel <-chan *central.SensorEvent, toPush pushable) (keepPushing bool) {
 	// Try to read the channel. If it is closed, then return false so the loop knows to stop.
 	in, ok := <-inputChannel
 	if !ok {

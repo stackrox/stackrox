@@ -7,7 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline/mocks"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -56,9 +56,9 @@ func (suite *PipelineTestSuite) TearDownTest() {
 
 func (suite *PipelineTestSuite) TestCallsDeploymentPipeline() {
 	expectedError := fmt.Errorf("this is expected")
-	event := &v1.SensorEvent{
-		Action:   v1.ResourceAction_CREATE_RESOURCE,
-		Resource: &v1.SensorEvent_Deployment{},
+	event := &central.SensorEvent{
+		Action:   central.ResourceAction_CREATE_RESOURCE,
+		Resource: &central.SensorEvent_Deployment{},
 	}
 
 	suite.depMock.EXPECT().Run(event, nil).Return(expectedError)
@@ -69,9 +69,9 @@ func (suite *PipelineTestSuite) TestCallsDeploymentPipeline() {
 
 func (suite *PipelineTestSuite) TestCallProcessIndicationPipeline() {
 	expectedError := fmt.Errorf("this is expected")
-	event := &v1.SensorEvent{
-		Action:   v1.ResourceAction_CREATE_RESOURCE,
-		Resource: &v1.SensorEvent_ProcessIndicator{},
+	event := &central.SensorEvent{
+		Action:   central.ResourceAction_CREATE_RESOURCE,
+		Resource: &central.SensorEvent_ProcessIndicator{},
 	}
 
 	suite.proMock.EXPECT().Run(event, nil).Return(expectedError)
@@ -82,9 +82,9 @@ func (suite *PipelineTestSuite) TestCallProcessIndicationPipeline() {
 
 func (suite *PipelineTestSuite) TestCallsNetworkPolicyPipeline() {
 	expectedError := fmt.Errorf("this is expected")
-	event := &v1.SensorEvent{
-		Action:   v1.ResourceAction_CREATE_RESOURCE,
-		Resource: &v1.SensorEvent_NetworkPolicy{},
+	event := &central.SensorEvent{
+		Action:   central.ResourceAction_CREATE_RESOURCE,
+		Resource: &central.SensorEvent_NetworkPolicy{},
 	}
 
 	suite.netMock.EXPECT().Run(event, nil).Return(expectedError)
@@ -95,9 +95,9 @@ func (suite *PipelineTestSuite) TestCallsNetworkPolicyPipeline() {
 
 func (suite *PipelineTestSuite) TestCallsNamespacePipeline() {
 	expectedError := fmt.Errorf("this is expected")
-	event := &v1.SensorEvent{
-		Action:   v1.ResourceAction_CREATE_RESOURCE,
-		Resource: &v1.SensorEvent_Namespace{},
+	event := &central.SensorEvent{
+		Action:   central.ResourceAction_CREATE_RESOURCE,
+		Resource: &central.SensorEvent_Namespace{},
 	}
 
 	suite.namMock.EXPECT().Run(event, nil).Return(expectedError)
@@ -108,9 +108,9 @@ func (suite *PipelineTestSuite) TestCallsNamespacePipeline() {
 
 func (suite *PipelineTestSuite) TestCallsSecretPipeline() {
 	expectedError := fmt.Errorf("this is expected")
-	event := &v1.SensorEvent{
-		Action:   v1.ResourceAction_CREATE_RESOURCE,
-		Resource: &v1.SensorEvent_Secret{},
+	event := &central.SensorEvent{
+		Action:   central.ResourceAction_CREATE_RESOURCE,
+		Resource: &central.SensorEvent_Secret{},
 	}
 
 	suite.secMock.EXPECT().Run(event, nil).Return(expectedError)
@@ -120,8 +120,8 @@ func (suite *PipelineTestSuite) TestCallsSecretPipeline() {
 }
 
 func (suite *PipelineTestSuite) TestHandlesNoType() {
-	event := &v1.SensorEvent{
-		Action: v1.ResourceAction_CREATE_RESOURCE,
+	event := &central.SensorEvent{
+		Action: central.ResourceAction_CREATE_RESOURCE,
 	}
 
 	err := suite.tested.Run(event, nil)
