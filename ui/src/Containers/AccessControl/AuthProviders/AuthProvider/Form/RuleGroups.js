@@ -30,10 +30,6 @@ const MenuList = ({ toggleModal, ...props }) => (
 class RuleGroups extends Component {
     static propTypes = {
         fields: PropTypes.shape({}).isRequired,
-        onDelete: PropTypes.func.isRequired,
-        initialValues: PropTypes.shape({
-            id: PropTypes.string
-        }),
         toggleModal: PropTypes.func.isRequired,
         usersAttributes: PropTypes.arrayOf(
             PropTypes.shape({
@@ -61,7 +57,7 @@ class RuleGroups extends Component {
     };
 
     render() {
-        const { fields, onDelete, initialValues, usersAttributes } = this.props;
+        const { fields, initialValues, usersAttributes } = this.props;
         const { keyOptions, roleOptions } = formDescriptor.attrToRole;
         let valueOptions = initialValues.groups.map(({ props: { key, value } }) => ({
             key,
@@ -80,7 +76,6 @@ class RuleGroups extends Component {
         );
         const addRule = () => fields.push({ props: { auth_provider_id: initialValues.id } });
         const deleteRule = (group, idx) => () => {
-            onDelete(group.get(idx));
             fields.remove(idx);
         };
         return (
@@ -121,15 +116,12 @@ class RuleGroups extends Component {
                             />
                         </div>
                         <button className="pl-2 pr-2" type="button">
-                            <Icon.Plus className="h-4 w-4" />
-                        </button>
-                        <button className="pl-2 pr-2" type="button">
                             <Icon.Trash2 className="h-4 w-4" onClick={deleteRule(value, idx)} />
                         </button>
                     </div>
                 ))}
                 {/* eslint-disable-next-line */}
-                <button className="btn btn-primary" type="button" onClick={addRule}>
+                <button className="btn btn-primary ml-1" type="button" onClick={addRule}>
                     Add New Rule
                 </button>
             </div>

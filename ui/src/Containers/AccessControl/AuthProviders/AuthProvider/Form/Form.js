@@ -12,12 +12,13 @@ class Form extends Component {
     static propTypes = {
         handleSubmit: PropTypes.func.isRequired,
         onSubmit: PropTypes.func.isRequired,
-        onDelete: PropTypes.func.isRequired,
-        initialValues: PropTypes.shape({})
+        initialValues: PropTypes.shape({}),
+        selectedAuthProvider: PropTypes.shape({})
     };
 
     static defaultProps = {
-        initialValues: null
+        initialValues: null,
+        selectedAuthProvider: null
     };
 
     constructor(props) {
@@ -41,9 +42,10 @@ class Form extends Component {
     renderRuleGroupsComponent = props => <RuleGroups toggleModal={this.toggleModal} {...props} />;
 
     render() {
-        const { handleSubmit, initialValues, onSubmit, onDelete } = this.props;
+        const { handleSubmit, initialValues, onSubmit, selectedAuthProvider } = this.props;
         const fields = formDescriptor[initialValues.type];
         if (!fields) return null;
+        const className = !selectedAuthProvider.name ? 'pointer-events-none opacity-50' : '';
         return (
             <>
                 <form
@@ -58,7 +60,7 @@ class Form extends Component {
                             ))}
                         </div>
                     </CollapsibleCard>
-                    <div className="mt-4">
+                    <div className={`mt-4 ${className}`}>
                         <CollapsibleCard
                             title={`2. Assign StackRox Roles to your (${
                                 initialValues.type
@@ -67,7 +69,6 @@ class Form extends Component {
                             <FieldArray
                                 name="groups"
                                 component={this.renderRuleGroupsComponent}
-                                onDelete={onDelete}
                                 initialValues={initialValues}
                             />
                         </CollapsibleCard>

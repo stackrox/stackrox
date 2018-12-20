@@ -18,7 +18,6 @@ class AuthProvider extends Component {
         isEditing: PropTypes.bool.isRequired,
         onSave: PropTypes.func.isRequired,
         onEdit: PropTypes.func.isRequired,
-        onDelete: PropTypes.func.isRequired,
         groups: PropTypes.arrayOf(PropTypes.shape({})).isRequired
     };
 
@@ -44,7 +43,7 @@ class AuthProvider extends Component {
     );
 
     displayContent = () => {
-        const { selectedAuthProvider, isEditing, onSave, groups, onDelete } = this.props;
+        const { selectedAuthProvider, isEditing, onSave, groups } = this.props;
         let initialValues = { ...selectedAuthProvider };
         if (!selectedAuthProvider.name) {
             initialValues = this.populateDefaultValues(initialValues);
@@ -61,7 +60,7 @@ class AuthProvider extends Component {
                 key={initialValues.type}
                 onSubmit={onSave}
                 initialValues={modifiedInitialValues}
-                onDelete={onDelete}
+                selectedAuthProvider={selectedAuthProvider}
             />
         ) : (
             <Details authProvider={selectedAuthProvider} groups={filteredGroups} />

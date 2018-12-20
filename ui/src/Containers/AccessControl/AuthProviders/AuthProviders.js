@@ -4,7 +4,6 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions } from 'reducers/auth';
-import { actions as groupActions } from 'reducers/groups';
 
 import SideBar from 'Containers/AccessControl/SideBar';
 import Select from 'Containers/AccessControl/AuthProviders/Select/Select';
@@ -17,8 +16,6 @@ class AuthProviders extends Component {
         selectAuthProvider: PropTypes.func.isRequired,
         saveAuthProvider: PropTypes.func.isRequired,
         deleteAuthProvider: PropTypes.func.isRequired,
-        saveRuleGroup: PropTypes.func.isRequired,
-        deleteRuleGroup: PropTypes.func.isRequired,
         groups: PropTypes.arrayOf(PropTypes.shape({})).isRequired
     };
 
@@ -35,9 +32,7 @@ class AuthProviders extends Component {
     }
 
     onSave = data => {
-        const { groups, ...remaining } = data;
-        this.props.saveAuthProvider(remaining);
-        this.props.saveRuleGroup(groups);
+        this.props.saveAuthProvider(data);
         this.setState({ isEditing: false });
     };
 
@@ -76,10 +71,6 @@ class AuthProviders extends Component {
         );
     };
 
-    deleteRuleGroup = group => {
-        this.props.deleteRuleGroup(group);
-    };
-
     render() {
         const { selectedAuthProvider, groups } = this.props;
         return (
@@ -92,7 +83,6 @@ class AuthProviders extends Component {
                         onSave={this.onSave}
                         onEdit={this.onEdit}
                         onCancel={this.onCancel}
-                        onDelete={this.deleteRuleGroup}
                         groups={groups}
                     />
                 </div>
@@ -110,9 +100,7 @@ const mapStateToProps = createStructuredSelector({
 const mapDispatchToProps = {
     selectAuthProvider: actions.selectAuthProvider,
     saveAuthProvider: actions.saveAuthProvider,
-    deleteAuthProvider: actions.deleteAuthProvider,
-    saveRuleGroup: groupActions.saveRuleGroup,
-    deleteRuleGroup: groupActions.deleteRuleGroup
+    deleteAuthProvider: actions.deleteAuthProvider
 };
 
 export default connect(

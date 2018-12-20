@@ -10,6 +10,7 @@ import * as AuthService from 'services/AuthService';
 import fetchUsersAttributes from 'services/AttributesService';
 import { selectors } from 'reducers';
 import { actions, types, AUTH_STATUS } from 'reducers/auth';
+import { actions as groupActions } from 'reducers/groups';
 import { types as locationActionTypes } from 'reducers/routes';
 
 function* evaluateUserAccess() {
@@ -157,20 +158,31 @@ function* handleHttpError(action) {
 function* saveAuthProvider(action) {
     try {
         const { authProvider } = action;
+        const { groups, ...remaining } = authProvider;
         const authProviders = yield select(selectors.getAuthProviders);
+        const filteredGroups = groups.filter(
+            group =>
+                group &&
+                group.props &&
+                group.props.key &&
+                group.props.key !== '' &&
+                group.roleName &&
+                group.roleName !== ''
+        );
         const isNewAuthProvider = !authProviders.filter(
-            currAuthProvider => currAuthProvider.name === authProvider.name
+            currAuthProvider => currAuthProvider.name === remaining.name
         ).length;
         if (isNewAuthProvider) {
-            yield call(AuthService.saveAuthProvider, authProvider);
+            yield call(AuthService.saveAuthProvider, remaining);
             yield call(getAuthProviders);
             yield call(fetchUsersAttributes);
-            yield put(actions.selectAuthProvider(authProvider));
+            yield put(actions.selectAuthProvider(remaining));
         } else {
-            yield call(AuthService.saveAuthProvider, authProvider);
+            yield call(AuthService.saveAuthProvider, remaining);
             yield call(getAuthProviders);
+            yield put(groupActions.saveRuleGroup(filteredGroups));
             yield call(fetchUsersAttributes);
-            yield put(actions.selectAuthProvider(authProvider));
+            yield put(actions.selectAuthProvider(remaining));
         }
     } catch (error) {
         Raven.captureException(error);
