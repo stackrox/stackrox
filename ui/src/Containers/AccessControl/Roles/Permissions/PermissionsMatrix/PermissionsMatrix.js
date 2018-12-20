@@ -24,12 +24,8 @@ const PermissionsMatrix = props => (
 
 PermissionsMatrix.propTypes = {
     name: PropTypes.string.isRequired,
-    resourceToAccess: PropTypes.shape({}),
+    resourceToAccess: PropTypes.shape({}).isRequired,
     isEditing: PropTypes.bool.isRequired
-};
-
-PermissionsMatrix.defaultProps = {
-    resourceToAccess: {}
 };
 
 export default PermissionsMatrix;

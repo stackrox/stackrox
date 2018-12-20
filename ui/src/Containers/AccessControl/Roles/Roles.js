@@ -7,7 +7,7 @@ import { actions } from 'reducers/roles';
 
 import SideBar from 'Containers/AccessControl/SideBar';
 import Permissions from 'Containers/AccessControl/Roles/Permissions/Permissions';
-import { defaultRoles } from 'constants/accessControl';
+import { defaultRoles, defaultSelectedRole } from 'constants/accessControl';
 
 class Roles extends Component {
     static propTypes = {
@@ -47,7 +47,7 @@ class Roles extends Component {
     };
 
     onCreateNewRole = () => {
-        this.props.selectRole({});
+        this.props.selectRole(defaultSelectedRole);
         this.setState({ isEditing: true });
     };
 

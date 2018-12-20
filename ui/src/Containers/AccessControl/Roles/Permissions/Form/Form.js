@@ -4,11 +4,9 @@ import { reduxForm } from 'redux-form';
 
 import ReduxTextField from 'Components/forms/ReduxTextField';
 import PermissionsMatrix from 'Containers/AccessControl/Roles/Permissions/PermissionsMatrix/PermissionsMatrix';
-import { defaultPermissions } from 'constants/accessControl';
 
 const Form = props => {
     const { handleSubmit, initialValues, onSubmit } = props;
-    const resourceToAccess = initialValues.resourceToAccess || defaultPermissions;
     const disableNameField = !!initialValues && !!initialValues.name;
     return (
         <form
@@ -26,7 +24,7 @@ const Form = props => {
                 <div className="py-2 text-base-600 font-700">Permissions</div>
                 <PermissionsMatrix
                     name="resourceToAccess"
-                    resourceToAccess={resourceToAccess}
+                    resourceToAccess={initialValues.resourceToAccess}
                     isEditing
                 />
             </div>

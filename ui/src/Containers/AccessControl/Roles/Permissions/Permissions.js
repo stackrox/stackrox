@@ -3,8 +3,9 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
+import isEmpty from 'lodash/isEmpty';
 
-import { defaultRoles } from 'constants/accessControl';
+import { defaultRoles, defaultPermissions } from 'constants/accessControl';
 import Panel, { headerClassName } from 'Components/Panel';
 import Button from 'Containers/AccessControl/Roles/Permissions/Button/Button';
 import Form from 'Containers/AccessControl/Roles/Permissions/Form/Form';
@@ -26,12 +27,31 @@ class Permissions extends Component {
         selectedRole: null
     };
 
+    addDefaultPermissions = initialValues => {
+        const modifiedInitialValues = { ...initialValues };
+        const resourceToAccess = { ...initialValues.resourceToAccess };
+        Object.keys(defaultPermissions).forEach(resource => {
+            // if the access value for the resource is not available
+            if (!resourceToAccess[resource]) {
+                if (isEmpty(initialValues.resourceToAccess)) {
+                    // use globalAccess level for this resource if resourceToAccess is empty
+                    resourceToAccess[resource] = initialValues.globalAccess;
+                } else {
+                    resourceToAccess[resource] = defaultPermissions[resource];
+                }
+            }
+        });
+        modifiedInitialValues.resourceToAccess = resourceToAccess;
+        return modifiedInitialValues;
+    };
+
     displayContent = () => {
         const { selectedRole, isEditing, onSave } = this.props;
+        const modifiedSelectedRole = this.addDefaultPermissions(selectedRole);
         const content = isEditing ? (
-            <Form onSubmit={onSave} initialValues={selectedRole} />
+            <Form onSubmit={onSave} initialValues={modifiedSelectedRole} />
         ) : (
-            <Details role={selectedRole} />
+            <Details role={modifiedSelectedRole} />
         );
         return content;
     };

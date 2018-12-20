@@ -54,3 +54,9 @@ export const defaultPermissions = {
     ServiceIdentity: NO_ACCESS,
     User: NO_ACCESS
 };
+
+export const defaultSelectedRole = {
+    name: '',
+    globalAccess: 'NO_ACCESS',
+    resourceToAccess: defaultPermissions
+};

@@ -14,6 +14,7 @@ const TableRows = props => {
                     key={`${name}.${resourceName}`}
                     name={`${name}.${resourceName}`}
                     resourceName={resourceName}
+                    resourceToAccess={resourceToAccess}
                     isEditing={isEditing}
                     component={AccessField}
                 />
