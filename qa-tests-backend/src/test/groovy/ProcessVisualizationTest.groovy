@@ -21,7 +21,7 @@ class ProcessVisualizationTest extends BaseSpecification {
             new Deployment()
                 .setName (NGINXDEPLOYMENT)
                 .setImage ("nginx:1.14-alpine")
-                .addLabel ( "app", "test" ) ,
+                .addLabel ( "app", "test" ),
             new Deployment()
                 .setName (STRUTSDEPLOYMENT)
                 .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
@@ -79,55 +79,57 @@ class ProcessVisualizationTest extends BaseSpecification {
     def "Verify process visualization on default: #depName"()  {
         when:
         "Get Process IDs running on deployment: #depName"
-        String uid = orchestrator?.getDeploymentId(DEPLOYMENTS.find { it.name == depName })
+        String uid = DEPLOYMENTS.find { it.name == depName }.deploymentUid
         assert uid != null
 
-        List<String> receivedProcessPaths = ProcessService.getProcessPaths(uid)
+        Set<String> receivedProcessPaths = ProcessService.getUniqueProcessPaths(uid)
         def sleepTime = 0L
-        while ((!receivedProcessPaths.containsAll(expectedFilePaths)) && sleepTime < MAX_SLEEP_TIME) {
+        while (!receivedProcessPaths.equals(expectedFilePaths) && sleepTime < MAX_SLEEP_TIME) {
             println "Didn't find all the expected processes, retrying..."
             sleep(SLEEP_INCREMENT)
             sleepTime += SLEEP_INCREMENT
-            receivedProcessPaths = ProcessService.getProcessPaths(uid)
+            receivedProcessPaths = ProcessService.getUniqueProcessPaths(uid)
         }
         println "ProcessVisualizationTest: Dep: " + depName + " Processes: " + receivedProcessPaths
 
         then:
         "Verify process in added : : #depName"
-        assert receivedProcessPaths.containsAll(expectedFilePaths)
+        assert receivedProcessPaths.equals(expectedFilePaths)
 
         where:
         "Data inputs are :"
 
-        expectedFilePaths |  depName
+        expectedFilePaths | depName
 
-        ["/usr/sbin/nginx"] | NGINXDEPLOYMENT
+        ["/usr/sbin/nginx"] as Set | NGINXDEPLOYMENT
 
         ["/docker-java-home/jre/bin/java",
-         "/usr/bin/tty",
+         "/usr/bin/tty", "/bin/uname",
          "/usr/local/tomcat/bin/catalina.sh",
-         "/usr/bin/dirname"]  | STRUTSDEPLOYMENT
+         "/usr/bin/dirname"] as Set | STRUTSDEPLOYMENT
 
         ["/bin/mv", "/bin/cat", "/usr/bin/stat", "/main.sh",
-          "/usr/sbin/apache2", "/usr/sbin/apache2ctl", "/bin/mkdir", "/bin/chmod"] | SSL_TERMINATOR
+         "/usr/sbin/apache2", "/usr/sbin/apache2ctl", "/bin/mkdir", "/bin/chown",
+         "/bin/chmod", "/bin/mktemp"] as Set | SSL_TERMINATOR
 
-        ["/bin/mktemp", "/bin/mv", "/main.sh", "/usr/sbin/apache2",
-          "/bin/chown", "/usr/bin/stat", "/bin/chmod", "/bin/mkdir"]  | APACHEDEPLOYMENT
+        ["/bin/mktemp", "/bin/mv", "/main.sh", "/usr/sbin/apache2", "/usr/sbin/apache2ctl",
+          "/bin/chown", "/usr/bin/stat", "/bin/chmod", "/bin/mkdir"] as Set | APACHEDEPLOYMENT
 
-        ["/bin/sh", "/bin/sleep"]  | CENTOSDEPLOYMENT
+        ["/bin/sh", "/bin/sleep"] as Set | CENTOSDEPLOYMENT
 
-        ["/bin/sh", "/bin/sleep"]  | FEDORADEPLOYMENT
+        ["/bin/sh", "/bin/sleep"] as Set | FEDORADEPLOYMENT
 
         ["/usr/bin/tr", "/bin/chown", "/bin/egrep", "/bin/grep",
-         "/usr/local/bin/gosu", "/bin/hostname", "/docker-java-home/jre/bin/java",
-         "/usr/share/elasticsearch/bin/elasticsearch", "/sbin/ldconfig", "/bin/chown",
+         "/usr/local/bin/gosu", "/bin/hostname",
+         "/usr/share/elasticsearch/bin/elasticsearch", "/sbin/ldconfig",
          "/docker-entrypoint.sh", "/usr/bin/cut", "/usr/bin/id",
-         "/docker-java-home/jre/bin/java", "/usr/bin/dirname"]  | ELASTICDEPLOYMENT
+         "/docker-java-home/jre/bin/java", "/usr/bin/dirname"] as Set | ELASTICDEPLOYMENT
 
         ["/usr/bin/id", "/usr/bin/find", "/usr/local/bin/docker-entrypoint.sh",
-         "/usr/local/bin/gosu", "/usr/local/bin/redis-server"]  | REDISDEPLOYMENT
+         "/usr/local/bin/gosu", "/usr/local/bin/redis-server"] as Set | REDISDEPLOYMENT
 
         ["/bin/true", "/bin/chown", "/usr/local/bin/docker-entrypoint.sh",
-         "/bin/chown", "/usr/local/bin/gosu", "/usr/bin/mongod", "/usr/bin/numactl"] |  MONGODEPLOYMENT
+         "/bin/rm", "/usr/bin/id", "/usr/bin/find",
+         "/usr/local/bin/gosu", "/usr/bin/mongod", "/usr/bin/numactl"] as Set | MONGODEPLOYMENT
    }
 }

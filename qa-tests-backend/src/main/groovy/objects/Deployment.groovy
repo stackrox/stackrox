@@ -18,6 +18,7 @@ class Deployment {
     List<Pod> pods = new ArrayList<>()
     String deploymentUid
     Boolean skipReplicaWait = false
+    Integer replicas = 1
     List<String> args = new ArrayList<>()
     Boolean exposeAsService = false
     Map<String, String> env = new HashMap<>()
@@ -134,6 +135,11 @@ class Deployment {
 
     Deployment setEnv(Map<String, String> env) {
         this.env = env
+        return this
+    }
+
+    Deployment setReplicas(Integer n) {
+        this.replicas = n
         return this
     }
 

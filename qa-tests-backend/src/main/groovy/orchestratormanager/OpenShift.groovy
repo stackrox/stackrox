@@ -580,7 +580,7 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
                 .endMetadata()
                 .withNewSpec()
                         .withSelector(new LabelSelector(null, deployment.labels))
-                        .withReplicas(1)
+                        .withReplicas(deployment.getReplicas())
                         .withMinReadySeconds(15)
                         .withNewTemplate()
                                 .withNewMetadata()
