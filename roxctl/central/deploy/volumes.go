@@ -33,7 +33,7 @@ func externalVolume() *cobra.Command {
 		return outputZip(cfg)
 	}
 	c.Flags().StringVarP(&external.Name, "name", "", "stackrox-db", "external volume name")
-	c.Flags().StringVarP(&external.StorageClass, "storage-class", "", "", "storage class name (optional)")
+	c.Flags().StringVarP(&external.StorageClass, "storage-class", "", "", "storage class name (optional if you have a default StorageClass configured)")
 	return c
 }
 
