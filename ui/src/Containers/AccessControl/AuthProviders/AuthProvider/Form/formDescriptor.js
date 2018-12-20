@@ -122,13 +122,6 @@ const formDescriptors = {
             { value: 'email', label: 'email' },
             { value: 'uid', label: 'uid' },
             { value: 'groups', label: 'groups' }
-        ],
-        roleOptions: [
-            { value: 'admin', label: 'Admin' },
-            { value: 'analyst', label: 'Analyst' },
-            { value: 'none', label: 'None' },
-            { value: 'continuous', label: 'Continuous' },
-            { value: 'sensor creator', label: 'Sensor Creator' }
         ]
     }
 };

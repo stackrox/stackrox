@@ -11,9 +11,10 @@ export const types = {
 
 export const actions = {
     fetchGroups: createFetchingActions(types.FETCH_RULE_GROUPS),
-    saveRuleGroup: group => ({
+    saveRuleGroup: (group, defaultRole) => ({
         type: types.SAVE_RULE_GROUP,
-        group
+        group,
+        defaultRole
     }),
     deleteRuleGroup: group => ({
         type: types.DELETE_RULE_GROUP,
@@ -34,9 +35,16 @@ const groupsByAuthProviderId = (state = {}, action) => {
         action.response.groups.forEach(group => {
             if (group && group.props) {
                 if (!authProviderRuleGroups[group.props.authProviderId]) {
-                    authProviderRuleGroups[group.props.authProviderId] = [];
+                    authProviderRuleGroups[group.props.authProviderId] = {
+                        rules: [],
+                        defaultRole: null
+                    };
                 }
-                authProviderRuleGroups[group.props.authProviderId].push(group);
+                if (group.props.key) {
+                    authProviderRuleGroups[group.props.authProviderId].rules.push(group);
+                } else {
+                    authProviderRuleGroups[group.props.authProviderId].defaultRole = group.roleName;
+                }
             }
         });
         return isEqual(authProviderRuleGroups, state) ? state : authProviderRuleGroups;

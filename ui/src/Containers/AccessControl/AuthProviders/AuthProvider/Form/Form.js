@@ -1,5 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import { selectors } from 'reducers';
+import { createSelector, createStructuredSelector } from 'reselect';
 import { FieldArray, reduxForm } from 'redux-form';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
@@ -13,7 +16,13 @@ class Form extends Component {
         handleSubmit: PropTypes.func.isRequired,
         onSubmit: PropTypes.func.isRequired,
         initialValues: PropTypes.shape({}),
-        selectedAuthProvider: PropTypes.shape({})
+        selectedAuthProvider: PropTypes.shape({}),
+        roles: PropTypes.arrayOf(
+            PropTypes.shape({
+                name: PropTypes.string,
+                globalAccess: PropTypes.string
+            })
+        ).isRequired
     };
 
     static defaultProps = {
@@ -39,17 +48,19 @@ class Form extends Component {
         return <CreateRoleModal onClose={this.toggleModal} />;
     };
 
-    renderRuleGroupsComponent = props => <RuleGroups toggleModal={this.toggleModal} {...props} />;
+    renderRuleGroupsComponent = props => (
+        <RuleGroups toggleModal={this.toggleModal} roles={this.props.roles} {...props} />
+    );
 
     render() {
-        const { handleSubmit, initialValues, onSubmit, selectedAuthProvider } = this.props;
+        const { handleSubmit, initialValues, onSubmit, selectedAuthProvider, roles } = this.props;
         const fields = formDescriptor[initialValues.type];
         if (!fields) return null;
         const className = !selectedAuthProvider.name ? 'pointer-events-none opacity-50' : '';
         return (
             <>
                 <form
-                    className="w-full justify-between overflow-auto"
+                    className="w-full justify-between overflow-auto h-full"
                     onSubmit={handleSubmit(onSubmit)}
                     initialvalues={initialValues}
                 >
@@ -66,6 +77,14 @@ class Form extends Component {
                                 initialValues.type
                             }) attributes`}
                         >
+                            <div className="w-full p-2">
+                                <Field
+                                    label={`Default role for "${initialValues.name}"`}
+                                    type="select"
+                                    jsonPath="defaultRole"
+                                    options={roles}
+                                />
+                            </div>
                             <FieldArray
                                 name="groups"
                                 component={this.renderRuleGroupsComponent}
@@ -80,7 +99,19 @@ class Form extends Component {
     }
 }
 
+const getRoleOptions = createSelector([selectors.getRoles], roles =>
+    roles.map(role => ({ value: role.name, label: role.name }))
+);
+
+const mapStateToProps = createStructuredSelector({
+    roles: getRoleOptions
+});
+
 export default reduxForm({
-    // a unique name for the form
     form: 'auth-provider-form'
-})(Form);
+})(
+    connect(
+        mapStateToProps,
+        null
+    )(Form)
+);

@@ -19,7 +19,7 @@ const Field = props => {
 
 const Details = props => {
     const { name, type } = props.authProvider;
-    const { groups } = props;
+    const { groups, defaultRole } = props;
 
     if (!name) return null;
     const title = `1. ${name} Configuration`;
@@ -38,6 +38,10 @@ const Details = props => {
             <div className="mt-4">
                 <CollapsibleCard title={propsTitle}>
                     <div className="flex flex-col">
+                        <div className="p-4 w-full">
+                            <div className="text-base-600 font-700 pb-2">Default Role</div>
+                            <div>{defaultRole}</div>
+                        </div>
                         {groups.map((group, idx) => (
                             <div className="p-4 flex flex-row w-full" key={idx}>
                                 <div className="w-full">
@@ -78,7 +82,12 @@ Details.propTypes = {
     authProvider: PropTypes.shape({
         name: PropTypes.string
     }).isRequired,
-    groups: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+    groups: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+    defaultRole: PropTypes.string
+};
+
+Details.defaultProps = {
+    defaultRole: ''
 };
 
 export default Details;

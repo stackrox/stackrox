@@ -4,6 +4,7 @@ import { accessControlPath } from 'routePaths';
 import * as service from 'services/GroupsService';
 import { actions, types } from 'reducers/groups';
 import { selectors } from 'reducers';
+import { getGroupsWithDefault, getExistingGroupsWithDefault } from 'utils/permissionRuleGroupUtils';
 
 import Raven from 'raven-js';
 
@@ -18,12 +19,12 @@ function* getRuleGroups() {
 
 function* saveRuleGroup(action) {
     try {
-        const { group } = action;
+        const { group, defaultRole } = action;
         const selectedAuthProvider = yield select(selectors.getSelectedAuthProvider);
         const existingGroups = yield select(selectors.getGroupsByAuthProviderId);
         yield call(service.updateOrAddGroup, {
-            newGroups: group,
-            oldGroups: existingGroups[selectedAuthProvider.id]
+            newGroups: getGroupsWithDefault(group, selectedAuthProvider.id, defaultRole),
+            oldGroups: getExistingGroupsWithDefault(existingGroups, selectedAuthProvider.id)
         });
         yield call(getRuleGroups);
     } catch (error) {

@@ -48,13 +48,22 @@ class AuthProvider extends Component {
         if (!selectedAuthProvider.name) {
             initialValues = this.populateDefaultValues(initialValues);
         }
-        const filteredGroups = groups.filter(
-            group =>
+        const filteredGroups = [];
+        let defaultRole = null;
+        groups.forEach(group => {
+            if (
                 group.props &&
                 group.props.authProviderId &&
                 selectedAuthProvider.id === group.props.authProviderId
-        );
-        const modifiedInitialValues = Object.assign(initialValues, { groups: filteredGroups });
+            ) {
+                if (!group.props.key) defaultRole = group.roleName;
+                else filteredGroups.push(group);
+            }
+        });
+        const modifiedInitialValues = Object.assign(initialValues, {
+            groups: filteredGroups,
+            defaultRole
+        });
         const content = isEditing ? (
             <Form
                 key={initialValues.type}
@@ -63,7 +72,11 @@ class AuthProvider extends Component {
                 selectedAuthProvider={selectedAuthProvider}
             />
         ) : (
-            <Details authProvider={selectedAuthProvider} groups={filteredGroups} />
+            <Details
+                authProvider={selectedAuthProvider}
+                groups={filteredGroups}
+                defaultRole={defaultRole}
+            />
         );
         return content;
     };

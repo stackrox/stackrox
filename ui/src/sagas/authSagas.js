@@ -158,7 +158,7 @@ function* handleHttpError(action) {
 function* saveAuthProvider(action) {
     try {
         const { authProvider } = action;
-        const { groups, ...remaining } = authProvider;
+        const { groups, defaultRole, ...remaining } = authProvider;
         const authProviders = yield select(selectors.getAuthProviders);
         const filteredGroups = groups.filter(
             group =>
@@ -180,7 +180,7 @@ function* saveAuthProvider(action) {
         } else {
             yield call(AuthService.saveAuthProvider, remaining);
             yield call(getAuthProviders);
-            yield put(groupActions.saveRuleGroup(filteredGroups));
+            yield put(groupActions.saveRuleGroup(filteredGroups, defaultRole));
             yield call(fetchUsersAttributes);
             yield put(actions.selectAuthProvider(remaining));
         }

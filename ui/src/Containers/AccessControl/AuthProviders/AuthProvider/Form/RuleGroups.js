@@ -31,6 +31,12 @@ class RuleGroups extends Component {
     static propTypes = {
         fields: PropTypes.shape({}).isRequired,
         toggleModal: PropTypes.func.isRequired,
+        roles: PropTypes.arrayOf(
+            PropTypes.shape({
+                name: PropTypes.string,
+                globalAccess: PropTypes.string
+            })
+        ).isRequired,
         usersAttributes: PropTypes.arrayOf(
             PropTypes.shape({
                 authProviderId: PropTypes.string,
@@ -57,8 +63,8 @@ class RuleGroups extends Component {
     };
 
     render() {
-        const { fields, initialValues, usersAttributes } = this.props;
-        const { keyOptions, roleOptions } = formDescriptor.attrToRole;
+        const { fields, initialValues, usersAttributes, roles } = this.props;
+        const { keyOptions } = formDescriptor.attrToRole;
         let valueOptions = initialValues.groups.map(({ props: { key, value } }) => ({
             key,
             label: value,
@@ -108,7 +114,7 @@ class RuleGroups extends Component {
                                 jsonPath={`${group}.roleName`}
                                 type="select"
                                 label="Role"
-                                options={roleOptions}
+                                options={roles}
                                 customComponents={{
                                     MenuList: this.renderMenuListComponent
                                 }}
