@@ -24,9 +24,10 @@ func versionCommand() *cobra.Command {
 
 func main() {
 	c := &cobra.Command{
-		Use:   "roxctl",
-		Short: "roxctl is the command-line interface for StackRox services",
-		Long:  "roxctl is the command-line interface for StackRox services",
+		Use:          "roxctl",
+		Short:        "roxctl is the command-line interface for StackRox services",
+		Long:         "roxctl is the command-line interface for StackRox services",
+		SilenceUsage: true,
 	}
 	c.AddCommand(versionCommand())
 
