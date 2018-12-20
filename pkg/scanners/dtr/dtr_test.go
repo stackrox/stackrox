@@ -11,6 +11,23 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const emptyScan = `
+[
+  {
+   "namespace": "qa",
+   "reponame": "socat",
+   "tag": "testing",
+   "critical": 0,
+   "major": 0,
+   "minor": 0,
+   "last_scan_status": 0,
+   "check_completed_at": "0001-01-01T00:00:00Z",
+   "should_rescan": false,
+   "has_foreign_layers": false
+  }
+ ]
+`
+
 func TestDTRSuite(t *testing.T) {
 	suite.Run(t, new(DTRSuite))
 }
@@ -21,22 +38,6 @@ type DTRSuite struct {
 	server *httptest.Server
 	dtr    types.ImageScanner
 }
-
-var statusPayload = `{
-  "state": 0,
-  "scanner_version": 3,
-  "scanner_updated_at": "20171116T21:07:18.934766247Z",
-  "db_version": 279,
-  "db_updated_at": "20171117T03:14:02.63437292Z",
-  "last_db_update_failed": true,
-  "replicas": {
-   "d8ae913ef3a1": {
-    "db_updated_at": "20171116T00:35:27.408476Z",
-    "version": "279",
-    "replica_id": "d8ae913ef3a1"
-   }
-  }
- }`
 
 func handleAuth(r *http.Request) error {
 	if r.Header.Get("Authorization") != "Basic dXNlcjpwYXNzd29yZA==" {
@@ -56,21 +57,13 @@ func (suite *DTRSuite) SetupSuite() {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, scanResultPayload)
 	})
-	masterRouter.HandleFunc("/api/v0/imagescan/scan/docker/nginx/1.10/linux/amd64", func(w http.ResponseWriter, r *http.Request) {
+	masterRouter.HandleFunc("/api/v0/imagescan/repositories/docker/nginx/1.11", func(w http.ResponseWriter, r *http.Request) {
 		if err := handleAuth(r); err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "{}")
-	})
-	masterRouter.HandleFunc("/api/v0/imagescan/status", func(w http.ResponseWriter, r *http.Request) {
-		if err := handleAuth(r); err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, statusPayload)
+		fmt.Fprintf(w, emptyScan)
 	})
 
 	masterServer := httptest.NewServer(masterRouter)
@@ -103,27 +96,6 @@ func (suite *DTRSuite) TestTestFunc() {
 	suite.NoError(d.Test())
 }
 
-func (suite *DTRSuite) TestGetScans() {
-	d := suite.dtr.(*dtr)
-
-	image := &storage.Image{
-		Name: &storage.ImageName{
-			Registry: "",
-			Remote:   "docker/nginx",
-			Tag:      "1.10",
-		},
-	}
-	scans, err := d.GetLastScan(image)
-	suite.NoError(err)
-
-	expectedScanSummary, err := getExpectedImageScan()
-	suite.NoError(err)
-
-	// convert scans here. It relies on converting the scan but is not the conversion test
-	expectedScans := convertTagScanSummaryToImageScan(expectedScanSummary)
-	suite.Equal(expectedScans, scans)
-}
-
 func (suite *DTRSuite) TestGetLastScan() {
 	d := suite.dtr.(*dtr)
 
@@ -143,4 +115,18 @@ func (suite *DTRSuite) TestGetLastScan() {
 	// convert scans here. It relies on converting the scan but is not the conversion test
 	expectedScan := convertTagScanSummaryToImageScan(expectedScanSummary)
 	suite.Equal(expectedScan, scan)
+}
+
+func (suite *DTRSuite) TestGetLastScanWithEmptyResult() {
+	d := suite.dtr.(*dtr)
+
+	image := &storage.Image{
+		Name: &storage.ImageName{
+			Registry: "",
+			Remote:   "docker/nginx",
+			Tag:      "1.11",
+		},
+	}
+	_, err := d.GetLastScan(image)
+	suite.Error(err)
 }

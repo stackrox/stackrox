@@ -125,6 +125,7 @@ func (d *dtr) getScan(image *storage.Image) (*storage.ImageScan, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	scans, err := parseDTRImageScans(body)
 	if err != nil {
 		scanErrors, err := parseDTRImageScanErrors(body)
@@ -147,6 +148,9 @@ func (d *dtr) getScan(image *storage.Image) (*storage.ImageScan, error) {
 		if s.CheckCompletedAt.After(lastScan.CheckCompletedAt) {
 			lastScan = s
 		}
+	}
+	if lastScan.CheckCompletedAt.IsZero() {
+		return nil, fmt.Errorf("expected to receive at least one scan for %s", image.String())
 	}
 
 	scan := convertTagScanSummaryToImageScan(lastScan)

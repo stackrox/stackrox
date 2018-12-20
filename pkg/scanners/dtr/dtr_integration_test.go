@@ -5,7 +5,6 @@ package dtr
 import (
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
@@ -28,7 +27,7 @@ type DTRIntegrationSuite struct {
 
 func (suite *DTRIntegrationSuite) SetupSuite() {
 	integration := &storage.ImageIntegration{
-		IntegrationConfig: &v1.ImageIntegration_Dtr{
+		IntegrationConfig: &storage.ImageIntegration_Dtr{
 			Dtr: &storage.DTRConfig{
 				Username: user,
 				Password: password,
@@ -47,20 +46,6 @@ func (suite *DTRIntegrationSuite) SetupSuite() {
 
 func (suite *DTRIntegrationSuite) TearDownSuite() {}
 
-func (suite *DTRIntegrationSuite) TestGetScans() {
-	image := &storage.Image{
-		Name: &storage.ImageName{
-			Registry: dtrServer,
-			Remote:   "srox/nginx",
-			Tag:      "1.12",
-		},
-	}
-	scans, err := suite.GetScans(image)
-	suite.Nil(err)
-	suite.NotEmpty(scans)
-	suite.NotEmpty(scans[0].GetComponents())
-}
-
 func (suite *DTRIntegrationSuite) TestGetLastScan() {
 	image := &storage.Image{
 		Name: &storage.ImageName{
@@ -71,6 +56,6 @@ func (suite *DTRIntegrationSuite) TestGetLastScan() {
 	}
 	scan, err := suite.GetLastScan(image)
 	suite.Nil(err)
-	suite.NotNil(scan)
+	suite.NotEmpty(scan)
 	suite.NotEmpty(scan.GetComponents())
 }

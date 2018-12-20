@@ -91,6 +91,13 @@ func convertTagScanSummaryToImageScan(tagScanSummary *tagScanSummary) *storage.I
 	sort.SliceStable(convertedLayers, func(i, j int) bool {
 		return compareComponent(convertedLayers[i], convertedLayers[j]) <= 0
 	})
+
+	if len(convertedLayers) == 0 {
+		return &storage.ImageScan{
+			ScanTime: completedAt,
+		}
+	}
+
 	uniqueLayers := convertedLayers[:1]
 	for i := 1; i < len(convertedLayers); i++ {
 		prevComponent, currComponent := convertedLayers[i-1], convertedLayers[i]
