@@ -1,13 +1,11 @@
 {{if eq .Values.exposure.type "Route"}}
-apiVersion: v1
+apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  labels:
-    app.kubernetes.io/name: monitoring
   name: monitoring-mtls
   namespace: {{.Values.namespace}}
 spec:
-  host: monitoring.stackrox
+  host: monitoring.{{.Values.namespace}}
   port:
     targetPort: https
   tls:

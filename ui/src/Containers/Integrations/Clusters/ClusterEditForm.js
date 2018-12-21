@@ -43,7 +43,7 @@ const RuntimeSupportFormField = () => (
 
 const MonitoringEndpointFormField = () => (
     <FormField label="Monitoring Endpoint (include port; empty means no monitoring)">
-        <ReduxTextField name="monitoringEndpoint" placeholder="monitoring.stackrox:8086" />
+        <ReduxTextField name="monitoringEndpoint" placeholder="monitoring.stackrox:443" />
     </FormField>
 );
 
@@ -131,6 +131,7 @@ const initialValuesFactories = {
                 namespace: 'stackrox'
             }
         },
+        monitoringEndpoint: 'monitoring.stackrox:443',
         runtimeSupport: true
     }),
     KUBERNETES_CLUSTER: metadata => ({
@@ -142,7 +143,7 @@ const initialValuesFactories = {
                 namespace: 'stackrox'
             }
         },
-        monitoringEndpoint: 'monitoring.stackrox:8086',
+        monitoringEndpoint: 'monitoring.stackrox:443',
         runtimeSupport: true
     })
 };
