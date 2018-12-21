@@ -14,6 +14,10 @@ const navLinks = [
     {
         text: 'Integrations',
         to: '/main/integrations'
+    },
+    {
+        text: 'Access Control',
+        to: '/main/access'
     }
 ];
 

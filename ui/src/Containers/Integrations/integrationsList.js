@@ -1,5 +1,4 @@
 import artifactory from 'images/artifactory.svg';
-import auth0 from 'images/auth0.svg';
 import aws from 'images/aws.svg';
 import clair from 'images/clair.svg';
 import docker from 'images/docker.svg';
@@ -8,33 +7,13 @@ import google from 'images/google-cloud.svg';
 import jira from 'images/jira.svg';
 import kubernetes from 'images/kubernetes.svg';
 import logo from 'images/logo-tall.svg';
-import oidc from 'images/openidconnect.svg';
 import openshift from 'images/openshift.svg';
 import quay from 'images/quay.svg';
-import saml from 'images/saml.svg';
 import slack from 'images/slack.svg';
 import splunk from 'images/splunk.svg';
 
 const integrationsList = {
     authProviders: [
-        {
-            label: 'Auth0',
-            type: 'auth0',
-            source: 'authProviders',
-            image: auth0
-        },
-        {
-            label: 'OpenID Connect',
-            type: 'oidc',
-            source: 'authProviders',
-            image: oidc
-        },
-        {
-            label: 'SAML 2.0',
-            type: 'saml',
-            source: 'authProviders',
-            image: saml
-        },
         {
             label: 'API Token',
             type: 'apitoken',
