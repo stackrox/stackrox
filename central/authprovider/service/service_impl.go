@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/auth/authproviders/basic"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -83,6 +84,12 @@ func (s *serviceImpl) GetAuthProviders(ctx context.Context, request *v1.GetAuthP
 		result[i] = provider.StorageView()
 	}
 	sort.SliceStable(result, func(i, j int) bool {
+		if result[i].GetType() == basic.TypeName {
+			return false
+		}
+		if result[j].GetType() == basic.TypeName {
+			return true
+		}
 		return result[i].GetName() < result[j].GetName()
 	})
 	return &v1.GetAuthProvidersResponse{AuthProviders: result}, nil
