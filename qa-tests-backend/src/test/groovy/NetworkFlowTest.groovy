@@ -38,25 +38,21 @@ class NetworkFlowTest extends BaseSpecification {
             //Target deployments
             new Deployment()
                     .setName(UDPCONNECTIONTARGET)
-                    .setImage("ubuntu")
+                    .setImage("apollo-dtr.rox.systems/qa/socat:testing")
                     .addPort(8080, "UDP")
                     .addLabel("app", UDPCONNECTIONTARGET)
                     .setExposeAsService(true)
                     .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["apt-get update && " +
-                                      "apt-get install socat -y && " +
-                                      "socat -d -d -v UDP-RECV:8080 STDOUT" as String,]),
+                    .setArgs(["socat -d -d -v UDP-RECV:8080 STDOUT",]),
             new Deployment()
                     .setName(TCPCONNECTIONTARGET)
-                    .setImage("ubuntu")
+                    .setImage("apollo-dtr.rox.systems/qa/socat:testing")
                     .addPort(80)
                     .addPort(8080)
                     .addLabel("app", TCPCONNECTIONTARGET)
                     .setExposeAsService(true)
                     .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["apt-get update && " +
-                                      "apt-get install socat -y && " +
-                                      "(socat -d -d -v TCP-LISTEN:80,fork STDOUT & " +
+                    .setArgs(["(socat -d -d -v TCP-LISTEN:80,fork STDOUT & " +
                                       "socat -d -d -v TCP-LISTEN:8080,fork STDOUT)" as String,]),
             new Deployment()
                     .setName(NGINXCONNECTIONTARGET)
@@ -88,32 +84,26 @@ class NetworkFlowTest extends BaseSpecification {
                                       "while sleep 30; do echo hello; done" as String,]),
             new Deployment()
                     .setName(UDPCONNECTIONSOURCE)
-                    .setImage("ubuntu")
+                    .setImage("apollo-dtr.rox.systems/qa/socat:testing")
                     .addLabel("app", UDPCONNECTIONSOURCE)
                     .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["apt-get update && " +
-                                      "apt-get install socat -y && " +
-                                      "while sleep 5; " +
+                    .setArgs(["while sleep 5; " +
                                       "do socat -d -d -d -d -s STDIN UDP:${UDPCONNECTIONTARGET}:8080; " +
                                       "done" as String,]),
             new Deployment()
                     .setName(TCPCONNECTIONSOURCE)
-                    .setImage("ubuntu")
+                    .setImage("apollo-dtr.rox.systems/qa/socat:testing")
                     .addLabel("app", TCPCONNECTIONSOURCE)
                     .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["apt-get update && " +
-                                      "apt-get install socat -y && " +
-                                      "while sleep 5; " +
+                    .setArgs(["while sleep 5; " +
                                       "do socat -d -d -d -d -s STDIN TCP:${TCPCONNECTIONTARGET}:80; " +
                                       "done" as String,]),
             new Deployment()
                     .setName(MULTIPLEPORTSCONNECTION)
-                    .setImage("ubuntu")
+                    .setImage("apollo-dtr.rox.systems/qa/socat:testing")
                     .addLabel("app", MULTIPLEPORTSCONNECTION)
                     .setCommand(["/bin/sh", "-c",])
-                    .setArgs(["apt-get update && " +
-                                      "apt-get install socat -y && " +
-                                      "while sleep 5; " +
+                    .setArgs(["while sleep 5; " +
                                       "do socat -s STDIN TCP:${TCPCONNECTIONTARGET}:80; " +
                                       "socat -s STDIN TCP:${TCPCONNECTIONTARGET}:8080; " +
                                       "done" as String,]),
