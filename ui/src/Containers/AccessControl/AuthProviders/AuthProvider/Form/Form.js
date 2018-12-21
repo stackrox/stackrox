@@ -53,10 +53,9 @@ class Form extends Component {
     );
 
     render() {
-        const { handleSubmit, initialValues, onSubmit, selectedAuthProvider, roles } = this.props;
+        const { handleSubmit, initialValues, onSubmit, roles } = this.props;
         const fields = formDescriptor[initialValues.type];
         if (!fields) return null;
-        const className = !selectedAuthProvider.name ? 'pointer-events-none opacity-50' : '';
         return (
             <>
                 <form
@@ -71,7 +70,7 @@ class Form extends Component {
                             ))}
                         </div>
                     </CollapsibleCard>
-                    <div className={`mt-4 ${className}`}>
+                    <div className="mt-4">
                         <CollapsibleCard
                             title={`2. Assign StackRox Roles to your (${
                                 initialValues.type

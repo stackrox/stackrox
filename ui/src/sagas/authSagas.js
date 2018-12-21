@@ -173,15 +173,21 @@ function* saveAuthProvider(action) {
             currAuthProvider => currAuthProvider.name === remaining.name
         ).length;
         if (isNewAuthProvider) {
-            yield call(AuthService.saveAuthProvider, remaining);
+            const savedAuthProvider = yield call(AuthService.saveAuthProvider, remaining);
+            filteredGroups.forEach(group =>
+                Object.assign(group.props, { authProviderId: savedAuthProvider.data.id })
+            );
+            yield put(
+                groupActions.saveRuleGroup(filteredGroups, defaultRole, savedAuthProvider.data.id)
+            );
             yield call(getAuthProviders);
             yield call(fetchUsersAttributes);
-            yield put(actions.selectAuthProvider(remaining));
+            yield put(actions.selectAuthProvider({ ...remaining, id: savedAuthProvider.data.id }));
         } else {
             yield call(AuthService.saveAuthProvider, remaining);
             yield call(getAuthProviders);
-            yield put(groupActions.saveRuleGroup(filteredGroups, defaultRole));
             yield call(fetchUsersAttributes);
+            yield put(groupActions.saveRuleGroup(filteredGroups, defaultRole));
             yield put(actions.selectAuthProvider(remaining));
         }
     } catch (error) {

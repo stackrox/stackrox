@@ -56,10 +56,14 @@ class AuthProvider extends Component {
                 group.props.authProviderId &&
                 selectedAuthProvider.id === group.props.authProviderId
             ) {
-                if (!group.props.key) defaultRole = group.roleName;
-                else filteredGroups.push(group);
+                if (group.props && group.props.key) {
+                    filteredGroups.push(group);
+                } else {
+                    defaultRole = group.roleName;
+                }
             }
         });
+
         const modifiedInitialValues = Object.assign(initialValues, {
             groups: filteredGroups,
             defaultRole

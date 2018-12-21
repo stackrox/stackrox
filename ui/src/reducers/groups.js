@@ -11,10 +11,11 @@ export const types = {
 
 export const actions = {
     fetchGroups: createFetchingActions(types.FETCH_RULE_GROUPS),
-    saveRuleGroup: (group, defaultRole) => ({
+    saveRuleGroup: (group, defaultRole, id) => ({
         type: types.SAVE_RULE_GROUP,
         group,
-        defaultRole
+        defaultRole,
+        id
     }),
     deleteRuleGroup: group => ({
         type: types.DELETE_RULE_GROUP,
@@ -40,7 +41,7 @@ const groupsByAuthProviderId = (state = {}, action) => {
                         defaultRole: null
                     };
                 }
-                if (group.props.key) {
+                if (group.props.key && group.props.key !== '') {
                     authProviderRuleGroups[group.props.authProviderId].rules.push(group);
                 } else {
                     authProviderRuleGroups[group.props.authProviderId].defaultRole = group.roleName;
