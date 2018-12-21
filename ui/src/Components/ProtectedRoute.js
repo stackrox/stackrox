@@ -14,7 +14,12 @@ class ProtectedRoute extends Component {
         component: PropTypes.func.isRequired,
         authStatus: PropTypes.oneOf(Object.keys(AUTH_STATUS).map(key => AUTH_STATUS[key]))
             .isRequired,
-        location: ReactRouterPropTypes.location.isRequired
+        location: ReactRouterPropTypes.location.isRequired,
+        devOnly: PropTypes.bool
+    };
+
+    static defaultProps = {
+        devOnly: false
     };
 
     renderRoute = props => {
@@ -42,7 +47,10 @@ class ProtectedRoute extends Component {
     };
 
     render() {
-        const { component, authStatus, ...rest } = this.props;
+        const { component, authStatus, devOnly, ...rest } = this.props;
+
+        if (devOnly && process.env.NODE_ENV !== 'development') return null;
+
         return <Route {...rest} render={this.renderRoute} />;
     }
 }

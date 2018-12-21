@@ -404,6 +404,16 @@ dependencies:
     - 2016 React Community
     - 2013-present Facebook, Inc.
 
+  ui/node_modules/react-vis:
+    url: "https://github.com/uber-common/react-vis.git"
+    license: MIT
+    files:
+      LICENSE: edbb5a4d165ac69376c765b551c0662ff42bea87e1f1eda85f42ac90c34b09d0
+      package.json:
+        author: 5e0cc79ad4fcaf88a555d43b63bb20aad7d469a907f7d735caeff7715bf3a10d
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+    - 2018 Visualization Team <visualization@uber.com>
   ui/node_modules/recharts:
     url: https://github.com/recharts/recharts
     license: MIT

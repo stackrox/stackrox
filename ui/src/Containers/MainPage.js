@@ -30,6 +30,9 @@ import LeftNavigation from 'Containers/Navigation/LeftNavigation';
 import SearchModal from 'Containers/Search/SearchModal';
 import ErrorBoundary from 'Containers/ErrorBoundary';
 
+// TODO: Remove
+import ChartPlayground from 'Containers/Dashboard/ChartPlayground';
+
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
 const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/NetworkPage'));
@@ -65,6 +68,7 @@ class MainPage extends Component {
         <section className="flex-auto w-full overflow-hidden">
             <ErrorBoundary>
                 <Switch>
+                    <ProtectedRoute devOnly path="/main/charts" component={ChartPlayground} />
                     <ProtectedRoute path={dashboardPath} component={AsyncDashboardPage} />
                     <ProtectedRoute path={networkPath} component={AsyncNetworkPage} />
                     <ProtectedRoute path={violationsPath} component={AsyncViolationsPage} />
