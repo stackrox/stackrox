@@ -52,7 +52,7 @@ func getBackup() error {
 
 	switch resp.StatusCode {
 	case http.StatusOK:
-	case http.StatusUnauthorized:
+	case http.StatusUnauthorized, http.StatusForbidden:
 		return fmt.Errorf("Invalid credentials. Please add/fix your credentials")
 	default:
 		body, err := ioutil.ReadAll(resp.Body)

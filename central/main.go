@@ -216,9 +216,14 @@ func allResourcesViewPermissions() []*v1.Permission {
 	return result
 }
 
-// To export the DB, you need to be able to view _everything_.
-func dbExportOrBackupAuthorizer() authz.Authorizer {
-	return authzUser.With(allResourcesViewPermissions()...)
+// allResourcesViewPermissions returns a slice containing view permissions for all resource types.
+func allResourcesModifyPermissions() []*v1.Permission {
+	resourceLst := resources.ListAll()
+	result := make([]*v1.Permission, len(resourceLst))
+	for i, resource := range resourceLst {
+		result[i] = permissions.Modify(resource)
+	}
+	return result
 }
 
 func (c *central) customRoutes() (customRoutes []routes.CustomRoute) {
@@ -235,22 +240,21 @@ func (c *central) customRoutes() (customRoutes []routes.CustomRoute) {
 			ServerHandler: clustersZip.Handler(datastore.Singleton(), siService.Singleton()),
 			Compression:   false,
 		},
-
 		{
 			Route:         "/db/backup",
-			Authorizer:    dbExportOrBackupAuthorizer(),
+			Authorizer:    authzUser.With(allResourcesViewPermissions()...),
 			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB()),
 			Compression:   true,
 		},
 		{
 			Route:         "/db/export",
-			Authorizer:    dbExportOrBackupAuthorizer(),
+			Authorizer:    authzUser.With(allResourcesViewPermissions()...),
 			ServerHandler: globaldbHandlers.ExportDB(globaldb.GetGlobalDB()),
 			Compression:   true,
 		},
 		{
 			Route:         "/db/restore",
-			Authorizer:    dbExportOrBackupAuthorizer(),
+			Authorizer:    authzUser.With(allResourcesModifyPermissions()...),
 			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB()),
 		},
 		{

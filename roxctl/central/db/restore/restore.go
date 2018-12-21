@@ -49,13 +49,16 @@ func restore(file string) error {
 		return err
 	}
 
-	if resp.StatusCode == 200 {
+	switch resp.StatusCode {
+	case http.StatusOK:
 		fmt.Println("Successfully restored DB")
 		return nil
+	case http.StatusUnauthorized, http.StatusForbidden:
+		return fmt.Errorf("Token is not authorized to restore DB")
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
-	return fmt.Errorf("Received response code %q, but expected 200. Response body: %s", resp.StatusCode, string(body))
+	return fmt.Errorf("Received response code %d, but expected 200. Response body: %s", resp.StatusCode, string(body))
 }
