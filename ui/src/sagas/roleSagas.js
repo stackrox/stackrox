@@ -6,6 +6,7 @@ import { actions, types } from 'reducers/roles';
 import { selectors } from 'reducers';
 
 import Raven from 'raven-js';
+import { actions as notificationActions } from 'reducers/notifications';
 
 function* getRoles() {
     try {
@@ -30,6 +31,8 @@ function* saveRole(action) {
         }
         yield call(getRoles);
     } catch (error) {
+        yield put(notificationActions.addNotification(error.response.data.error));
+        yield put(notificationActions.removeOldestNotification());
         Raven.captureException(error);
     }
 }
@@ -40,6 +43,8 @@ function* deleteRole(action) {
         yield call(service.deleteRole, id);
         yield put(actions.fetchRoles.request());
     } catch (error) {
+        yield put(notificationActions.addNotification(error.response.data.error));
+        yield put(notificationActions.removeOldestNotification());
         Raven.captureException(error);
     }
 }

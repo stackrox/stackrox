@@ -12,6 +12,7 @@ import { selectors } from 'reducers';
 import { actions, types, AUTH_STATUS } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
 import { types as locationActionTypes } from 'reducers/routes';
+import { actions as notificationActions } from 'reducers/notifications';
 
 function* evaluateUserAccess() {
     const authProviders = yield select(selectors.getAuthProviders);
@@ -191,6 +192,8 @@ function* saveAuthProvider(action) {
             yield put(actions.selectAuthProvider(remaining));
         }
     } catch (error) {
+        yield put(notificationActions.addNotification(error.response.data.error));
+        yield put(notificationActions.removeOldestNotification());
         Raven.captureException(error);
     }
 }
@@ -201,6 +204,8 @@ function* deleteAuthProvider(action) {
         yield call(AuthService.deleteAuthProvider, id);
         yield put(actions.fetchAuthProviders.request());
     } catch (error) {
+        yield put(notificationActions.addNotification(error.response.data.error));
+        yield put(notificationActions.removeOldestNotification());
         Raven.captureException(error);
     }
 }
