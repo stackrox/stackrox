@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/role/resources"
@@ -90,7 +91,14 @@ func (s *serviceImpl) UpdateRole(ctx context.Context, role *storage.Role) (*v1.E
 }
 
 func (s *serviceImpl) DeleteRole(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
-	err := s.roleStore.RemoveRole(id.GetId())
+	role, err := s.roleStore.GetRole(id.GetId())
+	if err != nil {
+		return nil, err
+	} else if role == nil {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("Role '%s' not found", id.GetId()))
+	}
+
+	err = s.roleStore.RemoveRole(id.GetId())
 	if err != nil {
 		return nil, err
 	}
