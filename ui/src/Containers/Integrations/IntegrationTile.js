@@ -53,12 +53,11 @@ class IntegrationTile extends Component {
                         <div className="leading-loose text-2xl text-tertiary-800">
                             {integration.label}
                         </div>
-                        {integration.categories !== '' &&
-                            integration.categories !== undefined && (
-                                <div className="font-700 text-tertiary-700 text-xs tracking-widest uppercase mb-1">
-                                    {integration.categories}
-                                </div>
-                            )}
+                        {integration.categories !== '' && integration.categories !== undefined && (
+                            <div className="font-700 text-tertiary-700 text-xs tracking-widest uppercase mb-1">
+                                {integration.categories}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

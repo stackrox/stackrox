@@ -356,23 +356,32 @@ class BenchmarksPage extends Component {
     }
 }
 
-const getBenchmarkScanResults = createSelector([selectors.getLastScan], lastScan => {
-    if (!lastScan || !lastScan.metadata) return [];
-    const { checks } = lastScan.data;
-    return checks;
-});
+const getBenchmarkScanResults = createSelector(
+    [selectors.getLastScan],
+    lastScan => {
+        if (!lastScan || !lastScan.metadata) return [];
+        const { checks } = lastScan.data;
+        return checks;
+    }
+);
 
-const getLastScannedTime = createSelector([selectors.getLastScan], lastScan => {
-    if (!lastScan || !lastScan.metadata) return '';
-    const scanTime = dateFns.format(lastScan.metadata.time, dateTimeFormat);
-    return scanTime || '';
-});
+const getLastScannedTime = createSelector(
+    [selectors.getLastScan],
+    lastScan => {
+        if (!lastScan || !lastScan.metadata) return '';
+        const scanTime = dateFns.format(lastScan.metadata.time, dateTimeFormat);
+        return scanTime || '';
+    }
+);
 
-const getLastScanId = createSelector([selectors.getLastScan], lastScan => {
-    if (!lastScan || !lastScan.data) return '';
-    const { id } = lastScan.data;
-    return id || '';
-});
+const getLastScanId = createSelector(
+    [selectors.getLastScan],
+    lastScan => {
+        if (!lastScan || !lastScan.data) return '';
+        const { id } = lastScan.data;
+        return id || '';
+    }
+);
 
 const getSelectedBenchmarkScanResult = createSelector(
     [selectors.getSelectedBenchmarkScanResult, selectors.getBenchmarkCheckHostResults],

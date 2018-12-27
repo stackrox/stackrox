@@ -25,11 +25,14 @@ Panel.propTypes = {
     policyDisabled: PropTypes.bool.isRequired
 };
 
-const isPolicyDisabled = createSelector([selectors.getWizardPolicy], policy => {
-    if (policy == null) return true;
-    if (policy.disabled) return true;
-    return false;
-});
+const isPolicyDisabled = createSelector(
+    [selectors.getWizardPolicy],
+    policy => {
+        if (policy == null) return true;
+        if (policy.disabled) return true;
+        return false;
+    }
+);
 
 const mapStateToProps = createStructuredSelector({
     dryRun: selectors.getWizardDryRun,

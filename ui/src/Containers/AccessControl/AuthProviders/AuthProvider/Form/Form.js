@@ -98,8 +98,9 @@ class Form extends Component {
     }
 }
 
-const getRoleOptions = createSelector([selectors.getRoles], roles =>
-    roles.map(role => ({ value: role.name, label: role.name }))
+const getRoleOptions = createSelector(
+    [selectors.getRoles],
+    roles => roles.map(role => ({ value: role.name, label: role.name }))
 );
 
 const mapStateToProps = createStructuredSelector({

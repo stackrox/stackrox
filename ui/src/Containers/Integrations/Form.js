@@ -138,20 +138,22 @@ class Form extends Component {
         return (
             <form id="integrations-form" className="w-full p-4">
                 <div>
-                    {formFields.filter(field => field.type !== 'hidden').map(field => {
-                        if (field.type === 'html') {
-                            return field.html;
-                        }
-                        return (
-                            // eslint-disable-next-line jsx-a11y/label-has-for
-                            <label className="flex mt-4" htmlFor={field.key} key={field.label}>
-                                <div className="mr-4 flex items-center w-2/3 capitalize">
-                                    {field.label}
-                                </div>
-                                {this.renderFormField(field)}
-                            </label>
-                        );
-                    })}
+                    {formFields
+                        .filter(field => field.type !== 'hidden')
+                        .map(field => {
+                            if (field.type === 'html') {
+                                return field.html;
+                            }
+                            return (
+                                // eslint-disable-next-line jsx-a11y/label-has-for
+                                <label className="flex mt-4" htmlFor={field.key} key={field.label}>
+                                    <div className="mr-4 flex items-center w-2/3 capitalize">
+                                        {field.label}
+                                    </div>
+                                    {this.renderFormField(field)}
+                                </label>
+                            );
+                        })}
                     {formFields
                         .filter(field => field.type === 'hidden')
                         .map(this.renderHiddenField)}
@@ -200,7 +202,10 @@ const getFormFieldKeys = (source, type) =>
 
 const formFieldKeys = (state, props) =>
     formValueSelector('integrationForm')(state, ...getFormFieldKeys(props.source, props.type));
-const getFormData = createSelector([formFieldKeys], formData => formData);
+const getFormData = createSelector(
+    [formFieldKeys],
+    formData => formData
+);
 
 const mapStateToProps = createStructuredSelector({
     formFields: getFormFields,

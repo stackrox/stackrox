@@ -102,8 +102,9 @@ class Roles extends Component {
     }
 }
 
-const getRolesWithDefault = createSelector([selectors.getRoles], roles =>
-    roles.map(role => Object.assign({}, role, { noAction: defaultRoles[role.name] }))
+const getRolesWithDefault = createSelector(
+    [selectors.getRoles],
+    roles => roles.map(role => Object.assign({}, role, { noAction: defaultRoles[role.name] }))
 );
 
 const mapStateToProps = createStructuredSelector({

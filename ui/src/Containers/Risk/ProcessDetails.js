@@ -31,14 +31,14 @@ class ProcessDetails extends Component {
 
     componentDidMount() {
         /*
-        * @TODO: Investigate a better alternative to this approach. The "shave.js" function call 
-        * was hoisted up from the ProcessBinaryCollapsible Component because each "componentDidMount"
-        * was causing a forced reflow that was causing some slow performance. This isn't a very
-        * React friendly way of doing things since this component knows more than it should about 
-        * it's child components, but we can see some performance improvements. In addition, windowing
-        * or using something like react-virtualized might be helpful when it comes to rendering 
-        * a large number of iterated Components
-        */
+         * @TODO: Investigate a better alternative to this approach. The "shave.js" function call
+         * was hoisted up from the ProcessBinaryCollapsible Component because each "componentDidMount"
+         * was causing a forced reflow that was causing some slow performance. This isn't a very
+         * React friendly way of doing things since this component knows more than it should about
+         * it's child components, but we can see some performance improvements. In addition, windowing
+         * or using something like react-virtualized might be helpful when it comes to rendering
+         * a large number of iterated Components
+         */
         shave('.binary-args', MAX_STRING_HEIGHT);
     }
 

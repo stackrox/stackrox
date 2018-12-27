@@ -106,7 +106,10 @@ export default reducer;
 // Selectors
 
 const getClustersById = state => state.byId;
-const getClusters = createSelector([getClustersById], clusters => Object.values(clusters));
+const getClusters = createSelector(
+    [getClustersById],
+    clusters => Object.values(clusters)
+);
 const getSelectedClusterId = state => state.selectedCluster;
 const getWizardCurrentPage = state => (state.wizard ? state.wizard.page : null);
 const getWizardClusterId = state => (state.wizard ? state.wizard.clusterId : null);

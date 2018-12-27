@@ -73,11 +73,14 @@ const getBenchmarkTabs = createSelector(
     }
 );
 
-const getCluster = createSelector([selectors.getClusters, getClusterId], (clusters, clusterId) => {
-    let selectedCluster = clusters.find(obj => obj.id === clusterId);
-    if (!selectedCluster) [selectedCluster] = clusters;
-    return selectedCluster;
-});
+const getCluster = createSelector(
+    [selectors.getClusters, getClusterId],
+    (clusters, clusterId) => {
+        let selectedCluster = clusters.find(obj => obj.id === clusterId);
+        if (!selectedCluster) [selectedCluster] = clusters;
+        return selectedCluster;
+    }
+);
 
 const mapStateToProps = createStructuredSelector({
     benchmarkTabs: getBenchmarkTabs,

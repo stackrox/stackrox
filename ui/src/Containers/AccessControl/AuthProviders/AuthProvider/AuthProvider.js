@@ -31,9 +31,11 @@ class AuthProvider extends Component {
         newInitialValues.enabled = true;
         // set initial values for default values from formDiscriptor
         if (formDescriptor[initialValues.type]) {
-            formDescriptor[initialValues.type].filter(field => field.default).forEach(field => {
-                set(newInitialValues, field.jsonPath, field.default);
-            });
+            formDescriptor[initialValues.type]
+                .filter(field => field.default)
+                .forEach(field => {
+                    set(newInitialValues, field.jsonPath, field.default);
+                });
         }
         return newInitialValues;
     };

@@ -82,11 +82,13 @@ class SendNotificationSection extends Component {
     }
 }
 
-const getFormattedNotifiers = createSelector([selectors.getNotifiers], notifiers =>
-    notifiers.map(notifier => ({
-        label: notifier.name,
-        value: notifier.id
-    }))
+const getFormattedNotifiers = createSelector(
+    [selectors.getNotifiers],
+    notifiers =>
+        notifiers.map(notifier => ({
+            label: notifier.name,
+            value: notifier.id
+        }))
 );
 
 const mapStateToProps = createStructuredSelector({

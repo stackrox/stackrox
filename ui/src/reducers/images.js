@@ -66,8 +66,9 @@ export default reducer;
 
 const getImagesByID = state => state.byID;
 const getFilteredIDs = state => state.filteredIDs;
-const getFilteredImages = createSelector([getImagesByID, getFilteredIDs], (images, ids) =>
-    ids.map(id => images[id])
+const getFilteredImages = createSelector(
+    [getImagesByID, getFilteredIDs],
+    (images, ids) => ids.map(id => images[id])
 );
 const getImage = (state, id) => getImagesByID(state)[id];
 

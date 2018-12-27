@@ -167,10 +167,12 @@ const SceneManager = canvas => {
     }
 
     function hideAllNamespaceLinks() {
-        scene.children.filter(object => object.userData.namespaceLink).forEach(object => {
-            const { lineWidth } = object.material.uniforms;
-            lineWidth.value = 0;
-        });
+        scene.children
+            .filter(object => object.userData.namespaceLink)
+            .forEach(object => {
+                const { lineWidth } = object.material.uniforms;
+                lineWidth.value = 0;
+            });
     }
 
     function getIntersectingObjects(x, y) {

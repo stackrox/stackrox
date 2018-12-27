@@ -65,11 +65,15 @@ export default reducer;
 // Selectors
 
 const getSecretsById = state => state.byId;
-const getSecrets = createSelector([getSecretsById], secrets => Object.values(secrets));
+const getSecrets = createSelector(
+    [getSecretsById],
+    secrets => Object.values(secrets)
+);
 const getFilteredIds = state => state.filteredIds;
 const getSecret = (state, id) => getSecretsById(state)[id];
-const getFilteredSecrets = createSelector([getSecretsById, getFilteredIds], (secrets, ids) =>
-    ids.map(id => secrets[id])
+const getFilteredSecrets = createSelector(
+    [getSecretsById, getFilteredIds],
+    (secrets, ids) => ids.map(id => secrets[id])
 );
 
 export const selectors = {

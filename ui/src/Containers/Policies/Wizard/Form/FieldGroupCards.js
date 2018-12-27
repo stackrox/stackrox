@@ -217,7 +217,10 @@ const getPolicyFormFields = createSelector(
 const formFields = state =>
     formValueSelector('policyCreationForm')(state, ...getPolicyFormDataKeys());
 
-const getFormData = createSelector([formFields], formData => formData);
+const getFormData = createSelector(
+    [formFields],
+    formData => formData
+);
 
 const mapStateToProps = createStructuredSelector({
     policyFormFields: getPolicyFormFields,

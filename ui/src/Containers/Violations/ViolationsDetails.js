@@ -22,14 +22,16 @@ class ViolationsDetails extends Component {
 
     getDeploytimeMessages = () => {
         const { violations } = this.props;
-        return violations.filter(violation => !violation.processes.length).map(({ message }) => (
-            <div
-                key={message}
-                className="mb-4 p-3 pb-2 shadow border border-base-200 text-base-600 flex justify-between leading-normal bg-base-100"
-            >
-                {message}
-            </div>
-        ));
+        return violations
+            .filter(violation => !violation.processes.length)
+            .map(({ message }) => (
+                <div
+                    key={message}
+                    className="mb-4 p-3 pb-2 shadow border border-base-200 text-base-600 flex justify-between leading-normal bg-base-100"
+                >
+                    {message}
+                </div>
+            ));
     };
 
     getRuntimeMessages = () => {

@@ -466,18 +466,21 @@ class DashboardPage extends Component {
     }
 }
 
-const getTopRiskyDeployments = createSelector([selectors.getFilteredDeployments], deployments =>
-    deployments.sort((a, b) => a.priority - b.priority).slice(0, 5)
+const getTopRiskyDeployments = createSelector(
+    [selectors.getFilteredDeployments],
+    deployments => deployments.sort((a, b) => a.priority - b.priority).slice(0, 5)
 );
 
-const getClustersByName = createSelector([selectors.getClusters], clusters =>
-    clusters.reduce(
-        (result, cluster) => ({
-            ...result,
-            [cluster.name]: cluster
-        }),
-        {}
-    )
+const getClustersByName = createSelector(
+    [selectors.getClusters],
+    clusters =>
+        clusters.reduce(
+            (result, cluster) => ({
+                ...result,
+                [cluster.name]: cluster
+            }),
+            {}
+        )
 );
 
 const isViewFiltered = createSelector(

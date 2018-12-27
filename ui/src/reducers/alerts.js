@@ -132,13 +132,16 @@ const getGlobalAlertCounts = state => state.globalAlertCounts;
 const getAlertCountsByPolicyCategories = state => state.alertCountsByPolicyCategories;
 const getAlertCountsByCluster = state => state.alertCountsByCluster;
 const getAlertsByTimeseries = state => state.alertsByTimeseries;
-const getFilteredAlertsById = createSelector([getAlertsById, getFilteredIds], (alerts, ids) => {
-    const alertsObj = {};
-    ids.forEach(id => {
-        alertsObj[id] = alerts[id];
-    });
-    return alertsObj;
-});
+const getFilteredAlertsById = createSelector(
+    [getAlertsById, getFilteredIds],
+    (alerts, ids) => {
+        const alertsObj = {};
+        ids.forEach(id => {
+            alertsObj[id] = alerts[id];
+        });
+        return alertsObj;
+    }
+);
 const getFilteredAlerts = state => Object.values(getFilteredAlertsById(state));
 
 export const selectors = {

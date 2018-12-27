@@ -245,26 +245,32 @@ class SearchResults extends Component {
     }
 }
 
-const getTabs = createSelector([selectors.getGlobalSearchCounts], globalSearchCounts => {
-    if (globalSearchCounts.length === 0) return defaultTabs;
+const getTabs = createSelector(
+    [selectors.getGlobalSearchCounts],
+    globalSearchCounts => {
+        if (globalSearchCounts.length === 0) return defaultTabs;
 
-    const newTabs = [];
-    defaultTabs.forEach(tab => {
-        const newTab = Object.assign({}, tab);
-        const currentTab = globalSearchCounts.find(obj => obj.category === tab.category);
-        if (currentTab) {
-            newTab.text += ` (${currentTab.count})`;
-            if (currentTab.count === '0') newTab.disabled = true;
-        }
-        newTabs.push(newTab);
-    });
-    return newTabs;
-});
+        const newTabs = [];
+        defaultTabs.forEach(tab => {
+            const newTab = Object.assign({}, tab);
+            const currentTab = globalSearchCounts.find(obj => obj.category === tab.category);
+            if (currentTab) {
+                newTab.text += ` (${currentTab.count})`;
+                if (currentTab.count === '0') newTab.disabled = true;
+            }
+            newTabs.push(newTab);
+        });
+        return newTabs;
+    }
+);
 
-const getDefaultTab = createSelector([selectors.getGlobalSearchCategory], globalSearchCategory => {
-    const tab = defaultTabs.find(obj => obj.category === globalSearchCategory);
-    return tab;
-});
+const getDefaultTab = createSelector(
+    [selectors.getGlobalSearchCategory],
+    globalSearchCategory => {
+        const tab = defaultTabs.find(obj => obj.category === globalSearchCategory);
+        return tab;
+    }
+);
 
 const mapStateToProps = createStructuredSelector({
     globalSearchResults: selectors.getGlobalSearchResults,
