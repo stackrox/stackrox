@@ -17,11 +17,11 @@ const (
 	loginPath     = "login"
 )
 
-func (r *storeBackedRegistry) URLPathPrefix() string {
+func (r *registryImpl) URLPathPrefix() string {
 	return r.urlPathPrefix
 }
 
-func (r *storeBackedRegistry) errorURL(err error, typ string, clientState string) *url.URL {
+func (r *registryImpl) errorURL(err error, typ string, clientState string) *url.URL {
 	return &url.URL{
 		Path: r.redirectURL,
 		Fragment: url.Values{
@@ -32,7 +32,7 @@ func (r *storeBackedRegistry) errorURL(err error, typ string, clientState string
 	}
 }
 
-func (r *storeBackedRegistry) tokenURL(rawToken string, typ string, clientState string) *url.URL {
+func (r *registryImpl) tokenURL(rawToken string, typ string, clientState string) *url.URL {
 	return &url.URL{
 		Path: r.redirectURL,
 		Fragment: url.Values{
@@ -43,20 +43,20 @@ func (r *storeBackedRegistry) tokenURL(rawToken string, typ string, clientState 
 	}
 }
 
-func (r *storeBackedRegistry) providersURLPrefix() string {
+func (r *registryImpl) providersURLPrefix() string {
 	return path.Join(r.urlPathPrefix, providersPath) + "/"
 }
 
-func (r *storeBackedRegistry) loginURLPrefix() string {
+func (r *registryImpl) loginURLPrefix() string {
 	return path.Join(r.urlPathPrefix, loginPath) + "/"
 }
 
-func (r *storeBackedRegistry) initHTTPMux() {
+func (r *registryImpl) initHTTPMux() {
 	r.HandleFunc(r.providersURLPrefix(), r.providersHTTPHandler)
 	r.HandleFunc(r.loginURLPrefix(), r.loginHTTPHandler)
 }
 
-func (r *storeBackedRegistry) loginHTTPHandler(w http.ResponseWriter, req *http.Request) {
+func (r *registryImpl) loginHTTPHandler(w http.ResponseWriter, req *http.Request) {
 	prefix := r.loginURLPrefix()
 	if !strings.HasPrefix(req.URL.Path, prefix) {
 		log.Errorf("UNEXPECTED: received HTTP request for invalid URL %v", req.URL)
@@ -84,11 +84,11 @@ func (r *storeBackedRegistry) loginHTTPHandler(w http.ResponseWriter, req *http.
 	w.WriteHeader(http.StatusSeeOther)
 }
 
-func (r *storeBackedRegistry) loginURL(providerID string) string {
+func (r *registryImpl) loginURL(providerID string) string {
 	return path.Join(r.loginURLPrefix(), providerID)
 }
 
-func (r *storeBackedRegistry) providersHTTPHandler(w http.ResponseWriter, req *http.Request) {
+func (r *registryImpl) providersHTTPHandler(w http.ResponseWriter, req *http.Request) {
 	prefix := r.providersURLPrefix()
 	if !strings.HasPrefix(req.URL.Path, prefix) {
 		log.Errorf("UNEXPECTED: received HTTP request for invalid URL %v", req.URL)
@@ -112,7 +112,7 @@ func (r *storeBackedRegistry) providersHTTPHandler(w http.ResponseWriter, req *h
 	}
 
 	providerID, err := factory.ProcessHTTPRequest(w, req)
-	var provider *authProvider
+	var provider Provider
 	if err == nil {
 		provider = r.getAuthProvider(providerID)
 		if provider == nil {
@@ -135,7 +135,7 @@ func (r *storeBackedRegistry) providersHTTPHandler(w http.ResponseWriter, req *h
 	var tokenInfo *tokens.TokenInfo
 
 	if err == nil && claim != nil {
-		tokenInfo, err = provider.issuer.Issue(tokens.RoxClaims{ExternalUser: claim}, opts...)
+		tokenInfo, err = provider.Issuer().Issue(tokens.RoxClaims{ExternalUser: claim}, opts...)
 	}
 
 	if err != nil {

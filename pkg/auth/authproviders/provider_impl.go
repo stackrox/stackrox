@@ -1,113 +1,141 @@
 package authproviders
 
 import (
-	"errors"
 	"sync"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 )
 
-type authProvider struct {
-	backend    Backend
-	baseInfo   storage.AuthProvider
-	roleMapper permissions.RoleMapper
-
-	registry *storeBackedRegistry
-	issuer   tokens.Issuer
-
+// If you add new data fields to this class, make sure you make commensurate modifications
+// to the cloneWithoutMutex and copyWithoutMutex functions below.
+type providerImpl struct {
 	mutex sync.RWMutex
+
+	storedInfo storage.AuthProvider
+	backend    Backend
+	roleMapper permissions.RoleMapper
+	issuer     tokens.Issuer
+	onSuccess  ProviderOption
 }
 
-func (p *authProvider) Validate(claims *tokens.Claims) error {
+// Accessor functions.
+//////////////////////
+
+func (p *providerImpl) ID() string {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+
+	return p.storedInfo.GetId()
+}
+
+func (p *providerImpl) Type() string {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+
+	return p.storedInfo.Type
+}
+
+func (p *providerImpl) Name() string {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+
+	return p.storedInfo.Name
+}
+
+func (p *providerImpl) Enabled() bool {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+
+	return p.backend != nil && p.storedInfo.Enabled
+}
+
+func (p *providerImpl) Validated() bool {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+
+	return p.storedInfo.Validated
+}
+
+func (p *providerImpl) StorageView() *storage.AuthProvider {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+
+	result := p.storedInfo
+	if p.backend == nil {
+		result.Enabled = false
+	}
+	return &result
+}
+
+func (p *providerImpl) Backend() Backend {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+
+	return p.backend
+}
+
+func (p *providerImpl) RoleMapper() permissions.RoleMapper {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+
+	return p.roleMapper
+}
+
+func (p *providerImpl) Issuer() tokens.Issuer {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+
+	return p.issuer
+}
+
+// Modifier functions.
+//////////////////////
+
+func (p *providerImpl) OnSuccess() error {
+	return p.applyOptions(p.onSuccess)
+}
+
+func (p *providerImpl) Validate(claims *tokens.Claims) error {
 	// Signature validation/expiry checks/check for enabledness is already done by the JWT layer.
 	// TODO: allow the backend to do validation?
 	return nil
 }
 
-func (p *authProvider) RoleMapper() permissions.RoleMapper {
-	return p.roleMapper
-}
+// We must lock the provider when applying options to it.
+func (p *providerImpl) applyOptions(options ...ProviderOption) error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
 
-func (p *authProvider) RecordSuccess() error {
-	if !p.Enabled() {
-		return errors.New("cannot record success for disabled auth provider")
-	}
-	if err := p.registry.recordSuccess(p.ID()); err != nil {
+	// Try updates on a copy of the provider
+	modifiedProvider := cloneWithoutMutex(p)
+	if err := applyOptions(modifiedProvider, options...); err != nil {
 		return err
 	}
 
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-	p.baseInfo.Validated = true
+	// If updates succeed, apply them.
+	copyWithoutMutex(p, modifiedProvider)
 	return nil
 }
 
-func (p *authProvider) Backend() Backend {
-	p.mutex.RLock()
-	defer p.mutex.RUnlock()
-	return p.backend
-}
-
-func (p *authProvider) ID() string {
-	return p.baseInfo.GetId()
-}
-
-func (p *authProvider) Enabled() bool {
-	p.mutex.RLock()
-	defer p.mutex.RUnlock()
-	return p.backend != nil && p.baseInfo.Enabled
-}
-
-func (p *authProvider) Validated() bool {
-	p.mutex.RLock()
-	defer p.mutex.RUnlock()
-	return p.baseInfo.Validated
-}
-
-func (p *authProvider) Type() string {
-	return p.baseInfo.Type
-}
-
-func (p *authProvider) Name() string {
-	p.mutex.RLock()
-	defer p.mutex.RUnlock()
-	return p.baseInfo.Name
-}
-
-func (p *authProvider) setBackend(backend Backend, effectiveConfig map[string]string) {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-	p.backend = backend
-	p.baseInfo.Config = effectiveConfig
-}
-
-func (p *authProvider) update(name *string, enabled *bool) (bool, storage.AuthProvider, string) {
-	modified := false
-	var oldName string
-
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-	if name != nil && *name != p.baseInfo.Name {
-		oldName = p.baseInfo.Name
-		p.baseInfo.Name = *name
-		modified = true
+// Does a deep copy of the proto field 'storedInfo' so that it can support nested message fields.
+func cloneWithoutMutex(pr *providerImpl) *providerImpl {
+	return &providerImpl{
+		storedInfo: *proto.Clone(&pr.storedInfo).(*storage.AuthProvider),
+		backend:    pr.backend,
+		roleMapper: pr.roleMapper,
+		issuer:     pr.issuer,
+		onSuccess:  pr.onSuccess,
 	}
-	if enabled != nil && *enabled != p.baseInfo.Enabled {
-		p.baseInfo.Enabled = *enabled
-		modified = true
-	}
-	return modified, p.baseInfo, oldName
 }
 
-func (p *authProvider) StorageView() *storage.AuthProvider {
-	p.mutex.RLock()
-	defer p.mutex.RUnlock()
-
-	result := p.baseInfo
-	if p.backend == nil {
-		result.Enabled = false
-	}
-	return &result
+// No need to do a deep copy of the 'storedInfo' field here since the 'from' input was created with a deep copy.
+func copyWithoutMutex(to *providerImpl, from *providerImpl) {
+	to.storedInfo = from.storedInfo
+	to.backend = from.backend
+	to.roleMapper = from.roleMapper
+	to.issuer = from.issuer
+	to.onSuccess = from.onSuccess
 }

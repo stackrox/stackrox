@@ -350,7 +350,6 @@ func (s *GroupStoreTestSuite) TestWalk() {
 	}
 
 	expectedGroups := []*storage.Group{
-		groups[0],
 		groups[1],
 		groups[2],
 		groups[3],

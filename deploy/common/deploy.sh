@@ -160,7 +160,13 @@ function get_authority {
 function setup_auth0() {
     local LOCAL_API_ENDPOINT="$1"
 	echo "Setting up StackRox Dev Auth0 login"
-	curl_central -s "https://${LOCAL_API_ENDPOINT}/v1/authProviders" -X POST -d @- >/dev/null <<-EOF
+	TMP=$(mktemp)
+	STATUS=$(curl_central \
+	    -s \
+        -o $TMP \
+        "https://${LOCAL_API_ENDPOINT}/v1/authProviders" \
+        -X POST \
+        -d @- >/dev/null <<-EOF
 {
 	"name": "StackRox Dev (Auth0)",
 	"type": "oidc",
@@ -173,6 +179,20 @@ function setup_auth0() {
 		"mode": "post"
 	},
 	"extraUiEndpoints": ["localhost:3000", "prevent.stackrox.com"]
+}
+EOF
+    )
+    echo "Status: $STATUS"
+    AUTH_PROVIDER_ID="$(jq <"$TMP" -r '.id')"
+    echo "Created auth provider: ${AUTH_PROVIDER_ID}"
+
+    echo "Setting up role for Auth0"
+    curl_central -s "https://${LOCAL_API_ENDPOINT}/v1/groups" -X POST -d @- >/dev/null <<-EOF
+{
+    "props": {
+        "authProviderId": "${AUTH_PROVIDER_ID}"
+    },
+    "roleName": "Admin"
 }
 EOF
 }

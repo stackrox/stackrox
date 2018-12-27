@@ -167,18 +167,14 @@ func removeInTransaction(tx *bolt.Tx, key []byte) error {
 }
 
 func getPossibleGroupProperties(authProviderID string, attributes map[string][]string) (props []*storage.GroupProperties) {
-	// We need to consider no provider, and the provider given.
-	possibleAuthProviders := []string{"", authProviderID}
-	for _, ap := range possibleAuthProviders {
-		// Need to consider no key.
-		props = append(props, &storage.GroupProperties{AuthProviderId: ap})
-		for key, values := range attributes {
-			// Need to consider key with no value
-			props = append(props, &storage.GroupProperties{AuthProviderId: ap, Key: key})
-			// Consider all Key/Value pairs present.
-			for _, value := range values {
-				props = append(props, &storage.GroupProperties{AuthProviderId: ap, Key: key, Value: value})
-			}
+	// Need to consider no key.
+	props = append(props, &storage.GroupProperties{AuthProviderId: authProviderID})
+	for key, values := range attributes {
+		// Need to consider key with no value
+		props = append(props, &storage.GroupProperties{AuthProviderId: authProviderID, Key: key})
+		// Consider all Key/Value pairs present.
+		for _, value := range values {
+			props = append(props, &storage.GroupProperties{AuthProviderId: authProviderID, Key: key, Value: value})
 		}
 	}
 	return

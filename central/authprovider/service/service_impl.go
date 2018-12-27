@@ -61,7 +61,7 @@ func (s *serviceImpl) GetAuthProvider(ctx context.Context, request *v1.GetAuthPr
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Auth Provider id is required")
 	}
-	authProvider := s.registry.GetProvider(ctx, request.GetId())
+	authProvider := s.registry.GetProvider(request.GetId())
 	if authProvider == nil {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("Auth Provider %v not found", request.GetId()))
 	}
@@ -78,7 +78,7 @@ func (s *serviceImpl) GetAuthProviders(ctx context.Context, request *v1.GetAuthP
 		typ = &request.Type
 	}
 
-	authProviders := s.registry.GetProviders(ctx, name, typ)
+	authProviders := s.registry.GetProviders(name, typ)
 	result := make([]*storage.AuthProvider, len(authProviders))
 	for i, provider := range authProviders {
 		result[i] = provider.StorageView()
@@ -107,7 +107,7 @@ func (s *serviceImpl) PostAuthProvider(ctx context.Context, request *v1.PostAuth
 	if providerReq.GetLoginUrl() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Auth Provider loginUrl field must be empty")
 	}
-	provider, err := s.registry.CreateProvider(ctx, providerReq.GetType(), providerReq.GetName(), authproviders.AllUIEndpoints(providerReq), providerReq.GetEnabled(), providerReq.GetValidated(), providerReq.GetConfig())
+	provider, err := s.registry.CreateProvider(ctx, authproviders.WithStorageView(providerReq))
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "could not create auth provider: %v", err)
 	}
@@ -118,15 +118,15 @@ func (s *serviceImpl) UpdateAuthProvider(ctx context.Context, request *v1.Update
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Auth Provider id must not be empty")
 	}
-	var name *string
-	var enabled *bool
+
+	var options []authproviders.ProviderOption
 	if nameOpt, ok := request.GetNameOpt().(*v1.UpdateAuthProviderRequest_Name); ok {
-		name = &nameOpt.Name
+		options = append(options, authproviders.WithName(nameOpt.Name))
 	}
 	if enabledOpt, ok := request.GetEnabledOpt().(*v1.UpdateAuthProviderRequest_Enabled); ok {
-		enabled = &enabledOpt.Enabled
+		options = append(options, authproviders.WithEnabled(enabledOpt.Enabled))
 	}
-	provider, err := s.registry.UpdateProvider(ctx, request.GetId(), name, enabled)
+	provider, err := s.registry.UpdateProvider(request.GetId(), options...)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "could not update auth provider: %v", err)
 	}
@@ -138,7 +138,7 @@ func (s *serviceImpl) DeleteAuthProvider(ctx context.Context, request *v1.Resour
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Auth Provider id is required")
 	}
-	if err := s.registry.DeleteProvider(ctx, request.GetId()); err != nil {
+	if err := s.registry.DeleteProvider(request.GetId()); err != nil {
 		return nil, err
 	}
 	return &v1.Empty{}, nil
