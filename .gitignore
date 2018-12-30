@@ -9,9 +9,8 @@ registry-auth
 
 # Deployment
 sensor-deploy.sh
-sensor-deploy.zip
-central.zip
 tmp
+*.zip
 
 # Generated API docs
 /image/docs/
