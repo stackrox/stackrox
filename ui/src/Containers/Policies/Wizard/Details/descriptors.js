@@ -123,19 +123,19 @@ const fieldsMap = {
         }
     },
     imageAgeDays: {
-        label: 'Image Created',
+        label: 'Days since image was created',
         formatValue: d => (d !== '0' ? `${Number(d)} Days ago` : '')
     },
     noScanExists: {
-        label: 'Scan Does Not Exist',
+        label: 'Image Scan Status',
         formatValue: () => 'Verify that the image is scanned'
     },
     scanAgeDays: {
-        label: 'Days since Image scanned',
+        label: 'Days since image was last scanned',
         formatValue: d => (d !== '0' ? `${Number(d)} Days ago` : '')
     },
     lineRule: {
-        label: 'Line Rule',
+        label: 'Dockerfile Line',
         formatValue: d => `${d.instruction} ${d.value}`
     },
     cvss: {
@@ -147,15 +147,15 @@ const fieldsMap = {
         formatValue: d => d
     },
     component: {
-        label: 'Component',
+        label: 'Image Component',
         formatValue: d => {
             const name = d.name ? `${d.name}` : '';
             const version = d.version ? d.version : '';
-            return `'${name}' with version '${version}'`;
+            return `"${name}" with version "${version}"`;
         }
     },
     env: {
-        label: 'Environment',
+        label: 'Environment Variable',
         formatValue: d => {
             const key = d.key ? `${d.key}` : '';
             const value = d.value ? d.value : '';

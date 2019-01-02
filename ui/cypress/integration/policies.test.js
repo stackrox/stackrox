@@ -213,7 +213,7 @@ describe('Policies page', () => {
     it('should allow updating days since image scanned in a policy', () => {
         cy.get(selectors.policies.scanImage).click({ force: true });
         editPolicy();
-        cy.get(selectors.form.select).select('Days since Image scanned');
+        cy.get(selectors.form.select).select('Days since image was last scanned');
         cy.get(selectors.scanAgeDays.input).type('50');
         savePolicy();
         cy.get(selectors.scanAgeDays.value).should('have.text', '50 Days ago');

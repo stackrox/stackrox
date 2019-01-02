@@ -37,8 +37,10 @@ export const selectors = {
         value: '[data-test-id="imageName"] div.flex'
     },
     scanAgeDays: {
-        input: 'div:contains("Days since Image scanned") + div.flex>.react-numeric-input>input',
-        deleteButton: 'div:contains("Days since Image scanned") + div.flex>div.flex>button',
+        input:
+            'div:contains("Days since image was last scanned") + div.flex>.react-numeric-input>input',
+        deleteButton:
+            'div:contains("Days since image was last scanned") + div.flex>div.flex>button',
         value: '[data-test-id="scanAgeDays"] div.flex'
     },
     policyPreview: {

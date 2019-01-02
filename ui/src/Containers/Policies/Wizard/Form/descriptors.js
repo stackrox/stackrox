@@ -215,6 +215,7 @@ const policyConfigurationDescriptor = [
         label: 'Image Remote',
         jsonpath: 'fields.imageName.remote',
         type: 'text',
+        placeholder: 'library/nginx',
         required: false,
         default: false
     },
@@ -227,18 +228,18 @@ const policyConfigurationDescriptor = [
         default: false
     },
     {
-        label: 'Days since Image created',
+        label: 'Days since image was created',
         jsonpath: 'fields.imageAgeDays',
         type: 'number',
-        placeholder: '1 Day Ago',
+        placeholder: '1',
         required: false,
         default: false
     },
     {
-        label: 'Days since Image scanned',
+        label: 'Days since image was last scanned',
         jsonpath: 'fields.scanAgeDays',
         type: 'number',
-        placeholder: '1 Day Ago',
+        placeholder: '1',
         required: false,
         default: false
     },
@@ -314,26 +315,26 @@ const policyConfigurationDescriptor = [
         default: false
     },
     {
-        label: 'Component',
+        label: 'Image Component',
         jsonpath: 'fields.component',
         type: 'group',
         jsonpaths: [
             {
                 jsonpath: 'fields.component.name',
                 type: 'text',
-                placeholder: '^example*'
+                placeholder: 'example'
             },
             {
                 jsonpath: 'fields.component.version',
                 type: 'text',
-                placeholder: '^v1.2.0$'
+                placeholder: '1.2.[0-9]+'
             }
         ],
         required: false,
         default: false
     },
     {
-        label: 'Environment',
+        label: 'Environment Variable',
         jsonpath: 'fields.env',
         type: 'group',
         jsonpaths: [
@@ -393,7 +394,7 @@ const policyConfigurationDescriptor = [
         label: 'Volume Name',
         jsonpath: 'fields.volumePolicy.name',
         type: 'text',
-        placeholder: '/var/run/docker.sock',
+        placeholder: 'docker-socket',
         required: false,
         default: false
     },
@@ -401,7 +402,7 @@ const policyConfigurationDescriptor = [
         label: 'Volume Source',
         jsonpath: 'fields.volumePolicy.source',
         type: 'text',
-        placeholder: '^/var/run/docker.sock$',
+        placeholder: '/var/run/docker.sock',
         required: false,
         default: false
     },
@@ -409,7 +410,7 @@ const policyConfigurationDescriptor = [
         label: 'Volume Destination',
         jsonpath: 'fields.volumePolicy.destination',
         type: 'text',
-        placeholder: '^/var/run/docker.sock$',
+        placeholder: '/var/run/docker.sock',
         required: false,
         default: false
     },
@@ -425,6 +426,7 @@ const policyConfigurationDescriptor = [
         label: 'Protocol',
         jsonpath: 'fields.portPolicy.protocol',
         type: 'text',
+        placeholder: 'tcp',
         required: false,
         default: false
     },
@@ -432,6 +434,7 @@ const policyConfigurationDescriptor = [
         label: 'Port',
         jsonpath: 'fields.portPolicy.port',
         type: 'number',
+        placeholder: '22',
         required: false,
         default: false
     },
@@ -491,7 +494,7 @@ const policyFormFields = {
         descriptor: policyDetailsFormDescriptor
     },
     policyConfiguration: {
-        header: 'Policy Configuration',
+        header: 'Policy Criteria',
         descriptor: policyConfigurationDescriptor
     }
 };

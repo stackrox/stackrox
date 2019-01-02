@@ -147,7 +147,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .build())
                         .build()            | DEPLOYMENTREMOTE
 
-        "Days since Image created" |
+        "Days since image was created" |
                 Policy.newBuilder()
                         .setName("TestDaysImagecreatedPolicy")
                         .setDescription("TestDaysImagecreated")
@@ -161,7 +161,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .build())
                         .build()            | DEPLOYMENTAGE
 
-        "Days since Image scanned" |
+        "Days since image was last scanned" |
                 Policy.newBuilder()
                         .setName("TestDaysImagescannedPolicy")
                         .setDescription("TestDaysImagescanned")
@@ -261,7 +261,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setValue("annotation").build()))
                         .build()            | DEPLOYMENTNGINX
 
-        "Environment is available" |
+        "Environment Variable is available" |
                 Policy.newBuilder()
                         .setName("TestEnvironmentPolicy")
                         .setDescription("TestEnvironment")
