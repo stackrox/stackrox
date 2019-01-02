@@ -7,9 +7,9 @@ import set from 'lodash/set';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Panel, { headerClassName } from 'Components/Panel';
-import Button from 'Containers/AccessControl/AuthProviders/AuthProvider/Button/Button';
+import Button from 'Containers/AccessControl/AuthProviders/AuthProvider/Button';
 import Form from 'Containers/AccessControl/AuthProviders/AuthProvider/Form/Form';
-import Details from 'Containers/AccessControl/AuthProviders/AuthProvider/Details/Details';
+import Details from 'Containers/AccessControl/AuthProviders/AuthProvider/Details';
 import formDescriptor from './Form/formDescriptor';
 
 class AuthProvider extends Component {
@@ -40,6 +40,35 @@ class AuthProvider extends Component {
         return newInitialValues;
     };
 
+    getGroupsByAuthProviderId = (groups, id) => {
+        const filteredGroups = groups.filter(
+            group =>
+                group.props &&
+                group.props.authProviderId &&
+                group.props.authProviderId === id &&
+                (group.props.key !== '' && groups.props.value !== '')
+        );
+        return filteredGroups;
+    };
+
+    getDefaultRoleByAuthProviderId = (groups, id) => {
+        let defaultRoleGroups = groups.filter(
+            group =>
+                group.props &&
+                group.props.authProviderId &&
+                group.props.authProviderId === id &&
+                group.props.key === '' &&
+                group.props.value === ''
+        );
+        if (defaultRoleGroups.length) {
+            return defaultRoleGroups[0].roleName;
+        }
+        // if there is no default role specified for this auth provider then use the global default role
+        defaultRoleGroups = groups.filter(group => !group.props);
+        if (defaultRoleGroups.length) return defaultRoleGroups[0].roleName;
+        return 'Admin';
+    };
+
     displayEmptyState = () => (
         <NoResultsMessage message="No Auth Providers integrated. Please add one." />
     );
@@ -50,21 +79,8 @@ class AuthProvider extends Component {
         if (!selectedAuthProvider.name) {
             initialValues = this.populateDefaultValues(initialValues);
         }
-        const filteredGroups = [];
-        let defaultRole = null;
-        groups.forEach(group => {
-            if (
-                group.props &&
-                group.props.authProviderId &&
-                selectedAuthProvider.id === group.props.authProviderId
-            ) {
-                if (group.props && group.props.key) {
-                    filteredGroups.push(group);
-                } else {
-                    defaultRole = group.roleName;
-                }
-            }
-        });
+        const filteredGroups = this.getGroupsByAuthProviderId(groups, selectedAuthProvider.id);
+        const defaultRole = this.getDefaultRoleByAuthProviderId(groups, selectedAuthProvider.id);
 
         const modifiedInitialValues = Object.assign(initialValues, {
             groups: filteredGroups,

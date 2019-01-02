@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import get from 'lodash/get';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
-import formDescriptor from '../Form/formDescriptor';
+import formDescriptor from './Form/formDescriptor';
 
 const Field = props => {
     const { label, jsonPath, authProvider } = props;
@@ -87,7 +87,7 @@ Details.propTypes = {
 };
 
 Details.defaultProps = {
-    defaultRole: ''
+    defaultRole: 'Admin'
 };
 
 export default Details;

@@ -7,9 +7,9 @@ import isEmpty from 'lodash/isEmpty';
 
 import { defaultRoles, defaultPermissions } from 'constants/accessControl';
 import Panel, { headerClassName } from 'Components/Panel';
-import Button from 'Containers/AccessControl/Roles/Permissions/Button/Button';
-import Form from 'Containers/AccessControl/Roles/Permissions/Form/Form';
-import Details from 'Containers/AccessControl/Roles/Permissions/Details/Details';
+import Button from 'Containers/AccessControl/Roles/Permissions/Button';
+import Form from 'Containers/AccessControl/Roles/Permissions/Form';
+import Details from 'Containers/AccessControl/Roles/Permissions/Details';
 
 class Permissions extends Component {
     static propTypes = {

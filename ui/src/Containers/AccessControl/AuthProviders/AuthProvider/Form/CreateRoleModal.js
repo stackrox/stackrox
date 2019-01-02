@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 
 import { actions } from 'reducers/roles';
 import Modal from 'Components/Modal';
-import Form from 'Containers/AccessControl/Roles/Permissions/Form/Form';
+import Form from 'Containers/AccessControl/Roles/Permissions/Form';
 import SaveButton from 'Containers/AccessControl/SaveButton';
 import { defaultPermissions } from 'constants/accessControl';
 

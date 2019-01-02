@@ -78,7 +78,7 @@ class Form extends Component {
                         >
                             <div className="w-full p-2">
                                 <Field
-                                    label={`Default role for "${initialValues.name}"`}
+                                    label="Default Role"
                                     type="select"
                                     jsonPath="defaultRole"
                                     options={roles}

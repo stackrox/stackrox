@@ -6,7 +6,7 @@ import { selectors } from 'reducers';
 import { actions } from 'reducers/auth';
 
 import SideBar from 'Containers/AccessControl/SideBar';
-import Select from 'Containers/AccessControl/AuthProviders/Select/Select';
+import Select from 'Containers/AccessControl/AuthProviders/Select';
 import AuthProvider from 'Containers/AccessControl/AuthProviders/AuthProvider/AuthProvider';
 
 class AuthProviders extends Component {
