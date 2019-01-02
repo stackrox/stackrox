@@ -1,6 +1,6 @@
 defaults: &defaults
   docker:
-    - image: docker.io/stackrox/apollo-ci:0.1.11-20-g6058930140
+    - image: docker.io/stackrox/apollo-ci:0.1.11-21-g5a8e8ee519
       auth:
         username: $DOCKERHUB_USERNAME
         password: $DOCKERHUB_PASSWORD
