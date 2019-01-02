@@ -33,7 +33,11 @@ func (s *swarm) Render(c Config) ([]*zip.File, error) {
 	}
 
 	for _, f := range filenames {
-		data, err := executeRawTemplate(image.SwarmBox.String(f), &c)
+		tmpl, err := image.SwarmBox.FindString(f)
+		if err != nil {
+			return nil, err
+		}
+		data, err := executeRawTemplate(tmpl, &c)
 		if err != nil {
 			return nil, err
 		}
