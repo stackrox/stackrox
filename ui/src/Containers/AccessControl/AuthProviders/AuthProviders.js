@@ -16,42 +16,38 @@ class AuthProviders extends Component {
         selectAuthProvider: PropTypes.func.isRequired,
         saveAuthProvider: PropTypes.func.isRequired,
         deleteAuthProvider: PropTypes.func.isRequired,
-        groups: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+        groups: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+        setAuthProviderEditingState: PropTypes.func.isRequired,
+        isEditing: PropTypes.bool
     };
 
     static defaultProps = {
         authProviders: [],
-        selectedAuthProvider: null
+        selectedAuthProvider: null,
+        isEditing: false
     };
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            isEditing: false
-        };
-    }
-
     onSave = data => {
-        this.props.saveAuthProvider(data);
-        this.setState({ isEditing: false });
+        const { saveAuthProvider } = this.props;
+        saveAuthProvider(data);
     };
 
     onEdit = () => {
-        this.setState({ isEditing: true });
+        this.props.setAuthProviderEditingState(true);
     };
 
     onCreateNewAuthProvider = option => {
         this.props.selectAuthProvider({ type: option.value });
-        this.setState({ isEditing: true });
+        this.props.setAuthProviderEditingState(true);
     };
 
     onCancel = () => {
-        this.setState({ isEditing: false });
+        this.props.setAuthProviderEditingState(false);
     };
 
     onDelete = authProvider => {
         this.props.deleteAuthProvider(authProvider.id);
-        this.setState({ isEditing: false });
+        this.props.setAuthProviderEditingState(false);
     };
 
     renderSideBar = () => {
@@ -78,7 +74,7 @@ class AuthProviders extends Component {
                 <div className="w-1/4 m-4">{this.renderSideBar()}</div>
                 <div className="w-3/4 my-4 mr-4">
                     <AuthProvider
-                        isEditing={this.state.isEditing}
+                        isEditing={this.props.isEditing}
                         selectedAuthProvider={selectedAuthProvider}
                         onSave={this.onSave}
                         onEdit={this.onEdit}
@@ -94,13 +90,15 @@ class AuthProviders extends Component {
 const mapStateToProps = createStructuredSelector({
     authProviders: selectors.getAvailableAuthProviders,
     selectedAuthProvider: selectors.getSelectedAuthProvider,
-    groups: selectors.getRuleGroups
+    groups: selectors.getRuleGroups,
+    isEditing: selectors.getAuthProviderEditingState
 });
 
 const mapDispatchToProps = {
     selectAuthProvider: actions.selectAuthProvider,
     saveAuthProvider: actions.saveAuthProvider,
-    deleteAuthProvider: actions.deleteAuthProvider
+    deleteAuthProvider: actions.deleteAuthProvider,
+    setAuthProviderEditingState: actions.setAuthProviderEditingState
 };
 
 export default connect(

@@ -191,7 +191,9 @@ function* saveAuthProvider(action) {
             yield put(groupActions.saveRuleGroup(filteredGroups, defaultRole));
             yield put(actions.selectAuthProvider(remaining));
         }
+        yield put(actions.setAuthProviderEditingState(false));
     } catch (error) {
+        yield put(actions.setAuthProviderEditingState(true));
         yield put(notificationActions.addNotification(error.response.data.error));
         yield put(notificationActions.removeOldestNotification());
         Raven.captureException(error);

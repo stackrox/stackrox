@@ -1,16 +1,17 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { submit } from 'redux-form';
+import { submit, isPristine } from 'redux-form';
 
 const onClickHandler = (dispatch, formName) => () => {
     dispatch(submit(formName));
 };
 
-const SaveButton = ({ dispatch, formName, className }) => (
+const SaveButton = ({ dispatch, formName, className, isPristineForm }) => (
     <button
         className={`btn btn-success ${className}`}
         type="button"
+        disabled={isPristineForm}
         onClick={onClickHandler(dispatch, formName)}
     >
         Save
@@ -20,11 +21,15 @@ const SaveButton = ({ dispatch, formName, className }) => (
 SaveButton.propTypes = {
     dispatch: PropTypes.func.isRequired,
     formName: PropTypes.string.isRequired,
-    className: PropTypes.string
+    className: PropTypes.string,
+    isPristineForm: PropTypes.bool
 };
 
 SaveButton.defaultProps = {
-    className: ''
+    className: '',
+    isPristineForm: false
 };
 
-export default connect()(SaveButton);
+const mapStateToProps = (state, props) => ({ isPristineForm: isPristine(props.formName)(state) });
+
+export default connect(mapStateToProps)(SaveButton);

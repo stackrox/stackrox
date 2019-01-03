@@ -25,7 +25,8 @@ export const types = {
     LOGOUT: 'auth/LOGOUT',
     GRANT_ANONYMOUS_ACCESS: 'auth/GRANT_ANONYMOUS_ACCESS',
     AUTH_HTTP_ERROR: 'auth/AUTH_HTTP_ERROR',
-    AUTH_IDP_ERROR: 'auth/AUTH_IDP_ERROR'
+    AUTH_IDP_ERROR: 'auth/AUTH_IDP_ERROR',
+    SET_AUTH_PROVIDER_EDITING_STATE: 'auth/SET_AUTH_PROVIDER_EDITING_STATE'
 };
 
 // Actions
@@ -43,6 +44,10 @@ export const actions = {
     deleteAuthProvider: id => ({
         type: types.DELETE_AUTH_PROVIDER,
         id
+    }),
+    setAuthProviderEditingState: value => ({
+        type: types.SET_AUTH_PROVIDER_EDITING_STATE,
+        value
     }),
     login: () => ({ type: types.LOGIN }),
     logout: () => ({ type: types.LOGOUT }),
@@ -70,6 +75,13 @@ const selectedAuthProvider = (state = null, action) => {
     }
     if (action.type === types.SELECTED_AUTH_PROVIDER && action.authProvider) {
         return isEqual(action.authProvider, state) ? state : action.authProvider;
+    }
+    return state;
+};
+
+const isEditingAuthProvider = (state = false, action) => {
+    if (action.type === types.SET_AUTH_PROVIDER_EDITING_STATE) {
+        return isEqual(action.value, state) ? state : action.value;
     }
     return state;
 };
@@ -111,7 +123,8 @@ const reducer = combineReducers({
     authProviders,
     selectedAuthProvider,
     authStatus,
-    authProviderResponse
+    authProviderResponse,
+    isEditingAuthProvider
 });
 
 export default reducer;
@@ -123,11 +136,13 @@ const getAvailableAuthProviders = state => filterAuthProviders(state.authProvide
 const getSelectedAuthProvider = state => state.selectedAuthProvider;
 const getAuthStatus = state => state.authStatus;
 const getAuthProviderError = state => state.authProviderResponse;
+const getAuthProviderEditingState = state => state.isEditingAuthProvider;
 
 export const selectors = {
     getAuthProviders,
     getAvailableAuthProviders,
     getSelectedAuthProvider,
     getAuthStatus,
-    getAuthProviderError
+    getAuthProviderError,
+    getAuthProviderEditingState
 };
