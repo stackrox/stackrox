@@ -3,7 +3,7 @@
     "nodes": [
         {
             "id": "1",
-            "cluster": "Swarm Cluster 1",
+            "cluster": "Kubernetes Cluster 0",
             "namespace": "namespace-1",
             "internetAccess": false,
             "policyIds": [],
@@ -11,7 +11,7 @@
         },
         {
             "id": "2",
-            "cluster": "Swarm Cluster 1",
+            "cluster": "Kubernetes Cluster 0",
             "namespace": "namespace-1",
             "internetAccess": true,
             "policyIds": [],
@@ -19,7 +19,7 @@
         },
         {
            "id": "3",
-            "cluster": "Swarm Cluster 1",
+            "cluster": "Kubernetes Cluster 0",
             "namespace": "namespace-2",
             "internetAccess": false,
             "policyIds": [],
@@ -27,7 +27,7 @@
         },
         {
            "id": "4",
-            "cluster": "Swarm Cluster 1",
+            "cluster": "Kubernetes Cluster 0",
             "namespace": "namespace-3",
             "internetAccess": true,
             "policyIds": [],

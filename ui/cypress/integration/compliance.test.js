@@ -66,12 +66,12 @@ describe('Compliance page', () => {
         setupMultipleClustersFixture();
         cy.get(selectors.firstNavLink).click({ force: true });
         cy.get(selectors.compliance).should('have.class', 'bg-primary-700');
-        cy.url().should('contain', '/main/compliance/swarmCluster1');
+        cy.url().should('contain', '/main/compliance/k8sCluster0');
         // first tab selected by default
         cy.get(selectors.benchmarkTabs)
             .first()
             .should('have.class', 'tab-active');
-        cy.get(selectors.benchmarkTabs).should('contain', 'CIS Swarm v1.1.0 Benchmark');
+        cy.get(selectors.benchmarkTabs).should('contain', 'CIS Kubernetes v1.2.0 Benchmark');
     });
 
     it('should have selected second cluster in Compliance nav bar', () => {

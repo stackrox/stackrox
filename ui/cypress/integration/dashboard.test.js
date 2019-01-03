@@ -130,7 +130,7 @@ describe('Dashboard page', () => {
             .as('chart');
 
         cy.get('@chart').within(() => {
-            cy.get(selectors.chart.xAxis).should('contain', 'Swarm Cluster 1');
+            cy.get(selectors.chart.xAxis).should('contain', 'Kubernetes Cluster 0');
             cy.get(selectors.chart.grid).spread(grid => {
                 // from alerts fixture : low = 2, medium = 1, therefore medium's height should be twice less
                 const { height } = grid.getBBox();

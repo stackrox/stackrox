@@ -3,7 +3,6 @@ export const url = '/main/integrations';
 export const selectors = {
     configure: 'nav.left-navigation li:contains("Configure") a',
     navLink: '.navigation-panel li:contains("Integrations") a',
-    dockerSwarmTile: 'div[role="button"]:contains("Docker Swarm")',
     kubernetesTile: 'div[role="button"]:contains("Kubernetes")',
     dockerRegistryTile: 'div[role="button"]:contains("Generic Docker Registry")',
     clairTile: 'div[role="button"]:contains("CoreOS Clair")',
@@ -11,7 +10,7 @@ export const selectors = {
     slackTile: 'div[role="button"]:contains("Slack")',
     apiTokenTile: 'div[role="button"]:contains("API Token")',
     clusters: {
-        swarmCluster1: 'div.rt-td:contains("Swarm Cluster 1")'
+        k8sCluster0: 'div.rt-td:contains("Kubernetes Cluster 0")'
     },
     buttons: {
         new: 'button:contains("New")',

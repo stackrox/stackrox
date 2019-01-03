@@ -200,6 +200,9 @@ func walkTree(c *cobra.Command) (args []string) {
 	// group commands by their annotation categories
 	categoriesToCommands := make(map[string][]string)
 	for _, cmd := range c.Commands() {
+		if cmd.Hidden {
+			continue
+		}
 		if category, ok := cmd.Annotations[categoryAnnotation]; ok {
 			categoriesToCommands[category] = append(categoriesToCommands[category], cmd.Name())
 		}

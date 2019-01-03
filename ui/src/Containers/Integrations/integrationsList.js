@@ -99,12 +99,6 @@ const integrationsList = {
             image: openshift,
             source: 'clusters',
             type: 'OPENSHIFT_CLUSTER'
-        },
-        {
-            label: 'Docker Swarm',
-            image: docker,
-            source: 'clusters',
-            type: 'SWARM_CLUSTER'
         }
     ],
     plugins: [

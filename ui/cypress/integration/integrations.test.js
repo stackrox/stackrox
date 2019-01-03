@@ -125,31 +125,31 @@ describe('Cluster Creation Flow', () => {
     });
 
     it('Should show a confirmation dialog when trying to delete clusters', () => {
-        cy.get(selectors.dockerSwarmTile).click();
+        cy.get(selectors.kubernetesTile).click();
         cy.get(selectors.dialog).should('not.exist');
         cy.get(selectors.checkboxes).check();
         cy.get(selectors.buttons.delete).click({ force: true });
         cy.get(selectors.dialog);
     });
 
-    it('Should show the remote cluster when clicking the Docker Swarm tile', () => {
-        cy.get(selectors.dockerSwarmTile).click();
+    it('Should show the remote cluster when clicking the Kubernetes tile', () => {
+        cy.get(selectors.kubernetesTile).click();
 
-        cy.get(selectors.clusters.swarmCluster1);
+        cy.get(selectors.clusters.k8sCluster0);
     });
 
     it('Should show a disabled form when viewing a specific cluster', () => {
-        cy.get(selectors.dockerSwarmTile).click();
+        cy.get(selectors.kubernetesTile).click();
 
-        cy.get(selectors.clusters.swarmCluster1).click();
+        cy.get(selectors.clusters.k8sCluster0).click();
 
         cy.get(selectors.labeledValue)
             .eq(0)
-            .should('have.text', 'Name:Swarm Cluster 1');
+            .should('have.text', 'Name:Kubernetes Cluster 0');
 
         cy.get(selectors.labeledValue)
             .eq(1)
-            .should('have.text', 'Cluster Type:Swarm');
+            .should('have.text', 'Cluster Type:Kubernetes');
 
         cy.get(selectors.labeledValue)
             .eq(2)
@@ -160,18 +160,18 @@ describe('Cluster Creation Flow', () => {
             .should('have.text', 'Central API Endpoint:central.stackrox:443');
     });
 
-    it('Should be able to fill out the Swarm form, download config files and see cluster checked-in', () => {
-        cy.get(selectors.dockerSwarmTile).click();
+    it('Should be able to fill out the Kubernetes form, download config files and see cluster checked-in', () => {
+        cy.get(selectors.kubernetesTile).click();
 
         cy.get(selectors.buttons.new).click();
 
-        const clusterName = 'Swarm Cluster TestInstance';
+        const clusterName = 'Kubernetes Cluster TestInstance';
         cy.get(selectors.clusterForm.nameInput).type(clusterName);
         // The image name should be pre-populated, so we don't type it in to test that the prepopulation works.
         // (The backend WILL error out if the image is empty.)
         cy.get(selectors.clusterForm.endpointInput)
             .clear()
-            .type('central.prevent_net:443');
+            .type('central.stackrox:443');
 
         cy.get(selectors.buttons.next).click();
         cy.wait('@addCluster')
