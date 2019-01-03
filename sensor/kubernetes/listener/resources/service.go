@@ -30,16 +30,16 @@ func (s *serviceWrap) exposure() storage.PortConfig_Exposure {
 	}
 }
 
-// serviceHandler handles servidce resource events.
-type serviceHandler struct {
+// serviceDispatcher handles servidce resource events.
+type serviceDispatcher struct {
 	serviceStore    *serviceStore
 	deploymentStore *deploymentStore
 	endpointManager *endpointManager
 }
 
-// newServiceHandler creates and returns a new service handler.
-func newServiceHandler(serviceStore *serviceStore, deploymentStore *deploymentStore, endpointManager *endpointManager) *serviceHandler {
-	return &serviceHandler{
+// newServiceDispatcher creates and returns a new service handler.
+func newServiceDispatcher(serviceStore *serviceStore, deploymentStore *deploymentStore, endpointManager *endpointManager) *serviceDispatcher {
+	return &serviceDispatcher{
 		serviceStore:    serviceStore,
 		deploymentStore: deploymentStore,
 		endpointManager: endpointManager,
@@ -47,7 +47,8 @@ func newServiceHandler(serviceStore *serviceStore, deploymentStore *deploymentSt
 }
 
 // Process processes a service resource event, and returns the sensor events to emit in response.
-func (sh *serviceHandler) Process(svc *v1.Service, action central.ResourceAction) []*central.SensorEvent {
+func (sh *serviceDispatcher) ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent {
+	svc := obj.(*v1.Service)
 	if action == central.ResourceAction_CREATE_RESOURCE {
 		return sh.processCreate(svc)
 	}
@@ -68,7 +69,7 @@ func (sh *serviceHandler) Process(svc *v1.Service, action central.ResourceAction
 	return sh.updateDeploymentsFromStore(svc.Namespace, sel)
 }
 
-func (sh *serviceHandler) updateDeploymentsFromStore(namespace string, sel selector) (events []*central.SensorEvent) {
+func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector) (events []*central.SensorEvent) {
 	for _, deploymentWrap := range sh.deploymentStore.getMatchingDeployments(namespace, sel) {
 		if deploymentWrap.updatePortExposureFromStore(sh.serviceStore) {
 			events = append(events, deploymentWrap.toEvent(central.ResourceAction_UPDATE_RESOURCE))
@@ -78,7 +79,7 @@ func (sh *serviceHandler) updateDeploymentsFromStore(namespace string, sel selec
 	return
 }
 
-func (sh *serviceHandler) processCreate(svc *v1.Service) (events []*central.SensorEvent) {
+func (sh *serviceDispatcher) processCreate(svc *v1.Service) (events []*central.SensorEvent) {
 	wrap := wrapService(svc)
 	sh.serviceStore.addOrUpdateService(wrap)
 	for _, deploymentWrap := range sh.deploymentStore.getMatchingDeployments(svc.Namespace, wrap.selector) {

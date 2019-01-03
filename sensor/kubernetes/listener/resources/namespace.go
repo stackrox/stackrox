@@ -11,20 +11,22 @@ type NamespaceDeletionListener interface {
 	OnNamespaceDeleted(string)
 }
 
-// namespaceHandler handles namespace resource events.
-type namespaceHandler struct {
+// namespaceDispatcher handles namespace resource events.
+type namespaceDispatcher struct {
 	deletionListeners []NamespaceDeletionListener
 }
 
-// newNamespaceHandler creates and returns a new namespace handler.
-func newNamespaceHandler(deletionListeners ...NamespaceDeletionListener) *namespaceHandler {
-	return &namespaceHandler{
+// newNamespaceDispatcher creates and returns a new namespace handler.
+func newNamespaceDispatcher(deletionListeners ...NamespaceDeletionListener) *namespaceDispatcher {
+	return &namespaceDispatcher{
 		deletionListeners: deletionListeners,
 	}
 }
 
 // Process processes a namespace resource events, and returns the sensor events to emit in response.
-func (h *namespaceHandler) Process(ns *v1.Namespace, action central.ResourceAction) []*central.SensorEvent {
+func (h *namespaceDispatcher) ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent {
+	ns := obj.(*v1.Namespace)
+
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		for _, listener := range h.deletionListeners {
 			listener.OnNamespaceDeleted(ns.Name)

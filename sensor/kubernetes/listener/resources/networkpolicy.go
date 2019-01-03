@@ -6,15 +6,16 @@ import (
 	networkingV1 "k8s.io/api/networking/v1"
 )
 
-// networkPolicyHandler handles network policy resource events.
-type networkPolicyHandler struct{}
+// networkPolicyDispatcher handles network policy resource events.
+type networkPolicyDispatcher struct{}
 
-func newNetworkPolicyHandler() *networkPolicyHandler {
-	return &networkPolicyHandler{}
+func newNetworkPolicyDispatcher() *networkPolicyDispatcher {
+	return &networkPolicyDispatcher{}
 }
 
 // Process processes a network policy resource event, and returns the sensor events to generate.
-func (h *networkPolicyHandler) Process(np *networkingV1.NetworkPolicy, action central.ResourceAction) []*central.SensorEvent {
+func (h *networkPolicyDispatcher) ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent {
+	np := obj.(*networkingV1.NetworkPolicy)
 	return []*central.SensorEvent{
 		{
 			Id:     string(np.UID),

@@ -6,15 +6,15 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-type nodeHandler struct {
+type nodeDispatcher struct {
 	serviceStore    *serviceStore
 	deploymentStore *deploymentStore
 	nodeStore       *nodeStore
 	endpointManager *endpointManager
 }
 
-func newNodeHandler(serviceStore *serviceStore, deploymentStore *deploymentStore, nodeStore *nodeStore, endpointManager *endpointManager) *nodeHandler {
-	return &nodeHandler{
+func newNodeDispatcher(serviceStore *serviceStore, deploymentStore *deploymentStore, nodeStore *nodeStore, endpointManager *endpointManager) *nodeDispatcher {
+	return &nodeDispatcher{
 		serviceStore:    serviceStore,
 		deploymentStore: deploymentStore,
 		nodeStore:       nodeStore,
@@ -22,7 +22,8 @@ func newNodeHandler(serviceStore *serviceStore, deploymentStore *deploymentStore
 	}
 }
 
-func (h *nodeHandler) Process(node *v1.Node, action central.ResourceAction) []*central.SensorEvent {
+func (h *nodeDispatcher) ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent {
+	node := obj.(*v1.Node)
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		h.nodeStore.removeNode(node)
 	} else {

@@ -6,7 +6,28 @@ import (
 	v1listers "k8s.io/client-go/listers/core/v1"
 )
 
-// deploymentHandler handles deployment resource events.
+// deploymentDispatcherImpl is a Dispatcher implementation for deployment events.
+// All deploymentDispatcherImpl must share a handler instance since different types must be correlated.
+type deploymentDispatcherImpl struct {
+	deploymentType string
+
+	handler *deploymentHandler
+}
+
+// newDeploymentDispatcher creates and returns a new deployment dispatcher instance.
+func newDeploymentDispatcher(deploymentType string, handler *deploymentHandler) Dispatcher {
+	return &deploymentDispatcherImpl{
+		deploymentType: deploymentType,
+		handler:        handler,
+	}
+}
+
+// ProcessEvent processes a deployment resource events, and returns the sensor events to emit in response.
+func (d *deploymentDispatcherImpl) ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent {
+	return d.handler.processWithType(obj, action, d.deploymentType)
+}
+
+// deploymentHandler handles deployment resource events and does the actual processing.
 type deploymentHandler struct {
 	podLister       v1listers.PodLister
 	serviceStore    *serviceStore
@@ -24,21 +45,7 @@ func newDeploymentHandler(serviceStore *serviceStore, deploymentStore *deploymen
 	}
 }
 
-func (d *deploymentHandler) maybeProcessPod(obj interface{}) []*central.SensorEvent {
-	pod, ok := obj.(*v1.Pod)
-	if !ok {
-		return nil
-	}
-	owners := d.deploymentStore.getOwningDeployments(pod.Namespace, pod.Labels)
-	var events []*central.SensorEvent
-	for _, owner := range owners {
-		events = append(events, d.Process(owner.original, central.ResourceAction_UPDATE_RESOURCE, owner.Type)...)
-	}
-	return events
-}
-
-// Process processes a deployment resource events, and returns the sensor events to emit in response.
-func (d *deploymentHandler) Process(obj interface{}, action central.ResourceAction, deploymentType string) []*central.SensorEvent {
+func (d *deploymentHandler) processWithType(obj interface{}, action central.ResourceAction, deploymentType string) []*central.SensorEvent {
 	wrap := newDeploymentEventFromResource(obj, action, deploymentType, d.podLister)
 	if wrap == nil {
 		return d.maybeProcessPod(obj)
@@ -51,6 +58,18 @@ func (d *deploymentHandler) Process(obj interface{}, action central.ResourceActi
 		d.deploymentStore.removeDeployment(wrap)
 		d.endpointManager.OnDeploymentRemove(wrap)
 	}
-
 	return []*central.SensorEvent{wrap.toEvent(action)}
+}
+
+func (d *deploymentHandler) maybeProcessPod(obj interface{}) []*central.SensorEvent {
+	pod, ok := obj.(*v1.Pod)
+	if !ok {
+		return nil
+	}
+	owners := d.deploymentStore.getOwningDeployments(pod.Namespace, pod.Labels)
+	var events []*central.SensorEvent
+	for _, owner := range owners {
+		events = append(events, d.processWithType(owner.original, central.ResourceAction_UPDATE_RESOURCE, owner.Type)...)
+	}
+	return events
 }

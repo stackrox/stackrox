@@ -100,16 +100,18 @@ func populateTypeData(secret *storage.Secret, dataFiles map[string][]byte) {
 	}
 }
 
-// secretHandler handles secret resource events.
-type secretHandler struct{}
+// secretDispatcher handles secret resource events.
+type secretDispatcher struct{}
 
-// newSecretHandler creates and returns a new secret handler.
-func newSecretHandler() *secretHandler {
-	return &secretHandler{}
+// newSecretDispatcher creates and returns a new secret handler.
+func newSecretDispatcher() *secretDispatcher {
+	return &secretDispatcher{}
 }
 
 // Process processes a secret resource event, and returns the sensor events to emit in response.
-func (*secretHandler) Process(secret *v1.Secret, action central.ResourceAction) []*central.SensorEvent {
+func (*secretDispatcher) ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent {
+	secret := obj.(*v1.Secret)
+
 	// Filter out service account tokens because we have a service account field.
 	// Also filter out DockerConfigJson/DockerCfgs because we don't really care about them.
 	switch secret.Type {
