@@ -1,8 +1,5 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
-import { selectors } from 'reducers';
 import set from 'lodash/set';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
@@ -131,13 +128,4 @@ class AuthProvider extends Component {
     }
 }
 
-const mapStateToProps = createStructuredSelector({
-    selectedRole: selectors.getSelectedRole
-});
-
-const mapDispatchToProps = {};
-
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(AuthProvider);
+export default AuthProvider;

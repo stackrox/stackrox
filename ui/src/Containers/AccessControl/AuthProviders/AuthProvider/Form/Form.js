@@ -48,9 +48,7 @@ class Form extends Component {
         return <CreateRoleModal onClose={this.toggleModal} />;
     };
 
-    renderRuleGroupsComponent = props => (
-        <RuleGroups toggleModal={this.toggleModal} roles={this.props.roles} {...props} />
-    );
+    renderRuleGroupsComponent = props => <RuleGroups toggleModal={this.toggleModal} {...props} />;
 
     render() {
         const { handleSubmit, initialValues, onSubmit, roles } = this.props;

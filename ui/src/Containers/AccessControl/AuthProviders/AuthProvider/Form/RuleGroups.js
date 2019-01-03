@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
+import { createStructuredSelector, createSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { formValues } from 'redux-form';
 import uniqBy from 'lodash/uniqBy';
@@ -135,8 +135,14 @@ class RuleGroups extends Component {
     }
 }
 
+const getRoleOptions = createSelector(
+    [selectors.getRoles],
+    roles => roles.map(role => ({ value: role.name, label: role.name }))
+);
+
 const mapStateToProps = createStructuredSelector({
-    usersAttributes: selectors.getUsersAttributes
+    usersAttributes: selectors.getUsersAttributes,
+    roles: getRoleOptions
 });
 
 const mapDispatchToProps = {};
