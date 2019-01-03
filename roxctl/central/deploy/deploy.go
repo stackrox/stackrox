@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/zip"
 	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
 )
@@ -29,10 +28,6 @@ func init() {
 }
 
 var (
-	clairifyImage = "clairify:" + version.GetClairifyVersion()
-	mainTag       = version.GetMainVersion()
-	mainImage     = "main:" + mainTag
-
 	generatedMonitoringPassword = renderer.CreatePassword()
 )
 

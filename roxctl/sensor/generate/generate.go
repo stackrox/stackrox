@@ -18,8 +18,8 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
-	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/defaults"
 )
 
 const (
@@ -66,7 +66,7 @@ func Command() *cobra.Command {
 
 	c.PersistentFlags().StringVar(&cluster.Name, "name", "", "cluster name to identify the cluster")
 	c.PersistentFlags().StringVar(&cluster.CentralApiEndpoint, "central", "central.stackrox:443", "endpoint that sensor should connect to")
-	c.PersistentFlags().StringVar(&cluster.MainImage, "image", "stackrox.io/main:"+version.GetMainVersion(), "image sensor should be deployed with")
+	c.PersistentFlags().StringVar(&cluster.MainImage, "image", defaults.MainImage, "image sensor should be deployed with")
 	c.PersistentFlags().StringVar(&cluster.MonitoringEndpoint, "monitoring-endpoint", "", "endpoint for monitoring")
 	c.PersistentFlags().BoolVar(&cluster.RuntimeSupport, "runtime", true, "whether or not to have runtime support")
 	c.AddCommand(k8s())
