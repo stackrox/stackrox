@@ -982,8 +982,158 @@ module.exports = {
 
   svgStroke: {
     current: "currentColor"
-  }
+  },
+
+  /*
+  |-----------------------------------------------------------------------------
+  | Modules                  https://tailwindcss.com/docs/configuration#modules
+  |-----------------------------------------------------------------------------
+  |
+  | Here is where you control which modules are generated and what variants are
+  | generated for each of those modules.
+  |
+  | Currently supported variants:
+  |   - responsive
+  |   - hover
+  |   - focus
+  |   - focus-within
+  |   - active
+  |   - group-hover
+  |
+  | To disable a module completely, use `false` instead of an array.
+  |
+  */
+
+  modules: {
+    appearance: ['responsive'],
+    backgroundAttachment: ['responsive'],
+    backgroundColors: ['responsive', 'hover', 'focus'],
+    backgroundPosition: ['responsive'],
+    backgroundRepeat: ['responsive'],
+    backgroundSize: ['responsive'],
+    borderCollapse: [],
+    borderColors: ['responsive', 'hover', 'focus'],
+    borderRadius: ['responsive'],
+    borderStyle: ['responsive'],
+    borderWidths: ['responsive'],
+    cursor: ['responsive'],
+    display: ['responsive'],
+    flexbox: ['responsive'],
+    float: ['responsive'],
+    fonts: ['responsive'],
+    fontWeights: ['responsive', 'hover', 'focus'],
+    height: ['responsive'],
+    leading: ['responsive'],
+    lists: ['responsive'],
+    margin: ['responsive'],
+    maxHeight: ['responsive'],
+    maxWidth: ['responsive'],
+    minHeight: ['responsive'],
+    minWidth: ['responsive'],
+    negativeMargin: ['responsive'],
+    opacity: ['responsive'],
+    outline: ['focus'],
+    overflow: ['responsive'],
+    padding: ['responsive'],
+    pointerEvents: ['responsive'],
+    position: ['responsive'],
+    resize: ['responsive'],
+    shadows: ['responsive', 'hover', 'focus'],
+    svgFill: [],
+    svgStroke: [],
+    tableLayout: ['responsive'],
+    textAlign: ['responsive'],
+    textColors: ['responsive', 'hover', 'focus'],
+    textSizes: ['responsive'],
+    textStyle: ['responsive', 'hover', 'focus'],
+    tracking: ['responsive'],
+    userSelect: ['responsive'],
+    verticalAlign: ['responsive'],
+    visibility: ['responsive'],
+    whitespace: ['responsive'],
+    width: ['responsive'],
+    zIndex: ['responsive'],
+  },
+
+
+  /*
+  |-----------------------------------------------------------------------------
+  | Plugins                                https://tailwindcss.com/docs/plugins
+  |-----------------------------------------------------------------------------
+  |
+  | Here is where you can register any plugins you'd like to use in your
+  | project. Tailwind's built-in `container` plugin is enabled by default to
+  | give you a Bootstrap-style responsive container component out of the box.
+  |
+  | Be sure to view the complete plugin documentation to learn more about how
+  | the plugin system works.
+  |
+  */
+
+  plugins: [
+
+    require('./tailwind-plugins/gradient.js')({
+      variants: ['responsive', 'hover'],
+    }),
+
+    require('./tailwind-plugins/object-fit.js')({
+      variants: ['responsive'],
+    }),
+
+    require('./tailwind-plugins/grid.js')({
+      gaps: {
+        "0": "0",
+        "1px": "1px",
+        "1": "0.25rem",
+        "2": "0.5rem",
+        "3": "0.75rem",
+        "4": "1rem",
+        "5": "1.25rem",
+        "6": "1.5rem",
+        "7": "1.75rem",
+        "8": "2rem",
+        "10": "2.5rem",
+        "12": "3rem",
+        "16": "4rem",
+      },
+      variants: ['responsive'],
+    }),
+
+    require('./tailwind-plugins/order.js')({
+      positive: {
+        "0": 0,
+        "1": 1,
+        "2": 2,
+        "3": 3,
+        "4": 4,
+        "5": 5,
+      },
+      negative: {
+        "-1": -1,
+        "-2": -2,
+        "-3": -3,
+        "-4": -4,
+        "-5": -5,
+      },
+      variants: ['responsive'],
+    }),
+  ],
+
+
+  /*
+  |-----------------------------------------------------------------------------
+  | Advanced Options         https://tailwindcss.com/docs/configuration#options
+  |-----------------------------------------------------------------------------
+  |
+  | Here is where you can tweak advanced configuration options. We recommend
+  | leaving these options alone unless you absolutely need to change them.
+  |
+  */
+
+  options: {
+    prefix: '',
+    important: true,
+    separator: ':',
+  },
+
 };
-
-
-

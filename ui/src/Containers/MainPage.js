@@ -32,6 +32,7 @@ import ErrorBoundary from 'Containers/ErrorBoundary';
 
 // TODO: Remove
 import ChartPlayground from 'Containers/Dashboard/ChartPlayground';
+import CSSGrid from 'Containers/CSSGrid';
 
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
@@ -80,6 +81,7 @@ class MainPage extends Component {
                     <ProtectedRoute path={secretsPath} component={AsyncSecretsPage} />
                     <ProtectedRoute path={accessControlPath} component={AsyncAccessControlPage} />
                     <ProtectedRoute path={apidocsPath} component={AsyncApiDocsPage} />
+                    <ProtectedRoute devOnly path="/main/test" component={CSSGrid} />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
             </ErrorBoundary>

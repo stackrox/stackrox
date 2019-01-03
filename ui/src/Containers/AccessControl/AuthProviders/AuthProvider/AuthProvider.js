@@ -46,7 +46,7 @@ class AuthProvider extends Component {
                 group.props &&
                 group.props.authProviderId &&
                 group.props.authProviderId === id &&
-                (group.props.key !== '' && groups.props.value !== '')
+                (group.props.key !== '' && group.props.value !== '')
         );
         return filteredGroups;
     };
