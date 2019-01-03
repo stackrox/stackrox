@@ -1,0 +1,55 @@
+package framework
+
+import (
+	"fmt"
+	"sync"
+)
+
+// CheckRegistry stores compliance checks, and allows retrieving them by ID.
+type CheckRegistry interface {
+	Register(check Check) error
+	Lookup(id string) Check
+}
+
+type checkRegistry struct {
+	checks      map[string]Check
+	checksMutex sync.RWMutex
+}
+
+var (
+	registry     *checkRegistry
+	registryInit sync.Once
+)
+
+// RegistrySingleton returns the global check registry.
+func RegistrySingleton() CheckRegistry {
+	registryInit.Do(func() {
+		registry = newCheckRegistry()
+	})
+	return registry
+}
+
+func newCheckRegistry() *checkRegistry {
+	registry := &checkRegistry{
+		checks: make(map[string]Check),
+	}
+	return registry
+}
+
+func (r *checkRegistry) Register(check Check) error {
+	r.checksMutex.Lock()
+	defer r.checksMutex.Unlock()
+
+	if _, ok := r.checks[check.ID()]; ok {
+		return fmt.Errorf("check with id %s already registered", check.ID())
+	}
+	r.checks[check.ID()] = check
+	return nil
+}
+
+func (r *checkRegistry) Lookup(id string) Check {
+	r.checksMutex.RLock()
+	defer r.checksMutex.RUnlock()
+
+	return r.checks[id]
+}
