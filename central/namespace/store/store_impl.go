@@ -19,7 +19,7 @@ func (b *storeImpl) GetNamespace(id string) (namespace *storage.Namespace, exist
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Namespace")
 	namespace = new(storage.Namespace)
 	err = b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(namespaceBucket))
+		b := tx.Bucket(namespaceBucket)
 		val := b.Get([]byte(id))
 		if val == nil {
 			return nil
@@ -36,7 +36,7 @@ func (b *storeImpl) GetNamespaces() ([]*storage.Namespace, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Namespace")
 	var namespaces []*storage.Namespace
 	err := b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(namespaceBucket))
+		b := tx.Bucket(namespaceBucket)
 		return b.ForEach(func(k, v []byte) error {
 			var namespace storage.Namespace
 			if err := proto.Unmarshal(v, &namespace); err != nil {
@@ -53,7 +53,7 @@ func (b *storeImpl) GetNamespaces() ([]*storage.Namespace, error) {
 func (b *storeImpl) AddNamespace(namespace *storage.Namespace) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Namespace")
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(namespaceBucket))
+		bucket := tx.Bucket(namespaceBucket)
 		bytes, err := proto.Marshal(namespace)
 		if err != nil {
 			return err
@@ -67,7 +67,7 @@ func (b *storeImpl) AddNamespace(namespace *storage.Namespace) error {
 func (b *storeImpl) UpdateNamespace(namespace *storage.Namespace) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Namespace")
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(namespaceBucket))
+		bucket := tx.Bucket(namespaceBucket)
 		bytes, err := proto.Marshal(namespace)
 		if err != nil {
 			return err
@@ -80,7 +80,7 @@ func (b *storeImpl) UpdateNamespace(namespace *storage.Namespace) error {
 func (b *storeImpl) RemoveNamespace(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Namespace")
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(namespaceBucket))
+		bucket := tx.Bucket(namespaceBucket)
 		return bucket.Delete([]byte(id))
 	})
 }

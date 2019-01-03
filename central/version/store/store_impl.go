@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
-const key = "\x00"
+var key = []byte("\x00")
 
 type storeImpl struct {
 	bucketRef bolthelper.BucketRef
@@ -19,7 +19,7 @@ type storeImpl struct {
 func (s *storeImpl) GetVersion() (*storage.Version, error) {
 	version := new(storage.Version)
 	err := s.bucketRef.View(func(b *bolt.Bucket) error {
-		val := b.Get([]byte(key))
+		val := b.Get(key)
 		if val == nil {
 			return errors.New("no version found in DB")
 		}
@@ -37,7 +37,7 @@ func (s *storeImpl) UpdateVersion(version *storage.Version) error {
 		return fmt.Errorf("marshaling version %+v to proto: %s", version, err)
 	}
 	return s.bucketRef.Update(func(b *bolt.Bucket) error {
-		if err := b.Put([]byte(key), bytes); err != nil {
+		if err := b.Put(key, bytes); err != nil {
 			return fmt.Errorf("failed to insert: %s", err)
 		}
 		return nil

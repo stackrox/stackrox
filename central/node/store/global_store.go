@@ -19,6 +19,6 @@ type GlobalStore interface {
 func NewGlobalStore(db *bolt.DB) GlobalStore {
 	bolthelper.RegisterBucketOrPanic(db, nodesBucketKey)
 	return &globalStoreImpl{
-		bucketRef: bolthelper.TopLevelRef(db, []byte(nodesBucketKey)),
+		bucketRef: bolthelper.TopLevelRef(db, nodesBucketKey),
 	}
 }

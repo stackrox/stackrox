@@ -23,7 +23,7 @@ func (s *countTestSuite) SetupSuite() {
 	db, err := NewTemp("count_test.db")
 	s.Require().NoError(err, "Failed to make BoltDB: %s", err)
 
-	testBucket := "testBucket"
+	testBucket := []byte("testBucket")
 	RegisterBucketOrPanic(db, testBucket)
 
 	s.db, s.testBucketRef = db, TopLevelRef(db, []byte(testBucket))

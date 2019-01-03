@@ -33,7 +33,7 @@ func (b *storeImpl) getMultiplier(id string, bucket *bolt.Bucket) (multiplier *s
 func (b *storeImpl) GetMultiplier(id string) (multiplier *storage.Multiplier, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Multiplier")
 	err = b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(multiplierBucket))
+		bucket := tx.Bucket(multiplierBucket)
 		multiplier, exists, err = b.getMultiplier(id, bucket)
 		return err
 	})
@@ -45,7 +45,7 @@ func (b *storeImpl) GetMultipliers() ([]*storage.Multiplier, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Multiplier")
 	var multipliers []*storage.Multiplier
 	err := b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(multiplierBucket))
+		b := tx.Bucket(multiplierBucket)
 		return b.ForEach(func(k, v []byte) error {
 			var multiplier storage.Multiplier
 			if err := proto.Unmarshal(v, &multiplier); err != nil {
@@ -63,7 +63,7 @@ func (b *storeImpl) AddMultiplier(multiplier *storage.Multiplier) (string, error
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Multiplier")
 	multiplier.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(multiplierBucket))
+		bucket := tx.Bucket(multiplierBucket)
 		_, exists, err := b.getMultiplier(multiplier.GetId(), bucket)
 		if err != nil {
 			return err
@@ -87,7 +87,7 @@ func (b *storeImpl) AddMultiplier(multiplier *storage.Multiplier) (string, error
 func (b *storeImpl) UpdateMultiplier(multiplier *storage.Multiplier) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Multiplier")
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(multiplierBucket))
+		b := tx.Bucket(multiplierBucket)
 		// If the update is changing the name, check if the name has already been taken
 		if val, _ := secondarykey.GetCurrentUniqueKey(tx, multiplierBucket, multiplier.GetId()); val != multiplier.GetName() {
 			if err := secondarykey.UpdateUniqueKey(tx, multiplierBucket, multiplier.GetId(), multiplier.GetName()); err != nil {
@@ -106,7 +106,7 @@ func (b *storeImpl) UpdateMultiplier(multiplier *storage.Multiplier) error {
 func (b *storeImpl) RemoveMultiplier(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Multiplier")
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(multiplierBucket))
+		b := tx.Bucket(multiplierBucket)
 		key := []byte(id)
 		if exists := b.Get(key) != nil; !exists {
 			return dberrors.ErrNotFound{Type: "Multiplier", ID: string(key)}

@@ -6,9 +6,9 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
-const (
-	authProviderBucket  = "authProviders"
-	authValidatedBucket = "authValidated"
+var (
+	authProviderBucket  = []byte("authProviders")
+	authValidatedBucket = []byte("authValidated")
 )
 
 // New returns a new Store instance using the provided bolt DB instance.

@@ -17,7 +17,7 @@ type storeImpl struct {
 
 func (b *storeImpl) upsertNetworkPolicy(np *storage.NetworkPolicy) error {
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(networkPolicyBucket))
+		bucket := tx.Bucket(networkPolicyBucket)
 		bytes, err := proto.Marshal(np)
 		if err != nil {
 			return err
@@ -30,7 +30,7 @@ func (b *storeImpl) upsertNetworkPolicy(np *storage.NetworkPolicy) error {
 func (b *storeImpl) GetNetworkPolicy(id string) (np *storage.NetworkPolicy, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "NetworkPolicy")
 	err = b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(networkPolicyBucket))
+		bucket := tx.Bucket(networkPolicyBucket)
 		np = new(storage.NetworkPolicy)
 		val := bucket.Get([]byte(id))
 		if val == nil {
@@ -47,7 +47,7 @@ func (b *storeImpl) GetNetworkPolicies(request *v1.GetNetworkPoliciesRequest) ([
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "NetworkPolicy")
 	var policies []*storage.NetworkPolicy
 	err := b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(networkPolicyBucket))
+		bucket := tx.Bucket(networkPolicyBucket)
 		return bucket.ForEach(func(k, v []byte) error {
 			var np storage.NetworkPolicy
 			if err := proto.Unmarshal(v, &np); err != nil {
@@ -67,7 +67,7 @@ func (b *storeImpl) GetNetworkPolicies(request *v1.GetNetworkPoliciesRequest) ([
 func (b *storeImpl) CountNetworkPolicies() (count int, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Count, "NetworkPolicy")
 	err = b.View(func(tx *bolt.Tx) error {
-		count = tx.Bucket([]byte(networkPolicyBucket)).Stats().KeyN
+		count = tx.Bucket(networkPolicyBucket).Stats().KeyN
 		return nil
 	})
 
@@ -91,7 +91,7 @@ func (b *storeImpl) RemoveNetworkPolicy(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "NetworkPolicy")
 	var err error
 	b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(networkPolicyBucket))
+		bucket := tx.Bucket(networkPolicyBucket)
 		return bucket.Delete([]byte(id))
 	})
 	return err

@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
-const benchmarkScheduleBucket = "benchmark_schedules"
+var benchmarkScheduleBucket = []byte("benchmark_schedules")
 
 // Store provides storage functionality for alerts.
 type Store interface {

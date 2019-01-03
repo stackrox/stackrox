@@ -8,9 +8,9 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
-const (
-	clusterBucket                = "clusters"
-	clusterLastContactTimeBucket = "clusters_last_contact"
+var (
+	clusterBucket                = []byte("clusters")
+	clusterLastContactTimeBucket = []byte("clusters_last_contact")
 )
 
 // Store provides storage functionality for alerts.

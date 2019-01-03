@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
-const serviceIdentityBucket = "service_identities"
+var serviceIdentityBucket = []byte("service_identities")
 
 // Store provides storage functionality for alerts.
 type Store interface {

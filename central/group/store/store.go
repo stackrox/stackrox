@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
-const groupsBucket = "groups"
+var groupsBucket = []byte("groups")
 
 // Store updates and utilizes groups, which are attribute to role mappings.
 //go:generate mockgen-wrapper Store

@@ -10,6 +10,7 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/dberrors"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/secondarykey"
@@ -39,8 +40,8 @@ func (b *storeImpl) GetAllAuthProviders() ([]*storage.AuthProvider, error) {
 
 	var authProviders []*storage.AuthProvider
 	err := b.View(func(tx *bolt.Tx) error {
-		provB := tx.Bucket([]byte(authProviderBucket))
-		valB := tx.Bucket([]byte(authValidatedBucket))
+		provB := tx.Bucket(authProviderBucket)
+		valB := tx.Bucket(authValidatedBucket)
 
 		return provB.ForEach(func(k, v []byte) error {
 			var authProvider storage.AuthProvider
@@ -70,12 +71,8 @@ func (b *storeImpl) AddAuthProvider(authProvider *storage.AuthProvider) error {
 	}
 
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(authProviderBucket))
-		_, exists, err := b.getAuthProvider(authProvider.GetId(), bucket)
-		if err != nil {
-			return err
-		}
-		if exists {
+		bucket := tx.Bucket(authProviderBucket)
+		if bolthelper.Exists(bucket, authProvider.GetId()) {
 			return fmt.Errorf("AuthProvider %v (%v) cannot be added because it already exists", authProvider.GetId(), authProvider.GetName())
 		}
 		if err := secondarykey.CheckUniqueKeyExistsAndInsert(tx, authProviderBucket, authProvider.GetId(), authProvider.GetName()); err != nil {
@@ -94,7 +91,7 @@ func (b *storeImpl) UpdateAuthProvider(authProvider *storage.AuthProvider) error
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "AuthProvider")
 
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(authProviderBucket))
+		b := tx.Bucket(authProviderBucket)
 		// If the update is changing the name, check if the name has already been taken
 		if val, _ := secondarykey.GetCurrentUniqueKey(tx, authProviderBucket, authProvider.GetId()); val != authProvider.GetName() {
 			if err := secondarykey.UpdateUniqueKey(tx, authProviderBucket, authProvider.GetId(), authProvider.GetName()); err != nil {
@@ -114,7 +111,7 @@ func (b *storeImpl) RemoveAuthProvider(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "AuthProvider")
 
 	return b.Update(func(tx *bolt.Tx) error {
-		ab := tx.Bucket([]byte(authProviderBucket))
+		ab := tx.Bucket(authProviderBucket)
 		key := []byte(id)
 		if exists := ab.Get(key) != nil; !exists {
 			return dberrors.ErrNotFound{Type: "Auth Provider", ID: id}
@@ -126,7 +123,7 @@ func (b *storeImpl) RemoveAuthProvider(id string) error {
 			return err
 		}
 
-		vb := tx.Bucket([]byte(authValidatedBucket))
+		vb := tx.Bucket(authValidatedBucket)
 		return vb.Delete(key)
 	})
 }
@@ -137,7 +134,7 @@ func (b *storeImpl) RecordAuthSuccess(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "AuthValidated")
 
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(authValidatedBucket))
+		bucket := tx.Bucket(authValidatedBucket)
 
 		timestamp := ptypes.TimestampNow()
 		bytes, err := proto.Marshal(timestamp)

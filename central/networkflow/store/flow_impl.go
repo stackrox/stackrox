@@ -20,7 +20,7 @@ type flowStoreImpl struct {
 	flowsBucket bolthelper.BucketRef
 }
 
-const updatedTSKey = "\x00"
+var updatedTSKey = []byte("\x00")
 
 // GetAllFlows returns all the flows in the store.
 func (s *flowStoreImpl) GetAllFlows() (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
@@ -59,7 +59,7 @@ func (s *flowStoreImpl) UpsertFlows(flows []*storage.NetworkFlow, lastUpdatedTS 
 	}
 
 	kvs := make([]bolthelper.KV, len(flows)+1)
-	kvs[0] = bolthelper.KV{Key: []byte(updatedTSKey), Value: tsData}
+	kvs[0] = bolthelper.KV{Key: updatedTSKey, Value: tsData}
 
 	for i, flow := range flows {
 		k := getID(flow.GetProps())
@@ -93,7 +93,7 @@ func (s *flowStoreImpl) RemoveFlow(props *storage.NetworkFlowProperties) error {
 
 func readAllFlows(bucket *bolt.Bucket) (flows []*storage.NetworkFlow, lastUpdateTS types.Timestamp, err error) {
 	err = bucket.ForEach(func(k, v []byte) error {
-		if bytes.Equal(k, []byte(updatedTSKey)) {
+		if bytes.Equal(k, updatedTSKey) {
 			return proto.Unmarshal(v, &lastUpdateTS)
 		}
 		flow := new(storage.NetworkFlow)

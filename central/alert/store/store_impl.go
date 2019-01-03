@@ -19,7 +19,7 @@ type storeImpl struct {
 func (b *storeImpl) ListAlert(id string) (alert *storage.ListAlert, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ListAlert")
 	err = b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(alertListBucket))
+		bucket := tx.Bucket(alertListBucket)
 		alert = new(storage.ListAlert)
 		val := bucket.Get([]byte(id))
 		if val == nil {
@@ -39,7 +39,7 @@ func (b *storeImpl) ListAlerts() ([]*storage.ListAlert, error) {
 
 	var alerts []*storage.ListAlert
 	err := b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(alertListBucket))
+		b := tx.Bucket(alertListBucket)
 		return b.ForEach(func(k, v []byte) error {
 			var alert storage.ListAlert
 			if err := proto.Unmarshal(v, &alert); err != nil {
@@ -57,7 +57,7 @@ func (b *storeImpl) GetAlert(id string) (alert *storage.Alert, exists bool, err 
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Alert")
 
 	err = b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(alertBucket))
+		bucket := tx.Bucket(alertBucket)
 		alert, exists, err = getAlert(id, bucket)
 		return err
 	})
@@ -71,7 +71,7 @@ func (b *storeImpl) GetAlerts() ([]*storage.Alert, error) {
 
 	var alerts []*storage.Alert
 	err := b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(alertBucket))
+		b := tx.Bucket(alertBucket)
 		return b.ForEach(func(k, v []byte) error {
 			var alert storage.Alert
 			if err := proto.Unmarshal(v, &alert); err != nil {
@@ -99,14 +99,14 @@ func (b *storeImpl) AddAlert(alert *storage.Alert) error {
 	}
 
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(alertBucket))
+		bucket := tx.Bucket(alertBucket)
 		if bucket.Get([]byte(alert.Id)) != nil {
 			return fmt.Errorf("Alert %v cannot be added because it already exists", alert.GetId())
 		}
 		if err := bucket.Put([]byte(alert.Id), bytes); err != nil {
 			return err
 		}
-		bucket = tx.Bucket([]byte(alertListBucket))
+		bucket = tx.Bucket(alertListBucket)
 		return bucket.Put([]byte(alert.Id), listBytes)
 	})
 }
@@ -126,11 +126,11 @@ func (b *storeImpl) UpdateAlert(alert *storage.Alert) error {
 	}
 
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(alertBucket))
+		bucket := tx.Bucket(alertBucket)
 		if err := bucket.Put([]byte(alert.Id), bytes); err != nil {
 			return err
 		}
-		bucket = tx.Bucket([]byte(alertListBucket))
+		bucket = tx.Bucket(alertListBucket)
 		return bucket.Put([]byte(alert.Id), listBytes)
 	})
 }

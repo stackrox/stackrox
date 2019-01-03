@@ -30,7 +30,7 @@ func (b *storeImpl) AddScan(request *storage.BenchmarkScanMetadata) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		// Create benchmark bucket if does not already exist
 		// Add scan id into that bucket
-		topLevelBenchmarkBucket := tx.Bucket([]byte(benchmarksToScansBucket))
+		topLevelBenchmarkBucket := tx.Bucket(benchmarksToScansBucket)
 		benchmarkBucket, err := topLevelBenchmarkBucket.CreateBucketIfNotExists([]byte(request.GetBenchmarkId()))
 		if err != nil {
 			return err
@@ -41,7 +41,7 @@ func (b *storeImpl) AddScan(request *storage.BenchmarkScanMetadata) error {
 		}
 
 		// Insert metadata into flat scan metadata bucket
-		scanBucket := tx.Bucket([]byte(scanMetadataBucket))
+		scanBucket := tx.Bucket(scanMetadataBucket)
 		bytes, err := proto.Marshal(request)
 		if err != nil {
 			return err
@@ -58,14 +58,14 @@ func (b *storeImpl) AddBenchmarkResult(result *storage.BenchmarkResult) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "BenchmarkResult")
 	return b.Update(func(tx *bolt.Tx) error {
 		// iterate over all checks and add them into buckets with key (Name)
-		scansToCheck := tx.Bucket([]byte(scansToCheckBucket))
+		scansToCheck := tx.Bucket(scansToCheckBucket)
 		// Create scan id bucket if it doesn't exist
 		scanIDBucket, err := scansToCheck.CreateBucketIfNotExists([]byte(result.GetScanId()))
 		if err != nil {
 			return err
 		}
 
-		checksBucket := tx.Bucket([]byte(checkResultsBucket))
+		checksBucket := tx.Bucket(checkResultsBucket)
 		for _, check := range result.Results {
 			check.Id = uuid.NewV4().String()
 			check.ClusterId = result.GetClusterId()
@@ -94,7 +94,7 @@ func (b *storeImpl) AddBenchmarkResult(result *storage.BenchmarkResult) error {
 }
 
 func (b *storeImpl) getScanMetadata(tx *bolt.Tx, scanID string) (*storage.BenchmarkScanMetadata, error) {
-	metadataBucket := tx.Bucket([]byte(scanMetadataBucket))
+	metadataBucket := tx.Bucket(scanMetadataBucket)
 	bytes := metadataBucket.Get([]byte(scanID))
 	if bytes == nil {
 		return nil, dberrors.ErrNotFound{Type: "Scan", ID: scanID}
@@ -107,7 +107,7 @@ func (b *storeImpl) getScanMetadata(tx *bolt.Tx, scanID string) (*storage.Benchm
 }
 
 func (b *storeImpl) getCheckResult(tx *bolt.Tx, k []byte) (*storage.BenchmarkCheckResult, error) {
-	checkBucket := tx.Bucket([]byte(checkResultsBucket))
+	checkBucket := tx.Bucket(checkResultsBucket)
 	bytes := checkBucket.Get(k)
 	var result storage.BenchmarkCheckResult
 	if err := proto.Unmarshal(bytes, &result); err != nil {
@@ -141,7 +141,7 @@ func (b *storeImpl) GetBenchmarkScan(request *v1.GetBenchmarkScanRequest) (scan 
 		exists = true
 
 		// grab from scan ids -> checks -> check ids
-		scanToChecks := tx.Bucket([]byte(scansToCheckBucket)).Bucket([]byte(request.GetScanId()))
+		scanToChecks := tx.Bucket(scansToCheckBucket).Bucket([]byte(request.GetScanId()))
 		if scanToChecks == nil {
 			return dberrors.ErrNotFound{Type: "Results for scan", ID: request.GetScanId()}
 		}
@@ -188,7 +188,7 @@ func (b *storeImpl) ListBenchmarkScans(request *v1.ListBenchmarkScansRequest) ([
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.List, "BenchmarkScan")
 	var scansMetadata []*storage.BenchmarkScanMetadata
 	err := b.View(func(tx *bolt.Tx) error {
-		scanBucket := tx.Bucket([]byte(scanMetadataBucket))
+		scanBucket := tx.Bucket(scanMetadataBucket)
 		err := scanBucket.ForEach(func(k, v []byte) error {
 			var metadata storage.BenchmarkScanMetadata
 			if err := proto.Unmarshal(v, &metadata); err != nil {
@@ -234,7 +234,7 @@ func (b *storeImpl) GetHostResults(request *v1.GetHostResultsRequest) (*v1.HostR
 	hostResults := new(v1.HostResults)
 	err := b.View(func(tx *bolt.Tx) error {
 		// grab from scan id -> checks -> check ids
-		scanToChecks := tx.Bucket([]byte(scansToCheckBucket)).Bucket([]byte(request.GetScanId()))
+		scanToChecks := tx.Bucket(scansToCheckBucket).Bucket([]byte(request.GetScanId()))
 		if scanToChecks == nil {
 			return dberrors.ErrNotFound{Type: "Results for scan", ID: request.GetScanId()}
 		}

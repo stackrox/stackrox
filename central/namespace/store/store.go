@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
-const namespaceBucket = "namespaces"
+var namespaceBucket = []byte("namespaces")
 
 // Store provides storage functionality for alerts.
 type Store interface {

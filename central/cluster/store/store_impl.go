@@ -29,7 +29,7 @@ type storeImpl struct {
 func (b *storeImpl) GetCluster(id string) (cluster *storage.Cluster, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Cluster")
 	err = b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(clusterBucket))
+		bucket := tx.Bucket(clusterBucket)
 		cluster, exists, err = b.getCluster(tx, id, bucket)
 		return err
 	})
@@ -41,7 +41,7 @@ func (b *storeImpl) GetClusters() ([]*storage.Cluster, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Cluster")
 	var clusters []*storage.Cluster
 	err := b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(clusterBucket))
+		bucket := tx.Bucket(clusterBucket)
 		return bucket.ForEach(func(k, v []byte) error {
 			var cluster storage.Cluster
 			if err := proto.Unmarshal(v, &cluster); err != nil {
@@ -59,11 +59,8 @@ func (b *storeImpl) GetClusters() ([]*storage.Cluster, error) {
 func (b *storeImpl) CountClusters() (count int, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Count, "Cluster")
 	err = b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(clusterBucket))
-		return b.ForEach(func(k, v []byte) error {
-			count++
-			return nil
-		})
+		count = tx.Bucket(clusterBucket).Stats().KeyN
+		return nil
 	})
 
 	return
@@ -74,7 +71,7 @@ func (b *storeImpl) AddCluster(cluster *storage.Cluster) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Cluster")
 	cluster.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(clusterBucket))
+		bucket := tx.Bucket(clusterBucket)
 		currCluster, exists, err := b.getCluster(tx, cluster.GetId(), bucket)
 		if err != nil {
 			return err
@@ -96,7 +93,7 @@ func (b *storeImpl) AddCluster(cluster *storage.Cluster) (string, error) {
 }
 
 func (b *storeImpl) updateCluster(tx *bolt.Tx, cluster *storage.Cluster) error {
-	bucket := tx.Bucket([]byte(clusterBucket))
+	bucket := tx.Bucket(clusterBucket)
 	// If the update is changing the name, check if the name has already been taken
 	if val, _ := secondarykey.GetCurrentUniqueKey(tx, clusterBucket, cluster.GetId()); val != cluster.GetName() {
 		if err := secondarykey.UpdateUniqueKey(tx, clusterBucket, cluster.GetId(), cluster.GetName()); err != nil {
@@ -122,7 +119,7 @@ func (b *storeImpl) UpdateCluster(cluster *storage.Cluster) error {
 func (b *storeImpl) RemoveCluster(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Cluster")
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(clusterBucket))
+		b := tx.Bucket(clusterBucket)
 		key := []byte(id)
 		if err := secondarykey.RemoveUniqueKey(tx, clusterBucket, id); err != nil {
 			return err
@@ -151,7 +148,7 @@ func (b *storeImpl) UpdateClusterContactTime(id string, t time.Time) error {
 
 	key := []byte(id)
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(clusterLastContactTimeBucket))
+		bucket := tx.Bucket(clusterLastContactTimeBucket)
 		return bucket.Put(key, bytes)
 	})
 }
@@ -181,7 +178,7 @@ func (b *storeImpl) populateProtoContactTime(tx *bolt.Tx, cluster *storage.Clust
 }
 
 func (b *storeImpl) getClusterContactTime(tx *bolt.Tx, id string) (*timestamp.Timestamp, error) {
-	bucket := tx.Bucket([]byte(clusterLastContactTimeBucket))
+	bucket := tx.Bucket(clusterLastContactTimeBucket)
 	val := bucket.Get([]byte(id))
 	if val == nil {
 		return nil, nil
@@ -199,7 +196,7 @@ func (b *storeImpl) UpdateMetadata(id string, metadata *storage.ProviderMetadata
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Cluster")
 
 	return b.Update(func(tx *bolt.Tx) error {
-		cluster, exists, err := b.getCluster(tx, id, tx.Bucket([]byte(clusterBucket)))
+		cluster, exists, err := b.getCluster(tx, id, tx.Bucket(clusterBucket))
 		if err != nil {
 			return err
 		}

@@ -10,8 +10,8 @@ import (
 	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
 )
 
-const (
-	nodesBucketKey = "nodes"
+var (
+	nodesBucketKey = []byte("nodes")
 )
 
 type globalStoreImpl struct {

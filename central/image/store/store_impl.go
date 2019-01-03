@@ -22,7 +22,7 @@ func (b *storeImpl) ListImage(id string) (image *storage.ListImage, exists bool,
 
 	digest := types.NewDigest(id).Digest()
 	err = b.db.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(listImageBucket))
+		bucket := tx.Bucket(listImageBucket)
 		image = new(storage.ListImage)
 		val := bucket.Get([]byte(digest))
 		if val == nil {
@@ -39,7 +39,7 @@ func (b *storeImpl) ListImages() (images []*storage.ListImage, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListImage")
 
 	err = b.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(listImageBucket))
+		b := tx.Bucket(listImageBucket)
 		return b.ForEach(func(k, v []byte) error {
 			var image storage.ListImage
 			if err := proto.Unmarshal(v, &image); err != nil {
@@ -68,7 +68,7 @@ func (b *storeImpl) CountImages() (count int, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "Image")
 
 	err = b.db.View(func(tx *bolt.Tx) error {
-		count = tx.Bucket([]byte(imageBucket)).Stats().KeyN
+		count = tx.Bucket(imageBucket).Stats().KeyN
 		return nil
 	})
 	return
@@ -181,7 +181,7 @@ func convertImageToListImage(i *storage.Image) *storage.ListImage {
 
 // readAllImages reads all the images in the DB within a transaction.
 func readAllImages(tx *bolt.Tx) (images []*storage.Image, err error) {
-	bucket := tx.Bucket([]byte(imageBucket))
+	bucket := tx.Bucket(imageBucket)
 	err = bucket.ForEach(func(k, v []byte) error {
 		image, err := readImage(tx, k)
 		if err != nil {
@@ -196,7 +196,7 @@ func readAllImages(tx *bolt.Tx) (images []*storage.Image, err error) {
 
 // HasImage returns whether a image exists for the given id.
 func hasImage(tx *bolt.Tx, id []byte) bool {
-	bucket := tx.Bucket([]byte(imageBucket))
+	bucket := tx.Bucket(imageBucket)
 
 	bytes := bucket.Get(id)
 	if bytes == nil {
@@ -207,7 +207,7 @@ func hasImage(tx *bolt.Tx, id []byte) bool {
 
 // readImage reads a image within a transaction.
 func readImage(tx *bolt.Tx, id []byte) (image *storage.Image, err error) {
-	bucket := tx.Bucket([]byte(imageBucket))
+	bucket := tx.Bucket(imageBucket)
 
 	bytes := bucket.Get(id)
 	if bytes == nil {
@@ -222,7 +222,7 @@ func readImage(tx *bolt.Tx, id []byte) (image *storage.Image, err error) {
 
 // writeImage writes an image within a transaction.
 func writeImage(tx *bolt.Tx, image *storage.Image) (err error) {
-	bucket := tx.Bucket([]byte(imageBucket))
+	bucket := tx.Bucket(imageBucket)
 
 	id := []byte(idForSha(image.GetId()))
 
@@ -236,14 +236,14 @@ func writeImage(tx *bolt.Tx, image *storage.Image) (err error) {
 
 // deleteImage deletes an image within a transaction.
 func deleteImage(tx *bolt.Tx, id []byte) (err error) {
-	bucket := tx.Bucket([]byte(imageBucket))
+	bucket := tx.Bucket(imageBucket)
 
 	bucket.Delete(id)
 	return
 }
 
 func upsertListImage(tx *bolt.Tx, image *storage.Image) error {
-	bucket := tx.Bucket([]byte(listImageBucket))
+	bucket := tx.Bucket(listImageBucket)
 	listImage := convertImageToListImage(image)
 	bytes, err := proto.Marshal(listImage)
 	if err != nil {
@@ -254,7 +254,7 @@ func upsertListImage(tx *bolt.Tx, image *storage.Image) error {
 }
 
 func deleteListImage(tx *bolt.Tx, id []byte) (err error) {
-	bucket := tx.Bucket([]byte(listImageBucket))
+	bucket := tx.Bucket(listImageBucket)
 
 	bucket.Delete(id)
 	return

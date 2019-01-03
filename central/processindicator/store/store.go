@@ -10,9 +10,9 @@ import (
 
 var log = logging.LoggerForModule()
 
-const (
-	processIndicatorBucket = "process_indicators"
-	uniqueProcessesBucket  = "process_indicators_unique"
+var (
+	processIndicatorBucket = []byte("process_indicators")
+	uniqueProcessesBucket  = []byte("process_indicators_unique")
 )
 
 // Store provides storage functionality for alerts.

@@ -16,7 +16,7 @@ type storeImpl struct {
 // Get returns a group matching the given properties if it exists from the store.
 func (s *storeImpl) Get(props *storage.GroupProperties) (grp *storage.Group, err error) {
 	s.db.View(func(tx *bolt.Tx) error {
-		buc := tx.Bucket([]byte(groupsBucket))
+		buc := tx.Bucket(groupsBucket)
 		k := serializeKey(props)
 		v := buc.Get(k)
 		if v == nil {
@@ -31,7 +31,7 @@ func (s *storeImpl) Get(props *storage.GroupProperties) (grp *storage.Group, err
 // GetAll return all groups currently in the store.
 func (s *storeImpl) GetAll() (grps []*storage.Group, err error) {
 	err = s.db.View(func(tx *bolt.Tx) error {
-		buc := tx.Bucket([]byte(groupsBucket))
+		buc := tx.Bucket(groupsBucket)
 		buc.ForEach(func(k, v []byte) error {
 			grp, err := deserialize(k, v)
 			if err != nil {
@@ -57,7 +57,7 @@ func (s *storeImpl) Walk(authProviderID string, attributes map[string][]string) 
 
 	// Search for items in list.
 	err = s.db.View(func(tx *bolt.Tx) error {
-		buc := tx.Bucket([]byte(groupsBucket))
+		buc := tx.Bucket(groupsBucket)
 		for _, check := range toSearch {
 			serializedKey := serializeKey(check)
 			if serializedVal := buc.Get(serializedKey); serializedVal != nil {
@@ -98,7 +98,7 @@ func (s *storeImpl) Upsert(group *storage.Group) error {
 	key, value := serialize(group)
 
 	return s.db.Update(func(tx *bolt.Tx) error {
-		buc := tx.Bucket([]byte(groupsBucket))
+		buc := tx.Bucket(groupsBucket)
 		return buc.Put(key, value)
 	})
 }
@@ -143,7 +143,7 @@ func (s *storeImpl) Mutate(toRemove, toUpdate, toAdd []*storage.Group) error {
 //////////
 
 func addInTransaction(tx *bolt.Tx, key, value []byte) error {
-	buc := tx.Bucket([]byte(groupsBucket))
+	buc := tx.Bucket(groupsBucket)
 	if buc.Get(key) != nil {
 		return fmt.Errorf("group config for %s already exists", key)
 	}
@@ -151,7 +151,7 @@ func addInTransaction(tx *bolt.Tx, key, value []byte) error {
 }
 
 func updateInTransaction(tx *bolt.Tx, key, value []byte) error {
-	buc := tx.Bucket([]byte(groupsBucket))
+	buc := tx.Bucket(groupsBucket)
 	if buc.Get(key) == nil {
 		return fmt.Errorf("group config for %s does not exist", key)
 	}
@@ -159,7 +159,7 @@ func updateInTransaction(tx *bolt.Tx, key, value []byte) error {
 }
 
 func removeInTransaction(tx *bolt.Tx, key []byte) error {
-	buc := tx.Bucket([]byte(groupsBucket))
+	buc := tx.Bucket(groupsBucket)
 	if buc.Get(key) == nil {
 		return fmt.Errorf("group config for %s does not exist", key)
 	}

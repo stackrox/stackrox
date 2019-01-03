@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
-const imageIntegrationBucket = "imageintegrations"
+var imageIntegrationBucket = []byte("imageintegrations")
 
 // Store provides storage functionality for alerts.
 type Store interface {

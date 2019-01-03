@@ -9,9 +9,11 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-var log = logging.LoggerForModule()
+var (
+	policyBucket = []byte("policies")
 
-const policyBucket = "policies"
+	log = logging.LoggerForModule()
+)
 
 // Store provides storage functionality for alerts.
 type Store interface {

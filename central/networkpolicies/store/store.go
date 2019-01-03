@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-const networkPolicyBucket = "networkpolicies"
+var networkPolicyBucket = []byte("networkpolicies")
 
 var (
 	log = logging.LoggerForModule()

@@ -9,8 +9,10 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-const deploymentBucket = "deployments"
-const deploymentListBucket = "deployments_list"
+var (
+	deploymentBucket     = []byte("deployments")
+	deploymentListBucket = []byte("deployments_list")
+)
 
 var (
 	log = logging.LoggerForModule()

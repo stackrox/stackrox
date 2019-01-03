@@ -34,7 +34,7 @@ func (b *storeImpl) getImageIntegration(id string, bucket *bolt.Bucket) (integra
 func (b *storeImpl) GetImageIntegration(id string) (integration *storage.ImageIntegration, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ImageIntegration")
 	err = b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(imageIntegrationBucket))
+		bucket := tx.Bucket(imageIntegrationBucket)
 		integration, exists, err = b.getImageIntegration(id, bucket)
 		return err
 	})
@@ -46,7 +46,7 @@ func (b *storeImpl) GetImageIntegrations(request *v1.GetImageIntegrationsRequest
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ImageIntegration")
 	var integrations []*storage.ImageIntegration
 	err := b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(imageIntegrationBucket))
+		b := tx.Bucket(imageIntegrationBucket)
 		return b.ForEach(func(k, v []byte) error {
 			var integration storage.ImageIntegration
 			if err := proto.Unmarshal(v, &integration); err != nil {
@@ -64,7 +64,7 @@ func (b *storeImpl) AddImageIntegration(integration *storage.ImageIntegration) (
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "ImageIntegration")
 	integration.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(imageIntegrationBucket))
+		bucket := tx.Bucket(imageIntegrationBucket)
 		_, exists, err := b.getImageIntegration(integration.GetId(), bucket)
 		if err != nil {
 			return err
@@ -88,7 +88,7 @@ func (b *storeImpl) AddImageIntegration(integration *storage.ImageIntegration) (
 func (b *storeImpl) UpdateImageIntegration(integration *storage.ImageIntegration) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "ImageIntegration")
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(imageIntegrationBucket))
+		b := tx.Bucket(imageIntegrationBucket)
 		// If the update is changing the name, check if the name has already been taken
 		if val, _ := secondarykey.GetCurrentUniqueKey(tx, imageIntegrationBucket, integration.GetId()); val != integration.GetName() {
 			if err := secondarykey.UpdateUniqueKey(tx, imageIntegrationBucket, integration.GetId(), integration.GetName()); err != nil {
@@ -107,7 +107,7 @@ func (b *storeImpl) UpdateImageIntegration(integration *storage.ImageIntegration
 func (b *storeImpl) RemoveImageIntegration(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "ImageIntegration")
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(imageIntegrationBucket))
+		b := tx.Bucket(imageIntegrationBucket)
 		key := []byte(id)
 		if exists := b.Get(key) != nil; !exists {
 			return dberrors.ErrNotFound{Type: "ImageIntegration", ID: string(key)}

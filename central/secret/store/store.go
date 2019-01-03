@@ -6,10 +6,10 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
-const (
+var (
 	// SecretBucket is the bucket tht stores secret objects.
-	secretBucket     = "secrets"
-	secretListBucket = "secrets_list"
+	secretBucket     = []byte("secrets")
+	secretListBucket = []byte("secrets_list")
 )
 
 // Store provides access and update functions for secrets.

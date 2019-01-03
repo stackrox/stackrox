@@ -6,9 +6,9 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
-const (
-	alertBucket     = "alerts"
-	alertListBucket = "alerts_list"
+var (
+	alertBucket     = []byte("alerts")
+	alertListBucket = []byte("alerts_list")
 )
 
 // Store provides storage functionality for alerts.

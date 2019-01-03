@@ -27,10 +27,10 @@ type MessageCrud interface {
 
 // NewMessageCrud returns a new MessageCrud instance for the given db and bucket.
 func NewMessageCrud(db *bolt.DB,
-	bucketName string,
+	bucketName []byte,
 	keyFunc func(proto.Message) []byte,
 	allocFunc func() proto.Message) MessageCrud {
-	return NewMessageCrudForBucket(bolthelper.TopLevelRef(db, []byte(bucketName)), keyFunc, allocFunc)
+	return NewMessageCrudForBucket(bolthelper.TopLevelRef(db, bucketName), keyFunc, allocFunc)
 }
 
 // NewMessageCrudForBucket returns a new MessageCrud instance for the given bucket ref.

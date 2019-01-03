@@ -34,7 +34,7 @@ func (b *storeImpl) getBenchmarkSchedule(id string, bucket *bolt.Bucket) (schedu
 func (b *storeImpl) GetBenchmarkSchedule(id string) (schedule *storage.BenchmarkSchedule, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "BenchmarkSchedule")
 	err = b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(benchmarkScheduleBucket))
+		bucket := tx.Bucket(benchmarkScheduleBucket)
 		schedule, exists, err = b.getBenchmarkSchedule(id, bucket)
 		return err
 	})
@@ -46,7 +46,7 @@ func (b *storeImpl) GetBenchmarkSchedules(request *v1.GetBenchmarkSchedulesReque
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "BenchmarkSchedule")
 	var schedules []*storage.BenchmarkSchedule
 	err := b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(benchmarkScheduleBucket))
+		b := tx.Bucket(benchmarkScheduleBucket)
 		err := b.ForEach(func(k, v []byte) error {
 			var schedule storage.BenchmarkSchedule
 			if err := proto.Unmarshal(v, &schedule); err != nil {
@@ -77,7 +77,7 @@ func (b *storeImpl) AddBenchmarkSchedule(schedule *storage.BenchmarkSchedule) (s
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "BenchmarkSchedule")
 	schedule.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(benchmarkScheduleBucket))
+		bucket := tx.Bucket(benchmarkScheduleBucket)
 		_, exists, err := b.getBenchmarkSchedule(schedule.GetId(), bucket)
 		if err != nil {
 			return err
@@ -99,7 +99,7 @@ func (b *storeImpl) AddBenchmarkSchedule(schedule *storage.BenchmarkSchedule) (s
 func (b *storeImpl) UpdateBenchmarkSchedule(schedule *storage.BenchmarkSchedule) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "BenchmarkSchedule")
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(benchmarkScheduleBucket))
+		b := tx.Bucket(benchmarkScheduleBucket)
 		bytes, err := proto.Marshal(schedule)
 		if err != nil {
 			return err
@@ -113,7 +113,7 @@ func (b *storeImpl) UpdateBenchmarkSchedule(schedule *storage.BenchmarkSchedule)
 func (b *storeImpl) RemoveBenchmarkSchedule(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "BenchmarkSchedule")
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(benchmarkScheduleBucket))
+		b := tx.Bucket(benchmarkScheduleBucket)
 		key := []byte(id)
 		if exists := b.Get(key) != nil; !exists {
 			return dberrors.ErrNotFound{Type: "Benchmark Schedule", ID: id}

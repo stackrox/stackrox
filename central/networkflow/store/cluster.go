@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
-const clusterFlowBucket = "clustersWithFlowsBucket"
+var clusterFlowBucket = []byte("clustersWithFlowsBucket")
 
 // ClusterStore stores the network edges per cluster.
 type ClusterStore interface {
@@ -20,6 +20,6 @@ type ClusterStore interface {
 func NewClusterStore(db *bolt.DB) ClusterStore {
 	bolthelper.RegisterBucketOrPanic(db, clusterFlowBucket)
 	return &clusterStoreImpl{
-		clusterFlowsBucket: bolthelper.TopLevelRef(db, []byte(clusterFlowBucket)),
+		clusterFlowsBucket: bolthelper.TopLevelRef(db, clusterFlowBucket),
 	}
 }

@@ -28,7 +28,7 @@ func (s *MessageCrudTestSuite) SetupSuite() {
 	db, err := bolthelper.NewTemp(s.T().Name() + ".db")
 	s.Require().NoError(err, "Failed to make BoltDB: %s", err)
 
-	testBucket := "testBucket"
+	testBucket := []byte("testBucket")
 	bolthelper.RegisterBucketOrPanic(db, testBucket)
 
 	s.db = db
@@ -41,7 +41,7 @@ func (s *MessageCrudTestSuite) SetupSuite() {
 	allocFunc := func() proto.Message {
 		return &storage.Alert{}
 	}
-	s.crud = NewMessageCrud(db, "testBucket", keyFunc, allocFunc)
+	s.crud = NewMessageCrud(db, []byte("testBucket"), keyFunc, allocFunc)
 }
 
 func (s *MessageCrudTestSuite) TearDownSuite() {

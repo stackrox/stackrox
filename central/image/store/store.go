@@ -6,10 +6,9 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
-const (
-	orchShaToRegShaBucket = "orchShaToRegShaBucket"
-	imageBucket           = "imageBucket"
-	listImageBucket       = "images_list"
+var (
+	imageBucket     = []byte("imageBucket")
+	listImageBucket = []byte("images_list")
 )
 
 // Store provides storage functionality for alerts.

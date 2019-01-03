@@ -34,7 +34,7 @@ func (b *storeImpl) getBenchmark(id string, bucket *bolt.Bucket) (benchmark *sto
 func (b *storeImpl) GetBenchmark(id string) (benchmark *storage.Benchmark, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Benchmark")
 	err = b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(benchmarkBucket))
+		bucket := tx.Bucket(benchmarkBucket)
 		benchmark, exists, err = b.getBenchmark(id, bucket)
 		return err
 	})
@@ -46,7 +46,7 @@ func (b *storeImpl) GetBenchmarks(request *v1.GetBenchmarksRequest) ([]*storage.
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Benchmark")
 	var benchmarks []*storage.Benchmark
 	err := b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(benchmarkBucket))
+		b := tx.Bucket(benchmarkBucket)
 		return b.ForEach(func(k, v []byte) error {
 			var benchmark storage.Benchmark
 			if err := proto.Unmarshal(v, &benchmark); err != nil {
@@ -64,7 +64,7 @@ func (b *storeImpl) AddBenchmark(benchmark *storage.Benchmark) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Benchmark")
 	benchmark.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(benchmarkBucket))
+		bucket := tx.Bucket(benchmarkBucket)
 		_, exists, err := b.getBenchmark(benchmark.GetId(), bucket)
 		if err != nil {
 			return err
@@ -88,7 +88,7 @@ func (b *storeImpl) AddBenchmark(benchmark *storage.Benchmark) (string, error) {
 func (b *storeImpl) UpdateBenchmark(benchmark *storage.Benchmark) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Benchmark")
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(benchmarkBucket))
+		bucket := tx.Bucket(benchmarkBucket)
 		currBenchmark, exists, err := b.getBenchmark(benchmark.GetId(), bucket)
 		if err != nil {
 			return err
@@ -114,7 +114,7 @@ func (b *storeImpl) UpdateBenchmark(benchmark *storage.Benchmark) error {
 func (b *storeImpl) RemoveBenchmark(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Benchmark")
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(benchmarkBucket))
+		bucket := tx.Bucket(benchmarkBucket)
 		benchmark, exists, err := b.getBenchmark(id, bucket)
 		if err != nil {
 			return err

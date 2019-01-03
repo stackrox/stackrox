@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
-const multiplierBucket = "multipliers"
+var multiplierBucket = []byte("multipliers")
 
 // Store provides storage functionality for alerts.
 type Store interface {

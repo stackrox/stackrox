@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
-const logsBucket = "logs"
+var logsBucket = []byte("logs")
 
 // Store provides storage functionality for alerts.
 //go:generate mockgen-wrapper Store

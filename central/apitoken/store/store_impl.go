@@ -31,7 +31,7 @@ func (b *storeImpl) AddToken(token *storage.TokenMetadata) error {
 	}
 
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(apiTokensBucket))
+		bucket := tx.Bucket(apiTokensBucket)
 		return bucket.Put([]byte(token.GetId()), bytes)
 	})
 }
@@ -40,7 +40,7 @@ func (b *storeImpl) GetTokenOrNil(id string) (token *storage.TokenMetadata, err 
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "APIToken")
 
 	err = b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(apiTokensBucket))
+		bucket := tx.Bucket(apiTokensBucket)
 		tokenBytes := bucket.Get([]byte(id))
 		if tokenBytes == nil {
 			return nil
@@ -59,7 +59,7 @@ func (b *storeImpl) GetTokens(req *v1.GetAPITokensRequest) (tokens []*storage.To
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "APIToken")
 
 	err = b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(apiTokensBucket))
+		bucket := tx.Bucket(apiTokensBucket)
 		return bucket.ForEach(func(k, v []byte) error {
 			var token storage.TokenMetadata
 			err := proto.Unmarshal(v, &token)
@@ -93,7 +93,7 @@ func (b *storeImpl) RevokeToken(id string) (exists bool, err error) {
 	}
 
 	err = b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(apiTokensBucket))
+		bucket := tx.Bucket(apiTokensBucket)
 		return bucket.Put([]byte(id), bytes)
 	})
 	return

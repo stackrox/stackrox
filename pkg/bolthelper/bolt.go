@@ -57,9 +57,9 @@ func NewTemp(dbPath string) (*bolt.DB, error) {
 }
 
 // RegisterBucketOrPanic registers a new bucket in the global DB, and panics if there's an error.
-func RegisterBucketOrPanic(db *bolt.DB, bucket string) {
+func RegisterBucketOrPanic(db *bolt.DB, bucket []byte) {
 	err := db.Update(func(tx *bolt.Tx) error {
-		if _, err := tx.CreateBucketIfNotExists([]byte(bucket)); err != nil {
+		if _, err := tx.CreateBucketIfNotExists(bucket); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
 		if err := secondarykey.CreateUniqueKeyBucket(tx, bucket); err != nil {

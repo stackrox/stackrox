@@ -7,7 +7,7 @@ import (
 )
 
 // GetCurrentUniqueKey returns the secondary key for the input primary key.
-func GetCurrentUniqueKey(tx *bolt.Tx, bucket string, id string) (string, bool) {
+func GetCurrentUniqueKey(tx *bolt.Tx, bucket []byte, id string) (string, bool) {
 	b := tx.Bucket(getMapperBucket(bucket))
 	val := b.Get([]byte(id))
 	if val == nil {
@@ -18,7 +18,7 @@ func GetCurrentUniqueKey(tx *bolt.Tx, bucket string, id string) (string, bool) {
 
 // CheckUniqueKeyExistsAndInsert checks if the name exists within the context of a transaction which means
 // if the transaction fails then this will be rolled back
-func CheckUniqueKeyExistsAndInsert(tx *bolt.Tx, bucket string, id, k string) error {
+func CheckUniqueKeyExistsAndInsert(tx *bolt.Tx, bucket []byte, id, k string) error {
 	b := tx.Bucket(getUniqueBucket(bucket))
 	if b.Get([]byte(k)) != nil {
 		return fmt.Errorf("'%v' already exists", k)
@@ -31,7 +31,7 @@ func CheckUniqueKeyExistsAndInsert(tx *bolt.Tx, bucket string, id, k string) err
 }
 
 // InsertUniqueKey inserts the unique key
-func InsertUniqueKey(tx *bolt.Tx, bucket string, id, k string) error {
+func InsertUniqueKey(tx *bolt.Tx, bucket []byte, id, k string) error {
 	b := tx.Bucket(getUniqueBucket(bucket))
 	if err := b.Put([]byte(k), []byte{}); err != nil {
 		return err
@@ -41,7 +41,7 @@ func InsertUniqueKey(tx *bolt.Tx, bucket string, id, k string) error {
 }
 
 // UpdateUniqueKey changes a current key to a new value.
-func UpdateUniqueKey(tx *bolt.Tx, bucket string, id, k string) error {
+func UpdateUniqueKey(tx *bolt.Tx, bucket []byte, id, k string) error {
 	if _, exists := GetCurrentUniqueKey(tx, bucket, id); exists {
 		RemoveUniqueKey(tx, bucket, id)
 	}
@@ -49,7 +49,7 @@ func UpdateUniqueKey(tx *bolt.Tx, bucket string, id, k string) error {
 }
 
 // RemoveUniqueKey removes a secondary key.
-func RemoveUniqueKey(tx *bolt.Tx, bucket string, id string) error {
+func RemoveUniqueKey(tx *bolt.Tx, bucket []byte, id string) error {
 	b := tx.Bucket(getMapperBucket(bucket))
 	val := b.Get([]byte(id))
 	if val == nil {
@@ -63,7 +63,7 @@ func RemoveUniqueKey(tx *bolt.Tx, bucket string, id string) error {
 }
 
 // CreateUniqueKeyBucket creates buckets for storing secondary keys and their mappings to primary keys.
-func CreateUniqueKeyBucket(tx *bolt.Tx, bucket string) error {
+func CreateUniqueKeyBucket(tx *bolt.Tx, bucket []byte) error {
 	if _, err := tx.CreateBucketIfNotExists(getUniqueBucket(bucket)); err != nil {
 		return err
 	}
@@ -71,10 +71,10 @@ func CreateUniqueKeyBucket(tx *bolt.Tx, bucket string) error {
 	return err
 }
 
-func getUniqueBucket(b string) []byte {
-	return []byte(b + "-unique")
+func getUniqueBucket(b []byte) []byte {
+	return append(b, []byte("-unique")...)
 }
 
-func getMapperBucket(b string) []byte {
-	return []byte(b + "-mapper")
+func getMapperBucket(b []byte) []byte {
+	return append(b, []byte("-mapper")...)
 }

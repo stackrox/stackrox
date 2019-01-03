@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
-const benchmarkTriggerBucket = "benchmark_triggers"
+var benchmarkTriggerBucket = []byte("benchmark_triggers")
 
 // Store provides storage functionality for alerts.
 type Store interface {

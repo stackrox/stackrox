@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/dberrors"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
@@ -34,7 +35,7 @@ func (b *storeImpl) initializeRanker() error {
 func (b *storeImpl) ListDeployment(id string) (deployment *storage.ListDeployment, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "ListDeployment")
 	err = b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(deploymentListBucket))
+		bucket := tx.Bucket(deploymentListBucket)
 		val := bucket.Get([]byte(id))
 		if val == nil {
 			return nil
@@ -56,7 +57,7 @@ func (b *storeImpl) ListDeployments() ([]*storage.ListDeployment, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListDeployment")
 	var deployments []*storage.ListDeployment
 	err := b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(deploymentListBucket))
+		bucket := tx.Bucket(deploymentListBucket)
 		return bucket.ForEach(func(k, v []byte) error {
 			var deployment storage.ListDeployment
 			if err := proto.Unmarshal(v, &deployment); err != nil {
@@ -82,7 +83,7 @@ func (b *storeImpl) upsertListDeployment(bucket *bolt.Bucket, deployment *storag
 
 // Note: This is called within a txn and do not require an Update or View
 func (b *storeImpl) removeListDeployment(tx *bolt.Tx, id string) error {
-	bucket := tx.Bucket([]byte(deploymentListBucket))
+	bucket := tx.Bucket(deploymentListBucket)
 	return bucket.Delete([]byte(id))
 }
 
@@ -113,7 +114,7 @@ func (b *storeImpl) getDeployment(id string, bucket *bolt.Bucket) (deployment *s
 func (b *storeImpl) GetDeployment(id string) (deployment *storage.Deployment, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Deployment")
 	err = b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(deploymentBucket))
+		bucket := tx.Bucket(deploymentBucket)
 		deployment, exists, err = b.getDeployment(id, bucket)
 		if err != nil {
 			return err
@@ -132,7 +133,7 @@ func (b *storeImpl) GetDeployments() ([]*storage.Deployment, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Deployment")
 	var deployments []*storage.Deployment
 	err := b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(deploymentBucket))
+		bucket := tx.Bucket(deploymentBucket)
 		return bucket.ForEach(func(k, v []byte) error {
 			var deployment storage.Deployment
 			if err := proto.Unmarshal(v, &deployment); err != nil {
@@ -151,7 +152,7 @@ func (b *storeImpl) GetDeployments() ([]*storage.Deployment, error) {
 func (b *storeImpl) CountDeployments() (count int, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Count, "Deployment")
 	err = b.View(func(tx *bolt.Tx) error {
-		count = tx.Bucket([]byte(deploymentBucket)).Stats().KeyN
+		count = tx.Bucket(deploymentBucket).Stats().KeyN
 		return nil
 	})
 
@@ -169,20 +170,15 @@ func (b *storeImpl) upsertDeployment(deployment *storage.Deployment, bucket *bol
 // This needs to be called within an Update transaction, and is the common code between
 // upsert and update.
 func (b *storeImpl) putDeployment(deployment *storage.Deployment, tx *bolt.Tx, errorIfNotExists bool) error {
-	bucket := tx.Bucket([]byte(deploymentBucket))
-	_, exists, err := b.getDeployment(deployment.GetId(), bucket)
-	if err != nil {
-		return err
-	}
-	if errorIfNotExists && !exists {
+	bucket := tx.Bucket(deploymentBucket)
+	if errorIfNotExists && !bolthelper.Exists(bucket, deployment.GetId()) {
 		return dberrors.ErrNotFound{Type: "Deployment", ID: deployment.GetId()}
 	}
-
 	b.ranker.Add(deployment.GetId(), deployment.GetRisk().GetScore())
 	if err := b.upsertDeployment(deployment, bucket); err != nil {
 		return err
 	}
-	return b.upsertListDeployment(tx.Bucket([]byte(deploymentListBucket)), deployment)
+	return b.upsertListDeployment(tx.Bucket(deploymentListBucket), deployment)
 }
 
 // UpsertDeployment adds a deployment to bolt, or updates it if it exists already.
@@ -206,7 +202,7 @@ func (b *storeImpl) RemoveDeployment(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Deployment")
 
 	err := b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(deploymentBucket))
+		bucket := tx.Bucket(deploymentBucket)
 
 		b.ranker.Remove(id)
 		if err := bucket.Delete([]byte(id)); err != nil {

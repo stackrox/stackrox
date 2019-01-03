@@ -8,7 +8,7 @@ import (
 	proto2 "github.com/stackrox/rox/pkg/bolthelper/crud/proto"
 )
 
-const rolesBucket = "roles"
+var rolesBucket = []byte("roles")
 
 // Store is the store for roles.
 //go:generate mockgen-wrapper Store

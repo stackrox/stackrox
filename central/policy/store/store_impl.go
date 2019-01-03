@@ -36,7 +36,7 @@ func (b *storeImpl) GetPolicy(id string) (policy *storage.Policy, exists bool, e
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Policy")
 	policy = new(storage.Policy)
 	err = b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(policyBucket))
+		b := tx.Bucket(policyBucket)
 		val := b.Get([]byte(id))
 		if val == nil {
 			return nil
@@ -53,7 +53,7 @@ func (b *storeImpl) GetPolicies() ([]*storage.Policy, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Policy")
 	var policies []*storage.Policy
 	err := b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(policyBucket))
+		b := tx.Bucket(policyBucket)
 		return b.ForEach(func(k, v []byte) error {
 			var policy storage.Policy
 			if err := proto.Unmarshal(v, &policy); err != nil {
@@ -71,7 +71,7 @@ func (b *storeImpl) AddPolicy(policy *storage.Policy) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Policy")
 	policy.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(policyBucket))
+		bucket := tx.Bucket(policyBucket)
 		_, exists, err := b.getPolicy(policy.GetId(), bucket)
 		if err != nil {
 			return err
@@ -95,7 +95,7 @@ func (b *storeImpl) AddPolicy(policy *storage.Policy) (string, error) {
 func (b *storeImpl) UpdatePolicy(policy *storage.Policy) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Policy")
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(policyBucket))
+		bucket := tx.Bucket(policyBucket)
 		// If the update is changing the name, check if the name has already been taken
 		if val, _ := secondarykey.GetCurrentUniqueKey(tx, policyBucket, policy.GetId()); val != policy.GetName() {
 			if err := secondarykey.UpdateUniqueKey(tx, policyBucket, policy.GetId(), policy.GetName()); err != nil {
@@ -114,7 +114,7 @@ func (b *storeImpl) UpdatePolicy(policy *storage.Policy) error {
 func (b *storeImpl) RemovePolicy(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Policy")
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(policyBucket))
+		bucket := tx.Bucket(policyBucket)
 		key := []byte(id)
 		if exists := bucket.Get(key) != nil; !exists {
 			return dberrors.ErrNotFound{Type: "Policy", ID: string(key)}
@@ -130,7 +130,7 @@ func (b *storeImpl) RemovePolicy(id string) error {
 func (b *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Rename, "PolicyCategory")
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(policyBucket))
+		b := tx.Bucket(policyBucket)
 		return b.ForEach(func(k, v []byte) error {
 			var policy storage.Policy
 			if err := proto.Unmarshal(v, &policy); err != nil {
@@ -162,7 +162,7 @@ func (b *storeImpl) RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest
 func (b *storeImpl) DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "PolicyCategory")
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(policyBucket))
+		b := tx.Bucket(policyBucket)
 		return b.ForEach(func(k, v []byte) error {
 			var policy storage.Policy
 			if err := proto.Unmarshal(v, &policy); err != nil {

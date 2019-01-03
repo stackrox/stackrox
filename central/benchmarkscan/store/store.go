@@ -7,11 +7,11 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
-const (
-	scanMetadataBucket      = "scan_metadata"
-	benchmarksToScansBucket = "benchmarks_to_scans"
-	checkResultsBucket      = "check_results"
-	scansToCheckBucket      = "scans_to_checks"
+var (
+	scanMetadataBucket      = []byte("scan_metadata")
+	benchmarksToScansBucket = []byte("benchmarks_to_scans")
+	checkResultsBucket      = []byte("check_results")
+	scansToCheckBucket      = []byte("scans_to_checks")
 )
 
 // Store provides storage functionality for alerts.

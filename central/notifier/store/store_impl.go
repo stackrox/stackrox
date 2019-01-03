@@ -34,7 +34,7 @@ func (b *storeImpl) getNotifier(id string, bucket *bolt.Bucket) (notifier *stora
 func (b *storeImpl) GetNotifier(id string) (notifier *storage.Notifier, exists bool, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "Notifier")
 	err = b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(notifierBucket))
+		bucket := tx.Bucket(notifierBucket)
 		notifier, exists, err = b.getNotifier(id, bucket)
 		return err
 	})
@@ -46,7 +46,7 @@ func (b *storeImpl) GetNotifiers(request *v1.GetNotifiersRequest) ([]*storage.No
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Notifier")
 	var notifiers []*storage.Notifier
 	err := b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(notifierBucket))
+		b := tx.Bucket(notifierBucket)
 		return b.ForEach(func(k, v []byte) error {
 			var notifier storage.Notifier
 			if err := proto.Unmarshal(v, &notifier); err != nil {
@@ -64,7 +64,7 @@ func (b *storeImpl) AddNotifier(notifier *storage.Notifier) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Notifier")
 	notifier.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(notifierBucket))
+		bucket := tx.Bucket(notifierBucket)
 		_, exists, err := b.getNotifier(notifier.GetId(), bucket)
 		if err != nil {
 			return err
@@ -88,7 +88,7 @@ func (b *storeImpl) AddNotifier(notifier *storage.Notifier) (string, error) {
 func (b *storeImpl) UpdateNotifier(notifier *storage.Notifier) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Notifier")
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(notifierBucket))
+		b := tx.Bucket(notifierBucket)
 		// If the update is changing the name, check if the name has already been taken
 		if val, _ := secondarykey.GetCurrentUniqueKey(tx, notifierBucket, notifier.GetId()); val != notifier.GetName() {
 			if err := secondarykey.UpdateUniqueKey(tx, notifierBucket, notifier.GetId(), notifier.GetName()); err != nil {
@@ -107,7 +107,7 @@ func (b *storeImpl) UpdateNotifier(notifier *storage.Notifier) error {
 func (b *storeImpl) RemoveNotifier(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Notifier")
 	return b.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(notifierBucket))
+		b := tx.Bucket(notifierBucket)
 		key := []byte(id)
 		if exists := b.Get(key) != nil; !exists {
 			return dberrors.ErrNotFound{Type: "Notifier", ID: string(key)}

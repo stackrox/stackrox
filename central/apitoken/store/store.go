@@ -7,8 +7,8 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
-const (
-	apiTokensBucket = "apiTokens"
+var (
+	apiTokensBucket = []byte("apiTokens")
 )
 
 // Store is the (bolt-backed) store for API tokens.

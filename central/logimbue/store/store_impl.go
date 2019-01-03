@@ -21,7 +21,7 @@ func (b *storeImpl) GetLogs() ([]string, error) {
 
 	logs := make([]string, 0)
 	err := b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(logsBucket)).Cursor()
+		bucket := tx.Bucket(logsBucket).Cursor()
 
 		for k, v := bucket.First(); k != nil; k, v = bucket.Next() {
 			logs = append(logs, string(v))
@@ -35,7 +35,7 @@ func (b *storeImpl) GetLogs() ([]string, error) {
 func (b *storeImpl) CountLogs() (count int, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Count, "Logs")
 	err = b.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(logsBucket))
+		b := tx.Bucket(logsBucket)
 		count = b.Stats().KeyN
 		return nil
 	})
@@ -49,7 +49,7 @@ func (b *storeImpl) GetLogsRange() (start int64, end int64, err error) {
 	var min int64
 	var max int64
 	err = b.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(logsBucket)).Cursor()
+		bucket := tx.Bucket(logsBucket).Cursor()
 
 		minBytes, _ := bucket.First()
 		min = int64(binary.LittleEndian.Uint64(minBytes))
@@ -67,7 +67,7 @@ func (b *storeImpl) AddLog(log string) error {
 
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Logs")
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(logsBucket))
+		bucket := tx.Bucket(logsBucket)
 
 		b := make([]byte, 8)
 		binary.LittleEndian.PutUint64(b, uint64(logTime))
@@ -82,7 +82,7 @@ func (b *storeImpl) RemoveLogs(from, to int64) error {
 
 	errorList := errorhelpers.NewErrorList("errors deleting logs")
 	return b.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(logsBucket)).Cursor()
+		bucket := tx.Bucket(logsBucket).Cursor()
 
 		startBytes := make([]byte, 8)
 		binary.LittleEndian.PutUint64(startBytes, uint64(from))
