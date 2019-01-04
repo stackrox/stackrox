@@ -17,7 +17,7 @@ const AccessField = ({ input, resourceToAccess, resourceName, isEditing }) => {
     const name = input ? input.name : '';
     return (
         <tr>
-            <th className="p-2 border-r border-base-300">{resourceName}</th>
+            <th className="p-2 border-r border-base-300 flex">{resourceName}</th>
             <th className="p-2">
                 <ReadWriteIcon value={value} type="READ" />
             </th>
