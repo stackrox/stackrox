@@ -1,7 +1,7 @@
 import React from 'react';
 import PageHeader from 'Components/PageHeader';
-import Panel from 'Components/Panel';
-import HorizontalBarChart from 'Components/visuals/HorizontalBar';
+import Widget from 'Components/Widget';
+import StandardsAcrossEntity from 'Containers/Compliance2/widgets/StandardsAcrossEntity';
 import Sunburst from 'Components/visuals/Sunburst';
 import VerticalBarChart from 'Components/visuals/VerticalClusterBar';
 import {
@@ -10,58 +10,45 @@ import {
     sunburstLegendData,
     verticalBarData
 } from 'mockData/graphDataMock';
+import entityTypes from 'constants/entityTypes';
 
-const ComplianceDashboard = () => {
-    function formatAsPercent(x) {
-        return `${x}%`;
-    }
-    return (
-        <section className="flex flex-1 flex-col h-full">
-            <div className="flex flex-1 flex-col">
-                <PageHeader header="Compliance" subHeader="Dashboard" />
-                <div className="flex-1 relative bg-base-200 p-4">
-                    <div className="grid grid-columns-3 grid-gap-6">
-                        <Panel
-                            header="Standards Across Clusters"
-                            className="widget"
-                            bodyClassName="p-2"
-                        >
-                            <HorizontalBarChart
-                                data={horizontalBarData}
-                                valueFormat={formatAsPercent}
-                            />
-                        </Panel>
+const ComplianceDashboard = () => (
+    <section className="flex flex-1 flex-col h-full">
+        <div className="flex flex-1 flex-col">
+            <PageHeader header="Compliance" subHeader="Dashboard" />
+            <div className="flex-1 relative bg-base-200 p-4 overflow-auto">
+                <div className="grid grid-columns-3 grid-gap-6">
+                    <StandardsAcrossEntity type={entityTypes.CLUSTERS} data={horizontalBarData} />
 
-                        <Panel header="Standards By Cluster" className="widget">
-                            <VerticalBarChart
-                                data={verticalBarData}
-                                labelLinks={{
-                                    'Docker Swarm Dev': 'https://google.com/search?q=docker'
-                                }}
-                            />
-                        </Panel>
+                    <Widget header="Standards By Cluster" className="bg-base-100">
+                        <VerticalBarChart
+                            data={verticalBarData}
+                            labelLinks={{
+                                'Docker Swarm Dev': 'https://google.com/search?q=docker'
+                            }}
+                        />
+                    </Widget>
 
-                        <Panel header="Compliance Across Controls" className="widget">
-                            <Sunburst
-                                data={sunburstData}
-                                legendData={sunburstLegendData}
-                                centerLabel="75%"
-                                containerProps={{
-                                    style: {
-                                        borderRight: '1px solid var(--base-300)'
-                                    }
-                                }}
-                            />
-                        </Panel>
+                    <Widget header="Compliance Across Controls" className="bg-base-100">
+                        <Sunburst
+                            data={sunburstData}
+                            legendData={sunburstLegendData}
+                            centerLabel="75%"
+                            containerProps={{
+                                style: {
+                                    borderRight: '1px solid var(--base-300)'
+                                }
+                            }}
+                        />
+                    </Widget>
 
-                        <Panel header="Another Panel" className="widget">
-                            More Graphs
-                        </Panel>
-                    </div>
+                    <StandardsAcrossEntity type={entityTypes.NAMESPACES} data={horizontalBarData} />
+
+                    <StandardsAcrossEntity type={entityTypes.NODES} data={horizontalBarData} />
                 </div>
             </div>
-        </section>
-    );
-};
+        </div>
+    </section>
+);
 
 export default ComplianceDashboard;

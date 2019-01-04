@@ -2,19 +2,7 @@ const horizontalBarData = [
     { y: 'PCI', x: 63, hint: { title: 'Tip Title', body: 'This is the body' } },
     { y: 'NIST', x: 84 },
     { y: 'HIPAA', x: 29, axisLink: 'https://google.com/search?q=HIPAA' },
-    { y: 'GDPR', x: 65 },
-    { y: 'CIS', x: 52 },
-    { y: 'SOC1', x: 81 },
-    { y: 'SOC2', x: 47 },
-    { y: 'SOC3', x: 68 },
-    {
-        y: 'TAG1',
-        x: 100,
-        hint: {
-            title: 'Tip Title',
-            body: 'This is a totally long hint and then some. The body is here.'
-        }
-    }
+    { y: 'CIS', x: 52 }
 ];
 
 // Vertical Bar data generator

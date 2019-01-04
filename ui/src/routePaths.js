@@ -2,7 +2,7 @@
  * Application route paths constants.
  */
 
-import { standardTypes, resourceTypes } from 'constants/resourceTypes';
+import { standardTypes, resourceTypes } from 'constants/entityTypes';
 
 export const mainPath = '/main';
 export const loginPath = '/login';
