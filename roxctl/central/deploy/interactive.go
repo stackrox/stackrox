@@ -6,6 +6,8 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -81,33 +83,39 @@ func promptUserForSection(prompt string) (bool, error) {
 func readUserString(f *pflag.Flag) string {
 	s, err := readUserInputFromFlag(f)
 	if err != nil {
-		printToStderr("Error reading value from command line. Please try again.\n")
+		printlnToStderr("Error reading value from command line. Please try again.")
 		return readUserString(f)
 	}
 	return s
 }
 
-func printToStderr(t string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, t, args...)
+func printlnToStderr(t string, args ...interface{}) {
+	printToStderr(t+"\n", args...)
 }
 
-func processFlag(f *pflag.Flag) string {
+func printToStderr(t string, args ...interface{}) {
+	str := fmt.Sprintf(t, args...)
+	if str != "" {
+		r, n := utf8.DecodeRuneInString(str)
+		str = string(unicode.ToUpper(r)) + str[n:]
+	}
+	fmt.Fprint(os.Stderr, str)
+}
+
+func processFlag(f *pflag.Flag) (string, string) {
 	userInput := readUserString(f)
 	if userInput == "" {
-		return ""
+		return "", ""
 	}
-	return fmt.Sprintf("--%s=%s", f.Name, userInput)
+	return userInput, fmt.Sprintf("--%s=%s", f.Name, userInput)
 }
 
 func choseCommand(prompt string, c *cobra.Command) (args []string) {
 	for true {
 		cmdString, err := readUserInput(prompt)
 		if err != nil {
-			printToStderr("\nCould not read user input. Did you specify '-i' in the Docker run command?\n")
+			printlnToStderr("\nCould not read user input. Did you specify '-i' in the Docker run command?")
 			os.Exit(1)
-		}
-		if cmdString == "" {
-			return
 		}
 		for _, subCommand := range c.Commands() {
 			if subCommand.Name() == cmdString {
@@ -115,7 +123,7 @@ func choseCommand(prompt string, c *cobra.Command) (args []string) {
 				return
 			}
 		}
-		printToStderr("'%s' is not a valid option. Please try again.\n", cmdString)
+		printlnToStderr("'%s' is not a valid option. Please try again.", cmdString)
 	}
 	return
 }
@@ -191,8 +199,17 @@ func walkTree(c *cobra.Command) (args []string) {
 			if flag.Hidden {
 				continue
 			}
-			if val := processFlag(flag); val != "" {
-				args = append(args, val)
+
+			for {
+				if value, commandline := processFlag(flag); flag.NoOptDefVal == "" {
+					// Verify flag parsing
+					if err := flag.Value.Set(value); err != nil {
+						printlnToStderr(err.Error())
+						continue
+					}
+					args = append(args, commandline)
+				}
+				break
 			}
 		}
 	}

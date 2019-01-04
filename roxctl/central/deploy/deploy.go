@@ -13,6 +13,7 @@ import (
 	cflog "github.com/cloudflare/cfssl/log"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/zip"
@@ -145,19 +146,33 @@ func outputZip(config renderer.Config) error {
 	}
 	wrapper.AddFiles(files...)
 
-	bytes, err := wrapper.Zip()
-	if err != nil {
-		return fmt.Errorf("error generating zip file: %v", err)
-	}
-	_, err = os.Stdout.Write(bytes)
-	if err != nil {
-		return fmt.Errorf("couldn't write zip file: %s", err)
+	var outputPath string
+	if docker.IsContainerized() {
+		bytes, err := wrapper.Zip()
+		if err != nil {
+			return fmt.Errorf("error generating zip file: %v", err)
+		}
+		_, err = os.Stdout.Write(bytes)
+		if err != nil {
+			return fmt.Errorf("couldn't write zip file: %v", err)
+		}
+	} else {
+		var err error
+		outputPath, err = wrapper.Directory(config.OutputDir)
+		if err != nil {
+			return fmt.Errorf("error generating directory for Central output: %v", err)
+		}
 	}
 
 	fmt.Fprintln(os.Stderr, "Done!")
 	fmt.Fprintln(os.Stderr)
-	config.WriteInstructions(os.Stderr)
 
+	if outputPath != "" {
+		fmt.Fprintf(os.Stderr, "Wrote central bundle to %q\n", outputPath)
+		fmt.Fprintln(os.Stderr)
+	}
+
+	config.WriteInstructions(os.Stderr)
 	return nil
 }
 

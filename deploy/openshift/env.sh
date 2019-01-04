@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-central.stackrox:443}"
-echo "In-cluster Central endpoint set to $CLUSTER_API_ENDPOINT"
-
-export NAMESPACE=${NAMESPACE:-stackrox}
-echo "Kubernetes namespace set to $NAMESPACE"
-
-export MONITORING_SUPPORT=${MONITORING_SUPPORT:-true}
-export ROX_HTPASSWD_AUTH=${ROX_HTPASSWD_AUTH:-true}
+export ORCH="openshift"
+export ORCH_CMD="oc"
+export ORCH_FULLNAME="openshift"
+export CLUSTER_TYPE="OPENSHIFT_CLUSTER"

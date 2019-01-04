@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
 	"github.com/stackrox/rox/roxctl/defaults"
 )
@@ -37,6 +38,9 @@ Output is a zip file printed to stdout.`, shortName, longName),
 		RunE: func(*cobra.Command, []string) error {
 			return fmt.Errorf("storage type must be specified")
 		},
+	}
+	if !docker.IsContainerized() {
+		c.PersistentFlags().Var(newOutputDir(&cfg.OutputDir), "output-dir", "the directory to output the deployment bundle to")
 	}
 	return c
 }

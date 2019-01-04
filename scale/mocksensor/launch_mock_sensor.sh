@@ -17,7 +17,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 ROX_DIR="${DIR}/../.."
 source "$ROX_DIR/deploy/common/deploy.sh"
-source "$ROX_DIR/deploy/k8s/launch.sh"
+source "$ROX_DIR/deploy/common/k8sbased.sh"
 source "$ROX_DIR/deploy/k8s/env.sh"
 
 # set auth

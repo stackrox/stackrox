@@ -1,6 +1,7 @@
 package deploy
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/stackrox/rox/generated/api/v1"
@@ -20,7 +21,10 @@ func (f *fileFormatWrapper) String() string {
 }
 
 func (f *fileFormatWrapper) Set(input string) error {
-	val, _ := v1.DeploymentFormat_value[strings.ToUpper(input)]
+	val, ok := v1.DeploymentFormat_value[strings.ToUpper(input)]
+	if !ok {
+		return fmt.Errorf("%q is not a valid option", input)
+	}
 	*f.DeploymentFormat = v1.DeploymentFormat(val)
 	return nil
 }

@@ -35,7 +35,7 @@ func (f *loadBalancerWrapper) Set(input string) error {
 		*f.LoadBalancerType = val
 		return nil
 	}
-	return fmt.Errorf("Invalid load balancer type: %s", input)
+	return fmt.Errorf("invalid load balancer type: %q", input)
 }
 
 func (f *loadBalancerWrapper) Type() string {
