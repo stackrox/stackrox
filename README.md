@@ -264,8 +264,10 @@ released.
 </details>
 
 ### Create Release Notes
-1. Go the [releases page on GitHub](https://github.com/stackrox/rox/releases).
-1. Edit the corresponding tag and write release notes based on JIRA issues that
+1. Go the [tags page on GitHub](https://github.com/stackrox/rox/tags).
+1. Find the corresponding tag. Click the three-dots menu on the right and
+click "Create release".
+1. Write release notes based on JIRA issues that
 went into the current release ([filter](https://stack-rox.atlassian.net/issues/?jql=project%20%3D%20ROX%20AND%20fixVersion%20%3D%20latestReleasedVersion()%20AND%20resolution%20not%20in%20(%22Won%27t%20Do%22%2C%20%22Won%27t%20Fix%22%2C%20%22Invalid%20Ticket%22%2C%20%22Not%20a%20Bug%22%2C%20Duplicate%2C%20%22Duplicate%20Ticket%22%2C%20%22Cannot%20Reproduce%22))).
 1. Mark the release as "Pre-release" if QA verification is pending.
 
