@@ -29,6 +29,7 @@ var (
 		"tools",
 		"integration-tests",
 		"scale",
+		"compliance",
 	}
 
 	ignoredRoots = []string{

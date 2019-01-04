@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+option go_package = "compliance";
+option java_package = "io.stackrox.proto.compliance";
+
+package compliance;
+
+message JSONDataChunk {
+    bytes json = 1;
+}
+
+message File {
+    string path                       = 1;
+    uint32 user                       = 2;
+    uint32 group                      = 3;
+    uint32 permissions                = 4;
+    bytes  content                    = 5;
+    bool   is_dir                     = 6;
+    repeated File children            = 7;
+}
+
+message CommandLine {
+    string process     = 1;
+
+    message Args {
+        string key          = 1;
+        string value        = 2;
+        File   file         = 3; // This will be set if it looks like the value defines a file and we found the file
+    }
+    repeated Args args  = 2;
+}
+
+message ComplianceReturn {
+    JSONDataChunk        docker_data   = 1;
+    repeated CommandLine command_lines = 2;
+    repeated File        files         = 3;
+}
