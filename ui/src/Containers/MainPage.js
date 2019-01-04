@@ -11,6 +11,7 @@ import {
     networkPath,
     violationsPath,
     compliancePath,
+    compliance2Path,
     integrationsPath,
     policiesPath,
     riskPath,
@@ -30,8 +31,6 @@ import LeftNavigation from 'Containers/Navigation/LeftNavigation';
 import SearchModal from 'Containers/Search/SearchModal';
 import ErrorBoundary from 'Containers/ErrorBoundary';
 
-// TODO: Remove
-import ChartPlayground from 'Containers/Dashboard/ChartPlayground';
 import CSSGrid from 'Containers/CSSGrid';
 
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
@@ -44,6 +43,8 @@ const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/V
 const AsyncPoliciesPage = asyncComponent(() => import('Containers/Policies/Page'));
 const AsyncImagesPage = asyncComponent(() => import('Containers/Images/ImagesPage'));
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/CompliancePage'));
+const AsyncCompliance2Page = asyncComponent(() => import('Containers/Compliance2/Compliance2Page'));
+
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
 const AsyncSecretsPage = asyncComponent(() => import('Containers/Secrets/SecretsPage'));
 const AsyncAccessControlPage = asyncComponent(() => import('Containers/AccessControl/Page'));
@@ -69,7 +70,11 @@ class MainPage extends Component {
         <section className="flex-auto w-full overflow-hidden">
             <ErrorBoundary>
                 <Switch>
-                    <ProtectedRoute devOnly path="/main/charts" component={ChartPlayground} />
+                    <ProtectedRoute
+                        devOnly
+                        path={compliance2Path}
+                        component={AsyncCompliance2Page}
+                    />
                     <ProtectedRoute path={dashboardPath} component={AsyncDashboardPage} />
                     <ProtectedRoute path={networkPath} component={AsyncNetworkPage} />
                     <ProtectedRoute path={violationsPath} component={AsyncViolationsPage} />

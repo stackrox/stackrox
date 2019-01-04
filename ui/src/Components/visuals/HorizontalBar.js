@@ -10,6 +10,7 @@ import {
 } from 'react-vis';
 
 import PropTypes from 'prop-types';
+import merge from 'deepmerge';
 import HoverHint from './HoverHint';
 
 class HorizontalBarChart extends Component {
@@ -30,9 +31,9 @@ class HorizontalBarChart extends Component {
     static defaultProps = {
         valueFormat: x => x,
         tickValues: [0, 25, 50, 75, 100],
-        containerProps: null,
-        plotProps: null,
-        seriesProps: null,
+        containerProps: {},
+        plotProps: {},
+        seriesProps: {},
         valueGradientColorStart: 'var(--tertiary-500)',
         valueGradientColorEnd: 'var(--tertiary-400',
         onValueMouseOver: null,
@@ -104,14 +105,14 @@ class HorizontalBarChart extends Component {
 
         // Default props
         const defaultContainerProps = {
-            className: `flex flex-col justify-between h-full ${hintsEnabled ? 'relative' : ''}`,
+            className: `relative chart-container w-full`,
             onMouseMove: hintsEnabled ? this.setHintPosition : null
         };
         const defaultPlotProps = {
-            height: 260,
+            height: 270,
             xDomain: [0, 105],
             yType: 'category',
-            yRange: data.map((item, i) => (i + 1) * 20),
+            yRange: data.map((item, i) => (i + 1) * 23),
             margin: { top: 30 },
             stackBy: 'x',
             animation: hintsEnabled ? false : ''
@@ -119,6 +120,10 @@ class HorizontalBarChart extends Component {
 
         const defaultSeriesProps = {
             color: 'url(#horizontalGradient)',
+            style: {
+                height: 12,
+                rx: '3px'
+            },
             onValueMouseOver: datum => {
                 this.setHintData(datum);
                 if (onValueMouseOver) onValueMouseOver(datum);
@@ -131,18 +136,10 @@ class HorizontalBarChart extends Component {
                 if (onValueClick) onValueClick(datum);
             }
         };
-        const seriesStyle = Object.assign(
-            {
-                height: 12,
-                rx: '3px'
-            },
-            this.props.seriesProps && this.props.seriesProps.style
-        );
 
-        const containerProps = Object.assign({}, defaultContainerProps, this.props.containerProps);
-        const plotProps = Object.assign({}, defaultPlotProps, this.props.plotProps);
-        const seriesProps = Object.assign({}, defaultSeriesProps, this.props.seriesProps);
-        seriesProps.style = seriesStyle;
+        const containerProps = merge(defaultContainerProps, this.props.containerProps);
+        const plotProps = merge(defaultPlotProps, this.props.plotProps);
+        const seriesProps = merge(defaultSeriesProps, this.props.seriesProps);
 
         function tickFormat(value) {
             let inner = value;

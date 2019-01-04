@@ -941,6 +941,11 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 .horizontal-bar-legend  .rv-discrete-color-legend-item {
     padding: 3px 10px;
 }
+
+.horizontal-bar-legend {
+    border-top: 1px solid var(--base-300);
+    padding: 2px 0;
+}
 /* Legend color swatch */
 .horizontal-bar-legend .rv-discrete-color-legend-item__color__path {
     stroke-width:3px;
@@ -951,4 +956,16 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     display: inline-block;
     font-size: .8em;
     padding-left: 5px;
+}
+
+/* TODO: tailwind this stuff */
+.widget {
+    @apply bg-base-100;
+    @apply rounded;
+    box-shadow: 0 0px 2px 0 hsla(230, 50%, 70%, .25) !important;
+}
+
+.widget .chart-container {
+    max-height: 260px;
+    @apply w-full;
 }

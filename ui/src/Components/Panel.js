@@ -31,13 +31,14 @@ const Panel = props => (
                 )}
             </div>
         </div>
-        <div className="flex h-full overflow-y-auto">{props.children}</div>
+        <div className={`flex h-full overflow-y-auto ${props.bodyClassName}`}>{props.children}</div>
     </div>
 );
 
 Panel.propTypes = {
     header: PropTypes.string,
     headerClassName: PropTypes.string,
+    bodyClassName: PropTypes.string,
     buttons: PropTypes.node,
     className: PropTypes.string,
     children: PropTypes.node.isRequired,
@@ -50,6 +51,7 @@ Panel.propTypes = {
 Panel.defaultProps = {
     header: ' ',
     headerClassName,
+    bodyClassName: null,
     buttons: null,
     className: 'w-full',
     onClose: null,

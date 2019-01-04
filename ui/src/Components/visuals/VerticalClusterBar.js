@@ -10,6 +10,7 @@ import {
 
 import PropTypes from 'prop-types';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
+import merge from 'deepmerge';
 import HoverHint from './HoverHint';
 
 class BarChart extends Component {
@@ -99,13 +100,18 @@ class BarChart extends Component {
         };
 
         const defaultContainerProps = {
-            className: 'relative',
+            className: 'relative chart-container w-full',
             onMouseMove: this.setHintPosition
         };
 
         const defaultSeriesProps = {
             // animation: true, //causes onValueMouseOut to fail https://github.com/uber/react-vis/issues/381
             barWidth: 0.5,
+            style: {
+                opacity: '.8',
+                width: '6px',
+                ry: '2px'
+            },
             onValueMouseOver: datum => {
                 this.setHintData(datum);
                 if (onValueMouseOver) onValueMouseOver(datum);
@@ -119,20 +125,10 @@ class BarChart extends Component {
             }
         };
 
-        const seriesStyle = Object.assign(
-            {
-                opacity: '.8',
-                width: '6px',
-                ry: '2px'
-            },
-            this.props.seriesProps.style
-        );
-
         // Merge props
-        const containerProps = Object.assign({}, defaultContainerProps, this.props.containerProps);
-        const plotProps = Object.assign({}, defaultPlotProps, this.props.plotProps);
-        const seriesProps = Object.assign({}, defaultSeriesProps, this.props.seriesProps);
-        seriesProps.style = seriesStyle;
+        const containerProps = merge(defaultContainerProps, this.props.containerProps);
+        const plotProps = merge(defaultPlotProps, this.props.plotProps);
+        const seriesProps = merge(defaultSeriesProps, this.props.seriesProps);
 
         function formatTicks(value) {
             let inner = value;

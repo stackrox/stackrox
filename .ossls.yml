@@ -41,6 +41,17 @@ dependencies:
     attribution:
     - Sasha Koss
 
+  ui/node_modules/deepmerge:
+    url: https://github.com/KyleAMathews/deepmerge
+    license: MIT
+    files:
+      license.txt: df9f7d1de68a86422c9c59579b5febcdefc6705ea3926e911fc29b7eddb75c18
+      package.json:
+        author: c4127f003be8ecf4d12faa592563cad10c85360bcd7043c412b8a3e229d96586
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+    - Nick Fisher
+
   ui/node_modules/file-saver:
     url: https://github.com/eligrey/FileSaver.js
     license: MIT
