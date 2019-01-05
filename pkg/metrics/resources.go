@@ -15,4 +15,5 @@ const (
 	NetworkPolicy
 	Node
 	ProviderMetadata
+	ComplianceReturn
 )

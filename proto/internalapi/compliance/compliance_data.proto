@@ -3,6 +3,8 @@ syntax = "proto3";
 option go_package = "compliance";
 option java_package = "io.stackrox.proto.compliance";
 
+import "google/protobuf/timestamp.proto";
+
 package compliance;
 
 message JSONDataChunk {
@@ -31,7 +33,11 @@ message CommandLine {
 }
 
 message ComplianceReturn {
-    JSONDataChunk        docker_data   = 1;
-    repeated CommandLine command_lines = 2;
-    repeated File        files         = 3;
+    string hostname = 1;
+
+    JSONDataChunk        docker_data   = 2;
+    repeated CommandLine command_lines = 3;
+    repeated File        files         = 4;
+
+    google.protobuf.Timestamp time = 5;
 }

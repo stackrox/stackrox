@@ -2,6 +2,7 @@ syntax = "proto3";
 
 option go_package = "central";
 
+import "internalapi/compliance/compliance_data.proto";
 import "storage/cluster.proto";
 import "storage/deployment.proto";
 import "storage/namespace.proto";
@@ -21,6 +22,9 @@ enum ResourceAction {
     UPDATE_RESOURCE         = 3;
 }
 
+// Event updates from sensor to central.
+////////////////////////////////////////
+
 message SensorEvent {
     // These fields may be duplicated in the individual events, but avoid the need to branch all the time
     string         id                           = 1;
@@ -37,8 +41,14 @@ message SensorEvent {
         // Indicators
         storage.ProcessIndicator process_indicator = 8;
         storage.ProviderMetadata provider_metadata = 10;
+
+        // Node scrapes
+        compliance.ComplianceReturn compliance_return = 11;
     }
 }
+
+// Central enforcement through sensor.
+//////////////////////////////////////
 
 message SensorEnforcement {
     storage.EnforcementAction enforcement = 1;
@@ -60,4 +70,18 @@ message DeploymentEnforcement {
 message ContainerInstanceEnforcement {
     string container_instance_id = 1;
     string pod_id                = 2;
+}
+
+// Central commands to sensor.
+//////////////////////////////
+
+message SensorCommand {
+    oneof command {
+        ScrapeCommand scrape = 1;
+    }
+}
+
+// Scrape command causes sensor to scrape all hosts/nodes in the cluster.
+message ScrapeCommand {
+    string id = 1;
 }

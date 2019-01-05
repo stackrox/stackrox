@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
+	"github.com/stackrox/rox/central/sensorevent/service/pipeline/compliancereturn"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline/deploymentevents"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline/namespaces"
 	"github.com/stackrox/rox/central/sensorevent/service/pipeline/networkpolicies"
@@ -27,6 +28,7 @@ func initialize() {
 		secrets.Singleton(),
 		nodes.Singleton(),
 		providermetadata.Singleton(),
+		compliancereturn.Singleton(),
 	)
 }
 

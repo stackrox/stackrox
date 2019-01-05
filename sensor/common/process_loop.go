@@ -23,33 +23,6 @@ const (
 
 var logger = logging.LoggerForModule()
 
-func logSendingEvent(sensorEvent *central.SensorEvent) {
-	var name string
-	var resourceType string
-	switch x := sensorEvent.GetResource().(type) {
-	case *central.SensorEvent_Deployment:
-		name = sensorEvent.GetDeployment().GetName()
-		resourceType = "Deployment"
-	case *central.SensorEvent_NetworkPolicy:
-		name = sensorEvent.GetNetworkPolicy().GetName()
-		resourceType = "NetworkPolicy"
-	case *central.SensorEvent_Namespace:
-		name = sensorEvent.GetNamespace().GetName()
-		resourceType = "Namespace"
-	case *central.SensorEvent_ProcessIndicator:
-		name = sensorEvent.GetProcessIndicator().GetSignal().GetExecFilePath()
-		resourceType = "ProcessIndicator"
-	case *central.SensorEvent_Secret:
-		name = sensorEvent.GetSecret().GetName()
-		resourceType = "Secret"
-	case nil:
-		logger.Errorf("Resource field is empty")
-	default:
-		logger.Errorf("No resource with type %T", x)
-	}
-	logger.Infof("Sending Sensor Event: Action: '%s'. Type '%s'. Name: '%s'", sensorEvent.GetAction(), resourceType, name)
-}
-
 func (s *sensor) sendEvents(orchestratorEvents <-chan *central.SensorEvent, signals <-chan *central.SensorEvent, flows <-chan *central.NetworkFlowUpdate, output chan<- *central.SensorEnforcement, client central.SensorServiceClient) {
 	var err error
 	recoverable := true
@@ -160,22 +133,37 @@ func (s *sensor) doReceiveMessages(output chan<- *central.SensorEnforcement, str
 				return err
 			}
 
-			enforcementMsg, ok := msg.Msg.(*central.MsgToSensor_Enforcement)
-			if !ok {
-				logger.Errorf("Unsupported message from central of type %T: %+v", msg.Msg, msg.Msg)
-				continue
-			}
-			enforcement := enforcementMsg.Enforcement
-
-			switch x := enforcement.Resource.(type) {
-			case *central.SensorEnforcement_Deployment:
-				s.processResponse(stream.Context(), enforcement, output)
-			case *central.SensorEnforcement_ContainerInstance:
-				s.processResponse(stream.Context(), enforcement, output)
+			switch msg.Msg.(type) {
+			case *central.MsgToSensor_Enforcement:
+				enforcementMsg := msg.Msg.(*central.MsgToSensor_Enforcement)
+				s.processEnforcement(enforcementMsg.Enforcement, output, stream)
+			case *central.MsgToSensor_Command:
+				commandMsg := msg.Msg.(*central.MsgToSensor_Command)
+				s.processCommand(commandMsg.Command)
 			default:
-				logger.Errorf("Event response with type '%s' is not handled", x)
+				logger.Errorf("Unsupported message from central of type %T: %+v", msg.Msg, msg.Msg)
 			}
 		}
+	}
+}
+
+func (s *sensor) processEnforcement(enforcement *central.SensorEnforcement, output chan<- *central.SensorEnforcement, stream central.SensorService_CommunicateClient) {
+	switch x := enforcement.Resource.(type) {
+	case *central.SensorEnforcement_Deployment:
+		s.processResponse(stream.Context(), enforcement, output)
+	case *central.SensorEnforcement_ContainerInstance:
+		s.processResponse(stream.Context(), enforcement, output)
+	default:
+		logger.Errorf("enforcement with type '%s' is not handled", x)
+	}
+}
+
+func (s *sensor) processCommand(command *central.SensorCommand) {
+	switch x := command.Command.(type) {
+	case *central.SensorCommand_Scrape:
+		// do nothing.
+	default:
+		logger.Errorf("enforcement with type '%s' is not handled", x)
 	}
 }
 

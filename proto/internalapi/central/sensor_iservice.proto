@@ -17,6 +17,7 @@ message MsgFromSensor {
 message MsgToSensor {
     oneof msg {
         SensorEnforcement enforcement = 1;
+        SensorCommand     command     = 2;
     }
 }
 
