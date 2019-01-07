@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
@@ -38,9 +37,9 @@ func getSplunk(t *testing.T) *splunk {
 
 	notifier := &storage.Notifier{
 		UiEndpoint: "http://google.com",
-		Config: &v1.Notifier_Splunk{
+		Config: &storage.Notifier_Splunk{
 			Splunk: &storage.Splunk{
-				Token:        token,
+				HttpToken:    token,
 				HttpEndpoint: endpoint,
 			},
 		},

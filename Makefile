@@ -228,6 +228,10 @@ ui-test:
 .PHONY: test
 test: bazel-test benchmarks-test ui-test collector-tag
 
+.PHONY: integration-unit-tests
+integration-unit-tests: gazelle
+	 go test -tags=integration $(shell go list ./... | grep  "registries\|scanners\|notifiers")
+
 upload-coverage:
 	@# 'mode: set' is repeated in each coverage file, but Coveralls only wants it
 	@# exactly once at the head of the file.

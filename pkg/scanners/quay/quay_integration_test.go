@@ -5,7 +5,6 @@ package quay
 import (
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
@@ -26,7 +25,7 @@ type QuayIntegrationSuite struct {
 
 func (suite *QuayIntegrationSuite) SetupSuite() {
 	protoImageIntegration := &storage.ImageIntegration{
-		IntegrationConfig: &v1.ImageIntegration_Quay{
+		IntegrationConfig: &storage.ImageIntegration_Quay{
 			Quay: &storage.QuayConfig{
 				OauthToken: testOauthToken,
 				Endpoint:   "quay.io",
@@ -49,14 +48,11 @@ func (suite *QuayIntegrationSuite) TestScanTest() {
 
 func (suite *QuayIntegrationSuite) TestGetLastScan() {
 	image := &storage.Image{
+		Id: "sha256:d088ff453bb180ade5c97c8e7961afbbb6921f0131982563de431e8d3d9bb606",
 		Name: &storage.ImageName{
-			Sha:      "sha256:d088ff453bb180ade5c97c8e7961afbbb6921f0131982563de431e8d3d9bb606",
 			Registry: "quay.io",
 			Remote:   "integration/nginx",
 			Tag:      "1.10",
-		},
-		Metadata: &storage.ImageMetadata{
-			RegistrySha: "sha256:d088ff453bb180ade5c97c8e7961afbbb6921f0131982563de431e8d3d9bb606",
 		},
 	}
 	scan, err := suite.quay.GetLastScan(image)

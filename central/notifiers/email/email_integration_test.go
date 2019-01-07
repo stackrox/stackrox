@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
@@ -34,7 +33,7 @@ func getEmail(t *testing.T) *email {
 
 	notifier := &storage.Notifier{
 		UiEndpoint: "http://google.com",
-		Config: &v1.Notifier_Email{
+		Config: &storage.Notifier_Email{
 			Email: &storage.Email{
 				Server:     server,
 				Sender:     user,

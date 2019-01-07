@@ -7,7 +7,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,10 +14,22 @@ import (
 
 func TestECRIntegration(t *testing.T) {
 	accessID := os.Getenv("ACCESS_ID")
+	if accessID == "" {
+		t.Skip("ACCESS_ID required for ECR integration test")
+		return
+	}
 	accessKey := os.Getenv("ACCESS_KEY")
+	if accessKey == "" {
+		t.Skip("ACCESS_KEY required for ECR integration test")
+		return
+	}
 	registryID := os.Getenv("REGISTRY_ID")
+	if registryID == "" {
+		t.Skip("REGISTRY_ID required for ECR integration test")
+		return
+	}
 	integration := &storage.ImageIntegration{
-		IntegrationConfig: &v1.ImageIntegration_Ecr{
+		IntegrationConfig: &storage.ImageIntegration_Ecr{
 			Ecr: &storage.ECRConfig{
 				Region:          "us-west-2",
 				RegistryId:      registryID,

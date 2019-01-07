@@ -361,6 +361,23 @@ jobs:
             make go-generated-srcs
             git diff --exit-code HEAD
 
+  integration-unit-tests:
+    <<: *defaults
+    resource_class: large
+    steps:
+      - checkout
+      - setup_remote_docker
+
+      - *restoreDep
+      - *restoreGradle
+      - *restoreUI
+
+      - *setupBazel
+
+      - run:
+          name: Run integration tests
+          command: make integration-unit-tests
+
   k8s-tests:
     <<: *defaults
     environment:
@@ -806,6 +823,10 @@ workflows:
             tags:
               only: /.*/
       - unit-tests:
+          filters:
+            tags:
+              only: /.*/
+      - integration-unit-tests:
           filters:
             tags:
               only: /.*/

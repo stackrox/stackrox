@@ -6,21 +6,20 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+const project = "ultra-current-825"
+
 func TestGoogle(t *testing.T) {
 	if os.Getenv("SERVICE_ACCOUNT") == "" {
-		t.Fatal("SERVICE_ACCOUNT env variable required")
-	}
-	if os.Getenv("PROJECT") == "" {
-		t.Fatal("PROJECT env variable required")
+		t.Skip("SERVICE_ACCOUNT env variable required")
+		return
 	}
 	integration := &storage.ImageIntegration{
-		IntegrationConfig: &v1.ImageIntegration_Google{
+		IntegrationConfig: &storage.ImageIntegration_Google{
 			Google: &storage.GoogleConfig{
 				Endpoint:       "us.gcr.io",
 				ServiceAccount: os.Getenv("SERVICE_ACCOUNT"),
@@ -34,10 +33,10 @@ func TestGoogle(t *testing.T) {
 	metadata, err := registry.Metadata(&storage.Image{
 		Name: &storage.ImageName{
 			Registry: "us.gcr.io",
-			Remote:   os.Getenv("PROJECT") + "/music-nginx",
+			Remote:   project + "/music-nginx",
 			Tag:      "latest",
 		},
 	})
 	require.NoError(t, err)
-	assert.Len(t, metadata.Layers, 14)
+	assert.Len(t, metadata.LayerShas, 14)
 }
