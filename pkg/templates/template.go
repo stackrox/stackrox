@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"bytes"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -20,4 +21,14 @@ func ExecuteToString(tmpl *template.Template, data interface{}) (string, error) 
 		return "", err
 	}
 	return b.String(), nil
+}
+
+// ExecuteToBytes executes the given template and returns the result as a []byte.
+func ExecuteToBytes(tmpl *template.Template, data interface{}) ([]byte, error) {
+	var b []byte
+	buf := bytes.NewBuffer(b)
+	if err := tmpl.Execute(buf, data); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

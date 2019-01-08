@@ -2,9 +2,12 @@ package image
 
 import (
 	"strings"
+	"text/template"
 
 	"github.com/gobuffalo/packd"
 	"github.com/gobuffalo/packr"
+	"github.com/stackrox/rox/pkg/templates"
+	"github.com/stackrox/rox/pkg/version"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 )
@@ -44,13 +47,29 @@ func GetMonitoringChart() *chart.Chart {
 	return chart
 }
 
+// We need to stamp in the version to the Chart.yaml files prior to loading the chart
+// or it will fail
 func getChart(box packr.Box, prefix string) (*chart.Chart, error) {
 	var chartFiles []*chartutil.BufferedFile
 	err := box.WalkPrefix(prefix, func(name string, file packd.File) error {
 		trimmedPath := strings.TrimPrefix(name, prefix)
+		data := []byte(file.String())
+		// if chart file, then render the version into it
+		if trimmedPath == "Chart.yaml" {
+			t, err := template.New("chart").Parse(file.String())
+			if err != nil {
+				return err
+			}
+			data, err = templates.ExecuteToBytes(t, map[string]string{
+				"Version": version.GetMainVersion(),
+			})
+			if err != nil {
+				return err
+			}
+		}
 		chartFiles = append(chartFiles, &chartutil.BufferedFile{
 			Name: trimmedPath,
-			Data: []byte(file.String()),
+			Data: data,
 		})
 		return nil
 	})

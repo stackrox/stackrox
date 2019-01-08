@@ -1,6 +1,6 @@
 name: monitoring
 description: StackRox Monitoring
-version: 2.2.11.0
+version: {{.Version}}
 maintainers:
   - name: stackrox
     email: support@stackrox.com

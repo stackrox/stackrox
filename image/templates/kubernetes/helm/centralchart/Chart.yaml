@@ -1,6 +1,6 @@
 name: central
 description: StackRox Central Server
-version: 2.2.11.0
+version: {{.Version}}
 maintainers:
   - name: stackrox
     email: support@stackrox.com
