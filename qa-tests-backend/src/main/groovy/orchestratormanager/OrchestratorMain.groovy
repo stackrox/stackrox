@@ -28,7 +28,6 @@ interface OrchestratorMain {
     def waitForDaemonSetDeletion(String name)
 
     //Containers
-    String getpods()
     def wasContainerKilled(String containerName, String namespace)
     def isKubeProxyPresent()
     def isKubeDashboardRunning()
@@ -36,6 +35,7 @@ interface OrchestratorMain {
 
     //Services
     def deleteService(String serviceName, String namespace)
+    def createService(Deployment deployment)
 
     //Secrets
     def createSecret(String name)
@@ -54,6 +54,7 @@ interface OrchestratorMain {
     def createClairifyDeployment()
     String getClairifyEndpoint()
     String generateYaml(Object orchestratorObject)
+    String getNameSpace()
 
     /*TODO:
         def getDeploymenton(String deploymentName)

@@ -169,6 +169,10 @@ class DockerEE extends OrchestratorCommon {
     }
 
     @Override
+    def getNameSpace() {
+    }
+
+    @Override
     def getDeploymentCount() {
     }
 

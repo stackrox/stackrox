@@ -361,16 +361,6 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         Container Methods
     */
 
-    String getpods() {
-        List<String> podIds = new ArrayList<>()
-        V1PodList pods = this.api.listNamespacedPod("qa", "", "", "", false, "", 1, "", 5, false)
-        List<V1Pod> podlist = pods.getItems()
-        for (V1Pod pod : podlist) {
-            podIds.add(podlist.metadata.name)
-        }
-        return podIds.get(0)
-    }
-
     def wasContainerKilled(String containerName, String namespace = this.namespace) {
         Long startTime = System.currentTimeMillis()
         V1PodList pods = new V1PodList()
@@ -460,11 +450,12 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
 
     def createService(Deployment deployment) {
         api.createNamespacedService(
-                deployment.namespace,
+               deployment.namespace,
                 new V1Service()
+
                         .metadata(
                         new V1ObjectMeta()
-                                .name(deployment.name)
+                                .name(deployment.serviceName ? deployment.serviceName : deployment.name)
                                 .namespace(deployment.namespace)
                                 .labels(deployment.labels)
                 )
@@ -472,10 +463,13 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                         new V1ServiceSpec()
                                 .ports(deployment.getPorts().collect {
                             k, v ->
+
             new V1ServicePort()
                                         .name(k as String)
                                         .port(k as Integer)
                                         .protocol(v)
+                                        .targetPort(new IntOrString(deployment.targetport) ?: new
+                    IntOrString(k as Integer))
                         })
                                 .selector(deployment.labels)
                                 .type(deployment.createLoadBalancer ? "LoadBalancer" : "ClusterIP")
@@ -504,7 +498,8 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
             println "Waiting for LB external IP for " + deployment.name
             while (waitTime < maxWaitTime) {
                 V1ServiceList sList
-                sList = api.listNamespacedService(namespace, null, null, null, null, null, null, null, null, null)
+                sList = api.listNamespacedService(deployment.namespace, null, null, null, null, null,
+                        null, null, null, null)
 
                 for (V1Service service : sList.getItems()) {
                     if (service.getMetadata().getName() == deployment.name) {
@@ -754,13 +749,15 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         return ""
     }
 
+    String getNameSpace() {
+        return this.namespace
+    }
+
     /*
         Private K8S Support functions
     */
 
     private createDeploymentNoWait(Deployment deployment) {
-        deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
-
         // Create service if needed
         if (deployment.exposeAsService) {
             createService(deployment)
@@ -770,8 +767,8 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         ExtensionsV1beta1Deployment k8sDeployment = new ExtensionsV1beta1Deployment()
                 .metadata(
                 new V1ObjectMeta()
-                        .name(deployment.getName())
-                        .namespace(deployment.getNamespace())
+                        .name(deployment.name)
+                        .namespace(deployment.namespace)
                         .labels(deployment.getLabels())
         )
                 .spec(new ExtensionsV1beta1DeploymentSpec()
@@ -781,14 +778,14 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 .spec(generatePodSpec(deployment))
                 .metadata(new V1ObjectMeta()
                 .annotations(deployment.getAnnotation())
-                .name(deployment.getName())
-                .namespace(this.namespace)
+                .name(deployment.name)
+                .namespace(deployment.namespace)
                 .labels(deployment.getLabels())
         )
         )
         )
         try {
-            beta1.createNamespacedDeployment(deployment.getNamespace(), k8sDeployment, null)
+            beta1.createNamespacedDeployment(deployment.namespace, k8sDeployment, null)
             println("Told the orchestrator to create " + deployment.getName())
         } catch (Exception e) {
             println("Error creating kube deployment" + e.toString())
@@ -930,6 +927,13 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
             k, v -> new V1ContainerPort().containerPort(k).protocol(v)
         }
 
+        List<V1LocalObjectReference> imagePullSecrets = new LinkedList<>()
+        for (String str : deployment.getImagePullSecret()) {
+            V1LocalObjectReference obj = new V1LocalObjectReference()
+                                  .name(str)
+            imagePullSecrets.add(obj)
+        }
+
         List<V1VolumeMount> mounts = new LinkedList<>()
         for (int i = 0; i < deployment.getVolMounts().size(); ++i) {
             V1VolumeMount mount = new V1VolumeMount()
@@ -981,7 +985,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 ]
         )
                 .volumes(volumes)
-
+                .imagePullSecrets(imagePullSecrets)
         return v1PodSpec
     }
 

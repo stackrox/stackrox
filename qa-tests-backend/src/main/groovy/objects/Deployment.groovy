@@ -4,7 +4,7 @@ import orchestratormanager.OrchestratorType
 
 class Deployment {
     String name
-    String namespace
+    String namespace = "qa"
     List<String> volNames = new ArrayList<String>()
     List<String> volMounts = new ArrayList<String>()
     String volType
@@ -13,6 +13,7 @@ class Deployment {
     List<String> secretNames = new ArrayList<String>()
     Map<String, String> labels = new HashMap<>()
     Map<Integer, String> ports = new HashMap<>()
+    Integer targetport
     Map<String,String> annotation = new HashMap<>()
     List<String> command = new ArrayList<>()
     List<Pod> pods = new ArrayList<>()
@@ -27,6 +28,8 @@ class Deployment {
     Map<String , String> request = new HashMap<>()
     Boolean createLoadBalancer = false
     String loadBalancerIP = null
+    String serviceName
+    List<String> imagePullSecret = new ArrayList<String>()
 
     Deployment setName(String n) {
         this.name = n
@@ -35,8 +38,23 @@ class Deployment {
         return this
     }
 
+    Deployment setServiceName(String name) {
+        this.serviceName = name
+        return this
+    }
+
+    Deployment addImagePullSecret(String sec) {
+        this.imagePullSecret.add(sec)
+        return this
+    }
+
     Deployment setNamespace(String n) {
         this.namespace = n
+        return this
+    }
+
+    Deployment setTargetPort(int port) {
+        this.targetport = port
         return this
     }
 

@@ -1,11 +1,12 @@
-import objects.Deployment
 import org.junit.experimental.categories.Category
 import groups.BAT
 import spock.lang.Unroll
+import objects.Deployment
 import io.stackrox.proto.api.v1.EmptyOuterClass
 import io.stackrox.proto.storage.NotifierOuterClass
 
 class IntegrationsTest extends BaseSpecification {
+
     @Category(BAT)
     def "Verify Clairify Integration"() {
         when:
@@ -108,4 +109,58 @@ class IntegrationsTest extends BaseSpecification {
         // connections to port 25
     }
 
+    @Category(BAT)
+    def "Verify Splunk Integration"() {
+       when:
+        "the integration is tested"
+
+        Deployment  deployment =
+               new Deployment()
+                       .setNamespace("stackrox")
+                       .setName("splunk")
+                       .setImage("store/splunk/enterprise:latest")
+                       .addPort (8000)
+                       .addPort (8088)
+                       .addAnnotation("test", "annotation")
+                       .setEnv([ "SPLUNK_START_ARGS": "--accept-license", "SPLUNK_USER": "root" ])
+                       .addLabel("app", "splunk")
+                       .setPrivilegedFlag(true)
+                       .addVolMountName("test")
+                       .addVolName("test")
+                       .addMountPath("/tmp")
+                       .setSkipReplicaWait(true)
+                       .addImagePullSecret("stackrox")
+
+        orchestrator.createDeployment(deployment)
+
+        Deployment serviceDeployment = new Deployment()
+               .addLabel("app", "splunk")
+               .setCreateLoadBalancer(true)
+               .setNamespace("stackrox")
+               .setName("splunk")
+               .setTargetPort(8000)
+               .addPort(8000, "TCP")
+               .setServiceName("splunk-http")
+
+        orchestrator.createService(serviceDeployment)
+
+        Deployment serviceDeploymentHec = new Deployment()
+               .addLabel("app" , "splunk")
+               .setCreateLoadBalancer(true)
+               .setNamespace("stackrox")
+               .setName("splunk")
+               .setTargetPort(8088)
+               .addPort(8088, "TCP")
+               .setServiceName("splunk-hec")
+
+        orchestrator.createService(serviceDeploymentHec)
+
+ then : "the API should return an empty message or an error, depending on the config"
+
+      cleanup:
+        "remove Deployment and services"
+        orchestrator.deleteDeployment(deployment)
+        orchestrator.deleteService( "splunk-hec", "stackrox")
+        orchestrator.deleteService( "splunk-http", "stackrox")
+    }
 }

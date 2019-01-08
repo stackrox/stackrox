@@ -248,16 +248,6 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
         Container Methods
     */
 
-    String getpods() {
-        List<String>podIds = new ArrayList<>()
-        def pods = osClient.pods().inNamespace("qa").list()
-        List<Pod> podlist = pods.getItems()
-        for ( Pod pod : podlist) {
-            podIds.add(pod.metadata.name)
-        }
-        return podIds.get(0)
-    }
-
     def wasContainerKilled(String containerName, String namespace = this.namespace) {
         Long startTime = System.currentTimeMillis()
         PodList pods = new PodList()
@@ -310,6 +300,7 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
         def service = osClient.services().inNamespace(deployment.namespace).createOrReplaceWithNew()
                 .withNewMetadata()
                         .withName(deployment.name)
+                        .withName(deployment.serviceName ? deployment.serviceName : deployment.name)
                         .withNamespace(deployment.namespace)
                         .withLabels(deployment.labels)
                 .endMetadata()
@@ -322,6 +313,7 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
                     .withName(k as String)
                     .withPort(k as Integer)
                     .withProtocol(v)
+                    .withTargetPort(new IntOrString(deployment.targetport))
                     .endPort()
         }
 
@@ -450,6 +442,10 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
         Misc/Helper Methods
     */
 
+    String getNameSpace() {
+        return this.namespace
+    }
+
     String generateYaml(Object orchestratorObject) {
         if (orchestratorObject instanceof NetworkPolicy) {
             return YamlGenerator.toYaml(createNetworkPolicyObject(orchestratorObject))
@@ -570,8 +566,6 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
     */
 
     private createDeploymentNoWait(Deployment deployment) {
-        deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
-
         DeploymentBuilder dep = new DeploymentBuilder()
                 .withNewMetadata()
                         .withName(deployment.name)
@@ -735,6 +729,12 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
             )
         }
 
+        List<LocalObjectReference> imagePullSecrets = new LinkedList<>()
+        for (String str : deployment.getImagePullSecret()) {
+            LocalObjectReference obj = new LocalObjectReference(name: str)
+            imagePullSecrets.add(obj)
+        }
+
         List<VolumeMount> volMounts = deployment.volMounts.collect {
             new VolumeMount(deployment.mountpath, null, it, true, null)
         }
@@ -777,7 +777,8 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
         )
         PodSpec podSpec = new PodSpec(
                 containers: [container],
-                volumes: volumes
+                volumes: volumes,
+                imagePullSecrets: imagePullSecrets
         )
         return podSpec
     }
