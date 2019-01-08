@@ -136,7 +136,7 @@ func (m *networkFlowManager) currentEnrichedConns() map[networkConnIndicator]tim
 	for conn, status := range conns {
 		container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
 		if !ok {
-			log.Errorf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
+			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
 			continue
 		}
 
