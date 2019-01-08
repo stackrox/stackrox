@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "sensor";
+
+import "internalapi/compliance/compliance_data.proto";
+import "api/v1/empty.proto";
+
+package sensor;
+
+// A Sensor service that allows node scrapes to report results.
+service ComplianceService {
+    rpc PushComplianceReturn (compliance.ComplianceReturn) returns (v1.Empty);
+}

@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	sensor "github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/compliance"
 	networkConnManager "github.com/stackrox/rox/sensor/common/networkflow/manager"
 	networkFlowService "github.com/stackrox/rox/sensor/common/networkflow/service"
 	signalService "github.com/stackrox/rox/sensor/common/service"
@@ -185,6 +186,7 @@ func (s *Sensor) registerAPIServices() {
 		benchmarks.NewBenchmarkResultsService(benchmarks.NewLRURelayer(s.conn)),
 		signalService.Singleton(),
 		networkFlowService.Singleton(),
+		compliance.Singleton(),
 	)
 	s.logger.Info("API services registered")
 }
@@ -211,7 +213,7 @@ func pingWithTimeout(svc v1.PingServiceClient) (err error) {
 func (s *Sensor) runSensor() {
 	s.sensorInstance = sensor.NewSensor(s.conn, s.clusterID)
 	s.logger.Info("Starting central connection.")
-	s.sensorInstance.Start(s.listener.Events(), signalService.Singleton().Indicators(), s.networkConnManager.FlowUpdates(), s.enforcer.Actions())
+	s.sensorInstance.Start(s.listener.Events(), signalService.Singleton().Indicators(), s.networkConnManager.FlowUpdates(), compliance.Singleton().Output(), s.enforcer.Actions())
 
 	if err := s.sensorInstance.Wait(); err != nil {
 		s.logger.Errorf("Sensor reported an error: %v", err)

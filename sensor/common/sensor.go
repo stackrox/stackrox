@@ -22,7 +22,7 @@ var (
 
 // Sensor interface allows you to start and stop the consumption/production loops.
 type Sensor interface {
-	Start(orchestratorInput <-chan *central.SensorEvent, collectorInput <-chan *central.SensorEvent, networkFlowInput <-chan *central.NetworkFlowUpdate, output chan<- *central.SensorEnforcement)
+	Start(orchestratorInput <-chan *central.SensorEvent, collectorInput <-chan *central.SensorEvent, networkFlowInput <-chan *central.NetworkFlowUpdate, complianceReturns <-chan *central.MsgFromSensor, output chan<- *central.SensorEnforcement)
 	Stop(error)
 	Wait() error
 }
@@ -69,7 +69,7 @@ type sensor struct {
 // It is an error to call Start repeatedly without first calling Wait(); Wait
 // itself will not return unless Stop() is called, or processing must be
 // aborted for another reason (stream interrupted, channel closed, etc.).
-func (s *sensor) Start(orchestratorInput <-chan *central.SensorEvent, collectorInput <-chan *central.SensorEvent, networkFlowInput <-chan *central.NetworkFlowUpdate, output chan<- *central.SensorEnforcement) {
+func (s *sensor) Start(orchestratorInput <-chan *central.SensorEvent, collectorInput <-chan *central.SensorEvent, networkFlowInput <-chan *central.NetworkFlowUpdate, complianceReturns <-chan *central.MsgFromSensor, output chan<- *central.SensorEnforcement) {
 	if !s.stopped.Reset() {
 		panic("Sensor has already been started without stopping first")
 	}
@@ -78,7 +78,7 @@ func (s *sensor) Start(orchestratorInput <-chan *central.SensorEvent, collectorI
 	// eventually returns.
 	go s.poller.Run()
 
-	go s.sendEvents(orchestratorInput, collectorInput, networkFlowInput, output, central.NewSensorServiceClient(s.conn))
+	go s.sendEvents(orchestratorInput, collectorInput, networkFlowInput, complianceReturns, output, central.NewSensorServiceClient(s.conn))
 
 }
 

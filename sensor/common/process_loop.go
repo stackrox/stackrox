@@ -23,7 +23,13 @@ const (
 
 var logger = logging.LoggerForModule()
 
-func (s *sensor) sendEvents(orchestratorEvents <-chan *central.SensorEvent, signals <-chan *central.SensorEvent, flows <-chan *central.NetworkFlowUpdate, output chan<- *central.SensorEnforcement, client central.SensorServiceClient) {
+func (s *sensor) sendEvents(
+	orchestratorEvents <-chan *central.SensorEvent,
+	signals <-chan *central.SensorEvent,
+	flows <-chan *central.NetworkFlowUpdate,
+	complianceReturns <-chan *central.MsgFromSensor,
+	output chan<- *central.SensorEnforcement,
+	client central.SensorServiceClient) {
 	var err error
 	recoverable := true
 	for !s.stopped.IsDone() && recoverable {
@@ -33,7 +39,7 @@ func (s *sensor) sendEvents(orchestratorEvents <-chan *central.SensorEvent, sign
 				break
 			}
 		}
-		recoverable, err = s.sendEventsSingle(orchestratorEvents, signals, flows, output, client)
+		recoverable, err = s.sendEventsSingle(orchestratorEvents, signals, flows, complianceReturns, output, client)
 	}
 	// Sanity check - if we exit the loop, we should be done, otherwise panic.
 	if !concurrency.WaitWithTimeout(&s.stopped, gracePeriod) {
@@ -45,6 +51,7 @@ func (s *sensor) sendEventsSingle(
 	orchestratorEvents <-chan *central.SensorEvent,
 	signals <-chan *central.SensorEvent,
 	flows <-chan *central.NetworkFlowUpdate,
+	complianceReturns <-chan *central.MsgFromSensor,
 	output chan<- *central.SensorEnforcement,
 	client central.SensorServiceClient) (recoverable bool, err error) {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -93,6 +100,11 @@ func (s *sensor) sendEventsSingle(
 					NetworkFlowUpdate: flowUpdate,
 				},
 			}
+		case complianceMsg, ok := <-complianceReturns:
+			if !ok {
+				return false, errors.New("compliance returns channel closed")
+			}
+			msg = complianceMsg
 		case <-stream.Context().Done():
 			return true, stream.Context().Err()
 		case <-s.stopped.Done():
