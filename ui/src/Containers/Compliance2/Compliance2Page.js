@@ -1,7 +1,7 @@
 import React from 'react';
 import { withRouter, Route } from 'react-router-dom';
 import { nestedCompliancePaths as PATHS } from 'routePaths';
-import Dashboard from './ComplianceDashboard';
+import Dashboard from './ComplianceDashboard/Dashboard';
 import Entity from './ComplianceEntity';
 import List from './ComplianceList';
 

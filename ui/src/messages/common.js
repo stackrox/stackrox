@@ -26,6 +26,11 @@ const common = Object.freeze({
         NO_ACCESS: 'No Access',
         READ_ACCESS: 'Read Access',
         READ_WRITE_ACCESS: 'Read + Write Access'
+    },
+    resourceLabels: {
+        CLUSTER: 'cluster',
+        NAMESPACE: 'namespace',
+        NODE: 'node'
     }
 });
 

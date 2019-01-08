@@ -95,7 +95,7 @@ export function fetchAuthStatus() {
     return axios.get('/v1/auth/status');
 }
 
-const getAccessToken = () => store.get(accessTokenKey) || null;
+export const getAccessToken = () => store.get(accessTokenKey) || null;
 export const storeAccessToken = token => store.set(accessTokenKey, token);
 export const clearAccessToken = () => store.remove(accessTokenKey);
 export const isTokenPresent = () => !!getAccessToken();

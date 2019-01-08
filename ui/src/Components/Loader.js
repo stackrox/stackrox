@@ -3,9 +3,9 @@ import { ClipLoader } from 'react-spinners';
 import PropTypes from 'prop-types';
 
 const Loader = ({ message }) => (
-    <div className="flex flex-col items-center justify-center h-full w-full bg-base-200">
+    <div className="flex flex-col items-center justify-center h-full w-full">
         <ClipLoader loading size={20} color="#5E667D" />
-        <div className="text-lg font-sans font-600 tracking-wide mt-4">{message}</div>
+        {message && <div className="text-lg font-sans font-600 tracking-wide mt-4">{message}</div>}
     </div>
 );
 

@@ -540,7 +540,7 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .btn {
-    @apply .flex .py-1 .px-1 .rounded-sm .font-600 .uppercase .text-center .text-sm .items-center .min-w-24 .justify-center .bg-base-200 .border-2 !important;
+    @apply .flex .py-2 .px-1 .rounded-sm .font-600 .uppercase .text-center .text-sm .items-center .min-w-24 .justify-center .border-2 !important;
 }
 
 .btn-icon {
@@ -548,31 +548,31 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-success {
-    @apply .text-success-600 .border-success-200 !important;
+    @apply .text-success-600 .border-success-200 .bg-base-200 !important;
 }
 
 .btn-success:hover {
-    @apply .btn-success .bg-success-100 !important;
+    @apply .btn-success .bg-success-100 .bg-base-200 !important;
 }
 
 .btn-alert {
-    @apply .text-alert-600 .border-alert-200 !important;
+    @apply .text-alert-600 .border-alert-200 .bg-base-200 !important;
 }
 
 .btn-alert:hover {
-    @apply .btn-alert .bg-alert-100 !important;
+    @apply .btn-alert .bg-alert-100 .bg-base-200 !important;
 }
 
 .btn-primary {
-    @apply .text-primary-600 .border-primary-200 !important;
+    @apply .text-primary-600 .border-primary-200 .bg-base-200 !important;
 }
 
 .btn-primary:hover {
-    @apply .btn-primary .bg-primary-100 !important;
+    @apply .btn-primary .bg-primary-100 .bg-base-200 !important;
 }
 
 .btn-base {
-    @apply .text-base-600 .border-base-200 !important;
+    @apply .text-base-600 .border-base-400 .bg-base-100 !important;
 }
 
 .btn-base:hover {
@@ -956,16 +956,4 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     display: inline-block;
     font-size: .8em;
     padding-left: 5px;
-}
-
-/* TODO: tailwind this stuff */
-.widget {
-    @apply bg-base-100;
-    @apply rounded;
-    box-shadow: 0 0px 2px 0 hsla(230, 50%, 70%, .25) !important;
-}
-
-.widget .chart-container {
-    max-height: 260px;
-    @apply w-full;
 }

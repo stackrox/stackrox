@@ -8,6 +8,92 @@ resolvers:
     module-dir: ui/node_modules
 
 dependencies:
+  ui/node_modules/apollo-cache-inmemory:
+    url: "https://github.com/apollographql/apollo-client"
+    license: MIT
+    files:
+      LICENSE: 7e87073d69b005223f3c10b5e088c98faa2596d2f7efe22eb57721c531ce023d
+      package.json:
+        author: f0e96153c80920216c08a51fb007941a998952394e318fc7b349290b8d25a9e1
+        contributors: 7434935e3e49e54278ce613bf6c4f1aa4c6fa6e26e2e91fff264cf35545bbcc5
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+      - 2018 Meteor Development Group, Inc.
+  
+  ui/node_modules/apollo-client:
+    url: "https://github.com/apollographql/apollo-client"
+    license: MIT
+    files:
+      LICENSE: 7e87073d69b005223f3c10b5e088c98faa2596d2f7efe22eb57721c531ce023d
+      package.json:
+        author: 343f32e43536fd12736f6870de1e2ca1f36204e5fa4bdc0cedb0921bdd9f8ae6
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+      - 2018 Meteor Development Group, Inc.
+
+  ui/node_modules/apollo-link:
+    url: "https://github.com/apollographql/apollo-client"
+    license: MIT
+    files:
+      package.json:
+        author: 321e96549d2d081034104cc63b7a57bf5c448940abda3ae7dd027460327cf3bf
+        contributors: 6e657b553f3c6101b12fc1dafdc622e27110c9e2ba09ef8d23247e6fa9e27a85
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+      - 2018 Meteor Development Group, Inc.
+
+  ui/node_modules/apollo-link-context:
+    url: "https://github.com/apollographql/apollo-client"
+    license: MIT
+    files:
+      package.json:
+        author: f0e96153c80920216c08a51fb007941a998952394e318fc7b349290b8d25a9e1
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+      - 2018 Meteor Development Group, Inc.
+
+  ui/node_modules/apollo-link-error:
+    url: "https://github.com/apollographql/apollo-client"
+    license: MIT
+    files:
+      package.json:
+        author: f0e96153c80920216c08a51fb007941a998952394e318fc7b349290b8d25a9e1
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+      - 2018 Meteor Development Group, Inc.
+
+  ui/node_modules/apollo-link-http:
+    url: "https://github.com/apollographql/apollo-client"
+    license: MIT
+    files:
+      package.json:
+        author: 321e96549d2d081034104cc63b7a57bf5c448940abda3ae7dd027460327cf3bf
+        contributors: f1481ab99f1742c9d3b488cd489485e18bca9ab76862fdd3252d956a9e463346
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution: 
+      - 2018 Meteor Development Group, Inc.
+
+  ui/node_modules/graphql:
+    url: "https://github.com/apollographql/apollo-client"
+    license: MIT
+    files:
+      LICENSE: 22a28f29cff8f5ecf9f463301d9c03b8245a2952ebae0bcab633fd654c0792fb
+      package.json:
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+      - 2018 Meteor Development Group, Inc.
+  
+  ui/node_modules/graphql-tag:
+    url: "https://github.com/apollographql/apollo-client"
+    license: MIT
+    files:
+      LICENSE: c8b47ee39e3e20b29f769b39b6a1de8f3f2cca18738a7b3a82ffb2f483d46234
+      package.json:
+        author: bd85bcdb8d4e613a79cb62d0903946ad10c83e63dc75f67614c159c0dbf4d184
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+      - 2018 Meteor Development Group, Inc.
+
   ui/node_modules/axios:
     url: https://github.com/axios/axios
     license: MIT
@@ -192,6 +278,17 @@ dependencies:
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
     - Facebook, Inc. and its affiliates.
+
+  ui/node_modules/react-apollo:
+    url: https://github.com/apollographql/react-apollo
+    license: MIT
+    files:
+      LICENSE: c3788ec9303d941341f6293db23508a2bce3f773586c71fc1e71737999f66ece
+      package.json:
+        author: 42b381e0c864fd85379c730ae47f0f0d3d9621e29f4c10970074e0c4209ecc8f
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+      - 2015 Ben Newman
 
   ui/node_modules/react-collapsible:
     url: https://github.com/glennflanagan/react-collapsible
