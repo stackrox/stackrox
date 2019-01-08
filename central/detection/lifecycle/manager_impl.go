@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/central/enrichment"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/central/sensorevent/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -23,7 +23,7 @@ import (
 
 type indicatorWithInjector struct {
 	indicator           *storage.ProcessIndicator
-	enforcementInjector pipeline.EnforcementInjector
+	msgToSensorInjector pipeline.MsgInjector
 }
 
 type managerImpl struct {
@@ -117,24 +117,28 @@ func (m *managerImpl) flushIndicatorQueue() {
 				deployment.GetNamespace(), deployment.GetName())
 			continue
 		}
-		injected := indicatorInfo.enforcementInjector.InjectEnforcement(enforcementAction)
+		injected := indicatorInfo.msgToSensorInjector.InjectMessage(&central.MsgToSensor{
+			Msg: &central.MsgToSensor_Enforcement{
+				Enforcement: enforcementAction,
+			},
+		})
 		if !injected {
 			logger.Errorf("Failed to inject enforcement action: %s", proto.MarshalTextString(enforcementAction))
 		}
 	}
 }
 
-func (m *managerImpl) addToQueue(indicator *storage.ProcessIndicator, injector pipeline.EnforcementInjector) {
+func (m *managerImpl) addToQueue(indicator *storage.ProcessIndicator, injector pipeline.MsgInjector) {
 	m.queueLock.Lock()
 	defer m.queueLock.Unlock()
 
 	m.queuedIndicators[indicator.GetId()] = indicatorWithInjector{
 		indicator:           indicator,
-		enforcementInjector: injector,
+		msgToSensorInjector: injector,
 	}
 }
 
-func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator, injector pipeline.EnforcementInjector) error {
+func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator, injector pipeline.MsgInjector) error {
 	if indicator.GetId() == "" {
 		return fmt.Errorf("invalid indicator received: %s, id was empty", proto.MarshalTextString(indicator))
 	}

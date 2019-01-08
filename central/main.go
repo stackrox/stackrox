@@ -53,8 +53,8 @@ import (
 	roleStore "github.com/stackrox/rox/central/role/store"
 	searchService "github.com/stackrox/rox/central/search/service"
 	secretService "github.com/stackrox/rox/central/secret/service"
-	sensorManager "github.com/stackrox/rox/central/sensor/manager"
 	sensorService "github.com/stackrox/rox/central/sensor/service"
+	"github.com/stackrox/rox/central/sensor/service/streamer"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	userService "github.com/stackrox/rox/central/user/service"
@@ -198,7 +198,7 @@ func (c *central) startGRPCServer() {
 		siService.Singleton(),
 		summaryService.Singleton(),
 		userService.Singleton(),
-		sensorService.New(sensorManager.Singleton()),
+		sensorService.New(streamer.ManagerSingleton()),
 	)
 
 	enrichanddetect.GetLoop().Start()

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/rox/central/sensor/manager"
+	"github.com/stackrox/rox/central/sensor/service/streamer"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -19,11 +19,11 @@ var (
 )
 
 type serviceImpl struct {
-	manager manager.SensorManager
+	manager streamer.Manager
 }
 
 // New creates a new Service using the given manager.
-func New(manager manager.SensorManager) Service {
+func New(manager streamer.Manager) Service {
 	return &serviceImpl{
 		manager: manager,
 	}
@@ -55,14 +55,15 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 
 	clusterID := svc.GetId()
 
-	// Create a stream for the cluster. Throw error if it already exists.
-	sensorConn, err := s.manager.CreateConnection(clusterID)
+	// Create a Streamer for the cluster. Throw error if it already exists.
+	streamer, err := s.manager.CreateStreamer(clusterID)
 	if err != nil {
 		return fmt.Errorf("unable to open stream to cluster %s: %s", clusterID, err)
 	}
+	streamer.Start(server)
+	streamer.WaitUntilFinished()
 
-	err = sensorConn.Communicate(server)
-	if removeErr := s.manager.RemoveConnection(clusterID, sensorConn); removeErr != nil {
+	if removeErr := s.manager.RemoveStreamer(clusterID, streamer); removeErr != nil {
 		log.Errorf("Could not remove sensor connection for cluster %s: %v", clusterID, removeErr)
 	}
 	return err
