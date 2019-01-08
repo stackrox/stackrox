@@ -10,12 +10,20 @@ function Button(props) {
                 Edit
             </button>
         );
-    return <SaveButton formName="auth-provider-form" />;
+    return (
+        <div className="flex flex-row">
+            <button className="btn btn-primary mr-2" type="button" onClick={props.onCancel}>
+                Cancel
+            </button>
+            <SaveButton formName="auth-provider-form" />
+        </div>
+    );
 }
 
 Button.propTypes = {
     isEditing: PropTypes.bool.isRequired,
-    onEdit: PropTypes.func.isRequired
+    onEdit: PropTypes.func.isRequired,
+    onCancel: PropTypes.func.isRequired
 };
 
 export default Button;

@@ -15,6 +15,7 @@ class AuthProvider extends Component {
         isEditing: PropTypes.bool.isRequired,
         onSave: PropTypes.func.isRequired,
         onEdit: PropTypes.func.isRequired,
+        onCancel: PropTypes.func.isRequired,
         groups: PropTypes.arrayOf(PropTypes.shape({})).isRequired
     };
 
@@ -101,7 +102,7 @@ class AuthProvider extends Component {
     };
 
     render() {
-        const { selectedAuthProvider, isEditing, onSave, onEdit } = this.props;
+        const { selectedAuthProvider, isEditing, onSave, onEdit, onCancel } = this.props;
         const isEmptyState = !selectedAuthProvider;
         let headerText = '';
         let headerComponents = null;
@@ -110,8 +111,10 @@ class AuthProvider extends Component {
         } else {
             headerText = selectedAuthProvider.name
                 ? `"${selectedAuthProvider.name}" Auth Provider`
-                : 'Create New Auth Provider';
-            headerComponents = <Button isEditing={isEditing} onEdit={onEdit} onSave={onSave} />;
+                : `Create New Auth ${selectedAuthProvider.type} Provider`;
+            headerComponents = (
+                <Button isEditing={isEditing} onEdit={onEdit} onSave={onSave} onCancel={onCancel} />
+            );
         }
         const panelHeaderClassName = `${headerClassName} bg-base-100`;
         return (

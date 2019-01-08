@@ -53,6 +53,10 @@ class Roles extends Component {
 
     onCancel = () => {
         this.setState({ isEditing: false });
+        const { selectedRole, selectRole, roles } = this.props;
+        if (selectedRole && selectedRole.name === '') {
+            selectRole(roles[0]);
+        }
     };
 
     onDelete = role => {
@@ -85,9 +89,10 @@ class Roles extends Component {
 
     render() {
         const { selectedRole } = this.props;
+        const className = this.state.isEditing ? 'pointer-events-none opacity-50' : '';
         return (
             <section className="flex flex-1 h-full">
-                <div className="w-1/4 m-4">{this.renderSideBar()}</div>
+                <div className={`w-1/4 m-4 ${className}`}>{this.renderSideBar()}</div>
                 <div className="w-3/4 my-4 mr-4">
                     <Permissions
                         isEditing={this.state.isEditing}

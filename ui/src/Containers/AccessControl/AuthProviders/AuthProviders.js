@@ -42,7 +42,16 @@ class AuthProviders extends Component {
     };
 
     onCancel = () => {
-        this.props.setAuthProviderEditingState(false);
+        const {
+            selectedAuthProvider,
+            setAuthProviderEditingState,
+            selectAuthProvider,
+            authProviders
+        } = this.props;
+        setAuthProviderEditingState(false);
+        if (selectedAuthProvider && !selectedAuthProvider.id) {
+            selectAuthProvider(authProviders[0]);
+        }
     };
 
     onDelete = authProvider => {
@@ -69,9 +78,10 @@ class AuthProviders extends Component {
 
     render() {
         const { selectedAuthProvider, groups } = this.props;
+        const className = this.props.isEditing ? 'pointer-events-none opacity-50' : '';
         return (
             <section className="flex flex-1 h-full">
-                <div className="w-1/4 m-4">{this.renderSideBar()}</div>
+                <div className={`w-1/4 m-4 ${className}`}>{this.renderSideBar()}</div>
                 <div className="w-3/4 my-4 mr-4">
                     <AuthProvider
                         isEditing={this.props.isEditing}

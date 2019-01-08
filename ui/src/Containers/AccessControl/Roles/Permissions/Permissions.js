@@ -20,6 +20,7 @@ class Permissions extends Component {
         }),
         isEditing: PropTypes.bool.isRequired,
         onSave: PropTypes.func.isRequired,
+        onCancel: PropTypes.func.isRequired,
         onEdit: PropTypes.func.isRequired
     };
 
@@ -57,7 +58,7 @@ class Permissions extends Component {
     };
 
     render() {
-        const { selectedRole, isEditing, onSave, onEdit } = this.props;
+        const { selectedRole, isEditing, onSave, onEdit, onCancel } = this.props;
         if (!selectedRole) return null;
         const headerText = selectedRole.name
             ? `"${selectedRole.name}" Permissions`
@@ -65,7 +66,7 @@ class Permissions extends Component {
         const headerComponents = defaultRoles[selectedRole.name] ? (
             <span className="uppercase text-base-500 leading-normal font-700">system default</span>
         ) : (
-            <Button isEditing={isEditing} onEdit={onEdit} onSave={onSave} />
+            <Button isEditing={isEditing} onEdit={onEdit} onSave={onSave} onCancel={onCancel} />
         );
         const panelHeaderClassName = `${headerClassName} bg-base-100`;
         return (
