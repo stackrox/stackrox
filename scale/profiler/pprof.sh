@@ -16,12 +16,16 @@ usage() {
     echo "usage: ./pprof.sh <output dir> <endpoint> <num_iterations (optional)>"
 }
 
+curl_central() {
+    curl -sk -u "admin:$ROX_PASSWORD" $@
+}
+
 pull_profiles() {
   echo "Iteration $1"
   formatted_date="$(date +%Y-%m-%d-%H-%M-%S)"
-  curl -sk "https://$ENDPOINT/debug/heap" > "$DIR/heap_${formatted_date}.tar.gz"
-  curl -sk "https://$ENDPOINT/debug/goroutine" > "$DIR/goroutine_${formatted_date}.tar.gz"
-  curl -sk "https://$ENDPOINT/debug/pprof/profile" > "$DIR/cpu_${formatted_date}.tar.gz"
+  curl_central "https://$ENDPOINT/debug/heap" > "$DIR/heap_${formatted_date}.tar.gz"
+  curl_central "https://$ENDPOINT/debug/goroutine" > "$DIR/goroutine_${formatted_date}.tar.gz"
+  curl_central "https://$ENDPOINT/debug/pprof/profile" > "$DIR/cpu_${formatted_date}.tar.gz"
 }
 
 if [ $# -lt 2 ]; then

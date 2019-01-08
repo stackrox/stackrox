@@ -1,0 +1,54 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: profiler
+  namespace: stackrox
+  labels:
+    app: profiler
+  annotations:
+    owner: stackrox
+    email: support@stackrox.com
+spec:
+  replicas: 1
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: profiler
+  template:
+    metadata:
+      namespace: stackrox
+      labels:
+        app: profiler
+    spec:
+      imagePullSecrets:
+        - name: stackrox
+      containers:
+      - image: stackrox/scale:${TAG}
+        imagePullPolicy: IfNotPresent
+        name: profiler
+        env:
+        - name: ROX_PASSWORD
+          value: ${ROX_PASSWORD}
+        command:
+          - /profiler-entrypoint.sh
+          - ${OUTPUT_DIR}
+          - "${PORT}"
+        volumeMounts:
+        - name: profiler-volume
+          mountPath: ${OUTPUT_DIR}
+      volumes:
+      - name: profiler-volume
+        persistentVolumeClaim:
+          claimName: profiler-pvc
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: profiler-pvc
+  namespace: stackrox
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

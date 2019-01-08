@@ -192,7 +192,8 @@ build: gazelle cli
 		//sensor/swarm \
 		//integration-tests/mock-grpc-server \
 		//scale/mocksensor \
-		//scale/mockcollector
+		//scale/mockcollector \
+		//scale/profiler
 
 .PHONY: gendocs
 gendocs: $(GENERATED_API_DOCS)
@@ -266,6 +267,7 @@ image: build clean-image $(MERGED_API_SWAGGER_SPEC)
 	cp bazel-bin/integration-tests/mock-grpc-server/linux_amd64_pure_stripped/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
 	cp bazel-bin/scale/mocksensor/linux_amd64_pure_stripped/mocksensor scale/image/bin/mocksensor
 	cp bazel-bin/scale/mockcollector/linux_amd64_pure_stripped/mockcollector scale/image/bin/mockcollector
+	cp bazel-bin/scale/profiler/linux_amd64_pure_stripped/profiler scale/image/bin/profiler
 
 	echo "$(TAG)" > image/VERSION.txt
 	chmod +w image/bin/*
@@ -273,7 +275,7 @@ image: build clean-image $(MERGED_API_SWAGGER_SPEC)
 	docker build -t stackrox/main:$(TAG) image/
 	docker build -t stackrox/monitoring:$(TAG) monitoring
 	docker build -t stackrox/grpc-server:$(TAG) integration-tests/mock-grpc-server/image
-	docker build -t stackrox/scale:$(TAG) scale/image
+	docker build -t stackrox/scale:$(TAG) -f scale/image/Dockerfile scale
 	@echo "Built images with tag: $(TAG)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 
