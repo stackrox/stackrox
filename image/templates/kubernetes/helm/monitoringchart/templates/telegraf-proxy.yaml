@@ -3,8 +3,6 @@ kind: ConfigMap
 metadata:
   name: telegraf-proxy
   namespace: {{.Values.namespace}}
-  annotations:
-    "helm.sh/hook": "pre-install"
 data:
   telegraf.conf: |-
     # Telegraf Configuration

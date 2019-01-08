@@ -182,5 +182,3 @@ kind: ConfigMap
 metadata:
   name: telegraf
   namespace: {{.Values.namespace}}
-  annotations:
-    "helm.sh/hook": "pre-install"

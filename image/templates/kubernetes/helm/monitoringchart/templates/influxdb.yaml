@@ -3,8 +3,6 @@ kind: ConfigMap
 metadata:
   name: influxdb
   namespace: {{.Values.namespace}}
-  annotations:
-    "helm.sh/hook": "pre-install"
 data:
   influxdb.conf: |-
     ### Welcome to the InfluxDB configuration file.
