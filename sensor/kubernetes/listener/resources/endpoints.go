@@ -58,7 +58,9 @@ func (m *endpointManager) addEndpointDataForContainerPort(podIP, podHostIP net.I
 
 func (m *endpointManager) addEndpointDataForPod(pod *v1.Pod, data *clusterentities.EntityData) {
 	podIP := net.ParseIP(pod.Status.PodIP)
-	if podIP.IsValid() {
+	// Do not register the pod if it is using the host network (i.e., pod IP = node IP), as this causes issues with
+	// kube-proxy connections.
+	if !pod.Spec.HostNetwork && podIP.IsValid() {
 		data.AddIP(podIP)
 	}
 

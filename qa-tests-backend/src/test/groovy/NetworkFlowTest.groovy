@@ -1,6 +1,5 @@
 import static com.jayway.restassured.RestAssured.given
 
-import orchestratormanager.OrchestratorTypes
 import com.google.protobuf.Timestamp
 import groups.BAT
 import groups.NetworkFlowVisualization
@@ -221,11 +220,6 @@ class NetworkFlowTest extends BaseSpecification {
     @Category([NetworkFlowVisualization])
     def "Verify connections from external sources"() {
         given:
-        "Cluster is Openshift"
-        // This is due to ROX-897, external -> deploy in k8s via LB is not working
-        Assume.assumeTrue(OrchestratorTypes.valueOf(System.getenv("CLUSTER")) == OrchestratorTypes.OPENSHIFT)
-
-        and:
         "Deployment A, where an external source communicates to A"
         String deploymentUid = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert deploymentUid != null
