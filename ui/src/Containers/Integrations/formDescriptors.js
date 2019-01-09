@@ -590,6 +590,45 @@ const formDescriptors = {
                 type: 'password',
                 placeholder: ''
             }
+        ],
+        nexus: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: 'Nexus Registry'
+            },
+            {
+                label: 'Types',
+                jsonpath: 'categories',
+                type: 'multiselect',
+                options: [{ value: 'REGISTRY', label: 'Registry', clearableValue: false }],
+                placeholder: ''
+            },
+            {
+                label: 'Endpoint',
+                jsonpath: 'docker.endpoint',
+                type: 'text',
+                placeholder: 'sonatype.nexus.com'
+            },
+            {
+                label: 'Username',
+                jsonpath: 'docker.username',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                label: 'Password',
+                jsonpath: 'docker.password',
+                type: 'password',
+                placeholder: ''
+            },
+            {
+                label: 'Disable TLS Certificate Validation (Insecure)',
+                jsonpath: 'docker.insecure',
+                type: 'checkbox',
+                placeholder: ''
+            }
         ]
     }
 };

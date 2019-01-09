@@ -87,16 +87,18 @@ func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, 
 	}, nil
 }
 
-func (r *Registry) handleV1SignedManifest(remote, ref string) (*storage.ImageMetadata, error) {
-	manifest, err := r.client.SignedManifest(remote, ref)
+// HandleV1SignedManifest takes in a signed v1 ref and returns the image metadata
+func (r *Registry) HandleV1SignedManifest(remote, ref string) (*storage.ImageMetadata, error) {
+	manifest, err := r.Client.SignedManifest(remote, ref)
 	if err != nil {
 		return nil, err
 	}
 	return r.populateV1DataFromManifest(manifest, ref)
 }
 
-func (r *Registry) handleV1Manifest(remote, ref string) (*storage.ImageMetadata, error) {
-	manifest, err := r.client.Manifest(remote, ref)
+// HandleV1Manifest takes in a v1 ref and returns the image metadata
+func (r *Registry) HandleV1Manifest(remote, ref string) (*storage.ImageMetadata, error) {
+	manifest, err := r.Client.Manifest(remote, ref)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +106,7 @@ func (r *Registry) handleV1Manifest(remote, ref string) (*storage.ImageMetadata,
 }
 
 func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*storage.V1Metadata, error) {
-	v1r, err := r.client.DownloadLayer(remote, ref)
+	v1r, err := r.Client.DownloadLayer(remote, ref)
 	if err != nil {
 		return nil, err
 	}

@@ -13,7 +13,7 @@ var (
 )
 
 func TestGetMetadataIntegration(t *testing.T) {
-	dockerHubClient, err := newRegistry(&storage.ImageIntegration{
+	dockerHubClient, err := NewDockerRegistry(&storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Docker{
 			Docker: &storage.DockerConfig{
 				Endpoint: "https://k8s.gcr.io",

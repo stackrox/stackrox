@@ -6,22 +6,24 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-func (r *Registry) handleV2ManifestList(remote, ref string) (*storage.ImageMetadata, error) {
-	manifestList, err := r.client.ManifestList(remote, ref)
+// HandleV2ManifestList takes in a v2 manifest list ref and returns the image metadata
+func (r *Registry) HandleV2ManifestList(remote, ref string) (*storage.ImageMetadata, error) {
+	manifestList, err := r.Client.ManifestList(remote, ref)
 	if err != nil {
 		return nil, err
 	}
 	for _, manifest := range manifestList.Manifests {
 		// Default to linux arch
 		if manifest.Platform.OS == "linux" && manifest.Platform.Architecture == "amd64" {
-			return r.handleV2Manifest(remote, manifest.Digest)
+			return r.HandleV2Manifest(remote, manifest.Digest)
 		}
 	}
 	return nil, fmt.Errorf("could not find manifest in list for architecture linux:amd64: '%s'", ref)
 }
 
-func (r *Registry) handleV2Manifest(remote, ref string) (*storage.ImageMetadata, error) {
-	metadata, err := r.client.ManifestV2(remote, ref)
+// HandleV2Manifest takes in a v2 ref and returns the image metadata
+func (r *Registry) HandleV2Manifest(remote, ref string) (*storage.ImageMetadata, error) {
+	metadata, err := r.Client.ManifestV2(remote, ref)
 	if err != nil {
 		return nil, err
 	}

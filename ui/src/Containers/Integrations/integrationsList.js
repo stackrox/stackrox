@@ -7,6 +7,7 @@ import google from 'images/google-cloud.svg';
 import jira from 'images/jira.svg';
 import kubernetes from 'images/kubernetes.svg';
 import logo from 'images/logo-tall.svg';
+import nexus from 'images/nexus.svg';
 import openshift from 'images/openshift.svg';
 import quay from 'images/quay.svg';
 import slack from 'images/slack.svg';
@@ -84,6 +85,14 @@ const integrationsList = {
             categories: 'Scanner',
             source: 'imageIntegrations',
             image: clair,
+            disabled: false
+        },
+        {
+            label: 'Nexus Sonatype',
+            type: 'nexus',
+            categories: 'Registry',
+            source: 'imageIntegrations',
+            image: nexus,
             disabled: false
         }
     ],

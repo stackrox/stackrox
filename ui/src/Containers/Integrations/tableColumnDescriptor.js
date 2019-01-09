@@ -95,6 +95,11 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'name', Header: 'Name' },
             { accessor: 'ecr.registryId', Header: 'Registry ID' },
             { accessor: 'ecr.region', Header: 'Region' }
+        ],
+        nexus: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'docker.endpoint', Header: 'Endpoint' },
+            { accessor: 'docker.username', Header: 'Username' }
         ]
     }
 });

@@ -7,6 +7,7 @@ import (
 	dtrFactory "github.com/stackrox/rox/pkg/registries/dtr"
 	ecrFactory "github.com/stackrox/rox/pkg/registries/ecr"
 	googleFactory "github.com/stackrox/rox/pkg/registries/google"
+	nexusFactory "github.com/stackrox/rox/pkg/registries/nexus"
 	quayFactory "github.com/stackrox/rox/pkg/registries/quay"
 	tenableFactory "github.com/stackrox/rox/pkg/registries/tenable"
 	"github.com/stackrox/rox/pkg/registries/types"
@@ -48,6 +49,9 @@ func NewFactory() Factory {
 
 	tenableFactoryType, tenableFactoryCreator := tenableFactory.Creator()
 	reg.creators[tenableFactoryType] = tenableFactoryCreator
+
+	nexusFactoryType, nexusFactoryCreator := nexusFactory.Creator()
+	reg.creators[nexusFactoryType] = nexusFactoryCreator
 
 	return reg
 }

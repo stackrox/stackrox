@@ -46,5 +46,5 @@ func newRegistry(integration *storage.ImageIntegration) (*docker.Registry, error
 		Password: config.GetServiceAccount(),
 		Endpoint: config.GetEndpoint(),
 	}
-	return docker.NewDockerRegistry(cfg, integration)
+	return docker.NewDockerRegistryWithConfig(cfg, integration)
 }

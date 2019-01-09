@@ -27,5 +27,5 @@ func newRegistry(integration *storage.ImageIntegration) (*docker.Registry, error
 		Endpoint: dtrConfig.Dtr.GetEndpoint(),
 		Insecure: dtrConfig.Dtr.GetInsecure(),
 	}
-	return docker.NewDockerRegistry(cfg, integration)
+	return docker.NewDockerRegistryWithConfig(cfg, integration)
 }

@@ -82,7 +82,7 @@ func (e *ecr) refreshDockerClient() error {
 		Password: basicAuth[colon+1:],
 	}
 
-	client, err := docker.NewDockerRegistry(conf, e.integration)
+	client, err := docker.NewDockerRegistryWithConfig(conf, e.integration)
 	if err != nil {
 		return err
 	}

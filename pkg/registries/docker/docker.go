@@ -21,7 +21,7 @@ var (
 // Creator provides the type and registries.Creator to add to the registries Registry.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageRegistry, error)) {
 	return "docker", func(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
-		reg, err := newRegistry(integration)
+		reg, err := NewDockerRegistry(integration)
 		return reg, err
 	}
 }
@@ -31,7 +31,7 @@ type Registry struct {
 	cfg                   Config
 	protoImageIntegration *storage.ImageIntegration
 
-	client *registry.Registry
+	Client *registry.Registry
 
 	url      string
 	registry string // This is the registry portion of the image
@@ -49,9 +49,9 @@ type Config struct {
 	Insecure bool
 }
 
-// NewDockerRegistry creates a new instantiation of the docker registry
+// NewDockerRegistryWithConfig creates a new instantiation of the docker registry
 // TODO(cgorman) AP-386 - properly put the base docker registry into another pkg
-func NewDockerRegistry(cfg Config, integration *storage.ImageIntegration) (*Registry, error) {
+func NewDockerRegistryWithConfig(cfg Config, integration *storage.ImageIntegration) (*Registry, error) {
 	url, err := urlfmt.FormatURL(cfg.Endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if err != nil {
 		return nil, err
@@ -78,13 +78,14 @@ func NewDockerRegistry(cfg Config, integration *storage.ImageIntegration) (*Regi
 	return &Registry{
 		url:                   url,
 		registry:              registryServer,
-		client:                client,
+		Client:                client,
 		cfg:                   cfg,
 		protoImageIntegration: integration,
 	}, nil
 }
 
-func newRegistry(integration *storage.ImageIntegration) (*Registry, error) {
+// NewDockerRegistry creates a generic docker registry integration
+func NewDockerRegistry(integration *storage.ImageIntegration) (*Registry, error) {
 	dockerConfig, ok := integration.IntegrationConfig.(*storage.ImageIntegration_Docker)
 	if !ok {
 		return nil, fmt.Errorf("Docker configuration required")
@@ -95,7 +96,7 @@ func newRegistry(integration *storage.ImageIntegration) (*Registry, error) {
 		Password: dockerConfig.Docker.GetPassword(),
 		Insecure: dockerConfig.Docker.GetInsecure(),
 	}
-	return NewDockerRegistry(cfg, integration)
+	return NewDockerRegistryWithConfig(cfg, integration)
 }
 
 // Match decides if the image is contained within this registry
@@ -117,26 +118,26 @@ func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error
 
 	remote := image.GetName().GetRemote()
 
-	digest, manifestType, err := r.client.ManifestDigest(remote, utils.Reference(image))
+	digest, manifestType, err := r.Client.ManifestDigest(remote, utils.Reference(image))
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get the manifest digest : %s", err)
 	}
 
 	// If the image ID is empty, then populate with the digest from the manifest
-	// This only applies in a situation with CI client
+	// This only applies in a situation with CI Client
 	if image.GetId() == "" {
 		image.Id = digest.String()
 	}
 
 	switch manifestType {
 	case manifestV1.MediaTypeManifest:
-		return r.handleV1Manifest(remote, digest.String())
+		return r.HandleV1Manifest(remote, digest.String())
 	case manifestV1.MediaTypeSignedManifest:
-		return r.handleV1SignedManifest(remote, digest.String())
+		return r.HandleV1SignedManifest(remote, digest.String())
 	case registry.MediaTypeManifestList:
-		return r.handleV2ManifestList(remote, digest.String())
+		return r.HandleV2ManifestList(remote, digest.String())
 	case schema2.MediaTypeManifest:
-		return r.handleV2Manifest(remote, digest.String())
+		return r.HandleV2Manifest(remote, digest.String())
 	default:
 		return nil, fmt.Errorf("unknown manifest type '%s'", manifestType)
 	}
@@ -144,7 +145,7 @@ func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error
 
 // Test tests the current registry and makes sure that it is working properly
 func (r *Registry) Test() error {
-	return r.client.Ping()
+	return r.Client.Ping()
 }
 
 // Config returns the configuration of the docker registry
