@@ -92,9 +92,9 @@ func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 	}
 	s.roleStoreMock.
 		EXPECT().
-		GetRolesBatch([]string{"TeamAwesome"}).
+		GetRole("TeamAwesome").
 		Times(1).
-		Return([]*storage.Role{expectedRole}, nil)
+		Return(expectedRole, nil)
 
 	// Call the mapper for a user.
 	tokenClaims := &tokens.Claims{
@@ -163,9 +163,14 @@ func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 	}
 	s.roleStoreMock.
 		EXPECT().
-		GetRolesBatch(gomock.Any()).
+		GetRole("TeamAwesome").
 		Times(1).
-		Return([]*storage.Role{expectedRole1, expectedRole2}, nil)
+		Return(expectedRole1, nil)
+	s.roleStoreMock.
+		EXPECT().
+		GetRole("TeamEvenAwesomer").
+		Times(1).
+		Return(expectedRole2, nil)
 
 	// Call the mapper for a user.
 	tokenClaims := &tokens.Claims{
@@ -227,9 +232,9 @@ func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
 	}
 	s.roleStoreMock.
 		EXPECT().
-		GetRolesBatch([]string{"TeamAwesome"}).
+		GetRole("TeamAwesome").
 		Times(1).
-		Return([]*storage.Role{expectedRole}, nil)
+		Return(expectedRole, nil)
 
 	// Call the mapper for a user.
 	tokenClaims := &tokens.Claims{
@@ -321,9 +326,9 @@ func (s *MapperTestSuite) TestRoleFetchFailureCausesError() {
 	// Expect the role to be fetched.
 	s.roleStoreMock.
 		EXPECT().
-		GetRolesBatch([]string{"TeamAwesome"}).
+		GetRole("TeamAwesome").
 		Times(1).
-		Return([]*storage.Role{}, fmt.Errorf("error should be returned"))
+		Return(nil, fmt.Errorf("error should be returned"))
 
 	// Call the mapper for a user.
 	tokenClaims := &tokens.Claims{

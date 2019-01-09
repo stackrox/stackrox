@@ -58,16 +58,28 @@ func (rm *storeBasedMapperImpl) getRole(claims *tokens.Claims) (*storage.Role, e
 }
 
 func (rm *storeBasedMapperImpl) rolesForGroups(groups []*storage.Group) ([]*storage.Role, error) {
-	// Get the roles in all of the groups.
+	// Get the role names in all of the groups.
 	roleNameSet := set.NewStringSet()
 	for _, group := range groups {
 		roleNameSet.Add(group.GetRoleName())
 	}
-	roleNamesSlice := roleNameSet.AsSlice()
-	if len(roleNamesSlice) == 0 {
+	if roleNameSet.Cardinality() == 0 {
 		return nil, fmt.Errorf("no roles can be found for user")
 	}
-	return rm.roleStore.GetRolesBatch(roleNamesSlice)
+	roleNamesSlice := roleNameSet.AsSlice()
+
+	// Load the roles (need to load individually because we want to ignore missing roles)
+	var roles = make([]*storage.Role, 0, len(roleNamesSlice))
+	for _, roleName := range roleNamesSlice {
+		role, err := rm.roleStore.GetRole(roleName)
+		if err != nil {
+			return nil, err
+		}
+		if role != nil {
+			roles = append(roles, role)
+		}
+	}
+	return roles, nil
 }
 
 // Helpers
