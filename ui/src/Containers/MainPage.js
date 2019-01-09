@@ -43,7 +43,7 @@ const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/V
 const AsyncPoliciesPage = asyncComponent(() => import('Containers/Policies/Page'));
 const AsyncImagesPage = asyncComponent(() => import('Containers/Images/ImagesPage'));
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/CompliancePage'));
-const AsyncCompliance2Page = asyncComponent(() => import('Containers/Compliance2/Compliance2Page'));
+const AsyncCompliance2Page = asyncComponent(() => import('Containers/Compliance2/Page'));
 
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
 const AsyncSecretsPage = asyncComponent(() => import('Containers/Secrets/SecretsPage'));

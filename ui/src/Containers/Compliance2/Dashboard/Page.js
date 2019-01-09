@@ -15,7 +15,7 @@ import entityTypes from 'constants/entityTypes';
 
 import DashboardHeader from './Header';
 
-const ComplianceDashboard = () => (
+const ComplianceDashboardPage = () => (
     <section className="flex flex-1 flex-col h-full">
         <div className="flex flex-1 flex-col">
             <DashboardHeader />
@@ -54,4 +54,4 @@ const ComplianceDashboard = () => (
     </section>
 );
 
-export default ComplianceDashboard;
+export default ComplianceDashboardPage;
