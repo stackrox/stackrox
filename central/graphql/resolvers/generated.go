@@ -654,6 +654,467 @@ func toComparators(values *[]string) []storage.Comparator {
 	return output
 }
 
+type complianceControlResolver struct {
+	root *Resolver
+	data *v1.ComplianceControl
+}
+
+func (resolver *Resolver) wrapComplianceControl(value *v1.ComplianceControl, ok bool, err error) (*complianceControlResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceControlResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceControls(values []*v1.ComplianceControl, err error) ([]*complianceControlResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceControlResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceControlResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceControlResolver) Description() string {
+	value := resolver.data.GetDescription()
+	return value
+}
+
+func (resolver *complianceControlResolver) GroupId() string {
+	value := resolver.data.GetGroupId()
+	return value
+}
+
+func (resolver *complianceControlResolver) Id() graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *complianceControlResolver) Name() string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *complianceControlResolver) StandardId() string {
+	value := resolver.data.GetStandardId()
+	return value
+}
+
+type complianceControlGroupResolver struct {
+	root *Resolver
+	data *v1.ComplianceControlGroup
+}
+
+func (resolver *Resolver) wrapComplianceControlGroup(value *v1.ComplianceControlGroup, ok bool, err error) (*complianceControlGroupResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceControlGroupResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceControlGroups(values []*v1.ComplianceControlGroup, err error) ([]*complianceControlGroupResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceControlGroupResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceControlGroupResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceControlGroupResolver) Description() string {
+	value := resolver.data.GetDescription()
+	return value
+}
+
+func (resolver *complianceControlGroupResolver) Id() graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *complianceControlGroupResolver) Name() string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *complianceControlGroupResolver) StandardId() string {
+	value := resolver.data.GetStandardId()
+	return value
+}
+
+type complianceControlResultResolver struct {
+	root *Resolver
+	data *storage.ComplianceControlResult
+}
+
+func (resolver *Resolver) wrapComplianceControlResult(value *storage.ComplianceControlResult, ok bool, err error) (*complianceControlResultResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceControlResultResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceControlResults(values []*storage.ComplianceControlResult, err error) ([]*complianceControlResultResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceControlResultResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceControlResultResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceControlResultResolver) ControlId() string {
+	value := resolver.data.GetControlId()
+	return value
+}
+
+func (resolver *complianceControlResultResolver) Resource() (*complianceResourceResolver, error) {
+	value := resolver.data.GetResource()
+	return resolver.root.wrapComplianceResource(value, true, nil)
+}
+
+func (resolver *complianceControlResultResolver) Value() (*complianceResultValueResolver, error) {
+	value := resolver.data.GetValue()
+	return resolver.root.wrapComplianceResultValue(value, true, nil)
+}
+
+type complianceResourceResolver struct {
+	root *Resolver
+	data *storage.ComplianceResource
+}
+
+func (resolver *Resolver) wrapComplianceResource(value *storage.ComplianceResource, ok bool, err error) (*complianceResourceResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceResourceResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceResources(values []*storage.ComplianceResource, err error) ([]*complianceResourceResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceResourceResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceResourceResolver{resolver, v}
+	}
+	return output, nil
+}
+
+type complianceResourceResourceResolver struct {
+	resolver *complianceResourceResolver
+}
+
+func (resolver *complianceResourceResolver) Resource() *complianceResourceResourceResolver {
+	return &complianceResourceResourceResolver{resolver}
+}
+
+func (resolver *complianceResourceResourceResolver) ToComplianceResource_ClusterName() (*complianceResource_ClusterNameResolver, bool) {
+	value := resolver.resolver.data.GetCluster()
+	if value != nil {
+		return &complianceResource_ClusterNameResolver{resolver.resolver.root, value}, true
+	}
+	return nil, false
+}
+
+func (resolver *complianceResourceResourceResolver) ToComplianceResource_DeploymentName() (*complianceResource_DeploymentNameResolver, bool) {
+	value := resolver.resolver.data.GetDeployment()
+	if value != nil {
+		return &complianceResource_DeploymentNameResolver{resolver.resolver.root, value}, true
+	}
+	return nil, false
+}
+
+func (resolver *complianceResourceResourceResolver) ToComplianceResource_NodeName() (*complianceResource_NodeNameResolver, bool) {
+	value := resolver.resolver.data.GetNode()
+	if value != nil {
+		return &complianceResource_NodeNameResolver{resolver.resolver.root, value}, true
+	}
+	return nil, false
+}
+
+func (resolver *complianceResourceResourceResolver) ToImageName() (*imageNameResolver, bool) {
+	value := resolver.resolver.data.GetImage()
+	if value != nil {
+		return &imageNameResolver{resolver.resolver.root, value}, true
+	}
+	return nil, false
+}
+
+type complianceResource_ClusterNameResolver struct {
+	root *Resolver
+	data *storage.ComplianceResource_ClusterName
+}
+
+func (resolver *Resolver) wrapComplianceResource_ClusterName(value *storage.ComplianceResource_ClusterName, ok bool, err error) (*complianceResource_ClusterNameResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceResource_ClusterNameResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceResource_ClusterNames(values []*storage.ComplianceResource_ClusterName, err error) ([]*complianceResource_ClusterNameResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceResource_ClusterNameResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceResource_ClusterNameResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceResource_ClusterNameResolver) Id() graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *complianceResource_ClusterNameResolver) Name() string {
+	value := resolver.data.GetName()
+	return value
+}
+
+type complianceResource_DeploymentNameResolver struct {
+	root *Resolver
+	data *storage.ComplianceResource_DeploymentName
+}
+
+func (resolver *Resolver) wrapComplianceResource_DeploymentName(value *storage.ComplianceResource_DeploymentName, ok bool, err error) (*complianceResource_DeploymentNameResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceResource_DeploymentNameResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceResource_DeploymentNames(values []*storage.ComplianceResource_DeploymentName, err error) ([]*complianceResource_DeploymentNameResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceResource_DeploymentNameResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceResource_DeploymentNameResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceResource_DeploymentNameResolver) Cluster() (*complianceResource_ClusterNameResolver, error) {
+	value := resolver.data.GetCluster()
+	return resolver.root.wrapComplianceResource_ClusterName(value, true, nil)
+}
+
+func (resolver *complianceResource_DeploymentNameResolver) Id() graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *complianceResource_DeploymentNameResolver) Name() string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *complianceResource_DeploymentNameResolver) Namespace() string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+type complianceResource_NodeNameResolver struct {
+	root *Resolver
+	data *storage.ComplianceResource_NodeName
+}
+
+func (resolver *Resolver) wrapComplianceResource_NodeName(value *storage.ComplianceResource_NodeName, ok bool, err error) (*complianceResource_NodeNameResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceResource_NodeNameResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceResource_NodeNames(values []*storage.ComplianceResource_NodeName, err error) ([]*complianceResource_NodeNameResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceResource_NodeNameResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceResource_NodeNameResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceResource_NodeNameResolver) Cluster() (*complianceResource_ClusterNameResolver, error) {
+	value := resolver.data.GetCluster()
+	return resolver.root.wrapComplianceResource_ClusterName(value, true, nil)
+}
+
+func (resolver *complianceResource_NodeNameResolver) Id() graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *complianceResource_NodeNameResolver) Name() string {
+	value := resolver.data.GetName()
+	return value
+}
+
+type complianceResultValueResolver struct {
+	root *Resolver
+	data *storage.ComplianceResultValue
+}
+
+func (resolver *Resolver) wrapComplianceResultValue(value *storage.ComplianceResultValue, ok bool, err error) (*complianceResultValueResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceResultValueResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceResultValues(values []*storage.ComplianceResultValue, err error) ([]*complianceResultValueResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceResultValueResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceResultValueResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceResultValueResolver) Evidence() ([]*complianceResultValue_EvidenceResolver, error) {
+	value := resolver.data.GetEvidence()
+	return resolver.root.wrapComplianceResultValue_Evidences(value, nil)
+}
+
+type complianceResultValue_EvidenceResolver struct {
+	root *Resolver
+	data *storage.ComplianceResultValue_Evidence
+}
+
+func (resolver *Resolver) wrapComplianceResultValue_Evidence(value *storage.ComplianceResultValue_Evidence, ok bool, err error) (*complianceResultValue_EvidenceResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceResultValue_EvidenceResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceResultValue_Evidences(values []*storage.ComplianceResultValue_Evidence, err error) ([]*complianceResultValue_EvidenceResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceResultValue_EvidenceResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceResultValue_EvidenceResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceResultValue_EvidenceResolver) Message() string {
+	value := resolver.data.GetMessage()
+	return value
+}
+
+func (resolver *complianceResultValue_EvidenceResolver) State() string {
+	value := resolver.data.GetState()
+	return value.String()
+}
+
+type complianceStandardResolver struct {
+	root *Resolver
+	data *v1.ComplianceStandard
+}
+
+func (resolver *Resolver) wrapComplianceStandard(value *v1.ComplianceStandard, ok bool, err error) (*complianceStandardResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceStandardResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceStandards(values []*v1.ComplianceStandard, err error) ([]*complianceStandardResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceStandardResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceStandardResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceStandardResolver) Controls() ([]*complianceControlResolver, error) {
+	value := resolver.data.GetControls()
+	return resolver.root.wrapComplianceControls(value, nil)
+}
+
+func (resolver *complianceStandardResolver) Groups() ([]*complianceControlGroupResolver, error) {
+	value := resolver.data.GetGroups()
+	return resolver.root.wrapComplianceControlGroups(value, nil)
+}
+
+func (resolver *complianceStandardResolver) Metadata() (*complianceStandardMetadataResolver, error) {
+	value := resolver.data.GetMetadata()
+	return resolver.root.wrapComplianceStandardMetadata(value, true, nil)
+}
+
+type complianceStandardMetadataResolver struct {
+	root *Resolver
+	data *v1.ComplianceStandardMetadata
+}
+
+func (resolver *Resolver) wrapComplianceStandardMetadata(value *v1.ComplianceStandardMetadata, ok bool, err error) (*complianceStandardMetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceStandardMetadataResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceStandardMetadatas(values []*v1.ComplianceStandardMetadata, err error) ([]*complianceStandardMetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceStandardMetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceStandardMetadataResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceStandardMetadataResolver) Description() string {
+	value := resolver.data.GetDescription()
+	return value
+}
+
+func (resolver *complianceStandardMetadataResolver) Id() graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *complianceStandardMetadataResolver) Name() string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func toComplianceState(value *string) storage.ComplianceState {
+	if value != nil {
+		return storage.ComplianceState(storage.ComplianceState_value[*value])
+	}
+	return storage.ComplianceState(0)
+}
+
+func toComplianceStates(values *[]string) []storage.ComplianceState {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.ComplianceState, len(*values))
+	for i, v := range *values {
+		output[i] = toComplianceState(&v)
+	}
+	return output
+}
+
 type componentResolver struct {
 	root *Resolver
 	data *storage.Component

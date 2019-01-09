@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import weak "google/api/annotations.proto";
+import "storage/compliance.proto";
+import "api/v1/search_service.proto";
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
+
+package v1;
+
+message ComplianceStandardMetadata {
+    string id          = 1;
+    string name        = 2;
+    string description = 3;
+}
+
+message ComplianceControlGroup {
+    string id          = 1;
+    string standard_id = 2;
+    string name        = 3;
+    string description = 4;
+}
+
+message ComplianceControl {
+    string id          = 1;
+    string standard_id = 2;
+    string group_id    = 3;
+    string name        = 4;
+    string description = 5;
+}
+
+message ComplianceStandard {
+    ComplianceStandardMetadata metadata    = 1;
+    repeated ComplianceControlGroup groups = 2;
+    repeated ComplianceControl controls    = 3;
+}
+
+message GetComplianceStandardResponse {
+    ComplianceStandard standard = 1;
+}
+
+message GetComplianceStandardsResponse {
+    repeated ComplianceStandardMetadata standards = 1;
+}
+
+message ComplianceControlResultsResponse {
+    repeated storage.ComplianceControlResult results = 1;
+}
+
+service ComplianceService {
+    rpc GetStandards(Empty) returns (GetComplianceStandardsResponse) {
+        option (google.api.http) = {
+            get: "/v1/compliance/standards"
+        };
+    }
+
+    rpc GetStandard(ResourceByID) returns (GetComplianceStandardResponse) {
+        option (google.api.http) = {
+            get: "/v1/compliance/standards/{id}"
+        };
+    }
+
+    rpc GetComplianceControlResults(RawQuery) returns (ComplianceControlResultsResponse) {
+        option (google.api.http) = {
+            get: "/v1/compliance/results"
+        };
+    }
+}

@@ -10,6 +10,8 @@ import (
 	violationsDatastore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/apitoken"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	complianceDataStore "github.com/stackrox/rox/central/compliance/datastore"
+	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	groupDataStore "github.com/stackrox/rox/central/group/store"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -27,18 +29,20 @@ import (
 
 // Resolver is the root GraphQL resolver
 type Resolver struct {
-	APITokenBackend       apitoken.Backend
-	ClusterDataStore      clusterDatastore.DataStore
-	DeploymentDataStore   deploymentDatastore.DataStore
-	ImageDataStore        imageDatastore.DataStore
-	GroupDataStore        groupDataStore.Store
-	NetworkFlowStore      networkFlowStore.ClusterStore
-	NodeGlobalStore       nodeStore.GlobalStore
-	NotifierStore         notifierStore.Store
-	PolicyDataStore       policyDatastore.DataStore
-	ProcessIndicatorStore processIndicatorStore.DataStore
-	SecretsDataStore      secretDataStore.DataStore
-	ViolationsDataStore   violationsDatastore.DataStore
+	APITokenBackend         apitoken.Backend
+	ClusterDataStore        clusterDatastore.DataStore
+	ComplianceDataStore     complianceDataStore.DataStore
+	ComplianceStandardStore complianceStandards.Standards
+	DeploymentDataStore     deploymentDatastore.DataStore
+	ImageDataStore          imageDatastore.DataStore
+	GroupDataStore          groupDataStore.Store
+	NetworkFlowStore        networkFlowStore.ClusterStore
+	NodeGlobalStore         nodeStore.GlobalStore
+	NotifierStore           notifierStore.Store
+	PolicyDataStore         policyDatastore.DataStore
+	ProcessIndicatorStore   processIndicatorStore.DataStore
+	SecretsDataStore        secretDataStore.DataStore
+	ViolationsDataStore     violationsDatastore.DataStore
 }
 
 // New returns a Resolver wired into the relevant data stores
@@ -46,6 +50,7 @@ func New() *Resolver {
 	return &Resolver{
 		APITokenBackend:       apitoken.BackendSingleton(),
 		ClusterDataStore:      clusterDatastore.Singleton(),
+		ComplianceDataStore:   complianceDataStore.Fake(),
 		DeploymentDataStore:   deploymentDatastore.Singleton(),
 		ImageDataStore:        imageDatastore.Singleton(),
 		GroupDataStore:        groupDataStore.Singleton(),
@@ -63,6 +68,7 @@ var (
 	alertAuth      = readAuth(resources.Alert)
 	apiTokenAuth   = readAuth(resources.APIToken)
 	clusterAuth    = readAuth(resources.Cluster)
+	complianceAuth = readAuth(resources.Compliance)
 	deploymentAuth = readAuth(resources.Deployment)
 	groupAuth      = readAuth(resources.Group)
 	imageAuth      = readAuth(resources.Image)

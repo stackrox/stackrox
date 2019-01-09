@@ -22,11 +22,13 @@ var (
 	// Features contains all defined Features by name.
 	Features = map[string]Feature{
 		HtpasswdAuth.Name(): HtpasswdAuth,
+		Compliance.Name():   Compliance,
 	}
 
 	// Flags contains all defined FeatureFlags by name.
 	Flags = map[string]FeatureFlag{
 		HtpasswdAuth.Name(): HtpasswdAuth,
+		Compliance.Name():   Compliance,
 	}
 )
 

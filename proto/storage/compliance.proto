@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "storage/image.proto";
+
+package storage;
+
+message ComplianceResource {
+    message ClusterName {
+        string id   = 1;
+        string name = 2;
+    }
+
+    message DeploymentName {
+        ClusterName cluster = 1;
+        string id           = 2;
+        string name         = 3;
+        string namespace    = 4;
+    }
+
+    message NodeName {
+        ClusterName cluster = 1;
+        string id           = 2;
+        string name         = 3;
+    }
+
+    oneof resource {
+        ClusterName cluster       = 1;
+        DeploymentName deployment = 2;
+        NodeName node             = 3;
+        ImageName image           = 4;
+    }
+}
+
+enum ComplianceState {
+    COMPLIANCE_STATE_UNKNOWN = 0;
+    COMPLIANCE_STATE_SUCCESS = 1;
+    COMPLIANCE_STATE_FAILURE = 2;
+}
+
+message ComplianceResultValue {
+    message Evidence {
+        ComplianceState state = 1;
+        string message        = 2;
+    }
+    repeated Evidence evidence  = 1;
+}
+
+message ComplianceControlResult {
+    ComplianceResource resource = 1;
+    string control_id           = 2;
+    ComplianceResultValue value = 3;
+}

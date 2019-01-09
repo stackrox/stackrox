@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
+	complianceService "github.com/stackrox/rox/central/compliance/service"
 	debugService "github.com/stackrox/rox/central/debug/service"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
 	detectionService "github.com/stackrox/rox/central/detection/service"
@@ -200,6 +201,9 @@ func (c *central) startGRPCServer() {
 		userService.Singleton(),
 		sensorService.New(streamer.ManagerSingleton()),
 	)
+	if features.Compliance.Enabled() {
+		c.server.Register(complianceService.New())
+	}
 
 	enrichanddetect.GetLoop().Start()
 	startedSig := c.server.Start()
