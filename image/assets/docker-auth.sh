@@ -1,20 +1,21 @@
 #!/usr/bin/env bash
 
-# Copyright (c) 2018 StackRox Inc.
+# Copyright (c) 2018-2019 StackRox Inc.
 #
 # Reads Docker credentials from ~/.docker/config.json / credentials store / terminal prompt, and outputs them as
 # a base64 encoded auth token, or an entire docker auths config (if `-m k8s` is specified).
-
-b64enc_cmd=()
 
 if type openssl >/dev/null 2>&1; then
 	b64enc_cmd=(openssl base64)
 elif type base64 >/dev/null 2>&1; then
 	b64enc_cmd=(base64)
+else
+	echo "No base64 command was found on your system!" 1>&2
+	exit 1
 fi
 
-if ! "${b64enc_cmd[@]}" <<<"" >/dev/null 2>&1; then
-	echo >&2 "No usable base64 command was found on your system!"
+if ! "${b64enc_cmd[@]}" </dev/null >/dev/null 2>&1; then
+	echo >&2 "${b64_enc_cmd[@]} command fails to encode an empty string!"
 	exit 1
 fi
 
