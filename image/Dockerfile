@@ -23,6 +23,7 @@ COPY ./entrypoint.sh /stackrox/
 COPY ./bin/benchmark-bootstrap /stackrox/
 COPY ./bin/benchmarks /stackrox/
 COPY ./bin/central /stackrox/
+COPY ./bin/compliance /stackrox/compliance
 COPY ./bin/roxctl* /stackrox/
 COPY ./bin/kubernetes-sensor /stackrox/
 COPY ./bin/swarm-sensor /stackrox/
