@@ -13,6 +13,8 @@ import PropTypes from 'prop-types';
 import merge from 'deepmerge';
 import HoverHint from './HoverHint';
 
+const minimalMargin = { top: 0, bottom: 0, left: 0, right: 0 };
+
 class HorizontalBarChart extends Component {
     static propTypes = {
         data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
@@ -25,7 +27,8 @@ class HorizontalBarChart extends Component {
         valueGradientColorEnd: PropTypes.string,
         onValueMouseOver: PropTypes.func,
         onValueMouseOut: PropTypes.func,
-        onValueClick: PropTypes.func
+        onValueClick: PropTypes.func,
+        minimal: PropTypes.bool
     };
 
     static defaultProps = {
@@ -38,7 +41,8 @@ class HorizontalBarChart extends Component {
         valueGradientColorEnd: 'var(--tertiary-400',
         onValueMouseOver: null,
         onValueMouseOut: null,
-        onValueClick: null
+        onValueClick: null,
+        minimal: false
     };
 
     constructor(props) {
@@ -81,16 +85,67 @@ class HorizontalBarChart extends Component {
             return val;
         });
 
+    onValueMouseOverHandler = datum => {
+        const { onValueMouseOver } = this.props;
+        this.setHintData(datum);
+        if (onValueMouseOver) onValueMouseOver(datum);
+    };
+
+    onValueMouseOutHandler = datum => {
+        const { onValueMouseOut } = this.props;
+        this.clearHintData();
+        if (onValueMouseOut) onValueMouseOut(datum);
+    };
+
+    onValueClickHandler = datum => {
+        const { onValueClick } = this.props;
+        if (onValueClick) onValueClick(datum);
+    };
+
+    getContainerProps = hintsEnabled => {
+        const defaultContainerProps = {
+            className: 'relative chart-container w-full',
+            onMouseMove: hintsEnabled ? this.setHintPosition : null
+        };
+        return merge(defaultContainerProps, this.props.containerProps);
+    };
+
+    getPlotProps = hintsEnabled => {
+        const { data, minimal } = this.props;
+        const defaultPlotProps = {
+            height: minimal ? 30 : 270,
+            xDomain: [0, 105],
+            yType: 'category',
+            yRange: data.map((item, i) => (i + 1) * 23).concat([0]),
+            margin: minimal ? minimalMargin : { top: 30 },
+            stackBy: 'x',
+            animation: hintsEnabled ? false : ''
+        };
+        return merge(defaultPlotProps, this.props.plotProps);
+    };
+
+    getSeriesProps = () => {
+        const defaultSeriesProps = {
+            color: 'url(#horizontalGradient)',
+            style: {
+                height: 12,
+                rx: '3px'
+            },
+            onValueMouseOver: this.onValueMouseOverHandler,
+            onValueMouseOut: this.onValueMouseOutHandler,
+            onValueClick: this.onValueClickHandler
+        };
+        return merge(defaultSeriesProps, this.props.seriesProps);
+    };
+
     render() {
         const {
             data,
             tickValues,
             valueFormat,
-            onValueMouseOver,
-            onValueMouseOut,
-            onValueClick,
             valueGradientColorStart,
-            valueGradientColorEnd
+            valueGradientColorEnd,
+            minimal
         } = this.props;
 
         const { hintX, hintY, hintData } = this.state;
@@ -103,43 +158,9 @@ class HorizontalBarChart extends Component {
             return acc;
         }, {});
 
-        // Default props
-        const defaultContainerProps = {
-            className: `relative chart-container w-full`,
-            onMouseMove: hintsEnabled ? this.setHintPosition : null
-        };
-        const defaultPlotProps = {
-            height: 270,
-            xDomain: [0, 105],
-            yType: 'category',
-            yRange: data.map((item, i) => (i + 1) * 23),
-            margin: { top: 30 },
-            stackBy: 'x',
-            animation: hintsEnabled ? false : ''
-        };
-
-        const defaultSeriesProps = {
-            color: 'url(#horizontalGradient)',
-            style: {
-                height: 12,
-                rx: '3px'
-            },
-            onValueMouseOver: datum => {
-                this.setHintData(datum);
-                if (onValueMouseOver) onValueMouseOver(datum);
-            },
-            onValueMouseOut: datum => {
-                this.clearHintData();
-                if (onValueMouseOut) onValueMouseOut(datum);
-            },
-            onValueClick: datum => {
-                if (onValueClick) onValueClick(datum);
-            }
-        };
-
-        const containerProps = merge(defaultContainerProps, this.props.containerProps);
-        const plotProps = merge(defaultPlotProps, this.props.plotProps);
-        const seriesProps = merge(defaultSeriesProps, this.props.seriesProps);
+        const containerProps = this.getContainerProps(hintsEnabled);
+        const plotProps = this.getPlotProps(hintsEnabled);
+        const seriesProps = this.getSeriesProps();
 
         function tickFormat(value) {
             let inner = value;
@@ -156,7 +177,12 @@ class HorizontalBarChart extends Component {
         return (
             <div {...containerProps}>
                 {/* Bar Background  */}
-                <svg height="10" width="10" xmlns="http://www.w3.org/2000/svg" version="1.1">
+                <svg
+                    height={`${minimal ? '0' : '10'}`}
+                    width="10"
+                    xmlns="http://www.w3.org/2000/svg"
+                    version="1.1"
+                >
                     <defs>
                         <pattern
                             id="bar-background"
@@ -191,14 +217,16 @@ class HorizontalBarChart extends Component {
                     </GradientDefs>
                     {/* Empty area bar background */}
 
-                    <VerticalGridLines tickValues={tickValues} />
+                    {!minimal && <VerticalGridLines tickValues={tickValues} />}
 
-                    <XAxis
-                        orientation="top"
-                        tickSize={0}
-                        tickFormat={valueFormat}
-                        tickValues={tickValues}
-                    />
+                    {!minimal && (
+                        <XAxis
+                            orientation="top"
+                            tickSize={0}
+                            tickFormat={valueFormat}
+                            tickValues={tickValues}
+                        />
+                    )}
 
                     {/* Empty Background */}
                     <HorizontalBarSeries
@@ -222,17 +250,19 @@ class HorizontalBarChart extends Component {
                         }}
                     />
 
-                    <YAxis tickSize={0} top={25} className="text-xs" tickFormat={tickFormat} />
+                    {!minimal && (
+                        <YAxis tickSize={0} top={25} className="text-xs" tickFormat={tickFormat} />
+                    )}
                 </FlexibleWidthXYPlot>
 
-                {hintData ? (
+                {hintData && (
                     <HoverHint
                         top={hintY}
                         left={hintX}
                         title={hintData.title}
                         body={hintData.body}
                     />
-                ) : null}
+                )}
             </div>
         );
     }

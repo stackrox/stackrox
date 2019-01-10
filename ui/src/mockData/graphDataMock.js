@@ -5,6 +5,15 @@ const horizontalBarData = [
     { y: 'CIS', x: 52 }
 ];
 
+const horizontalBarDatum = [
+    {
+        y: 'PCI',
+        x: 63,
+        hint: { title: 'Tip Title', body: 'This is the body' },
+        axisLink: 'https://google.com/search?q=PCI'
+    }
+];
+
 // Vertical Bar data generator
 const verticalBarData = {
     PCIData: [
@@ -94,4 +103,4 @@ const sunburstLegendData = [
     { title: '> 10% Failing', color: 'var(--alert-400)' }
 ];
 
-export { verticalBarData, sunburstData, sunburstLegendData, horizontalBarData };
+export { verticalBarData, sunburstData, sunburstLegendData, horizontalBarData, horizontalBarDatum };

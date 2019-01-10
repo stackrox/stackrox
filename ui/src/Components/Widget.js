@@ -5,7 +5,7 @@ export const defaultHeaderClassName = 'flex w-full h-12 word-break';
 
 const Widget = props => (
     <div
-        className={`flex flex-col h-full border border-base-400 ${props.className}`}
+        className={`flex flex-col border border-base-400 ${props.className}`}
         data-test-id="widget"
     >
         <div className="border-b border-base-400">
@@ -37,7 +37,7 @@ Widget.propTypes = {
 Widget.defaultProps = {
     header: '',
     headerClassName: defaultHeaderClassName,
-    bodyClassName: null,
+    bodyClassName: '',
     className: 'w-full',
     headerComponents: null
 };

@@ -4,159 +4,170 @@
 
 /* open-sans-300 - latin */
 @font-face {
-    font-family: 'Open Sans';
+    font-family: "Open Sans";
     font-style: normal;
     font-weight: 300;
-    src: local('Open Sans Light'), local('OpenSans-Light'),
-            url('fonts/open-sans-v15-latin/open-sans-v15-latin-300.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-            url('fonts/open-sans-v15-latin/open-sans-v15-latin-300.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+    src: local("Open Sans Light"), local("OpenSans-Light"),
+        url("fonts/open-sans-v15-latin/open-sans-v15-latin-300.woff2")
+            format("woff2"),
+        /* Chrome 26+, Opera 23+, Firefox 39+ */
+            url("fonts/open-sans-v15-latin/open-sans-v15-latin-300.woff")
+            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 /* open-sans-regular - latin */
 @font-face {
-    font-family: 'Open Sans';
+    font-family: "Open Sans";
     font-style: normal;
     font-weight: 400;
-    src: local('Open Sans Regular'), local('OpenSans-Regular'),
-            url('fonts/open-sans-v15-latin/open-sans-v15-latin-regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-            url('fonts/open-sans-v15-latin/open-sans-v15-latin-regular.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+    src: local("Open Sans Regular"), local("OpenSans-Regular"),
+        url("fonts/open-sans-v15-latin/open-sans-v15-latin-regular.woff2")
+            format("woff2"),
+        /* Chrome 26+, Opera 23+, Firefox 39+ */
+            url("fonts/open-sans-v15-latin/open-sans-v15-latin-regular.woff")
+            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 /* open-sans-600 - latin */
 @font-face {
-    font-family: 'Open Sans';
+    font-family: "Open Sans";
     font-style: normal;
     font-weight: 600;
-    src: local('Open Sans SemiBold'), local('OpenSans-SemiBold'),
-            url('fonts/open-sans-v15-latin/open-sans-v15-latin-600.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-            url('fonts/open-sans-v15-latin/open-sans-v15-latin-600.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+    src: local("Open Sans SemiBold"), local("OpenSans-SemiBold"),
+        url("fonts/open-sans-v15-latin/open-sans-v15-latin-600.woff2")
+            format("woff2"),
+        /* Chrome 26+, Opera 23+, Firefox 39+ */
+            url("fonts/open-sans-v15-latin/open-sans-v15-latin-600.woff")
+            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 /* open-sans-700 - latin */
 @font-face {
-    font-family: 'Open Sans';
+    font-family: "Open Sans";
     font-style: normal;
     font-weight: 700;
-    src: local('Open Sans Bold'), local('OpenSans-Bold'),
-            url('fonts/open-sans-v15-latin/open-sans-v15-latin-700.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-            url('fonts/open-sans-v15-latin/open-sans-v15-latin-700.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+    src: local("Open Sans Bold"), local("OpenSans-Bold"),
+        url("fonts/open-sans-v15-latin/open-sans-v15-latin-700.woff2")
+            format("woff2"),
+        /* Chrome 26+, Opera 23+, Firefox 39+ */
+            url("fonts/open-sans-v15-latin/open-sans-v15-latin-700.woff")
+            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 
 /* open-sans-condensed-700 - latin */
 @font-face {
-    font-family: 'Open Sans Condensed';
+    font-family: "Open Sans Condensed";
     font-style: normal;
     font-weight: 700;
-    src: local('Open Sans Condensed Bold'), local('OpenSansCondensed-Bold'),
-         url('fonts/open-sans-condensed-v12-latin/open-sans-condensed-v12-latin-700.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
-         url('fonts/open-sans-condensed-v12-latin/open-sans-condensed-v12-latin-700.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+    src: local("Open Sans Condensed Bold"), local("OpenSansCondensed-Bold"),
+        url("fonts/open-sans-condensed-v12-latin/open-sans-condensed-v12-latin-700.woff2")
+            format("woff2"),
+        /* Chrome 26+, Opera 23+, Firefox 39+ */
+            url("fonts/open-sans-condensed-v12-latin/open-sans-condensed-v12-latin-700.woff")
+            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 
 .theme-light {
+    --base-100: hsla(225, 0%, 100%, 1);
+    --base-200: hsla(225, 45%, 98%, 1);
+    --base-300: hsla(225, 43%, 94%, 1);
+    --base-400: hsla(225, 44%, 87%, 1);
+    --base-500: hsla(225, 17%, 63%, 1);
+    --base-600: hsla(225, 14%, 43%, 1);
+    --base-700: hsla(225, 18%, 32%, 1);
+    --base-800: hsla(225, 24%, 22%, 1);
+    --base-900: hsla(225, 27%, 16%, 1);
 
-      --base-100: hsla(225, 0%, 100%, 1);
-      --base-200: hsla(225, 45%, 98%, 1);
-      --base-300: hsla(225, 43%, 94%, 1);
-      --base-400: hsla(225, 44%, 87%, 1);
-      --base-500: hsla(225, 17%, 63%, 1);
-      --base-600: hsla(225, 14%, 43%, 1);
-      --base-700: hsla(225, 18%, 32%, 1);
-      --base-800: hsla(225, 24%, 22%, 1);
-      --base-900: hsla(225, 27%, 16%, 1);
-  
-      --primary-100: hsla(225, 100%, 99%, 1);
-      --primary-200: hsla(225, 100%, 96%, 1);
-      --primary-300: hsla(225, 80%, 92%, 1);
-      --primary-400: hsla(225, 68%, 78%, 1);
-      --primary-500: hsla(225, 65%, 68%, 1);
-      --primary-600: hsla(225, 90%, 67%, 1);
-      --primary-700: hsla(225, 51%, 52%, 1);
-      --primary-800: hsla(225, 37%, 36%, 1);
-      --primary-900: hsla(225, 28%, 21%, 1);
-  
-      --secondary-100: hsla(257, 45%, 98%, 1);
-      --secondary-200: hsla(257, 100%, 96%, 1);
-      --secondary-300: hsla(257, 81%, 90%, 1);
-      --secondary-400: hsla(257, 68%, 78%, 1);
-      --secondary-500: hsla(257, 66%, 68%, 1);
-      --secondary-600: hsla(257, 100%, 67%, 1);
-      --secondary-700: hsla(257, 50%, 52%, 1);
-      --secondary-800: hsla(257, 37%, 36%, 1);
-      --secondary-900: hsla(257, 28%, 21%, 1);
-  
+    --primary-100: hsla(225, 100%, 99%, 1);
+    --primary-200: hsla(225, 100%, 96%, 1);
+    --primary-300: hsla(225, 80%, 92%, 1);
+    --primary-400: hsla(225, 68%, 78%, 1);
+    --primary-500: hsla(225, 65%, 68%, 1);
+    --primary-600: hsla(225, 90%, 67%, 1);
+    --primary-700: hsla(225, 51%, 52%, 1);
+    --primary-800: hsla(225, 37%, 36%, 1);
+    --primary-900: hsla(225, 28%, 21%, 1);
 
-      --tertiary-100: hsla(210, 45%, 98%, 1);
-      --tertiary-200: hsla(210, 100%, 96%, 1);
-      --tertiary-300: hsla(210, 81%, 90%, 1);
-      --tertiary-400: hsla(210, 68%, 78%, 1);
-      --tertiary-500: hsla(210, 66%, 68%, 1);
-      --tertiary-600: hsla(210, 93%, 58%, 1);
-      --tertiary-700: hsla(210, 47%, 48%, 1);
-      --tertiary-800: hsla(210, 37%, 36%, 1);
-      --tertiary-900: hsla(210, 28%, 21%, 1);
-  
-      --accent-100: hsla(293, 45%, 98%, 1);
-      --accent-200: hsla(293, 100%, 96%, 1);
-      --accent-300: hsla(293, 80%, 90%, 1);
-      --accent-400: hsla(293, 64%, 80%, 1);
-      --accent-500: hsla(293, 62%, 71%, 1);
-      --accent-600: hsla(293, 68%, 62%, 1);
-      --accent-700: hsla(293, 34%, 50%, 1);
-      --accent-800: hsla(293, 34%, 37%, 1);
-      --accent-900: hsla(293, 28%, 21%, 1);
-  
-      --success-100: hsla(155, 45%, 98%, 1);
-      --success-200: hsla(155, 100%, 96%, 1);
-      --success-300: hsla(155, 81%, 90%, 1);
-      --success-400: hsla(155, 68%, 78%, 1);
-      --success-500: hsla(155, 66%, 68%, 1);
-      --success-600: hsla(155, 52%, 46%, 1);
-      --success-700: hsla(155, 62%, 37%, 1);
-      --success-800: hsla(155, 37%, 36%, 1);
-      --success-900: hsla(155, 28%, 21%, 1);
-  
-      --warning-100: hsla(39, 45%, 98%, 1);
-      --warning-200: hsla(39, 100%, 96%, 1);
-      --warning-300: hsla(39, 80%, 90%, 1);
-      --warning-400: hsla(39, 64%, 80%, 1);
-      --warning-500: hsla(39, 62%, 71%, 1);
-      --warning-600: hsla(39, 100%, 66%, 1);
-      --warning-700: hsla(39, 38%, 52%, 1);
-      --warning-800: hsla(39, 34%, 37%, 1);
-      --warning-900: hsla(39, 28%, 21%, 1);
+    --secondary-100: hsla(257, 45%, 98%, 1);
+    --secondary-200: hsla(257, 100%, 96%, 1);
+    --secondary-300: hsla(257, 81%, 90%, 1);
+    --secondary-400: hsla(257, 68%, 78%, 1);
+    --secondary-500: hsla(257, 66%, 68%, 1);
+    --secondary-600: hsla(257, 100%, 67%, 1);
+    --secondary-700: hsla(257, 50%, 52%, 1);
+    --secondary-800: hsla(257, 37%, 36%, 1);
+    --secondary-900: hsla(257, 28%, 21%, 1);
 
-      --caution-100: hsla(16, 45%, 98%, 1);
-      --caution-200: hsla(16, 100%, 96%, 1);
-      --caution-300: hsla(16, 81%, 90%, 1);
-      --caution-400: hsla(16, 68%, 78%, 1);
-      --caution-500: hsla(16, 66%, 68%, 1);
-      --caution-600: hsla(16, 87%, 65%, 1);
-      --caution-700: hsla(16, 47%, 48%, 1);
-      --caution-800: hsla(16, 37%, 36%, 1);
-      --caution-900: hsla(16, 28%, 21%, 1);
+    --tertiary-100: hsla(210, 45%, 98%, 1);
+    --tertiary-200: hsla(210, 100%, 96%, 1);
+    --tertiary-300: hsla(210, 81%, 90%, 1);
+    --tertiary-400: hsla(210, 68%, 78%, 1);
+    --tertiary-500: hsla(210, 66%, 68%, 1);
+    --tertiary-600: hsla(210, 93%, 58%, 1);
+    --tertiary-700: hsla(210, 47%, 48%, 1);
+    --tertiary-800: hsla(210, 37%, 36%, 1);
+    --tertiary-900: hsla(210, 28%, 21%, 1);
 
-      --alert-100: hsla(358, 45%, 98%, 1);
-      --alert-200: hsla(358, 100%, 96%, 1);
-      --alert-300: hsla(358, 81%, 90%, 1);
-      --alert-400: hsla(358, 68%, 78%, 1);
-      --alert-500: hsla(358, 66%, 68%, 1);
-      --alert-600: hsla(358, 96%, 67%, 1);
-      --alert-700: hsla(358, 50%, 52%, 1);
-      --alert-800: hsla(358, 37%, 36%, 1);
-      --alert-900: hsla(358, 28%, 21%, 1);
-  
-  }
+    --accent-100: hsla(293, 45%, 98%, 1);
+    --accent-200: hsla(293, 100%, 96%, 1);
+    --accent-300: hsla(293, 80%, 90%, 1);
+    --accent-400: hsla(293, 64%, 80%, 1);
+    --accent-500: hsla(293, 62%, 71%, 1);
+    --accent-600: hsla(293, 68%, 62%, 1);
+    --accent-700: hsla(293, 34%, 50%, 1);
+    --accent-800: hsla(293, 34%, 37%, 1);
+    --accent-900: hsla(293, 28%, 21%, 1);
+
+    --success-100: hsla(155, 45%, 98%, 1);
+    --success-200: hsla(155, 100%, 96%, 1);
+    --success-300: hsla(155, 81%, 90%, 1);
+    --success-400: hsla(155, 68%, 78%, 1);
+    --success-500: hsla(155, 66%, 68%, 1);
+    --success-600: hsla(155, 52%, 46%, 1);
+    --success-700: hsla(155, 62%, 37%, 1);
+    --success-800: hsla(155, 37%, 36%, 1);
+    --success-900: hsla(155, 28%, 21%, 1);
+
+    --warning-100: hsla(39, 45%, 98%, 1);
+    --warning-200: hsla(39, 100%, 96%, 1);
+    --warning-300: hsla(39, 80%, 90%, 1);
+    --warning-400: hsla(39, 64%, 80%, 1);
+    --warning-500: hsla(39, 62%, 71%, 1);
+    --warning-600: hsla(39, 100%, 66%, 1);
+    --warning-700: hsla(39, 38%, 52%, 1);
+    --warning-800: hsla(39, 34%, 37%, 1);
+    --warning-900: hsla(39, 28%, 21%, 1);
+
+    --caution-100: hsla(16, 45%, 98%, 1);
+    --caution-200: hsla(16, 100%, 96%, 1);
+    --caution-300: hsla(16, 81%, 90%, 1);
+    --caution-400: hsla(16, 68%, 78%, 1);
+    --caution-500: hsla(16, 66%, 68%, 1);
+    --caution-600: hsla(16, 87%, 65%, 1);
+    --caution-700: hsla(16, 47%, 48%, 1);
+    --caution-800: hsla(16, 37%, 36%, 1);
+    --caution-900: hsla(16, 28%, 21%, 1);
+
+    --alert-100: hsla(358, 45%, 98%, 1);
+    --alert-200: hsla(358, 100%, 96%, 1);
+    --alert-300: hsla(358, 81%, 90%, 1);
+    --alert-400: hsla(358, 68%, 78%, 1);
+    --alert-500: hsla(358, 66%, 68%, 1);
+    --alert-600: hsla(358, 96%, 67%, 1);
+    --alert-700: hsla(358, 50%, 52%, 1);
+    --alert-800: hsla(358, 37%, 36%, 1);
+    --alert-900: hsla(358, 28%, 21%, 1);
+}
 
 @tailwind preflight;
 @tailwind utilities;
-
 
 body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
-input[type=number]::-webkit-inner-spin-button, 
-input[type=number]::-webkit-outer-spin-button { 
-  -webkit-appearance: none; 
-  margin: 0; 
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .sticky {
@@ -167,7 +178,8 @@ button:focus {
     outline: none;
 }
 
-button, select {
+button,
+select {
     @apply text-base-600 text-base font-600 appearance-none !important;
     line-height: 14px; /*weird render bug fix where select text gets clipped at bottom */
 }
@@ -191,7 +203,7 @@ button[disabled] {
 }
 
 .shadow-underline {
-    box-shadow: inset 0 -1px 0px 0 hsla(0, 0%, 0%, 0.10);
+    box-shadow: inset 0 -1px 0px 0 hsla(0, 0%, 0%, 0.1);
 }
 
 .disabled {
@@ -202,9 +214,9 @@ button[disabled] {
     border-collapse: collapse;
 }
 
-[class~=flex-1] {
+[class~="flex-1"] {
     @apply min-h-0 !important;
-/* Firefox needs this property to properly scroll panels with flex/overflow. Tailwind throws an exception error when using
+    /* Firefox needs this property to properly scroll panels with flex/overflow. Tailwind throws an exception error when using
 their built-in classes, so this is a workaround to `bundle` the Firefox fix with every `flex-1` class by default*/
 }
 
@@ -216,7 +228,18 @@ their built-in classes, so this is a workaround to `bundle` the Firefox fix with
     word-break: break-all;
 }
 
-ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
+ul,
+ol,
+li,
+p,
+span,
+div,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     @apply break-words !important;
 }
 
@@ -234,11 +257,11 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .transition {
- animation: fadein .25s ease-in;
+    animation: fadein 0.25s ease-in;
 }
 
 .transition-out {
- animation: fadeout .25s ease-out;
+    animation: fadeout 0.25s ease-out;
 }
 
 @keyframes fadein {
@@ -269,16 +292,18 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .tab-row {
-    box-shadow: inset 0 -1px 0 0 config('colors.base-400'), 0 15px 30px 0 config('colors.base-200');
+    box-shadow: inset 0 -1px 0 0 config("colors.base-400"),
+        0 15px 30px 0 config("colors.base-200");
 }
 
 .tab {
-    box-shadow: inset -1px 0px 0px 0px config('colors.base-400'), inset 0px -1px 0px 0px config('colors.base-400');
+    box-shadow: inset -1px 0px 0px 0px config("colors.base-400"),
+        inset 0px -1px 0px 0px config("colors.base-400");
 }
 
-
 .tab-active {
-    box-shadow: inset 0px 2px 0px 0px config('colors.primary-400'), inset -1px 0px 0px 0px config('colors.base-400');
+    box-shadow: inset 0px 2px 0px 0px config("colors.primary-400"),
+        inset -1px 0px 0px 0px config("colors.base-400");
 }
 
 .pill:hover {
@@ -294,12 +319,17 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .login-border-t {
-    background: linear-gradient(90deg, hsl(26, 94%, 73%) 0%, hsl(4, 100%, 82%) 44.95%, hsl(262, 85%, 74%) 100%);
+    background: linear-gradient(
+        90deg,
+        hsl(26, 94%, 73%) 0%,
+        hsl(4, 100%, 82%) 44.95%,
+        hsl(262, 85%, 74%) 100%
+    );
     height: 5px;
 }
 
 .login-bg {
-    background-image: url('images/login-stripes.svg');
+    background-image: url("images/login-stripes.svg");
     background-position: top left;
     background-repeat: no-repeat;
 }
@@ -334,9 +364,14 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 
 .navigation-gradient {
     height: 2px;
-    background-image: linear-gradient(90deg, #d1a0ea 0%, #a3acff 44%, #78effb 99%);
-    top:0;
-    z-index:2;
+    background-image: linear-gradient(
+        90deg,
+        #d1a0ea 0%,
+        #a3acff 44%,
+        #78effb 99%
+    );
+    top: 0;
+    z-index: 2;
     position: absolute;
     width: 100%;
 }
@@ -347,7 +382,7 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     z-index: 1001;
     top: 0;
     height: 100%;
-     background-color: hsla(0, 0%, 21%, 0.85);
+    background-color: hsla(0, 0%, 21%, 0.85);
 }
 
 .navigation-panel ul {
@@ -381,14 +416,15 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .react-select__menu {
-    @apply .m-0 !important; 
+    @apply .m-0 !important;
 }
 
 .react-select__menu-notice--no-options {
     @apply .text-left !important;
 }
 
-.react-select__control--is-focused, .react-select__control--is-focused:hover {
+.react-select__control--is-focused,
+.react-select__control--is-focused:hover {
     @apply .border-base-400 !important;
 }
 
@@ -410,12 +446,12 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .react-select__multi-value__remove {
-@apply .cursor-pointer;
+    @apply .cursor-pointer;
 }
 
 .react-select__multi-value__remove:hover {
     @apply .shadow-inner;
-    }
+}
 
 .react-select__menu-list {
     @apply .p-0 !important;
@@ -425,21 +461,24 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     @apply .bg-primary-100 .text-base-600 .border-2 .border-primary-300 .rounded-sm .p-1;
 }
 
-
-
 .severity-tile {
     background: hsla(0, 0%, 100%, 0.19);
- }
- 
-.slick-initialized.slick-slider, .slick-list, .slick-track {
-    height:100%;
 }
 
-.carousel-prev-arrow, .carousel-next-arrow {
+.slick-initialized.slick-slider,
+.slick-list,
+.slick-track {
+    height: 100%;
+}
+
+.carousel-prev-arrow,
+.carousel-next-arrow {
     position: absolute;
     top: 0%;
     z-index: 2;
-}.carousel-prev-arrow, .carousel-next-arrow {
+}
+.carousel-prev-arrow,
+.carousel-next-arrow {
     position: absolute;
     top: 0%;
     z-index: 2;
@@ -452,7 +491,6 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 .carousel-next-arrow {
     right: 24px;
 }
-
 
 .cursor-text {
     cursor: text !important;
@@ -467,7 +505,7 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     border-top-color: hsla(230, 13%, 34%, 1) !important;
 }
 
-.recharts-responsive-container .recharts-tooltip-cursor{
+.recharts-responsive-container .recharts-tooltip-cursor {
     fill-opacity: 0;
 }
 
@@ -475,13 +513,12 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     background: inherit;
 }
 
-
 .left-navigation {
     width: 81px;
 }
 
 .bg-global-search-empty-state {
-    background-image: url('images/globalSearchEmptyState.svg');
+    background-image: url("images/globalSearchEmptyState.svg");
     background-repeat: no-repeat;
     background-position-x: 50%;
     background-position-y: 50%;
@@ -497,9 +534,29 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 
 .network-grid-bg {
     background-color: rgba(157, 163, 193, 0.1);
-    background-image: -webkit-linear-gradient(rgba(157, 163, 193, 0.3) 1px, transparent 1px), -webkit-linear-gradient(left, rgba(157, 163, 193, 0.3) 1px, transparent 1px), -webkit-linear-gradient(rgba(157, 163, 193, 0.3) 1px, transparent 1px), -webkit-linear-gradient(left, rgba(157, 163, 193, 0.2) 1px, transparent 1px);
-    background-image: -o-linear-gradient(rgba(157, 163, 193, 0.3) 1px, transparent 1px), -o-linear-gradient(left, rgba(157, 163, 193, 0.3) 1px, transparent 1px), -o-linear-gradient(rgba(157, 163, 193, 0.3) 1px, transparent 1px), -o-linear-gradient(left, rgba(157, 163, 193, 0.2) 1px, transparent 1px);
-    background-image: linear-gradient(rgba(157, 163, 193, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(157, 163, 193, 0.2) 1px, transparent 1px), linear-gradient(rgba(157, 163, 193, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(157, 163, 193, 0.1) 1px, transparent 1px);
+    background-image: -webkit-linear-gradient(
+            rgba(157, 163, 193, 0.3) 1px,
+            transparent 1px
+        ),
+        -webkit-linear-gradient(left, rgba(157, 163, 193, 0.3) 1px, transparent
+                    1px),
+        -webkit-linear-gradient(rgba(157, 163, 193, 0.3) 1px, transparent 1px),
+        -webkit-linear-gradient(left, rgba(157, 163, 193, 0.2) 1px, transparent
+                    1px);
+    background-image: -o-linear-gradient(
+            rgba(157, 163, 193, 0.3) 1px,
+            transparent 1px
+        ),
+        -o-linear-gradient(left, rgba(157, 163, 193, 0.3) 1px, transparent 1px),
+        -o-linear-gradient(rgba(157, 163, 193, 0.3) 1px, transparent 1px),
+        -o-linear-gradient(left, rgba(157, 163, 193, 0.2) 1px, transparent 1px);
+    background-image: linear-gradient(
+            rgba(157, 163, 193, 0.2) 1px,
+            transparent 1px
+        ),
+        linear-gradient(90deg, rgba(157, 163, 193, 0.2) 1px, transparent 1px),
+        linear-gradient(rgba(157, 163, 193, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(157, 163, 193, 0.1) 1px, transparent 1px);
     background-size: 20px 20px, 20px 20px, 4px 4px, 4px 4px;
     background-position: -2px -2px, -2px -2px, -2px -2px, -2px -2px;
 }
@@ -507,7 +564,8 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 /**
   Outline for Simulation Mode
  */
-.simulator-mode.success:before, .simulator-mode.error:before {
+.simulator-mode.success:before,
+.simulator-mode.error:before {
     content: "";
     position: absolute;
     left: 0;
@@ -519,16 +577,15 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .simulator-mode.error:before {
-    -webkit-box-shadow: inset 0px 0px 0px 4px config('colors.alert-600');
-    -moz-box-shadow: inset 0px 0px 0px 4px config('colors.alert-600');
-    box-shadow: inset 0px 0px 0px 4px config('colors.alert-600');
+    -webkit-box-shadow: inset 0px 0px 0px 4px config("colors.alert-600");
+    -moz-box-shadow: inset 0px 0px 0px 4px config("colors.alert-600");
+    box-shadow: inset 0px 0px 0px 4px config("colors.alert-600");
 }
 
 .simulator-mode.success:before {
-    -webkit-box-shadow: inset 0px 0px 0px 4px config('colors.success-600');
-    -moz-box-shadow: inset 0px 0px 0px 4px config('colors.success-600');
-    box-shadow: inset 0px 0px 0px 4px config('colors.success-600');
-
+    -webkit-box-shadow: inset 0px 0px 0px 4px config("colors.success-600");
+    -moz-box-shadow: inset 0px 0px 0px 4px config("colors.success-600");
+    box-shadow: inset 0px 0px 0px 4px config("colors.success-600");
 }
 
 .top-navigation {
@@ -608,11 +665,11 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .bg-header:before {
-    background-image: url('images/header-bg.svg');
+    background-image: url("images/header-bg.svg");
     background-position: 100% 0%;
     background-repeat: no-repeat;
     background-size: 640px;
-    content:"";
+    content: "";
     width: 100%;
     height: 100%;
     top: 0;
@@ -622,7 +679,8 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .bg-dashboard {
-    background-image: url('images/dashboard-bg.svg'), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%239C92AC' fill-opacity='0.3' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
+    background-image: url("images/dashboard-bg.svg"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%239C92AC' fill-opacity='0.3' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
     background-position: right top, center center;
     background-repeat: no-repeat, repeat;
     background-size: 1650px 450px, 4px 4px;
@@ -632,8 +690,9 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     overflow: hidden;
 }
 
-.text-separator:before, .text-separator:after {
-    content:"";
+.text-separator:before,
+.text-separator:after {
+    content: "";
     position: absolute;
     width: 100%;
     height: 1px;
@@ -679,7 +738,7 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     background-position: right, bottom;
 } */
 
-.ReactTable .-pagination  {
+.ReactTable .-pagination {
     @apply .shadow-none .border-t .shadow-underline .pt-2 .pb-2 .pl-0 .pr-0 !important;
 }
 
@@ -688,7 +747,8 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     cursor: pointer;
 }
 
-.ReactTable input[type="checkbox"]:hover, .ReactTable input[type="checkbox"]:focus  {
+.ReactTable input[type="checkbox"]:hover,
+.ReactTable input[type="checkbox"]:focus {
     @apply .shadow;
 }
 
@@ -711,26 +771,29 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .ReactTable .rt-thead.-header .rt-tr {
-    box-shadow: -10px 0 0 white, 10px 0 0 white, 0 2px 8px 0 hsla(230, 50%, 70%, .25) !important;
+    box-shadow: -10px 0 0 white, 10px 0 0 white,
+        0 2px 8px 0 hsla(230, 50%, 70%, 0.25) !important;
     @apply bg-base-100 !important;
 }
 
-.ReactTable .rt-thead .rt-th.-sort-desc, .ReactTable .rt-thead .rt-th.-sort-asc {
+.ReactTable .rt-thead .rt-th.-sort-desc,
+.ReactTable .rt-thead .rt-th.-sort-asc {
     @apply .shadow-none !important;
 }
 
 .ReactTable .rt-thead .rt-th.-sort-desc div:after {
-    content: ' ↓';
+    content: " ↓";
     position: absolute;
     margin-left: 4px;
 }
 
 .ReactTable .rt-thead .rt-th.-sort-asc div:after {
-    content: ' ↑';
+    content: " ↑";
     position: absolute;
     margin-left: 4px;
 }
-.ReactTable .rt-tbody, .ReactTable .rt-thead  {
+.ReactTable .rt-tbody,
+.ReactTable .rt-thead {
     @apply .px-3 !important;
 }
 
@@ -743,19 +806,22 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .ReactTable .rt-tbody .rt-tr .rt-td {
-    box-shadow: 0px -1px 0 0 config('colors.base-300'), inset 0px -1px 0 0 config('colors.base-300');
+    box-shadow: 0px -1px 0 0 config("colors.base-300"),
+        inset 0px -1px 0 0 config("colors.base-300");
 }
 
 .ReactTable .rt-tbody .rt-tr:hover .rt-td {
     @apply .bg-base-200 !important;
     z-index: 3 !important;
-    box-shadow: 0px -1px 0 0 config('colors.base-400'), inset 0px -1px 0 0 config('colors.base-400');
+    box-shadow: 0px -1px 0 0 config("colors.base-400"),
+        inset 0px -1px 0 0 config("colors.base-400");
 }
 
-
-.ReactTable .rt-tbody .rt-tr.row-active .rt-td, .ReactTable .rt-tbody .rt-tr.row-active:hover .rt-td {
+.ReactTable .rt-tbody .rt-tr.row-active .rt-td,
+.ReactTable .rt-tbody .rt-tr.row-active:hover .rt-td {
     @apply .text-tertiary-700 .bg-tertiary-200 !important;
-    box-shadow: 0px -1px 0 0 config('colors.tertiary-400'), inset 0px -1px 0 0 config('colors.tertiary-400');
+    box-shadow: 0px -1px 0 0 config("colors.tertiary-400"),
+        inset 0px -1px 0 0 config("colors.tertiary-400");
     z-index: 3 !important;
 }
 
@@ -783,14 +849,15 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     @apply .flex !important;
 }
 
-.ReactTable .-previous .-btn, .ReactTable .-next .-btn {
+.ReactTable .-previous .-btn,
+.ReactTable .-next .-btn {
     @apply .bg-primary-100 .rounded-none .text-primary-600 !important;
 }
 
-.ReactTable .-previous .-btn:hover, .ReactTable .-next .-btn:hover {
+.ReactTable .-previous .-btn:hover,
+.ReactTable .-next .-btn:hover {
     @apply .bg-primary-300 .text-base-100 .rounded-none !important;
 }
-
 
 /* will clean up and refactor all selectors at some point */
 
@@ -799,7 +866,9 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     position: sticky !important;
     left: 0px;
     z-index: 1 !important;
-    box-shadow: 0px -1px 0 0 config('colors.base-300'), inset 0px -1px 0 0 config('colors.base-300'), 11px 0 8px -4px config('colors.base-100');
+    box-shadow: 0px -1px 0 0 config("colors.base-300"),
+        inset 0px -1px 0 0 config("colors.base-300"),
+        11px 0 8px -4px config("colors.base-100");
 }
 
 .ReactTable .rt-thead .rt-th:first-child {
@@ -807,7 +876,7 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     position: sticky !important;
     left: 0px;
     z-index: 1 !important;
-    box-shadow: 11px 0 8px -4px config('colors.base-100');
+    box-shadow: 11px 0 8px -4px config("colors.base-100");
 }
 
 .ReactTable .rt-thead .rt-tr {
@@ -818,52 +887,61 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     @apply bg-base-100;
 }
 
-.ReactTable .rt-tbody .rt-td.sticky-column   {
+.ReactTable .rt-tbody .rt-td.sticky-column {
     background: inherit !important;
     position: sticky !important;
     left: 0;
-    z-index:1;
-    box-shadow: 0px -1px 0 0 config('colors.base-300'), inset 0px -1px 0 0 config('colors.base-300'), 11px 0 8px -4px config('colors.base-100');
-
+    z-index: 1;
+    box-shadow: 0px -1px 0 0 config("colors.base-300"),
+        inset 0px -1px 0 0 config("colors.base-300"),
+        11px 0 8px -4px config("colors.base-100");
 }
 
-.ReactTable .rt-thead .rt-th.sticky-column   {
+.ReactTable .rt-thead .rt-th.sticky-column {
     background: inherit !important;
     position: sticky !important;
     left: 0;
     z-index: 1 !important;
-    box-shadow: 11px 0 8px -4px config('colors.base-100');
-
+    box-shadow: 11px 0 8px -4px config("colors.base-100");
 }
 
-
-.ReactTable .rt-thead .rt-th.sticky-column:hover   {
+.ReactTable .rt-thead .rt-th.sticky-column:hover {
     @apply .bg-primary-200 !important;
 }
 
-
-.ReactTable .rt-tbody .rt-tr:hover .rt-td.sticky-column , .ReactTable .rt-tbody .rt-tr:hover .rt-td:first-child {
-    box-shadow: 0px -1px 0 0 config('colors.base-400'), inset 0px -1px 0 0 config('colors.base-400'), 11px 0 8px -4px config('colors.base-200');
+.ReactTable .rt-tbody .rt-tr:hover .rt-td.sticky-column,
+.ReactTable .rt-tbody .rt-tr:hover .rt-td:first-child {
+    box-shadow: 0px -1px 0 0 config("colors.base-400"),
+        inset 0px -1px 0 0 config("colors.base-400"),
+        11px 0 8px -4px config("colors.base-200");
     z-index: 2 !important;
 }
 
-.ReactTable .rt-tbody .rt-tr.row-active .rt-td.sticky-column, .ReactTable .rt-tbody .rt-tr.row-active:hover .rt-td.sticky-column, .ReactTable .rt-tbody .rt-tr.row-active .rt-td:first-child {
-    box-shadow: 0px -1px 0 0 config('colors.tertiary-400'), inset 0px -1px 0 0 config('colors.tertiary-400'), 11px 0 8px -4px config('colors.tertiary-200');
+.ReactTable .rt-tbody .rt-tr.row-active .rt-td.sticky-column,
+.ReactTable .rt-tbody .rt-tr.row-active:hover .rt-td.sticky-column,
+.ReactTable .rt-tbody .rt-tr.row-active .rt-td:first-child {
+    box-shadow: 0px -1px 0 0 config("colors.tertiary-400"),
+        inset 0px -1px 0 0 config("colors.tertiary-400"),
+        11px 0 8px -4px config("colors.tertiary-200");
     z-index: 3 !important;
 }
 
-
-.ReactTable .rt-tbody .rt-td.sticky-column.left-checkbox-offset, .ReactTable .rt-thead .rt-th.sticky-column.left-checkbox-offset {
+.ReactTable .rt-tbody .rt-td.sticky-column.left-checkbox-offset,
+.ReactTable .rt-thead .rt-th.sticky-column.left-checkbox-offset {
     left: 28px !important;
 }
 
-.cve-table .rt-table .rt-tbody, .cve-table .rt-table .rt-thead,
-.dockerfile-table .rt-table .rt-tbody, .dockerfile-table .rt-table .rt-thead {
+.cve-table .rt-table .rt-tbody,
+.cve-table .rt-table .rt-thead,
+.dockerfile-table .rt-table .rt-tbody,
+.dockerfile-table .rt-table .rt-thead {
     @apply .p-0 !important;
 }
 
-.cve-table .rt-tbody .rt-tr, .cve-table .rt-thead .rt-tr,
-.dockerfile-table .cve-table .rt-tbody .rt-tr, .dockerfile-table .cve-table .rt-thead .rt-tr {
+.cve-table .rt-tbody .rt-tr,
+.cve-table .rt-thead .rt-tr,
+.dockerfile-table .cve-table .rt-tbody .rt-tr,
+.dockerfile-table .cve-table .rt-thead .rt-tr {
     @apply .min-h-0 !important;
 }
 
@@ -876,7 +954,8 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
     overflow: overlay;
 }
 
-.redoc-wrap, .redoc-wrap .menu-content {
+.redoc-wrap,
+.redoc-wrap .menu-content {
     @apply .h-full !important;
 }
 
@@ -885,7 +964,8 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 /* CHECKBOX TOGGLE SWITCH */
-.form-switch, .form-switch-reverse{
+.form-switch,
+.form-switch-reverse {
     @apply relative select-none w-12 mr-2 leading-normal;
 }
 
@@ -894,11 +974,11 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 
 .form-switch-checkbox:disabled + .form-switch-label {
-    @apply opacity-50
+    @apply opacity-50;
 }
 
 .form-switch-checkbox:disabled + .form-switch-label:before {
-    @apply bg-base-200
+    @apply bg-base-200;
 }
 
 .form-switch-label {
@@ -914,7 +994,7 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 
 .form-switch-label:before {
     @apply absolute block bg-base-100 pin-y w-6 border rounded -ml-1;
-    
+
     right: 50%;
     content: "";
     transition: all 0.2s ease-in;
@@ -938,7 +1018,7 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 @import "../node_modules/react-vis/dist/style.css";
 
 /* Legend */
-.horizontal-bar-legend  .rv-discrete-color-legend-item {
+.horizontal-bar-legend .rv-discrete-color-legend-item {
     padding: 3px 10px;
 }
 
@@ -948,12 +1028,33 @@ ul, ol, li, p, span, div, h1, h2, h3, h4, h5, h6 {
 }
 /* Legend color swatch */
 .horizontal-bar-legend .rv-discrete-color-legend-item__color__path {
-    stroke-width:3px;
-    stroke-linecap:round;
+    stroke-width: 3px;
+    stroke-linecap: round;
 }
 /* Legend item text */
-.horizontal-bar-legend .rv-discrete-color-legend-item.horizontal .rv-discrete-color-legend-item__title {
+.horizontal-bar-legend
+    .rv-discrete-color-legend-item.horizontal
+    .rv-discrete-color-legend-item__title {
     display: inline-block;
-    font-size: .8em;
+    font-size: 0.8em;
     padding-left: 5px;
+}
+
+/* widget detail */
+.widget-detail-bullet {
+    position: relative;
+}
+
+.widget-detail-bullet:before {
+    position: absolute;
+    left: -18px;
+    content: "\25CF";
+}
+
+.widget-detail-bullet:not(:last-child) {
+    @apply pt-2 pb-2 border-b border-base-300;
+}
+
+.widget-detail-bullet:last-child {
+    @apply pt-2;
 }

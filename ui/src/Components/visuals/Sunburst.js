@@ -1,6 +1,9 @@
 import React from 'react';
-import { Sunburst, DiscreteColorLegend } from 'react-vis';
+import { Sunburst, DiscreteColorLegend, LabelSeries } from 'react-vis';
 import PropTypes from 'prop-types';
+import merge from 'deepmerge';
+
+import SunburstDetailSection from 'Components/visuals/SunburstDetailSection';
 
 // Get array of node ancestor names
 function getKeyPath(node) {
@@ -27,11 +30,15 @@ function highlightPathData(data, highlightedNames) {
     return data;
 }
 
+const LABEL_STYLE = {
+    fontSize: '12px',
+    textAnchor: 'middle'
+};
+
 export default class BasicSunburst extends React.Component {
     static propTypes = {
         data: PropTypes.shape({}).isRequired,
         legendData: PropTypes.arrayOf(PropTypes.object).isRequired,
-        containerProps: PropTypes.shape({}),
         sunburstProps: PropTypes.shape({}),
         onValueMouseOver: PropTypes.func,
         onValueMouseOut: PropTypes.func,
@@ -40,7 +47,6 @@ export default class BasicSunburst extends React.Component {
     };
 
     static defaultProps = {
-        containerProps: {},
         sunburstProps: {},
         onValueMouseOver: null,
         onValueMouseOut: null,
@@ -52,59 +58,74 @@ export default class BasicSunburst extends React.Component {
         super(props);
         this.state = {
             data: this.props.data,
-            clicked: false
+            clicked: false,
+            selectedDatum: null
         };
     }
 
-    render() {
-        const {
-            legendData,
-            onValueMouseOver,
-            onValueMouseOut,
-            onValueSelect,
-            onValueDeselect
-        } = this.props;
-        const { clicked, data } = this.state;
+    getCenterLabel = () => {
+        const { selectedDatum } = this.state;
+        if (!selectedDatum) return null;
+        return <LabelSeries data={[{ x: 0, y: 10, label: '76%', style: LABEL_STYLE }]} />;
+    };
 
-        const defaultContainerProps = {
-            className: 'flex flex-col justify-between h-full'
-        };
+    onValueMouseOverHandler = datum => {
+        const { data, clicked } = this.state;
+        const { onValueMouseOver } = this.props;
+        if (clicked) {
+            return;
+        }
+        const path = getKeyPath(datum);
+        this.setState({
+            data: highlightPathData(data, path),
+            selectedDatum: datum
+        });
+        if (onValueMouseOver) onValueMouseOver(path);
+    };
+
+    onValueMouseOutHandler = () => {
+        const { data, clicked } = this.state;
+        const { onValueMouseOut } = this.props;
+        if (clicked) {
+            return;
+        }
+        this.setState({
+            selectedDatum: null,
+            data: highlightPathData(data, false)
+        });
+        if (onValueMouseOut) onValueMouseOut();
+    };
+
+    onValueClickHandler = datum => {
+        const { clicked } = this.state;
+        const { onValueSelect, onValueDeselect } = this.props;
+        this.setState({ clicked: !clicked });
+        if (clicked && onValueSelect) {
+            onValueSelect(datum);
+        }
+        if (!clicked && onValueDeselect) {
+            onValueDeselect(datum);
+        }
+    };
+
+    getSunburstProps = () => {
         const defaultSunburstProps = {
             colorType: 'literal',
             width: 275,
             height: 250,
             className: 'self-start',
-            onValueMouseOver: datum => {
-                if (clicked) {
-                    return;
-                }
-                const path = getKeyPath(datum);
-                this.setState({
-                    data: highlightPathData(data, path)
-                });
-                if (onValueMouseOver) onValueMouseOver(path);
-            },
-            onValueMouseOut: () => {
-                if (clicked) {
-                    return;
-                }
-                this.setState({
-                    data: highlightPathData(data, false)
-                });
-                if (onValueMouseOut) onValueMouseOut();
-            },
-            onValueClick: datum => {
-                const clickState = !clicked;
-                this.setState({ clicked: clickState });
-                if (clickState && onValueSelect) {
-                    onValueSelect(datum);
-                }
-                if (!clickState && onValueDeselect) {
-                    onValueDeselect(datum);
-                }
-            }
+            onValueMouseOver: this.onValueMouseOverHandler,
+            onValueMouseOut: this.onValueMouseOutHandler,
+            onValueClick: this.onValueClickHandler
         };
+        return merge(defaultSunburstProps, this.props.sunburstProps);
+    };
 
+    render() {
+        const { legendData } = this.props;
+        const { clicked, data, selectedDatum } = this.state;
+
+        const sunburstProps = this.getSunburstProps();
         const sunburstStyle = Object.assign(
             {
                 stroke: '#ddd',
@@ -113,21 +134,23 @@ export default class BasicSunburst extends React.Component {
             },
             this.props.sunburstProps.style
         );
-
-        const containerProps = Object.assign({}, defaultContainerProps, this.props.containerProps);
-        const sunburstProps = Object.assign({}, defaultSunburstProps, this.props.sunburstProps);
         sunburstProps.style = sunburstStyle;
 
         return (
-            <div {...containerProps}>
-                <Sunburst data={data} {...sunburstProps} />
-                <DiscreteColorLegend
-                    orientation="horizontal"
-                    items={legendData.map(item => item.title)}
-                    colors={legendData.map(item => item.color)}
-                    className="w-full horizontal-bar-legend"
-                />
-            </div>
+            <>
+                <div className="flex flex-col justify-between">
+                    <Sunburst data={data} {...sunburstProps} hideRootNode>
+                        {this.getCenterLabel()}
+                    </Sunburst>
+                    <DiscreteColorLegend
+                        orientation="horizontal"
+                        items={legendData.map(item => item.title)}
+                        colors={legendData.map(item => item.color)}
+                        className="w-full horizontal-bar-legend border-t border-base-300 h-7"
+                    />
+                </div>
+                <SunburstDetailSection selectedDatum={selectedDatum} clicked={clicked} />
+            </>
         );
     }
 }
