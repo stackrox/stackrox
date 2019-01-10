@@ -200,12 +200,3 @@ func (s *sensor) processResponse(ctx context.Context, enforcement *central.Senso
 	case <-ctx.Done():
 	}
 }
-
-func (s *sensor) enrichImages(deployment *storage.Deployment) {
-	if deployment == nil || len(deployment.GetContainers()) == 0 {
-		return
-	}
-	for _, c := range deployment.GetContainers() {
-		s.imageEnricher.EnrichImage(c.Image)
-	}
-}

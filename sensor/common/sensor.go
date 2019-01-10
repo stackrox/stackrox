@@ -5,11 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/expiringcache"
-	"github.com/stackrox/rox/pkg/images/enricher"
-	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/metrics"
 	"google.golang.org/grpc"
 )
 
@@ -29,23 +25,9 @@ type Sensor interface {
 
 // NewSensor returns a new Sensor.
 func NewSensor(centralConn *grpc.ClientConn, clusterID string) Sensor {
-	// This will track the set of integrations for this cluster.
-	integrationSet := integration.NewSet()
-
-	// This polls central for the integrations specific to this cluster.
-	poller := integration.NewPoller(integrationSet, centralConn, clusterID)
-
-	metadataCache := expiringcache.NewExpiringCacheOrPanic(imageDataSize, imageDataExpiry)
-	scanCache := expiringcache.NewExpiringCacheOrPanic(imageDataSize, imageDataExpiry)
-
-	// This uses those integrations to enrich images.
-	imageEnricher := enricher.New(integrationSet, metrics.SensorSubsystem, metadataCache, scanCache)
 
 	return &sensor{
 		conn: centralConn,
-
-		imageEnricher: imageEnricher,
-		poller:        poller,
 
 		// The ErrorSignal needs to be activated so Start() can detect callers that
 		// improperly call Start() repeatedly without calling Stop() first.
@@ -57,11 +39,7 @@ func NewSensor(centralConn *grpc.ClientConn, clusterID string) Sensor {
 // sensor implements the Sensor interface by sending inputs to central,
 // and providing the output from central asynchronously.
 type sensor struct {
-	conn *grpc.ClientConn
-
-	imageEnricher enricher.ImageEnricher
-	poller        integration.Poller
-
+	conn    *grpc.ClientConn
 	stopped concurrency.ErrorSignal
 }
 
@@ -73,20 +51,12 @@ func (s *sensor) Start(orchestratorInput <-chan *central.SensorEvent, collectorI
 	if !s.stopped.Reset() {
 		panic("Sensor has already been started without stopping first")
 	}
-
-	// The poller must be started so that its Stop() signal
-	// eventually returns.
-	go s.poller.Run()
-
 	go s.sendEvents(orchestratorInput, collectorInput, networkFlowInput, complianceReturns, output, central.NewSensorServiceClient(s.conn))
-
 }
 
 // Stop stops the processing loops reading and writing to input and output, and closes the stream open with central.
 func (s *sensor) Stop(err error) {
-	if s.stopped.SignalWithError(err) {
-		s.poller.Stop()
-	}
+	s.stopped.SignalWithError(err)
 }
 
 // Wait blocks until the processing has stopped.
