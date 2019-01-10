@@ -11,6 +11,8 @@ import Logo from 'Components/icons/logo';
 import { actions as authActions, AUTH_STATUS } from 'reducers/auth';
 
 const titleMap = {
+    numClusters: { singular: 'Cluster', plural: 'Clusters' },
+    numNodes: { singular: 'Node', plural: 'Nodes' },
     numAlerts: { singular: 'Violation', plural: 'Violations' },
     numDeployments: { singular: 'Deployment', plural: 'Deployments' },
     numImages: { singular: 'Image', plural: 'Images' },
@@ -24,6 +26,8 @@ class TopNavigation extends Component {
         logout: PropTypes.func.isRequired,
         toggleGlobalSearchView: PropTypes.func.isRequired,
         summaryCounts: PropTypes.shape({
+            numClusters: PropTypes.string,
+            numNodes: PropTypes.string,
             numAlerts: PropTypes.string,
             numDeployments: PropTypes.string,
             numImages: PropTypes.string,
