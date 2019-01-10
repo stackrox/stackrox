@@ -1,5 +1,5 @@
 import React from 'react';
 
-const ComplianceEntity = () => <div>Compliance Entity</div>;
+const ComplianceEntity = () => <div>Compliance Resource</div>;
 
 export default ComplianceEntity;

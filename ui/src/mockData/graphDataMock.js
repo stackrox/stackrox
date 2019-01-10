@@ -15,29 +15,57 @@ const horizontalBarDatum = [
 ];
 
 // Vertical Bar data generator
-const verticalBarData = {
-    PCIData: [
-        {
-            x: 'Docker Swarm Dev',
-            y: 75,
-            hint: { title: 'Hint Title', body: '12 controls failing in this cluster' }
-        },
-        { x: 'Kube Dev', y: 90 },
-        { x: 'Kube Test', y: 60 }
-    ],
-    NISTData: [
-        { x: 'Docker Swarm Dev', y: 50 },
-        { x: 'Kube Dev', y: 10 },
-        { x: 'Kube Test', y: 30 }
-    ],
-    HIPAAData: [
-        { x: 'Docker Swarm Dev', y: 40 },
-        { x: 'Kube Dev', y: 70 },
-        { x: 'Kube Test', y: 20 }
-    ],
+const verticalBarData = [
+    {
+        PCIData: [
+            {
+                x: 'Docker Swarm Dev',
+                y: 75,
+                hint: { title: 'Hint Title', body: '12 controls failing in this cluster' }
+            },
+            { x: 'Kube Dev', y: 90 },
+            { x: 'Kube Test', y: 60 }
+        ],
+        NISTData: [
+            { x: 'Docker Swarm Dev', y: 50 },
+            { x: 'Kube Dev', y: 10 },
+            { x: 'Kube Test', y: 30 }
+        ],
+        HIPAAData: [
+            { x: 'Docker Swarm Dev', y: 40 },
+            { x: 'Kube Dev', y: 70 },
+            { x: 'Kube Test', y: 20 }
+        ],
 
-    CISData: [{ x: 'Docker Swarm Dev', y: 40 }, { x: 'Kube Dev', y: 20 }, { x: 'Kube Test', y: 50 }]
-};
+        CISData: [
+            { x: 'Docker Swarm Dev', y: 40 },
+            { x: 'Kube Dev', y: 20 },
+            { x: 'Kube Test', y: 50 }
+        ]
+    },
+    {
+        PCIData: [
+            {
+                x: 'Swarm Dev2',
+                y: 10
+            },
+            { x: 'Kube Dev2', y: 30 },
+            { x: 'Kube Test2', y: 50 }
+        ],
+        NISTData: [
+            { x: 'Swarm Dev2', y: 90 },
+            { x: 'Kube Dev2', y: 20 },
+            { x: 'Kube Test2', y: 50 }
+        ],
+        HIPAAData: [
+            { x: 'Swarm Dev2', y: 10 },
+            { x: 'Kube Dev2', y: 50 },
+            { x: 'Kube Test2', y: 60 }
+        ],
+
+        CISData: [{ x: 'Swarm Dev2', y: 40 }, { x: 'Kube Dev2', y: 20 }, { x: 'Kube Test2', y: 50 }]
+    }
+];
 
 // Suburst Data Generator
 function getSlice(sliceIndex) {
