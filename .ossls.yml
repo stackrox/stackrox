@@ -978,6 +978,14 @@ dependencies:
     - Google Inc.
     - 2018 gRPC authors.
 
+  vendor/gopkg.in/robfig/cron.v2:
+    url: https://github.com/robfig/cron
+    license: MIT
+    files:
+      LICENSE: 8f650581478707182f3306d9a86676d4e03e2d4edc868344378cf4d6fe6c927a
+    attribution:
+    - Rob Figueiredo
+
   vendor/gopkg.in/square/go-jose.v2:
     url: https://github.com/square/go-jose
     license: Apache-2.0

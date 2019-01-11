@@ -1,0 +1,116 @@
+package manager
+
+import (
+	"errors"
+	"fmt"
+	"sync"
+	"time"
+
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"gopkg.in/robfig/cron.v2"
+)
+
+// scheduleInstance is an instantiated schedule, i.e., including the business logic around a schedule specification.
+type scheduleInstance struct {
+	id string // immutable, not protected by mutex
+
+	mutex sync.RWMutex
+
+	spec *storage.ComplianceRunSchedule
+
+	cronSchedule cron.Schedule
+
+	lastRun         *runInstance
+	lastFinishedRun *runInstance
+
+	nextRunTime time.Time
+}
+
+func (s *scheduleInstance) ToProto() *v1.ComplianceRunScheduleInfo {
+	if s == nil {
+		return nil
+	}
+
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	return &v1.ComplianceRunScheduleInfo{
+		Schedule:         s.spec,
+		LastRun:          s.lastRun.ToProto(),
+		LastCompletedRun: s.lastFinishedRun.ToProto(),
+		NextRunTime:      timeToProto(s.nextRunTime),
+	}
+}
+
+func (s *scheduleInstance) isSuspended() bool {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+	return s.spec.GetSuspended()
+}
+
+func (s *scheduleInstance) clusterAndStandard() (string, string) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	return s.spec.GetClusterId(), s.spec.GetStandardId()
+}
+
+func (s *scheduleInstance) updateNextTimeNoLock() {
+	if s.spec.GetSuspended() || s.cronSchedule == nil {
+		s.nextRunTime = time.Time{}
+	} else {
+		s.nextRunTime = s.cronSchedule.Next(time.Now())
+	}
+}
+
+func (s *scheduleInstance) checkAndUpdate(now time.Time) bool {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	if s.nextRunTime.IsZero() || s.nextRunTime.After(now) {
+		return false
+	}
+
+	s.updateNextTimeNoLock()
+	return true
+}
+
+func (s *scheduleInstance) updateNextTime() {
+	concurrency.WithLock(&s.mutex, s.updateNextTimeNoLock)
+}
+
+func (s *scheduleInstance) update(spec *storage.ComplianceRunSchedule) error {
+	if s.id != spec.GetId() {
+		return errors.New("schedule IDs cannot be changed")
+	}
+
+	cronSchedule, err := cron.Parse(spec.GetCrontabSpec())
+	if err != nil {
+		return fmt.Errorf("parsing crontab spec: %v", err)
+	}
+
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	s.spec, s.cronSchedule = spec, cronSchedule
+	s.updateNextTimeNoLock()
+
+	return nil
+}
+
+func newScheduleInstance(spec *storage.ComplianceRunSchedule) (*scheduleInstance, error) {
+	cronSchedule, err := cron.Parse(spec.GetCrontabSpec())
+	if err != nil {
+		return nil, fmt.Errorf("parsing crontab spec: %v", err)
+	}
+	si := &scheduleInstance{
+		id:           spec.GetId(),
+		spec:         spec,
+		cronSchedule: cronSchedule,
+	}
+
+	si.updateNextTimeNoLock()
+	return si, nil
+}

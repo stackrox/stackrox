@@ -2,8 +2,8 @@ syntax = "proto3";
 
 option go_package = "central";
 
-import "internalapi/central/sensor_events.proto";
 import "internalapi/central/network_flow.proto";
+import "internalapi/central/sensor_events.proto";
 
 package central;
 

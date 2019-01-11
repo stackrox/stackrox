@@ -1,0 +1,142 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+import "storage/compliance_management.proto";
+import "api/v1/empty.proto";
+
+package v1;
+
+message ComplianceRunScheduleInfo {
+    storage.ComplianceRunSchedule schedule = 1;
+
+    ComplianceRun last_run           = 2;
+    ComplianceRun last_completed_run = 3;
+
+    google.protobuf.Timestamp next_run_time = 4;
+}
+
+message GetComplianceRunSchedulesRequest {
+    oneof cluster_id_opt {
+        string cluster_id = 1;
+    }
+    oneof standard_id_opt {
+        string standard_id = 2;
+    }
+    oneof suspended_opt {
+        bool suspended = 3;
+    }
+}
+
+message GetComplianceRunSchedulesResponse {
+    repeated ComplianceRunScheduleInfo schedules = 1;
+}
+
+message AddComplianceRunScheduleRequest {
+    storage.ComplianceRunSchedule schedule_spec = 1;
+}
+
+message AddComplianceRunScheduleResponse {
+    ComplianceRunScheduleInfo added_schedule = 1;
+}
+
+message UpdateComplianceRunScheduleRequest {
+    string schedule_id                         = 1;
+    storage.ComplianceRunSchedule updated_spec = 2;
+}
+
+message UpdateComplianceRunScheduleResponse {
+    ComplianceRunScheduleInfo updated_schedule = 1;
+}
+
+message DeleteComplianceRunScheduleRequest {
+    string schedule_id = 1;
+}
+
+message TriggerComplianceRunRequest {
+    string cluster_id  = 1;
+    string standard_id = 2;
+}
+
+message TriggerComplianceRunResponse {
+    ComplianceRun started_run = 1;
+}
+
+message ComplianceRun {
+    enum State {
+        INVALID = 0;
+        READY = 1;
+        GATHERING_DATA = 2;
+        RUNNING = 3;
+        FINISHED = 4;
+    }
+
+    string id = 1;
+
+    string cluster_id  = 2;
+    string standard_id = 3;
+
+    string schedule_id = 4;
+
+    google.protobuf.Timestamp start_time  = 5;
+    google.protobuf.Timestamp finish_time = 6;
+
+    State state          = 7;
+    string error_message = 8;
+}
+
+message GetRecentComplianceRunsRequest {
+    oneof cluster_id_opt {
+        string cluster_id = 1;
+    }
+    oneof standard_id_opt {
+        string standard_id = 2;
+    }
+    google.protobuf.Timestamp since = 3;
+}
+
+message GetRecentComplianceRunsResponse {
+    repeated ComplianceRun compliance_runs = 1;
+}
+
+service ComplianceManagementService {
+    rpc GetRunSchedules(GetComplianceRunSchedulesRequest) returns (GetComplianceRunSchedulesResponse) {
+        option (google.api.http) = {
+            get: "/v1/complianceManagement/schedules"
+        };
+    }
+    rpc AddRunSchedule(AddComplianceRunScheduleRequest) returns (AddComplianceRunScheduleResponse) {
+        option (google.api.http) = {
+            post: "/v1/complianceManagement/schedules"
+            body: "schedule_spec"
+        };
+    }
+    rpc UpdateRunSchedule(UpdateComplianceRunScheduleRequest) returns (UpdateComplianceRunScheduleResponse) {
+        option (google.api.http) = {
+            post: "/v1/complianceManagement/schedules/{schedule_id}"
+            body: "updated_spec"
+        };
+    }
+    rpc DeleteRunSchedule(DeleteComplianceRunScheduleRequest) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/complianceManagement/schedules/{schedule_id}"
+        };
+    }
+
+    rpc GetRecentRuns(GetRecentComplianceRunsRequest) returns (GetRecentComplianceRunsResponse) {
+        option (google.api.http) = {
+            get: "/v1/complianceManagement/runs"
+        };
+    }
+
+    rpc TriggerRun(TriggerComplianceRunRequest) returns (TriggerComplianceRunResponse) {
+        option (google.api.http) = {
+            post: "/v1/complianceManagement/runs"
+            body: "*"
+        };
+    }
+}

@@ -82,6 +82,10 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
   version = "1.7.2"
 
 [[constraint]]
+  name = "gopkg.in/robfig/cron.v2"
+  revision = "be2e0b0deed5a68ffee390b4583a13aff8321535"
+
+[[constraint]]
   name = "k8s.io/api"
   version = "kubernetes-1.10.0"
 

@@ -23,6 +23,8 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
+	"github.com/stackrox/rox/central/compliance/manager"
+	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
 	debugService "github.com/stackrox/rox/central/debug/service"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
@@ -168,7 +170,7 @@ func (c *central) startGRPCServer() {
 
 	c.server = pkgGRPC.NewAPI(config)
 
-	c.server.Register(
+	servicesToRegister := []pkgGRPC.APIService{
 		alertService.Singleton(),
 		authService.New(),
 		apiTokenService.Singleton(),
@@ -200,10 +202,18 @@ func (c *central) startGRPCServer() {
 		summaryService.Singleton(),
 		userService.Singleton(),
 		sensorService.New(streamer.ManagerSingleton()),
-	)
-	if features.Compliance.Enabled() {
-		c.server.Register(complianceService.New())
 	}
+	if features.Compliance.Enabled() {
+		servicesToRegister = append(servicesToRegister,
+			complianceService.New(),
+			complianceManagerService.Singleton())
+
+		if err := manager.Singleton().Start(); err != nil {
+			log.Panicf("could not start compliance manager: %v", err)
+		}
+	}
+
+	c.server.Register(servicesToRegister...)
 
 	enrichanddetect.GetLoop().Start()
 	startedSig := c.server.Start()

@@ -1499,6 +1499,13 @@
   version = "v0.9.1"
 
 [[projects]]
+  digest = "1:af48fd9cabfa0cd50594518c47d7dee43c2db85f0344fd71477108b9c271e34e"
+  name = "gopkg.in/robfig/cron.v2"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "be2e0b0deed5a68ffee390b4583a13aff8321535"
+
+[[projects]]
   digest = "1:05d5fa95be8d9c43a8a353625c3831dfed3536063c34284ac43c40940eddc7eb"
   name = "gopkg.in/square/go-jose.v2"
   packages = [
@@ -1877,6 +1884,7 @@
     "google.golang.org/grpc/metadata",
     "google.golang.org/grpc/peer",
     "google.golang.org/grpc/status",
+    "gopkg.in/robfig/cron.v2",
     "gopkg.in/square/go-jose.v2",
     "gopkg.in/square/go-jose.v2/jwt",
     "gopkg.in/yaml.v2",
