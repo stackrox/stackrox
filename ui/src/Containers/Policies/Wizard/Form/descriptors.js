@@ -475,6 +475,14 @@ const policyConfigurationDescriptor = [
         default: false
     },
     {
+        label: 'Process Ancestor',
+        jsonpath: 'fields.processPolicy.ancestor',
+        type: 'text',
+        placeholder: 'java',
+        required: false,
+        default: false
+    },
+    {
         label: 'Process Args',
         jsonpath: 'fields.processPolicy.args',
         type: 'text',

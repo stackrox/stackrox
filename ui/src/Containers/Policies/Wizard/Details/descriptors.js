@@ -222,11 +222,12 @@ const fieldsMap = {
         formatValue: formatResources
     },
     processPolicy: {
-        label: 'Process Name',
+        label: 'Process Execution',
         formatValue: d => {
-            const name = d.name ? `Process named "${d.name}"` : 'Process';
-            const args = d.args ? `with args "${d.args}"` : '';
-            return `${name} ${args}`;
+            const name = d.name ? `Process matches name "${d.name}"` : 'Process';
+            const args = d.args ? `and match args "${d.args}"` : '';
+            const ancestor = d.ancestor ? `and has ancestor matching "${d.ancestor}"` : '';
+            return `${name} ${args} ${ancestor}`;
         }
     }
 };

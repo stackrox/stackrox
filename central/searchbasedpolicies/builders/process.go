@@ -20,7 +20,8 @@ type ProcessQueryBuilder struct {
 func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	processName := fields.GetProcessPolicy().GetName()
 	processArgs := fields.GetProcessPolicy().GetArgs()
-	if processName == "" && processArgs == "" {
+	processAncestor := fields.GetProcessPolicy().GetAncestor()
+	if processName == "" && processArgs == "" && processAncestor == "" {
 		return
 	}
 
@@ -33,12 +34,18 @@ func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[
 	if err != nil {
 		err = fmt.Errorf("%s: %s", p.Name(), search.ProcessArguments)
 	}
+
+	_, err = getSearchFieldNotStored(search.ProcessAncestor, optionsMap)
+	if err != nil {
+		err = fmt.Errorf("%s: %s", p.Name(), search.ProcessAncestor)
+	}
+
 	processIDSearchField, err := getSearchFieldNotStored(search.ProcessID, optionsMap)
 	if err != nil {
 		err = fmt.Errorf("%s: %s", p.Name(), err)
 	}
 
-	// Construct query for ProcessID and processArgs (if found)
+	// Construct query for ProcessID
 	fieldLabels := []search.FieldLabel{search.ProcessID}
 	queryStrings := []string{search.WildcardString}
 	highlights := []bool{true}
@@ -52,6 +59,12 @@ func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[
 	if processName != "" {
 		fieldLabels = append(fieldLabels, search.ProcessName)
 		queryStrings = append(queryStrings, search.RegexQueryString(processName))
+		highlights = append(highlights, false)
+	}
+
+	if processAncestor != "" {
+		fieldLabels = append(fieldLabels, search.ProcessAncestor)
+		queryStrings = append(queryStrings, search.RegexQueryString(processAncestor))
 		highlights = append(highlights, false)
 	}
 

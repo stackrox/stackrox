@@ -70,6 +70,7 @@ const (
 	ProcessExecPath  FieldLabel = "Process Path"
 	ProcessName      FieldLabel = "Process Name"
 	ProcessArguments FieldLabel = "Process Arguments"
+	ProcessAncestor  FieldLabel = "Process Ancestor"
 
 	// Secret search fields
 	SecretType       FieldLabel = "Secret Type"

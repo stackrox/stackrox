@@ -3181,6 +3181,11 @@ func (resolver *Resolver) wrapProcessPolicies(values []*storage.ProcessPolicy, e
 	return output, nil
 }
 
+func (resolver *processPolicyResolver) Ancestor() string {
+	value := resolver.data.GetAncestor()
+	return value
+}
+
 func (resolver *processPolicyResolver) Args() string {
 	value := resolver.data.GetArgs()
 	return value

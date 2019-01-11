@@ -130,8 +130,9 @@ message VolumePolicy {
 }
 
 message ProcessPolicy {
-    string name = 1;
-    string args = 2;
+    string name     = 1;
+    string args     = 2;
+    string ancestor = 3;
 }
 
 message ResourcePolicy {

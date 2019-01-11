@@ -144,7 +144,7 @@ func (suite *DefaultPoliciesTestSuite) imageIDFromDep(deployment *storage.Deploy
 	return types.NewDigest(id).Digest()
 }
 
-func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args, path string) *storage.ProcessIndicator {
+func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args, path string, lineage []string) *storage.ProcessIndicator {
 	indicator := &storage.ProcessIndicator{
 		Id:           uuid.NewV4().String(),
 		DeploymentId: deploymentID,
@@ -153,6 +153,7 @@ func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args
 			Args:         args,
 			ExecFilePath: path,
 			Time:         gogoTypes.TimestampNow(),
+			Lineage:      lineage,
 		},
 	}
 	err := suite.processDataStore.AddProcessIndicator(indicator)
@@ -162,6 +163,7 @@ func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args
 
 type testCase struct {
 	policyName         string
+	policy             *storage.Policy
 	expectedViolations map[string][]*storage.Alert_Violation
 
 	// If shouldNotMatch is specified (which is the case for policies that check for the absence of something), we verify that
@@ -425,15 +427,19 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	suite.mustIndexDepAndImages(depWithAllResourceLimitsRequestsSpecified)
 
 	// Index processes
-	fixtureDepAptIndicator := suite.mustAddIndicator(fixtureDep.GetId(), "apt", "", "/usr/bin/apt")
-	sysAdminDepAptIndicator := suite.mustAddIndicator(sysAdminDep.GetId(), "apt", "install blah", "/usr/bin/apt")
+	bashLineage := []string{"/bin/bash"}
+	fixtureDepAptIndicator := suite.mustAddIndicator(fixtureDep.GetId(), "apt", "", "/usr/bin/apt", bashLineage)
+	sysAdminDepAptIndicator := suite.mustAddIndicator(sysAdminDep.GetId(), "apt", "install blah", "/usr/bin/apt", bashLineage)
 
-	kubeletIndicator := suite.mustAddIndicator(containerPort22Dep.GetId(), "curl", "https://12.13.14.15:10250", "/bin/curl")
-	kubeletIndicator2 := suite.mustAddIndicator(containerPort22Dep.GetId(), "wget", "https://heapster.kube-system/metrics", "/bin/wget")
+	kubeletIndicator := suite.mustAddIndicator(containerPort22Dep.GetId(), "curl", "https://12.13.14.15:10250", "/bin/curl", bashLineage)
+	kubeletIndicator2 := suite.mustAddIndicator(containerPort22Dep.GetId(), "wget", "https://heapster.kube-system/metrics", "/bin/wget", bashLineage)
 
-	nmapIndicatorfixtureDep1 := suite.mustAddIndicator(fixtureDep.GetId(), "nmap", "blah", "/usr/bin/nmap")
-	nmapIndicatorfixtureDep2 := suite.mustAddIndicator(fixtureDep.GetId(), "nmap", "blah2", "/usr/bin/nmap")
-	nmapIndicatorNginx110Dep := suite.mustAddIndicator(nginx110Dep.GetId(), "nmap", "", "/usr/bin/nmap")
+	nmapIndicatorfixtureDep1 := suite.mustAddIndicator(fixtureDep.GetId(), "nmap", "blah", "/usr/bin/nmap", bashLineage)
+	nmapIndicatorfixtureDep2 := suite.mustAddIndicator(fixtureDep.GetId(), "nmap", "blah2", "/usr/bin/nmap", bashLineage)
+	nmapIndicatorNginx110Dep := suite.mustAddIndicator(nginx110Dep.GetId(), "nmap", "", "/usr/bin/nmap", bashLineage)
+
+	javaLineage := []string{"/bin/bash", "/mnt/scripts/run_server.sh", "/bin/java"}
+	fixtureDepJavaIndicator := suite.mustAddIndicator(fixtureDep.GetId(), "/bin/bash", "-attack", "/bin/bash", javaLineage)
 
 	// Find all the deployments indexed.
 	allDeployments, err := suite.deploymentIndexer.Search(search.EmptyQuery())
@@ -813,6 +819,17 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				},
 			},
 		},
+		{
+			policyName: "Shell Spawned by Java Application",
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				fixtureDep.GetId(): {
+					{
+						Message:   "Detected execution of binary '/bin/bash' with arguments '-attack'",
+						Processes: []*storage.ProcessIndicator{fixtureDepJavaIndicator},
+					},
+				},
+			},
+		},
 	}
 
 	for _, c := range deploymentTestCases {
@@ -1179,6 +1196,9 @@ func (suite *DefaultPoliciesTestSuite) TestRuntimePolicyFieldsCompile() {
 			}
 			if processPolicy.GetArgs() != "" {
 				regexp.MustCompile(processPolicy.GetArgs())
+			}
+			if processPolicy.GetAncestor() != "" {
+				regexp.MustCompile(processPolicy.GetAncestor())
 			}
 		}
 	}
