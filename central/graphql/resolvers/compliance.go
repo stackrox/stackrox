@@ -33,7 +33,7 @@ func (resolver *Resolver) ComplianceStandard(ctx context.Context, args struct{ g
 		return nil, err
 	}
 	return resolver.wrapComplianceStandardMetadata(
-		resolver.ComplianceStandardStore.Standard(string(args.ID)))
+		resolver.ComplianceStandardStore.StandardMetadata(string(args.ID)))
 }
 
 // ComplianceResults returns graphql resolvers for all matching compliance results

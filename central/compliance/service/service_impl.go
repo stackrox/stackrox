@@ -31,14 +31,14 @@ var (
 // New returns a service object for registering with grpc
 func New() Service {
 	return &serviceImpl{
-		store:     datastore.Fake(),
-		standards: standards.Fake(),
+		store:         datastore.Fake(),
+		standardsRepo: standards.RegistrySingleton(),
 	}
 }
 
 type serviceImpl struct {
-	store     datastore.DataStore
-	standards standards.Standards
+	store         datastore.DataStore
+	standardsRepo standards.Repository
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -56,9 +56,9 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-// GetStandards returns a list of available standards
+// GetStandards returns a list of available standardsRepo
 func (s *serviceImpl) GetStandards(context.Context, *v1.Empty) (*v1.GetComplianceStandardsResponse, error) {
-	standards, err := s.standards.Standards()
+	standards, err := s.standardsRepo.Standards()
 	if err != nil {
 		return nil, err
 	}
@@ -69,22 +69,15 @@ func (s *serviceImpl) GetStandards(context.Context, *v1.Empty) (*v1.GetComplianc
 
 // GetStandard returns details + controls for a given standard
 func (s *serviceImpl) GetStandard(ctx context.Context, req *v1.ResourceByID) (*v1.GetComplianceStandardResponse, error) {
-	metadata, exists, err := s.standards.Standard(req.GetId())
+	standard, exists, err := s.standardsRepo.Standard(req.GetId())
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
 		return nil, status.Error(codes.NotFound, req.GetId())
 	}
-	controls, err := s.standards.Controls(req.GetId())
-	if err != nil {
-		return nil, err
-	}
 	return &v1.GetComplianceStandardResponse{
-		Standard: &v1.ComplianceStandard{
-			Metadata: metadata,
-			Controls: controls,
-		},
+		Standard: standard,
 	}, nil
 }
 

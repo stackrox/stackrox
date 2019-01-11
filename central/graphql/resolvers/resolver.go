@@ -32,7 +32,7 @@ type Resolver struct {
 	APITokenBackend         apitoken.Backend
 	ClusterDataStore        clusterDatastore.DataStore
 	ComplianceDataStore     complianceDataStore.DataStore
-	ComplianceStandardStore complianceStandards.Standards
+	ComplianceStandardStore complianceStandards.Repository
 	DeploymentDataStore     deploymentDatastore.DataStore
 	ImageDataStore          imageDatastore.DataStore
 	GroupDataStore          groupDataStore.Store
