@@ -33,7 +33,7 @@ func main() {
 	maxIndicators := flag.Int("max-indicators", 5000, "maximum number of indicators to send")
 	networkFlowInterval := flag.Duration("network-flow-interval", 30*time.Second, "interval for sending network flow diffs")
 	maxNetworkFlows := flag.Int("max-network-flows", 1000, "maximum number of network flows to send at once")
-	maxUpdates := flag.Int("max-updates", 1580, "total number of network flows updates to send")
+	maxUpdates := flag.Int("max-updates", 40, "total number of network flows updates to send")
 	flowDeleteRate := flag.Float64("flow-delete-rate", 0.03, "fraction of flows that will be marked removed in each network flow update")
 	centralEndpoint := flag.String("central", "central.stackrox:443", "central endpoint")
 	bigDepRate := flag.Float64("big-dep-rate", 0.01, "fraction of giant deployments to send")
