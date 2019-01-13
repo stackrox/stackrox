@@ -40,7 +40,7 @@ class NetworkPoliciesDetails extends Component {
                                         )}
                                         tabIndex="-1"
                                     >
-                                        <span className="pr-2">Download yaml file</span>
+                                        <span className="pr-2">Download YAML file</span>
                                         <Icon.Download className="h-3 w-3" />
                                     </button>
                                 </div>

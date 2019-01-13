@@ -20,6 +20,7 @@ import (
 	bsService "github.com/stackrox/rox/central/benchmarkscan/service"
 	bshService "github.com/stackrox/rox/central/benchmarkschedule/service"
 	btService "github.com/stackrox/rox/central/benchmarktrigger/service"
+	"github.com/stackrox/rox/central/cli"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
@@ -253,6 +254,12 @@ func (c *central) customRoutes() (customRoutes []routes.CustomRoute) {
 			Authorizer:    authzUser.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity)),
 			ServerHandler: clustersZip.Handler(datastore.Singleton(), siService.Singleton()),
 			Compression:   false,
+		},
+		{
+			Route:         "/api/cli/download/",
+			Authorizer:    authzUser.With(),
+			ServerHandler: cli.Handler(),
+			Compression:   true,
 		},
 		{
 			Route:         "/db/backup",

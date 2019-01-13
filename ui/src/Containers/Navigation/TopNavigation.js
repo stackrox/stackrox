@@ -3,9 +3,12 @@ import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
+import { actions as cliDownloadActions } from 'reducers/cli';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import * as Icon from 'react-feather';
+import Tooltip from 'rc-tooltip';
+import 'rc-tooltip/assets/bootstrap.css';
 
 import Logo from 'Components/icons/logo';
 import { actions as authActions, AUTH_STATUS } from 'reducers/auth';
@@ -19,12 +22,18 @@ const titleMap = {
     numSecrets: { singular: 'Secret', plural: 'Secrets' }
 };
 
+const topNavBtnTextClass = 'sm:hidden md:flex uppercase text-sm tracking-wide';
+const topNavBtnSvgClass = 'sm:mr-0 md:mr-3 h-4 w-4';
+const topNavBtnClass =
+    'flex flex-end px-4 no-underline pt-3 pb-2 text-base-600 hover:bg-base-200 items-center cursor-pointer';
+
 class TopNavigation extends Component {
     static propTypes = {
         authStatus: PropTypes.oneOf(Object.keys(AUTH_STATUS).map(key => AUTH_STATUS[key]))
             .isRequired,
         logout: PropTypes.func.isRequired,
         toggleGlobalSearchView: PropTypes.func.isRequired,
+        toggleCLIDownloadView: PropTypes.func.isRequired,
         summaryCounts: PropTypes.shape({
             numClusters: PropTypes.string,
             numNodes: PropTypes.string,
@@ -42,26 +51,58 @@ class TopNavigation extends Component {
     renderLogoutButton = () => {
         if (this.props.authStatus !== AUTH_STATUS.LOGGED_IN) return null;
         return (
-            <button
-                type="button"
-                onClick={this.props.logout}
-                className="flex flex-end border-r border-base-400 px-4 no-underline pt-3 pb-2 text-base-600 hover:bg-base-200 items-center cursor-pointer"
+            <Tooltip
+                placement="bottom"
+                overlay={<div>Logout</div>}
+                mouseLeaveDelay={0}
+                overlayClassName="sm:visible md:invisible"
             >
-                <Icon.LogOut className="h-4 w-4 mr-3" />
-                <span className="uppercase text-sm tracking-wide">Logout</span>
-            </button>
+                <button
+                    type="button"
+                    onClick={this.props.logout}
+                    className={`${topNavBtnClass} border-l border-r border-base-400`}
+                >
+                    <Icon.LogOut className={topNavBtnSvgClass} />
+                    <span className={topNavBtnTextClass}>Logout</span>
+                </button>
+            </Tooltip>
         );
     };
 
     renderSearchButton = () => (
-        <button
-            type="button"
-            onClick={this.props.toggleGlobalSearchView}
-            className="ignore-react-onclickoutside flex flex-end border-l border-r border-base-400 px-4 no-underline pt-3 pb-2 text-base-600 hover:bg-base-200 items-center cursor-pointer hover:bg-base-300"
+        <Tooltip
+            placement="bottom"
+            overlay={<div>Search</div>}
+            mouseLeaveDelay={0}
+            overlayClassName="sm:visible md:invisible"
         >
-            <Icon.Search className="h-4 w-4 mr-3" />
-            <span className="uppercase text-sm tracking-wide">Search</span>
-        </button>
+            <button
+                type="button"
+                onClick={this.props.toggleGlobalSearchView}
+                className={`${topNavBtnClass} border-l border-r border-base-400 ignore-react-onclickoutside`}
+            >
+                <Icon.Search className={topNavBtnSvgClass} />
+                <span className={topNavBtnTextClass}>Search</span>
+            </button>
+        </Tooltip>
+    );
+
+    renderCLIDownloadButton = () => (
+        <Tooltip
+            placement="bottom"
+            overlay={<div>CLI</div>}
+            mouseLeaveDelay={0}
+            overlayClassName="sm:visible md:invisible"
+        >
+            <button
+                type="button"
+                onClick={this.props.toggleCLIDownloadView}
+                className={`${topNavBtnClass} ignore-cli-clickoutside`}
+            >
+                <Icon.Download className={topNavBtnSvgClass} />
+                <span className={topNavBtnTextClass}>CLI</span>
+            </button>
+        </Tooltip>
     );
 
     renderSummaryCounts = () => {
@@ -72,7 +113,7 @@ class TopNavigation extends Component {
                 {Object.entries(titleMap).map(([key, titles]) => (
                     <li
                         key={key}
-                        className="flex flex-col border-r border-base-400 border-dashed px-3 w-24 no-underline py-3 text-base-500 items-center justify-center font-condensed"
+                        className="flex flex-col border-r border-base-400 border-dashed px-3 lg:w-24 md:w-20 no-underline py-3 text-base-500 items-center justify-center font-condensed"
                     >
                         <div className="text-3xl tracking-widest">{summaryCounts[key]}</div>
                         <div className="text-sm pt-1 tracking-wide">
@@ -95,6 +136,7 @@ class TopNavigation extends Component {
                 </div>
                 <div className="flex">
                     {this.renderSearchButton()}
+                    {this.renderCLIDownloadButton()}
                     {this.renderLogoutButton()}
                 </div>
             </nav>
@@ -108,6 +150,7 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = dispatch => ({
+    toggleCLIDownloadView: () => dispatch(cliDownloadActions.toggleCLIDownloadView()),
     toggleGlobalSearchView: () => dispatch(globalSearchActions.toggleGlobalSearchView()),
     logout: () => dispatch(authActions.logout())
 });

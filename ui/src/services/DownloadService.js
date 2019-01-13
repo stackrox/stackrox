@@ -7,24 +7,27 @@ import FileSaver from 'file-saver';
 /**
  * Common download service to download different types of files.
  */
-export function saveFile({ url, data }) {
+export function saveFile({ method, url, data, name }) {
     const options = {
-        method: 'post',
+        method,
         url,
         data,
-        responseType: 'arraybuffer'
+        responseType: 'arraybuffer',
+        name
     };
     return axios(options).then(response => {
         if (response.data) {
             const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
             const matches = filenameRegex.exec(response.headers['content-disposition']);
 
+            const file = new Blob([response.data], {
+                type: response.headers['content-type']
+            });
+
             if (matches !== null && matches[1]) {
-                const filename = matches[1].replace(/['"]/g, '');
-                const file = new Blob([response.data], {
-                    type: response.headers['content-type']
-                });
-                FileSaver.saveAs(file, filename);
+                FileSaver.saveAs(file, matches[1].replace(/['"]/g, ''));
+            } else if (name !== '') {
+                FileSaver.saveAs(file, name);
             } else {
                 throw new Error('Unable to extract file name');
             }

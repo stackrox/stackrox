@@ -176,6 +176,7 @@ gazelle: deps $(GENERATED_SRCS) cleanup
 cli: gazelle
 	bazel build $(BAZEL_FLAGS) --platforms=@io_bazel_rules_go//go/toolchain:darwin_amd64 -- //roxctl
 	bazel build $(BAZEL_FLAGS) --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 -- //roxctl
+	bazel build $(BAZEL_FLAGS) --platforms=@io_bazel_rules_go//go/toolchain:windows_amd64 -- //roxctl
 
 	# Copy the user's specific OS into gopath
 	cp bazel-bin/roxctl/$(BAZEL_OS)_amd64_pure_stripped/roxctl $(GOPATH)/bin/roxctl
@@ -260,7 +261,8 @@ image: build clean-image $(MERGED_API_SWAGGER_SPEC)
 	cp -r ui/build image/ui/
 	cp bazel-bin/central/linux_amd64_pure_stripped/central image/bin/central
 	cp bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl image/bin/roxctl-linux
-	cp bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl image/bin/roxctl-darwin
+	cp bazel-bin/roxctl/darwin_amd64_pure_stripped/roxctl image/bin/roxctl-darwin
+	cp bazel-bin/roxctl/windows_amd64_pure_stripped/roxctl.exe image/bin/roxctl-windows.exe
 	cp bazel-bin/benchmarks/linux_amd64_pure_stripped/benchmarks image/bin/benchmarks
 	cp bazel-bin/benchmark-bootstrap/linux_amd64_pure_stripped/benchmark-bootstrap image/bin/benchmark-bootstrap
 	cp bazel-bin/sensor/swarm/linux_amd64_pure_stripped/swarm image/bin/swarm-sensor

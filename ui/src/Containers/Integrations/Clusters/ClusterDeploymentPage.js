@@ -16,7 +16,7 @@ const YamlDownloadSection = ({ onFileDownload }) => (
                     onClick={onFileDownload}
                     tabIndex="-1"
                 >
-                    <span className="pr-2">Download yaml file and keys</span>
+                    <span className="pr-2">Download YAML file and keys</span>
                     <Icon.Download className="h-3 w-3" />
                 </button>
             </div>

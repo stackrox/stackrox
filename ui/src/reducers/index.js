@@ -24,6 +24,7 @@ import network, { selectors as networkSelectors } from './network';
 import processes, { selectors as processSelectors } from './processes';
 import groups, { selectors as groupsSelectors } from './groups';
 import attributes, { selectors as attributesSelectors } from './attributes';
+import cli, { selectors as cliSelectors } from './cli';
 
 // Reducers
 
@@ -38,6 +39,7 @@ const appReducer = combineReducers({
     integrations,
     notifications,
     globalSearch,
+    cli,
     policies,
     roles,
     summaries,
@@ -84,6 +86,7 @@ const getNetwork = state => getApp(state).network;
 const getProcesses = state => getApp(state).processes;
 const getRuleGroups = state => getApp(state).groups;
 const getAttributes = state => getApp(state).attributes;
+const getCLI = state => getApp(state).cli;
 
 const boundSelectors = {
     ...bindSelectors(getAlerts, alertSelectors),
@@ -107,7 +110,8 @@ const boundSelectors = {
     ...bindSelectors(getNetwork, networkSelectors),
     ...bindSelectors(getProcesses, processSelectors),
     ...bindSelectors(getRuleGroups, groupsSelectors),
-    ...bindSelectors(getAttributes, attributesSelectors)
+    ...bindSelectors(getAttributes, attributesSelectors),
+    ...bindSelectors(getCLI, cliSelectors)
 };
 
 export const selectors = {

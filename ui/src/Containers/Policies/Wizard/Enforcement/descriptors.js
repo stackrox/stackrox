@@ -9,7 +9,7 @@ const lifecycleTileMap = {
         label: 'BUILD',
         header: 'Enforcement Behavior',
         description:
-            'If enabled, StackRox will fail your CI builds when build data matches parameters from this policy. Download the helper script to set this up.'
+            'If enabled, StackRox will fail your CI builds when build data matches parameters from this policy. Download the CLI above to get started.'
     },
     DEPLOY: {
         image: deployImage,

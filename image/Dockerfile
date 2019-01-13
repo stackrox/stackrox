@@ -24,7 +24,7 @@ COPY ./bin/benchmark-bootstrap /stackrox/
 COPY ./bin/benchmarks /stackrox/
 COPY ./bin/central /stackrox/
 COPY ./bin/compliance /stackrox/compliance
-COPY ./bin/roxctl* /stackrox/
+COPY ./bin/roxctl* /assets/downloads/cli/
 COPY ./bin/kubernetes-sensor /stackrox/
 COPY ./bin/swarm-sensor /stackrox/
 COPY ./ui/build  /ui/
@@ -37,7 +37,7 @@ COPY ./assets /data/assets
 
 EXPOSE 443
 
-ENTRYPOINT ["roxctl-linux"]
+ENTRYPOINT ["/assets/downloads/cli/roxctl-linux"]
 
 # The following paths are written to in Central.
 # Including these VOLUME instructions means that we can enable a

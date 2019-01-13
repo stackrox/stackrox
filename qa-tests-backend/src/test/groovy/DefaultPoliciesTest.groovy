@@ -280,4 +280,5 @@ class DefaultPoliciesTest extends BaseSpecification {
         flat["Secure Shell (ssh) Port Exposed"] != 0
         flat["Don't use environment variables with secrets"] != 0
     }
+
 }

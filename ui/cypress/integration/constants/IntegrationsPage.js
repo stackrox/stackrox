@@ -15,7 +15,7 @@ export const selectors = {
     buttons: {
         new: 'button:contains("New")',
         next: 'button:contains("Next")',
-        download: 'button:contains("Download")',
+        downloadYAML: 'button:contains("Download YAML")',
         delete: 'button:contains("Delete")',
         test: 'button:contains("Test")',
         create: 'button:contains("Create")',

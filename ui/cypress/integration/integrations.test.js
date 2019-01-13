@@ -160,7 +160,7 @@ describe('Cluster Creation Flow', () => {
             .should('have.text', 'Central API Endpoint:central.stackrox:443');
     });
 
-    it('Should be able to fill out the Kubernetes form, download config files and see cluster checked-in', () => {
+    it.skip('Should be able to fill out the Kubernetes form, download config files and see cluster checked-in', () => {
         cy.get(selectors.kubernetesTile).click();
 
         cy.get(selectors.buttons.new).click();
@@ -179,7 +179,7 @@ describe('Cluster Creation Flow', () => {
             .then(response => {
                 const clusterId = response.cluster.id;
 
-                cy.get(selectors.buttons.download).click();
+                cy.get(selectors.buttons.downloadYAML).click();
                 cy.wait('@download');
 
                 cy.get('div:contains("Waiting for the cluster to check-in successfully...")');

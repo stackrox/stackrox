@@ -19,6 +19,7 @@ import metadata from './metadataSagas';
 import processes from './processSagas';
 import groups from './groupSagas';
 import attributes from './attributesSagas';
+import cli from './cliSagas';
 
 export default function* root() {
     yield all([
@@ -26,6 +27,7 @@ export default function* root() {
         fork(apiTokens),
         fork(authProviders),
         fork(benchmarks),
+        fork(cli),
         fork(clusters),
         fork(deployments),
         fork(images),

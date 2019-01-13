@@ -67,6 +67,7 @@ export function saveCluster(cluster) {
  */
 export function downloadClusterYaml(clusterId) {
     return saveFile({
+        method: 'post',
         url: '/api/extensions/clusters/zip',
         data: { id: clusterId }
     });

@@ -22,6 +22,7 @@ import {
 } from 'routePaths';
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
+import { actions as cliSearchActions } from 'reducers/cli';
 
 import asyncComponent from 'Components/AsyncComponent';
 import ProtectedRoute from 'Components/ProtectedRoute';
@@ -29,6 +30,8 @@ import Notifications from 'Containers/Notifications';
 import TopNavigation from 'Containers/Navigation/TopNavigation';
 import LeftNavigation from 'Containers/Navigation/LeftNavigation';
 import SearchModal from 'Containers/Search/SearchModal';
+import CLIModal from 'Containers/CLI/CLIModal';
+
 import ErrorBoundary from 'Containers/ErrorBoundary';
 
 import CSSGrid from 'Containers/CSSGrid';
@@ -53,17 +56,29 @@ class MainPage extends Component {
     static propTypes = {
         history: ReactRouterPropTypes.history.isRequired,
         toggleGlobalSearchView: PropTypes.func.isRequired,
-        globalSearchView: PropTypes.bool.isRequired
+        toggleCLIDownloadView: PropTypes.func.isRequired,
+        globalSearchView: PropTypes.bool.isRequired,
+        cliDownloadView: PropTypes.bool.isRequired
     };
 
-    onCloseHandler = toURL => {
+    onSearchCloseHandler = toURL => {
         this.props.toggleGlobalSearchView();
+        if (toURL && typeof toURL === 'string') this.props.history.push(toURL);
+    };
+
+    onCLICloseHandler = toURL => {
+        this.props.toggleCLIDownloadView();
         if (toURL && typeof toURL === 'string') this.props.history.push(toURL);
     };
 
     renderSearchModal = () => {
         if (!this.props.globalSearchView) return '';
-        return <SearchModal className="h-full w-full" onClose={this.onCloseHandler} />;
+        return <SearchModal className="h-full w-full" onClose={this.onSearchCloseHandler} />;
+    };
+
+    renderCLIDownload = () => {
+        if (!this.props.cliDownloadView) return '';
+        return <CLIModal className="h-full w-full" onClose={this.onCLICloseHandler} />;
     };
 
     renderRouter = () => (
@@ -106,17 +121,20 @@ class MainPage extends Component {
                     {this.renderRouter()}
                 </section>
                 {this.renderSearchModal()}
+                {this.renderCLIDownload()}
             </section>
         );
     }
 }
 
 const mapStateToProps = createStructuredSelector({
-    globalSearchView: selectors.getGlobalSearchView
+    globalSearchView: selectors.getGlobalSearchView,
+    cliDownloadView: selectors.getCLIDownloadView
 });
 
 const mapDispatchToProps = dispatch => ({
-    toggleGlobalSearchView: () => dispatch(globalSearchActions.toggleGlobalSearchView())
+    toggleGlobalSearchView: () => dispatch(globalSearchActions.toggleGlobalSearchView()),
+    toggleCLIDownloadView: () => dispatch(cliSearchActions.toggleCLIDownloadView())
 });
 
 export default connect(
