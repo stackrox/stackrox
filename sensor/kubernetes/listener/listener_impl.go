@@ -31,6 +31,9 @@ func (k *listenerImpl) Start() {
 		osFactory = externalversions.NewSharedInformerFactory(k.clients.openshift, resyncPeriod)
 	}
 
+	// Patch namespaces to include labels
+	patchNamespaces(k.clients.k8s, &k.stopSig)
+
 	// Start handling resource events.
 	handleAllEvents(k8sFactory, osFactory, k.eventsC, &k.stopSig)
 }
@@ -45,15 +48,16 @@ func (k *listenerImpl) Events() <-chan *central.SensorEvent {
 
 func (k *listenerImpl) sendClusterMetadata() {
 	m := providers.GetMetadata()
-	if m != nil {
-		k.eventsC <- &central.SensorEvent{
-			Id:     "metadata",
-			Action: central.ResourceAction_UPDATE_RESOURCE, // updates a cluster object
-			Resource: &central.SensorEvent_ProviderMetadata{
-				ProviderMetadata: m,
-			},
-		}
+	if m == nil {
+		log.Infof("No Cloud Provider metadata is found")
 		return
 	}
-	logger.Infof("No Cloud Provider metadata is found")
+	k.eventsC <- &central.SensorEvent{
+		Id:     "metadata",
+		Action: central.ResourceAction_UPDATE_RESOURCE, // updates a cluster object
+		Resource: &central.SensorEvent_ProviderMetadata{
+			ProviderMetadata: m,
+		},
+	}
+
 }

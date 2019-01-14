@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 // New returns a new kubernetes listener.

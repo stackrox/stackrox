@@ -15,18 +15,18 @@ type clientSet struct {
 func createClient() *clientSet {
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		logger.Fatalf("Unable to get cluster config: %s", err)
+		log.Fatalf("Unable to get cluster config: %s", err)
 	}
 
 	cs := &clientSet{}
 	cs.k8s, err = kubernetesClient.NewForConfig(config)
 	if err != nil {
-		logger.Fatalf("Unable to get k8s client: %s", err)
+		log.Fatalf("Unable to get k8s client: %s", err)
 	}
 	if env.OpenshiftAPI.Setting() == "true" {
 		cs.openshift, err = openshift.NewForConfig(config)
 		if err != nil {
-			logger.Warnf("Could not generate openshift client: %s", err)
+			log.Warnf("Could not generate openshift client: %s", err)
 		}
 	}
 	return cs
