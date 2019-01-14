@@ -8,6 +8,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	concurrency "github.com/stackrox/rox/pkg/concurrency"
 	search "github.com/stackrox/rox/pkg/search"
 	reflect "reflect"
 )
@@ -150,4 +151,28 @@ func (m *MockDataStore) SearchRawProcessIndicators(arg0 *v1.Query) ([]*storage.P
 // SearchRawProcessIndicators indicates an expected call of SearchRawProcessIndicators
 func (mr *MockDataStoreMockRecorder) SearchRawProcessIndicators(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawProcessIndicators", reflect.TypeOf((*MockDataStore)(nil).SearchRawProcessIndicators), arg0)
+}
+
+// Stop mocks base method
+func (m *MockDataStore) Stop() bool {
+	ret := m.ctrl.Call(m, "Stop")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Stop indicates an expected call of Stop
+func (mr *MockDataStoreMockRecorder) Stop() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockDataStore)(nil).Stop))
+}
+
+// Wait mocks base method
+func (m *MockDataStore) Wait(arg0 concurrency.Waitable) bool {
+	ret := m.ctrl.Call(m, "Wait", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Wait indicates an expected call of Wait
+func (mr *MockDataStoreMockRecorder) Wait(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Wait", reflect.TypeOf((*MockDataStore)(nil).Wait), arg0)
 }

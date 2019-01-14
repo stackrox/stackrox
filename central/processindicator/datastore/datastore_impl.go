@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"fmt"
-	"sync/atomic"
 	"time"
 
 	"github.com/stackrox/rox/central/metrics"
@@ -12,19 +11,19 @@ import (
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	indexer  index.Indexer
-	searcher search.Searcher
-	pruner   pruner.Pruner
+	storage       store.Store
+	indexer       index.Indexer
+	searcher      search.Searcher
+	prunerFactory pruner.Factory
 
-	// Used for testing.
-	pruneCounter int32
+	stopSig, stoppedSig concurrency.Signal
 }
 
 func (ds *datastoreImpl) Search(q *v1.Query) ([]pkgSearch.Result, error) {
@@ -140,19 +139,22 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsOfStaleContainers(deploymentID s
 }
 
 func (ds *datastoreImpl) prunePeriodically() {
-	if ds.pruner == nil {
+	defer ds.stoppedSig.Signal()
+
+	if ds.prunerFactory == nil {
 		return
 	}
-	t := time.NewTicker(ds.pruner.Period())
-	defer t.Stop()
-	for range t.C {
-		ds.prune()
-		atomic.AddInt32(&ds.pruneCounter, 1)
-	}
-}
 
-func (ds *datastoreImpl) numPrunesDone() int32 {
-	return atomic.LoadInt32(&ds.pruneCounter)
+	t := time.NewTicker(ds.prunerFactory.Period())
+	defer t.Stop()
+	for !ds.stopSig.IsDone() {
+		select {
+		case <-t.C:
+			ds.prune()
+		case <-ds.stopSig.Done():
+			return
+		}
+	}
 }
 
 func (ds *datastoreImpl) prune() {
@@ -162,8 +164,11 @@ func (ds *datastoreImpl) prune() {
 		log.Errorf("Error while pruning processes: couldn't retrieve process info to args: %s", err)
 		return
 	}
+
+	pruner := ds.prunerFactory.StartPruning()
+	defer pruner.Finish()
 	for _, args := range processInfoToArgs {
-		idsToRemove := ds.pruner.Prune(args)
+		idsToRemove := pruner.Prune(args)
 		if len(idsToRemove) > 0 {
 			if err := ds.removeIndicators(idsToRemove); err != nil {
 				log.Errorf("Error while pruning processes: %s", err)
@@ -172,4 +177,12 @@ func (ds *datastoreImpl) prune() {
 			}
 		}
 	}
+}
+
+func (ds *datastoreImpl) Stop() bool {
+	return ds.stopSig.Signal()
+}
+
+func (ds *datastoreImpl) Wait(cancelWhen concurrency.Waitable) bool {
+	return concurrency.WaitInContext(&ds.stoppedSig, cancelWhen)
 }

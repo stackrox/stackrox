@@ -11,11 +11,13 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/index"
+	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/pruner/mocks"
 	processSearch "github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -32,8 +34,7 @@ type IndicatorDataStoreTestSuite struct {
 	indexer   index.Indexer
 	searcher  processSearch.Searcher
 
-	mockPruner *mocks.MockPruner
-	mockCtrl   *gomock.Controller
+	mockCtrl *gomock.Controller
 }
 
 func (suite *IndicatorDataStoreTestSuite) SetupTest() {
@@ -49,7 +50,6 @@ func (suite *IndicatorDataStoreTestSuite) SetupTest() {
 	suite.NoError(err)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.mockPruner = mocks.NewMockPruner(suite.mockCtrl)
 }
 
 func (suite *IndicatorDataStoreTestSuite) TearDownTest() {
@@ -213,15 +213,24 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByContainerIDAgain
 }
 
 func (suite *IndicatorDataStoreTestSuite) TestPruning() {
-	const pruneDuration = 100 * time.Millisecond
-	suite.mockPruner.EXPECT().Period().Return(pruneDuration)
+	const prunePeriod = 100 * time.Millisecond
+	mockPrunerFactory := mocks.NewMockFactory(suite.mockCtrl)
+	mockPrunerFactory.EXPECT().Period().Return(prunePeriod)
 	indicators, _ := getIndicators()
 
-	ch := make(chan struct{})
+	prunedSignal := concurrency.NewSignal()
+	mockPruner := mocks.NewMockPruner(suite.mockCtrl)
+	mockPruner.EXPECT().Finish().AnyTimes().Do(func() {
+		prunedSignal.Signal()
+	})
+
+	pruneTurnstile := concurrency.NewTurnstile()
+	mockPrunerFactory.EXPECT().StartPruning().AnyTimes().DoAndReturn(func() pruner.Pruner {
+		pruneTurnstile.Wait()
+		return mockPruner
+	})
+
 	m := testutils.PredMatcher("id with args matcher", func(passed []processindicator.IDAndArgs) bool {
-		defer func() {
-			ch <- struct{}{}
-		}()
 		ourIDsAndArgs := make([]processindicator.IDAndArgs, 0, len(indicators))
 		for _, indicator := range indicators {
 			ourIDsAndArgs = append(ourIDsAndArgs, processindicator.IDAndArgs{ID: indicator.GetId(), Args: indicator.GetSignal().GetArgs()})
@@ -242,25 +251,24 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 		}
 		return true
 	})
-	suite.datastore = New(suite.storage, suite.indexer, suite.searcher, suite.mockPruner)
+	suite.datastore = New(suite.storage, suite.indexer, suite.searcher, mockPrunerFactory)
 	suite.NoError(suite.datastore.AddProcessIndicators(indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
-	suite.mockPruner.EXPECT().Prune(m).Return(nil)
-	<-ch
-	for suite.datastore.(*datastoreImpl).numPrunesDone() < 1 {
-		time.Sleep(10 * time.Millisecond)
-	}
-	suite.Equal(suite.datastore.(*datastoreImpl).numPrunesDone(), int32(1))
+	mockPruner.EXPECT().Prune(m).Return(nil)
+	pruneTurnstile.AllowOne()
+	suite.Assert().True(concurrency.WaitWithTimeout(&prunedSignal, 3*prunePeriod))
 	suite.verifyIndicatorsAre(indicators...)
 
-	suite.mockPruner.EXPECT().Prune(m).Return([]string{indicators[0].GetId()})
-	<-ch
-	for suite.datastore.(*datastoreImpl).numPrunesDone() < 2 {
-		time.Sleep(10 * time.Millisecond)
-	}
-	suite.Equal(suite.datastore.(*datastoreImpl).numPrunesDone(), int32(2))
+	mockPruner.EXPECT().Prune(m).Return([]string{indicators[0].GetId()})
+	prunedSignal.Reset()
+	pruneTurnstile.AllowOne()
+	suite.Assert().True(concurrency.WaitWithTimeout(&prunedSignal, 3*prunePeriod))
 	suite.verifyIndicatorsAre(indicators[1:]...)
 
-	suite.mockPruner.EXPECT().Prune(m).AnyTimes().Return(nil)
+	mockPruner.EXPECT().Prune(gomock.Any()).AnyTimes().Return(nil)
+	pruneTurnstile.Close()
+
+	suite.datastore.Stop()
+	suite.True(suite.datastore.Wait(concurrency.Timeout(3 * prunePeriod)))
 }

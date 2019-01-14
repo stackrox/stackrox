@@ -35,7 +35,7 @@ func initialize() {
 		panic("unable to load search index for alerts")
 	}
 
-	p := pruner.New(minArgsPerProcess, pruneInterval)
+	p := pruner.NewFactory(minArgsPerProcess, pruneInterval)
 
 	ad = New(storage, indexer, searcher, p)
 }

@@ -12,7 +12,7 @@ const (
 	jaccardThreshold = 0.6
 )
 
-type prunerImpl struct {
+type prunerFactoryImpl struct {
 	minProcesses int
 	period       time.Duration
 }
@@ -55,7 +55,7 @@ func isCloseToAnExistingSet(existingSets []set.IntSet, candidate set.IntSet) boo
 	return false
 }
 
-func (p *prunerImpl) Prune(processes []processindicator.IDAndArgs) (idsToRemove []string) {
+func (p *prunerFactoryImpl) Prune(processes []processindicator.IDAndArgs) (idsToRemove []string) {
 	knownStrings := make(map[string]int)
 
 	if len(processes) <= p.minProcesses {
@@ -79,13 +79,19 @@ func (p *prunerImpl) Prune(processes []processindicator.IDAndArgs) (idsToRemove 
 	return
 }
 
-func (p *prunerImpl) Period() time.Duration {
+func (p *prunerFactoryImpl) Finish() {}
+
+func (p *prunerFactoryImpl) Period() time.Duration {
 	return p.period
 }
 
-// New returns an new Pruner that never prunes below the given number of `minProcesses`.
-func New(minProcesses int, period time.Duration) Pruner {
-	return &prunerImpl{
+func (p *prunerFactoryImpl) StartPruning() Pruner {
+	return p
+}
+
+// NewFactory returns an new Factory that creates pruners never pruning below the given number of `minProcesses`.
+func NewFactory(minProcesses int, period time.Duration) Factory {
+	return &prunerFactoryImpl{
 		minProcesses: minProcesses,
 		period:       period,
 	}

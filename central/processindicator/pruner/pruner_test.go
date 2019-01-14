@@ -96,8 +96,9 @@ func TestRabbitMQPruning(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		processes = append(processes, processToIDAndArgs(rabbitMQBeamSMPProcess()))
 	}
-	pruner := New(1, time.Second)
+	pruner := NewFactory(1, time.Second).StartPruning()
 	prunedIDs := pruner.Prune(processes)
+	pruner.Finish()
 	assert.Len(t, prunedIDs, len(processes)-2)
 	assert.NotContains(t, prunedIDs, deterministicRabbitMQProcess.GetId())
 }
