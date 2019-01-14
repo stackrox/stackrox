@@ -131,4 +131,38 @@ const sunburstLegendData = [
     { title: '> 10% Failing', color: 'var(--alert-400)' }
 ];
 
-export { verticalBarData, sunburstData, sunburstLegendData, horizontalBarData, horizontalBarDatum };
+const listData = [
+    {
+        name: '1.2.2 - secure and synchronize router configuration file',
+        link: 'https://google.com'
+    },
+    {
+        name: '1.3.2 - limit inbound internet traffic to IP addresses with something something',
+        link: 'https://google.com'
+    },
+    {
+        name: '1.2.3 - secure and synchronize router configuration file',
+        link: 'https://google.com'
+    },
+    {
+        name: '1.3.3 - limit inbound internet traffic to IP addresses with something something',
+        link: 'https://google.com'
+    },
+    {
+        name: '1.2.4 - secure and synchronize router configuration file',
+        link: 'https://google.com'
+    },
+    {
+        name: '1.3.4 - limit inbound internet traffic to IP addresses with something something',
+        link: 'https://google.com'
+    }
+];
+
+export {
+    verticalBarData,
+    sunburstData,
+    sunburstLegendData,
+    horizontalBarData,
+    horizontalBarDatum,
+    listData
+};

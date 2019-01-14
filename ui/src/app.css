@@ -797,12 +797,8 @@ h6 {
     @apply .px-3 !important;
 }
 
-.ReactTable .rt-tbody .rt-td {
-    @apply .whitespace-normal !important;
-}
-
 .ReactTable .rt-tbody .rt-tr {
-    @apply .min-h-14 bg-base-100 !important;
+    @apply .min-h-12 bg-base-100 !important;
 }
 
 .ReactTable .rt-tbody .rt-tr .rt-td {

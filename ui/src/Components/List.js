@@ -13,7 +13,7 @@ function List(props) {
             onRowClick={selectRow}
             showThead={false}
             idAttribute={selectedIdAttribute}
-            selectedRowId={selectedListItem[selectedIdAttribute]}
+            selectedRowId={selectedListItem ? selectedListItem[selectedIdAttribute] : ''}
             noDataText="No Items Available. Create a new one below."
         />
     );
