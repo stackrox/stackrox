@@ -46,13 +46,5 @@ func (s *serviceImpl) PushComplianceReturn(ctx context.Context, request *complia
 
 // Helper function to make formatting values easier.
 func returnAsMessage(cr *compliance.ComplianceReturn) *central.MsgFromSensor {
-	return &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Resource: &central.SensorEvent_ComplianceReturn{
-					ComplianceReturn: cr,
-				},
-			},
-		},
-	}
+	return &central.MsgFromSensor{}
 }
