@@ -1,6 +1,6 @@
 {
     "name": "Shell Spawned by Java Application",
-    "description": "Detects execution of shell (bash/csh/sh/zsh) as a subprocess of java",
+    "description": "Detects execution of shell (bash/csh/sh/zsh) as a subprocess of a java application",
     "categories": ["System Modification"],
     "severity": "HIGH_SEVERITY",
     "lifecycle_stages": ["RUNTIME"],
@@ -11,5 +11,5 @@
       }
     },
   "rationale": "Java application launching a shell can be an indicator of remote code execution",
-  "remediation": "Determine whether this is intended behavior of the application or an indication of malication activity"
+  "remediation": "Determine whether this is intended behavior of the application or an indication of malicious activity"
 }
