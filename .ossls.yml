@@ -915,9 +915,9 @@ dependencies:
     url: https://github.com/stretchr/testify
     license: MIT
     files:
-      LICENSE: 402f39eed8a1851385d0703999aa9f23d067c2ea3e15c63c074e389cbf8f8f8f
+      LICENSE: dad2b0b2cc2dbdbf95ad5d800ef7588956e74dc2479014829d42be295125c25d
     attribution:
-    - 2012-2013 Mat Ryer and Tyler Bunnell
+    - 2012-2018 Mat Ryer and Tyler Bunnell
 
   vendor/github.com/tkuchiki/go-timezone:
     url: https://github.com/tkuchiki/go-timezone
