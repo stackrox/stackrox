@@ -21,6 +21,7 @@ import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
 import io.stackrox.proto.api.v1.SecretServiceGrpc
 import io.stackrox.proto.api.v1.NetworkPolicyServiceGrpc
+import io.stackrox.proto.storage.SecretOuterClass.Secret
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass.Alert
 import io.stackrox.proto.storage.AlertOuterClass.ListAlert
@@ -150,16 +151,19 @@ class Services extends BaseService {
         return getSearchServiceClient().search(rawSearchRequest)
       }
 
-    static String getSecret(String id) {
+    static Secret getSecret(String id) {
         int intervalSeconds = 1
         int waitTime
         for (waitTime = 0; waitTime < 50000 / intervalSeconds; waitTime++) {
-            def sec = getSecretServiceClient().getSecret(ResourceByID.newBuilder().setId(id).build())
-            if (sec != null) {
-                return sec.id
-                  }
-            sleep(intervalSeconds * 1000)
+            try {
+                Secret sec = getSecretServiceClient().getSecret(ResourceByID.newBuilder().setId(id).build())
+                return sec
+            } catch (Exception e) {
+                println "Exception checking for getting the secret, retrying...:"
+                println e.toString()
+                sleep(intervalSeconds * 1000)
             }
+        }
         println "Failed to add secret " + id + " after waiting " + waitTime * intervalSeconds + " seconds"
         return null
       }

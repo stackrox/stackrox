@@ -9,7 +9,6 @@ import io.kubernetes.client.apis.ExtensionsV1beta1Api
 import io.kubernetes.client.custom.IntOrString
 import io.kubernetes.client.models.ExtensionsV1beta1DeploymentList
 import io.kubernetes.client.models.V1Capabilities
-import io.kubernetes.client.models.V1HostPathVolumeSource
 import io.kubernetes.client.models.V1LabelSelector
 import io.kubernetes.client.models.V1EnvVar
 import io.kubernetes.client.models.V1LocalObjectReference
@@ -22,6 +21,8 @@ import io.kubernetes.client.models.V1ContainerPort
 import io.kubernetes.client.models.V1PodTemplateSpec
 import io.kubernetes.client.models.V1PodSpec
 import io.kubernetes.client.models.V1ResourceRequirements
+import io.kubernetes.client.models.V1SecretList
+import io.kubernetes.client.models.V1SecretVolumeSource
 import io.kubernetes.client.models.V1ServiceList
 import io.kubernetes.client.models.V1Volume
 import io.kubernetes.client.models.V1Container
@@ -114,10 +115,40 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         }
     }
 
+    def waitForDeploymentDeletion(Deployment deploy) {
+        int waitTime = 0
+        boolean beenDeleted = false
+        String deploymentName = deploy.getName()
+        String namespace = this.getNameSpace()
+
+        while (waitTime < maxWaitTime && !beenDeleted) {
+            ExtensionsV1beta1DeploymentList dList
+            dList = beta1.listNamespacedDeployment(namespace, null, null, null, null, null, null, null, null, null)
+            beenDeleted = true
+
+            println "Waiting for " + deploymentName + " to be deleted"
+            for (ExtensionsV1beta1Deployment v1beta1Deployment : dList.getItems()) {
+                if (v1beta1Deployment.getMetadata().getName() == deploymentName) {
+                    sleep(sleepDuration)
+                    waitTime += sleepDuration
+                    beenDeleted = false
+                    break
+                }
+            }
+        }
+
+        if (beenDeleted) {
+            println deploymentName + ": deployment removed."
+        } else {
+            println "Timed out waiting for " + deploymentName
+        }
+    }
+
     def deleteDeployment(Deployment deployment) {
         if (deployment.exposeAsService) {
             this.deleteService(deployment.name, deployment.namespace)
         }
+
         this.beta1.deleteNamespacedDeployment(
                 deployment.name,
                 deployment.namespace, new V1DeleteOptions()
@@ -128,7 +159,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 false,
                 null
         )
-        println deployment.name + ": deployment removed."
+        println "removing the deployment:" + deployment.name
     }
 
     String getDeploymentId(Deployment deployment) {
@@ -220,6 +251,37 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
             }
         }
         return null
+    }
+
+    Set<String> getDeploymentSecrets(Deployment deployment) {
+        ExtensionsV1beta1DeploymentList deployments = this.beta1.listNamespacedDeployment(
+                deployment.namespace,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        )
+        Set<String> secretSet = [] as Set
+        List<V1Volume> volumeList
+        for (ExtensionsV1beta1Deployment d : deployments.getItems()) {
+            if (d.getMetadata().getName() == deployment.name) {
+                volumeList = d.getSpec().getTemplate().getSpec().getVolumes()
+                if (volumeList != null) {
+                    for (V1Volume volume : volumeList) {
+                        if (volume.getSecret() != null) {
+                            secretSet.add(volume.getSecret().getSecretName())
+                        }
+                    }
+                }
+            }
+        }
+
+        return secretSet
     }
 
     def getDeploymentCount() {
@@ -521,6 +583,24 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     /*
         Secrets Methods
     */
+    def waitForSecretCreation(String secretName, String namespace) {
+        int waitTime = 0
+
+        while (waitTime < maxWaitTime) {
+            V1SecretList sList
+            sList = api.listNamespacedSecret(namespace, null, null, null, null, null, null, null, null, null)
+            println "Waiting for " + secretName
+            for (V1Secret v1Secret : sList.getItems()) {
+                if (v1Secret.getMetadata().getName() == secretName) {
+                    println secretName + ": secret created."
+                    return
+                }
+            }
+            sleep(sleepDuration)
+            waitTime += sleepDuration
+        }
+        println "Timed out waiting for " + secretName
+    }
 
     String createSecret(String name) {
         Map<String, byte[]> data = new HashMap<String, byte[]>()
@@ -534,8 +614,17 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                 .name(name))
                 .type("Opaque")
                 .data(data)
-        V1Secret createdSecret = this.api.createNamespacedSecret("qa", createsecret, "true")
-        return createdSecret.metadata.uid
+
+        try {
+            V1Secret createdSecret = this.api.createNamespacedSecret(this.namespace, createsecret, "true")
+            if (createdSecret != null) {
+                waitForSecretCreation(name, this.namespace)
+                return createdSecret.metadata.uid
+            }
+        } catch (Exception e) {
+            println("Error creating kube secret" + e.toString())
+        }
+        return null
     }
 
     def deleteSecret(String name, String namespace = this.namespace) {
@@ -763,7 +852,6 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
             createService(deployment)
             createLoadBalancer(deployment)
         }
-
         ExtensionsV1beta1Deployment k8sDeployment = new ExtensionsV1beta1Deployment()
                 .metadata(
                 new V1ObjectMeta()
@@ -785,8 +873,8 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         )
         )
         try {
-            beta1.createNamespacedDeployment(deployment.namespace, k8sDeployment, null)
             println("Told the orchestrator to create " + deployment.getName())
+            beta1.createNamespacedDeployment(deployment.namespace, k8sDeployment, null)
         } catch (Exception e) {
             println("Error creating kube deployment" + e.toString())
         }
@@ -909,7 +997,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         println "Timed out waiting for " + deploymentName
     }
 
-    def List<V1EnvVar> envToList(Map<String, String> env) {
+    List<V1EnvVar> envToList(Map<String, String> env) {
         List<V1EnvVar> l
         l = new ArrayList<V1EnvVar>()
         for (Map.Entry<String, String> entry : env) {
@@ -946,10 +1034,15 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         List<V1Volume> volumes = new LinkedList<>()
         for (String str : deployment.getVolNames()) {
             V1Volume deployVol = new V1Volume()
-                    .hostPath(new V1HostPathVolumeSource()
-                    .path("/tmp")
-                    .type("Directory"))
                     .name(str)
+
+            if (deployment.secretNames != null || deployment.secretNames.size() != 0) {
+                for (String secret : deployment.secretNames) {
+                    deployVol.setSecret(new V1SecretVolumeSource()
+                            .secretName(secret))
+                }
+            }
+
             volumes.add(deployVol)
         }
 

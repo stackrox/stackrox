@@ -12,11 +12,13 @@ interface OrchestratorMain {
     def createDeployment(Deployment deployment)
     def batchCreateDeployments(List<Deployment> deployments)
     def deleteDeployment(Deployment deployment)
+    def waitForDeploymentDeletion(Deployment deploy)
     String getDeploymentId(Deployment deployment)
     def getDeploymentReplicaCount(Deployment deployment)
     def getDeploymentUnavailableReplicaCount(Deployment deployment)
     def getDeploymentNodeSelectors(Deployment deployment)
     def getDeploymentCount()
+    Set<String> getDeploymentSecrets(Deployment deployment)
 
     //DaemonSets
     def createDaemonSet(DaemonSet daemonSet)

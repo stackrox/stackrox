@@ -5,7 +5,6 @@ import io.fabric8.kubernetes.api.model.Capabilities
 import io.fabric8.kubernetes.api.model.Container
 import io.fabric8.kubernetes.api.model.ContainerPort
 import io.fabric8.kubernetes.api.model.EnvVar
-import io.fabric8.kubernetes.api.model.HostPathVolumeSource
 import io.fabric8.kubernetes.api.model.IntOrString
 import io.fabric8.kubernetes.api.model.LabelSelector
 import io.fabric8.kubernetes.api.model.LocalObjectReference
@@ -16,6 +15,7 @@ import io.fabric8.kubernetes.api.model.PodSpec
 import io.fabric8.kubernetes.api.model.ResourceRequirements
 import io.fabric8.kubernetes.api.model.Secret
 import io.fabric8.kubernetes.api.model.SecretList
+import io.fabric8.kubernetes.api.model.SecretVolumeSource
 import io.fabric8.kubernetes.api.model.SecurityContext
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder
 import io.fabric8.kubernetes.api.model.ServiceBuilder
@@ -120,12 +120,40 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
         }
     }
 
+    def waitForDeploymentDeletion(Deployment deploy) {
+        int waitTime = 0
+        boolean beenDeleted = false
+        String deploymentName = deploy.getName()
+        String namespace = this.getNameSpace()
+
+        while (waitTime < maxWaitTime && !beenDeleted) {
+            def dList = osClient.apps().deployments().inNamespace(namespace).list()
+            beenDeleted = true
+
+            println "Waiting for " + deploymentName + " to be deleted"
+            for (io.fabric8.kubernetes.api.model.apps.Deployment deployment : dList.getItems()) {
+                if (deployment.getMetadata().getName() == deploymentName) {
+                    sleep(sleepDuration)
+                    waitTime += sleepDuration
+                    beenDeleted = false
+                    break
+                }
+            }
+        }
+        if (beenDeleted) {
+            println deploymentName + ": deployment removed."
+        } else {
+            println "Timed out waiting for " + deploymentName
+        }
+    }
+
     def deleteDeployment(Deployment deployment) {
         if (deployment.exposeAsService) {
             this.deleteService(deployment.name, deployment.namespace)
         }
         osClient.apps().deployments().inNamespace(deployment.namespace).withName(deployment.name).delete()
-        println deployment.name + ": deployment removed."
+
+        println "removing the deployment:" + deployment.name
     }
 
     String getDeploymentId(Deployment deployment) {
@@ -171,6 +199,20 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
     def getDeploymentCount() {
         return osClient.deploymentConfigs().inAnyNamespace().list().getItems().size() +
                 osClient.apps().deployments().inAnyNamespace().list().getItems().size()
+    }
+    Set<String> getDeploymentSecrets(Deployment deployment) {
+        Set<String> secretSet = [] as Set
+        io.fabric8.kubernetes.api.model.apps.Deployment d = osClient.apps().deployments()
+                .inNamespace(deployment.namespace)
+                .withName(deployment.name)
+                .get()
+        if (d != null) {
+            List<Volume> volumeList = d.getSpec().getTemplate().getSpec().getVolumes()
+            for (Volume volume : volumeList) {
+                secretSet.add(volume.getSecret().getSecretName())
+            }
+        }
+        return secretSet
     }
 
     /*
@@ -361,22 +403,43 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
     /*
         Secrets Methods
     */
+    def waitForSecretCreation(String secretName, String namespace = this.namespace) {
+        int waitTime = 0
 
+        while (waitTime < maxWaitTime) {
+            Secret secret = osClient.secrets().inNamespace(namespace).withName(secretName).get()
+            if (secret != null) {
+                println secretName + ": secret created."
+                return
+            }
+            sleep(sleepDuration)
+            waitTime += sleepDuration
+        }
+        println "Timed out waiting for " + secretName
+    }
     String createSecret(String name) {
         Map<String, String> data = new HashMap<String, String>()
         data.put("username", "YWRtaW4=")
         data.put("password", "MWYyZDFlMmU2N2Rm")
 
-        Secret createdSecret = osClient.secrets().createOrReplaceWithNew()
-                .withApiVersion("v1")
-                .withKind("Secret")
-                .withNewMetadata()
+        try {
+            Secret createdSecret = osClient.secrets().inNamespace(this.namespace).createOrReplaceWithNew()
+                    .withApiVersion("v1")
+                    .withKind("Secret")
+                    .withNewMetadata()
                         .withName(name)
-                .endMetadata()
-                .withType("Opaque")
-                .withData(data)
-                .done()
-        return createdSecret.metadata.uid
+                        .withNamespace(this.namespace)
+                    .endMetadata()
+                    .withType("Opaque")
+                    .withData(data)
+                    .done()
+            waitForSecretCreation(name, this.namespace)
+            return createdSecret.metadata.uid
+        } catch (Exception e) {
+            println("Error creating openshift secret: " + e.toString())
+        }
+
+        return null
     }
 
     def deleteSecret(String name, String namespace = this.namespace) {
@@ -587,8 +650,8 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
                 .endSpec()
 
         try {
-            osClient.apps().deployments().inNamespace(deployment.namespace).createOrReplace(dep.build())
             println("Told the orchestrator to create " + deployment.getName())
+            osClient.apps().deployments().inNamespace(deployment.namespace).createOrReplace(dep.build())
         } catch (Exception e) {
             println("Error creating os deployment: " + e.toString())
         }
@@ -746,9 +809,13 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
         List<Volume> volumes = []
         deployment.volNames.each {
             Volume v = new Volume(
-                    name: it,
-                    hostPath: new HostPathVolumeSource("/tmp", "Directory")
+                name: it
             )
+            if (deployment.secretNames != null || deployment.secretNames.size() != 0) {
+                for (String secret : deployment.secretNames) {
+                    v.setSecret(new SecretVolumeSource(null, null, null, secret))
+                }
+            }
             volumes.add(v)
         }
 
