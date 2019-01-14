@@ -1,7 +1,7 @@
-package compliancereturn
+package scrapeupdate
 
 import (
-	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/central/scrape/sensor/accept"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
@@ -16,18 +16,21 @@ var (
 
 // NewPipeline returns a new instance of Pipeline.
 func NewPipeline() pipeline.Fragment {
-	return &pipelineImpl{}
+	return &pipelineImpl{
+		accepter: accept.SingletonAccepter(),
+	}
 }
 
-type pipelineImpl struct{}
+type pipelineImpl struct {
+	accepter accept.Accepter
+}
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
-	return msg.GetEvent().GetComplianceReturn() != nil
+	return msg.GetScrapeUpdate() != nil
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(event *central.MsgFromSensor, _ pipeline.MsgInjector) (err error) {
-	// do nothing for now.
-	log.Infof("ignoring compliance run: %s", proto.MarshalTextString(event))
+func (s *pipelineImpl) Run(msg *central.MsgFromSensor, _ pipeline.MsgInjector) (err error) {
+	s.accepter.AcceptUpdate(msg.GetScrapeUpdate())
 	return nil
 }

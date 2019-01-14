@@ -147,11 +147,9 @@ func (s *sensor) doReceiveMessages(output chan<- *central.SensorEnforcement, str
 
 			switch msg.Msg.(type) {
 			case *central.MsgToSensor_Enforcement:
-				enforcementMsg := msg.Msg.(*central.MsgToSensor_Enforcement)
-				s.processEnforcement(enforcementMsg.Enforcement, output, stream)
-			case *central.MsgToSensor_Command:
-				commandMsg := msg.Msg.(*central.MsgToSensor_Command)
-				s.processCommand(commandMsg.Command)
+				s.processEnforcement(msg.GetEnforcement(), output, stream)
+			case *central.MsgToSensor_ScrapeCommand:
+				s.processCommand(msg.GetScrapeCommand())
 			default:
 				logger.Errorf("Unsupported message from central of type %T: %+v", msg.Msg, msg.Msg)
 			}
@@ -170,12 +168,14 @@ func (s *sensor) processEnforcement(enforcement *central.SensorEnforcement, outp
 	}
 }
 
-func (s *sensor) processCommand(command *central.SensorCommand) {
+func (s *sensor) processCommand(command *central.ScrapeCommand) {
 	switch x := command.Command.(type) {
-	case *central.SensorCommand_Scrape:
-		// do nothing.
+	case *central.ScrapeCommand_StartScrape:
+		logger.Errorf("command with type '%T' is not handled", x)
+	case *central.ScrapeCommand_KillScrape:
+		logger.Errorf("command with type '%T' is not handled", x)
 	default:
-		logger.Errorf("enforcement with type '%s' is not handled", x)
+		logger.Errorf("command with type '%T' is not handled", x)
 	}
 }
 

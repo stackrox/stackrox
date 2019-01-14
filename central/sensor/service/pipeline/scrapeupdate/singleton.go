@@ -1,4 +1,4 @@
-package compliancereturn
+package scrapeupdate
 
 import (
 	"sync"

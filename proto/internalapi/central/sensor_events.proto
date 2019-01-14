@@ -41,9 +41,6 @@ message SensorEvent {
         // Indicators
         storage.ProcessIndicator process_indicator = 8;
         storage.ProviderMetadata provider_metadata = 10;
-
-        // Node scrapes
-        compliance.ComplianceReturn compliance_return = 11;
     }
 }
 
@@ -72,16 +69,42 @@ message ContainerInstanceEnforcement {
     string pod_id                = 2;
 }
 
-// Central commands to sensor.
-//////////////////////////////
+// Scrape commands sent to sensor.
+//////////////////////////////////
 
-message SensorCommand {
+message ScrapeCommand {
+    string scrape_id = 1;
+
     oneof command {
-        ScrapeCommand scrape = 1;
+        StartScrape start_scrape = 2;
+        KillScrape  kill_scrape = 3;
     }
 }
 
-// Scrape command causes sensor to scrape all hosts/nodes in the cluster.
-message ScrapeCommand {
-    string id = 1;
+message StartScrape {
+    // Dictates the hosts we expect results from.
+    repeated string hostnames = 1;
+}
+
+message KillScrape {}
+
+// Scrape updates receoived from sensor.
+////////////////////////////////////////
+
+message ScrapeUpdate {
+    string scrape_id = 1;
+
+    oneof update {
+        compliance.ComplianceReturn compliance_return = 2;
+        ScrapeStarted scrape_started = 3;
+        ScrapeKilled scrape_killed= 4;
+    }
+}
+
+message ScrapeStarted {
+    string error_message = 1;
+}
+
+message ScrapeKilled {
+    string error_message = 1;
 }

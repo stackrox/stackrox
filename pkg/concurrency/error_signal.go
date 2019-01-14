@@ -9,6 +9,20 @@ import (
 // not complaining about error not being the last return value.
 type Error = error
 
+// ReadOnlyErrorSignal provides an interface to inspect ErrorSignals without modifying them.
+type ReadOnlyErrorSignal interface {
+	WaitC() WaitableChan
+	Done() <-chan struct{}
+	IsDone() bool
+	Error() (Error, bool)
+	ErrorWithDefault(defaultErr error) error
+	WaitUntil(cancelCond Waitable) (Error, bool)
+	WaitWithTimeout(timeout time.Duration) (Error, bool)
+	WaitWithDeadline(deadline time.Time) (Error, bool)
+	Wait() error
+	Err() error
+}
+
 // ErrorSignal is a signal that supports atomically storing an error whenever it is triggered. It is safe
 // to trigger the signal concurrently from different goroutines, but only the first successful call to
 // `SignalWithError` will result in the error being stored.

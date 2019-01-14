@@ -1,0 +1,150 @@
+package scrape
+
+import (
+	"errors"
+	"fmt"
+	"sync"
+	"time"
+
+	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
+)
+
+var (
+	log = logging.LoggerForModule()
+)
+
+type scrapeImpl struct {
+	// immutable, not protected by mutex
+	scrapeID      string
+	clusterID     string
+	expectedHosts set.StringSet
+	creationTime  time.Time
+	////////////////////////////////////
+
+	lock    sync.RWMutex
+	results map[string]*compliance.ComplianceReturn
+
+	stopped concurrency.ErrorSignal
+}
+
+func (s *scrapeImpl) GetScrapeID() string {
+	return s.scrapeID
+}
+
+func (s *scrapeImpl) GetClusterID() string {
+	return s.clusterID
+}
+
+func (s *scrapeImpl) GetExpectedHosts() []string {
+	return s.expectedHosts.AsSlice()
+}
+
+func (s *scrapeImpl) GetCreationTime() time.Time {
+	return s.creationTime
+}
+
+func (s *scrapeImpl) Stopped() concurrency.ReadOnlyErrorSignal {
+	return &s.stopped
+}
+
+func (s *scrapeImpl) GetResults() map[string]*compliance.ComplianceReturn {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	ret := make(map[string]*compliance.ComplianceReturn, len(s.results))
+	for id, cr := range s.results {
+		ret[id] = cr
+	}
+	return ret
+}
+
+// Fragment implementation for the Accepter.
+////////////////////////////////////////////
+
+func (s *scrapeImpl) Match(update *central.ScrapeUpdate) bool {
+	return update.GetScrapeId() == s.scrapeID
+}
+
+// Update the scrape with a new message from sensor.
+func (s *scrapeImpl) AcceptUpdate(update *central.ScrapeUpdate) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	switch update.Update.(type) {
+	case *central.ScrapeUpdate_ScrapeStarted:
+		s.acceptStart(update.GetScrapeStarted())
+	case *central.ScrapeUpdate_ComplianceReturn:
+		s.acceptComplianceReturn(update.GetComplianceReturn())
+	case *central.ScrapeUpdate_ScrapeKilled:
+		s.acceptKill(update.GetScrapeKilled())
+	default:
+		log.Errorf("unrecognized scrape update: %s", proto.MarshalTextString(update))
+	}
+}
+
+func (s *scrapeImpl) acceptStart(started *central.ScrapeStarted) {
+	// If the scrape is already stopped, just log an error.
+	if s.stopped.IsDone() {
+		log.Errorf("scrape %s received a start update after being stopped", s.scrapeID)
+		return
+	}
+
+	// If it failed to start, close everything.
+	if started.GetErrorMessage() != "" {
+		s.stopped.SignalWithError(fmt.Errorf("failed to start: %s", started.GetErrorMessage()))
+	}
+	return
+}
+
+func (s *scrapeImpl) acceptComplianceReturn(cr *compliance.ComplianceReturn) {
+	// If the scrape is already stopped, just log an error.
+	if s.stopped.IsDone() {
+		log.Errorf("scrape %s received an update for host %s after being stopped", s.scrapeID, cr.GetHostname())
+		return
+	}
+
+	// Check that the update is from an expected host. If not, just log an error and return.
+	if !s.expectedHosts.Contains(cr.GetHostname()) {
+		log.Errorf("scrape %s received results from unexpected host: %s", s.scrapeID, cr.GetHostname())
+		return
+	}
+
+	// Check that we did not already received an update for the host.
+	if _, exists := s.results[cr.GetHostname()]; exists {
+		log.Errorf("scrape %s received multiple results for host %s", cr.GetHostname(), s.scrapeID)
+		return
+	}
+
+	// Add the update to the results.
+	s.results[cr.GetHostname()] = cr
+}
+
+func (s *scrapeImpl) acceptKill(killed *central.ScrapeKilled) {
+	// If the scrape is already stopped, just log an error.
+	if s.stopped.IsDone() {
+		log.Errorf("scrape %s received a kill update after being stopped", s.scrapeID)
+		return
+	}
+
+	// If the kill is a result of an error (for instance a kill command from central), add the error to the signal.
+	// Otherwise, just signal that we finished.
+	if killed.GetErrorMessage() != "" {
+		s.stopped.SignalWithError(errors.New(killed.GetErrorMessage()))
+		return
+	}
+
+	// Check that we received the results we expected.
+	// Since we do not allow repeated results, or unexpected results, we can just check that counts.
+	if s.expectedHosts.Cardinality() != len(s.results) {
+		s.stopped.SignalWithError(fmt.Errorf("scrape %s received kill with %d results outstanding", s.scrapeID, s.expectedHosts.Cardinality()-len(s.results)))
+		return
+	}
+
+	// Everything is gucci baby.
+	s.stopped.Signal()
+}
