@@ -119,7 +119,7 @@ func (s *policyValidator) validateCapabilities(policy *storage.Policy) error {
 
 func (s *policyValidator) validateCategories(policy *storage.Policy) error {
 	if len(policy.GetCategories()) == 0 {
-		return errors.New("a policy must have one of Image Policy, Configuration Policy, or Privilege Policy")
+		return errors.New("a policy must have at least one category")
 	}
 	categorySet := make(map[string]struct{})
 	for _, c := range policy.GetCategories() {
