@@ -130,7 +130,7 @@ func TestDoesPodLabelsMatchLabel(t *testing.T) {
 		{
 			name: "matching values in selector",
 			deployment: &storage.Deployment{
-				Labels: map[string]string{
+				PodLabels: map[string]string{
 					"hello": "hi",
 				},
 			},
@@ -144,7 +144,7 @@ func TestDoesPodLabelsMatchLabel(t *testing.T) {
 		{
 			name: "non matching values in selector",
 			deployment: &storage.Deployment{
-				Labels: map[string]string{
+				PodLabels: map[string]string{
 					"hello": "hi1",
 				},
 			},
@@ -253,8 +253,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 		{
 			name: "non match pod selector",
 			deployment: &storage.Deployment{
-
-				Labels: map[string]string{
+				PodLabels: map[string]string{
 					"key": "value1",
 				},
 			},
@@ -270,7 +269,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 		{
 			name: "match pod selector",
 			deployment: &storage.Deployment{
-				Labels: map[string]string{
+				PodLabels: map[string]string{
 					"key": "value",
 				},
 			},
@@ -358,7 +357,7 @@ func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		{
 			name: "pod selector doesn't match",
 			d: &storage.Deployment{
-				Labels: map[string]string{
+				PodLabels: map[string]string{
 					"key1": "value1",
 				},
 				Namespace: "default",
@@ -378,7 +377,7 @@ func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		{
 			name: "all matches - has ingress",
 			d: &storage.Deployment{
-				Labels: map[string]string{
+				PodLabels: map[string]string{
 					"key1": "value1",
 				},
 				Namespace: "default",
@@ -398,7 +397,7 @@ func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		{
 			name: "all matches - doesn't have ingress",
 			d: &storage.Deployment{
-				Labels: map[string]string{
+				PodLabels: map[string]string{
 					"key1": "value1",
 				},
 				Namespace: "default",
@@ -445,7 +444,7 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		{
 			name: "pod selector doesn't match",
 			d: &storage.Deployment{
-				Labels: map[string]string{
+				PodLabels: map[string]string{
 					"key1": "value1",
 				},
 				Namespace: "default",
@@ -465,7 +464,7 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		{
 			name: "all matches - doesn't have egress",
 			d: &storage.Deployment{
-				Labels: map[string]string{
+				PodLabels: map[string]string{
 					"key1": "value1",
 				},
 				Namespace: "default",
@@ -485,7 +484,7 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		{
 			name: "all matches - has egress",
 			d: &storage.Deployment{
-				Labels: map[string]string{
+				PodLabels: map[string]string{
 					"key1": "value1",
 				},
 				Namespace: "default",
@@ -506,7 +505,7 @@ func TestEgressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
 		{
 			name: "all matches - has egress and ip block",
 			d: &storage.Deployment{
-				Labels: map[string]string{
+				PodLabels: map[string]string{
 					"key1": "value1",
 				},
 				Namespace: "default",
@@ -660,7 +659,7 @@ func TestEvaluateClusters(t *testing.T) {
 				{
 					Id:        "d1",
 					Namespace: "default",
-					Labels:    deploymentLabels("app", "web"),
+					PodLabels: deploymentLabels("app", "web"),
 				},
 				{
 					Id:        "d2",
@@ -690,17 +689,17 @@ func TestEvaluateClusters(t *testing.T) {
 				{
 					Id:        "d1",
 					Namespace: "default",
-					Labels:    deploymentLabels("app", "bookstore", "role", "api"),
+					PodLabels: deploymentLabels("app", "bookstore", "role", "api"),
 				},
 				{
 					Id:        "d2",
 					Namespace: "default",
-					Labels:    deploymentLabels("app", "bookstore", "role", "frontend"),
+					PodLabels: deploymentLabels("app", "bookstore", "role", "frontend"),
 				},
 				{
 					Id:        "d3",
 					Namespace: "default",
-					Labels:    deploymentLabels("app", "coffeeshop", "role", "api"),
+					PodLabels: deploymentLabels("app", "coffeeshop", "role", "api"),
 				},
 			},
 			edges: flattenEdges(
@@ -723,7 +722,7 @@ func TestEvaluateClusters(t *testing.T) {
 				{
 					Id:        "d1",
 					Namespace: "default",
-					Labels:    deploymentLabels("app", "web"),
+					PodLabels: deploymentLabels("app", "web"),
 				},
 				{
 					Id:        "d2",
@@ -753,7 +752,7 @@ func TestEvaluateClusters(t *testing.T) {
 				{
 					Id:        "d1",
 					Namespace: "default",
-					Labels:    deploymentLabels("app", "web"),
+					PodLabels: deploymentLabels("app", "web"),
 				},
 				{
 					Id:        "d2",
@@ -813,7 +812,7 @@ func TestEvaluateClusters(t *testing.T) {
 				{
 					Id:        "d1",
 					Namespace: "default",
-					Labels:    deploymentLabels("app", "web"),
+					PodLabels: deploymentLabels("app", "web"),
 				},
 				{
 					Id:        "d2",
@@ -845,7 +844,7 @@ func TestEvaluateClusters(t *testing.T) {
 				{
 					Id:        "d1",
 					Namespace: "default",
-					Labels:    deploymentLabels("app", "web"),
+					PodLabels: deploymentLabels("app", "web"),
 				},
 				{
 					Id:        "d2",
@@ -876,17 +875,17 @@ func TestEvaluateClusters(t *testing.T) {
 				{
 					Id:        "d1",
 					Namespace: "default",
-					Labels:    deploymentLabels("app", "web", "role", "db"),
+					PodLabels: deploymentLabels("app", "web", "role", "db"),
 				},
 				{
 					Id:        "d2",
 					Namespace: "default",
-					Labels:    deploymentLabels("app", "bookstore", "role", "search"),
+					PodLabels: deploymentLabels("app", "bookstore", "role", "search"),
 				},
 				{
 					Id:        "d3",
 					Namespace: "default",
-					Labels:    deploymentLabels("app", "bookstore", "role", "api"),
+					PodLabels: deploymentLabels("app", "bookstore", "role", "api"),
 				},
 				{
 					Id:        "d4",
@@ -914,7 +913,7 @@ func TestEvaluateClusters(t *testing.T) {
 				{
 					Id:        "d1",
 					Namespace: "default",
-					Labels:    deploymentLabels("app", "web"),
+					PodLabels: deploymentLabels("app", "web"),
 				},
 				{
 					Id:        "d2",
@@ -938,7 +937,7 @@ func TestEvaluateClusters(t *testing.T) {
 				{
 					Id:        "d1",
 					Namespace: "default",
-					Labels:    deploymentLabels("app", "web"),
+					PodLabels: deploymentLabels("app", "web"),
 				},
 				{
 					Id:        "d2",
@@ -967,7 +966,7 @@ func TestEvaluateClusters(t *testing.T) {
 				{
 					Id:        "d1",
 					Namespace: "default",
-					Labels:    deploymentLabels("app", "web"),
+					PodLabels: deploymentLabels("app", "web"),
 				},
 				{
 					Id:        "d2",
@@ -996,12 +995,12 @@ func TestEvaluateClusters(t *testing.T) {
 				{
 					Id:        "d1",
 					Namespace: "qa",
-					Labels:    deploymentLabels("app", "web"),
+					PodLabels: deploymentLabels("app", "web"),
 				},
 				{
 					Id:        "d2",
 					Namespace: "qa",
-					Labels:    deploymentLabels("app", "client"),
+					PodLabels: deploymentLabels("app", "client"),
 				},
 				{
 					Id:        "d3",

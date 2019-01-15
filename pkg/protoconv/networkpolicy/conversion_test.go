@@ -46,6 +46,13 @@ func TestNetworkPolicyConversion(t *testing.T) {
 				MatchLabels: map[string]string{
 					"role": "db",
 				},
+				MatchExpressions: []metav1.LabelSelectorRequirement{
+					{
+						Key:      "status",
+						Operator: metav1.LabelSelectorOpNotIn,
+						Values:   []string{"disabled", "suspended"},
+					},
+				},
 			},
 			PolicyTypes: []v1.PolicyType{
 				v1.PolicyTypeIngress,
@@ -63,10 +70,24 @@ func TestNetworkPolicyConversion(t *testing.T) {
 								MatchLabels: map[string]string{
 									"project": "myproject",
 								},
+								MatchExpressions: []metav1.LabelSelectorRequirement{
+									{
+										Key:      "environment",
+										Operator: metav1.LabelSelectorOpNotIn,
+										Values:   []string{"testing", "staging"},
+									},
+								},
 							},
 							PodSelector: &metav1.LabelSelector{
 								MatchLabels: map[string]string{
 									"role": "frontend",
+								},
+								MatchExpressions: []metav1.LabelSelectorRequirement{
+									{
+										Key:      "status",
+										Operator: metav1.LabelSelectorOpIn,
+										Values:   []string{"active"},
+									},
 								},
 							},
 						},

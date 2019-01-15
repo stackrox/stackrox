@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+package storage;
+
+// Next available tag: 3
+message LabelSelector {
+    enum Operator {
+        UNKNOWN = 0;
+        IN = 1;
+        NOT_IN = 2;
+        EXISTS = 3;
+        NOT_EXISTS = 4;
+    }
+
+    // Next available tag: 4
+    message Requirement {
+        string key             = 1;
+        Operator op            = 2;
+        repeated string values = 3;
+    }
+
+    // This is actually a oneof, but we can't make it one due to backwards compatibility constraints.
+    map<string, string> match_labels  = 1;
+    repeated Requirement requirements = 2;
+}

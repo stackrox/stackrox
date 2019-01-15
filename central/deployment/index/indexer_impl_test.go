@@ -288,6 +288,18 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			expectedIDs: []string{notNginx110Dep.GetId(), nginx110Dep.GetId(), containerPort22Dep.GetId(), badEmailDep.GetId()},
 		},
 		{
+			fieldValues: map[search.FieldLabel]string{search.Label: "app=nginx"},
+			expectedIDs: []string{},
+		},
+		{
+			fieldValues: map[search.FieldLabel]string{search.PodLabel: "app=nginx"},
+			expectedIDs: []string{deployment.GetId()},
+		},
+		{
+			fieldValues: map[search.FieldLabel]string{search.PodLabel: "com.docker.stack.namespace=prevent"},
+			expectedIDs: []string{},
+		},
+		{
 			fieldValues: map[search.FieldLabel]string{search.DeploymentName: "!nginx", search.Label: "com.docker.stack.namespace=prevent"},
 			expectedIDs: []string{},
 		},

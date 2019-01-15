@@ -96,6 +96,7 @@ func (s serviceWrap) asDeployment(client dockerClientLite, retryGetImageSha bool
 		Type:      m.asType(),
 		Replicas:  m.asReplica(),
 		Labels:    s.Spec.Labels,
+		PodLabels: s.Spec.TaskTemplate.ContainerSpec.Labels,
 		UpdatedAt: updatedTime,
 		Containers: []*storage.Container{
 			{

@@ -15,6 +15,7 @@ import (
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/uuid"
 	"k8s.io/api/core/v1"
@@ -50,7 +51,6 @@ func getKubeProxyDeploymentID() string {
 type deploymentWrap struct {
 	*storage.Deployment
 	original    interface{}
-	podLabels   map[string]string
 	portConfigs map[portRef]*storage.PortConfig
 	pods        []*v1.Pod
 	podSelector labels.Selector
@@ -80,12 +80,16 @@ func newWrap(obj interface{}, kind string) *deploymentWrap {
 	}
 }
 
-func (w *deploymentWrap) populateKubeProxyIfNecessary(o *v1.Pod) labels.Selector {
+func (w *deploymentWrap) populateKubeProxyIfNecessary(o *v1.Pod) *metav1.LabelSelector {
 	if o.Namespace == kubeSystemNamespace && o.Labels[kubeProxyLabelKey] == kubeProxyLabelValue {
 		w.Id = kubeProxyDeploymentID
 		w.Name = kubeProxyDeploymentName
 		w.Type = kubeProxyType
-		return SelectorFromMap(o.GetLabels())
+		return &metav1.LabelSelector{
+			MatchLabels: map[string]string{
+				kubeProxyLabelKey: kubeProxyLabelValue,
+			},
+		}
 	}
 	return nil
 }
@@ -100,7 +104,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 	}
 
 	var podLabels map[string]string
-	var labelSelector labels.Selector
+	var labelSelector *metav1.LabelSelector
 	var err error
 
 	switch o := obj.(type) {
@@ -140,7 +144,13 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 		}
 	}
 
-	w.podLabels = podLabels
+	labelSel, err := k8s.ToRoxLabelSelector(labelSelector)
+	if err != nil {
+		logger.Warnf("Could not convert label selector: %v", err)
+	}
+
+	w.PodLabels = podLabels
+	w.LabelSelector = labelSel
 	w.populatePorts()
 
 	if action != central.ResourceAction_REMOVE_RESOURCE {
@@ -201,8 +211,12 @@ func filterOnName(name string, pods []*v1.Pod) []*v1.Pod {
 	return filteredPods
 }
 
-func (w *deploymentWrap) populatePodData(topLevelName string, labelSelector labels.Selector, lister v1listers.PodLister) error {
-	w.podSelector = labelSelector
+func (w *deploymentWrap) populatePodData(topLevelName string, labelSelector *metav1.LabelSelector, lister v1listers.PodLister) error {
+	compiledLabelSelector, err := metav1.LabelSelectorAsSelector(labelSelector)
+	if err != nil {
+		return fmt.Errorf("could not compile label selector: %v", err)
+	}
+	w.podSelector = compiledLabelSelector
 	pods, err := lister.Pods(w.Namespace).List(w.podSelector)
 	if err != nil {
 		return err
@@ -262,20 +276,22 @@ func (w *deploymentWrap) populateImageShas(pods ...*v1.Pod) {
 	}
 }
 
-func (w *deploymentWrap) getLabelSelector(spec reflect.Value) (labels.Selector, error) {
+func (w *deploymentWrap) getLabelSelector(spec reflect.Value) (*metav1.LabelSelector, error) {
 	s := spec.FieldByName("Selector")
 	if !doesFieldExist(s) {
-		return labels.Nothing(), nil
+		return nil, nil
 	}
 
 	// Selector is of map type for replication controller
 	if labelMap, ok := s.Interface().(map[string]string); ok {
-		return SelectorFromMap(labelMap), nil
+		return &metav1.LabelSelector{
+			MatchLabels: labelMap,
+		}, nil
 	}
 
 	// All other resources uses labelSelector.
 	if ls, ok := s.Interface().(*metav1.LabelSelector); ok {
-		return metav1.LabelSelectorAsSelector(ls)
+		return ls, nil
 	}
 
 	return nil, fmt.Errorf("unable to get label selector for %+v", spec.Type())
@@ -316,7 +332,7 @@ func (w *deploymentWrap) resetPortExposure() (updated bool) {
 func (w *deploymentWrap) updatePortExposureFromStore(store *serviceStore) (updated bool) {
 	updated = w.resetPortExposure()
 
-	svcs := store.getMatchingServices(w.Namespace, w.podLabels)
+	svcs := store.getMatchingServices(w.Namespace, w.PodLabels)
 	for _, svc := range svcs {
 		updated = w.updatePortExposure(svc) || updated
 	}
@@ -324,7 +340,7 @@ func (w *deploymentWrap) updatePortExposureFromStore(store *serviceStore) (updat
 }
 
 func (w *deploymentWrap) updatePortExposure(svc *serviceWrap) (updated bool) {
-	if !svc.selector.Matches(labels.Set(w.podLabels)) {
+	if !svc.selector.Matches(labels.Set(w.PodLabels)) {
 		return
 	}
 

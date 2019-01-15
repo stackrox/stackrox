@@ -84,7 +84,7 @@ func (m *endpointManager) endpointDataForDeployment(w *deploymentWrap) *clustere
 		m.addEndpointDataForPod(pod, result)
 	}
 
-	for _, svc := range m.serviceStore.getMatchingServices(w.Namespace, w.podLabels) {
+	for _, svc := range m.serviceStore.getMatchingServices(w.Namespace, w.PodLabels) {
 		m.addEndpointDataForService(w, svc, result)
 	}
 

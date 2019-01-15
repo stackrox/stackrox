@@ -43,7 +43,7 @@ func (ds *deploymentStore) getOwningDeployments(namespace string, podLabels map[
 
 func (ds *deploymentStore) getMatchingDeployments(namespace string, sel selector) (matching []*deploymentWrap) {
 	for _, wrap := range ds.deployments[namespace] {
-		if sel.Matches(labels.Set(wrap.podLabels)) {
+		if sel.Matches(labels.Set(wrap.PodLabels)) {
 			matching = append(matching, wrap)
 		}
 	}

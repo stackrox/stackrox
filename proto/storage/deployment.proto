@@ -4,6 +4,7 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
+import "storage/labels.proto";
 import "storage/image.proto";
 
 package storage;
@@ -13,6 +14,7 @@ enum ContainerRuntime {
     DOCKER_CONTAINER_RUNTIME  = 1;
 }
 
+// Next available tag: 21
 message Deployment {
     string id                                  = 1;
     string name                                = 2;
@@ -21,6 +23,8 @@ message Deployment {
     string namespace                           = 5;
     int64 replicas                             = 6;
     map<string, string> labels                 = 7;
+    map<string, string> pod_labels             = 19;
+    LabelSelector label_selector               = 20;
     google.protobuf.Timestamp updated_at       = 8;
     string cluster_id                          = 9;
     string cluster_name                        = 10;

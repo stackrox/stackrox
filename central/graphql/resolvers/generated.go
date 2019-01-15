@@ -1493,6 +1493,12 @@ func (resolver *deploymentResolver) Inactive() bool {
 	return value
 }
 
+func (resolver *deploymentResolver) LabelSelector() (*labelSelectorResolver, error) {
+	resolver.ensureData()
+	value := resolver.data.GetLabelSelector()
+	return resolver.root.wrapLabelSelector(value, true, nil)
+}
+
 func (resolver *deploymentResolver) Labels() labels {
 	resolver.ensureData()
 	value := resolver.data.GetLabels()
@@ -1513,6 +1519,12 @@ func (resolver *deploymentResolver) Namespace() string {
 		value = resolver.list.GetNamespace()
 	}
 	return value
+}
+
+func (resolver *deploymentResolver) PodLabels() labels {
+	resolver.ensureData()
+	value := resolver.data.GetPodLabels()
+	return labelsResolver(value)
 }
 
 func (resolver *deploymentResolver) Priority() int32 {
@@ -2275,6 +2287,95 @@ func toL4Protocols(values *[]string) []storage.L4Protocol {
 		output[i] = toL4Protocol(&v)
 	}
 	return output
+}
+
+type labelSelectorResolver struct {
+	root *Resolver
+	data *storage.LabelSelector
+}
+
+func (resolver *Resolver) wrapLabelSelector(value *storage.LabelSelector, ok bool, err error) (*labelSelectorResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &labelSelectorResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapLabelSelectors(values []*storage.LabelSelector, err error) ([]*labelSelectorResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*labelSelectorResolver, len(values))
+	for i, v := range values {
+		output[i] = &labelSelectorResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *labelSelectorResolver) MatchLabels() labels {
+	value := resolver.data.GetMatchLabels()
+	return labelsResolver(value)
+}
+
+func (resolver *labelSelectorResolver) Requirements() ([]*labelSelector_RequirementResolver, error) {
+	value := resolver.data.GetRequirements()
+	return resolver.root.wrapLabelSelector_Requirements(value, nil)
+}
+
+func toLabelSelector_Operator(value *string) storage.LabelSelector_Operator {
+	if value != nil {
+		return storage.LabelSelector_Operator(storage.LabelSelector_Operator_value[*value])
+	}
+	return storage.LabelSelector_Operator(0)
+}
+
+func toLabelSelector_Operators(values *[]string) []storage.LabelSelector_Operator {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.LabelSelector_Operator, len(*values))
+	for i, v := range *values {
+		output[i] = toLabelSelector_Operator(&v)
+	}
+	return output
+}
+
+type labelSelector_RequirementResolver struct {
+	root *Resolver
+	data *storage.LabelSelector_Requirement
+}
+
+func (resolver *Resolver) wrapLabelSelector_Requirement(value *storage.LabelSelector_Requirement, ok bool, err error) (*labelSelector_RequirementResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &labelSelector_RequirementResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapLabelSelector_Requirements(values []*storage.LabelSelector_Requirement, err error) ([]*labelSelector_RequirementResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*labelSelector_RequirementResolver, len(values))
+	for i, v := range values {
+		output[i] = &labelSelector_RequirementResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *labelSelector_RequirementResolver) Key() string {
+	value := resolver.data.GetKey()
+	return value
+}
+
+func (resolver *labelSelector_RequirementResolver) Op() string {
+	value := resolver.data.GetOp()
+	return value.String()
+}
+
+func (resolver *labelSelector_RequirementResolver) Values() []string {
+	value := resolver.data.GetValues()
+	return value
 }
 
 type licenseResolver struct {

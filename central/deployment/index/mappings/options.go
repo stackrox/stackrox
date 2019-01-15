@@ -13,6 +13,7 @@ var OptionsMap = mergeMaps(map[search.FieldLabel]*v1.SearchField{
 	search.ClusterID: search.NewField(v1.SearchCategory_DEPLOYMENTS, "deployment.cluster_id", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
 	search.Namespace: search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.namespace"),
 	search.Label:     search.NewMapField(v1.SearchCategory_DEPLOYMENTS, "deployment.labels"),
+	search.PodLabel:  search.NewMapField(v1.SearchCategory_DEPLOYMENTS, "deployment.pod_labels"),
 
 	search.Annotation:       search.NewMapField(v1.SearchCategory_DEPLOYMENTS, "deployment.annotations"),
 	search.CPUCoresLimit:    search.NewStoredNumericField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.resources.cpu_cores_limit"),

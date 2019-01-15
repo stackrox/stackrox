@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	k8sCoreV1 "k8s.io/api/core/v1"
 	networkingV1 "k8s.io/api/networking/v1"
 	k8sMetaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,12 +50,11 @@ func (np KubernetesNetworkPolicyWrap) ToRoxNetworkPolicy() *storage.NetworkPolic
 }
 
 func (np KubernetesNetworkPolicyWrap) convertSelector(sel *k8sMetaV1.LabelSelector) *storage.LabelSelector {
-	if sel == nil {
-		return nil
+	convertedSel, err := k8s.ToRoxLabelSelector(sel)
+	if err != nil {
+		log.Warnf("Failed to convert label selector: %v", err)
 	}
-	return &storage.LabelSelector{
-		MatchLabels: sel.MatchLabels,
-	}
+	return convertedSel
 }
 
 func (np KubernetesNetworkPolicyWrap) convertProtocol(p *k8sCoreV1.Protocol) storage.Protocol {
@@ -67,7 +67,7 @@ func (np KubernetesNetworkPolicyWrap) convertProtocol(p *k8sCoreV1.Protocol) sto
 	case k8sCoreV1.ProtocolTCP:
 		return storage.Protocol_TCP_PROTOCOL
 	default:
-		logger.Warnf("Network protocol %s is not handled", *p)
+		log.Warnf("Network protocol %s is not handled", *p)
 		return storage.Protocol_UNSET_PROTOCOL
 	}
 }
@@ -155,7 +155,7 @@ func k8sPolicyTypeToRox(t networkingV1.PolicyType) storage.NetworkPolicyType {
 	case networkingV1.PolicyTypeEgress:
 		return storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE
 	default:
-		logger.Warnf("network policy type %s is not handled", t)
+		log.Warnf("network policy type %s is not handled", t)
 		return storage.NetworkPolicyType_UNSET_NETWORK_POLICY_TYPE
 	}
 }

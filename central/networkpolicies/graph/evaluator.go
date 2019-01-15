@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -274,28 +275,11 @@ func (g *evaluatorImpl) getNamespace(deployment *storage.Deployment) *storage.Na
 }
 
 func doesNamespaceMatchLabel(namespace *storage.Namespace, selector *storage.LabelSelector) bool {
-	if len(selector.MatchLabels) == 0 {
-		return true
-	}
-	for k, v := range namespace.GetLabels() {
-		if selector.MatchLabels[k] == v {
-			return true
-		}
-	}
-	return false
+	return labels.MatchLabels(selector, namespace.GetLabels())
 }
 
 func doesPodLabelsMatchLabel(deployment *storage.Deployment, podSelector *storage.LabelSelector) bool {
-	// No values equals match all
-	if len(podSelector.GetMatchLabels()) == 0 {
-		return true
-	}
-	for k, v := range podSelector.GetMatchLabels() {
-		if deployment.GetLabels()[k] != v {
-			return false
-		}
-	}
-	return true
+	return labels.MatchLabels(podSelector, deployment.GetPodLabels())
 }
 
 func hasEgress(types []storage.NetworkPolicyType) bool {

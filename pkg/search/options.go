@@ -11,6 +11,7 @@ const (
 	ClusterID FieldLabel = "Cluster Id"
 	Namespace FieldLabel = "Namespace"
 	Label     FieldLabel = "Label"
+	PodLabel  FieldLabel = "PodLabel"
 
 	PolicyID       FieldLabel = "Policy Id"
 	Enforcement    FieldLabel = "Enforcement"

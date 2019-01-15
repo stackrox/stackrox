@@ -19,6 +19,9 @@ func LightweightDeployment() *storage.Deployment {
 			"email":                         "vv@stackrox.com",
 			"owner":                         "stackrox",
 		},
+		PodLabels: map[string]string{
+			"app": "nginx",
+		},
 		Containers: []*storage.Container{
 			{
 				Image: &storage.Image{

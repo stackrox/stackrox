@@ -237,6 +237,9 @@ func TestConvert(t *testing.T) {
 					"key":      "value",
 					"question": "answer",
 				},
+				LabelSelector: &storage.LabelSelector{
+					MatchLabels: map[string]string{},
+				},
 				Annotations: map[string]string{
 					"annotationkey1": "annotationvalue1",
 					"annotationkey2": "annotationvalue2",

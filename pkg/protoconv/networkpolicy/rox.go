@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	k8sCoreV1 "k8s.io/api/core/v1"
 	k8sV1 "k8s.io/api/networking/v1"
 	k8sMetaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,7 +15,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-var logger = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 // RoxNetworkPolicyWrap wraps a proto network policy so you can convert it to a kubernetes network policy
 type RoxNetworkPolicyWrap struct {
@@ -62,12 +65,11 @@ func (np RoxNetworkPolicyWrap) ToKubernetesNetworkPolicy() *k8sV1.NetworkPolicy 
 }
 
 func (np RoxNetworkPolicyWrap) convertSelector(sel *storage.LabelSelector) *k8sMetaV1.LabelSelector {
-	if sel == nil {
-		return nil
+	convertedSel, err := k8s.FromRoxLabelSelector(sel)
+	if err != nil {
+		log.Warnf("Failed to convert label selector: %v", err)
 	}
-	return &k8sMetaV1.LabelSelector{
-		MatchLabels: sel.MatchLabels,
-	}
+	return convertedSel
 }
 
 func (np RoxNetworkPolicyWrap) convertProtocol(p storage.Protocol) *k8sCoreV1.Protocol {
@@ -80,7 +82,7 @@ func (np RoxNetworkPolicyWrap) convertProtocol(p storage.Protocol) *k8sCoreV1.Pr
 	case storage.Protocol_UDP_PROTOCOL:
 		retProtocol = k8sCoreV1.ProtocolUDP
 	default:
-		logger.Warnf("Network protocol %s is not handled", p)
+		log.Warnf("Network protocol %s is not handled", p)
 		return nil
 	}
 	return &retProtocol
@@ -159,7 +161,7 @@ func (np RoxNetworkPolicyWrap) convertPolicyType(t storage.NetworkPolicyType) k8
 	case storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE:
 		return k8sV1.PolicyTypeEgress
 	default:
-		logger.Warnf("network policy type %s is not handled", t)
+		log.Warnf("network policy type %s is not handled", t)
 		return k8sV1.PolicyTypeIngress
 	}
 }
