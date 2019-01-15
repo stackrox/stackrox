@@ -9,21 +9,21 @@ const lifecycleTileMap = {
         label: 'BUILD',
         header: 'Enforcement Behavior',
         description:
-            'If enabled, StackRox will fail your CI builds when build data matches parameters from this policy. Download the CLI above to get started.'
+            'If enabled, StackRox will fail your CI builds when images match the conditions of this policy. Download the CLI above to get started.'
     },
     DEPLOY: {
         image: deployImage,
         label: 'DEPLOY',
         header: 'Enforcement Behavior',
         description:
-            'If enabled, StackRox will automatically apply enforcement actions when deploy data matches parameters from this policy. If an admission controller is enabled, it will reject the API request. Otherwise, it will apply one of two types of enforcement actions.'
+            'If enabled, StackRox will automatically block creation of deployments that match the conditions of this policy. In clusters with the StackRox Admission Controller enabled, the Kubernetes API server will block noncompliant deployments. In other clusters, StackRox will edit noncompliant deployments to prevent pods from being scheduled.'
     },
     RUNTIME: {
         image: runImage,
         label: 'RUNTIME',
         header: 'Enforcement Behavior',
         description:
-            'If enabled, StackRox will automatically kill pods associated with any runtime data that matches parameters from this policy.'
+            'If enabled, StackRox will automatically kill any pod that matches the conditions of this policy.'
     }
 };
 
