@@ -58,6 +58,18 @@ func (mr *MockComplianceDataRepositoryMockRecorder) Deployments() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Deployments", reflect.TypeOf((*MockComplianceDataRepository)(nil).Deployments))
 }
 
+// ImageIntegrations mocks base method
+func (m *MockComplianceDataRepository) ImageIntegrations() []*storage.ImageIntegration {
+	ret := m.ctrl.Call(m, "ImageIntegrations")
+	ret0, _ := ret[0].([]*storage.ImageIntegration)
+	return ret0
+}
+
+// ImageIntegrations indicates an expected call of ImageIntegrations
+func (mr *MockComplianceDataRepositoryMockRecorder) ImageIntegrations() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImageIntegrations", reflect.TypeOf((*MockComplianceDataRepository)(nil).ImageIntegrations))
+}
+
 // NetworkGraph mocks base method
 func (m *MockComplianceDataRepository) NetworkGraph() *v1.NetworkGraph {
 	ret := m.ctrl.Call(m, "NetworkGraph")
@@ -92,4 +104,16 @@ func (m *MockComplianceDataRepository) Nodes() map[string]*storage.Node {
 // Nodes indicates an expected call of Nodes
 func (mr *MockComplianceDataRepositoryMockRecorder) Nodes() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Nodes", reflect.TypeOf((*MockComplianceDataRepository)(nil).Nodes))
+}
+
+// Policies mocks base method
+func (m *MockComplianceDataRepository) Policies() map[string]*storage.Policy {
+	ret := m.ctrl.Call(m, "Policies")
+	ret0, _ := ret[0].(map[string]*storage.Policy)
+	return ret0
+}
+
+// Policies indicates an expected call of Policies
+func (mr *MockComplianceDataRepositoryMockRecorder) Policies() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Policies", reflect.TypeOf((*MockComplianceDataRepository)(nil).Policies))
 }

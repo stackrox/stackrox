@@ -43,11 +43,11 @@ func (suite *ImageIntegrationDataStoreTestSuite) TearDownTest() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsPersistence() {
-	testIntegrations(suite.T(), suite.datastore, suite.store)
+	testIntegrations(suite.T(), suite.store, suite.datastore)
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrations() {
-	testIntegrations(suite.T(), suite.datastore, suite.datastore)
+	testIntegrations(suite.T(), suite.store, suite.datastore)
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsFiltering() {
@@ -82,7 +82,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsFiltering() {
 	suite.ElementsMatch(integrations, actualIntegrations)
 }
 
-func testIntegrations(t *testing.T, insertStorage, retrievalStorage store.Store) {
+func testIntegrations(t *testing.T, insertStorage store.Store, retrievalStorage DataStore) {
 	integrations := []*storage.ImageIntegration{
 		{
 			Name: "registry1",

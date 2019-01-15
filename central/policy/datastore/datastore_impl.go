@@ -32,6 +32,20 @@ func (ds *datastoreImpl) GetPolicies() ([]*storage.Policy, error) {
 	return ds.storage.GetPolicies()
 }
 
+// GetPolicyByName returns policy with given name.
+func (ds *datastoreImpl) GetPolicyByName(name string) (policy *storage.Policy, exists bool, err error) {
+	policies, err := ds.GetPolicies()
+	if err != nil {
+		return nil, false, err
+	}
+	for _, p := range policies {
+		if p.GetName() == name {
+			return p, true, nil
+		}
+	}
+	return nil, false, nil
+}
+
 // AddPolicy inserts a policy into the storage and the indexer
 func (ds *datastoreImpl) AddPolicy(policy *storage.Policy) (string, error) {
 	id, err := ds.storage.AddPolicy(policy)

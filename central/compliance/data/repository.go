@@ -11,8 +11,10 @@ type repository struct {
 	nodes       map[string]*storage.Node
 	deployments map[string]*storage.Deployment
 
-	networkPolicies map[string]*storage.NetworkPolicy
-	networkGraph    *v1.NetworkGraph
+	networkPolicies   map[string]*storage.NetworkPolicy
+	networkGraph      *v1.NetworkGraph
+	policies          map[string]*storage.Policy
+	imageIntegrations []*storage.ImageIntegration
 }
 
 func (r *repository) Cluster() *storage.Cluster {
@@ -33,6 +35,14 @@ func (r *repository) NetworkPolicies() map[string]*storage.NetworkPolicy {
 
 func (r *repository) NetworkGraph() *v1.NetworkGraph {
 	return r.networkGraph
+}
+
+func (r *repository) Policies() map[string]*storage.Policy {
+	return r.policies
+}
+
+func (r *repository) ImageIntegrations() []*storage.ImageIntegration {
+	return r.imageIntegrations
 }
 
 func newRepository(domain framework.ComplianceDomain, factory *factory) (*repository, error) {
@@ -67,6 +77,14 @@ func networkPoliciesByID(policies []*storage.NetworkPolicy) map[string]*storage.
 	return result
 }
 
+func policiesByName(policies []*storage.Policy) map[string]*storage.Policy {
+	result := make(map[string]*storage.Policy, len(policies))
+	for _, policy := range policies {
+		result[policy.GetName()] = policy
+	}
+	return result
+}
+
 func (r *repository) init(domain framework.ComplianceDomain, f *factory) error {
 	r.cluster = domain.Cluster().Cluster()
 	r.nodes = nodesByID(framework.Nodes(domain))
@@ -85,5 +103,17 @@ func (r *repository) init(domain framework.ComplianceDomain, f *factory) error {
 
 	r.networkGraph = f.networkGraphEvaluator.GetGraph(deployments, networkPolicies)
 
+	policies, err := f.policyStore.GetPolicies()
+	if err != nil {
+		return err
+	}
+	r.policies = policiesByName(policies)
+
+	r.imageIntegrations, err = f.imageIntegrationStore.GetImageIntegrations(
+		&v1.GetImageIntegrationsRequest{},
+	)
+	if err != nil {
+		return err
+	}
 	return nil
 }

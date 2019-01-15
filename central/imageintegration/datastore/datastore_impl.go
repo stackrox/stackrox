@@ -18,7 +18,7 @@ func (ds *datastoreImpl) GetImageIntegration(id string) (*storage.ImageIntegrati
 
 // GetImageIntegrations provides an in memory layer on top of the underlying DB based storage.
 func (ds *datastoreImpl) GetImageIntegrations(request *v1.GetImageIntegrationsRequest) ([]*storage.ImageIntegration, error) {
-	integrations, err := ds.storage.GetImageIntegrations(request)
+	integrations, err := ds.storage.GetImageIntegrations()
 	if err != nil {
 		return nil, err
 	}

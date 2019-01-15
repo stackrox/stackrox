@@ -7,7 +7,6 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -42,7 +41,7 @@ func (b *storeImpl) GetImageIntegration(id string) (integration *storage.ImageIn
 }
 
 // GetImageIntegrations retrieves integrations from bolt
-func (b *storeImpl) GetImageIntegrations(request *v1.GetImageIntegrationsRequest) ([]*storage.ImageIntegration, error) {
+func (b *storeImpl) GetImageIntegrations() ([]*storage.ImageIntegration, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ImageIntegration")
 	var integrations []*storage.ImageIntegration
 	err := b.View(func(tx *bolt.Tx) error {

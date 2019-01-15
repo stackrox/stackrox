@@ -16,6 +16,7 @@ type DataStore interface {
 
 	GetPolicy(id string) (*storage.Policy, bool, error)
 	GetPolicies() ([]*storage.Policy, error)
+	GetPolicyByName(name string) (*storage.Policy, bool, error)
 
 	AddPolicy(*storage.Policy) (string, error)
 	UpdatePolicy(*storage.Policy) error

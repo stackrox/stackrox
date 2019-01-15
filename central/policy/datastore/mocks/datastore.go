@@ -86,6 +86,20 @@ func (mr *MockDataStoreMockRecorder) GetPolicy(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicy", reflect.TypeOf((*MockDataStore)(nil).GetPolicy), arg0)
 }
 
+// GetPolicyByName mocks base method
+func (m *MockDataStore) GetPolicyByName(arg0 string) (*storage.Policy, bool, error) {
+	ret := m.ctrl.Call(m, "GetPolicyByName", arg0)
+	ret0, _ := ret[0].(*storage.Policy)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetPolicyByName indicates an expected call of GetPolicyByName
+func (mr *MockDataStoreMockRecorder) GetPolicyByName(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicyByName", reflect.TypeOf((*MockDataStore)(nil).GetPolicyByName), arg0)
+}
+
 // RemovePolicy mocks base method
 func (m *MockDataStore) RemovePolicy(arg0 string) error {
 	ret := m.ctrl.Call(m, "RemovePolicy", arg0)

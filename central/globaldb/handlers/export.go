@@ -75,7 +75,7 @@ func clearNotifierConfigs(db *bolt.DB) error {
 func clearImageIntegrationConfigs(db *bolt.DB) error {
 	store := imageIntegrationStore.New(db)
 
-	integrations, err := store.GetImageIntegrations(&v1.GetImageIntegrationsRequest{})
+	integrations, err := store.GetImageIntegrations()
 	if err != nil {
 		return err
 	}

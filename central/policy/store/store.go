@@ -15,7 +15,7 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// Store provides storage functionality for alerts.
+// Store provides storage functionality for policies.
 type Store interface {
 	GetPolicy(id string) (*storage.Policy, bool, error)
 	GetPolicies() ([]*storage.Policy, error)

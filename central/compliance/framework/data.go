@@ -18,4 +18,6 @@ type ComplianceDataRepository interface {
 
 	NetworkPolicies() map[string]*storage.NetworkPolicy
 	NetworkGraph() *v1.NetworkGraph
+	Policies() map[string]*storage.Policy
+	ImageIntegrations() []*storage.ImageIntegration
 }
