@@ -22,7 +22,8 @@ var (
 
 type serviceWrap struct {
 	orchestrators.SystemService
-	namespace string
+	namespace   string
+	tolerations []v1.Toleration
 }
 
 type converter struct{}
@@ -32,6 +33,12 @@ func newConverter() converter {
 }
 
 func (c converter) asDaemonSet(service *serviceWrap) *v1beta1.DaemonSet {
+	service.tolerations = []v1.Toleration{
+		{
+			Effect:   v1.TaintEffectNoSchedule,
+			Operator: v1.TolerationOpExists,
+		},
+	}
 	return &v1beta1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DaemonSet",
@@ -76,6 +83,7 @@ func (c converter) asKubernetesPod(service *serviceWrap) v1.PodTemplateSpec {
 			RestartPolicy:      v1.RestartPolicyAlways,
 			Volumes:            c.asVolumes(service),
 			HostPID:            service.HostPID,
+			Tolerations:        service.tolerations,
 		},
 	}
 }

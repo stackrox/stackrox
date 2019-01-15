@@ -162,6 +162,12 @@ func TestCovertDaemonSet(t *testing.T) {
 									},
 								},
 							},
+							Tolerations: []v1.Toleration{
+								{
+									Effect:   v1.TaintEffectNoSchedule,
+									Operator: v1.TolerationOpExists,
+								},
+							},
 							RestartPolicy: v1.RestartPolicyAlways,
 							Volumes: []v1.Volume{
 								{
