@@ -88,7 +88,7 @@ const integrationsList = {
             disabled: false
         },
         {
-            label: 'Nexus Sonatype',
+            label: 'Sonatype Nexus',
             type: 'nexus',
             categories: 'Registry',
             source: 'imageIntegrations',
