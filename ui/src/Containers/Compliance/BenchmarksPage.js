@@ -292,6 +292,7 @@ class BenchmarksPage extends Component {
                 rows={rows}
                 columns={columns}
                 idAttribute="definition.name"
+                defaultPageSize={rows.length}
                 selectedRowId={name}
                 onRowClick={this.onRowClick}
                 noDataText="No benchmark results available. Please scan your cluster first."
