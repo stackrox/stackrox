@@ -4,4 +4,3 @@ ui/yarn.lock
 central/compliance/standards/pci_dss_3_2.go
 central/graphql/resolvers/generated.go
 Gopkg.lock
-image/a_image-packr.go

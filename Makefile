@@ -36,7 +36,7 @@ endif
 	@find . -name vendor -prune -o -name generated -prune -o -name mocks -prune -o -name '*.go' -print | xargs gofmt -s -l -w
 
 .PHONY: imports
-imports: deps proto-generated-srcs
+imports: deps volatile-generated-srcs
 	@echo "+ $@"
 ifdef CI
 		@echo "The environment indicates we are in CI; checking goimports."
@@ -85,14 +85,13 @@ dev:
 	@go get -u golang.org/x/tools/cmd/goimports
 	@go get -u github.com/jstemmer/go-junit-report
 	@go get -u github.com/golang/dep/cmd/dep
-	@go get -u github.com/gobuffalo/packr/packr
 
 
 #####################################
 ## Generated Code and Dependencies ##
 #####################################
 
-GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_API_GW_SRCS)
+PROTO_GENERATED_SRCS = $(GENERATED_PB_SRCS) $(GENERATED_API_GW_SRCS)
 
 include make/protogen.mk
 
@@ -122,23 +121,33 @@ go-packr-srcs: $(PACKR_BIN)
 	@echo "+ $@"
 	@packr
 
+# For some reasons, a `packr clean` is much slower than the `find`. It also does not work.
+.PHONY: clean-packr-srcs
+clean-packr-srcs:
+	@echo "+ $@"
+	@find . -name '*-packr.go' -exec rm {} \;
+
 .PHONY: go-generated-srcs
-go-generated-srcs: go-packr-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
+go-generated-srcs: $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
 	@echo "+ $@"
 	PATH=$(PATH):$(BASE_DIR)/tools/generate-helpers go generate ./...
 
 .PHONY: proto-generated-srcs
-proto-generated-srcs: $(GENERATED_SRCS)
+proto-generated-srcs: $(PROTO_GENERATED_SRCS)
+
+# volatile-generated-srcs are all generated sources that are NOT committed
+.PHONY: volatile-generated-srcs
+volatile-generated-srcs: proto-generated-srcs go-packr-srcs
 
 .PHONY: generated-srcs
-generated-srcs: $(GENERATED_SRCS) go-generated-srcs
+generated-srcs: volatile-generated-srcs go-generated-srcs
 
 .PHONY: clean-generated-srcs
-clean-generated-srcs:
+clean-generated-srcs: clean-packr-srcs
 	@echo "+ $@"
 	git clean -xdf generated
 
-deps: $(GENERATED_SRCS) Gopkg.toml Gopkg.lock
+deps: Gopkg.toml Gopkg.lock volatile-generated-srcs
 	@echo "+ $@"
 	@# `dep check` exits with a nonzero code if there is a toml->lock mismatch.
 	dep check -skip-vendor
@@ -167,10 +176,10 @@ PLATFORMS := --platforms=@io_bazel_rules_go//go/toolchain:$(BAZEL_OS)_amd64
 BAZEL_FLAGS := $(PURE) $(LINUX_AMD64) $(VARIABLE_STAMPS)
 cleanup:
 	@echo "Total BUILD.bazel files deleted: "
-	@find . -mindepth 2 -name BUILD.bazel -print | grep -v '^\./\(image\|pkg/version\)' | xargs rm -v | wc -l
+	@git status --ignored --untracked-files=all --porcelain | grep '^\(!!\|??\) ' | cut -d' ' -f 2- | grep '\(/\|^\)BUILD\.bazel$$' | xargs rm -v | wc -l
 
 .PHONY: gazelle
-gazelle: deps $(GENERATED_SRCS) cleanup
+gazelle: deps volatile-generated-srcs cleanup
 	bazel run //:gazelle
 
 cli: gazelle

@@ -15,6 +15,9 @@ tmp
 # Generated API docs
 /image/docs/
 
+# Generated packr sources
+*-packr.go
+
 # Uncommitted code
 vendor/
 api/generated

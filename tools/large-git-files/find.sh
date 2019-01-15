@@ -8,7 +8,7 @@ whitelist_file="$(dirname "${SCRIPT}")/whitelist"
 [[ -f "${whitelist_file}" ]] || { echo >&2 "Couldn't find whitelist file. Exiting..."; exit 1; }
 
 large_files=$(git ls-tree --full-tree -l -r HEAD $(git rev-parse --show-toplevel) | awk '$4 > 50*1024 {print$5}')
-non_whitelisted_files=($({ echo "${large_files}"; cat "${whitelist_file}"; } | sort | uniq -u))
+non_whitelisted_files=($({ echo "${large_files}"; cat "${whitelist_file}"; cat "${whitelist_file}"; } | sort | uniq -u))
 
 [[ "${#non_whitelisted_files[@]}" == 0 ]] || {
   echo "Found large files in the working tree. Please remove them!"
