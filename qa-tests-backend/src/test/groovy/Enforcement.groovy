@@ -3,6 +3,8 @@ import groups.Integration
 import groups.PolicyEnforcement
 import objects.DaemonSet
 import objects.Deployment
+import orchestratormanager.OrchestratorTypes
+import org.junit.Assume
 import org.junit.experimental.categories.Category
 import spock.lang.Unroll
 import io.stackrox.proto.storage.AlertOuterClass
@@ -19,6 +21,10 @@ class Enforcement extends BaseSpecification {
         // This test verifies enforcement by triggering a enforcement via admission controller
 
         given:
+        "Cluster is not Openshift"
+        Assume.assumeTrue(OrchestratorTypes.valueOf(System.getenv("CLUSTER")) != OrchestratorTypes.OPENSHIFT)
+
+        and:
         "Add deployment time enforcement to an existing policy"
         def startEnforcements = Services.updatePolicyEnforcement(
                 CONTAINER_PORT_22_POLICY,
