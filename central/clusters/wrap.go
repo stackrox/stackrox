@@ -42,8 +42,9 @@ func NewDeployer(c *storage.Cluster) (Deployer, error) {
 }
 
 // Deployer is the interface that defines how to get the specific files per orchestrator
+// The first parameter is a wrap around the cluster and the second is the CA
 type Deployer interface {
-	Render(Wrap) ([]*zip.File, error)
+	Render(wrap Wrap, CA []byte) ([]*zip.File, error)
 }
 
 var deployers = make(map[storage.ClusterType]Deployer)
@@ -119,6 +120,8 @@ func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
 
 		"MonitoringEndpoint": netutil.WithDefaultPort(c.MonitoringEndpoint, defaultMonitoringPort),
 		"ClusterType":        c.Type.String(),
+
+		"AdmissionController": c.AdmissionController,
 	}
 	return fields, nil
 }

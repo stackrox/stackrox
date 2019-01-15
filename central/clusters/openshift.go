@@ -16,7 +16,7 @@ func newOpenshift() Deployer {
 	return &openshift{}
 }
 
-func (o *openshift) Render(c Wrap) ([]*zip.File, error) {
+func (o *openshift) Render(c Wrap, _ []byte) ([]*zip.File, error) {
 	var openshiftParams *storage.OpenshiftParams
 	clusterOpenshift, ok := c.OrchestratorParams.(*storage.Cluster_Openshift)
 	if ok {

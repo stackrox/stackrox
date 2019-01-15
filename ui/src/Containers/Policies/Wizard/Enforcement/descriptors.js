@@ -16,7 +16,7 @@ const lifecycleTileMap = {
         label: 'DEPLOY',
         header: 'Enforcement Behavior',
         description:
-            'If enabled, StackRox will automatically apply one of two types of enforcement actions when deploy data matches parameters from this policy.'
+            'If enabled, StackRox will automatically apply enforcement actions when deploy data matches parameters from this policy. If an admission controller is enabled, it will reject the API request. Otherwise, it will apply one of two types of enforcement actions.'
     },
     RUNTIME: {
         image: runImage,

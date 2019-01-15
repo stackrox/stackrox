@@ -53,6 +53,12 @@ func (s Subject) Hostname() string {
 	return fmt.Sprintf("%s.stackrox", hostname(s.ServiceType))
 }
 
+// AllHostnames returns all of the hostnames: e.g. central.stackrox.svc
+func (s Subject) AllHostnames() []string {
+	// Admission Controllers require the .svc suffic
+	return []string{s.Hostname(), fmt.Sprintf("%s.svc", s.Hostname())}
+}
+
 func hostname(t storage.ServiceType) string {
 	return strings.ToLower(strings.Split(t.String(), "_")[0])
 }

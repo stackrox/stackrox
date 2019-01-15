@@ -30,14 +30,14 @@ message ProviderMetadata {
 }
 
 message Cluster {
-    string                    id                   = 1;
-    string                    name                 = 2;
-    ClusterType               type                 = 3;
-    string                    main_image           = 4;
-    string                    central_api_endpoint = 5;
-    google.protobuf.Timestamp last_contact         = 6;
-    bool                      runtime_support      = 7;
-    string                    monitoring_endpoint  = 8;
+    string                    id                          = 1;
+    string                    name                        = 2;
+    ClusterType               type                        = 3;
+    string                    main_image                  = 4;
+    string                    central_api_endpoint        = 5;
+    google.protobuf.Timestamp last_contact                = 6;
+    bool                      runtime_support             = 7;
+    string                    monitoring_endpoint         = 8;
 
     oneof orchestrator_params {
         KubernetesParams kubernetes = 9;
@@ -45,7 +45,8 @@ message Cluster {
         OpenshiftParams  openshift  = 11;
     }
 
-    ProviderMetadata          provider_metadata    = 12;
+    ProviderMetadata          provider_metadata           = 12;
+    bool                      admission_controller        = 13;
 }
 
 message KubernetesParams {

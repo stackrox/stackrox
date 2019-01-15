@@ -1,14 +1,11 @@
 package resources
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
-	"strconv"
 	"strings"
 
-	ptypes "github.com/gogo/protobuf/types"
 	openshift_appsv1 "github.com/openshift/api/apps/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -18,11 +15,9 @@ import (
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stackrox/rox/sensor/kubernetes/volumes"
 	"k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -30,10 +25,6 @@ import (
 )
 
 const (
-	openshiftEncodedDeploymentConfigAnnotation = `openshift.io/encoded-deployment-config`
-
-	megabyte = 1024 * 1024
-
 	kubeProxyLabelKey   = "component"
 	kubeProxyLabelValue = "kube-proxy"
 	kubeProxyType       = "StaticPods"
@@ -71,61 +62,21 @@ func doesFieldExist(value reflect.Value) bool {
 }
 
 func newDeploymentEventFromResource(obj interface{}, action central.ResourceAction, deploymentType string, lister v1listers.PodLister) (wrap *deploymentWrap) {
-	objMeta, err := meta.Accessor(obj)
-	if err != nil {
-		logger.Errorf("could not access metadata of object of type %T: %v", obj, err)
-		return
+	wrap = newWrap(obj, deploymentType)
+	if wrap == nil {
+		return nil
 	}
-	kind := deploymentType
-
-	// Ignore resources that are owned by another resource.
-	// DeploymentConfigs can be owned by TemplateInstance which we don't care about
-	if len(objMeta.GetOwnerReferences()) > 0 && kind != kubernetes.DeploymentConfig {
-		return
-	}
-
-	// This only applies to OpenShift
-	if encDeploymentConfig, ok := objMeta.GetLabels()[openshiftEncodedDeploymentConfigAnnotation]; ok {
-		newMeta, newKind, err := extractDeploymentConfig(encDeploymentConfig)
-		if err != nil {
-			logger.Error(err)
-		} else {
-			objMeta, kind = newMeta, newKind
-		}
-	}
-
-	wrap = newWrap(objMeta, kind)
-	wrap.populateFields(obj, action, lister)
+	wrap.populateNonStaticFields(obj, action, lister)
 	return
 }
 
-func extractDeploymentConfig(encodedDeploymentConfig string) (metav1.Object, string, error) {
-	// Anonymous struct that only contains the fields we are interested in (note: json.Unmarshal silently ignores
-	// fields that are not in the destination object).
-	dc := struct {
-		metav1.TypeMeta
-		MetaData metav1.ObjectMeta `json:"metadata"`
-	}{}
-	err := json.Unmarshal([]byte(encodedDeploymentConfig), &dc)
-	return &dc.MetaData, dc.Kind, err
-}
-
-func newWrap(meta metav1.Object, kind string) *deploymentWrap {
-	updatedTime, err := ptypes.TimestampProto(meta.GetCreationTimestamp().Time)
-	if err != nil {
-		logger.Error(err)
+func newWrap(obj interface{}, kind string) *deploymentWrap {
+	deployment, err := resources.NewDeploymentFromStaticResource(obj, kind)
+	if err != nil || deployment == nil {
+		return nil
 	}
 	return &deploymentWrap{
-		Deployment: &storage.Deployment{
-			Id:          string(meta.GetUID()),
-			Name:        meta.GetName(),
-			Type:        kind,
-			Version:     meta.GetResourceVersion(),
-			Namespace:   meta.GetNamespace(),
-			Labels:      meta.GetLabels(),
-			Annotations: meta.GetAnnotations(),
-			UpdatedAt:   updatedTime,
-		},
+		Deployment: deployment,
 	}
 }
 
@@ -139,7 +90,7 @@ func (w *deploymentWrap) populateKubeProxyIfNecessary(o *v1.Pod) labels.Selector
 	return nil
 }
 
-func (w *deploymentWrap) populateFields(obj interface{}, action central.ResourceAction, lister v1listers.PodLister) {
+func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central.ResourceAction, lister v1listers.PodLister) {
 	w.original = obj
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
 	spec := objValue.FieldByName("Spec")
@@ -148,9 +99,6 @@ func (w *deploymentWrap) populateFields(obj interface{}, action central.Resource
 		return
 	}
 
-	w.populateReplicas(spec)
-
-	var podSpec v1.PodSpec
 	var podLabels map[string]string
 	var labelSelector labels.Selector
 	var err error
@@ -161,7 +109,6 @@ func (w *deploymentWrap) populateFields(obj interface{}, action central.Resource
 			logger.Errorf("Spec obj %+v does not have a Template field or is not a pointer pod spec", spec)
 			return
 		}
-		podSpec = o.Spec.Template.Spec
 		podLabels = o.Spec.Template.Labels
 
 		labelSelector, err = w.getLabelSelector(spec)
@@ -175,7 +122,6 @@ func (w *deploymentWrap) populateFields(obj interface{}, action central.Resource
 		// Standalone Pods do not have a PodTemplate, like the other deployment
 		// types do. So, we need to directly access the Pod's Spec field,
 		// instead of looking for it inside a PodTemplate.
-		podSpec = o.Spec
 		podLabels = o.Labels
 
 		labelSelector = w.populateKubeProxyIfNecessary(o)
@@ -185,7 +131,6 @@ func (w *deploymentWrap) populateFields(obj interface{}, action central.Resource
 			logger.Errorf("Spec obj %+v does not have a Template field", spec)
 			return
 		}
-		podSpec = podTemplate.Spec
 		podLabels = podTemplate.Labels
 
 		labelSelector, err = w.getLabelSelector(spec)
@@ -196,7 +141,7 @@ func (w *deploymentWrap) populateFields(obj interface{}, action central.Resource
 	}
 
 	w.podLabels = podLabels
-	w.populateContainers(podSpec)
+	w.populatePorts()
 
 	if action != central.ResourceAction_REMOVE_RESOURCE {
 		// If we have a standalone pod, we cannot use the labels to try and select that pod so we must directly populate the pod data
@@ -216,53 +161,6 @@ func (w *deploymentWrap) GetDeployment() *storage.Deployment {
 		return nil
 	}
 	return w.Deployment
-}
-
-func (w *deploymentWrap) populateContainers(podSpec v1.PodSpec) {
-	w.Deployment.Containers = make([]*storage.Container, 0, len(podSpec.Containers))
-	for _, c := range podSpec.Containers {
-		w.Deployment.Containers = append(w.Deployment.Containers, &storage.Container{
-			Name: c.Name,
-		})
-	}
-
-	w.populateServiceAccount(podSpec)
-	w.populateContainerConfigs(podSpec)
-	w.populateImages(podSpec)
-	w.populateSecurityContext(podSpec)
-	w.populateVolumesAndSecrets(podSpec)
-	w.populatePorts(podSpec)
-	w.populateResources(podSpec)
-	w.populateImagePullSecrets(podSpec)
-}
-
-func (w *deploymentWrap) populateServiceAccount(podSpec v1.PodSpec) {
-	w.ServiceAccount = podSpec.ServiceAccountName
-}
-
-func (w *deploymentWrap) populateImagePullSecrets(podSpec v1.PodSpec) {
-	secrets := make([]string, 0, len(podSpec.ImagePullSecrets))
-	for _, s := range podSpec.ImagePullSecrets {
-		secrets = append(secrets, s.Name)
-	}
-	w.ImagePullSecrets = secrets
-}
-
-func (w *deploymentWrap) populateReplicas(spec reflect.Value) {
-	replicaField := spec.FieldByName("Replicas")
-	if !doesFieldExist(replicaField) {
-		return
-	}
-
-	replicasPointer, ok := replicaField.Interface().(*int32)
-	if ok && replicasPointer != nil {
-		w.Deployment.Replicas = int64(*replicasPointer)
-	}
-
-	replicas, ok := replicaField.Interface().(int32)
-	if ok {
-		w.Deployment.Replicas = int64(replicas)
-	}
 }
 
 func matchesOwnerName(name string, p *v1.Pod) bool {
@@ -383,170 +281,13 @@ func (w *deploymentWrap) getLabelSelector(spec reflect.Value) (labels.Selector, 
 	return nil, fmt.Errorf("unable to get label selector for %+v", spec.Type())
 }
 
-func (w *deploymentWrap) populateContainerConfigs(podSpec v1.PodSpec) {
-	for i, c := range podSpec.Containers {
-
-		// Skip if there's nothing to add.
-		if len(c.Command) == 0 && len(c.Args) == 0 && len(c.WorkingDir) == 0 && len(c.Env) == 0 && c.SecurityContext == nil {
-			continue
-		}
-
-		config := &storage.ContainerConfig{
-			Command:   c.Command,
-			Args:      c.Args,
-			Directory: c.WorkingDir,
-		}
-
-		envSlice := make([]*storage.ContainerConfig_EnvironmentConfig, len(c.Env))
-		for i, env := range c.Env {
-			envSlice[i] = &storage.ContainerConfig_EnvironmentConfig{
-				Key:   env.Name,
-				Value: env.Value,
-			}
-		}
-
-		config.Env = envSlice
-
-		if s := c.SecurityContext; s != nil {
-			if uid := s.RunAsUser; uid != nil {
-				config.Uid = *uid
-			}
-		}
-
-		w.Deployment.Containers[i].Id = w.Deployment.Id + ":" + c.Name
-		w.Deployment.Containers[i].Config = config
-	}
-}
-
-func (w *deploymentWrap) populateImages(podSpec v1.PodSpec) {
-	for i, c := range podSpec.Containers {
-		w.Deployment.Containers[i].Image = imageUtils.GenerateImageFromString(c.Image)
-	}
-}
-
-func (w *deploymentWrap) populateSecurityContext(podSpec v1.PodSpec) {
-	for i, c := range podSpec.Containers {
-		if s := c.SecurityContext; s != nil {
-			sc := &storage.SecurityContext{}
-
-			if p := s.Privileged; p != nil {
-				sc.Privileged = *p
-			}
-
-			if SELinux := s.SELinuxOptions; SELinux != nil {
-				sc.Selinux = &storage.SecurityContext_SELinux{
-					User:  SELinux.User,
-					Role:  SELinux.Role,
-					Type:  SELinux.Type,
-					Level: SELinux.Level,
-				}
-			}
-
-			if capabilities := s.Capabilities; capabilities != nil {
-				for _, add := range capabilities.Add {
-					sc.AddCapabilities = append(sc.AddCapabilities, string(add))
-				}
-
-				for _, drop := range capabilities.Drop {
-					sc.DropCapabilities = append(sc.DropCapabilities, string(drop))
-				}
-			}
-
-			w.Deployment.Containers[i].SecurityContext = sc
-		}
-	}
-}
-
-func (w *deploymentWrap) getVolumeSourceMap(podSpec v1.PodSpec) map[string]volumes.VolumeSource {
-	volumeSourceMap := make(map[string]volumes.VolumeSource)
-	for _, v := range podSpec.Volumes {
-		val := reflect.ValueOf(v.VolumeSource)
-		for i := 0; i < val.NumField(); i++ {
-			f := val.Field(i)
-			if !f.IsNil() {
-				sourceCreator, ok := volumes.VolumeRegistry[val.Type().Field(i).Name]
-				if !ok {
-					volumeSourceMap[v.Name] = &volumes.Unimplemented{}
-				} else {
-					volumeSourceMap[v.Name] = sourceCreator(f.Interface())
-				}
-			}
-		}
-	}
-	return volumeSourceMap
-}
-
-func convertQuantityToCores(q *resource.Quantity) float32 {
-	// kubernetes does not like floating point values so they make you jump through hoops
-	f, err := strconv.ParseFloat(q.AsDec().String(), 32)
-	if err != nil {
-		logger.Error(err)
-	}
-	return float32(f)
-}
-
-func convertQuantityToMb(q *resource.Quantity) float32 {
-	return float32(float64(q.Value()) / megabyte)
-}
-
-func (w *deploymentWrap) populateResources(podSpec v1.PodSpec) {
-	for i, c := range podSpec.Containers {
-		w.Deployment.Containers[i].Resources = &storage.Resources{
-			CpuCoresRequest: convertQuantityToCores(c.Resources.Requests.Cpu()),
-			CpuCoresLimit:   convertQuantityToCores(c.Resources.Limits.Cpu()),
-			MemoryMbRequest: convertQuantityToMb(c.Resources.Requests.Memory()),
-			MemoryMbLimit:   convertQuantityToMb(c.Resources.Limits.Memory()),
-		}
-	}
-}
-
-func (w *deploymentWrap) populateVolumesAndSecrets(podSpec v1.PodSpec) {
-	volumeSourceMap := w.getVolumeSourceMap(podSpec)
-	for i, c := range podSpec.Containers {
-		for _, v := range c.VolumeMounts {
-			sourceVolume, ok := volumeSourceMap[v.Name]
-			if !ok {
-				sourceVolume = &volumes.Unimplemented{}
-			}
-			if sourceVolume.Type() == "Secret" {
-				w.Deployment.Containers[i].Secrets = append(w.Deployment.Containers[i].Secrets, &storage.EmbeddedSecret{
-					Name: sourceVolume.Source(),
-					Path: v.MountPath,
-				})
-				continue
-			}
-			w.Deployment.Containers[i].Volumes = append(w.Deployment.Containers[i].Volumes, &storage.Volume{
-				Name:        v.Name,
-				Source:      sourceVolume.Source(),
-				Destination: v.MountPath,
-				ReadOnly:    v.ReadOnly,
-				Type:        sourceVolume.Type(),
-			})
-		}
-	}
-}
-
-func (w *deploymentWrap) populatePorts(podSpec v1.PodSpec) {
+func (w *deploymentWrap) populatePorts() {
 	w.portConfigs = make(map[portRef]*storage.PortConfig)
-	for i, c := range podSpec.Containers {
-		for _, p := range c.Ports {
-			exposedPort := p.ContainerPort
-			// If the port defines a host port, then it is exposed via that port instead of the container port
-			if p.HostPort != 0 {
-				exposedPort = p.HostPort
-			}
-
-			portConfig := &storage.PortConfig{
-				Name:          p.Name,
-				ContainerPort: p.ContainerPort,
-				ExposedPort:   exposedPort,
-				Protocol:      string(p.Protocol),
-				Exposure:      storage.PortConfig_INTERNAL,
-			}
-			w.Deployment.Containers[i].Ports = append(w.Deployment.Containers[i].Ports, portConfig)
-			w.portConfigs[portRef{Port: intstr.FromInt(int(p.ContainerPort)), Protocol: p.Protocol}] = portConfig
+	for _, c := range w.GetContainers() {
+		for _, p := range c.GetPorts() {
+			w.portConfigs[portRef{Port: intstr.FromInt(int(p.ContainerPort)), Protocol: v1.Protocol(p.Protocol)}] = p
 			if p.Name != "" {
-				w.portConfigs[portRef{Port: intstr.FromString(p.Name), Protocol: p.Protocol}] = portConfig
+				w.portConfigs[portRef{Port: intstr.FromString(p.Name), Protocol: v1.Protocol(p.Protocol)}] = p
 			}
 		}
 	}

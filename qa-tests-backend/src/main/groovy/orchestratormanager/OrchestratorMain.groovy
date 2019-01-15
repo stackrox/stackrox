@@ -1,5 +1,6 @@
 package orchestratormanager
 
+import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
 import objects.DaemonSet
 import objects.Deployment
 import objects.NetworkPolicy
@@ -9,6 +10,7 @@ interface OrchestratorMain {
     def cleanup()
 
     //Deployments
+    def createDeploymentNoWait(Deployment deployment)
     def createDeployment(Deployment deployment)
     def batchCreateDeployments(List<Deployment> deployments)
     def deleteDeployment(Deployment deployment)
@@ -57,6 +59,10 @@ interface OrchestratorMain {
     String getClairifyEndpoint()
     String generateYaml(Object orchestratorObject)
     String getNameSpace()
+
+    V1beta1ValidatingWebhookConfiguration getAdmissionController()
+    def deleteAdmissionController(String name)
+    def createAdmissionController(V1beta1ValidatingWebhookConfiguration config)
 
     /*TODO:
         def getDeploymenton(String deploymentName)

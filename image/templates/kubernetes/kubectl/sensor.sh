@@ -57,6 +57,9 @@ function print_rbac_instructions {
 echo "Creating RBAC roles..."
 kubectl apply -f "$DIR/sensor-rbac.yaml" || print_rbac_instructions
 
+{{if .AdmissionController}}
+kubectl apply -f "$DIR/admission-controller.yaml"
+{{- end}}
 
 {{if .MonitoringEndpoint}}
 echo "Creating secrets for monitoring..."

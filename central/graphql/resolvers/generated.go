@@ -513,6 +513,11 @@ func (resolver *Resolver) wrapClusters(values []*storage.Cluster, err error) ([]
 	return output, nil
 }
 
+func (resolver *clusterResolver) AdmissionController() bool {
+	value := resolver.data.GetAdmissionController()
+	return value
+}
+
 func (resolver *clusterResolver) CentralApiEndpoint() string {
 	value := resolver.data.GetCentralApiEndpoint()
 	return value

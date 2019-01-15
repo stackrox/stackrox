@@ -3,50 +3,54 @@ package check
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/image/check/report"
 	"golang.org/x/net/context"
 )
 
-// This is set very high, because typically the scan will need to be triggered as the image will be new
-// This means we must let the scanners do their thing otherwise we will miss the scans
-// TODO(cgorman) We need a flag currently that says --wait-for-image timeout or something like that because Clair does scanning inline
-// but other scanners do not
-const timeout = 10 * time.Minute
+const timeout = 1 * time.Minute
+
+var log = logging.LoggerForModule()
 
 // Command checks the image against image build lifecycle policies
 func Command() *cobra.Command {
 	var (
-		image string
-		json  bool
+		file string
+		json bool
 	)
 	c := &cobra.Command{
 		Use:   "check",
 		Short: "Check images for build time policy violations.",
 		Long:  "Check images for build time policy violations.",
 		RunE: func(*cobra.Command, []string) error {
-			if image == "" {
-				return fmt.Errorf("--image must be set")
+			if file == "" {
+				return fmt.Errorf("--file must be set")
 			}
-			return checkImage(image, json)
+			return checkDeployment(file, json)
 		},
 	}
 
-	c.Flags().StringVarP(&image, "image", "i", "", "image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
+	c.Flags().StringVarP(&file, "file", "f", "", "file to send to Central to evaluate policies against")
 	c.Flags().BoolVar(&json, "json", false, "output policy results as json.")
 	return c
 }
 
-func checkImage(image string, json bool) error {
+func checkDeployment(file string, json bool) error {
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+
 	// Get the violated policies for the input data.
-	violatedPolicies, err := getViolatedPolicies(image)
+	violatedPolicies, err := getViolatedPolicies(string(data))
 	if err != nil {
 		return err
 	}
@@ -72,8 +76,8 @@ func checkImage(image string, json bool) error {
 }
 
 // Fetch the alerts for the inputs and convert them to a list of Policies that are violated.
-func getViolatedPolicies(image string) ([]*storage.Policy, error) {
-	alerts, err := getAlerts(image)
+func getViolatedPolicies(yaml string) ([]*storage.Policy, error) {
+	alerts, err := getAlerts(yaml)
 	if err != nil {
 		return nil, err
 	}
@@ -86,13 +90,7 @@ func getViolatedPolicies(image string) ([]*storage.Policy, error) {
 }
 
 // Get the alerts for the command line inputs.
-func getAlerts(imageStr string) ([]*storage.Alert, error) {
-	// Attempt to construct the request first since it is the cheapest op.
-	image, err := buildRequest(imageStr)
-	if err != nil {
-		return nil, err
-	}
-
+func getAlerts(yaml string) ([]*storage.Alert, error) {
 	// Create the connection to the central detection service.
 	conn, err := common.GetGRPCConnection()
 	if err != nil {
@@ -104,18 +102,12 @@ func getAlerts(imageStr string) ([]*storage.Alert, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	// Call detection and return the returned alerts.
-	response, err := service.DetectBuildTime(ctx, &v1.BuildDetectionRequest{Resource: &v1.BuildDetectionRequest_Image{Image: image}})
+	response, err := service.DetectDeployTimeFromYAML(ctx, &v1.DeployYAMLDetectionRequest{Yaml: yaml})
 	if err != nil {
 		return nil, err
 	}
-	return response.GetAlerts(), nil
-}
 
-// Use inputs to generate an image name for request.
-func buildRequest(image string) (*storage.Image, error) {
-	img, err := utils.GenerateImageFromStringWithError(image)
-	if err != nil {
-		return nil, fmt.Errorf("could not parse image '%s': %s", image, err)
-	}
-	return img, nil
+	log.Infof("Runs: %+v", response.GetRuns())
+
+	return []*storage.Alert{}, nil
 }

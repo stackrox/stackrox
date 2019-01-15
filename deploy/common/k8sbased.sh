@@ -81,13 +81,14 @@ function launch_sensor {
 
     if [[ "${ORCH}" == "k8s" && -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         roxctl -p ${ROX_ADMIN_PASSWORD} --endpoint localhost:8000 sensor generate --image="${MAIN_IMAGE}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
-             --runtime="$RUNTIME_SUPPORT" "${extra_config[@]+"${extra_config[@]}"}" ${ORCH}
+             --runtime="$RUNTIME_SUPPORT" --admission-controller="$ADMISSION_CONTROLLER" "${extra_config[@]+"${extra_config[@]}"}" ${ORCH}
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
     else
         local common_params="{ \"params\" : { \"namespace\": \"stackrox\" } }"
         extra_json_config+="\"${ORCH_FULLNAME}\": $common_params }"
         get_cluster_zip localhost:8000 "$CLUSTER" ${CLUSTER_TYPE} "$MAIN_IMAGE" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$RUNTIME_SUPPORT" "$extra_json_config"
         unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"
+        rm "$k8s_dir/sensor-deploy.zip"
     fi
 
     echo "Deploying Sensor..."

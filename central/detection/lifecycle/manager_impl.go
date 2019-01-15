@@ -11,7 +11,9 @@ import (
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/central/enrichment"
+	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,12 +30,14 @@ type indicatorWithInjector struct {
 
 type managerImpl struct {
 	enricher           enrichment.Enricher
+	riskManager        riskManager.Manager
 	runtimeDetector    runtime.Detector
 	deploytimeDetector deploytime.Detector
 	alertManager       alertmanager.AlertManager
 
 	deploymentDataStore deploymentDatastore.DataStore
 	processesDataStore  processIndicatorDatastore.DataStore
+	imageDataStore      imageDatastore.DataStore
 
 	queuedIndicators map[string]indicatorWithInjector
 
@@ -153,12 +157,23 @@ func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator, inject
 
 func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string, storage.EnforcementAction, error) {
 	// Attempt to enrich the image before detection.
-	if _, err := m.enricher.Enrich(deployment); err != nil {
+	updatedImages, updated, err := m.enricher.EnrichDeployment(deployment)
+	if err != nil {
 		logger.Errorf("Error enriching deployment %s: %s", deployment.GetName(), err)
+	}
+	if updated {
+		for _, i := range updatedImages {
+			if err := m.imageDataStore.UpsertImage(i); err != nil {
+				logger.Errorf("Error persisting image %s: %s", i.GetName().GetFullName(), err)
+			}
+		}
+		if err := m.deploymentDataStore.UpdateDeployment(deployment); err != nil {
+			logger.Errorf("Error persisting deployment %s: %s", deployment.GetName(), err)
+		}
 	}
 
 	// Asynchronously update risk after processing.
-	defer m.enricher.ReprocessDeploymentRiskAsync(deployment)
+	defer m.riskManager.ReprocessDeploymentRiskAsync(deployment)
 
 	presentAlerts, err := m.deploytimeDetector.AlertsForDeployment(deployment)
 	if err != nil {
@@ -177,7 +192,7 @@ func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string,
 
 func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 	// Asynchronously update all deployments' risk after processing.
-	defer m.enricher.ReprocessRiskAsync()
+	defer m.riskManager.ReprocessRiskAsync()
 
 	var presentAlerts []*storage.Alert
 

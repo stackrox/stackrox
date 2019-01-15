@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/central"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/deployment"
 	"github.com/stackrox/rox/roxctl/image"
 	"github.com/stackrox/rox/roxctl/sensor"
 )
@@ -24,15 +25,17 @@ func versionCommand() *cobra.Command {
 
 func main() {
 	c := &cobra.Command{
-		Use:          "roxctl",
-		Short:        "roxctl is the command-line interface for StackRox services",
-		Long:         "roxctl is the command-line interface for StackRox services",
 		SilenceUsage: true,
 	}
 	c.AddCommand(versionCommand())
 
 	// Image Commands
 	c.AddCommand(image.Command())
+
+	// Deployment Commands
+	deploymentCommand := deployment.Command()
+	deploymentCommand.Hidden = true
+	c.AddCommand(deploymentCommand)
 
 	// Central Commands
 	c.AddCommand(central.Command())

@@ -8,7 +8,9 @@ import (
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/central/enrichment"
+	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -38,14 +40,16 @@ type Manager interface {
 
 // NewManager returns a new manager with the injected dependencies.
 func NewManager(enricher enrichment.Enricher, deploytimeDetector deploytime.Detector, runtimeDetector runtime.Detector,
-	deploymentDatastore deploymentDatastore.DataStore, processesDataStore processDatastore.DataStore, alertManager alertmanager.AlertManager) Manager {
+	deploymentDatastore deploymentDatastore.DataStore, processesDataStore processDatastore.DataStore, imageDataStore imageDataStore.DataStore, alertManager alertmanager.AlertManager, riskManager riskManager.Manager) Manager {
 	m := &managerImpl{
 		enricher:            enricher,
+		riskManager:         riskManager,
 		deploytimeDetector:  deploytimeDetector,
 		runtimeDetector:     runtimeDetector,
 		alertManager:        alertManager,
 		deploymentDataStore: deploymentDatastore,
 		processesDataStore:  processesDataStore,
+		imageDataStore:      imageDataStore,
 
 		queuedIndicators: make(map[string]indicatorWithInjector),
 

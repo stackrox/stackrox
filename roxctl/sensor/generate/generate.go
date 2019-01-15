@@ -69,6 +69,7 @@ func Command() *cobra.Command {
 	c.PersistentFlags().StringVar(&cluster.MainImage, "image", defaults.MainImage, "image sensor should be deployed with")
 	c.PersistentFlags().StringVar(&cluster.MonitoringEndpoint, "monitoring-endpoint", "", "endpoint for monitoring")
 	c.PersistentFlags().BoolVar(&cluster.RuntimeSupport, "runtime", true, "whether or not to have runtime support")
+	c.PersistentFlags().BoolVar(&cluster.AdmissionController, "admission-controller", true, "whether or not to use an admission controller for enforcement")
 	c.AddCommand(k8s())
 	return c
 }

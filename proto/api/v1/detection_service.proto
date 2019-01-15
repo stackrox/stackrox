@@ -6,20 +6,59 @@ option java_package = "io.stackrox.proto.api.v1";
 import weak "google/api/annotations.proto";
 import "storage/image.proto";
 import "storage/alert.proto";
+import "storage/deployment.proto";
 
 package v1;
 
-message DetectionResponse {
+message BuildDetectionRequest {
+    oneof Resource {
+        storage.Image image = 1;
+    }
+}
+
+message BuildDetectionResponse {
     repeated storage.Alert alerts = 1;
+}
+
+message DeployDetectionRequest {
+    oneof Resource {
+        storage.Deployment deployment = 1;
+    }
+}
+
+message DeployYAMLDetectionRequest {
+    string yaml = 1;
+}
+
+message DeployDetectionResponse {
+    message Run {
+        string   name                 = 1;
+        string   type                 = 2;
+        repeated storage.Alert alerts = 3;
+    }
+    repeated Run runs = 1;
 }
 
 service DetectionService {
 
-    rpc DetectBuildTime(storage.Image) returns (DetectionResponse) {
+    rpc DetectBuildTime(BuildDetectionRequest) returns (BuildDetectionResponse) {
         option (google.api.http) = {
             post: "/v1/detect/build"
             body: "*"
         };
     }
 
+    rpc DetectDeployTime(DeployDetectionRequest) returns (DeployDetectionResponse) {
+        option (google.api.http) = {
+            post: "/v1/detect/deploy"
+            body: "*"
+        };
+    }
+
+    rpc DetectDeployTimeFromYAML(DeployYAMLDetectionRequest) returns (DeployDetectionResponse) {
+        option (google.api.http) = {
+            post: "/v1/detect/deploy/yaml"
+            body: "*"
+        };
+    }
 }

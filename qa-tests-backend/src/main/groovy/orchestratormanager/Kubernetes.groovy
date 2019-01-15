@@ -4,6 +4,7 @@ import common.YamlGenerator
 import io.kubernetes.client.ApiClient
 import io.kubernetes.client.ApiException
 import io.kubernetes.client.Configuration
+import io.kubernetes.client.apis.AdmissionregistrationV1beta1Api
 import io.kubernetes.client.apis.CoreV1Api
 import io.kubernetes.client.apis.ExtensionsV1beta1Api
 import io.kubernetes.client.custom.IntOrString
@@ -44,6 +45,7 @@ import io.kubernetes.client.models.V1beta1NetworkPolicyEgressRule
 import io.kubernetes.client.models.V1beta1NetworkPolicyIngressRule
 import io.kubernetes.client.models.V1beta1NetworkPolicyPeer
 import io.kubernetes.client.models.V1beta1NetworkPolicySpec
+import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
 import io.kubernetes.client.util.Config
 import io.kubernetes.client.custom.Quantity
 import objects.DaemonSet
@@ -60,6 +62,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
 
     final private CoreV1Api api
     final private ExtensionsV1beta1Api beta1
+    final private AdmissionregistrationV1beta1Api admissionAPI
 
     Kubernetes(String ns) {
         this.namespace = ns
@@ -68,6 +71,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
 
         this.api = new CoreV1Api()
         this.beta1 = new ExtensionsV1beta1Api()
+        this.admissionAPI = new AdmissionregistrationV1beta1Api()
 
         ensureNamespaceExists()
     }
@@ -846,7 +850,9 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         Private K8S Support functions
     */
 
-    private createDeploymentNoWait(Deployment deployment) {
+    def createDeploymentNoWait(Deployment deployment) {
+        deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
+
         // Create service if needed
         if (deployment.exposeAsService) {
             createService(deployment)
@@ -875,7 +881,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         try {
             println("Told the orchestrator to create " + deployment.getName())
             beta1.createNamespacedDeployment(deployment.namespace, k8sDeployment, null)
-        } catch (Exception e) {
+        } catch (ApiException e) {
             println("Error creating kube deployment" + e.toString())
         }
     }
@@ -1174,5 +1180,44 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         }
 
         return networkPolicy
+    }
+
+    V1beta1ValidatingWebhookConfiguration getAdmissionController() {
+        return admissionAPI.listValidatingWebhookConfiguration(
+                null,
+                null,
+                null,
+                true,
+                null,
+                null,
+                null,
+                null,
+                false
+        ).getItems().find { it.getMetadata().getName() == "stackrox" }
+    }
+
+    def deleteAdmissionController(String name) {
+        admissionAPI.deleteValidatingWebhookConfiguration(
+                name,
+                new V1DeleteOptions(),
+                null,
+                null,
+                null,
+                null)
+        sleep 1000
+    }
+
+    def createAdmissionController(V1beta1ValidatingWebhookConfiguration config) {
+        if (config == null) {
+            return
+        }
+        config.setMetadata(config.getMetadata().resourceVersion(""))
+        try {
+            admissionAPI.createValidatingWebhookConfiguration(config, null)
+            sleep 1000
+            println "Created admission controller"
+        } catch (ApiException e) {
+            println "Error creating validating webhook ${e}"
+        }
     }
 }

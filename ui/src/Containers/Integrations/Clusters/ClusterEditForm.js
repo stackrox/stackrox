@@ -57,6 +57,9 @@ const K8sFields = ({ metadata }) => (
         </FormField>
         <MonitoringEndpointFormField />
         <RuntimeSupportFormField />
+        <FormField label="Enable Admission Controller">
+            <ReduxCheckboxField name="admissionController" />
+        </FormField>
     </React.Fragment>
 );
 
@@ -144,7 +147,8 @@ const initialValuesFactories = {
             }
         },
         monitoringEndpoint: 'monitoring.stackrox:443',
-        runtimeSupport: true
+        runtimeSupport: true,
+        admissionController: true
     })
 };
 

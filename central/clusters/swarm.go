@@ -19,7 +19,7 @@ func newSwarm() Deployer {
 	return &swarm{}
 }
 
-func (s *swarm) Render(c Wrap) ([]*zip.File, error) {
+func (s *swarm) Render(c Wrap, _ []byte) ([]*zip.File, error) {
 	var swarmParams *storage.SwarmParams
 	clusterSwarm, ok := c.OrchestratorParams.(*storage.Cluster_Swarm)
 	if ok {

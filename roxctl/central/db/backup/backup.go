@@ -18,9 +18,10 @@ const timeout = 10 * time.Second
 // Command defines the db backup command
 func Command() *cobra.Command {
 	c := &cobra.Command{
-		Use:   "backup",
-		Short: "Save a snapshot of the DB as a backup.",
-		Long:  "Save a snapshot of the DB as a backup.",
+		Use:          "backup",
+		Short:        "Save a snapshot of the DB as a backup.",
+		Long:         "Save a snapshot of the DB as a backup.",
+		SilenceUsage: true,
 		RunE: func(c *cobra.Command, _ []string) error {
 			return getBackup()
 		},

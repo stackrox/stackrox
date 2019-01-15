@@ -6,6 +6,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	"github.com/stackrox/rox/central/enrichment"
+	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 )
 
 var (
@@ -16,7 +17,7 @@ var (
 )
 
 func initialize() {
-	en = New(enrichment.Singleton(), lifecycle.SingletonManager())
+	en = New(enrichment.Singleton(), lifecycle.SingletonManager(), deploymentDataStore.Singleton(), imageDatastore.Singleton())
 	loop = NewLoop(en, deploymentDataStore.Singleton())
 }
 

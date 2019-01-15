@@ -5,9 +5,13 @@ class TestGroups {
 	protected static final INTEGRATION_CATEGORY = "it"
 	protected static final INTEGRATION_CATEGORY_CLASS = "groups.Integration"
 
+	protected static final ENFORCEMENT_CATEGORY = "enforcement"
+	protected static final ENFORCEMENT_CATEGORY_CLASS = "groups.PolicyEnforcement"
+
 	private static final groupDefinitions = [
 			(BAT_CATEGORY)    : BAT_CATEGORY_CLASS,
-			(INTEGRATION_CATEGORY)    : INTEGRATION_CATEGORY_CLASS
+			(INTEGRATION_CATEGORY)    : INTEGRATION_CATEGORY_CLASS,
+			(ENFORCEMENT_CATEGORY)    : ENFORCEMENT_CATEGORY_CLASS
 	]
 
 	private final Collection<String> groupsParam

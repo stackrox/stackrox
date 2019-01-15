@@ -43,6 +43,7 @@ import io.fabric8.openshift.api.model.SecurityContextConstraintsBuilder
 import io.fabric8.openshift.client.DefaultOpenShiftClient
 import io.fabric8.openshift.client.OpenShiftClient
 import io.fabric8.kubernetes.api.model.Quantity
+import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
 import objects.DaemonSet
 import objects.Deployment
 import objects.NetworkPolicy
@@ -628,7 +629,9 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
         Private K8S Support functions
     */
 
-    private createDeploymentNoWait(Deployment deployment) {
+    def createDeploymentNoWait(Deployment deployment) {
+        deployment.getNamespace() != null ?: deployment.setNamespace(this.namespace)
+
         DeploymentBuilder dep = new DeploymentBuilder()
                 .withNewMetadata()
                         .withName(deployment.name)
@@ -938,5 +941,16 @@ class OpenShift extends OrchestratorCommon implements OrchestratorMain {
         }
 
         return networkPolicy.endSpec().build()
+    }
+
+    V1beta1ValidatingWebhookConfiguration getAdmissionController() {
+    }
+
+    def deleteAdmissionController(String name) {
+        println name
+    }
+
+    def createAdmissionController(V1beta1ValidatingWebhookConfiguration config) {
+        println config
     }
 }

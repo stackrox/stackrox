@@ -6,9 +6,9 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/enrichment"
 	multiplierStore "github.com/stackrox/rox/central/multiplier/store"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
+	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -46,7 +46,7 @@ type serviceImpl struct {
 	datastore         datastore.DataStore
 	processIndicators processIndicatorStore.DataStore
 	multipliers       multiplierStore.Store
-	enricher          enrichment.Enricher
+	manager           manager.Manager
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -181,7 +181,7 @@ func (s *serviceImpl) AddMultiplier(ctx context.Context, request *storage.Multip
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	request.Id = id
-	s.enricher.UpdateMultiplier(request)
+	s.manager.UpdateMultiplier(request)
 	return request, nil
 }
 
@@ -190,7 +190,7 @@ func (s *serviceImpl) UpdateMultiplier(ctx context.Context, request *storage.Mul
 	if err := s.multipliers.UpdateMultiplier(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	s.enricher.UpdateMultiplier(request)
+	s.manager.UpdateMultiplier(request)
 	return &v1.Empty{}, nil
 }
 
@@ -205,6 +205,6 @@ func (s *serviceImpl) RemoveMultiplier(ctx context.Context, request *v1.Resource
 		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	s.enricher.RemoveMultiplier(request.GetId())
+	s.manager.RemoveMultiplier(request.GetId())
 	return &v1.Empty{}, nil
 }

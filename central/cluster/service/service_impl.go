@@ -9,8 +9,8 @@ import (
 	"github.com/docker/distribution/reference"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/monitoring"
+	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -44,8 +44,8 @@ var (
 
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
-	datastore datastore.DataStore
-	enricher  enrichment.Enricher
+	datastore   datastore.DataStore
+	riskManager manager.Manager
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -194,7 +194,6 @@ func (s *serviceImpl) DeleteCluster(ctx context.Context, request *v1.ResourceByI
 	if err := s.datastore.RemoveCluster(request.GetId()); err != nil {
 		return nil, err
 	}
-	s.enricher.ReprocessRiskAsync()
-
+	s.riskManager.ReprocessRiskAsync()
 	return &v1.Empty{}, nil
 }

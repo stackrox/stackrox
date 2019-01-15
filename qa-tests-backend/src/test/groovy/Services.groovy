@@ -1,4 +1,5 @@
 import io.grpc.StatusRuntimeException
+import io.stackrox.proto.api.v1.DetectionServiceOuterClass.BuildDetectionRequest
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import orchestratormanager.OrchestratorType
 import services.BaseService
@@ -277,16 +278,15 @@ class Services extends BaseService {
       }
 
     static requestBuildImageScan(String registry, String remote, String tag) {
-        return getDetectionClient().detectBuildTime(
-                        ImageOuterClass.Image.newBuilder()
-                                    .setName(ImageOuterClass.ImageName.newBuilder()
-                                    .setRegistry(registry)
-                                    .setRemote(remote)
-                                    .setTag(tag)
-                                    .build()
-                        )
-                                    .build()
-            )
+        return getDetectionClient().detectBuildTime(BuildDetectionRequest.newBuilder().setImage(
+                ImageOuterClass.Image.newBuilder()
+                        .setName(ImageOuterClass.ImageName.newBuilder()
+                        .setRegistry(registry)
+                        .setRemote(remote)
+                        .setTag(tag)
+                        .build()
+                )
+        ).build())
       }
 
     static updatePolicy(Policy policyDef) {

@@ -15,6 +15,37 @@ class Enforcement extends BaseSpecification {
     private final static String LATEST_TAG = "Latest tag"
 
     @Category([BAT, Integration, PolicyEnforcement])
+    def "Test Admission Controller Enforcement - Integration"() {
+        // This test verifies enforcement by triggering a enforcement via admission controller
+
+        given:
+        "Add deployment time enforcement to an existing policy"
+        def startEnforcements = Services.updatePolicyEnforcement(
+                CONTAINER_PORT_22_POLICY,
+                [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,]
+        )
+
+        when:
+        "Create Deployment to test scale-down enforcement"
+        def count = orchestrator.getDeploymentCount()
+        Deployment d = new Deployment()
+                .setName("admission-controller-enforcement")
+                .setImage("nginx")
+                .addPort(22)
+                .addLabel("app", "admission-controller-enforcement")
+                .setSkipReplicaWait(true)
+
+        orchestrator.createDeploymentNoWait(d)
+
+        then:
+        assert count == orchestrator.getDeploymentCount()
+
+        cleanup:
+        "restore enforcement state of policy and remove deployment"
+        Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
+    }
+
+    @Category([BAT, Integration, PolicyEnforcement])
     def "Test Kill Enforcement - Integration"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for Kill Pod enforcement
@@ -77,6 +108,10 @@ class Enforcement extends BaseSpecification {
 
         when:
         "Create Deployment to test scale-down enforcement"
+        def ac = orchestrator.getAdmissionController()
+        if (ac != null) {
+            orchestrator.deleteAdmissionController(ac.getMetadata().getName())
+        }
         Deployment d = new Deployment()
                 .setName("scale-down-enforcement-int")
                 .setImage("nginx")
@@ -113,6 +148,7 @@ class Enforcement extends BaseSpecification {
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
+        orchestrator.createAdmissionController(ac)
         Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
         orchestrator.deleteDeployment(d)
     }
@@ -131,6 +167,11 @@ class Enforcement extends BaseSpecification {
 
         when:
         "Create Deployment to test node constraint enforcement"
+        def ac = orchestrator.getAdmissionController()
+        if (ac != null) {
+            orchestrator.deleteAdmissionController(ac.getMetadata().getName())
+        }
+
         Deployment d = new Deployment()
                 .setName("node-constraint-enforcement-int")
                 .setImage("nginx")
@@ -169,6 +210,7 @@ class Enforcement extends BaseSpecification {
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
+        orchestrator.createAdmissionController(ac)
         Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
         orchestrator.deleteDeployment(d)
     }
@@ -229,6 +271,10 @@ class Enforcement extends BaseSpecification {
 
         when:
         "Create Deployment to test scale-down and Node Selection enforcement"
+        def ac = orchestrator.getAdmissionController()
+        if (ac != null) {
+            orchestrator.deleteAdmissionController(ac.getMetadata().getName())
+        }
         Deployment d = new Deployment()
                 .setName("scale-node-deployment-enforcement-int")
                 .setImage("nginx")
@@ -268,6 +314,7 @@ class Enforcement extends BaseSpecification {
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
+        orchestrator.createAdmissionController(ac)
         Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
         orchestrator.deleteDeployment(d)
     }
@@ -288,6 +335,11 @@ class Enforcement extends BaseSpecification {
 
         when:
         "Create DaemonSet to test scale-down and Node Selection enforcement"
+        def ac = orchestrator.getAdmissionController()
+        if (ac != null) {
+            print ac
+            orchestrator.deleteAdmissionController(ac.getMetadata().getName())
+        }
         DaemonSet d = new DaemonSet()
                 .setName("scale-node-daemonset-enforcement-int")
                 .setImage("nginx")
@@ -326,6 +378,7 @@ class Enforcement extends BaseSpecification {
 
         cleanup:
         "restore enforcement state of policy and remove deployment"
+        orchestrator.createAdmissionController(ac)
         Services.updatePolicyEnforcement(CONTAINER_PORT_22_POLICY, startEnforcements)
         d.delete()
     }

@@ -21,10 +21,11 @@ import (
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	sensor "github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	networkConnManager "github.com/stackrox/rox/sensor/common/networkflow/manager"
 	networkFlowService "github.com/stackrox/rox/sensor/common/networkflow/service"
-	signalService "github.com/stackrox/rox/sensor/common/service"
+	signalService "github.com/stackrox/rox/sensor/common/signal"
 	"google.golang.org/grpc"
 )
 
@@ -118,6 +119,13 @@ func (s *Sensor) Start() {
 	}
 
 	s.profilingServer = s.startProfilingServer()
+
+	customRoutes = append(customRoutes, routes.CustomRoute{
+		Route:         "/",
+		Authorizer:    allow.Anonymous(),
+		ServerHandler: admissioncontroller.NewHandler(s.conn),
+		Compression:   false,
+	})
 
 	// Create grpc server with custom routes
 	config := pkgGRPC.Config{

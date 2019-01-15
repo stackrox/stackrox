@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/central/deployment/index"
-	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -12,7 +11,7 @@ import (
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
 type searcherImpl struct {
-	storage store.Store
+	storage store
 
 	indexer index.Indexer
 }

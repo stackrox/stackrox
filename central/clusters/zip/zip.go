@@ -89,7 +89,21 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	baseFiles, err := deployer.Render(clusters.Wrap(*cluster))
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	authority, err := z.identityService.GetAuthorities(ctx, &v1.Empty{})
+	if err != nil {
+		writeGRPCStyleError(w, codes.Internal, err)
+		return
+	}
+	if len(authority.GetAuthorities()) != 1 {
+		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("authority: got %d authorities", len(authority.GetAuthorities())))
+		return
+	}
+
+	wrapper.AddFiles(zip.NewFile("ca.pem", authority.GetAuthorities()[0].GetCertificatePem(), 0))
+
+	baseFiles, err := deployer.Render(clusters.Wrap(*cluster), authority.GetAuthorities()[0].GetCertificatePem())
 	if err != nil {
 		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("could not render all files: %v", err))
 		return
@@ -98,7 +112,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	wrapper.AddFiles(baseFiles...)
 
 	// Add MTLS files for sensor
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	idReq := &v1.CreateServiceIdentityRequest{
 		Id:   cluster.GetId(),
@@ -161,20 +175,6 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		wrapper.AddFiles(zip.NewFile("monitoring-ca.pem", monitoringCA, 0))
 	}
-
-	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	authority, err := z.identityService.GetAuthorities(ctx, &v1.Empty{})
-	if err != nil {
-		writeGRPCStyleError(w, codes.Internal, err)
-		return
-	}
-	if len(authority.GetAuthorities()) != 1 {
-		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("authority: got %d authorities", len(authority.GetAuthorities())))
-		return
-	}
-
-	wrapper.AddFiles(zip.NewFile("ca.pem", authority.GetAuthorities()[0].GetCertificatePem(), 0))
 
 	bytes, err := wrapper.Zip()
 	if err != nil {

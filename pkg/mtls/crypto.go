@@ -164,7 +164,7 @@ func IssueNewCertFromCA(subj Subject, caCert, caKey []byte) (certPEM, keyPEM []b
 	}
 
 	req := cfsigner.SignRequest{
-		Hosts:   []string{subj.Hostname()},
+		Hosts:   subj.AllHostnames(),
 		Request: string(csrBytes),
 		Subject: &cfsigner.Subject{
 			CN:           subj.CN(),
@@ -207,7 +207,7 @@ func IssueNewCert(subj Subject, store serviceIdentityStorage) (certPEM, keyPEM [
 	}
 
 	req := cfsigner.SignRequest{
-		Hosts:   []string{subj.Hostname()},
+		Hosts:   subj.AllHostnames(),
 		Request: string(csrBytes),
 		Subject: &cfsigner.Subject{
 			CN:           subj.CN(),

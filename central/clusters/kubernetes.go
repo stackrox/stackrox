@@ -1,6 +1,8 @@
 package clusters
 
 import (
+	"encoding/base64"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/zip"
@@ -25,7 +27,9 @@ var monitoringFilenames = []string{
 	"kubernetes/kubectl/telegraf.conf",
 }
 
-func (k *kubernetes) Render(c Wrap) ([]*zip.File, error) {
+var admissionController = "kubernetes/kubectl/admission-controller.yaml"
+
+func (k *kubernetes) Render(c Wrap, ca []byte) ([]*zip.File, error) {
 	var kubernetesParams *storage.KubernetesParams
 	clusterKube, ok := c.OrchestratorParams.(*storage.Cluster_Kubernetes)
 	if ok {
@@ -47,6 +51,11 @@ func (k *kubernetes) Render(c Wrap) ([]*zip.File, error) {
 
 	if c.MonitoringEndpoint != "" {
 		filenames = append(filenames, monitoringFilenames...)
+	}
+
+	if c.AdmissionController {
+		fields["CABundle"] = base64.StdEncoding.EncodeToString(ca)
+		filenames = append(filenames, admissionController)
 	}
 
 	return renderFilenames(filenames, fields, "/data/assets/docker-auth.sh")

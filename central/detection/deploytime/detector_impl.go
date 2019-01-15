@@ -5,7 +5,10 @@ import (
 
 	ptypes "github.com/gogo/protobuf/types"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/detection/deployment"
+	"github.com/stackrox/rox/central/globalindex"
+	imageIndexer "github.com/stackrox/rox/central/image/index"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
@@ -14,12 +17,42 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
+const (
+	deploymentID    = "deployment-id"
+	imageIDTemplate = "image-id-%d"
+)
+
 var logger = logging.LoggerForModule()
 
 type detectorImpl struct {
 	policySet deployment.PolicySet
 
 	deployments deploymentDataStore.DataStore
+}
+
+// Detect runs detection on an deployment, returning any generated alerts.
+func (d *detectorImpl) Detect(deployment *storage.Deployment) ([]*storage.Alert, error) {
+	tempIndex, err := globalindex.MemOnlyIndex()
+	if err != nil {
+		return nil, fmt.Errorf("initializing temp index: %s", err)
+	}
+	imageIndex := imageIndexer.New(tempIndex)
+	deploymentIndex := deploymentIndexer.New(tempIndex)
+	if deployment.GetId() == "" {
+		deployment.Id = deploymentID
+	}
+	for i, container := range deployment.GetContainers() {
+		if container.GetImage().GetId() == "" {
+			container.Image.Id = fmt.Sprintf(imageIDTemplate, i)
+		}
+		if err := imageIndex.AddImage(container.GetImage()); err != nil {
+			return nil, err
+		}
+	}
+	if err := deploymentIndex.AddDeployment(deployment); err != nil {
+		return nil, err
+	}
+	return d.evaluateAlertsForDeployment(deploymentIndex, deployment)
 }
 
 // UpsertPolicy adds or updates a policy in the set.
@@ -33,15 +66,14 @@ func (d *detectorImpl) RemovePolicy(policyID string) error {
 
 }
 
-func (d *detectorImpl) AlertsForDeployment(deployment *storage.Deployment) ([]*storage.Alert, error) {
-	// Get the new and old alerts for the deployment.
+func (d *detectorImpl) evaluateAlertsForDeployment(searcher searchbasedpolicies.Searcher, deployment *storage.Deployment) ([]*storage.Alert, error) {
 	var newAlerts []*storage.Alert
 	err := d.policySet.ForEach(func(p *storage.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
 		if shouldProcess != nil && !shouldProcess(deployment) {
 			return nil
 		}
 
-		violations, err := matcher.MatchOne(d.deployments, deployment.GetId())
+		violations, err := matcher.MatchOne(searcher, deployment.GetId())
 		if err != nil {
 			return fmt.Errorf("evaluating violations for policy %s; deployment %s/%s: %s", p.GetName(), deployment.GetNamespace(), deployment.GetName(), err)
 		}
@@ -55,6 +87,10 @@ func (d *detectorImpl) AlertsForDeployment(deployment *storage.Deployment) ([]*s
 		return nil, err
 	}
 	return newAlerts, nil
+}
+
+func (d *detectorImpl) AlertsForDeployment(deployment *storage.Deployment) ([]*storage.Alert, error) {
+	return d.evaluateAlertsForDeployment(d.deployments, deployment)
 }
 
 func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*storage.Alert, error) {

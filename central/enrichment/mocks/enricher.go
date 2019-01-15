@@ -33,55 +33,30 @@ func (m *MockEnricher) EXPECT() *MockEnricherMockRecorder {
 	return m.recorder
 }
 
-// Enrich mocks base method
-func (m *MockEnricher) Enrich(arg0 *storage.Deployment) (bool, error) {
-	ret := m.ctrl.Call(m, "Enrich", arg0)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+// EnrichDeployment mocks base method
+func (m *MockEnricher) EnrichDeployment(arg0 *storage.Deployment) ([]*storage.Image, bool, error) {
+	ret := m.ctrl.Call(m, "EnrichDeployment", arg0)
+	ret0, _ := ret[0].([]*storage.Image)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// Enrich indicates an expected call of Enrich
-func (mr *MockEnricherMockRecorder) Enrich(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Enrich", reflect.TypeOf((*MockEnricher)(nil).Enrich), arg0)
+// EnrichDeployment indicates an expected call of EnrichDeployment
+func (mr *MockEnricherMockRecorder) EnrichDeployment(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichDeployment", reflect.TypeOf((*MockEnricher)(nil).EnrichDeployment), arg0)
 }
 
-// RemoveMultiplier mocks base method
-func (m *MockEnricher) RemoveMultiplier(arg0 string) {
-	m.ctrl.Call(m, "RemoveMultiplier", arg0)
+// EnrichDeploymentWithEmptyImages mocks base method
+func (m *MockEnricher) EnrichDeploymentWithEmptyImages(arg0 *storage.Deployment) ([]*storage.Image, bool, error) {
+	ret := m.ctrl.Call(m, "EnrichDeploymentWithEmptyImages", arg0)
+	ret0, _ := ret[0].([]*storage.Image)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// RemoveMultiplier indicates an expected call of RemoveMultiplier
-func (mr *MockEnricherMockRecorder) RemoveMultiplier(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveMultiplier", reflect.TypeOf((*MockEnricher)(nil).RemoveMultiplier), arg0)
-}
-
-// ReprocessDeploymentRiskAsync mocks base method
-func (m *MockEnricher) ReprocessDeploymentRiskAsync(arg0 *storage.Deployment) {
-	m.ctrl.Call(m, "ReprocessDeploymentRiskAsync", arg0)
-}
-
-// ReprocessDeploymentRiskAsync indicates an expected call of ReprocessDeploymentRiskAsync
-func (mr *MockEnricherMockRecorder) ReprocessDeploymentRiskAsync(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReprocessDeploymentRiskAsync", reflect.TypeOf((*MockEnricher)(nil).ReprocessDeploymentRiskAsync), arg0)
-}
-
-// ReprocessRiskAsync mocks base method
-func (m *MockEnricher) ReprocessRiskAsync() {
-	m.ctrl.Call(m, "ReprocessRiskAsync")
-}
-
-// ReprocessRiskAsync indicates an expected call of ReprocessRiskAsync
-func (mr *MockEnricherMockRecorder) ReprocessRiskAsync() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReprocessRiskAsync", reflect.TypeOf((*MockEnricher)(nil).ReprocessRiskAsync))
-}
-
-// UpdateMultiplier mocks base method
-func (m *MockEnricher) UpdateMultiplier(arg0 *storage.Multiplier) {
-	m.ctrl.Call(m, "UpdateMultiplier", arg0)
-}
-
-// UpdateMultiplier indicates an expected call of UpdateMultiplier
-func (mr *MockEnricherMockRecorder) UpdateMultiplier(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateMultiplier", reflect.TypeOf((*MockEnricher)(nil).UpdateMultiplier), arg0)
+// EnrichDeploymentWithEmptyImages indicates an expected call of EnrichDeploymentWithEmptyImages
+func (mr *MockEnricherMockRecorder) EnrichDeploymentWithEmptyImages(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichDeploymentWithEmptyImages", reflect.TypeOf((*MockEnricher)(nil).EnrichDeploymentWithEmptyImages), arg0)
 }

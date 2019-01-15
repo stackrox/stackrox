@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"github.com/stackrox/rox/pkg/set"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -31,4 +32,21 @@ var (
 	ScaleToZeroSpec = v1beta1.ScaleSpec{
 		Replicas: 0,
 	}
+
+	deploymentResourceSet = set.NewStringSet(
+		Deployment,
+		DaemonSet,
+		Pod,
+		ReplicaSet,
+		ReplicationController,
+		StatefulSet,
+		CronJob,
+		Job,
+		DeploymentConfig,
+	)
 )
+
+// IsDeploymentResource will return true if the passed string is a type we can convert to our concept of Deployment
+func IsDeploymentResource(s string) bool {
+	return deploymentResourceSet.Contains(s)
+}

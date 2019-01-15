@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/enrichment"
+	"github.com/stackrox/rox/central/risk/manager"
 )
 
 var (
@@ -14,7 +14,7 @@ var (
 )
 
 func initialize() {
-	as = New(datastore.Singleton(), enrichment.Singleton())
+	as = New(datastore.Singleton(), manager.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

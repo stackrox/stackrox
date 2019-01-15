@@ -34,6 +34,11 @@ bat-test:
 	@echo "+ $@"
 	gradle test -Dgroups=bat
 
+.PHONY: enforcement-test
+enforcement-test:
+	@echo "+ $@"
+	gradle test -Dgroups=enforcement
+
 .PHONY: integration-test
 integration-test:
 	@echo "+ $@"

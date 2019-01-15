@@ -6,8 +6,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/mitchellh/go-wordwrap"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/stringutils"
 )
 
 const (
@@ -48,7 +48,7 @@ var (
 		template.FuncMap{
 			"failed": EnforcementFailedBuild,
 			"join":   strings.Join,
-			"wrap":   wrap,
+			"wrap":   stringutils.Wrap,
 		},
 	).Parse(failedTemplate))
 
@@ -91,13 +91,4 @@ func EnforcementFailedBuild(policy *storage.Policy) bool {
 		}
 	}
 	return false
-}
-
-// wrap performs line-wrapping of the given text at 80 characters in length.
-// Intended to be uses as a test template function.
-func wrap(text string) string {
-	wrapped := wordwrap.WrapString(text, 80)
-	wrapped = strings.TrimSpace(wrapped)
-	wrapped = strings.Replace(wrapped, "\n", "\n      ", -1)
-	return wrapped
 }
