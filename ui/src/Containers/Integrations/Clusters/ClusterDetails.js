@@ -41,6 +41,10 @@ const K8sDetails = ({ cluster }) => (
             value={get(cluster, 'kubernetes.params.namespace', 'N/A')}
         />
         <LabeledValue label="Monitoring Endpoint" value={cluster.monitoringEndpoint || 'N/A'} />
+        <LabeledValue
+            label="Admission Controller"
+            value={cluster.admissionController ? 'Enabled' : 'Disabled'}
+        />
     </React.Fragment>
 );
 K8sDetails.propTypes = {
