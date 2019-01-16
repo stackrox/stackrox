@@ -178,6 +178,30 @@ roleRef:
   name: {{.Namespace}}:view-nodes
   apiGroup: rbac.authorization.k8s.io
 ---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{.Namespace}}:update-namespaces
+rules:
+  - resources:
+      - namespaces
+    apiGroups: [""]
+    verbs:
+      - update
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{.Namespace}}:update-namespaces-binding
+subjects:
+  - kind: ServiceAccount
+    name: sensor
+    namespace: {{.Namespace}}
+roleRef:
+  kind: ClusterRole
+  name: {{.Namespace}}:update-namespaces
+  apiGroup: rbac.authorization.k8s.io
+---
 kind: SecurityContextConstraints
 apiVersion: v1
 metadata:
