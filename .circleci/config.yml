@@ -542,47 +542,41 @@ jobs:
 
       - *teardownGKE
 
+
   provision-openshift:
-    <<: *defaults
+    machine: true
+    environment:
+      - OPENSHIFT_AUTOMATION_VERSION: 0.4.0
     steps:
       - checkout
       - *checkOpenshiftLabel
-      - setup_remote_docker
-
-      - attach_workspace:
-          at: /go/src/github.com/stackrox/rox
 
       - run:
           name: Login to Docker Hub
           command: docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
 
       - run:
-          name: Generate ephemeral SSH key
+          name: Install kubectl
+          working_directory: /tmp
           command: |
-            mkdir openshift
-            ssh-keygen -t rsa -f openshift/id_rsa -C packer -N ''
-            cat openshift/id_rsa.pub
+            wget https://storage.googleapis.com/kubernetes-release/release/v1.11.2/bin/linux/amd64/kubectl
+            sudo install kubectl /usr/bin
 
       - run:
-          name: Pack openshift volume
+          name: Generate ephemeral SSH key
           command: |
-            docker create -v /data --name openshift alpine:3.8 /bin/true
-            docker cp openshift/id_rsa     openshift:/data
-            docker cp openshift/id_rsa.pub openshift:/data
+            mkdir -p openshift
+            ssh-keygen -t rsa -f openshift/id_rsa -C packer -N ''
+            chmod 0400 openshift/id_rsa openshift/id_rsa.pub
+            cat openshift/id_rsa.pub
 
       - run:
           name: Create cloud resources
           command: |
             docker run --rm -t \
-              --volumes-from openshift \
+              -v $PWD/openshift:/data \
               -e GOOGLE_CREDENTIALS="$OPENSHIFT_TERRAFORM_CREDENTIALS" \
-              stackrox/openshift-automation:terraform-0.3.0 create "${CIRCLE_SHA1:0:7}"
-
-      - run:
-          name: Unpack openshift volume
-          command: |
-            docker cp openshift:/data/terraform.tfstate openshift
-            docker cp openshift:/data/master            openshift
+              stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION create "${CIRCLE_SHA1:0:7}"
 
       - store_artifacts:
           path: openshift
@@ -592,37 +586,39 @@ jobs:
           name: Create Openshift cluster
           command: |
             docker run --rm -t \
-            --volumes-from openshift \
-            stackrox/openshift-automation:ansible-0.3.0
+            -v $PWD/openshift:/data \
+            stackrox/openshift-automation:ansible-$OPENSHIFT_AUTOMATION_VERSION
 
       - run:
-          name: Unpack openshift volume
+          name: Configure Kubeconfig
           command: |
-            docker cp openshift:/data/config openshift
-            ls -hl openshift
-          when: always
+            ls -lh $PWD/openshift
+            export KUBECONFIG=$PWD/openshift/config
+            kubectl get nodes
 
       - store_artifacts:
           path: openshift
           destination: openshift
 
       - persist_to_workspace:
-          root: /go/src/github.com/stackrox/rox
+          root: .
           paths:
-          - openshift
+            - openshift
 
       - run:
           name: Destroy Openshift cluster
           command: |
             docker run --rm -t \
-              --volumes-from openshift \
+              -v $PWD/openshift:/data \
               -e GOOGLE_CREDENTIALS="$OPENSHIFT_TERRAFORM_CREDENTIALS" \
-              stackrox/openshift-automation:terraform-0.3.0 destroy "${CIRCLE_SHA1:0:7}"
+              stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION destroy "${CIRCLE_SHA1:0:7}"
           when: on_fail
+
 
   openshift-tests:
     <<: *defaults
     environment:
+      - OPENSHIFT_AUTOMATION_VERSION: 0.4.0
       - LOCAL_PORT: 8000
       - RUNTIME_SUPPORT: true
       - MONITORING_SUPPORT: true
@@ -639,12 +635,21 @@ jobs:
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
 
+      - run:
+          name: Sanity check OpenShift Env
+          command: |
+            pwd
+            ls -lh $PWD/openshift
+            export KUBECONFIG=$PWD/openshift/config
+            oc get nodes
+
       - *setupRoxctl
 
       - run:
           name: Configure Deployment Environment
           command: |
             cat >>"$BASH_ENV" <<EOF
+              export KUBECONFIG=$PWD/openshift/config
               export CLAIRIFY_IMAGE_TAG=0.5.2
               export OPENSHIFT_HOST=$(cat openshift/master)
               export ROX_IMAGE_REGISTRY=docker.io
@@ -652,27 +657,6 @@ jobs:
               export REGISTRY_PASSWORD=$DOCKERHUB_PASSWORD
               export REGISTRY_USERNAME=$DOCKERHUB_USERNAME
             EOF
-
-      - run:
-          name: Configure Kubectl
-          command: |
-            cp openshift/config ~/.kube/
-            context="$(kubectl config get-contexts -o name | grep -v master)"
-            kubectl config use-context "$context"
-            kubectl get nodes
-
-      - run:
-          name: Configure SSH
-          command: |
-            mkdir -p ~/.ssh
-            install -m 0400 openshift/id_rsa openshift/id_rsa.pub ~/.ssh
-            ssh -o StrictHostKeyChecking=no "stackrox@$OPENSHIFT_HOST" uname -a
-
-      - run:
-          name: Generate Installation Bundle
-          command: |
-            docker run -i "stackrox/main:$MAIN_IMAGE_TAG" central generate openshift none > /tmp/openshift.zip
-            unzip /tmp/openshift.zip -d openshift
 
       - run:
           name: Deploy to remote cluster
@@ -749,7 +733,7 @@ jobs:
             docker run --rm -t \
               --volumes-from openshift \
               -e GOOGLE_CREDENTIALS="$OPENSHIFT_TERRAFORM_CREDENTIALS" \
-              stackrox/openshift-automation:terraform-0.3.0 destroy "${CIRCLE_SHA1:0:7}"
+              stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION destroy "${CIRCLE_SHA1:0:7}"
           when: always
 
   oss-audit:
