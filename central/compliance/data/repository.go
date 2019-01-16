@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type repository struct {
@@ -11,10 +12,11 @@ type repository struct {
 	nodes       map[string]*storage.Node
 	deployments map[string]*storage.Deployment
 
-	networkPolicies   map[string]*storage.NetworkPolicy
-	networkGraph      *v1.NetworkGraph
-	policies          map[string]*storage.Policy
-	imageIntegrations []*storage.ImageIntegration
+	networkPolicies    map[string]*storage.NetworkPolicy
+	networkGraph       *v1.NetworkGraph
+	policies           map[string]*storage.Policy
+	imageIntegrations  []*storage.ImageIntegration
+	categoryToPolicies map[string]set.StringSet // maps categories to policy set
 }
 
 func (r *repository) Cluster() *storage.Cluster {
@@ -39,6 +41,10 @@ func (r *repository) NetworkGraph() *v1.NetworkGraph {
 
 func (r *repository) Policies() map[string]*storage.Policy {
 	return r.policies
+}
+
+func (r *repository) PolicyCategories() map[string]set.StringSet {
+	return r.categoryToPolicies
 }
 
 func (r *repository) ImageIntegrations() []*storage.ImageIntegration {
@@ -85,6 +91,24 @@ func policiesByName(policies []*storage.Policy) map[string]*storage.Policy {
 	return result
 }
 
+func policyCategories(policies []*storage.Policy) map[string]set.StringSet {
+	result := make(map[string]set.StringSet, len(policies))
+	for _, policy := range policies {
+		if policy.Disabled {
+			continue
+		}
+		for _, category := range policy.Categories {
+			policySet, ok := result[category]
+			if !ok {
+				policySet = set.NewStringSet()
+			}
+			policySet.Add(policy.Name)
+			result[category] = policySet
+		}
+	}
+	return result
+}
+
 func (r *repository) init(domain framework.ComplianceDomain, f *factory) error {
 	r.cluster = domain.Cluster().Cluster()
 	r.nodes = nodesByID(framework.Nodes(domain))
@@ -107,7 +131,9 @@ func (r *repository) init(domain framework.ComplianceDomain, f *factory) error {
 	if err != nil {
 		return err
 	}
+
 	r.policies = policiesByName(policies)
+	r.categoryToPolicies = policyCategories(policies)
 
 	r.imageIntegrations, err = f.imageIntegrationStore.GetImageIntegrations(
 		&v1.GetImageIntegrationsRequest{},

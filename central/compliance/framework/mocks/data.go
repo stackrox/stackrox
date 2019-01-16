@@ -8,6 +8,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	set "github.com/stackrox/rox/pkg/set"
 	reflect "reflect"
 )
 
@@ -116,4 +117,16 @@ func (m *MockComplianceDataRepository) Policies() map[string]*storage.Policy {
 // Policies indicates an expected call of Policies
 func (mr *MockComplianceDataRepositoryMockRecorder) Policies() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Policies", reflect.TypeOf((*MockComplianceDataRepository)(nil).Policies))
+}
+
+// PolicyCategories mocks base method
+func (m *MockComplianceDataRepository) PolicyCategories() map[string]set.StringSet {
+	ret := m.ctrl.Call(m, "PolicyCategories")
+	ret0, _ := ret[0].(map[string]set.StringSet)
+	return ret0
+}
+
+// PolicyCategories indicates an expected call of PolicyCategories
+func (mr *MockComplianceDataRepositoryMockRecorder) PolicyCategories() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PolicyCategories", reflect.TypeOf((*MockComplianceDataRepository)(nil).PolicyCategories))
 }

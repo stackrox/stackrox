@@ -3,6 +3,7 @@ package framework
 import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 //go:generate mockgen-wrapper ComplianceDataRepository
@@ -20,4 +21,5 @@ type ComplianceDataRepository interface {
 	NetworkGraph() *v1.NetworkGraph
 	Policies() map[string]*storage.Policy
 	ImageIntegrations() []*storage.ImageIntegration
+	PolicyCategories() map[string]set.StringSet
 }
