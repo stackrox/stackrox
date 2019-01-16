@@ -172,7 +172,7 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
-  digest = "1:d99f8659919d6f509feafcb9528519fe85d0243bac7002306e08849d3c9b9a5d"
+  digest = "1:de88d6472b4fcb8743db861c1ea09d581d3077496d26d3f0e00807da493c283b"
   name = "github.com/blevesearch/bleve"
   packages = [
     ".",
@@ -216,7 +216,7 @@
     "size",
   ]
   pruneopts = "NUT"
-  revision = "ec2b558603928f10cf9f2e1d3e221ada3df66c5c"
+  revision = "a5bc3f469a24602c9af6e3d1d80258f2a42580c0"
   source = "https://github.com/connorgorman/bleve.git"
 
 [[projects]]
@@ -307,11 +307,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0f158bc2a43f0d7fe650905c5655598b6edf4ec2da3fcd9b8ebd9067a36a609e"
+  digest = "1:6a90f4bbdd3f9413ba93beaa6911da7b48e151f521f1f3d6ee42d007e9b4676c"
   name = "github.com/couchbase/vellum"
   packages = [
     ".",
-    "levenshtein",
+    "levenshtein2",
     "regexp",
     "utf8",
   ]
