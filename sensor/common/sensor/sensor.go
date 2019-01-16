@@ -121,7 +121,7 @@ func (s *Sensor) Start() {
 	s.profilingServer = s.startProfilingServer()
 
 	customRoutes = append(customRoutes, routes.CustomRoute{
-		Route:         "/",
+		Route:         "/admissioncontroller",
 		Authorizer:    allow.Anonymous(),
 		ServerHandler: admissioncontroller.NewHandler(s.conn),
 		Compression:   false,
