@@ -24,6 +24,7 @@ var (
 			"/v1.ComplianceService/GetStandard",
 			"/v1.ComplianceService/GetComplianceControlResults",
 			"/v1.ComplianceService/GetComplianceStatistics",
+			"/v1.ComplianceService/GetAggregatedResults",
 		},
 	})
 )
@@ -98,4 +99,8 @@ func (s *serviceImpl) GetComplianceControlResults(ctx context.Context, query *v1
 	return &v1.ComplianceControlResultsResponse{
 		Results: results,
 	}, nil
+}
+
+func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.ComplianceAggregation_Request) (*v1.ComplianceAggregation_Response, error) {
+	return nil, status.Error(codes.Unimplemented, "not yet implemented")
 }

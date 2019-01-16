@@ -10,6 +10,47 @@ import "api/v1/empty.proto";
 
 package v1;
 
+message ComplianceAggregation {
+    enum Scope {
+        UNKNOWN = 0;
+        STANDARD = 1;
+        CLUSTER = 2;
+        CATEGORY = 3;
+        CONTROL = 4;
+        NAMESPACE = 5;
+        NODE = 6;
+        DEPLOYMENT = 7;
+    }
+
+    // Next available tag: 3
+    message AggregationKey {
+        Scope scope = 1;
+        string id = 2;
+    }
+
+    // Next available tag: 4
+    message Request {
+        repeated Scope group_by = 1;
+        Scope unit = 2;
+
+        RawQuery where = 3;
+    }
+
+    // Next available tag: 5
+    message Result {
+        repeated AggregationKey aggregation_keys = 1;
+        Scope unit = 2;
+
+        int64 num_passing = 3;
+        int64 num_failing = 4;
+    }
+
+    // Next available tag: 2
+    message Response {
+        repeated Result results = 1;
+    }
+}
+
 message ComplianceStandardMetadata {
     string id          = 1;
     string name        = 2;
@@ -65,6 +106,12 @@ service ComplianceService {
     rpc GetComplianceControlResults(RawQuery) returns (ComplianceControlResultsResponse) {
         option (google.api.http) = {
             get: "/v1/compliance/results"
+        };
+    }
+
+    rpc GetAggregatedResults(ComplianceAggregation.Request) returns (ComplianceAggregation.Response) {
+        option (google.api.http) = {
+            get: "/v1/compliance/aggregatedresults"
         };
     }
 }
