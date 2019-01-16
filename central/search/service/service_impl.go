@@ -100,7 +100,7 @@ func shouldProcessAlerts(q *v1.Query) (shouldProcess bool) {
 		if !ok {
 			return
 		}
-		if _, ok := mappings.OptionsMap[search.FieldLabel(mfq.MatchFieldQuery.Field)]; ok {
+		if _, ok := mappings.OptionsMap.Get(mfq.MatchFieldQuery.Field); ok {
 			shouldProcess = true
 		}
 	}

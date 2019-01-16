@@ -123,7 +123,7 @@ func TestCategoryToOptionsMap(t *testing.T) {
 	for category, optionsMap := range CategoryToOptionsMap {
 		t.Run(category.String(), func(t *testing.T) {
 
-			for option, searchField := range optionsMap {
+			for option, searchField := range optionsMap.Original() {
 				t.Run(option.String(), func(t *testing.T) {
 					// Basic checks
 					require.NotEqual(t, searchField.GetCategory(), v1.SearchCategory_SEARCH_UNSET)

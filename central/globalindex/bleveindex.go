@@ -25,7 +25,7 @@ import (
 
 var (
 	// CategoryToOptionsMap is a mapping from search categories to the options map for that category.
-	CategoryToOptionsMap = map[v1.SearchCategory]map[search.FieldLabel]*v1.SearchField{
+	CategoryToOptionsMap = map[v1.SearchCategory]search.OptionsMap{
 		v1.SearchCategory_ALERTS:             alertMapping.OptionsMap,
 		v1.SearchCategory_DEPLOYMENTS:        deploymentMapping.OptionsMap,
 		v1.SearchCategory_IMAGES:             imageMapping.OptionsMap,
@@ -93,7 +93,7 @@ func getIndexMapping() mapping.IndexMapping {
 	indexMapping.TypeField = "Type"
 
 	for category, optMap := range CategoryToOptionsMap {
-		indexMapping.AddDocumentMapping(category.String(), blevesearch.DocumentMappingFromOptionsMap(optMap))
+		indexMapping.AddDocumentMapping(category.String(), blevesearch.DocumentMappingFromOptionsMap(optMap.Original()))
 	}
 
 	disabledSection := bleve.NewDocumentDisabledMapping()

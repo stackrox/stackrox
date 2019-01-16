@@ -1,6 +1,7 @@
 package index
 
 import (
+	"fmt"
 	"sort"
 	"testing"
 
@@ -577,6 +578,22 @@ func (suite *DeploymentIndexTestSuite) TestBatches() {
 	suite.NoError(err)
 	for _, d := range deployments {
 		results, err := suite.indexer.Search(search.NewQueryBuilder().AddExactMatches(search.DeploymentID, d.GetId()).ProtoQuery())
+		suite.NoError(err)
+		suite.Len(results, 1)
+	}
+}
+
+func (suite *DeploymentIndexTestSuite) TestCaseInsensitivityOfFieldNames() {
+	dep := fixtures.GetDeployment()
+	suite.NoError(suite.indexer.AddDeployment(dep))
+	ns := dep.GetNamespace()
+
+	upperCaseQ, err := search.ParseRawQuery(fmt.Sprintf("Namespace:%s", ns))
+	suite.NoError(err)
+	lowerCaseQ, err := search.ParseRawQuery(fmt.Sprintf("namespace:%s", ns))
+	suite.NoError(err)
+	for _, q := range []*v1.Query{upperCaseQ, lowerCaseQ} {
+		results, err := suite.indexer.Search(q)
 		suite.NoError(err)
 		suite.Len(results, 1)
 	}

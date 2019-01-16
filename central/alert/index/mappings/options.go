@@ -6,7 +6,7 @@ import (
 )
 
 // OptionsMap is exposed for e2e test.
-var OptionsMap = map[search.FieldLabel]*v1.SearchField{
+var OptionsMap = search.OptionsMapFromMap(map[search.FieldLabel]*v1.SearchField{
 	search.Violation:      search.NewStringField(v1.SearchCategory_ALERTS, "alert.violations.message"),
 	search.ViolationState: search.NewViolationStateField(v1.SearchCategory_ALERTS, "alert.state"),
 
@@ -23,4 +23,4 @@ var OptionsMap = map[search.FieldLabel]*v1.SearchField{
 	search.Namespace:      search.NewStringField(v1.SearchCategory_ALERTS, "alert.deployment.namespace"),
 	search.Label:          search.NewMapField(v1.SearchCategory_ALERTS, "alert.deployment.labels"),
 	search.DeploymentName: search.NewStringField(v1.SearchCategory_ALERTS, "alert.deployment.name"),
-}
+})

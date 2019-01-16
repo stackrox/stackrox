@@ -12,11 +12,11 @@ import (
 type queryConverter struct {
 	category     v1.SearchCategory
 	index        bleve.Index
-	optionsMap   map[search.FieldLabel]*v1.SearchField
+	optionsMap   search.OptionsMap
 	highlightCtx highlightContext
 }
 
-func newQueryConverter(category v1.SearchCategory, index bleve.Index, optionsMap map[search.FieldLabel]*v1.SearchField) *queryConverter {
+func newQueryConverter(category v1.SearchCategory, index bleve.Index, optionsMap search.OptionsMap) *queryConverter {
 	return &queryConverter{
 		category:     category,
 		index:        index,
@@ -75,7 +75,7 @@ func (c *queryConverter) matchLinkedFieldsQueryToBleve(mfqs []*v1.MatchFieldQuer
 		if mfq.GetField() == "" || mfq.GetValue() == "" {
 			continue
 		}
-		searchField, found := c.optionsMap[search.FieldLabel(mfq.GetField())]
+		searchField, found := c.optionsMap.Get(mfq.GetField())
 		if !found {
 			continue
 		}

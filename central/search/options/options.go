@@ -45,6 +45,6 @@ func GetOptions(categories []v1.SearchCategory) []string {
 func init() {
 	CategoryToOptionsSet = make(map[v1.SearchCategory]set.StringSet)
 	for category, optionsMap := range globalindex.CategoryToOptionsMap {
-		CategoryToOptionsSet[category] = generateSetFromOptionsMap(optionsMap)
+		CategoryToOptionsSet[category] = generateSetFromOptionsMap(optionsMap.Original())
 	}
 }

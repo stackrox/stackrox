@@ -233,7 +233,7 @@ func resolveMatchFieldQuery(index bleve.Index, category v1.SearchCategory, searc
 }
 
 // RunSearchRequest builds a query and runs it against the index.
-func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index, optionsMap map[searchPkg.FieldLabel]*v1.SearchField) ([]searchPkg.Result, error) {
+func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index, optionsMap searchPkg.OptionsMap) ([]searchPkg.Result, error) {
 	bleveQuery, highlightContext, err := buildQuery(index, category, q, optionsMap)
 	if err != nil {
 		return nil, err
@@ -266,7 +266,7 @@ func runQuery(query query.Query, index bleve.Index, highlightCtx highlightContex
 
 // buildQuery builds a bleve query for the input query
 // It is okay for the input query to be nil or empty; in this case, a query matching all documents of the given category will be returned.
-func buildQuery(index bleve.Index, category v1.SearchCategory, q *v1.Query, optionsMap map[searchPkg.FieldLabel]*v1.SearchField) (query.Query, highlightContext, error) {
+func buildQuery(index bleve.Index, category v1.SearchCategory, q *v1.Query, optionsMap searchPkg.OptionsMap) (query.Query, highlightContext, error) {
 	if q.GetQuery() == nil {
 		return typeQuery(category), nil, nil
 	}
