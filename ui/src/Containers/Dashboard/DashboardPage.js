@@ -1,21 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import {
-    Line,
-    BarChart,
-    Bar,
-    Cell,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ResponsiveContainer
-} from 'recharts';
-import { format, subDays } from 'date-fns';
 import * as Icon from 'react-feather';
 import Slider from 'react-slick';
-import { CarouselNextArrow, CarouselPrevArrow } from 'Components/CarouselArrows';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 
@@ -23,22 +9,16 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import TwoLevelPieChart from 'Components/visuals/TwoLevelPieChart';
-import CustomLineChart from 'Components/visuals/CustomLineChart';
 import DashboardBenchmarks from 'Containers/Dashboard/DashboardBenchmarks';
 import SeverityTile from 'Containers/Dashboard/SeverityTile';
 import TopRiskyDeployments from 'Containers/Dashboard/TopRiskyDeployments';
-import cloneDeep from 'lodash/cloneDeep';
 import { severityLabels } from 'messages/common';
 import { selectors } from 'reducers';
 import { actions as dashboardActions } from 'reducers/dashboard';
-
-//  @TODO: Have one source of truth for severity colors
-const severityColorMap = {
-    CRITICAL_SEVERITY: 'hsl(358, 81%, 80%)',
-    HIGH_SEVERITY: 'hsl(16, 81%, 80%)',
-    MEDIUM_SEVERITY: 'hsl(39, 80%, 80%)',
-    LOW_SEVERITY: 'hsl(230, 43%, 90%)'
-};
+import severityColorMap from 'constants/severityColors';
+import AlertsByTimeseriesChart from 'Containers/Dashboard/AlertsByTimeseriesChart';
+import slickSettings from 'constants/slickSettings';
+import ViolationsByClusterChart from './ViolationsByClusterChart';
 
 const severityPropType = PropTypes.oneOf([
     'CRITICAL_SEVERITY',
@@ -46,13 +26,6 @@ const severityPropType = PropTypes.oneOf([
     'MEDIUM_SEVERITY',
     'LOW_SEVERITY'
 ]);
-
-const emptyFunc = () => null;
-const slickSettings = {
-    dots: false,
-    nextArrow: <CarouselNextArrow onClick={emptyFunc} />,
-    prevArrow: <CarouselPrevArrow onClick={emptyFunc} />
-};
 
 const groupedViolationsPropType = PropTypes.arrayOf(
     PropTypes.shape({
@@ -87,129 +60,16 @@ class DashboardPage extends Component {
         isViewFiltered: PropTypes.bool.isRequired
     };
 
-    makeBarClickHandler = (clusterName, severity) => () => {
-        // if clusters are not loaded yet, at least we can redirect to unfiltered violations
-        const clusterQuery = clusterName !== '' ? `cluster=${clusterName}` : '';
-        this.props.history.push(`/main/violations?severity=${severity}&${clusterQuery}`);
-    };
-
-    formatTimeseriesData = clusterData => {
-        if (!clusterData) return '';
-        // set a baseline zero'd object for the past week
-        const baselineData = {};
-        const xAxisBuckets = [];
-        for (let i = 6; i >= 0; i -= 1) {
-            const key = format(subDays(new Date(), i), 'MMM DD');
-            baselineData[key] = 0;
-            xAxisBuckets.push(key);
-        }
-        // set severities in timeAlertMap to have this zero'd data
-        const timeAlertMap = {};
-        const timeAlertInitialMap = {}; // this is the number of initial alerts that have come before
-        Object.keys(severityColorMap).forEach(severity => {
-            timeAlertMap[severity] = cloneDeep(baselineData);
-            timeAlertInitialMap[severity] = 0;
-        });
-
-        // populate actual data into timeAlertMap
-        clusterData.severities.forEach(severityObj => {
-            const { severity, events } = severityObj;
-            events.forEach(alert => {
-                const time = format(parseInt(alert.time, 10), 'MMM DD');
-                const alerts = timeAlertMap[severity][time];
-                if (alerts !== undefined) {
-                    switch (alert.type) {
-                        case 'CREATED':
-                            timeAlertMap[severity][time] += 1;
-                            break;
-                        case 'REMOVED':
-                            timeAlertMap[severity][time] -= 1;
-                            break;
-                        default:
-                            break;
-                    }
-                } else {
-                    timeAlertInitialMap[severity] += 1;
-                }
-            });
-        });
-
-        Object.keys(severityColorMap).forEach(severity => {
-            let runningSum = timeAlertInitialMap[severity];
-            Object.keys(baselineData).forEach(time => {
-                const prevVal = timeAlertMap[severity][time];
-                timeAlertMap[severity][time] += runningSum;
-                runningSum += prevVal;
-            });
-        });
-
-        // set data format for line chart
-        const cluster = {};
-        cluster.data = Object.keys(baselineData).map(time => ({
-            time,
-            low: timeAlertMap.LOW_SEVERITY[time],
-            medium: timeAlertMap.MEDIUM_SEVERITY[time],
-            high: timeAlertMap.HIGH_SEVERITY[time],
-            critical: timeAlertMap.CRITICAL_SEVERITY[time]
-        }));
-        cluster.name = clusterData.cluster;
-
-        return cluster;
-    };
-
     renderAlertsByTimeseries = () => {
         if (!this.props.alertsByTimeseries || !this.props.alertsByTimeseries.length) {
-            return (
-                <NoResultsMessage message="No data available. Please ensure your cluster is properly configured." />
-            );
+            return <NoResultsMessage />;
         }
-        return (
-            <div className="p-0 h-64 w-full overflow-hidden">
-                <Slider {...slickSettings}>
-                    {this.props.alertsByTimeseries.map(cluster => {
-                        const { data, name } = this.formatTimeseriesData(cluster);
-                        return (
-                            <div className="h-64" key={name}>
-                                <CustomLineChart
-                                    data={data}
-                                    name={name}
-                                    xAxisDataKey="time"
-                                    yAxisDataKey=""
-                                >
-                                    <Line
-                                        type="monotone"
-                                        dataKey="low"
-                                        stroke={severityColorMap.LOW_SEVERITY}
-                                    />
-                                    <Line
-                                        type="monotone"
-                                        dataKey="medium"
-                                        stroke={severityColorMap.MEDIUM_SEVERITY}
-                                    />
-                                    <Line
-                                        type="monotone"
-                                        dataKey="high"
-                                        stroke={severityColorMap.HIGH_SEVERITY}
-                                    />
-                                    <Line
-                                        type="monotone"
-                                        dataKey="critical"
-                                        stroke={severityColorMap.CRITICAL_SEVERITY}
-                                    />
-                                </CustomLineChart>
-                            </div>
-                        );
-                    })}
-                </Slider>
-            </div>
-        );
+        return <AlertsByTimeseriesChart clusterData={this.props.alertsByTimeseries} />;
     };
 
     renderViolationsByCluster = () => {
         if (!this.props.violationsByCluster || !this.props.violationsByCluster.length) {
-            return (
-                <NoResultsMessage message="No data available. Please ensure your cluster is properly configured." />
-            );
+            return <NoResultsMessage />;
         }
         const clusterCharts = [];
 
@@ -238,70 +98,7 @@ class DashboardPage extends Component {
             clusterCharts.push(barCharts);
             i += 4;
         }
-        return (
-            <div className="p-0 h-64 w-full">
-                <Slider {...slickSettings}>
-                    {clusterCharts.map((data, index) => (
-                        <div key={index}>
-                            <ResponsiveContainer className="flex-1 h-full w-full">
-                                <BarChart
-                                    stackOffset="expand"
-                                    maxBarSize={32}
-                                    barGap={16}
-                                    data={data}
-                                    margin={{
-                                        top: 5,
-                                        right: 10,
-                                        left: -30,
-                                        bottom: 5
-                                    }}
-                                >
-                                    <XAxis dataKey="name" />
-
-                                    <YAxis
-                                        domain={[0, 'dataMax']}
-                                        allowDecimals={false}
-                                        label={{
-                                            value: '',
-                                            angle: -90,
-                                            position: 'insideLeft',
-                                            textAnchor: 'end'
-                                        }}
-                                    />
-                                    <CartesianGrid strokeDasharray="1 1" />
-                                    <Tooltip offset={0} />
-                                    <Legend wrapperStyle={{ left: 0, width: '100%' }} />
-                                    {Object.keys(severityLabels).map(severity => {
-                                        const arr = [];
-                                        const bar = (
-                                            <Bar
-                                                name={severityLabels[severity]}
-                                                key={severityLabels[severity]}
-                                                dataKey={severityLabels[severity]}
-                                                fill={severityColorMap[severity]}
-                                            >
-                                                {data.map(entry => (
-                                                    <Cell
-                                                        key={entry.name}
-                                                        className="cursor-pointer"
-                                                        onClick={this.makeBarClickHandler(
-                                                            entry.name,
-                                                            severity
-                                                        )}
-                                                    />
-                                                ))}
-                                            </Bar>
-                                        );
-                                        arr.push(bar);
-                                        return arr;
-                                    })}
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    ))}
-                </Slider>
-            </div>
-        );
+        return <ViolationsByClusterChart clusterCharts={clusterCharts} />;
     };
 
     renderViolationsByPolicyCategory = () => {

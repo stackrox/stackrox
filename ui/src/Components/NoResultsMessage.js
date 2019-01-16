@@ -8,7 +8,11 @@ const NoResultsMessage = props => (
 );
 
 NoResultsMessage.propTypes = {
-    message: PropTypes.string.isRequired
+    message: PropTypes.string
+};
+
+NoResultsMessage.defaultProps = {
+    message: 'No data available. Please ensure your cluster is properly configured.'
 };
 
 export default NoResultsMessage;

@@ -1,12 +1,6 @@
+import severityColorMap from '../../../src/constants/severityColors';
+
 export const url = '/main/dashboard';
-
-const severityColors = {
-    CRITICAL_SEVERITY: 'hsl(358, 81%, 80%)',
-    HIGH_SEVERITY: 'hsl(16, 81%, 80%)',
-    MEDIUM_SEVERITY: 'hsl(39, 80%, 80%)',
-    LOW_SEVERITY: 'hsl(230, 43%, 90%)'
-};
-
 export const selectors = {
     navLink: 'nav li:contains("Dashboard") a',
     buttons: {
@@ -24,9 +18,9 @@ export const selectors = {
     chart: {
         xAxis: 'g.xAxis',
         grid: 'g.recharts-cartesian-grid',
-        medSeverityBar: `g.recharts-bar-rectangle path[fill="${severityColors.MEDIUM_SEVERITY}"]`,
-        lowSeverityBar: `g.recharts-bar-rectangle path[fill="${severityColors.LOW_SEVERITY}"]`,
-        medSeveritySector: `g.recharts-pie-sector path[fill="${severityColors.MEDIUM_SEVERITY}"]`,
+        medSeverityBar: `g.recharts-bar-rectangle path[fill="${severityColorMap.MEDIUM_SEVERITY}"]`,
+        lowSeverityBar: `g.recharts-bar-rectangle path[fill="${severityColorMap.LOW_SEVERITY}"]`,
+        medSeveritySector: `g.recharts-pie-sector path[fill="${severityColorMap.MEDIUM_SEVERITY}"]`,
         legendItem: `span.recharts-legend-item-text`
     },
     slick: {
