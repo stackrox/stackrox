@@ -6,14 +6,71 @@ import io.stackrox.proto.api.v1.BenchmarkScanServiceOuterClass.GetBenchmarkScanR
 import io.stackrox.proto.api.v1.BenchmarkServiceGrpc
 import io.stackrox.proto.api.v1.BenchmarkServiceOuterClass.GetBenchmarksRequest
 import io.stackrox.proto.api.v1.BenchmarkTriggerServiceGrpc
+import io.stackrox.proto.api.v1.Common
+import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.storage.BenchmarkScanOuterClass.BenchmarkScan
 import io.stackrox.proto.storage.BenchmarkTriggerOuterClass.BenchmarkTrigger
+import io.stackrox.proto.storage.Compliance
+import io.stackrox.proto.storage.Compliance.ComplianceControlResult
+import v1.ComplianceServiceGrpc
+import v1.ComplianceServiceOuterClass.ComplianceStandard
+import v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
 
 import java.util.stream.Collectors
 
 class ComplianceService extends BaseService {
     private static final int MAX_WAIT_TIME = 45000
     private static final int SLEEP_DURATION = 3000
+
+    static getComplianceClient() {
+        return ComplianceServiceGrpc.newBlockingStub(getChannel())
+    }
+
+    static List<ComplianceStandardMetadata> getComplianceStandards() {
+        return getComplianceClient().getStandards().standardsList
+    }
+
+    static ComplianceStandard getComplianceStandardDetails(String complianceId) {
+        try {
+            return getComplianceClient()
+                    .getStandard(Common.ResourceByID.newBuilder()
+                    .setId(complianceId).build()).standard
+        } catch (Exception e) {
+            println "Could not find Compliance Standard with ID ${complianceId}: ${e.toString()}"
+        }
+    }
+
+    static List<ComplianceControlResult> getComplianceResults(RawQuery query = RawQuery.newBuilder().build()) {
+        // return getComplianceClient().getComplianceControlResults(query).resultsList
+        // the results api is not sending any data yet... send mock data instead for testing purposes
+        println query
+        return [
+                ComplianceControlResult.newBuilder()
+                        .setControlId("fake-1.1.1")
+                        .setValue(Compliance.ComplianceResultValue.newBuilder()
+                                .addEvidence(
+                                        Compliance.ComplianceResultValue.Evidence.newBuilder()
+                                                .setState(Compliance.ComplianceState.COMPLIANCE_STATE_SUCCESS)
+                                                .setMessage("Your deployments are frobotzed")
+                                                .build()
+                                ).build()
+                        ).build(),
+                ComplianceControlResult.newBuilder()
+                        .setControlId("fake-1.1.2")
+                        .setValue(Compliance.ComplianceResultValue.newBuilder()
+                                .addEvidence(
+                                        Compliance.ComplianceResultValue.Evidence.newBuilder()
+                                                .setState(Compliance.ComplianceState.COMPLIANCE_STATE_FAILURE)
+                                                .setMessage("Your nodes are not frobotzed")
+                                                .build()
+                                ).build()
+                        ).build(),
+        ]
+    }
+
+    /*
+      Legacy Benchmark APIs
+     */
 
     static getBenchmarkTriggersClient() {
         return BenchmarkTriggerServiceGrpc.newBlockingStub(getChannel())
@@ -74,5 +131,4 @@ class ComplianceService extends BaseService {
         }
         return false
     }
-
 }
