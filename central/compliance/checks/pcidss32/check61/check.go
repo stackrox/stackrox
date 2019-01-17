@@ -5,9 +5,11 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 )
 
+const checkID = "PCI_DSS_3_2:6_1"
+
 func init() {
 	framework.MustRegisterNewCheck(
-		"PCI_DSS_3_2:6_1",
+		checkID,
 		framework.ClusterKind,
 		nil,
 		common.CheckImageScannerInUse)

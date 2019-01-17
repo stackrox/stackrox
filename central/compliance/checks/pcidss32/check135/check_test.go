@@ -46,7 +46,7 @@ func (s *suiteImpl) TestFail() {
 	s.NoError(err)
 
 	results := run.GetAllResults()
-	checkResults := results["PCI_DSS_3_2:1_3_5"]
+	checkResults := results[checkID]
 	s.NotNil(checkResults)
 
 	for _, deployment := range domain.Deployments() {
@@ -72,7 +72,7 @@ func (s *suiteImpl) TestPass() {
 	s.NoError(err)
 
 	results := run.GetAllResults()
-	checkResults := results["PCI_DSS_3_2:1_3_5"]
+	checkResults := results[checkID]
 	s.NotNil(checkResults)
 
 	for _, deployment := range domain.Deployments() {
@@ -88,7 +88,7 @@ func (s *suiteImpl) TestPass() {
 
 func (s *suiteImpl) verifyCheckRegistered() framework.Check {
 	registry := framework.RegistrySingleton()
-	check := registry.Lookup("PCI_DSS_3_2:1_3_5")
+	check := registry.Lookup(checkID)
 	s.NotNil(check)
 	return check
 }

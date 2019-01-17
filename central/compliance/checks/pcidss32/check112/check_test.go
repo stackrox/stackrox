@@ -18,8 +18,7 @@ import (
 func TestCheck112(t *testing.T) {
 	t.Parallel()
 	registry := framework.RegistrySingleton()
-	checkName := "PCI_DSS_3_2:1_1_2"
-	check := registry.Lookup(checkName)
+	check := registry.Lookup(checkID)
 	require.NotNil(t, check)
 
 	testCluster := &storage.Cluster{
@@ -56,7 +55,7 @@ func TestCheck112(t *testing.T) {
 	require.NoError(t, err)
 
 	results := run.GetAllResults()
-	checkResults := results[checkName]
+	checkResults := results[checkID]
 	require.NotNil(t, checkResults)
 	for _, deployment := range domain.Deployments() {
 		deploymentResults := checkResults.ForChild(deployment)

@@ -6,9 +6,11 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
+const checkID = "PCI_DSS_3_2:1_1_2"
+
 func init() {
 	framework.MustRegisterNewCheck(
-		"PCI_DSS_3_2:1_1_2",
+		checkID,
 		framework.DeploymentKind,
 		[]string{"NetworkGraph"},
 		checkAllDeploymentsInNetworkGraph)

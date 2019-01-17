@@ -7,9 +7,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
+const checkID = "PCI_DSS_3_2:1_3_5"
+
 func init() {
 	framework.MustRegisterNewCheck(
-		"PCI_DSS_3_2:1_3_5",
+		checkID,
 		framework.DeploymentKind,
 		nil,
 		clusterIsCompliant)

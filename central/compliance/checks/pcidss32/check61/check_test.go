@@ -55,7 +55,7 @@ func (s *suiteImpl) TestFail() {
 	s.NoError(err)
 
 	results := run.GetAllResults()
-	checkResults := results["PCI_DSS_3_2:6_1"]
+	checkResults := results[checkID]
 	s.NotNil(checkResults)
 
 	s.NoError(checkResults.Error())
@@ -93,7 +93,7 @@ func (s *suiteImpl) TestPass() {
 	s.NoError(err)
 
 	results := run.GetAllResults()
-	checkResults := results["PCI_DSS_3_2:6_1"]
+	checkResults := results[checkID]
 	s.NotNil(checkResults)
 
 	s.NoError(checkResults.Error())
@@ -106,7 +106,7 @@ func (s *suiteImpl) TestPass() {
 
 func (s *suiteImpl) verifyCheckRegistered() framework.Check {
 	registry := framework.RegistrySingleton()
-	check := registry.Lookup("PCI_DSS_3_2:6_1")
+	check := registry.Lookup(checkID)
 	s.NotNil(check)
 	return check
 }
