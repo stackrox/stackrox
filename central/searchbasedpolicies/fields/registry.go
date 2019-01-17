@@ -14,6 +14,7 @@ var Registry = []searchbasedpolicies.PolicyQueryBuilder{
 	builders.CVSSQueryBuilder{},
 	builders.CVEQueryBuilder{},
 	componentQueryBuilder,
+	disallowedAnnotationQueryBuilder,
 	scanAgeQueryBuilder,
 	builders.ScanExistsQueryBuilder{},
 	builders.EnvQueryBuilder{},

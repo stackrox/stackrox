@@ -426,6 +426,14 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.mustIndexDepAndImages(depWithAllResourceLimitsRequestsSpecified)
 
+	depWithEnforcementBypassAnnotation := &storage.Deployment{
+		Id: "ENFORCEMENTBYPASS",
+		Annotations: map[string]string{
+			"admission.stackrox.io/break-glass": "ticket-1234",
+		},
+	}
+	suite.mustIndexDepAndImages(depWithEnforcementBypassAnnotation)
+
 	// Index processes
 	bashLineage := []string{"/bin/bash"}
 	fixtureDepAptIndicator := suite.mustAddIndicator(fixtureDep.GetId(), "apt", "", "/usr/bin/apt", bashLineage)
@@ -641,6 +649,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				depWitharbitraryAnnotations.GetId():               {},
 				sysAdminDep.GetId():                               {},
 				depWithAllResourceLimitsRequestsSpecified.GetId(): {},
+				depWithEnforcementBypassAnnotation.GetId():        {},
 			},
 			sampleViolationForMatched: "Image has not been scanned",
 		},
@@ -826,6 +835,16 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 					{
 						Message:   "Detected execution of binary '/bin/bash' with arguments '-attack'",
 						Processes: []*storage.ProcessIndicator{fixtureDepJavaIndicator},
+					},
+				},
+			},
+		},
+		{
+			policyName: "Emergency Deployment Annotation",
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				depWithEnforcementBypassAnnotation.GetId(): {
+					{
+						Message: "Disallowed annotation found (key = 'admission.stackrox.io/break-glass')",
 					},
 				},
 			},

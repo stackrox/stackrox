@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 )
@@ -72,13 +73,17 @@ func (s *pipelineImpl) Run(msg *central.MsgFromSensor, injector pipeline.MsgInje
 		return err
 	}
 	if resp != nil {
-		injected := injector.InjectMessage(&central.MsgToSensor{
-			Msg: &central.MsgToSensor_Enforcement{
-				Enforcement: resp,
-			},
-		})
-		if !injected {
-			log.Errorf("Failed to inject enforcement action %s", proto.MarshalTextString(resp))
+		if enforcers.ShouldEnforce(deployment.GetAnnotations()) {
+			injected := injector.InjectMessage(&central.MsgToSensor{
+				Msg: &central.MsgToSensor_Enforcement{
+					Enforcement: resp,
+				},
+			})
+			if !injected {
+				log.Errorf("Failed to inject enforcement action %s", proto.MarshalTextString(resp))
+			}
+		} else {
+			log.Warnf("Did not inject enforcement because deployment %s contained Enforcement Bypass annotations", deployment.GetName())
 		}
 	}
 	return nil

@@ -162,6 +162,14 @@ const fieldsMap = {
             return `${key}=${value}`;
         }
     },
+    disallowedAnnotation: {
+        label: 'Disallowed Annotation',
+        formatValue: d => {
+            const key = d.key ? `Key: ${d.key} ` : '';
+            const value = d.value ? `Value: ${d.value}` : '';
+            return `${key}${value}`;
+        }
+    },
     requiredLabel: {
         label: 'Required Label',
         formatValue: d => {

@@ -353,6 +353,25 @@ const policyConfigurationDescriptor = [
         default: false
     },
     {
+        label: 'Disallowed Annotation',
+        jsonpath: 'fields.disallowedAnnotation',
+        type: 'group',
+        jsonpaths: [
+            {
+                jsonpath: 'fields.disallowedAnnotation.key',
+                type: 'text',
+                placeholder: 'admission.stackrox.io/break-glass'
+            },
+            {
+                jsonpath: 'fields.disallowedAnnotation.value',
+                type: 'text',
+                placeholder: ''
+            }
+        ],
+        required: false,
+        default: false
+    },
+    {
         label: 'Required Label',
         jsonpath: 'fields.requiredLabel',
         type: 'group',

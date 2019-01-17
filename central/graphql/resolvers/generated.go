@@ -2983,6 +2983,11 @@ func (resolver *policyFieldsResolver) Directory() string {
 	return value
 }
 
+func (resolver *policyFieldsResolver) DisallowedAnnotation() (*keyValuePolicyResolver, error) {
+	value := resolver.data.GetDisallowedAnnotation()
+	return resolver.root.wrapKeyValuePolicy(value, true, nil)
+}
+
 func (resolver *policyFieldsResolver) DropCapabilities() []string {
 	value := resolver.data.GetDropCapabilities()
 	return value

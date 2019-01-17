@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
@@ -24,12 +25,12 @@ import (
 )
 
 const (
-	emergencyReleaseLabelKey = "critical.stackrox.io"
-	timeout                  = 10 * time.Second
+	timeout = 30 * time.Second
 
 	// This purposefully leaves a newline at the top for formatting when using kubectl
 	kubectlTemplate = `
 Policy: {{.Title}}
+In case of emergency, add the annotation {"admission.stackrox.io/break-glass": "ticket-1234"} to your deployment with an updated ticket number
 {{range .Alerts}}
 {{.Policy.Name}}
 - Description:
@@ -160,8 +161,8 @@ func (s *handlerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, ok := deployment.GetLabels()[emergencyReleaseLabelKey]; ok {
-		log.Warnf("Deployment %s/%s of type %s was deployed without being checked due to emergency labels",
+	if !enforcers.ShouldEnforce(deployment.GetAnnotations()) {
+		log.Warnf("Deployment %s/%s of type %s was deployed without being checked due to emergency annotations",
 			deployment.GetNamespace(), deployment.GetName(), deployment.GetType())
 		admissionPass(w, admissionReview.Request.UID)
 		return
