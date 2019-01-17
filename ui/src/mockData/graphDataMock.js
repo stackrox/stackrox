@@ -67,6 +67,13 @@ const verticalBarData = [
     }
 ];
 
+const multiGaugeData = [
+    { title: 'PCI', passing: 75, failing: 25 },
+    { title: 'NIST', passing: 25, failing: 75 },
+    { title: 'HIPAA', passing: 75, failing: 25 },
+    { title: 'CIS', passing: 50, failing: 50 }
+];
+
 // Suburst Data Generator
 function getSlice(sliceIndex) {
     // Inner slice
@@ -162,7 +169,8 @@ export {
     verticalBarData,
     sunburstData,
     sunburstLegendData,
-    horizontalBarData,
     horizontalBarDatum,
+    multiGaugeData,
+    horizontalBarData,
     listData
 };

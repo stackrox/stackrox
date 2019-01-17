@@ -4,8 +4,14 @@ import Widget from 'Components/Widget';
 import StandardsAcrossEntity from 'Containers/Compliance2/widgets/StandardsAcrossEntity';
 import StandardsByEntity from 'Containers/Compliance2/widgets/StandardsByEntity';
 import Sunburst from 'Components/visuals/Sunburst';
+import MultiGaugeChart from 'Components/visuals/MultiGaugeChart';
 
-import { horizontalBarData, sunburstData, sunburstLegendData } from 'mockData/graphDataMock';
+import {
+    horizontalBarData,
+    sunburstData,
+    sunburstLegendData,
+    multiGaugeData
+} from 'mockData/graphDataMock';
 import entityTypes from 'constants/entityTypes';
 
 import DashboardHeader from './Header';
@@ -30,6 +36,10 @@ const ComplianceDashboardPage = () => (
                                 }
                             }}
                         />
+                    </Widget>
+
+                    <Widget header="Compliance Across Clusters" className="bg-base-100">
+                        <MultiGaugeChart data={multiGaugeData} dataProperty="passing" />
                     </Widget>
 
                     <StandardsAcrossEntity type={entityTypes.NAMESPACES} data={horizontalBarData} />

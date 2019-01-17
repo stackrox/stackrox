@@ -63,11 +63,9 @@ export default class BasicSunburst extends React.Component {
         };
     }
 
-    getCenterLabel = () => {
-        const { selectedDatum } = this.state;
-        if (!selectedDatum) return null;
-        return <LabelSeries data={[{ x: 0, y: 10, label: '76%', style: LABEL_STYLE }]} />;
-    };
+    getCenterLabel = () => (
+        <LabelSeries data={[{ x: 0, y: 10, label: '76%', style: LABEL_STYLE }]} />
+    );
 
     onValueMouseOverHandler = datum => {
         const { data, clicked } = this.state;
