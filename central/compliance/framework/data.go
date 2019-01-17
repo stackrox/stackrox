@@ -21,5 +21,6 @@ type ComplianceDataRepository interface {
 	NetworkGraph() *v1.NetworkGraph
 	Policies() map[string]*storage.Policy
 	ImageIntegrations() []*storage.ImageIntegration
+	ProcessIndicators() []*storage.ProcessIndicator
 	PolicyCategories() map[string]set.StringSet
 }

@@ -130,3 +130,15 @@ func (m *MockComplianceDataRepository) PolicyCategories() map[string]set.StringS
 func (mr *MockComplianceDataRepositoryMockRecorder) PolicyCategories() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PolicyCategories", reflect.TypeOf((*MockComplianceDataRepository)(nil).PolicyCategories))
 }
+
+// ProcessIndicators mocks base method
+func (m *MockComplianceDataRepository) ProcessIndicators() []*storage.ProcessIndicator {
+	ret := m.ctrl.Call(m, "ProcessIndicators")
+	ret0, _ := ret[0].([]*storage.ProcessIndicator)
+	return ret0
+}
+
+// ProcessIndicators indicates an expected call of ProcessIndicators
+func (mr *MockComplianceDataRepositoryMockRecorder) ProcessIndicators() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessIndicators", reflect.TypeOf((*MockComplianceDataRepository)(nil).ProcessIndicators))
+}

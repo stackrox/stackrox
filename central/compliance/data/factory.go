@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
 	policiesStore "github.com/stackrox/rox/central/policy/datastore"
+	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 )
 
 // RepositoryFactory allows creating `ComplianceDataRepository`s to be used in compliance runs.
@@ -18,6 +19,7 @@ type factory struct {
 	networkGraphEvaluator graph.Evaluator
 	policyStore           policiesStore.DataStore
 	imageIntegrationStore imageIntegrationStore.DataStore
+	processIndicatorStore processIndicatorStore.DataStore
 }
 
 // NewDefaultFactory creates a new RepositoryFactory using the default instances for accessing data.
@@ -27,6 +29,7 @@ func NewDefaultFactory() RepositoryFactory {
 		networkGraphEvaluator: graph.Singleton(),
 		policyStore:           policiesStore.Singleton(),
 		imageIntegrationStore: imageIntegrationStore.Singleton(),
+		processIndicatorStore: processIndicatorStore.Singleton(),
 	}
 }
 

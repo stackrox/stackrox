@@ -16,6 +16,7 @@ type repository struct {
 	networkGraph       *v1.NetworkGraph
 	policies           map[string]*storage.Policy
 	imageIntegrations  []*storage.ImageIntegration
+	processIndicators  []*storage.ProcessIndicator
 	categoryToPolicies map[string]set.StringSet // maps categories to policy set
 }
 
@@ -49,6 +50,10 @@ func (r *repository) PolicyCategories() map[string]set.StringSet {
 
 func (r *repository) ImageIntegrations() []*storage.ImageIntegration {
 	return r.imageIntegrations
+}
+
+func (r *repository) ProcessIndicators() []*storage.ProcessIndicator {
+	return r.processIndicators
 }
 
 func newRepository(domain framework.ComplianceDomain, factory *factory) (*repository, error) {
@@ -141,5 +146,11 @@ func (r *repository) init(domain framework.ComplianceDomain, f *factory) error {
 	if err != nil {
 		return err
 	}
+
+	r.processIndicators, err = f.processIndicatorStore.GetProcessIndicators()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
