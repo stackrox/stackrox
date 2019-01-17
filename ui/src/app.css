@@ -471,6 +471,10 @@ h6 {
     height: 100%;
 }
 
+.slick-arrow::before {
+    display: none;
+}
+
 .carousel-prev-arrow,
 .carousel-next-arrow {
     position: absolute;
@@ -1053,4 +1057,11 @@ h6 {
 
 .widget-detail-bullet:last-child {
     @apply pt-2;
+}
+
+.banner-background {
+    background-image: url("images/list-bg.svg");
+    background-repeat: no-repeat;
+    background-position-y: bottom;
+    background-size: contain;
 }
