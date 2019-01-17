@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/image/check/report"
+	"github.com/stackrox/rox/roxctl/common/report"
 	"golang.org/x/net/context"
 )
 
@@ -46,43 +46,29 @@ func Command() *cobra.Command {
 
 func checkImage(image string, json bool) error {
 	// Get the violated policies for the input data.
-	violatedPolicies, err := getViolatedPolicies(image)
+	alerts, err := getAlerts(image)
 	if err != nil {
 		return err
 	}
 
 	// If json mode was given, print results (as json) and immediately return.
 	if json {
-		return report.JSON(os.Stdout, violatedPolicies)
+		return report.JSON(os.Stdout, alerts)
 	}
 
 	// Print results in human readable mode.
-	if err = report.Pretty(os.Stdout, violatedPolicies); err != nil {
+	if err = report.PrettyWithResourceName(os.Stdout, alerts, storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT, "Image", image); err != nil {
 		return err
 	}
 
 	// Check if any of the violated policies have an enforcement action that
 	// fails the CI build.
-	for _, policy := range violatedPolicies {
-		if report.EnforcementFailedBuild(policy) {
+	for _, alert := range alerts {
+		if report.EnforcementFailedBuild(storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT)(alert.GetPolicy()) {
 			return errors.New("Violated a policy with CI enforcement set")
 		}
 	}
 	return nil
-}
-
-// Fetch the alerts for the inputs and convert them to a list of Policies that are violated.
-func getViolatedPolicies(image string) ([]*storage.Policy, error) {
-	alerts, err := getAlerts(image)
-	if err != nil {
-		return nil, err
-	}
-
-	var policies []*storage.Policy
-	for _, alert := range alerts {
-		policies = append(policies, alert.GetPolicy())
-	}
-	return policies, nil
 }
 
 // Get the alerts for the command line inputs.

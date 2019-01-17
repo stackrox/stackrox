@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/image/check/report"
+	"github.com/stackrox/rox/roxctl/common/report"
 	"golang.org/x/net/context"
 )
 
@@ -50,43 +50,29 @@ func checkDeployment(file string, json bool) error {
 	}
 
 	// Get the violated policies for the input data.
-	violatedPolicies, err := getViolatedPolicies(string(data))
+	alerts, err := getAlerts(string(data))
 	if err != nil {
 		return err
 	}
 
 	// If json mode was given, print results (as json) and immediately return.
 	if json {
-		return report.JSON(os.Stdout, violatedPolicies)
+		return report.JSON(os.Stdout, alerts)
 	}
 
 	// Print results in human readable mode.
-	if err = report.Pretty(os.Stdout, violatedPolicies); err != nil {
+	if err = report.Pretty(os.Stdout, alerts, storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT, "Deployment"); err != nil {
 		return err
 	}
 
 	// Check if any of the violated policies have an enforcement action that
 	// fails the CI build.
-	for _, policy := range violatedPolicies {
-		if report.EnforcementFailedBuild(policy) {
-			return errors.New("Violated a policy with CI enforcement set")
+	for _, alert := range alerts {
+		if report.EnforcementFailedBuild(storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT)(alert.GetPolicy()) {
+			return errors.New("Violated a policy with Deploy Time enforcement set")
 		}
 	}
 	return nil
-}
-
-// Fetch the alerts for the inputs and convert them to a list of Policies that are violated.
-func getViolatedPolicies(yaml string) ([]*storage.Policy, error) {
-	alerts, err := getAlerts(yaml)
-	if err != nil {
-		return nil, err
-	}
-
-	var policies []*storage.Policy
-	for _, alert := range alerts {
-		policies = append(policies, alert.GetPolicy())
-	}
-	return policies, nil
 }
 
 // Get the alerts for the command line inputs.
@@ -106,8 +92,9 @@ func getAlerts(yaml string) ([]*storage.Alert, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	log.Infof("Runs: %+v", response.GetRuns())
-
-	return []*storage.Alert{}, nil
+	var alerts []*storage.Alert
+	for _, r := range response.GetRuns() {
+		alerts = append(alerts, r.GetAlerts()...)
+	}
+	return alerts, nil
 }

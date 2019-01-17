@@ -1,0 +1,16 @@
+
+
+✗ Image nginx failed policy 'CI Test Policy Two' 
+- Description:
+    ↳ CI policy two that is used for tests
+- Rationale:
+    ↳ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean eleifend ac
+      purus id vehicula. Vivamus malesuada eros at malesuada scelerisque. Praesent
+      pellentesque ipsum mauris, eu tempus diam interdum quis.
+- Remediation:
+    ↳ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin nec vehicula
+      magna.
+- Violations:
+    - This is cool
+    - This is more cool
+

@@ -540,9 +540,10 @@
   version = "v0.2.3"
 
 [[projects]]
-  digest = "1:6518785f4c886109300554314bdae157eb988c272614ca55df787dd3ac089ae0"
+  digest = "1:b4148cd35b486db8b62a59bc48fd05496a2445fe97e73809bb8059836290a4a1"
   name = "github.com/gogo/protobuf"
   packages = [
+    "jsonpb",
     "proto",
     "sortkeys",
     "types",
@@ -1818,6 +1819,7 @@
     "github.com/ghodss/yaml",
     "github.com/gobuffalo/packd",
     "github.com/gobuffalo/packr",
+    "github.com/gogo/protobuf/jsonpb",
     "github.com/gogo/protobuf/proto",
     "github.com/gogo/protobuf/types",
     "github.com/golang/mock/gomock",

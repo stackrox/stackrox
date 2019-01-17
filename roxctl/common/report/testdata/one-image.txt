@@ -1,6 +1,6 @@
-----------------BEGIN STACKROX CI---------------
-The scanned image violated the following policies:
-✗ CI Test Policy One (policy enforcement failed build)
+
+
+✗ Image nginx failed policy 'CI Test Policy One' (policy enforcement caused failure)
 - Description:
     ↳ CI policy one that is used for tests
 - Rationale:
@@ -10,6 +10,7 @@ The scanned image violated the following policies:
 - Remediation:
     ↳ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus cursus
       convallis lacinia.
-- Categories:
-    ↳ Vuln Management, Security Best Practices
-----------------END STACKROX CI---------------
+- Violations:
+    - This is awesome
+    - This is more awesome
+

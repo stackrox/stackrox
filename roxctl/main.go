@@ -33,9 +33,7 @@ func main() {
 	c.AddCommand(image.Command())
 
 	// Deployment Commands
-	deploymentCommand := deployment.Command()
-	deploymentCommand.Hidden = true
-	c.AddCommand(deploymentCommand)
+	c.AddCommand(deployment.Command())
 
 	// Central Commands
 	c.AddCommand(central.Command())
