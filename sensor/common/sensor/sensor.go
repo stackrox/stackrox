@@ -152,6 +152,7 @@ func (s *Sensor) Start() {
 	if s.networkConnManager != nil {
 		go s.networkConnManager.Start()
 	}
+
 	// Wait for central so we can initiate our GRPC connection to send sensor events.
 	s.waitUntilCentralIsReady(s.conn)
 
@@ -219,7 +220,7 @@ func pingWithTimeout(svc v1.PingServiceClient) (err error) {
 }
 
 func (s *Sensor) runSensor() {
-	s.sensorInstance = sensor.NewSensor(s.conn, s.clusterID)
+	s.sensorInstance = sensor.NewSensor(s.conn, compliance.NewCommandHandler(s.image, s.orchestrator))
 	s.logger.Info("Starting central connection.")
 	s.sensorInstance.Start(s.listener.Events(), signalService.Singleton().Indicators(), s.networkConnManager.FlowUpdates(), compliance.Singleton().Output(), s.enforcer.Actions())
 

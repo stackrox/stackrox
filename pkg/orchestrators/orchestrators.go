@@ -8,6 +8,7 @@ type Creator func() (Orchestrator, error)
 // SystemService is an abstraction for a container
 type SystemService struct {
 	Name           string
+	GenerateName   string
 	Envs           []string
 	Image          string
 	Mounts         []string
@@ -18,6 +19,7 @@ type SystemService struct {
 }
 
 // Orchestrator is the interface that allows for actions against an orchestrator
+//go:generate mockgen-wrapper Orchestrator
 type Orchestrator interface {
 	Launch(service SystemService) (string, error)
 	Kill(id string) error

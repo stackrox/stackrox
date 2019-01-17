@@ -27,7 +27,7 @@ func (s *sensor) sendEvents(
 	orchestratorEvents <-chan *central.SensorEvent,
 	signals <-chan *central.SensorEvent,
 	flows <-chan *central.NetworkFlowUpdate,
-	complianceReturns <-chan *central.MsgFromSensor,
+	scrapeUpdates <-chan *central.ScrapeUpdate,
 	output chan<- *central.SensorEnforcement,
 	client central.SensorServiceClient) {
 	var err error
@@ -39,7 +39,7 @@ func (s *sensor) sendEvents(
 				break
 			}
 		}
-		recoverable, err = s.sendEventsSingle(orchestratorEvents, signals, flows, complianceReturns, output, client)
+		recoverable, err = s.sendEventsSingle(orchestratorEvents, signals, flows, scrapeUpdates, output, client)
 	}
 	// Sanity check - if we exit the loop, we should be done, otherwise panic.
 	if !concurrency.WaitWithTimeout(&s.stopped, gracePeriod) {
@@ -51,7 +51,7 @@ func (s *sensor) sendEventsSingle(
 	orchestratorEvents <-chan *central.SensorEvent,
 	signals <-chan *central.SensorEvent,
 	flows <-chan *central.NetworkFlowUpdate,
-	complianceReturns <-chan *central.MsgFromSensor,
+	scrapeUpdates <-chan *central.ScrapeUpdate,
 	output chan<- *central.SensorEnforcement,
 	client central.SensorServiceClient) (recoverable bool, err error) {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -100,11 +100,15 @@ func (s *sensor) sendEventsSingle(
 					NetworkFlowUpdate: flowUpdate,
 				},
 			}
-		case complianceMsg, ok := <-complianceReturns:
+		case scrapeUpdate, ok := <-s.handler.Output():
 			if !ok {
 				return false, errors.New("compliance returns channel closed")
 			}
-			msg = complianceMsg
+			msg = &central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_ScrapeUpdate{
+					ScrapeUpdate: scrapeUpdate,
+				},
+			}
 		case <-stream.Context().Done():
 			return true, stream.Context().Err()
 		case <-s.stopped.Done():
@@ -147,9 +151,11 @@ func (s *sensor) doReceiveMessages(output chan<- *central.SensorEnforcement, str
 
 			switch msg.Msg.(type) {
 			case *central.MsgToSensor_Enforcement:
-				s.processEnforcement(msg.GetEnforcement(), output, stream)
+				enforcementMsg := msg.Msg.(*central.MsgToSensor_Enforcement)
+				s.processEnforcement(enforcementMsg.Enforcement, output, stream)
 			case *central.MsgToSensor_ScrapeCommand:
-				s.processCommand(msg.GetScrapeCommand())
+				commandMsg := msg.Msg.(*central.MsgToSensor_ScrapeCommand)
+				s.processCommand(commandMsg.ScrapeCommand)
 			default:
 				logger.Errorf("Unsupported message from central of type %T: %+v", msg.Msg, msg.Msg)
 			}
@@ -169,13 +175,8 @@ func (s *sensor) processEnforcement(enforcement *central.SensorEnforcement, outp
 }
 
 func (s *sensor) processCommand(command *central.ScrapeCommand) {
-	switch x := command.Command.(type) {
-	case *central.ScrapeCommand_StartScrape:
-		logger.Errorf("command with type '%T' is not handled", x)
-	case *central.ScrapeCommand_KillScrape:
-		logger.Errorf("command with type '%T' is not handled", x)
-	default:
-		logger.Errorf("command with type '%T' is not handled", x)
+	if !s.handler.SendCommand(command) {
+		log.Errorf("unable to send command: %s", proto.MarshalTextString(command))
 	}
 }
 

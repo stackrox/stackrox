@@ -7,10 +7,12 @@ import "google/protobuf/timestamp.proto";
 
 package compliance;
 
+// Next Available Tag: 2
 message JSONDataChunk {
     bytes json = 1;
 }
 
+// Next Available Tag: 8
 message File {
     string path                       = 1;
     uint32 user                       = 2;
@@ -21,6 +23,7 @@ message File {
     repeated File children            = 7;
 }
 
+// Next Available Tag: 3
 message CommandLine {
     string process     = 1;
 
@@ -32,12 +35,14 @@ message CommandLine {
     repeated Args args  = 2;
 }
 
+// Next Available Tag: 7
 message ComplianceReturn {
     string hostname = 1;
+    string scrape_id = 2;
 
-    JSONDataChunk        docker_data   = 2;
-    repeated CommandLine command_lines = 3;
-    repeated File        files         = 4;
+    JSONDataChunk        docker_data   = 3;
+    repeated CommandLine command_lines = 4;
+    repeated File        files         = 5;
 
-    google.protobuf.Timestamp time = 5;
+    google.protobuf.Timestamp time = 6;
 }

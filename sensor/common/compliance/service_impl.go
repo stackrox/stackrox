@@ -3,7 +3,6 @@ package compliance
 import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
@@ -13,7 +12,7 @@ import (
 
 // BenchmarkResultsService is the struct that manages the benchmark results API
 type serviceImpl struct {
-	output chan *central.MsgFromSensor
+	output chan *compliance.ComplianceReturn
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -33,18 +32,13 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // Output returns the channel where the received messages are output.
-func (s *serviceImpl) Output() <-chan *central.MsgFromSensor {
+func (s *serviceImpl) Output() <-chan *compliance.ComplianceReturn {
 	return s.output
 }
 
 // PushComplianceReturn takes the compliance results and outputs them to the channel.
 func (s *serviceImpl) PushComplianceReturn(ctx context.Context, request *compliance.ComplianceReturn) (*v1.Empty, error) {
 	// Push a message to the output channel.
-	s.output <- returnAsMessage(request)
+	s.output <- request
 	return &v1.Empty{}, nil
-}
-
-// Helper function to make formatting values easier.
-func returnAsMessage(cr *compliance.ComplianceReturn) *central.MsgFromSensor {
-	return &central.MsgFromSensor{}
 }

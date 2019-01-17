@@ -77,7 +77,7 @@ message ScrapeCommand {
 
     oneof command {
         StartScrape start_scrape = 2;
-        KillScrape  kill_scrape = 3;
+        KillScrape  kill_scrape  = 3;
     }
 }
 
@@ -88,7 +88,7 @@ message StartScrape {
 
 message KillScrape {}
 
-// Scrape updates receoived from sensor.
+// Scrape updates received from sensor.
 ////////////////////////////////////////
 
 message ScrapeUpdate {
@@ -96,8 +96,8 @@ message ScrapeUpdate {
 
     oneof update {
         compliance.ComplianceReturn compliance_return = 2;
-        ScrapeStarted scrape_started = 3;
-        ScrapeKilled scrape_killed= 4;
+        ScrapeStarted scrape_started                  = 3;
+        ScrapeKilled scrape_killed                    = 4;
     }
 }
 

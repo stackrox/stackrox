@@ -1,6 +1,7 @@
 package orchestrator
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -10,7 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	v1beta12 "k8s.io/api/extensions/v1beta1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/typed/extensions/v1beta1"
@@ -59,37 +60,40 @@ func setupClient() (client *kubernetes.Clientset, err error) {
 	return kubernetes.NewForConfig(config)
 }
 
-func (k *kubernetesOrchestrator) launch(setInterface v1beta1.DaemonSetInterface, ds *v1beta12.DaemonSet) error {
+func (k *kubernetesOrchestrator) launch(setInterface v1beta1.DaemonSetInterface, ds *v1beta12.DaemonSet) (string, error) {
 	for i := 0; i < 3; i++ {
-		if _, err := k.client.ExtensionsV1beta1().DaemonSets(k.namespace).Create(ds); err != nil {
-			if statusErr, ok := err.(*errors.StatusError); ok && statusErr.Status().Reason == metav1.StatusReasonAlreadyExists {
+		actual, err := k.client.ExtensionsV1beta1().DaemonSets(k.namespace).Create(ds)
+		if err != nil {
+			if statusErr, ok := err.(*k8sErrors.StatusError); ok && statusErr.Status().Reason == metav1.StatusReasonAlreadyExists {
 				time.Sleep(10 * time.Second)
 				continue
 			}
-			return err
+			return "", err
 		}
-		return nil
+		return actual.Name, nil
 	}
-	return nil
+	return "", errors.New("unable to launch daemonset")
 }
 
 func (k *kubernetesOrchestrator) Launch(service orchestrators.SystemService) (string, error) {
 	if service.Global {
 		ds := k.converter.asDaemonSet(k.newServiceWrap(service))
-		if err := k.launch(k.client.ExtensionsV1beta1().DaemonSets(k.namespace), ds); err != nil {
+		launchedName, err := k.launch(k.client.ExtensionsV1beta1().DaemonSets(k.namespace), ds)
+		if err != nil {
 			logger.Errorf("unable to create daemonset %s: %s", service.Name, err)
 			return "", err
 		}
-		return service.Name, nil
+		return launchedName, nil
 	}
 
 	deploy := k.converter.asDeployment(k.newServiceWrap(service))
-	if _, err := k.client.ExtensionsV1beta1().Deployments(k.namespace).Create(deploy); err != nil {
+	actual, err := k.client.ExtensionsV1beta1().Deployments(k.namespace).Create(deploy)
+	if err != nil {
 		logger.Errorf("unable to create deployment %s: %s", service.Name, err)
 		return "", err
 	}
 
-	return service.Name, nil
+	return actual.Name, nil
 }
 
 func (k *kubernetesOrchestrator) LaunchBenchmark(service orchestrators.SystemService) (string, error) {

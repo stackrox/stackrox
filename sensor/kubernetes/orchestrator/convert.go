@@ -61,8 +61,9 @@ func (c converter) asDeployment(service *serviceWrap) *v1beta1.Deployment {
 			APIVersion: "extensions/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      service.Name,
-			Namespace: service.namespace,
+			Name:         service.Name,
+			Namespace:    service.namespace,
+			GenerateName: service.GenerateName,
 		},
 		Spec: v1beta1.DeploymentSpec{
 			Replicas: &[]int32{1}[0],
