@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { normalize } from 'normalizr';
-import queryString from 'query-string';
+import queryString from 'qs';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
 import { secret as secretSchema } from './schemas';
@@ -13,9 +13,10 @@ const secretsUrl = '/v1/secrets';
  * @returns {Promise<Object[], Error>} fulfilled with array of secrets (as defined in .proto)
  */
 export function fetchSecrets(options) {
-    const params = queryString.stringify({
-        query: searchOptionsToQuery(options)
-    });
+    const params = queryString.stringify(
+        { query: searchOptionsToQuery(options) },
+        { encode: false, arrayFormat: 'repeat' }
+    );
     return axios.get(`${secretsUrl}?${params}`).then(response => ({
         response: normalize(response.data.secrets, [secretSchema])
     }));

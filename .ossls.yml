@@ -229,17 +229,6 @@ dependencies:
     attribution:
     - 2013-present Facebook, Inc.
 
-  ui/node_modules/query-string:
-    url: https://github.com/sindresorhus/query-string
-    license: MIT
-    files:
-      license: 48da2f39e100d4085767e94966b43f4fa95ff6a0698fba57ed460914e35f94a0
-      package.json:
-        author: a79cf742e06a2994f196cd45b37bb1fab34f935f97b8a48cfbd6a563f160c59f
-        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
-    attribution:
-    - Sindre Sorhus
-
   ui/node_modules/raven-for-redux:
     url: https://github.com/captbaritone/raven-for-redux
     license: MIT
@@ -424,6 +413,17 @@ dependencies:
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
     - 2017 Raiden
+
+  ui/node_modules/qs:
+    url: "https://github.com/ljharb/qs"
+    license: BSD-3-Clause
+    files:
+      LICENSE: d2f9d2835eb09ccf673e118e4fdc372075437c1787e66c2202912fbe3e5ee9e1
+      package.json:
+        contributors: dff896f9ab5ca2a6dfa732ba88142ee337f135c428c24a027848c74c1bb609a7
+        license: f15ff9073b9028a1ec2bc0f18cc3e3ed6df570ab3197b5597d8932ccb30e6d6b
+    attribution:
+      - 2014 Nathan LaFreniere and other contributors.
 
   ui/node_modules/react-router-redux:
     url: https://github.com/ReactTraining/react-router/tree/master/packages/react-router-redux

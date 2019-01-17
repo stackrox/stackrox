@@ -1,7 +1,7 @@
 import { all, take, call, fork, put, takeLatest, takeEvery, select } from 'redux-saga/effects';
 import { delay } from 'redux-saga';
 import { push } from 'react-router-redux';
-import queryString from 'query-string';
+import queryString from 'qs';
 import Raven from 'raven-js';
 
 import { loginPath, integrationsPath, authResponsePrefix } from 'routePaths';
@@ -89,7 +89,7 @@ function* handleLoginPageRedirect({ location }) {
 }
 
 function* handleOidcResponse(location) {
-    const hash = queryString.parse(location.hash);
+    const hash = queryString.parse(location.hash, { ignoreQueryPrefix: true });
     if (hash.error) {
         return hash;
     }

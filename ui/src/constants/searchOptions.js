@@ -1,0 +1,11 @@
+export const SEARCH_CATEGORIES = {
+    ALERTS: 'ALERTS',
+    DEPLOYMENTS: 'DEPLOYMENTS',
+    IMAGES: 'IMAGES',
+    POLICIES: 'POLICIES',
+    PROCESS_INDICATORS: 'PROCESS_INDICATORS',
+    SEARCH_UNSET: 'SEARCH_UNSET',
+    SECRETS: 'SECRETS'
+};
+
+export const availableSearchOptions = Object.values(SEARCH_CATEGORIES);

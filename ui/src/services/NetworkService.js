@@ -1,5 +1,5 @@
 import axios from 'axios';
-import queryString from 'query-string';
+import queryString from 'qs';
 
 const networkPoliciesBaseUrl = '/v1/networkpolicies';
 const networkFlowBaseUrl = '/v1/networkgraph';
@@ -12,7 +12,7 @@ const networkFlowBaseUrl = '/v1/networkgraph';
  */
 export function fetchNetworkPolicyGraph(filters, clusterId) {
     const { query, simulationYaml } = filters;
-    const params = queryString.stringify({ query });
+    const params = queryString.stringify({ query }, { encode: false, arrayFormat: 'repeat' });
     let options;
     let getGraph = data => data;
     if (simulationYaml) {
@@ -42,7 +42,7 @@ export function fetchNetworkPolicyGraph(filters, clusterId) {
  */
 export function fetchNetworkFlowGraph(filters, clusterId) {
     const { query } = filters;
-    const params = queryString.stringify({ query });
+    const params = queryString.stringify({ query }, { encode: false, arrayFormat: 'repeat' });
     const options = {
         method: 'GET',
         url: `${networkFlowBaseUrl}/cluster/${clusterId}?${params}`

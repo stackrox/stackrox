@@ -1,5 +1,5 @@
 import axios from 'axios';
-import queryString from 'query-string';
+import queryString from 'qs';
 import { normalize } from 'normalizr';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
@@ -13,9 +13,10 @@ const imagesUrl = '/v1/images';
  * @returns {Promise<Object[], Error>} fulfilled with array of images (as defined in .proto)
  */
 export function fetchImages(options) {
-    const params = queryString.stringify({
-        query: searchOptionsToQuery(options)
-    });
+    const params = queryString.stringify(
+        { query: searchOptionsToQuery(options) },
+        { encode: false, arrayFormat: 'repeat' }
+    );
     return axios
         .get(`${imagesUrl}?${params}`)
         .then(response => ({ response: normalize(response.data.images, [imageSchema]) }));

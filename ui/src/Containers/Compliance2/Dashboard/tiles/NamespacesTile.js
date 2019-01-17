@@ -4,7 +4,7 @@ import uniq from 'lodash/uniq';
 import Query from 'Components/ThrowingQuery';
 import TileLink from 'Components/TileLink';
 
-import { NAMESPACES_QUERY } from 'queries';
+import NAMESPACES_QUERY from 'queries/namespace';
 import { resourceLabels } from 'messages/common';
 
 const NamespacesTile = () => (

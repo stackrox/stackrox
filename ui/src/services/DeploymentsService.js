@@ -1,5 +1,5 @@
 import axios from 'axios';
-import queryString from 'query-string';
+import queryString from 'qs';
 import { normalize } from 'normalizr';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
@@ -13,9 +13,10 @@ const deploymentsUrl = '/v1/deployments';
  * @returns {Promise<Object[], Error>} fulfilled with array of deployments (as defined in .proto)
  */
 export function fetchDeployments(options) {
-    const params = queryString.stringify({
-        query: searchOptionsToQuery(options)
-    });
+    const params = queryString.stringify(
+        { query: searchOptionsToQuery(options) },
+        { encode: false, arrayFormat: 'repeat' }
+    );
     return axios
         .get(`${deploymentsUrl}?${params}`)
         .then(response => ({ response: normalize(response.data.deployments, [deploymentSchema]) }));

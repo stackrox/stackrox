@@ -1,6 +1,6 @@
 import { normalize } from 'normalizr';
 import axios from 'axios';
-import queryString from 'query-string';
+import queryString from 'qs';
 
 import { alert as alertSchema, alerts as alertsSchema } from './schemas';
 
@@ -14,9 +14,7 @@ const baseUrl = '/v1/alerts';
  * @returns {Promise<Object, Error>} fulfilled with normalized response
  */
 export function fetchAlerts(filters) {
-    const params = queryString.stringify({
-        ...filters
-    });
+    const params = queryString.stringify({ ...filters }, { encode: false, arrayFormat: 'repeat' });
     return axios.get(`${baseUrl}?${params}`).then(response => ({
         response: normalize(response.data, alertsSchema)
     }));

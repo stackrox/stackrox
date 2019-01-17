@@ -1,5 +1,5 @@
 import axios from 'axios';
-import queryString from 'query-string';
+import queryString from 'qs';
 
 const baseUrl = '/v1/search';
 
@@ -27,9 +27,7 @@ export function fetchOptions(query = '') {
  * @returns {Promise<Object, Error>} fulfilled with options response
  */
 export function fetchGlobalSearchResults(filters) {
-    const params = queryString.stringify({
-        ...filters
-    });
+    const params = queryString.stringify({ ...filters }, { encode: false, arrayFormat: 'repeat' });
     return axios.get(`${baseUrl}?${params}`).then(response => ({
         response: response.data
     }));
