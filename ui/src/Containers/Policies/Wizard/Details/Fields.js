@@ -33,6 +33,7 @@ class Fields extends Component {
                     <div className="h-full p-3 pb-0">
                         {fields.map(field => {
                             if (!fieldsMap[field]) return '';
+                            if (policy[field] === undefined) return '';
                             const { label } = fieldsMap[field];
                             const value = fieldsMap[field].formatValue(policy[field], {
                                 clustersById: this.props.clustersById,
