@@ -1,4 +1,4 @@
-package check411
+package check422
 
 import (
 	"context"
@@ -38,40 +38,39 @@ var (
 
 	domain = framework.NewComplianceDomain(testCluster, testNodes, testDeployments)
 
-	cvssPolicyEnabledAndEnforced = storage.Policy{
+	latestTagEnabledAndEnforced = storage.Policy{
 		Id:   uuid.NewV4().String(),
 		Name: "Foo",
 		Fields: &storage.PolicyFields{
-			Cvss: &storage.NumericalPolicy{
-				Value: 7,
+			ImageName: &storage.ImageNamePolicy{
+				Tag: "latest",
 			},
 		},
 		Disabled:           false,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 	}
 
-	buildPolicyEnforced = storage.Policy{
-		Id:                 uuid.NewV4().String(),
-		Name:               "Sample Build time",
-		LifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+	imageAgePolicyEnabledAndEnforced = storage.Policy{
+		Id:   uuid.NewV4().String(),
+		Name: "Bar",
+		Fields: &storage.PolicyFields{
+			SetImageAgeDays: &storage.PolicyFields_ImageAgeDays{
+				ImageAgeDays: 30,
+			},
+		},
 		Disabled:           false,
-		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT},
-	}
-
-	cvssPolicyDisabled = storage.Policy{
-		Id:                 uuid.NewV4().String(),
-		Name:               "Foo",
-		Disabled:           true,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 	}
 
-	imageIntegration = storage.ImageIntegration{
-		Name:       "Clairify",
-		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER},
+	randomPolicy = storage.Policy{
+		Id:                 uuid.NewV4().String(),
+		Name:               "Random",
+		Disabled:           false,
+		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 	}
 )
 
-func TestNIST411_Success(t *testing.T) {
+func TestNIST422_Success(t *testing.T) {
 	t.Parallel()
 
 	registry := framework.RegistrySingleton()
@@ -79,8 +78,8 @@ func TestNIST411_Success(t *testing.T) {
 	require.NotNil(t, check)
 
 	policies := make(map[string]*storage.Policy)
-	policies[cvssPolicyEnabledAndEnforced.GetName()] = &cvssPolicyEnabledAndEnforced
-	policies[buildPolicyEnforced.GetName()] = &buildPolicyEnforced
+	policies[latestTagEnabledAndEnforced.GetName()] = &latestTagEnabledAndEnforced
+	policies[imageAgePolicyEnabledAndEnforced.GetName()] = &imageAgePolicyEnabledAndEnforced
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -88,7 +87,6 @@ func TestNIST411_Success(t *testing.T) {
 	data := complianceMocks.NewMockComplianceDataRepository(mockCtrl)
 	data.EXPECT().Cluster().AnyTimes().Return(testCluster)
 	data.EXPECT().Policies().AnyTimes().Return(policies)
-	data.EXPECT().ImageIntegrations().AnyTimes().Return([]*storage.ImageIntegration{&imageIntegration})
 
 	run, err := framework.NewComplianceRun(check)
 	require.NoError(t, err)
@@ -99,14 +97,12 @@ func TestNIST411_Success(t *testing.T) {
 	checkResults := results[standardID]
 	require.NotNil(t, checkResults)
 
-	require.Len(t, checkResults.Evidence(), 3)
+	require.Len(t, checkResults.Evidence(), 2)
 	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[0].Status)
 	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[1].Status)
-	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[2].Status)
-
 }
 
-func TestNIST411_Fail(t *testing.T) {
+func TestNIST422_Fail(t *testing.T) {
 	t.Parallel()
 
 	registry := framework.RegistrySingleton()
@@ -114,8 +110,7 @@ func TestNIST411_Fail(t *testing.T) {
 	require.NotNil(t, check)
 
 	policies := make(map[string]*storage.Policy)
-	policies[cvssPolicyDisabled.GetName()] = &cvssPolicyDisabled
-	policies[buildPolicyEnforced.GetName()] = &buildPolicyEnforced
+	policies[randomPolicy.GetName()] = &randomPolicy
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -123,7 +118,6 @@ func TestNIST411_Fail(t *testing.T) {
 	data := complianceMocks.NewMockComplianceDataRepository(mockCtrl)
 	data.EXPECT().Cluster().AnyTimes().Return(testCluster)
 	data.EXPECT().Policies().AnyTimes().Return(policies)
-	data.EXPECT().ImageIntegrations().AnyTimes().Return([]*storage.ImageIntegration{})
 
 	run, err := framework.NewComplianceRun(check)
 	require.NoError(t, err)
@@ -134,9 +128,7 @@ func TestNIST411_Fail(t *testing.T) {
 	checkResults := results[standardID]
 	require.NotNil(t, checkResults)
 
-	require.Len(t, checkResults.Evidence(), 3)
+	require.Len(t, checkResults.Evidence(), 2)
 	assert.Equal(t, framework.FailStatus, checkResults.Evidence()[0].Status)
 	assert.Equal(t, framework.FailStatus, checkResults.Evidence()[1].Status)
-	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[2].Status)
-
 }

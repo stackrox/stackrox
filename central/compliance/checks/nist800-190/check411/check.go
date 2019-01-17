@@ -26,5 +26,13 @@ func checkNIST411(ctx framework.ComplianceContext) {
 }
 
 func checkCVSS7PolicyEnforced(ctx framework.ComplianceContext) {
-	common.CheckPolicyEnforced(ctx, "CVSS >= 7")
+	policies := ctx.Data().Policies()
+	for _, p := range policies {
+		if p.GetFields() != nil && p.GetFields().GetCvss() != nil && !p.GetDisabled() && len(p.GetEnforcementActions()) != 0 {
+			framework.Passf(ctx, "Policy '%s' enabled and enforced", p.GetName())
+			return
+		}
+	}
+
+	framework.Fail(ctx, "Policy that disallows images, with a CVSS score above a threshold, to be deployed not found")
 }
