@@ -1,0 +1,4504 @@
+{
+  "definitions": [
+    {
+      "protopath": "alert.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "ViolationState",
+            "enum_fields": [
+              {
+                "name": "ACTIVE"
+              },
+              {
+                "name": "SNOOZED",
+                "integer": 1
+              },
+              {
+                "name": "RESOLVED",
+                "integer": 2
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "Alert",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "policy",
+                "type": "Policy"
+              },
+              {
+                "id": 3,
+                "name": "lifecycle_stage",
+                "type": "LifecycleStage"
+              },
+              {
+                "id": 4,
+                "name": "deployment",
+                "type": "Deployment"
+              },
+              {
+                "id": 5,
+                "name": "violations",
+                "type": "Violation",
+                "is_repeated": true
+              },
+              {
+                "id": 6,
+                "name": "enforcement",
+                "type": "Enforcement"
+              },
+              {
+                "id": 7,
+                "name": "time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 10,
+                "name": "first_occurred",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 11,
+                "name": "state",
+                "type": "ViolationState"
+              },
+              {
+                "id": 12,
+                "name": "snooze_till",
+                "type": "google.protobuf.Timestamp"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Violation",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "message",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "link",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "processes",
+                    "type": "ProcessIndicator",
+                    "is_repeated": true
+                  }
+                ]
+              },
+              {
+                "name": "Enforcement",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "action",
+                    "type": "storage.EnforcementAction"
+                  },
+                  {
+                    "id": 2,
+                    "name": "message",
+                    "type": "string"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ListAlert",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "lifecycle_stage",
+                "type": "LifecycleStage"
+              },
+              {
+                "id": 3,
+                "name": "time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 4,
+                "name": "policy",
+                "type": "ListAlertPolicy"
+              },
+              {
+                "id": 5,
+                "name": "deployment",
+                "type": "ListAlertDeployment"
+              },
+              {
+                "id": 6,
+                "name": "state",
+                "type": "ViolationState"
+              },
+              {
+                "id": 7,
+                "name": "enforcement_count",
+                "type": "int32"
+              }
+            ]
+          },
+          {
+            "name": "ListAlertPolicy",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "severity",
+                "type": "Severity"
+              },
+              {
+                "id": 4,
+                "name": "description",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "categories",
+                "type": "string",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "ListAlertDeployment",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "updated_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 4,
+                "name": "cluster_name",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "namespace",
+                "type": "string"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/deployment.proto"
+          },
+          {
+            "path": "storage/policy.proto"
+          },
+          {
+            "path": "storage/process_indicator.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "api_token.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "TokenMetadata",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "role",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "issued_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "expiration",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 6,
+                "name": "revoked",
+                "type": "bool"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "auth_provider.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "AuthProvider",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "type",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "ui_endpoint",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "enabled",
+                "type": "bool"
+              },
+              {
+                "id": 7,
+                "name": "login_url",
+                "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "validated",
+                "type": "bool"
+              },
+              {
+                "id": 9,
+                "name": "extra_ui_endpoints",
+                "type": "string",
+                "is_repeated": true
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 6,
+                  "name": "config",
+                  "type": "string"
+                }
+              }
+            ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "benchmark.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "Benchmark",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "editable",
+                "type": "bool"
+              },
+              {
+                "id": 4,
+                "name": "checks",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 5,
+                "name": "cluster_types",
+                "type": "ClusterType",
+                "is_repeated": true
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "storage/cluster.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "benchmark_scan.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "BenchmarkCheckStatus",
+            "enum_fields": [
+              {
+                "name": "INFO"
+              },
+              {
+                "name": "WARN",
+                "integer": 1
+              },
+              {
+                "name": "NOTE",
+                "integer": 2
+              },
+              {
+                "name": "PASS",
+                "integer": 3
+              },
+              {
+                "name": "NOT_APPLICABLE",
+                "integer": 4
+              }
+            ]
+          },
+          {
+            "name": "BenchmarkReason",
+            "enum_fields": [
+              {
+                "name": "SCHEDULED"
+              },
+              {
+                "name": "TRIGGERED",
+                "integer": 1
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "BenchmarkResult",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "benchmark_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "results",
+                "type": "BenchmarkCheckResult",
+                "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "start_time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "end_time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 6,
+                "name": "host",
+                "type": "string"
+              },
+              {
+                "id": 7,
+                "name": "scan_id",
+                "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 9,
+                "name": "reason",
+                "type": "BenchmarkReason"
+              }
+            ]
+          },
+          {
+            "name": "BenchmarkScan",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "checks",
+                "type": "Check",
+                "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "Check",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "definition",
+                    "type": "BenchmarkCheckDefinition"
+                  }
+                ],
+                "maps": [
+                  {
+                    "key_type": "string",
+                    "field": {
+                      "id": 2,
+                      "name": "aggregated_results",
+                      "type": "int32"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "BenchmarkScanMetadata",
+            "fields": [
+              {
+                "id": 1,
+                "name": "scan_id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "benchmark_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "cluster_ids",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "checks",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 5,
+                "name": "time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 6,
+                "name": "reason",
+                "type": "BenchmarkReason"
+              }
+            ]
+          },
+          {
+            "name": "BenchmarkCheckResult",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "host",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "definition",
+                "type": "BenchmarkCheckDefinition"
+              },
+              {
+                "id": 5,
+                "name": "result",
+                "type": "BenchmarkCheckStatus"
+              },
+              {
+                "id": 6,
+                "name": "notes",
+                "type": "string",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "BenchmarkCheckDefinition",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "description",
+                "type": "string"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "benchmark_schedule.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "BenchmarkSchedule",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "benchmark_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "benchmark_name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "day",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "hour",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "timezone_offset",
+                "type": "int64"
+              },
+              {
+                "id": 7,
+                "name": "last_updated",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 8,
+                "name": "cluster_ids",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 9,
+                "name": "notifiers",
+                "type": "string",
+                "is_repeated": true
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "benchmark_trigger.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "BenchmarkTrigger",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 3,
+                "name": "cluster_ids",
+                "type": "string",
+                "is_repeated": true
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "cluster.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "ClusterType",
+            "enum_fields": [
+              {
+                "name": "GENERIC_CLUSTER"
+              },
+              {
+                "name": "KUBERNETES_CLUSTER",
+                "integer": 1
+              },
+              {
+                "name": "OPENSHIFT_CLUSTER",
+                "integer": 2
+              },
+              {
+                "name": "DOCKER_EE_CLUSTER",
+                "integer": 4
+              }
+            ],
+            "reserved_ids": [
+              3
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "GoogleProviderMetadata",
+            "fields": [
+              {
+                "id": 1,
+                "name": "project",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "cluster_name",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "ProviderMetadata",
+            "fields": [
+              {
+                "id": 1,
+                "name": "region",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "zone",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "google",
+                "type": "GoogleProviderMetadata"
+              }
+            ]
+          },
+          {
+            "name": "Cluster",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "type",
+                "type": "ClusterType"
+              },
+              {
+                "id": 4,
+                "name": "main_image",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "central_api_endpoint",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "last_contact",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 7,
+                "name": "runtime_support",
+                "type": "bool"
+              },
+              {
+                "id": 8,
+                "name": "monitoring_endpoint",
+                "type": "string"
+              },
+              {
+                "id": 9,
+                "name": "kubernetes",
+                "type": "KubernetesParams"
+              },
+              {
+                "id": 11,
+                "name": "openshift",
+                "type": "OpenshiftParams"
+              },
+              {
+                "id": 12,
+                "name": "provider_metadata",
+                "type": "ProviderMetadata"
+              },
+              {
+                "id": 13,
+                "name": "admission_controller",
+                "type": "bool"
+              }
+            ],
+            "reserved_ids": [
+              10
+            ]
+          },
+          {
+            "name": "KubernetesParams",
+            "fields": [
+              {
+                "id": 1,
+                "name": "params",
+                "type": "CommonKubernetesParams"
+              }
+            ]
+          },
+          {
+            "name": "CommonKubernetesParams",
+            "fields": [
+              {
+                "id": 1,
+                "name": "namespace",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "OpenshiftParams",
+            "fields": [
+              {
+                "id": 1,
+                "name": "params",
+                "type": "CommonKubernetesParams"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "compliance.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "ComplianceState",
+            "enum_fields": [
+              {
+                "name": "COMPLIANCE_STATE_UNKNOWN"
+              },
+              {
+                "name": "COMPLIANCE_STATE_SUCCESS",
+                "integer": 1
+              },
+              {
+                "name": "COMPLIANCE_STATE_FAILURE",
+                "integer": 2
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "ComplianceResource",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cluster",
+                "type": "ClusterName"
+              },
+              {
+                "id": 2,
+                "name": "deployment",
+                "type": "DeploymentName"
+              },
+              {
+                "id": 3,
+                "name": "node",
+                "type": "NodeName"
+              },
+              {
+                "id": 4,
+                "name": "image",
+                "type": "ImageName"
+              }
+            ],
+            "messages": [
+              {
+                "name": "ClusterName",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "name",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
+                "name": "DeploymentName",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "cluster",
+                    "type": "ClusterName"
+                  },
+                  {
+                    "id": 2,
+                    "name": "id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 4,
+                    "name": "namespace",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
+                "name": "NodeName",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "cluster",
+                    "type": "ClusterName"
+                  },
+                  {
+                    "id": 2,
+                    "name": "id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "name",
+                    "type": "string"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ComplianceResultValue",
+            "fields": [
+              {
+                "id": 1,
+                "name": "evidence",
+                "type": "Evidence",
+                "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "Evidence",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "state",
+                    "type": "ComplianceState"
+                  },
+                  {
+                    "id": 2,
+                    "name": "message",
+                    "type": "string"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ComplianceControlResult",
+            "fields": [
+              {
+                "id": 1,
+                "name": "resource",
+                "type": "ComplianceResource"
+              },
+              {
+                "id": 2,
+                "name": "control_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "value",
+                "type": "ComplianceResultValue"
+              }
+            ]
+          },
+          {
+            "name": "ComplianceDomain",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cluster",
+                "type": "Cluster"
+              },
+              {
+                "id": 2,
+                "name": "nodes",
+                "type": "Node",
+                "is_repeated": true
+              },
+              {
+                "id": 3,
+                "name": "deployments",
+                "type": "Deployment",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "ComplianceRunMetadata",
+            "fields": [
+              {
+                "id": 1,
+                "name": "run_id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "standard_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "start_timestamp",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 4,
+                "name": "finish_timestamp",
+                "type": "google.protobuf.Timestamp"
+              }
+            ]
+          },
+          {
+            "name": "ComplianceRunResults",
+            "fields": [
+              {
+                "id": 1,
+                "name": "domain",
+                "type": "ComplianceDomain"
+              },
+              {
+                "id": 2,
+                "name": "run_metadata",
+                "type": "ComplianceRunMetadata"
+              },
+              {
+                "id": 3,
+                "name": "cluster_results",
+                "type": "EntityResults"
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 4,
+                  "name": "node_results",
+                  "type": "EntityResults"
+                }
+              },
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 5,
+                  "name": "deployment_results",
+                  "type": "EntityResults"
+                }
+              }
+            ],
+            "messages": [
+              {
+                "name": "EntityResults",
+                "maps": [
+                  {
+                    "key_type": "string",
+                    "field": {
+                      "id": 1,
+                      "name": "control_results",
+                      "type": "ComplianceResultValue"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/cluster.proto"
+          },
+          {
+            "path": "storage/deployment.proto"
+          },
+          {
+            "path": "storage/image.proto"
+          },
+          {
+            "path": "storage/node.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "compliance_management.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "ComplianceRunSchedule",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "standard_id",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "suspended",
+                "type": "bool"
+              },
+              {
+                "id": 5,
+                "name": "crontab_spec",
+                "type": "string"
+              }
+            ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "deployment.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "ContainerRuntime",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN_CONTAINER_RUNTIME"
+              },
+              {
+                "name": "DOCKER_CONTAINER_RUNTIME",
+                "integer": 1
+              }
+            ]
+          },
+          {
+            "name": "PortConfig.Exposure",
+            "enum_fields": [
+              {
+                "name": "UNSET"
+              },
+              {
+                "name": "EXTERNAL",
+                "integer": 1
+              },
+              {
+                "name": "NODE",
+                "integer": 2
+              },
+              {
+                "name": "INTERNAL",
+                "integer": 3
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "Deployment",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "version",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "type",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "namespace",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "replicas",
+                "type": "int64"
+              },
+              {
+                "id": 20,
+                "name": "label_selector",
+                "type": "LabelSelector"
+              },
+              {
+                "id": 8,
+                "name": "updated_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 9,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 10,
+                "name": "cluster_name",
+                "type": "string"
+              },
+              {
+                "id": 11,
+                "name": "containers",
+                "type": "Container",
+                "is_repeated": true
+              },
+              {
+                "id": 12,
+                "name": "risk",
+                "type": "Risk"
+              },
+              {
+                "id": 15,
+                "name": "priority",
+                "type": "int64"
+              },
+              {
+                "id": 16,
+                "name": "inactive",
+                "type": "bool"
+              },
+              {
+                "id": 17,
+                "name": "image_pull_secrets",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 18,
+                "name": "service_account",
+                "type": "string"
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 7,
+                  "name": "labels",
+                  "type": "string"
+                }
+              },
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 19,
+                  "name": "pod_labels",
+                  "type": "string"
+                }
+              },
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 14,
+                  "name": "annotations",
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          {
+            "name": "Container",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "config",
+                "type": "ContainerConfig"
+              },
+              {
+                "id": 3,
+                "name": "image",
+                "type": "Image"
+              },
+              {
+                "id": 4,
+                "name": "security_context",
+                "type": "SecurityContext"
+              },
+              {
+                "id": 5,
+                "name": "volumes",
+                "type": "Volume",
+                "is_repeated": true
+              },
+              {
+                "id": 6,
+                "name": "ports",
+                "type": "PortConfig",
+                "is_repeated": true
+              },
+              {
+                "id": 7,
+                "name": "secrets",
+                "type": "EmbeddedSecret",
+                "is_repeated": true
+              },
+              {
+                "id": 8,
+                "name": "resources",
+                "type": "Resources"
+              },
+              {
+                "id": 9,
+                "name": "instances",
+                "type": "ContainerInstance",
+                "is_repeated": true
+              },
+              {
+                "id": 10,
+                "name": "name",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "Resources",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cpu_cores_request",
+                "type": "float"
+              },
+              {
+                "id": 2,
+                "name": "cpu_cores_limit",
+                "type": "float"
+              },
+              {
+                "id": 3,
+                "name": "memory_mb_request",
+                "type": "float"
+              },
+              {
+                "id": 4,
+                "name": "memory_mb_limit",
+                "type": "float"
+              }
+            ]
+          },
+          {
+            "name": "Volume",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "source",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "destination",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "read_only",
+                "type": "bool"
+              },
+              {
+                "id": 5,
+                "name": "type",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "ContainerInstance",
+            "fields": [
+              {
+                "id": 1,
+                "name": "instance_id",
+                "type": "ContainerInstanceID"
+              },
+              {
+                "id": 2,
+                "name": "containing_pod_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "container_ips",
+                "type": "string",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "ContainerInstanceID",
+            "fields": [
+              {
+                "id": 1,
+                "name": "container_runtime",
+                "type": "ContainerRuntime"
+              },
+              {
+                "id": 2,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "node",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "EmbeddedSecret",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "path",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "PortConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "container_port",
+                "type": "int32"
+              },
+              {
+                "id": 3,
+                "name": "protocol",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "exposure",
+                "type": "Exposure"
+              },
+              {
+                "id": 5,
+                "name": "exposed_port",
+                "type": "int32"
+              }
+            ]
+          },
+          {
+            "name": "ContainerConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "env",
+                "type": "EnvironmentConfig",
+                "is_repeated": true
+              },
+              {
+                "id": 2,
+                "name": "command",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 3,
+                "name": "args",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "directory",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "user",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "uid",
+                "type": "int64"
+              }
+            ],
+            "messages": [
+              {
+                "name": "EnvironmentConfig",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "key",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "value",
+                    "type": "string"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "SecurityContext",
+            "fields": [
+              {
+                "id": 1,
+                "name": "privileged",
+                "type": "bool"
+              },
+              {
+                "id": 2,
+                "name": "selinux",
+                "type": "SELinux"
+              },
+              {
+                "id": 3,
+                "name": "drop_capabilities",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "add_capabilities",
+                "type": "string",
+                "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "SELinux",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "user",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "role",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "id": 4,
+                    "name": "level",
+                    "type": "string"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Risk",
+            "fields": [
+              {
+                "id": 1,
+                "name": "score",
+                "type": "float"
+              },
+              {
+                "id": 2,
+                "name": "results",
+                "type": "Result",
+                "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "Result",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "factors",
+                    "type": "Factor",
+                    "is_repeated": true
+                  },
+                  {
+                    "id": 3,
+                    "name": "score",
+                    "type": "float"
+                  }
+                ],
+                "messages": [
+                  {
+                    "name": "Factor",
+                    "fields": [
+                      {
+                        "id": 1,
+                        "name": "message",
+                        "type": "string"
+                      },
+                      {
+                        "id": 2,
+                        "name": "url",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ListDeployment",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "cluster",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "namespace",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "updated_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 7,
+                "name": "priority",
+                "type": "int64"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/labels.proto"
+          },
+          {
+            "path": "storage/image.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "group.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "Group",
+            "fields": [
+              {
+                "id": 1,
+                "name": "props",
+                "type": "GroupProperties"
+              },
+              {
+                "id": 3,
+                "name": "role_name",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "GroupProperties",
+            "fields": [
+              {
+                "id": 1,
+                "name": "auth_provider_id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "key",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "value",
+                "type": "string"
+              }
+            ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "image.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "CVSSV2.Impact",
+            "enum_fields": [
+              {
+                "name": "IMPACT_NONE"
+              },
+              {
+                "name": "IMPACT_PARTIAL",
+                "integer": 1
+              },
+              {
+                "name": "IMPACT_COMPLETE",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "CVSSV2.AttackVector",
+            "enum_fields": [
+              {
+                "name": "ATTACK_LOCAL"
+              },
+              {
+                "name": "ATTACK_ADJACENT",
+                "integer": 1
+              },
+              {
+                "name": "ATTACK_NETWORK",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "CVSSV2.AccessComplexity",
+            "enum_fields": [
+              {
+                "name": "ACCESS_HIGH"
+              },
+              {
+                "name": "ACCESS_MEDIUM",
+                "integer": 1
+              },
+              {
+                "name": "ACCESS_LOW",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "CVSSV2.Authentication",
+            "enum_fields": [
+              {
+                "name": "AUTH_MULTIPLE"
+              },
+              {
+                "name": "AUTH_SINGLE",
+                "integer": 1
+              },
+              {
+                "name": "AUTH_NONE",
+                "integer": 2
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "Image",
+            "fields": [
+              {
+                "id": 4,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 1,
+                "name": "name",
+                "type": "ImageName"
+              },
+              {
+                "id": 2,
+                "name": "metadata",
+                "type": "ImageMetadata"
+              },
+              {
+                "id": 3,
+                "name": "scan",
+                "type": "ImageScan"
+              }
+            ]
+          },
+          {
+            "name": "ImageScan",
+            "fields": [
+              {
+                "id": 1,
+                "name": "scan_time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 2,
+                "name": "components",
+                "type": "ImageScanComponent",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "ImageScanComponent",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "version",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "license",
+                "type": "License"
+              },
+              {
+                "id": 4,
+                "name": "vulns",
+                "type": "Vulnerability",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "License",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "type",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "url",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "Vulnerability",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cve",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "cvss",
+                "type": "float"
+              },
+              {
+                "id": 3,
+                "name": "summary",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "link",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "fixed_by",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "cvss_v2",
+                "type": "CVSSV2"
+              }
+            ]
+          },
+          {
+            "name": "CVSSV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "vector",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "attack_vector",
+                "type": "AttackVector"
+              },
+              {
+                "id": 3,
+                "name": "access_complexity",
+                "type": "AccessComplexity"
+              },
+              {
+                "id": 4,
+                "name": "authentication",
+                "type": "Authentication"
+              },
+              {
+                "id": 5,
+                "name": "confidentiality",
+                "type": "Impact"
+              },
+              {
+                "id": 6,
+                "name": "integrity",
+                "type": "Impact"
+              },
+              {
+                "id": 7,
+                "name": "availability",
+                "type": "Impact"
+              }
+            ]
+          },
+          {
+            "name": "ImageMetadata",
+            "fields": [
+              {
+                "id": 1,
+                "name": "v1",
+                "type": "V1Metadata"
+              },
+              {
+                "id": 2,
+                "name": "v2",
+                "type": "V2Metadata"
+              },
+              {
+                "id": 3,
+                "name": "layer_shas",
+                "type": "string",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "V2Metadata",
+            "fields": [
+              {
+                "id": 1,
+                "name": "digest",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "V1Metadata",
+            "fields": [
+              {
+                "id": 1,
+                "name": "digest",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 3,
+                "name": "author",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "layers",
+                "type": "ImageLayer",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "ImageLayer",
+            "fields": [
+              {
+                "id": 1,
+                "name": "instruction",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "value",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 4,
+                "name": "author",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "components",
+                "type": "ImageScanComponent",
+                "is_repeated": true
+              },
+              {
+                "id": 6,
+                "name": "empty",
+                "type": "bool"
+              }
+            ]
+          },
+          {
+            "name": "ImageName",
+            "fields": [
+              {
+                "id": 1,
+                "name": "registry",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "remote",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "tag",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "full_name",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "ListImage",
+            "fields": [
+              {
+                "id": 7,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "components",
+                "type": "int32"
+              },
+              {
+                "id": 4,
+                "name": "cves",
+                "type": "int32"
+              },
+              {
+                "id": 5,
+                "name": "fixable_cves",
+                "type": "int32"
+              },
+              {
+                "id": 6,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "image_integration.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "ImageIntegrationCategory",
+            "enum_fields": [
+              {
+                "name": "REGISTRY"
+              },
+              {
+                "name": "SCANNER",
+                "integer": 1
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "ImageIntegration",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "type",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "clusters",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 6,
+                "name": "categories",
+                "type": "ImageIntegrationCategory",
+                "is_repeated": true
+              },
+              {
+                "id": 7,
+                "name": "dtr",
+                "type": "DTRConfig"
+              },
+              {
+                "id": 8,
+                "name": "clairify",
+                "type": "ClairifyConfig"
+              },
+              {
+                "id": 9,
+                "name": "docker",
+                "type": "DockerConfig"
+              },
+              {
+                "id": 10,
+                "name": "quay",
+                "type": "QuayConfig"
+              },
+              {
+                "id": 11,
+                "name": "ecr",
+                "type": "ECRConfig"
+              },
+              {
+                "id": 12,
+                "name": "tenable",
+                "type": "TenableConfig"
+              },
+              {
+                "id": 13,
+                "name": "google",
+                "type": "GoogleConfig"
+              },
+              {
+                "id": 14,
+                "name": "clair",
+                "type": "ClairConfig"
+              }
+            ]
+          },
+          {
+            "name": "QuayConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "endpoint",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "oauthToken",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "ClairConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "endpoint",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "ClairifyConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "endpoint",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "DockerConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "endpoint",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "username",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "password",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "insecure",
+                "type": "bool"
+              }
+            ]
+          },
+          {
+            "name": "ECRConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "registry_id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "access_key_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "secret_access_key",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "region",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "DTRConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "username",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "password",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "endpoint",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "insecure",
+                "type": "bool"
+              }
+            ]
+          },
+          {
+            "name": "GoogleConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "endpoint",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "service_account",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "project",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "TenableConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "access_key",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "secret_key",
+                "type": "string"
+              }
+            ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "labels.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "LabelSelector.Operator",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN"
+              },
+              {
+                "name": "IN",
+                "integer": 1
+              },
+              {
+                "name": "NOT_IN",
+                "integer": 2
+              },
+              {
+                "name": "EXISTS",
+                "integer": 3
+              },
+              {
+                "name": "NOT_EXISTS",
+                "integer": 4
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "LabelSelector",
+            "fields": [
+              {
+                "id": 2,
+                "name": "requirements",
+                "type": "Requirement",
+                "is_repeated": true
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 1,
+                  "name": "match_labels",
+                  "type": "string"
+                }
+              }
+            ],
+            "messages": [
+              {
+                "name": "Requirement",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "key",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "op",
+                    "type": "Operator"
+                  },
+                  {
+                    "id": 3,
+                    "name": "values",
+                    "type": "string",
+                    "is_repeated": true
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "multiplier.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "Multiplier",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "scope",
+                "type": "Scope"
+              },
+              {
+                "id": 4,
+                "name": "value",
+                "type": "float"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "storage/scope.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "namespace.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "Namespace",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "cluster_name",
+                "type": "string"
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 5,
+                  "name": "labels",
+                  "type": "string"
+                }
+              }
+            ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "network_flow.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "NetworkEntityInfo.Type",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN_TYPE"
+              },
+              {
+                "name": "DEPLOYMENT",
+                "integer": 1
+              },
+              {
+                "name": "INTERNET",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "L4Protocol",
+            "enum_fields": [
+              {
+                "name": "L4_PROTOCOL_UNKNOWN"
+              },
+              {
+                "name": "L4_PROTOCOL_TCP",
+                "integer": 1
+              },
+              {
+                "name": "L4_PROTOCOL_UDP",
+                "integer": 2
+              },
+              {
+                "name": "L4_PROTOCOL_ICMP",
+                "integer": 3
+              },
+              {
+                "name": "L4_PROTOCOL_RAW",
+                "integer": 4
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "NetworkFlow",
+            "fields": [
+              {
+                "id": 1,
+                "name": "props",
+                "type": "NetworkFlowProperties"
+              },
+              {
+                "id": 2,
+                "name": "last_seen_timestamp",
+                "type": "google.protobuf.Timestamp"
+              }
+            ]
+          },
+          {
+            "name": "NetworkFlowProperties",
+            "fields": [
+              {
+                "id": 1,
+                "name": "src_entity",
+                "type": "NetworkEntityInfo"
+              },
+              {
+                "id": 2,
+                "name": "dst_entity",
+                "type": "NetworkEntityInfo"
+              },
+              {
+                "id": 3,
+                "name": "dst_port",
+                "type": "uint32"
+              },
+              {
+                "id": 4,
+                "name": "l4protocol",
+                "type": "L4Protocol"
+              }
+            ]
+          },
+          {
+            "name": "NetworkEntityInfo",
+            "fields": [
+              {
+                "id": 1,
+                "name": "type",
+                "type": "Type"
+              },
+              {
+                "id": 2,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "deployment",
+                "type": "Deployment"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Deployment",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "namespace",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "cluster",
+                    "type": "string"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "network_policy.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "Protocol",
+            "enum_fields": [
+              {
+                "name": "UNSET_PROTOCOL"
+              },
+              {
+                "name": "TCP_PROTOCOL",
+                "integer": 1
+              },
+              {
+                "name": "UDP_PROTOCOL",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "NetworkPolicyType",
+            "enum_fields": [
+              {
+                "name": "UNSET_NETWORK_POLICY_TYPE"
+              },
+              {
+                "name": "INGRESS_NETWORK_POLICY_TYPE",
+                "integer": 1
+              },
+              {
+                "name": "EGRESS_NETWORK_POLICY_TYPE",
+                "integer": 2
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "NetworkPolicy",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "cluster_name",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "namespace",
+                "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "spec",
+                "type": "NetworkPolicySpec"
+              },
+              {
+                "id": 9,
+                "name": "yaml",
+                "type": "string"
+              },
+              {
+                "id": 10,
+                "name": "api_version",
+                "type": "string"
+              },
+              {
+                "id": 11,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 6,
+                  "name": "labels",
+                  "type": "string"
+                }
+              },
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 7,
+                  "name": "annotations",
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          {
+            "name": "NetworkPolicySpec",
+            "fields": [
+              {
+                "id": 1,
+                "name": "pod_selector",
+                "type": "LabelSelector"
+              },
+              {
+                "id": 2,
+                "name": "ingress",
+                "type": "NetworkPolicyIngressRule",
+                "is_repeated": true
+              },
+              {
+                "id": 3,
+                "name": "egress",
+                "type": "NetworkPolicyEgressRule",
+                "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "policy_types",
+                "type": "NetworkPolicyType",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "NetworkPolicyEgressRule",
+            "fields": [
+              {
+                "id": 1,
+                "name": "ports",
+                "type": "NetworkPolicyPort",
+                "is_repeated": true
+              },
+              {
+                "id": 2,
+                "name": "to",
+                "type": "NetworkPolicyPeer",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "NetworkPolicyPeer",
+            "fields": [
+              {
+                "id": 1,
+                "name": "pod_selector",
+                "type": "LabelSelector"
+              },
+              {
+                "id": 2,
+                "name": "namespace_selector",
+                "type": "LabelSelector"
+              },
+              {
+                "id": 3,
+                "name": "ip_block",
+                "type": "IPBlock"
+              }
+            ]
+          },
+          {
+            "name": "IPBlock",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cidr",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "except",
+                "type": "string",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "NetworkPolicyPort",
+            "fields": [
+              {
+                "id": 1,
+                "name": "protocol",
+                "type": "Protocol"
+              },
+              {
+                "id": 2,
+                "name": "port",
+                "type": "int32"
+              }
+            ]
+          },
+          {
+            "name": "NetworkPolicyIngressRule",
+            "fields": [
+              {
+                "id": 1,
+                "name": "ports",
+                "type": "NetworkPolicyPort",
+                "is_repeated": true
+              },
+              {
+                "id": 2,
+                "name": "from",
+                "type": "NetworkPolicyPeer",
+                "is_repeated": true
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/labels.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "node.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "Node",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              }
+            ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "notifier.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "Notifier",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "type",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "ui_endpoint",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "enabled",
+                "type": "bool"
+              },
+              {
+                "id": 8,
+                "name": "label_key",
+                "type": "string"
+              },
+              {
+                "id": 9,
+                "name": "label_default",
+                "type": "string"
+              },
+              {
+                "id": 10,
+                "name": "jira",
+                "type": "Jira"
+              },
+              {
+                "id": 11,
+                "name": "email",
+                "type": "Email"
+              },
+              {
+                "id": 12,
+                "name": "cscc",
+                "type": "CSCC"
+              },
+              {
+                "id": 13,
+                "name": "splunk",
+                "type": "Splunk"
+              }
+            ]
+          },
+          {
+            "name": "CSCC",
+            "fields": [
+              {
+                "id": 1,
+                "name": "service_account",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "source_id",
+                "type": "string"
+              }
+            ],
+            "reserved_ids": [
+              2,
+              3
+            ]
+          },
+          {
+            "name": "Jira",
+            "fields": [
+              {
+                "id": 1,
+                "name": "url",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "username",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "password",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "issue_type",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "Email",
+            "fields": [
+              {
+                "id": 1,
+                "name": "server",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "sender",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "username",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "password",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "disableTLS",
+                "type": "bool"
+              },
+              {
+                "id": 6,
+                "name": "useSTARTTLS",
+                "type": "bool"
+              },
+              {
+                "id": 7,
+                "name": "from",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "Splunk",
+            "fields": [
+              {
+                "id": 1,
+                "name": "http_token",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "http_endpoint",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "insecure",
+                "type": "bool"
+              }
+            ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "policy.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "EnforcementAction",
+            "enum_fields": [
+              {
+                "name": "UNSET_ENFORCEMENT"
+              },
+              {
+                "name": "SCALE_TO_ZERO_ENFORCEMENT",
+                "integer": 1
+              },
+              {
+                "name": "UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT",
+                "integer": 2
+              },
+              {
+                "name": "KILL_POD_ENFORCEMENT",
+                "integer": 3
+              },
+              {
+                "name": "FAIL_BUILD_ENFORCEMENT",
+                "integer": 4
+              }
+            ]
+          },
+          {
+            "name": "Severity",
+            "enum_fields": [
+              {
+                "name": "UNSET_SEVERITY"
+              },
+              {
+                "name": "LOW_SEVERITY",
+                "integer": 1
+              },
+              {
+                "name": "MEDIUM_SEVERITY",
+                "integer": 2
+              },
+              {
+                "name": "HIGH_SEVERITY",
+                "integer": 3
+              },
+              {
+                "name": "CRITICAL_SEVERITY",
+                "integer": 4
+              }
+            ]
+          },
+          {
+            "name": "LifecycleStage",
+            "enum_fields": [
+              {
+                "name": "DEPLOY"
+              },
+              {
+                "name": "BUILD",
+                "integer": 1
+              },
+              {
+                "name": "RUNTIME",
+                "integer": 2
+              }
+            ]
+          },
+          {
+            "name": "Comparator",
+            "enum_fields": [
+              {
+                "name": "LESS_THAN"
+              },
+              {
+                "name": "LESS_THAN_OR_EQUALS",
+                "integer": 1
+              },
+              {
+                "name": "EQUALS",
+                "integer": 2
+              },
+              {
+                "name": "GREATER_THAN_OR_EQUALS",
+                "integer": 3
+              },
+              {
+                "name": "GREATER_THAN",
+                "integer": 4
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "Policy",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "description",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "rationale",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "remediation",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "disabled",
+                "type": "bool"
+              },
+              {
+                "id": 7,
+                "name": "categories",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 8,
+                "name": "fields",
+                "type": "PolicyFields"
+              },
+              {
+                "id": 9,
+                "name": "lifecycle_stages",
+                "type": "LifecycleStage",
+                "is_repeated": true
+              },
+              {
+                "id": 10,
+                "name": "whitelists",
+                "type": "Whitelist",
+                "is_repeated": true
+              },
+              {
+                "id": 11,
+                "name": "scope",
+                "type": "Scope",
+                "is_repeated": true
+              },
+              {
+                "id": 12,
+                "name": "severity",
+                "type": "Severity"
+              },
+              {
+                "id": 13,
+                "name": "enforcement_actions",
+                "type": "EnforcementAction",
+                "is_repeated": true
+              },
+              {
+                "id": 14,
+                "name": "notifiers",
+                "type": "string",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "ListPolicy",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "description",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "severity",
+                "type": "Severity"
+              },
+              {
+                "id": 5,
+                "name": "disabled",
+                "type": "bool"
+              },
+              {
+                "id": 6,
+                "name": "lifecycle_stages",
+                "type": "LifecycleStage",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "PolicyFields",
+            "fields": [
+              {
+                "id": 1,
+                "name": "image_name",
+                "type": "ImageNamePolicy"
+              },
+              {
+                "id": 2,
+                "name": "image_age_days",
+                "type": "int64"
+              },
+              {
+                "id": 3,
+                "name": "line_rule",
+                "type": "DockerfileLineRuleField"
+              },
+              {
+                "id": 4,
+                "name": "cvss",
+                "type": "NumericalPolicy"
+              },
+              {
+                "id": 5,
+                "name": "cve",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "component",
+                "type": "Component"
+              },
+              {
+                "id": 7,
+                "name": "scan_age_days",
+                "type": "int64"
+              },
+              {
+                "id": 8,
+                "name": "no_scan_exists",
+                "type": "bool"
+              },
+              {
+                "id": 9,
+                "name": "env",
+                "type": "KeyValuePolicy"
+              },
+              {
+                "id": 10,
+                "name": "command",
+                "type": "string"
+              },
+              {
+                "id": 11,
+                "name": "args",
+                "type": "string"
+              },
+              {
+                "id": 12,
+                "name": "directory",
+                "type": "string"
+              },
+              {
+                "id": 13,
+                "name": "user",
+                "type": "string"
+              },
+              {
+                "id": 14,
+                "name": "volume_policy",
+                "type": "VolumePolicy"
+              },
+              {
+                "id": 15,
+                "name": "port_policy",
+                "type": "PortPolicy"
+              },
+              {
+                "id": 16,
+                "name": "required_label",
+                "type": "KeyValuePolicy"
+              },
+              {
+                "id": 17,
+                "name": "required_annotation",
+                "type": "KeyValuePolicy"
+              },
+              {
+                "id": 24,
+                "name": "disallowed_annotation",
+                "type": "KeyValuePolicy"
+              },
+              {
+                "id": 18,
+                "name": "privileged",
+                "type": "bool"
+              },
+              {
+                "id": 19,
+                "name": "drop_capabilities",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 20,
+                "name": "add_capabilities",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 21,
+                "name": "container_resource_policy",
+                "type": "ResourcePolicy"
+              },
+              {
+                "id": 23,
+                "name": "process_policy",
+                "type": "ProcessPolicy"
+              }
+            ],
+            "reserved_ids": [
+              22
+            ]
+          },
+          {
+            "name": "Component",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "version",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "DockerfileLineRuleField",
+            "fields": [
+              {
+                "id": 1,
+                "name": "instruction",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "value",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "KeyValuePolicy",
+            "fields": [
+              {
+                "id": 1,
+                "name": "key",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "value",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "VolumePolicy",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "source",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "destination",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "read_only",
+                "type": "bool"
+              },
+              {
+                "id": 5,
+                "name": "type",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "ProcessPolicy",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "args",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "ancestor",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "ResourcePolicy",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cpu_resource_request",
+                "type": "NumericalPolicy"
+              },
+              {
+                "id": 2,
+                "name": "cpu_resource_limit",
+                "type": "NumericalPolicy"
+              },
+              {
+                "id": 3,
+                "name": "memory_resource_request",
+                "type": "NumericalPolicy"
+              },
+              {
+                "id": 4,
+                "name": "memory_resource_limit",
+                "type": "NumericalPolicy"
+              }
+            ]
+          },
+          {
+            "name": "NumericalPolicy",
+            "fields": [
+              {
+                "id": 1,
+                "name": "op",
+                "type": "Comparator"
+              },
+              {
+                "id": 3,
+                "name": "value",
+                "type": "float"
+              }
+            ]
+          },
+          {
+            "name": "PortPolicy",
+            "fields": [
+              {
+                "id": 1,
+                "name": "port",
+                "type": "int32"
+              },
+              {
+                "id": 2,
+                "name": "protocol",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "ImageNamePolicy",
+            "fields": [
+              {
+                "id": 1,
+                "name": "registry",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "remote",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "tag",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "Whitelist",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "container",
+                "type": "Container"
+              },
+              {
+                "id": 5,
+                "name": "deployment",
+                "type": "Deployment"
+              },
+              {
+                "id": 6,
+                "name": "expiration",
+                "type": "google.protobuf.Timestamp"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Container",
+                "fields": [
+                  {
+                    "id": 3,
+                    "name": "image_name",
+                    "type": "ImageName"
+                  }
+                ]
+              },
+              {
+                "name": "Deployment",
+                "fields": [
+                  {
+                    "id": 3,
+                    "name": "name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 4,
+                    "name": "scope",
+                    "type": "Scope"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/scope.proto"
+          },
+          {
+            "path": "storage/image.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "process_indicator.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "ProcessIndicator",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "deployment_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "container_name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "pod_id",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "emit_timestamp",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 6,
+                "name": "signal",
+                "type": "ProcessSignal"
+              }
+            ]
+          },
+          {
+            "name": "ProcessIndicatorUniqueKey",
+            "fields": [
+              {
+                "id": 1,
+                "name": "pod_id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "container_name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "process_name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "process_exec_file_path",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "process_args",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "ProcessSignal",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "container_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 4,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "args",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "exec_file_path",
+                "type": "string"
+              },
+              {
+                "id": 7,
+                "name": "pid",
+                "type": "uint32"
+              },
+              {
+                "id": 8,
+                "name": "uid",
+                "type": "uint32"
+              },
+              {
+                "id": 9,
+                "name": "gid",
+                "type": "uint32"
+              },
+              {
+                "id": 10,
+                "name": "lineage",
+                "type": "string",
+                "is_repeated": true
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "role.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "Access",
+            "enum_fields": [
+              {
+                "name": "NO_ACCESS"
+              },
+              {
+                "name": "READ_ACCESS",
+                "integer": 1
+              },
+              {
+                "name": "READ_WRITE_ACCESS",
+                "integer": 2
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "Role",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "global_access",
+                "type": "Access"
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 3,
+                  "name": "resource_to_access",
+                  "type": "Access"
+                }
+              }
+            ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "scope.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "Scope",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cluster",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "namespace",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "label",
+                "type": "Label"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Label",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "key",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "value",
+                    "type": "string"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "secret.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "SecretType",
+            "enum_fields": [
+              {
+                "name": "UNDETERMINED"
+              },
+              {
+                "name": "PUBLIC_CERTIFICATE",
+                "integer": 1
+              },
+              {
+                "name": "CERTIFICATE_REQUEST",
+                "integer": 2
+              },
+              {
+                "name": "PRIVACY_ENHANCED_MESSAGE",
+                "integer": 3
+              },
+              {
+                "name": "OPENSSH_PRIVATE_KEY",
+                "integer": 4
+              },
+              {
+                "name": "PGP_PRIVATE_KEY",
+                "integer": 5
+              },
+              {
+                "name": "EC_PRIVATE_KEY",
+                "integer": 6
+              },
+              {
+                "name": "RSA_PRIVATE_KEY",
+                "integer": 7
+              },
+              {
+                "name": "DSA_PRIVATE_KEY",
+                "integer": 8
+              },
+              {
+                "name": "CERT_PRIVATE_KEY",
+                "integer": 9
+              },
+              {
+                "name": "ENCRYPTED_PRIVATE_KEY",
+                "integer": 10
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "Secret",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "cluster_name",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "namespace",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "type",
+                "type": "string"
+              },
+              {
+                "id": 9,
+                "name": "created_at",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 10,
+                "name": "files",
+                "type": "SecretDataFile",
+                "is_repeated": true
+              },
+              {
+                "id": 11,
+                "name": "relationship",
+                "type": "SecretRelationship"
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 7,
+                  "name": "labels",
+                  "type": "string"
+                }
+              },
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 8,
+                  "name": "annotations",
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          {
+            "name": "ListSecret",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "cluster_name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "namespace",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "types",
+                "type": "SecretType",
+                "is_repeated": true
+              },
+              {
+                "id": 6,
+                "name": "created_at",
+                "type": "google.protobuf.Timestamp"
+              }
+            ]
+          },
+          {
+            "name": "SecretRelationship",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "container_relationships",
+                "type": "SecretContainerRelationship",
+                "is_repeated": true
+              },
+              {
+                "id": 5,
+                "name": "deployment_relationships",
+                "type": "SecretDeploymentRelationship",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "SecretDeploymentRelationship",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "SecretContainerRelationship",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "path",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "SecretDataFile",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "type",
+                "type": "SecretType"
+              },
+              {
+                "id": 3,
+                "name": "cert",
+                "type": "Cert"
+              }
+            ]
+          },
+          {
+            "name": "Cert",
+            "fields": [
+              {
+                "id": 1,
+                "name": "subject",
+                "type": "CertName"
+              },
+              {
+                "id": 2,
+                "name": "issuer",
+                "type": "CertName"
+              },
+              {
+                "id": 3,
+                "name": "sans",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "start_date",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 5,
+                "name": "end_date",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 6,
+                "name": "algorithm",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "CertName",
+            "fields": [
+              {
+                "id": 1,
+                "name": "common_name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "country",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "organization",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "organization_unit",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "locality",
+                "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "province",
+                "type": "string"
+              },
+              {
+                "id": 7,
+                "name": "street_address",
+                "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "postal_code",
+                "type": "string"
+              },
+              {
+                "id": 9,
+                "name": "names",
+                "type": "string",
+                "is_repeated": true
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "service_identity.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "ServiceType",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN_SERVICE"
+              },
+              {
+                "name": "SENSOR_SERVICE",
+                "integer": 1
+              },
+              {
+                "name": "CENTRAL_SERVICE",
+                "integer": 2
+              },
+              {
+                "name": "REMOTE_SERVICE",
+                "integer": 3
+              },
+              {
+                "name": "COLLECTOR_SERVICE",
+                "integer": 4
+              },
+              {
+                "name": "MONITORING_UI_SERVICE",
+                "integer": 5
+              },
+              {
+                "name": "MONITORING_DB_SERVICE",
+                "integer": 6
+              },
+              {
+                "name": "MONITORING_CLIENT_SERVICE",
+                "integer": 7
+              },
+              {
+                "name": "BENCHMARK_SERVICE",
+                "integer": 8
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "ServiceIdentity",
+            "fields": [
+              {
+                "id": 1,
+                "name": "serial",
+                "type": "int64"
+              },
+              {
+                "id": 2,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "type",
+                "type": "ServiceType"
+              }
+            ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "user.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "User",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "auth_provider_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "attributes",
+                "type": "UserAttribute",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "UserAttribute",
+            "fields": [
+              {
+                "id": 1,
+                "name": "key",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "value",
+                "type": "string"
+              }
+            ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "version.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "Version",
+            "fields": [
+              {
+                "id": 1,
+                "name": "seq_num",
+                "type": "int32"
+              },
+              {
+                "id": 2,
+                "name": "version",
+                "type": "string"
+              }
+            ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    }
+  ]
+}

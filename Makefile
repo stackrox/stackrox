@@ -10,7 +10,7 @@ all: deps style test image
 ## Style ##
 ###########
 .PHONY: style
-style: fmt imports lint vet blanks crosspkgimports no-large-files only-store-storage-protos ui-lint qa-tests-style
+style: fmt imports lint vet blanks crosspkgimports no-large-files only-store-storage-protos storage-protos-compatible ui-lint qa-tests-style
 
 .PHONY: qa-tests-style
 qa-tests-style:
@@ -62,6 +62,19 @@ no-large-files:
 only-store-storage-protos:
 	@echo "+ $@"
 	@go run $(BASE_DIR)/tools/storedprotos/verify.go $(shell go list github.com/stackrox/rox/central/...)
+
+PROTOLOCK_BIN := $(GOPATH)/bin/protolock
+$(PROTOLOCK_BIN):
+	@echo "+ $@"
+	$(BASE_PATH)/scripts/go-get-version.sh github.com/viswajithiii/protolock 43bb8a9ba4e8de043a5ffacc64b1c38d95419e1d --skip-install
+	mkdir -p $(GOPATH)/src/github.com/nilslice
+	mv $(GOPATH)/src/github.com/viswajithiii/protolock $(GOPATH)/src/github.com/nilslice/protolock
+	go install github.com/nilslice/protolock/...
+
+.PHONY: storage-protos-compatible
+storage-protos-compatible: $(PROTOLOCK_BIN)
+	@echo "+ $@"
+	@protolock status -lockdir=$(BASE_DIR)/proto/storage -protoroot=$(BASE_DIR)/proto/storage
 
 .PHONY: lint
 lint:
