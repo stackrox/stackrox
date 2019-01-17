@@ -209,11 +209,6 @@ func Command() *cobra.Command {
 
 	c.AddCommand(k8s())
 	c.AddCommand(openshift())
-
-	swarmCmd := dockerBasedOrchestrator("swarm", "Docker Swarm", storage.ClusterType_SWARM_CLUSTER)
-	swarmCmd.Hidden = true
-	c.AddCommand(swarmCmd)
-
 	return c
 }
 

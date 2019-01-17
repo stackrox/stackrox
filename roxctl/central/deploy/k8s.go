@@ -53,7 +53,7 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 	}
 
 	c.AddCommand(externalVolume())
-	c.AddCommand(hostPathVolume(cluster))
+	c.AddCommand(hostPathVolume())
 	c.AddCommand(noVolume())
 
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}

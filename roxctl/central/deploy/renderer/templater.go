@@ -125,22 +125,12 @@ type K8sConfig struct {
 	Command string
 }
 
-// SwarmConfig contains swarm fields
-type SwarmConfig struct {
-	CommonConfig
-
-	// swarm fields
-	NetworkMode string
-	PublicPort  int
-}
-
 // Config configures the deployer for the central service.
 type Config struct {
 	ClusterType storage.ClusterType
 	OutputDir   string
 
-	K8sConfig   *K8sConfig
-	SwarmConfig *SwarmConfig
+	K8sConfig *K8sConfig
 
 	External *ExternalPersistence
 	HostPath *HostPathPersistence

@@ -24,7 +24,6 @@ var (
 		"roxctl",
 		"pkg",
 		"sensor/kubernetes",
-		"sensor/swarm",
 		"sensor/common",
 		"tools",
 		"integration-tests",
@@ -126,7 +125,7 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot string) (errs []
 		allowedPackages = append(allowedPackages, "image")
 	}
 
-	if validImportRoot == "sensor/swarm" || validImportRoot == "sensor/kubernetes" {
+	if validImportRoot == "sensor/kubernetes" {
 		allowedPackages = append(allowedPackages, "sensor/common")
 	}
 

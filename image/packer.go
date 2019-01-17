@@ -14,7 +14,6 @@ import (
 
 // These are the go based files from packr
 var (
-	SwarmBox     = packr.NewBox("./templates/swarm")
 	K8sBox       = packr.NewBox("./templates/kubernetes")
 	OpenshiftBox = packr.NewBox("./templates/openshift")
 	AssetBox     = packr.NewBox("./assets")

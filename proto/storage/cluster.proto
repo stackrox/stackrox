@@ -8,11 +8,11 @@ import "google/protobuf/timestamp.proto";
 package storage;
 
 enum ClusterType {
-    GENERIC_CLUSTER    = 0;
-    KUBERNETES_CLUSTER = 1;
-    OPENSHIFT_CLUSTER  = 2;
-    SWARM_CLUSTER      = 3;
-    DOCKER_EE_CLUSTER  = 4;
+    GENERIC_CLUSTER          = 0;
+    KUBERNETES_CLUSTER       = 1;
+    OPENSHIFT_CLUSTER        = 2;
+    reserved 3;
+    DOCKER_EE_CLUSTER        = 4;
 }
 
 message GoogleProviderMetadata {
@@ -39,10 +39,10 @@ message Cluster {
     bool                      runtime_support             = 7;
     string                    monitoring_endpoint         = 8;
 
+    reserved 10;
     oneof orchestrator_params {
-        KubernetesParams kubernetes = 9;
-        SwarmParams      swarm      = 10;
-        OpenshiftParams  openshift  = 11;
+        KubernetesParams kubernetes       = 9;
+        OpenshiftParams  openshift        = 11;
     }
 
     ProviderMetadata          provider_metadata           = 12;
@@ -59,8 +59,4 @@ message CommonKubernetesParams {
 
 message OpenshiftParams {
     CommonKubernetesParams params = 1;
-}
-
-message SwarmParams {
-    bool disable_swarm_tls = 1;
 }

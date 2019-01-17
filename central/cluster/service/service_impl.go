@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"strings"
@@ -104,12 +103,7 @@ func validateInput(cluster *storage.Cluster) error {
 		errorList.AddError(validateDNS1123Field("namespace", orchSpecific.Kubernetes.GetParams().GetNamespace()))
 	case *storage.Cluster_Openshift:
 		errorList.AddError(validateDNS1123Field("namespace", orchSpecific.Openshift.GetParams().GetNamespace()))
-	case *storage.Cluster_Swarm:
-		if cluster.GetRuntimeSupport() {
-			errorList.AddError(errors.New("runtime is not supported with Swarm"))
-		}
 	}
-
 	if cluster.GetMonitoringEndpoint() != "" {
 		// Purposefully not checking the CAPath because only one is needed for an indication of monitoring not being enabled
 		if _, err := ioutil.ReadFile(monitoring.CAPath); err != nil {

@@ -69,35 +69,6 @@ that commit by default. The image will be pulled if needed.
 
 Further steps are orchestrator specific.
 
-<details><summary>Docker Swarm</summary>
-
-Set `LOCAL_API_ENDPOINT` to a `hostname:port` string appropriate for your
-local host, VM, or cluster, then:
-```bash
-./deploy/swarm/deploy.sh
-```
-
-When prompted, enter the credentials for whatever image registry you are
-downloading StackRox Platform from. Usually, this is [Docker Hub](https://hub.docker.com).
-They are necessary so that Sensor can properly deploy the Benchmark Bootstrap
-service on all cluster nodes when requested.
-You may set these as `REGISTRY_USERNAME` and `REGISTRY_PASSWORD` in your
-environment to avoid typing them repeatedly.
-
-If `DOCKER_CERT_PATH` is empty in the script's environment, the script will
-request that Central generate a Sensor config that excludes Docker TLS
-credentials. Otherwise, the credentials currently in use in your shell
-will be sent to the cluster and created as secrets for the Sensor to use.
-
-If you are running on a local VM and do not want Swarm to pull a new image when
-you submit the StackRox Platform stack (e.g., to use a locally built `:latest` tag),
-use this variant instead:
-
-```bash
-./deploy/swarm/deploy-local.sh
-```
-</details>
-
 <details><summary>Kubernetes</summary>
 
 Set your Docker image-pull credentials as `REGISTRY_USERNAME` and
@@ -109,31 +80,6 @@ Set your Docker image-pull credentials as `REGISTRY_USERNAME` and
 </details>
 
 ## Deploying for Customer
-
-<details><summary>Docker Swarm (not officially supported)</summary>
-
-Note: you may need to run `unset DOCKER_HOST DOCKER_CERT_PATH DOCKER_TLS_VERIFY`
-on a fresh terminal locally so that you don't try to run an interactive container
-remotely.
-
-```
-docker run -i --rm stackrox.io/main:<tag> interactive > swarm.zip
-```
-
-This will run you through an installer and generate a `swarm.zip` file:
-
-```$xslt
-unzip swarm.zip -d swarm
-```
-
-Note: This should be run in an environment that does have the proper cert bundle
-```$xslt
-bash swarm/central.sh
-```
-
-Now Central has been deployed. Use the UI to deploy Sensor.
-
-</details>
 
 <details><summary>Kubernetes</summary>
 

@@ -1,7 +1,7 @@
 {
   "name": "CIS Docker v1.1.0 Benchmark",
   "editable": false,
-  "cluster_types": ["KUBERNETES_CLUSTER", "SWARM_CLUSTER", "DOCKER_EE_CLUSTER", "OPENSHIFT_CLUSTER"],
+  "cluster_types": ["KUBERNETES_CLUSTER", "DOCKER_EE_CLUSTER", "OPENSHIFT_CLUSTER"],
   "checks": [
     "CIS Docker v1.1.0 - 1.1",
     "CIS Docker v1.1.0 - 1.2",

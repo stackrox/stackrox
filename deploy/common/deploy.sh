@@ -60,7 +60,7 @@ function wait_for_central {
 # arguments:
 #   - central API server endpoint reachable from this host
 #   - name of cluster
-#   - type of cluster (e.g., SWARM_CLUSTER)
+#   - type of cluster (e.g., KUBERNETES_CLUSTER)
 #   - image reference (e.g., stackrox/main:$(git describe --tags --abbrev=10 --dirty))
 #   - central API endpoint reachable from the container (e.g., my-host:8080)
 #   - directory to drop files in

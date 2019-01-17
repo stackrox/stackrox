@@ -25,8 +25,7 @@ import (
 
 const (
 	emergencyReleaseLabelKey = "critical.stackrox.io"
-
-	timeout = 10 * time.Second
+	timeout                  = 10 * time.Second
 
 	// This purposefully leaves a newline at the top for formatting when using kubectl
 	kubectlTemplate = `

@@ -579,14 +579,6 @@ func (resolver *clusterOrchestratorParamsResolver) ToKubernetesParams() (*kubern
 	return nil, false
 }
 
-func (resolver *clusterOrchestratorParamsResolver) ToSwarmParams() (*swarmParamsResolver, bool) {
-	value := resolver.resolver.data.GetSwarm()
-	if value != nil {
-		return &swarmParamsResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
-}
-
 func (resolver *clusterOrchestratorParamsResolver) ToOpenshiftParams() (*openshiftParamsResolver, bool) {
 	value := resolver.resolver.data.GetOpenshift()
 	if value != nil {
@@ -4211,34 +4203,6 @@ func (resolver *splunkResolver) HttpToken() string {
 
 func (resolver *splunkResolver) Insecure() bool {
 	value := resolver.data.GetInsecure()
-	return value
-}
-
-type swarmParamsResolver struct {
-	root *Resolver
-	data *storage.SwarmParams
-}
-
-func (resolver *Resolver) wrapSwarmParams(value *storage.SwarmParams, ok bool, err error) (*swarmParamsResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &swarmParamsResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapSwarmParamses(values []*storage.SwarmParams, err error) ([]*swarmParamsResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*swarmParamsResolver, len(values))
-	for i, v := range values {
-		output[i] = &swarmParamsResolver{resolver, v}
-	}
-	return output, nil
-}
-
-func (resolver *swarmParamsResolver) DisableSwarmTls() bool {
-	value := resolver.data.GetDisableSwarmTls()
 	return value
 }
 

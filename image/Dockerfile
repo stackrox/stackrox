@@ -26,7 +26,6 @@ COPY ./bin/central /stackrox/
 COPY ./bin/compliance /stackrox/compliance
 COPY ./bin/roxctl* /assets/downloads/cli/
 COPY ./bin/kubernetes-sensor /stackrox/
-COPY ./bin/swarm-sensor /stackrox/
 COPY ./ui/build  /ui/
 COPY ./docs/api/v1/swagger.json /docs/api/v1/swagger.json
 
