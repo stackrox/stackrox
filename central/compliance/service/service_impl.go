@@ -2,8 +2,8 @@ package service
 
 import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/rox/central/compliance/datastore"
 	"github.com/stackrox/rox/central/compliance/standards"
+	"github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -32,13 +32,13 @@ var (
 // New returns a service object for registering with grpc
 func New() Service {
 	return &serviceImpl{
-		store:         datastore.Fake(),
+		store:         store.Singleton(),
 		standardsRepo: standards.RegistrySingleton(),
 	}
 }
 
 type serviceImpl struct {
-	store         datastore.DataStore
+	store         store.Store
 	standardsRepo standards.Repository
 }
 

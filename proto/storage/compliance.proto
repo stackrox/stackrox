@@ -3,7 +3,12 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "google/protobuf/timestamp.proto";
+
+import "storage/cluster.proto";
+import "storage/deployment.proto";
 import "storage/image.proto";
+import "storage/node.proto";
 
 package storage;
 
@@ -52,4 +57,33 @@ message ComplianceControlResult {
     ComplianceResource resource = 1;
     string control_id           = 2;
     ComplianceResultValue value = 3;
+}
+
+message ComplianceDomain {
+    Cluster cluster = 1;
+    repeated Node nodes = 2;
+    repeated Deployment deployments = 3;
+}
+
+// Next available tag: 5
+message ComplianceRunMetadata {
+    string run_id = 1;
+    string standard_id = 2;
+
+    google.protobuf.Timestamp start_timestamp  = 3;
+    google.protobuf.Timestamp finish_timestamp = 4;
+}
+
+// Next available tag: 6
+message ComplianceRunResults {
+    message EntityResults {
+        map<string, ComplianceResultValue> control_results = 1;
+    }
+
+    ComplianceDomain domain            = 1;
+    ComplianceRunMetadata run_metadata = 2;
+
+    EntityResults cluster_results                 = 3;
+    map<string, EntityResults> node_results       = 4;
+    map<string, EntityResults> deployment_results = 5;
 }

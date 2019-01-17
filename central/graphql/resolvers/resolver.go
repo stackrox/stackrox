@@ -10,8 +10,8 @@ import (
 	violationsDatastore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/apitoken"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	complianceDataStore "github.com/stackrox/rox/central/compliance/datastore"
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
+	complianceStore "github.com/stackrox/rox/central/compliance/store"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	groupDataStore "github.com/stackrox/rox/central/group/store"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
@@ -31,7 +31,7 @@ import (
 type Resolver struct {
 	APITokenBackend         apitoken.Backend
 	ClusterDataStore        clusterDatastore.DataStore
-	ComplianceDataStore     complianceDataStore.DataStore
+	ComplianceDataStore     complianceStore.Store
 	ComplianceStandardStore complianceStandards.Repository
 	DeploymentDataStore     deploymentDatastore.DataStore
 	ImageDataStore          imageDatastore.DataStore
@@ -50,7 +50,7 @@ func New() *Resolver {
 	return &Resolver{
 		APITokenBackend:       apitoken.BackendSingleton(),
 		ClusterDataStore:      clusterDatastore.Singleton(),
-		ComplianceDataStore:   complianceDataStore.Fake(),
+		ComplianceDataStore:   complianceStore.Singleton(),
 		DeploymentDataStore:   deploymentDatastore.Singleton(),
 		ImageDataStore:        imageDatastore.Singleton(),
 		GroupDataStore:        groupDataStore.Singleton(),
