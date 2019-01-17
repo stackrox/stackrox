@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -27,8 +27,7 @@ func (s *serviceImpl) RegisterServiceHandler(context.Context, *runtime.ServeMux,
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	// TODO:: Provide credentials to the benchmark service and verify them here.
-	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
+	return ctx, idcheck.BenchmarkOnly().Authorized(ctx, fullMethodName)
 }
 
 // Output returns the channel where the received messages are output.

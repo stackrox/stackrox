@@ -74,14 +74,14 @@ func (s *serviceImpl) CreateServiceIdentity(ctx context.Context, request *v1.Cre
 	if request.GetType() == storage.ServiceType_UNKNOWN_SERVICE {
 		return nil, status.Error(codes.InvalidArgument, "Service type must be nonempty")
 	}
-	cert, key, id, err := mtls.IssueNewCert(mtls.Subject{ServiceType: request.GetType(), Identifier: request.GetId()}, s.storage)
+	issuedCert, err := mtls.IssueNewCert(mtls.NewSubject(request.GetId(), request.GetType()), s.storage)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &v1.CreateServiceIdentityResponse{
-		Identity:       id,
-		CertificatePem: cert,
-		PrivateKeyPem:  key,
+		Identity:       issuedCert.ID,
+		CertificatePem: issuedCert.CertPEM,
+		PrivateKeyPem:  issuedCert.KeyPEM,
 	}, nil
 }
 

@@ -25,11 +25,6 @@ const (
 	Sensor
 )
 
-// GRPCConnection returns a grpc.ClientConn object.
-func GRPCConnection(endpoint string, service Service) (conn *grpc.ClientConn, err error) {
-	return AuthenticatedGRPCConnection(endpoint, service)
-}
-
 func tlsConfig(clientCert tls.Certificate, rootCAs *x509.CertPool, server string) *tls.Config {
 	return &tls.Config{
 		Certificates: []tls.Certificate{clientCert},
@@ -51,9 +46,10 @@ func AuthenticatedGRPCConnection(endpoint string, service Service) (conn *grpc.C
 	}
 
 	var creds credentials.TransportCredentials
-	if service == Central {
+	switch service {
+	case Central:
 		creds = credentials.NewTLS(tlsConfig(clientCert, rootCAs, mtls.CentralSubject.Hostname()))
-	} else if service == Sensor {
+	case Sensor:
 		creds = credentials.NewTLS(tlsConfig(clientCert, rootCAs, mtls.SensorSubject.Hostname()))
 	}
 	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds), keepAliveDialOption())

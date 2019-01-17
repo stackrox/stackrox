@@ -18,9 +18,7 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	GetServiceIdentities(ctx context.Context, _ *v1.Empty) (*v1.ServiceIdentityResponse, error)
-	CreateServiceIdentity(ctx context.Context, request *v1.CreateServiceIdentityRequest) (*v1.CreateServiceIdentityResponse, error)
-	GetAuthorities(ctx context.Context, request *v1.Empty) (*v1.Authorities, error)
+	v1.ServiceIdentityServiceServer
 }
 
 // New returns a new Service instance using the given DataStore.

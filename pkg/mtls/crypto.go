@@ -19,6 +19,7 @@ import (
 	cfsigner "github.com/cloudflare/cfssl/signer"
 	"github.com/cloudflare/cfssl/signer/local"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 const (
@@ -46,11 +47,21 @@ var (
 	// SensorSubject is the identity used in certificates for Sensor.
 	SensorSubject = Subject{ServiceType: storage.ServiceType_SENSOR_SERVICE, Identifier: "Sensor"}
 
+	// BenchmarkSubject is the identity used in certificates for Benchmark
+	BenchmarkSubject = Subject{ServiceType: storage.ServiceType_BENCHMARK_SERVICE, Identifier: "Benchmark"}
+
 	readCAOnce sync.Once
 	caCert     *x509.Certificate
 	caCertDER  []byte
 	caCertErr  error
 )
+
+// IssuedCert is a representation of an issued certificate
+type IssuedCert struct {
+	CertPEM []byte
+	KeyPEM  []byte
+	ID      *storage.ServiceIdentity
+}
 
 // LeafCertificateFromFile reads a tls.Certificate (including private key and cert)
 // from the canonical locations on non-central services.
@@ -141,9 +152,9 @@ type serviceIdentityStorage interface {
 }
 
 // IssueNewCertFromCA issues a certificate from the CA that is passed in
-func IssueNewCertFromCA(subj Subject, caCert, caKey []byte) (certPEM, keyPEM []byte, err error) {
-	returnErr := func(err error, prefix string) ([]byte, []byte, error) {
-		return nil, nil, fmt.Errorf("%s: %s", prefix, err)
+func IssueNewCertFromCA(subj Subject, caCert, caKey []byte) (cert *IssuedCert, err error) {
+	returnErr := func(err error, prefix string) (*IssuedCert, error) {
+		return nil, fmt.Errorf("%s: %s", prefix, err)
 	}
 
 	s, err := signerFromCABytes(caCert, caKey)
@@ -177,16 +188,32 @@ func IssueNewCertFromCA(subj Subject, caCert, caKey []byte) (certPEM, keyPEM []b
 		return returnErr(err, "signing")
 	}
 
-	certPEM = certBytes
-	keyPEM = keyBytes
+	return &IssuedCert{
+		CertPEM: certBytes,
+		KeyPEM:  keyBytes,
+	}, nil
+}
 
-	return certPEM, keyPEM, nil
+func validateSubject(subj Subject) error {
+	errorList := errorhelpers.NewErrorList("")
+	if subj.ServiceType == storage.ServiceType_UNKNOWN_SERVICE {
+		errorList.AddString("Subject service type must be known")
+	}
+	if subj.Identifier == "" {
+		errorList.AddString("Subject Identifier must be non-empty")
+	}
+	return errorList.ToError()
 }
 
 // IssueNewCert generates a new key and certificate chain for a sensor.
-func IssueNewCert(subj Subject, store serviceIdentityStorage) (certPEM, keyPEM []byte, identity *storage.ServiceIdentity, err error) {
-	returnErr := func(err error, prefix string) ([]byte, []byte, *storage.ServiceIdentity, error) {
-		return nil, nil, nil, fmt.Errorf("%s: %s", prefix, err)
+func IssueNewCert(subj Subject, store serviceIdentityStorage) (cert *IssuedCert, err error) {
+	returnErr := func(err error, prefix string) (*IssuedCert, error) {
+		return nil, fmt.Errorf("%s: %s", prefix, err)
+	}
+
+	if err := validateSubject(subj); err != nil {
+		// Purposefully didn't use returnErr because errorList.ToError() returned from validateSubject is already prefixed
+		return nil, err
 	}
 
 	s, err := signer()
@@ -220,9 +247,6 @@ func IssueNewCert(subj Subject, store serviceIdentityStorage) (certPEM, keyPEM [
 		return returnErr(err, "signing")
 	}
 
-	certPEM = certBytes
-	keyPEM = keyBytes
-
 	id := generateIdentity(subj, serial)
 	if store != nil {
 		err = store.AddServiceIdentity(id)
@@ -231,7 +255,11 @@ func IssueNewCert(subj Subject, store serviceIdentityStorage) (certPEM, keyPEM [
 		}
 	}
 
-	return certPEM, keyPEM, id, nil
+	return &IssuedCert{
+		CertPEM: certBytes,
+		KeyPEM:  keyBytes,
+		ID:      id,
+	}, nil
 }
 
 func randomSerial() (int64, error) {

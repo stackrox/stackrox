@@ -34,7 +34,7 @@ func TrustedCertPool() (*x509.CertPool, error) {
 // TLSConfig initializes a server configuration that requires client TLS
 // authentication based on the Certificate Authority we are using.
 func (CA) TLSConfig() (*tls.Config, error) {
-	serverCert, serverKey, _, err := mtls.IssueNewCert(mtls.CentralSubject, nil)
+	issuedCert, err := mtls.IssueNewCert(mtls.CentralSubject, nil)
 	if err != nil {
 		return nil, fmt.Errorf("server keypair: %s", err)
 	}
@@ -42,9 +42,9 @@ func (CA) TLSConfig() (*tls.Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("CA cert retrieval: %s", err)
 	}
-	serverCertBundle := append(serverCert, caPEM...)
+	serverCertBundle := append(issuedCert.CertPEM, caPEM...)
 
-	serverTLSCert, err := tls.X509KeyPair(serverCertBundle, serverKey)
+	serverTLSCert, err := tls.X509KeyPair(serverCertBundle, issuedCert.KeyPEM)
 	if err != nil {
 		return nil, fmt.Errorf("tls conversion: %s", err)
 	}

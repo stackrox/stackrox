@@ -29,6 +29,7 @@ oc secrets add serviceaccount/benchmark secrets/stackrox --for=pull
 
 # Create secrets for sensor
 oc create secret -n "{{.Namespace}}" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/ca.pem"
+oc create secret -n "{{.Namespace}}" generic benchmark-tls --from-file="$DIR/benchmark-cert.pem" --from-file="$DIR/benchmark-key.pem" --from-file="$DIR/ca.pem"
 
 {{if .RuntimeSupport}}
 if ! oc get secret/collector-stackrox -n {{.Namespace}} > /dev/null; then

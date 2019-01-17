@@ -1,23 +1,23 @@
-package service
+package store
 
 import (
 	"sync"
 
-	"github.com/stackrox/rox/central/serviceidentities/store"
+	"github.com/stackrox/rox/central/globaldb"
 )
 
 var (
 	once sync.Once
 
-	as Service
+	s Store
 )
 
 func initialize() {
-	as = New(store.Singleton())
+	s = New(globaldb.GetGlobalDB())
 }
 
 // Singleton provides the instance of the Service interface to register.
-func Singleton() Service {
+func Singleton() Store {
 	once.Do(initialize)
-	return as
+	return s
 }

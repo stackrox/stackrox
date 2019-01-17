@@ -1,29 +1,35 @@
 package orchestrator
 
 import (
+	"fmt"
 	"strings"
 
+	"github.com/stackrox/rox/pkg/orchestrators"
 	"k8s.io/api/core/v1"
 )
 
 // only hostmounts are currently supported.
 func (c converter) asVolumes(service *serviceWrap) (output []v1.Volume) {
-	output = make([]v1.Volume, len(service.Mounts))
+	output = make([]v1.Volume, 0, len(service.Mounts)+len(service.Secrets))
 
-	for i, m := range service.Mounts {
-		hm := newHostMount(m)
-		output[i] = hm.kubernetesVolume()
+	for _, m := range service.Mounts {
+		output = append(output, newHostMount(m).kubernetesVolume())
 	}
-
+	for _, s := range service.Secrets {
+		output = append(output, kubernetesSecretVolume(s))
+	}
 	return
 }
 
 func (c converter) asVolumeMounts(service *serviceWrap) (output []v1.VolumeMount) {
-	output = make([]v1.VolumeMount, len(service.Mounts))
+	output = make([]v1.VolumeMount, 0, len(service.Mounts)+len(service.Secrets))
 
-	for i, m := range service.Mounts {
+	for _, m := range service.Mounts {
 		hm := newHostMount(m)
-		output[i] = hm.kubernetesVolumeMount()
+		output = append(output, hm.kubernetesVolumeMount())
+	}
+	for _, s := range service.Secrets {
+		output = append(output, kubernetesSecretVolumeMount(s))
 	}
 
 	return
@@ -52,6 +58,29 @@ func kubernetesName(name string) string {
 	replaced := invalidDNSLabelCharacter.ReplaceAllString(name, "-")
 	trimmed := strings.Trim(replaced, "-")
 	return strings.ToLower(trimmed)
+}
+
+func kubernetesSecretVolume(s orchestrators.Secret) v1.Volume {
+	items := make([]v1.KeyToPath, 0, len(s.Items))
+	for k, v := range s.Items {
+		items = append(items, v1.KeyToPath{Key: k, Path: v})
+	}
+	return v1.Volume{
+		Name: fmt.Sprintf("%s-volume", s.Name),
+		VolumeSource: v1.VolumeSource{
+			Secret: &v1.SecretVolumeSource{
+				SecretName: s.Name,
+				Items:      items,
+			},
+		},
+	}
+}
+
+func kubernetesSecretVolumeMount(s orchestrators.Secret) v1.VolumeMount {
+	return v1.VolumeMount{
+		Name:      fmt.Sprintf("%s-volume", s.Name),
+		MountPath: s.TargetPath,
+	}
 }
 
 func (m hostMount) kubernetesVolume() v1.Volume {

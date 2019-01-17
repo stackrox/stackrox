@@ -30,7 +30,7 @@ const (
 )
 
 func runBenchmark(jsonOnly bool) {
-	conn, err := clientconn.UnauthenticatedGRPCConnection(env.AdvertisedEndpoint.Setting())
+	conn, err := clientconn.AuthenticatedGRPCConnection(env.AdvertisedEndpoint.Setting(), clientconn.Sensor)
 	if err != nil {
 		log.Fatal(err)
 	}

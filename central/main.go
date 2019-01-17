@@ -60,6 +60,7 @@ import (
 	sensorService "github.com/stackrox/rox/central/sensor/service"
 	"github.com/stackrox/rox/central/sensor/service/streamer"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
+	siStore "github.com/stackrox/rox/central/serviceidentities/store"
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -252,7 +253,7 @@ func (c *central) customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/api/extensions/clusters/zip",
 			Authorizer:    authzUser.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity)),
-			ServerHandler: clustersZip.Handler(datastore.Singleton(), siService.Singleton()),
+			ServerHandler: clustersZip.Handler(datastore.Singleton(), siStore.Singleton()),
 			Compression:   false,
 		},
 		{

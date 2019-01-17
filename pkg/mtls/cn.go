@@ -42,6 +42,14 @@ type Subject struct {
 	Identifier  string
 }
 
+// NewSubject returns a new subject from the passed ID and service type
+func NewSubject(id string, serviceType storage.ServiceType) Subject {
+	return Subject{
+		Identifier:  id,
+		ServiceType: serviceType,
+	}
+}
+
 // CN returns the Common Name that represents this subject's identity.
 func (s Subject) CN() string {
 	return fmt.Sprintf("%s: %s", s.ServiceType, s.Identifier)

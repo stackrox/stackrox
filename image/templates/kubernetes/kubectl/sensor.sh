@@ -70,6 +70,7 @@ kubectl create cm -n "{{.Namespace}}" telegraf --from-file="$DIR/telegraf.conf"
 
 echo "Creating secrets for sensor..."
 kubectl create secret -n "{{.Namespace}}" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/ca.pem"
+kubectl create secret -n "{{.Namespace}}" generic benchmark-tls --from-file="$DIR/benchmark-cert.pem" --from-file="$DIR/benchmark-key.pem" --from-file="$DIR/ca.pem"
 
 {{if .RuntimeSupport}}
 echo "Creating secrets for collector..."

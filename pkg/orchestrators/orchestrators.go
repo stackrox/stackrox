@@ -5,7 +5,15 @@ import "time"
 // Creator is a function stub that defined how to create a Orchestrator
 type Creator func() (Orchestrator, error)
 
-// SystemService is an abstraction for a container
+// Secret is a generic definition of an orchestrator secret
+type Secret struct {
+	Name  string
+	Items map[string]string
+
+	TargetPath string
+}
+
+// SystemService is a generic definition of an orchestrator deployment
 type SystemService struct {
 	Name           string
 	GenerateName   string
@@ -16,6 +24,7 @@ type SystemService struct {
 	Command        []string
 	HostPID        bool
 	ServiceAccount string
+	Secrets        []Secret
 }
 
 // Orchestrator is the interface that allows for actions against an orchestrator

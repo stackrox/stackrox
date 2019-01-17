@@ -191,6 +191,17 @@ func (s *SchedulerClient) Launch(scan *storage.BenchmarkScanMetadata) error {
 		Image:          s.image,
 		Global:         true,
 		ServiceAccount: benchmarkServiceAccount,
+		Secrets: []orchestrators.Secret{
+			{
+				Name: "benchmark-tls",
+				Items: map[string]string{
+					"ca.pem":             "ca.pem",
+					"benchmark-cert.pem": "cert.pem",
+					"benchmark-key.pem":  "key.pem",
+				},
+				TargetPath: "/run/secrets/stackrox.io/certs/",
+			},
+		},
 	}
 	_, err := s.orchestrator.LaunchBenchmark(service)
 	if err != nil {

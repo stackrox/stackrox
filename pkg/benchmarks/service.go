@@ -4,7 +4,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -35,8 +35,7 @@ func (s *BenchmarkResultsService) RegisterServiceHandler(context.Context, *runti
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *BenchmarkResultsService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	// TODO(cg): AP-157: Provide credentials to the benchmark service and verify them here.
-	return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
+	return ctx, idcheck.BenchmarkOnly().Authorized(ctx, fullMethodName)
 }
 
 // PostBenchmarkResult inserts a new benchmark result into the system

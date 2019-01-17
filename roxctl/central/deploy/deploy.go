@@ -59,31 +59,31 @@ func generateMTLSFiles(fileMap map[string][]byte) (cert, key []byte, err error) 
 }
 
 func generateMonitoringFiles(fileMap map[string][]byte, caCert, caKey []byte) error {
-	monitoringCert, monitoringKey, err := mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: storage.ServiceType_MONITORING_DB_SERVICE, Identifier: "Monitoring DB"},
+	monitoringCert, err := mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: storage.ServiceType_MONITORING_DB_SERVICE, Identifier: "Monitoring DB"},
 		caCert, caKey)
 	if err != nil {
 		return err
 	}
-	fileMap["monitoring-db-cert.pem"] = monitoringCert
-	fileMap["monitoring-db-key.pem"] = monitoringKey
+	fileMap["monitoring-db-cert.pem"] = monitoringCert.CertPEM
+	fileMap["monitoring-db-key.pem"] = monitoringCert.KeyPEM
 
-	monitoringCert, monitoringKey, err = mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: storage.ServiceType_MONITORING_UI_SERVICE, Identifier: "Monitoring UI"},
-		caCert, caKey)
-	if err != nil {
-		return err
-	}
-
-	fileMap["monitoring-ui-cert.pem"] = monitoringCert
-	fileMap["monitoring-ui-key.pem"] = monitoringKey
-
-	monitoringCert, monitoringKey, err = mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: storage.ServiceType_MONITORING_CLIENT_SERVICE, Identifier: "Monitoring Client"},
+	monitoringCert, err = mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: storage.ServiceType_MONITORING_UI_SERVICE, Identifier: "Monitoring UI"},
 		caCert, caKey)
 	if err != nil {
 		return err
 	}
 
-	fileMap["monitoring-client-cert.pem"] = monitoringCert
-	fileMap["monitoring-client-key.pem"] = monitoringKey
+	fileMap["monitoring-ui-cert.pem"] = monitoringCert.CertPEM
+	fileMap["monitoring-ui-key.pem"] = monitoringCert.KeyPEM
+
+	monitoringCert, err = mtls.IssueNewCertFromCA(mtls.Subject{ServiceType: storage.ServiceType_MONITORING_CLIENT_SERVICE, Identifier: "Monitoring Client"},
+		caCert, caKey)
+	if err != nil {
+		return err
+	}
+
+	fileMap["monitoring-client-cert.pem"] = monitoringCert.CertPEM
+	fileMap["monitoring-client-key.pem"] = monitoringCert.KeyPEM
 
 	return nil
 }

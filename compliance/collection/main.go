@@ -41,7 +41,7 @@ func main() {
 	}
 
 	// Create a connection with sensor to push scraped data.
-	conn, err := clientconn.UnauthenticatedGRPCConnection(env.AdvertisedEndpoint.Setting())
+	conn, err := clientconn.AuthenticatedGRPCConnection(env.AdvertisedEndpoint.Setting(), clientconn.Sensor)
 	if err != nil {
 		log.Fatal(err)
 	}
