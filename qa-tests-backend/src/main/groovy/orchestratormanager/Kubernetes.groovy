@@ -1,53 +1,42 @@
 package orchestratormanager
 
 import common.YamlGenerator
-import io.kubernetes.client.ApiClient
-import io.kubernetes.client.ApiException
-import io.kubernetes.client.Configuration
-import io.kubernetes.client.apis.AdmissionregistrationV1beta1Api
-import io.kubernetes.client.apis.CoreV1Api
-import io.kubernetes.client.apis.ExtensionsV1beta1Api
-import io.kubernetes.client.custom.IntOrString
-import io.kubernetes.client.models.ExtensionsV1beta1DeploymentList
-import io.kubernetes.client.models.V1Capabilities
-import io.kubernetes.client.models.V1LabelSelector
-import io.kubernetes.client.models.V1EnvVar
-import io.kubernetes.client.models.V1LocalObjectReference
-import io.kubernetes.client.models.V1Node
-import io.kubernetes.client.models.V1ObjectMeta
-import io.kubernetes.client.models.V1Namespace
-import io.kubernetes.client.models.ExtensionsV1beta1Deployment
-import io.kubernetes.client.models.ExtensionsV1beta1DeploymentSpec
-import io.kubernetes.client.models.V1ContainerPort
-import io.kubernetes.client.models.V1PodTemplateSpec
-import io.kubernetes.client.models.V1PodSpec
-import io.kubernetes.client.models.V1ResourceRequirements
-import io.kubernetes.client.models.V1SecretList
-import io.kubernetes.client.models.V1SecretVolumeSource
-import io.kubernetes.client.models.V1ServiceList
-import io.kubernetes.client.models.V1Volume
-import io.kubernetes.client.models.V1Container
-import io.kubernetes.client.models.V1PodList
-import io.kubernetes.client.models.V1Pod
-import io.kubernetes.client.models.V1DeleteOptions
-import io.kubernetes.client.models.V1SecurityContext
-import io.kubernetes.client.models.V1Service
-import io.kubernetes.client.models.V1Secret
-import io.kubernetes.client.models.V1ServicePort
-import io.kubernetes.client.models.V1ServiceSpec
-import io.kubernetes.client.models.V1VolumeMount
-import io.kubernetes.client.models.V1Status
-import io.kubernetes.client.models.V1beta1DaemonSet
-import io.kubernetes.client.models.V1beta1DaemonSetList
-import io.kubernetes.client.models.V1beta1DaemonSetSpec
-import io.kubernetes.client.models.V1beta1NetworkPolicy
-import io.kubernetes.client.models.V1beta1NetworkPolicyEgressRule
-import io.kubernetes.client.models.V1beta1NetworkPolicyIngressRule
-import io.kubernetes.client.models.V1beta1NetworkPolicyPeer
-import io.kubernetes.client.models.V1beta1NetworkPolicySpec
+import io.fabric8.kubernetes.api.model.Capabilities
+import io.fabric8.kubernetes.api.model.Container
+import io.fabric8.kubernetes.api.model.ContainerPort
+import io.fabric8.kubernetes.api.model.EnvVar
+import io.fabric8.kubernetes.api.model.IntOrString
+import io.fabric8.kubernetes.api.model.LabelSelector
+import io.fabric8.kubernetes.api.model.LocalObjectReference
+import io.fabric8.kubernetes.api.model.Namespace
+import io.fabric8.kubernetes.api.model.ObjectMeta
+import io.fabric8.kubernetes.api.model.Pod
+import io.fabric8.kubernetes.api.model.PodList
+import io.fabric8.kubernetes.api.model.PodSpec
+import io.fabric8.kubernetes.api.model.PodTemplateSpec
+import io.fabric8.kubernetes.api.model.Quantity
+import io.fabric8.kubernetes.api.model.ResourceRequirements
+import io.fabric8.kubernetes.api.model.Secret
+import io.fabric8.kubernetes.api.model.SecretVolumeSource
+import io.fabric8.kubernetes.api.model.SecurityContext
+import io.fabric8.kubernetes.api.model.Service
+import io.fabric8.kubernetes.api.model.ServiceList
+import io.fabric8.kubernetes.api.model.ServicePort
+import io.fabric8.kubernetes.api.model.ServiceSpec
+import io.fabric8.kubernetes.api.model.Volume
+import io.fabric8.kubernetes.api.model.VolumeMount
+import io.fabric8.kubernetes.api.model.apps.DaemonSetList
+import io.fabric8.kubernetes.api.model.apps.DaemonSetSpec
+import io.fabric8.kubernetes.api.model.apps.DeploymentList
+import io.fabric8.kubernetes.api.model.apps.DeploymentSpec
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyEgressRuleBuilder
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder
+import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder
+import io.fabric8.kubernetes.client.DefaultKubernetesClient
+import io.fabric8.kubernetes.client.KubernetesClient
+import io.fabric8.kubernetes.client.KubernetesClientException
 import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
-import io.kubernetes.client.util.Config
-import io.kubernetes.client.custom.Quantity
 import objects.DaemonSet
 import objects.Deployment
 import objects.NetworkPolicy
@@ -55,49 +44,39 @@ import objects.NetworkPolicyTypes
 
 import java.util.stream.Collectors
 
-class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
-    private final String namespace
-    private final int sleepDuration = 5000
-    private final int maxWaitTime = 90000
+class Kubernetes implements OrchestratorMain {
+    final int sleepDuration = 5000
+    final int maxWaitTime = 90000
 
-    final private CoreV1Api api
-    final private ExtensionsV1beta1Api beta1
-    final private AdmissionregistrationV1beta1Api admissionAPI
+    String namespace
+    KubernetesClient client
 
     Kubernetes(String ns) {
         this.namespace = ns
-        ApiClient client = Config.defaultClient()
-        Configuration.setDefaultApiClient(client)
-
-        this.api = new CoreV1Api()
-        this.beta1 = new ExtensionsV1beta1Api()
-        this.admissionAPI = new AdmissionregistrationV1beta1Api()
-
-        ensureNamespaceExists()
+        this.client = new DefaultKubernetesClient()
     }
 
     Kubernetes() {
         Kubernetes("default")
     }
 
-    def ensureNamespaceExists() {
-        V1Namespace namespace = new V1Namespace().apiVersion("v1").metadata(new V1ObjectMeta().name(this.namespace))
+    def ensureNamespaceExists(String ns) {
+        Namespace namespace = new Namespace("v1", null, new ObjectMeta(name: ns), null, null)
         try {
-            this.api.createNamespace(namespace, null)
+            client.namespaces().createOrReplace(namespace)
             println "Created namespace ${namespace}"
-        } catch (ApiException e) {
+        } catch (KubernetesClientException kce) {
             // 409 is already exists
-            if (e.code != 409) {
-                throw e
+            if (kce.code != 409) {
+                throw kce
             }
         }
     }
 
-    @Override
     def setup() {
+        ensureNamespaceExists(this.namespace)
     }
 
-    @Override
     def cleanup() {
     }
 
@@ -122,29 +101,24 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     def waitForDeploymentDeletion(Deployment deploy) {
         int waitTime = 0
         boolean beenDeleted = false
-        String deploymentName = deploy.getName()
-        String namespace = this.getNameSpace()
 
         while (waitTime < maxWaitTime && !beenDeleted) {
-            ExtensionsV1beta1DeploymentList dList
-            dList = beta1.listNamespacedDeployment(namespace, null, null, null, null, null, null, null, null, null)
+            io.fabric8.kubernetes.api.model.apps.Deployment d =
+                    client.apps().deployments().inNamespace(deploy.namespace).withName(deploy.name).get()
             beenDeleted = true
 
-            println "Waiting for " + deploymentName + " to be deleted"
-            for (ExtensionsV1beta1Deployment v1beta1Deployment : dList.getItems()) {
-                if (v1beta1Deployment.getMetadata().getName() == deploymentName) {
-                    sleep(sleepDuration)
-                    waitTime += sleepDuration
-                    beenDeleted = false
-                    break
-                }
+            println "Waiting for " + deploy.name + " to be deleted"
+            if (d != null) {
+                sleep(sleepDuration)
+                waitTime += sleepDuration
+                beenDeleted = false
             }
         }
 
         if (beenDeleted) {
-            println deploymentName + ": deployment removed."
+            println deploy.name + ": deployment removed."
         } else {
-            println "Timed out waiting for " + deploymentName
+            println "Timed out waiting for " + deploy.name
         }
     }
 
@@ -152,154 +126,63 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         if (deployment.exposeAsService) {
             this.deleteService(deployment.name, deployment.namespace)
         }
-
-        this.beta1.deleteNamespacedDeployment(
-                deployment.name,
-                deployment.namespace, new V1DeleteOptions()
-                .gracePeriodSeconds(0)
-                .orphanDependents(false),
-                null,
-                0,
-                false,
-                null
-        )
+        client.apps().deployments().inNamespace(deployment.namespace).withName(deployment.name).delete()
         println "removing the deployment:" + deployment.name
     }
 
     String getDeploymentId(Deployment deployment) {
-        ExtensionsV1beta1DeploymentList dList
-        dList = beta1.listNamespacedDeployment(
-                deployment.namespace,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        )
-        for (ExtensionsV1beta1Deployment v1beta1Deployment : dList.getItems()) {
-            if (v1beta1Deployment.getMetadata().getName() == deployment.name) {
-                def val = v1beta1Deployment.getMetadata().uid
-                if (v1beta1Deployment.getStatus().getReadyReplicas() > 0) {
-                    println val + ": deployment id found."
-                    return val
-                }
-            }
-        }
+        return client.apps().deployments()
+                .inNamespace(deployment.namespace)
+                .withName(deployment.name)
+                .get()?.metadata?.uid
     }
 
     def getDeploymentReplicaCount(Deployment deployment) {
-        ExtensionsV1beta1DeploymentList deployments = this.beta1.listNamespacedDeployment(
-                deployment.namespace,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        )
-        for (ExtensionsV1beta1Deployment d : deployments.getItems()) {
-            if (d.getMetadata().getName() == deployment.name) {
-                println "${deployment.name}: Replicas=${d.getSpec().getReplicas()}"
-                return d.getSpec().getReplicas()
-            }
+        io.fabric8.kubernetes.api.model.apps.Deployment d = client.apps().deployments()
+                .inNamespace(deployment.namespace)
+                .withName(deployment.name)
+                .get()
+        if (d != null) {
+            println "${deployment.name}: Replicas=${d.getSpec().getReplicas()}"
+            return d.getSpec().getReplicas()
         }
-        return null
     }
 
     def getDeploymentUnavailableReplicaCount(Deployment deployment) {
-        ExtensionsV1beta1DeploymentList deployments = this.beta1.listNamespacedDeployment(
-                deployment.namespace,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        )
-        for (ExtensionsV1beta1Deployment d : deployments.getItems()) {
-            if (d.getMetadata().getName() == deployment.name) {
-                println "${deployment.name}: Unavailable Replicas=${d.getStatus().getUnavailableReplicas()}"
-                return d.getStatus().getUnavailableReplicas()
-            }
+        io.fabric8.kubernetes.api.model.apps.Deployment d = client.apps().deployments()
+                .inNamespace(deployment.namespace)
+                .withName(deployment.name)
+                .get()
+        if (d != null) {
+            println "${deployment.name}: Unavailable Replicas=${d.getStatus().getUnavailableReplicas()}"
+            return d.getStatus().getUnavailableReplicas()
         }
-        return null
     }
 
     def getDeploymentNodeSelectors(Deployment deployment) {
-        ExtensionsV1beta1DeploymentList deployments = this.beta1.listNamespacedDeployment(
-                deployment.namespace,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        )
-        for (ExtensionsV1beta1Deployment d : deployments.getItems()) {
-            if (d.getMetadata().getName() == deployment.name) {
-                println "${deployment.name}: Host=${d.getSpec().getTemplate().getSpec().getNodeSelector()}"
-                return d.getSpec().getTemplate().getSpec().getNodeSelector()
-            }
+        io.fabric8.kubernetes.api.model.apps.Deployment d = client.apps().deployments()
+                .inNamespace(deployment.namespace)
+                .withName(deployment.name)
+                .get()
+        if (d != null) {
+            println "${deployment.name}: Host=${d.getSpec().getTemplate().getSpec().getNodeSelector()}"
+            return d.getSpec().getTemplate().getSpec().getNodeSelector()
         }
-        return null
     }
 
     Set<String> getDeploymentSecrets(Deployment deployment) {
-        ExtensionsV1beta1DeploymentList deployments = this.beta1.listNamespacedDeployment(
-                deployment.namespace,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        )
+        io.fabric8.kubernetes.api.model.apps.Deployment d =
+                client.apps().deployments().inNamespace(deployment.namespace).withName(deployment.name).get()
         Set<String> secretSet = [] as Set
-        List<V1Volume> volumeList
-        for (ExtensionsV1beta1Deployment d : deployments.getItems()) {
-            if (d.getMetadata().getName() == deployment.name) {
-                volumeList = d.getSpec().getTemplate().getSpec().getVolumes()
-                if (volumeList != null) {
-                    for (V1Volume volume : volumeList) {
-                        if (volume.getSecret() != null) {
-                            secretSet.add(volume.getSecret().getSecretName())
-                        }
-                    }
-                }
-            }
+        if (d != null) {
+            d.getSpec()?.getTemplate()?.getSpec()?.getVolumes()?.each { secretSet.add(it.secret.secretName) }
         }
 
         return secretSet
     }
 
     def getDeploymentCount() {
-        return beta1.listDeploymentForAllNamespaces(
-                null,
-                null,
-                true,
-                null,
-                null,
-                null,
-                null,
-                null,
-                false
-        ).getItems().size()
+        return client.apps().deployments().inAnyNamespace().list().getItems().size()
     }
 
     /*
@@ -312,16 +195,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     }
 
     def deleteDaemonSet(DaemonSet daemonSet) {
-        this.beta1.deleteNamespacedDaemonSet(
-                daemonSet.name,
-                daemonSet.namespace, new V1DeleteOptions()
-                .gracePeriodSeconds(0)
-                .orphanDependents(false),
-                null,
-                0,
-                false,
-                null
-        )
+        client.apps().daemonSets().inNamespace(daemonSet.namespace).withName(daemonSet.name).delete()
         println daemonSet.name + ": daemonset removed."
     }
 
@@ -329,10 +203,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         int waitTime = 0
 
         while (waitTime < maxWaitTime) {
-            V1beta1DaemonSetList dList
-            dList = beta1.listNamespacedDaemonSet(ns, null, null, null, null, null, null, null, null, null)
-
-            if (dList.getItems().find { it.getMetadata().getName() == name }.collect().size() == 0) {
+            if (client.apps().daemonSets().inNamespace(ns).withName(name).get() == null) {
                 return
             }
 
@@ -344,83 +215,43 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     }
 
     def getDaemonSetReplicaCount(DaemonSet daemonSet) {
-        V1beta1DaemonSetList daemonSets = this.beta1.listNamespacedDaemonSet(
-                daemonSet.namespace,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        )
-        for (V1beta1DaemonSet d : daemonSets.getItems()) {
-            if (d.getMetadata().getName() == daemonSet.name) {
-                println "${daemonSet.name}: Replicas=${d.getStatus().getDesiredNumberScheduled()}"
-                return d.getStatus().getDesiredNumberScheduled()
-            }
+        io.fabric8.kubernetes.api.model.apps.DaemonSet d = client.apps().daemonSets()
+                .inNamespace(daemonSet.namespace)
+                .withName(daemonSet.name)
+                .get()
+        if (d != null) {
+            println "${daemonSet.name}: Replicas=${d.getStatus().getDesiredNumberScheduled()}"
+            return d.getStatus().getDesiredNumberScheduled()
         }
         return null
     }
 
     def getDaemonSetUnavailableReplicaCount(DaemonSet daemonSet) {
-        V1beta1DaemonSetList daemonSets = this.beta1.listNamespacedDaemonSet(
-                daemonSet.namespace,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        )
-        for (V1beta1DaemonSet d : daemonSets.getItems()) {
-            if (d.getMetadata().getName() == daemonSet.name) {
-                println "${daemonSet.name}: Unavailable Replicas=${d.getStatus().getNumberUnavailable()}"
-                return d.getStatus().getNumberUnavailable() == null ? 0 : d.getStatus().getNumberUnavailable()
-            }
+        io.fabric8.kubernetes.api.model.apps.DaemonSet d = client.apps().daemonSets()
+                .inNamespace(daemonSet.namespace)
+                .withName(daemonSet.name)
+                .get()
+        if (d != null) {
+            println "${daemonSet.name}: Unavailable Replicas=${d.getStatus().getNumberUnavailable()}"
+            return d.getStatus().getNumberUnavailable() == null ? 0 : d.getStatus().getNumberUnavailable()
         }
         return null
     }
 
     def getDaemonSetNodeSelectors(DaemonSet daemonSet) {
-        V1beta1DaemonSetList daemonSets = this.beta1.listNamespacedDaemonSet(
-                daemonSet.namespace,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        )
-        for (V1beta1DaemonSet d : daemonSets.getItems()) {
-            if (d.getMetadata().getName() == daemonSet.name) {
-                println "${daemonSet.name}: Host=${d.getSpec().getTemplate().getSpec().getNodeSelector()}"
-                return d.getSpec().getTemplate().getSpec().getNodeSelector()
-            }
+        io.fabric8.kubernetes.api.model.apps.DaemonSet d = client.apps().daemonSets()
+                .inNamespace(daemonSet.namespace)
+                .withName(daemonSet.name)
+                .get()
+        if (d != null) {
+            println "${daemonSet.name}: Host=${d.getSpec().getTemplate().getSpec().getNodeSelector()}"
+            return d.getSpec().getTemplate().getSpec().getNodeSelector()
         }
         return null
     }
 
     def getDaemonSetCount() {
-        return beta1.listDaemonSetForAllNamespaces(
-                null,
-                null,
-                true,
-                null,
-                null,
-                null,
-                null,
-                null,
-                false
-        ).getItems().size()
+        return client.apps().daemonSets().inAnyNamespace().list().getItems().size()
     }
 
     /*
@@ -429,22 +260,12 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
 
     def wasContainerKilled(String containerName, String namespace = this.namespace) {
         Long startTime = System.currentTimeMillis()
-        V1PodList pods = new V1PodList()
+        Pod pod
 
         while (System.currentTimeMillis() - startTime < 60000) {
             try {
-                pods = api.listNamespacedPod(
-                        namespace,
-                        null,
-                        null,
-                        "metadata.name=${containerName}",
-                        true,
-                        null,
-                        Integer.MAX_VALUE,
-                        null,
-                        180,
-                        false)
-                if (pods.items.size() == 0) {
+                pod = client.pods().inNamespace(namespace).withName(containerName).get()
+                if (pod == null) {
                     println "Could not query K8S for pod details, assuming pod was killed"
                     return true
                 }
@@ -454,12 +275,12 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         }
 
         println "wasContainerKilled: did not determine container was killed before 60s timeout"
-        println "container details were found:\n${containerName}: ${pods.getItems().get(0).toString()}"
+        println "container details were found:\n${containerName}: ${pod.toString()}"
         return false
     }
 
     def isKubeProxyPresent() {
-        V1PodList pods = api.listPodForAllNamespaces(null, null, true, null, null, null, null, null, false)
+        PodList pods = client.pods().inAnyNamespace().list()
         return pods.getItems().findAll {
             it.getSpec().getContainers().find {
                 it.getImage().contains("kube-proxy")
@@ -468,8 +289,8 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     }
 
     def isKubeDashboardRunning() {
-        V1PodList pods = api.listPodForAllNamespaces(null, null, true, null, null, null, null, null, false)
-        List<V1Pod> kubeDashboards = pods.getItems().findAll {
+        PodList pods = client.pods().inAnyNamespace().list()
+        List<Pod> kubeDashboards = pods.getItems().findAll {
             it.getSpec().getContainers().find {
                 it.getImage().contains("kubernetes-dashboard")
             }
@@ -478,33 +299,15 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     }
 
     def getContainerlogs(Deployment deployment) {
-        V1PodList pods = api.listNamespacedPod(
-                deployment.namespace,
-                null,
-                null,
-                null,
-                false,
-                null,
-                null,
-                null,
-                null,
-                false
-        )
-        V1Pod pod = pods.getItems().find { it.getMetadata().getName().startsWith(deployment.name) }
+        PodList pods = client.pods().inNamespace(deployment.namespace).list()
+        Pod pod = pods.getItems().find { it.getMetadata().getName().startsWith(deployment.name) }
 
         try {
-            return api.readNamespacedPodLog(
-                    pod.metadata.name,
-                    pod.metadata.namespace,
-                    pod.spec.containers.get(0).name,
-                    false,
-                    null,
-                    "false",
-                    false,
-                    null,
-                    null,
-                    null
-            )
+            println client.pods()
+                    .inNamespace(pod.metadata.namespace)
+                    .withName(pod.metadata.name)
+                    .tailingLines(5000)
+                    .watchLog(System.out)
         } catch (Exception e) {
             println "Error getting container logs: ${e.toString()}"
         }
@@ -515,47 +318,33 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     */
 
     def createService(Deployment deployment) {
-        api.createNamespacedService(
-               deployment.namespace,
-                new V1Service()
-
-                        .metadata(
-                        new V1ObjectMeta()
-                                .name(deployment.serviceName ? deployment.serviceName : deployment.name)
-                                .namespace(deployment.namespace)
-                                .labels(deployment.labels)
-                )
-                        .spec(
-                        new V1ServiceSpec()
-                                .ports(deployment.getPorts().collect {
-                            k, v ->
-
-            new V1ServicePort()
-                                        .name(k as String)
-                                        .port(k as Integer)
-                                        .protocol(v)
-                                        .targetPort(new IntOrString(deployment.targetport) ?: new
-                    IntOrString(k as Integer))
-                        })
-                                .selector(deployment.labels)
-                                .type(deployment.createLoadBalancer ? "LoadBalancer" : "ClusterIP")
+        Service service = new Service(
+                metadata: new ObjectMeta(
+                        name: deployment.serviceName ? deployment.serviceName : deployment.name,
+                        namespace: deployment.namespace,
+                        labels: deployment.labels
                 ),
-                null
+                spec: new ServiceSpec(
+                        ports: deployment.getPorts().collect {
+                            k, v ->
+                                new ServicePort(
+                                        name: k as String,
+                                        port: k as Integer,
+                                        protocol: v,
+                                        targetPort:
+                                                new IntOrString(deployment.targetport) ?: new IntOrString(k as Integer)
+                                )
+                        },
+                        selector: deployment.labels,
+                        type: deployment.createLoadBalancer ? "LoadBalancer" : "ClusterIP"
+                )
         )
+        client.services().inNamespace(deployment.namespace).createOrReplace(service)
         println "${deployment.name}: Service created"
     }
 
     def deleteService(String name, String namespace = this.namespace) {
-        this.api.deleteNamespacedService(
-                name,
-                namespace, new V1DeleteOptions()
-                .gracePeriodSeconds(0)
-                .orphanDependents(false),
-                null,
-                0,
-                false,
-                null
-        )
+        client.services().inNamespace(namespace).withName(name).delete()
     }
 
     def createLoadBalancer(Deployment deployment) {
@@ -563,17 +352,17 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
             int waitTime = 0
             println "Waiting for LB external IP for " + deployment.name
             while (waitTime < maxWaitTime) {
-                V1ServiceList sList
-                sList = api.listNamespacedService(deployment.namespace, null, null, null, null, null,
-                        null, null, null, null)
+                ServiceList sList = client.services().inNamespace(deployment.namespace).list()
 
-                for (V1Service service : sList.getItems()) {
+                for (Service service : sList.getItems()) {
                     if (service.getMetadata().getName() == deployment.name) {
-                        if (service.getStatus().getLoadBalancer().getIngress() != null) {
-                            println "LB IP: " +
-                                    service.getStatus().getLoadBalancer().getIngress().get(0).getIp()
+                        if (service.getStatus().getLoadBalancer().getIngress() != null &&
+                                service.getStatus().getLoadBalancer().getIngress().size() > 0) {
                             deployment.loadBalancerIP =
-                                    service.getStatus().getLoadBalancer().getIngress().get(0).getIp()
+                                    service.getStatus().getLoadBalancer().getIngress().get(0).getIp() != null ?
+                                            service.getStatus().getLoadBalancer().getIngress().get(0).getIp() :
+                                            service.getStatus().getLoadBalancer().getIngress().get(0).getHostname()
+                            println "LB IP: " + deployment.loadBalancerIP
                             waitTime += maxWaitTime
                         }
                     }
@@ -587,18 +376,14 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     /*
         Secrets Methods
     */
-    def waitForSecretCreation(String secretName, String namespace) {
+    def waitForSecretCreation(String secretName, String namespace = this.namespace) {
         int waitTime = 0
 
         while (waitTime < maxWaitTime) {
-            V1SecretList sList
-            sList = api.listNamespacedSecret(namespace, null, null, null, null, null, null, null, null, null)
-            println "Waiting for " + secretName
-            for (V1Secret v1Secret : sList.getItems()) {
-                if (v1Secret.getMetadata().getName() == secretName) {
-                    println secretName + ": secret created."
-                    return
-                }
+            Secret secret = client.secrets().inNamespace(namespace).withName(secretName).get()
+            if (secret != null) {
+                println secretName + ": secret created."
+                return
             }
             sleep(sleepDuration)
             waitTime += sleepDuration
@@ -607,57 +392,40 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     }
 
     String createSecret(String name) {
-        Map<String, byte[]> data = new HashMap<String, byte[]>()
-        data.put("username", "YWRtaW4=".getBytes())
-        data.put("password", "MWYyZDFlMmU2N2Rm".getBytes())
+        Map<String, String> data = new HashMap<String, String>()
+        data.put("username", "YWRtaW4=")
+        data.put("password", "MWYyZDFlMmU2N2Rm")
 
-        V1Secret createsecret = new V1Secret()
-                .apiVersion("v1")
-                .kind("Secret")
-                .metadata(new V1ObjectMeta()
-                .name(name))
-                .type("Opaque")
-                .data(data)
+        Secret secret = new Secret(
+                apiVersion: "v1",
+                kind: "Secret",
+                type: "Opaque",
+                data: data,
+                metadata: new ObjectMeta(
+                        name: name
+                )
+        )
 
         try {
-            V1Secret createdSecret = this.api.createNamespacedSecret(this.namespace, createsecret, "true")
+            Secret createdSecret = client.secrets().inNamespace("qa").createOrReplace(secret)
             if (createdSecret != null) {
                 waitForSecretCreation(name, this.namespace)
                 return createdSecret.metadata.uid
             }
         } catch (Exception e) {
-            println("Error creating kube secret" + e.toString())
+            println("Error creating secret" + e.toString())
         }
         return null
     }
 
     def deleteSecret(String name, String namespace = this.namespace) {
-        this.api.deleteNamespacedSecret(
-                name,
-                namespace, new V1DeleteOptions()
-                .gracePeriodSeconds(0)
-                .orphanDependents(false),
-                null,
-                0,
-                false,
-                null
-        )
+        client.secrets().inNamespace(namespace).withName(name).delete()
         sleep(sleepDuration)
         println name + ": Secret removed."
     }
 
     def getSecretCount() {
-        return api.listSecretForAllNamespaces(
-                null,
-                null,
-                true,
-                null,
-                null,
-                null,
-                null,
-                null,
-                false
-        ).getItems().findAll {
+        return client.secrets().inAnyNamespace().list().getItems().findAll {
             !it.type.startsWith("kubernetes.io/docker") &&
                     !it.type.startsWith("kubernetes.io/service-account-token")
         }.size()
@@ -668,40 +436,29 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     */
 
     String applyNetworkPolicy(NetworkPolicy policy) {
-        V1beta1NetworkPolicy networkPolicy = createNetworkPolicyObject(policy)
+        io.fabric8.kubernetes.api.model.networking.NetworkPolicy networkPolicy =
+                createNetworkPolicyObject(policy)
 
         println "${networkPolicy.metadata.name}: NetworkPolicy created:"
         println YamlGenerator.toYaml(networkPolicy)
-        V1beta1NetworkPolicy createdPolicy = this.beta1.createNamespacedNetworkPolicy(
-                networkPolicy.metadata.namespace ?
+        io.fabric8.kubernetes.api.model.networking.NetworkPolicy createdPolicy =
+                client.network().networkPolicies()
+                        .inNamespace(networkPolicy.metadata.namespace ?
                         networkPolicy.metadata.namespace :
-                        this.namespace,
-                networkPolicy,
-                null
-        )
+                        this.namespace).createOrReplace(networkPolicy)
         policy.uid = createdPolicy.metadata.uid
         return createdPolicy.metadata.uid
     }
 
     boolean deleteNetworkPolicy(NetworkPolicy policy) {
-        V1Status status = this.beta1.deleteNamespacedNetworkPolicy(
-                policy.name,
-                policy.namespace ?
-                        policy.namespace :
-                        this.namespace,
-                new V1DeleteOptions()
-                        .gracePeriodSeconds(0)
-                        .orphanDependents(false),
-                null,
-                0,
-                false,
-                null
-        )
-        if (status.status == "Success") {
+        Boolean status = client.network().networkPolicies()
+                .inNamespace(policy.namespace ? policy.namespace : this.namespace)
+                .withName(policy.name)
+                .delete()
+        if (status) {
             println "${policy.name}: NetworkPolicy removed."
             return true
         }
-
         println "${policy.name}: Failed to remove NetworkPolicy."
         return false
     }
@@ -711,31 +468,11 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
      */
 
     def getNodeCount() {
-        return api.listNode(
-                null,
-                null,
-                null,
-                true,
-                null,
-                null,
-                null,
-                null,
-                false
-        ).getItems().size()
+        return client.nodes().list().getItems().size()
     }
 
     def supportsNetworkPolicies() {
-        List<V1Node> gkeNodes = api.listNode(
-                null,
-                null,
-                null,
-                true,
-                null,
-                null,
-                null,
-                null,
-                false
-        ).getItems().findAll {
+        List<Node> gkeNodes = client.nodes().list().getItems().findAll {
             it.getStatus().getNodeInfo().getKubeletVersion().contains("gke")
         }
         return gkeNodes.size() > 0
@@ -747,86 +484,80 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
 
     def createClairifyDeployment() {
         //create clairify service
-        Map<String, String> selector = new HashMap<String, String>()
-        selector.put("app", "clairify")
-
-        V1Service clairifyService = new V1Service()
-                .apiVersion("v1")
-                .metadata(new V1ObjectMeta()
-                .name("clairify")
-                .namespace("stackrox"))
-                .spec(new V1ServiceSpec()
-                .addPortsItem(new V1ServicePort()
-                .name("clair-http")
-                .port(6060)
-                .targetPort(new IntOrString(6060)
+        Service clairifyService = new Service(
+                apiVersion: "v1",
+                metadata: new ObjectMeta(
+                        name: "clairify",
+                        namespace: "stackrox"
+                ),
+                spec: new ServiceSpec(
+                        ports: [
+                                new ServicePort(
+                                        name: "clair-http",
+                                        port: 6060,
+                                        targetPort: new IntOrString(6060)
+                                ),
+                                new ServicePort(
+                                        name: "clairify-http",
+                                        port: 8080,
+                                        targetPort: new IntOrString(8080)
+                                )
+                        ],
+                        type: "ClusterIP",
+                        selector: ["app":"clairify"]
+                )
         )
-        )
-                .addPortsItem(new V1ServicePort()
-                .name("clairify-http")
-                .port(8080)
-                .targetPort(new IntOrString(8080)
-        )
-        )
-                .type("ClusterIP")
-                .selector(selector)
-        )
-        this.api.createNamespacedService("stackrox", clairifyService, null)
+        client.services().inNamespace("stackrox").createOrReplace(clairifyService)
 
         //create clairify deployment
-        Map<String, String> labels = new HashMap<>()
-        labels.put("app", "clairify")
-        Map<String, String> annotations = new HashMap<>()
-        annotations.put("owner", "stackrox")
-        annotations.put("email", "support@stackrox.com")
-
-        List<String> commands = new LinkedList<>()
-        commands.add("/init")
-        commands.add("/clairify")
-
-        V1Container clairContainer = new V1Container()
-                .name("clairify")
-                .image("stackrox/clairify:0.3.1")
-                .command(commands)
-                .imagePullPolicy("Always")
-                .addPortsItem(new V1ContainerPort()
-                .name("clair-http")
-                .containerPort(6060)
-        )
-                .addPortsItem(new V1ContainerPort()
-                .name("clairify-http")
-                .containerPort(8080)
-        )
-                .securityContext(new V1SecurityContext()
-                .capabilities(new V1Capabilities()
-                .addDropItem("NET_RAW")
-        )
+        Container clairifyContainer = new Container(
+                name: "clairify",
+                image: "stackrox/clairify:0.3.1",
+                env: [new EnvVar(
+                        name: "CLAIR_ARGS",
+                        value: "-insecure-tls")
+                ],
+                command: ["/init", "/clairify"],
+                imagePullPolicy: "Always",
+                ports: [new ContainerPort(containerPort: 6060, name: "clair-http"),
+                        new ContainerPort(containerPort: 8080, name: "clairify-http")
+                ],
+                securityContext: new SecurityContext(
+                        capabilities: new Capabilities(
+                                drop: ["NET_RAW"]
+                        )
+                )
         )
 
-        ExtensionsV1beta1Deployment clairifyDeployment = new ExtensionsV1beta1Deployment()
-                .metadata(new V1ObjectMeta()
-                .name("clairify")
-                .namespace("stackrox")
-                .labels(labels).annotations(annotations)
-        )
-                .spec(new ExtensionsV1beta1DeploymentSpec()
-                .replicas(1)
-                .selector(new V1LabelSelector()
-                .matchLabels(labels))
-                .template(new V1PodTemplateSpec()
-                .metadata(new V1ObjectMeta()
-                .namespace("stackrox")
-                .labels(labels))
-                .spec(new V1PodSpec()
-                .addContainersItem(clairContainer)
-                .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name("stackrox")
-        )
-        )
-        )
-        )
-
-        this.beta1.createNamespacedDeployment("stackrox", clairifyDeployment, null)
+        io.fabric8.kubernetes.api.model.apps.Deployment clairifyDeployment =
+                new io.fabric8.kubernetes.api.model.apps.Deployment(
+                        metadata: new ObjectMeta(
+                                name: "clairify",
+                                namespace: "stackrox",
+                                labels: ["app":"clairify"],
+                                annotations: ["owner":"stackrox", "email":"support@stackrox.com"]
+                        ),
+                        spec: new DeploymentSpec(
+                                replicas: 1,
+                                minReadySeconds: 15,
+                                selector: new LabelSelector(
+                                        matchLabels: ["app":"clairify"]
+                                ),
+                                template: new PodTemplateSpec(
+                                        metadata: new ObjectMeta(
+                                                namespace: "stackrox",
+                                                labels: ["app":"clairify"]
+                                        ),
+                                        spec: new PodSpec(
+                                                containers: [clairifyContainer],
+                                                imagePullSecrets: [new LocalObjectReference(
+                                                        name: "stackrox"
+                                                )]
+                                        )
+                                )
+                        )
+                )
+        client.apps().deployments().inNamespace("stackrox").createOrReplace(clairifyDeployment)
         waitForDeploymentCreation("clairify", "stackrox")
     }
 
@@ -858,31 +589,34 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
             createService(deployment)
             createLoadBalancer(deployment)
         }
-        ExtensionsV1beta1Deployment k8sDeployment = new ExtensionsV1beta1Deployment()
-                .metadata(
-                new V1ObjectMeta()
-                        .name(deployment.name)
-                        .namespace(deployment.namespace)
-                        .labels(deployment.getLabels())
+
+        io.fabric8.kubernetes.api.model.apps.Deployment d = new io.fabric8.kubernetes.api.model.apps.Deployment(
+                metadata: new ObjectMeta(
+                        name: deployment.name,
+                        namespace: deployment.namespace,
+                        labels: deployment.labels
+                ),
+                spec: new DeploymentSpec(
+                        selector: new LabelSelector(null, deployment.labels),
+                        replicas: deployment.replicas,
+                        minReadySeconds: 15,
+                        template: new PodTemplateSpec(
+                                metadata: new ObjectMeta(
+                                        name: deployment.name,
+                                        namespace: deployment.namespace,
+                                        labels: deployment.labels,
+                                        annotations: deployment.annotation
+                                ),
+                                spec: generatePodSpec(deployment)
+                        )
+                )
         )
-                .spec(new ExtensionsV1beta1DeploymentSpec()
-                .replicas(deployment.getReplicas())
-                .minReadySeconds(15)
-                .template(new V1PodTemplateSpec()
-                .spec(generatePodSpec(deployment))
-                .metadata(new V1ObjectMeta()
-                .annotations(deployment.getAnnotation())
-                .name(deployment.name)
-                .namespace(deployment.namespace)
-                .labels(deployment.getLabels())
-        )
-        )
-        )
+
         try {
+            client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
             println("Told the orchestrator to create " + deployment.getName())
-            beta1.createNamespacedDeployment(deployment.namespace, k8sDeployment, null)
-        } catch (ApiException e) {
-            println("Error creating kube deployment" + e.toString())
+        } catch (Exception e) {
+            println("Error creating k8s deployment: " + e.toString())
         }
     }
 
@@ -903,16 +637,15 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         int waitTime = 0
 
         while (waitTime < maxWaitTime) {
-            ExtensionsV1beta1DeploymentList dList
-            dList = beta1.listNamespacedDeployment(namespace, null, null, null, null, null, null, null, null, null)
+            DeploymentList dList = client.apps().deployments().inNamespace(namespace).list()
 
             println "Waiting for " + deploymentName
-            for (ExtensionsV1beta1Deployment v1beta1Deployment : dList.getItems()) {
-                if (v1beta1Deployment.getMetadata().getName() == deploymentName) {
+            for (io.fabric8.kubernetes.api.model.apps.Deployment deployment : dList.getItems()) {
+                if (deployment.getMetadata().getName() == deploymentName) {
                     // Using the 'skipReplicaWait' bool to avoid timeout waiting for ready replicas if we know
                     // the deployment will not have replicas available
-                    if (v1beta1Deployment.getStatus().getReadyReplicas() ==
-                            v1beta1Deployment.getSpec().getReplicas() ||
+                    if (deployment.getStatus().getReadyReplicas() ==
+                            deployment.getSpec().getReplicas() ||
                             skipReplicaWait) {
                         // If skipReplicaWait is set, we still want to sleep for a few seconds to allow the deployment
                         // to work its way through the system.
@@ -920,7 +653,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                             sleep(sleepDuration)
                         }
                         println deploymentName + ": deployment created."
-                        return v1beta1Deployment.getMetadata().getUid()
+                        return deployment.getMetadata().getUid()
                     }
                 }
             }
@@ -933,29 +666,31 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
     def createDaemonSetNoWait(DaemonSet daemonSet) {
         daemonSet.getNamespace() != null ?: daemonSet.setNamespace(this.namespace)
 
-        V1beta1DaemonSet k8sDaemonSet = new V1beta1DaemonSet()
-                .metadata(
-                new V1ObjectMeta()
-                        .name(daemonSet.getName())
-                        .namespace(daemonSet.getNamespace())
-                        .labels(daemonSet.getLabels())
+        io.fabric8.kubernetes.api.model.apps.DaemonSet ds = new io.fabric8.kubernetes.api.model.apps.DaemonSet(
+                metadata: new ObjectMeta(
+                        name: daemonSet.name,
+                        namespace: daemonSet.namespace,
+                        labels: daemonSet.labels
+                ),
+                spec: new DaemonSetSpec(
+                        minReadySeconds: 15,
+                        selector: new LabelSelector(null, daemonSet.labels),
+                        template: new PodTemplateSpec(
+                                metadata: new ObjectMeta(
+                                        name: daemonSet.name,
+                                        namespace: daemonSet.namespace,
+                                        labels: daemonSet.labels
+                                ),
+                                spec: generatePodSpec(daemonSet)
+                        )
+                )
         )
-                .spec(new V1beta1DaemonSetSpec()
-                .minReadySeconds(15)
-                .template(new V1PodTemplateSpec()
-                .spec(generatePodSpec(daemonSet))
-                .metadata(new V1ObjectMeta()
-                .name(daemonSet.getName())
-                .namespace(this.namespace)
-                .labels(daemonSet.getLabels())
-        )
-        )
-        )
+
         try {
-            beta1.createNamespacedDaemonSet(daemonSet.getNamespace(), k8sDaemonSet, null)
-            println("Told the orchestrator to create DaemonSet " + daemonSet.getName())
+            client.apps().daemonSets().inNamespace(daemonSet.namespace).createOrReplace(ds)
+            println("Told the orchestrator to create " + daemonSet.getName())
         } catch (Exception e) {
-            println("Error creating kube daemonset" + e.toString())
+            println("Error creating k8s deployment" + e.toString())
         }
     }
 
@@ -976,16 +711,15 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         int waitTime = 0
 
         while (waitTime < maxWaitTime) {
-            V1beta1DaemonSetList dList
-            dList = beta1.listNamespacedDaemonSet(namespace, null, null, null, null, null, null, null, null, null)
+            DaemonSetList dList = client.apps().daemonSets().inNamespace(namespace).list()
 
             println "Waiting for " + deploymentName
-            for (V1beta1DaemonSet v1beta1DaemonSet : dList.getItems()) {
-                if (v1beta1DaemonSet.getMetadata().getName() == deploymentName) {
+            for (io.fabric8.kubernetes.api.model.apps.DaemonSet daemonSet : dList.getItems()) {
+                if (daemonSet.getMetadata().getName() == deploymentName) {
                     // Using the 'skipReplicaWait' bool to avoid timeout waiting for ready replicas if we know
                     // the deployment will not have replicas available
-                    if (v1beta1DaemonSet.getStatus().getNumberReady() ==
-                            v1beta1DaemonSet.getStatus().getDesiredNumberScheduled() ||
+                    if (daemonSet.getStatus().getNumberReady() ==
+                            daemonSet.getStatus().getDesiredNumberScheduled() ||
                             skipReplicaWait) {
                         // If skipReplicaWait is set, we still want to sleep for a few seconds to allow the deployment
                         // to work its way through the system.
@@ -993,7 +727,7 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
                             sleep(sleepDuration)
                         }
                         println deploymentName + ": deployment created."
-                        return v1beta1DaemonSet.getMetadata().getUid()
+                        return daemonSet.getMetadata().getUid()
                     }
                 }
             }
@@ -1003,107 +737,91 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         println "Timed out waiting for " + deploymentName
     }
 
-    List<V1EnvVar> envToList(Map<String, String> env) {
-        List<V1EnvVar> l
-        l = new ArrayList<V1EnvVar>()
-        for (Map.Entry<String, String> entry : env) {
-            V1EnvVar var
-            var = new V1EnvVar()
-            var.setName(entry.getKey())
-            var.setValue(entry.getValue())
-            l.add(var)
-        }
-        return l
-    }
-
     def generatePodSpec(Deployment deployment) {
-        List<V1ContainerPort> containerPorts = deployment.getPorts().collect {
-            k, v -> new V1ContainerPort().containerPort(k).protocol(v)
+        List<ContainerPort> depPorts = deployment.ports.collect {
+            k, v -> new ContainerPort(
+                    k as Integer,
+                    null,
+                    null,
+                    "port" + (k as String),
+                    v as String
+            )
         }
 
-        List<V1LocalObjectReference> imagePullSecrets = new LinkedList<>()
+        List<VolumeMount> volMounts = deployment.volMounts.collect {
+            new VolumeMount(deployment.mountpath, null, it, true, null)
+        }
+
+        List<LocalObjectReference> imagePullSecrets = new LinkedList<>()
         for (String str : deployment.getImagePullSecret()) {
-            V1LocalObjectReference obj = new V1LocalObjectReference()
-                                  .name(str)
+            LocalObjectReference obj = new LocalObjectReference(name: str)
             imagePullSecrets.add(obj)
         }
 
-        List<V1VolumeMount> mounts = new LinkedList<>()
+        List<VolumeMount> mounts = new LinkedList<>()
         for (int i = 0; i < deployment.getVolMounts().size(); ++i) {
-            V1VolumeMount mount = new V1VolumeMount()
-                    .name(deployment.getVolMounts().get(i))
-                    .mountPath(deployment.getMountpath())
-                    .readOnly(true)
+            VolumeMount mount = new VolumeMount(
+                    name: deployment.getVolMounts().get(i),
+                    mountPath: deployment.getMountpath(),
+                    readOnly: true
+            )
             mounts.add(mount)
         }
 
-        List<V1Volume> volumes = new LinkedList<>()
-        for (String str : deployment.getVolNames()) {
-            V1Volume deployVol = new V1Volume()
-                    .name(str)
+        List<EnvVar> envVars = deployment.env.collect {
+            k, v -> new EnvVar(k, v, null)
+        }
 
+        List<Volume> volumes = []
+        deployment.volNames.each {
+            Volume v = new Volume(
+                    name: it
+            )
             if (deployment.secretNames != null || deployment.secretNames.size() != 0) {
                 for (String secret : deployment.secretNames) {
-                    deployVol.setSecret(new V1SecretVolumeSource()
-                            .secretName(secret))
+                    v.setSecret(new SecretVolumeSource(null, null, null, secret))
                 }
             }
-
-            volumes.add(deployVol)
+            volumes.add(v)
         }
 
-        Map<String , Quantity> getLimits = new HashMap<>()
-        for (String key : deployment.limits.keySet()) {
-            Quantity quantity = Quantity.fromString(deployment.limits.get(key))
-            getLimits.put(key, quantity)
+        Map<String , Quantity> limits = new HashMap<>()
+        for (String key:deployment.limits.keySet()) {
+            Quantity quantity = new Quantity(deployment.limits.get(key))
+            limits.put(key, quantity)
         }
 
-        Map<String , Quantity> getRequests = new HashMap<>()
-        for (String key : deployment.request.keySet()) {
-            Quantity quantity = Quantity.fromString(deployment.limits.get(key))
-            getLimits.put(key, quantity)
+        Map<String , Quantity> requests = new HashMap<>()
+        for (String key:deployment.request.keySet()) {
+            Quantity quantity = new Quantity(deployment.request.get(key))
+            requests.put(key, quantity)
         }
 
-        List<V1EnvVar> env = envToList(deployment.getEnv())
-        V1PodSpec v1PodSpec = new V1PodSpec()
-                .containers(
-                [
-                        new V1Container()
-                                .name(deployment.getName())
-                                .image(deployment.getImage())
-                                .command(deployment.getCommand())
-                                .args(deployment.getArgs())
-                                .env(env)
-                                .ports(containerPorts)
-                                .volumeMounts(mounts)
-                                .securityContext(new V1SecurityContext()
-                                        .privileged(deployment.getIsPrivileged()))
-                                .resources(new V1ResourceRequirements()
-                                        .limits(getLimits)
-                                        .requests(getRequests)),
-                ]
+        Container container = new Container(
+                name: deployment.name,
+                image: deployment.image,
+                command: deployment.command,
+                args: deployment.args,
+                ports: depPorts,
+                volumeMounts: volMounts,
+                env: envVars,
+                resources: new ResourceRequirements(limits, requests),
+                securityContext: new SecurityContext(privileged: deployment.isPrivileged)
         )
-                .volumes(volumes)
-                .imagePullSecrets(imagePullSecrets)
-        return v1PodSpec
+
+        PodSpec podSpec = new PodSpec(
+                containers: [container],
+                volumes: volumes,
+                imagePullSecrets: imagePullSecrets
+        )
+        return podSpec
     }
 
     def updateDeploymentDetails(Deployment deployment) {
         // Filtering pod query by using the "name=<name>" because it should always be present in the deployment
         // object - IF this is ever missing, it may cause problems fetching pod details
-        V1PodList deployedPods = this.api.listNamespacedPod(
-                deployment.namespace,
-                null,
-                null,
-                null,
-                null,
-                "name=" + deployment.name,
-                null,
-                null,
-                null,
-                null
-        )
-        for (V1Pod pod : deployedPods.getItems()) {
+        def deployedPods = client.pods().inNamespace(deployment.namespace).withLabel("name", deployment.name).list()
+        for (Pod pod : deployedPods.getItems()) {
             deployment.addPod(
                     pod.getMetadata().getName(),
                     pod.getMetadata().getUid(),
@@ -1117,107 +835,87 @@ class Kubernetes extends OrchestratorCommon implements OrchestratorMain {
         }
     }
 
-    private V1beta1NetworkPolicy createNetworkPolicyObject(NetworkPolicy policy) {
-        V1beta1NetworkPolicy networkPolicy = new V1beta1NetworkPolicy()
-        networkPolicy.setApiVersion("extensions/v1beta1")
-        networkPolicy.setKind("NetworkPolicy")
-        networkPolicy.setMetadata(new V1ObjectMeta())
-        networkPolicy.setSpec(new V1beta1NetworkPolicySpec())
-        networkPolicy.getMetadata().setName(policy.name)
+    private io.fabric8.kubernetes.api.model.networking.NetworkPolicy createNetworkPolicyObject(NetworkPolicy policy) {
+        def networkPolicy = new NetworkPolicyBuilder()
+                .withApiVersion("networking.k8s.io/v1")
+                .withKind("NetworkPolicy")
+                .withNewMetadata()
+                .withName(policy.name)
 
         if (policy.namespace) {
-            networkPolicy.getMetadata().setNamespace(policy.namespace)
+            networkPolicy.withNamespace(policy.namespace)
         }
 
+        networkPolicy = networkPolicy.endMetadata().withNewSpec()
+
         if (policy.metadataPodSelector != null) {
-            networkPolicy.getSpec().setPodSelector(new V1LabelSelector().matchLabels(policy.metadataPodSelector))
+            networkPolicy.withNewPodSelector().withMatchLabels(policy.metadataPodSelector).endPodSelector()
         }
 
         if (policy.types != null) {
+            def polTypes = []
             for (NetworkPolicyTypes type : policy.types) {
-                networkPolicy.getSpec().addPolicyTypesItem(type.toString())
+                polTypes.add(type.toString())
             }
+            networkPolicy.withPolicyTypes(polTypes)
         }
 
         if (policy.ingressPodSelector != null) {
-            networkPolicy.getSpec().addIngressItem(
-                    new V1beta1NetworkPolicyIngressRule().addFromItem(
-                            new V1beta1NetworkPolicyPeer().podSelector(
-                                    new V1LabelSelector().matchLabels(policy.ingressPodSelector)
-                            )
-                    )
+            networkPolicy.withIngress(
+                    new NetworkPolicyIngressRuleBuilder().withFrom(
+                            new NetworkPolicyPeerBuilder()
+                                    .withNewPodSelector()
+                                    .withMatchLabels(policy.ingressPodSelector)
+                                    .endPodSelector().build()
+                    ).build()
             )
         }
 
         if (policy.egressPodSelector != null) {
-            networkPolicy.getSpec().addEgressItem(
-                    new V1beta1NetworkPolicyEgressRule().addToItem(
-                            new V1beta1NetworkPolicyPeer().podSelector(
-                                    new V1LabelSelector().matchLabels(policy.egressPodSelector)
-                            )
-                    )
+            networkPolicy.withEgress(
+                    new NetworkPolicyEgressRuleBuilder().withTo(
+                            new NetworkPolicyPeerBuilder()
+                                    .withNewPodSelector()
+                                    .withMatchLabels(policy.egressPodSelector)
+                                    .endPodSelector().build()
+                    ).build()
             )
         }
 
         if (policy.ingressNamespaceSelector != null) {
-            networkPolicy.getSpec().addIngressItem(
-                    new V1beta1NetworkPolicyIngressRule().addFromItem(
-                            new V1beta1NetworkPolicyPeer().namespaceSelector(
-                                    new V1LabelSelector().matchLabels(policy.ingressNamespaceSelector)
-                            )
-                    )
+            networkPolicy.withIngress(
+                    new NetworkPolicyIngressRuleBuilder().withFrom(
+                            new NetworkPolicyPeerBuilder()
+                                    .withNewNamespaceSelector()
+                                    .withMatchLabels(policy.ingressNamespaceSelector)
+                                    .endNamespaceSelector().build()
+                    ).build()
             )
         }
 
         if (policy.egressNamespaceSelector != null) {
-            networkPolicy.getSpec().addEgressItem(
-                    new V1beta1NetworkPolicyEgressRule().addToItem(
-                            new V1beta1NetworkPolicyPeer().namespaceSelector(
-                                    new V1LabelSelector().matchLabels(policy.egressNamespaceSelector)
-                            )
-                    )
+            networkPolicy.withEgress(
+                    new NetworkPolicyEgressRuleBuilder().withTo(
+                            new NetworkPolicyPeerBuilder()
+                                    .withNewNamespaceSelector()
+                                    .withMatchLabels(policy.egressNamespaceSelector)
+                                    .endNamespaceSelector().build()
+                    ).build()
             )
         }
 
-        return networkPolicy
+        return networkPolicy.endSpec().build()
     }
 
     V1beta1ValidatingWebhookConfiguration getAdmissionController() {
-        return admissionAPI.listValidatingWebhookConfiguration(
-                null,
-                null,
-                null,
-                true,
-                null,
-                null,
-                null,
-                null,
-                false
-        ).getItems().find { it.getMetadata().getName() == "stackrox" }
+        println "get admission controllers stub"
     }
 
     def deleteAdmissionController(String name) {
-        admissionAPI.deleteValidatingWebhookConfiguration(
-                name,
-                new V1DeleteOptions(),
-                null,
-                null,
-                null,
-                null)
-        sleep 1000
+        println "delete admission controllers stub: ${name}"
     }
 
     def createAdmissionController(V1beta1ValidatingWebhookConfiguration config) {
-        if (config == null) {
-            return
-        }
-        config.setMetadata(config.getMetadata().resourceVersion(""))
-        try {
-            admissionAPI.createValidatingWebhookConfiguration(config, null)
-            sleep 1000
-            println "Created admission controller"
-        } catch (ApiException e) {
-            println "Error creating validating webhook ${e}"
-        }
+        println "create admission controllers stub: ${config}"
     }
 }

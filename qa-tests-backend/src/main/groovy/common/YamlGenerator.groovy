@@ -1,6 +1,6 @@
 package common
 
-import io.kubernetes.client.custom.IntOrString
+import io.fabric8.kubernetes.api.model.IntOrString
 import org.yaml.snakeyaml.DumperOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.introspector.Property

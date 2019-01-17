@@ -1,10 +1,11 @@
 package objects
 
+import common.Constants
 import orchestratormanager.OrchestratorType
 
 class Deployment {
     String name
-    String namespace = "qa"
+    String namespace = Constants.ORCHESTRATOR_NAMESPACE
     List<String> volNames = new ArrayList<String>()
     List<String> volMounts = new ArrayList<String>()
     String volType

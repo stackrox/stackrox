@@ -1,5 +1,6 @@
 import com.google.protobuf.Timestamp
 import com.jayway.restassured.RestAssured
+import common.Constants
 import groovy.util.logging.Slf4j
 import orchestratormanager.OrchestratorMain
 import orchestratormanager.OrchestratorType
@@ -15,6 +16,7 @@ import java.util.concurrent.TimeUnit
 
 @Slf4j
 class BaseSpecification extends Specification {
+
     @Rule
     Timeout globalTimeout = new Timeout(500000, TimeUnit.MILLISECONDS)
     @Rule
@@ -26,7 +28,10 @@ class BaseSpecification extends Specification {
     @Shared
     def resultMap = [:]
     @Shared
-    OrchestratorMain orchestrator = OrchestratorType.create(OrchestratorTypes.valueOf(System.getenv("CLUSTER")), "qa")
+    OrchestratorMain orchestrator = OrchestratorType.create(
+            OrchestratorTypes.valueOf(System.getenv("CLUSTER")),
+            Constants.ORCHESTRATOR_NAMESPACE
+    )
     @Shared
     private testStartTime
 

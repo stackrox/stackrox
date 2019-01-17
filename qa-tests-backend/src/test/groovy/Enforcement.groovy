@@ -3,7 +3,6 @@ import groups.Integration
 import groups.PolicyEnforcement
 import objects.DaemonSet
 import objects.Deployment
-import orchestratormanager.OrchestratorTypes
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import spock.lang.Unroll
@@ -21,8 +20,8 @@ class Enforcement extends BaseSpecification {
         // This test verifies enforcement by triggering a enforcement via admission controller
 
         given:
-        "Cluster is not Openshift"
-        Assume.assumeTrue(OrchestratorTypes.valueOf(System.getenv("CLUSTER")) != OrchestratorTypes.OPENSHIFT)
+        "ignore test until we get admission control in fabric8 lib"
+        Assume.assumeTrue(false)
 
         and:
         "Add deployment time enforcement to an existing policy"
@@ -70,6 +69,7 @@ class Enforcement extends BaseSpecification {
                 .setImage("nginx")
                 .addLabel("app", "kill-enforcement-int")
                 .setCommand(["sh" , "-c" , "while true; do sleep 5; apt-get -y update; done"])
+                .setSkipReplicaWait(true)
         orchestrator.createDeployment(d)
         assert Services.waitForDeployment(d)
 
