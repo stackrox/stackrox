@@ -89,7 +89,7 @@ function* handleLoginPageRedirect({ location }) {
 }
 
 function* handleOidcResponse(location) {
-    const hash = queryString.parse(location.hash, { ignoreQueryPrefix: true });
+    const hash = queryString.parse(location.hash.slice(1)); // ignore '#' https://github.com/ljharb/qs/issues/222
     if (hash.error) {
         return hash;
     }
@@ -106,7 +106,7 @@ function* handleOidcResponse(location) {
 }
 
 function handleGenericResponse(location) {
-    const hash = queryString.parse(location.hash);
+    const hash = queryString.parse(location.hash.slice(1)); // ignore '#' https://github.com/ljharb/qs/issues/222
     if (hash.error) {
         return hash;
     }

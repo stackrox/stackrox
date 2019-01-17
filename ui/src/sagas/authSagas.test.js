@@ -212,7 +212,7 @@ describe('Auth Sagas', () => {
                 createLocationChange(
                     '/auth/response/oidc',
                     null,
-                    `id_token=${token}&state=${serverState}`
+                    `#id_token=${token}&state=${serverState}`
                 )
             )
             .silentRun()
