@@ -97,3 +97,15 @@ func CheckAnyPolicyInCategoryEnforced(ctx framework.ComplianceContext, category 
 		CheckPolicyEnforced(ctx, policy)
 	}
 }
+
+// DeploymentHasHostMounts returns true if the deployment has host mounts.
+func DeploymentHasHostMounts(deployment *storage.Deployment) bool {
+	for _, container := range deployment.Containers {
+		for _, vol := range container.Volumes {
+			if vol.Type == "HostPath" {
+				return true
+			}
+		}
+	}
+	return false
+}

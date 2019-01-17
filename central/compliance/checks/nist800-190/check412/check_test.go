@@ -71,7 +71,7 @@ func TestNIST412_Success(t *testing.T) {
 	t.Parallel()
 
 	registry := framework.RegistrySingleton()
-	check := registry.Lookup("NIST-800-190:4.1.2")
+	check := registry.Lookup(standardID)
 	require.NotNil(t, check)
 
 	policies := make(map[string]*storage.Policy)
@@ -102,7 +102,7 @@ func TestNIST412_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	results := run.GetAllResults()
-	checkResults := results["NIST-800-190:4.1.2"]
+	checkResults := results[standardID]
 	require.NotNil(t, checkResults)
 
 	require.Len(t, checkResults.Evidence(), 2)
@@ -114,7 +114,7 @@ func TestNIST412_Fail(t *testing.T) {
 	t.Parallel()
 
 	registry := framework.RegistrySingleton()
-	check := registry.Lookup("NIST-800-190:4.1.2")
+	check := registry.Lookup(standardID)
 	require.NotNil(t, check)
 
 	policies := make(map[string]*storage.Policy)
@@ -140,7 +140,7 @@ func TestNIST412_Fail(t *testing.T) {
 	require.NoError(t, err)
 
 	results := run.GetAllResults()
-	checkResults := results["NIST-800-190:4.1.2"]
+	checkResults := results[standardID]
 	require.NotNil(t, checkResults)
 
 	require.Len(t, checkResults.Evidence(), 3)

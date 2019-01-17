@@ -5,9 +5,13 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 )
 
+const (
+	standardID = "NIST_800_190:4_1_2"
+)
+
 func init() {
 	framework.MustRegisterNewCheck(
-		"NIST-800-190:4.1.2",
+		standardID,
 		framework.ClusterKind,
 		[]string{"Policies", "ImageIntegrations"},
 		func(ctx framework.ComplianceContext) {
