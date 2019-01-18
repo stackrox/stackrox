@@ -71,6 +71,18 @@ func (mr *MockComplianceDataRepositoryMockRecorder) ImageIntegrations() *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImageIntegrations", reflect.TypeOf((*MockComplianceDataRepository)(nil).ImageIntegrations))
 }
 
+// NetworkFlows mocks base method
+func (m *MockComplianceDataRepository) NetworkFlows() []*storage.NetworkFlow {
+	ret := m.ctrl.Call(m, "NetworkFlows")
+	ret0, _ := ret[0].([]*storage.NetworkFlow)
+	return ret0
+}
+
+// NetworkFlows indicates an expected call of NetworkFlows
+func (mr *MockComplianceDataRepositoryMockRecorder) NetworkFlows() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkFlows", reflect.TypeOf((*MockComplianceDataRepository)(nil).NetworkFlows))
+}
+
 // NetworkGraph mocks base method
 func (m *MockComplianceDataRepository) NetworkGraph() *v1.NetworkGraph {
 	ret := m.ctrl.Call(m, "NetworkGraph")
