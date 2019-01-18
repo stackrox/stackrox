@@ -5,7 +5,6 @@ import PropTypes from 'prop-types';
 import MultiGaugeDetailSection from './MultiGaugeDetailSection';
 
 const LABEL_STYLE = {
-    fontSize: '36px',
     textAnchor: 'middle',
     fill: 'var(--primary-800)',
     fontWeight: 400
@@ -55,9 +54,12 @@ class MultiGaugeChart extends Component {
     };
 
     calculateMultiGaugeData = property => {
+        if (!this.props.data.length) return null;
         const pi = Math.PI;
         const fullAngle = 2 * pi;
-        let radius = 1;
+        // TODO: Dynamic technique to assign  radius & font size to the gauges.
+        let radius = this.props.data.length > 1 ? 1 : 1.5;
+        LABEL_STYLE.fontSize = this.props.data.length > 1 ? '36px' : '48px';
         const data = [];
         [...this.props.data].forEach((d, index) => {
             const radius0 = radius + 0.1;
@@ -132,12 +134,17 @@ class MultiGaugeChart extends Component {
 
     onArcClick = data => this.setSelectedData(data);
 
-    getAngle0 = ({ angle0 }) => angle0;
-
-    getAngle = ({ angle }) => angle;
-
     getCenterLabel = () => (
-        <LabelSeries data={[{ x: 0.1, y: -0.85, label: '76%', style: LABEL_STYLE }]} />
+        <LabelSeries
+            data={[
+                {
+                    x: 0.1,
+                    y: this.props.data.length > 1 ? -0.85 : 1.1,
+                    label: '76%',
+                    style: LABEL_STYLE
+                }
+            ]}
+        />
     );
 
     getHint = () => {
@@ -165,17 +172,11 @@ class MultiGaugeChart extends Component {
         const { data } = this.props;
         return (
             <div className="flex flex-row">
-                <XYPlot
-                    xDomain={[-3, 4]}
-                    yDomain={[-3, 4]}
-                    getAngle={this.getAngle}
-                    getAngle0={this.getAngle0}
-                    width={275}
-                    height={250}
-                >
+                <XYPlot xDomain={[-3, 4]} yDomain={[-3, 4]} width={275} height={250}>
                     {this.getCenterLabel()}
                     {this.getHint()}
                     <ArcSeries
+                        arcClassName="cursor-pointer"
                         radiusDomain={[0, 2]}
                         data={this.state.data}
                         colorType="literal"
