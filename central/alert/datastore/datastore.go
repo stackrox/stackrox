@@ -17,6 +17,7 @@ type DataStore interface {
 
 	ListAlerts(request *v1.ListAlertsRequest) ([]*storage.ListAlert, error)
 
+	GetAlertStore() ([]*storage.ListAlert, error)
 	GetAlert(id string) (*storage.Alert, bool, error)
 	CountAlerts() (int, error)
 	AddAlert(alert *storage.Alert) error

@@ -73,6 +73,19 @@ func (mr *MockDataStoreMockRecorder) GetAlert(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAlert", reflect.TypeOf((*MockDataStore)(nil).GetAlert), arg0)
 }
 
+// GetAlertStore mocks base method
+func (m *MockDataStore) GetAlertStore() ([]*storage.ListAlert, error) {
+	ret := m.ctrl.Call(m, "GetAlertStore")
+	ret0, _ := ret[0].([]*storage.ListAlert)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAlertStore indicates an expected call of GetAlertStore
+func (mr *MockDataStoreMockRecorder) GetAlertStore() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAlertStore", reflect.TypeOf((*MockDataStore)(nil).GetAlertStore))
+}
+
 // ListAlerts mocks base method
 func (m *MockDataStore) ListAlerts(arg0 *v1.ListAlertsRequest) ([]*storage.ListAlert, error) {
 	ret := m.ctrl.Call(m, "ListAlerts", arg0)

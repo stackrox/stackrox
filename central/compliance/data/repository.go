@@ -12,6 +12,7 @@ type repository struct {
 	nodes       map[string]*storage.Node
 	deployments map[string]*storage.Deployment
 
+	alerts             []*storage.ListAlert
 	networkPolicies    map[string]*storage.NetworkPolicy
 	networkGraph       *v1.NetworkGraph
 	policies           map[string]*storage.Policy
@@ -59,6 +60,10 @@ func (r *repository) ProcessIndicators() []*storage.ProcessIndicator {
 
 func (r *repository) NetworkFlows() []*storage.NetworkFlow {
 	return r.networkFlows
+}
+
+func (r *repository) Alerts() []*storage.ListAlert {
+	return r.alerts
 }
 
 func newRepository(domain framework.ComplianceDomain, factory *factory) (*repository, error) {
@@ -159,6 +164,11 @@ func (r *repository) init(domain framework.ComplianceDomain, f *factory) error {
 
 	flowStore := f.networkFlowStore.GetFlowStore(domain.Cluster().ID())
 	r.networkFlows, _, err = flowStore.GetAllFlows()
+	if err != nil {
+		return err
+	}
+
+	r.alerts, err = f.alertStore.GetAlertStore()
 	if err != nil {
 		return err
 	}

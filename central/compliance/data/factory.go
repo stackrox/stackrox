@@ -1,6 +1,7 @@
 package data
 
 import (
+	alertStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/compliance/framework"
 	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
@@ -16,6 +17,7 @@ type RepositoryFactory interface {
 }
 
 type factory struct {
+	alertStore            alertStore.DataStore
 	networkPoliciesStore  networkPoliciesStore.Store
 	networkGraphEvaluator graph.Evaluator
 	policyStore           policiesStore.DataStore
@@ -27,6 +29,7 @@ type factory struct {
 // NewDefaultFactory creates a new RepositoryFactory using the default instances for accessing data.
 func NewDefaultFactory() RepositoryFactory {
 	return &factory{
+		alertStore:            alertStore.Singleton(),
 		networkPoliciesStore:  networkPoliciesStore.Singleton(),
 		networkGraphEvaluator: graph.Singleton(),
 		policyStore:           policiesStore.Singleton(),

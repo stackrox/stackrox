@@ -35,6 +35,18 @@ func (m *MockComplianceDataRepository) EXPECT() *MockComplianceDataRepositoryMoc
 	return m.recorder
 }
 
+// Alerts mocks base method
+func (m *MockComplianceDataRepository) Alerts() []*storage.ListAlert {
+	ret := m.ctrl.Call(m, "Alerts")
+	ret0, _ := ret[0].([]*storage.ListAlert)
+	return ret0
+}
+
+// Alerts indicates an expected call of Alerts
+func (mr *MockComplianceDataRepositoryMockRecorder) Alerts() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Alerts", reflect.TypeOf((*MockComplianceDataRepository)(nil).Alerts))
+}
+
 // Cluster mocks base method
 func (m *MockComplianceDataRepository) Cluster() *storage.Cluster {
 	ret := m.ctrl.Call(m, "Cluster")

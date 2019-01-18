@@ -17,6 +17,7 @@ type ComplianceDataRepository interface {
 	Nodes() map[string]*storage.Node
 	Deployments() map[string]*storage.Deployment
 
+	Alerts() []*storage.ListAlert
 	NetworkPolicies() map[string]*storage.NetworkPolicy
 	NetworkGraph() *v1.NetworkGraph
 	Policies() map[string]*storage.Policy

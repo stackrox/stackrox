@@ -60,6 +60,11 @@ func (ds *datastoreImpl) SearchRawAlerts(q *v1.Query) ([]*storage.Alert, error) 
 	return ds.searcher.SearchRawAlerts(q)
 }
 
+// GetAlertStore returns all the alerts. Mainly used for compliance checks.
+func (ds *datastoreImpl) GetAlertStore() ([]*storage.ListAlert, error) {
+	return ds.ListAlerts(nil)
+}
+
 // GetAlert returns an alert by id.
 func (ds *datastoreImpl) GetAlert(id string) (*storage.Alert, bool, error) {
 	return ds.storage.GetAlert(id)
