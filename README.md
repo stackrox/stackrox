@@ -33,6 +33,26 @@ make image
 ```
 
 This will create `stackrox/main` with a tag defined by `make tag`.
+
+### Possible OS/X complications:
+If you are on OS/X and get an error when building the golang x/tools,
+try first making sure the EULA is agreed by:
+
+1. starting XCode
+2. building a new blank app project
+3. starting the blank project app in the emulator
+4. close both the emulator and the XCode, then
+5. run the following commands:
+
+```
+xcode-select --install
+sudo xcode-select --switch /Library/Developer/CommandLineTools # Enable command line tools
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+```
+
+For more info, see https://github.com/nodejs/node-gyp/issues/569
+
+### Test the base configuration
 This is the only image required to run the base configuration of StackRox.
 Runtime collection and system monitoring require additional images.
 
