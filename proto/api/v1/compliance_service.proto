@@ -41,8 +41,8 @@ message ComplianceAggregation {
         repeated AggregationKey aggregation_keys = 1;
         Scope unit = 2;
 
-        int64 num_passing = 3;
-        int64 num_failing = 4;
+        int32 num_passing = 3;
+        int32 num_failing = 4;
     }
 
     // Next available tag: 2

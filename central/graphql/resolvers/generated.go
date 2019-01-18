@@ -985,6 +985,11 @@ func (resolver *complianceResultValueResolver) Evidence() ([]*complianceResultVa
 	return resolver.root.wrapComplianceResultValue_Evidences(value, nil)
 }
 
+func (resolver *complianceResultValueResolver) OverallState() string {
+	value := resolver.data.GetOverallState()
+	return value.String()
+}
+
 type complianceResultValue_EvidenceResolver struct {
 	root *Resolver
 	data *storage.ComplianceResultValue_Evidence
