@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/central"
+	"github.com/stackrox/rox/roxctl/cluster"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/deployment"
 	"github.com/stackrox/rox/roxctl/image"
@@ -40,6 +41,9 @@ func main() {
 
 	// Sensor Commands
 	c.AddCommand(sensor.Command())
+
+	// Cluster Commands
+	c.AddCommand(cluster.Command())
 
 	common.AddAuthFlags(c)
 
