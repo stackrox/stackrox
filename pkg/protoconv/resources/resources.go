@@ -137,6 +137,7 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 		podSpec = podTemplate.Spec
 	}
 
+	w.HostNetwork = podSpec.HostNetwork
 	w.populateContainers(podSpec)
 }
 

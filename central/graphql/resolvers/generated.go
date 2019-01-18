@@ -1465,6 +1465,12 @@ func (resolver *deploymentResolver) Containers() ([]*containerResolver, error) {
 	return resolver.root.wrapContainers(value, nil)
 }
 
+func (resolver *deploymentResolver) HostNetwork() bool {
+	resolver.ensureData()
+	value := resolver.data.GetHostNetwork()
+	return value
+}
+
 func (resolver *deploymentResolver) Id() graphql.ID {
 	value := resolver.data.GetId()
 	if resolver.data == nil {

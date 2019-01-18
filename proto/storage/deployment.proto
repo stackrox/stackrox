@@ -14,7 +14,7 @@ enum ContainerRuntime {
     DOCKER_CONTAINER_RUNTIME  = 1;
 }
 
-// Next available tag: 21
+// Next available tag: 22
 message Deployment {
     string id                                  = 1;
     string name                                = 2;
@@ -36,6 +36,7 @@ message Deployment {
     bool inactive                              = 16;
     repeated string image_pull_secrets         = 17;
     string service_account                     = 18;
+    bool host_network                          = 21;
 }
 
 message Container {
@@ -95,6 +96,7 @@ message EmbeddedSecret {
     string path = 2;
 }
 
+// Next Available Tag: 6
 message PortConfig {
     string name             = 1;
     int32 container_port    = 2;
