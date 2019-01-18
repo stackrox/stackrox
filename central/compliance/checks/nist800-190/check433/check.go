@@ -1,15 +1,17 @@
-package check121
+package check433
 
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 )
 
-const checkID = "PCI_DSS_3_2:1_2_1"
+const (
+	standardID = "NIST_800_190:4_3_3"
+)
 
 func init() {
 	framework.MustRegisterNewCheck(
-		checkID,
+		standardID,
 		framework.DeploymentKind,
 		[]string{"NetworkGraph", "NetworkPolicies"},
 		common.ClusterHasNetworkPolicies)
