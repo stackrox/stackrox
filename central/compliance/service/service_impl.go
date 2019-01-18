@@ -1,11 +1,15 @@
 package service
 
 import (
+	"strings"
+
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -34,12 +38,14 @@ func New() Service {
 	return &serviceImpl{
 		store:         store.Singleton(),
 		standardsRepo: standards.RegistrySingleton(),
+		clusters:      datastore.Singleton(),
 	}
 }
 
 type serviceImpl struct {
 	store         store.Store
 	standardsRepo standards.Repository
+	clusters      datastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -101,6 +107,71 @@ func (s *serviceImpl) GetComplianceControlResults(ctx context.Context, query *v1
 	}, nil
 }
 
+func filterStandards(standards []*v1.ComplianceStandardMetadata, values []string) []string {
+	if len(values) == 0 {
+		standardIDs := make([]string, 0, len(standards))
+		for _, s := range standards {
+			standardIDs = append(standardIDs, s.GetId())
+		}
+		return standardIDs
+	}
+	var filteredStandards []string
+loop:
+	for _, standard := range standards {
+		standardLower := strings.ToLower(standard.GetName())
+		for _, v := range values {
+			if strings.HasPrefix(standardLower, strings.ToLower(v)) {
+				filteredStandards = append(filteredStandards, standard.GetId())
+				continue loop
+			}
+		}
+	}
+	return filteredStandards
+}
+
+func filterClusters(clusters []*storage.Cluster, values []string) []string {
+	if len(values) == 0 {
+		clusterIDs := make([]string, 0, len(clusters))
+		for _, s := range clusters {
+			clusterIDs = append(clusterIDs, s.GetId())
+		}
+		return clusterIDs
+	}
+	var filteredClusters []string
+loop:
+	for _, cluster := range clusters {
+		clusterLower := strings.ToLower(cluster.GetName())
+		for _, v := range values {
+			if strings.HasPrefix(clusterLower, strings.ToLower(v)) {
+				filteredClusters = append(filteredClusters, cluster.GetId())
+				continue loop
+			}
+		}
+	}
+	return filteredClusters
+}
+
 func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.ComplianceAggregation_Request) (*v1.ComplianceAggregation_Response, error) {
-	return nil, status.Error(codes.Unimplemented, "not yet implemented")
+	searchMap := search.ParseRawQueryIntoMap(request.GetWhere().GetQuery())
+
+	standards, err := s.standardsRepo.Standards()
+	if err != nil {
+		return nil, err
+	}
+	standardIDs := filterStandards(standards, searchMap[search.Standard.String()])
+
+	clusters, err := s.clusters.GetClusters()
+	if err != nil {
+		return nil, err
+	}
+	clusterIDs := filterClusters(clusters, searchMap[search.Cluster.String()])
+
+	results, err := s.store.GetLatestRunResultsBatch(clusterIDs, standardIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.ComplianceAggregation_Response{
+		Results: getAggregatedResults(request.GetGroupBy(), request.GetUnit(), results),
+	}, nil
 }

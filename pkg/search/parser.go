@@ -25,6 +25,21 @@ func ParseRawQuery(query string) (*v1.Query, error) {
 	return parseRawQuery(query)
 }
 
+// ParseRawQueryIntoMap returns a map[search key] []values from a string query
+func ParseRawQueryIntoMap(query string) map[string][]string {
+	pairs := strings.Split(query, "+")
+	resultMap := make(map[string][]string)
+
+	for _, pair := range pairs {
+		key, commaSeparatedValues, valid := parsePair(pair)
+		if !valid {
+			continue
+		}
+		resultMap[key] = strings.Split(commaSeparatedValues, ",")
+	}
+	return resultMap
+}
+
 func parseRawQuery(query string) (*v1.Query, error) {
 	pairs := strings.Split(query, "+")
 

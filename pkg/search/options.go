@@ -76,6 +76,9 @@ const (
 	// Secret search fields
 	SecretType       FieldLabel = "Secret Type"
 	SecretExpiration FieldLabel = "Cert Expiration"
+
+	// Compliance search fields
+	Standard FieldLabel = "Standard"
 )
 
 func (f FieldLabel) String() string {
