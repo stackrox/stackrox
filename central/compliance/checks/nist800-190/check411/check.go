@@ -3,6 +3,7 @@ package check411
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 const (
@@ -28,11 +29,19 @@ func checkNIST411(ctx framework.ComplianceContext) {
 func checkCVSS7PolicyEnforced(ctx framework.ComplianceContext) {
 	policies := ctx.Data().Policies()
 	for _, p := range policies {
-		if p.GetFields() != nil && p.GetFields().GetCvss() != nil && !p.GetDisabled() && len(p.GetEnforcementActions()) != 0 {
+		a := common.NewAnder(common.IsPolicyEnabled(p), common.IsPolicyEnforced(p), doesPolicyHaveCVSS(p))
+
+		if a.Execute() {
 			framework.Passf(ctx, "Policy '%s' enabled and enforced", p.GetName())
 			return
 		}
 	}
 
 	framework.Fail(ctx, "Policy that disallows images, with a CVSS score above a threshold, to be deployed not found")
+}
+
+func doesPolicyHaveCVSS(p *storage.Policy) common.Andable {
+	return func() bool {
+		return p.GetFields() != nil && p.GetFields().GetCvss() != nil
+	}
 }

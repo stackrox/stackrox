@@ -9,7 +9,7 @@
       "tag": "latest"
     }
   },
-  "rationale": "Using latest tag can result in running heterogenous versions of code. Many Docker hosts cache the Docker images, which means newer versions of the latest tag will not be picked up. See https://docs.docker.com/develop/dev-best-practices for more best practices.",
+  "rationale": "Using latest tag can result in running heterogeneous versions of code. Many Docker hosts cache the Docker images, which means newer versions of the latest tag will not be picked up. See https://docs.docker.com/develop/dev-best-practices for more best practices.",
   "remediation": "Consider moving to semantic versioning based on code releases (semver.org) or using the first 12 characters of the source control SHA. This will allow you to tie the Docker image to the code.",
   "whitelists": [
     {
@@ -17,17 +17,6 @@
       "deployment": {
         "scope": {
           "namespace": "kube-system"
-        }
-      }
-    },
-    {
-      "name": "Don't alert on StackRox Detect and Respond",
-      "deployment": {
-        "scope": {
-          "label": {
-            "key": "com.docker.stack.namespace",
-            "value": "stackrox"
-          }
         }
       }
     }

@@ -1,7 +1,9 @@
 package check422
 
 import (
+	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 const (
@@ -26,7 +28,9 @@ func checkNIST422(ctx framework.ComplianceContext) {
 func checkImageAgePolicyEnforced(ctx framework.ComplianceContext) {
 	policies := ctx.Data().Policies()
 	for _, p := range policies {
-		if p.GetFields() != nil && p.GetFields().GetImageAgeDays() != 0 && !p.GetDisabled() && len(p.GetEnforcementActions()) != 0 {
+		a := common.NewAnder(common.IsPolicyEnabled(p), common.IsPolicyEnforced(p), doesPolicyHaveImageTagLatest(p))
+
+		if a.Execute() {
 			framework.Passf(ctx, "Policy '%s' enabled and enforced", p.GetName())
 			return
 		}
@@ -38,11 +42,25 @@ func checkImageAgePolicyEnforced(ctx framework.ComplianceContext) {
 func checkLatestImageTagPolicyEnforced(ctx framework.ComplianceContext) {
 	policies := ctx.Data().Policies()
 	for _, p := range policies {
-		if p.GetFields() != nil && p.GetFields().GetImageName().GetTag() != "latest" && !p.GetDisabled() && len(p.GetEnforcementActions()) != 0 {
+		a := common.NewAnder(common.IsPolicyEnabled(p), common.IsPolicyEnforced(p), doesPolicyHaveImageAgeDays(p))
+
+		if a.Execute() {
 			framework.Passf(ctx, "Policy '%s' enabled and enforced", p.GetName())
 			return
 		}
 	}
 
 	framework.Fail(ctx, "Policy that disallows images with tag 'latest' to be deployed not found")
+}
+
+func doesPolicyHaveImageTagLatest(p *storage.Policy) common.Andable {
+	return func() bool {
+		return p.GetFields() != nil && p.GetFields().GetImageName().GetTag() != "latest"
+	}
+}
+
+func doesPolicyHaveImageAgeDays(p *storage.Policy) common.Andable {
+	return func() bool {
+		return p.GetFields() != nil && p.GetFields().GetImageAgeDays() != 0 && !p.GetDisabled()
+	}
 }

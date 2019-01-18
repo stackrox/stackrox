@@ -109,3 +109,17 @@ func DeploymentHasHostMounts(deployment *storage.Deployment) bool {
 	}
 	return false
 }
+
+// IsPolicyEnabled returns true if the policy is enabled.
+func IsPolicyEnabled(p *storage.Policy) Andable {
+	return func() bool {
+		return !p.Disabled
+	}
+}
+
+// IsPolicyEnforced returns true if the policy has one or more enforcement actions.
+func IsPolicyEnforced(p *storage.Policy) Andable {
+	return func() bool {
+		return len(p.GetEnforcementActions()) != 0
+	}
+}
