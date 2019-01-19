@@ -34,9 +34,9 @@ message GetNetworkGraphRequest {
 }
 
 message SimulateNetworkGraphRequest {
-    string cluster_id               = 1;
-    string query                    = 2;
-    string simulation_yaml          = 3;
+    string cluster_id                      = 1;
+    string query                           = 2;
+    NetworkPolicyModification modification = 3;
 }
 
 message NetworkPolicyInSimulation {
@@ -45,11 +45,12 @@ message NetworkPolicyInSimulation {
         UNCHANGED = 1;
         MODIFIED = 2;
         ADDED = 3;
+        DELETED = 4;
     }
 
     storage.NetworkPolicy policy = 1;
     Status        status = 2;
-    storage.NetworkPolicy old_policy = 3;  // if status is MODIFIED, this contains the previous network policy.
+    storage.NetworkPolicy old_policy = 3;  // if status is MODIFIED or DELETED, this contains the previous network policy.
 }
 
 message NetworkNodeDiff {
@@ -65,12 +66,44 @@ message SimulateNetworkGraphResponse {
     NetworkGraph simulated_graph                = 1;
     repeated NetworkPolicyInSimulation policies = 2;
 
-    NetworkGraphDiff added = 3;
+    NetworkGraphDiff added   = 3;
     NetworkGraphDiff removed = 4;
 }
 
 message NetworkGraphEpoch {
     uint32 epoch = 1;
+}
+
+// Next available tag: 3
+message NetworkPolicyReference {
+    string namespace = 1;
+    string name      = 2;
+}
+
+// Next available tag: 3
+message NetworkPolicyModification {
+    string apply_yaml                         = 1;
+    repeated NetworkPolicyReference to_delete = 2;
+}
+
+// Next available tag: 4
+message GenerateNetworkPoliciesRequest {
+    enum DeleteExistingPoliciesMode {
+        UNKNOWN        = 0;
+        NONE           = 1;  // Do not delete any existing network policies.
+        GENERATED_ONLY = 2;  // Delete any existing *auto-generated* network policies.
+        ALL            = 3;  // Delete all existing network policies in the respective namespace.
+    }
+
+    string cluster_id                          = 1;
+    repeated string namespaces                 = 2;
+    DeleteExistingPoliciesMode delete_existing = 3;
+}
+
+// Next available tag: 3
+message GenerateNetworkPoliciesResponse {
+    SimulateNetworkGraphResponse simulation = 1;
+    NetworkPolicyModification modification  = 2;
 }
 
 service NetworkPolicyService {
@@ -102,7 +135,7 @@ service NetworkPolicyService {
     rpc SimulateNetworkGraph (SimulateNetworkGraphRequest) returns (SimulateNetworkGraphResponse) {
         option (google.api.http) = {
             post: "/v1/networkpolicies/simulate/{cluster_id}"
-            body: "simulation_yaml"
+            body: "modification"
         };
     }
 
@@ -110,6 +143,12 @@ service NetworkPolicyService {
         option (google.api.http) = {
             post: "/v1/networkpolicies/simulate/{cluster_id}/notify"
             body: "yaml"
+        };
+    }
+
+    rpc GenerateNetworkPolicies (GenerateNetworkPoliciesRequest) returns (GenerateNetworkPoliciesResponse) {
+        option (google.api.http) = {
+            get: "/v1/networkpolicies/generate/{cluster_id}"
         };
     }
 }

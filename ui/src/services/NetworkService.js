@@ -18,7 +18,9 @@ export function fetchNetworkPolicyGraph(filters, clusterId) {
     if (simulationYaml) {
         options = {
             method: 'POST',
-            data: simulationYaml && `"${simulationYaml.split('\n').join('\\n')}"`,
+            data: {
+                applyYaml: simulationYaml
+            },
             url: `${networkPoliciesBaseUrl}/simulate/${clusterId}?${params}`
         };
         getGraph = ({ simulatedGraph }) => simulatedGraph;

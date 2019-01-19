@@ -162,7 +162,7 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 	}
 
 	// Gather all of the network policies that apply to the cluster and add the addition we are testing if applicable.
-	networkPoliciesInSimulation, err := s.getNetworkPoliciesInSimulation(request.GetClusterId(), request.GetSimulationYaml())
+	networkPoliciesInSimulation, err := s.getNetworkPoliciesInSimulation(request.GetClusterId(), request.GetModification())
 	if err != nil {
 		return nil, err
 	}
@@ -189,6 +189,11 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 			oldPolicies = append(oldPolicies, policyInSim.GetOldPolicy())
 			newPolicies = append(newPolicies, policyInSim.GetPolicy())
 			hasChanges = true
+		case v1.NetworkPolicyInSimulation_DELETED:
+			oldPolicies = append(oldPolicies, policyInSim.GetOldPolicy())
+			hasChanges = true
+		default:
+			return nil, status.Errorf(codes.Internal, "unhandled policy status %v", policyInSim.GetStatus())
 		}
 	}
 	newGraph := s.graphEvaluator.GetGraph(deployments, newPolicies)
@@ -249,6 +254,10 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 	return &v1.Empty{}, nil
 }
 
+func (s *serviceImpl) GenerateNetworkPolicies(ctx context.Context, req *v1.GenerateNetworkPoliciesRequest) (*v1.GenerateNetworkPoliciesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
 func (s *serviceImpl) getDeployments(clusterID, query string) (deployments []*storage.Deployment, err error) {
 	clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 
@@ -265,9 +274,9 @@ func (s *serviceImpl) getDeployments(clusterID, query string) (deployments []*st
 	return
 }
 
-func (s *serviceImpl) getNetworkPoliciesInSimulation(clusterID, simulationYaml string) ([]*v1.NetworkPolicyInSimulation, error) {
+func (s *serviceImpl) getNetworkPoliciesInSimulation(clusterID string, modification *v1.NetworkPolicyModification) ([]*v1.NetworkPolicyInSimulation, error) {
 	// Confirm that any input yamls are valid. Do this check first since it is the cheapest.
-	additionalPolicies, err := compileValidateYaml(simulationYaml)
+	additionalPolicies, err := compileValidateYaml(modification.GetApplyYaml())
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +287,11 @@ func (s *serviceImpl) getNetworkPoliciesInSimulation(clusterID, simulationYaml s
 		return nil, err
 	}
 
-	return replaceOrAddPolicies(additionalPolicies, currentPolicies), nil
+	return applyPolicyModification(policyModification{
+		ExistingPolicies: currentPolicies,
+		NewPolicies:      additionalPolicies,
+		ToDelete:         modification.GetToDelete(),
+	})
 }
 
 type networkPolicyRef struct {
@@ -292,15 +305,21 @@ func getRef(policy *storage.NetworkPolicy) networkPolicyRef {
 	}
 }
 
-// replaceOrAddPolicies returns the input slice of policies modified to use newPolicies.
+type policyModification struct {
+	ExistingPolicies []*storage.NetworkPolicy
+	ToDelete         []*v1.NetworkPolicyReference
+	NewPolicies      []*storage.NetworkPolicy
+}
+
+// applyPolicyModification returns the input slice of policies modified to use newPolicies.
 // If oldPolicies contains a network policy with the same name and namespace as newPolicy, we consider newPolicy a
 // replacement.
 // If oldPolicies does not contain a network policy with a matching namespace and name, we consider it a new additional
 // policy.
-func replaceOrAddPolicies(newPolicies []*storage.NetworkPolicy, oldPolicies []*storage.NetworkPolicy) (outputPolicies []*v1.NetworkPolicyInSimulation) {
-	outputPolicies = make([]*v1.NetworkPolicyInSimulation, 0, len(newPolicies)+len(oldPolicies))
-	policiesByRef := make(map[networkPolicyRef]*v1.NetworkPolicyInSimulation, len(oldPolicies))
-	for _, oldPolicy := range oldPolicies {
+func applyPolicyModification(policies policyModification) (outputPolicies []*v1.NetworkPolicyInSimulation, err error) {
+	outputPolicies = make([]*v1.NetworkPolicyInSimulation, 0, len(policies.NewPolicies)+len(policies.ExistingPolicies))
+	policiesByRef := make(map[networkPolicyRef]*v1.NetworkPolicyInSimulation, len(policies.ExistingPolicies))
+	for _, oldPolicy := range policies.ExistingPolicies {
 		simPolicy := &v1.NetworkPolicyInSimulation{
 			Policy: oldPolicy,
 			Status: v1.NetworkPolicyInSimulation_UNCHANGED,
@@ -309,12 +328,32 @@ func replaceOrAddPolicies(newPolicies []*storage.NetworkPolicy, oldPolicies []*s
 		policiesByRef[getRef(oldPolicy)] = simPolicy
 	}
 
+	// Delete policies that should be deleted
+	for _, toDeleteRef := range policies.ToDelete {
+		ref := networkPolicyRef{
+			Namespace: toDeleteRef.GetNamespace(),
+			Name:      toDeleteRef.GetName(),
+		}
+		simPolicy := policiesByRef[ref]
+		if simPolicy == nil {
+			return nil, fmt.Errorf("policy %s in namespace %s marked for deletion does not exist", toDeleteRef.GetName(), toDeleteRef.GetNamespace())
+		}
+
+		if simPolicy.OldPolicy == nil {
+			simPolicy.OldPolicy = simPolicy.Policy
+		}
+		simPolicy.Policy = nil
+		simPolicy.Status = v1.NetworkPolicyInSimulation_DELETED
+	}
+
 	// Add new policies that have no matching old policies.
-	for _, newPolicy := range newPolicies {
+	for _, newPolicy := range policies.NewPolicies {
 		oldPolicySim := policiesByRef[getRef(newPolicy)]
 		if oldPolicySim != nil {
 			oldPolicySim.Status = v1.NetworkPolicyInSimulation_MODIFIED
-			oldPolicySim.OldPolicy = oldPolicySim.Policy
+			if oldPolicySim.OldPolicy == nil {
+				oldPolicySim.OldPolicy = oldPolicySim.Policy
+			}
 			oldPolicySim.Policy = newPolicy
 			continue
 		}

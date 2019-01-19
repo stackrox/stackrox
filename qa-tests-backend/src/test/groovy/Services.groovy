@@ -374,7 +374,9 @@ class Services extends BaseService {
             NetworkPolicyServiceOuterClass.SimulateNetworkGraphRequest.Builder request =
                     NetworkPolicyServiceOuterClass.SimulateNetworkGraphRequest.newBuilder()
                             .setClusterId(ClusterService.getClusterId())
-                            .setSimulationYaml(yaml)
+                            .setModification(
+                                NetworkPolicyServiceOuterClass.NetworkPolicyModification.newBuilder()
+                                    .setApplyYaml(yaml))
             if (query != null) {
                 request.setQuery(query)
             }
