@@ -43,10 +43,11 @@ message ComplianceResource {
 // @protolock:skip
 enum ComplianceState {
     COMPLIANCE_STATE_UNKNOWN = 0;
-    COMPLIANCE_STATE_NOTE    = 1;
-    COMPLIANCE_STATE_SUCCESS = 2;
-    COMPLIANCE_STATE_FAILURE = 3;
-    COMPLIANCE_STATE_ERROR   = 4;
+    COMPLIANCE_STATE_SKIP    = 1;
+    COMPLIANCE_STATE_NOTE    = 2;
+    COMPLIANCE_STATE_SUCCESS = 3;
+    COMPLIANCE_STATE_FAILURE = 4;
+    COMPLIANCE_STATE_ERROR   = 5;
 }
 
 // @protolock:skip

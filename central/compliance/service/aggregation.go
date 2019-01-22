@@ -12,15 +12,51 @@ const (
 	numScopes = maxScope - minScope + 1
 )
 
+type passFailCounts struct {
+	pass int
+	fail int
+}
+
+func (c passFailCounts) Add(other passFailCounts) passFailCounts {
+	return passFailCounts{
+		pass: c.pass + other.pass,
+		fail: c.fail + other.fail,
+	}
+}
+
+func (c passFailCounts) Reduce() passFailCounts {
+	if c.fail > 0 {
+		return passFailCounts{fail: 1}
+	}
+	if c.pass > 0 {
+		return passFailCounts{pass: 1}
+	}
+	return passFailCounts{}
+}
+
 var (
 	log = logging.LoggerForModule()
+
+	passFailCountsByState = map[storage.ComplianceState]passFailCounts{
+		storage.ComplianceState_COMPLIANCE_STATE_SUCCESS: {pass: 1},
+		storage.ComplianceState_COMPLIANCE_STATE_FAILURE: {fail: 1},
+		storage.ComplianceState_COMPLIANCE_STATE_ERROR:   {fail: 1},
+	}
 )
 
 type groupByKey [numScopes]string
 
+func (k groupByKey) Get(scope v1.ComplianceAggregation_Scope) string {
+	if scope < minScope || scope > maxScope {
+		log.Errorf("Unknown scope: %v", scope)
+		return ""
+	}
+	return k[int(scope-minScope)]
+}
+
 func (k *groupByKey) Set(scope v1.ComplianceAggregation_Scope, value string) {
 	if scope < minScope || scope > maxScope {
-		log.Errorf("Unknown scope: %s", scope.String())
+		log.Errorf("Unknown scope: %v", scope)
 		return
 	}
 	(*k)[int(scope-minScope)] = value
@@ -30,6 +66,10 @@ func (k *groupByKey) Set(scope v1.ComplianceAggregation_Scope, value string) {
 type flatCheck struct {
 	values map[v1.ComplianceAggregation_Scope]string
 	state  storage.ComplianceState
+}
+
+func (c flatCheck) passFailCounts() passFailCounts {
+	return passFailCountsByState[c.state]
 }
 
 func newFlatCheck(clusterID, namespaceID, standardID, category, controlID, nodeID, deploymentID string, state storage.ComplianceState) flatCheck {
@@ -94,55 +134,49 @@ func getAggregatedResults(groupBy []v1.ComplianceAggregation_Scope, unit v1.Comp
 	for _, r := range runResults {
 		flatChecks = append(flatChecks, getFlatChecksFromRunResult(r)...)
 	}
+
+	// Iterate over all of the checks and create a map[groupBy][]flatCheck. Ignore keys where one of the groupBy values
+	// would be empty.
 	groups := make(map[groupByKey][]flatCheck)
-loop:
-	// Iterate over all of the checks create a map[groupBy][]flatCheck
-	// as long as one of the groupBy values is not empty
 	for _, fc := range flatChecks {
-		groupByKey := &groupByKey{}
+		var key groupByKey
+		valid := true
 		for _, s := range groupBy {
 			val, ok := fc.values[s]
 			if !ok || val == "" {
-				continue loop
+				valid = false
+				break
 			}
-			groupByKey.Set(s, val)
+			key.Set(s, val)
 		}
-		groups[*groupByKey] = append(groups[*groupByKey], fc)
+		if valid {
+			groups[key] = append(groups[key], fc)
+		}
 	}
 
 	results := make([]*v1.ComplianceAggregation_Result, 0, len(groups))
-	for groupKey, checks := range groups {
-		resultMap := make(map[string]storage.ComplianceState)
-		var fail int32
+	for key, checks := range groups {
+		unitMap := make(map[string]passFailCounts)
 		for _, c := range checks {
 			unitKey := c.values[unit]
 			// If there is no unit key, then the check doesn't apply in this unit scope
 			if unitKey == "" {
 				continue
 			}
-
-			if currState, ok := resultMap[unitKey]; !ok {
-				resultMap[unitKey] = c.state
-				if c.state == storage.ComplianceState_COMPLIANCE_STATE_FAILURE {
-					fail++
-				}
-			} else if currState == storage.ComplianceState_COMPLIANCE_STATE_SUCCESS && c.state == storage.ComplianceState_COMPLIANCE_STATE_FAILURE {
-				resultMap[unitKey] = c.state
-				fail++
-			}
+			unitMap[unitKey] = unitMap[unitKey].Add(c.passFailCounts())
 		}
 
-		// If there are no results, then the Unit does not apply to the GroupBys and therefore
-		// we will omit the non relevant results
-		if len(resultMap) == 0 {
-			continue
+		// Aggregate over all units for this key
+		var counts passFailCounts
+		for _, u := range unitMap {
+			counts = counts.Add(u.Reduce())
 		}
 
 		results = append(results, &v1.ComplianceAggregation_Result{
-			AggregationKeys: getAggregationKeys(groupKey),
+			AggregationKeys: getAggregationKeys(key),
 			Unit:            unit,
-			NumPassing:      int32(len(resultMap)) - fail,
-			NumFailing:      fail,
+			NumPassing:      int32(counts.pass),
+			NumFailing:      int32(counts.fail),
 		})
 	}
 	return results

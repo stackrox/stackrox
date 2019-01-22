@@ -56,6 +56,28 @@ func FailNowf(ctx ComplianceContext, format string, args ...interface{}) {
 	Abort(ctx, nil)
 }
 
+// Skip records "skip" evidence for the compliance check active in the given context.
+func Skip(ctx ComplianceContext, msg string) {
+	RecordEvidence(ctx, SkipStatus, msg)
+}
+
+// Skipf records "skip" evidence for the compliance check active in the given context.
+func Skipf(ctx ComplianceContext, format string, args ...interface{}) {
+	Skip(ctx, fmt.Sprintf(format, args...))
+}
+
+// SkipNow records "skip" evidence for the compliance check active in the given context, and terminates the check.
+func SkipNow(ctx ComplianceContext, msg string) {
+	Skip(ctx, msg)
+	Abort(ctx, nil)
+}
+
+// SkipNowf records "skip" evidence for the compliance check active in the given context, and terminates the check.
+func SkipNowf(ctx ComplianceContext, format string, args ...interface{}) {
+	Skipf(ctx, format, args...)
+	Abort(ctx, nil)
+}
+
 // Abortf aborts with an error created from the given format and args via `fmt.Errorf`.
 func Abortf(ctx ComplianceContext, format string, args ...interface{}) {
 	Abort(ctx, fmt.Errorf(format, args...))

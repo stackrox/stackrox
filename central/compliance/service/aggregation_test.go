@@ -26,6 +26,10 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 					Id:        cluster + "deployment2",
 					Namespace: cluster + "namespace2",
 				},
+				cluster + "deployment3": {
+					Id:        cluster + "deployment3",
+					Namespace: cluster + "namespace3",
+				},
 			},
 			Nodes: map[string]*storage.Node{
 				cluster + "node1": {
@@ -53,7 +57,7 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 			cluster + "node1": {
 				ControlResults: map[string]*storage.ComplianceResultValue{
 					"control3": {
-						OverallState: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
+						OverallState: storage.ComplianceState_COMPLIANCE_STATE_ERROR,
 					},
 					"control4": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
@@ -92,6 +96,16 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 					},
 				},
 			},
+			cluster + "deployment3": {
+				ControlResults: map[string]*storage.ComplianceResultValue{
+					"control5": {
+						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SKIP,
+					},
+					"control6": {
+						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SKIP,
+					},
+				},
+			},
 		},
 	}
 }
@@ -101,7 +115,7 @@ func mockFlatChecks(clusterID, standardID string) []flatCheck {
 	return []flatCheck{
 		newFlatCheck(clusterID, "", standardID, "", "control1", "", "", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
 		newFlatCheck(clusterID, "", standardID, "", "control2", "", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
-		newFlatCheck(clusterID, "", standardID, "", "control3", clusterID+"node1", "", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
+		newFlatCheck(clusterID, "", standardID, "", "control3", clusterID+"node1", "", storage.ComplianceState_COMPLIANCE_STATE_ERROR),
 		newFlatCheck(clusterID, "", standardID, "", "control4", clusterID+"node1", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
 		newFlatCheck(clusterID, "", standardID, "", "control3", clusterID+"node2", "", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
 		newFlatCheck(clusterID, "", standardID, "", "control4", clusterID+"node2", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
@@ -109,6 +123,8 @@ func mockFlatChecks(clusterID, standardID string) []flatCheck {
 		newFlatCheck(clusterID, clusterID+"namespace1", standardID, "", "control6", "", clusterID+"deployment1", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
 		newFlatCheck(clusterID, clusterID+"namespace2", standardID, "", "control5", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
 		newFlatCheck(clusterID, clusterID+"namespace2", standardID, "", "control6", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
+		newFlatCheck(clusterID, clusterID+"namespace3", standardID, "", "control5", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
+		newFlatCheck(clusterID, clusterID+"namespace3", standardID, "", "control6", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
 	}
 }
 

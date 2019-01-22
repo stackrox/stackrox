@@ -213,7 +213,7 @@ func (s *suiteImpl) TestSkipKubeSystem() {
 		deploymentResults := checkResults.ForChild(deployment)
 		s.NoError(deploymentResults.Error())
 		if s.Len(deploymentResults.Evidence(), 1) {
-			s.Equal(framework.PassStatus, deploymentResults.Evidence()[0].Status)
+			s.Equal(framework.SkipStatus, deploymentResults.Evidence()[0].Status)
 		}
 	}
 }
