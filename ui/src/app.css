@@ -617,15 +617,15 @@ h6 {
 }
 
 .btn-alert {
-    @apply .text-alert-600 .border-alert-200 .bg-base-200 !important;
+    @apply .text-alert-100 .border-alert-600 .bg-alert-600 !important;
 }
 
 .btn-alert:hover {
-    @apply .btn-alert .bg-alert-100 .bg-base-200 !important;
+    @apply .btn-alert .border-alert-700 .bg-alert-700 !important;
 }
 
 .btn-primary {
-    @apply .text-primary-600 .border-primary-200 .bg-base-200 !important;
+    @apply .text-primary-600 .border-primary-200 .bg-base-100 !important;
 }
 
 .btn-primary:hover {

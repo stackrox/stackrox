@@ -48,7 +48,7 @@ class Buttons extends Component {
                     <PanelButton
                         icon={<Icon.Trash2 className="h-4 w- ml-1" />}
                         text={`Delete (${selectionCount})`}
-                        className="btn btn-danger"
+                        className="btn btn-alert"
                         onClick={this.props.openDialogue}
                         disabled={buttonsDisabled}
                     />
@@ -57,7 +57,7 @@ class Buttons extends Component {
                     <PanelButton
                         icon={<Icon.RefreshCw className="h-4 w-4 ml-1" />}
                         text="Reassess All"
-                        className="btn btn-base"
+                        className="btn btn-base mr-2"
                         onClick={this.props.reassessPolicies}
                         tooltip="Manually enrich external data"
                         disabled={buttonsDisabled}

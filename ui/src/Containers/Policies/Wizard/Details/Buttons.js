@@ -35,13 +35,13 @@ class Buttons extends Component {
                 <PanelButton
                     icon={<Icon.Copy className="h-4 w-4" />}
                     text="Clone"
-                    className="btn btn-success"
+                    className="btn btn-base mr-2"
                     onClick={this.onPolicyClone}
                 />
                 <PanelButton
                     icon={<Icon.Edit className="h-4 w-4" />}
                     text="Edit"
-                    className="btn btn-success"
+                    className="btn btn-base"
                     onClick={this.goToEdit}
                 />
             </React.Fragment>

@@ -18,7 +18,7 @@ const Panel = props => (
                 >
                     {props.header}
                 </div>
-                <div className="panel-actions relative flex items-center">{props.buttons}</div>
+                <div className="panel-actions relative flex items-center mr-2">{props.buttons}</div>
                 {props.headerComponents && (
                     <div className="flex items-center pr-3 relative">{props.headerComponents}</div>
                 )}
