@@ -49,14 +49,14 @@ func checkDeploymentIsCompliant(ctx framework.ComplianceContext, deployment *sto
 	var failedContainers uint32
 	for _, container := range deployment.GetContainers() {
 		if countProcesses(container, containerNameToIndicators[container.GetName()]) > 1 {
-			framework.Failf(ctx, "Container %s in Deployment %s (%s) is running processes from multiple binaries, indicating the container is performing multiple tasks", container.GetName(), deployment.GetName(), deployment.GetId())
+			framework.Failf(ctx, failText(container))
 			failedContainers = failedContainers + 1
 		}
 	}
 
 	// If no containers failed, then the deployment passes.
 	if failedContainers == 0 {
-		framework.Passf(ctx, "Every container in Deployment %s (%s) has launched processes from no more than one binary", deployment.GetName(), deployment.GetId())
+		framework.Pass(ctx, passText())
 	}
 }
 

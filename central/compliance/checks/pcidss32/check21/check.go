@@ -16,5 +16,5 @@ func init() {
 
 // It's StackRox bro. Come on.
 func clusterIsCompliant(ctx framework.ComplianceContext) {
-	framework.Passf(ctx, "StackRox either randomly generates a strong admin password, or a user supplies one, for every deployment")
+	framework.Pass(ctx, passText())
 }

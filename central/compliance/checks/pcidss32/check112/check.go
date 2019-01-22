@@ -30,8 +30,8 @@ func checkAllDeploymentsInNetworkGraph(ctx framework.ComplianceContext) {
 
 	framework.ForEachDeployment(ctx, func(ctx framework.ComplianceContext, deployment *storage.Deployment) {
 		if !deploymentNodes.Contains(deployment.GetId()) {
-			framework.FailNowf(ctx, "Deployment %s (%s) is not present in network graph", deployment.GetName(), deployment.GetId())
+			framework.FailNowf(ctx, "Deployment is not present in network graph")
 		}
-		framework.PassNowf(ctx, "Deployment %s (%s) is present in network graph", deployment.GetName(), deployment.GetId())
+		framework.PassNowf(ctx, "Deployment is present in network graph")
 	})
 }
