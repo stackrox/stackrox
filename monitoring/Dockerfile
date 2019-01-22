@@ -18,7 +18,7 @@ COPY ./influxdb/influx-post-start.sh /influx-post-start.sh
 
 
 COPY ./grafana/dashboard-config.yaml /etc/grafana/provisioning/dashboards/dashboard-config.yaml
-COPY ./grafana/dashboards/* /var/lib/grafana/dashboards/
+COPY ./grafana/dashboards/* /etc/grafana/dashboards/
 COPY ./grafana/datasources/* /etc/grafana/provisioning/datasources/
 COPY ./grafana/entrypoint.sh /grafana-entrypoint.sh
 

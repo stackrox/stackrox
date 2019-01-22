@@ -18,6 +18,10 @@ func getBaseConfig() Config {
 				MainImage:     "stackrox/main:2.2.11.0-57-g392c0f5bed-dirty",
 				ClairifyImage: "stackrox.io/clairify:0.4.2",
 			},
+			Monitoring: MonitoringConfig{
+				HostPath: &HostPathPersistence{},
+				External: &ExternalPersistence{},
+			},
 			Namespace: "stackrox",
 		},
 		SecretsByteMap: map[string][]byte{
@@ -104,16 +108,16 @@ func (suite *renderSuite) TestRenderMultiple() {
 }
 
 func (suite *renderSuite) testWithMonitoring(t *testing.T, c Config) {
-	c.K8sConfig.MonitoringType = OnPrem
-	c.K8sConfig.MonitoringEndpoint = "monitoring.stackrox:443"
+	c.K8sConfig.Monitoring.Type = OnPrem
+	c.K8sConfig.Monitoring.Endpoint = "monitoring.stackrox:443"
 	_, err := suite.Render(c)
 	suite.NoError(err)
 
-	c.K8sConfig.MonitoringLoadBalancerType = v1.LoadBalancerType_NODE_PORT
+	c.K8sConfig.Monitoring.LoadBalancerType = v1.LoadBalancerType_NODE_PORT
 	_, err = suite.Render(c)
 	suite.NoError(err)
 
-	c.K8sConfig.MonitoringLoadBalancerType = v1.LoadBalancerType_LOAD_BALANCER
+	c.K8sConfig.Monitoring.LoadBalancerType = v1.LoadBalancerType_LOAD_BALANCER
 	_, err = suite.Render(c)
 	suite.NoError(err)
 }

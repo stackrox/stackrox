@@ -11,15 +11,18 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/stackrox/rox/pkg/docker"
 )
 
 const (
 	categoryAnnotation = "category"
 	groupAnnotation    = "group"
+
+	subgroupAnnotation = "subgroup"
 )
 
-var (
-	flagGroupMap = map[string]*flagGroup{
+func getFlagGroupMap() map[string]*flagGroup {
+	return map[string]*flagGroup{
 		"central": {
 			name:       "central",
 			optional:   false,
@@ -36,9 +39,15 @@ var (
 			groupOrder:  2,
 			groupPrompt: "Would you like to run the monitoring stack?",
 			cmdLineSpec: "--monitoring-type=none",
+
+			subgroupPrompt: "Enter persistence type for monitoring (hostpath, pvc, none):",
+			subgroup: map[string][]*pflag.Flag{
+				"none": {},
+			},
+			subgroupCmdLineSpecTemplate: "--monitoring-persistence-type=%s",
 		},
 	}
-)
+}
 
 func readUserInput(prompt string) (string, error) {
 	printToStderr(prompt)
@@ -135,6 +144,10 @@ type flagGroup struct {
 	groupPrompt string
 	flags       []*pflag.Flag
 	cmdLineSpec string
+
+	subgroupPrompt              string
+	subgroup                    map[string][]*pflag.Flag
+	subgroupCmdLineSpecTemplate string
 }
 
 func getFirstFromStringSliceOrEmpty(s []string) string {
@@ -146,6 +159,8 @@ func getFirstFromStringSliceOrEmpty(s []string) string {
 
 func flagGroups(flags []*pflag.Flag) []*flagGroup {
 	groups := make(map[string]*flagGroup)
+	// Iterate over the flags to get the groups
+	flagGroupMap := getFlagGroupMap()
 	for _, f := range flags {
 		name := getFirstFromStringSliceOrEmpty(f.Annotations[groupAnnotation])
 		// Check global flag group
@@ -157,9 +172,26 @@ func flagGroups(flags []*pflag.Flag) []*flagGroup {
 				group = &flagGroup{}
 			}
 		}
-		group.flags = append(group.flags, f)
-		groups[name] = group
+
+		if _, ok := f.Annotations[subgroupAnnotation]; !ok {
+			groups[name] = group
+			group.flags = append(group.flags, f)
+		}
 	}
+	// Iterate over the flags against to attach the subgroup
+	for _, f := range flags {
+		subgroup := getFirstFromStringSliceOrEmpty(f.Annotations[subgroupAnnotation])
+		if subgroup == "" {
+			continue
+		}
+		name := getFirstFromStringSliceOrEmpty(f.Annotations[groupAnnotation])
+		if name == "" {
+			panic(fmt.Sprintf("Invalid annotations on flags. Flag %s with subgroup %s must have a valid group assigned", f.Name, subgroup))
+		}
+		group := groups[name]
+		group.subgroup[subgroup] = append(group.subgroup[subgroup], f)
+	}
+
 	var groupList []*flagGroup
 	for _, g := range groups {
 		groupList = append(groupList, g)
@@ -174,9 +206,15 @@ func walkTree(c *cobra.Command) (args []string) {
 	args = []string{c.Name()}
 	var allFlags []*pflag.Flag
 	c.PersistentFlags().VisitAll(func(f *pflag.Flag) {
+		if f.Hidden {
+			return
+		}
 		allFlags = append(allFlags, f)
 	})
 	c.Flags().VisitAll(func(f *pflag.Flag) {
+		if f.Hidden {
+			return
+		}
 		allFlags = append(allFlags, f)
 	})
 
@@ -199,7 +237,6 @@ func walkTree(c *cobra.Command) (args []string) {
 			if flag.Hidden {
 				continue
 			}
-
 			for {
 				if value, commandline := processFlag(flag); flag.NoOptDefVal == "" {
 					// Verify flag parsing
@@ -210,6 +247,44 @@ func walkTree(c *cobra.Command) (args []string) {
 					args = append(args, commandline)
 				}
 				break
+			}
+		}
+		if fg.subgroup != nil {
+			input, err := readUserInput(fg.subgroupPrompt)
+			if err != nil {
+				if docker.IsContainerized() {
+					printToStderr("\nCould not read user input. Did you specify '-i' in the Docker run command?\n")
+				} else {
+					printToStderr("\nError reading user input: %v", err)
+				}
+				os.Exit(1)
+			}
+			var subgroupFlags []*pflag.Flag
+			for {
+				var ok bool
+				subgroupFlags, ok = fg.subgroup[input]
+				if ok {
+					// Currently the only subgroup is monitoring persistence
+					if fg.subgroupCmdLineSpecTemplate != "" {
+						args = append(args, fmt.Sprintf(fg.subgroupCmdLineSpecTemplate, input))
+					}
+					break
+				}
+				printToStderr(fmt.Sprintf("\n%q is not a valid option", input))
+				input, err = readUserInput(fg.subgroupPrompt)
+				if err != nil {
+					if docker.IsContainerized() {
+						printToStderr("\nCould not read user input. Did you specify '-i' in the Docker run command?\n")
+					} else {
+						printToStderr("\nError reading user input: %v", err)
+					}
+					os.Exit(1)
+				}
+			}
+			for _, f := range subgroupFlags {
+				if val, flag := processFlag(f); val != "" {
+					args = append(args, flag)
+				}
 			}
 		}
 	}

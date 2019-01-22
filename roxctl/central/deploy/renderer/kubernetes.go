@@ -40,7 +40,7 @@ func (k *kubernetes) renderKubectl(c Config) ([]*zip.File, error) {
 	}
 	renderedFiles = append(renderedFiles, clairifyRenderedFiles...)
 
-	if c.K8sConfig.MonitoringType.OnPrem() {
+	if c.K8sConfig.Monitoring.Type.OnPrem() {
 		monitoringFiles, err := k.renderHelmFiles(c, image.GetMonitoringChart(), "monitoring")
 		if err != nil {
 			return nil, fmt.Errorf("error rendering monitoring files: %v", err)
@@ -68,8 +68,8 @@ func (k *kubernetes) Render(c Config) ([]*zip.File, error) {
 		return nil, err
 	}
 	injectImageTags(&c)
-	c.K8sConfig.MonitoringImage = generateMonitoringImage(c.K8sConfig.MainImage)
-	c.K8sConfig.MonitoringEndpoint = netutil.WithDefaultPort(c.K8sConfig.MonitoringEndpoint, defaultMonitoringPort)
+	c.K8sConfig.Monitoring.Image = generateMonitoringImage(c.K8sConfig.MainImage)
+	c.K8sConfig.Monitoring.Endpoint = netutil.WithDefaultPort(c.K8sConfig.Monitoring.Endpoint, defaultMonitoringPort)
 
 	var renderedFiles []*zip.File
 	if c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_HELM {
@@ -89,7 +89,7 @@ const instructionPrefix = `To deploy:
   - If you need to add additional trusted CAs, run central/scripts/ca-setup.sh.`
 
 const helmInstructionTemplate = instructionPrefix + `
-  {{if not .K8sConfig.MonitoringType.None}}
+  {{if not .K8sConfig.Monitoring.Type.None}}
   - Deploy Monitoring
     - Run monitoring/scripts/setup.sh
     - Run helm install --name monitoring monitoring
@@ -101,7 +101,7 @@ const helmInstructionTemplate = instructionPrefix + `
     - If you want to run the StackRox Clairify scanner, run helm install --name clairify clairify
 `
 
-const kubectlInstructionTemplate = instructionPrefix + `{{if not .K8sConfig.MonitoringType.None}}
+const kubectlInstructionTemplate = instructionPrefix + `{{if not .K8sConfig.Monitoring.Type.None}}
   - Deploy Monitoring
     - Run monitoring/scripts/setup.sh
     - Run {{.K8sConfig.Command}} create -R -f monitoring

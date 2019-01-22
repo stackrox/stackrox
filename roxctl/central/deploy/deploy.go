@@ -30,6 +30,11 @@ func init() {
 
 var (
 	generatedMonitoringPassword = renderer.CreatePassword()
+
+	isInteractive              bool
+	flagsHiddenWhenInteractive = []string{
+		"monitoring-persistence-type",
+	}
 )
 
 func generateJWTSigningKey(fileMap map[string][]byte) error {
@@ -123,16 +128,16 @@ func outputZip(config renderer.Config) error {
 		return err
 	}
 
-	if config.K8sConfig != nil && config.K8sConfig.MonitoringType.OnPrem() {
+	if config.K8sConfig != nil && config.K8sConfig.Monitoring.Type.OnPrem() {
 		generateMonitoringFiles(config.SecretsByteMap, cert, key)
 
-		if config.K8sConfig.MonitoringPassword == "" {
-			config.K8sConfig.MonitoringPassword = renderer.CreatePassword()
-			config.K8sConfig.MonitoringPasswordAuto = true
+		if config.K8sConfig.Monitoring.Password == "" {
+			config.K8sConfig.Monitoring.Password = renderer.CreatePassword()
+			config.K8sConfig.Monitoring.PasswordAuto = true
 		}
 
-		config.SecretsByteMap["monitoring-password"] = []byte(config.K8sConfig.MonitoringPassword)
-		wrapper.AddFiles(zip.NewFile("monitoring/password", []byte(config.K8sConfig.MonitoringPassword+"\n"), zip.Sensitive))
+		config.SecretsByteMap["monitoring-password"] = []byte(config.K8sConfig.Monitoring.Password)
+		wrapper.AddFiles(zip.NewFile("monitoring/password", []byte(config.K8sConfig.Monitoring.Password+"\n"), zip.Sensitive))
 	}
 
 	config.SecretsBase64Map = make(map[string]string)
@@ -196,7 +201,9 @@ func Command() *cobra.Command {
 		Short: "Generate creates the required YAML files to deploy StackRox Central.",
 		Long:  "Generate creates the required YAML files to deploy StackRox Central.",
 		Run: func(c *cobra.Command, _ []string) {
-			c.Help()
+			if !isInteractive {
+				c.Help()
+			}
 		},
 	}
 	if features.HtpasswdAuth.Enabled() {
@@ -212,7 +219,25 @@ func Command() *cobra.Command {
 	return c
 }
 
+func markFlagAsHidden(cmd *cobra.Command, flagName string) error {
+	if err := cmd.PersistentFlags().MarkHidden(flagName); err == nil {
+		return nil
+	}
+	for _, c := range cmd.Commands() {
+		if err := markFlagAsHidden(c, flagName); err == nil {
+			return nil
+		}
+	}
+	return fmt.Errorf("Could not find flag with name %q", flagName)
+}
+
 func runInteractive(cmd *cobra.Command) error {
+	for _, f := range flagsHiddenWhenInteractive {
+		if err := markFlagAsHidden(cmd, f); err != nil {
+			return err
+		}
+	}
+	isInteractive = true
 	// Overwrite os.Args because cobra uses them
 	os.Args = walkTree(cmd)
 	return cmd.Execute()

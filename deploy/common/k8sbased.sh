@@ -29,12 +29,12 @@ function launch_central {
     if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
        rm -rf central-bundle "${k8s_dir}/central-bundle"
        roxctl central generate ${ORCH} ${EXTRA_ARGS[@]} --output-dir="central-bundle" --output-format="${OUTPUT_FORMAT}" --monitoring-password=stackrox \
-           -i "${MAIN_IMAGE}" "${STORAGE}"
+           -i "${MAIN_IMAGE}" --monitoring-persistence-type="${STORAGE}" "${STORAGE}"
        cp -R central-bundle/ "${unzip_dir}/"
        rm -rf central-bundle
     else
        docker run --rm -e ROX_HTPASSWD_AUTH "$MAIN_IMAGE" central generate ${ORCH} ${EXTRA_ARGS[@]} --output-format="${OUTPUT_FORMAT}" \
-        --monitoring-password=stackrox -i "${MAIN_IMAGE}" "${STORAGE}" > "${k8s_dir}/central.zip"
+        --monitoring-password=stackrox -i "${MAIN_IMAGE}" --monitoring-persistence-type="${STORAGE}" "${STORAGE}" > "${k8s_dir}/central.zip"
         unzip "${k8s_dir}/central.zip" -d "${unzip_dir}"
     fi
 

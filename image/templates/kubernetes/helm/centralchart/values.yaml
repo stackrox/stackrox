@@ -7,9 +7,9 @@ namespace: {{.K8sConfig.Namespace}}
 
 image: {{.K8sConfig.MainImage}}
 
-{{if not .K8sConfig.MonitoringType.None}}
+{{if not .K8sConfig.Monitoring.Type.None}}
 monitoring:
-  endpoint: {{.K8sConfig.MonitoringEndpoint}}
+  endpoint: {{.K8sConfig.Monitoring.Endpoint}}
 {{- end}}
 
 persistence:
@@ -22,6 +22,7 @@ persistence:
 {{- else if .External}}
   name: {{.External.Name}}
   type: pv
+  storageClass: {{.K8sConfig.Monitoring.External.StorageClass}}
   value:
     persistentVolumeClaim:
       claimName: {{.External.Name}}
@@ -58,7 +59,7 @@ secrets:
       htpasswd: {{index .SecretsBase64Map "htpasswd"}}
   {{end -}}
 
-  {{if not .K8sConfig.MonitoringType.None}}
+  {{if not .K8sConfig.Monitoring.Type.None}}
   monitoring:
     data:
       monitoring-client-cert.pem: {{index .SecretsBase64Map "monitoring-client-cert.pem"}}

@@ -5,7 +5,7 @@ clusterType: {{.ClusterType.String}}
 
 namespace: {{.K8sConfig.Namespace}}
 
-image: {{.K8sConfig.MonitoringImage}}
+image: {{.K8sConfig.Monitoring.Image}}
 
 resources:
   requests:
@@ -26,12 +26,38 @@ secrets:
 
 exposure:
   port: 443
-  {{if eq .K8sConfig.MonitoringLoadBalancerType.String "LOAD_BALANCER"}}
+  {{if eq .K8sConfig.Monitoring.LoadBalancerType.String "LOAD_BALANCER"}}
   type: LoadBalancer
-  {{else if eq .K8sConfig.MonitoringLoadBalancerType.String "NODE_PORT"}}
+  {{else if eq .K8sConfig.Monitoring.LoadBalancerType.String "NODE_PORT"}}
   type: NodePort
-  {{else if eq .K8sConfig.LoadBalancerType.String "ROUTE"}}
+  {{else if eq .K8sConfig.Monitoring.LoadBalancerType.String "ROUTE"}}
   type: Route
   {{else}}
   type: None
   {{- end}}
+
+persistence:
+{{if eq .K8sConfig.Monitoring.PersistenceType.String "hostpath"}}
+  name: monitoring-db
+  type: hostpath
+  value:
+    hostPath:
+      path: {{.K8sConfig.Monitoring.HostPath.HostPath}}
+{{- else if eq .K8sConfig.Monitoring.PersistenceType.String "pvc"}}
+  name: {{.K8sConfig.Monitoring.External.Name}}
+  type: pv
+  storageClass: {{.K8sConfig.Monitoring.External.StorageClass}}
+  value:
+    persistentVolumeClaim:
+      claimName: {{.K8sConfig.Monitoring.External.Name}}
+{{- else}}
+  name: empty-db
+  type: none
+  value:
+    emptyDir: {}
+{{- end}}
+
+{{if ne .K8sConfig.Monitoring.HostPath.NodeSelectorKey "" -}}
+nodeSelector:
+  {{.K8sConfig.Monitoring.HostPath.NodeSelectorKey}}: {{.K8sConfig.Monitoring.HostPath.NodeSelectorValue}}
+{{end -}}

@@ -129,7 +129,7 @@ func (k *kubernetes) renderHelm(c Config) ([]*zip.File, error) {
 		return nil, err
 	}
 	renderedFiles = append(renderedFiles, clairifyFiles...)
-	if c.K8sConfig.MonitoringType.OnPrem() {
+	if c.K8sConfig.Monitoring.Type.OnPrem() {
 		monitoringFiles, err := chartToFiles("monitoring", image.GetMonitoringChart(), c)
 		if err != nil {
 			return nil, err

@@ -39,6 +39,8 @@ spec:
           - name: influxdb-config-volume
             mountPath: /etc/influxdb/
             readOnly: true
+          - name: {{.Values.persistence.name}}
+            mountPath: /var/lib/influxdb
       - name: telegraf-proxy
         image: {{.Values.image}}
         command:
@@ -85,6 +87,8 @@ spec:
           - name: monitoring-password-volume
             mountPath: /run/secrets/stackrox.io/monitoring/secrets/
             readOnly: true
+          - name: {{.Values.persistence.name}}
+            mountPath: /var/lib/grafana
       volumes:
       - name: monitoring-db-volume
         secret:
@@ -116,3 +120,5 @@ spec:
       - name: telegraf-proxy-config-volume
         configMap:
           name: telegraf-proxy
+      - name: {{.Values.persistence.name}}
+{{ toYaml .Values.persistence.value | indent 8 }}
