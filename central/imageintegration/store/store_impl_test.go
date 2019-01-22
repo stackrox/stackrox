@@ -8,6 +8,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -24,7 +25,7 @@ type ImageIntegrationStoreTestSuite struct {
 }
 
 func (suite *ImageIntegrationStoreTestSuite) SetupTest() {
-	db, err := bolthelper.NewTemp("ImageIntegrationStoreTestSuite.db")
+	db, err := bolthelper.NewTemp(testutils.DBFileName(suite.Suite))
 	if err != nil {
 		suite.FailNow("failure: "+suite.T().Name(), err.Error())
 	}

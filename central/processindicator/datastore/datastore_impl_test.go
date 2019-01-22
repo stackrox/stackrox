@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"fmt"
-	"math/rand"
 	"sort"
 	"testing"
 	"time"
@@ -38,7 +37,7 @@ type IndicatorDataStoreTestSuite struct {
 }
 
 func (suite *IndicatorDataStoreTestSuite) SetupTest() {
-	db, err := bolthelper.NewTemp(fmt.Sprintf("Bolt%d.db", rand.Int()))
+	db, err := bolthelper.NewTemp(testutils.DBFileName(suite.Suite))
 	suite.NoError(err)
 	suite.storage = store.New(db)
 

@@ -1,7 +1,6 @@
 package store
 
 import (
-	"errors"
 	"fmt"
 
 	bolt "github.com/etcd-io/bbolt"
@@ -17,12 +16,13 @@ type storeImpl struct {
 }
 
 func (s *storeImpl) GetVersion() (*storage.Version, error) {
-	version := new(storage.Version)
+	var version *storage.Version
 	err := s.bucketRef.View(func(b *bolt.Bucket) error {
 		val := b.Get(key)
 		if val == nil {
-			return errors.New("no version found in DB")
+			return nil
 		}
+		version = new(storage.Version)
 		if err := proto.Unmarshal(val, version); err != nil {
 			return fmt.Errorf("proto unmarshaling: %s", err)
 		}

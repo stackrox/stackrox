@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -28,7 +29,7 @@ type BenchmarkTriggerDataStoreTestSuite struct {
 }
 
 func (suite *BenchmarkTriggerDataStoreTestSuite) SetupTest() {
-	db, err := bolthelper.NewTemp("BenchmarkTriggerDataStoreTestSuite.db")
+	db, err := bolthelper.NewTemp(testutils.DBFileName(suite.Suite))
 	if err != nil {
 		suite.FailNow("Failed to make BoltDB", err.Error())
 	}

@@ -10,14 +10,12 @@ var (
 	versionBucket = []byte("version")
 )
 
-// A ReadOnlyStore is a read-only snapshot of the version store.
-type ReadOnlyStore interface {
-	GetVersion() (*storage.Version, error)
-}
-
 // A Store stores versions.
 type Store interface {
-	ReadOnlyStore
+	// GetVersion returns the version found in the DB.
+	// If there is no version in the DB, it returns nil and no error, so
+	// the caller MUST always check for a nil return value.
+	GetVersion() (*storage.Version, error)
 	UpdateVersion(*storage.Version) error
 }
 

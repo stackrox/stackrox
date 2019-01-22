@@ -37,8 +37,9 @@ func (suite *VersionStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *VersionStoreTestSuite) TestVersionStore() {
-	_, err := suite.store.GetVersion()
-	suite.Error(err)
+	v, err := suite.store.GetVersion()
+	suite.NoError(err)
+	suite.Nil(v)
 
 	for _, version := range []int32{2, 5, 19} {
 		protoVersion := &storage.Version{SeqNum: version, Version: fmt.Sprintf("Version %d", version)}

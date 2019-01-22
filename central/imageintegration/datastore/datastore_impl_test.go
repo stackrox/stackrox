@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -27,7 +28,7 @@ type ImageIntegrationDataStoreTestSuite struct {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
-	db, err := bolthelper.NewTemp("ImageIntegrationDataStoreTestSuite.db")
+	db, err := bolthelper.NewTemp(testutils.DBFileName(suite.Suite))
 	if err != nil {
 		suite.FailNow("Failed to make BoltDB", err.Error())
 	}

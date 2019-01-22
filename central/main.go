@@ -63,6 +63,7 @@ import (
 	siStore "github.com/stackrox/rox/central/serviceidentities/store"
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	userService "github.com/stackrox/rox/central/user/service"
+	"github.com/stackrox/rox/central/version"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
@@ -102,36 +103,32 @@ const (
 )
 
 func main() {
-	central := newCentral()
+	ensureDB()
+	go startGRPCServer()
 
-	go central.startGRPCServer()
+	signalsC := make(chan os.Signal, 1)
+	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
+	processForever(signalsC)
+}
 
-	central.processForever()
+func ensureDB() {
+	err := version.Ensure(globaldb.GetGlobalDB())
+	if err != nil {
+		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
+	}
 }
 
 func watchdog(signal *concurrency.Signal, timeout time.Duration) {
 	if !concurrency.WaitWithTimeout(signal, timeout) {
 		log.Errorf("API server failed to start within %v!", timeout)
 		log.Errorf("This usually means something is *very* wrong. Terminating ...")
-		syscall.Kill(syscall.Getpid(), syscall.SIGABRT)
+		if err := syscall.Kill(syscall.Getpid(), syscall.SIGABRT); err != nil {
+			panic(err)
+		}
 	}
 }
 
-type central struct {
-	signalsC chan os.Signal
-	server   pkgGRPC.API
-}
-
-func newCentral() *central {
-	central := &central{}
-
-	central.signalsC = make(chan os.Signal, 1)
-	signal.Notify(central.signalsC, syscall.SIGINT, syscall.SIGTERM)
-
-	return central
-}
-
-func (c *central) startGRPCServer() {
+func startGRPCServer() {
 	registry, err := authproviders.NewStoreBackedRegistry(
 		ssoURLPathPrefix, tokenRedirectURLPath,
 		authProviderStore.New(globaldb.GetGlobalDB()), jwt.IssuerFactorySingleton(),
@@ -162,7 +159,7 @@ func (c *central) startGRPCServer() {
 	}
 
 	config := pkgGRPC.Config{
-		CustomRoutes:       c.customRoutes(),
+		CustomRoutes:       customRoutes(),
 		TLS:                verifier.CA{},
 		UnaryInterceptors:  interceptorSingletons.GrpcUnaryInterceptors(),
 		StreamInterceptors: interceptorSingletons.GrpcStreamInterceptors(),
@@ -170,7 +167,7 @@ func (c *central) startGRPCServer() {
 		AuthProviders:      registry,
 	}
 
-	c.server = pkgGRPC.NewAPI(config)
+	server := pkgGRPC.NewAPI(config)
 
 	servicesToRegister := []pkgGRPC.APIService{
 		alertService.Singleton(),
@@ -215,10 +212,10 @@ func (c *central) startGRPCServer() {
 		}
 	}
 
-	c.server.Register(servicesToRegister...)
+	server.Register(servicesToRegister...)
 
 	enrichanddetect.GetLoop().Start()
-	startedSig := c.server.Start()
+	startedSig := server.Start()
 	go watchdog(startedSig, grpcServerWatchdogTimeout)
 }
 
@@ -242,7 +239,7 @@ func allResourcesModifyPermissions() []*v1.Permission {
 	return result
 }
 
-func (c *central) customRoutes() (customRoutes []routes.CustomRoute) {
+func customRoutes() (customRoutes []routes.CustomRoute) {
 	customRoutes = []routes.CustomRoute{
 		{
 			Route:         "/",
@@ -315,11 +312,11 @@ func (c *central) customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   false,
 		},
 	)
-	customRoutes = append(customRoutes, c.debugRoutes()...)
+	customRoutes = append(customRoutes, debugRoutes()...)
 	return
 }
 
-func (c *central) debugRoutes() []routes.CustomRoute {
+func debugRoutes() []routes.CustomRoute {
 	customRoutes := make([]routes.CustomRoute, 0, len(routes.DebugRoutes))
 
 	for r, h := range routes.DebugRoutes {
@@ -333,18 +330,18 @@ func (c *central) debugRoutes() []routes.CustomRoute {
 	return customRoutes
 }
 
-func (c *central) processForever() {
+func processForever(signalsC <-chan os.Signal) {
 	defer func() {
 		if r := recover(); r != nil {
 			metrics.IncrementPanicCounter(getPanicFunc())
 			log.Errorf("Caught panic in process loop; restarting. Stack: %s", string(debug.Stack()))
-			c.processForever()
+			processForever(signalsC)
 		}
 	}()
 
 	for {
 		select {
-		case sig := <-c.signalsC:
+		case sig := <-signalsC:
 			log.Infof("Caught %s signal", sig)
 			enrichanddetect.GetLoop().Stop()
 			globaldb.Close()
