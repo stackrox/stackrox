@@ -31,8 +31,10 @@ const (
 	// triggerTimespan is how long we should check for unfired triggers
 	triggerTimespan = 5 * time.Minute
 
-	benchmarkServiceName    = "benchmark"
-	benchmarkServiceAccount = "benchmark"
+	benchmarkServiceName = "benchmark"
+
+	// BenchmarkServiceAccount is the service account used by the benchmark service.
+	BenchmarkServiceAccount = "benchmark"
 )
 
 var (
@@ -190,7 +192,7 @@ func (s *SchedulerClient) Launch(scan *storage.BenchmarkScanMetadata) error {
 		},
 		Image:          s.image,
 		Global:         true,
-		ServiceAccount: benchmarkServiceAccount,
+		ServiceAccount: BenchmarkServiceAccount,
 		Secrets: []orchestrators.Secret{
 			{
 				Name: "benchmark-tls",

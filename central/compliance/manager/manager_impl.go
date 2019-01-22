@@ -7,9 +7,12 @@ import (
 	"time"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/compliance/data"
 	"github.com/stackrox/rox/central/compliance/framework"
+	complianceResultsStore "github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/node/store"
+	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -39,9 +42,14 @@ type manager struct {
 	clusterStore    clusterDatastore.DataStore
 	nodeStore       store.GlobalStore
 	deploymentStore datastore.DataStore
+
+	dataRepoFactory data.RepositoryFactory
+	scrapeFactory   scrape.Factory
+
+	resultsStore complianceResultsStore.Store
 }
 
-func newManager(scheduleStore ScheduleStore, clusterStore clusterDatastore.DataStore, nodeStore store.GlobalStore, deploymentStore datastore.DataStore) (*manager, error) {
+func newManager(scheduleStore ScheduleStore, clusterStore clusterDatastore.DataStore, nodeStore store.GlobalStore, deploymentStore datastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory scrape.Factory, resultsStore complianceResultsStore.Store) (*manager, error) {
 	mgr := &manager{
 		scheduleStore: scheduleStore,
 		runsByID:      make(map[string]*runInstance),
@@ -52,6 +60,11 @@ func newManager(scheduleStore ScheduleStore, clusterStore clusterDatastore.DataS
 		clusterStore:    clusterStore,
 		nodeStore:       nodeStore,
 		deploymentStore: deploymentStore,
+
+		dataRepoFactory: dataRepoFactory,
+		scrapeFactory:   scrapeFactory,
+
+		resultsStore: resultsStore,
 	}
 
 	if err := mgr.readFromStore(); err != nil {
@@ -126,7 +139,7 @@ func (m *manager) createRun(clusterID, standardID string) (*runInstance, error) 
 		return nil, fmt.Errorf("creating compliance domain: %v", err)
 	}
 
-	allChecks, err := checksForStandard(standardID)
+	allChecks, err := checksForStandardID(standardID)
 	if err != nil {
 		return nil, fmt.Errorf("looking up checks for standard %q: %v", standardID, err)
 	}
@@ -146,7 +159,7 @@ func (m *manager) createRun(clusterID, standardID string) (*runInstance, error) 
 }
 
 func (m *manager) startRun(run *runInstance) error {
-	if err := run.Start(); err != nil {
+	if err := run.Start(m.scrapeFactory, m.dataRepoFactory, m.resultsStore); err != nil {
 		return err
 	}
 
@@ -324,7 +337,7 @@ func (m *manager) AddSchedule(spec *storage.ComplianceRunSchedule) (*v1.Complian
 		return nil, fmt.Errorf("could not check cluster ID %q: %v", spec.GetClusterId(), err)
 	}
 
-	if _, err := checksForStandard(spec.GetStandardId()); err != nil {
+	if _, err := checksForStandardID(spec.GetStandardId()); err != nil {
 		return nil, fmt.Errorf("invalid standard ID %q: %v", spec.GetStandardId(), err)
 	}
 
@@ -355,7 +368,7 @@ func (m *manager) UpdateSchedule(spec *storage.ComplianceRunSchedule) (*v1.Compl
 		return nil, fmt.Errorf("could not check cluster ID %q: %v", spec.GetClusterId(), err)
 	}
 
-	if _, err := checksForStandard(spec.GetStandardId()); err != nil {
+	if _, err := checksForStandardID(spec.GetStandardId()); err != nil {
 		return nil, fmt.Errorf("invalid standard ID %q: %v", spec.GetStandardId(), err)
 	}
 

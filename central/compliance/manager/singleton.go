@@ -4,8 +4,11 @@ import (
 	"sync"
 
 	"github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/compliance/data"
+	complianceResultsStore "github.com/stackrox/rox/central/compliance/store"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/node/store"
+	"github.com/stackrox/rox/central/scrape"
 )
 
 var (
@@ -17,7 +20,7 @@ var (
 func Singleton() ComplianceManager {
 	managerInstanceInit.Do(func() {
 		var err error
-		managerInstance, err = NewManager(ScheduleStoreSingleton(), datastore.Singleton(), store.Singleton(), deploymentDatastore.Singleton())
+		managerInstance, err = NewManager(ScheduleStoreSingleton(), datastore.Singleton(), store.Singleton(), deploymentDatastore.Singleton(), data.NewDefaultFactory(), scrape.SingletonFactory(), complianceResultsStore.Singleton())
 		if err != nil {
 			log.Panicf("Could not create compliance manager: %v", err)
 		}

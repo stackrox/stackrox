@@ -104,24 +104,24 @@ func (s *scrapeImpl) acceptStart(started *central.ScrapeStarted) {
 func (s *scrapeImpl) acceptComplianceReturn(cr *compliance.ComplianceReturn) {
 	// If the scrape is already stopped, just log an error.
 	if s.stopped.IsDone() {
-		log.Errorf("scrape %s received an update for host %s after being stopped", s.scrapeID, cr.GetHostname())
+		log.Errorf("scrape %s received an update for node %s after being stopped", s.scrapeID, cr.GetNodeName())
 		return
 	}
 
 	// Check that the update is from an expected host. If not, just log an error and return.
-	if !s.expectedHosts.Contains(cr.GetHostname()) {
-		log.Errorf("scrape %s received results from unexpected host: %s", s.scrapeID, cr.GetHostname())
+	if !s.expectedHosts.Contains(cr.GetNodeName()) {
+		log.Errorf("scrape %s received results from unexpected host: %s", s.scrapeID, cr.GetNodeName())
 		return
 	}
 
 	// Check that we did not already received an update for the host.
-	if _, exists := s.results[cr.GetHostname()]; exists {
-		log.Errorf("scrape %s received multiple results for host %s", cr.GetHostname(), s.scrapeID)
+	if _, exists := s.results[cr.GetNodeName()]; exists {
+		log.Errorf("scrape %s received multiple results for host %s", cr.GetNodeName(), s.scrapeID)
 		return
 	}
 
 	// Add the update to the results.
-	s.results[cr.GetHostname()] = cr
+	s.results[cr.GetNodeName()] = cr
 }
 
 func (s *scrapeImpl) acceptKill(killed *central.ScrapeKilled) {

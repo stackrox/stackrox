@@ -33,7 +33,7 @@ function launch_central {
        cp -R central-bundle/ "${unzip_dir}/"
        rm -rf central-bundle
     else
-       docker run --rm -e ROX_HTPASSWD_AUTH "$MAIN_IMAGE" central generate ${ORCH} ${EXTRA_ARGS[@]} --output-format="${OUTPUT_FORMAT}" \
+       docker run --rm --env-file <(env | grep '^ROX_') "$MAIN_IMAGE" central generate ${ORCH} ${EXTRA_ARGS[@]} --output-format="${OUTPUT_FORMAT}" \
         --monitoring-password=stackrox -i "${MAIN_IMAGE}" --monitoring-persistence-type="${STORAGE}" "${STORAGE}" > "${k8s_dir}/central.zip"
         unzip "${k8s_dir}/central.zip" -d "${unzip_dir}"
     fi

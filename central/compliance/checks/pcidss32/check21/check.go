@@ -9,7 +9,7 @@ const checkID = "PCI_DSS_3_2:2_1"
 func init() {
 	framework.MustRegisterNewCheck(
 		checkID,
-		framework.DeploymentKind,
+		framework.ClusterKind,
 		nil,
 		clusterIsCompliant)
 }

@@ -145,7 +145,6 @@ go-generated-srcs: $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
 	@echo "+ $@"
 	PATH=$(PATH):$(BASE_DIR)/tools/generate-helpers go generate ./...
 
-.PHONY: proto-generated-srcs
 proto-generated-srcs: $(PROTO_GENERATED_SRCS)
 
 # volatile-generated-srcs are all generated sources that are NOT committed
@@ -160,7 +159,7 @@ clean-generated-srcs: clean-packr-srcs
 	@echo "+ $@"
 	git clean -xdf generated
 
-deps: Gopkg.toml Gopkg.lock volatile-generated-srcs
+deps: Gopkg.toml Gopkg.lock proto-generated-srcs
 	@echo "+ $@"
 	@# `dep check` exits with a nonzero code if there is a toml->lock mismatch.
 	dep check -skip-vendor

@@ -45,6 +45,21 @@ type Standard struct {
 	Categories []Category
 }
 
+// AllControlIDs returns the IDs for all controls in this check, either qualified or not.
+func (s *Standard) AllControlIDs(qualified bool) []string {
+	qualifierPrefix := ""
+	if qualified {
+		qualifierPrefix = s.ID + ":"
+	}
+	var result []string
+	for _, cat := range s.Categories {
+		for _, ctrl := range cat.Controls {
+			result = append(result, qualifierPrefix+ctrl.ID)
+		}
+	}
+	return result
+}
+
 // MetadataProto returns the proto representation of the standard's metadata.
 func (s *Standard) MetadataProto() *v1.ComplianceStandardMetadata {
 	return &v1.ComplianceStandardMetadata{

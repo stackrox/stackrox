@@ -1,12 +1,16 @@
 package manager
 
 import (
-	"errors"
+	"context"
+	"fmt"
 	"sync"
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/stackrox/rox/central/compliance/data"
 	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/central/compliance/store"
+	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 )
@@ -36,6 +40,9 @@ type runInstance struct {
 
 	schedule *scheduleInstance
 
+	ctx    context.Context
+	cancel context.CancelFunc
+
 	status                status
 	startTime, finishTime time.Time
 	err                   error
@@ -50,15 +57,19 @@ func createRun(id, standardID string, domain framework.ComplianceDomain, run fra
 		run:    run,
 	}
 
+	r.ctx, r.cancel = context.WithCancel(context.Background())
+
 	return r, nil
 }
 
-func (r *runInstance) Start() error {
-	go r.Run()
+func (r *runInstance) Start(scrapeFactory scrape.Factory, dataRepoFactory data.RepositoryFactory, resultsStore store.Store) error {
+	go r.Run(scrapeFactory, dataRepoFactory, resultsStore)
 	return nil
 }
 
-func (r *runInstance) Run() {
+func (r *runInstance) Run(scrapeFactory scrape.Factory, dataRepoFactory data.RepositoryFactory, resultsStore store.Store) {
+	defer r.cancel()
+
 	concurrency.WithLock(&r.mutex, func() {
 		r.startTime = time.Now()
 		r.status = started
@@ -77,9 +88,33 @@ func (r *runInstance) Run() {
 		})
 	}
 
+	err := r.doRun(scrapeFactory, dataRepoFactory, resultsStore)
+
 	concurrency.WithLock(&r.mutex, func() {
-		r.err = errors.New("run logic not yet implemented")
+		r.err = err
 	})
+}
+
+func (r *runInstance) doRun(scrapeFactory scrape.Factory, dataRepoFactory data.RepositoryFactory, resultsStore store.Store) error {
+	log.Infof("scraping results for standard %s and cluster %s", r.standardID, r.domain.Cluster().ID())
+	scrapeResults, err := scrapeFactory.RunScrape(r.domain, r.ctx)
+	if err != nil {
+		return fmt.Errorf("scraping results: %v", err)
+	}
+	log.Infof("done scraping results for standard %s and cluster %s", r.standardID, r.domain.Cluster().ID())
+
+	data, err := dataRepoFactory.CreateDataRepository(r.domain, scrapeResults)
+	if err != nil {
+		return fmt.Errorf("aggregating data: %v", err)
+	}
+
+	log.Infof("running checks for standard %s and cluster %s", r.standardID, r.domain.Cluster().ID())
+	if err := r.run.Run(r.ctx, r.domain, data); err != nil {
+		return err
+	}
+	log.Infof("done running checks for %s and cluster %s", r.standardID, r.domain.Cluster().ID())
+	results := r.collectResults()
+	return resultsStore.StoreRunResults(results)
 }
 
 func timeToProto(t time.Time) *types.Timestamp {

@@ -2,8 +2,11 @@ package manager
 
 import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/compliance/data"
+	complianceResultsStore "github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/node/store"
+	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -26,6 +29,6 @@ type ComplianceManager interface {
 }
 
 // NewManager creates and returns a new compliance manager.
-func NewManager(scheduleStore ScheduleStore, clusterStore clusterDatastore.DataStore, nodeStore store.GlobalStore, deploymentStore datastore.DataStore) (ComplianceManager, error) {
-	return newManager(scheduleStore, clusterStore, nodeStore, deploymentStore)
+func NewManager(scheduleStore ScheduleStore, clusterStore clusterDatastore.DataStore, nodeStore store.GlobalStore, deploymentStore datastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory scrape.Factory, resultsStore complianceResultsStore.Store) (ComplianceManager, error) {
+	return newManager(scheduleStore, clusterStore, nodeStore, deploymentStore, dataRepoFactory, scrapeFactory, resultsStore)
 }

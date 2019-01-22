@@ -17,7 +17,9 @@ type Secret struct {
 type SystemService struct {
 	Name           string
 	GenerateName   string
+	ExtraPodLabels map[string]string
 	Envs           []string
+	SpecialEnvs    []SpecialEnvVar
 	Image          string
 	Mounts         []string
 	Global         bool

@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
@@ -108,10 +109,12 @@ func outputZip(config renderer.Config) error {
 		return err
 	}
 
+	config.Environment = make(map[string]string)
+	for _, flag := range features.Flags {
+		config.Environment[flag.EnvVar()] = strconv.FormatBool(flag.(features.Feature).Enabled())
+	}
+
 	if features.HtpasswdAuth.Enabled() {
-		if config.Environment == nil {
-			config.Environment = make(map[string]string)
-		}
 		config.Environment[features.HtpasswdAuth.EnvVar()] = "true"
 
 		htpasswd, err := renderer.GenerateHtpasswd(&config)

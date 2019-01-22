@@ -28,6 +28,7 @@ var (
 			"/v1.ComplianceService/GetStandard",
 			"/v1.ComplianceService/GetComplianceControlResults",
 			"/v1.ComplianceService/GetComplianceStatistics",
+			"/v1.ComplianceService/GetRunResults",
 			"/v1.ComplianceService/GetAggregatedResults",
 		},
 	})
@@ -173,5 +174,15 @@ func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.Comp
 
 	return &v1.ComplianceAggregation_Response{
 		Results: getAggregatedResults(request.GetGroupBy(), request.GetUnit(), results),
+	}, nil
+}
+
+func (s *serviceImpl) GetRunResults(ctx context.Context, request *v1.GetComplianceRunResultsRequest) (*v1.GetComplianceRunResultsResponse, error) {
+	results, err := s.store.GetLatestRunResults(request.GetClusterId(), request.GetStandardId())
+	if err != nil {
+		return nil, err
+	}
+	return &v1.GetComplianceRunResultsResponse{
+		Results: results,
 	}, nil
 }

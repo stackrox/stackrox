@@ -43,6 +43,18 @@ func (r *Registry) LookupStandard(id string) *Standard {
 	return r.standardsByID[id]
 }
 
+// AllStandards returns all registered standards.
+func (r *Registry) AllStandards() []*Standard {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
+	result := make([]*Standard, 0, len(r.standardsByID))
+	for _, standard := range r.standardsByID {
+		result = append(result, standard)
+	}
+	return result
+}
+
 // Standards returns the metadata protos for all registered compliance standards.
 func (r *Registry) Standards() ([]*v1.ComplianceStandardMetadata, error) {
 	r.mutex.RLock()

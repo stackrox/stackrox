@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	storage "github.com/stackrox/rox/generated/storage"
 	set "github.com/stackrox/rox/pkg/set"
 	reflect "reflect"
@@ -69,6 +70,30 @@ func (m *MockComplianceDataRepository) Deployments() map[string]*storage.Deploym
 // Deployments indicates an expected call of Deployments
 func (mr *MockComplianceDataRepositoryMockRecorder) Deployments() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Deployments", reflect.TypeOf((*MockComplianceDataRepository)(nil).Deployments))
+}
+
+// HostFiles mocks base method
+func (m *MockComplianceDataRepository) HostFiles(arg0 *storage.Node) map[string]*compliance.File {
+	ret := m.ctrl.Call(m, "HostFiles", arg0)
+	ret0, _ := ret[0].(map[string]*compliance.File)
+	return ret0
+}
+
+// HostFiles indicates an expected call of HostFiles
+func (mr *MockComplianceDataRepositoryMockRecorder) HostFiles(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HostFiles", reflect.TypeOf((*MockComplianceDataRepository)(nil).HostFiles), arg0)
+}
+
+// HostProcesses mocks base method
+func (m *MockComplianceDataRepository) HostProcesses(arg0 *storage.Node) []*compliance.CommandLine {
+	ret := m.ctrl.Call(m, "HostProcesses", arg0)
+	ret0, _ := ret[0].([]*compliance.CommandLine)
+	return ret0
+}
+
+// HostProcesses indicates an expected call of HostProcesses
+func (mr *MockComplianceDataRepositoryMockRecorder) HostProcesses(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HostProcesses", reflect.TypeOf((*MockComplianceDataRepository)(nil).HostProcesses), arg0)
 }
 
 // ImageIntegrations mocks base method

@@ -6,16 +6,16 @@ import (
 
 type scrapeState struct {
 	deploymentName string
-	remainingHosts set.StringSet
+	remainingNodes set.StringSet
 }
 
-func newScrapeState(name string, expectedHosts []string) *scrapeState {
-	expectedHostsSet := set.NewStringSet()
-	for _, host := range expectedHosts {
-		expectedHostsSet.Add(host)
+func newScrapeState(name string, expectedNodes []string) *scrapeState {
+	expectedNodesSet := set.NewStringSet()
+	for _, host := range expectedNodes {
+		expectedNodesSet.Add(host)
 	}
 	return &scrapeState{
 		deploymentName: name,
-		remainingHosts: expectedHostsSet,
+		remainingNodes: expectedNodesSet,
 	}
 }

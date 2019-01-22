@@ -45,8 +45,9 @@ func (c converter) asDaemonSet(service *serviceWrap) *v1beta1.DaemonSet {
 			APIVersion: "extensions/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      service.Name,
-			Namespace: service.namespace,
+			Name:         service.Name,
+			Namespace:    service.namespace,
+			GenerateName: service.GenerateName,
 		},
 		Spec: v1beta1.DaemonSetSpec{
 			Template: c.asKubernetesPod(service),
@@ -76,7 +77,7 @@ func (c converter) asKubernetesPod(service *serviceWrap) v1.PodTemplateSpec {
 	return v1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: service.namespace,
-			Labels:    c.asKubernetesLabels(service.Name),
+			Labels:    c.asKubernetesLabels(service),
 		},
 		Spec: v1.PodSpec{
 			Containers:         c.asContainers(service),
@@ -89,19 +90,38 @@ func (c converter) asKubernetesPod(service *serviceWrap) v1.PodTemplateSpec {
 	}
 }
 
-func (converter) asKubernetesLabels(name string) (labels map[string]string) {
+func (converter) asKubernetesLabels(service *serviceWrap) (labels map[string]string) {
 	labels = make(map[string]string)
+
+	name := service.Name
+	if name == "" {
+		name = service.GenerateName
+	}
 
 	labels[namespaceLabel] = preventLabelValue
 	labels[serviceLabel] = name
+	for k, v := range service.ExtraPodLabels {
+		labels[k] = v
+	}
 	return
 }
 
+func (c converter) allEnvs(service *serviceWrap) []v1.EnvVar {
+	allEnvs := make([]v1.EnvVar, 0, len(service.Envs)+len(service.SpecialEnvs))
+	allEnvs = append(allEnvs, convertSpecialEnvs(service.SpecialEnvs)...)
+	allEnvs = append(allEnvs, c.asEnv(service.Envs)...)
+	return allEnvs
+}
+
 func (c converter) asContainers(service *serviceWrap) []v1.Container {
+	containerName := service.Name
+	if containerName == "" {
+		containerName = service.GenerateName
+	}
 	return []v1.Container{
 		{
-			Name:         service.Name,
-			Env:          c.asEnv(service.Envs),
+			Name:         containerName,
+			Env:          c.allEnvs(service),
 			Image:        service.Image,
 			Command:      service.Command,
 			VolumeMounts: c.asVolumeMounts(service),

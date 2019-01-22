@@ -148,6 +148,7 @@ func ClusterHasNetworkPolicies(ctx framework.ComplianceContext) {
 
 func deploymentHasNetworkPolicies(ctx framework.ComplianceContext, deployment *storage.Deployment, deploymentIDToNodes map[string]*v1.NetworkNode) {
 	if isKubeSystem(deployment) {
+		framework.PassNow(ctx, "Kubernetes system deployments are exempt from this requirement")
 		return
 	}
 

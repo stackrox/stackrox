@@ -48,7 +48,11 @@ func (r *results) Evidence() []EvidenceRecord {
 }
 
 func (r *results) ForChild(target ComplianceTarget) Results {
-	return r.childResults[GetTargetRef(target)]
+	childRes := r.childResults[GetTargetRef(target)]
+	if childRes == nil {
+		return nil
+	}
+	return childRes
 }
 
 func (r *results) recordEvidence(status Status, message string) {

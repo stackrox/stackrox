@@ -9,11 +9,12 @@ import (
 	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
 	policiesStore "github.com/stackrox/rox/central/policy/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
 )
 
 // RepositoryFactory allows creating `ComplianceDataRepository`s to be used in compliance runs.
 type RepositoryFactory interface {
-	CreateDataRepository(domain framework.ComplianceDomain) (framework.ComplianceDataRepository, error)
+	CreateDataRepository(domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn) (framework.ComplianceDataRepository, error)
 }
 
 type factory struct {
@@ -39,6 +40,6 @@ func NewDefaultFactory() RepositoryFactory {
 	}
 }
 
-func (f *factory) CreateDataRepository(domain framework.ComplianceDomain) (framework.ComplianceDataRepository, error) {
-	return newRepository(domain, f)
+func (f *factory) CreateDataRepository(domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn) (framework.ComplianceDataRepository, error) {
+	return newRepository(domain, scrapeResults, f)
 }

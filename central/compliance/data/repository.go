@@ -1,8 +1,11 @@
 package data
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -20,6 +23,9 @@ type repository struct {
 	processIndicators  []*storage.ProcessIndicator
 	networkFlows       []*storage.NetworkFlow
 	categoryToPolicies map[string]set.StringSet // maps categories to policy set
+
+	hostProcesses map[string][]*compliance.CommandLine
+	hostFiles     map[string]map[string]*compliance.File
 }
 
 func (r *repository) Cluster() *storage.Cluster {
@@ -66,9 +72,25 @@ func (r *repository) Alerts() []*storage.ListAlert {
 	return r.alerts
 }
 
-func newRepository(domain framework.ComplianceDomain, factory *factory) (*repository, error) {
+func (r *repository) HostProcesses(node *storage.Node) []*compliance.CommandLine {
+	processes, ok := r.hostProcesses[node.GetName()]
+	if !ok {
+		panic(fmt.Errorf("no such node: %s", node.GetId()))
+	}
+	return processes
+}
+
+func (r *repository) HostFiles(node *storage.Node) map[string]*compliance.File {
+	files, ok := r.hostFiles[node.GetName()]
+	if !ok {
+		panic(fmt.Errorf("no such node: %s", node.GetId()))
+	}
+	return files
+}
+
+func newRepository(domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn, factory *factory) (*repository, error) {
 	r := &repository{}
-	if err := r.init(domain, factory); err != nil {
+	if err := r.init(domain, scrapeResults, factory); err != nil {
 		return nil, err
 	}
 	return r, nil
@@ -124,7 +146,15 @@ func policyCategories(policies []*storage.Policy) map[string]set.StringSet {
 	return result
 }
 
-func (r *repository) init(domain framework.ComplianceDomain, f *factory) error {
+func filesByPath(files []*compliance.File) map[string]*compliance.File {
+	result := make(map[string]*compliance.File, len(files))
+	for _, f := range files {
+		result[f.GetPath()] = f
+	}
+	return result
+}
+
+func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn, f *factory) error {
 	r.cluster = domain.Cluster().Cluster()
 	r.nodes = nodesByID(framework.Nodes(domain))
 
@@ -171,6 +201,14 @@ func (r *repository) init(domain framework.ComplianceDomain, f *factory) error {
 	r.alerts, err = f.alertStore.GetAlertStore()
 	if err != nil {
 		return err
+	}
+
+	r.hostFiles = make(map[string]map[string]*compliance.File, len(scrapeResults))
+	r.hostProcesses = make(map[string][]*compliance.CommandLine, len(scrapeResults))
+	for nodeName, complianceRet := range scrapeResults {
+		filesMap := filesByPath(complianceRet.GetFiles())
+		r.hostFiles[nodeName] = filesMap
+		r.hostProcesses[nodeName] = complianceRet.GetCommandLines()
 	}
 
 	return nil

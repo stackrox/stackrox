@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 type kubernetesOrchestrator struct {
@@ -41,7 +41,7 @@ func MustCreate() orchestrators.Orchestrator {
 func New() (orchestrators.Orchestrator, error) {
 	c, err := setupClient()
 	if err != nil {
-		logger.Errorf("unable to create kubernetes client: %s", err)
+		log.Errorf("unable to create kubernetes client: %s", err)
 		return nil, err
 	}
 	return &kubernetesOrchestrator{
@@ -80,7 +80,7 @@ func (k *kubernetesOrchestrator) Launch(service orchestrators.SystemService) (st
 		ds := k.converter.asDaemonSet(k.newServiceWrap(service))
 		launchedName, err := k.launch(k.client.ExtensionsV1beta1().DaemonSets(k.namespace), ds)
 		if err != nil {
-			logger.Errorf("unable to create daemonset %s: %s", service.Name, err)
+			log.Errorf("unable to create daemonset %s: %s", service.Name, err)
 			return "", err
 		}
 		return launchedName, nil
@@ -89,7 +89,7 @@ func (k *kubernetesOrchestrator) Launch(service orchestrators.SystemService) (st
 	deploy := k.converter.asDeployment(k.newServiceWrap(service))
 	actual, err := k.client.ExtensionsV1beta1().Deployments(k.namespace).Create(deploy)
 	if err != nil {
-		logger.Errorf("unable to create deployment %s: %s", service.Name, err)
+		log.Errorf("unable to create deployment %s: %s", service.Name, err)
 		return "", err
 	}
 
@@ -114,7 +114,7 @@ func (k *kubernetesOrchestrator) newServiceWrap(service orchestrators.SystemServ
 func (k *kubernetesOrchestrator) Kill(name string) error {
 	if ds, err := k.client.ExtensionsV1beta1().DaemonSets(k.namespace).Get(name, metav1.GetOptions{}); err == nil && ds != nil {
 		if err := k.client.ExtensionsV1beta1().DaemonSets(k.namespace).Delete(name, pkgKubernetes.DeleteOption); err != nil {
-			logger.Errorf("unable to delete daemonset %s: %s", name, err)
+			log.Errorf("unable to delete daemonset %s: %s", name, err)
 			return err
 		}
 		return nil
@@ -122,14 +122,14 @@ func (k *kubernetesOrchestrator) Kill(name string) error {
 
 	if deploy, err := k.client.ExtensionsV1beta1().Deployments(k.namespace).Get(name, metav1.GetOptions{}); err == nil && deploy != nil {
 		if err := k.client.ExtensionsV1beta1().Deployments(k.namespace).Delete(name, pkgKubernetes.DeleteOption); err != nil {
-			logger.Errorf("unable to delete deployment %s: %s", name, err)
+			log.Errorf("unable to delete deployment %s: %s", name, err)
 			return err
 		}
 		return nil
 	}
 
 	err := fmt.Errorf("unable to delete service %s; service not found", name)
-	logger.Error(err)
+	log.Error(err)
 	return err
 }
 

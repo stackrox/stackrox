@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/prometheus/common/log"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/pkg/benchmarks"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stackrox/rox/pkg/retry"
 )
@@ -33,6 +34,8 @@ var (
 		"/run:/host/run",
 		"/var/run/docker.sock:/host/var/run/docker.sock",
 	}
+
+	log = logging.LoggerForModule()
 )
 
 type commandHandlerImpl struct {
@@ -136,6 +139,7 @@ func (c *commandHandlerImpl) startScrape(scrapeID string, expectedHosts []string
 
 	// If we succeeded, start tracking the scrape and send a message to central.
 	c.scrapeIDToState[scrapeID] = newScrapeState(scrapeName, expectedHosts)
+	log.Infof("started scrape")
 	return scrapeStarted(scrapeID, errStr)
 }
 
@@ -180,16 +184,33 @@ func (c *commandHandlerImpl) killScrapeWithRetry(name, scrapeID string) error {
 func (c *commandHandlerImpl) createService(scrapeID string) *orchestrators.SystemService {
 	return &orchestrators.SystemService{
 		GenerateName: scrapeServiceName,
-		Command:      []string{scrapeCommand},
-		Mounts:       scrapeMounts,
-		HostPID:      true,
+		ExtraPodLabels: map[string]string{
+			"compliance.stackrox.io/scrape-id": scrapeID,
+		},
+		Command: []string{scrapeCommand},
+		Mounts:  scrapeMounts,
+		HostPID: true,
 		Envs: []string{
 			env.CombineSetting(env.AdvertisedEndpoint),
 			env.Combine(scrapeEnvironment, scrapeID),
 		},
+		SpecialEnvs: []orchestrators.SpecialEnvVar{
+			orchestrators.NodeName,
+		},
 		Image:          c.image,
 		Global:         true,
-		ServiceAccount: scrapeServiceAccount,
+		ServiceAccount: benchmarks.BenchmarkServiceAccount,
+		Secrets: []orchestrators.Secret{
+			{
+				Name: "benchmark-tls",
+				Items: map[string]string{
+					"ca.pem":             "ca.pem",
+					"benchmark-cert.pem": "cert.pem",
+					"benchmark-key.pem":  "key.pem",
+				},
+				TargetPath: "/run/secrets/stackrox.io/certs/",
+			},
+		},
 	}
 }
 
@@ -197,22 +218,22 @@ func (c *commandHandlerImpl) commitResult(result *compliance.ComplianceReturn) (
 	// Check that the scrape has not already been killed.
 	scrapeState, running := c.scrapeIDToState[result.GetScrapeId()]
 	if !running {
-		log.Errorf("received result scrape not tracked: %s", proto.MarshalTextString(result))
+		log.Errorf("received result for scrape not tracked: %q", result.GetScrapeId())
 		return
 	}
 
 	// Check that we have not already received a result for the host.
-	if hostNotSeenYet := scrapeState.remainingHosts.Contains(result.GetHostname()); !hostNotSeenYet {
-		log.Errorf("received an unexpected result: %s", proto.MarshalTextString(result))
+	if hostNotSeenYet := scrapeState.remainingNodes.Contains(result.GetNodeName()); !hostNotSeenYet {
+		log.Errorf("received duplicate result in scrape %s for node %s", result.GetScrapeId(), result.GetNodeName())
 		return
 	}
 
 	// Pass the update back to central.
-	scrapeState.remainingHosts.Remove(result.GetHostname())
+	scrapeState.remainingNodes.Remove(result.GetNodeName())
 	ret = append(ret, scrapeUpdate(result))
 
 	// If that was the last expected update, kill the scrape.
-	if scrapeState.remainingHosts.Cardinality() == 0 {
+	if scrapeState.remainingNodes.Cardinality() == 0 {
 		if update := c.killScrape(result.GetScrapeId()); update != nil {
 			ret = append(ret, update)
 		}

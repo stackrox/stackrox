@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"os"
 	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/compliance/collection/command"
 	"github.com/stackrox/rox/compliance/collection/docker"
 	file2 "github.com/stackrox/rox/compliance/collection/file"
@@ -12,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stackrox/rox/pkg/retry"
 )
 
@@ -22,9 +25,20 @@ var (
 const requestTimeout = time.Second * 5
 
 func main() {
-	var msgReturn compliance.ComplianceReturn
-	var err error
+	thisNodeName := os.Getenv(string(orchestrators.NodeName))
+	if thisNodeName == "" {
+		log.Fatal("No node name found in the environment")
+	}
+	thisScrapeID := os.Getenv("ROX_SCRAPE_ID")
+	if thisScrapeID == "" {
+		log.Fatal("No scrape ID found in the environment")
+	}
+	msgReturn := compliance.ComplianceReturn{
+		NodeName: thisNodeName,
+		ScrapeId: thisScrapeID,
+	}
 
+	var err error
 	msgReturn.DockerData, err = docker.GetDockerData()
 	if err != nil {
 		log.Error(err)
@@ -39,6 +53,8 @@ func main() {
 	if err != nil {
 		log.Error(err)
 	}
+
+	msgReturn.Time = types.TimestampNow()
 
 	// Create a connection with sensor to push scraped data.
 	conn, err := clientconn.AuthenticatedGRPCConnection(env.AdvertisedEndpoint.Setting(), clientconn.Sensor)

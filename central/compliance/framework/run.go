@@ -26,6 +26,8 @@ type ComplianceRun interface {
 
 	// GetAllResults returns a map mapping the ID of each check that was run to its corresponding Results.
 	GetAllResults() map[string]Results
+
+	GetChecks() []Check
 }
 
 type checkRecord struct {
@@ -102,4 +104,12 @@ func (r *complianceRun) GetAllResults() map[string]Results {
 		resultsByCheckID[checkRec.check.ID()] = checkRec.results
 	}
 	return resultsByCheckID
+}
+
+func (r *complianceRun) GetChecks() []Check {
+	checks := make([]Check, len(r.checks))
+	for i, check := range r.checks {
+		checks[i] = check.check
+	}
+	return checks
 }
