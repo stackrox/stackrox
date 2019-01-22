@@ -1,6 +1,8 @@
 package common
 
 import (
+	"strings"
+
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -190,4 +192,43 @@ func policyIsOfType(spec *storage.NetworkPolicySpec, policyType storage.NetworkP
 
 func isKubeSystem(deployment *storage.Deployment) bool {
 	return deployment.GetNamespace() == "kube-system"
+}
+
+// AlertsForDeployments checks if any deployments has alerts for a given policy lifecycle.
+func AlertsForDeployments(ctx framework.ComplianceContext, policyLifeCycle storage.LifecycleStage) {
+	alerts := ctx.Data().Alerts()
+	deploymentIDToAlerts := make(map[string][]*storage.ListAlert)
+	for _, alert := range alerts {
+		// resolved alerts is ok. We are interested in current env.
+		if alert.State == storage.ViolationState_RESOLVED {
+			continue
+		}
+		// enforcement is enabled.
+		if alert.GetEnforcementCount() > 0 {
+			continue
+		}
+		violations := deploymentIDToAlerts[alert.GetDeployment().GetId()]
+		violations = append(violations, alert)
+		deploymentIDToAlerts[alert.GetDeployment().GetId()] = violations
+	}
+
+	framework.ForEachDeployment(ctx, func(ctx framework.ComplianceContext, deployment *storage.Deployment) {
+		count := deploymentHasAlert(deployment, policyLifeCycle, deploymentIDToAlerts)
+		if count > 0 {
+			framework.Failf(ctx, "Deployment has active alert(s) in '%s' lifecycle not being enforced.", strings.ToLower(storage.LifecycleStage_name[int32(policyLifeCycle)]))
+			return
+		}
+		framework.Passf(ctx, "Deployment has no active alert(s) in '%s' lifecycle.", strings.ToLower(storage.LifecycleStage_name[int32(policyLifeCycle)]))
+	})
+}
+
+func deploymentHasAlert(deployment *storage.Deployment, policyLifeCycle storage.LifecycleStage, deploymentIDToAlerts map[string][]*storage.ListAlert) int {
+	alerts := deploymentIDToAlerts[deployment.GetId()]
+	count := 0
+	for _, alert := range alerts {
+		if policyLifeCycle == alert.GetLifecycleStage() {
+			count++
+		}
+	}
+	return count
 }
