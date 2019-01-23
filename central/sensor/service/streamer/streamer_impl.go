@@ -20,6 +20,9 @@ type streamerImpl struct {
 	msgsRead  chan *central.MsgFromSensor
 	msgQueued chan *central.MsgFromSensor
 	msgToSend chan *central.MsgToSensor
+
+	stopSig    concurrency.ErrorSignal
+	stoppedSig concurrency.ErrorSignal
 }
 
 // Start sets up the channels and signals to start processing events input through the given stream, and return
@@ -32,8 +35,8 @@ func (s *streamerImpl) Start(server central.SensorService_CommunicateServer) {
 }
 
 // WaitUntilEmpty waits until all items input from the sensor stream have been processed.
-func (s *streamerImpl) WaitUntilFinished() {
-	s.finishedSending.Wait()
+func (s *streamerImpl) WaitUntilFinished() error {
+	return s.stoppedSig.Wait()
 }
 
 // InjectEnforcement tries to add the enforcement to the stream sent to sensor and returns whether or not it was
@@ -91,16 +94,18 @@ func (s *streamerImpl) enqueueDequeue() {
 // The output channel is closed when the input channel is closed.
 func (s *streamerImpl) processWithPipeline() {
 	s.msgToSend = make(chan *central.MsgToSensor)
-	closeOutput := func() {
+	closeOutput := func(err error) {
 		s.lock.Lock()
 		defer s.lock.Unlock()
 
 		close(s.msgToSend)
 		s.msgToSend = nil
+
+		s.stoppedSig.SignalWithError(err)
 	}
 
 	// Processing -> Process -> OutputChannel
-	NewPipeline(closeOutput).Start(s.msgQueued, s.pl, s)
+	NewPipeline(closeOutput).Start(s.msgQueued, s.pl, s, &s.stopSig)
 }
 
 // sendToStream reads from the input channel and sends received data out over the input stream. When the input channel
@@ -111,4 +116,10 @@ func (s *streamerImpl) sendToStream(server central.SensorService_CommunicateServ
 
 	// OutputChannel -> Sensor
 	NewSender(sendFinishedSignal).Start(s.msgToSend, server)
+}
+
+func (s *streamerImpl) Terminate(err error) bool {
+	stopped := s.stopSig.SignalWithError(err)
+	s.stoppedSig.Wait()
+	return stopped
 }

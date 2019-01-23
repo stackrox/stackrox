@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	nodeStore "github.com/stackrox/rox/central/node/store"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
+	"github.com/stackrox/rox/central/sensor/service/streamer"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -22,6 +24,7 @@ type datastoreImpl struct {
 	dds deploymentDataStore.DataStore
 	ns  nodeStore.GlobalStore
 	ss  secretDataStore.DataStore
+	sm  streamer.Manager
 }
 
 // GetCluster is a pass through function to the underlying storage.
@@ -59,58 +62,64 @@ func (ds *datastoreImpl) RemoveCluster(id string) error {
 	// Fetch the cluster an confirm it exists.
 	cluster, exists, err := ds.storage.GetCluster(id)
 	if !exists {
-		return fmt.Errorf("unable to find cluster %s", id)
+		return fmt.Errorf("unable to find cluster %q", id)
 	}
 	if err != nil {
 		return err
+	}
+
+	if err := ds.storage.RemoveCluster(id); err != nil {
+		return fmt.Errorf("failed to remove cluster %q: %v", id, err)
+	}
+
+	go ds.postRemoveCluster(cluster)
+	return nil
+}
+
+func (ds *datastoreImpl) postRemoveCluster(cluster *storage.Cluster) {
+	// Terminate the cluster connection to prevent new data from being stored.
+	if ds.sm != nil {
+		if streamer := ds.sm.GetStreamer(cluster.GetId()); streamer != nil {
+			streamer.Terminate(errors.New("cluster was deleted"))
+		}
 	}
 
 	// Fetch the deployments.
 	deployments, err := ds.getDeployments(cluster)
 	if err != nil {
-		return err
+		log.Errorf("failed to get deployments for removed cluster %s: %v", cluster.GetId(), err)
 	}
-
 	// Tombstone each deployment and mark alerts stale.
-	errorList := errorhelpers.NewErrorList("unable to complete cluster removal")
 	for _, deployment := range deployments {
 		alerts, err := ds.getAlerts(deployment)
 		if err != nil {
-			errorList.AddError(err)
-			continue
-		}
-
-		err = ds.markAlertsStale(alerts)
-		if err != nil {
-			errorList.AddError(err)
-			continue
+			log.Errorf("failed to retrieve alerts for deployment %s: %v", deployment.GetId(), err)
+		} else {
+			err = ds.markAlertsStale(alerts)
+			if err != nil {
+				log.Errorf("failed to mark alerts for deployment %s as stale: %v", deployment.GetId(), err)
+			}
 		}
 
 		err = ds.dds.RemoveDeployment(deployment.GetId())
 		if err != nil {
-			errorList.AddError(err)
-			continue
+			log.Errorf("failed to remove deployment %s in deleted cluster: %v", deployment.GetId(), err)
 		}
-	}
-	if err := errorList.ToError(); err != nil {
-		return err
 	}
 
 	// Remove nodes associated with this cluster
-	if err := ds.ns.RemoveClusterNodeStore(id); err != nil {
-		return err
+	if err := ds.ns.RemoveClusterNodeStore(cluster.GetId()); err != nil {
+		log.Errorf("failed to remove nodes for cluster %s: %v", cluster.GetId(), err)
 	}
 
 	secrets, err := ds.getSecrets(cluster)
 	if err != nil {
-		return err
+		log.Errorf("failed to obtain secrets in deleted cluster %s: %v", cluster.GetId(), err)
 	}
 	for _, s := range secrets {
 		// Best effort to remove. If the object doesn't exist, then that is okay
 		ds.ss.RemoveSecret(s.GetId())
 	}
-
-	return ds.storage.RemoveCluster(id)
 }
 
 // RemoveCluster removes an cluster from the storage and the indexer

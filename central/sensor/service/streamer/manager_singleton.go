@@ -2,8 +2,6 @@ package streamer
 
 import (
 	"sync"
-
-	"github.com/stackrox/rox/central/sensor/service/pipeline/all"
 )
 
 var (
@@ -16,7 +14,7 @@ var (
 // multiple clusters.
 func ManagerSingleton() Manager {
 	once.Do(func() {
-		sm = NewManager(all.Singleton())
+		sm = NewManager()
 	})
 	return sm
 }

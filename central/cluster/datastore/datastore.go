@@ -8,6 +8,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	nodeStore "github.com/stackrox/rox/central/node/store"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
+	"github.com/stackrox/rox/central/sensor/service/streamer"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -36,12 +37,14 @@ func New(
 	ads alertDataStore.DataStore,
 	dds deploymentDataStore.DataStore,
 	ns nodeStore.GlobalStore,
-	ss secretDataStore.DataStore) DataStore {
+	ss secretDataStore.DataStore,
+	sm streamer.Manager) DataStore {
 	return &datastoreImpl{
 		storage: storage,
 		ads:     ads,
 		dds:     dds,
 		ns:      ns,
 		ss:      ss,
+		sm:      sm,
 	}
 }

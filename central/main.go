@@ -58,6 +58,7 @@ import (
 	searchService "github.com/stackrox/rox/central/search/service"
 	secretService "github.com/stackrox/rox/central/secret/service"
 	sensorService "github.com/stackrox/rox/central/sensor/service"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/all"
 	"github.com/stackrox/rox/central/sensor/service/streamer"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
 	siStore "github.com/stackrox/rox/central/serviceidentities/store"
@@ -200,7 +201,7 @@ func startGRPCServer() {
 		siService.Singleton(),
 		summaryService.Singleton(),
 		userService.Singleton(),
-		sensorService.New(streamer.ManagerSingleton()),
+		sensorService.New(streamer.ManagerSingleton(), all.Singleton()),
 	}
 	if features.Compliance.Enabled() {
 		servicesToRegister = append(servicesToRegister,

@@ -6,15 +6,14 @@ import (
 
 // Manager provides functions for working with per cluster SensorEvent streams.
 type Manager interface {
-	CreateStreamer(clusterID string) (Streamer, error)
+	CreateStreamer(clusterID string, pf pipeline.Factory) (Streamer, error)
 	GetStreamer(clusterID string) Streamer
 	RemoveStreamer(clusterID string, streamer Streamer) error
 }
 
 // NewManager creates a new manager on top of the given pipeline factory.
-func NewManager(pf pipeline.Factory) Manager {
+func NewManager() Manager {
 	return &managerImpl{
 		streamers: make(map[string]Streamer),
-		pf:        pf,
 	}
 }

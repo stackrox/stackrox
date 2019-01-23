@@ -11,11 +11,9 @@ import (
 type managerImpl struct {
 	streamers      map[string]Streamer
 	streamersMutex sync.Mutex
-
-	pf pipeline.Factory
 }
 
-func (m *managerImpl) CreateStreamer(clusterID string) (Streamer, error) {
+func (m *managerImpl) CreateStreamer(clusterID string, pf pipeline.Factory) (Streamer, error) {
 	m.streamersMutex.Lock()
 	defer m.streamersMutex.Unlock()
 
@@ -24,7 +22,7 @@ func (m *managerImpl) CreateStreamer(clusterID string) (Streamer, error) {
 	}
 
 	qu := queue.NewQueue()
-	pl, err := m.pf.GetPipeline(clusterID)
+	pl, err := pf.GetPipeline(clusterID)
 	if err != nil {
 		return nil, err
 	}
