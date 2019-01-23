@@ -127,7 +127,7 @@ func IsPolicyEnforced(p *storage.Policy) Andable {
 	}
 }
 
-// ClusterHasNetworkPolicies ensures the cluster has ingress/egress network policies and does
+// ClusterHasNetworkPolicies ensures the cluster has ingress and egress network policies and does
 // not use host network namespace.
 func ClusterHasNetworkPolicies(ctx framework.ComplianceContext) {
 	// Map deployments to nodes.
@@ -146,6 +146,47 @@ func ClusterHasNetworkPolicies(ctx framework.ComplianceContext) {
 	})
 }
 
+// ClusterHasIngressNetworkPolicies ensures the cluster has ingress network policies and does
+// not use host network namespace.
+func ClusterHasIngressNetworkPolicies(ctx framework.ComplianceContext) {
+	// Map deployments to nodes.
+	networkGraph := ctx.Data().NetworkGraph()
+	deploymentIDToNodes := make(map[string]*v1.NetworkNode, len(networkGraph.GetNodes()))
+	for _, node := range networkGraph.GetNodes() {
+		if node.GetEntity().GetType() != storage.NetworkEntityInfo_DEPLOYMENT {
+			continue
+		}
+		deploymentIDToNodes[node.GetEntity().GetId()] = node
+	}
+
+	// Use the deployment node map to validate each deployment.
+	framework.ForEachDeployment(ctx, func(ctx framework.ComplianceContext, deployment *storage.Deployment) {
+		deploymentHasIngressNetworkPolicies(ctx, deployment, deploymentIDToNodes)
+	})
+}
+
+func deploymentHasIngressNetworkPolicies(ctx framework.ComplianceContext, deployment *storage.Deployment, deploymentIDToNodes map[string]*v1.NetworkNode) {
+	if isKubeSystem(deployment) {
+		framework.SkipNow(ctx, "Kubernetes system deployments are exempt from this requirement")
+		return
+	}
+
+	hasIngress := deploymentHasSpecifiedNetworkPolicy(ctx, storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE, deploymentIDToNodes, deployment)
+	usesHostNamespace := deployment.GetHostNetwork()
+
+	if usesHostNamespace {
+		framework.Fail(ctx, "Deployment uses host network, which allows it to subvert network policies")
+		return
+	}
+
+	if !hasIngress {
+		framework.Fail(ctx, "No ingress network policies apply to the deployment, hence all ingress connections are allowed")
+		return
+	}
+
+	framework.Pass(ctx, "Deployment has ingress network policies applied to it, and does not use host network namespace")
+}
+
 func deploymentHasNetworkPolicies(ctx framework.ComplianceContext, deployment *storage.Deployment, deploymentIDToNodes map[string]*v1.NetworkNode) {
 	if isKubeSystem(deployment) {
 		framework.SkipNow(ctx, "Kubernetes system deployments are exempt from this requirement")
@@ -156,17 +197,17 @@ func deploymentHasNetworkPolicies(ctx framework.ComplianceContext, deployment *s
 	usesHostNamespace := deployment.GetHostNetwork()
 
 	if hasIngress && hasEgress && !usesHostNamespace {
-		framework.Passf(ctx, "Deployment has both ingress and egress network policies applied to it, and does not use host network namespace")
+		framework.Pass(ctx, "Deployment has both ingress and egress network policies applied to it, and does not use host network namespace")
 		return
 	}
 	if !hasIngress {
-		framework.Failf(ctx, "No ingress network policies apply to Deployment %s (%s), hence all ingress connections are allowed", deployment.GetName(), deployment.GetId())
+		framework.Fail(ctx, "No ingress network policies apply to this deployment, hence all ingress connections are allowed")
 	}
 	if !hasEgress {
-		framework.Failf(ctx, "No egress network policies apply to Deployment %s (%s), hence all egress connections are allowed", deployment.GetName(), deployment.GetId())
+		framework.Fail(ctx, "No egress network policies apply to this deployment, hence all egress connections are allowed")
 	}
 	if usesHostNamespace {
-		framework.Failf(ctx, "Deployment %s (%s) uses host network, which allows it to subvert network policies", deployment.GetName(), deployment.GetId())
+		framework.Fail(ctx, "Deployment uses host network, which allows it to subvert network policies")
 	}
 }
 
