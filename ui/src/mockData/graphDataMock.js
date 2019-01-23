@@ -165,7 +165,15 @@ const listData = [
     }
 ];
 
+const verticalSingleBarData = [
+    { x: 'PCI', y: 80 },
+    { x: 'NIST', y: 55 },
+    { x: 'HIPAA', y: 78 },
+    { x: 'CIS', y: 50 }
+];
+
 export {
+    verticalSingleBarData,
     verticalBarData,
     sunburstData,
     sunburstLegendData,
@@ -173,4 +181,5 @@ export {
     multiGaugeData,
     horizontalBarData,
     listData
+    // arcData
 };

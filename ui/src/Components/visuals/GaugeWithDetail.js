@@ -26,7 +26,7 @@ const buildValue = hoveredCell => {
     };
 };
 
-class MultiGaugeChart extends Component {
+class GaugeWithDetail extends Component {
     static propTypes = {
         data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
         dataProperty: PropTypes.string.isRequired
@@ -196,4 +196,4 @@ class MultiGaugeChart extends Component {
     }
 }
 
-export default MultiGaugeChart;
+export default GaugeWithDetail;
