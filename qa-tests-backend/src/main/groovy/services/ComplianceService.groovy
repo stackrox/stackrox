@@ -13,6 +13,8 @@ import io.stackrox.proto.storage.BenchmarkTriggerOuterClass.BenchmarkTrigger
 import io.stackrox.proto.storage.Compliance
 import io.stackrox.proto.storage.Compliance.ComplianceControlResult
 import v1.ComplianceServiceGrpc
+import v1.ComplianceServiceOuterClass
+import v1.ComplianceServiceOuterClass.ComplianceAggregation.Scope
 import v1.ComplianceServiceOuterClass.ComplianceStandard
 import v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
 
@@ -66,6 +68,25 @@ class ComplianceService extends BaseService {
                                 ).build()
                         ).build(),
         ]
+    }
+
+    static getComplianceRunResult(String standardId, String clusterId) {
+        return getComplianceClient().getRunResults(
+                ComplianceServiceOuterClass.GetComplianceRunResultsRequest.newBuilder()
+                        .setStandardId(standardId)
+                        .setClusterId(clusterId)
+                        .build()
+        ).results
+    }
+
+    static getAggregatedResults(Scope unit, List<Scope> groupBy, RawQuery where = RawQuery.newBuilder().build()) {
+        return getComplianceClient().getAggregatedResults(
+                ComplianceServiceOuterClass.ComplianceAggregation.Request.newBuilder()
+                        .addAllGroupBy(groupBy)
+                        .setUnit(unit)
+                        .setWhere(where)
+                        .build()
+        ).resultsList
     }
 
     /*
