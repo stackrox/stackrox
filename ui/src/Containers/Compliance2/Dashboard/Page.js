@@ -40,16 +40,11 @@ const ComplianceDashboardPage = () => (
                     <StandardsAcrossEntity type={entityTypes.CLUSTERS} data={horizontalBarData} />
                     <StandardsByEntity type={entityTypes.CLUSTERS} />
 
-                    <Widget header="Compliance Across Controls" className="bg-base-100">
+                    <Widget header="Compliance Across Controls">
                         <Sunburst
                             data={sunburstData}
                             legendData={sunburstLegendData}
                             centerLabel="75%"
-                            containerProps={{
-                                style: {
-                                    borderRight: '1px solid var(--base-300)'
-                                }
-                            }}
                         />
                     </Widget>
 

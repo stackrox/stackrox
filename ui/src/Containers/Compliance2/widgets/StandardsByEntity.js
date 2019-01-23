@@ -3,31 +3,45 @@ import PropTypes from 'prop-types';
 import Widget from 'Components/Widget';
 import { verticalBarData } from 'mockData/graphDataMock';
 import VerticalBarChart from 'Components/visuals/VerticalClusterBar';
+import Query from 'Components/ThrowingQuery';
+import { CLUSTERS_QUERY } from 'queries/cluster';
+import Loader from 'Components/Loader';
+import { withRouter } from 'react-router-dom';
 
-const StandardsByEntity = ({ type }) => {
-    // Lets pretend we got data from a graphQL Query
-    const data = verticalBarData;
+const StandardsByEntity = ({ type }) => (
+    // TODO: use real query and calculate values based on return data
+    <Query query={CLUSTERS_QUERY} action="list">
+        {({ loading, data }) => {
+            let graphData;
+            let labelLinks;
+            let pages;
+            let contents = <Loader />;
 
-    const VerticalBarChartPaged = ({ currentPage }) => (
-        <>
-            <VerticalBarChart
-                data={data[currentPage]}
-                labelLinks={{
+            if (!loading && data) {
+                graphData = verticalBarData;
+                labelLinks = {
                     'Docker Swarm Dev': 'https://google.com/search?q=docker'
-                }}
-            />
-        </>
-    );
+                };
+                pages = verticalBarData.length;
 
-    return (
-        <Widget pages={data.length} header={`Standards By ${type}`} className="bg-base-100">
-            <VerticalBarChartPaged />
-        </Widget>
-    );
-};
+                const VerticalBarChartPaged = ({ currentPage }) => (
+                    <VerticalBarChart data={graphData[currentPage]} labelLinks={labelLinks} />
+                );
+                VerticalBarChartPaged.propTypes = { currentPage: PropTypes.number };
+                VerticalBarChartPaged.defaultProps = { currentPage: 0 };
+                contents = <VerticalBarChartPaged />;
+            }
 
+            return (
+                <Widget pages={pages} header={`Standards By ${type}`}>
+                    {contents}
+                </Widget>
+            );
+        }}
+    </Query>
+);
 StandardsByEntity.propTypes = {
     type: PropTypes.string.isRequired
 };
 
-export default StandardsByEntity;
+export default withRouter(StandardsByEntity);

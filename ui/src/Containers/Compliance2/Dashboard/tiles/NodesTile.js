@@ -4,7 +4,7 @@ import flatten from 'lodash/flatten';
 import Query from 'Components/ThrowingQuery';
 import TileLink from 'Components/TileLink';
 
-import NODES_QUERY from 'queries/node';
+import { NODES_QUERY } from 'queries/node';
 import { resourceLabels } from 'messages/common';
 
 const NodesTile = () => (

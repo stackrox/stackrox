@@ -7,11 +7,11 @@ import CollapsibleBanner from 'Components/CollapsibleBanner/CollapsibleBanner';
 import StandardsAcrossEntity from 'Containers/Compliance2/widgets/StandardsAcrossEntity';
 import StandardsByEntity from 'Containers/Compliance2/widgets/StandardsByEntity';
 import Sunburst from 'Components/visuals/Sunburst';
-import ListHeader from './Header';
+import Header from './Header';
 
 const ComplianceListPage = () => (
     <section className="flex flex-col h-full">
-        <ListHeader />
+        <Header />
         <div className="flex-1 bg-base-200 overflow-auto">
             <CollapsibleBanner>
                 <StandardsAcrossEntity type={entityTypes.CLUSTERS} data={horizontalBarData} />

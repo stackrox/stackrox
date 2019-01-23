@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 const renderSubHeader = subHeader => {
     if (!subHeader) return null;
-    return <div className="text-base-500 mt-1 italic">{subHeader}</div>;
+    return <div className="text-base-500 mt-1 italic capitalize">{subHeader}</div>;
 };
 
 const PageHeader = props => (

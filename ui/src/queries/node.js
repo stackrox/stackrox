@@ -1,8 +1,8 @@
 import gql from 'graphql-tag';
 
-const NODES_QUERY = gql`
+export const NODES_QUERY = gql`
     query list {
-        clusters {
+        results: clusters {
             id
             nodes {
                 id
@@ -11,4 +11,11 @@ const NODES_QUERY = gql`
     }
 `;
 
-export default NODES_QUERY;
+export const NODE_QUERY = gql`
+    query getCluster($id: ID!) {
+        results: cluster(id: $id) {
+            id
+            name
+        }
+    }
+`;

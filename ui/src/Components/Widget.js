@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import ErrorBoundary from 'Containers/ErrorBoundary';
 import { PagerDots, PagerButtonGroup } from './PagerControls';
 
 class Widget extends Component {
@@ -16,7 +17,7 @@ class Widget extends Component {
     static defaultProps = {
         header: '',
         bodyClassName: null,
-        className: 'w-full',
+        className: 'w-full bg-base-100',
         headerComponents: null,
         pages: 0,
         onPageChange: null
@@ -112,7 +113,7 @@ class Widget extends Component {
                     </div>
                 </div>
                 <div className={`flex h-full overflow-y-auto ${bodyClassName}`}>
-                    {childrenWithPageProp}
+                    <ErrorBoundary>{childrenWithPageProp}</ErrorBoundary>
                 </div>
                 {pagerControls ? pagerControls.dots : null}
             </div>

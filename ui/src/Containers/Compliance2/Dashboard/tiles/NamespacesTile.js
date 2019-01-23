@@ -4,7 +4,7 @@ import uniq from 'lodash/uniq';
 import Query from 'Components/ThrowingQuery';
 import TileLink from 'Components/TileLink';
 
-import NAMESPACES_QUERY from 'queries/namespace';
+import { NAMESPACES_QUERY } from 'queries/namespace';
 import { resourceLabels } from 'messages/common';
 
 const NamespacesTile = () => (
@@ -13,9 +13,7 @@ const NamespacesTile = () => (
             let value = 0;
             if (!loading) {
                 value = uniq(
-                    data.deployments.map(
-                        deployment => `${deployment.cluster}-${deployment.namespace}`
-                    )
+                    data.results.map(deployment => `${deployment.cluster}-${deployment.namespace}`)
                 ).length;
             }
             return (
