@@ -651,6 +651,151 @@ func toComparators(values *[]string) []storage.Comparator {
 	return output
 }
 
+type complianceAggregationResolver struct {
+	root *Resolver
+	data *v1.ComplianceAggregation
+}
+
+func (resolver *Resolver) wrapComplianceAggregation(value *v1.ComplianceAggregation, ok bool, err error) (*complianceAggregationResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceAggregationResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceAggregations(values []*v1.ComplianceAggregation, err error) ([]*complianceAggregationResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceAggregationResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceAggregationResolver{resolver, v}
+	}
+	return output, nil
+}
+
+type complianceAggregation_AggregationKeyResolver struct {
+	root *Resolver
+	data *v1.ComplianceAggregation_AggregationKey
+}
+
+func (resolver *Resolver) wrapComplianceAggregation_AggregationKey(value *v1.ComplianceAggregation_AggregationKey, ok bool, err error) (*complianceAggregation_AggregationKeyResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceAggregation_AggregationKeyResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceAggregation_AggregationKeies(values []*v1.ComplianceAggregation_AggregationKey, err error) ([]*complianceAggregation_AggregationKeyResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceAggregation_AggregationKeyResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceAggregation_AggregationKeyResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceAggregation_AggregationKeyResolver) Id() graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *complianceAggregation_AggregationKeyResolver) Scope() string {
+	value := resolver.data.GetScope()
+	return value.String()
+}
+
+type complianceAggregation_ResponseResolver struct {
+	root *Resolver
+	data *v1.ComplianceAggregation_Response
+}
+
+func (resolver *Resolver) wrapComplianceAggregation_Response(value *v1.ComplianceAggregation_Response, ok bool, err error) (*complianceAggregation_ResponseResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceAggregation_ResponseResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceAggregation_Responses(values []*v1.ComplianceAggregation_Response, err error) ([]*complianceAggregation_ResponseResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceAggregation_ResponseResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceAggregation_ResponseResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceAggregation_ResponseResolver) Results() ([]*complianceAggregation_ResultResolver, error) {
+	value := resolver.data.GetResults()
+	return resolver.root.wrapComplianceAggregation_Results(value, nil)
+}
+
+type complianceAggregation_ResultResolver struct {
+	root *Resolver
+	data *v1.ComplianceAggregation_Result
+}
+
+func (resolver *Resolver) wrapComplianceAggregation_Result(value *v1.ComplianceAggregation_Result, ok bool, err error) (*complianceAggregation_ResultResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceAggregation_ResultResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceAggregation_Results(values []*v1.ComplianceAggregation_Result, err error) ([]*complianceAggregation_ResultResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceAggregation_ResultResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceAggregation_ResultResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceAggregation_ResultResolver) AggregationKeys() ([]*complianceAggregation_AggregationKeyResolver, error) {
+	value := resolver.data.GetAggregationKeys()
+	return resolver.root.wrapComplianceAggregation_AggregationKeies(value, nil)
+}
+
+func (resolver *complianceAggregation_ResultResolver) NumFailing() int32 {
+	value := resolver.data.GetNumFailing()
+	return value
+}
+
+func (resolver *complianceAggregation_ResultResolver) NumPassing() int32 {
+	value := resolver.data.GetNumPassing()
+	return value
+}
+
+func (resolver *complianceAggregation_ResultResolver) Unit() string {
+	value := resolver.data.GetUnit()
+	return value.String()
+}
+
+func toComplianceAggregation_Scope(value *string) v1.ComplianceAggregation_Scope {
+	if value != nil {
+		return v1.ComplianceAggregation_Scope(v1.ComplianceAggregation_Scope_value[*value])
+	}
+	return v1.ComplianceAggregation_Scope(0)
+}
+
+func toComplianceAggregation_Scopes(values *[]string) []v1.ComplianceAggregation_Scope {
+	if values == nil {
+		return nil
+	}
+	output := make([]v1.ComplianceAggregation_Scope, len(*values))
+	for i, v := range *values {
+		output[i] = toComplianceAggregation_Scope(&v)
+	}
+	return output
+}
+
 type complianceControlResolver struct {
 	root *Resolver
 	data *v1.ComplianceControl

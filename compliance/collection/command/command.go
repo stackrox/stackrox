@@ -118,9 +118,14 @@ func parseArgs(args []string) []*compliance.CommandLine_Args {
 	if len(args) == 0 {
 		return nil
 	}
+
 	var retArgs []*compliance.CommandLine_Args
 	for i := 0; i < len(args); i++ {
-		key, value, skip := parseArg(args[i], args[i+1])
+		var nextArg string
+		if i+1 < len(args) {
+			nextArg = args[i+1]
+		}
+		key, value, skip := parseArg(args[i], nextArg)
 		if skip {
 			i++
 		}

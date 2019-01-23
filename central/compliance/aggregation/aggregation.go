@@ -1,4 +1,4 @@
-package service
+package aggregation
 
 import (
 	"github.com/stackrox/rox/generated/api/v1"
@@ -94,7 +94,7 @@ func getAggregationKeys(groupByKey groupByKey) []*v1.ComplianceAggregation_Aggre
 			continue
 		}
 		aggregationKeys = append(aggregationKeys, &v1.ComplianceAggregation_AggregationKey{
-			Scope: v1.ComplianceAggregation_Scope(i),
+			Scope: v1.ComplianceAggregation_Scope(i + int(minScope)),
 			Id:    val,
 		})
 	}
@@ -129,7 +129,8 @@ func getFlatChecksFromRunResult(runResults *storage.ComplianceRunResults) []flat
 	return flatChecks
 }
 
-func getAggregatedResults(groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope, runResults []*storage.ComplianceRunResults) []*v1.ComplianceAggregation_Result {
+// GetAggregatedResults aggregates the passed results by groupBy and unit
+func GetAggregatedResults(groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope, runResults []*storage.ComplianceRunResults) []*v1.ComplianceAggregation_Result {
 	var flatChecks []flatCheck
 	for _, r := range runResults {
 		flatChecks = append(flatChecks, getFlatChecksFromRunResult(r)...)

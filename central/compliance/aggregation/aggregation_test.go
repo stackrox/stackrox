@@ -1,4 +1,4 @@
-package service
+package aggregation
 
 import (
 	"fmt"
@@ -233,7 +233,7 @@ func TestGetAggregatedResults(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(testName(c.groupBy, c.unit), func(t *testing.T) {
-			results := getAggregatedResults(c.groupBy, c.unit, runResults)
+			results := GetAggregatedResults(c.groupBy, c.unit, runResults)
 			require.Equal(t, c.numResults, len(results))
 			for _, r := range results {
 				assert.Equal(t, c.passPerResult, r.NumPassing)

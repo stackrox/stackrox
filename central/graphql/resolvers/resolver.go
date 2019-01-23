@@ -48,19 +48,20 @@ type Resolver struct {
 // New returns a Resolver wired into the relevant data stores
 func New() *Resolver {
 	return &Resolver{
-		APITokenBackend:       apitoken.BackendSingleton(),
-		ClusterDataStore:      clusterDatastore.Singleton(),
-		ComplianceDataStore:   complianceStore.Singleton(),
-		DeploymentDataStore:   deploymentDatastore.Singleton(),
-		ImageDataStore:        imageDatastore.Singleton(),
-		GroupDataStore:        groupDataStore.Singleton(),
-		NetworkFlowStore:      networkFlowStore.Singleton(),
-		NodeGlobalStore:       nodeStore.Singleton(),
-		NotifierStore:         notifierStore.Singleton(),
-		PolicyDataStore:       policyDatastore.Singleton(),
-		ProcessIndicatorStore: processIndicatorStore.Singleton(),
-		SecretsDataStore:      secretDataStore.Singleton(),
-		ViolationsDataStore:   violationsDatastore.Singleton(),
+		APITokenBackend:         apitoken.BackendSingleton(),
+		ClusterDataStore:        clusterDatastore.Singleton(),
+		ComplianceDataStore:     complianceStore.Singleton(),
+		ComplianceStandardStore: complianceStandards.RegistrySingleton(),
+		DeploymentDataStore:     deploymentDatastore.Singleton(),
+		ImageDataStore:          imageDatastore.Singleton(),
+		GroupDataStore:          groupDataStore.Singleton(),
+		NetworkFlowStore:        networkFlowStore.Singleton(),
+		NodeGlobalStore:         nodeStore.Singleton(),
+		NotifierStore:           notifierStore.Singleton(),
+		PolicyDataStore:         policyDatastore.Singleton(),
+		ProcessIndicatorStore:   processIndicatorStore.Singleton(),
+		SecretsDataStore:        secretDataStore.Singleton(),
+		ViolationsDataStore:     violationsDatastore.Singleton(),
 	}
 }
 

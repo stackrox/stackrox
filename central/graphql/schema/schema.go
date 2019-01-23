@@ -21,6 +21,8 @@ var (
 			reflect.TypeOf((*storage.Cluster)(nil)),
 			reflect.TypeOf((*storage.ComplianceControlResult)(nil)),
 			reflect.TypeOf((*v1.ComplianceStandard)(nil)),
+			reflect.TypeOf((*v1.ComplianceAggregation)(nil)),
+			reflect.TypeOf((*v1.ComplianceAggregation_Response)(nil)),
 			reflect.TypeOf((*storage.Deployment)(nil)),
 			reflect.TypeOf((*storage.ListDeployment)(nil)),
 			reflect.TypeOf((*storage.Group)(nil)),

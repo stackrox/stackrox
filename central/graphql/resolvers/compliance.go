@@ -4,9 +4,16 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/compliance/aggregation"
 	"github.com/stackrox/rox/central/graphql/schema"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 func init() {
@@ -15,6 +22,7 @@ func init() {
 	}
 	schema.AddQuery("complianceStandard(id:ID!): ComplianceStandardMetadata")
 	schema.AddQuery("complianceStandards: [ComplianceStandardMetadata!]!")
+	schema.AddQuery("aggregatedResults(groupBy:[ComplianceAggregation_Scope!],unit:ComplianceAggregation_Scope!,where:String): ComplianceAggregation_Response!")
 	schema.AddResolver((*v1.ComplianceStandardMetadata)(nil), "controls: [ComplianceControl!]!")
 }
 
@@ -34,6 +42,48 @@ func (resolver *Resolver) ComplianceStandard(ctx context.Context, args struct{ g
 	}
 	return resolver.wrapComplianceStandardMetadata(
 		resolver.ComplianceStandardStore.StandardMetadata(string(args.ID)))
+}
+
+type aggregatedResultQuery struct {
+	GroupBy *[]string
+	Unit    string
+	Where   *string
+}
+
+// AggregatedResults returns the aggregration of the last runs aggregated by scope, unit and filtered by a query
+func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregatedResultQuery) (*complianceAggregation_ResponseResolver, error) {
+	if err := complianceAuth(ctx); err != nil {
+		return nil, err
+	}
+
+	standards, err := resolver.ComplianceStandardStore.Standards()
+	if err != nil {
+		return nil, err
+	}
+
+	clusters, err := resolver.ClusterDataStore.GetClusters()
+	if err != nil {
+		return nil, err
+	}
+
+	var clusterIDs, standardIDs []string
+	if args.Where != nil {
+		searchMap := search.ParseRawQueryIntoMap(*args.Where)
+		standardIDs = aggregation.FilterStandards(standards, searchMap[search.Standard.String()])
+		clusterIDs = aggregation.FilterClusters(clusters, searchMap[search.Cluster.String()])
+	} else {
+		standardIDs = aggregation.FilterStandards(standards, nil)
+		clusterIDs = aggregation.FilterClusters(clusters, nil)
+	}
+
+	runResults, err := resolver.ComplianceDataStore.GetLatestRunResultsBatch(clusterIDs, standardIDs)
+	if err != nil {
+		return nil, err
+	}
+	results := aggregation.GetAggregatedResults(toComplianceAggregation_Scopes(args.GroupBy), toComplianceAggregation_Scope(&args.Unit), runResults)
+	return resolver.wrapComplianceAggregation_Response(&v1.ComplianceAggregation_Response{
+		Results: results,
+	}, true, nil)
 }
 
 // ComplianceResults returns graphql resolvers for all matching compliance results
