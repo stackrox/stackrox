@@ -1,7 +1,6 @@
 package deduper
 
 import (
-	"bytes"
 	"reflect"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -22,14 +21,14 @@ type key struct {
 // deduper takes care of deduping sensor events.
 type deduper struct {
 	stream   messagestream.SensorMessageStream
-	lastSent map[key][]byte
+	lastSent map[key]interface{}
 }
 
 // NewDedupingMessageStream wraps a SensorMessageStream and dedupes events. Other message types are forwarded as-is.
 func NewDedupingMessageStream(stream messagestream.SensorMessageStream) messagestream.SensorMessageStream {
 	return deduper{
 		stream:   stream,
-		lastSent: make(map[key][]byte),
+		lastSent: make(map[key]interface{}),
 	}
 }
 
@@ -46,47 +45,18 @@ func (d deduper) Send(msg *central.MsgFromSensor) error {
 	}
 	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		delete(d.lastSent, key)
-	}
-	if event.GetAction() != central.ResourceAction_UPDATE_RESOURCE {
 		return d.stream.Send(msg)
 	}
 
-	serialized, err := serializeDeterministic(msg)
-	if err != nil {
-		log.Warnf("Could not deterministically serialize event: %v", err)
-		delete(d.lastSent, key)
-		return d.stream.Send(msg)
-	}
-
-	return d.doSendRaw(msg, key, serialized)
-}
-
-func (d deduper) SendRaw(msg *central.MsgFromSensor, raw []byte) error {
-	eventMsg, ok := msg.Msg.(*central.MsgFromSensor_Event)
-	if !ok {
-		// We only dedupe event messages, other messages get forwarded directly.
-		return d.stream.Send(msg)
-	}
-	event := eventMsg.Event
-	key := key{
-		id:           event.GetId(),
-		resourceType: reflect.TypeOf(event.GetResource()),
-	}
-	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
-		delete(d.lastSent, key)
-	}
-	if event.GetAction() != central.ResourceAction_UPDATE_RESOURCE {
-		return d.stream.SendRaw(msg, raw)
-	}
-
-	return d.doSendRaw(msg, key, raw)
-}
-
-func (d deduper) doSendRaw(msg *central.MsgFromSensor, key key, serialized []byte) error {
-	if bytes.Equal(d.lastSent[key], serialized) {
+	if reflect.DeepEqual(d.lastSent[key], event) {
 		return nil
 	}
-	d.lastSent[key] = serialized
 
-	return d.stream.SendRaw(msg, serialized)
+	if err := d.stream.Send(msg); err != nil {
+		return err
+	}
+	// Make the action an update so we can dedupe CREATE and UPDATE
+	event.Action = central.ResourceAction_UPDATE_RESOURCE
+	d.lastSent[key] = event
+	return nil
 }

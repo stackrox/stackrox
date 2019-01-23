@@ -7,5 +7,4 @@ import (
 // SensorMessageStream is a stripped-down version of the SensorService Communicate stream.
 type SensorMessageStream interface {
 	Send(msg *central.MsgFromSensor) error
-	SendRaw(msg *central.MsgFromSensor, raw []byte) error
 }

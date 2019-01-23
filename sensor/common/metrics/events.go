@@ -41,11 +41,6 @@ func (s countingMessageStream) Send(msg *central.MsgFromSensor) error {
 	return s.stream.Send(msg)
 }
 
-func (s countingMessageStream) SendRaw(msg *central.MsgFromSensor, raw []byte) error {
-	s.updateMetrics(msg)
-	return s.stream.SendRaw(msg, raw)
-}
-
 // NewCountingEventStream returns a new SensorMessageStream that automatically updates metrics counters.
 func NewCountingEventStream(stream messagestream.SensorMessageStream, typ string) messagestream.SensorMessageStream {
 	return countingMessageStream{

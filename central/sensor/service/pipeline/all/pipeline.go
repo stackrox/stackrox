@@ -2,8 +2,11 @@ package all
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
@@ -37,5 +40,6 @@ func (s *pipelineImpl) Run(msg *central.MsgFromSensor, injector pipeline.MsgInje
 	if matchingFragment == nil {
 		return fmt.Errorf("no pipeline present to process message: %s", proto.MarshalTextString(msg))
 	}
+	defer metrics.SetSensorEventRunDuration(time.Now(), common.GetMessageType(msg))
 	return matchingFragment.Run(msg, injector)
 }

@@ -34,12 +34,21 @@ var (
 		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
 	}, []string{"Operation", "Type"})
 
+	sensorEventDurationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "sensor_event_duration",
+		Help:      "Time taken to perform an process a sensor event operation",
+		// We care more about precision at lower latencies, or outliers at higher latencies.
+		Buckets: prometheus.ExponentialBuckets(4, 2, 8),
+	}, []string{"Type"})
+
 	sensorEventQueueCounterVec = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "sensor_event_queue",
 		Help:      "Number of elements in removed from the queue",
-	}, []string{"Operation"})
+	}, []string{"Operation", "Type"})
 
 	resourceProcessedCounterVec = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -78,14 +87,19 @@ func SetBoltOperationDurationTime(start time.Time, op metrics.Op, t string) {
 	boltOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
 }
 
+// SetSensorEventRunDuration times how long a particular sensor event operation took on a particular resource
+func SetSensorEventRunDuration(start time.Time, t string) {
+	sensorEventDurationHistogramVec.With(prometheus.Labels{"Type": t}).Observe(startTimeToMS(start))
+}
+
 // SetIndexOperationDurationTime times how long a particular index operation took on a particular resource
 func SetIndexOperationDurationTime(start time.Time, op metrics.Op, t string) {
 	indexOperationHistogramVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Observe(startTimeToMS(start))
 }
 
 // IncrementSensorEventQueueCounter increments the counter for the passed operation
-func IncrementSensorEventQueueCounter(op metrics.Op) {
-	sensorEventQueueCounterVec.With(prometheus.Labels{"Operation": op.String()}).Inc()
+func IncrementSensorEventQueueCounter(op metrics.Op, t string) {
+	sensorEventQueueCounterVec.With(prometheus.Labels{"Operation": op.String(), "Type": t}).Inc()
 }
 
 // SetPolicyEvaluationDurationTime is the amount of time a specific policy took

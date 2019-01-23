@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
@@ -40,8 +41,8 @@ func (p *queueImpl) Pull() (*central.MsgFromSensor, error) {
 		return nil, nil
 	}
 
-	metrics.IncrementSensorEventQueueCounter(ops.Remove)
 	evt := p.queue.Remove(p.queue.Front()).(*central.MsgFromSensor)
+	metrics.IncrementSensorEventQueueCounter(ops.Remove, common.GetMessageType(evt))
 	delete(p.resourceIDToEvent, evt.GetEvent().GetId())
 
 	return evt, nil
@@ -49,7 +50,7 @@ func (p *queueImpl) Pull() (*central.MsgFromSensor, error) {
 
 // Push attempts to add an item to the queue, and returns an error if it is unable.
 func (p *queueImpl) Push(msg *central.MsgFromSensor) error {
-	metrics.IncrementSensorEventQueueCounter(ops.Add)
+	metrics.IncrementSensorEventQueueCounter(ops.Add, common.GetMessageType(msg))
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
@@ -68,7 +69,7 @@ func (p *queueImpl) pushNoLock(msg *central.MsgFromSensor) error {
 
 func (p *queueImpl) pushWithDedupeNoLock(msg *central.MsgFromSensor) error {
 	if evt, ok := p.resourceIDToEvent[msg.GetEvent().GetId()]; ok {
-		metrics.IncrementSensorEventQueueCounter(ops.Dedupe)
+		metrics.IncrementSensorEventQueueCounter(ops.Dedupe, common.GetMessageType(msg))
 		p.queue.Remove(evt)
 	}
 	msgInserted := p.queue.PushBack(msg)

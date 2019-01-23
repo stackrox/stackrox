@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/deduper"
-	"github.com/stackrox/rox/sensor/common/messagestream"
 	"github.com/stackrox/rox/sensor/common/metrics"
 )
 
@@ -65,8 +64,7 @@ func (s *sensor) sendEventsSingle(
 
 	go s.receiveMessages(output, stream)
 
-	wrappedStream := messagestream.Wrap(stream)
-	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "unique")
+	wrappedStream := metrics.NewCountingEventStream(stream, "unique")
 	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream)
 	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "total")
 
@@ -117,7 +115,7 @@ func (s *sensor) sendEventsSingle(
 		}
 
 		if msg != nil {
-			if err := stream.Send(msg); err != nil {
+			if err := wrappedStream.Send(msg); err != nil {
 				return true, err
 			}
 		}

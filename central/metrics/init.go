@@ -11,11 +11,14 @@ var (
 
 func init() {
 	// general
-	prometheus.MustRegister(panicCounter)
-	prometheus.MustRegister(boltOperationHistogramVec)
-	prometheus.MustRegister(indexOperationHistogramVec)
-	prometheus.MustRegister(sensorEventQueueCounterVec)
-	prometheus.MustRegister(policyEvaluationHistogram)
-	prometheus.MustRegister(resourceProcessedCounterVec)
-	prometheus.MustRegister(totalNetworkFlowsReceivedCounter)
+	prometheus.MustRegister(
+		panicCounter,
+		boltOperationHistogramVec,
+		indexOperationHistogramVec,
+		sensorEventQueueCounterVec,
+		policyEvaluationHistogram,
+		resourceProcessedCounterVec,
+		totalNetworkFlowsReceivedCounter,
+		sensorEventDurationHistogramVec,
+	)
 }
