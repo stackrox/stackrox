@@ -12,6 +12,7 @@ var (
 	statusToProtoStatus = map[framework.Status]storage.ComplianceState{
 		framework.FailStatus: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 		framework.PassStatus: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
+		framework.SkipStatus: storage.ComplianceState_COMPLIANCE_STATE_SKIP,
 	}
 )
 
