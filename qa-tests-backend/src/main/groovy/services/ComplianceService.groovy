@@ -11,6 +11,7 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.storage.BenchmarkScanOuterClass.BenchmarkScan
 import io.stackrox.proto.storage.BenchmarkTriggerOuterClass.BenchmarkTrigger
 import io.stackrox.proto.storage.Compliance
+import io.stackrox.proto.storage.Compliance.ComplianceRunResults
 import io.stackrox.proto.storage.Compliance.ComplianceControlResult
 import v1.ComplianceServiceGrpc
 import v1.ComplianceServiceOuterClass
@@ -70,7 +71,7 @@ class ComplianceService extends BaseService {
         ]
     }
 
-    static getComplianceRunResult(String standardId, String clusterId) {
+    static ComplianceRunResults getComplianceRunResult(String standardId, String clusterId) {
         return getComplianceClient().getRunResults(
                 ComplianceServiceOuterClass.GetComplianceRunResultsRequest.newBuilder()
                         .setStandardId(standardId)

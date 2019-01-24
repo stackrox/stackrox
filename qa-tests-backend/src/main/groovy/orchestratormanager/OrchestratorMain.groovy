@@ -4,6 +4,7 @@ import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
 import objects.DaemonSet
 import objects.Deployment
 import objects.NetworkPolicy
+import objects.Service
 
 interface OrchestratorMain {
     def setup()
@@ -38,8 +39,9 @@ interface OrchestratorMain {
     def getContainerlogs(Deployment deployment)
 
     //Services
-    def deleteService(String serviceName, String namespace)
     def createService(Deployment deployment)
+    def createService(Service service)
+    def deleteService(String serviceName, String namespace)
 
     //Secrets
     def createSecret(String name)

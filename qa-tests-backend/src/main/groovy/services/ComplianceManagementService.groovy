@@ -2,6 +2,7 @@ package services
 
 import com.google.protobuf.Timestamp
 import io.stackrox.proto.api.v1.ComplianceManagementServiceGrpc
+import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.AddComplianceRunScheduleRequest
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.DeleteComplianceRunScheduleRequest
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.GetComplianceRunSchedulesRequest
@@ -26,6 +27,18 @@ class ComplianceManagementService extends BaseService {
         } catch (Exception e) {
             println "Error triggering compliance run: ${e.toString()}"
         }
+    }
+
+    static triggerComplianceRunAndWait(String standardId, String clusterId) {
+        ComplianceManagementServiceOuterClass.ComplianceRun complianceRun = triggerComplianceRun(standardId, clusterId)
+        println "triggered ${standardId} compliance run"
+        println "waiting for the run to finish..."
+        while (complianceRun.state != ComplianceManagementServiceOuterClass.ComplianceRun.State.FINISHED) {
+            complianceRun = getRecentRuns(standardId).find { it.id == complianceRun.id }
+            sleep 2000
+        }
+        println "${standardId} run completed!"
+        return complianceRun.id
     }
 
     static getRecentRuns(String standardId = null, String clusterId = null, Timestamp since = null) {

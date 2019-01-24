@@ -6,7 +6,7 @@ import orchestratormanager.OrchestratorType
 class Deployment {
     String name
     String namespace = Constants.ORCHESTRATOR_NAMESPACE
-    List<String> volNames = new ArrayList<String>()
+    Map<String, String> volNames = [:]
     List<String> volMounts = new ArrayList<String>()
     String volType
     String image
@@ -124,8 +124,8 @@ class Deployment {
         return this
     }
 
-    Deployment addVolName(String v) {
-        this.volNames.add(v)
+    Deployment addVolName(String v, String p = null) {
+        this.volNames.put(v, p)
         return this
     }
 

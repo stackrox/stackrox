@@ -247,11 +247,17 @@ class Services extends BaseService {
       }
 
     static deleteDockerTrustedRegistry(String dtrId) {
-        getIntegrationClient().deleteImageIntegration(
-                        ResourceByID.newBuilder()
-                                    .setId(dtrId)
-                                    .build()
+        try {
+            getIntegrationClient().deleteImageIntegration(
+                    ResourceByID.newBuilder()
+                            .setId(dtrId)
+                            .build()
             )
+            return true
+        } catch (Exception e) {
+            println "Failed to delete integration: ${e.toString()}"
+            return false
+        }
       }
 
     static String addClairifyScanner(String clairifyEndpoint) {

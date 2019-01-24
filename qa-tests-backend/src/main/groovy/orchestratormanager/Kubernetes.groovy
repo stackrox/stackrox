@@ -5,6 +5,7 @@ import io.fabric8.kubernetes.api.model.Capabilities
 import io.fabric8.kubernetes.api.model.Container
 import io.fabric8.kubernetes.api.model.ContainerPort
 import io.fabric8.kubernetes.api.model.EnvVar
+import io.fabric8.kubernetes.api.model.HostPathVolumeSource
 import io.fabric8.kubernetes.api.model.IntOrString
 import io.fabric8.kubernetes.api.model.LabelSelector
 import io.fabric8.kubernetes.api.model.LocalObjectReference
@@ -341,6 +342,32 @@ class Kubernetes implements OrchestratorMain {
         )
         client.services().inNamespace(deployment.namespace).createOrReplace(service)
         println "${deployment.name}: Service created"
+    }
+
+    def createService(objects.Service s) {
+        Service service = new Service(
+                metadata: new ObjectMeta(
+                        name: s.name,
+                        namespace: s.namespace,
+                        labels: s.labels
+                ),
+                spec: new ServiceSpec(
+                        ports: s.getPorts().collect {
+                            k, v ->
+                                new ServicePort(
+                                        name: k as String,
+                                        port: k as Integer,
+                                        protocol: v,
+                                        targetPort:
+                                                new IntOrString(s.targetport) ?: new IntOrString(k as Integer)
+                                )
+                        },
+                        selector: s.labels,
+                        type: s.type.toString()
+                )
+        )
+        client.services().inNamespace(s.namespace).createOrReplace(service)
+        println "${s.name}: Service created"
     }
 
     def deleteService(String name, String namespace = this.namespace) {
@@ -774,15 +801,19 @@ class Kubernetes implements OrchestratorMain {
 
         List<Volume> volumes = []
         deployment.volNames.each {
-            Volume v = new Volume(
-                    name: it
+            k, v -> Volume vol = new Volume(
+                    name: k,
+                    hostPath: v ? new HostPathVolumeSource(
+                            path: v,
+                            type: "Directory") :
+                            null
             )
             if (deployment.secretNames != null || deployment.secretNames.size() != 0) {
                 for (String secret : deployment.secretNames) {
-                    v.setSecret(new SecretVolumeSource(null, null, null, secret))
+                    vol.setSecret(new SecretVolumeSource(null, null, null, secret))
                 }
             }
-            volumes.add(v)
+            volumes.add(vol)
         }
 
         Map<String , Quantity> limits = new HashMap<>()
