@@ -68,17 +68,17 @@ const verticalBarData = [
 ];
 
 const multiGaugeData = [
-    { title: 'PCI', passing: 75, failing: 25 }
-    // { title: 'NIST', passing: 25, failing: 75 },
-    // { title: 'HIPAA', passing: 75, failing: 25 },
-    // { title: 'CIS', passing: 50, failing: 50 }
+    { title: 'PCI', passing: 75, failing: 25 },
+    { title: 'NIST', passing: 25, failing: 75 },
+    { title: 'HIPAA', passing: 75, failing: 25 },
+    { title: 'CIS', passing: 50, failing: 50 }
 ];
 
 // Suburst Data Generator
 function getSlice(sliceIndex) {
     // Inner slice
     const slice = {
-        color: 'var(--base-500)',
+        color: 'var(--tertiary-400)',
         stroke: 2,
         radius: 20,
         radius0: 60,
@@ -96,7 +96,7 @@ function getSlice(sliceIndex) {
             radius: 60,
             radius0: 100,
             style: { stroke: 'white' },
-            color: 'var(--base-500)',
+            color: 'var(--tertiary-400)',
             name: `Outer-${sliceIndex}-Inner-${i}`
         });
     }
@@ -125,8 +125,8 @@ function getSunburstData() {
         root.children.push(getSlice(i));
     }
 
-    setSunburstColor(root.children[0], 'var(--warning-500)');
-    setSunburstColor(root.children[3], 'var(--alert-500)');
+    setSunburstColor(root.children[0], 'var(--warning-400)');
+    setSunburstColor(root.children[3], 'var(--alert-400)');
 
     return root;
 }

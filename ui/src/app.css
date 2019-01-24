@@ -1043,12 +1043,15 @@ h6 {
 /* widget detail */
 .widget-detail-bullet {
     position: relative;
+    @apply font-500
 }
 
-.widget-detail-bullet:before {
+.widget-detail-bullet::before {
     position: absolute;
     left: -18px;
-    content: "\25CF";
+    top: 10px;
+    content: '';
+    @apply rounded-full border-2 border-base-400 bg-base-100 w-3 h-3
 }
 
 .widget-detail-bullet:not(:last-child) {

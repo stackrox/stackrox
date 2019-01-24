@@ -50,14 +50,14 @@ export const PagerButtonGroup = ({ onPagePrev, onPageNext }) => (
         <button
             type="button"
             onClick={onPagePrev}
-            className="border-base-300 border-l-2 border-t-2 border-b-2 rounded-sm hover:bg-base-400"
+            className="border-base-300 border-l-2 border-t-2 border-b-2 rounded-sm hover:bg-base-200"
         >
             <Icon.ChevronLeft className="mt-1 h-4" />
         </button>
         <button
             type="button"
             onClick={onPageNext}
-            className="border-base-300 border-2 hover:bg-base-400"
+            className="border-base-300 border-2 hover:bg-base-200"
         >
             <Icon.ChevronRight className="mt-1 h-4" />
         </button>

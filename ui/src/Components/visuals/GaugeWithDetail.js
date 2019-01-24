@@ -134,18 +134,47 @@ class GaugeWithDetail extends Component {
 
     onArcClick = data => this.setSelectedData(data);
 
-    getCenterLabel = () => (
-        <LabelSeries
-            data={[
-                {
-                    x: 0.1,
-                    y: this.props.data.length > 1 ? -0.85 : 1.1,
-                    label: '76%',
-                    style: LABEL_STYLE
-                }
-            ]}
-        />
-    );
+    getTotalPassing = () => {
+        const { data } = this.state;
+        let totalPassing = 0;
+        if (data) {
+            const totalValues = data.reduce(
+                (accumulator, value) => ({
+                    passing: accumulator.passing + value.passing,
+                    total: accumulator.total + value.failing + value.passing
+                }),
+                { passing: 0, total: 0 }
+            );
+            totalPassing = Math.round((totalValues.passing / totalValues.total) * 100);
+        }
+        return totalPassing;
+    };
+
+    getSelectedPassingFailing = () => {
+        let value = 0;
+        const { arc, passing, failing } = this.state.selectedData;
+        // 'inner' refers to passing and 'outer' refers to failing
+        value = arc === 'inner' ? passing : failing;
+        return value;
+    };
+
+    getCenterLabel = () => {
+        let label = '';
+        const { selectedData } = this.state;
+        label = selectedData ? this.getSelectedPassingFailing() : this.getTotalPassing();
+        return (
+            <LabelSeries
+                data={[
+                    {
+                        x: 0.1,
+                        y: this.props.data.length > 1 ? -0.85 : 1.1,
+                        label: `${label}%`,
+                        style: LABEL_STYLE
+                    }
+                ]}
+            />
+        );
+    };
 
     getHint = () => {
         if (!this.state.hoveredCell) return null;

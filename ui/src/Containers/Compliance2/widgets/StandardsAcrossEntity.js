@@ -6,7 +6,6 @@ import HorizontalBarChart from 'Components/visuals/HorizontalBar';
 import Query from 'Components/ThrowingQuery';
 import { CLUSTERS_QUERY } from 'queries/cluster';
 import { horizontalBarData } from 'mockData/graphDataMock';
-import { withRouter } from 'react-router-dom';
 import Loader from 'Components/Loader';
 
 function formatAsPercent(x) {
@@ -39,4 +38,4 @@ StandardsAcrossEntity.propTypes = {
     match: PropTypes.shape({}).isRequired
 };
 
-export default withRouter(StandardsAcrossEntity);
+export default StandardsAcrossEntity;
