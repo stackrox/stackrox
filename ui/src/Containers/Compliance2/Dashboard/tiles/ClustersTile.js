@@ -10,8 +10,8 @@ const ClustersTile = () => (
     <Query query={CLUSTERS_QUERY} action="list">
         {({ loading, data }) => {
             let value = 0;
-            if (!loading && data.clusters && Array.isArray(data.clusters)) {
-                value = data.clusters.length;
+            if (!loading && data.results && Array.isArray(data.results)) {
+                value = data.results.length;
             }
             return (
                 <TileLink

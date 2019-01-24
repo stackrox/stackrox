@@ -11,8 +11,8 @@ const NodesTile = () => (
     <Query query={NODES_QUERY} action="list">
         {({ loading, data }) => {
             let value = 0;
-            if (!loading && data.clusters && Array.isArray(data.clusters)) {
-                value = flatten(data.clusters.map(cluster => cluster.nodes.map(node => node.id)))
+            if (!loading && data.results && Array.isArray(data.results)) {
+                value = flatten(data.results.map(cluster => cluster.nodes.map(node => node.id)))
                     .length;
             }
             return (
