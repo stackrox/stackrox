@@ -71,7 +71,7 @@ class CollapsibleBanner extends Component {
                 open={this.state.open}
                 trigger={this.renderWhenClosed()}
                 triggerWhenOpen={this.renderWhenOpened()}
-                transitionTime={0}
+                transitionTime={10}
                 className="relative"
                 openedClassName="relative border-b border-primary-500"
                 triggerClassName={triggerClassName}

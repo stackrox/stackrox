@@ -7,6 +7,17 @@ const arrowIconClass = 'h-8 w-8 text-primary-600 ';
 const arrowStyles = {
     top: 'calc(50% - 24px)' // centers the next/prev arrow within the container and takes into account the icon size
 };
+const arrowPropTypes = {
+    className: PropTypes.string,
+    style: PropTypes.shape({}),
+    onClick: PropTypes.func
+};
+
+const arrowDefaultProps = {
+    className: '',
+    style: {},
+    onClick: null
+};
 
 const isArrowDisabled = className => className.includes('slick-disabled');
 
@@ -29,11 +40,8 @@ const NextArrow = props => {
     );
 };
 
-NextArrow.propTypes = {
-    className: PropTypes.string.isRequired,
-    style: PropTypes.shape({}).isRequired,
-    onClick: PropTypes.func.isRequired
-};
+NextArrow.propTypes = arrowPropTypes;
+NextArrow.defaultProps = arrowDefaultProps;
 
 const PrevArrow = props => {
     const { className, style, onClick } = props;
@@ -54,10 +62,7 @@ const PrevArrow = props => {
     );
 };
 
-PrevArrow.propTypes = {
-    className: PropTypes.string.isRequired,
-    style: PropTypes.shape({}).isRequired,
-    onClick: PropTypes.func.isRequired
-};
+PrevArrow.propTypes = arrowPropTypes;
+PrevArrow.defaultProps = arrowDefaultProps;
 
 export { NextArrow, PrevArrow };
