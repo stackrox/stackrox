@@ -11,7 +11,7 @@ func init() {
 	framework.MustRegisterNewCheck(
 		checkID,
 		framework.ClusterKind,
-		[]string{"ImageIntegrations"},
+		[]string{"ImageIntegrations", "Images"},
 		clusterIsCompliant)
 }
 

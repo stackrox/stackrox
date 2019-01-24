@@ -9,4 +9,5 @@ import (
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check221"
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check225"
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check61"
+	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check62"
 )
