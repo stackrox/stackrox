@@ -6,7 +6,6 @@ import VerticalBarChart from 'Components/visuals/VerticalClusterBar';
 import Query from 'Components/ThrowingQuery';
 import { CLUSTERS_QUERY } from 'queries/cluster';
 import Loader from 'Components/Loader';
-import { withRouter } from 'react-router-dom';
 
 const StandardsByEntity = ({ type }) => (
     // TODO: use real query and calculate values based on return data
@@ -20,7 +19,7 @@ const StandardsByEntity = ({ type }) => (
             if (!loading && data) {
                 graphData = verticalBarData;
                 labelLinks = {
-                    'Docker Swarm Dev': 'https://google.com/search?q=docker'
+                    'Docker Swarm Dev': '/main/compliance2/clusters/Docker Swarm Dev'
                 };
                 pages = verticalBarData.length;
 
@@ -40,8 +39,9 @@ const StandardsByEntity = ({ type }) => (
         }}
     </Query>
 );
+
 StandardsByEntity.propTypes = {
     type: PropTypes.string.isRequired
 };
 
-export default withRouter(StandardsByEntity);
+export default StandardsByEntity;

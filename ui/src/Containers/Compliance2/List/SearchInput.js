@@ -16,7 +16,11 @@ const ComplianceListSearchInput = ({ categories }) => (
 );
 
 ComplianceListSearchInput.propTypes = {
-    categories: PropTypes.arrayOf(PropTypes.string).isRequired
+    categories: PropTypes.arrayOf(PropTypes.string)
+};
+
+ComplianceListSearchInput.defaultProps = {
+    categories: []
 };
 
 export default ComplianceListSearchInput;

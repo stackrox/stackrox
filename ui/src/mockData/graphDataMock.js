@@ -17,53 +17,87 @@ const horizontalBarDatum = [
 // Vertical Bar data generator
 const verticalBarData = [
     {
-        PCIData: [
+        PCI: [
             {
                 x: 'Docker Swarm Dev',
                 y: 75,
-                hint: { title: 'Hint Title', body: '12 controls failing in this cluster' }
+                hint: { title: 'PCI Standard', body: '25 controls failing in this cluster' },
+                link: '/main/compliance2/PCI?Cluster=Docker Swarm Dev'
             },
-            { x: 'Kube Dev', y: 90 },
-            { x: 'Kube Test', y: 60 }
-        ],
-        NISTData: [
-            { x: 'Docker Swarm Dev', y: 50 },
-            { x: 'Kube Dev', y: 10 },
-            { x: 'Kube Test', y: 30 }
-        ],
-        HIPAAData: [
-            { x: 'Docker Swarm Dev', y: 40 },
-            { x: 'Kube Dev', y: 70 },
-            { x: 'Kube Test', y: 20 }
-        ],
-
-        CISData: [
-            { x: 'Docker Swarm Dev', y: 40 },
-            { x: 'Kube Dev', y: 20 },
-            { x: 'Kube Test', y: 50 }
-        ]
-    },
-    {
-        PCIData: [
             {
-                x: 'Swarm Dev2',
-                y: 10
+                x: 'Kube Dev',
+                y: 100,
+                link: '/main/compliance2/PCI?Cluster=Kube Dev',
+                hint: { title: 'PCI Standard', body: '0 controls failing in this cluster' }
             },
-            { x: 'Kube Dev2', y: 30 },
-            { x: 'Kube Test2', y: 50 }
+            {
+                x: 'Kube Test',
+                y: 50,
+                link: '/main/compliance2/PCI?Cluster=Kube Test',
+                hint: { title: 'PCI Standard', body: '50 controls failing in this cluster' }
+            }
         ],
-        NISTData: [
-            { x: 'Swarm Dev2', y: 90 },
-            { x: 'Kube Dev2', y: 20 },
-            { x: 'Kube Test2', y: 50 }
+        NIST: [
+            {
+                x: 'Docker Swarm Dev',
+                y: 50,
+                link: '/main/compliance2/NIST?Cluster=Docker Swarm Dev',
+                hint: { title: 'NIST Standard', body: '50 controls failing in this cluster' }
+            },
+            {
+                x: 'Kube Dev',
+                y: 10,
+                link: '/main/compliance2/NIST?Cluster=Kube Dev',
+                hint: { title: 'NIST Standard', body: '90 controls failing in this cluster' }
+            },
+            {
+                x: 'Kube Test',
+                y: 30,
+                link: '/main/compliance2/NIST?Cluster=Kube Test',
+                hint: { title: 'NIST Standard', body: '70 controls failing in this cluster' }
+            }
         ],
-        HIPAAData: [
-            { x: 'Swarm Dev2', y: 10 },
-            { x: 'Kube Dev2', y: 50 },
-            { x: 'Kube Test2', y: 60 }
+        HIPAA: [
+            {
+                x: 'Docker Swarm Dev',
+                y: 40,
+                link: '/main/compliance2/HIPAA?Cluster=Docker Swarm Dev',
+                hint: { title: 'HIPAA Standard', body: '60 controls failing in this cluster' }
+            },
+            {
+                x: 'Kube Dev',
+                y: 70,
+                link: '/main/compliance2/HIPAA?Cluster=Kube Dev',
+                hint: { title: 'HIPAA Standard', body: '30 controls failing in this cluster' }
+            },
+            {
+                x: 'Kube Test',
+                y: 20,
+                link: '/main/compliance2/HIPAA?Cluster=Kube Test',
+                hint: { title: 'HIPAA Standard', body: '80 controls failing in this cluster' }
+            }
         ],
 
-        CISData: [{ x: 'Swarm Dev2', y: 40 }, { x: 'Kube Dev2', y: 20 }, { x: 'Kube Test2', y: 50 }]
+        CIS: [
+            {
+                x: 'Docker Swarm Dev',
+                y: 40,
+                link: '/main/compliance2/CIS?Cluster=Docker Swarm Dev',
+                hint: { title: 'CIS Standard', body: '60 controls failing in this cluster' }
+            },
+            {
+                x: 'Kube Dev',
+                y: 20,
+                link: '/main/compliance2/CIS?Cluster=Kube Dev',
+                hint: { title: 'CIS Standard', body: '80 controls failing in this cluster' }
+            },
+            {
+                x: 'Kube Test',
+                y: 50,
+                link: '/main/compliance2/CIS?Cluster=Kube Test',
+                hint: { title: 'CIS Standard', body: '50 controls failing in this cluster' }
+            }
+        ]
     }
 ];
 

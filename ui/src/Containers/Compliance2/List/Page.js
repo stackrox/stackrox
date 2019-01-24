@@ -18,19 +18,16 @@ import CollapsibleBanner from 'Components/CollapsibleBanner/CollapsibleBanner';
 import StandardsAcrossEntity from 'Containers/Compliance2/widgets/StandardsAcrossEntity';
 import StandardsByEntity from 'Containers/Compliance2/widgets/StandardsByEntity';
 import Sunburst from 'Components/visuals/Sunburst';
-// import ComplianceEntityPage from 'Containers/Compliance2/Entity/Page';
+import SearchInput from './SearchInput';
 import Header from './Header';
 
 const entity = 'control';
 class ComplianceListPage extends Component {
     static propTypes = {
-        // data: PropTypes.arrayOf(PropTypes.shape({})),
         grouped: PropTypes.bool
-        // entityType: PropTypes.string.isRequired
     };
 
     static defaultProps = {
-        // data: [],
         grouped: true
     };
 
@@ -92,7 +89,7 @@ class ComplianceListPage extends Component {
         );
         return (
             <section className="flex flex-col h-full">
-                <Header />
+                <Header searchComponent={<SearchInput />} />
                 <CollapsibleBanner>
                     <StandardsAcrossEntity type={entityTypes.CLUSTERS} data={horizontalBarData} />
                     <StandardsByEntity type={entityTypes.CLUSTERS} />

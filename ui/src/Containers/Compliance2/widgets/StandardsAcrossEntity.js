@@ -34,8 +34,7 @@ const StandardsAcrossEntity = ({ type }) => (
 );
 
 StandardsAcrossEntity.propTypes = {
-    type: PropTypes.string.isRequired,
-    match: PropTypes.shape({}).isRequired
+    type: PropTypes.string.isRequired
 };
 
 export default StandardsAcrossEntity;

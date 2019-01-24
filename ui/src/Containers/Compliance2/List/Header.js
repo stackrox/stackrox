@@ -6,7 +6,7 @@ import Button from 'Components/Button';
 import * as Icon from 'react-feather';
 
 import ReactRouterPropTypes from 'react-router-prop-types';
-import { resourceTypes } from 'constants/entityTypes';
+import { resourceTypes, standardTypes } from 'constants/entityTypes';
 import URLService from 'modules/URLService';
 import labels from 'messages/common';
 
@@ -18,14 +18,18 @@ const ListHeader = ({ match, location, searchComponent }) => {
     const headerTexts = {
         [resourceTypes.NODES]: `${labels.resourceLabels.NODE}S`,
         [resourceTypes.NAMESPACES]: `${labels.resourceLabels.NAMESPACE}S`,
-        [resourceTypes.CLUSTERS]: `${labels.resourceLabels.CLUSTER}S`
+        [resourceTypes.CLUSTERS]: `${labels.resourceLabels.CLUSTER}S`,
+        [standardTypes.PCI]: `${labels.standardLabels.PCI} Standard`,
+        [standardTypes.NIST]: `${labels.standardLabels.NIST} Standard`,
+        [standardTypes.HIPAA]: `${labels.standardLabels.HIPAA} Standard`,
+        [standardTypes.CIS]: `${labels.standardLabels.CIS} Standard`
     };
     const params = new URLService(match, location).getParams();
     const { entityType } = params;
 
     return (
         <PageHeader header={headerTexts[entityType]} subHeader="Resource List">
-            {searchComponent}
+            <div className="w-full">{searchComponent}</div>
             <div className="flex flex-1 justify-end">
                 <div className="ml-3 border-l border-base-300 mr-3" />
                 <div className="flex">

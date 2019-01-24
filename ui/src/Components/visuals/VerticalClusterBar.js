@@ -7,8 +7,8 @@ import {
     HorizontalGridLines,
     VerticalBarSeries
 } from 'react-vis';
-
 import PropTypes from 'prop-types';
+import { withRouter, Link } from 'react-router-dom';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import merge from 'deepmerge';
 import HoverHint from './HoverHint';
@@ -24,8 +24,7 @@ class BarChart extends Component {
         tickFormat: PropTypes.func,
         labelLinks: PropTypes.shape({}),
         onValueMouseOver: PropTypes.func,
-        onValueMouseOut: PropTypes.func,
-        onValueClick: PropTypes.func
+        onValueMouseOut: PropTypes.func
     };
 
     static defaultProps = {
@@ -42,8 +41,7 @@ class BarChart extends Component {
         tickFormat: x => `${x}%`,
         labelLinks: {},
         onValueMouseOver: null,
-        onValueMouseOut: null,
-        onValueClick: null
+        onValueMouseOut: null
     };
 
     constructor(props) {
@@ -88,8 +86,7 @@ class BarChart extends Component {
             tickFormat,
             labelLinks,
             onValueMouseOver,
-            onValueMouseOut,
-            onValueClick
+            onValueMouseOut
         } = this.props;
 
         // Default props
@@ -110,7 +107,8 @@ class BarChart extends Component {
             style: {
                 opacity: '.8',
                 width: '6px',
-                ry: '2px'
+                ry: '2px',
+                cursor: 'pointer'
             },
             onValueMouseOver: datum => {
                 this.setHintData(datum);
@@ -121,7 +119,7 @@ class BarChart extends Component {
                 if (onValueMouseOut) onValueMouseOut(datum);
             },
             onValueClick: datum => {
-                if (onValueClick) onValueClick(datum);
+                if (datum.link) this.props.history.push(datum.link);
             }
         };
 
@@ -134,9 +132,9 @@ class BarChart extends Component {
             let inner = value;
             if (labelLinks[value])
                 inner = (
-                    <a className="underline" href={labelLinks[value]}>
+                    <Link className="underline" to={labelLinks[value]}>
                         {value}
-                    </a>
+                    </Link>
                 );
 
             return <tspan>{inner}</tspan>;
@@ -197,4 +195,4 @@ class BarChart extends Component {
     }
 }
 
-export default BarChart;
+export default withRouter(BarChart);
