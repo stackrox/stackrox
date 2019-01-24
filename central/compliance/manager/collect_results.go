@@ -117,15 +117,22 @@ func (r *runInstance) metadataProto() *storage.ComplianceRunMetadata {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
-	startTS, err := types.TimestampProto(r.startTime)
-	if err != nil && !r.startTime.IsZero() {
-		log.Errorf("could not convert compliance run start timestamp to proto: %v", err)
+	var startTS, finishTS *types.Timestamp
+	var err error
+	if !r.startTime.IsZero() {
+		startTS, err = types.TimestampProto(r.startTime)
+		if err != nil {
+			log.Errorf("could not convert compliance run start timestamp to proto: %v", err)
+		}
 	}
 
-	finishTS, err := types.TimestampProto(r.finishTime)
-	if err != nil && !r.finishTime.IsZero() {
-		log.Errorf("could not convert compliance run finish timestamp to proto: %v", err)
+	if !r.finishTime.IsZero() {
+		finishTS, err = types.TimestampProto(r.finishTime)
+		if err != nil {
+			log.Errorf("could not convert compliance run finish timestamp to proto: %v", err)
+		}
 	}
+
 	return &storage.ComplianceRunMetadata{
 		RunId:           r.id,
 		StandardId:      r.standardID,
