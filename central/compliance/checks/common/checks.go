@@ -30,6 +30,17 @@ func CheckImageScannerInUse(ctx framework.ComplianceContext) {
 	}
 }
 
+// CheckFixedCVES returns true if we find any fixed cves in images.
+func CheckFixedCVES(ctx framework.ComplianceContext) {
+	for _, image := range ctx.Data().Images() {
+		if image.GetFixableCves() > 0 {
+			framework.Failf(ctx, "Image %s has %d fixed CVE(s). An image upgrade is required.", image.GetName(), image.GetFixableCves())
+		} else {
+			framework.Passf(ctx, "Image %s has no fixed CVE(s).", image.GetName())
+		}
+	}
+}
+
 // CheckBuildTimePolicyEnforced checks if any build time policies are being enforced.
 func CheckBuildTimePolicyEnforced(ctx framework.ComplianceContext) {
 	policies := ctx.Data().Policies()

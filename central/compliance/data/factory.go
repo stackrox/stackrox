@@ -3,6 +3,7 @@ package data
 import (
 	alertStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/compliance/framework"
+	imageStore "github.com/stackrox/rox/central/image/datastore"
 	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
@@ -22,6 +23,7 @@ type factory struct {
 	networkPoliciesStore  networkPoliciesStore.Store
 	networkGraphEvaluator graph.Evaluator
 	policyStore           policiesStore.DataStore
+	imageStore            imageStore.DataStore
 	imageIntegrationStore imageIntegrationStore.DataStore
 	processIndicatorStore processIndicatorStore.DataStore
 	networkFlowStore      networkFlowStore.ClusterStore
@@ -34,6 +36,7 @@ func NewDefaultFactory() RepositoryFactory {
 		networkPoliciesStore:  networkPoliciesStore.Singleton(),
 		networkGraphEvaluator: graph.Singleton(),
 		policyStore:           policiesStore.Singleton(),
+		imageStore:            imageStore.Singleton(),
 		imageIntegrationStore: imageIntegrationStore.Singleton(),
 		processIndicatorStore: processIndicatorStore.Singleton(),
 		networkFlowStore:      networkFlowStore.Singleton(),

@@ -108,6 +108,18 @@ func (mr *MockComplianceDataRepositoryMockRecorder) ImageIntegrations() *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImageIntegrations", reflect.TypeOf((*MockComplianceDataRepository)(nil).ImageIntegrations))
 }
 
+// Images mocks base method
+func (m *MockComplianceDataRepository) Images() []*storage.ListImage {
+	ret := m.ctrl.Call(m, "Images")
+	ret0, _ := ret[0].([]*storage.ListImage)
+	return ret0
+}
+
+// Images indicates an expected call of Images
+func (mr *MockComplianceDataRepositoryMockRecorder) Images() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Images", reflect.TypeOf((*MockComplianceDataRepository)(nil).Images))
+}
+
 // NetworkFlows mocks base method
 func (m *MockComplianceDataRepository) NetworkFlows() []*storage.NetworkFlow {
 	ret := m.ctrl.Call(m, "NetworkFlows")

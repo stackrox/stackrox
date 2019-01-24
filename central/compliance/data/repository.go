@@ -19,6 +19,7 @@ type repository struct {
 	networkPolicies    map[string]*storage.NetworkPolicy
 	networkGraph       *v1.NetworkGraph
 	policies           map[string]*storage.Policy
+	images             []*storage.ListImage
 	imageIntegrations  []*storage.ImageIntegration
 	processIndicators  []*storage.ProcessIndicator
 	networkFlows       []*storage.NetworkFlow
@@ -54,6 +55,10 @@ func (r *repository) Policies() map[string]*storage.Policy {
 
 func (r *repository) PolicyCategories() map[string]set.StringSet {
 	return r.categoryToPolicies
+}
+
+func (r *repository) Images() []*storage.ListImage {
+	return r.images
 }
 
 func (r *repository) ImageIntegrations() []*storage.ImageIntegration {
@@ -179,6 +184,11 @@ func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[s
 
 	r.policies = policiesByName(policies)
 	r.categoryToPolicies = policyCategories(policies)
+
+	r.images, err = f.imageStore.ListImages()
+	if err != nil {
+		return err
+	}
 
 	r.imageIntegrations, err = f.imageIntegrationStore.GetImageIntegrations(
 		&v1.GetImageIntegrationsRequest{},

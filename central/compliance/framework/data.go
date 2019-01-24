@@ -22,6 +22,7 @@ type ComplianceDataRepository interface {
 	NetworkPolicies() map[string]*storage.NetworkPolicy
 	NetworkGraph() *v1.NetworkGraph
 	Policies() map[string]*storage.Policy
+	Images() []*storage.ListImage
 	ImageIntegrations() []*storage.ImageIntegration
 	ProcessIndicators() []*storage.ProcessIndicator
 	NetworkFlows() []*storage.NetworkFlow
