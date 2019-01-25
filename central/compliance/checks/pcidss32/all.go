@@ -3,6 +3,7 @@ package pcidss32
 import (
 	// Make sure all checks are registered.
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check112"
+	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check1121"
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check121"
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check134"
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check135"
