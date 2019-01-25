@@ -16,9 +16,6 @@ type Enricher interface {
 	// EnrichDeployment enriches the deployment and images only if they have IDs
 	// It was enriched along with image indexes that were updated
 	EnrichDeployment(deployment *storage.Deployment) ([]*storage.Image, bool, error)
-	// EnrichDeploymentWithEmptyImages enriches the deployment and images even if they don't have IDs
-	// It was enriched along with image indexes that were updated
-	EnrichDeploymentWithEmptyImages(deployment *storage.Deployment) ([]*storage.Image, bool, error)
 }
 
 // New creates and returns a new Enricher.

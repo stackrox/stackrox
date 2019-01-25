@@ -14,20 +14,12 @@ type enricherImpl struct {
 
 // EnrichDeployment enriches a deployment with data from registries and scanners.
 func (e *enricherImpl) EnrichDeployment(deployment *storage.Deployment) ([]*storage.Image, bool, error) {
-	return e.enrichDeployment(deployment, true)
+	return e.enrichDeployment(deployment)
 }
 
-// EnrichDeployment enriches a deployment with data from registries and scanners.
-func (e *enricherImpl) EnrichDeploymentWithEmptyImages(deployment *storage.Deployment) ([]*storage.Image, bool, error) {
-	return e.enrichDeployment(deployment, false)
-}
-
-func (e *enricherImpl) enrichDeployment(deployment *storage.Deployment, ignoreEmptyImages bool) ([]*storage.Image, bool, error) {
+func (e *enricherImpl) enrichDeployment(deployment *storage.Deployment) ([]*storage.Image, bool, error) {
 	var updatedImages []*storage.Image
 	for _, c := range deployment.GetContainers() {
-		if c.GetImage().GetId() == "" && ignoreEmptyImages {
-			continue
-		}
 		if updated := e.imageEnricher.EnrichImage(c.Image); updated && c.GetImage().GetId() != "" {
 			updatedImages = append(updatedImages, c.GetImage())
 		}

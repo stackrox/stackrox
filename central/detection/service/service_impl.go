@@ -84,7 +84,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 }
 
 func (s *serviceImpl) enrichAndDetect(deployment *storage.Deployment) (*apiV1.DeployDetectionResponse_Run, error) {
-	_, _, err := s.deploymentEnricher.EnrichDeploymentWithEmptyImages(deployment)
+	_, _, err := s.deploymentEnricher.EnrichDeployment(deployment)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

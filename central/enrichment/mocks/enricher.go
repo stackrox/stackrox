@@ -46,17 +46,3 @@ func (m *MockEnricher) EnrichDeployment(arg0 *storage.Deployment) ([]*storage.Im
 func (mr *MockEnricherMockRecorder) EnrichDeployment(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichDeployment", reflect.TypeOf((*MockEnricher)(nil).EnrichDeployment), arg0)
 }
-
-// EnrichDeploymentWithEmptyImages mocks base method
-func (m *MockEnricher) EnrichDeploymentWithEmptyImages(arg0 *storage.Deployment) ([]*storage.Image, bool, error) {
-	ret := m.ctrl.Call(m, "EnrichDeploymentWithEmptyImages", arg0)
-	ret0, _ := ret[0].([]*storage.Image)
-	ret1, _ := ret[1].(bool)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// EnrichDeploymentWithEmptyImages indicates an expected call of EnrichDeploymentWithEmptyImages
-func (mr *MockEnricherMockRecorder) EnrichDeploymentWithEmptyImages(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichDeploymentWithEmptyImages", reflect.TypeOf((*MockEnricher)(nil).EnrichDeploymentWithEmptyImages), arg0)
-}

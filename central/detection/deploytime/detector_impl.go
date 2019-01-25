@@ -3,6 +3,7 @@ package deploytime
 import (
 	"fmt"
 
+	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
@@ -18,11 +19,12 @@ import (
 )
 
 const (
-	deploymentID    = "deployment-id"
-	imageIDTemplate = "image-id-%d"
+	deploymentID = "deployment-id"
 )
 
-var logger = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 type detectorImpl struct {
 	policySet deployment.PolicySet
@@ -30,26 +32,38 @@ type detectorImpl struct {
 	deployments deploymentDataStore.DataStore
 }
 
-// Detect runs detection on an deployment, returning any generated alerts.
-func (d *detectorImpl) Detect(deployment *storage.Deployment) ([]*storage.Alert, error) {
+func tempDeploymentIndexer(deployment *storage.Deployment) (deploymentIndexer.Indexer, error) {
+	clonedDeployment := proto.Clone(deployment).(*storage.Deployment)
+	if clonedDeployment.GetId() == "" {
+		clonedDeployment.Id = deploymentID
+	}
 	tempIndex, err := globalindex.MemOnlyIndex()
 	if err != nil {
 		return nil, fmt.Errorf("initializing temp index: %s", err)
 	}
 	imageIndex := imageIndexer.New(tempIndex)
 	deploymentIndex := deploymentIndexer.New(tempIndex)
-	if deployment.GetId() == "" {
-		deployment.Id = deploymentID
-	}
-	for i, container := range deployment.GetContainers() {
+	for i, container := range clonedDeployment.GetContainers() {
+		if container.GetImage() == nil {
+			continue
+		}
 		if container.GetImage().GetId() == "" {
-			container.Image.Id = fmt.Sprintf(imageIDTemplate, i)
+			container.Image.Id = fmt.Sprintf("image-id-%d", i)
 		}
 		if err := imageIndex.AddImage(container.GetImage()); err != nil {
 			return nil, err
 		}
 	}
-	if err := deploymentIndex.AddDeployment(deployment); err != nil {
+	if err := deploymentIndex.AddDeployment(clonedDeployment); err != nil {
+		return nil, err
+	}
+	return deploymentIndex, nil
+}
+
+// Detect runs detection on an deployment, returning any generated alerts.
+func (d *detectorImpl) Detect(deployment *storage.Deployment) ([]*storage.Alert, error) {
+	deploymentIndex, err := tempDeploymentIndexer(deployment)
+	if err != nil {
 		return nil, err
 	}
 	return d.evaluateAlertsForDeployment(deploymentIndex, deployment)
@@ -63,7 +77,15 @@ func (d *detectorImpl) UpsertPolicy(policy *storage.Policy) error {
 // RemovePolicy removes a policy from the set.
 func (d *detectorImpl) RemovePolicy(policyID string) error {
 	return d.policySet.RemovePolicy(policyID)
+}
 
+func (d *detectorImpl) matchWithEmptyImageIDs(p *storage.Policy, matcher searchbasedpolicies.Matcher, deployment *storage.Deployment) ([]*storage.Alert_Violation, error) {
+	deploymentIndex, err := tempDeploymentIndexer(deployment)
+	violations, err := matcher.MatchOne(deploymentIndex, deployment.GetId())
+	if err != nil {
+		return nil, err
+	}
+	return violations, nil
 }
 
 func (d *detectorImpl) evaluateAlertsForDeployment(searcher searchbasedpolicies.Searcher, deployment *storage.Deployment) ([]*storage.Alert, error) {
@@ -73,11 +95,16 @@ func (d *detectorImpl) evaluateAlertsForDeployment(searcher searchbasedpolicies.
 			return nil
 		}
 
-		violations, err := matcher.MatchOne(searcher, deployment.GetId())
+		var err error
+		var violations []*storage.Alert_Violation
+		if enforcement, _ := policyAndDeploymentToEnforcement(p, deployment); enforcement != storage.EnforcementAction_UNSET_ENFORCEMENT {
+			violations, err = d.matchWithEmptyImageIDs(p, matcher, deployment)
+		} else {
+			violations, err = matcher.MatchOne(d.deployments, deployment.GetId())
+		}
 		if err != nil {
 			return fmt.Errorf("evaluating violations for policy %s; deployment %s/%s: %s", p.GetName(), deployment.GetNamespace(), deployment.GetName(), err)
 		}
-
 		if len(violations) > 0 {
 			newAlerts = append(newAlerts, policyDeploymentAndViolationsToAlert(p, deployment, violations))
 		}
@@ -106,7 +133,7 @@ func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*storage.Alert, error
 				return err
 			}
 			if !exists {
-				logger.Errorf("deployment with id '%s' had violations, but doesn't exist", deploymentID)
+				log.Errorf("deployment with id %q had violations, but doesn't exist", deploymentID)
 				continue
 			}
 			if shouldProcess != nil && !shouldProcess(dep) {
