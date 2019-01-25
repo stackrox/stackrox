@@ -4,6 +4,7 @@ import (
 	// Make sure all checks are registered.
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check112"
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check1121"
+	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check114"
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check12"
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check121"
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check132"
