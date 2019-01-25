@@ -22,9 +22,11 @@ var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.ComplianceRuns)): {
 			"/v1.ComplianceManagementService/GetRecentRuns",
+			"/v1.ComplianceManagementService/GetRunStatuses",
 		},
 		user.With(permissions.Modify(resources.ComplianceRuns)): {
 			"/v1.ComplianceManagementService/TriggerRun",
+			"/v1.ComplianceManagementService/TriggerRuns",
 		},
 		user.With(permissions.View(resources.ComplianceRunSchedule)): {
 			"/v1.ComplianceManagementService/GetRunSchedules",
@@ -119,4 +121,12 @@ func (s *service) TriggerRun(ctx context.Context, req *v1.TriggerComplianceRunRe
 	return &v1.TriggerComplianceRunResponse{
 		StartedRun: run,
 	}, nil
+}
+
+func (s *service) TriggerRuns(ctx context.Context, req *v1.TriggerComplianceRunsRequest) (*v1.TriggerComplianceRunsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (s *service) GetRunStatuses(ctx context.Context, req *v1.GetComplianceRunStatusesRequest) (*v1.GetComplianceRunStatusesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
 }

@@ -57,13 +57,19 @@ message DeleteComplianceRunScheduleRequest {
     string schedule_id = 1;
 }
 
-message TriggerComplianceRunRequest {
+message ComplianceRunSelection {
+    // The ID of the cluster. "*" means "all clusters".
     string cluster_id  = 1;
+    // The ID of the compliance standard. "*" means "all standards".
     string standard_id = 2;
 }
 
-message TriggerComplianceRunResponse {
-    ComplianceRun started_run = 1;
+message GetActiveComplianceRunsRequest {
+    ComplianceRunSelection selection = 1;
+}
+
+message GetActiveComplianceRunsResponse {
+    repeated ComplianceRun active_runs = 1;
 }
 
 message ComplianceRun {
@@ -103,7 +109,36 @@ message GetRecentComplianceRunsResponse {
     repeated ComplianceRun compliance_runs = 1;
 }
 
+message TriggerComplianceRunRequest {
+    string cluster_id = 1;
+    string standard_id = 2;
+}
+
+message TriggerComplianceRunResponse {
+    ComplianceRun started_run = 1;
+}
+
+message TriggerComplianceRunsRequest {
+    ComplianceRunSelection selection = 1;
+}
+
+message TriggerComplianceRunsResponse {
+    repeated ComplianceRun started_runs = 1;
+}
+
+message GetComplianceRunStatusesRequest {
+    repeated string run_ids = 1;
+}
+
+message GetComplianceRunStatusesResponse {
+    repeated string invalid_run_ids = 1;
+    repeated ComplianceRun runs     = 2;
+}
+
 service ComplianceManagementService {
+
+    // BEGIN EXPERIMENTAL/UNSTABLE API
+
     rpc GetRunSchedules(GetComplianceRunSchedulesRequest) returns (GetComplianceRunSchedulesResponse) {
         option (google.api.http) = {
             get: "/v1/complianceManagement/schedules"
@@ -137,6 +172,21 @@ service ComplianceManagementService {
         option (google.api.http) = {
             post: "/v1/complianceManagement/runs"
             body: "*"
+        };
+    }
+
+    // END EXPERIMENTAL/UNSTABLE API
+
+    rpc TriggerRuns(TriggerComplianceRunsRequest) returns (TriggerComplianceRunsResponse) {
+        option (google.api.http) = {
+            post: "/v1/compliancemanagement/runs"
+            body: "*"
+        };
+    }
+
+    rpc GetRunStatuses(GetComplianceRunStatusesRequest) returns (GetComplianceRunStatusesResponse) {
+        option (google.api.http) = {
+            get: "/v1/compliancemanagement/runstatuses"
         };
     }
 }
