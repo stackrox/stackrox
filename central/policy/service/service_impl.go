@@ -27,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -289,10 +290,7 @@ func (s *serviceImpl) GetPolicyCategories(context.Context, *v1.Empty) (*v1.Polic
 	}
 
 	response := new(v1.PolicyCategoriesResponse)
-	response.Categories = make([]string, 0, len(categorySet))
-	for c := range categorySet {
-		response.Categories = append(response.Categories, c)
-	}
+	response.Categories = categorySet.AsSlice()
 	sort.Strings(response.Categories)
 
 	return response, nil
@@ -318,7 +316,7 @@ func (s *serviceImpl) DeletePolicyCategory(ctx context.Context, request *v1.Dele
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	if _, ok := categorySet[request.GetCategory()]; !ok {
+	if !categorySet.Contains(request.GetCategory()) {
 		return nil, status.Errorf(codes.NotFound, "Policy Category %s does not exist", request.GetCategory())
 	}
 
@@ -329,20 +327,19 @@ func (s *serviceImpl) DeletePolicyCategory(ctx context.Context, request *v1.Dele
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) getPolicyCategorySet() (map[string]struct{}, error) {
+func (s *serviceImpl) getPolicyCategorySet() (categorySet set.StringSet, err error) {
 	policies, err := s.policies.GetPolicies()
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	categorySet := make(map[string]struct{})
+	categorySet = set.NewStringSet()
 	for _, p := range policies {
 		for _, c := range p.GetCategories() {
-			categorySet[c] = struct{}{}
+			categorySet.Add(c)
 		}
 	}
-
-	return categorySet, nil
+	return
 }
 
 func (s *serviceImpl) reprocessDeployments(deployments []*storage.Deployment) {
