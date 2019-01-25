@@ -3,11 +3,11 @@ package resolvers
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/graphql/schema"
 	"github.com/stackrox/rox/generated/storage"
 )
 
 func init() {
+	schema := getBuilder()
 	schema.AddQuery("groups: [Group!]!")
 	schema.AddQuery("group(authProviderId: String, key: String, value: String): Group")
 }

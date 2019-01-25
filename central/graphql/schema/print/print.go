@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 
+	"github.com/stackrox/rox/central/graphql/resolvers"
 	_ "github.com/stackrox/rox/central/graphql/resolvers"
-	"github.com/stackrox/rox/central/graphql/schema"
 )
 
 func main() {
-	fmt.Println(schema.Schema())
+	fmt.Println(resolvers.Schema())
 }

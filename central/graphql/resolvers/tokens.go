@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/graphql/schema"
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
 func init() {
+	schema := getBuilder()
 	schema.AddQuery("tokens(revoked:Boolean): [TokenMetadata!]!")
 	schema.AddQuery("token(id:ID!): TokenMetadata")
 }

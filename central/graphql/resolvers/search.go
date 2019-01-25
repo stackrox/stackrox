@@ -4,7 +4,6 @@ import (
 	"context"
 	"sort"
 
-	"github.com/stackrox/rox/central/graphql/schema"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/search/options"
 	searchService "github.com/stackrox/rox/central/search/service"
@@ -15,6 +14,7 @@ import (
 )
 
 func init() {
+	schema := getBuilder()
 	schema.AddQuery("searchOptions(categories: [SearchCategory!]): [String!]!")
 	schema.AddQuery("globalSearch(categories: [SearchCategory!], query: String!): [SearchResult!]!")
 }

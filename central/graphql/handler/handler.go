@@ -8,12 +8,11 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stackrox/rox/central/graphql/resolvers"
-	"github.com/stackrox/rox/central/graphql/schema"
 )
 
 // Handler returns an HTTP handler for the graphql api endpoint
 func Handler() http.Handler {
-	s := schema.Schema()
+	s := resolvers.Schema()
 	ourSchema, err := graphql.ParseSchema(s, resolvers.New())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "s: %q", s)

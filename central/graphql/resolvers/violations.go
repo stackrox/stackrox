@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/graphql/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 func init() {
+	schema := getBuilder()
 	schema.AddQuery("violations(query: String): [Alert!]!")
 	schema.AddQuery("violation(id: ID!): Alert")
 }

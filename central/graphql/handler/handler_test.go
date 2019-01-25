@@ -15,7 +15,6 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
-	"github.com/stackrox/rox/central/graphql/schema"
 	processMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 )
@@ -142,7 +141,7 @@ func executeTestQuery(t *testing.T, mocks mocks, query string) *httptest.Respons
 }
 
 func executeTestQueryWithVariables(t *testing.T, mocks mocks, query string, variables map[string]string) *httptest.ResponseRecorder {
-	ourSchema, err := graphql.ParseSchema(schema.Schema(), mocks.resolver)
+	ourSchema, err := graphql.ParseSchema(resolvers.Schema(), mocks.resolver)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -164,7 +163,7 @@ func executeTestQueryWithVariables(t *testing.T, mocks mocks, query string, vari
 }
 
 func TestSchemaValidates(t *testing.T) {
-	s := schema.Schema()
+	s := resolvers.Schema()
 	_, err := graphql.ParseSchema(s, mockResolver(t).resolver)
 	if err != nil {
 		t.Log(s)

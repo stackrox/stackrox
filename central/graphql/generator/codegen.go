@@ -19,11 +19,39 @@ var templates = map[string]string{
 package resolvers
 
 import (
+	"reflect"
+
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/graphql/generator"
 {{- range $i, $_ := .Imports }}{{if $i}}
 	"{{$i}}"
 {{- end}}{{end}} // end range imports
 )
+
+func registerGeneratedTypes(builder generator.SchemaBuilder) {
+	builder.AddType("Label", []string{"key: String!", "value: String!"})
+{{- range $td := .Entries }}
+{{- if isEnum $td.Data.Type }}
+	generator.RegisterProtoEnum(builder, reflect.TypeOf({{ importedName $td.Data.Type }}(0)))
+{{- else }}
+	builder.AddType("{{ $td.Data.Name }}", []string{
+{{- range $td.Data.FieldData }}{{ if schemaType . }}
+		"{{ lower .Name}}: {{ schemaType .}}",
+{{- end }}{{ end }}
+{{- range $td.Data.UnionData }}
+		"{{lower .Name }}: {{ $td.Data.Name }}{{.Name}}",
+{{- end }}
+	})
+{{- range $ud := $td.Data.UnionData }}
+	builder.AddUnionType("{{ $td.Data.Name }}{{ $ud.Name }}", []string{
+{{- range $ud.Entries }}
+		"{{ schemaType . }}",
+{{- end }}
+	})
+{{- end }}
+{{- end }}
+{{- end }}
+}
 {{range $td := .Entries}}{{if isEnum $td.Data.Type}}
 func to{{.Data.Name}}(value *string) {{importedName .Data.Type}} {
 	if value != nil {
@@ -238,6 +266,7 @@ func GenerateResolvers(parameters TypeWalkParameters, writer io.Writer) {
 		"plural":       plural,
 		"translator":   translator(rootTemplate),
 		"valueType":    valueType,
+		"schemaType":   schemaType,
 	})
 	for name, text := range templates {
 		thisTemplate := rootTemplate

@@ -4,15 +4,15 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/graphql/schema"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 func init() {
+	schema := getBuilder()
 	schema.AddQuery("secret(id:ID!): Secret")
 	schema.AddQuery("secrets(query: String): [Secret!]!")
-	schema.AddResolver((*storage.Secret)(nil), "deployments(): [Deployment!]!")
+	schema.AddExtraResolver("Secret", "deployments(): [Deployment!]!")
 }
 
 // Secret gets a single secret by ID

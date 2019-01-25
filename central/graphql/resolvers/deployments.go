@@ -4,16 +4,16 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/graphql/schema"
 	"github.com/stackrox/rox/central/processindicator/service"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 func init() {
-	schema.AddResolver(&storage.Deployment{}, `cluster: Cluster`)
-	schema.AddResolver(&storage.Deployment{}, `groupedProcesses: [ProcessNameGroup!]!`)
-	schema.AddResolver(&storage.Deployment{}, `alerts: [Alert!]!`)
+	schema := getBuilder()
+	schema.AddExtraResolver("Deployment", `cluster: Cluster`)
+	schema.AddExtraResolver("Deployment", `groupedProcesses: [ProcessNameGroup!]!`)
+	schema.AddExtraResolver("Deployment", `alerts: [Alert!]!`)
 	schema.AddQuery("deployment(id: ID): Deployment")
 	schema.AddQuery("deployments(query: String): [Deployment!]!")
 }

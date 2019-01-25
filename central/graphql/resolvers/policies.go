@@ -4,15 +4,14 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/graphql/schema"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 func init() {
+	schema := getBuilder()
 	schema.AddQuery("policies(query: String): [Policy!]!")
 	schema.AddQuery("policy(id: ID): Policy")
-	schema.AddResolver(&storage.Policy{}, `alerts: [Alert!]!`)
+	schema.AddExtraResolver("Policy", `alerts: [Alert!]!`)
 }
 
 // Policies returns GraphQL resolvers for all policies

@@ -5,7 +5,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/compliance/aggregation"
-	"github.com/stackrox/rox/central/graphql/schema"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
@@ -20,10 +19,11 @@ func init() {
 	if !features.Compliance.Enabled() {
 		return
 	}
+	schema := getBuilder()
 	schema.AddQuery("complianceStandard(id:ID!): ComplianceStandardMetadata")
 	schema.AddQuery("complianceStandards: [ComplianceStandardMetadata!]!")
 	schema.AddQuery("aggregatedResults(groupBy:[ComplianceAggregation_Scope!],unit:ComplianceAggregation_Scope!,where:String): ComplianceAggregation_Response!")
-	schema.AddResolver((*v1.ComplianceStandardMetadata)(nil), "controls: [ComplianceControl!]!")
+	schema.AddExtraResolver("ComplianceStandardMetadata", "controls: [ComplianceControl!]!")
 }
 
 // ComplianceStandards returns graphql resolvers for all compliance standards

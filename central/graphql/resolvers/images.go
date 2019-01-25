@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/graphql/schema"
 	"github.com/stackrox/rox/generated/storage"
 )
 
 func init() {
+	schema := getBuilder()
 	schema.AddQuery("images(query:String): [Image!]!")
 	schema.AddQuery("image(sha:ID!): Image")
 }

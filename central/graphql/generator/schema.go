@@ -1,54 +1,13 @@
 package generator
 
 import (
-	"bytes"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
-	"text/template"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/proto"
 )
-
-const schemaTemplate = `
-schema {
-	query: Query
-}
-{{range $td := .Entries}}
-{{if isEnum .Data.Type -}}
-enum {{.Data.Name}} {
-{{- range $k, $v := enumValues .Data}}
-	{{$k -}}
-{{end}}
-}
-{{else -}}
-type {{.Data.Name}} {
-{{- range .Data.FieldData -}}
-{{$t := schemaType .}}{{if $t }}
-	{{lower .Name}}: {{ $t -}}
-{{end -}}
-{{end -}}
-{{range .Data.UnionData }}
-	{{lower .Name}}: {{$td.Data.Name}}{{.Name -}}
-{{end -}}
-{{range .ExtraResolvers }}
-	{{ . -}}
-{{end}}
-}
-{{ range $u := .Data.UnionData}}
-union {{$td.Data.Name}}{{$u.Name}} = 
-{{- range $i, $f := $u.Entries}}{{if $i}} |{{end}} {{schemaType $f}}{{end}}
-{{ end }}
-{{end}}{{end}}
-
-type Label {
-	key: String!
-	value: String!
-}
-
-scalar Time
-`
 
 type schemaEntry struct {
 	Data           typeData
@@ -81,7 +40,7 @@ func makeSchemaEntries(data []typeData, extraResolvers map[string][]string) []sc
 	}
 
 	for _, td := range data {
-		if (td.Name == "Query" || isProto(td.Type) || isEnum(td.Type)) && !isListType(td.Type) {
+		if (td.Type == nil || isProto(td.Type) || isEnum(td.Type)) && !isListType(td.Type) {
 			listRef := listRef[td.Name]
 			se := schemaEntry{
 				Data:           td,
@@ -153,43 +112,18 @@ func schemaExpand(p reflect.Type) string {
 	return ""
 }
 
-func enumValues(data typeData) map[string]int32 {
-	return proto.EnumValueMap(importedName(data.Type))
-}
-
-// GenerateSchema produces a valid GraphQL schema based on the results of a type walk and including
-// the extra resolvers provided. A Query object is automatically added, so entry point resolver methods
-// should be exposed on that name in extraResolvers.
-func GenerateSchema(parameters TypeWalkParameters, extraResolvers map[string][]string) string {
-	walkResults := typeWalk(
-		parameters.IncludedTypes,
-		[]reflect.Type{
-			reflect.TypeOf((*types.Timestamp)(nil)),
-		},
-	)
-	data := make([]typeData, 1, len(walkResults)+1)
-	data[0] = typeData{
-		Name:      "Query",
-		Type:      nil,
-		FieldData: nil,
-		Package:   "",
+// RegisterProtoEnum is a utility method used by the generated code to output enums
+func RegisterProtoEnum(builder SchemaBuilder, typ reflect.Type) {
+	m := proto.EnumValueMap(importedName(typ))
+	values := make([]string, 0, len(m))
+	for k := range m {
+		values = append(values, k)
 	}
-	data = append(data, walkResults...)
-	buf := &bytes.Buffer{}
-	schemaEntries := makeSchemaEntries(data, extraResolvers)
-	t, err := template.New("schema").Funcs(template.FuncMap{
-		"lower":      lower,
-		"plural":     plural,
-		"schemaType": schemaType,
-		"isEnum":     isEnum,
-		"enumValues": enumValues,
-	}).Parse(schemaTemplate)
+	sort.Slice(values, func(i, j int) bool {
+		return m[values[i]] < m[values[j]]
+	})
+	err := builder.AddEnumType(typ.Name(), values)
 	if err != nil {
 		panic(err)
 	}
-	err = t.Execute(buf, struct{ Entries []schemaEntry }{schemaEntries})
-	if err != nil {
-		panic(err)
-	}
-	return buf.String()
 }

@@ -1,9 +1,12 @@
 
-check: generate
+check: imports
 	go test ../handler
 
+imports: generate
+	test -z "$(shell goimports -l .)" || ( goimports -d .  ; exit 1)
+
 generate:
-	go generate . && goimports -w .
+	go generate .
 
 clean:
 	rm -f generated.go

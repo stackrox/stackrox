@@ -3,10 +3,633 @@
 package resolvers
 
 import (
+	"reflect"
+
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/graphql/generator"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage" // end range imports
 )
+
+func registerGeneratedTypes(builder generator.SchemaBuilder) {
+	builder.AddType("Label", []string{"key: String!", "value: String!"})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Access(0)))
+	builder.AddType("Alert", []string{
+		"deployment: Deployment",
+		"enforcement: Alert_Enforcement",
+		"firstOccurred: Time!",
+		"id: ID!",
+		"lifecycleStage: LifecycleStage!",
+		"policy: Policy",
+		"snoozeTill: Time!",
+		"state: ViolationState!",
+		"time: Time!",
+		"violations: [Alert_Violation]!",
+	})
+	builder.AddType("Alert_Enforcement", []string{
+		"action: EnforcementAction!",
+		"message: String!",
+	})
+	builder.AddType("Alert_Violation", []string{
+		"link: String!",
+		"message: String!",
+		"processes: [ProcessIndicator]!",
+	})
+	builder.AddType("CSCC", []string{
+		"serviceAccount: String!",
+		"sourceId: String!",
+	})
+	builder.AddType("CVSSV2", []string{
+		"accessComplexity: CVSSV2_AccessComplexity!",
+		"attackVector: CVSSV2_AttackVector!",
+		"authentication: CVSSV2_Authentication!",
+		"availability: CVSSV2_Impact!",
+		"confidentiality: CVSSV2_Impact!",
+		"integrity: CVSSV2_Impact!",
+		"vector: String!",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_AccessComplexity(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_AttackVector(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_Authentication(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_Impact(0)))
+	builder.AddType("Cert", []string{
+		"algorithm: String!",
+		"endDate: Time!",
+		"issuer: CertName",
+		"sans: [String!]!",
+		"startDate: Time!",
+		"subject: CertName",
+	})
+	builder.AddType("CertName", []string{
+		"commonName: String!",
+		"country: String!",
+		"locality: String!",
+		"names: [String!]!",
+		"organization: String!",
+		"organizationUnit: String!",
+		"postalCode: String!",
+		"province: String!",
+		"streetAddress: String!",
+	})
+	builder.AddType("Cluster", []string{
+		"admissionController: Boolean!",
+		"centralApiEndpoint: String!",
+		"id: ID!",
+		"lastContact: Time!",
+		"mainImage: String!",
+		"monitoringEndpoint: String!",
+		"name: String!",
+		"providerMetadata: ProviderMetadata",
+		"runtimeSupport: Boolean!",
+		"type: ClusterType!",
+		"orchestratorParams: ClusterOrchestratorParams",
+	})
+	builder.AddUnionType("ClusterOrchestratorParams", []string{
+		"KubernetesParams",
+		"OpenshiftParams",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterType(0)))
+	builder.AddType("CommonKubernetesParams", []string{
+		"namespace: String!",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Comparator(0)))
+	builder.AddType("ComplianceAggregation_AggregationKey", []string{
+		"id: ID!",
+		"scope: ComplianceAggregation_Scope!",
+	})
+	builder.AddType("ComplianceAggregation_Response", []string{
+		"results: [ComplianceAggregation_Result]!",
+	})
+	builder.AddType("ComplianceAggregation_Result", []string{
+		"aggregationKeys: [ComplianceAggregation_AggregationKey]!",
+		"numFailing: Int!",
+		"numPassing: Int!",
+		"unit: ComplianceAggregation_Scope!",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.ComplianceAggregation_Scope(0)))
+	builder.AddType("ComplianceControl", []string{
+		"description: String!",
+		"groupId: String!",
+		"id: ID!",
+		"name: String!",
+		"standardId: String!",
+	})
+	builder.AddType("ComplianceControlGroup", []string{
+		"description: String!",
+		"id: ID!",
+		"name: String!",
+		"standardId: String!",
+	})
+	builder.AddType("ComplianceControlResult", []string{
+		"controlId: String!",
+		"resource: ComplianceResource",
+		"value: ComplianceResultValue",
+	})
+	builder.AddType("ComplianceResource", []string{
+		"resource: ComplianceResourceResource",
+	})
+	builder.AddUnionType("ComplianceResourceResource", []string{
+		"ComplianceResource_ClusterName",
+		"ComplianceResource_DeploymentName",
+		"ComplianceResource_NodeName",
+		"ImageName",
+	})
+	builder.AddType("ComplianceResource_ClusterName", []string{
+		"id: ID!",
+		"name: String!",
+	})
+	builder.AddType("ComplianceResource_DeploymentName", []string{
+		"cluster: ComplianceResource_ClusterName",
+		"id: ID!",
+		"name: String!",
+		"namespace: String!",
+	})
+	builder.AddType("ComplianceResource_NodeName", []string{
+		"cluster: ComplianceResource_ClusterName",
+		"id: ID!",
+		"name: String!",
+	})
+	builder.AddType("ComplianceResultValue", []string{
+		"evidence: [ComplianceResultValue_Evidence]!",
+		"overallState: ComplianceState!",
+	})
+	builder.AddType("ComplianceResultValue_Evidence", []string{
+		"message: String!",
+		"state: ComplianceState!",
+	})
+	builder.AddType("ComplianceStandard", []string{
+		"controls: [ComplianceControl]!",
+		"groups: [ComplianceControlGroup]!",
+		"metadata: ComplianceStandardMetadata",
+	})
+	builder.AddType("ComplianceStandardMetadata", []string{
+		"description: String!",
+		"id: ID!",
+		"name: String!",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ComplianceState(0)))
+	builder.AddType("Component", []string{
+		"name: String!",
+		"version: String!",
+	})
+	builder.AddType("Container", []string{
+		"config: ContainerConfig",
+		"id: ID!",
+		"image: Image",
+		"instances: [ContainerInstance]!",
+		"name: String!",
+		"ports: [PortConfig]!",
+		"resources: Resources",
+		"secrets: [EmbeddedSecret]!",
+		"securityContext: SecurityContext",
+		"volumes: [Volume]!",
+	})
+	builder.AddType("ContainerConfig", []string{
+		"args: [String!]!",
+		"command: [String!]!",
+		"directory: String!",
+		"env: [ContainerConfig_EnvironmentConfig]!",
+		"uid: Int!",
+		"user: String!",
+	})
+	builder.AddType("ContainerConfig_EnvironmentConfig", []string{
+		"key: String!",
+		"value: String!",
+	})
+	builder.AddType("ContainerInstance", []string{
+		"containerIps: [String!]!",
+		"containingPodId: String!",
+		"instanceId: ContainerInstanceID",
+	})
+	builder.AddType("ContainerInstanceID", []string{
+		"containerRuntime: ContainerRuntime!",
+		"id: ID!",
+		"node: String!",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ContainerRuntime(0)))
+	builder.AddType("Deployment", []string{
+		"annotations: [Label!]!",
+		"clusterId: String!",
+		"clusterName: String!",
+		"containers: [Container]!",
+		"hostNetwork: Boolean!",
+		"id: ID!",
+		"imagePullSecrets: [String!]!",
+		"inactive: Boolean!",
+		"labelSelector: LabelSelector",
+		"labels: [Label!]!",
+		"name: String!",
+		"namespace: String!",
+		"podLabels: [Label!]!",
+		"priority: Int!",
+		"replicas: Int!",
+		"risk: Risk",
+		"serviceAccount: String!",
+		"type: String!",
+		"updatedAt: Time!",
+		"version: String!",
+	})
+	builder.AddType("DockerfileLineRuleField", []string{
+		"instruction: String!",
+		"value: String!",
+	})
+	builder.AddType("Email", []string{
+		"disableTLS: Boolean!",
+		"from: String!",
+		"password: String!",
+		"sender: String!",
+		"server: String!",
+		"useSTARTTLS: Boolean!",
+		"username: String!",
+	})
+	builder.AddType("EmbeddedSecret", []string{
+		"name: String!",
+		"path: String!",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EnforcementAction(0)))
+	builder.AddType("GenerateTokenResponse", []string{
+		"metadata: TokenMetadata",
+		"token: String!",
+	})
+	builder.AddType("GoogleProviderMetadata", []string{
+		"clusterName: String!",
+		"project: String!",
+	})
+	builder.AddType("Group", []string{
+		"props: GroupProperties",
+		"roleName: String!",
+	})
+	builder.AddType("GroupProperties", []string{
+		"authProviderId: String!",
+		"key: String!",
+		"value: String!",
+	})
+	builder.AddType("Image", []string{
+		"id: ID!",
+		"metadata: ImageMetadata",
+		"name: ImageName",
+		"scan: ImageScan",
+	})
+	builder.AddType("ImageLayer", []string{
+		"author: String!",
+		"components: [ImageScanComponent]!",
+		"created: Time!",
+		"empty: Boolean!",
+		"instruction: String!",
+		"value: String!",
+	})
+	builder.AddType("ImageMetadata", []string{
+		"layerShas: [String!]!",
+		"v1: V1Metadata",
+		"v2: V2Metadata",
+	})
+	builder.AddType("ImageName", []string{
+		"fullName: String!",
+		"registry: String!",
+		"remote: String!",
+		"tag: String!",
+	})
+	builder.AddType("ImageNamePolicy", []string{
+		"registry: String!",
+		"remote: String!",
+		"tag: String!",
+	})
+	builder.AddType("ImageScan", []string{
+		"components: [ImageScanComponent]!",
+		"scanTime: Time!",
+	})
+	builder.AddType("ImageScanComponent", []string{
+		"license: License",
+		"name: String!",
+		"version: String!",
+		"vulns: [Vulnerability]!",
+	})
+	builder.AddType("Jira", []string{
+		"issueType: String!",
+		"password: String!",
+		"url: String!",
+		"username: String!",
+	})
+	builder.AddType("KeyValuePolicy", []string{
+		"key: String!",
+		"value: String!",
+	})
+	builder.AddType("KubernetesParams", []string{
+		"params: CommonKubernetesParams",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.L4Protocol(0)))
+	builder.AddType("LabelSelector", []string{
+		"matchLabels: [Label!]!",
+		"requirements: [LabelSelector_Requirement]!",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.LabelSelector_Operator(0)))
+	builder.AddType("LabelSelector_Requirement", []string{
+		"key: String!",
+		"op: LabelSelector_Operator!",
+		"values: [String!]!",
+	})
+	builder.AddType("License", []string{
+		"name: String!",
+		"type: String!",
+		"url: String!",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.LifecycleStage(0)))
+	builder.AddType("Metadata", []string{
+		"version: String!",
+	})
+	builder.AddType("NetworkEntityInfo", []string{
+		"id: ID!",
+		"type: NetworkEntityInfo_Type!",
+		"desc: NetworkEntityInfoDesc",
+	})
+	builder.AddUnionType("NetworkEntityInfoDesc", []string{
+		"NetworkEntityInfo_Deployment",
+	})
+	builder.AddType("NetworkEntityInfo_Deployment", []string{
+		"cluster: String!",
+		"name: String!",
+		"namespace: String!",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NetworkEntityInfo_Type(0)))
+	builder.AddType("NetworkFlow", []string{
+		"lastSeenTimestamp: Time!",
+		"props: NetworkFlowProperties",
+	})
+	builder.AddType("NetworkFlowProperties", []string{
+		"dstEntity: NetworkEntityInfo",
+		"dstPort: Int!",
+		"l4Protocol: L4Protocol!",
+		"srcEntity: NetworkEntityInfo",
+	})
+	builder.AddType("Node", []string{
+		"id: ID!",
+		"name: String!",
+	})
+	builder.AddType("Notifier", []string{
+		"enabled: Boolean!",
+		"id: ID!",
+		"labelDefault: String!",
+		"labelKey: String!",
+		"name: String!",
+		"type: String!",
+		"uiEndpoint: String!",
+		"config: NotifierConfig",
+	})
+	builder.AddUnionType("NotifierConfig", []string{
+		"Jira",
+		"Email",
+		"CSCC",
+		"Splunk",
+	})
+	builder.AddType("NumericalPolicy", []string{
+		"op: Comparator!",
+		"value: Float!",
+	})
+	builder.AddType("OpenshiftParams", []string{
+		"params: CommonKubernetesParams",
+	})
+	builder.AddType("Policy", []string{
+		"categories: [String!]!",
+		"description: String!",
+		"disabled: Boolean!",
+		"enforcementActions: [EnforcementAction!]!",
+		"fields: PolicyFields",
+		"id: ID!",
+		"lifecycleStages: [LifecycleStage!]!",
+		"name: String!",
+		"notifiers: [String!]!",
+		"rationale: String!",
+		"remediation: String!",
+		"scope: [Scope]!",
+		"severity: Severity!",
+		"whitelists: [Whitelist]!",
+	})
+	builder.AddType("PolicyFields", []string{
+		"addCapabilities: [String!]!",
+		"args: String!",
+		"command: String!",
+		"component: Component",
+		"containerResourcePolicy: ResourcePolicy",
+		"cve: String!",
+		"cvss: NumericalPolicy",
+		"directory: String!",
+		"disallowedAnnotation: KeyValuePolicy",
+		"dropCapabilities: [String!]!",
+		"env: KeyValuePolicy",
+		"imageName: ImageNamePolicy",
+		"lineRule: DockerfileLineRuleField",
+		"portPolicy: PortPolicy",
+		"processPolicy: ProcessPolicy",
+		"requiredAnnotation: KeyValuePolicy",
+		"requiredLabel: KeyValuePolicy",
+		"user: String!",
+		"volumePolicy: VolumePolicy",
+	})
+	builder.AddType("PortConfig", []string{
+		"containerPort: Int!",
+		"exposedPort: Int!",
+		"exposure: PortConfig_Exposure!",
+		"name: String!",
+		"protocol: String!",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.PortConfig_Exposure(0)))
+	builder.AddType("PortPolicy", []string{
+		"port: Int!",
+		"protocol: String!",
+	})
+	builder.AddType("ProcessGroup", []string{
+		"args: String!",
+		"signals: [ProcessIndicator]!",
+	})
+	builder.AddType("ProcessIndicator", []string{
+		"containerName: String!",
+		"deploymentId: String!",
+		"emitTimestamp: Time!",
+		"id: ID!",
+		"podId: String!",
+		"signal: ProcessSignal",
+	})
+	builder.AddType("ProcessNameGroup", []string{
+		"groups: [ProcessGroup]!",
+		"name: String!",
+		"timesExecuted: Int!",
+	})
+	builder.AddType("ProcessPolicy", []string{
+		"ancestor: String!",
+		"args: String!",
+		"name: String!",
+	})
+	builder.AddType("ProcessSignal", []string{
+		"args: String!",
+		"containerId: String!",
+		"execFilePath: String!",
+		"gid: Int!",
+		"id: ID!",
+		"lineage: [String!]!",
+		"name: String!",
+		"pid: Int!",
+		"time: Time!",
+		"uid: Int!",
+	})
+	builder.AddType("ProviderMetadata", []string{
+		"region: String!",
+		"zone: String!",
+		"provider: ProviderMetadataProvider",
+	})
+	builder.AddUnionType("ProviderMetadataProvider", []string{
+		"GoogleProviderMetadata",
+	})
+	builder.AddType("ResourcePolicy", []string{
+		"cpuResourceLimit: NumericalPolicy",
+		"cpuResourceRequest: NumericalPolicy",
+		"memoryResourceLimit: NumericalPolicy",
+		"memoryResourceRequest: NumericalPolicy",
+	})
+	builder.AddType("Resources", []string{
+		"cpuCoresLimit: Float!",
+		"cpuCoresRequest: Float!",
+		"memoryMbLimit: Float!",
+		"memoryMbRequest: Float!",
+	})
+	builder.AddType("Risk", []string{
+		"results: [Risk_Result]!",
+		"score: Float!",
+	})
+	builder.AddType("Risk_Result", []string{
+		"factors: [Risk_Result_Factor]!",
+		"name: String!",
+		"score: Float!",
+	})
+	builder.AddType("Risk_Result_Factor", []string{
+		"message: String!",
+		"url: String!",
+	})
+	builder.AddType("Role", []string{
+		"globalAccess: Access!",
+		"name: String!",
+	})
+	builder.AddType("Scope", []string{
+		"cluster: String!",
+		"label: Scope_Label",
+		"namespace: String!",
+	})
+	builder.AddType("Scope_Label", []string{
+		"key: String!",
+		"value: String!",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.SearchCategory(0)))
+	builder.AddType("SearchResult", []string{
+		"category: SearchCategory!",
+		"id: ID!",
+		"location: String!",
+		"name: String!",
+		"score: Float!",
+	})
+	builder.AddType("Secret", []string{
+		"annotations: [Label!]!",
+		"clusterId: String!",
+		"clusterName: String!",
+		"createdAt: Time!",
+		"files: [SecretDataFile]!",
+		"id: ID!",
+		"labels: [Label!]!",
+		"name: String!",
+		"namespace: String!",
+		"relationship: SecretRelationship",
+		"type: String!",
+	})
+	builder.AddType("SecretContainerRelationship", []string{
+		"id: ID!",
+		"path: String!",
+	})
+	builder.AddType("SecretDataFile", []string{
+		"name: String!",
+		"type: SecretType!",
+		"metadata: SecretDataFileMetadata",
+	})
+	builder.AddUnionType("SecretDataFileMetadata", []string{
+		"Cert",
+	})
+	builder.AddType("SecretDeploymentRelationship", []string{
+		"id: ID!",
+		"name: String!",
+	})
+	builder.AddType("SecretRelationship", []string{
+		"containerRelationships: [SecretContainerRelationship]!",
+		"deploymentRelationships: [SecretDeploymentRelationship]!",
+		"id: ID!",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SecretType(0)))
+	builder.AddType("SecurityContext", []string{
+		"addCapabilities: [String!]!",
+		"dropCapabilities: [String!]!",
+		"privileged: Boolean!",
+		"selinux: SecurityContext_SELinux",
+	})
+	builder.AddType("SecurityContext_SELinux", []string{
+		"level: String!",
+		"role: String!",
+		"type: String!",
+		"user: String!",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Severity(0)))
+	builder.AddType("Splunk", []string{
+		"httpEndpoint: String!",
+		"httpToken: String!",
+		"insecure: Boolean!",
+	})
+	builder.AddType("TokenMetadata", []string{
+		"expiration: Time!",
+		"id: ID!",
+		"issuedAt: Time!",
+		"name: String!",
+		"revoked: Boolean!",
+		"role: String!",
+	})
+	builder.AddType("V1Metadata", []string{
+		"author: String!",
+		"created: Time!",
+		"digest: String!",
+		"layers: [ImageLayer]!",
+	})
+	builder.AddType("V2Metadata", []string{
+		"digest: String!",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ViolationState(0)))
+	builder.AddType("Volume", []string{
+		"destination: String!",
+		"name: String!",
+		"readOnly: Boolean!",
+		"source: String!",
+		"type: String!",
+	})
+	builder.AddType("VolumePolicy", []string{
+		"destination: String!",
+		"name: String!",
+		"source: String!",
+		"type: String!",
+	})
+	builder.AddType("Vulnerability", []string{
+		"cve: String!",
+		"cvss: Float!",
+		"cvssV2: CVSSV2",
+		"link: String!",
+		"summary: String!",
+	})
+	builder.AddType("Whitelist", []string{
+		"container: Whitelist_Container",
+		"deployment: Whitelist_Deployment",
+		"expiration: Time!",
+		"name: String!",
+	})
+	builder.AddType("Whitelist_Container", []string{
+		"imageName: ImageName",
+	})
+	builder.AddType("Whitelist_Deployment", []string{
+		"name: String!",
+		"scope: Scope",
+	})
+}
 
 func toAccess(value *string) storage.Access {
 	if value != nil {
@@ -649,29 +1272,6 @@ func toComparators(values *[]string) []storage.Comparator {
 		output[i] = toComparator(&v)
 	}
 	return output
-}
-
-type complianceAggregationResolver struct {
-	root *Resolver
-	data *v1.ComplianceAggregation
-}
-
-func (resolver *Resolver) wrapComplianceAggregation(value *v1.ComplianceAggregation, ok bool, err error) (*complianceAggregationResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &complianceAggregationResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapComplianceAggregations(values []*v1.ComplianceAggregation, err error) ([]*complianceAggregationResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*complianceAggregationResolver, len(values))
-	for i, v := range values {
-		output[i] = &complianceAggregationResolver{resolver, v}
-	}
-	return output, nil
 }
 
 type complianceAggregation_AggregationKeyResolver struct {
