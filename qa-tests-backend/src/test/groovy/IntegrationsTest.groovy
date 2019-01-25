@@ -24,9 +24,9 @@ class IntegrationsTest extends BaseSpecification {
 
         cleanup:
         "Remove the deployment and integration"
-        orchestrator.deleteService("clairify", "stackrox")
-        orchestrator.deleteDeployment(new Deployment(name: "clairify", namespace: "stackrox"))
         assert Services.deleteClairifyScanner(clairifyId)
+        orchestrator.deleteDeployment(new Deployment(name: "clairify", namespace: "stackrox"))
+        orchestrator.deleteService("clairify", "stackrox")
     }
     @Category(BAT)
     def "Verify GCR Integration"() {

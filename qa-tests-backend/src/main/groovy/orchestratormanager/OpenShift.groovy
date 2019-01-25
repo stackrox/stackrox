@@ -186,7 +186,7 @@ class OpenShift extends Kubernetes {
         //create clairify deployment
         Container clairifyContainer = new Container(
                 name: "clairify",
-                image: "stackrox/clairify:0.3.1",
+                image: "stackrox/clairify:0.5.3",
                 env: [new EnvVar(
                         name: "CLAIR_ARGS",
                         value: "-insecure-tls")
