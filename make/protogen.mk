@@ -85,9 +85,11 @@ $(PROTOC_FILE):
 
 $(PROTOC_INCLUDES): $(PROTOC_TMP)
 	@echo "+ $@"
+	@touch $@
 
 $(PROTOC): $(PROTOC_TMP)
 	@echo "+ $@"
+	@touch $@
 
 $(PROTOC_TMP): $(PROTOC_FILE)
 	@echo "+ $@"

@@ -146,6 +146,8 @@ go-generated-srcs: $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
 	PATH=$(PATH):$(BASE_DIR)/tools/generate-helpers go generate ./...
 
 proto-generated-srcs: $(PROTO_GENERATED_SRCS)
+	@echo "+ $@"
+	@touch proto-generated-srcs
 
 # volatile-generated-srcs are all generated sources that are NOT committed
 .PHONY: volatile-generated-srcs

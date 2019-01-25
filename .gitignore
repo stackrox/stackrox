@@ -24,6 +24,7 @@ api/generated
 
 # Makefile cruft
 deps
+proto-generated-srcs
 report.xml
 test.log
 protoc-*
