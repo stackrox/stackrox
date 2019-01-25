@@ -30,8 +30,6 @@ func init() {
 }
 
 var (
-	generatedMonitoringPassword = renderer.CreatePassword()
-
 	isInteractive              bool
 	flagsHiddenWhenInteractive = []string{
 		"monitoring-persistence-type",

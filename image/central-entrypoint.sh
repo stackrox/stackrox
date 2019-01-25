@@ -4,4 +4,5 @@ set -e
 
 update-ca-certificates
 
-exec "$@"
+migrator
+exec central "$@"

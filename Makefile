@@ -212,6 +212,7 @@ build: gazelle cli
 		//central \
 		//benchmarks \
 		//benchmark-bootstrap \
+		//migrator \
 		//sensor/kubernetes \
 		//integration-tests/mock-grpc-server \
 		//scale/mocksensor \
@@ -287,6 +288,7 @@ image: build clean-image $(MERGED_API_SWAGGER_SPEC)
 	cp bazel-bin/roxctl/windows_amd64_pure_stripped/roxctl.exe image/bin/roxctl-windows.exe
 	cp bazel-bin/benchmarks/linux_amd64_pure_stripped/benchmarks image/bin/benchmarks
 	cp bazel-bin/benchmark-bootstrap/linux_amd64_pure_stripped/benchmark-bootstrap image/bin/benchmark-bootstrap
+	cp bazel-bin/migrator/linux_amd64_pure_stripped/migrator image/bin/migrator
 	cp bazel-bin/sensor/kubernetes/linux_amd64_pure_stripped/kubernetes image/bin/kubernetes-sensor
 	cp bazel-bin/compliance/collection/linux_amd64_pure_stripped/collection image/bin/compliance
 

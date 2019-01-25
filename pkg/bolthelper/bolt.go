@@ -15,6 +15,7 @@ import (
 
 const (
 	dbMountPath = "/var/lib/stackrox"
+	dbFileName  = "stackrox.db"
 	txMaxSize   = 65536
 )
 
@@ -39,7 +40,7 @@ func New(path string) (*bolt.DB, error) {
 
 // NewWithDefaults returns an instance of the persistent BoltDB store with default values loaded.
 func NewWithDefaults() (*bolt.DB, error) {
-	db, err := New(filepath.Join(dbMountPath, "stackrox.db"))
+	db, err := New(filepath.Join(dbMountPath, dbFileName))
 	if err != nil {
 		return db, err
 	}

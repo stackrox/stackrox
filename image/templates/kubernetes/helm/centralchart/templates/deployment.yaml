@@ -29,8 +29,7 @@ spec:
       - name: central
         image: {{.Values.image}}
         command:
-          - /stackrox/entrypoint.sh
-          - central
+          - /stackrox/central-entrypoint.sh
         ports:
           - name: api
             containerPort: 443

@@ -21,6 +21,7 @@ var (
 		"benchmark-bootstrap",
 		"benchmarks",
 		"central",
+		"migrator",
 		"roxctl",
 		"pkg",
 		"sensor/kubernetes",
@@ -116,7 +117,8 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot string) (errs []
 	}
 
 	allowedPackages := []string{validImportRoot, "generated"}
-	if validImportRoot != "pkg" {
+	// The migrator is NOT allowed to import code from pkg.
+	if validImportRoot != "pkg" && validImportRoot != "migrator" {
 		allowedPackages = append(allowedPackages, "pkg")
 	}
 

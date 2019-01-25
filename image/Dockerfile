@@ -19,9 +19,10 @@ ENV PATH="/stackrox:$PATH"
 COPY ./benchmarks/ /data/benchmarks
 COPY ./policies/ /data/policies
 COPY ./templates/ /data/templates
-COPY ./entrypoint.sh /stackrox/
+COPY ./central-entrypoint.sh /stackrox/
 COPY ./bin/benchmark-bootstrap /stackrox/
 COPY ./bin/benchmarks /stackrox/
+COPY ./bin/migrator /stackrox/
 COPY ./bin/central /stackrox/
 COPY ./bin/compliance /stackrox/compliance
 COPY ./bin/roxctl* /assets/downloads/cli/
