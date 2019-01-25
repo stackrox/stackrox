@@ -1,101 +1,41 @@
-import React from 'react';
 import qs from 'qs';
-import { generatePath, Link } from 'react-router-dom';
+import pageTypes from 'constants/pageTypes';
+import contextTypes from 'constants/contextTypes';
 
-function getURLParamNames(str) {
-    const PATH_REGEXP = new RegExp(
-        [
-            '(\\\\.)',
-            '(?:\\:(\\w+)(?:\\(((?:\\\\.|[^\\\\()])+)\\))?|\\(((?:\\\\.|[^\\\\()])+)\\))([+*?])?'
-        ].join('|'),
-        'g'
-    );
-
-    const paramNames = [];
-    let index = 0;
-    let path = '';
-    let res;
-    res = PATH_REGEXP.exec(str);
-
-    while (res !== null) {
-        const escaped = res[1];
-        const offset = res.index;
-        path += str.slice(index, offset);
-        index = offset + res[0].length;
-
-        if (escaped) {
-            path += escaped[1];
-        } else {
-            const name = res[2];
-
-            if (path.length) {
-                path = path.slice(0, path.length - 1);
-            }
-
-            paramNames.push(name);
-            res = PATH_REGEXP.exec(str);
-        }
-    }
-
-    return paramNames;
+function getContext(match) {
+    if (match.url.includes('/compliance')) return contextTypes.COMPLIANCE;
+    return null;
 }
 
-class URLService {
-    constructor(match, location) {
-        this.queryParams = qs.parse(location.search, { ignoreQueryPrefix: true });
-        this.urlParams = match.params;
-        this.path = match.path;
-        this.originalURL = match.url;
-        this.urlParamNames = getURLParamNames(match.path);
-    }
-
-    setParams(params) {
-        if (!params) return this;
-
-        Object.keys(params).forEach(key => {
-            if (this.urlParamNames.includes(key)) this.urlParams[key] = params[key];
-            else this.queryParams[key] = params[key];
-        });
-        return this;
-    }
-
-    setPath(path) {
-        this.replace = this.path !== path;
-        this.path = path;
-        this.urlParamNames = getURLParamNames(path);
-        return this;
-    }
-
-    clearParams() {
-        this.urlParams = {};
-        this.queryParams = {};
-        return this;
-    }
-
-    getParams(flat) {
-        if (flat) {
-            return {
-                ...this.urlParams,
-                ...this.queryParams
-            };
-        }
-
-        return {
-            ...this.urlParams,
-            query: this.queryParams
-        };
-    }
-
-    getLink(child) {
-        const pathname = generatePath(this.path, this.urlParams);
-        const replace = pathname === this.originalURL;
-        const search = qs.stringify(this.queryParams, { addQueryPrefix: true });
-        return (
-            <Link to={{ pathname, search }} replace={replace}>
-                {child}
-            </Link>
-        );
-    }
+function getPageType(match) {
+    if (match.params.entityId) return pageTypes.ENTITY;
+    if (match.params.entityType) return pageTypes.LIST;
+    return pageTypes.DASHBOARD;
 }
 
-export default URLService;
+function getEntityType(match) {
+    return match.params.entityType;
+}
+
+function getPageId(match) {
+    const context = getContext(match);
+    const pageType = getPageType(match);
+    const entityType = getEntityType(match);
+    return {
+        context,
+        pageType,
+        entityType
+    };
+}
+
+function getParams(match, location) {
+    return {
+        ...match.params,
+        query: qs.parse(location.search, { ignoreQueryPrefix: true })
+    };
+}
+
+export default {
+    getParams,
+    getPageId
+};

@@ -5,72 +5,56 @@ import PageHeader from 'Components/PageHeader';
 import Button from 'Components/Button';
 import * as Icon from 'react-feather';
 
-import Query from 'Components/ThrowingQuery';
-import ReactRouterPropTypes from 'react-router-prop-types';
+import Query from 'Components/AppQuery';
 import { resourceTypes } from 'constants/entityTypes';
 import componentTypes from 'constants/componentTypes';
-import queryService from 'modules/queryService';
-import URLService from 'modules/URLService';
 import labels from 'messages/common';
 
 const handleExport = () => {
     throw new Error('"Export" is not supported yet.');
 };
 
-const EntityHeader = ({ match, location, searchComponent }) => {
-    const subHeaderTexts = {
-        [resourceTypes.NODES]: labels.resourceLabels.NODE,
-        [resourceTypes.NAMESPACES]: labels.resourceLabels.NAMESPACE,
-        [resourceTypes.CLUSTERS]: labels.resourceLabels.CLUSTER
-    };
+const subHeaderTexts = {
+    [resourceTypes.NODES]: labels.resourceLabels.NODE,
+    [resourceTypes.NAMESPACES]: labels.resourceLabels.NAMESPACE,
+    [resourceTypes.CLUSTERS]: labels.resourceLabels.CLUSTER
+};
 
-    const queryConfig = queryService.getQuery(match, location, componentTypes.HEADER);
-    const params = new URLService(match, location).getParams();
+const EntityHeader = ({ params, pageId, searchComponent }) => (
+    <Query pageId={pageId} params={params} componentType={componentTypes.HEADER} action="list">
+        {({ loading, data }) => {
+            let headerText = 'loading...';
 
-    if (!queryConfig) return <PageHeader header="Error" subHeader="Error" />;
-    return (
-        <Query query={queryConfig.query} action="list" variables={queryConfig.variables}>
-            {({ loading, error, data }) => {
-                let headerText = 'loading...';
-                if (error) {
-                    // TODO: What does error state look like?
-                }
+            if (!loading && data) {
+                headerText = data.results ? data.results.name : params.entityId;
+            }
 
-                if (!loading && data) {
-                    headerText = data.results ? data.results.name : params.entityId;
-                }
-
-                return (
-                    <PageHeader
-                        header={headerText}
-                        subHeader={
-                            subHeaderTexts[new URLService(match, location).getParams().entityType]
-                        }
-                    >
-                        {searchComponent}
-                        <div className="flex flex-1 justify-end">
-                            <div className="ml-3 border-l border-base-300 mr-3" />
-                            <div className="flex">
-                                <div className="flex items-center">
-                                    <Button
-                                        className="btn btn-base"
-                                        text="Export"
-                                        icon={<Icon.FileText className="h-4 w-4 mr-3" />}
-                                        onClick={handleExport}
-                                    />
-                                </div>
+            return (
+                <PageHeader header={headerText} subHeader={subHeaderTexts[params.entityType]}>
+                    {searchComponent}
+                    <div className="flex flex-1 justify-end">
+                        <div className="ml-3 border-l border-base-300 mr-3" />
+                        <div className="flex">
+                            <div className="flex items-center">
+                                <Button
+                                    className="btn btn-base"
+                                    text="Export"
+                                    icon={<Icon.FileText className="h-4 w-4 mr-3" />}
+                                    onClick={handleExport}
+                                />
                             </div>
                         </div>
-                    </PageHeader>
-                );
-            }}
-        </Query>
-    );
-};
+                    </div>
+                </PageHeader>
+            );
+        }}
+    </Query>
+);
+
 EntityHeader.propTypes = {
     searchComponent: PropTypes.element,
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired
+    params: PropTypes.shape({}).isRequired,
+    pageId: PropTypes.shape({}).isRequired
 };
 
 EntityHeader.defaultProps = {

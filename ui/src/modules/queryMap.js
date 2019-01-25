@@ -37,7 +37,6 @@ export default [
         entityType: [entityTypes.CLUSTERS],
         component: [componentTypes.RELATED_ENTITIES_LIST],
         query: RELATED_DEPLOYMENTS,
-        metadata: { entityType: entityTypes.NAMESPACES },
         variables: [{ graphQLParam: 'id', queryParam: 'entityId' }]
     }
 ];

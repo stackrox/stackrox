@@ -1,7 +1,8 @@
 export const resourceTypes = {
     NAMESPACES: 'namespaces',
     CLUSTERS: 'clusters',
-    NODES: 'nodes'
+    NODES: 'nodes',
+    DEPLOYMENTS: 'deployments'
 };
 
 export const standardTypes = {

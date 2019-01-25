@@ -24,7 +24,7 @@ const ListHeader = ({ match, location, searchComponent }) => {
         [standardTypes.HIPAA]: `${labels.standardLabels.HIPAA} Standard`,
         [standardTypes.CIS]: `${labels.standardLabels.CIS} Standard`
     };
-    const params = new URLService(match, location).getParams();
+    const params = URLService.getParams(match, location);
     const { entityType } = params;
 
     return (

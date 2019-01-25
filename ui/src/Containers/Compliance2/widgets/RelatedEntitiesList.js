@@ -1,32 +1,70 @@
 import React from 'react';
 import componentTypes from 'constants/componentTypes';
 import Widget from 'Components/Widget';
-import Query from 'Components/ThrowingQuery';
-import { withRouter } from 'react-router-dom';
+import Query from 'Components/AppQuery';
 import Loader from 'Components/Loader';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import queryService from 'modules/queryService';
+import { resourceTypes } from 'constants/entityTypes';
+import labels from 'messages/common';
+import PropTypes from 'prop-types';
+import AppLink from 'Components/AppLink';
 
-const RelatedEntitiesList = ({ match, location }) => {
-    const queryConfig = queryService.getQuery(
-        match,
-        location,
-        componentTypes.RELATED_ENTITIES_LIST
-    );
+const pageToWidgetEntityMap = {
+    [resourceTypes.CLUSTERS]: resourceTypes.DEPLOYMENTS,
+    [resourceTypes.NAMESPACES]: resourceTypes.DEPLOYMENTS,
+    [resourceTypes.NODES]: resourceTypes.DEPLOYMENTS
+};
+
+const entityTypeToNameMap = {
+    [resourceTypes.NAMESPACES]: `${labels.resourceLabels.NAMESPACE}S`,
+    [resourceTypes.DEPLOYMENTS]: `${labels.resourceLabels.DEPLOYMENTS}S`
+};
+
+const RelatedEntitiesList = ({ params, pageId }) => {
+    const { entityType: pageEntityType } = params;
+    const widgetEntityType = pageToWidgetEntityMap[pageEntityType];
+    const entityTypeText = entityTypeToNameMap[widgetEntityType];
+
+    function processData(results) {
+        if (!results) return [];
+
+        const { context, pageType } = pageId;
+        const dataWithLink = results[widgetEntityType].map(item => {
+            const linkParams = {
+                query: params.query,
+                entityId: item.id,
+                entityType: widgetEntityType
+            };
+            const link = (
+                <AppLink
+                    context={context}
+                    pageType={pageType}
+                    entityType={widgetEntityType}
+                    params={linkParams}
+                >
+                    {item.name}
+                </AppLink>
+            );
+            return {
+                ...item,
+                link
+            };
+        });
+
+        return dataWithLink;
+    }
     return (
-        <Query query={queryConfig.query} variables={queryConfig.variables}>
+        <Query pageId={pageId} params={params} componentType={componentTypes.RELATED_ENTITIES_LIST}>
             {({ loading, data }) => {
-                const entityTypeText = queryConfig.metadata.entityType;
                 let contents = <Loader />;
                 let headerText = `Related ${entityTypeText}`;
                 if (!loading && data && data.results) {
-                    const results = data.results.deployments;
-
+                    const results = processData(data.results);
                     headerText = `${results.length} Related ${entityTypeText}`;
+
                     contents = (
                         <ul>
                             {results.map(entity => (
-                                <li key={entity.id}>{entity.name}</li>
+                                <li key={entity.id}>{entity.link}</li>
                             ))}
                         </ul>
                     );
@@ -39,8 +77,8 @@ const RelatedEntitiesList = ({ match, location }) => {
 };
 
 RelatedEntitiesList.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired
+    params: PropTypes.shape({}).isRequired,
+    pageId: PropTypes.shape({}).isRequired
 };
 
-export default withRouter(RelatedEntitiesList);
+export default RelatedEntitiesList;
