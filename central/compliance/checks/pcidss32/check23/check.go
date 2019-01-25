@@ -1,4 +1,4 @@
-package check24
+package check23
 
 import (
 	"github.com/stackrox/rox/central/compliance/framework"
@@ -7,7 +7,7 @@ import (
 
 var log = logging.LoggerForModule()
 
-const checkID = "PCI_DSS_3_2:2_4"
+const checkID = "PCI_DSS_3_2:2_3"
 
 func init() {
 	framework.MustRegisterNewCheck(
