@@ -11,6 +11,6 @@ func init() {
 	framework.MustRegisterNewCheck(
 		checkID,
 		framework.ClusterKind,
-		nil,
-		common.CheckImageScannerInUse)
+		[]string{"ImageIntegrations"},
+		common.IsImageScannerInUse)
 }

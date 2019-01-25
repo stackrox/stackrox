@@ -22,7 +22,7 @@ func init() {
 func checkNIST412(ctx framework.ComplianceContext) {
 	checkSSHPolicies(ctx)
 	checkPrivilegedCategoryPolicies(ctx)
-	common.CheckImageScannerInUse(ctx)
+	common.IsImageScannerInUse(ctx)
 	common.CheckBuildTimePolicyEnforced(ctx)
 }
 

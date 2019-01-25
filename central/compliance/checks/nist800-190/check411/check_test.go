@@ -103,7 +103,6 @@ func TestNIST411_Success(t *testing.T) {
 	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[0].Status)
 	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[1].Status)
 	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[2].Status)
-
 }
 
 func TestNIST411_Fail(t *testing.T) {

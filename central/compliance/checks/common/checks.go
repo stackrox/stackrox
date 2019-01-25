@@ -8,8 +8,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// CheckImageScannerInUse checks if we have atleast one image scanner in place.
-func CheckImageScannerInUse(ctx framework.ComplianceContext) {
+// IsImageScannerInUse checks if we have atleast one image scanner in use.
+func IsImageScannerInUse(ctx framework.ComplianceContext) {
 	var scanners []string
 	for _, integration := range ctx.Data().ImageIntegrations() {
 		for _, category := range integration.GetCategories() {
@@ -20,14 +20,11 @@ func CheckImageScannerInUse(ctx framework.ComplianceContext) {
 	}
 
 	if len(scanners) > 0 {
-		if len(scanners) == 1 {
-			framework.Passf(ctx, "An image vulnerability scanner (%s) is configured", scanners[0])
-		} else {
-			framework.Passf(ctx, "%d image vulnerability scanners are configured", len(scanners))
-		}
-	} else {
-		framework.Failf(ctx, "No image vulnerability scanners are configured")
+		framework.Pass(ctx, "Cluster has a image scanner in use")
+		return
 	}
+
+	framework.Fail(ctx, "No image scanners are being used in the cluster")
 }
 
 // CheckFixedCVES returns true if we find any fixed cves in images.

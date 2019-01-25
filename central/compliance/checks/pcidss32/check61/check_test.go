@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -99,6 +100,7 @@ func (s *suiteImpl) TestPass() {
 	s.NoError(checkResults.Error())
 	s.Len(checkResults.Evidence(), 1)
 	s.Equal(framework.PassStatus, checkResults.Evidence()[0].Status)
+	assert.Equal(s.T(), framework.PassStatus, checkResults.Evidence()[0].Status)
 }
 
 // Helper functions for test data.

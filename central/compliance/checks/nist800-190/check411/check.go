@@ -22,7 +22,7 @@ func init() {
 
 func checkNIST411(ctx framework.ComplianceContext) {
 	checkCVSS7PolicyEnforced(ctx)
-	common.CheckImageScannerInUse(ctx)
+	common.IsImageScannerInUse(ctx)
 	common.CheckBuildTimePolicyEnforced(ctx)
 }
 
@@ -37,7 +37,7 @@ func checkCVSS7PolicyEnforced(ctx framework.ComplianceContext) {
 		}
 	}
 
-	framework.Fail(ctx, "Policy that disallows images, with a CVSS score above a threshold, to be deployed not found")
+	framework.Fail(ctx, "Policy that disallows images with a critical CVSS score not found")
 }
 
 func doesPolicyHaveCVSS(p *storage.Policy) common.Andable {
