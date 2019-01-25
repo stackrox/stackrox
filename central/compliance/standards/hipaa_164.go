@@ -18,6 +18,18 @@ var hipaa164 = Standard{
 				},
 			},
 		},
+		{
+			ID:          "308_a_5_ii_b",
+			Name:        "308.a.5.ii.b",
+			Description: "Security Awareness and Training",
+			Controls: []Control{
+				{
+					ID:          "308_a_5_ii_b",
+					Name:        "308.a.5.ii.b",
+					Description: "Security Awareness and Training",
+				},
+			},
+		},
 	},
 }
 

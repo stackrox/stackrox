@@ -66,33 +66,36 @@ func CheckPolicyInUse(ctx framework.ComplianceContext, name string) {
 	framework.Passf(ctx, "'%s' policy is in use", name)
 }
 
-// CheckPolicyEnforced checks if a policy is in use and is enforced.
-func CheckPolicyEnforced(ctx framework.ComplianceContext, name string) {
+// AnyPoliciesEnforced checks if any policy in the given list is being enforced.
+func AnyPoliciesEnforced(ctx framework.ComplianceContext, policyNames []string) int {
 	policies := ctx.Data().Policies()
-	p := policies[name]
+	count := 0
 
-	if p.GetDisabled() {
-		framework.Failf(ctx, "'%s' policy is not in use", name)
-		return
+	for _, name := range policyNames {
+		p := policies[name]
+		if p.GetDisabled() {
+			continue
+		}
+		if len(p.GetEnforcementActions()) > 0 {
+			count++
+		}
 	}
 
-	if len(p.GetEnforcementActions()) == 0 {
-		framework.Failf(ctx, "'%s' policy is not being enforced", name)
-		return
-	}
-
-	framework.Passf(ctx, "'%s' policy is in use and is enforced", name)
+	return count
 }
 
-// CheckAnyPolicyInCategory checks if there are any enabled policies in the given category.
-func CheckAnyPolicyInCategory(ctx framework.ComplianceContext, category string) {
-	categoryPolicies := ctx.Data().PolicyCategories()
-	policySet := categoryPolicies[category]
-	if policySet.Cardinality() == 0 {
-		framework.Failf(ctx, "No policies are in place to monitor '%s' category issues", category)
-		return
+// CheckAnyPolicyInLifeCycle checks if there are any enabled policies in the given lifecycle.
+func CheckAnyPolicyInLifeCycle(ctx framework.ComplianceContext, policyLifeCycle storage.LifecycleStage) {
+	policies := ctx.Data().Policies()
+	for _, p := range policies {
+		for _, stage := range p.GetLifecycleStages() {
+			if stage == policyLifeCycle && !p.Disabled {
+				framework.Passf(ctx, "At least one %q time policy is enabled", strings.ToLower(storage.LifecycleStage_name[int32(policyLifeCycle)]))
+				return
+			}
+		}
 	}
-	framework.Passf(ctx, "Policies are in place to monitor '%s' category issues", category)
+	framework.Failf(ctx, "There are no %q time policy being used", strings.ToLower(storage.LifecycleStage_name[int32(policyLifeCycle)]))
 }
 
 // CheckAnyPolicyInCategoryEnforced checks if there are any enabled policies in the given category and are enforced.
@@ -100,12 +103,14 @@ func CheckAnyPolicyInCategoryEnforced(ctx framework.ComplianceContext, category 
 	categoryPolicies := ctx.Data().PolicyCategories()
 	policySet := categoryPolicies[category]
 	if policySet.Cardinality() == 0 {
-		framework.Failf(ctx, "No policies are in place to monitor '%s' category issues", category)
+		framework.Failf(ctx, "No policies are in place to detect %q category issues", category)
 		return
 	}
 	policies := policySet.AsSlice()
-	for _, policy := range policies {
-		CheckPolicyEnforced(ctx, policy)
+	if AnyPoliciesEnforced(ctx, policies) > 0 {
+		framework.Passf(ctx, "Policies are in place to detect and enforce %q category issues.", category)
+	} else {
+		framework.Failf(ctx, "No policies are being enforced in %q category issues.", category)
 	}
 }
 

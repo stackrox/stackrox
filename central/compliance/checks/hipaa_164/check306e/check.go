@@ -15,7 +15,6 @@ func init() {
 		clusterIsCompliant)
 }
 
-// It's StackRox bro. Come on.
 func clusterIsCompliant(ctx framework.ComplianceContext) {
 	common.IsImageScannerInUse(ctx)
 	common.CheckFixedCVES(ctx)
