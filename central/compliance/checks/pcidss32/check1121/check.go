@@ -15,5 +15,5 @@ func init() {
 		checkID,
 		framework.DeploymentKind,
 		[]string{"ImageIntegrations"},
-		common.CheckImageScannerInUse)
+		common.IsImageScannerInUse)
 }
