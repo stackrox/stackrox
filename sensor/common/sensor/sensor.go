@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/benchmarks"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/env"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
@@ -69,6 +70,8 @@ type Sensor struct {
 	conn *grpc.ClientConn
 
 	sensorInstance sensor.Sensor
+
+	stoppedSig concurrency.ErrorSignal
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
@@ -85,6 +88,8 @@ func NewSensor(log *logging.Logger, l listeners.Listener, e enforcers.Enforcer, 
 		enforcer:           e,
 		orchestrator:       o,
 		networkConnManager: n,
+
+		stoppedSig: concurrency.NewErrorSignal(),
 	}
 }
 
@@ -226,7 +231,14 @@ func (s *Sensor) runSensor() {
 
 	if err := s.sensorInstance.Wait(); err != nil {
 		s.logger.Errorf("Sensor reported an error: %v", err)
+		s.stoppedSig.SignalWithError(err)
 	} else {
 		s.logger.Info("Terminating central connection.")
+		s.stoppedSig.Signal()
 	}
+}
+
+// Stopped returns an error signal that returns when the sensor terminates.
+func (s *Sensor) Stopped() concurrency.ReadOnlyErrorSignal {
+	return &s.stoppedSig
 }

@@ -56,10 +56,12 @@ func (s *sensor) sendEventsSingle(
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	log.Infof("Attempting to establish connection to Central ...")
 	stream, err := client.Communicate(ctx)
 	if err != nil {
 		return true, fmt.Errorf("opening stream: %v", err)
 	}
+	log.Infof("Established connection to Central.")
 	defer stream.CloseSend()
 
 	go s.receiveMessages(output, stream)

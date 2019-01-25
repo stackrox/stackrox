@@ -35,6 +35,13 @@ func main() {
 			logger.Infof("Caught %s signal", sig)
 			s.Stop()
 			return
+		case <-s.Stopped().Done():
+			if err := s.Stopped().Err(); err != nil {
+				logger.Fatalf("Sensor exited with error: %v", err)
+			} else {
+				logger.Info("Sensor exited normally")
+			}
+			return
 		}
 	}
 }
