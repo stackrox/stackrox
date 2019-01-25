@@ -9,6 +9,7 @@ import (
 type CheckRegistry interface {
 	Register(check Check) error
 	Lookup(id string) Check
+	GetAll() []Check
 }
 
 type checkRegistry struct {
@@ -52,4 +53,15 @@ func (r *checkRegistry) Lookup(id string) Check {
 	defer r.checksMutex.RUnlock()
 
 	return r.checks[id]
+}
+
+func (r *checkRegistry) GetAll() []Check {
+	r.checksMutex.RLock()
+	defer r.checksMutex.RUnlock()
+
+	result := make([]Check, 0, len(r.checks))
+	for _, check := range r.checks {
+		result = append(result, check)
+	}
+	return result
 }
