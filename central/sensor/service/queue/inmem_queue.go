@@ -44,7 +44,7 @@ func (p *queueImpl) Pull() (*central.MsgFromSensor, error) {
 	evt := p.queue.Remove(p.queue.Front()).(*central.MsgFromSensor)
 	metrics.IncrementSensorEventQueueCounter(ops.Remove, common.GetMessageType(evt))
 	// If resource action was not create, then delete it from the cache
-	if evt.GetEvent().GetAction() != central.ResourceAction_CREATE_RESOURCE {
+	if evt.GetEvent() != nil && evt.GetEvent().GetAction() != central.ResourceAction_CREATE_RESOURCE {
 		delete(p.resourceIDToEvent, evt.GetEvent().GetId())
 	}
 
@@ -60,7 +60,7 @@ func (p *queueImpl) Push(msg *central.MsgFromSensor) error {
 }
 
 func (p *queueImpl) pushNoLock(msg *central.MsgFromSensor) error {
-	if msg.GetEvent().GetAction() == central.ResourceAction_CREATE_RESOURCE {
+	if msg.GetEvent().GetAction() == central.ResourceAction_CREATE_RESOURCE || msg.GetEvent() == nil {
 		p.queue.PushBack(msg)
 		// Purposefully don't cache the CREATE because it should never be deduped
 		return nil
