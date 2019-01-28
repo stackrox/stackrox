@@ -42,6 +42,18 @@ var hipaa164 = Standard{
 				},
 			},
 		},
+		{
+			ID:          "308_a_7_ii_e",
+			Name:        "308.a.7.ii.e",
+			Description: "Applications and data criticality analysis",
+			Controls: []Control{
+				{
+					ID:          "308_a_7_ii_e",
+					Name:        "308.a.7.ii.e",
+					Description: "Applications and data criticality analysis",
+				},
+			},
+		},
 	},
 }
 
