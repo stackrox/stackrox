@@ -31,6 +31,18 @@ var hipaa164 = Standard{
 			},
 		},
 		{
+			ID:          "308_a_4_ii_b",
+			Name:        "308.a.4.ii.b",
+			Description: "Information Access Management",
+			Controls: []Control{
+				{
+					ID:          "308_a_4_ii_b",
+					Name:        "308.a.4.ii.b",
+					Description: "Information Access Management",
+				},
+			},
+		},
+		{
 			ID:          "308_a_5_ii_b",
 			Name:        "308.a.5.ii.b",
 			Description: "Security Awareness and Training",
