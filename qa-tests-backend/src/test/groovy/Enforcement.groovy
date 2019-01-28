@@ -1,10 +1,12 @@
 import groups.BAT
 import groups.Integration
 import groups.PolicyEnforcement
+import io.stackrox.proto.storage.PolicyOuterClass
 import objects.DaemonSet
 import objects.Deployment
 import org.junit.Assume
 import org.junit.experimental.categories.Category
+import services.CreatePolicyService
 import spock.lang.Unroll
 import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
@@ -14,6 +16,7 @@ class Enforcement extends BaseSpecification {
     private final static String CONTAINER_PORT_22_POLICY = "Secure Shell (ssh) Port Exposed"
     private final static String APT_GET_POLICY = "Ubuntu Package Manager Execution"
     private final static String LATEST_TAG = "Latest tag"
+    private final static String CVSS = "CVSS >= 7"
 
     @Category([BAT, Integration, PolicyEnforcement])
     def "Test Admission Controller Enforcement - Integration"() {
@@ -160,6 +163,160 @@ class Enforcement extends BaseSpecification {
     }
 
     @Category([BAT, Integration, PolicyEnforcement])
+    def "Test Scale-down Enforcement - Integration (build,deploy - image tag)"() {
+        // This test verifies enforcement by triggering a policy violation on an image
+        // based policy that is configured for scale-down enforcement with both BUILD and
+        // DEPLOY Lifecycle Stages
+
+        given:
+        "custom policy to test image tag with enforcement and lifecycle stages"
+        PolicyOuterClass.Policy policy = PolicyOuterClass.Policy.newBuilder()
+                .setName("TestImageTagPolicyForEnforcement")
+                .setDescription("Test image tag")
+                .setRationale("Test image tag")
+                .addLifecycleStages(LifecycleStage.BUILD)
+                .addLifecycleStages(LifecycleStage.DEPLOY)
+                .addCategories("Image Assurance")
+                .setDisabled(false)
+                .setSeverityValue(2)
+                .setFields(PolicyOuterClass.PolicyFields.newBuilder()
+                        .setImageName(PolicyOuterClass.ImageNamePolicy.newBuilder()
+                                .setTag("testing")
+                                .build())
+                        .build())
+                .build()
+        String policyID = CreatePolicyService.createNewPolicy(policy)
+        assert policyID != null
+
+        and:
+        "add enforcement action"
+        Services.updatePolicyEnforcement(
+                "TestImageTagPolicyForEnforcement",
+                [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,
+                 EnforcementAction.FAIL_BUILD_ENFORCEMENT]
+        )
+
+        when:
+        "Create Deployment to test scale-down enforcement"
+        def ac = orchestrator.getAdmissionController()
+        if (ac != null) {
+            orchestrator.deleteAdmissionController(ac.getMetadata().getName())
+        }
+        Deployment d = new Deployment()
+                .setName("scale-down-enforcement-build-deploy-image")
+                .setImage("apollo-dtr.rox.systems/qa/enforcement:testing")
+                .addPort(22)
+                .addLabel("app", "scale-down-enforcement-build-deploy")
+                .setSkipReplicaWait(true)
+        orchestrator.createDeployment(d)
+        assert Services.waitForDeployment(d)
+
+        and:
+        "get violation details"
+        List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
+                d.name,
+                "TestImageTagPolicyForEnforcement",
+                30
+        ) as List<AlertOuterClass.ListAlert>
+        assert violations != null && violations?.size() > 0
+        AlertOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
+
+        then:
+        "check deployment was scaled-down to 0 replicas"
+        def replicaCount = 1
+        def startTime = System.currentTimeMillis()
+        while (replicaCount > 0 && (System.currentTimeMillis() - startTime) < 60000) {
+            replicaCount = orchestrator.getDeploymentReplicaCount(d)
+            sleep 1000
+        }
+        assert replicaCount == 0
+        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
+        assert Services.getAlertEnforcementCount(
+                d.name,
+                "TestImageTagPolicyForEnforcement") == 1
+
+        cleanup:
+        "restore enforcement state of policy and remove deployment"
+        orchestrator.createAdmissionController(ac)
+        if (d) {
+            orchestrator.deleteDeployment(d)
+        }
+        if (policyID) {
+            CreatePolicyService.deletePolicy(policyID)
+        }
+    }
+
+    @Category([BAT, Integration, PolicyEnforcement])
+    def "Test Scale-down Enforcement - Integration (build,deploy - cvss)"() {
+        // This test verifies enforcement by triggering a policy violation on a CVSS
+        // based policy that is configured for scale-down enforcement with both BUILD and
+        // DEPLOY Lifecycle Stages
+
+        given:
+        "add BUILD and DEPLOY ifecylce stages"
+        def startlifeCycle = Services.updatePolicyLifecycleStage(
+                CVSS,
+                [LifecycleStage.BUILD, LifecycleStage.DEPLOY]
+        )
+
+        and:
+        "Add scale-down and fail-build enforcement to an existing policy"
+        def startEnforcements = Services.updatePolicyEnforcement(
+                CVSS,
+                [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,
+                 EnforcementAction.FAIL_BUILD_ENFORCEMENT]
+        )
+
+        when:
+        "Create Deployment to test scale-down enforcement"
+        def ac = orchestrator.getAdmissionController()
+        if (ac != null) {
+            orchestrator.deleteAdmissionController(ac.getMetadata().getName())
+        }
+        Deployment d = new Deployment()
+                .setName("scale-down-enforcement-build-deploy-cvss")
+                .setImage("apollo-dtr.rox.systems/qa/enforcement:testing")
+                .addPort(22)
+                .addLabel("app", "scale-down-enforcement-build-deploy")
+                .setSkipReplicaWait(true)
+        orchestrator.createDeployment(d)
+        assert Services.waitForDeployment(d)
+
+        and:
+        "get violation details"
+        List<AlertOuterClass.ListAlert> violations = Services.getViolationsWithTimeout(
+                d.name,
+                CVSS,
+                30
+        ) as List<AlertOuterClass.ListAlert>
+        assert violations != null && violations?.size() > 0
+        AlertOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
+
+        then:
+        "check deployment was scaled-down to 0 replicas"
+        def replicaCount = 1
+        def startTime = System.currentTimeMillis()
+        while (replicaCount > 0 && (System.currentTimeMillis() - startTime) < 60000) {
+            replicaCount = orchestrator.getDeploymentReplicaCount(d)
+            sleep 1000
+        }
+        assert replicaCount == 0
+        println "Enforcement took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        assert alert.enforcement.action == EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT
+        assert Services.getAlertEnforcementCount(
+                d.name,
+                CVSS) == 1
+
+        cleanup:
+        "restore enforcement state of policy and remove deployment"
+        orchestrator.createAdmissionController(ac)
+        Services.updatePolicyEnforcement(CVSS, startEnforcements)
+        Services.updatePolicyLifecycleStage(CVSS, startlifeCycle)
+        orchestrator.deleteDeployment(d)
+    }
+
+    @Category([BAT, Integration, PolicyEnforcement])
     def "Test Node Constraint Enforcement - Integration"() {
         // This test verifies enforcement by triggering a policy violation on a policy
         // that is configured for node constraint enforcement
@@ -236,6 +393,46 @@ class Enforcement extends BaseSpecification {
         def startEnforcements = Services.updatePolicyEnforcement(
                 LATEST_TAG,
                 [EnforcementAction.FAIL_BUILD_ENFORCEMENT,]
+        )
+
+        when:
+        "Request Image Scan"
+        def scanResults = Services.requestBuildImageScan(
+                "apollo-dtr.rox.systems",
+                "legacy-apps/struts-app",
+                "latest"
+        )
+
+        then:
+        "verify violation and enforcement"
+        assert scanResults.getAlertsList().findAll {
+            it.getPolicy().name == LATEST_TAG &&
+            it.getPolicy().getEnforcementActionsList().find {
+                it.getNumber() == EnforcementAction.FAIL_BUILD_ENFORCEMENT_VALUE
+            }
+        }.size() == 1
+
+        cleanup:
+        "restore enforcement state of policy and remove deployment"
+        Services.updatePolicyEnforcement(LATEST_TAG, startEnforcements)
+        Services.updatePolicyLifecycleStage(LATEST_TAG, startlifeCycle)
+    }
+
+    @Category([BAT, Integration, PolicyEnforcement])
+    def "Test Fail Build Enforcement - Integration (build,deploy)"() {
+        // This test verifies enforcement by triggering a policy violation on a policy
+        // that is configured for fail build enforcement
+
+        given:
+        "Apply policy at Build time"
+        def startlifeCycle = Services.updatePolicyLifecycleStage(
+                LATEST_TAG,
+                [LifecycleStage.BUILD, LifecycleStage.DEPLOY]
+        )
+        "Add node constraint enforcement to an existing policy"
+        def startEnforcements = Services.updatePolicyEnforcement(
+                LATEST_TAG,
+                [EnforcementAction.FAIL_BUILD_ENFORCEMENT, EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT]
         )
 
         when:
@@ -503,4 +700,5 @@ class Enforcement extends BaseSpecification {
                 [EnforcementAction.KILL_POD_ENFORCEMENT]                       |
                 APT_GET_POLICY
     }
+
 }
