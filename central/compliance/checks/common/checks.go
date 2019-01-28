@@ -8,6 +8,17 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
+// CheckNotifierInUse checks if any notifiers have been sent up for alerts.
+func CheckNotifierInUse(ctx framework.ComplianceContext) {
+	for _, notifier := range ctx.Data().Notifiers() {
+		if notifier.GetEnabled() == true {
+			framework.Pass(ctx, "At least one notifier is enabled.")
+			return
+		}
+	}
+	framework.Fail(ctx, "There are no enabled notifiers for alerts.")
+}
+
 // IsImageScannerInUse checks if we have atleast one image scanner in use.
 func IsImageScannerInUse(ctx framework.ComplianceContext) {
 	var scanners []string

@@ -168,6 +168,18 @@ func (mr *MockComplianceDataRepositoryMockRecorder) Nodes() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Nodes", reflect.TypeOf((*MockComplianceDataRepository)(nil).Nodes))
 }
 
+// Notifiers mocks base method
+func (m *MockComplianceDataRepository) Notifiers() []*storage.Notifier {
+	ret := m.ctrl.Call(m, "Notifiers")
+	ret0, _ := ret[0].([]*storage.Notifier)
+	return ret0
+}
+
+// Notifiers indicates an expected call of Notifiers
+func (mr *MockComplianceDataRepositoryMockRecorder) Notifiers() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Notifiers", reflect.TypeOf((*MockComplianceDataRepository)(nil).Notifiers))
+}
+
 // Policies mocks base method
 func (m *MockComplianceDataRepository) Policies() map[string]*storage.Policy {
 	ret := m.ctrl.Call(m, "Policies")

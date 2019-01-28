@@ -8,6 +8,7 @@ import (
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
+	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	policiesStore "github.com/stackrox/rox/central/policy/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
@@ -27,6 +28,7 @@ type factory struct {
 	imageIntegrationStore imageIntegrationStore.DataStore
 	processIndicatorStore processIndicatorStore.DataStore
 	networkFlowStore      networkFlowStore.ClusterStore
+	notifierStore         notifierStore.Store
 }
 
 // NewDefaultFactory creates a new RepositoryFactory using the default instances for accessing data.
@@ -40,6 +42,7 @@ func NewDefaultFactory() RepositoryFactory {
 		imageIntegrationStore: imageIntegrationStore.Singleton(),
 		processIndicatorStore: processIndicatorStore.Singleton(),
 		networkFlowStore:      networkFlowStore.Singleton(),
+		notifierStore:         notifierStore.Singleton(),
 	}
 }
 

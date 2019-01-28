@@ -27,6 +27,7 @@ type ComplianceDataRepository interface {
 	ProcessIndicators() []*storage.ProcessIndicator
 	NetworkFlows() []*storage.NetworkFlow
 	PolicyCategories() map[string]set.StringSet
+	Notifiers() []*storage.Notifier
 
 	// Per-host data
 

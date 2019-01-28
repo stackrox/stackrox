@@ -23,6 +23,7 @@ type repository struct {
 	imageIntegrations  []*storage.ImageIntegration
 	processIndicators  []*storage.ProcessIndicator
 	networkFlows       []*storage.NetworkFlow
+	notifiers          []*storage.Notifier
 	categoryToPolicies map[string]set.StringSet // maps categories to policy set
 
 	hostProcesses map[string][]*compliance.CommandLine
@@ -71,6 +72,10 @@ func (r *repository) ProcessIndicators() []*storage.ProcessIndicator {
 
 func (r *repository) NetworkFlows() []*storage.NetworkFlow {
 	return r.networkFlows
+}
+
+func (r *repository) Notifiers() []*storage.Notifier {
+	return r.notifiers
 }
 
 func (r *repository) Alerts() []*storage.ListAlert {
@@ -204,6 +209,11 @@ func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[s
 
 	flowStore := f.networkFlowStore.GetFlowStore(domain.Cluster().ID())
 	r.networkFlows, _, err = flowStore.GetAllFlows()
+	if err != nil {
+		return err
+	}
+
+	r.notifiers, err = f.notifierStore.GetNotifiers(&v1.GetNotifiersRequest{})
 	if err != nil {
 		return err
 	}
