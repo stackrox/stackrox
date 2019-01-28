@@ -61,7 +61,7 @@ setupGCP: &setupGCP
       echo $GKE_SERVICE_ACCOUNT > /tmp/gcp.json
       gcloud auth activate-service-account --key-file /tmp/gcp.json
       gcloud config set project stackrox-ci
-      gcloud config set compute/zone us-central1-f
+      gcloud config set compute/zone us-central1-a
 
 createGKE: &createGKE
   run:
