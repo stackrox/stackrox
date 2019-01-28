@@ -61,13 +61,16 @@ func doesFieldExist(value reflect.Value) bool {
 	return !reflect.DeepEqual(value, reflect.Value{})
 }
 
-func newDeploymentEventFromResource(obj interface{}, action central.ResourceAction, deploymentType string, lister v1listers.PodLister) (wrap *deploymentWrap) {
-	wrap = newWrap(obj, deploymentType)
+func newDeploymentEventFromResource(obj interface{}, action central.ResourceAction, deploymentType string, lister v1listers.PodLister) *deploymentWrap {
+	wrap := newWrap(obj, deploymentType)
 	if wrap == nil {
 		return nil
 	}
-	wrap.populateNonStaticFields(obj, action, lister)
-	return
+	if err := wrap.populateNonStaticFields(obj, action, lister); err != nil {
+		logger.Error(err)
+		return nil
+	}
+	return wrap
 }
 
 func newWrap(obj interface{}, kind string) *deploymentWrap {
@@ -94,13 +97,12 @@ func (w *deploymentWrap) populateKubeProxyIfNecessary(o *v1.Pod) *metav1.LabelSe
 	return nil
 }
 
-func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central.ResourceAction, lister v1listers.PodLister) {
+func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central.ResourceAction, lister v1listers.PodLister) error {
 	w.original = obj
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
 	spec := objValue.FieldByName("Spec")
 	if !doesFieldExist(spec) {
-		logger.Errorf("Obj %+v does not have a Spec field", objValue)
-		return
+		return fmt.Errorf("obj %+v does not have a Spec field", objValue)
 	}
 
 	var podLabels map[string]string
@@ -110,19 +112,20 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 	switch o := obj.(type) {
 	case *openshift_appsv1.DeploymentConfig:
 		if o.Spec.Template == nil {
-			logger.Errorf("Spec obj %+v does not have a Template field or is not a pointer pod spec", spec)
-			return
+			return fmt.Errorf("spec obj %+v does not have a Template field or is not a pointer pod spec", spec)
 		}
 		podLabels = o.Spec.Template.Labels
 
 		labelSelector, err = w.getLabelSelector(spec)
 		if err != nil {
-			logger.Errorf("Error getting label selector: %v", err)
-			return
+			return fmt.Errorf("error getting label selector: %v", err)
 		}
 
 	// Pods don't have the abstractions that higher level objects have so maintain it's lifecycle independently
 	case *v1.Pod:
+		if o.Status.Phase != v1.PodRunning {
+			return fmt.Errorf("found Pod %s, but it was not running", o.Name)
+		}
 		// Standalone Pods do not have a PodTemplate, like the other deployment
 		// types do. So, we need to directly access the Pod's Spec field,
 		// instead of looking for it inside a PodTemplate.
@@ -132,15 +135,13 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 	default:
 		podTemplate, ok := spec.FieldByName("Template").Interface().(v1.PodTemplateSpec)
 		if !ok {
-			logger.Errorf("Spec obj %+v does not have a Template field", spec)
-			return
+			return fmt.Errorf("spec obj %+v does not have a Template field", spec)
 		}
 		podLabels = podTemplate.Labels
 
 		labelSelector, err = w.getLabelSelector(spec)
 		if err != nil {
-			logger.Errorf("Error getting label selector: %v", err)
-			return
+			return fmt.Errorf("error getting label selector: %v", err)
 		}
 	}
 
@@ -160,10 +161,11 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 			w.populateDataFromPods(pod)
 		} else {
 			if err := w.populatePodData(w.Name, labelSelector, lister); err != nil {
-				logger.Errorf("Could not populate pod data: %v", err)
+				return fmt.Errorf("could not populate pod data: %v", err)
 			}
 		}
 	}
+	return nil
 }
 
 func (w *deploymentWrap) GetDeployment() *storage.Deployment {
