@@ -600,8 +600,16 @@ h6 {
     border-top-color: inherit !important;
 }
 
+.btn-class {
+    @apply .flex .px-1 .rounded-sm .font-600 .uppercase .text-center .items-center .min-w-24 .justify-center .border-2 !important;
+}
+
+.btn-sm {
+    @apply .btn-class .py-1 .text-xs !important;
+}
+
 .btn {
-    @apply .flex .py-2 .px-1 .rounded-sm .font-600 .uppercase .text-center .text-sm .items-center .min-w-24 .justify-center .border-2 !important;
+    @apply .btn-class .py-2 .text-sm !important;
 }
 
 .btn-icon {

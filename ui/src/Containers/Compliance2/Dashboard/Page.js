@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 import Widget from 'Components/Widget';
 import StandardsAcrossEntity from 'Containers/Compliance2/widgets/StandardsAcrossEntity';
@@ -6,6 +7,8 @@ import StandardsByEntity from 'Containers/Compliance2/widgets/StandardsByEntity'
 import EntityCompliance from 'Containers/Compliance2/widgets/EntityCompliance';
 import Sunburst from 'Components/visuals/Sunburst';
 import GaugeWithDetail from 'Components/visuals/GaugeWithDetail';
+import LinkListWidget from 'Components/widgets/LinkListWidget';
+import Button from 'Components/Button';
 
 import {
     horizontalBarData,
@@ -16,6 +19,14 @@ import {
 import entityTypes from 'constants/entityTypes';
 
 import DashboardHeader from './Header';
+
+const namespacesList = [
+    { name: 'namespace-1', link: '/main/compliance2/namespace/1' },
+    { name: 'namespace-2', link: '/main/compliance2/namespace/2' },
+    { name: 'namespace-3', link: '/main/compliance2/namespace/3' },
+    { name: 'namespace-4', link: '/main/compliance2/namespace/4' },
+    { name: 'namespace-5', link: '/main/compliance2/namespace/5' }
+];
 
 const ComplianceDashboardPage = () => (
     <section className="flex flex-1 flex-col h-full">
@@ -38,6 +49,15 @@ const ComplianceDashboardPage = () => (
                     </div>
 
                     <StandardsAcrossEntity type={entityTypes.CLUSTERS} data={horizontalBarData} />
+                    <LinkListWidget
+                        title="5 Related Namespaces"
+                        data={namespacesList}
+                        headerComponents={
+                            <Link className="no-underline" to="/main/compliance2/namespaces">
+                                <Button className="btn-sm btn-base" text="View All" />
+                            </Link>
+                        }
+                    />
                     <StandardsByEntity type={entityTypes.CLUSTERS} />
 
                     <Widget header="Compliance Across Controls">
