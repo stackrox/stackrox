@@ -5,3 +5,4 @@ central/compliance/standards/pci_dss_3_2.go
 central/graphql/resolvers/generated.go
 Gopkg.lock
 proto/storage/proto.lock
+central/compliance/checks/fixtures/scraped.go

@@ -10,4 +10,6 @@ const (
 	PassStatus
 	// SkipStatus indicates that a compliance check was skipped as it was not applicable.
 	SkipStatus
+	// NoteStatus indicates the a compliance check gathered data, but could not make a pass/fail determination
+	NoteStatus
 )

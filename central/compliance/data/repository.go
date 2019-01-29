@@ -1,13 +1,16 @@
 package data
 
 import (
-	"fmt"
-
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 type repository struct {
@@ -26,8 +29,7 @@ type repository struct {
 	notifiers          []*storage.Notifier
 	categoryToPolicies map[string]set.StringSet // maps categories to policy set
 
-	hostProcesses map[string][]*compliance.CommandLine
-	hostFiles     map[string]map[string]*compliance.File
+	hostScrape map[string]*compliance.ComplianceReturn
 }
 
 func (r *repository) Cluster() *storage.Cluster {
@@ -82,20 +84,8 @@ func (r *repository) Alerts() []*storage.ListAlert {
 	return r.alerts
 }
 
-func (r *repository) HostProcesses(node *storage.Node) []*compliance.CommandLine {
-	processes, ok := r.hostProcesses[node.GetName()]
-	if !ok {
-		panic(fmt.Errorf("no such node: %s", node.GetId()))
-	}
-	return processes
-}
-
-func (r *repository) HostFiles(node *storage.Node) map[string]*compliance.File {
-	files, ok := r.hostFiles[node.GetName()]
-	if !ok {
-		panic(fmt.Errorf("no such node: %s", node.GetId()))
-	}
-	return files
+func (r *repository) HostScraped() map[string]*compliance.ComplianceReturn {
+	return r.hostScrape
 }
 
 func newRepository(domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn, factory *factory) (*repository, error) {
@@ -156,12 +146,18 @@ func policyCategories(policies []*storage.Policy) map[string]set.StringSet {
 	return result
 }
 
-func filesByPath(files []*compliance.File) map[string]*compliance.File {
-	result := make(map[string]*compliance.File, len(files))
-	for _, f := range files {
-		result[f.GetPath()] = f
+func expandFile(parent *compliance.File) map[string]*compliance.File {
+	expanded := make(map[string]*compliance.File)
+	for _, child := range parent.GetChildren() {
+		log.Infof("Child %s - %d", child.Path, len(child.Children))
+
+		childExpanded := expandFile(child)
+		for k, v := range childExpanded {
+			expanded[k] = v
+		}
 	}
-	return result
+	expanded[parent.GetPath()] = parent
+	return expanded
 }
 
 func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn, f *factory) error {
@@ -223,13 +219,20 @@ func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[s
 		return err
 	}
 
-	r.hostFiles = make(map[string]map[string]*compliance.File, len(scrapeResults))
-	r.hostProcesses = make(map[string][]*compliance.CommandLine, len(scrapeResults))
-	for nodeName, complianceRet := range scrapeResults {
-		filesMap := filesByPath(complianceRet.GetFiles())
-		r.hostFiles[nodeName] = filesMap
-		r.hostProcesses[nodeName] = complianceRet.GetCommandLines()
+	// Flatten the files so we can do direct lookups on the nested values
+	for _, n := range scrapeResults {
+		totalNodeFiles := make(map[string]*compliance.File)
+		for path, file := range n.GetFiles() {
+			expanded := expandFile(file)
+			for k, v := range expanded {
+				totalNodeFiles[k] = v
+			}
+			totalNodeFiles[path] = file
+		}
+		n.Files = totalNodeFiles
 	}
+
+	r.hostScrape = scrapeResults
 
 	return nil
 }

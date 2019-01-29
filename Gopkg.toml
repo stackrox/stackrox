@@ -202,3 +202,7 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
 [[constraint]]
   name = "cloud.google.com/go"
   version = "0.34.0"
+
+[[constraint]]
+  name = "github.com/coreos/go-systemd"
+  version = "v18"

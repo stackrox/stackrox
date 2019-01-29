@@ -8,7 +8,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/compliance/collection/command"
 	"github.com/stackrox/rox/compliance/collection/docker"
-	file2 "github.com/stackrox/rox/compliance/collection/file"
+	"github.com/stackrox/rox/compliance/collection/file"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -44,7 +44,9 @@ func main() {
 		log.Error(err)
 	}
 
-	msgReturn.Files, err = file2.CollectFiles()
+	msgReturn.SystemdFiles, err = file.CollectSystemdFiles()
+
+	msgReturn.Files, err = file.CollectFiles()
 	if err != nil {
 		log.Error(err)
 	}

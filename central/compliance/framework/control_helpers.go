@@ -82,3 +82,25 @@ func SkipNowf(ctx ComplianceContext, format string, args ...interface{}) {
 func Abortf(ctx ComplianceContext, format string, args ...interface{}) {
 	Abort(ctx, fmt.Errorf(format, args...))
 }
+
+// Note records "note" evidence for the compliance check active in the given context.
+func Note(ctx ComplianceContext, msg string) {
+	RecordEvidence(ctx, NoteStatus, msg)
+}
+
+// Notef records "note" evidence for the compliance check active in the given context.
+func Notef(ctx ComplianceContext, format string, args ...interface{}) {
+	Note(ctx, fmt.Sprintf(format, args...))
+}
+
+// NoteNow records "note" evidence for the compliance check active in the given context, and terminates the check.
+func NoteNow(ctx ComplianceContext, msg string) {
+	Note(ctx, msg)
+	Abort(ctx, nil)
+}
+
+// NoteNowf records "note" evidence for the compliance check active in the given context, and terminates the check.
+func NoteNowf(ctx ComplianceContext, format string, args ...interface{}) {
+	Notef(ctx, format, args...)
+	Abort(ctx, nil)
+}

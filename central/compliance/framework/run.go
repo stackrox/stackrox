@@ -6,6 +6,11 @@ import (
 	"sync"
 
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // ComplianceRun encapsulates a compliance run (i.e., multiple checks on a given domain). A ComplianceRun can only be

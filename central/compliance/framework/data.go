@@ -30,7 +30,5 @@ type ComplianceDataRepository interface {
 	Notifiers() []*storage.Notifier
 
 	// Per-host data
-
-	HostFiles(node *storage.Node) map[string]*compliance.File
-	HostProcesses(node *storage.Node) []*compliance.CommandLine
+	HostScraped() map[string]*compliance.ComplianceReturn
 }

@@ -19,12 +19,12 @@ var commandsToRetrieve = []string{
 	"kube-apiserver",
 	"etcd",
 	"kube-scheduler",
-	"kubectl",
+	"kubelet",
 }
 
 // RetrieveCommands returns the commandlines of the services to be evaluated
-func RetrieveCommands() ([]*compliance.CommandLine, error) {
-	var commands []*compliance.CommandLine
+func RetrieveCommands() (map[string]*compliance.CommandLine, error) {
+	commands := make(map[string]*compliance.CommandLine)
 	for _, c := range commandsToRetrieve {
 		c, exists, err := parseCommandline(c)
 		if err != nil {
@@ -33,7 +33,7 @@ func RetrieveCommands() ([]*compliance.CommandLine, error) {
 		if !exists {
 			continue
 		}
-		commands = append(commands, c)
+		commands[c.GetProcess()] = c
 	}
 	return commands, nil
 }
@@ -60,7 +60,7 @@ func parseCommandline(processes ...string) (*compliance.CommandLine, bool, error
 }
 
 func getPID(process string) (int, error) {
-	output, err := exec.Command("/usr/bin/pgrep", "-f", "-n", process).CombinedOutput()
+	output, err := exec.Command("/usr/bin/pgrep", "--exact", process).CombinedOutput()
 	if err != nil {
 		if len(output) != 0 {
 			return -1, fmt.Errorf("Error getting process %q. Output: %s. Err: %v", process, output, err)
@@ -133,18 +133,17 @@ func parseArgs(args []string) []*compliance.CommandLine_Args {
 		arg := newArg(key, value)
 
 		if strings.HasPrefix(key, "/") {
-			f, exists, err := file.EvaluatePath(key)
+			f, exists, err := file.EvaluatePath(key, true)
 			if exists && err == nil {
 				arg.File = f
 			}
 		}
 		if strings.HasPrefix(value, "/") {
-			f, exists, err := file.EvaluatePath(value)
+			f, exists, err := file.EvaluatePath(value, true)
 			if exists && err == nil {
 				arg.File = f
 			}
 		}
-
 		retArgs = append(retArgs, arg)
 	}
 	return retArgs

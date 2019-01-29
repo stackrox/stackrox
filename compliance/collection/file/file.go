@@ -4,22 +4,26 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"syscall"
 
+	systemdBus "github.com/coreos/go-systemd/dbus"
+	"github.com/godbus/dbus"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-var filesToCollect = []string{
-	// generalized files
+var filesWithContents = []string{
 	"/etc/audit",
 	"/etc/docker",
-	"/etc/kubernetes",
+	"/etc/fstab",
+}
 
-	// systemd
-	"/etc/systemd/system",
-	"/lib/systemd/system",
-	"/usr/lib/systemd/system",
+var filesWithoutContents = []string{
+	"/etc/kubernetes",
+	"/etc/cni",
+	"/opt/cni",
 
 	// individual files
 	"/var/run/docker.sock",
@@ -27,22 +31,72 @@ var filesToCollect = []string{
 	"/etc/default/docker",
 }
 
+var systemdUnits = []string{
+	"docker",
+	"kube",
+}
+
 var log = logging.LoggerForModule()
 
-// CollectFiles returns the result of data collection of the files
-func CollectFiles() ([]*compliance.File, error) {
-	var files []*compliance.File
-	for _, c := range filesToCollect {
-		file, exists, err := EvaluatePath(c)
-		if err != nil {
-			return nil, err
+func dbusConn() (*dbus.Conn, error) {
+	conn, err := dbus.Dial("unix:path=/host/run/systemd/private")
+	if err != nil {
+		return nil, err
+	}
+	methods := []dbus.Auth{dbus.AuthExternal(strconv.Itoa(os.Getuid()))}
+
+	err = conn.Auth(methods)
+	if err != nil {
+		conn.Close()
+		return nil, err
+	}
+
+	return conn, nil
+}
+
+// CollectSystemdFiles returns the result of data collection of the systemd files
+func CollectSystemdFiles() (map[string]*compliance.File, error) {
+	conn, err := systemdBus.NewConnection(dbusConn)
+	if err != nil {
+		return nil, err
+	}
+	systemdUnitFiles, err := conn.ListUnitFiles()
+	if err != nil {
+		return nil, err
+	}
+	systemFiles := make(map[string]*compliance.File)
+	for _, u := range systemdUnitFiles {
+		for _, unitSubstring := range systemdUnits {
+			if strings.Contains(u.Path, unitSubstring) {
+				file, exists, err := EvaluatePath(u.Path, false)
+				if err != nil || !exists {
+					continue
+				}
+				systemFiles[filepath.Base(u.Path)] = file
+			}
 		}
-		if !exists {
+	}
+	return systemFiles, nil
+}
+
+// CollectFiles returns the result of data collection of the files
+func CollectFiles() (map[string]*compliance.File, error) {
+	allFiles := make(map[string]*compliance.File)
+	for _, f := range filesWithoutContents {
+		file, exists, err := EvaluatePath(f, false)
+		if err != nil || !exists {
 			continue
 		}
-		files = append(files, file)
+		allFiles[file.GetPath()] = file
 	}
-	return files, nil
+	for _, f := range filesWithContents {
+		file, exists, err := EvaluatePath(f, true)
+		if err != nil || !exists {
+			continue
+		}
+		allFiles[file.GetPath()] = file
+	}
+	return allFiles, nil
 }
 
 func containerPath(s string) string {
@@ -50,8 +104,9 @@ func containerPath(s string) string {
 }
 
 // EvaluatePath takes in a path and returns the corresponding File, if it exists or an error
-func EvaluatePath(path string) (*compliance.File, bool, error) {
-	fi, err := os.Stat(containerPath(path))
+func EvaluatePath(path string, withContents bool) (*compliance.File, bool, error) {
+	pathInContainer := containerPath(path)
+	fi, err := os.Stat(pathInContainer)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, false, nil
@@ -59,33 +114,33 @@ func EvaluatePath(path string) (*compliance.File, bool, error) {
 		return nil, false, err
 	}
 
-	File := getFile(path, fi)
+	file := getFile(path, fi)
 	if fi.IsDir() {
-		files, err := ioutil.ReadDir(containerPath(path))
+		files, err := ioutil.ReadDir(pathInContainer)
 		if err != nil {
 			return nil, false, err
 		}
 		for _, f := range files {
-			file, exists, err := EvaluatePath(filepath.Join(path, f.Name()))
+			child, exists, err := EvaluatePath(filepath.Join(path, f.Name()), withContents)
 			if err != nil {
 				return nil, false, err
 			}
 			if !exists {
 				continue
 			}
-			File.Children = append(File.Children, file)
+			file.Children = append(file.Children, child)
 		}
-	} else {
+	} else if withContents {
 		if fi.Size() == 0 {
-			return File, true, nil
+			return file, true, nil
 		}
 		var err error
-		File.Content, err = ioutil.ReadFile(containerPath(path))
+		file.Content, err = ioutil.ReadFile(pathInContainer)
 		if err != nil {
 			return nil, false, err
 		}
 	}
-	return File, true, nil
+	return file, true, nil
 }
 
 func getFile(path string, fi os.FileInfo) *compliance.File {
@@ -94,7 +149,9 @@ func getFile(path string, fi os.FileInfo) *compliance.File {
 	return &compliance.File{
 		Path:        path,
 		User:        uid,
+		UserName:    userMap[uid],
 		Group:       gid,
+		GroupName:   groupMap[gid],
 		Permissions: uint32(fi.Mode().Perm()),
 		IsDir:       fi.IsDir(),
 	}

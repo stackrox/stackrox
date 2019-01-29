@@ -1060,3 +1060,11 @@ dependencies:
       LICENSE.txt: 1299b0bd3492107a8c89944819b8d6c25f9471c54938f655c2822d5b7fdbc77d
     attribution:
     - Mark Bates
+
+  vendor/github.com/coreos/go-systemd:
+    url : "https://github.com/coreos/go-systemd"
+    license: Apache-2.0
+    files:
+      LICENSE: 73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68
+    attribution:
+    - CoreOS, Inc

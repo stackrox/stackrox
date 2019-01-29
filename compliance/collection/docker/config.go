@@ -128,6 +128,10 @@ type Config struct {
 	Init                 bool                     `json:"init,omitempty"`
 	InitPath             string                   `json:"init-path,omitempty"`
 	SeccompProfile       string                   `json:"seccomp-profile,omitempty"`
+	NoNewPrivileges      bool                     `json:"no-new-privileges,omitempty"`
+	IpcMode              string                   `json:"default-ipc-mode,omitempty"`
+	// ResolvConf is the path to the configuration of the host resolver
+	ResolvConf string `json:"resolv-conf,omitempty"`
 }
 
 // DockerCommandExpansion tranforms the short versions of the dockerd command line into their full names

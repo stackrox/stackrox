@@ -13,6 +13,7 @@ var (
 		framework.FailStatus: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
 		framework.PassStatus: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 		framework.SkipStatus: storage.ComplianceState_COMPLIANCE_STATE_SKIP,
+		framework.NoteStatus: storage.ComplianceState_COMPLIANCE_STATE_NOTE,
 	}
 )
 

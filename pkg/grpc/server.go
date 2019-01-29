@@ -29,6 +29,8 @@ import (
 const (
 	publicAPIEndpoint     = ":443"
 	insecureLocalEndpoint = "127.0.0.1:444"
+
+	maxMsgSize = 8 * 1024 * 1024
 )
 
 func init() {
@@ -188,6 +190,7 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 		grpc.UnaryInterceptor(
 			grpc_middleware.ChainUnaryServer(a.unaryInterceptors()...),
 		),
+		grpc.MaxRecvMsgSize(maxMsgSize),
 	)
 
 	for _, service := range a.apiServices {

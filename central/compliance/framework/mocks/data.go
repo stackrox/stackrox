@@ -72,28 +72,16 @@ func (mr *MockComplianceDataRepositoryMockRecorder) Deployments() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Deployments", reflect.TypeOf((*MockComplianceDataRepository)(nil).Deployments))
 }
 
-// HostFiles mocks base method
-func (m *MockComplianceDataRepository) HostFiles(arg0 *storage.Node) map[string]*compliance.File {
-	ret := m.ctrl.Call(m, "HostFiles", arg0)
-	ret0, _ := ret[0].(map[string]*compliance.File)
+// HostScraped mocks base method
+func (m *MockComplianceDataRepository) HostScraped() map[string]*compliance.ComplianceReturn {
+	ret := m.ctrl.Call(m, "HostScraped")
+	ret0, _ := ret[0].(map[string]*compliance.ComplianceReturn)
 	return ret0
 }
 
-// HostFiles indicates an expected call of HostFiles
-func (mr *MockComplianceDataRepositoryMockRecorder) HostFiles(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HostFiles", reflect.TypeOf((*MockComplianceDataRepository)(nil).HostFiles), arg0)
-}
-
-// HostProcesses mocks base method
-func (m *MockComplianceDataRepository) HostProcesses(arg0 *storage.Node) []*compliance.CommandLine {
-	ret := m.ctrl.Call(m, "HostProcesses", arg0)
-	ret0, _ := ret[0].([]*compliance.CommandLine)
-	return ret0
-}
-
-// HostProcesses indicates an expected call of HostProcesses
-func (mr *MockComplianceDataRepositoryMockRecorder) HostProcesses(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HostProcesses", reflect.TypeOf((*MockComplianceDataRepository)(nil).HostProcesses), arg0)
+// HostScraped indicates an expected call of HostScraped
+func (mr *MockComplianceDataRepositoryMockRecorder) HostScraped() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HostScraped", reflect.TypeOf((*MockComplianceDataRepository)(nil).HostScraped))
 }
 
 // ImageIntegrations mocks base method

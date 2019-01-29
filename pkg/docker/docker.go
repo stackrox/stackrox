@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/docker/docker/api"
 	"github.com/docker/docker/client"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -37,6 +38,11 @@ func NewClient() (*client.Client, error) {
 	defer cancel()
 	cli.NegotiateAPIVersion(ctx)
 	return cli, nil
+}
+
+// NewClientWithPath returns a docker client with the path
+func NewClientWithPath(host string) (*client.Client, error) {
+	return client.NewClient(host, api.DefaultVersion, nil, nil)
 }
 
 // TimeoutContext returns a context with a timeout with the duration of the hang timeout

@@ -56,3 +56,11 @@ func (c *checkFromFunc) DataDependencies() []string {
 func (c *checkFromFunc) Run(ctx ComplianceContext) {
 	c.checkFn(ctx)
 }
+
+// NoteCheck simply publishes the passes description as evidence for a NoteStatus
+func NoteCheck(name, desc string) Check {
+	return NewCheckFromFunc(name, NodeKind,
+		nil, func(ctx ComplianceContext) {
+			NoteNow(ctx, desc)
+		})
+}

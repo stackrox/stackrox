@@ -1,16 +1,20 @@
 package docker
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
-	"os"
 	"time"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -27,9 +31,10 @@ var (
 
 // Data is the wrapper around all of the Docker info required for compliance
 type Data struct {
-	Info       types.Info
-	Containers []types.ContainerJSON
-	Images     []ImageWrap
+	Info          types.Info
+	Containers    []types.ContainerJSON
+	Images        []ImageWrap
+	BridgeNetwork types.NetworkResource
 }
 
 func getContext() (context.Context, context.CancelFunc) {
@@ -42,19 +47,52 @@ type ImageWrap struct {
 	History []image.HistoryResponseItem `json:"history"`
 }
 
-func getClient() (client *client.Client, err error) {
-	for _, p := range pathsForDockerSocket {
-		os.Setenv("DOCKER_HOST", p)
-		client, err = docker.NewClient()
-		if err == nil {
-			return
-		}
+// Config returns an empty config if one does not exist or the config from the Image object
+func (i ImageWrap) Config() *container.Config {
+	if i.Image.Config == nil {
+		return &container.Config{}
 	}
-	return
+	return i.Image.Config
 }
 
-// GetDockerData returns the marshalled JSON from scraping Docker
-func GetDockerData() (*compliance.JSONDataChunk, error) {
+// Name attempts to return a human-readable registry-based name, but will fall back to ID if it cannot
+func (i ImageWrap) Name() string {
+	if len(i.Image.RepoTags) != 0 {
+		return i.Image.RepoTags[0]
+	}
+	if len(i.Image.RepoDigests) != 0 {
+		return i.Image.RepoDigests[0]
+	}
+	return i.Image.ID
+}
+
+func checkClient(c *client.Client) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	_, err := c.Info(ctx)
+	return err
+}
+
+func getClient() (*client.Client, error) {
+	errorList := errorhelpers.NewErrorList("Docker client")
+	for _, p := range pathsForDockerSocket {
+		log.Infof("Trying to create client with: %s", p)
+		client, err := docker.NewClientWithPath(p)
+		if err != nil {
+			errorList.AddError(err)
+			continue
+		}
+		if err := checkClient(client); err != nil {
+			errorList.AddError(err)
+			continue
+		}
+		return client, nil
+	}
+	return nil, errorList.ToError()
+}
+
+// GetDockerData returns the marshaled JSON from scraping Docker
+func GetDockerData() (*compliance.GZIPDataChunk, error) {
 	var dockerData Data
 
 	client, err := getClient()
@@ -77,13 +115,22 @@ func GetDockerData() (*compliance.JSONDataChunk, error) {
 		return nil, err
 	}
 
-	bytes, err := json.Marshal(&dockerData)
+	dockerData.BridgeNetwork, err = getBridgeNetwork(client)
 	if err != nil {
 		return nil, err
 	}
 
-	return &compliance.JSONDataChunk{
-		Json: bytes,
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	if err := json.NewEncoder(gz).Encode(&dockerData); err != nil {
+		return nil, err
+	}
+	if err := gz.Close(); err != nil {
+		return nil, err
+	}
+
+	return &compliance.GZIPDataChunk{
+		Gzip: buf.Bytes(),
 	}, nil
 }
 
@@ -166,4 +213,12 @@ func getImages(c *client.Client) ([]ImageWrap, error) {
 		images = append(images, ImageWrap{Image: image, History: histories})
 	}
 	return images, nil
+}
+
+func getBridgeNetwork(c *client.Client) (types.NetworkResource, error) {
+	listFilters := filters.NewArgs()
+	listFilters.Add("Name", "bridge")
+	ctx, cancel := docker.TimeoutContext()
+	defer cancel()
+	return c.NetworkInspect(ctx, "bridge", types.NetworkInspectOptions{})
 }

@@ -2,6 +2,7 @@ package framework
 
 import (
 	"fmt"
+	"runtime/debug"
 
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -65,6 +66,8 @@ func ForEachDeployment(ctx ComplianceContext, checkFn func(ComplianceContext, *s
 func finalize(ctx ComplianceContext) {
 	var err error
 	if action := recover(); action != nil {
+		log.Infof("finalize: %+v", action)
+		debug.PrintStack()
 		switch a := action.(type) {
 		case error:
 			err = a
