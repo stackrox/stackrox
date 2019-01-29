@@ -102,7 +102,7 @@ func (s *suiteImpl) TestFail() {
 				{
 					Volumes: []*storage.Volume{
 						{
-							Type: "HostPath",
+							Type: "HostPath (bare host directory volume)",
 						},
 					},
 				},
@@ -115,7 +115,7 @@ func (s *suiteImpl) TestFail() {
 				{
 					Volumes: []*storage.Volume{
 						{
-							Type: "HostPath",
+							Type: "HostPath (bare host directory volume)",
 						},
 					},
 				},

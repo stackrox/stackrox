@@ -129,7 +129,7 @@ func CheckAnyPolicyInCategoryEnforced(ctx framework.ComplianceContext, category 
 func DeploymentHasHostMounts(deployment *storage.Deployment) bool {
 	for _, container := range deployment.Containers {
 		for _, vol := range container.Volumes {
-			if vol.Type == "HostPath" {
+			if strings.Contains(vol.Type, "HostPath") {
 				return true
 			}
 		}
