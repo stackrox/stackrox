@@ -55,6 +55,20 @@ var hipaa164 = Standard{
 			},
 		},
 		{
+			ID:          "308_a_6_ii",
+			Name:        "308.a.6.ii",
+			Description: "Identify and respond to suspected or known security incidents",
+			Controls: []Control{
+				{
+					ID:   "308_a_6_ii",
+					Name: "308.a.6.ii",
+					Description: "Identify and respond to suspected or known security incidents; mitigate, to the " +
+						"extent practicable, harmful effects of security incidents that are known to the covered " +
+						"entity or business associate; and document security incidents and their outcomes.",
+				},
+			},
+		},
+		{
 			ID:          "308_a_7_ii_e",
 			Name:        "308.a.7.ii.e",
 			Description: "Applications and data criticality analysis",

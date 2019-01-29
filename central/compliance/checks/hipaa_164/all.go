@@ -7,5 +7,6 @@ import (
 	_ "github.com/stackrox/rox/central/compliance/checks/hipaa_164/check308a3iia"
 	_ "github.com/stackrox/rox/central/compliance/checks/hipaa_164/check308a4iib"
 	_ "github.com/stackrox/rox/central/compliance/checks/hipaa_164/check308a5iib"
+	_ "github.com/stackrox/rox/central/compliance/checks/hipaa_164/check308a6ii"
 	_ "github.com/stackrox/rox/central/compliance/checks/hipaa_164/check308a7iie"
 )
