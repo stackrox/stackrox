@@ -8,7 +8,7 @@ import {
     GradientDefs,
     LabelSeries
 } from 'react-vis';
-
+import { withRouter, Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import merge from 'deepmerge';
 import HoverHint from './HoverHint';
@@ -27,7 +27,6 @@ class HorizontalBarChart extends Component {
         valueGradientColorEnd: PropTypes.string,
         onValueMouseOver: PropTypes.func,
         onValueMouseOut: PropTypes.func,
-        onValueClick: PropTypes.func,
         minimal: PropTypes.bool
     };
 
@@ -41,7 +40,6 @@ class HorizontalBarChart extends Component {
         valueGradientColorEnd: 'var(--tertiary-300',
         onValueMouseOver: null,
         onValueMouseOut: null,
-        onValueClick: null,
         minimal: false
     };
 
@@ -98,8 +96,7 @@ class HorizontalBarChart extends Component {
     };
 
     onValueClickHandler = datum => {
-        const { onValueClick } = this.props;
-        if (onValueClick) onValueClick(datum);
+        if (datum.barLink) this.props.history.push(datum.barLink);
     };
 
     getContainerProps = hintsEnabled => {
@@ -129,7 +126,8 @@ class HorizontalBarChart extends Component {
             color: 'url(#horizontalGradient)',
             style: {
                 height: 12,
-                rx: '3px'
+                rx: '3px',
+                cursor: 'pointer'
             },
             onValueMouseOver: this.onValueMouseOverHandler,
             onValueMouseOut: this.onValueMouseOutHandler,
@@ -166,9 +164,9 @@ class HorizontalBarChart extends Component {
             let inner = value;
             if (axisLinks[value])
                 inner = (
-                    <a className="underline" href={axisLinks[value]}>
+                    <Link className="underline" to={axisLinks[value]}>
                         {value}
-                    </a>
+                    </Link>
                 );
 
             return <tspan>{inner}</tspan>;
@@ -234,7 +232,8 @@ class HorizontalBarChart extends Component {
                         style={{
                             height: seriesProps.style.height,
                             stroke: 'var(--base-200)',
-                            fill: `url(#bar-background)`
+                            fill: `url(#bar-background)`,
+                            cursor: 'pointer'
                         }}
                     />
 
@@ -246,7 +245,8 @@ class HorizontalBarChart extends Component {
                         labelAnchorY="no-change"
                         labelAnchorX="end-alignment"
                         style={{
-                            fill: 'var(--base-800)'
+                            fill: 'var(--base-800)',
+                            cursor: 'pointer'
                         }}
                     />
 
@@ -268,4 +268,4 @@ class HorizontalBarChart extends Component {
     }
 }
 
-export default HorizontalBarChart;
+export default withRouter(HorizontalBarChart);

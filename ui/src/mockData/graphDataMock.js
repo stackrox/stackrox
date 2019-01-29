@@ -1,8 +1,29 @@
 const horizontalBarData = [
-    { y: 'PCI', x: 63, hint: { title: 'Tip Title', body: 'This is the body' } },
-    { y: 'NIST', x: 84 },
-    { y: 'HIPAA', x: 29, axisLink: 'https://google.com/search?q=HIPAA' },
-    { y: 'CIS', x: 52 }
+    {
+        y: 'PCI',
+        x: 50,
+        axisLink: '/main/compliance2/PCI?GroupBy=Controls',
+        barLink: '/main/compliance2/PCI?GroupBy=Clusters',
+        hint: { title: 'PCI Standard - 50%', body: '50 controls failing across 3 clusters' }
+    },
+    {
+        y: 'NIST',
+        x: 100,
+        axisLink: '/main/compliance2/NIST?GroupBy=Controls',
+        barLink: '/main/compliance2/NIST?GroupBy=Clusters'
+    },
+    {
+        y: 'HIPAA',
+        x: 25,
+        axisLink: '/main/compliance2/HIPAA?GroupBy=Controls',
+        barLink: '/main/compliance2/HIPAA?GroupBy=Clusters'
+    },
+    {
+        y: 'CIS',
+        x: 75,
+        axisLink: '/main/compliance2/CIS?GroupBy=Controls',
+        barLink: '/main/compliance2/CIS?GroupBy=Clusters'
+    }
 ];
 
 const horizontalBarDatum = [
