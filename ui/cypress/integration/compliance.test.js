@@ -90,7 +90,6 @@ describe('Compliance page', () => {
         cy.get('@scanNow').should('contain', 'Scan now');
         cy.get('@scanNow').click();
         cy.wait('@trigger');
-        cy.get('@scanNow').should('not.contain', 'Scan now'); // spinner
     });
 
     it('should show scan results', () => {
