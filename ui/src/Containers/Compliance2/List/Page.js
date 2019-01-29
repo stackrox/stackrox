@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { horizontalBarData, sunburstData, sunburstLegendData } from 'mockData/graphDataMock';
 import entityTypes from 'constants/entityTypes';
+import { withRouter } from 'react-router-dom';
+import ReactRouterPropTypes from 'react-router-prop-types';
 
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
@@ -13,18 +15,21 @@ import {
     tableData as data,
     tableColumns as columns
 } from 'mockData/tableDataMock';
+import URLService from 'modules/URLService';
 import Widget from 'Components/Widget';
 import CollapsibleBanner from 'Components/CollapsibleBanner/CollapsibleBanner';
 import StandardsAcrossEntity from 'Containers/Compliance2/widgets/StandardsAcrossEntity';
 import StandardsByEntity from 'Containers/Compliance2/widgets/StandardsByEntity';
 import Sunburst from 'Components/visuals/Sunburst';
+import ComplianceEntityPage from 'Containers/Compliance2/Entity/Page';
 import SearchInput from './SearchInput';
 import Header from './Header';
 
 const entity = 'control';
 class ComplianceListPage extends Component {
     static propTypes = {
-        grouped: PropTypes.bool
+        grouped: PropTypes.bool,
+        match: ReactRouterPropTypes.match.isRequired
     };
 
     static defaultProps = {
@@ -48,9 +53,14 @@ class ComplianceListPage extends Component {
     renderSidePanel = () => {
         const { selectedRow } = this.state;
         if (!selectedRow) return '';
+        const pageId = URLService.getPageId(this.props.match);
         return (
-            <Panel header={selectedRow.node || selectedRow.control} onClose={this.clearSelectedRow}>
-                {/* <ComplianceEntityPage /> */}
+            <Panel
+                className="w-2/3"
+                header={selectedRow.node || selectedRow.control}
+                onClose={this.clearSelectedRow}
+            >
+                <ComplianceEntityPage rowPageId={pageId} />
             </Panel>
         );
     };
@@ -108,7 +118,7 @@ class ComplianceListPage extends Component {
                     <StandardsAcrossEntity type={entityTypes.NAMESPACES} data={horizontalBarData} />
                     <StandardsAcrossEntity type={entityTypes.NODES} data={horizontalBarData} />
                 </CollapsibleBanner>
-                <div className="flex">
+                <div className="flex flex-1 overflow-y-auto">
                     <Panel header={entityTypes.NODES} headerComponents={paginationComponent}>
                         {this.renderTable()}
                     </Panel>
@@ -119,4 +129,4 @@ class ComplianceListPage extends Component {
     }
 }
 
-export default ComplianceListPage;
+export default withRouter(ComplianceListPage);
