@@ -31,7 +31,7 @@ func IsImageScannerInUse(ctx framework.ComplianceContext) {
 	}
 
 	if len(scanners) > 0 {
-		framework.Pass(ctx, "Cluster has a image scanner in use")
+		framework.Pass(ctx, "Cluster has an image scanner in use")
 		return
 	}
 

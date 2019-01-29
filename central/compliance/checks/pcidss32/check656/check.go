@@ -13,7 +13,7 @@ const checkID = "PCI_DSS_3_2:6_5_6"
 func init() {
 	framework.MustRegisterNewCheck(
 		checkID,
-		framework.DeploymentKind,
+		framework.ClusterKind,
 		[]string{"ImageIntegrations"},
 		common.IsImageScannerInUse)
 }
