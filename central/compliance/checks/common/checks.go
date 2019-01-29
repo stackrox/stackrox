@@ -233,6 +233,8 @@ func deploymentHasNetworkPolicies(ctx framework.ComplianceContext, deployment *s
 }
 
 func deploymentHasIngressNetworkPolicies(ctx framework.ComplianceContext, deployment *storage.Deployment, deploymentIDToNodes map[string]*v1.NetworkNode) {
+	checkFailed := false
+
 	if isKubeSystem(deployment) {
 		framework.SkipNow(ctx, "Kubernetes system deployments are exempt from this requirement")
 		return
@@ -243,18 +245,22 @@ func deploymentHasIngressNetworkPolicies(ctx framework.ComplianceContext, deploy
 
 	if usesHostNamespace {
 		framework.Fail(ctx, "Deployment uses host network, which allows it to subvert network policies")
-		return
+		checkFailed = true
 	}
 
 	if !hasIngress {
 		framework.Fail(ctx, "No ingress network policies apply to the deployment, hence all ingress connections are allowed")
-		return
+		checkFailed = true
 	}
 
-	framework.Pass(ctx, "Deployment has ingress network policies applied to it, and does not use host network namespace")
+	if !checkFailed {
+		framework.Pass(ctx, "Deployment has ingress network policies applied to it, and does not use host network namespace")
+	}
 }
 
 func deploymentHasEgressNetworkPolicies(ctx framework.ComplianceContext, deployment *storage.Deployment, deploymentIDToNodes map[string]*v1.NetworkNode) {
+	checkFailed := false
+
 	if isKubeSystem(deployment) {
 		framework.SkipNow(ctx, "Kubernetes system deployments are exempt from this requirement")
 		return
@@ -265,15 +271,17 @@ func deploymentHasEgressNetworkPolicies(ctx framework.ComplianceContext, deploym
 
 	if usesHostNamespace {
 		framework.Fail(ctx, "Deployment uses host network, which allows it to subvert network policies")
-		return
+		checkFailed = true
 	}
 
 	if !hasIngress {
 		framework.Fail(ctx, "No egress network policies apply to the deployment, hence all egress connections are allowed")
-		return
+		checkFailed = true
 	}
 
-	framework.Pass(ctx, "Deployment has egress network policies applied to it, and does not use host network namespace")
+	if !checkFailed {
+		framework.Pass(ctx, "Deployment has egress network policies applied to it, and does not use host network namespace")
+	}
 }
 
 func deploymentHasSpecifiedNetworkPolicy(ctx framework.ComplianceContext, policyType storage.NetworkPolicyType, deploymentIDToNodes map[string]*v1.NetworkNode, deployment *storage.Deployment) bool {
