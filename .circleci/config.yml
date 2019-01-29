@@ -62,6 +62,7 @@ setupGCP: &setupGCP
       gcloud auth activate-service-account --key-file /tmp/gcp.json
       gcloud config set project stackrox-ci
       gcloud config set compute/zone us-central1-a
+      gcloud config set core/disable_prompts True
 
 createGKE: &createGKE
   run:
