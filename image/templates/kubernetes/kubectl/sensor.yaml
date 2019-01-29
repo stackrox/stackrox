@@ -149,6 +149,7 @@ kind: DaemonSet
 metadata:
   labels:
     service: collector
+    app: collector
   name: collector
   namespace: {{.Namespace}}
 spec:
@@ -159,6 +160,7 @@ spec:
     metadata:
       labels:
         service: collector
+        app: collector
       namespace: {{.Namespace}}
     spec:
       serviceAccount: collector
