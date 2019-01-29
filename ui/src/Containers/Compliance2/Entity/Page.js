@@ -5,32 +5,52 @@ import URLService from 'modules/URLService';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
+import EntityCompliance from 'Containers/Compliance2/widgets/EntityCompliance';
+import entityTypes from 'constants/entityTypes';
+import Widget from 'Components/Widget';
 import Header from './Header';
 
-const ComplianceEntityPage = ({ match, location, params, rowPageId }) => {
-    const widgetParams = Object.assign({}, URLService.getParams(match, location), params);
-    const urlPageId = URLService.getPageId(match);
-    const pageId = rowPageId || urlPageId;
+const ComplianceEntityPage = ({ match, location, params, sidePanelMode }) => {
+    const widgetParams = sidePanelMode
+        ? params
+        : Object.assign({}, URLService.getParams(match, location), params);
 
+    // These really depend on which entity is being shown.
+    // Maybe we split out different pages for different entity types.
     const PCIWidgetParams = Object.assign({}, widgetParams, { standard: 'PCI' });
     const NISTWidgetParams = Object.assign({}, widgetParams, { standard: 'NIST' });
     const HIPAAWidgetParams = Object.assign({}, widgetParams, { standard: 'HIPAA' });
     const CISWidgetParams = Object.assign({}, widgetParams, { standard: 'CIS' });
-
+    const EntityComplianceParams = Object.assign({}, widgetParams, {
+        entityType: entityTypes.CLUSTERS
+    });
     return (
         <section className="flex flex-col h-full w-full">
-            {!rowPageId && <Header params={widgetParams} pageId={pageId} />}
+            {!sidePanelMode && <Header params={widgetParams} />}
             <div className="flex-1 relative bg-base-200 p-4 overflow-auto">
                 <div
                     className={`grid ${
-                        !rowPageId ? `xl:grid-columns-3 md:grid-columns-2` : ``
+                        !sidePanelMode ? `xl:grid-columns-3 md:grid-columns-2` : ``
                     } sm:grid-columns-1 grid-gap-6`}
                 >
-                    <ComplianceByStandard params={PCIWidgetParams} pageId={pageId} />
-                    <ComplianceByStandard params={NISTWidgetParams} pageId={pageId} />
-                    <ComplianceByStandard params={HIPAAWidgetParams} pageId={pageId} />
-                    <ComplianceByStandard params={CISWidgetParams} pageId={pageId} />
-                    {!rowPageId && <RelatedEntitiesList params={widgetParams} pageId={pageId} />}
+                    <div className="grid grid-columns-2 grid-gap-6">
+                        <EntityCompliance params={EntityComplianceParams} />
+                        <Widget header="Widget 2">
+                            Widget 2<br />
+                            Widget 2<br />
+                            Widget 2<br />
+                        </Widget>
+                        <Widget header="Widget 3">
+                            Widget 3<br />
+                            Widget 3<br />
+                            Widget 3<br />
+                        </Widget>
+                    </div>
+                    <ComplianceByStandard params={PCIWidgetParams} />
+                    <ComplianceByStandard params={NISTWidgetParams} />
+                    <ComplianceByStandard params={HIPAAWidgetParams} />
+                    <ComplianceByStandard params={CISWidgetParams} />
+                    {!sidePanelMode && <RelatedEntitiesList params={widgetParams} />}
                 </div>
             </div>
         </section>
@@ -40,13 +60,16 @@ const ComplianceEntityPage = ({ match, location, params, rowPageId }) => {
 ComplianceEntityPage.propTypes = {
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
-    params: PropTypes.shape({}),
-    rowPageId: PropTypes.shape({})
+    params: PropTypes.shape({
+        entityId: PropTypes.string,
+        entityType: PropTypes.string
+    }),
+    sidePanelMode: PropTypes.bool
 };
 
 ComplianceEntityPage.defaultProps = {
     params: null,
-    rowPageId: null
+    sidePanelMode: false
 };
 
 export default withRouter(ComplianceEntityPage);

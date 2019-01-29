@@ -5,6 +5,11 @@ export const resourceTypes = {
     DEPLOYMENTS: 'deployments'
 };
 
+export const standardEntityTypes = {
+    CONTROL: 'control',
+    GROUP: 'group'
+};
+
 export const standardTypes = {
     PCI: 'PCI',
     NIST: 'NIST',

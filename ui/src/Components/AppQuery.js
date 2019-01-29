@@ -4,10 +4,9 @@ import Raven from 'raven-js';
 import queryService from 'modules/queryService';
 import PropTypes from 'prop-types';
 
-const AppQuery = ({ children, pageId, params, componentType, ...rest }) => {
-    const queryConfig = queryService.getQuery(pageId, params, componentType);
-    if (!queryConfig)
-        throw Error(`No query config found for ${componentType}, ${JSON.stringify(pageId)}`);
+const AppQuery = ({ children, params, componentType, ...rest }) => {
+    const queryConfig = queryService.getQuery(params, componentType);
+    if (!queryConfig) throw Error(`No query config found for ${componentType}`);
 
     return (
         <Query query={queryConfig.query} variables={queryConfig.variables} {...rest}>
@@ -15,7 +14,15 @@ const AppQuery = ({ children, pageId, params, componentType, ...rest }) => {
                 if (queryResult.error) {
                     Raven.captureException(queryResult.error);
                 }
-                return children(queryResult);
+                const results = {
+                    ...queryResult
+                };
+
+                if (queryConfig.format && results.data) {
+                    results.data = queryConfig.format(results.data);
+                }
+
+                return children(results);
             }}
         </Query>
     );
@@ -23,7 +30,6 @@ const AppQuery = ({ children, pageId, params, componentType, ...rest }) => {
 
 AppQuery.propTypes = {
     children: PropTypes.func.isRequired,
-    pageId: PropTypes.shape({}).isRequired,
     params: PropTypes.shape({}).isRequired,
     componentType: PropTypes.string.isRequired
 };

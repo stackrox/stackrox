@@ -93,7 +93,7 @@ class Widget extends Component {
 
         return (
             <div
-                className={`flex flex-col border border-base-400 relative rounded ${className}`}
+                className={`flex flex-col border border-base-400 relative rounded bg-base-100 ${className}`}
                 data-test-id="widget"
             >
                 <div className="border-b border-base-400">

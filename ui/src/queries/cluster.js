@@ -16,3 +16,20 @@ export const CLUSTER_QUERY = gql`
         }
     }
 `;
+
+// TODO: Needs to take $id: ID! and generate a where clause to get compliance for only a specific cluster. API isn't complete yet.
+// Backup plan: filter results in format function ??
+export const CLUSTER_COMPLIANCE = gql`
+    query compliance {
+        aggregatedResults(groupBy: [STANDARD, CLUSTER], unit: CONTROL) {
+            results {
+                aggregationKeys {
+                    id
+                }
+                numFailing
+                numPassing
+                unit
+            }
+        }
+    }
+`;

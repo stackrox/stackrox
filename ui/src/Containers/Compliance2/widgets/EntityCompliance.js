@@ -1,28 +1,98 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Widget from 'Components/Widget';
-import { verticalSingleBarData } from 'mockData/graphDataMock';
 import VerticalBarChart from 'Components/visuals/VerticalBar';
 import ArcSingle from 'Components/visuals/ArcSingle';
+import Query from 'Components/AppQuery';
+import componentTypes from 'constants/componentTypes';
+import Loader from 'Components/Loader';
+import pluralize from 'pluralize';
+import pageTypes from 'constants/pageTypes';
+import { standardTypes } from 'constants/entityTypes';
+import URLService from 'modules/URLService';
+import ReactRouterPropTypes from 'react-router-prop-types';
+import { withRouter } from 'react-router-dom';
 
-const EntityCompliance = ({ type }) => (
-    <Widget header={`${type} Compliance`} className="bg-base-100 sx-2 sy-1">
-        <div className="flex w-full" style={{ alignItems: 'center' }}>
-            <div className="p-2">
-                <ArcSingle value={78} />
-            </div>
-            <div className="flex-grow -m-2">
-                <VerticalBarChart
-                    plotProps={{ height: 180, width: 250 }}
-                    data={verticalSingleBarData}
-                />
-            </div>
-        </div>
-    </Widget>
-);
+function getStandardTypeFromName(standardName) {
+    if (standardName.includes('NIST')) return standardTypes.NIST;
+    if (standardName.includes('PCI')) return standardTypes.PCI;
+    if (standardName.includes('HIPAA')) return standardTypes.HIPAA;
+    if (standardName.includes('CIS')) return standardTypes.CIS;
+    return null;
+}
+const EntityCompliance = ({ params, history }) => {
+    const { entityType } = params;
+    const entityTypeLabel = pluralize.singular(entityType);
 
+    function getBarData(results) {
+        return results.map(item => ({
+            x: item.aggregationKeys[0].id,
+            y: (item.numPassing / (item.numPassing + item.numFailing)) * 100
+        }));
+    }
+
+    function getTotals(results) {
+        return results.reduce(
+            (acc, curr) => {
+                acc.numPassing += curr.numPassing;
+                acc.total += curr.numPassing + curr.numFailing;
+                return acc;
+            },
+            { numPassing: 0, total: 0 }
+        );
+    }
+    function valueClick(datum) {
+        const { context } = params;
+        const linkParams = {
+            entityType: getStandardTypeFromName(datum.x),
+            query: {
+                [entityType]: params.entityId
+            }
+        };
+
+        const URL = URLService.getLinkTo(context, pageTypes.LIST, linkParams);
+        history.push(URL);
+    }
+
+    return (
+        <Query params={params} componentType={componentTypes.ENTITY_COMPLIANCE}>
+            {({ loading, data }) => {
+                let contents = <Loader />;
+                if (!loading && data && data.results) {
+                    const barData = getBarData(data.results);
+                    const totals = getTotals(data.results);
+                    const pct = Math.round((totals.numPassing / totals.total) * 100);
+                    contents = (
+                        <React.Fragment>
+                            <div className="flex w-full" style={{ alignItems: 'center' }}>
+                                <div className="p-2">
+                                    <ArcSingle value={pct} />
+                                </div>
+                                <div className="flex-grow -m-2">
+                                    <VerticalBarChart
+                                        plotProps={{ height: 180, width: 250 }}
+                                        data={barData}
+                                        onValueClick={valueClick}
+                                    />
+                                </div>
+                            </div>
+                        </React.Fragment>
+                    );
+                }
+                return (
+                    <Widget header={`${entityTypeLabel} Compliance`} className="sx-2 sy-1">
+                        {contents}
+                    </Widget>
+                );
+            }}
+        </Query>
+    );
+};
 EntityCompliance.propTypes = {
-    type: PropTypes.string.isRequired
+    params: PropTypes.shape({
+        entityType: PropTypes.string
+    }).isRequired,
+    history: ReactRouterPropTypes.history.isRequired
 };
 
-export default EntityCompliance;
+export default withRouter(EntityCompliance);

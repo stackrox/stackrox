@@ -48,7 +48,6 @@ class LinkListWidget extends Component {
             <Widget
                 header={title}
                 headerComponents={headerComponents}
-                className="bg-base-100"
                 bodyClassName="bg-base-100 flex-col"
             >
                 <List

@@ -219,6 +219,16 @@ dependencies:
     attribution:
     - 2015 Jiri Spac
 
+  ui/node_modules/pluralize:
+    url: https://github.com/blakeembrey/pluralize
+    license: MIT
+    files:
+      LICENSE: 5822e0d816e53e3537b306a4132cb7a70881897cf51bf483282148a602979076
+      package.json:
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+    - 2013 Blake Embrey
+
   ui/node_modules/prop-types:
     url: https://github.com/facebook/prop-types
     license: MIT

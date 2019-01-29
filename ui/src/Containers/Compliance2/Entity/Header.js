@@ -20,8 +20,8 @@ const subHeaderTexts = {
     [resourceTypes.CLUSTERS]: labels.resourceLabels.CLUSTER
 };
 
-const EntityHeader = ({ params, pageId, searchComponent }) => (
-    <Query pageId={pageId} params={params} componentType={componentTypes.HEADER} action="list">
+const EntityHeader = ({ params, searchComponent }) => (
+    <Query params={params} componentType={componentTypes.HEADER} action="list">
         {({ loading, data }) => {
             let headerText = 'loading...';
 
@@ -53,8 +53,7 @@ const EntityHeader = ({ params, pageId, searchComponent }) => (
 
 EntityHeader.propTypes = {
     searchComponent: PropTypes.element,
-    params: PropTypes.shape({}).isRequired,
-    pageId: PropTypes.shape({}).isRequired
+    params: PropTypes.shape({}).isRequired
 };
 
 EntityHeader.defaultProps = {

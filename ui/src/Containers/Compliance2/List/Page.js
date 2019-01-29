@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { horizontalBarData, sunburstData, sunburstLegendData } from 'mockData/graphDataMock';
-import entityTypes from 'constants/entityTypes';
+import entityTypes, { standardEntityTypes } from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 
@@ -22,18 +22,24 @@ import StandardsAcrossEntity from 'Containers/Compliance2/widgets/StandardsAcros
 import StandardsByEntity from 'Containers/Compliance2/widgets/StandardsByEntity';
 import Sunburst from 'Components/visuals/Sunburst';
 import ComplianceEntityPage from 'Containers/Compliance2/Entity/Page';
+import pageTypes from 'constants/pageTypes';
 import SearchInput from './SearchInput';
 import Header from './Header';
 
-const entity = 'control';
+// Ultimately, this will need to be dynamic
+const entity = standardEntityTypes.CONTROL;
+
 class ComplianceListPage extends Component {
     static propTypes = {
         grouped: PropTypes.bool,
-        match: ReactRouterPropTypes.match.isRequired
+        match: ReactRouterPropTypes.match.isRequired,
+        location: ReactRouterPropTypes.location.isRequired,
+        params: PropTypes.shape({})
     };
 
     static defaultProps = {
-        grouped: true
+        grouped: true,
+        params: null
     };
 
     constructor(props) {
@@ -53,14 +59,24 @@ class ComplianceListPage extends Component {
     renderSidePanel = () => {
         const { selectedRow } = this.state;
         if (!selectedRow) return '';
-        const pageId = URLService.getPageId(this.props.match);
+
+        const { match, location } = this.props;
+        const pageParams = URLService.getParams(match, location);
+
+        const compliancePageParams = {
+            context: pageParams.context,
+            pageType: pageTypes.ENTITY,
+            entityType: entity,
+            entityId: selectedRow.control
+        };
+
         return (
             <Panel
                 className="w-2/3"
                 header={selectedRow.node || selectedRow.control}
                 onClose={this.clearSelectedRow}
             >
-                <ComplianceEntityPage rowPageId={pageId} />
+                <ComplianceEntityPage params={compliancePageParams} sidePanelMode />
             </Panel>
         );
     };
@@ -103,7 +119,7 @@ class ComplianceListPage extends Component {
                 <CollapsibleBanner>
                     <StandardsAcrossEntity type={entityTypes.CLUSTERS} data={horizontalBarData} />
                     <StandardsByEntity type={entityTypes.CLUSTERS} />
-                    <Widget header="Compliance Across Controls" className="bg-base-100">
+                    <Widget header="Compliance Across Controls">
                         <Sunburst
                             data={sunburstData}
                             legendData={sunburstLegendData}

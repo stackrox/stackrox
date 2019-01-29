@@ -19,15 +19,14 @@ const entityTypeToNameMap = {
     [resourceTypes.DEPLOYMENTS]: `${labels.resourceLabels.DEPLOYMENTS}S`
 };
 
-const RelatedEntitiesList = ({ params, pageId }) => {
-    const { entityType: pageEntityType } = params;
+const RelatedEntitiesList = ({ params }) => {
+    const { entityType: pageEntityType, pageType, context } = params;
     const widgetEntityType = pageToWidgetEntityMap[pageEntityType];
     const entityTypeText = entityTypeToNameMap[widgetEntityType];
 
     function processData(results) {
         if (!results) return [];
 
-        const { context, pageType } = pageId;
         const dataWithLink = results[widgetEntityType].map(item => {
             const linkParams = {
                 query: params.query,
@@ -53,7 +52,7 @@ const RelatedEntitiesList = ({ params, pageId }) => {
         return dataWithLink;
     }
     return (
-        <Query pageId={pageId} params={params} componentType={componentTypes.RELATED_ENTITIES_LIST}>
+        <Query params={params} componentType={componentTypes.RELATED_ENTITIES_LIST}>
             {({ loading, data }) => {
                 let contents = <Loader />;
                 let headerText = `Related ${entityTypeText}`;
@@ -77,8 +76,11 @@ const RelatedEntitiesList = ({ params, pageId }) => {
 };
 
 RelatedEntitiesList.propTypes = {
-    params: PropTypes.shape({}).isRequired,
-    pageId: PropTypes.shape({}).isRequired
+    params: PropTypes.shape({
+        entityType: PropTypes.string,
+        context: PropTypes.string,
+        pageType: PropTypes.string
+    }).isRequired
 };
 
 export default RelatedEntitiesList;

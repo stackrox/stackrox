@@ -101,7 +101,8 @@ class VerticalBarChart extends Component {
             barWidth: 0.28,
             style: {
                 opacity: '.8',
-                ry: '2px'
+                ry: '2px',
+                cursor: 'pointer'
             },
 
             colorDomain: data.map(datum => datum.y),
