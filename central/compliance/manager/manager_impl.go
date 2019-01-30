@@ -25,12 +25,18 @@ import (
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
+const (
+	scrapeTimeout = 5 * time.Minute
+	runTimeout    = scrapeTimeout + 1*time.Minute
+)
+
 var (
 	log = logging.LoggerForModule()
 )
 
 type manager struct {
-	scheduleStore ScheduleStore
+	scheduleStore     ScheduleStore
+	standardImplStore StandardImplementationStore
 
 	mutex         sync.RWMutex
 	runsByID      map[string]*runInstance
@@ -49,9 +55,11 @@ type manager struct {
 	resultsStore complianceResultsStore.Store
 }
 
-func newManager(scheduleStore ScheduleStore, clusterStore clusterDatastore.DataStore, nodeStore store.GlobalStore, deploymentStore datastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory scrape.Factory, resultsStore complianceResultsStore.Store) (*manager, error) {
+func newManager(standardImplStore StandardImplementationStore, scheduleStore ScheduleStore, clusterStore clusterDatastore.DataStore, nodeStore store.GlobalStore, deploymentStore datastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory scrape.Factory, resultsStore complianceResultsStore.Store) (*manager, error) {
 	mgr := &manager{
-		scheduleStore: scheduleStore,
+		scheduleStore:     scheduleStore,
+		standardImplStore: standardImplStore,
+
 		runsByID:      make(map[string]*runInstance),
 		schedulesByID: make(map[string]*scheduleInstance),
 
@@ -133,61 +141,27 @@ func (m *manager) createDomain(clusterID string) (framework.ComplianceDomain, er
 	return framework.NewComplianceDomain(cluster, nodes, deployments), nil
 }
 
-func (m *manager) createRun(clusterID, standardID string) (*runInstance, error) {
-	domain, err := m.createDomain(clusterID)
-	if err != nil {
-		return nil, fmt.Errorf("creating compliance domain: %v", err)
-	}
-
-	allChecks, err := checksForStandardID(standardID)
-	if err != nil {
-		return nil, fmt.Errorf("looking up checks for standard %q: %v", standardID, err)
-	}
-
-	complianceRun, err := framework.NewComplianceRun(allChecks...)
-	if err != nil {
-		return nil, fmt.Errorf("instantiating compliance run: %v", err)
-	}
-
+func (m *manager) createRun(domain framework.ComplianceDomain, standard StandardImplementation, schedule *scheduleInstance) *runInstance {
 	runID := uuid.NewV4().String()
-	run, err := createRun(runID, standardID, domain, complianceRun)
-	if err != nil {
-		return nil, err
-	}
-
-	return run, nil
-}
-
-func (m *manager) startRun(run *runInstance) error {
-	if err := run.Start(m.scrapeFactory, m.dataRepoFactory, m.resultsStore); err != nil {
-		return err
-	}
-
+	run := createRun(runID, domain, standard)
+	run.schedule = schedule
 	concurrency.WithLock(&m.mutex, func() {
-		m.runsByID[run.id] = run
+		m.runsByID[runID] = run
 	})
-	return nil
+	return run
 }
 
-func (m *manager) createRunFromSchedule(schedule *scheduleInstance) (*runInstance, error) {
-	r, err := m.createRun(schedule.clusterAndStandard())
-	if err != nil {
-		return nil, fmt.Errorf("creating run: %v", err)
-	}
-	r.schedule = schedule
-	return r, nil
+func (m *manager) createRunFromSchedule(schedule *scheduleInstance) ([]*runInstance, error) {
+	return m.createAndLaunchRuns([]ClusterStandardPair{schedule.clusterAndStandard()}, schedule)
 }
 
 func (m *manager) runSchedules(schedulesToRun []*scheduleInstance) error {
 	var errList errorhelpers.ErrorList
 	for _, sched := range schedulesToRun {
-		run, err := m.createRunFromSchedule(sched)
+		_, err := m.createRunFromSchedule(sched)
 		if err != nil {
 			errList.AddStringf("creating compliance run: %v", err)
 			continue
-		}
-		if err := m.startRun(run); err != nil {
-			errList.AddStringf("starting compliance run: %v", err)
 		}
 	}
 	return errList.ToError()
@@ -337,7 +311,7 @@ func (m *manager) AddSchedule(spec *storage.ComplianceRunSchedule) (*v1.Complian
 		return nil, fmt.Errorf("could not check cluster ID %q: %v", spec.GetClusterId(), err)
 	}
 
-	if _, err := checksForStandardID(spec.GetStandardId()); err != nil {
+	if _, err := m.standardImplStore.LookupStandardImplementation(spec.GetStandardId()); err != nil {
 		return nil, fmt.Errorf("invalid standard ID %q: %v", spec.GetStandardId(), err)
 	}
 
@@ -368,7 +342,7 @@ func (m *manager) UpdateSchedule(spec *storage.ComplianceRunSchedule) (*v1.Compl
 		return nil, fmt.Errorf("could not check cluster ID %q: %v", spec.GetClusterId(), err)
 	}
 
-	if _, err := checksForStandardID(spec.GetStandardId()); err != nil {
+	if _, err := m.standardImplStore.LookupStandardImplementation(spec.GetStandardId()); err != nil {
 		return nil, fmt.Errorf("invalid standard ID %q: %v", spec.GetStandardId(), err)
 	}
 
@@ -468,16 +442,104 @@ func (m *manager) GetRecentRun(id string) (*v1.ComplianceRun, error) {
 	return run.ToProto(), nil
 }
 
-func (m *manager) TriggerRun(clusterID, standardID string) (*v1.ComplianceRun, error) {
-	run, err := m.createRun(clusterID, standardID)
-	if err != nil {
-		return nil, fmt.Errorf("creating run: %v", err)
+func (m *manager) ExpandSelection(clusterIDOrWildcard, standardIDOrWildcard string) ([]ClusterStandardPair, error) {
+	var clusterIDs []string
+	if clusterIDOrWildcard == Wildcard {
+		clusters, err := m.clusterStore.GetClusters()
+		if err != nil {
+			return nil, fmt.Errorf("retrieving clusters: %v", err)
+		}
+		clusterIDs = make([]string, len(clusters))
+		for i, cluster := range clusters {
+			clusterIDs[i] = cluster.GetId()
+		}
+	} else {
+		clusterIDs = []string{clusterIDOrWildcard}
 	}
-	if err := m.startRun(run); err != nil {
-		return nil, fmt.Errorf("starting run: %v", err)
+
+	var standardIDs []string
+	if standardIDOrWildcard == Wildcard {
+		standardImpls := m.standardImplStore.ListStandardImplementations()
+		standardIDs = make([]string, 0, len(standardImpls))
+		for _, standardImpl := range standardImpls {
+			standardIDs = append(standardIDs, standardImpl.Standard.ID)
+		}
+	} else {
+		standardIDs = []string{standardIDOrWildcard}
+	}
+
+	result := make([]ClusterStandardPair, 0, len(clusterIDs)*len(standardIDs))
+
+	for _, clusterID := range clusterIDs {
+		for _, standardID := range standardIDs {
+			result = append(result, ClusterStandardPair{
+				ClusterID:  clusterID,
+				StandardID: standardID,
+			})
+		}
+	}
+
+	return result, nil
+}
+
+func (m *manager) TriggerRuns(clusterStandardPairs ...ClusterStandardPair) ([]*v1.ComplianceRun, error) {
+	runs, err := m.createAndLaunchRuns(clusterStandardPairs, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	runProtos := make([]*v1.ComplianceRun, len(runs))
+	for i, run := range runs {
+		runProtos[i] = run.ToProto()
+	}
+	return runProtos, nil
+}
+
+func (m *manager) createAndLaunchRuns(clusterStandardPairs []ClusterStandardPair, schedule *scheduleInstance) ([]*runInstance, error) {
+	// Step 1: Group all standard implementations that need to run by cluster ID.
+	standardImplsByClusterID := make(map[string][]StandardImplementation)
+	for _, clusterAndStandard := range clusterStandardPairs {
+		standardImpl, err := m.standardImplStore.LookupStandardImplementation(clusterAndStandard.StandardID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid compliance standard ID: %v", err)
+		}
+		standardImplsByClusterID[clusterAndStandard.ClusterID] = append(standardImplsByClusterID[clusterAndStandard.ClusterID], standardImpl)
+	}
+
+	var runs []*runInstance
+
+	// Step 2: For each cluster, instantiate domains and scrape promises, and create runs.
+	for clusterID, standardImpls := range standardImplsByClusterID {
+		domain, err := m.createDomain(clusterID)
+		if err != nil {
+			return nil, fmt.Errorf("could not create domain for cluster ID %q: %v", clusterID, err)
+		}
+
+		scrapePromise := createAndRunScrape(m.scrapeFactory, m.dataRepoFactory, domain, scrapeTimeout)
+
+		for _, standard := range standardImpls {
+			run := m.createRun(domain, standard, schedule)
+			run.Start(scrapePromise, m.resultsStore)
+			runs = append(runs, run)
+		}
 	}
 
 	m.interrupt()
 
-	return run.ToProto(), nil
+	return runs, nil
+}
+
+func (m *manager) GetRunStatuses(ids ...string) []*v1.ComplianceRun {
+	var result []*v1.ComplianceRun
+
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	for _, id := range ids {
+		if run := m.runsByID[id]; run != nil {
+			result = append(result, run.ToProto())
+		}
+	}
+
+	return result
 }

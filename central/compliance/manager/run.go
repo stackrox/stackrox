@@ -7,23 +7,15 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/central/compliance/data"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/store"
-	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
 )
 
-type status int
-
 const (
 	// maxFinishedRunAge specifies the maximum age of a finished run before it will be flagged for deletion.
 	maxFinishedRunAge = 12 * time.Hour
-
-	ready status = iota
-	started
-	finished
 )
 
 // runInstance is a run managed by the ComplianceManager. It is different from a run in the compliance framework,
@@ -32,51 +24,56 @@ const (
 type runInstance struct {
 	mutex sync.RWMutex
 
-	id         string
-	standardID string
+	id string
 
-	domain framework.ComplianceDomain
-	run    framework.ComplianceRun
+	domain        framework.ComplianceDomain
+	standard      StandardImplementation
+	scrapePromise *scrapePromise
 
 	schedule *scheduleInstance
 
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	status                status
+	status                v1.ComplianceRun_State
 	startTime, finishTime time.Time
 	err                   error
 }
 
-func createRun(id, standardID string, domain framework.ComplianceDomain, run framework.ComplianceRun) (*runInstance, error) {
+func createRun(id string, domain framework.ComplianceDomain, standard StandardImplementation) *runInstance {
 	r := &runInstance{
-		id:         id,
-		standardID: standardID,
-
-		domain: domain,
-		run:    run,
+		id:       id,
+		domain:   domain,
+		standard: standard,
+		status:   v1.ComplianceRun_READY,
 	}
 
 	r.ctx, r.cancel = context.WithCancel(context.Background())
 
-	return r, nil
+	return r
 }
 
-func (r *runInstance) Start(scrapeFactory scrape.Factory, dataRepoFactory data.RepositoryFactory, resultsStore store.Store) error {
-	go r.Run(scrapeFactory, dataRepoFactory, resultsStore)
-	return nil
+func (r *runInstance) updateStatus(s v1.ComplianceRun_State) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	r.status = s
 }
 
-func (r *runInstance) Run(scrapeFactory scrape.Factory, dataRepoFactory data.RepositoryFactory, resultsStore store.Store) {
+func (r *runInstance) Start(scrapePromise *scrapePromise, resultsStore store.Store) {
+	go r.Run(scrapePromise, resultsStore)
+}
+
+func (r *runInstance) Run(scrapePromise *scrapePromise, resultsStore store.Store) {
 	defer r.cancel()
 
 	concurrency.WithLock(&r.mutex, func() {
 		r.startTime = time.Now()
-		r.status = started
+		r.status = v1.ComplianceRun_STARTED
 	})
 	defer concurrency.WithLock(&r.mutex, func() {
 		r.finishTime = time.Now()
-		r.status = finished
+		r.status = v1.ComplianceRun_FINISHED
 	})
 
 	if r.schedule != nil {
@@ -88,32 +85,35 @@ func (r *runInstance) Run(scrapeFactory scrape.Factory, dataRepoFactory data.Rep
 		})
 	}
 
-	err := r.doRun(scrapeFactory, dataRepoFactory, resultsStore)
+	err := r.doRun(scrapePromise, resultsStore)
 
 	concurrency.WithLock(&r.mutex, func() {
 		r.err = err
 	})
 }
 
-func (r *runInstance) doRun(scrapeFactory scrape.Factory, dataRepoFactory data.RepositoryFactory, resultsStore store.Store) error {
-	log.Infof("scraping results for standard %s and cluster %s", r.standardID, r.domain.Cluster().ID())
-	scrapeResults, err := scrapeFactory.RunScrape(r.domain, r.ctx)
-	if err != nil {
-		return fmt.Errorf("scraping results: %v", err)
-	}
-	log.Infof("done scraping results for standard %s and cluster %s", r.standardID, r.domain.Cluster().ID())
+func (r *runInstance) doRun(scrapePromise *scrapePromise, resultsStore store.Store) error {
+	log.Infof("Starting compliance run %s for cluster %q and standard %q", r.id, r.domain.Cluster().Cluster().Name, r.standard.Standard.Name)
 
-	data, err := dataRepoFactory.CreateDataRepository(r.domain, scrapeResults)
+	r.updateStatus(v1.ComplianceRun_WAIT_FOR_DATA)
+	data, err := scrapePromise.WaitForResult(r.ctx)
 	if err != nil {
-		return fmt.Errorf("aggregating data: %v", err)
+		return fmt.Errorf("waiting for compliance data: %v", err)
 	}
 
-	log.Infof("running checks for standard %s and cluster %s", r.standardID, r.domain.Cluster().ID())
-	if err := r.run.Run(r.ctx, r.domain, data); err != nil {
+	run, err := framework.NewComplianceRun(r.standard.Checks...)
+	if err != nil {
+		return fmt.Errorf("creating compliance run: %v", err)
+	}
+
+	r.updateStatus(v1.ComplianceRun_EVALUTING_CHECKS)
+	if err := run.Run(r.ctx, r.domain, data); err != nil {
 		return err
 	}
-	log.Infof("done running checks for %s and cluster %s", r.standardID, r.domain.Cluster().ID())
-	results := r.collectResults()
+
+	r.updateStatus(v1.ComplianceRun_STORING_RESULTS)
+	results := r.collectResults(run)
+
 	return resultsStore.StoreRunResults(results)
 }
 
@@ -125,6 +125,10 @@ func timeToProto(t time.Time) *types.Timestamp {
 	return tspb
 }
 
+func (r *runInstance) standardID() string {
+	return r.standard.Standard.ID
+}
+
 func (r *runInstance) ToProto() *v1.ComplianceRun {
 	if r == nil {
 		return nil
@@ -134,26 +138,17 @@ func (r *runInstance) ToProto() *v1.ComplianceRun {
 	defer r.mutex.RUnlock()
 
 	var errorMessage string
-	var state v1.ComplianceRun_State
-	switch r.status {
-	case ready:
-		state = v1.ComplianceRun_READY
-	case started:
-		state = v1.ComplianceRun_RUNNING
-	case finished:
-		state = v1.ComplianceRun_FINISHED
-		if r.err != nil {
-			errorMessage = r.err.Error()
-		}
+	if r.status == v1.ComplianceRun_FINISHED && r.err != nil {
+		errorMessage = r.err.Error()
 	}
 
 	proto := &v1.ComplianceRun{
 		Id:           r.id,
 		ClusterId:    r.domain.Cluster().Cluster().GetId(),
-		StandardId:   r.standardID,
+		StandardId:   r.standardID(),
 		StartTime:    timeToProto(r.startTime),
 		FinishTime:   timeToProto(r.finishTime),
-		State:        state,
+		State:        r.status,
 		ErrorMessage: errorMessage,
 	}
 	if r.schedule != nil {
@@ -166,7 +161,7 @@ func (r *runInstance) shouldDelete() bool {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
-	if r.status != finished {
+	if r.status != v1.ComplianceRun_FINISHED {
 		return false
 	}
 	return time.Now().Sub(r.finishTime) > maxFinishedRunAge

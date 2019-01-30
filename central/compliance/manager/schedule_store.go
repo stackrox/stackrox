@@ -67,3 +67,5 @@ func (s *scheduleStoreImpl) UpsertSchedule(schedule *storage.ComplianceRunSchedu
 func (s *scheduleStoreImpl) DeleteSchedule(id string) error {
 	return s.crud.Delete(id)
 }
+
+//go:generate mockgen-wrapper ScheduleStore

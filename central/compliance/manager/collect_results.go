@@ -136,17 +136,17 @@ func (r *runInstance) metadataProto() *storage.ComplianceRunMetadata {
 
 	return &storage.ComplianceRunMetadata{
 		RunId:           r.id,
-		StandardId:      r.standardID,
+		StandardId:      r.standard.Standard.ID,
 		StartTimestamp:  startTS,
 		FinishTimestamp: finishTS,
 	}
 }
 
-func (r *runInstance) collectResults() *storage.ComplianceRunResults {
+func (r *runInstance) collectResults(run framework.ComplianceRun) *storage.ComplianceRunResults {
 	domainProto := getDomainProto(r.domain)
 
-	allResults := r.run.GetAllResults()
-	checks := r.run.GetChecks()
+	allResults := run.GetAllResults()
+	checks := run.GetChecks()
 	clusterResults := collectEntityResults(r.domain.Cluster(), checks, allResults)
 
 	nodeResults := make(map[string]*storage.ComplianceRunResults_EntityResults)

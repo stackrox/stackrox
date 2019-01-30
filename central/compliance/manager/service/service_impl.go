@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -114,19 +115,43 @@ func (s *service) GetRunSchedules(ctx context.Context, req *v1.GetComplianceRunS
 }
 
 func (s *service) TriggerRun(ctx context.Context, req *v1.TriggerComplianceRunRequest) (*v1.TriggerComplianceRunResponse, error) {
-	run, err := s.manager.TriggerRun(req.GetClusterId(), req.GetStandardId())
+	runs, err := s.manager.TriggerRuns(manager.ClusterStandardPair{
+		ClusterID:  req.GetClusterId(),
+		StandardID: req.GetStandardId(),
+	})
 	if err != nil {
 		return nil, err
 	}
+	if len(runs) != 1 {
+		return nil, status.Errorf(codes.Internal, "unexpected number of runs: got %d, expected 1", len(runs))
+	}
 	return &v1.TriggerComplianceRunResponse{
-		StartedRun: run,
+		StartedRun: runs[0],
 	}, nil
 }
 
 func (s *service) TriggerRuns(ctx context.Context, req *v1.TriggerComplianceRunsRequest) (*v1.TriggerComplianceRunsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
+	expanded, err := s.manager.ExpandSelection(req.GetSelection().GetClusterId(), req.GetSelection().GetStandardId())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "could not expand cluster/standard selection: %v", err)
+	}
+	runs, err := s.manager.TriggerRuns(expanded...)
+	if err != nil {
+		return nil, err
+	}
+	return &v1.TriggerComplianceRunsResponse{
+		StartedRuns: runs,
+	}, nil
 }
 
 func (s *service) GetRunStatuses(ctx context.Context, req *v1.GetComplianceRunStatusesRequest) (*v1.GetComplianceRunStatusesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
+	runs := s.manager.GetRunStatuses(req.GetRunIds()...)
+	allRunIds := set.NewStringSet(req.GetRunIds()...)
+	for _, run := range runs {
+		allRunIds.Remove(run.GetId())
+	}
+	return &v1.GetComplianceRunStatusesResponse{
+		InvalidRunIds: allRunIds.AsSlice(),
+		Runs:          runs,
+	}, nil
 }

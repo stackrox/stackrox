@@ -59,7 +59,7 @@ message DeleteComplianceRunScheduleRequest {
 
 message ComplianceRunSelection {
     // The ID of the cluster. "*" means "all clusters".
-    string cluster_id  = 1;
+    string cluster_id = 1;
     // The ID of the compliance standard. "*" means "all standards".
     string standard_id = 2;
 }
@@ -76,9 +76,11 @@ message ComplianceRun {
     enum State {
         INVALID = 0;
         READY = 1;
-        GATHERING_DATA = 2;
-        RUNNING = 3;
-        FINISHED = 4;
+        STARTED = 2;
+        WAIT_FOR_DATA = 3;
+        EVALUTING_CHECKS = 4;
+        STORING_RESULTS = 5;
+        FINISHED = 6;
     }
 
     string id = 1;

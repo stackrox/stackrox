@@ -7,8 +7,9 @@ import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.AddComplia
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.DeleteComplianceRunScheduleRequest
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.GetComplianceRunSchedulesRequest
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.GetRecentComplianceRunsRequest
-import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.TriggerComplianceRunRequest
+import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.TriggerComplianceRunsRequest
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.UpdateComplianceRunScheduleRequest
+import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRunSelection
 import io.stackrox.proto.storage.ComplianceManagement.ComplianceRunSchedule
 
 class ComplianceManagementService extends BaseService {
@@ -18,12 +19,14 @@ class ComplianceManagementService extends BaseService {
 
     static triggerComplianceRun(String standardId, String clusterId) {
         try {
-            return getComplianceManagementClient().triggerRun(
-                    TriggerComplianceRunRequest.newBuilder()
-                            .setStandardId(standardId)
-                            .setClusterId(clusterId)
+            return getComplianceManagementClient().triggerRuns(
+                    TriggerComplianceRunsRequest.newBuilder()
+                            .setSelection(
+                                ComplianceRunSelection.newBuilder()
+                                    .setStandardId(standardId)
+                                    .setClusterId(clusterId))
                             .build()
-            ).startedRun
+            ).getStartedRuns(0)
         } catch (Exception e) {
             println "Error triggering compliance run: ${e.toString()}"
         }

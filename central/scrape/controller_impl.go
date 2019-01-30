@@ -45,7 +45,7 @@ func (s *controllerImpl) RunScrape(domain framework.ComplianceDomain, kill concu
 	// Either receive a kill, or wait for the scrape to finish.
 	select {
 	case <-kill.Done():
-		return nil, errors.New("scraped stopped due ot received kill command")
+		return nil, errors.New("scraped stopped due to received kill command")
 	case <-scrape.Stopped().Done():
 		if err := scrape.Stopped().Err(); err != nil {
 			return nil, fmt.Errorf("scrape failed: %s", err)

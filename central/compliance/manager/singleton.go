@@ -20,7 +20,7 @@ var (
 func Singleton() ComplianceManager {
 	managerInstanceInit.Do(func() {
 		var err error
-		managerInstance, err = NewManager(ScheduleStoreSingleton(), datastore.Singleton(), store.Singleton(), deploymentDatastore.Singleton(), data.NewDefaultFactory(), scrape.SingletonFactory(), complianceResultsStore.Singleton())
+		managerInstance, err = NewManager(DefaultStandardImplementationStore(), ScheduleStoreSingleton(), datastore.Singleton(), store.Singleton(), deploymentDatastore.Singleton(), data.NewDefaultFactory(), scrape.SingletonFactory(), complianceResultsStore.Singleton())
 		if err != nil {
 			log.Panicf("Could not create compliance manager: %v", err)
 		}

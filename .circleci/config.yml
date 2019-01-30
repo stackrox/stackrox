@@ -440,6 +440,7 @@ jobs:
       - RUNTIME_SUPPORT: true
       - MONITORING_SUPPORT: true
       - OUTPUT_FORMAT: helm
+      - ROX_COMPLIANCE_ENABLED: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
     steps:
       - checkout
@@ -623,6 +624,7 @@ jobs:
       - LOCAL_PORT: 8000
       - RUNTIME_SUPPORT: true
       - MONITORING_SUPPORT: true
+      - ROX_COMPLIANCE_ENABLED: true
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
     steps:
       - checkout

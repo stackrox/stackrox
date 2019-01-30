@@ -15,3 +15,5 @@ type Store interface {
 
 	StoreRunResults(results *storage.ComplianceRunResults) error
 }
+
+//go:generate mockgen-wrapper Store

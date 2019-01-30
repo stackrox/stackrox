@@ -50,11 +50,14 @@ func (s *scheduleInstance) isSuspended() bool {
 	return s.spec.GetSuspended()
 }
 
-func (s *scheduleInstance) clusterAndStandard() (string, string) {
+func (s *scheduleInstance) clusterAndStandard() ClusterStandardPair {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	return s.spec.GetClusterId(), s.spec.GetStandardId()
+	return ClusterStandardPair{
+		ClusterID:  s.spec.GetClusterId(),
+		StandardID: s.spec.GetStandardId(),
+	}
 }
 
 func (s *scheduleInstance) updateNextTimeNoLock() {

@@ -20,3 +20,5 @@ func NewFactory(emitter emit.Emitter, accepter accept.Accepter) Factory {
 		accepter: accepter,
 	}
 }
+
+//go:generate mockgen-wrapper Factory

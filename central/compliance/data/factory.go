@@ -49,3 +49,5 @@ func NewDefaultFactory() RepositoryFactory {
 func (f *factory) CreateDataRepository(domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn) (framework.ComplianceDataRepository, error) {
 	return newRepository(domain, scrapeResults, f)
 }
+
+//go:generate mockgen-wrapper RepositoryFactory

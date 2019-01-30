@@ -25,21 +25,27 @@ class PciComplianceTest extends BaseSpecification {
     @Shared
     private clusterId
 
+    @Shared
+    private static final boolean COMPLIANCE_ENABLED = false // System.getenv("ROX_COMPLIANCE_ENABLED") == "true"
+
     def setupSpec() {
+        if (!COMPLIANCE_ENABLED) {
+            return
+        }
+
         clusterId = ClusterService.getClusterId()
-        /*
+
         for (ComplianceStandardMetadata standard : ComplianceService.getComplianceStandards()) {
             def runId = ComplianceManagementService.triggerComplianceRunAndWait(standard.id, clusterId)
             ComplianceRunResults results = ComplianceService.getComplianceRunResult(standard.id, clusterId)
             assert runId == results.runMetadata.runId
             BASE_RESULTS.put(standard.id, results)
         }
-        */
     }
 
     @Category([BAT])
     def "Verify checks based on Integrations"() {
-        Assume.assumeTrue(false) //always skip for now
+        Assume.assumeTrue(COMPLIANCE_ENABLED)
         def baseControls = [
                 new Control(
                         "PCI_DSS_3_2:6_1",
@@ -169,7 +175,7 @@ class PciComplianceTest extends BaseSpecification {
 
     @Category([BAT])
     def "Verify checks based on Deployments"() {
-        Assume.assumeTrue(false) //always skip for now
+        Assume.assumeTrue(COMPLIANCE_ENABLED)
         def controls = [
                 new Control(
                         "PCI_DSS_3_2:1_3_5",
