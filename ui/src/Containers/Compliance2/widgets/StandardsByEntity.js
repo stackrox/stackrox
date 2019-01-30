@@ -1,30 +1,82 @@
 import React from 'react';
-import PropTypes from 'prop-types';
+import componentTypes from 'constants/componentTypes';
 import Widget from 'Components/Widget';
-import { verticalBarData } from 'mockData/graphDataMock';
-import VerticalBarChart from 'Components/visuals/VerticalClusterBar';
-import Query from 'Components/ThrowingQuery';
-import { CLUSTERS_QUERY } from 'queries/cluster';
+import Query from 'Components/AppQuery';
 import Loader from 'Components/Loader';
+import PropTypes from 'prop-types';
+import VerticalBarChart from 'Components/visuals/VerticalClusterBar';
+import { resourceTypes } from 'constants/entityTypes';
+import pluralize from 'pluralize';
+import capitalize from 'lodash/capitalize';
+import URLService from 'modules/URLService';
+import pageTypes from 'constants/pageTypes';
 
-const StandardsByEntity = ({ type }) => (
-    // TODO: use real query and calculate values based on return data
-    <Query query={CLUSTERS_QUERY} action="list">
+const componentTypeMapping = {
+    [resourceTypes.CLUSTERS]: componentTypes.STANDARDS_BY_CLUSTER
+};
+
+function processData(data, type, params) {
+    if (!data.results || !data.entityList) return [];
+    const standardsGrouping = {};
+    const { results, entityList, complianceStandards } = data;
+    results.results.forEach(result => {
+        const entity = entityList.find(
+            entityObject => entityObject.id === result.aggregationKeys[1].id
+        );
+        const standard = complianceStandards.find(c => c.id === result.aggregationKeys[0].id);
+        const { numPassing, numFailing } = result;
+        const percentagePassing = Math.round((numPassing / (numPassing + numFailing)) * 100);
+        const link = URLService.getLinkTo(params.context, pageTypes.LIST, {
+            entityType: standard.name,
+            query: {
+                [capitalize(pluralize.singular(type))]: entity.name
+            }
+        });
+        const dataPoint = {
+            x: entity.name,
+            y: percentagePassing,
+            hint: {
+                title: standard.id,
+                body: `${numFailing} controls failing in this ${pluralize.singular(type)}`
+            },
+            link
+        };
+        const standardGroup = standardsGrouping[standard.id];
+        if (standardGroup) {
+            standardGroup.push(dataPoint);
+        } else {
+            standardsGrouping[standard.id] = [dataPoint];
+        }
+    });
+    return [standardsGrouping];
+}
+
+function getLabelLinks(data, type, params) {
+    const { entityList } = data;
+    const labelLinks = {};
+    entityList.forEach(entity => {
+        const link = URLService.getLinkTo(params.context, pageTypes.ENTITY, {
+            entityType: type,
+            entityId: entity.name
+        });
+        labelLinks[entity.name] = link;
+    });
+    return labelLinks;
+}
+
+const StandardsByEntity = ({ type, params }) => (
+    <Query params={params} componentType={componentTypeMapping[type]}>
         {({ loading, data }) => {
-            let graphData;
-            let labelLinks;
-            let pages;
             let contents = <Loader />;
-
-            if (!loading && data) {
-                graphData = verticalBarData;
-                labelLinks = {
-                    'Docker Swarm Dev': '/main/compliance2/clusters/Docker Swarm Dev'
-                };
-                pages = verticalBarData.length;
+            const headerText = `Standards By ${type}`;
+            let pages;
+            if (!loading && data && data.results) {
+                const results = processData(data, type, params);
+                const labelLinks = getLabelLinks(data, type, params);
+                pages = results.length;
 
                 const VerticalBarChartPaged = ({ currentPage }) => (
-                    <VerticalBarChart data={graphData[currentPage]} labelLinks={labelLinks} />
+                    <VerticalBarChart data={results[currentPage]} labelLinks={labelLinks} />
                 );
                 VerticalBarChartPaged.propTypes = { currentPage: PropTypes.number };
                 VerticalBarChartPaged.defaultProps = { currentPage: 0 };
@@ -32,7 +84,7 @@ const StandardsByEntity = ({ type }) => (
             }
 
             return (
-                <Widget pages={pages} header={`Standards By ${type}`}>
+                <Widget pages={pages} header={headerText}>
                     {contents}
                 </Widget>
             );
@@ -41,7 +93,8 @@ const StandardsByEntity = ({ type }) => (
 );
 
 StandardsByEntity.propTypes = {
-    type: PropTypes.string.isRequired
+    type: PropTypes.string.isRequired,
+    params: PropTypes.shape({}).isRequired
 };
 
 export default StandardsByEntity;

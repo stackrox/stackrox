@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { Link, withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 
-const AppLink = ({ context, pageType, entityType, params, children, staticContext, ...rest }) => {
+const AppLink = ({ context, pageType, params, children, ...rest }) => {
     const to = URLService.getLinkTo(context, pageType, params);
 
     return (
@@ -16,7 +16,6 @@ const AppLink = ({ context, pageType, entityType, params, children, staticContex
 AppLink.propTypes = {
     context: PropTypes.string.isRequired,
     pageType: PropTypes.string.isRequired,
-    entityType: PropTypes.string.isRequired,
     params: PropTypes.shape({}).isRequired
 };
 

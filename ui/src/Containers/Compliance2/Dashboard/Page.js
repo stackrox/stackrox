@@ -1,52 +1,72 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { withRouter } from 'react-router-dom';
+import ReactRouterPropTypes from 'react-router-prop-types';
+import URLService from 'modules/URLService';
+import { resourceTypes } from 'constants/entityTypes';
+import { sunburstData, sunburstLegendData } from 'mockData/graphDataMock';
 
-import StandardsAcrossEntity from 'Containers/Compliance2/widgets/StandardsAcrossEntity';
+import Sunburst from 'Components/visuals/Sunburst';
+import Widget from 'Components/Widget';
 import StandardsByEntity from 'Containers/Compliance2/widgets/StandardsByEntity';
-import LinkListWidget from 'Components/widgets/LinkListWidget';
-import Button from 'Components/Button';
-
-import { horizontalBarData } from 'mockData/graphDataMock';
-import entityTypes from 'constants/entityTypes';
-
 import DashboardHeader from './Header';
+import StandardsAcrossEntity from '../widgets/StandardsAcrossEntity';
 
-const namespacesList = [
-    { name: 'namespace-1', link: '/main/compliance2/namespace/1' },
-    { name: 'namespace-2', link: '/main/compliance2/namespace/2' },
-    { name: 'namespace-3', link: '/main/compliance2/namespace/3' },
-    { name: 'namespace-4', link: '/main/compliance2/namespace/4' },
-    { name: 'namespace-5', link: '/main/compliance2/namespace/5' }
-];
+const ComplianceDashboardPage = ({ match, location }) => {
+    const params = URLService.getParams(match, location);
 
-// Just fixing a merge conflict. Not really sure what button onClick should do
-function doNothing() {}
-
-const ComplianceDashboardPage = () => (
-    <section className="flex flex-1 flex-col h-full">
-        <div className="flex flex-1 flex-col">
-            <DashboardHeader />
+    return (
+        <section className="flex flex-col h-full">
+            <DashboardHeader params={params} />
             <div className="flex-1 relative bg-base-200 p-4 overflow-auto">
                 <div className="grid xl:grid-columns-3 md:grid-columns-2 sm:grid-columns-1 grid-gap-6">
-                    <StandardsAcrossEntity type={entityTypes.CLUSTERS} data={horizontalBarData} />
-                    <LinkListWidget
-                        title="5 Related Namespaces"
-                        data={namespacesList}
-                        headerComponents={
-                            <Link className="no-underline" to="/main/compliance2/namespaces">
-                                <Button
-                                    className="btn-sm btn-base"
-                                    onClick={doNothing}
-                                    text="View All"
-                                />
-                            </Link>
-                        }
-                    />
-                    <StandardsByEntity type={entityTypes.CLUSTERS} />
+                    <StandardsAcrossEntity type={resourceTypes.CLUSTERS} params={params} />
+                    <StandardsByEntity type={resourceTypes.CLUSTERS} params={params} />
+                    <Widget header="Compliance Across Controls">
+                        <Sunburst
+                            data={sunburstData}
+                            legendData={sunburstLegendData}
+                            centerLabel="75%"
+                        />
+                    </Widget>
+                    <StandardsAcrossEntity type={resourceTypes.NAMESPACES} params={params} />
+                    <StandardsAcrossEntity type={resourceTypes.NODES} params={params} />
+                    <Widget header="PCI Compliance">
+                        <Sunburst
+                            data={sunburstData}
+                            legendData={sunburstLegendData}
+                            centerLabel="75%"
+                        />
+                    </Widget>
+                    <Widget header="NIST Compliance">
+                        <Sunburst
+                            data={sunburstData}
+                            legendData={sunburstLegendData}
+                            centerLabel="75%"
+                        />
+                    </Widget>
+                    <Widget header="HIPAA Compliance">
+                        <Sunburst
+                            data={sunburstData}
+                            legendData={sunburstLegendData}
+                            centerLabel="75%"
+                        />
+                    </Widget>
+                    <Widget header="CIS Compliance">
+                        <Sunburst
+                            data={sunburstData}
+                            legendData={sunburstLegendData}
+                            centerLabel="75%"
+                        />
+                    </Widget>
                 </div>
             </div>
-        </div>
-    </section>
-);
+        </section>
+    );
+};
 
-export default ComplianceDashboardPage;
+ComplianceDashboardPage.propTypes = {
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired
+};
+
+export default withRouter(ComplianceDashboardPage);

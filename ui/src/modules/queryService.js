@@ -20,7 +20,11 @@ function getQuery(params, component) {
 
     const { query, variables, format } = matches[0].config;
     const mappedVariables = variables.reduce((acc, param) => {
-        acc[param.graphQLParam] = params[param.queryParam];
+        if (param.graphQLValue) {
+            acc[param.graphQLParam] = param.graphQLValue;
+        } else {
+            acc[param.graphQLParam] = params[param.queryParam];
+        }
         return acc;
     }, {});
 

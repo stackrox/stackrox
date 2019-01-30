@@ -6,6 +6,7 @@ import { CLUSTER_QUERY, CLUSTER_COMPLIANCE } from 'queries/cluster';
 import { NAMESPACE_QUERY, RELATED_DEPLOYMENTS } from 'queries/namespace';
 import { CLUSTERS_QUERY, NAMESPACES_QUERY, NODES_QUERY } from 'queries/table';
 import { NODE_QUERY } from 'queries/node';
+import AGGREGATED_RESULTS from 'queries/controls';
 
 /**
  * context:     Array of contextTypes to match
@@ -117,6 +118,27 @@ export default [
         config: {
             query: NODES_QUERY,
             variables: [{ graphQLParam: 'id', queryParam: 'entityId' }]
+        }
+    },
+    {
+        context: [contextTypes.COMPLIANCE],
+        pageType: [pageTypes.DASHBOARD],
+        entityType: [],
+        component: [componentTypes.STANDARDS_BY_CLUSTER],
+        config: {
+            query: AGGREGATED_RESULTS,
+            variables: [
+                { graphQLParam: 'groupBy', graphQLValue: ['STANDARD', 'CLUSTER'] },
+                { graphQLParam: 'unit', graphQLValue: 'CONTROL' }
+            ],
+            format(data) {
+                const formattedData = {
+                    results: data.results,
+                    complianceStandards: data.complianceStandards,
+                    entityList: data.clusters
+                };
+                return formattedData;
+            }
         }
     }
 ];

@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import {
-    FlexibleWidthXYPlot,
+    FlexibleXYPlot,
     XAxis,
     YAxis,
     VerticalGridLines,
@@ -92,7 +92,6 @@ class BarChart extends Component {
         // Default props
         const defaultPlotProps = {
             xType: 'ordinal',
-            height: 250,
             yDomain: [0, 110]
         };
 
@@ -165,7 +164,7 @@ class BarChart extends Component {
 
         return (
             <div {...containerProps}>
-                <FlexibleWidthXYPlot {...plotProps}>
+                <FlexibleXYPlot {...plotProps}>
                     <VerticalGridLines
                         left={330 / clusterNames.length / 2 + 30}
                         tickValues={clusterNames.slice(0, clusterNames.length - 1)}
@@ -181,7 +180,7 @@ class BarChart extends Component {
                         colors={colors}
                         className="horizontal-bar-legend"
                     />
-                </FlexibleWidthXYPlot>
+                </FlexibleXYPlot>
                 {this.state.hintData ? (
                     <HoverHint
                         top={this.state.hintY}
