@@ -111,7 +111,6 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 }
 
 func mockFlatChecks(clusterID, standardID string) []flatCheck {
-	//helperFunc := newGroupKeyHelper(clusterID, standardID)
 	return []flatCheck{
 		newFlatCheck(clusterID, "", standardID, "", "control1", "", "", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
 		newFlatCheck(clusterID, "", standardID, "", "control2", "", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
@@ -222,6 +221,13 @@ func TestGetAggregatedResults(t *testing.T) {
 			failPerResult: 3,
 			passPerResult: 3,
 			numResults:    4,
+		},
+		{
+			groupBy:       []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER},
+			unit:          v1.ComplianceAggregation_CHECK,
+			failPerResult: 10,
+			passPerResult: 10,
+			numResults:    2,
 		},
 	}
 	runResults := []*storage.ComplianceRunResults{

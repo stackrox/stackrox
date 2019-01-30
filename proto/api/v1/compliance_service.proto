@@ -12,14 +12,15 @@ package v1;
 
 message ComplianceAggregation {
     enum Scope {
-        UNKNOWN = 0;
-        STANDARD = 1;
-        CLUSTER = 2;
-        CATEGORY = 3;
-        CONTROL = 4;
-        NAMESPACE = 5;
-        NODE = 6;
+        UNKNOWN    = 0;
+        STANDARD   = 1;
+        CLUSTER    = 2;
+        CATEGORY   = 3;
+        CONTROL    = 4;
+        NAMESPACE  = 5;
+        NODE       = 6;
         DEPLOYMENT = 7;
+        CHECK      = 8;
     }
 
     // Next available tag: 3

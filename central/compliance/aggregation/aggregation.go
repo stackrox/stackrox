@@ -1,6 +1,8 @@
 package aggregation
 
 import (
+	"strconv"
+
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -158,10 +160,12 @@ func GetAggregatedResults(groupBy []v1.ComplianceAggregation_Scope, unit v1.Comp
 	results := make([]*v1.ComplianceAggregation_Result, 0, len(groups))
 	for key, checks := range groups {
 		unitMap := make(map[string]passFailCounts)
-		for _, c := range checks {
+		for i, c := range checks {
 			unitKey := c.values[unit]
 			// If there is no unit key, then the check doesn't apply in this unit scope
-			if unitKey == "" {
+			if unit == v1.ComplianceAggregation_CHECK {
+				unitKey = strconv.Itoa(i)
+			} else if unitKey == "" {
 				continue
 			}
 			unitMap[unitKey] = unitMap[unitKey].Add(c.passFailCounts())
