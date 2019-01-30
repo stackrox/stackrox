@@ -4,6 +4,7 @@ export const CLUSTERS_QUERY = gql`
     query list {
         results: clusters {
             id
+            name
         }
     }
 `;

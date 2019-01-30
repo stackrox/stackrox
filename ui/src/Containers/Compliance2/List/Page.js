@@ -1,21 +1,12 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { horizontalBarData, sunburstData, sunburstLegendData } from 'mockData/graphDataMock';
-import entityTypes, { standardEntityTypes } from 'constants/entityTypes';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
-
-import Table from 'Components/Table';
-import Panel from 'Components/Panel';
-import TablePagination from 'Components/TablePagination';
-import TableGroup from 'Components/TableGroup';
-import {
-    groupedData,
-    subTableColumns,
-    tableData as data,
-    tableColumns as columns
-} from 'mockData/tableDataMock';
+import { horizontalBarData, sunburstData, sunburstLegendData } from 'mockData/graphDataMock';
+import entityTypes, { standardEntityTypes } from 'constants/entityTypes';
 import URLService from 'modules/URLService';
+
+import Panel from 'Components/Panel';
 import Widget from 'Components/Widget';
 import CollapsibleBanner from 'Components/CollapsibleBanner/CollapsibleBanner';
 import StandardsAcrossEntity from 'Containers/Compliance2/widgets/StandardsAcrossEntity';
@@ -25,20 +16,19 @@ import ComplianceEntityPage from 'Containers/Compliance2/Entity/Page';
 import pageTypes from 'constants/pageTypes';
 import SearchInput from './SearchInput';
 import Header from './Header';
+import ListTable from './Table';
 
 // Ultimately, this will need to be dynamic
 const entity = standardEntityTypes.CONTROL;
 
 class ComplianceListPage extends Component {
     static propTypes = {
-        grouped: PropTypes.bool,
         match: ReactRouterPropTypes.match.isRequired,
         location: ReactRouterPropTypes.location.isRequired,
         params: PropTypes.shape({})
     };
 
     static defaultProps = {
-        grouped: true,
         params: null
     };
 
@@ -83,36 +73,10 @@ class ComplianceListPage extends Component {
 
     setTablePage = page => this.setState({ page });
 
-    renderTable = () => {
-        const { grouped } = this.props;
-        const { selectedRow, page } = this.state;
-        return grouped ? (
-            <TableGroup
-                groups={groupedData}
-                tableColumns={subTableColumns}
-                onRowClick={this.updateSelectedRow}
-                idAttribute={entity}
-                selectedRowId={selectedRow ? selectedRow[entity] : null}
-            />
-        ) : (
-            <Table
-                rows={data}
-                columns={columns}
-                onRowClick={this.updateSelectedRow}
-                idAttribute="node"
-                selectedRowId={selectedRow ? selectedRow.node : null}
-                noDataText="No results found. Please refine your search."
-                page={page}
-            />
-        );
-    };
-
     render() {
-        // const { data } = this.props;
-        const { page } = this.state;
-        const paginationComponent = (
-            <TablePagination page={page} dataLength={data.length} setPage={this.setTablePage} />
-        );
+        const { match, location } = this.props;
+        const params = URLService.getParams(match, location);
+        const { selectedRow, page } = this.state;
         return (
             <section className="flex flex-col h-full">
                 <Header searchComponent={<SearchInput />} />
@@ -135,9 +99,13 @@ class ComplianceListPage extends Component {
                     <StandardsAcrossEntity type={entityTypes.NODES} data={horizontalBarData} />
                 </CollapsibleBanner>
                 <div className="flex flex-1 overflow-y-auto">
-                    <Panel header={entityTypes.NODES} headerComponents={paginationComponent}>
-                        {this.renderTable()}
-                    </Panel>
+                    <ListTable
+                        selectedRow={selectedRow}
+                        page={page}
+                        params={params}
+                        updateSelectedRow={this.updateSelectedRow}
+                        setTablePage={this.setTablePage}
+                    />
                     {this.renderSidePanel()}
                 </div>
             </section>

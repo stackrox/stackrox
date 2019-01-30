@@ -4,6 +4,7 @@ import contextTypes from 'constants/contextTypes';
 import pageTypes from 'constants/pageTypes';
 import { CLUSTER_QUERY, CLUSTER_COMPLIANCE } from 'queries/cluster';
 import { NAMESPACE_QUERY, RELATED_DEPLOYMENTS } from 'queries/namespace';
+import { CLUSTERS_QUERY, NAMESPACES_QUERY, NODES_QUERY } from 'queries/table';
 import { NODE_QUERY } from 'queries/node';
 
 /**
@@ -86,6 +87,36 @@ export default [
                 formattedData.results = getSubField(data, 'aggregatedResults.results');
                 return formattedData;
             }
+        }
+    },
+    {
+        context: [contextTypes.COMPLIANCE],
+        pageType: [pageTypes.LIST],
+        entityType: [entityTypes.CLUSTERS],
+        component: [componentTypes.LIST_TABLE],
+        config: {
+            query: CLUSTERS_QUERY,
+            variables: [{ graphQLParam: 'id', queryParam: 'entityId' }]
+        }
+    },
+    {
+        context: [contextTypes.COMPLIANCE],
+        pageType: [pageTypes.LIST],
+        entityType: [entityTypes.NAMESPACES],
+        component: [componentTypes.LIST_TABLE],
+        config: {
+            query: NAMESPACES_QUERY,
+            variables: [{ graphQLParam: 'id', queryParam: 'entityId' }]
+        }
+    },
+    {
+        context: [contextTypes.COMPLIANCE],
+        pageType: [pageTypes.LIST],
+        entityType: [entityTypes.NODES],
+        component: [componentTypes.LIST_TABLE],
+        config: {
+            query: NODES_QUERY,
+            variables: [{ graphQLParam: 'id', queryParam: 'entityId' }]
         }
     }
 ];

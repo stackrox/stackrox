@@ -1,5 +1,3 @@
-import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-
 const groupedData = [
     {
         name:
@@ -30,21 +28,6 @@ const groupedData = [
     }
 ];
 
-const subTableColumns = [
-    {
-        accessor: 'control',
-        Header: 'PCI Controls',
-        headerClassName: `w-5/6 ${defaultHeaderClassName}`,
-        className: `w-5/6 ${defaultColumnClassName}`
-    },
-    {
-        accessor: 'compliance',
-        Header: 'Compliance',
-        headerClassName: `w-1/8 flex justify-end pr-4 ${defaultHeaderClassName}`,
-        className: `w-1/8 justify-end pr-4 ${defaultColumnClassName}`
-    }
-];
-
 const tableData = [
     {
         node: 'Node 1',
@@ -69,27 +52,4 @@ const tableData = [
     }
 ];
 
-const tableColumns = [
-    {
-        accessor: 'node',
-        Header: 'Node'
-    },
-    {
-        accessor: 'pci',
-        Header: 'PCI'
-    },
-    {
-        accessor: 'nist',
-        Header: 'NIST'
-    },
-    {
-        accessor: 'hippa',
-        Header: 'HIPPA'
-    },
-    {
-        accessor: 'cis',
-        Header: 'CIS'
-    }
-];
-
-export { groupedData, subTableColumns, tableData, tableColumns };
+export { groupedData, tableData };
