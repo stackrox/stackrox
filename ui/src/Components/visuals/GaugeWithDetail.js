@@ -178,15 +178,20 @@ class GaugeWithDetail extends Component {
 
     getHint = () => {
         if (!this.state.hoveredCell) return null;
+        const { hoveredCell } = this.state;
         return (
-            <Hint value={buildValue(this.state.hoveredCell)}>
+            <Hint value={buildValue(hoveredCell)}>
                 <div className="text-base-600 text-xs p-2 pb-1 pt-1 border border-tertiary-400 bg-tertiary-200 rounded min-w-32">
                     <h1 className="text-uppercase border-b-2 border-base-400 leading-loose text-xs pb-1">
-                        {this.state.hoveredCell.title}
+                        {hoveredCell.title}
                     </h1>
                     <div>
-                        <div className="pt-2">Passing: {this.state.hoveredCell.passing}</div>
-                        <div className="py-2">Failing: {this.state.hoveredCell.failing}</div>
+                        {hoveredCell.arc === 'inner' && (
+                            <div className="py-2">Passing: {hoveredCell.passing}</div>
+                        )}
+                        {hoveredCell.arc !== 'inner' && (
+                            <div className="py-2">Failing: {hoveredCell.failing}</div>
+                        )}
                     </div>
                 </div>
             </Hint>
