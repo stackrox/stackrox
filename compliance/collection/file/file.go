@@ -12,7 +12,10 @@ import (
 	"github.com/godbus/dbus"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 )
+
+const maxFileSize = 5 * 1024
 
 var filesWithContents = []string{
 	"/etc/audit",
@@ -35,6 +38,11 @@ var systemdUnits = []string{
 	"docker",
 	"kube",
 }
+
+var fileExtensions = set.NewStringSet(
+	".yaml",
+	".rules",
+)
 
 var log = logging.LoggerForModule()
 
@@ -131,7 +139,7 @@ func EvaluatePath(path string, withContents bool) (*compliance.File, bool, error
 			file.Children = append(file.Children, child)
 		}
 	} else if withContents {
-		if fi.Size() == 0 {
+		if fi.Size() == 0 || fi.Size() > maxFileSize || !fileExtensions.Contains(filepath.Ext(pathInContainer)) {
 			return file, true, nil
 		}
 		var err error

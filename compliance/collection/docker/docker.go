@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
+	"golang.org/x/time/rate"
 )
 
 const timeout = 30 * time.Second
@@ -27,6 +28,8 @@ var (
 	}
 
 	log = logging.LoggerForModule()
+
+	dockerRateLimiter = rate.NewLimiter(rate.Every(50*time.Millisecond), 1)
 )
 
 // Data is the wrapper around all of the Docker info required for compliance
@@ -122,6 +125,10 @@ func GetDockerData() (*compliance.GZIPDataChunk, error) {
 
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
+	gz, err = gzip.NewWriterLevel(gz, gzip.BestCompression)
+	if err != nil {
+		return nil, err
+	}
 	if err := json.NewEncoder(gz).Encode(&dockerData); err != nil {
 		return nil, err
 	}
@@ -151,6 +158,7 @@ func getContainers(c *client.Client) ([]types.ContainerJSON, error) {
 	ctx, cancel := getContext()
 	defer cancel()
 
+	dockerRateLimiter.Wait(context.Background())
 	containerList, err := c.ContainerList(ctx, types.ContainerListOptions{All: true})
 	if err != nil {
 		return nil, err
@@ -195,6 +203,7 @@ func getImages(c *client.Client) ([]ImageWrap, error) {
 
 	images := make([]ImageWrap, 0, len(imageList))
 	for _, i := range imageList {
+		dockerRateLimiter.Wait(context.Background())
 		image, err := inspectImage(c, i.ID)
 		if client.IsErrImageNotFound(err) {
 			continue

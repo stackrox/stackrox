@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -83,4 +85,10 @@ func main() {
 			log.Errorf("Error posting compliance data to %v: %+v", env.AdvertisedEndpoint.Setting(), err)
 		}),
 	)
+
+	signalsC := make(chan os.Signal)
+	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
+	// Wait for a signal to terminate
+	sig := <-signalsC
+	log.Infof("Caught %s signal", sig)
 }

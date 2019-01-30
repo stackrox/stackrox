@@ -9,6 +9,7 @@ import (
 
 	"github.com/stackrox/rox/compliance/collection/file"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var commandsToRetrieve = []string{
@@ -21,6 +22,17 @@ var commandsToRetrieve = []string{
 	"kube-scheduler",
 	"kubelet",
 }
+
+var flagsWithFiles = set.NewStringSet(
+	"kubeconfig",
+	"client-ca-file",
+	"cni-conf-dir",
+	"cni-bin-dir",
+	"data-dir",
+	"tlscacert",
+	"tlscert",
+	"tlskey",
+)
 
 // RetrieveCommands returns the commandlines of the services to be evaluated
 func RetrieveCommands() (map[string]*compliance.CommandLine, error) {
@@ -132,14 +144,8 @@ func parseArgs(args []string) []*compliance.CommandLine_Args {
 		// Try to see if key or value is a file path and if so then try to read it and add it to the arg
 		arg := newArg(key, value)
 
-		if strings.HasPrefix(key, "/") {
-			f, exists, err := file.EvaluatePath(key, true)
-			if exists && err == nil {
-				arg.File = f
-			}
-		}
-		if strings.HasPrefix(value, "/") {
-			f, exists, err := file.EvaluatePath(value, true)
+		if flagsWithFiles.Contains(key) {
+			f, exists, err := file.EvaluatePath(key, false)
 			if exists && err == nil {
 				arg.File = f
 			}
