@@ -140,5 +140,44 @@ export default [
                 return formattedData;
             }
         }
+    },
+    {
+        context: [contextTypes.COMPLIANCE],
+        pageType: [pageTypes.DASHBOARD],
+        entityType: [],
+        component: [componentTypes.STANDARDS_ACROSS_CLUSTERS],
+        config: {
+            query: AGGREGATED_RESULTS,
+            variables: [
+                { graphQLParam: 'groupBy', graphQLValue: ['STANDARD'] },
+                { graphQLParam: 'unit', graphQLValue: 'CLUSTER' }
+            ]
+        }
+    },
+    {
+        context: [contextTypes.COMPLIANCE],
+        pageType: [pageTypes.DASHBOARD],
+        entityType: [],
+        component: [componentTypes.STANDARDS_ACROSS_NAMESPACES],
+        config: {
+            query: AGGREGATED_RESULTS,
+            variables: [
+                { graphQLParam: 'groupBy', graphQLValue: ['STANDARD'] },
+                { graphQLParam: 'unit', graphQLValue: 'NAMESPACE' }
+            ]
+        }
+    },
+    {
+        context: [contextTypes.COMPLIANCE],
+        pageType: [pageTypes.DASHBOARD],
+        entityType: [],
+        component: [componentTypes.STANDARDS_ACROSS_NODES],
+        config: {
+            query: AGGREGATED_RESULTS,
+            variables: [
+                { graphQLParam: 'groupBy', graphQLValue: ['STANDARD'] },
+                { graphQLParam: 'unit', graphQLValue: 'NODE' }
+            ]
+        }
     }
 ];

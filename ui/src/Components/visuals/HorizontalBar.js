@@ -11,6 +11,7 @@ import {
 import { withRouter, Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import merge from 'deepmerge';
+
 import HoverHint from './HoverHint';
 
 const minimalMargin = { top: 0, bottom: 0, left: 0, right: 0 };
@@ -73,11 +74,16 @@ class HorizontalBarChart extends Component {
 
     getLabelData = () =>
         this.props.data.map(item => {
+            let label = '';
+            // This prevents overlap between the value label and the axis label
+            if (item.x > 10) {
+                label = this.props.valueFormat(item.x).toString() || '';
+            }
             const val = {
                 x: 0,
                 y: item.y,
                 yOffset: 1,
-                label: this.props.valueFormat(item.x).toString() || ''
+                label
             };
             val.x -= 2.4 * val.label.length;
             return val;
@@ -109,12 +115,14 @@ class HorizontalBarChart extends Component {
 
     getPlotProps = hintsEnabled => {
         const { data, minimal } = this.props;
+        // This determines how far to push the bar graph to the right based on the longest axis label character's length
+        const maxLength = data.reduce((acc, curr) => Math.max(curr.y.length, acc), 0);
         const defaultPlotProps = {
             height: minimal ? 30 : 270,
             xDomain: [0, 105],
             yType: 'category',
             yRange: data.map((item, i) => (i + 1) * 23).concat([0]),
-            margin: minimal ? minimalMargin : { top: 30 },
+            margin: minimal ? minimalMargin : { top: 30, left: Math.ceil(maxLength * 6.4) },
             stackBy: 'x',
             animation: hintsEnabled ? false : ''
         };
