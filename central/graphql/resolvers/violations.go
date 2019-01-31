@@ -16,7 +16,7 @@ func init() {
 
 // Violations returns a list of all violations, or those that match the requested query
 func (resolver *Resolver) Violations(ctx context.Context, args rawQuery) ([]*alertResolver, error) {
-	if err := alertAuth(ctx); err != nil {
+	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
 	q, err := args.AsV1Query()
@@ -32,7 +32,7 @@ func (resolver *Resolver) Violations(ctx context.Context, args rawQuery) ([]*ale
 
 // Violation returns the violation with the requested ID
 func (resolver *Resolver) Violation(ctx context.Context, args struct{ graphql.ID }) (*alertResolver, error) {
-	if err := alertAuth(ctx); err != nil {
+	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.wrapAlert(

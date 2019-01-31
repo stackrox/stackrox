@@ -20,7 +20,7 @@ func init() {
 
 // Deployment returns a GraphQL resolver for a given id
 func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.ID }) (*deploymentResolver, error) {
-	if err := deploymentAuth(ctx); err != nil {
+	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.wrapDeployment(resolver.DeploymentDataStore.GetDeployment(string(*args.ID)))
@@ -28,7 +28,7 @@ func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.
 
 // Deployments returns GraphQL resolvers all deployments
 func (resolver *Resolver) Deployments(ctx context.Context, args rawQuery) ([]*deploymentResolver, error) {
-	if err := deploymentAuth(ctx); err != nil {
+	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
 	q, err := args.AsV1Query()
@@ -50,7 +50,7 @@ func (resolver *deploymentResolver) Cluster(ctx context.Context) (*clusterResolv
 }
 
 func (resolver *deploymentResolver) GroupedProcesses(ctx context.Context) ([]*processNameGroupResolver, error) {
-	if err := indicatorAuth(ctx); err != nil {
+	if err := readIndicators(ctx); err != nil {
 		return nil, err
 	}
 	query := search.NewQueryBuilder().AddStrings(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
@@ -59,7 +59,7 @@ func (resolver *deploymentResolver) GroupedProcesses(ctx context.Context) ([]*pr
 }
 
 func (resolver *deploymentResolver) Alerts(ctx context.Context) ([]*alertResolver, error) {
-	if err := alertAuth(ctx); err != nil {
+	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
 	query := search.NewQueryBuilder().AddStrings(search.DeploymentID, resolver.data.GetId()).ProtoQuery()

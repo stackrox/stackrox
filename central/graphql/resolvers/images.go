@@ -15,7 +15,7 @@ func init() {
 
 // Images returns GraphQL resolvers for all images
 func (resolver *Resolver) Images(ctx context.Context, args rawQuery) ([]*imageResolver, error) {
-	if err := imageAuth(ctx); err != nil {
+	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
 	q, err := args.AsV1Query()
@@ -31,7 +31,7 @@ func (resolver *Resolver) Images(ctx context.Context, args rawQuery) ([]*imageRe
 
 // Image returns a graphql resolver for the identified image, if it exists
 func (resolver *Resolver) Image(ctx context.Context, args struct{ Sha graphql.ID }) (*imageResolver, error) {
-	if err := imageAuth(ctx); err != nil {
+	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.wrapImage(

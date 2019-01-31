@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"sort"
+	"strings"
 	"text/template"
 )
 
@@ -28,6 +29,12 @@ enum {{ .Name }} {
 {{- else if .Unions -}}
 union {{ .Name }} =
 {{- range $ui, $ud := .Unions }}{{if $ui }} |{{ end }} {{ . }}{{- end }}
+{{- else if .InputFields -}}
+input {{ .Name }} {
+{{- range .InputFields }}
+	{{ . }}
+{{- end }}
+}
 {{- else }}
 {{- if $typeIndex }}type {{ end }}{{ .Name }} {
 {{- range .Fields }}
@@ -42,6 +49,7 @@ union {{ .Name }} =
 {{end -}}
 scalar Time
 `
+	// todo: add "AddScalar" API and stop hardcoding Time
 )
 
 type typeEntry struct {
@@ -49,7 +57,7 @@ type typeEntry struct {
 	enumValues                       []string
 	unionValues                      []string
 	definedResolvers, extraResolvers []string
-	listResolvers                    map[string]struct{}
+	inputFields                      []string
 }
 
 func (t *typeEntry) Enums() []string {
@@ -68,6 +76,10 @@ func (t *typeEntry) Fields() []string {
 	return t.definedResolvers
 }
 
+func (t *typeEntry) InputFields() []string {
+	return t.inputFields
+}
+
 func (t *typeEntry) ExtraFields() []string {
 	sort.Slice(t.extraResolvers, func(i, j int) bool {
 		return t.extraResolvers[i] < t.extraResolvers[j]
@@ -82,11 +94,12 @@ type schemaBuilderImpl struct {
 // SchemaBuilder is a builder for schemas
 type SchemaBuilder interface {
 	AddType(name string, resolvers []string) error
-	AddListType(name string, resolvers []string, listResolvers map[string]struct{}) error
+	AddInput(name string, fields []string) error
 	AddEnumType(name string, values []string) error
 	AddUnionType(name string, types []string) error
 	AddExtraResolver(name string, resolver string) error
 	AddQuery(resolver string) error
+	AddMutation(resolver string) error
 	Render() (string, error)
 }
 
@@ -100,21 +113,26 @@ func NewSchemaBuilder() SchemaBuilder {
 }
 
 func (s *schemaBuilderImpl) AddType(name string, resolvers []string) error {
-	return s.AddListType(name, resolvers, nil)
-}
-
-func (s *schemaBuilderImpl) AddListType(name string, resolvers []string, listResolvers map[string]struct{}) error {
 	if _, ok := s.entries[name]; ok {
 		return fmt.Errorf("already type registered with name %q", name)
 	}
 	s.entries[name] = &typeEntry{
 		name:             name,
 		definedResolvers: resolvers,
-		listResolvers:    listResolvers,
 	}
 	return nil
 }
 
+func (s *schemaBuilderImpl) AddInput(name string, fields []string) error {
+	if _, ok := s.entries[name]; ok {
+		return fmt.Errorf("already type registered with name %q", name)
+	}
+	s.entries[name] = &typeEntry{
+		name:        name,
+		inputFields: fields,
+	}
+	return nil
+}
 func (s *schemaBuilderImpl) AddEnumType(name string, values []string) error {
 	if _, ok := s.entries[name]; ok {
 		return fmt.Errorf("already type registered with name %q", name)
@@ -150,8 +168,11 @@ func (s *schemaBuilderImpl) AddExtraResolver(name string, resolver string) error
 }
 
 func (s *schemaBuilderImpl) AddQuery(resolver string) error {
-	const q = "Query"
-	return s.addBuiltin(q, resolver)
+	return s.addBuiltin("Query", resolver)
+}
+
+func (s *schemaBuilderImpl) AddMutation(resolver string) error {
+	return s.addBuiltin("Mutation", resolver)
 }
 
 func (s *schemaBuilderImpl) addBuiltin(name, resolver string) error {
@@ -160,7 +181,7 @@ func (s *schemaBuilderImpl) addBuiltin(name, resolver string) error {
 	if !ok {
 		entry = &typeEntry{name: name}
 		s.entries[name] = entry
-		s.entries["schema"].definedResolvers = append(s.entries["schema"].definedResolvers, "query: Query")
+		s.entries["schema"].definedResolvers = append(s.entries["schema"].definedResolvers, fmt.Sprintf("%s: %s", strings.ToLower(name), name))
 	}
 	entry.extraResolvers = append(entry.extraResolvers, resolver)
 	return nil

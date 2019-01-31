@@ -14,7 +14,7 @@ func init() {
 
 // Groups returns GraphQL resolvers for all groups
 func (resolver *Resolver) Groups(ctx context.Context) ([]*groupResolver, error) {
-	err := groupAuth(ctx)
+	err := readGroups(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +23,7 @@ func (resolver *Resolver) Groups(ctx context.Context) ([]*groupResolver, error) 
 
 // Group returns a GraphQL resolver for the matching group, if it exists
 func (resolver *Resolver) Group(ctx context.Context, args struct{ AuthProviderID, Key, Value *string }) (*groupResolver, error) {
-	err := groupAuth(ctx)
+	err := readGroups(ctx)
 	if err != nil {
 		return nil, err
 	}

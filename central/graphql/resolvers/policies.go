@@ -16,7 +16,7 @@ func init() {
 
 // Policies returns GraphQL resolvers for all policies
 func (resolver *Resolver) Policies(ctx context.Context, args rawQuery) ([]*policyResolver, error) {
-	if err := policyAuth(ctx); err != nil {
+	if err := readPolicies(ctx); err != nil {
 		return nil, err
 	}
 	q, err := args.AsV1Query()
@@ -31,7 +31,7 @@ func (resolver *Resolver) Policies(ctx context.Context, args rawQuery) ([]*polic
 
 // Policy returns a GraphQL resolver for a given policy
 func (resolver *Resolver) Policy(ctx context.Context, args struct{ *graphql.ID }) (*policyResolver, error) {
-	if err := policyAuth(ctx); err != nil {
+	if err := readPolicies(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.wrapPolicy(resolver.PolicyDataStore.GetPolicy(string(*args.ID)))
@@ -39,7 +39,7 @@ func (resolver *Resolver) Policy(ctx context.Context, args struct{ *graphql.ID }
 
 // Alerts returns GraphQL resolvers for all alerts for this policy
 func (resolver *policyResolver) Alerts(ctx context.Context) ([]*alertResolver, error) {
-	if err := alertAuth(ctx); err != nil {
+	if err := readAlerts(ctx); err != nil {
 		return nil, err
 	}
 	query := search.NewQueryBuilder().AddStrings(search.PolicyID, resolver.data.GetId()).ProtoQuery()

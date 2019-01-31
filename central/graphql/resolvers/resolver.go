@@ -10,6 +10,8 @@ import (
 	violationsDatastore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/apitoken"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	complianceManager "github.com/stackrox/rox/central/compliance/manager"
+	"github.com/stackrox/rox/central/compliance/manager/service"
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
 	complianceStore "github.com/stackrox/rox/central/compliance/store"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
@@ -22,62 +24,77 @@ import (
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 )
 
 // Resolver is the root GraphQL resolver
 type Resolver struct {
-	APITokenBackend         apitoken.Backend
-	ClusterDataStore        clusterDatastore.DataStore
-	ComplianceDataStore     complianceStore.Store
-	ComplianceStandardStore complianceStandards.Repository
-	DeploymentDataStore     deploymentDatastore.DataStore
-	ImageDataStore          imageDatastore.DataStore
-	GroupDataStore          groupDataStore.Store
-	NetworkFlowStore        networkFlowStore.ClusterStore
-	NodeGlobalStore         nodeStore.GlobalStore
-	NotifierStore           notifierStore.Store
-	PolicyDataStore         policyDatastore.DataStore
-	ProcessIndicatorStore   processIndicatorStore.DataStore
-	SecretsDataStore        secretDataStore.DataStore
-	ViolationsDataStore     violationsDatastore.DataStore
+	APITokenBackend             apitoken.Backend
+	ClusterDataStore            clusterDatastore.DataStore
+	ComplianceDataStore         complianceStore.Store
+	ComplianceStandardStore     complianceStandards.Repository
+	ComplianceManagementService v1.ComplianceManagementServiceServer
+	ComplianceManager           complianceManager.ComplianceManager
+	DeploymentDataStore         deploymentDatastore.DataStore
+	ImageDataStore              imageDatastore.DataStore
+	GroupDataStore              groupDataStore.Store
+	NetworkFlowStore            networkFlowStore.ClusterStore
+	NodeGlobalStore             nodeStore.GlobalStore
+	NotifierStore               notifierStore.Store
+	PolicyDataStore             policyDatastore.DataStore
+	ProcessIndicatorStore       processIndicatorStore.DataStore
+	SecretsDataStore            secretDataStore.DataStore
+	ViolationsDataStore         violationsDatastore.DataStore
 }
 
 // New returns a Resolver wired into the relevant data stores
 func New() *Resolver {
-	return &Resolver{
-		APITokenBackend:         apitoken.BackendSingleton(),
-		ClusterDataStore:        clusterDatastore.Singleton(),
-		ComplianceDataStore:     complianceStore.Singleton(),
-		ComplianceStandardStore: complianceStandards.RegistrySingleton(),
-		DeploymentDataStore:     deploymentDatastore.Singleton(),
-		ImageDataStore:          imageDatastore.Singleton(),
-		GroupDataStore:          groupDataStore.Singleton(),
-		NetworkFlowStore:        networkFlowStore.Singleton(),
-		NodeGlobalStore:         nodeStore.Singleton(),
-		NotifierStore:           notifierStore.Singleton(),
-		PolicyDataStore:         policyDatastore.Singleton(),
-		ProcessIndicatorStore:   processIndicatorStore.Singleton(),
-		SecretsDataStore:        secretDataStore.Singleton(),
-		ViolationsDataStore:     violationsDatastore.Singleton(),
+	resolver := &Resolver{
+		APITokenBackend:       apitoken.BackendSingleton(),
+		ClusterDataStore:      clusterDatastore.Singleton(),
+		DeploymentDataStore:   deploymentDatastore.Singleton(),
+		ImageDataStore:        imageDatastore.Singleton(),
+		GroupDataStore:        groupDataStore.Singleton(),
+		NetworkFlowStore:      networkFlowStore.Singleton(),
+		NodeGlobalStore:       nodeStore.Singleton(),
+		NotifierStore:         notifierStore.Singleton(),
+		PolicyDataStore:       policyDatastore.Singleton(),
+		ProcessIndicatorStore: processIndicatorStore.Singleton(),
+		SecretsDataStore:      secretDataStore.Singleton(),
+		ViolationsDataStore:   violationsDatastore.Singleton(),
 	}
+	if features.Compliance.Enabled() {
+		resolver.ComplianceStandardStore = complianceStandards.RegistrySingleton()
+		resolver.ComplianceDataStore = complianceStore.Singleton()
+		resolver.ComplianceManagementService = service.Singleton()
+		resolver.ComplianceManager = complianceManager.Singleton()
+	}
+	return resolver
 }
 
 var (
-	alertAuth      = readAuth(resources.Alert)
-	apiTokenAuth   = readAuth(resources.APIToken)
-	clusterAuth    = readAuth(resources.Cluster)
-	complianceAuth = readAuth(resources.Compliance)
-	deploymentAuth = readAuth(resources.Deployment)
-	groupAuth      = readAuth(resources.Group)
-	imageAuth      = readAuth(resources.Image)
-	indicatorAuth  = readAuth(resources.Indicator)
-	nodeAuth       = readAuth(resources.Node)
-	notifierAuth   = readAuth(resources.Notifier)
-	policyAuth     = readAuth(resources.Policy)
-	secretAuth     = readAuth(resources.Secret)
+	readAlerts                = readAuth(resources.Alert)
+	readTokens                = readAuth(resources.APIToken)
+	readClusters              = readAuth(resources.Cluster)
+	readCompliance            = readAuth(resources.Compliance)
+	readComplianceRuns        = readAuth(resources.ComplianceRuns)
+	readComplianceRunSchedule = readAuth(resources.ComplianceRunSchedule)
+	readDeployments           = readAuth(resources.Deployment)
+	readGroups                = readAuth(resources.Group)
+	readImages                = readAuth(resources.Image)
+	readIndicators            = readAuth(resources.Indicator)
+	readNodes                 = readAuth(resources.Node)
+	readNotifiers             = readAuth(resources.Notifier)
+	readPolicies              = readAuth(resources.Policy)
+	readSecrets               = readAuth(resources.Secret)
+
+	writeCompliance            = writeAuth(resources.Compliance)
+	writeComplianceRuns        = writeAuth(resources.ComplianceRuns)
+	writeComplianceRunSchedule = writeAuth(resources.ComplianceRunSchedule)
 )
 
 type authorizerOverride struct{}
@@ -88,8 +105,7 @@ func SetAuthorizerOverride(ctx context.Context, authorizer authz.Authorizer) con
 	return context.WithValue(ctx, authorizerOverride{}, authorizer)
 }
 
-func readAuth(resource permissions.Resource) func(ctx context.Context) error {
-	authorizer := user.With(permissions.View(resource))
+func applyAuthorizer(authorizer authz.Authorizer) func(ctx context.Context) error {
 	return func(ctx context.Context) error {
 		override := ctx.Value(authorizerOverride{})
 		if override != nil {
@@ -97,6 +113,14 @@ func readAuth(resource permissions.Resource) func(ctx context.Context) error {
 		}
 		return authorizer.Authorized(ctx, "graphql")
 	}
+}
+
+func readAuth(resource permissions.Resource) func(ctx context.Context) error {
+	return applyAuthorizer(user.With(permissions.View(resource)))
+}
+
+func writeAuth(resource permissions.Resource) func(ctx context.Context) error {
+	return applyAuthorizer(user.With(permissions.Modify(resource)))
 }
 
 func stringSlice(inputSlice interface{}) []string {

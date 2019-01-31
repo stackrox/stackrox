@@ -44,7 +44,7 @@ func InitCompliance() {
 
 // ComplianceStandards returns graphql resolvers for all compliance standards
 func (resolver *Resolver) ComplianceStandards(ctx context.Context) ([]*complianceStandardMetadataResolver, error) {
-	if err := complianceAuth(ctx); err != nil {
+	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.wrapComplianceStandardMetadatas(
@@ -53,7 +53,7 @@ func (resolver *Resolver) ComplianceStandards(ctx context.Context) ([]*complianc
 
 // ComplianceStandard returns a graphql resolver for a named compliance standard
 func (resolver *Resolver) ComplianceStandard(ctx context.Context, args struct{ graphql.ID }) (*complianceStandardMetadataResolver, error) {
-	if err := complianceAuth(ctx); err != nil {
+	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.wrapComplianceStandardMetadata(
@@ -68,7 +68,7 @@ type aggregatedResultQuery struct {
 
 // AggregatedResults returns the aggregration of the last runs aggregated by scope, unit and filtered by a query
 func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregatedResultQuery) ([]*complianceAggregationResultWithDomainResolver, error) {
-	if err := complianceAuth(ctx); err != nil {
+	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
 
@@ -212,7 +212,7 @@ func (resolver *complianceAggregationResultWithDomainResolver) Keys() ([]*compli
 
 // ComplianceResults returns graphql resolvers for all matching compliance results
 func (resolver *Resolver) ComplianceResults(ctx context.Context, query rawQuery) ([]*complianceControlResultResolver, error) {
-	if err := complianceAuth(ctx); err != nil {
+	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
 	q, err := query.AsV1Query()
@@ -224,7 +224,7 @@ func (resolver *Resolver) ComplianceResults(ctx context.Context, query rawQuery)
 }
 
 func (resolver *complianceStandardMetadataResolver) Controls(ctx context.Context) ([]*complianceControlResolver, error) {
-	if err := complianceAuth(ctx); err != nil {
+	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.root.wrapComplianceControls(
@@ -232,7 +232,7 @@ func (resolver *complianceStandardMetadataResolver) Controls(ctx context.Context
 }
 
 func (resolver *complianceStandardMetadataResolver) Groups(ctx context.Context) ([]*complianceControlGroupResolver, error) {
-	if err := complianceAuth(ctx); err != nil {
+	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.root.wrapComplianceControlGroups(

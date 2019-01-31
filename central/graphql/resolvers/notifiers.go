@@ -16,7 +16,7 @@ func init() {
 // Notifiers gets all available notifiers. In theory v1.GetNotifiersRequest has fields that we should represent here,
 // but in practice nobody uses them and they're not implemented in the store.
 func (resolver *Resolver) Notifiers(ctx context.Context) ([]*notifierResolver, error) {
-	if err := notifierAuth(ctx); err != nil {
+	if err := readNotifiers(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.wrapNotifiers(
@@ -25,7 +25,7 @@ func (resolver *Resolver) Notifiers(ctx context.Context) ([]*notifierResolver, e
 
 // Notifier gets a single notifier by ID
 func (resolver *Resolver) Notifier(ctx context.Context, args struct{ graphql.ID }) (*notifierResolver, error) {
-	if err := notifierAuth(ctx); err != nil {
+	if err := readNotifiers(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.wrapNotifier(

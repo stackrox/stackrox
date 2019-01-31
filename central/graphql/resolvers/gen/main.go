@@ -20,6 +20,7 @@ var (
 			reflect.TypeOf((*storage.ComplianceControlResult)(nil)),
 			reflect.TypeOf((*v1.ComplianceStandard)(nil)),
 			reflect.TypeOf((*v1.ComplianceAggregation_Response)(nil)),
+			reflect.TypeOf((*v1.ComplianceRunScheduleInfo)(nil)),
 			reflect.TypeOf((*storage.Deployment)(nil)),
 			reflect.TypeOf((*storage.ListDeployment)(nil)),
 			reflect.TypeOf((*storage.Group)(nil)),
@@ -36,6 +37,7 @@ var (
 			reflect.TypeOf((*storage.ListSecret)(nil)),
 			reflect.TypeOf((*storage.TokenMetadata)(nil)),
 			reflect.TypeOf((*v1.GenerateTokenResponse)(nil)),
+			reflect.TypeOf((*v1.GetComplianceRunStatusesResponse)(nil)),
 		},
 	}
 )

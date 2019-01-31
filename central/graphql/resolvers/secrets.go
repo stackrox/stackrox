@@ -17,7 +17,7 @@ func init() {
 
 // Secret gets a single secret by ID
 func (resolver *Resolver) Secret(ctx context.Context, arg struct{ graphql.ID }) (*secretResolver, error) {
-	if err := secretAuth(ctx); err != nil {
+	if err := readSecrets(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.wrapSecret(
@@ -26,7 +26,7 @@ func (resolver *Resolver) Secret(ctx context.Context, arg struct{ graphql.ID }) 
 
 // Secrets gets a list of all secrets
 func (resolver *Resolver) Secrets(ctx context.Context, args rawQuery) ([]*secretResolver, error) {
-	if err := secretAuth(ctx); err != nil {
+	if err := readSecrets(ctx); err != nil {
 		return nil, err
 	}
 	q, err := args.AsV1Query()
@@ -48,7 +48,7 @@ func (resolver *Resolver) getSecret(id string) *storage.Secret {
 }
 
 func (resolver *secretResolver) Deployments(ctx context.Context) ([]*deploymentResolver, error) {
-	if err := deploymentAuth(ctx); err != nil {
+	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
 	psr := search.NewQueryBuilder().

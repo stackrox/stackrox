@@ -20,7 +20,7 @@ func init() {
 
 // Cluster returns a GraphQL resolver for the given cluster
 func (resolver *Resolver) Cluster(ctx context.Context, args struct{ graphql.ID }) (*clusterResolver, error) {
-	if err := clusterAuth(ctx); err != nil {
+	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.wrapCluster(resolver.ClusterDataStore.GetCluster(string(args.ID)))
@@ -28,7 +28,7 @@ func (resolver *Resolver) Cluster(ctx context.Context, args struct{ graphql.ID }
 
 // Clusters returns GraphQL resolvers for all clusters
 func (resolver *Resolver) Clusters(ctx context.Context) ([]*clusterResolver, error) {
-	if err := clusterAuth(ctx); err != nil {
+	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.wrapClusters(resolver.ClusterDataStore.GetClusters())
@@ -36,7 +36,7 @@ func (resolver *Resolver) Clusters(ctx context.Context) ([]*clusterResolver, err
 
 // Alerts returns GraphQL resolvers for all alerts on this cluster
 func (resolver *clusterResolver) Alerts(ctx context.Context) ([]*alertResolver, error) {
-	if err := alertAuth(ctx); err != nil {
+	if err := readAlerts(ctx); err != nil {
 		return nil, err // could return nil, nil to prevent errors from propagating.
 	}
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, resolver.data.GetId()).ProtoQuery()
@@ -46,7 +46,7 @@ func (resolver *clusterResolver) Alerts(ctx context.Context) ([]*alertResolver, 
 
 // Deployments returns GraphQL resolvers for all deployments in this cluster
 func (resolver *clusterResolver) Deployments(ctx context.Context) ([]*deploymentResolver, error) {
-	if err := deploymentAuth(ctx); err != nil {
+	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, resolver.data.GetId()).ProtoQuery()
@@ -56,7 +56,7 @@ func (resolver *clusterResolver) Deployments(ctx context.Context) ([]*deployment
 
 // Nodes returns all nodes on the cluster
 func (resolver *clusterResolver) Nodes(ctx context.Context) ([]*nodeResolver, error) {
-	if err := nodeAuth(ctx); err != nil {
+	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
 	store, err := resolver.root.NodeGlobalStore.GetClusterNodeStore(resolver.data.GetId())
@@ -68,7 +68,7 @@ func (resolver *clusterResolver) Nodes(ctx context.Context) ([]*nodeResolver, er
 
 // Node returns a given node on a cluster
 func (resolver *clusterResolver) Node(ctx context.Context, args struct{ Node graphql.ID }) (*nodeResolver, error) {
-	if err := nodeAuth(ctx); err != nil {
+	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
 	store, err := resolver.root.NodeGlobalStore.GetClusterNodeStore(resolver.data.GetId())
