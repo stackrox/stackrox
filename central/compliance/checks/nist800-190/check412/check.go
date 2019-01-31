@@ -81,21 +81,15 @@ func deploymentHasSSHProcess(deploymentToIndicators map[string][]*storage.Proces
 func sshPolicyEnforced(ctx framework.ComplianceContext) bool {
 	policies := ctx.Data().Policies()
 	for _, p := range policies {
-		a := common.NewAnder(doesPolicyHaveSSH(p), common.IsPolicyEnabled(p), common.IsPolicyEnforced(p))
-		if a.Execute() {
-			return true
+		if !policyHasSSH(p) {
+			continue
 		}
+		return len(p.GetEnforcementActions()) != 0
 	}
-
 	return false
 }
 
-func doesPolicyHaveSSH(policy *storage.Policy) common.Andable {
-	return func() bool {
-		if policy.GetFields() != nil && policy.GetFields().GetProcessPolicy() != nil &&
-			policy.GetFields().GetProcessPolicy().GetName() == "sshd" {
-			return true
-		}
-		return false
-	}
+func policyHasSSH(policy *storage.Policy) bool {
+	return policy.GetFields() != nil && policy.GetFields().GetProcessPolicy() != nil &&
+		policy.GetFields().GetProcessPolicy().GetName() == "sshd"
 }

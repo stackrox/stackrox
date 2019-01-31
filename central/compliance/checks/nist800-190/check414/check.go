@@ -14,7 +14,7 @@ const (
 )
 
 var (
-	log = logging.New("NIST_800_190:4_1_4")
+	log = logging.New(standardID)
 )
 
 func init() {
@@ -79,5 +79,4 @@ func checkSecretsInEnv(ctx framework.ComplianceContext) {
 			return
 		}
 	}
-	framework.Fail(ctx, "Detecting Secrets in env is not enabled and enforced")
 }

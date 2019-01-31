@@ -28,10 +28,20 @@ func checkNIST422(ctx framework.ComplianceContext) {
 func checkImageAgePolicyEnforced(ctx framework.ComplianceContext) {
 	policies := ctx.Data().Policies()
 	for _, p := range policies {
-		a := common.NewAnder(common.IsPolicyEnabled(p), common.IsPolicyEnforced(p), doesPolicyHaveImageTagLatest(p))
+		if !policyHasImageAgeDays(p) {
+			continue
+		}
 
-		if a.Execute() {
-			framework.Passf(ctx, "Policy '%s' enabled and enforced", p.GetName())
+		enabled := common.IsPolicyEnabled(p)
+		enforced := common.IsPolicyEnforced(p)
+
+		if enabled && !enforced {
+			framework.Failf(ctx, "Enforcement is not set on the policy that disallows old images to be deployed (%q)", p.GetName())
+			return
+		}
+
+		if enabled && enforced {
+			framework.Passf(ctx, "Policy that disallows old images to be deployed (%q) is enabled and enforced", p.GetName())
 			return
 		}
 	}
@@ -42,25 +52,31 @@ func checkImageAgePolicyEnforced(ctx framework.ComplianceContext) {
 func checkLatestImageTagPolicyEnforced(ctx framework.ComplianceContext) {
 	policies := ctx.Data().Policies()
 	for _, p := range policies {
-		a := common.NewAnder(common.IsPolicyEnabled(p), common.IsPolicyEnforced(p), doesPolicyHaveImageAgeDays(p))
+		if !policyHasLatestImageTag(p) {
+			continue
+		}
 
-		if a.Execute() {
-			framework.Passf(ctx, "Policy '%s' enabled and enforced", p.GetName())
+		enabled := common.IsPolicyEnabled(p)
+		enforced := common.IsPolicyEnforced(p)
+
+		if enabled && !enforced {
+			framework.Failf(ctx, "Enforcement is not set on the policy that disallows images with tag 'latest' to be deployed (%q)", p.GetName())
+			return
+		}
+
+		if enabled && enforced {
+			framework.Passf(ctx, "Policy that disallows images with tag 'latest' to be deployed (%q) is enabled and enforced", p.GetName())
 			return
 		}
 	}
 
-	framework.Fail(ctx, "Policy that disallows images with tag 'latest' to be deployed not found")
+	framework.Fail(ctx, "Policy that disallows images with tag 'latest' to be deployed was not found")
 }
 
-func doesPolicyHaveImageTagLatest(p *storage.Policy) common.Andable {
-	return func() bool {
-		return p.GetFields() != nil && p.GetFields().GetImageName().GetTag() != "latest"
-	}
+func policyHasLatestImageTag(p *storage.Policy) bool {
+	return p.GetFields().GetImageName().GetTag() == "latest"
 }
 
-func doesPolicyHaveImageAgeDays(p *storage.Policy) common.Andable {
-	return func() bool {
-		return p.GetFields() != nil && p.GetFields().GetImageAgeDays() != 0 && !p.GetDisabled()
-	}
+func policyHasImageAgeDays(p *storage.Policy) bool {
+	return p.GetFields().GetSetImageAgeDays() != nil
 }

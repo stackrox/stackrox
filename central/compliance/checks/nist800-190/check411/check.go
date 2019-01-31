@@ -29,19 +29,26 @@ func checkNIST411(ctx framework.ComplianceContext) {
 func checkCVSS7PolicyEnforced(ctx framework.ComplianceContext) {
 	policies := ctx.Data().Policies()
 	for _, p := range policies {
-		a := common.NewAnder(common.IsPolicyEnabled(p), common.IsPolicyEnforced(p), doesPolicyHaveCVSS(p))
+		if !policyHasCVSS(p) {
+			continue
+		}
 
-		if a.Execute() {
-			framework.Passf(ctx, "Policy '%s' enabled and enforced", p.GetName())
+		enabled := common.IsPolicyEnabled(p)
+		enforced := common.IsPolicyEnforced(p)
+
+		if enabled && !enforced {
+			framework.Failf(ctx, "Enforcement is not set on the policy that disallows images with a critical CVSS score (%q)", p.GetName())
+			return
+		}
+
+		if enabled && enforced {
+			framework.Passf(ctx, "Policy that disallows images with a critical CVSS score (%q) is enabled and enforced", p.GetName())
 			return
 		}
 	}
-
-	framework.Fail(ctx, "Policy that disallows images with a critical CVSS score not found")
+	framework.Fail(ctx, "No policy that disallows images with a critical CVSS score was found")
 }
 
-func doesPolicyHaveCVSS(p *storage.Policy) common.Andable {
-	return func() bool {
-		return p.GetFields() != nil && p.GetFields().GetCvss() != nil
-	}
+func policyHasCVSS(p *storage.Policy) bool {
+	return p.GetFields().GetCvss() != nil
 }
