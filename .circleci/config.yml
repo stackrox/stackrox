@@ -348,6 +348,17 @@ jobs:
           name: Run unit tests
           command: make test upload-coverage
 
+  style-checks:
+    <<: *defaults
+    resource_class: large
+    steps:
+      - checkout
+      - setup_remote_docker
+
+      - *restoreDep
+      - *restoreGradle
+      - *restoreUI
+
       - run:
           name: Run style checks
           command: make style
@@ -810,6 +821,10 @@ workflows:
             tags:
               only: /.*/
       - unit-tests:
+          filters:
+            tags:
+              only: /.*/
+      - style-checks:
           filters:
             tags:
               only: /.*/
