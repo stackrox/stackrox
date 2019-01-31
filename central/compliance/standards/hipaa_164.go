@@ -92,6 +92,18 @@ var hipaa164 = Standard{
 				},
 			},
 		},
+		{
+			ID:          "310_a_1",
+			Name:        "310.a.1",
+			Description: "Facility Access",
+			Controls: []Control{
+				{
+					ID:          "310_a_1",
+					Name:        "310.a.1",
+					Description: "Implement policies and procedures to limit physical access to its electronic information systems and the facility or facilities in which they are housed, while ensuring that properly authorized access is allowed.",
+				},
+			},
+		},
 	},
 }
 
