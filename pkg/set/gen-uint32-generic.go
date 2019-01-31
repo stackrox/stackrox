@@ -27,36 +27,63 @@ type Uint32Set struct {
 
 // Add adds an element of type uint32.
 func (k Uint32Set) Add(i uint32) bool {
+	if k.underlying == nil {
+		k.underlying = mapset.NewSet()
+	}
+
 	return k.underlying.Add(i)
 }
 
 // Remove removes an element of type uint32.
 func (k Uint32Set) Remove(i uint32) {
-	k.underlying.Remove(i)
+	if k.underlying != nil {
+		k.underlying.Remove(i)
+	}
 }
 
 // Contains returns whether the set contains an element of type uint32.
 func (k Uint32Set) Contains(i uint32) bool {
-	return k.underlying.Contains(i)
+	if k.underlying != nil {
+		return k.underlying.Contains(i)
+	}
+	return false
 }
 
 // Cardinality returns the number of elements in the set.
 func (k Uint32Set) Cardinality() int {
-	return k.underlying.Cardinality()
+	if k.underlying != nil {
+		return k.underlying.Cardinality()
+	}
+	return 0
 }
 
 // Difference returns a new set with all elements of k not in other.
 func (k Uint32Set) Difference(other Uint32Set) Uint32Set {
+	if k.underlying == nil {
+		return Uint32Set{underlying: other.underlying}
+	} else if other.underlying == nil {
+		return Uint32Set{underlying: k.underlying}
+	}
+
 	return Uint32Set{underlying: k.underlying.Difference(other.underlying)}
 }
 
 // Intersect returns a new set with the intersection of the members of both sets.
 func (k Uint32Set) Intersect(other Uint32Set) Uint32Set {
-	return Uint32Set{underlying: k.underlying.Intersect(other.underlying)}
+	if k.underlying != nil && other.underlying != nil {
+		return Uint32Set{underlying: k.underlying.Intersect(other.underlying)}
+	}
+	return Uint32Set{}
 }
 
 // Union returns a new set with the union of the members of both sets.
 func (k Uint32Set) Union(other Uint32Set) Uint32Set {
+	if k.underlying == nil {
+		return Uint32Set{underlying: other.underlying}
+	} else if other.underlying == nil {
+		return Uint32Set{underlying: k.underlying}
+	}
+
 	return Uint32Set{underlying: k.underlying.Union(other.underlying)}
 }
 

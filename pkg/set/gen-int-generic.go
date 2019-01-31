@@ -27,36 +27,63 @@ type IntSet struct {
 
 // Add adds an element of type int.
 func (k IntSet) Add(i int) bool {
+	if k.underlying == nil {
+		k.underlying = mapset.NewSet()
+	}
+
 	return k.underlying.Add(i)
 }
 
 // Remove removes an element of type int.
 func (k IntSet) Remove(i int) {
-	k.underlying.Remove(i)
+	if k.underlying != nil {
+		k.underlying.Remove(i)
+	}
 }
 
 // Contains returns whether the set contains an element of type int.
 func (k IntSet) Contains(i int) bool {
-	return k.underlying.Contains(i)
+	if k.underlying != nil {
+		return k.underlying.Contains(i)
+	}
+	return false
 }
 
 // Cardinality returns the number of elements in the set.
 func (k IntSet) Cardinality() int {
-	return k.underlying.Cardinality()
+	if k.underlying != nil {
+		return k.underlying.Cardinality()
+	}
+	return 0
 }
 
 // Difference returns a new set with all elements of k not in other.
 func (k IntSet) Difference(other IntSet) IntSet {
+	if k.underlying == nil {
+		return IntSet{underlying: other.underlying}
+	} else if other.underlying == nil {
+		return IntSet{underlying: k.underlying}
+	}
+
 	return IntSet{underlying: k.underlying.Difference(other.underlying)}
 }
 
 // Intersect returns a new set with the intersection of the members of both sets.
 func (k IntSet) Intersect(other IntSet) IntSet {
-	return IntSet{underlying: k.underlying.Intersect(other.underlying)}
+	if k.underlying != nil && other.underlying != nil {
+		return IntSet{underlying: k.underlying.Intersect(other.underlying)}
+	}
+	return IntSet{}
 }
 
 // Union returns a new set with the union of the members of both sets.
 func (k IntSet) Union(other IntSet) IntSet {
+	if k.underlying == nil {
+		return IntSet{underlying: other.underlying}
+	} else if other.underlying == nil {
+		return IntSet{underlying: k.underlying}
+	}
+
 	return IntSet{underlying: k.underlying.Union(other.underlying)}
 }
 

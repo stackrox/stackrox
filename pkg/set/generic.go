@@ -27,36 +27,63 @@ type KeyTypeSet struct {
 
 // Add adds an element of type KeyType.
 func (k KeyTypeSet) Add(i KeyType) bool {
+	if k.underlying == nil {
+		k.underlying = mapset.NewSet()
+	}
+
 	return k.underlying.Add(i)
 }
 
 // Remove removes an element of type KeyType.
 func (k KeyTypeSet) Remove(i KeyType) {
-	k.underlying.Remove(i)
+	if k.underlying != nil {
+		k.underlying.Remove(i)
+	}
 }
 
 // Contains returns whether the set contains an element of type KeyType.
 func (k KeyTypeSet) Contains(i KeyType) bool {
-	return k.underlying.Contains(i)
+	if k.underlying != nil {
+		return k.underlying.Contains(i)
+	}
+	return false
 }
 
 // Cardinality returns the number of elements in the set.
 func (k KeyTypeSet) Cardinality() int {
-	return k.underlying.Cardinality()
+	if k.underlying != nil {
+		return k.underlying.Cardinality()
+	}
+	return 0
 }
 
 // Difference returns a new set with all elements of k not in other.
 func (k KeyTypeSet) Difference(other KeyTypeSet) KeyTypeSet {
+	if k.underlying == nil {
+		return KeyTypeSet{underlying: other.underlying}
+	} else if other.underlying == nil {
+		return KeyTypeSet{underlying: k.underlying}
+	}
+
 	return KeyTypeSet{underlying: k.underlying.Difference(other.underlying)}
 }
 
 // Intersect returns a new set with the intersection of the members of both sets.
 func (k KeyTypeSet) Intersect(other KeyTypeSet) KeyTypeSet {
-	return KeyTypeSet{underlying: k.underlying.Intersect(other.underlying)}
+	if k.underlying != nil && other.underlying != nil {
+		return KeyTypeSet{underlying: k.underlying.Intersect(other.underlying)}
+	}
+	return KeyTypeSet{}
 }
 
 // Union returns a new set with the union of the members of both sets.
 func (k KeyTypeSet) Union(other KeyTypeSet) KeyTypeSet {
+	if k.underlying == nil {
+		return KeyTypeSet{underlying: other.underlying}
+	} else if other.underlying == nil {
+		return KeyTypeSet{underlying: k.underlying}
+	}
+
 	return KeyTypeSet{underlying: k.underlying.Union(other.underlying)}
 }
 
