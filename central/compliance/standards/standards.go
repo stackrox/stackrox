@@ -8,4 +8,6 @@ type Repository interface {
 	StandardMetadata(id string) (*v1.ComplianceStandardMetadata, bool, error)
 	Standard(id string) (*v1.ComplianceStandard, bool, error)
 	Controls(standardID string) ([]*v1.ComplianceControl, error)
+	GetCategoryByControl(controlID string) *Category
+	Groups(standardID string) ([]*v1.ComplianceControlGroup, error)
 }

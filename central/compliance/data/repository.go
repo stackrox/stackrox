@@ -149,8 +149,6 @@ func policyCategories(policies []*storage.Policy) map[string]set.StringSet {
 func expandFile(parent *compliance.File) map[string]*compliance.File {
 	expanded := make(map[string]*compliance.File)
 	for _, child := range parent.GetChildren() {
-		log.Infof("Child %s - %d", child.Path, len(child.Children))
-
 		childExpanded := expandFile(child)
 		for k, v := range childExpanded {
 			expanded[k] = v

@@ -11,10 +11,9 @@ import (
 
 // GetProcess returns the commandline object that matches the process name
 func GetProcess(ret *compliance.ComplianceReturn, processName string) (*compliance.CommandLine, bool) {
-	var process *compliance.CommandLine
 	for _, c := range ret.CommandLines {
 		if strings.Contains(c.Process, processName) {
-			return process, true
+			return c, true
 		}
 	}
 	return nil, false

@@ -9,14 +9,16 @@ import (
 
 // Registry stores compliance standards by their ID.
 type Registry struct {
-	mutex         sync.RWMutex
-	standardsByID map[string]*Standard
+	mutex             sync.RWMutex
+	standardsByID     map[string]*Standard
+	controlToCategory map[string]*Category
 }
 
 // NewRegistry creates and returns a new standards registry.
 func NewRegistry() *Registry {
 	return &Registry{
-		standardsByID: make(map[string]*Standard),
+		standardsByID:     make(map[string]*Standard),
+		controlToCategory: make(map[string]*Category),
 	}
 }
 
@@ -32,6 +34,13 @@ func (r *Registry) RegisterStandard(standard *Standard) error {
 	} else if existingStandard != standard {
 		return fmt.Errorf("different compliance standard with id %q already registered", standard.ID)
 	}
+
+	for i, category := range standard.Categories {
+		for _, control := range category.Controls {
+			r.controlToCategory[fmt.Sprintf("%s:%s", standard.ID, control.ID)] = &standard.Categories[i]
+		}
+	}
+
 	return nil
 }
 
@@ -106,4 +115,28 @@ func (r *Registry) Controls(standardID string) ([]*v1.ComplianceControl, error) 
 		control.StandardId = standard.GetMetadata().GetId()
 	}
 	return controls, nil
+}
+
+// Groups returns the list of groups for the given compliance standard
+func (r *Registry) Groups(standardID string) ([]*v1.ComplianceControlGroup, error) {
+	standard, exists, err := r.Standard(standardID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, fmt.Errorf("standard with ID %q not found", standardID)
+	}
+	groups := standard.GetGroups()
+	for _, group := range groups {
+		group.StandardId = standard.GetMetadata().GetId()
+	}
+	return groups, nil
+}
+
+// GetCategoryByControl returns the category that corresponds to the passed control ID
+func (r *Registry) GetCategoryByControl(controlID string) *Category {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
+	return r.controlToCategory[controlID]
 }

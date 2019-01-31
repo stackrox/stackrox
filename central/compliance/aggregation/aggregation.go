@@ -1,10 +1,13 @@
 package aggregation
 
 import (
+	"fmt"
 	"strconv"
 
+	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -103,6 +106,15 @@ func getAggregationKeys(groupByKey groupByKey) []*v1.ComplianceAggregation_Aggre
 	return aggregationKeys
 }
 
+func getCategoryID(controlID string) string {
+	category := standards.RegistrySingleton().GetCategoryByControl(controlID)
+	if category == nil {
+		errorhelpers.PanicOnDevelopment(fmt.Errorf("no category found for control %q", controlID))
+		return ""
+	}
+	return category.ID
+}
+
 // TODO(cgorman) Look at how to handle category
 func getFlatChecksFromRunResult(runResults *storage.ComplianceRunResults) []flatCheck {
 	domain := runResults.GetDomain()
@@ -111,11 +123,11 @@ func getFlatChecksFromRunResult(runResults *storage.ComplianceRunResults) []flat
 
 	var flatChecks []flatCheck
 	for control, r := range runResults.GetClusterResults().GetControlResults() {
-		flatChecks = append(flatChecks, newFlatCheck(clusterID, "", standardID, "", control, "", "", r.GetOverallState()))
+		flatChecks = append(flatChecks, newFlatCheck(clusterID, "", standardID, getCategoryID(control), control, "", "", r.GetOverallState()))
 	}
 	for n, controlResults := range runResults.GetNodeResults() {
 		for control, r := range controlResults.GetControlResults() {
-			flatChecks = append(flatChecks, newFlatCheck(clusterID, "", standardID, "", control, n, "", r.GetOverallState()))
+			flatChecks = append(flatChecks, newFlatCheck(clusterID, "", standardID, getCategoryID(control), control, n, "", r.GetOverallState()))
 		}
 	}
 	for d, controlResults := range runResults.GetDeploymentResults() {
@@ -125,7 +137,7 @@ func getFlatChecksFromRunResult(runResults *storage.ComplianceRunResults) []flat
 			continue
 		}
 		for control, r := range controlResults.GetControlResults() {
-			flatChecks = append(flatChecks, newFlatCheck(clusterID, deployment.GetNamespace(), standardID, "", control, "", deployment.GetId(), r.GetOverallState()))
+			flatChecks = append(flatChecks, newFlatCheck(clusterID, deployment.GetNamespace(), standardID, getCategoryID(control), control, "", deployment.GetId(), r.GetOverallState()))
 		}
 	}
 	return flatChecks

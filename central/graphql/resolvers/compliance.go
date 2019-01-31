@@ -35,6 +35,7 @@ func InitCompliance() {
 		schema.AddQuery("complianceStandards: [ComplianceStandardMetadata!]!")
 		schema.AddQuery("aggregatedResults(groupBy:[ComplianceAggregation_Scope!],unit:ComplianceAggregation_Scope!,where:String): [ComplianceAggregation_Result!]!")
 		schema.AddExtraResolver("ComplianceStandardMetadata", "controls: [ComplianceControl!]!")
+		schema.AddExtraResolver("ComplianceStandardMetadata", "groups: [ComplianceControlGroup!]!")
 		schema.AddType("Namespace", []string{"cluster: Cluster", "name: String!"})
 		schema.AddUnionType("ComplianceDomainKey", []string{"ComplianceStandardMetadata", "ComplianceControl", "Cluster", "Deployment", "Node", "Namespace"})
 		schema.AddExtraResolver("ComplianceAggregation_Result", "keys: [ComplianceDomainKey!]!")
@@ -228,4 +229,12 @@ func (resolver *complianceStandardMetadataResolver) Controls(ctx context.Context
 	}
 	return resolver.root.wrapComplianceControls(
 		resolver.root.ComplianceStandardStore.Controls(resolver.data.GetId()))
+}
+
+func (resolver *complianceStandardMetadataResolver) Groups(ctx context.Context) ([]*complianceControlGroupResolver, error) {
+	if err := complianceAuth(ctx); err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapComplianceControlGroups(
+		resolver.root.ComplianceStandardStore.Groups(resolver.data.GetId()))
 }
