@@ -325,7 +325,11 @@ clean-image:
 
 .PHONY: tag
 tag:
+ifdef COMMIT
+	@git describe $(COMMIT) --tags --abbrev=10
+else
 	@echo $(TAG)
+endif
 
 ossls-audit:
 	ossls -audit
