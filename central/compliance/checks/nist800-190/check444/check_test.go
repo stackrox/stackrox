@@ -51,28 +51,23 @@ func (s *suiteImpl) TestPass() {
 
 	testNodes := s.nodes()
 
-	testAlerts := []*storage.ListAlert{
+	testPolicies := []*storage.Policy{
 		{
-			Deployment: &storage.ListAlertDeployment{
-				Id:   testDeployments[0].GetId(),
-				Name: "foo",
+			Id: uuid.NewV4().String(),
+			LifecycleStages: []storage.LifecycleStage{
+				storage.LifecycleStage_RUNTIME,
 			},
-			LifecycleStage:   storage.LifecycleStage_RUNTIME,
-			EnforcementCount: 1,
 		},
 		{
-			Deployment: &storage.ListAlertDeployment{
-				Id:   testDeployments[1].GetId(),
-				Name: "boo",
+			Id: uuid.NewV4().String(),
+			LifecycleStages: []storage.LifecycleStage{
+				storage.LifecycleStage_DEPLOY,
 			},
-			LifecycleStage:   storage.LifecycleStage_RUNTIME,
-			EnforcementCount: 1,
 		},
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
-	data.EXPECT().Alerts().AnyTimes().Return(testAlerts)
-	data.EXPECT().Deployments().AnyTimes().Return(toMap(testDeployments))
+	data.EXPECT().Policies().AnyTimes().Return(toMap(testPolicies))
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
@@ -84,13 +79,8 @@ func (s *suiteImpl) TestPass() {
 	results := run.GetAllResults()
 	checkResults := results[standardID]
 	s.NotNil(checkResults)
-
-	for _, deployment := range domain.Deployments() {
-		deploymentResults := checkResults.ForChild(deployment)
-		s.NoError(deploymentResults.Error())
-		s.Len(deploymentResults.Evidence(), 1)
-		s.Equal(framework.PassStatus, deploymentResults.Evidence()[0].Status)
-	}
+	s.Len(checkResults.Evidence(), 1)
+	s.Equal(framework.PassStatus, checkResults.Evidence()[0].Status)
 }
 
 func (s *suiteImpl) TestFail() {
@@ -100,28 +90,23 @@ func (s *suiteImpl) TestFail() {
 
 	testNodes := s.nodes()
 
-	testAlerts := []*storage.ListAlert{
+	testPolicies := []*storage.Policy{
 		{
-			Deployment: &storage.ListAlertDeployment{
-				Id:   testDeployments[0].GetId(),
-				Name: "foo",
+			Id: uuid.NewV4().String(),
+			LifecycleStages: []storage.LifecycleStage{
+				storage.LifecycleStage_DEPLOY,
 			},
-			LifecycleStage:   storage.LifecycleStage_RUNTIME,
-			EnforcementCount: 0,
 		},
 		{
-			Deployment: &storage.ListAlertDeployment{
-				Id:   testDeployments[1].GetId(),
-				Name: "boo",
+			Id: uuid.NewV4().String(),
+			LifecycleStages: []storage.LifecycleStage{
+				storage.LifecycleStage_DEPLOY,
 			},
-			LifecycleStage:   storage.LifecycleStage_RUNTIME,
-			EnforcementCount: 0,
 		},
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
-	data.EXPECT().Alerts().AnyTimes().Return(testAlerts)
-	data.EXPECT().Deployments().AnyTimes().Return(toMap(testDeployments))
+	data.EXPECT().Policies().AnyTimes().Return(toMap(testPolicies))
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
@@ -133,13 +118,8 @@ func (s *suiteImpl) TestFail() {
 	results := run.GetAllResults()
 	checkResults := results[standardID]
 	s.NotNil(checkResults)
-
-	for _, deployment := range domain.Deployments() {
-		deploymentResults := checkResults.ForChild(deployment)
-		s.NoError(deploymentResults.Error())
-		s.Len(deploymentResults.Evidence(), 1)
-		s.Equal(framework.FailStatus, deploymentResults.Evidence()[0].Status)
-	}
+	s.Len(checkResults.Evidence(), 1)
+	s.Equal(framework.FailStatus, checkResults.Evidence()[0].Status)
 }
 
 // Helper functions for test data.
@@ -169,8 +149,8 @@ func (s *suiteImpl) nodes() []*storage.Node {
 	}
 }
 
-func toMap(in []*storage.Deployment) map[string]*storage.Deployment {
-	merp := make(map[string]*storage.Deployment, len(in))
+func toMap(in []*storage.Policy) map[string]*storage.Policy {
+	merp := make(map[string]*storage.Policy, len(in))
 	for _, np := range in {
 		merp[np.GetId()] = np
 	}

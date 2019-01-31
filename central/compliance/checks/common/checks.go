@@ -101,12 +101,12 @@ func CheckAnyPolicyInLifeCycle(ctx framework.ComplianceContext, policyLifeCycle 
 	for _, p := range policies {
 		for _, stage := range p.GetLifecycleStages() {
 			if stage == policyLifeCycle && !p.Disabled {
-				framework.Passf(ctx, "At least one %q time policy is enabled", strings.ToLower(storage.LifecycleStage_name[int32(policyLifeCycle)]))
+				framework.Passf(ctx, "At least one policy in lifecycle %q is enabled", strings.ToLower(storage.LifecycleStage_name[int32(policyLifeCycle)]))
 				return
 			}
 		}
 	}
-	framework.Failf(ctx, "There are no %q time policy being used", strings.ToLower(storage.LifecycleStage_name[int32(policyLifeCycle)]))
+	framework.Failf(ctx, "There are no enabled policies in lifecycle %q", strings.ToLower(storage.LifecycleStage_name[int32(policyLifeCycle)]))
 }
 
 // CheckAnyPolicyInCategoryEnforced checks if there are any enabled policies in the given category and are enforced.

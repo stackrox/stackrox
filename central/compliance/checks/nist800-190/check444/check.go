@@ -13,11 +13,11 @@ const (
 func init() {
 	framework.MustRegisterNewCheck(
 		standardID,
-		framework.DeploymentKind,
-		[]string{"Alerts", "Deployments"},
+		framework.ClusterKind,
+		[]string{"Policies"},
 		checkNIST444)
 }
 
 func checkNIST444(ctx framework.ComplianceContext) {
-	common.AlertsForDeployments(ctx, storage.LifecycleStage_RUNTIME)
+	common.CheckAnyPolicyInLifeCycle(ctx, storage.LifecycleStage_RUNTIME)
 }
