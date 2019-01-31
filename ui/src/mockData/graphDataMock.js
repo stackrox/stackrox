@@ -129,68 +129,66 @@ const multiGaugeData = [
     { title: 'CIS', passing: 50, failing: 50 }
 ];
 
-// Suburst Data Generator
-function getSlice(sliceIndex) {
-    // Inner slice
-    const slice = {
-        color: 'var(--tertiary-400)',
-        stroke: 2,
-        radius: 20,
-        radius0: 60,
-        style: { stroke: 'var(--base-100)' },
-        title: 'Inner Title',
-        children: [],
-        name: `inner-${sliceIndex}`
+const getSunburstData = () => {
+    const numInnerRings = Math.floor(Math.random() * 7) + 3;
+    const numOuterRings = Math.floor(Math.random() * 7) + 3;
+    const colors = [
+        'var(--tertiary-400)',
+        'var(--warning-400)',
+        'var(--caution-400)',
+        'var(--alert-400)'
+    ];
+    const getColor = value => {
+        if (value === 100) return colors[0];
+        if (value >= 70) return colors[1];
+        if (value >= 50) return colors[2];
+        return colors[3];
     };
-
-    // Outer slice
-    for (let i = 0; i < 4; i += 1) {
-        slice.children.push({
-            title: 'Outer Title',
-            size: 1,
-            radius: 60,
-            radius0: 100,
-            style: { stroke: 'white' },
-            color: 'var(--tertiary-400)',
-            name: `Outer-${sliceIndex}-Inner-${i}`
-        });
-    }
-
-    return slice;
-}
-
-function setSunburstColor(slice, color) {
-    // eslint-disable-next-line
-    slice.color = color;
-    slice.children.forEach((child, i) => {
-        // eslint-disable-next-line
-        if (i !== 2) child.color = color;
+    const sunburstData = new Array(numInnerRings).fill(0).map((_, innerIndex) => {
+        const data = {
+            name: `${innerIndex}. Install an maintain a firewall configuration to protect data`,
+            link: 'http://google.com',
+            children: new Array(numOuterRings).fill(0).map((__, outerIndex) => {
+                const value = Math.floor(Math.random() * 100);
+                const childData = {
+                    color: getColor(value),
+                    name: `${innerIndex}.${outerIndex} - A formal process for approving and testing all network connections and changes to the firewall`,
+                    value,
+                    link: 'http://google.com'
+                };
+                return childData;
+            })
+        };
+        const val = data.children.reduce(
+            (acc, curr) => ({ total: acc.total + 100, passing: acc.passing + curr.value }),
+            {
+                total: 0,
+                passing: 0
+            }
+        );
+        data.value = Math.round((val.passing / val.total) * 100);
+        data.color = getColor(data.value);
+        return data;
     });
-}
-
-function getSunburstData() {
-    const root = {
-        title: 'Root Title',
-        name: 'root',
-        color: 'var(--base-100)',
-        children: []
-    };
-
-    for (let i = 0; i < 12; i += 1) {
-        root.children.push(getSlice(i));
-    }
-
-    setSunburstColor(root.children[0], 'var(--warning-400)');
-    setSunburstColor(root.children[3], 'var(--alert-400)');
-
-    return root;
-}
+    return sunburstData;
+};
 
 const sunburstData = getSunburstData();
+
 const sunburstLegendData = [
-    { title: 'Passing', color: 'var(--base-400)' },
-    { title: '< 10% Failing', color: 'var(--warning-400)' },
-    { title: '> 10% Failing', color: 'var(--alert-400)' }
+    { title: '100%', color: 'var(--base-400)' },
+    { title: '> 70%', color: 'var(--warning-400)' },
+    { title: '> 50%', color: 'var(--caution-400)' },
+    { title: '< 50%', color: 'var(--alert-400)' }
+];
+
+const sunburstRootData = [
+    {
+        text: '4 Categories'
+    },
+    {
+        text: '10 Controls'
+    }
 ];
 
 const listData = [
@@ -231,6 +229,7 @@ export {
     verticalSingleBarData,
     verticalBarData,
     sunburstData,
+    sunburstRootData,
     sunburstLegendData,
     horizontalBarDatum,
     multiGaugeData,

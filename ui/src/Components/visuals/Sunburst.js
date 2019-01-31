@@ -20,11 +20,10 @@ function highlightPathData(data, highlightedNames) {
     if (data.children) {
         data.children.map(child => highlightPathData(child, highlightedNames));
     }
-
     /* eslint-disable */
     data.style = {
         ...data.style,
-        fillOpacity: highlightedNames && !highlightedNames.includes(data.name) ? 0.5 : 1
+        fillOpacity: highlightedNames && !highlightedNames.includes(data.name) ? 0.3 : 1
     };
     /* eslint-enable */
     return data;
@@ -37,7 +36,28 @@ const LABEL_STYLE = {
 
 export default class BasicSunburst extends React.Component {
     static propTypes = {
-        data: PropTypes.shape({}).isRequired,
+        data: PropTypes.arrayOf(
+            PropTypes.shape({
+                name: PropTypes.string.isRequired,
+                color: PropTypes.string.isRequired,
+                link: PropTypes.string,
+                value: PropTypes.number.isRequired,
+                children: PropTypes.arrayOf(
+                    PropTypes.shape({
+                        name: PropTypes.string.isRequired,
+                        color: PropTypes.string.isRequired,
+                        link: PropTypes.string,
+                        value: PropTypes.number.isRequired
+                    })
+                )
+            })
+        ).isRequired,
+        rootData: PropTypes.arrayOf(
+            PropTypes.shape({
+                text: PropTypes.string.isRequired,
+                link: PropTypes.string
+            })
+        ).isRequired,
         legendData: PropTypes.arrayOf(PropTypes.object).isRequired,
         sunburstProps: PropTypes.shape({}),
         onValueMouseOver: PropTypes.func,
@@ -56,16 +76,27 @@ export default class BasicSunburst extends React.Component {
 
     constructor(props) {
         super(props);
+        const data = merge({}, props.data);
+        const enrichedData = this.enrichData(data);
         this.state = {
-            data: this.props.data,
+            data: enrichedData,
             clicked: false,
             selectedDatum: null
         };
     }
 
-    getCenterLabel = () => (
-        <LabelSeries data={[{ x: 0, y: 10, label: '76%', style: LABEL_STYLE }]} />
-    );
+    getCenterLabel = () => {
+        const { data } = this.props;
+        const val = data.reduce(
+            (acc, curr) => ({ total: acc.total + 100, passing: acc.passing + curr.value }),
+            {
+                total: 0,
+                passing: 0
+            }
+        );
+        const label = Math.round((val.passing / val.total) * 100);
+        return <LabelSeries data={[{ x: 0, y: 10, label: `${label}%`, style: LABEL_STYLE }]} />;
+    };
 
     onValueMouseOverHandler = datum => {
         const { data, clicked } = this.state;
@@ -119,8 +150,44 @@ export default class BasicSunburst extends React.Component {
         return merge(defaultSunburstProps, this.props.sunburstProps);
     };
 
+    enrichData = data => {
+        const enrichedData = {
+            title: 'Root Title',
+            name: 'root',
+            color: 'var(--base-100)',
+            children: data.map(({ children, ...rest }) => {
+                const result = {
+                    ...rest,
+                    radius: 20,
+                    radius0: 60,
+                    stroke: 2,
+                    style: {
+                        stroke: 'var(--base-100)'
+                    },
+                    title: 'Inner Title',
+                    children: children.map(({ ...props }) => {
+                        const childResult = {
+                            ...props,
+                            radius: 60,
+                            radius0: 100,
+                            size: 1,
+                            style: {
+                                stroke: 'var(--base-100)',
+                                fillOpacity: 1
+                            },
+                            title: 'Outer Title'
+                        };
+                        return childResult;
+                    })
+                };
+                return result;
+            })
+        };
+        return enrichedData;
+    };
+
     render() {
-        const { legendData } = this.props;
+        const { legendData, rootData } = this.props;
         const { clicked, data, selectedDatum } = this.state;
 
         const sunburstProps = this.getSunburstProps();
@@ -147,7 +214,11 @@ export default class BasicSunburst extends React.Component {
                         className="w-full horizontal-bar-legend border-t border-base-300 h-7"
                     />
                 </div>
-                <SunburstDetailSection selectedDatum={selectedDatum} clicked={clicked} />
+                <SunburstDetailSection
+                    selectedDatum={selectedDatum}
+                    rootData={rootData}
+                    clicked={clicked}
+                />
             </>
         );
     }

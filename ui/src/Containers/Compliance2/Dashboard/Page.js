@@ -2,14 +2,12 @@ import React from 'react';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import URLService from 'modules/URLService';
-import { resourceTypes } from 'constants/entityTypes';
-import { sunburstData, sunburstLegendData } from 'mockData/graphDataMock';
+import { resourceTypes, standardTypes } from 'constants/entityTypes';
 
-import Sunburst from 'Components/visuals/Sunburst';
-import Widget from 'Components/Widget';
 import StandardsByEntity from 'Containers/Compliance2/widgets/StandardsByEntity';
+import StandardsAcrossEntity from 'Containers/Compliance2/widgets/StandardsAcrossEntity';
+import ComplianceByStandard from 'Containers/Compliance2/widgets/ComplianceByStandard';
 import DashboardHeader from './Header';
-import StandardsAcrossEntity from '../widgets/StandardsAcrossEntity';
 
 const ComplianceDashboardPage = ({ match, location }) => {
     const params = URLService.getParams(match, location);
@@ -21,43 +19,12 @@ const ComplianceDashboardPage = ({ match, location }) => {
                 <div className="grid xl:grid-columns-3 md:grid-columns-2 sm:grid-columns-1 grid-gap-6">
                     <StandardsAcrossEntity type={resourceTypes.CLUSTERS} params={params} />
                     <StandardsByEntity type={resourceTypes.CLUSTERS} params={params} />
-                    <Widget header="Compliance Across Controls">
-                        <Sunburst
-                            data={sunburstData}
-                            legendData={sunburstLegendData}
-                            centerLabel="75%"
-                        />
-                    </Widget>
                     <StandardsAcrossEntity type={resourceTypes.NAMESPACES} params={params} />
                     <StandardsAcrossEntity type={resourceTypes.NODES} params={params} />
-                    <Widget header="PCI Compliance">
-                        <Sunburst
-                            data={sunburstData}
-                            legendData={sunburstLegendData}
-                            centerLabel="75%"
-                        />
-                    </Widget>
-                    <Widget header="NIST Compliance">
-                        <Sunburst
-                            data={sunburstData}
-                            legendData={sunburstLegendData}
-                            centerLabel="75%"
-                        />
-                    </Widget>
-                    <Widget header="HIPAA Compliance">
-                        <Sunburst
-                            data={sunburstData}
-                            legendData={sunburstLegendData}
-                            centerLabel="75%"
-                        />
-                    </Widget>
-                    <Widget header="CIS Compliance">
-                        <Sunburst
-                            data={sunburstData}
-                            legendData={sunburstLegendData}
-                            centerLabel="75%"
-                        />
-                    </Widget>
+                    <ComplianceByStandard type={standardTypes.PCI} params={params} />
+                    <ComplianceByStandard type={standardTypes.NIST} params={params} />
+                    <ComplianceByStandard type={standardTypes.HIPAA} params={params} />
+                    <ComplianceByStandard type={standardTypes.CIS} params={params} />
                 </div>
             </div>
         </section>

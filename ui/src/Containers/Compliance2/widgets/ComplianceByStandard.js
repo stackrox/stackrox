@@ -1,41 +1,23 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-
 import Widget from 'Components/Widget';
 import Sunburst from 'Components/visuals/Sunburst';
-import { sunburstData, sunburstLegendData } from 'mockData/graphDataMock';
-import Query from 'Components/ThrowingQuery';
-import { NODES_QUERY } from 'queries/node';
-import { withRouter } from 'react-router-dom';
-import Loader from 'Components/Loader';
-import ReactRouterPropTypes from 'react-router-prop-types';
 
-const ComplianceByStandard = ({ match, params }) => {
-    const { standard } = params;
-    return (
-        // TODO: use real query and calculate values based on return data
-        <Query query={NODES_QUERY} variables={{ id: match.params.entityId }}>
-            {({ loading, data }) => {
-                let result = null;
-                let contents = <Loader />;
+import { sunburstData, sunburstRootData, sunburstLegendData } from 'mockData/graphDataMock';
 
-                if (!loading && data) {
-                    // Temp mock data
-                    result = sunburstData;
-                    contents = (
-                        <Sunburst data={result} legendData={sunburstLegendData} centerLabel="75%" />
-                    );
-                }
-
-                return <Widget header={`${standard} Compliance`}>{contents}</Widget>;
-            }}
-        </Query>
-    );
-};
+const ComplianceByStandard = ({ type }) => (
+    <Widget header={`${type} Compliance`}>
+        <Sunburst data={sunburstData} rootData={sunburstRootData} legendData={sunburstLegendData} />
+    </Widget>
+);
 
 ComplianceByStandard.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    params: PropTypes.shape({}).isRequired
+    type: PropTypes.string.isRequired,
+    params: PropTypes.shape({})
 };
 
-export default withRouter(ComplianceByStandard);
+ComplianceByStandard.defaultProps = {
+    params: null
+};
+
+export default ComplianceByStandard;

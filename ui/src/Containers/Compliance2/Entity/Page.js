@@ -15,12 +15,6 @@ const ComplianceEntityPage = ({ match, location, params, sidePanelMode }) => {
         ? params
         : Object.assign({}, URLService.getParams(match, location), params);
 
-    // These really depend on which entity is being shown.
-    // Maybe we split out different pages for different entity types.
-    const PCIWidgetParams = Object.assign({}, widgetParams, { standard: 'PCI' });
-    const NISTWidgetParams = Object.assign({}, widgetParams, { standard: 'NIST' });
-    const HIPAAWidgetParams = Object.assign({}, widgetParams, { standard: 'HIPAA' });
-    const CISWidgetParams = Object.assign({}, widgetParams, { standard: 'CIS' });
     const EntityComplianceParams = Object.assign({}, widgetParams, {
         entityType: entityTypes.CLUSTERS
     });
@@ -46,10 +40,10 @@ const ComplianceEntityPage = ({ match, location, params, sidePanelMode }) => {
                             Widget 3<br />
                         </Widget>
                     </div>
-                    <ComplianceByStandard params={PCIWidgetParams} />
-                    <ComplianceByStandard params={NISTWidgetParams} />
-                    <ComplianceByStandard params={HIPAAWidgetParams} />
-                    <ComplianceByStandard params={CISWidgetParams} />
+                    <ComplianceByStandard type={entityTypes.PCI} params={widgetParams} />
+                    <ComplianceByStandard type={entityTypes.NIST} params={widgetParams} />
+                    <ComplianceByStandard type={entityTypes.HIPAA} params={widgetParams} />
+                    <ComplianceByStandard type={entityTypes.CIS} params={widgetParams} />
                     {!sidePanelMode && <RelatedEntitiesList params={widgetParams} />}
                 </div>
             </div>

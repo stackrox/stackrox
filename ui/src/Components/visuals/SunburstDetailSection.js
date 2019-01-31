@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 
 import HorizontalBarChart from 'Components/visuals/HorizontalBar';
-import { horizontalBarDatum } from 'mockData/graphDataMock';
 
 function formatAsPercent(x) {
     return `${x}%`;
@@ -11,6 +10,12 @@ function formatAsPercent(x) {
 
 class SunburstDetailSection extends Component {
     static propTypes = {
+        rootData: PropTypes.arrayOf(
+            PropTypes.shape({
+                text: PropTypes.string.isRequired,
+                link: PropTypes.string
+            })
+        ).isRequired,
         selectedDatum: PropTypes.shape({}),
         clicked: PropTypes.bool.isRequired
     };
@@ -19,43 +24,40 @@ class SunburstDetailSection extends Component {
         selectedDatum: null
     };
 
-    getParentText = () => {
+    getParentData = () => {
         const { selectedDatum } = this.props;
         if (selectedDatum) {
             const { parent } = selectedDatum;
             if (parent && parent.data && parent.data.name !== 'root') {
-                return parent.data.name;
+                return parent.data;
             }
         }
         return null;
     };
 
     getContent = () => {
-        const { selectedDatum } = this.props;
-        const parentText = this.getParentText();
+        const { rootData, selectedDatum } = this.props;
+        const parentDatum = this.getParentData();
 
         let bullets = [];
 
         if (selectedDatum) {
-            if (parentText) bullets.push({ text: parentText });
-            bullets.push({ text: selectedDatum.name });
-        } else
-            bullets = [
-                {
-                    text: '12 categories'
-                },
-                { text: '43 controls', link: 'https://google.com' },
-                { text: '29 passed controls', link: 'https://google.com/' },
-                { text: '14 failed controls' }
-            ];
+            if (parentDatum) bullets.push({ text: parentDatum.name, ...parentDatum });
+            bullets.push({
+                text: selectedDatum.name,
+                ...selectedDatum
+            });
+        } else {
+            bullets = rootData;
+        }
 
         return (
             <div className="pt-3 pl-3">
-                {bullets.map(({ text, link }, idx) => (
+                {bullets.map(({ text, link, value }, idx) => (
                     <div
                         key={text}
                         className={`widget-detail-bullet ${
-                            parentText && idx === 0 ? 'text-base-500' : ''
+                            parentDatum && parentDatum.name && idx === 0 ? 'text-base-500' : ''
                         }`}
                     >
                         {link && (
@@ -66,7 +68,7 @@ class SunburstDetailSection extends Component {
                         {!link && text}
                         {selectedDatum && (
                             <HorizontalBarChart
-                                data={horizontalBarDatum}
+                                data={[{ y: '', x: value }]}
                                 valueFormat={formatAsPercent}
                                 minimal
                             />
