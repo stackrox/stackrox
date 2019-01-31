@@ -2,28 +2,43 @@ package resolvers
 
 import (
 	"context"
+	"strings"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	log = logging.LoggerForModule()
+	log            = logging.LoggerForModule()
+	complianceOnce sync.Once
 )
 
 func init() {
+	InitCompliance()
+}
+
+// InitCompliance is a function that registers compliance graphql resolvers with the static schema. It's exposed for
+// feature flag / unit test reasons. Once the flag is gone, this can be folded into the normal init() method.
+func InitCompliance() {
 	if !features.Compliance.Enabled() {
 		return
 	}
-	schema := getBuilder()
-	schema.AddQuery("complianceStandard(id:ID!): ComplianceStandardMetadata")
-	schema.AddQuery("complianceStandards: [ComplianceStandardMetadata!]!")
-	schema.AddQuery("aggregatedResults(groupBy:[ComplianceAggregation_Scope!],unit:ComplianceAggregation_Scope!,where:String): ComplianceAggregation_Response!")
-	schema.AddExtraResolver("ComplianceStandardMetadata", "controls: [ComplianceControl!]!")
+	complianceOnce.Do(func() {
+		schema := getBuilder()
+		schema.AddQuery("complianceStandard(id:ID!): ComplianceStandardMetadata")
+		schema.AddQuery("complianceStandards: [ComplianceStandardMetadata!]!")
+		schema.AddQuery("aggregatedResults(groupBy:[ComplianceAggregation_Scope!],unit:ComplianceAggregation_Scope!,where:String): [ComplianceAggregation_Result!]!")
+		schema.AddExtraResolver("ComplianceStandardMetadata", "controls: [ComplianceControl!]!")
+		schema.AddType("Namespace", []string{"cluster: Cluster", "name: String!"})
+		schema.AddUnionType("ComplianceDomainKey", []string{"ComplianceStandardMetadata", "ComplianceControl", "Cluster", "Deployment", "Node", "Namespace"})
+		schema.AddExtraResolver("ComplianceAggregation_Result", "keys: [ComplianceDomainKey!]!")
+	})
 }
 
 // ComplianceStandards returns graphql resolvers for all compliance standards
@@ -51,7 +66,7 @@ type aggregatedResultQuery struct {
 }
 
 // AggregatedResults returns the aggregration of the last runs aggregated by scope, unit and filtered by a query
-func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregatedResultQuery) (*complianceAggregation_ResponseResolver, error) {
+func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregatedResultQuery) ([]*complianceAggregationResultWithDomainResolver, error) {
 	if err := complianceAuth(ctx); err != nil {
 		return nil, err
 	}
@@ -80,10 +95,118 @@ func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregated
 	if err != nil {
 		return nil, err
 	}
-	results := aggregation.GetAggregatedResults(toComplianceAggregation_Scopes(args.GroupBy), toComplianceAggregation_Scope(&args.Unit), runResults)
-	return resolver.wrapComplianceAggregation_Response(&v1.ComplianceAggregation_Response{
-		Results: results,
-	}, true, nil)
+	results, domainFunc := aggregation.GetAggregatedResults(toComplianceAggregation_Scopes(args.GroupBy), toComplianceAggregation_Scope(&args.Unit), runResults)
+	output := make([]*complianceAggregationResultWithDomainResolver, len(results))
+	for i, res := range results {
+		output[i] = &complianceAggregationResultWithDomainResolver{
+			complianceAggregation_ResultResolver{resolver, res},
+			domainFunc(i),
+		}
+	}
+	return output, nil
+}
+
+type complianceDomainKeyResolver struct {
+	root   *Resolver
+	domain *storage.ComplianceDomain
+	key    *v1.ComplianceAggregation_AggregationKey
+}
+
+func (resolver *complianceDomainKeyResolver) ToCluster() (cluster *clusterResolver, found bool) {
+	if resolver.key.GetScope() == v1.ComplianceAggregation_CLUSTER {
+		if resolver.domain.GetCluster() != nil {
+			return &clusterResolver{resolver.root, resolver.domain.GetCluster()}, true
+		}
+	}
+	return nil, false
+}
+
+func (resolver *complianceDomainKeyResolver) ToDeployment() (deployment *deploymentResolver, found bool) {
+	if resolver.key.GetScope() == v1.ComplianceAggregation_DEPLOYMENT {
+		deployment, found := resolver.domain.GetDeployments()[resolver.key.GetId()]
+		if found {
+			return &deploymentResolver{resolver.root, deployment, nil}, found
+		}
+	}
+	return nil, false
+}
+
+func (resolver *complianceDomainKeyResolver) ToNode() (node *nodeResolver, found bool) {
+	if resolver.key.GetScope() == v1.ComplianceAggregation_NODE {
+		node, found := resolver.domain.GetNodes()[resolver.key.GetId()]
+		if found {
+			return &nodeResolver{resolver.root, node}, found
+		}
+	}
+	return nil, false
+}
+
+type namespaceResolver struct {
+	root    *Resolver
+	name    string
+	cluster *storage.Cluster
+}
+
+func (resolver *namespaceResolver) Name() string {
+	return resolver.name
+}
+
+func (resolver *namespaceResolver) Cluster() *clusterResolver {
+	if resolver.cluster == nil {
+		return nil
+	}
+	return &clusterResolver{
+		resolver.root,
+		resolver.cluster,
+	}
+}
+
+func (resolver *complianceDomainKeyResolver) ToNamespace() (namespace *namespaceResolver, found bool) {
+	if resolver.key.GetScope() == v1.ComplianceAggregation_NAMESPACE {
+		return &namespaceResolver{resolver.root, resolver.key.GetId(), resolver.domain.GetCluster()}, true
+	}
+	return nil, false
+}
+
+func (resolver *complianceDomainKeyResolver) ToComplianceStandardMetadata() (standard *complianceStandardMetadataResolver, found bool) {
+	if resolver.key.GetScope() == v1.ComplianceAggregation_STANDARD {
+		standard, found, err := resolver.root.ComplianceStandardStore.StandardMetadata(resolver.key.GetId())
+		if err == nil && found {
+			return &complianceStandardMetadataResolver{resolver.root, standard}, found
+		}
+	}
+	return nil, false
+}
+
+func (resolver *complianceDomainKeyResolver) ToComplianceControl() (control *complianceControlResolver, found bool) {
+	if resolver.key.GetScope() == v1.ComplianceAggregation_CONTROL {
+		controlID := resolver.key.GetId()
+		parts := strings.SplitN(controlID, ":", 2)
+		if len(parts) == 2 {
+			controls, err := resolver.root.ComplianceStandardStore.Controls(parts[0])
+			if err == nil {
+				for _, c := range controls {
+					if c.GetId() == parts[1] {
+						return &complianceControlResolver{resolver.root, c}, true
+					}
+				}
+			}
+		}
+	}
+	return nil, false
+}
+
+// ComplianceDomain returns a graphql resolver that loads the underlying object for an aggregation key
+func (resolver *complianceAggregationResultWithDomainResolver) Keys() ([]*complianceDomainKeyResolver, error) {
+	output := make([]*complianceDomainKeyResolver, len(resolver.data.AggregationKeys))
+	for i, v := range resolver.data.AggregationKeys {
+		output[i] = &complianceDomainKeyResolver{
+			root:   resolver.root,
+			domain: resolver.domain,
+			key:    v,
+		}
+	}
+	return output, nil
 }
 
 // ComplianceResults returns graphql resolvers for all matching compliance results

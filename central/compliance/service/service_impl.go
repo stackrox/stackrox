@@ -125,7 +125,7 @@ func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.Comp
 	if err != nil {
 		return nil, err
 	}
-	results := aggregation.GetAggregatedResults(request.GetGroupBy(), request.GetUnit(), runResults)
+	results, _ := aggregation.GetAggregatedResults(request.GetGroupBy(), request.GetUnit(), runResults)
 
 	return &v1.ComplianceAggregation_Response{
 		Results: results,

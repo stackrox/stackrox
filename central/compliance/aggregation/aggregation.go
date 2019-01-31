@@ -131,17 +131,32 @@ func getFlatChecksFromRunResult(runResults *storage.ComplianceRunResults) []flat
 	return flatChecks
 }
 
+// DomainFunc will return a valid storage domain for a given key, if it exists. If multiple domains match, only one will be returned.
+type DomainFunc func(i int) *storage.ComplianceDomain
+
+type domainOffsetPair struct {
+	offset int
+	domain *storage.ComplianceDomain
+}
+
 // GetAggregatedResults aggregates the passed results by groupBy and unit
-func GetAggregatedResults(groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope, runResults []*storage.ComplianceRunResults) []*v1.ComplianceAggregation_Result {
+func GetAggregatedResults(groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope, runResults []*storage.ComplianceRunResults) ([]*v1.ComplianceAggregation_Result, DomainFunc) {
 	var flatChecks []flatCheck
+	var domainIndices []domainOffsetPair
 	for _, r := range runResults {
 		flatChecks = append(flatChecks, getFlatChecksFromRunResult(r)...)
+		domainIndices = append(domainIndices, domainOffsetPair{offset: len(flatChecks), domain: r.GetDomain()})
 	}
 
 	// Iterate over all of the checks and create a map[groupBy][]flatCheck. Ignore keys where one of the groupBy values
 	// would be empty.
 	groups := make(map[groupByKey][]flatCheck)
-	for _, fc := range flatChecks {
+	// Store a valid domain for every groupByKey
+	domains := make(map[groupByKey]*storage.ComplianceDomain)
+	for i, fc := range flatChecks {
+		if i >= domainIndices[0].offset {
+			domainIndices = domainIndices[1:]
+		}
 		var key groupByKey
 		valid := true
 		for _, s := range groupBy {
@@ -154,10 +169,12 @@ func GetAggregatedResults(groupBy []v1.ComplianceAggregation_Scope, unit v1.Comp
 		}
 		if valid {
 			groups[key] = append(groups[key], fc)
+			domains[key] = domainIndices[0].domain
 		}
 	}
 
 	results := make([]*v1.ComplianceAggregation_Result, 0, len(groups))
+	domainMap := make(map[int]*storage.ComplianceDomain)
 	for key, checks := range groups {
 		unitMap := make(map[string]passFailCounts)
 		for i, c := range checks {
@@ -177,6 +194,7 @@ func GetAggregatedResults(groupBy []v1.ComplianceAggregation_Scope, unit v1.Comp
 			counts = counts.Add(u.Reduce())
 		}
 
+		domainMap[len(results)] = domains[key]
 		results = append(results, &v1.ComplianceAggregation_Result{
 			AggregationKeys: getAggregationKeys(key),
 			Unit:            unit,
@@ -184,5 +202,5 @@ func GetAggregatedResults(groupBy []v1.ComplianceAggregation_Scope, unit v1.Comp
 			NumFailing:      int32(counts.fail),
 		})
 	}
-	return results
+	return results, func(i int) *storage.ComplianceDomain { return domainMap[i] }
 }
