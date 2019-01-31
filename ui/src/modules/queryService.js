@@ -1,5 +1,27 @@
 import queryMap from './queryMap';
 
+function constructWhereClause(mappedVariables, params) {
+    const newlyCreatedMappedVariables = { ...mappedVariables };
+    let whereClause = '';
+
+    Object.keys(params.query).forEach((queryParamKey, index) => {
+        const queryParamValue = params.query[queryParamKey];
+        if (Array.isArray(queryParamValue)) {
+            whereClause = `${whereClause}${
+                index !== 0 ? '+' : ''
+            }${queryParamKey}:${queryParamValue.join(',')}`;
+        } else {
+            whereClause = `${whereClause}${
+                index !== 0 ? '+' : ''
+            }${queryParamKey}:${queryParamValue}`;
+        }
+    });
+
+    newlyCreatedMappedVariables.where = whereClause;
+
+    return newlyCreatedMappedVariables;
+}
+
 function getQuery(params, component) {
     const { context, pageType, entityType } = params;
 
@@ -19,7 +41,7 @@ function getQuery(params, component) {
         );
 
     const { query, variables, format } = matches[0].config;
-    const mappedVariables = variables.reduce((acc, param) => {
+    let mappedVariables = variables.reduce((acc, param) => {
         if (param.graphQLValue) {
             acc[param.graphQLParam] = param.graphQLValue;
         } else {
@@ -27,6 +49,8 @@ function getQuery(params, component) {
         }
         return acc;
     }, {});
+
+    mappedVariables = constructWhereClause(mappedVariables, params);
 
     return {
         query,

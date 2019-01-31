@@ -4,17 +4,16 @@ const AGGREGATED_RESULTS = gql`
     query getAggregatedResults(
         $groupBy: [ComplianceAggregation_Scope!]
         $unit: ComplianceAggregation_Scope!
+        $where: String
     ) {
-        results: aggregatedResults(groupBy: $groupBy, unit: $unit) {
-            results {
-                aggregationKeys {
-                    id
-                    scope
-                }
-                numFailing
-                numPassing
-                unit
+        results: aggregatedResults(groupBy: $groupBy, unit: $unit, where: $where) {
+            aggregationKeys {
+                id
+                scope
             }
+            numFailing
+            numPassing
+            unit
         }
         complianceStandards: complianceStandards {
             id

@@ -19,7 +19,7 @@ function formatAsPercent(x) {
 
 function processData(data) {
     const { complianceStandards } = data;
-    const barData = data.results.results.map(result => {
+    const barData = data.results.map(result => {
         const standard = complianceStandards.find(cs => cs.id === result.aggregationKeys[0].id);
         const { numPassing, numFailing } = result;
         const percentagePassing = Math.round((numPassing / (numFailing + numPassing)) * 100) || 0;

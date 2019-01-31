@@ -19,7 +19,7 @@ function processData(data, type, params) {
     if (!data.results || !data.entityList) return [];
     const standardsGrouping = {};
     const { results, entityList, complianceStandards } = data;
-    results.results.forEach(result => {
+    results.forEach(result => {
         const entity = entityList.find(
             entityObject => entityObject.id === result.aggregationKeys[1].id
         );

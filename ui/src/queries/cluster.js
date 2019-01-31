@@ -23,14 +23,12 @@ export const CLUSTER_QUERY = gql`
 export const CLUSTER_COMPLIANCE = gql`
     query compliance {
         aggregatedResults(groupBy: [STANDARD, CLUSTER], unit: CONTROL) {
-            results {
-                aggregationKeys {
-                    id
-                }
-                numFailing
-                numPassing
-                unit
+            aggregationKeys {
+                id
             }
+            numFailing
+            numPassing
+            unit
         }
     }
 `;
