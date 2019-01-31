@@ -104,6 +104,18 @@ var hipaa164 = Standard{
 				},
 			},
 		},
+		{
+			ID:          "310_d",
+			Name:        "310.d",
+			Description: "Devices and Media Controls",
+			Controls: []Control{
+				{
+					ID:          "310_d",
+					Name:        "310.d",
+					Description: `Implement policies and procedures that govern the receipt and removal of hardware and electronic media that contain electronic protected health information into and out of a facility, and the movement of these items within the facility.`,
+				},
+			},
+		},
 	},
 }
 
