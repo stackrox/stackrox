@@ -116,6 +116,18 @@ var hipaa164 = Standard{
 				},
 			},
 		},
+		{
+			ID:          "312_c",
+			Name:        "312.c",
+			Description: "Integrity.",
+			Controls: []Control{
+				{
+					ID:          "312_c",
+					Name:        "312.c",
+					Description: "Implement policies and procedures to protect electronic protected health information from improper alteration or destruction.",
+				},
+			},
+		},
 	},
 }
 
