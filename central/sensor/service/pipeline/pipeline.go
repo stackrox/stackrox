@@ -8,6 +8,7 @@ import (
 //go:generate mockgen-wrapper Pipeline
 type Pipeline interface {
 	Run(msg *central.MsgFromSensor, injector MsgInjector) error
+	OnFinish()
 }
 
 // Factory returns a Pipeline for the given cluster.

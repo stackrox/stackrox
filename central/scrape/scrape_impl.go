@@ -148,3 +148,8 @@ func (s *scrapeImpl) acceptKill(killed *central.ScrapeKilled) {
 	// Everything is gucci baby.
 	s.stopped.Signal()
 }
+
+func (s *scrapeImpl) OnFinish() {
+	// The following will have no effect if we are already stopped.
+	s.stopped.SignalWithError(errors.New("connection to sensor was interrupted while scrape was ongoing"))
+}

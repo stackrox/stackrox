@@ -25,6 +25,8 @@ func (s *channeledImpl) process(msgsIn <-chan *central.MsgFromSensor, pl pipelin
 }
 
 func (s *channeledImpl) doProcess(msgsIn <-chan *central.MsgFromSensor, pl pipeline.Pipeline, injector pipeline.MsgInjector, stopSig concurrency.ReadOnlyErrorSignal) error {
+	defer pl.OnFinish()
+
 	for {
 		select {
 		case msg, ok := <-msgsIn:

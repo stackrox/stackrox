@@ -52,3 +52,5 @@ func (s *pipelineImpl) Run(msg *central.MsgFromSensor, injector pipeline.MsgInje
 func (s *pipelineImpl) process(indicator *storage.ProcessIndicator, injector pipeline.MsgInjector) error {
 	return s.manager.IndicatorAdded(indicator, injector)
 }
+
+func (s *pipelineImpl) OnFinish() {}

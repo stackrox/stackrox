@@ -43,3 +43,9 @@ func (s *pipelineImpl) Run(msg *central.MsgFromSensor, injector pipeline.MsgInje
 	defer metrics.SetSensorEventRunDuration(time.Now(), common.GetMessageType(msg))
 	return matchingFragment.Run(msg, injector)
 }
+
+func (s *pipelineImpl) OnFinish() {
+	for _, fragment := range s.fragments {
+		fragment.OnFinish()
+	}
+}

@@ -118,3 +118,5 @@ func (s *pipelineImpl) persistSecret(action central.ResourceAction, secret *stor
 		return fmt.Errorf("Event action '%s' for secret does not exist", action)
 	}
 }
+
+func (s *pipelineImpl) OnFinish() {}

@@ -23,6 +23,15 @@ func (s *accepterImpl) AcceptUpdate(update *central.ScrapeUpdate) {
 	}
 }
 
+func (s *accepterImpl) OnFinish() {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	for fragment := range s.fragments {
+		fragment.OnFinish()
+	}
+}
+
 func (s *accepterImpl) AddFragment(fragment Fragment) {
 	s.lock.Lock()
 	defer s.lock.Unlock()

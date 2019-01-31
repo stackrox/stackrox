@@ -8,11 +8,13 @@ import (
 type Fragment interface {
 	Match(update *central.ScrapeUpdate) bool
 	AcceptUpdate(update *central.ScrapeUpdate)
+	OnFinish()
 }
 
 // Accepter holds references to ongoing scrapes to update them.
 type Accepter interface {
 	AcceptUpdate(update *central.ScrapeUpdate)
+	OnFinish()
 
 	AddFragment(fragment Fragment)
 	RemoveFragment(fragment Fragment)

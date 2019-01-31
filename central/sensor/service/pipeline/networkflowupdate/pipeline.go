@@ -47,3 +47,5 @@ func (s *pipelineImpl) Run(msg *central.MsgFromSensor, _ pipeline.MsgInjector) (
 	}
 	return nil
 }
+
+func (s *pipelineImpl) OnFinish() {}

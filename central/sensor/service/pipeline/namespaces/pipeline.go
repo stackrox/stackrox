@@ -125,3 +125,5 @@ func (s *pipelineImpl) persistNamespace(action central.ResourceAction, ns *stora
 		return fmt.Errorf("Event action '%s' for namespace does not exist", action)
 	}
 }
+
+func (s *pipelineImpl) OnFinish() {}

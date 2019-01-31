@@ -34,3 +34,7 @@ func (s *pipelineImpl) Run(msg *central.MsgFromSensor, _ pipeline.MsgInjector) (
 	s.accepter.AcceptUpdate(msg.GetScrapeUpdate())
 	return nil
 }
+
+func (s *pipelineImpl) OnFinish() {
+	s.accepter.OnFinish()
+}

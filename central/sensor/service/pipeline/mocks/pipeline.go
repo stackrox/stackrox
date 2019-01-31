@@ -46,6 +46,16 @@ func (mr *MockFragmentMockRecorder) Match(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Match", reflect.TypeOf((*MockFragment)(nil).Match), arg0)
 }
 
+// OnFinish mocks base method
+func (m *MockFragment) OnFinish() {
+	m.ctrl.Call(m, "OnFinish")
+}
+
+// OnFinish indicates an expected call of OnFinish
+func (mr *MockFragmentMockRecorder) OnFinish() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnFinish", reflect.TypeOf((*MockFragment)(nil).OnFinish))
+}
+
 // Run mocks base method
 func (m *MockFragment) Run(arg0 *central.MsgFromSensor, arg1 pipeline.MsgInjector) error {
 	ret := m.ctrl.Call(m, "Run", arg0, arg1)

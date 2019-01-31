@@ -125,3 +125,5 @@ func (s *pipelineImpl) persistNetworkPolicy(action central.ResourceAction, np *s
 		return fmt.Errorf("Event action '%s' for network policy does not exist", action)
 	}
 }
+
+func (s *pipelineImpl) OnFinish() {}

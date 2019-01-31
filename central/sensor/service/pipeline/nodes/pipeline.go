@@ -56,3 +56,5 @@ func (p *pipelineImpl) Run(msg *central.MsgFromSensor, _ pipeline.MsgInjector) e
 	}
 	return store.UpsertNode(node)
 }
+
+func (p *pipelineImpl) OnFinish() {}

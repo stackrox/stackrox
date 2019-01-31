@@ -38,3 +38,5 @@ func (s *pipelineImpl) Run(msg *central.MsgFromSensor, _ pipeline.MsgInjector) e
 	event := msg.GetEvent()
 	return s.clusters.UpdateMetadata(event.GetClusterId(), event.GetProviderMetadata())
 }
+
+func (s *pipelineImpl) OnFinish() {}
