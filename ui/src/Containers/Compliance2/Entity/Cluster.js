@@ -19,7 +19,7 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                 <div className="grid grid-columns-2 grid-gap-6">
                     <EntityCompliance params={params} />
                     <Widget header="Widget 2">
-                        Widget 2<br />
+                        Widget x<br />
                         Widget 2<br />
                         Widget 2<br />
                     </Widget>
