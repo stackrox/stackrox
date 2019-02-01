@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
+	complianceHandlers "github.com/stackrox/rox/central/compliance/handlers"
 	"github.com/stackrox/rox/central/compliance/manager"
 	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
@@ -313,6 +314,17 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   false,
 		},
 	)
+
+	if features.Compliance.Enabled() {
+		customRoutes = append(customRoutes, routes.CustomRoute{
+			Route:         "/api/compliance/export/csv",
+			Authorizer:    authzUser.With(permissions.View(resources.Compliance)),
+			ServerHandler: complianceHandlers.CSVHandler(),
+			Compression:   true,
+		})
+
+	}
+
 	customRoutes = append(customRoutes, debugRoutes()...)
 	return
 }
