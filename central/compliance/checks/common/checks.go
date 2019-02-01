@@ -38,6 +38,17 @@ func IsImageScannerInUse(ctx framework.ComplianceContext) {
 	framework.Fail(ctx, "No image scanners are being used in the cluster")
 }
 
+// CheckImageScannerWasUsed checks if image scanner was used atleast once.
+func CheckImageScannerWasUsed(ctx framework.ComplianceContext) {
+	for _, image := range ctx.Data().Images() {
+		if image.GetSetCves() != nil {
+			framework.Passf(ctx, "Image (%s) was scanned previously for vulnerabilities", image.GetName())
+		} else {
+			framework.Failf(ctx, "Image (%s) was never scanned for vulnerabilities", image.GetName())
+		}
+	}
+}
+
 // CheckFixedCVES returns true if we find any fixed cves in images.
 func CheckFixedCVES(ctx framework.ComplianceContext) {
 	for _, image := range ctx.Data().Images() {

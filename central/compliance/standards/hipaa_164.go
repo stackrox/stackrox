@@ -19,6 +19,18 @@ var hipaa164 = Standard{
 			},
 		},
 		{
+			ID:          "308_a_1_ii_a",
+			Name:        "308_a_1_ii_a",
+			Description: "Security Awareness and Training",
+			Controls: []Control{
+				{
+					ID:          "308_a_1_ii_a",
+					Name:        "308_a_1_ii_a",
+					Description: "Security Awareness and Training",
+				},
+			},
+		},
+		{
 			ID:          "308_a_1_ii_b",
 			Name:        "308.a.1.ii.b",
 			Description: "Security Management Process",
@@ -27,6 +39,18 @@ var hipaa164 = Standard{
 					ID:          "308_a_1_ii_b",
 					Name:        "308.a.1.ii.b",
 					Description: "Security Management Process",
+				},
+			},
+		},
+		{
+			ID:          "308_a_3_ii_a",
+			Name:        "308.a.3.ii.a",
+			Description: "Workforce security",
+			Controls: []Control{
+				{
+					ID:          "308_a_3_ii_a",
+					Name:        "308.a.3.ii.a",
+					Description: `Implement procedures for the authorization and/or supervision of workforce members who work with electronic protected health information or in locations where it might be accessed.`,
 				},
 			},
 		},
