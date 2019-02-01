@@ -19,6 +19,18 @@ var hipaa164 = Standard{
 			},
 		},
 		{
+			ID:          "308_a_1_i",
+			Name:        "308_a_1_i",
+			Description: "Security Management Process",
+			Controls: []Control{
+				{
+					ID:          "308_a_1_i",
+					Name:        "308_a_1_i",
+					Description: "Security Management Process",
+				},
+			},
+		},
+		{
 			ID:          "308_a_1_ii_a",
 			Name:        "308_a_1_ii_a",
 			Description: "Security Awareness and Training",
