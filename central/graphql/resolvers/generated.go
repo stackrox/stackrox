@@ -249,6 +249,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"replicas: Int!",
 		"risk: Risk",
 		"serviceAccount: String!",
+		"tolerations: [Toleration]!",
 		"type: String!",
 		"updatedAt: Time!",
 		"version: String!",
@@ -392,6 +393,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	builder.AddType("Node", []string{
 		"id: ID!",
 		"name: String!",
+		"taints: [Taint]!",
 	})
 	builder.AddType("Notifier", []string{
 		"enabled: Boolean!",
@@ -606,6 +608,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"httpToken: String!",
 		"insecure: Boolean!",
 	})
+	builder.AddType("Taint", []string{
+		"key: String!",
+		"taintEffect: TaintEffect!",
+		"value: String!",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.TaintEffect(0)))
 	builder.AddType("TokenMetadata", []string{
 		"expiration: Time!",
 		"id: ID!",
@@ -614,6 +622,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"revoked: Boolean!",
 		"role: String!",
 	})
+	builder.AddType("Toleration", []string{
+		"key: String!",
+		"operator: Toleration_Operator!",
+		"taintEffect: TaintEffect!",
+		"value: String!",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Toleration_Operator(0)))
 	builder.AddType("V1Metadata", []string{
 		"author: String!",
 		"created: Time!",
@@ -2501,6 +2516,12 @@ func (resolver *deploymentResolver) ServiceAccount() string {
 	return value
 }
 
+func (resolver *deploymentResolver) Tolerations() ([]*tolerationResolver, error) {
+	resolver.ensureData()
+	value := resolver.data.GetTolerations()
+	return resolver.root.wrapTolerations(value, nil)
+}
+
 func (resolver *deploymentResolver) Type() string {
 	resolver.ensureData()
 	value := resolver.data.GetType()
@@ -3655,6 +3676,11 @@ func (resolver *nodeResolver) Id() graphql.ID {
 func (resolver *nodeResolver) Name() string {
 	value := resolver.data.GetName()
 	return value
+}
+
+func (resolver *nodeResolver) Taints() ([]*taintResolver, error) {
+	value := resolver.data.GetTaints()
+	return resolver.root.wrapTaints(value, nil)
 }
 
 type notifierResolver struct {
@@ -5200,6 +5226,62 @@ func (resolver *splunkResolver) Insecure() bool {
 	return value
 }
 
+type taintResolver struct {
+	root *Resolver
+	data *storage.Taint
+}
+
+func (resolver *Resolver) wrapTaint(value *storage.Taint, ok bool, err error) (*taintResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &taintResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapTaints(values []*storage.Taint, err error) ([]*taintResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*taintResolver, len(values))
+	for i, v := range values {
+		output[i] = &taintResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *taintResolver) Key() string {
+	value := resolver.data.GetKey()
+	return value
+}
+
+func (resolver *taintResolver) TaintEffect() string {
+	value := resolver.data.GetTaintEffect()
+	return value.String()
+}
+
+func (resolver *taintResolver) Value() string {
+	value := resolver.data.GetValue()
+	return value
+}
+
+func toTaintEffect(value *string) storage.TaintEffect {
+	if value != nil {
+		return storage.TaintEffect(storage.TaintEffect_value[*value])
+	}
+	return storage.TaintEffect(0)
+}
+
+func toTaintEffects(values *[]string) []storage.TaintEffect {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.TaintEffect, len(*values))
+	for i, v := range *values {
+		output[i] = toTaintEffect(&v)
+	}
+	return output
+}
+
 type tokenMetadataResolver struct {
 	root *Resolver
 	data *storage.TokenMetadata
@@ -5251,6 +5333,67 @@ func (resolver *tokenMetadataResolver) Revoked() bool {
 func (resolver *tokenMetadataResolver) Role() string {
 	value := resolver.data.GetRole()
 	return value
+}
+
+type tolerationResolver struct {
+	root *Resolver
+	data *storage.Toleration
+}
+
+func (resolver *Resolver) wrapToleration(value *storage.Toleration, ok bool, err error) (*tolerationResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &tolerationResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapTolerations(values []*storage.Toleration, err error) ([]*tolerationResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*tolerationResolver, len(values))
+	for i, v := range values {
+		output[i] = &tolerationResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *tolerationResolver) Key() string {
+	value := resolver.data.GetKey()
+	return value
+}
+
+func (resolver *tolerationResolver) Operator() string {
+	value := resolver.data.GetOperator()
+	return value.String()
+}
+
+func (resolver *tolerationResolver) TaintEffect() string {
+	value := resolver.data.GetTaintEffect()
+	return value.String()
+}
+
+func (resolver *tolerationResolver) Value() string {
+	value := resolver.data.GetValue()
+	return value
+}
+
+func toToleration_Operator(value *string) storage.Toleration_Operator {
+	if value != nil {
+		return storage.Toleration_Operator(storage.Toleration_Operator_value[*value])
+	}
+	return storage.Toleration_Operator(0)
+}
+
+func toToleration_Operators(values *[]string) []storage.Toleration_Operator {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.Toleration_Operator, len(*values))
+	for i, v := range *values {
+		output[i] = toToleration_Operator(&v)
+	}
+	return output
 }
 
 type v1MetadataResolver struct {

@@ -16,6 +16,7 @@ import (
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	"github.com/stackrox/rox/pkg/protoconv/resources/volumes"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -138,7 +139,20 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 	}
 
 	w.HostNetwork = podSpec.HostNetwork
+	w.populateTolerations(podSpec)
 	w.populateContainers(podSpec)
+}
+
+func (w *DeploymentWrap) populateTolerations(podSpec v1.PodSpec) {
+	w.Tolerations = make([]*storage.Toleration, 0, len(podSpec.Tolerations))
+	for _, toleration := range podSpec.Tolerations {
+		w.Tolerations = append(w.Tolerations, &storage.Toleration{
+			Key:         toleration.Key,
+			Value:       toleration.Value,
+			Operator:    k8s.ToRoxTolerationOperator(toleration.Operator),
+			TaintEffect: k8s.ToRoxTaintEffect(toleration.Effect),
+		})
+	}
 }
 
 func (w *DeploymentWrap) populateContainers(podSpec v1.PodSpec) {

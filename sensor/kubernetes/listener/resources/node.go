@@ -3,6 +3,7 @@ package resources
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	"k8s.io/api/core/v1"
 )
 
@@ -20,6 +21,18 @@ func newNodeDispatcher(serviceStore *serviceStore, deploymentStore *deploymentSt
 		nodeStore:       nodeStore,
 		endpointManager: endpointManager,
 	}
+}
+
+func convertTaints(taints []v1.Taint) []*storage.Taint {
+	roxTaints := make([]*storage.Taint, 0, len(taints))
+	for _, t := range taints {
+		roxTaints = append(roxTaints, &storage.Taint{
+			Key:         t.Key,
+			Value:       t.Value,
+			TaintEffect: k8s.ToRoxTaintEffect(t.Effect),
+		})
+	}
+	return roxTaints
 }
 
 func (h *nodeDispatcher) ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent {
@@ -40,8 +53,9 @@ func (h *nodeDispatcher) ProcessEvent(obj interface{}, action central.ResourceAc
 	}
 
 	nodeResource := &storage.Node{
-		Id:   string(node.UID),
-		Name: node.Name,
+		Id:     string(node.UID),
+		Name:   node.Name,
+		Taints: convertTaints(node.Spec.Taints),
 	}
 
 	events := []*central.SensorEvent{

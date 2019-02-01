@@ -19,20 +19,14 @@ enum SearchCategory {
     COMPLIANCE   = 7;
 }
 
+// TODO(cgorman) collapse these into Go code and not proto
 enum SearchDataType {
     SEARCH_BOOL     = 0;
     SEARCH_NUMERIC  = 1;
     SEARCH_STRING   = 2;
     SEARCH_DATETIME = 3;
-
-    // Enums must be accounted for because they will all be handled on an individual basis
-    SEARCH_ENFORCEMENT     = 4;
-    SEARCH_SEVERITY        = 5;
-    SEARCH_MAP             = 6;
-    SEARCH_SECRET_TYPE     = 7;
-    SEARCH_VIOLATION_STATE = 8;
-    SEARCH_LIFECYCLE_STAGE = 9;
-    SEARCH_ENUM            = 10;
+    SEARCH_MAP      = 4;
+    SEARCH_ENUM     = 5;
 }
 
 message RawQuery {

@@ -68,6 +68,11 @@ var (
 	VolumeDestination = newFieldLabel("Volume Destination")
 	VolumeReadonly    = newFieldLabel("Volume ReadOnly")
 	VolumeType        = newFieldLabel("Volume Type")
+	TaintKey          = newFieldLabel("Taint Key")
+	TaintValue        = newFieldLabel("Taint Value")
+	TolerationKey     = newFieldLabel("Toleration Key")
+	TolerationValue   = newFieldLabel("Toleration Value")
+	TolerationEffect  = newFieldLabel("Taint Effect")
 
 	Violation      = newFieldLabel("Violation")
 	ViolationState = newFieldLabel("Violation State")
@@ -88,7 +93,9 @@ var (
 )
 
 func newFieldLabel(s string) FieldLabel {
-	FieldLabelSet.Add(s)
+	if added := FieldLabelSet.Add(s); !added {
+		log.Fatalf("Field label %q has already been added", s)
+	}
 	return FieldLabel(s)
 }
 

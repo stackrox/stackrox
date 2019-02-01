@@ -3,12 +3,17 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "storage/taints.proto";
+
 package storage;
 
 // Node represents information about a node in the cluster.
+// next available tag: 4
 message Node {
     // A unique ID identifying this node.
     string id   = 1;
     // The (host)name of the node. Might or might not be the same as ID.
     string name = 2;
+    // Taints on the host
+    repeated Taint taints = 3;
 }

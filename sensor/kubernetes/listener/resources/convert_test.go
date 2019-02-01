@@ -244,7 +244,8 @@ func TestConvert(t *testing.T) {
 					"annotationkey1": "annotationvalue1",
 					"annotationkey2": "annotationvalue2",
 				},
-				UpdatedAt: &timestamp.Timestamp{Seconds: 1000},
+				UpdatedAt:   &timestamp.Timestamp{Seconds: 1000},
+				Tolerations: []*storage.Toleration{},
 				Containers: []*storage.Container{
 					{
 						Id:   "FooID:container1",
