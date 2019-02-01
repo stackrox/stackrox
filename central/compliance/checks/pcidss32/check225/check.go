@@ -12,7 +12,7 @@ func init() {
 	framework.MustRegisterNewCheck(
 		checkID,
 		framework.DeploymentKind,
-		nil,
+		[]string{"NetworkFlows"},
 		clusterIsCompliant)
 }
 
