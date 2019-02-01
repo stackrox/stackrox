@@ -5,38 +5,50 @@ import CloseButton from './CloseButton';
 
 export const headerClassName = 'flex w-full h-12 word-break';
 
-const Panel = props => (
-    <div
-        className={`flex flex-col h-full border border-base-400 ${props.className}`}
-        data-test-id="panel"
-    >
-        <div className="border-b border-base-400">
-            <div className={props.headerClassName}>
-                <div
-                    className="flex flex-1 text-base-600 uppercase items-center tracking-wide pl-4 pt-1 leading-normal font-700"
-                    data-test-id="panel-header"
-                >
-                    {props.header}
+const Panel = props => {
+    const headerText = (
+        <div
+            className="flex flex-1 text-base-600 uppercase items-center tracking-wide pl-4 pt-1 leading-normal font-700"
+            data-test-id="panel-header"
+        >
+            {props.header}
+        </div>
+    );
+    return (
+        <div
+            className={`flex flex-col h-full border border-base-400 ${props.className}`}
+            data-test-id="panel"
+        >
+            <div className="border-b border-base-400">
+                <div className={props.headerClassName}>
+                    {props.headerTextComponent ? props.headerTextComponent : headerText}
+                    <div className="panel-actions relative flex items-center mr-2">
+                        {props.buttons}
+                    </div>
+                    {props.headerComponents && (
+                        <div className="flex items-center pr-3 relative">
+                            {props.headerComponents}
+                        </div>
+                    )}
+                    {props.onClose && (
+                        <CloseButton
+                            onClose={props.onClose}
+                            className={props.closeButtonClassName}
+                            iconColor={props.closeButtonIconColor}
+                        />
+                    )}
                 </div>
-                <div className="panel-actions relative flex items-center mr-2">{props.buttons}</div>
-                {props.headerComponents && (
-                    <div className="flex items-center pr-3 relative">{props.headerComponents}</div>
-                )}
-                {props.onClose && (
-                    <CloseButton
-                        onClose={props.onClose}
-                        className={props.closeButtonClassName}
-                        iconColor={props.closeButtonIconColor}
-                    />
-                )}
+            </div>
+            <div className={`flex h-full overflow-y-auto ${props.bodyClassName}`}>
+                {props.children}
             </div>
         </div>
-        <div className={`flex h-full overflow-y-auto ${props.bodyClassName}`}>{props.children}</div>
-    </div>
-);
+    );
+};
 
 Panel.propTypes = {
     header: PropTypes.string,
+    headerTextComponent: PropTypes.element,
     headerClassName: PropTypes.string,
     bodyClassName: PropTypes.string,
     buttons: PropTypes.node,
@@ -50,6 +62,7 @@ Panel.propTypes = {
 
 Panel.defaultProps = {
     header: ' ',
+    headerTextComponent: null,
     headerClassName,
     bodyClassName: null,
     buttons: null,

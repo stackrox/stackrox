@@ -1,3 +1,5 @@
+import { singular } from 'pluralize';
+import toUpper from 'lodash/toUpper';
 import queryMap from './queryMap';
 
 function constructWhereClause(mappedVariables, params) {
@@ -45,7 +47,11 @@ function getQuery(params, component) {
         if (param.graphQLValue) {
             acc[param.graphQLParam] = param.graphQLValue;
         } else {
-            acc[param.graphQLParam] = params[param.queryParam];
+            let queryParamValue = params[param.queryParam];
+            if (param.queryParam === 'entityType') {
+                queryParamValue = toUpper(singular(queryParamValue));
+            }
+            acc[param.graphQLParam] = queryParamValue;
         }
         return acc;
     }, {});

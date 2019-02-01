@@ -1,54 +1,30 @@
 import React from 'react';
-import ComplianceByStandard from 'Containers/Compliance2/widgets/ComplianceByStandard';
-import RelatedEntitiesList from 'Containers/Compliance2/widgets/RelatedEntitiesList';
-import URLService from 'modules/URLService';
-import { withRouter } from 'react-router-dom';
+import { withRouter, Switch, Route } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
-import EntityCompliance from 'Containers/Compliance2/widgets/EntityCompliance';
-import entityTypes from 'constants/entityTypes';
-import Widget from 'Components/Widget';
-import Header from './Header';
+import URLService from 'modules/URLService';
+import ClusterPage from './Cluster';
+import NodePage from './Node';
+import NamespacePage from './Namespace';
 
 const ComplianceEntityPage = ({ match, location, params, sidePanelMode }) => {
-    const widgetParams = sidePanelMode
-        ? params
-        : Object.assign({}, URLService.getParams(match, location), params);
-
-    const EntityComplianceParams = Object.assign({}, widgetParams, {
-        entityType: entityTypes.CLUSTERS
-    });
+    const pageParams = URLService.getParams(match, location);
+    const pageProps = {
+        params: Object.assign({}, pageParams, params),
+        sidePanelMode
+    };
+    const ClusterEntityPage = () => <ClusterPage {...pageProps} />;
+    const NodeEntityPage = () => <NodePage {...pageProps} />;
+    const NamespaceEntityPage = () => <NamespacePage {...pageProps} />;
+    /* eslint-disable */
     return (
-        <section className="flex flex-col h-full w-full">
-            {!sidePanelMode && <Header params={widgetParams} />}
-            <div className="flex-1 relative bg-base-200 p-4 overflow-auto">
-                <div
-                    className={`grid ${
-                        !sidePanelMode ? `xl:grid-columns-3 md:grid-columns-2` : ``
-                    } sm:grid-columns-1 grid-gap-6`}
-                >
-                    <div className="grid grid-columns-2 grid-gap-6">
-                        <EntityCompliance params={EntityComplianceParams} />
-                        <Widget header="Widget 2">
-                            Widget 2<br />
-                            Widget 2<br />
-                            Widget 2<br />
-                        </Widget>
-                        <Widget header="Widget 3">
-                            Widget 3<br />
-                            Widget 3<br />
-                            Widget 3<br />
-                        </Widget>
-                    </div>
-                    <ComplianceByStandard type={entityTypes.PCI} params={widgetParams} />
-                    <ComplianceByStandard type={entityTypes.NIST} params={widgetParams} />
-                    <ComplianceByStandard type={entityTypes.HIPAA} params={widgetParams} />
-                    <ComplianceByStandard type={entityTypes.CIS} params={widgetParams} />
-                    {!sidePanelMode && <RelatedEntitiesList params={widgetParams} />}
-                </div>
-            </div>
-        </section>
+        <Switch>
+            <Route path="/main/compliance2/clusters" render={ClusterEntityPage} />
+            <Route path="/main/compliance2/nodes" render={NodeEntityPage} />
+            <Route path="/main/compliance2/namespaces" render={NamespaceEntityPage} />
+        </Switch>
     );
+    /* eslint-enable */
 };
 
 ComplianceEntityPage.propTypes = {

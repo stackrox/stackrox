@@ -19,3 +19,18 @@ export const NODE_QUERY = gql`
         }
     }
 `;
+
+export const NODE_COMPLIANCE = gql`
+    query compliance {
+        aggregatedResults(groupBy: [STANDARD, NODE], unit: CONTROL) {
+            results {
+                aggregationKeys {
+                    id
+                }
+                numFailing
+                numPassing
+                unit
+            }
+        }
+    }
+`;

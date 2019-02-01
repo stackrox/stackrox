@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import entityTypes from 'constants/entityTypes';
 
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
@@ -51,7 +50,7 @@ const ListTable = ({ params, selectedRow, page, updateSelectedRow, setTablePage 
                 );
             }
             return (
-                <Panel header={entityTypes.NODES} headerComponents={paginationComponent}>
+                <Panel header={params.entityType} headerComponents={paginationComponent}>
                     {contents}
                 </Panel>
             );

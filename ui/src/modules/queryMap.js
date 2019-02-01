@@ -2,11 +2,12 @@ import componentTypes from 'constants/componentTypes';
 import entityTypes from 'constants/entityTypes';
 import contextTypes from 'constants/contextTypes';
 import pageTypes from 'constants/pageTypes';
-import { CLUSTER_QUERY, CLUSTER_COMPLIANCE } from 'queries/cluster';
+import { CLUSTER_QUERY } from 'queries/cluster';
 import { NAMESPACE_QUERY, RELATED_DEPLOYMENTS } from 'queries/namespace';
 import { CLUSTERS_QUERY, NAMESPACES_QUERY, NODES_QUERY } from 'queries/table';
 import { NODE_QUERY } from 'queries/node';
 import AGGREGATED_RESULTS from 'queries/controls';
+import ENTITY_COMPLIANCE from 'queries/standard';
 
 /**
  * context:     Array of contextTypes to match
@@ -76,11 +77,14 @@ export default [
     {
         context: [contextTypes.COMPLIANCE],
         pageType: [pageTypes.ENTITY],
-        entityType: [entityTypes.CLUSTERS],
+        entityType: [entityTypes.CLUSTERS, entityTypes.NODES, entityTypes.NAMESPACES],
         component: [componentTypes.ENTITY_COMPLIANCE],
         config: {
-            query: CLUSTER_COMPLIANCE,
-            variables: [{ graphQLParam: 'id', queryParam: 'entityId' }],
+            query: ENTITY_COMPLIANCE,
+            variables: [
+                { graphQLParam: 'id', queryParam: 'entityId' },
+                { graphQLParam: 'entityType', queryParam: 'entityType' }
+            ],
             format(data) {
                 const formattedData = {
                     ...data
@@ -122,7 +126,7 @@ export default [
     },
     {
         context: [contextTypes.COMPLIANCE],
-        pageType: [pageTypes.DASHBOARD],
+        pageType: [pageTypes.DASHBOARD, pageTypes.LIST],
         entityType: [],
         component: [componentTypes.STANDARDS_BY_CLUSTER],
         config: {
@@ -143,7 +147,7 @@ export default [
     },
     {
         context: [contextTypes.COMPLIANCE],
-        pageType: [pageTypes.DASHBOARD],
+        pageType: [pageTypes.DASHBOARD, pageTypes.LIST],
         entityType: [],
         component: [componentTypes.STANDARDS_ACROSS_CLUSTERS],
         config: {
@@ -156,7 +160,7 @@ export default [
     },
     {
         context: [contextTypes.COMPLIANCE],
-        pageType: [pageTypes.DASHBOARD],
+        pageType: [pageTypes.DASHBOARD, pageTypes.LIST],
         entityType: [],
         component: [componentTypes.STANDARDS_ACROSS_NAMESPACES],
         config: {
@@ -169,7 +173,7 @@ export default [
     },
     {
         context: [contextTypes.COMPLIANCE],
-        pageType: [pageTypes.DASHBOARD],
+        pageType: [pageTypes.DASHBOARD, pageTypes.LIST],
         entityType: [],
         component: [componentTypes.STANDARDS_ACROSS_NODES],
         config: {
