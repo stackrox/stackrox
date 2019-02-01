@@ -117,9 +117,15 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot string) (errs []
 	}
 
 	allowedPackages := []string{validImportRoot, "generated"}
-	// The migrator is NOT allowed to import code from pkg.
+	// The migrator is NOT allowed to import all code from pkg.
 	if validImportRoot != "pkg" && validImportRoot != "migrator" {
 		allowedPackages = append(allowedPackages, "pkg")
+	}
+	// Specific sub-packages in pkg that the migrator is allowed to import go here.
+	// Please be VERY prudent about adding to this list, since everything that's added to this list
+	// will need to be protected by strict compatibility guarantees.
+	if validImportRoot == "migrator" {
+		allowedPackages = append(allowedPackages, "pkg/migrations", "pkg/testutils")
 	}
 
 	// Allow central and cmd/deploy to import "image" (for fixtures)

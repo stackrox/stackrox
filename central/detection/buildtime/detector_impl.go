@@ -47,8 +47,9 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 		if err != nil {
 			return fmt.Errorf("matching against policy %s: %s", p.GetName(), err)
 		}
-		if len(violations) > 0 {
-			alerts = append(alerts, policyAndViolationsToAlert(p, violations))
+		alertViolations := violations.AlertViolations
+		if len(alertViolations) > 0 {
+			alerts = append(alerts, policyAndViolationsToAlert(p, alertViolations))
 		}
 		return nil
 	})

@@ -258,7 +258,7 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *storage.Policy)
 	}
 
 	for deploymentID, violations := range violationsPerDeployment {
-		if len(violations) == 0 {
+		if len(violations.AlertViolations) == 0 && violations.ProcessViolation == nil {
 			continue
 		}
 		deployment, exists, err := s.deployments.GetDeployment(deploymentID)
@@ -273,9 +273,12 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *storage.Policy)
 			continue
 		}
 		// Collect the violation messages as strings for the output.
-		convertedViolations := make([]string, 0, len(violations))
-		for _, violation := range violations {
+		convertedViolations := make([]string, 0, len(violations.AlertViolations))
+		for _, violation := range violations.AlertViolations {
 			convertedViolations = append(convertedViolations, violation.GetMessage())
+		}
+		if violations.ProcessViolation != nil {
+			convertedViolations = append(convertedViolations, violations.ProcessViolation.GetMessage())
 		}
 		resp.Alerts = append(resp.Alerts, &v1.DryRunResponse_Alert{Deployment: deployment.GetName(), Violations: convertedViolations})
 	}

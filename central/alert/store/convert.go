@@ -40,7 +40,7 @@ func addEnforcementCount(alert *storage.Alert, listAlert *storage.ListAlert) {
 	// Since runtime enforcement is killing a pod, we can determine how many times
 	// a runtime policy has been enforced.
 	if alert.GetLifecycleStage() == storage.LifecycleStage_RUNTIME {
-		listAlert.EnforcementCount = determineRuntimeEnforcementCount(alert.GetViolations())
+		listAlert.EnforcementCount = determineRuntimeEnforcementCount(alert)
 		return
 	}
 	// We assume for a given deploy time alert with enforcement, that it is currently being
@@ -51,12 +51,10 @@ func addEnforcementCount(alert *storage.Alert, listAlert *storage.ListAlert) {
 	}
 }
 
-func determineRuntimeEnforcementCount(violations []*storage.Alert_Violation) int32 {
+func determineRuntimeEnforcementCount(alert *storage.Alert) int32 {
 	podIds := set.NewStringSet()
-	for _, violation := range violations {
-		for _, pi := range violation.GetProcesses() {
-			podIds.Add(pi.GetPodId())
-		}
+	for _, pi := range alert.GetProcessViolation().GetProcesses() {
+		podIds.Add(pi.GetPodId())
 	}
 	return int32(podIds.Cardinality())
 }

@@ -42,14 +42,14 @@ func (c CVEQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sear
 		[]search.FieldLabel{search.CVE, search.CVELink},
 		[]string{search.RegexQueryString(cve), search.WildcardString}).
 		ProtoQuery()
-	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) []*storage.Alert_Violation {
+	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) searchbasedpolicies.Violations {
 		cveMatches := result.Matches[cveSearchField.GetFieldPath()]
 		cveLinkMatches := result.Matches[cveLinkSearchField.GetFieldPath()]
 		if len(cveMatches) != len(cveLinkMatches) {
 			logger.Errorf("Got different number of matches for CVEs and links: %+v %+v", cveMatches, cveLinkMatches)
 		}
 		if len(cveMatches) == 0 {
-			return nil
+			return searchbasedpolicies.Violations{}
 		}
 		violations := make([]*storage.Alert_Violation, 0, len(cveMatches))
 		for i, cveMatch := range cveMatches {
@@ -62,7 +62,9 @@ func (c CVEQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sear
 				Link:    link,
 			})
 		}
-		return violations
+		return searchbasedpolicies.Violations{
+			AlertViolations: violations,
+		}
 	}
 	return
 }

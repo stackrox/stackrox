@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
@@ -108,6 +109,9 @@ func (ctx *walkState) walkType(p reflect.Type) {
 
 func (ctx *walkState) walkField(td *typeData, p reflect.Type, sf reflect.StructField) {
 	if len(sf.Name) > 4 && sf.Name[:4] == "XXX_" {
+		return
+	}
+	if strings.HasPrefix(sf.Name, "DEPRECATED") {
 		return
 	}
 	ctx.typeQueue = append(ctx.typeQueue, sf.Type)

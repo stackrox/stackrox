@@ -539,228 +539,28 @@
             }
         ]
     },
-    "violations": [
-        {
-            "message": "Detected running process 'iptables' with arguments '-w2 -C POSTROUTING -t nat -m comment --comment ip-masq-agent: ensure nat POSTROUTING directs all non-LOCAL destination traffic to our custom IP-MASQ-AGENT chain -m addrtype ! --dst-type LOCAL -j IP-MASQ-AGENT'",
-            "link": "",
-            "processes": [
-                {
-                    "id": "004783f6-d808-48d0-a484-fb02db48f523",
-                    "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
-                    "emitTimestamp": "2018-09-27T19:38:23.488464776Z",
-                    "signal": {
-                        "id": "e5692066-c28c-11e8-b5e7-92386806e2d4",
-                        "containerId": "066e2adae0e8",
-                        "time": "2018-09-27T19:38:23.482464814Z",
-                        "name": "iptables",
-                        "args": "-w2 -C POSTROUTING -t nat -m comment --comment ip-masq-agent: ensure nat POSTROUTING directs all non-LOCAL destination traffic to our custom IP-MASQ-AGENT chain -m addrtype ! --dst-type LOCAL -j IP-MASQ-AGENT",
-                        "execFilePath": "/sbin/iptables",
-                        "pid": 6974,
-                        "uid": 4294967295,
-                        "gid": 4294967295
-                    }
+    "processViolation": {
+        "message": "Detected running process 'iptables' with arguments '-w2 -C POSTROUTING -t nat -m comment --comment ip-masq-agent: ensure nat POSTROUTING directs all non-LOCAL destination traffic to our custom IP-MASQ-AGENT chain -m addrtype ! --dst-type LOCAL -j IP-MASQ-AGENT'",
+        "link": "",
+        "processes": [
+            {
+                "id": "004783f6-d808-48d0-a484-fb02db48f523",
+                "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
+                "emitTimestamp": "2018-09-27T19:38:23.488464776Z",
+                "signal": {
+                    "id": "e5692066-c28c-11e8-b5e7-92386806e2d4",
+                    "containerId": "066e2adae0e8",
+                    "time": "2018-09-27T19:38:23.482464814Z",
+                    "name": "iptables",
+                    "args": "-w2 -C POSTROUTING -t nat -m comment --comment ip-masq-agent: ensure nat POSTROUTING directs all non-LOCAL destination traffic to our custom IP-MASQ-AGENT chain -m addrtype ! --dst-type LOCAL -j IP-MASQ-AGENT",
+                    "execFilePath": "/sbin/iptables",
+                    "pid": 6974,
+                    "uid": 4294967295,
+                    "gid": 4294967295
                 }
-            ]
-        },
-        {
-            "message": "Detected running process 'iptables' with arguments '-w2 -C POSTROUTING -t nat -m comment --comment ip-masq-agent: ensure nat POSTROUTING directs all non-LOCAL destination traffic to our custom IP-MASQ-AGENT chain -m addrtype ! --dst-type LOCAL -j IP-MASQ-AGENT'",
-            "link": "",
-            "processes": [
-                {
-                    "id": "3816045c-bf5e-4b03-bb86-386c72467fb2",
-                    "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
-                    "emitTimestamp": "2018-09-27T19:38:24.628033940Z",
-                    "signal": {
-                        "id": "e61708de-c28c-11e8-8b63-2a9ca9c2a8fc",
-                        "containerId": "8752b7975f10",
-                        "time": "2018-09-27T19:38:24.617104830Z",
-                        "name": "iptables",
-                        "args": "-w2 -C POSTROUTING -t nat -m comment --comment ip-masq-agent: ensure nat POSTROUTING directs all non-LOCAL destination traffic to our custom IP-MASQ-AGENT chain -m addrtype ! --dst-type LOCAL -j IP-MASQ-AGENT",
-                        "execFilePath": "/sbin/iptables",
-                        "pid": 6250,
-                        "uid": 4294967295,
-                        "gid": 4294967295
-                    }
-                }
-            ]
-        },
-        {
-            "message": "Detected running process 'iptables' with arguments '-w2 -N IP-MASQ-AGENT -t nat'",
-            "link": "",
-            "processes": [
-                {
-                    "id": "4e204df1-e0a5-4ade-b862-beb1eaeb8902",
-                    "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
-                    "emitTimestamp": "2018-09-27T19:37:26.589265059Z",
-                    "signal": {
-                        "id": "c37ef624-c28c-11e8-b2fc-66a1c0eb9ad1",
-                        "containerId": "9ec57a6fc645",
-                        "time": "2018-09-27T19:37:26.568775287Z",
-                        "name": "iptables",
-                        "args": "-w2 -N IP-MASQ-AGENT -t nat",
-                        "execFilePath": "/sbin/iptables",
-                        "pid": 6582,
-                        "uid": 4294967295,
-                        "gid": 4294967295
-                    }
-                }
-            ]
-        },
-        {
-            "message": "Detected running process 'iptables' with arguments '-w2 -N IP-MASQ-AGENT -t nat'",
-            "link": "",
-            "processes": [
-                {
-                    "id": "4fd7cc4f-83ea-4fe3-80f7-5088fc617ab2",
-                    "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
-                    "emitTimestamp": "2018-09-27T19:38:17.329880343Z",
-                    "signal": {
-                        "id": "e1bd57b6-c28c-11e8-a580-e2bed353bb65",
-                        "containerId": "aa290fa0aaf2",
-                        "time": "2018-09-27T19:38:17.317080286Z",
-                        "name": "iptables",
-                        "args": "-w2 -N IP-MASQ-AGENT -t nat",
-                        "execFilePath": "/sbin/iptables",
-                        "pid": 5851,
-                        "uid": 4294967295,
-                        "gid": 4294967295
-                    }
-                }
-            ]
-        },
-        {
-            "message": "Detected running process 'iptables' with arguments '-w2 -N IP-MASQ-AGENT -t nat'",
-            "link": "",
-            "processes": [
-                {
-                    "id": "658aaed2-8296-41fd-b026-2351f684b656",
-                    "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
-                    "emitTimestamp": "2018-09-27T19:38:23.486789425Z",
-                    "signal": {
-                        "id": "e568dad4-c28c-11e8-b5e7-92386806e2d4",
-                        "containerId": "066e2adae0e8",
-                        "time": "2018-09-27T19:38:23.480865835Z",
-                        "name": "iptables",
-                        "args": "-w2 -N IP-MASQ-AGENT -t nat",
-                        "execFilePath": "/sbin/iptables",
-                        "pid": 6973,
-                        "uid": 4294967295,
-                        "gid": 4294967295
-                    }
-                }
-            ]
-        },
-        {
-            "message": "Detected running process 'iptables' with arguments '-w2 -N IP-MASQ-AGENT -t nat'",
-            "link": "",
-            "processes": [
-                {
-                    "id": "bc030882-a439-4d36-a6fe-0ba2be871a61",
-                    "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
-                    "emitTimestamp": "2018-09-27T19:38:24.626821095Z",
-                    "signal": {
-                        "id": "e616ca86-c28c-11e8-8b63-2a9ca9c2a8fc",
-                        "containerId": "8752b7975f10",
-                        "time": "2018-09-27T19:38:24.615423778Z",
-                        "name": "iptables",
-                        "args": "-w2 -N IP-MASQ-AGENT -t nat",
-                        "execFilePath": "/sbin/iptables",
-                        "pid": 6249,
-                        "uid": 4294967295,
-                        "gid": 4294967295
-                    }
-                }
-            ]
-        },
-        {
-            "message": "Detected running process 'iptables' with arguments '-w2 -C POSTROUTING -t nat -m comment --comment ip-masq-agent: ensure nat POSTROUTING directs all non-LOCAL destination traffic to our custom IP-MASQ-AGENT chain -m addrtype ! --dst-type LOCAL -j IP-MASQ-AGENT'",
-            "link": "",
-            "processes": [
-                {
-                    "id": "c274a3df-07eb-4d56-b3a9-75d487c5aba4",
-                    "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
-                    "emitTimestamp": "2018-09-27T19:37:26.591030985Z",
-                    "signal": {
-                        "id": "c37f423c-c28c-11e8-b2fc-66a1c0eb9ad1",
-                        "containerId": "9ec57a6fc645",
-                        "time": "2018-09-27T19:37:26.570350485Z",
-                        "name": "iptables",
-                        "args": "-w2 -C POSTROUTING -t nat -m comment --comment ip-masq-agent: ensure nat POSTROUTING directs all non-LOCAL destination traffic to our custom IP-MASQ-AGENT chain -m addrtype ! --dst-type LOCAL -j IP-MASQ-AGENT",
-                        "execFilePath": "/sbin/iptables",
-                        "pid": 6583,
-                        "uid": 4294967295,
-                        "gid": 4294967295
-                    }
-                }
-            ]
-        },
-        {
-            "message": "Detected running process 'iptables' with arguments '-w2 -C POSTROUTING -t nat -m comment --comment ip-masq-agent: ensure nat POSTROUTING directs all non-LOCAL destination traffic to our custom IP-MASQ-AGENT chain -m addrtype ! --dst-type LOCAL -j IP-MASQ-AGENT'",
-            "link": "",
-            "processes": [
-                {
-                    "id": "c47feb3a-54a0-4eda-9bd0-ecb28298d35f",
-                    "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
-                    "emitTimestamp": "2018-09-27T19:38:17.330825502Z",
-                    "signal": {
-                        "id": "e1bd8c04-c28c-11e8-a580-e2bed353bb65",
-                        "containerId": "aa290fa0aaf2",
-                        "time": "2018-09-27T19:38:17.318716799Z",
-                        "name": "iptables",
-                        "args": "-w2 -C POSTROUTING -t nat -m comment --comment ip-masq-agent: ensure nat POSTROUTING directs all non-LOCAL destination traffic to our custom IP-MASQ-AGENT chain -m addrtype ! --dst-type LOCAL -j IP-MASQ-AGENT",
-                        "execFilePath": "/sbin/iptables",
-                        "pid": 5852,
-                        "uid": 4294967295,
-                        "gid": 4294967295
-                    }
-                }
-            ]
-        },
-        {
-            "message": "Detected running process 'iptables' with arguments '-w2 -N IP-MASQ-AGENT -t nat'",
-            "link": "",
-            "processes": [
-                {
-                    "id": "e5a8d8a8-4955-45de-9033-2d37fc92a953",
-                    "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
-                    "emitTimestamp": "2018-09-27T19:38:23.972780922Z",
-                    "signal": {
-                        "id": "e5b2fcf4-c28c-11e8-89b1-7acb63520539",
-                        "containerId": "f293f940725e",
-                        "time": "2018-09-27T19:38:23.969739052Z",
-                        "name": "iptables",
-                        "args": "-w2 -N IP-MASQ-AGENT -t nat",
-                        "execFilePath": "/sbin/iptables",
-                        "pid": 6356,
-                        "uid": 4294967295,
-                        "gid": 4294967295
-                    }
-                }
-            ]
-        },
-        {
-            "message": "Detected running process 'iptables' with arguments '-w2 -C POSTROUTING -t nat -m comment --comment ip-masq-agent: ensure nat POSTROUTING directs all non-LOCAL destination traffic to our custom IP-MASQ-AGENT chain -m addrtype ! --dst-type LOCAL -j IP-MASQ-AGENT'",
-            "link": "",
-            "processes": [
-                {
-                    "id": "e7433ed0-af40-44f3-820b-35e936425c37",
-                    "deploymentId": "70ee2b9a-c28c-11e8-b8c4-42010a8a0fe9",
-                    "emitTimestamp": "2018-09-27T19:38:24.005285573Z",
-                    "signal": {
-                        "id": "e5b7eec6-c28c-11e8-89b1-7acb63520539",
-                        "containerId": "f293f940725e",
-                        "time": "2018-09-27T19:38:23.971347077Z",
-                        "name": "iptables",
-                        "args": "-w2 -C POSTROUTING -t nat -m comment --comment ip-masq-agent: ensure nat POSTROUTING directs all non-LOCAL destination traffic to our custom IP-MASQ-AGENT chain -m addrtype ! --dst-type LOCAL -j IP-MASQ-AGENT",
-                        "execFilePath": "/sbin/iptables",
-                        "pid": 6357,
-                        "uid": 4294967295,
-                        "gid": 4294967295
-                    }
-                }
-            ]
-        }
-    ],
+            }
+        ]
+    },
     "enforcement_actions": null,
     "time": "2018-05-21T18:06:04.385651124Z",
     "stale": false,

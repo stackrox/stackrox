@@ -21,6 +21,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"id: ID!",
 		"lifecycleStage: LifecycleStage!",
 		"policy: Policy",
+		"processViolation: Alert_ProcessViolation",
 		"snoozeTill: Time!",
 		"state: ViolationState!",
 		"time: Time!",
@@ -30,10 +31,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"action: EnforcementAction!",
 		"message: String!",
 	})
+	builder.AddType("Alert_ProcessViolation", []string{
+		"message: String!",
+		"processes: [ProcessIndicator]!",
+	})
 	builder.AddType("Alert_Violation", []string{
 		"link: String!",
 		"message: String!",
-		"processes: [ProcessIndicator]!",
 	})
 	builder.AddType("CSCC", []string{
 		"serviceAccount: String!",
@@ -774,6 +778,12 @@ func (resolver *alertResolver) Policy() (*policyResolver, error) {
 	return resolver.root.wrapPolicy(value, true, nil)
 }
 
+func (resolver *alertResolver) ProcessViolation() (*alert_ProcessViolationResolver, error) {
+	resolver.ensureData()
+	value := resolver.data.GetProcessViolation()
+	return resolver.root.wrapAlert_ProcessViolation(value, true, nil)
+}
+
 func (resolver *alertResolver) SnoozeTill() (graphql.Time, error) {
 	resolver.ensureData()
 	value := resolver.data.GetSnoozeTill()
@@ -835,6 +845,39 @@ func (resolver *alert_EnforcementResolver) Message() string {
 	return value
 }
 
+type alert_ProcessViolationResolver struct {
+	root *Resolver
+	data *storage.Alert_ProcessViolation
+}
+
+func (resolver *Resolver) wrapAlert_ProcessViolation(value *storage.Alert_ProcessViolation, ok bool, err error) (*alert_ProcessViolationResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_ProcessViolationResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_ProcessViolations(values []*storage.Alert_ProcessViolation, err error) ([]*alert_ProcessViolationResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_ProcessViolationResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_ProcessViolationResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *alert_ProcessViolationResolver) Message() string {
+	value := resolver.data.GetMessage()
+	return value
+}
+
+func (resolver *alert_ProcessViolationResolver) Processes() ([]*processIndicatorResolver, error) {
+	value := resolver.data.GetProcesses()
+	return resolver.root.wrapProcessIndicators(value, nil)
+}
+
 type alert_ViolationResolver struct {
 	root *Resolver
 	data *storage.Alert_Violation
@@ -866,11 +909,6 @@ func (resolver *alert_ViolationResolver) Link() string {
 func (resolver *alert_ViolationResolver) Message() string {
 	value := resolver.data.GetMessage()
 	return value
-}
-
-func (resolver *alert_ViolationResolver) Processes() ([]*processIndicatorResolver, error) {
-	value := resolver.data.GetProcesses()
-	return resolver.root.wrapProcessIndicators(value, nil)
 }
 
 type cSCCResolver struct {

@@ -129,7 +129,7 @@ describe('Violations page', () => {
             .find(ViolationsPageSelectors.sidePanel.tabs)
             .get(ViolationsPageSelectors.sidePanel.getTabByIndex(0))
             .click();
-        cy.get(ViolationsPageSelectors.runtimeProcessCards).should('have.length', 10);
+        cy.get(ViolationsPageSelectors.runtimeProcessCards).should('have.length', 1);
     });
 
     it('should contain correct action buttons for the lifecycle stage', () => {

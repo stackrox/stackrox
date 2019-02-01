@@ -41,8 +41,12 @@ func (r RequiredMapValueQueryBuilder) Query(fields *storage.PolicyFields, option
 	}
 	q = search.NewQueryBuilder().AddMapQuery(r.FieldLabel, keyValuePolicy.GetKey(), valueQuery).ProtoQuery()
 
-	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) []*storage.Alert_Violation {
-		return []*storage.Alert_Violation{{Message: fmt.Sprintf("Required %s not found (%s)", r.FieldName, printKeyValuePolicy(keyValuePolicy))}}
+	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) searchbasedpolicies.Violations {
+		return searchbasedpolicies.Violations{
+			AlertViolations: []*storage.Alert_Violation{
+				{Message: fmt.Sprintf("Required %s not found (%s)", r.FieldName, printKeyValuePolicy(keyValuePolicy))},
+			},
+		}
 	}
 	return
 }

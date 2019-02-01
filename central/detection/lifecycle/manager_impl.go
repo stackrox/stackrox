@@ -281,12 +281,9 @@ func containersToKill(alerts []*storage.Alert, indicatorsToInfo map[string]indic
 		if alert.GetEnforcement().GetAction() != storage.EnforcementAction_KILL_POD_ENFORCEMENT {
 			continue
 		}
-		violations := alert.GetViolations()
-		for _, v := range violations {
-			for _, singleIndicator := range v.GetProcesses() {
-				if infoWithInjector, ok := indicatorsToInfo[singleIndicator.GetId()]; ok {
-					containersSet[infoWithInjector.indicator.GetSignal().GetContainerId()] = infoWithInjector
-				}
+		for _, singleIndicator := range alert.GetProcessViolation().GetProcesses() {
+			if infoWithInjector, ok := indicatorsToInfo[singleIndicator.GetId()]; ok {
+				containersSet[infoWithInjector.indicator.GetSignal().GetContainerId()] = infoWithInjector
 			}
 		}
 	}

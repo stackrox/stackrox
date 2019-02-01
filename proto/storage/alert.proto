@@ -18,11 +18,17 @@ message Alert {
     Deployment deployment                    = 4 [(gogoproto.moretags) = "search_index:\"Deployment Id,Cluster,Namespace,Label,Deployment\""];
 
     message Violation {
-        string message                       = 1 [(gogoproto.moretags) = "search:\"Violation\""];
-        string link                          = 2;
-        repeated ProcessIndicator processes  = 3 [(gogoproto.moretags) = "search:\"-\""];
+        string message                                 = 1 [(gogoproto.moretags) = "search:\"Violation\""];
+        string link                                    = 2;
+        repeated ProcessIndicator DEPRECATED_processes = 3 [(gogoproto.moretags) = "search:\"-\""];
     }
     repeated Violation violations            = 5;
+
+    message ProcessViolation {
+        string message                      = 1;
+        repeated ProcessIndicator processes = 2 [(gogoproto.moretags) = "search:\"-\""];
+    }
+    ProcessViolation process_violation      = 13;
 
     message Enforcement {
         storage.EnforcementAction action = 1 [(gogoproto.moretags) = "search:\"Enforcement\""];

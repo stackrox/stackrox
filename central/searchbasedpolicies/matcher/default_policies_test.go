@@ -20,6 +20,7 @@ import (
 	processIndicatorIndex "github.com/stackrox/rox/central/processindicator/index"
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/store"
+	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -101,6 +102,10 @@ func (suite *DefaultPoliciesTestSuite) mustIndexDepAndImages(deployment *storage
 	}
 }
 
+func wrapAlertViolations(slice []*storage.Alert_Violation) searchbasedpolicies.Violations {
+	return searchbasedpolicies.Violations{AlertViolations: slice}
+}
+
 func imageWithComponents(components []*storage.ImageScanComponent) *storage.Image {
 	return &storage.Image{
 		Id:   uuid.NewV4().String(),
@@ -164,7 +169,7 @@ func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args
 type testCase struct {
 	policyName         string
 	policy             *storage.Policy
-	expectedViolations map[string][]*storage.Alert_Violation
+	expectedViolations map[string]searchbasedpolicies.Violations
 
 	// If shouldNotMatch is specified (which is the case for policies that check for the absence of something), we verify that
 	// it matches everything except shouldNotMatch.
@@ -459,18 +464,19 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	deploymentTestCases := []testCase{
 		{
 			policyName: "Latest tag",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				fixtureDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				fixtureDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Image tag 'latest' matched latest",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "DockerHub NGINX 1.10",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				fixtureDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				fixtureDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Image tag '1.10' matched 1.10",
 					},
@@ -481,7 +487,8 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						Message: "Image remote 'library/nginx' matched nginx",
 					},
 				},
-				nginx110Dep.GetId(): {
+				},
+				nginx110Dep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Image tag '1.10' matched 1.10",
 					},
@@ -491,103 +498,113 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 					{
 						Message: "Image remote 'library/nginx' matched nginx",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Alpine Linux Package Manager (apk) in Image",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				apkDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				apkDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Component name 'apk' matched apk",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Ubuntu Package Manager in Image",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				componentDeps["apt"].GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				componentDeps["apt"].GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Component name 'apt' matched apt|dpkg",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Curl in Image",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				curlDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				curlDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Component name 'curl' matched curl",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Red Hat Package Manager in Image",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				componentDeps["dnf"].GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				componentDeps["dnf"].GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Component name 'dnf' matched rpm|dnf|yum",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Wget in Image",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				componentDeps["wget"].GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				componentDeps["wget"].GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Component name 'wget' matched wget",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Mount Docker Socket",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				dockerSockDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				dockerSockDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Volume source '/var/run/docker.sock' matched /var/run/docker.sock",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "90-Day Image Age",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				oldImageDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				oldImageDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: fmt.Sprintf("Time of image creation '%s' was more than 90 days ago", readable.Time(oldImageCreationTime)),
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "30-Day Scan Age",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				oldScannedDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				oldScannedDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: fmt.Sprintf("Time of last scan '%s' was more than 30 days ago", readable.Time(oldScannedTime)),
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Secure Shell (ssh) Port Exposed in Image",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				imagePort22Dep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				imagePort22Dep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Dockerfile Line 'EXPOSE 22/tcp' matches the rule EXPOSE (22/tcp|\\s+22/tcp)",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Secure Shell (ssh) Port Exposed",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				containerPort22Dep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				containerPort22Dep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Port '22' matched 22",
 					},
@@ -595,40 +612,45 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						Message: "Protocol 'tcp' matched tcp",
 					},
 				},
+				},
 			},
 		},
 		{
 			policyName: "Privileged Container",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				fixtureDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				fixtureDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Privileged container found",
 					},
 				},
-				heartbleedDep.GetId(): {
+				},
+				heartbleedDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Privileged container found",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Insecure specified in CMD",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				insecureCMDDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				insecureCMDDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Dockerfile Line 'CMD do an insecure thing' matches the rule CMD .*insecure.*",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Improper Usage of Orchestrator Secrets Volume",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				runSecretsDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				runSecretsDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Dockerfile Line 'VOLUME /run/secrets' matches the rule VOLUME /run/secrets",
 					},
+				},
 				},
 			},
 		},
@@ -675,77 +697,84 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		},
 		{
 			policyName: "CAP_SYS_ADMIN capability added",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				sysAdminDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				sysAdminDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "CAP_SYS_ADMIN was in the ADD CAPABILITIES list",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Shellshock: CVE-2014-6271",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				shellshockDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				shellshockDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-6271'",
 						Link:    "https://shellshock",
 					},
 				},
-				fixtureDep.GetId(): {
+				},
+				fixtureDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-6271'",
 						Link:    "https://nvd.nist.gov/vuln/detail/CVE-2014-6271",
 					},
 				},
+				},
 			},
 		},
 		{
 			policyName: "Apache Struts: CVE-2017-5638",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				strutsDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				strutsDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "CVE CVE-2017-5638 matched regex 'CVE-2017-5638'",
 						Link:    "https://struts",
 					},
 				},
+				},
 			},
 		},
 		{
 			policyName: "Heartbleed: CVE-2014-0160",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				heartbleedDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				heartbleedDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "CVE CVE-2014-0160 matched regex 'CVE-2014-0160'",
 						Link:    "https://heartbleed",
 					},
 				},
+				},
 			},
 		},
 		{
 			policyName: "No resource requests or limits specified",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				fixtureDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				fixtureDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{Message: "The CPU resource limit of 0 is equal to the threshold of 0.00"},
 					{Message: "The memory resource limit of 0 is equal to the threshold of 0.00"},
 					{Message: "The memory resource request of 0 is equal to the threshold of 0.00"},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Environment Variable Contains Secret",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				secretEnvDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				secretEnvDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Container Environment (key='THIS_IS_SECRET_VAR', value='stealthmode') matched environment policy (key = '.*SECRET.*', value = '.*')",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "CVSS >= 6 and Privileged",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				heartbleedDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				heartbleedDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Found a CVSS score of 6 (greater than or equal to 6.0) (cve: CVE-2014-0160)",
 					},
@@ -753,27 +782,30 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						Message: "Privileged container found",
 					},
 				},
+				},
 			},
 		},
 		{
 			policyName: "CVSS >= 7",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				strutsDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				strutsDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Found a CVSS score of 8 (greater than or equal to 7.0) (cve: CVE-2017-5638)",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "ADD Command used instead of COPY",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				addDockerFileDep.GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				addDockerFileDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Dockerfile Line 'ADD deploy.sh' matches the rule ADD .*",
 					},
 				},
-				fixtureDep.GetId(): {
+				},
+				fixtureDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Dockerfile Line 'ADD FILE:blah' matches the rule ADD .*",
 					},
@@ -781,71 +813,66 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						Message: "Dockerfile Line 'ADD file:4eedf861fb567fffb2694b65ebdd58d5e371a2c28c3863f363f333cb34e5eb7b in /' matches the rule ADD .*",
 					},
 				},
+				},
 			},
 		},
 		{
 			policyName: "nmap Execution",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				fixtureDep.GetId(): {
-					{
-						Message:   "Detected executions of binary '/usr/bin/nmap' with 2 different arguments",
-						Processes: []*storage.ProcessIndicator{nmapIndicatorfixtureDep1, nmapIndicatorfixtureDep2},
-					},
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				fixtureDep.GetId(): {ProcessViolation: &storage.Alert_ProcessViolation{
+					Message:   "Detected executions of binary '/usr/bin/nmap' with 2 different arguments",
+					Processes: []*storage.ProcessIndicator{nmapIndicatorfixtureDep1, nmapIndicatorfixtureDep2},
 				},
-				nginx110Dep.GetId(): {
-					{
-						Message:   "Detected execution of binary '/usr/bin/nmap'",
-						Processes: []*storage.ProcessIndicator{nmapIndicatorNginx110Dep},
-					},
+				},
+				nginx110Dep.GetId(): {ProcessViolation: &storage.Alert_ProcessViolation{
+					Message:   "Detected execution of binary '/usr/bin/nmap'",
+					Processes: []*storage.ProcessIndicator{nmapIndicatorNginx110Dep},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Process Targeting Cluster Kubelet Endpoint",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				containerPort22Dep.GetId(): {
-					{
-						Message:   "Detected executions of 2 binaries with 2 different arguments",
-						Processes: []*storage.ProcessIndicator{kubeletIndicator, kubeletIndicator2},
-					},
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				containerPort22Dep.GetId(): {ProcessViolation: &storage.Alert_ProcessViolation{
+					Message:   "Detected executions of 2 binaries with 2 different arguments",
+					Processes: []*storage.ProcessIndicator{kubeletIndicator, kubeletIndicator2},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Ubuntu Package Manager Execution",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				fixtureDep.GetId(): {
-					{
-						Message:   "Detected execution of binary '/usr/bin/apt'",
-						Processes: []*storage.ProcessIndicator{fixtureDepAptIndicator},
-					},
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				fixtureDep.GetId(): {ProcessViolation: &storage.Alert_ProcessViolation{
+					Message:   "Detected execution of binary '/usr/bin/apt'",
+					Processes: []*storage.ProcessIndicator{fixtureDepAptIndicator},
 				},
-				sysAdminDep.GetId(): {
-					{
-						Message:   "Detected execution of binary '/usr/bin/apt' with arguments 'install blah'",
-						Processes: []*storage.ProcessIndicator{sysAdminDepAptIndicator},
-					},
+				},
+				sysAdminDep.GetId(): {ProcessViolation: &storage.Alert_ProcessViolation{
+					Message:   "Detected execution of binary '/usr/bin/apt' with arguments 'install blah'",
+					Processes: []*storage.ProcessIndicator{sysAdminDepAptIndicator},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Shell Spawned by Java Application",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				fixtureDep.GetId(): {
-					{
-						Message:   "Detected execution of binary '/bin/bash' with arguments '-attack'",
-						Processes: []*storage.ProcessIndicator{fixtureDepJavaIndicator},
-					},
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				fixtureDep.GetId(): {ProcessViolation: &storage.Alert_ProcessViolation{
+					Message:   "Detected execution of binary '/bin/bash' with arguments '-attack'",
+					Processes: []*storage.ProcessIndicator{fixtureDepJavaIndicator},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Emergency Deployment Annotation",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				depWithEnforcementBypassAnnotation.GetId(): {
-					{
-						Message: "Disallowed annotation found (key = 'admission.stackrox.io/break-glass')",
-					},
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				depWithEnforcementBypassAnnotation.GetId(): {AlertViolations: []*storage.Alert_Violation{{
+					Message: "Disallowed annotation found (key = 'admission.stackrox.io/break-glass')",
+				},
+				},
 				},
 			},
 		},
@@ -880,7 +907,8 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				// Test match one
 				gotFromMatchOne, err := m.MatchOne(suite.deploymentIndexer, id)
 				require.NoError(t, err)
-				assert.ElementsMatch(t, violations, gotFromMatchOne, "Expected violations from match one %+v don't match what we got %+v", violations, gotFromMatchOne)
+				assert.ElementsMatch(t, violations.AlertViolations, gotFromMatchOne.AlertViolations, "Expected violations from match one %+v don't match what we got %+v", violations, gotFromMatchOne)
+				assert.Equal(t, violations.ProcessViolation, gotFromMatchOne.ProcessViolation)
 			}
 		})
 	}
@@ -888,16 +916,17 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	imageTestCases := []testCase{
 		{
 			policyName: "Latest tag",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				fixtureDep.GetContainers()[1].GetImage().GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				fixtureDep.GetContainers()[1].GetImage().GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{Message: "Image tag 'latest' matched latest"},
+				},
 				},
 			},
 		},
 		{
 			policyName: "DockerHub NGINX 1.10",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				fixtureDep.GetContainers()[0].GetImage().GetId(): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				fixtureDep.GetContainers()[0].GetImage().GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Image tag '1.10' matched 1.10",
 					},
@@ -908,7 +937,8 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 						Message: "Image remote 'library/nginx' matched nginx",
 					},
 				},
-				suite.imageIDFromDep(nginx110Dep): {
+				},
+				suite.imageIDFromDep(nginx110Dep): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Image tag '1.10' matched 1.10",
 					},
@@ -918,106 +948,117 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 					{
 						Message: "Image remote 'library/nginx' matched nginx",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Alpine Linux Package Manager (apk) in Image",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				suite.imageIDFromDep(apkDep): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				suite.imageIDFromDep(apkDep): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Component name 'apk' matched apk",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Ubuntu Package Manager in Image",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				suite.imageIDFromDep(componentDeps["apt"]): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				suite.imageIDFromDep(componentDeps["apt"]): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Component name 'apt' matched apt|dpkg",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Curl in Image",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				suite.imageIDFromDep(curlDep): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				suite.imageIDFromDep(curlDep): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Component name 'curl' matched curl",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Red Hat Package Manager in Image",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				suite.imageIDFromDep(componentDeps["dnf"]): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				suite.imageIDFromDep(componentDeps["dnf"]): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Component name 'dnf' matched rpm|dnf|yum",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Wget in Image",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				suite.imageIDFromDep(componentDeps["wget"]): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				suite.imageIDFromDep(componentDeps["wget"]): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Component name 'wget' matched wget",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "90-Day Image Age",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				suite.imageIDFromDep(oldImageDep): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				suite.imageIDFromDep(oldImageDep): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: fmt.Sprintf("Time of image creation '%s' was more than 90 days ago", readable.Time(oldImageCreationTime)),
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "30-Day Scan Age",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				suite.imageIDFromDep(oldScannedDep): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				suite.imageIDFromDep(oldScannedDep): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: fmt.Sprintf("Time of last scan '%s' was more than 30 days ago", readable.Time(oldScannedTime)),
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Secure Shell (ssh) Port Exposed in Image",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				suite.imageIDFromDep(imagePort22Dep): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				suite.imageIDFromDep(imagePort22Dep): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Dockerfile Line 'EXPOSE 22/tcp' matches the rule EXPOSE (22/tcp|\\s+22/tcp)",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Insecure specified in CMD",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				suite.imageIDFromDep(insecureCMDDep): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				suite.imageIDFromDep(insecureCMDDep): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Dockerfile Line 'CMD do an insecure thing' matches the rule CMD .*insecure.*",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "Improper Usage of Orchestrator Secrets Volume",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				suite.imageIDFromDep(runSecretsDep): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				suite.imageIDFromDep(runSecretsDep): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Dockerfile Line 'VOLUME /run/secrets' matches the rule VOLUME /run/secrets",
 					},
+				},
 				},
 			},
 		},
@@ -1032,70 +1073,78 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		},
 		{
 			policyName: "Shellshock: CVE-2014-6271",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				suite.imageIDFromDep(shellshockDep): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				suite.imageIDFromDep(shellshockDep): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-6271'",
 						Link:    "https://shellshock",
 					},
 				},
-				fixtureDep.GetContainers()[1].GetImage().GetId(): {
+				},
+				fixtureDep.GetContainers()[1].GetImage().GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-6271'",
 						Link:    "https://nvd.nist.gov/vuln/detail/CVE-2014-6271",
 					},
 				},
+				},
 			},
 		},
 		{
 			policyName: "Apache Struts: CVE-2017-5638",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				suite.imageIDFromDep(strutsDep): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				suite.imageIDFromDep(strutsDep): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "CVE CVE-2017-5638 matched regex 'CVE-2017-5638'",
 						Link:    "https://struts",
 					},
 				},
+				},
 			},
 		},
 		{
 			policyName: "Heartbleed: CVE-2014-0160",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				suite.imageIDFromDep(heartbleedDep): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				suite.imageIDFromDep(heartbleedDep): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "CVE CVE-2014-0160 matched regex 'CVE-2014-0160'",
 						Link:    "https://heartbleed",
 					},
 				},
+				},
 			},
 		},
 		{
 			policyName: "CVSS >= 7",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				suite.imageIDFromDep(strutsDep): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				suite.imageIDFromDep(strutsDep): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Found a CVSS score of 8 (greater than or equal to 7.0) (cve: CVE-2017-5638)",
 					},
+				},
 				},
 			},
 		},
 		{
 			policyName: "ADD Command used instead of COPY",
-			expectedViolations: map[string][]*storage.Alert_Violation{
-				suite.imageIDFromDep(addDockerFileDep): {
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				suite.imageIDFromDep(addDockerFileDep): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Dockerfile Line 'ADD deploy.sh' matches the rule ADD .*",
 					},
 				},
-				fixtureDep.GetContainers()[0].GetImage().GetId(): {
+				},
+				fixtureDep.GetContainers()[0].GetImage().GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Dockerfile Line 'ADD FILE:blah' matches the rule ADD .*",
 					},
 				},
-				fixtureDep.GetContainers()[1].GetImage().GetId(): {
+				},
+				fixtureDep.GetContainers()[1].GetImage().GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
 						Message: "Dockerfile Line 'ADD file:4eedf861fb567fffb2694b65ebdd58d5e371a2c28c3863f363f333cb34e5eb7b in /' matches the rule ADD .*",
 					},
+				},
 				},
 			},
 		},
@@ -1131,13 +1180,13 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				// Test match one
 				gotFromMatchOne, err := m.MatchOne(suite.imageIndexer, id)
 				require.NoError(t, err)
-				assert.ElementsMatch(t, violations, gotFromMatchOne, "Expected violations from match one %+v don't match what we got %+v", violations, gotFromMatchOne)
+				assert.ElementsMatch(t, violations.AlertViolations, gotFromMatchOne.AlertViolations, "Expected violations from match one %+v don't match what we got %+v", violations, gotFromMatchOne)
 			}
 		})
 	}
 }
 
-func validateImageMatches(matches map[string][]*storage.Alert_Violation, allImages []search.Result, c testCase, t *testing.T) {
+func validateImageMatches(matches map[string]searchbasedpolicies.Violations, allImages []search.Result, c testCase, t *testing.T) {
 	if len(c.shouldNotMatch) > 0 {
 		assert.Nil(t, c.expectedViolations, "Don't specify expected violations and shouldNotMatch")
 		for id := range c.shouldNotMatch {
@@ -1155,7 +1204,7 @@ func validateImageMatches(matches map[string][]*storage.Alert_Violation, allImag
 			match, exists := matches[id]
 			require.True(t, exists, "Should have matched %s. Got %+v", id, matches)
 			if c.sampleViolationForMatched != "" {
-				assert.Equal(t, c.sampleViolationForMatched, match[0].GetMessage())
+				assert.Equal(t, c.sampleViolationForMatched, match.AlertViolations[0].GetMessage())
 			}
 		}
 		return
@@ -1167,12 +1216,13 @@ func validateImageMatches(matches map[string][]*storage.Alert_Violation, allImag
 		if !assert.True(t, ok, "Id '%s' didn't match, but should have. Got: %+v", id, matches) {
 			continue
 		}
-		assert.ElementsMatch(t, violations, got, "Expected violations %+v don't match what we got %+v", violations, got)
+		assert.ElementsMatch(t, violations.AlertViolations, got.AlertViolations, "Expected violations %+v don't match what we got %+v", violations, got)
+		assert.Equal(t, violations.ProcessViolation, got.ProcessViolation, "Expected violations %+v don't match what we got %+v", violations, got)
 	}
 	assert.Len(t, matches, len(c.expectedViolations))
 }
 
-func validateDeploymentMatches(matches map[string][]*storage.Alert_Violation, allDeployments []search.Result, c testCase, t *testing.T) {
+func validateDeploymentMatches(matches map[string]searchbasedpolicies.Violations, allDeployments []search.Result, c testCase, t *testing.T) {
 	if len(c.shouldNotMatch) > 0 {
 		assert.Nil(t, c.expectedViolations, "Don't specify expected violations and shouldNotMatch")
 		for id := range c.shouldNotMatch {
@@ -1188,7 +1238,7 @@ func validateDeploymentMatches(matches map[string][]*storage.Alert_Violation, al
 			match, exists := matches[id]
 			require.True(t, exists, "Should have matched %s", id)
 			if c.sampleViolationForMatched != "" {
-				assert.Equal(t, c.sampleViolationForMatched, match[0].GetMessage())
+				assert.Equal(t, c.sampleViolationForMatched, match.AlertViolations[0].GetMessage())
 			}
 		}
 		return
@@ -1199,7 +1249,8 @@ func validateDeploymentMatches(matches map[string][]*storage.Alert_Violation, al
 		if !assert.True(t, ok, "Id '%s' didn't match, but should have. Got: %+v", id, matches) {
 			continue
 		}
-		assert.ElementsMatch(t, violations, got, "Expected violations %+v don't match what we got %+v", violations, got)
+		assert.ElementsMatch(t, violations.AlertViolations, got.AlertViolations, "Expected violations %+v don't match what we got %+v", violations, got)
+		assert.Equal(t, violations.ProcessViolation, got.ProcessViolation)
 
 	}
 	assert.Len(t, matches, len(c.expectedViolations))

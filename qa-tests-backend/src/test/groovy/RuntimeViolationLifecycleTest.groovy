@@ -141,10 +141,11 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         assert originalAptGetAlert.getState() == ViolationState.ACTIVE
         assert originalAptGetAlert.getDeployment().getId() == DEPLOYMENT.getDeploymentUid()
         assert originalAptGetAlert.getLifecycleStage() == PolicyOuterClass.LifecycleStage.RUNTIME
-        assert originalAptGetAlert.getViolationsCount() == 1
-        def subViolation = originalAptGetAlert.getViolations(0)
-        assert subViolation.getProcessesCount() > 0
-        for (ProcessIndicator process : subViolation.getProcessesList()) {
+        assert originalAptGetAlert.getProcessViolation() != null
+        def processViolation = originalAptGetAlert.getProcessViolation()
+        assert processViolation != null
+        assert processViolation.getProcessesCount() > 0
+        for (ProcessIndicator process : processViolation.getProcessesList()) {
             assert process.getSignal().getName() in ["apt-get", "dpkg", "apt"]
             if (process.getSignal().getName() == "apt-get") {
                 assert process.getSignal().getArgs() == "-y update"

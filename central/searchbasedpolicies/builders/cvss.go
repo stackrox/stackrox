@@ -35,14 +35,14 @@ func (c CVSSQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sea
 		[]search.FieldLabel{search.CVSS, search.CVE},
 		[]string{search.NumericQueryString(cvss.GetOp(), cvss.GetValue()), search.WildcardString}).
 		ProtoQuery()
-	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) []*storage.Alert_Violation {
+	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) searchbasedpolicies.Violations {
 		cvssMatches := result.Matches[cvssSearchField.GetFieldPath()]
 		cveMatches := result.Matches[cveSearchField.GetFieldPath()]
 		if len(cvssMatches) != len(cveMatches) {
 			logger.Errorf("Got different number of matches for CVSS and CVEs: %+v %+v", cvssMatches, cveMatches)
 		}
 		if len(cvssMatches) == 0 {
-			return nil
+			return searchbasedpolicies.Violations{}
 		}
 		violations := make([]*storage.Alert_Violation, 0, len(cvssMatches))
 		for i, cvssMatch := range cvssMatches {
@@ -54,7 +54,9 @@ func (c CVSSQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sea
 				Message: fmt.Sprintf("Found a CVSS score of %s (%s %.1f)%s", cvssMatch, readableOp(cvss.GetOp()), cvss.GetValue(), cve),
 			})
 		}
-		return violations
+		return searchbasedpolicies.Violations{
+			AlertViolations: violations,
+		}
 	}
 	return
 }

@@ -35,11 +35,11 @@ func getProcessIndicator(timestamp *ptypes.Timestamp) *storage.ProcessIndicator 
 }
 
 func getFakeRuntimeAlert(indicators ...*storage.ProcessIndicator) *storage.Alert {
-	v := &storage.Alert_Violation{Processes: indicators}
+	v := &storage.Alert_ProcessViolation{Processes: indicators}
 	builders.UpdateRuntimeAlertViolationMessage(v)
 	return &storage.Alert{
-		LifecycleStage: storage.LifecycleStage_RUNTIME,
-		Violations:     []*storage.Alert_Violation{v},
+		LifecycleStage:   storage.LifecycleStage_RUNTIME,
+		ProcessViolation: v,
 	}
 }
 
@@ -205,8 +205,8 @@ func (suite *AlertManagerTestSuite) TestTrimResolvedProcessesActuallyTrims() {
 	clonedAlert := protoutils.CloneStorageAlert(alert)
 	suite.False(suite.alertManager.(*alertManagerImpl).trimResolvedProcessesFromRuntimeAlert(alert))
 	suite.NotEqual(clonedAlert, alert)
-	suite.Len(alert.GetViolations()[0].GetProcesses(), 1)
-	suite.Equal(alert.GetViolations()[0].GetProcesses()[0], nowProcess)
+	suite.Len(alert.GetProcessViolation().GetProcesses(), 1)
+	suite.Equal(alert.GetProcessViolation().GetProcesses()[0], nowProcess)
 }
 
 func TestMergeProcessesFromOldIntoNew(t *testing.T) {

@@ -85,7 +85,7 @@ func (d *detectorImpl) matchWithEmptyImageIDs(p *storage.Policy, matcher searchb
 	if err != nil {
 		return nil, err
 	}
-	return violations, nil
+	return violations.AlertViolations, nil
 }
 
 func (d *detectorImpl) evaluateAlertsForDeployment(searcher searchbasedpolicies.Searcher, deployment *storage.Deployment) ([]*storage.Alert, error) {
@@ -100,7 +100,9 @@ func (d *detectorImpl) evaluateAlertsForDeployment(searcher searchbasedpolicies.
 		if enforcement, _ := policyAndDeploymentToEnforcement(p, deployment); enforcement != storage.EnforcementAction_UNSET_ENFORCEMENT {
 			violations, err = d.matchWithEmptyImageIDs(p, matcher, deployment)
 		} else {
-			violations, err = matcher.MatchOne(d.deployments, deployment.GetId())
+			var violationsWrapper searchbasedpolicies.Violations
+			violationsWrapper, err = matcher.MatchOne(d.deployments, deployment.GetId())
+			violations = violationsWrapper.AlertViolations
 		}
 		if err != nil {
 			return fmt.Errorf("evaluating violations for policy %s; deployment %s/%s: %s", p.GetName(), deployment.GetNamespace(), deployment.GetName(), err)
@@ -139,7 +141,7 @@ func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*storage.Alert, error
 			if shouldProcess != nil && !shouldProcess(dep) {
 				continue
 			}
-			newAlerts = append(newAlerts, policyDeploymentAndViolationsToAlert(p, dep, violations))
+			newAlerts = append(newAlerts, policyDeploymentAndViolationsToAlert(p, dep, violations.AlertViolations))
 		}
 		return nil
 	})

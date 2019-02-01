@@ -16,8 +16,14 @@ type PolicyQueryBuilder interface {
 	Name() string
 }
 
+// Violations represents a list of violation sub-objects.
+type Violations struct {
+	ProcessViolation *storage.Alert_ProcessViolation
+	AlertViolations  []*storage.Alert_Violation
+}
+
 // A ViolationPrinter knows how to print violation messages from a search result.
-type ViolationPrinter func(search.Result, ProcessIndicatorGetter) []*storage.Alert_Violation
+type ViolationPrinter func(search.Result, ProcessIndicatorGetter) Violations
 
 // A ProcessIndicatorGetter knows how to retrieve process indicators given its id.
 type ProcessIndicatorGetter interface {
@@ -32,9 +38,9 @@ type Searcher interface {
 // Matcher matches objects against a policy.
 type Matcher interface {
 	// Match matches the policy against all objects, returning a map from object ID to violations.
-	Match(searcher Searcher) (map[string][]*storage.Alert_Violation, error)
+	Match(searcher Searcher) (map[string]Violations, error)
 	// MatchOne matches the policy against the object with the given id.
-	MatchOne(searcher Searcher, id string) ([]*storage.Alert_Violation, error)
+	MatchOne(searcher Searcher, id string) (Violations, error)
 	// MatchMany mathes the policy against just the objects with the given ids.
-	MatchMany(searcher Searcher, ids ...string) (map[string][]*storage.Alert_Violation, error)
+	MatchMany(searcher Searcher, ids ...string) (map[string]Violations, error)
 }

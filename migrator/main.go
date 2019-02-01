@@ -25,6 +25,11 @@ func run() error {
 		log.WriteToStderr("No DB found. Nothing to migrate...")
 		return nil
 	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.WriteToStderr("Error closing DB: %v", err)
+		}
+	}()
 	err = runner.Run(db)
 	if err != nil {
 		return fmt.Errorf("migrations failed: %s", err)

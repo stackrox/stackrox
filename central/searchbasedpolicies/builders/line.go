@@ -58,13 +58,15 @@ func (c *dockerFileLineFieldQueryBuilder) Query(fields *storage.PolicyFields, op
 		[]search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
 		[]string{lineRule.GetInstruction(), search.RegexQueryString(lineRule.GetValue())}).ProtoQuery()
 
-	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) []*storage.Alert_Violation {
+	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) searchbasedpolicies.Violations {
 		instMatches := result.Matches[instSearchField.GetFieldPath()]
 		valMatches := result.Matches[valSearchField.GetFieldPath()]
 		if len(instMatches) == 0 || len(valMatches) == 0 {
-			return nil
+			return searchbasedpolicies.Violations{}
 		}
-		violations := make([]*storage.Alert_Violation, 0, len(instMatches))
+		violations := searchbasedpolicies.Violations{
+			AlertViolations: make([]*storage.Alert_Violation, 0, len(instMatches)),
+		}
 		for i, instMatch := range instMatches {
 			// This should not happen if search works as expected.
 			if i >= len(valMatches) {
@@ -72,7 +74,7 @@ func (c *dockerFileLineFieldQueryBuilder) Query(fields *storage.PolicyFields, op
 					"instMatches %+v and valMatches %+v not of equal length", lineRule, instMatches, valMatches)
 				break
 			}
-			violations = append(violations, &storage.Alert_Violation{
+			violations.AlertViolations = append(violations.AlertViolations, &storage.Alert_Violation{
 				Message: fmt.Sprintf("Dockerfile Line '%s %s' matches the rule %s %s",
 					instMatch, valMatches[i], lineRule.GetInstruction(), lineRule.GetValue()),
 			})

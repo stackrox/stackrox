@@ -70,15 +70,15 @@ func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[
 
 	q = search.NewQueryBuilder().AddLinkedFieldsWithHighlightValues(fieldLabels, queryStrings, highlights).ProtoQuery()
 
-	v = func(result search.Result, processGetter searchbasedpolicies.ProcessIndicatorGetter) []*storage.Alert_Violation {
+	v = func(result search.Result, processGetter searchbasedpolicies.ProcessIndicatorGetter) searchbasedpolicies.Violations {
 		matches := result.Matches[processIDSearchField.GetFieldPath()]
 		if len(result.Matches[processIDSearchField.GetFieldPath()]) == 0 {
 			logger.Errorf("ID %s matched process query, but couldn't find the matching id", result.ID)
-			return nil
+			return searchbasedpolicies.Violations{}
 		}
 		if processGetter == nil {
 			logger.Errorf("Ran process policy %+v but had a nil process getter.", fields)
-			return nil
+			return searchbasedpolicies.Violations{}
 		}
 		processes := make([]*storage.ProcessIndicator, 0, len(matches))
 		for _, processID := range matches {
@@ -93,15 +93,16 @@ func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[
 			processes = append(processes, process)
 		}
 		if len(processes) == 0 {
-			return nil
+			return searchbasedpolicies.Violations{}
 		}
 		sort.Slice(processes, func(i, j int) bool {
 			return protoconv.CompareProtoTimestamps(processes[i].GetSignal().GetTime(), processes[j].GetSignal().GetTime()) < 0
 		})
 
-		v := &storage.Alert_Violation{Processes: processes}
+		v := &storage.Alert_ProcessViolation{Processes: processes}
 		UpdateRuntimeAlertViolationMessage(v)
-		return []*storage.Alert_Violation{v}
+		// TODO(viswa)
+		return searchbasedpolicies.Violations{ProcessViolation: v}
 	}
 	return
 }
@@ -112,7 +113,7 @@ func (p ProcessQueryBuilder) Name() string {
 }
 
 // UpdateRuntimeAlertViolationMessage updates the violation message for a violation in-place
-func UpdateRuntimeAlertViolationMessage(v *storage.Alert_Violation) {
+func UpdateRuntimeAlertViolationMessage(v *storage.Alert_ProcessViolation) {
 	processes := v.GetProcesses()
 	if len(processes) == 0 {
 		return

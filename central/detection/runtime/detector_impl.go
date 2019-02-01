@@ -29,7 +29,7 @@ func (a *alertSlice) append(alerts ...*storage.Alert) {
 func (d *detectorImpl) policyMatcher(alerts *alertSlice, deploymentIDs ...string) func(*storage.Policy, searchbasedpolicies.Matcher, predicate.Predicate) error {
 	return func(p *storage.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
 		var err error
-		var violationsByDeployment map[string][]*storage.Alert_Violation
+		var violationsByDeployment map[string]searchbasedpolicies.Violations
 		if len(deploymentIDs) == 0 {
 			violationsByDeployment, err = matcher.Match(d.deployments)
 		} else {
@@ -114,17 +114,18 @@ func (d *detectorImpl) RemovePolicy(policyID string) error {
 }
 
 // PolicyDeploymentAndViolationsToAlert constructs an alert.
-func policyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *storage.Deployment, violations []*storage.Alert_Violation) *storage.Alert {
-	if len(violations) == 0 {
+func policyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *storage.Deployment, violations searchbasedpolicies.Violations) *storage.Alert {
+	if len(violations.AlertViolations) == 0 && violations.ProcessViolation == nil {
 		return nil
 	}
 	alert := &storage.Alert{
-		Id:             uuid.NewV4().String(),
-		LifecycleStage: storage.LifecycleStage_RUNTIME,
-		Deployment:     protoutils.CloneStorageDeployment(deployment),
-		Policy:         protoutils.CloneStoragePolicy(policy),
-		Violations:     violations,
-		Time:           ptypes.TimestampNow(),
+		Id:               uuid.NewV4().String(),
+		LifecycleStage:   storage.LifecycleStage_RUNTIME,
+		Deployment:       protoutils.CloneStorageDeployment(deployment),
+		Policy:           protoutils.CloneStoragePolicy(policy),
+		Violations:       violations.AlertViolations,
+		ProcessViolation: violations.ProcessViolation,
+		Time:             ptypes.TimestampNow(),
 	}
 	if action, msg := policyAndDeploymentToEnforcement(policy, deployment); action != storage.EnforcementAction_UNSET_ENFORCEMENT {
 		alert.Enforcement = &storage.Alert_Enforcement{

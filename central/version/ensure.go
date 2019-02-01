@@ -8,16 +8,11 @@ import (
 	"github.com/stackrox/rox/central/version/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/migrations"
 )
 
 var (
 	log = logging.LoggerForModule()
-)
-
-const (
-	// This is the current DB version number.
-	// This must be incremented every time we write a migration.
-	currentDBVersionSeqNum = 1
 )
 
 // Ensure is an opaque command that ensures that the DB is in a good state by the time it returns.
@@ -36,7 +31,7 @@ func Ensure(db *bolt.DB) error {
 	// No version in the DB. This means that we're starting from scratch, with a blank DB, so we can just
 	// write the current version in and move on.
 	if version == nil {
-		if err := versionStore.UpdateVersion(&storage.Version{SeqNum: currentDBVersionSeqNum}); err != nil {
+		if err := versionStore.UpdateVersion(&storage.Version{SeqNum: migrations.CurrentDBVersionSeqNum}); err != nil {
 			return fmt.Errorf("failed to write version to the DB: %vs", err)
 		}
 		log.Info("No version found in the DB. Assuming that this is a fresh install...")
@@ -44,8 +39,8 @@ func Ensure(db *bolt.DB) error {
 	}
 
 	// DB is of the same version. This happens if Central does a regular restart, and was not patched.
-	if version.GetSeqNum() == currentDBVersionSeqNum {
-		log.Info("Version found in the DB was current. The existing DB will be used.")
+	if version.GetSeqNum() == migrations.CurrentDBVersionSeqNum {
+		log.Info("Version found in the DB was current. We're good to go!")
 		return nil
 	}
 

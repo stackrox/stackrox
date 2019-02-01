@@ -50,10 +50,10 @@ func getSearchFieldNotStored(fieldLabel search.FieldLabel, optionsMap map[search
 }
 
 func violationPrinterForField(fieldPath string, matchToMessage func(match string) string) searchbasedpolicies.ViolationPrinter {
-	return func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) []*storage.Alert_Violation {
+	return func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) searchbasedpolicies.Violations {
 		matches := result.Matches[fieldPath]
 		if len(matches) == 0 {
-			return nil
+			return searchbasedpolicies.Violations{}
 		}
 		violations := make([]*storage.Alert_Violation, 0, len(matches))
 		for _, match := range matches {
@@ -61,8 +61,9 @@ func violationPrinterForField(fieldPath string, matchToMessage func(match string
 				violations = append(violations, &storage.Alert_Violation{Message: matchToMessage(match)})
 			}
 		}
-		return violations
-
+		return searchbasedpolicies.Violations{
+			AlertViolations: violations,
+		}
 	}
 }
 
@@ -81,11 +82,19 @@ func printKeyValuePolicy(kvp *storage.KeyValuePolicy) string {
 }
 
 func concatenatingPrinter(printers []searchbasedpolicies.ViolationPrinter) searchbasedpolicies.ViolationPrinter {
-	return func(result search.Result, getter searchbasedpolicies.ProcessIndicatorGetter) (violations []*storage.Alert_Violation) {
+	return func(result search.Result, getter searchbasedpolicies.ProcessIndicatorGetter) searchbasedpolicies.Violations {
+		concatenated := searchbasedpolicies.Violations{}
 		for _, p := range printers {
-			violations = append(violations, p(result, getter)...)
+			violation := p(result, getter)
+			// Only one process violation will be present.
+			if violation.ProcessViolation != nil {
+				concatenated.ProcessViolation = violation.ProcessViolation
+			}
+			if len(violation.AlertViolations) > 0 {
+				concatenated.AlertViolations = append(concatenated.AlertViolations, violation.AlertViolations...)
+			}
 		}
-		return
+		return concatenated
 	}
 }
 

@@ -80,15 +80,13 @@ func lastTimestamp(processes []*storage.ProcessIndicator) *ptypes.Timestamp {
 // This depends on the fact that we sort process indicators in increasing order of timestamp.
 func getMostRecentProcessTimestampInAlerts(alerts ...*storage.Alert) (ts *ptypes.Timestamp) {
 	for _, alert := range alerts {
-		for _, violation := range alert.GetViolations() {
-			processes := violation.GetProcesses()
-			if len(processes) == 0 {
-				continue
-			}
-			lastTimeStampInViolation := lastTimestamp(processes)
-			if protoconv.CompareProtoTimestamps(ts, lastTimeStampInViolation) < 0 {
-				ts = lastTimeStampInViolation
-			}
+		processes := alert.GetProcessViolation().GetProcesses()
+		if len(processes) == 0 {
+			continue
+		}
+		lastTimeStampInViolation := lastTimestamp(processes)
+		if protoconv.CompareProtoTimestamps(ts, lastTimeStampInViolation) < 0 {
+			ts = lastTimeStampInViolation
 		}
 	}
 	return
@@ -122,19 +120,17 @@ func (d *alertManagerImpl) trimResolvedProcessesFromRuntimeAlert(alert *storage.
 	mostRecentResolvedTimestamp := getMostRecentProcessTimestampInAlerts(oldRunTimeAlerts...)
 
 	var newProcessFound bool
-	for _, violation := range alert.GetViolations() {
-		if len(violation.GetProcesses()) == 0 {
-			continue
-		}
-		filtered := violation.GetProcesses()[:0]
-		for _, process := range violation.GetProcesses() {
+	processes := alert.GetProcessViolation().GetProcesses()
+	if len(processes) > 0 {
+		filtered := processes[:0]
+		for _, process := range processes {
 			if protoconv.CompareProtoTimestamps(process.GetSignal().GetTime(), mostRecentResolvedTimestamp) > 0 {
 				newProcessFound = true
 				filtered = append(filtered, process)
 			}
 		}
-		violation.Processes = filtered
-		builders.UpdateRuntimeAlertViolationMessage(violation)
+		alert.ProcessViolation.Processes = filtered
+		builders.UpdateRuntimeAlertViolationMessage(alert.ProcessViolation)
 	}
 	isFullyResolved = !newProcessFound
 	return
@@ -145,43 +141,34 @@ func (d *alertManagerImpl) trimResolvedProcessesFromRuntimeAlert(alert *storage.
 // We don't want to lose them, though, so we keep all the processes from the old alert, and add ones from the new, if any.
 // Note that the old alert _was_ active which means that all the processes in it are guaranteed to violate the policy.
 func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewProcesses bool) {
-	// There is exactly one sub-object which has processes.
-	var oldViolationWithProcesses *storage.Alert_Violation
-	for _, violation := range old.GetViolations() {
-		if len(violation.GetProcesses()) > 0 {
-			oldViolationWithProcesses = violation
-			break
-		}
-	}
-	if oldViolationWithProcesses == nil {
+	oldProcessViolation := old.GetProcessViolation()
+
+	if len(oldProcessViolation.GetProcesses()) == 0 {
 		logger.Errorf("UNEXPECTED: found no old violation with processes for runtime alert %s", proto.MarshalTextString(old))
 		newAlertHasNewProcesses = true
 		return
 	}
 
-	for i, newViolation := range newAlert.GetViolations() {
-		if len(newViolation.GetProcesses()) == 0 {
-			continue
-		}
-		newProcessesSlice := oldViolationWithProcesses.GetProcesses()
-		// De-dupe processes using timestamps.
-		timestamp := lastTimestamp(oldViolationWithProcesses.GetProcesses())
-		for _, process := range newViolation.GetProcesses() {
-			if protoconv.CompareProtoTimestamps(process.GetSignal().GetTime(), timestamp) > 0 {
-				newAlertHasNewProcesses = true
-				newProcessesSlice = append(newProcessesSlice, process)
-			}
-		}
-		// If there are no new processes, we'll just use the old alert.
-		if !newAlertHasNewProcesses {
-			return
-		}
-		newAlert.Violations[i].Processes = newProcessesSlice
-		builders.UpdateRuntimeAlertViolationMessage(newAlert.Violations[i])
+	if len(newAlert.GetProcessViolation().GetProcesses()) == 0 {
+		logger.Errorf("UNEXPECTED: found no new violation with processes for runtime alert %s", proto.MarshalTextString(newAlert))
 		return
 	}
 
-	logger.Errorf("UNEXPECTED: found no new violation with processes for runtime alert %s", proto.MarshalTextString(newAlert))
+	newProcessesSlice := oldProcessViolation.GetProcesses()
+	// De-dupe processes using timestamps.
+	timestamp := lastTimestamp(oldProcessViolation.GetProcesses())
+	for _, process := range newAlert.GetProcessViolation().GetProcesses() {
+		if protoconv.CompareProtoTimestamps(process.GetSignal().GetTime(), timestamp) > 0 {
+			newAlertHasNewProcesses = true
+			newProcessesSlice = append(newProcessesSlice, process)
+		}
+	}
+	// If there are no new processes, we'll just use the old alert.
+	if !newAlertHasNewProcesses {
+		return
+	}
+	newAlert.ProcessViolation.Processes = newProcessesSlice
+	builders.UpdateRuntimeAlertViolationMessage(newAlert.ProcessViolation)
 	return
 }
 
