@@ -18,12 +18,6 @@ var (
 )
 
 const (
-	// DefaultAPIVersion is the Docker API version we will use in the
-	// absence of an exact version we can detect at runtime.
-	// This should be the API version for the minimum Docker version we support.
-	// For Docker version to API version table, see:
-	//   https://docs.docker.com/engine/reference/api/docker_remote_api/
-	DefaultAPIVersion = 1.22
 	// HangTimeout is the maximum length of time that we will wait for the docker client to respond
 	HangTimeout = 30 * time.Second
 )

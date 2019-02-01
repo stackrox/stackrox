@@ -7,8 +7,8 @@ import (
 
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/compliance/collection/docker"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/pkg/docker"
 )
 
 func getDockerData(ret *compliance.ComplianceReturn) (*docker.Data, error) {

@@ -127,10 +127,6 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot string) (errs []
 		allowedPackages = append(allowedPackages, "image")
 	}
 
-	if validImportRoot == "sensor/kubernetes" || validImportRoot == "central" {
-		allowedPackages = append(allowedPackages, "compliance")
-	}
-
 	if validImportRoot == "sensor/kubernetes" {
 		allowedPackages = append(allowedPackages, "sensor/common")
 	}

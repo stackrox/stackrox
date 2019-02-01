@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
@@ -32,41 +31,8 @@ var (
 	dockerRateLimiter = rate.NewLimiter(rate.Every(50*time.Millisecond), 1)
 )
 
-// Data is the wrapper around all of the Docker info required for compliance
-type Data struct {
-	Info          types.Info
-	Containers    []types.ContainerJSON
-	Images        []ImageWrap
-	BridgeNetwork types.NetworkResource
-}
-
 func getContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), timeout)
-}
-
-// ImageWrap is a wrapper around a docker image because normally the image doesn't give the history
-type ImageWrap struct {
-	Image   types.ImageInspect          `json:"image"`
-	History []image.HistoryResponseItem `json:"history"`
-}
-
-// Config returns an empty config if one does not exist or the config from the Image object
-func (i ImageWrap) Config() *container.Config {
-	if i.Image.Config == nil {
-		return &container.Config{}
-	}
-	return i.Image.Config
-}
-
-// Name attempts to return a human-readable registry-based name, but will fall back to ID if it cannot
-func (i ImageWrap) Name() string {
-	if len(i.Image.RepoTags) != 0 {
-		return i.Image.RepoTags[0]
-	}
-	if len(i.Image.RepoDigests) != 0 {
-		return i.Image.RepoDigests[0]
-	}
-	return i.Image.ID
 }
 
 func checkClient(c *client.Client) error {
@@ -96,7 +62,7 @@ func getClient() (*client.Client, error) {
 
 // GetDockerData returns the marshaled JSON from scraping Docker
 func GetDockerData() (*compliance.GZIPDataChunk, error) {
-	var dockerData Data
+	var dockerData docker.Data
 
 	client, err := getClient()
 	if err != nil {
@@ -191,7 +157,7 @@ func inspectImage(c *client.Client, id string) (types.ImageInspect, error) {
 	return i, err
 }
 
-func getImages(c *client.Client) ([]ImageWrap, error) {
+func getImages(c *client.Client) ([]docker.ImageWrap, error) {
 	ctx, cancel := getContext()
 	defer cancel()
 
@@ -201,7 +167,7 @@ func getImages(c *client.Client) ([]ImageWrap, error) {
 		return nil, err
 	}
 
-	images := make([]ImageWrap, 0, len(imageList))
+	images := make([]docker.ImageWrap, 0, len(imageList))
 	for _, i := range imageList {
 		dockerRateLimiter.Wait(context.Background())
 		image, err := inspectImage(c, i.ID)
@@ -219,7 +185,7 @@ func getImages(c *client.Client) ([]ImageWrap, error) {
 		if err != nil {
 			return nil, err
 		}
-		images = append(images, ImageWrap{Image: image, History: histories})
+		images = append(images, docker.ImageWrap{Image: image, History: histories})
 	}
 	return images, nil
 }

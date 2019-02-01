@@ -2,7 +2,7 @@ package docker
 
 import (
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/compliance/collection/docker"
+	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/set"
 )
 
