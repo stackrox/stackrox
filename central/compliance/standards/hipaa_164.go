@@ -60,9 +60,10 @@ var hipaa164 = Standard{
 			Description: "Workforce security",
 			Controls: []Control{
 				{
-					ID:          "308_a_3_ii_a",
-					Name:        "308.a.3.ii.a",
-					Description: `Implement procedures for the authorization and/or supervision of workforce members who work with electronic protected health information or in locations where it might be accessed.`,
+					ID:   "308_a_3_ii_a",
+					Name: "308.a.3.ii.a",
+					Description: `Implement procedures for the authorization and/or supervision of workforce members 
+					who work with electronic protected health information or in locations where it might be accessed.`,
 				},
 			},
 		},
@@ -98,9 +99,9 @@ var hipaa164 = Standard{
 				{
 					ID:   "308_a_6_ii",
 					Name: "308.a.6.ii",
-					Description: "Identify and respond to suspected or known security incidents; mitigate, to the " +
-						"extent practicable, harmful effects of security incidents that are known to the covered " +
-						"entity or business associate; and document security incidents and their outcomes.",
+					Description: `Identify and respond to suspected or known security incidents; mitigate, to the 
+					extent practicable, harmful effects of security incidents that are known to the covered entity 
+					or business associate; and document security incidents and their outcomes.`,
 				},
 			},
 		},
@@ -117,26 +118,16 @@ var hipaa164 = Standard{
 			},
 		},
 		{
-			ID:          "308_a_3_ii_a",
-			Name:        "308.a.3.ii.a",
-			Description: "Workforce security",
-			Controls: []Control{
-				{
-					ID:          "308_a_3_ii_a",
-					Name:        "308.a.3.ii.a",
-					Description: `Implement procedures for the authorization and/or supervision of workforce members who work with electronic protected health information or in locations where it might be accessed.`,
-				},
-			},
-		},
-		{
 			ID:          "310_a_1",
 			Name:        "310.a.1",
 			Description: "Facility Access",
 			Controls: []Control{
 				{
-					ID:          "310_a_1",
-					Name:        "310.a.1",
-					Description: "Implement policies and procedures to limit physical access to its electronic information systems and the facility or facilities in which they are housed, while ensuring that properly authorized access is allowed.",
+					ID:   "310_a_1",
+					Name: "310.a.1",
+					Description: `Implement policies and procedures to limit physical access to its electronic 
+					information systems and the facility or facilities in which they are housed, while ensuring that 
+					properly authorized access is allowed.`,
 				},
 			},
 		},
@@ -146,9 +137,11 @@ var hipaa164 = Standard{
 			Description: "Devices and Media Controls",
 			Controls: []Control{
 				{
-					ID:          "310_d",
-					Name:        "310.d",
-					Description: `Implement policies and procedures that govern the receipt and removal of hardware and electronic media that contain electronic protected health information into and out of a facility, and the movement of these items within the facility.`,
+					ID:   "310_d",
+					Name: "310.d",
+					Description: `Implement policies and procedures that govern the receipt and removal of hardware 
+					and electronic media that contain electronic protected health information into and out of a 
+					facility, and the movement of these items within the facility.`,
 				},
 			},
 		},
@@ -158,9 +151,24 @@ var hipaa164 = Standard{
 			Description: "Integrity.",
 			Controls: []Control{
 				{
-					ID:          "312_c",
-					Name:        "312.c",
-					Description: "Implement policies and procedures to protect electronic protected health information from improper alteration or destruction.",
+					ID:   "312_c",
+					Name: "312.c",
+					Description: `Implement policies and procedures to protect electronic protected health information 
+					from improper alteration or destruction.`,
+				},
+			},
+		},
+		{
+			ID:   "314_a_2_i_c",
+			Name: "314.a.2.i.c",
+			Description: `Report to the covered entity any security incident of which it becomes aware, including 
+			breaches of unsecured protected health information.`,
+			Controls: []Control{
+				{
+					ID:   "314_a_2_i_c",
+					Name: "314.a.2.i.c",
+					Description: `Report to the covered entity any security incident of which it becomes aware, 
+					including breaches of unsecured protected health information.`,
 				},
 			},
 		},
