@@ -4,11 +4,12 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "google/protobuf/timestamp.proto";
+import "protobuf/gogoproto/gogo.proto";
 
 package storage;
 
 message Image {
-    string    id            = 4;
+    string    id            = 4 [(gogoproto.moretags) = "search:\"Image Sha,store,hidden\""];
     ImageName name          = 1;
 
     ImageMetadata metadata  = 2;
@@ -16,13 +17,13 @@ message Image {
 }
 
 message ImageScan {
-    google.protobuf.Timestamp   scan_time  = 1;
+    google.protobuf.Timestamp   scan_time  = 1 [(gogoproto.moretags) = "search:\"Image Scan Time,store\""];
     repeated ImageScanComponent components = 2;
 }
 
 message ImageScanComponent {
-    string name                  = 1;
-    string version               = 2;
+    string name                  = 1 [(gogoproto.moretags) = "search:\"Component,store\""];
+    string version               = 2 [(gogoproto.moretags) = "search:\"Component Version,store\""];
     License license              = 3;
     repeated Vulnerability vulns = 4;
 }
@@ -34,10 +35,10 @@ message License {
 }
 
 message Vulnerability {
-    string cve          = 1;
-    float  cvss         = 2;
+    string cve          = 1 [(gogoproto.moretags) = "search:\"CVE,store\""];
+    float  cvss         = 2 [(gogoproto.moretags) = "search:\"CVSS,store\""];
     string summary      = 3;
-    string link         = 4;
+    string link         = 4 [(gogoproto.moretags) = "search:\"CVE Link,store,hidden\""];
     oneof set_fixed_by {
         string fixed_by = 5;
     }
@@ -92,14 +93,14 @@ message V2Metadata {
 
 message V1Metadata {
     string                    digest    = 1;
-    google.protobuf.Timestamp created   = 2;
+    google.protobuf.Timestamp created   = 2 [(gogoproto.moretags) = "search:\"Image Created Time,store\""];
     string                    author    = 3;
     repeated ImageLayer       layers    = 4;
 }
 
 message ImageLayer {
-    string instruction                     = 1;
-    string value                           = 2;
+    string instruction                     = 1 [(gogoproto.moretags) = "search:\"Dockerfile Instruction Keyword,store\""];
+    string value                           = 2 [(gogoproto.moretags) = "search:\"Dockerfile Instruction Value,store\""];
     google.protobuf.Timestamp created      = 3;
     string author                          = 4;
     repeated ImageScanComponent components = 5;
@@ -107,10 +108,10 @@ message ImageLayer {
 }
 
 message ImageName {
-    string registry                         = 1;
-    string remote                           = 2;
-    string tag                              = 3;
-    string full_name                        = 4;
+    string registry                         = 1 [(gogoproto.moretags) = "search:\"Image Registry,store\""];
+    string remote                           = 2 [(gogoproto.moretags) = "search:\"Image Remote,store\""];
+    string tag                              = 3 [(gogoproto.moretags) = "search:\"Image Tag,store\""];
+    string full_name                        = 4 [(gogoproto.moretags) = "search:\"Image,store\""];
 }
 
 message ListImage {

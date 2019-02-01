@@ -3,6 +3,8 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "protobuf/gogoproto/gogo.proto";
+
 package storage;
 
 // Next available tag: 3

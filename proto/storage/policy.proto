@@ -6,24 +6,25 @@ option java_package = "io.stackrox.proto.storage";
 import "google/protobuf/timestamp.proto";
 import "storage/scope.proto";
 import "storage/image.proto";
+import "protobuf/gogoproto/gogo.proto";
 
 package storage;
 
 message Policy {
-    string id                                   = 1;
-    string name                                 = 2;
-    string description                          = 3;
+    string id                                   = 1 [(gogoproto.moretags) = "search:\"Policy Id,store,hidden\""];
+    string name                                 = 2 [(gogoproto.moretags) = "search:\"Policy\""];
+    string description                          = 3 [(gogoproto.moretags) = "search:\"Description\""];
     string rationale                            = 4;
     string remediation                          = 5;
     bool disabled                               = 6;
-    repeated string categories                  = 7;
+    repeated string categories                  = 7 [(gogoproto.moretags) = "search:\"Category\""];
     PolicyFields fields                         = 8;
 
-    repeated LifecycleStage lifecycle_stages       = 9;
+    repeated LifecycleStage lifecycle_stages       = 9  [(gogoproto.moretags) = "search:\"Lifecycle Stage\""];
     repeated Whitelist whitelists                  = 10;
-    repeated Scope scope                   = 11;
-    Severity severity                              = 12;
-    repeated EnforcementAction enforcement_actions = 13;
+    repeated Scope scope                           = 11;
+    Severity severity                              = 12 [(gogoproto.moretags) = "search:\"Severity\""];
+    repeated EnforcementAction enforcement_actions = 13 [(gogoproto.moretags) = "search:\"Enforcement\""];
     repeated string notifiers                      = 14;
 }
 
@@ -171,7 +172,7 @@ message ImageNamePolicy {
 message Whitelist {
     string                    name       = 1;
     message Container {
-        ImageName image_name = 3;
+        ImageName image_name = 3 [(gogoproto.moretags) = "search:\"-\""];
     }
     Container                 container  = 2;
     message Deployment {

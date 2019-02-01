@@ -7,31 +7,32 @@ import "google/protobuf/timestamp.proto";
 import "storage/deployment.proto";
 import "storage/policy.proto";
 import "storage/process_indicator.proto";
+import "protobuf/gogoproto/gogo.proto";
 
 package storage;
 
 message Alert {
     string id                                = 1;
-    Policy policy                            = 2;
-    LifecycleStage lifecycle_stage           = 3;
-    Deployment deployment                    = 4;
+    Policy policy                            = 2 [(gogoproto.moretags) = "search_index:\"Policy Id,Policy,Category,Severity\""];
+    LifecycleStage lifecycle_stage           = 3 [(gogoproto.moretags) = "search:\"Lifecycle Stage\""];
+    Deployment deployment                    = 4 [(gogoproto.moretags) = "search_index:\"Deployment Id,Cluster,Namespace,Label,Deployment\""];
 
     message Violation {
-        string message                       = 1;
+        string message                       = 1 [(gogoproto.moretags) = "search:\"Violation\""];
         string link                          = 2;
-        repeated ProcessIndicator processes  = 3;
+        repeated ProcessIndicator processes  = 3 [(gogoproto.moretags) = "search:\"-\""];
     }
     repeated Violation violations            = 5;
 
     message Enforcement {
-        storage.EnforcementAction action = 1;
-        string message           = 2;
+        storage.EnforcementAction action = 1 [(gogoproto.moretags) = "search:\"Enforcement\""];
+        string message                   = 2;
     }
     Enforcement enforcement                  = 6;
 
     google.protobuf.Timestamp time           = 7;
     google.protobuf.Timestamp first_occurred = 10;
-    ViolationState state                     = 11;
+    ViolationState state                     = 11 [(gogoproto.moretags) = "search:\"Violation State\""];
     google.protobuf.Timestamp snooze_till    = 12;
 }
 

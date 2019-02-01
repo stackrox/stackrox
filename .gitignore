@@ -60,3 +60,4 @@ BUILD.bazel
 
 qa-tests-backend/bin/*
 qa-tests-backend/.project
+qa-tests-backend/src/main/proto/*

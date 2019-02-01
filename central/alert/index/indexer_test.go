@@ -5,6 +5,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
@@ -24,16 +25,15 @@ type alertIndexTestSuite struct {
 	indexer    Indexer
 }
 
-func (suite *alertIndexTestSuite) SetupSuite() {
+func (suite *alertIndexTestSuite) SetupTest() {
 	tmpIndex, err := globalindex.TempInitializeIndices("")
 	suite.Require().NoError(err)
 
 	suite.bleveIndex = tmpIndex
 	suite.indexer = New(tmpIndex)
-
 }
 
-func (suite *alertIndexTestSuite) TearDownSuite() {
+func (suite *alertIndexTestSuite) TearDownTest() {
 	suite.bleveIndex.Close()
 }
 
@@ -74,6 +74,42 @@ func (suite *alertIndexTestSuite) TestDefaultStaleness() {
 				qb.AddStrings(search.ViolationState, c.state)
 			}
 			alerts, err := suite.indexer.Search(qb.ProtoQuery())
+			assert.NoError(t, err)
+
+			alertIDs := make([]string, 0, len(alerts))
+			for _, alert := range alerts {
+				alertIDs = append(alertIDs, alert.ID)
+			}
+
+			assert.ElementsMatch(t, alertIDs, c.expectedAlertIDs)
+		})
+	}
+}
+
+// This test also tests xref because the Severity enum is buried inside Policy
+func (suite *alertIndexTestSuite) TestEnums() {
+	suite.NoError(suite.indexer.AddAlert(fixtures.GetAlert()))
+
+	var cases = []struct {
+		name             string
+		query            *v1.Query
+		expectedAlertIDs []string
+	}{
+		{
+			name:             "match severity",
+			query:            search.NewQueryBuilder().AddStrings(search.Severity, "low").ProtoQuery(),
+			expectedAlertIDs: []string{fixtures.GetAlert().GetId()},
+		},
+		{
+			name:             "no match severity",
+			query:            search.NewQueryBuilder().AddStrings(search.Severity, "high").ProtoQuery(),
+			expectedAlertIDs: []string{},
+		},
+	}
+
+	for _, c := range cases {
+		suite.T().Run(c.name, func(t *testing.T) {
+			alerts, err := suite.indexer.Search(c.query)
 			assert.NoError(t, err)
 
 			alertIDs := make([]string, 0, len(alerts))

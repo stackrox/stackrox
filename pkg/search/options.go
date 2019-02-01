@@ -1,85 +1,96 @@
 package search
 
+import (
+	"github.com/stackrox/rox/pkg/set"
+)
+
 // A FieldLabel is the label we use to refer to a search field, as a human-readable shortcut.
 // For example, if someone in the UI wants to filter the namespace to just "stackrox",
 // they would type "Namespace:stackrox", and "Namespace" would be the field label.
 type FieldLabel string
 
 // This block enumerates all valid FieldLabels.
-const (
-	Cluster   FieldLabel = "Cluster"
-	ClusterID FieldLabel = "Cluster Id"
-	Namespace FieldLabel = "Namespace"
-	Label     FieldLabel = "Label"
-	PodLabel  FieldLabel = "PodLabel"
+var (
+	FieldLabelSet = set.NewStringSet()
 
-	PolicyID       FieldLabel = "Policy Id"
-	Enforcement    FieldLabel = "Enforcement"
-	PolicyName     FieldLabel = "Policy"
-	LifecycleStage FieldLabel = "Lifecycle Stage"
-	Description    FieldLabel = "Description"
-	Category       FieldLabel = "Category"
-	Severity       FieldLabel = "Severity"
+	Cluster   = newFieldLabel("Cluster")
+	ClusterID = newFieldLabel("Cluster Id")
+	Namespace = newFieldLabel("Namespace")
+	Label     = newFieldLabel("Label")
+	PodLabel  = newFieldLabel("PodLabel")
 
-	CVE                          FieldLabel = "CVE"
-	CVELink                      FieldLabel = "CVELink"
-	CVSS                         FieldLabel = "CVSS"
-	Component                    FieldLabel = "Component"
-	ComponentVersion             FieldLabel = "Component Version"
-	DockerfileInstructionKeyword FieldLabel = "Dockerfile Instruction Keyword"
-	DockerfileInstructionValue   FieldLabel = "Dockerfile Instruction Value"
-	ImageCreatedTime             FieldLabel = "Image Created Time"
-	ImageName                    FieldLabel = "Image"
-	ImageSHA                     FieldLabel = "Image Sha"
-	ImageRegistry                FieldLabel = "Image Registry"
-	ImageRemote                  FieldLabel = "Image Remote"
-	ImageScanTime                FieldLabel = "Image Scan Time"
-	ImageTag                     FieldLabel = "Image Tag"
+	PolicyID       = newFieldLabel("Policy Id")
+	Enforcement    = newFieldLabel("Enforcement")
+	PolicyName     = newFieldLabel("Policy")
+	LifecycleStage = newFieldLabel("Lifecycle Stage")
+	Description    = newFieldLabel("Description")
+	Category       = newFieldLabel("Category")
+	Severity       = newFieldLabel("Severity")
 
-	Annotation        FieldLabel = "Annotation"
-	CPUCoresLimit     FieldLabel = "CPU Cores Limit"
-	CPUCoresRequest   FieldLabel = "CPU Cores Request"
-	ContainerID       FieldLabel = "Container Id"
-	DeploymentID      FieldLabel = "Deployment Id"
-	DeploymentName    FieldLabel = "Deployment"
-	DeploymentType    FieldLabel = "Deployment Type"
-	AddCapabilities   FieldLabel = "Add Capabilities"
-	DropCapabilities  FieldLabel = "Drop Capabilities"
-	EnvironmentKey    FieldLabel = "Environment Key"
-	EnvironmentValue  FieldLabel = "Environment Value"
-	ImagePullSecret   FieldLabel = "Image Pull Secret"
-	MemoryLimit       FieldLabel = "Memory Limit (MB)"
-	MemoryRequest     FieldLabel = "Memory Request (MB)"
-	Port              FieldLabel = "Port"
-	PortProtocol      FieldLabel = "Port Protocol"
-	Privileged        FieldLabel = "Privileged"
-	SecretID          FieldLabel = "Secret Id"
-	SecretName        FieldLabel = "Secret"
-	SecretPath        FieldLabel = "Secret Path"
-	ServiceAccount    FieldLabel = "Service Account"
-	VolumeName        FieldLabel = "Volume Name"
-	VolumeSource      FieldLabel = "Volume Source"
-	VolumeDestination FieldLabel = "Volume Destination"
-	VolumeReadonly    FieldLabel = "Volume ReadOnly"
-	VolumeType        FieldLabel = "Volume Type"
+	CVE                          = newFieldLabel("CVE")
+	CVELink                      = newFieldLabel("CVE Link")
+	CVSS                         = newFieldLabel("CVSS")
+	Component                    = newFieldLabel("Component")
+	ComponentVersion             = newFieldLabel("Component Version")
+	DockerfileInstructionKeyword = newFieldLabel("Dockerfile Instruction Keyword")
+	DockerfileInstructionValue   = newFieldLabel("Dockerfile Instruction Value")
+	ImageCreatedTime             = newFieldLabel("Image Created Time")
+	ImageName                    = newFieldLabel("Image")
+	ImageSHA                     = newFieldLabel("Image Sha")
+	ImageRegistry                = newFieldLabel("Image Registry")
+	ImageRemote                  = newFieldLabel("Image Remote")
+	ImageScanTime                = newFieldLabel("Image Scan Time")
+	ImageTag                     = newFieldLabel("Image Tag")
 
-	Violation      FieldLabel = "Violation"
-	ViolationState FieldLabel = "Violation State"
+	Annotation        = newFieldLabel("Annotation")
+	CPUCoresLimit     = newFieldLabel("CPU Cores Limit")
+	CPUCoresRequest   = newFieldLabel("CPU Cores Request")
+	ContainerID       = newFieldLabel("Container Id")
+	DeploymentID      = newFieldLabel("Deployment Id")
+	DeploymentName    = newFieldLabel("Deployment")
+	DeploymentType    = newFieldLabel("Deployment Type")
+	AddCapabilities   = newFieldLabel("Add Capabilities")
+	DropCapabilities  = newFieldLabel("Drop Capabilities")
+	EnvironmentKey    = newFieldLabel("Environment Key")
+	EnvironmentValue  = newFieldLabel("Environment Value")
+	ImagePullSecret   = newFieldLabel("Image Pull Secret")
+	MemoryLimit       = newFieldLabel("Memory Limit (MB)")
+	MemoryRequest     = newFieldLabel("Memory Request (MB)")
+	Port              = newFieldLabel("Port")
+	PortProtocol      = newFieldLabel("Port Protocol")
+	Privileged        = newFieldLabel("Privileged")
+	SecretID          = newFieldLabel("Secret Id")
+	SecretName        = newFieldLabel("Secret")
+	SecretPath        = newFieldLabel("Secret Path")
+	ServiceAccount    = newFieldLabel("Service Account")
+	VolumeName        = newFieldLabel("Volume Name")
+	VolumeSource      = newFieldLabel("Volume Source")
+	VolumeDestination = newFieldLabel("Volume Destination")
+	VolumeReadonly    = newFieldLabel("Volume ReadOnly")
+	VolumeType        = newFieldLabel("Volume Type")
+
+	Violation      = newFieldLabel("Violation")
+	ViolationState = newFieldLabel("Violation State")
 
 	// ProcessIndicator Search fields
-	ProcessID        FieldLabel = "Process ID"
-	ProcessExecPath  FieldLabel = "Process Path"
-	ProcessName      FieldLabel = "Process Name"
-	ProcessArguments FieldLabel = "Process Arguments"
-	ProcessAncestor  FieldLabel = "Process Ancestor"
+	ProcessID        = newFieldLabel("Process ID")
+	ProcessExecPath  = newFieldLabel("Process Path")
+	ProcessName      = newFieldLabel("Process Name")
+	ProcessArguments = newFieldLabel("Process Arguments")
+	ProcessAncestor  = newFieldLabel("Process Ancestor")
 
 	// Secret search fields
-	SecretType       FieldLabel = "Secret Type"
-	SecretExpiration FieldLabel = "Cert Expiration"
+	SecretType       = newFieldLabel("Secret Type")
+	SecretExpiration = newFieldLabel("Cert Expiration")
 
 	// Compliance search fields
-	Standard FieldLabel = "Standard"
+	Standard = newFieldLabel("Standard")
 )
+
+func newFieldLabel(s string) FieldLabel {
+	FieldLabelSet.Add(s)
+	return FieldLabel(s)
+}
 
 func (f FieldLabel) String() string {
 	return string(f)

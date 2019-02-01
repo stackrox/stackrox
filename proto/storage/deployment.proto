@@ -6,6 +6,7 @@ option java_package = "io.stackrox.proto.storage";
 import "google/protobuf/timestamp.proto";
 import "storage/labels.proto";
 import "storage/image.proto";
+import "protobuf/gogoproto/gogo.proto";
 
 package storage;
 
@@ -16,33 +17,32 @@ enum ContainerRuntime {
 
 // Next available tag: 22
 message Deployment {
-    string id                                  = 1;
-    string name                                = 2;
+    string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment Id,store,hidden\""];
+    string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
     string version                             = 3;
-    string type                                = 4;
-    string namespace                           = 5;
+    string type                                = 4 [(gogoproto.moretags) = "search:\"Deployment Type\""];
+    string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace\""];
     int64 replicas                             = 6;
-    map<string, string> labels                 = 7;
-    map<string, string> pod_labels             = 19;
+    map<string, string> labels                 = 7 [(gogoproto.moretags) = "search:\"Label\""];
+    map<string, string> pod_labels             = 19 [(gogoproto.moretags) = "search:\"PodLabel\""];
     LabelSelector label_selector               = 20;
     google.protobuf.Timestamp updated_at       = 8;
-    string cluster_id                          = 9;
-    string cluster_name                        = 10;
-
+    string cluster_id                          = 9 [(gogoproto.moretags) = "search:\"Cluster Id,store,hidden\""];
+    string cluster_name                        = 10 [(gogoproto.moretags) = "search:\"Cluster\""];
     repeated Container containers              = 11;
     Risk risk                                  = 12;
-    map<string, string> annotations            = 14;
+    map<string, string> annotations            = 14 [(gogoproto.moretags) = "search:\"Annotation\""];
     int64 priority                             = 15;
     bool inactive                              = 16;
-    repeated string image_pull_secrets         = 17;
-    string service_account                     = 18;
+    repeated string image_pull_secrets         = 17 [(gogoproto.moretags) = "search:\"Image Pull Secret\""];
+    string service_account                     = 18 [(gogoproto.moretags) = "search:\"Service Account\""];
     bool host_network                          = 21;
 }
 
 message Container {
     string id                           = 1;
     ContainerConfig config              = 2;
-    Image image                         = 3;
+    Image image                         = 3 [(gogoproto.moretags) = "search_index:\"Image Sha\" search_xref:\"all\""];
     SecurityContext security_context    = 4;
     repeated Volume volumes             = 5;
     repeated PortConfig ports           = 6;
@@ -54,20 +54,19 @@ message Container {
 }
 
 message Resources {
-    float cpu_cores_request = 1;
-    float cpu_cores_limit   = 2;
-    float memory_mb_request = 3;
-    float memory_mb_limit   = 4;
+    float cpu_cores_request = 1 [(gogoproto.moretags) = "search:\"CPU Cores Request,store\""];
+    float cpu_cores_limit   = 2 [(gogoproto.moretags) = "search:\"CPU Cores Limit,store\""];
+    float memory_mb_request = 3 [(gogoproto.moretags) = "search:\"Memory Request (MB),store\""];
+    float memory_mb_limit   = 4 [(gogoproto.moretags) = "search:\"Memory Limit (MB),store\""];
 }
 
 message Volume {
-    string name         = 1;
-    string source       = 2;
-    string destination  = 3;
-    bool read_only      = 4;
-    string type         = 5;
+    string name         = 1 [(gogoproto.moretags) = "search:\"Volume Name,store\""];
+    string source       = 2 [(gogoproto.moretags) = "search:\"Volume Source,store\""];
+    string destination  = 3 [(gogoproto.moretags) = "search:\"Volume Destination,store\""];
+    bool read_only      = 4 [(gogoproto.moretags) = "search:\"Volume ReadOnly,store\""];
+    string type         = 5 [(gogoproto.moretags) = "search:\"Volume Type,store\""];
 }
-
 
 // ContainerInstanceID allows to uniquely identify a container within a cluster.
 message ContainerInstance {
@@ -92,15 +91,15 @@ message ContainerInstanceID {
 
 
 message EmbeddedSecret {
-    string name = 1;
-    string path = 2;
+    string name = 1 [(gogoproto.moretags) = "search:\"Secret\""];
+    string path = 2 [(gogoproto.moretags) = "search:\"Secret Path\""];
 }
 
 // Next Available Tag: 6
 message PortConfig {
     string name             = 1;
-    int32 container_port    = 2;
-    string protocol         = 3;
+    int32 container_port    = 2 [(gogoproto.moretags) = "search:\"Port,store\""];
+    string protocol         = 3 [(gogoproto.moretags) = "search:\"Port Protocol,store\""];
     enum Exposure {
         UNSET    = 0;
         EXTERNAL = 1;
@@ -113,8 +112,8 @@ message PortConfig {
 
 message ContainerConfig {
     message EnvironmentConfig {
-        string key      = 1;
-        string value    = 2;
+        string key      = 1 [(gogoproto.moretags) = "search:\"Environment Key,store\""];
+        string value    = 2 [(gogoproto.moretags) = "search:\"Environment Value,store\""];
     }
     repeated EnvironmentConfig env  = 1;
     repeated string command         = 2;
@@ -125,7 +124,7 @@ message ContainerConfig {
 }
 
 message SecurityContext {
-    bool privileged                     = 1;
+    bool privileged                     = 1 [(gogoproto.moretags) = "search:\"Privileged,store\""];
     message SELinux {
         string user     = 1;
         string role     = 2;
@@ -133,8 +132,8 @@ message SecurityContext {
         string level    = 4;
     }
     SELinux selinux                     = 2;
-    repeated string drop_capabilities   = 3;
-    repeated string add_capabilities    = 4;
+    repeated string drop_capabilities   = 3 [(gogoproto.moretags) = "search:\"Drop Capabilities,store\""];
+    repeated string add_capabilities    = 4 [(gogoproto.moretags) = "search:\"Add Capabilities,store\""];
 }
 
 message Risk {

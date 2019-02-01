@@ -166,6 +166,7 @@ $(GENERATED_BASE_PATH)/%.pb.go: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTO
 	@echo "+ $@"
 	@mkdir -p $(dir $@)
 	@$(PROTOC) \
+		-I=$(GOPATH)/src/github.com/gogo \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
 		--proto_path=$(PROTO_BASE_PATH) \
@@ -180,6 +181,7 @@ $(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(
 	@mkdir -p $(dir $@)
 	@$(PROTOC) \
 		-I$(PROTOC_INCLUDES) \
+		-I=$(GOPATH)/src/github.com/gogo \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
 		--proto_path=$(PROTO_BASE_PATH) \
 		--grpc-gateway_out=$(GATEWAY_M_ARGS_STR),logtostderr=true:$(GENERATED_BASE_PATH) \
@@ -191,6 +193,7 @@ $(GENERATED_BASE_PATH)/%_service.pb.gw.go: $(PROTO_BASE_PATH)/%_service.proto $(
 $(GENERATED_DOC_PATH)/%.swagger.json: $(PROTO_BASE_PATH)/%.proto $(PROTO_DEPS) $(PROTOC_GEN_GRPC_GATEWAY) $(GENERATED_DOC_PATH) $(ALL_PROTOS)
 	@echo "+ $@"
 	@$(PROTOC) \
+		-I=$(GOPATH)/src/github.com/gogo \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOPATH)/src/github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis \
 		--proto_path=$(PROTO_BASE_PATH) \
@@ -209,6 +212,7 @@ $(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(PROTOC_GEN_GRPC_GATEWAY)
 
 .PHONY: clean-protos
 clean-protos: clean-generated
+	@rm -rf $(GOPATH)/src/github.com/gogo
 	@rm -rf $(GOPATH)/src/github.com/grpc-ecosystem
 	@rm -rf $(GOPATH)/src/github.com/golang/protobuf
 	@rm -rf $(GOPATH)/src/golang.google.org/genproto/googleapis

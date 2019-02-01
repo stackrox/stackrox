@@ -239,7 +239,7 @@ bazel-test: gazelle
 	bazel coverage $(PURE) $(RACE) \
 	    --test_output=errors \
 	    -- \
-	    //... -benchmarks/... -proto/... -qa-tests-backend/... -tests/... -vendor/...
+	    //... -benchmarks/... -proto/... -tests/... -vendor/...
 
 .PHONY: benchmarks-test
 benchmarks-test:

@@ -8,20 +8,15 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/storage"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 var datatypeToQueryFunc = map[v1.SearchDataType]func(v1.SearchCategory, string, string) (query.Query, error){
-	v1.SearchDataType_SEARCH_STRING:          newStringQuery,
-	v1.SearchDataType_SEARCH_BOOL:            newBoolQuery,
-	v1.SearchDataType_SEARCH_NUMERIC:         newNumericQuery,
-	v1.SearchDataType_SEARCH_DATETIME:        newTimeQuery,
-	v1.SearchDataType_SEARCH_SEVERITY:        newSeverityQuery,
-	v1.SearchDataType_SEARCH_ENFORCEMENT:     newEnforcementQuery,
-	v1.SearchDataType_SEARCH_LIFECYCLE_STAGE: newLifecycleStageQuery,
-	v1.SearchDataType_SEARCH_SECRET_TYPE:     newSecretTypeQuery,
-	v1.SearchDataType_SEARCH_VIOLATION_STATE: newViolationStateQuery,
+	v1.SearchDataType_SEARCH_STRING:   newStringQuery,
+	v1.SearchDataType_SEARCH_BOOL:     newBoolQuery,
+	v1.SearchDataType_SEARCH_NUMERIC:  newNumericQuery,
+	v1.SearchDataType_SEARCH_DATETIME: newTimeQuery,
+	v1.SearchDataType_SEARCH_ENUM:     newEnumQuery,
 	// Map type is handled specially.
 }
 
@@ -107,24 +102,16 @@ func newBoolQuery(_ v1.SearchCategory, field string, value string) (query.Query,
 	return q, nil
 }
 
-func newSeverityQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
-	return evaluateEnum(value, field, storage.Severity_name)
-}
-
-func newEnforcementQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
-	return evaluateEnum(value, field, storage.EnforcementAction_name)
-}
-
-func newLifecycleStageQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
-	return evaluateEnum(value, field, storage.LifecycleStage_name)
-}
-
-func newSecretTypeQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
-	return evaluateEnum(value, field, storage.SecretType_name)
-}
-
-func newViolationStateQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {
-	return evaluateEnum(value, field, storage.ViolationState_name)
+func newEnumQuery(_ v1.SearchCategory, field, value string) (query.Query, error) {
+	enumValues := enums.Get(field, value)
+	if len(enumValues) == 0 {
+		return nil, fmt.Errorf("could not find corresponding enum at field %q with value %q", field, value)
+	}
+	dq := bleve.NewDisjunctionQuery()
+	for _, s := range enumValues {
+		dq.AddQuery(createNumericQuery(field, "=", floatPtr(float64(s))))
+	}
+	return dq, nil
 }
 
 func typeQuery(category v1.SearchCategory) query.Query {

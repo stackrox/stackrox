@@ -61,19 +61,7 @@ func searchFieldToMapping(sf *v1.SearchField) *mapping.FieldMapping {
 		return setFieldMappingDefaults(mapping.NewTextFieldMapping(), sf.GetStore())
 	case v1.SearchDataType_SEARCH_BOOL:
 		return setFieldMappingDefaults(mapping.NewBooleanFieldMapping(), sf.GetStore())
-	case v1.SearchDataType_SEARCH_NUMERIC:
-		fallthrough
-	case v1.SearchDataType_SEARCH_ENFORCEMENT:
-		fallthrough
-	case v1.SearchDataType_SEARCH_LIFECYCLE_STAGE:
-		fallthrough
-	case v1.SearchDataType_SEARCH_SEVERITY:
-		fallthrough
-	case v1.SearchDataType_SEARCH_DATETIME:
-		fallthrough
-	case v1.SearchDataType_SEARCH_VIOLATION_STATE:
-		fallthrough
-	case v1.SearchDataType_SEARCH_SECRET_TYPE:
+	case v1.SearchDataType_SEARCH_NUMERIC, v1.SearchDataType_SEARCH_ENUM, v1.SearchDataType_SEARCH_DATETIME:
 		return setFieldMappingDefaults(mapping.NewNumericFieldMapping(), sf.GetStore())
 	default:
 		panic(fmt.Errorf("Search Field '%s' is not handled in the mapping", sf.Type))
