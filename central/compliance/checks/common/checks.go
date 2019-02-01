@@ -175,7 +175,12 @@ func IsPolicyEnabled(p *storage.Policy) bool {
 
 // IsPolicyEnforced returns true if the policy has one or more enforcement actions.
 func IsPolicyEnforced(p *storage.Policy) bool {
-	return len(p.GetEnforcementActions()) != 0
+	for _, act := range p.GetEnforcementActions() {
+		if act != storage.EnforcementAction_UNSET_ENFORCEMENT {
+			return true
+		}
+	}
+	return false
 }
 
 // ClusterHasNetworkPolicies ensures the cluster has ingress and egress network policies and does
