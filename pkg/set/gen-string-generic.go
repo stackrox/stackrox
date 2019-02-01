@@ -6,6 +6,8 @@
 package set
 
 import (
+	"sort"
+
 	"github.com/deckarep/golang-set"
 )
 
@@ -99,6 +101,19 @@ func (k StringSet) AsSlice() []string {
 	return elems
 }
 
+// AsSortedSlice returns a slice of the elements in the set, sorted using the passed less function.
+func (k StringSet) AsSortedSlice(less func(i, j string) bool) []string {
+	slice := k.AsSlice()
+	if len(slice) < 2 {
+		return slice
+	}
+	// Since we're generating the code, we might as well use sort.Sort
+	// and avoid paying the reflection penalty of sort.Slice.
+	sortable := &sortablestringSlice{slice: slice, less: less}
+	sort.Sort(sortable)
+	return sortable.slice
+}
+
 // NewStringSet returns a new set with the given key type.
 func NewStringSet(initial ...string) StringSet {
 	k := StringSet{underlying: mapset.NewSet()}
@@ -106,4 +121,21 @@ func NewStringSet(initial ...string) StringSet {
 		k.Add(elem)
 	}
 	return k
+}
+
+type sortablestringSlice struct {
+	slice []string
+	less  func(i, j string) bool
+}
+
+func (s *sortablestringSlice) Len() int {
+	return len(s.slice)
+}
+
+func (s *sortablestringSlice) Less(i, j int) bool {
+	return s.less(s.slice[i], s.slice[j])
+}
+
+func (s *sortablestringSlice) Swap(i, j int) {
+	s.slice[j], s.slice[i] = s.slice[i], s.slice[j]
 }

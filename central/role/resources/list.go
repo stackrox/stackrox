@@ -2,8 +2,6 @@
 package resources
 
 import (
-	"sort"
-
 	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
@@ -40,22 +38,17 @@ var (
 	ServiceIdentity       = newResource("ServiceIdentity")
 	User                  = newResource("User")
 
-	allResources = make(map[permissions.Resource]struct{})
+	allResources = permissions.NewResourceSet()
 )
 
 func newResource(name permissions.Resource) permissions.Resource {
-	allResources[name] = struct{}{}
+	allResources.Add(name)
 	return name
 }
 
 // ListAll returns a list of all resources.
 func ListAll() []permissions.Resource {
-	lst := make([]permissions.Resource, 0, len(allResources))
-	for r := range allResources {
-		lst = append(lst, r)
-	}
-	sort.Slice(lst, func(i, j int) bool {
-		return lst[i] < lst[j]
+	return allResources.AsSortedSlice(func(i, j permissions.Resource) bool {
+		return i < j
 	})
-	return lst
 }

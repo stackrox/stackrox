@@ -6,6 +6,8 @@
 package set
 
 import (
+	"sort"
+
 	"github.com/deckarep/golang-set"
 )
 
@@ -99,6 +101,19 @@ func (k Uint32Set) AsSlice() []uint32 {
 	return elems
 }
 
+// AsSortedSlice returns a slice of the elements in the set, sorted using the passed less function.
+func (k Uint32Set) AsSortedSlice(less func(i, j uint32) bool) []uint32 {
+	slice := k.AsSlice()
+	if len(slice) < 2 {
+		return slice
+	}
+	// Since we're generating the code, we might as well use sort.Sort
+	// and avoid paying the reflection penalty of sort.Slice.
+	sortable := &sortableuint32Slice{slice: slice, less: less}
+	sort.Sort(sortable)
+	return sortable.slice
+}
+
 // NewUint32Set returns a new set with the given key type.
 func NewUint32Set(initial ...uint32) Uint32Set {
 	k := Uint32Set{underlying: mapset.NewSet()}
@@ -106,4 +121,21 @@ func NewUint32Set(initial ...uint32) Uint32Set {
 		k.Add(elem)
 	}
 	return k
+}
+
+type sortableuint32Slice struct {
+	slice []uint32
+	less  func(i, j uint32) bool
+}
+
+func (s *sortableuint32Slice) Len() int {
+	return len(s.slice)
+}
+
+func (s *sortableuint32Slice) Less(i, j int) bool {
+	return s.less(s.slice[i], s.slice[j])
+}
+
+func (s *sortableuint32Slice) Swap(i, j int) {
+	s.slice[j], s.slice[i] = s.slice[i], s.slice[j]
 }

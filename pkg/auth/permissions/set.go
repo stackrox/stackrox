@@ -3,7 +3,7 @@
 // Any changes will be lost if this file is regenerated.
 // see https://github.com/mauricelam/genny
 
-package set
+package permissions
 
 import (
 	"sort"
@@ -18,17 +18,17 @@ import (
 // The permission set is an example of how to do that.
 // You can also specify the -imp command to specify additional imports in your generated file, if required.
 
-// int represents a generic type that we want to have a set of.
+// Resource represents a generic type that we want to have a set of.
 
-// IntSet will get translated to generic sets.
+// ResourceSet will get translated to generic sets.
 // It uses mapset.Set as the underlying implementation, so it comes with a bunch
 // of utility methods, and is thread-safe.
-type IntSet struct {
+type ResourceSet struct {
 	underlying mapset.Set
 }
 
-// Add adds an element of type int.
-func (k IntSet) Add(i int) bool {
+// Add adds an element of type Resource.
+func (k ResourceSet) Add(i Resource) bool {
 	if k.underlying == nil {
 		k.underlying = mapset.NewSet()
 	}
@@ -36,15 +36,15 @@ func (k IntSet) Add(i int) bool {
 	return k.underlying.Add(i)
 }
 
-// Remove removes an element of type int.
-func (k IntSet) Remove(i int) {
+// Remove removes an element of type Resource.
+func (k ResourceSet) Remove(i Resource) {
 	if k.underlying != nil {
 		k.underlying.Remove(i)
 	}
 }
 
-// Contains returns whether the set contains an element of type int.
-func (k IntSet) Contains(i int) bool {
+// Contains returns whether the set contains an element of type Resource.
+func (k ResourceSet) Contains(i Resource) bool {
 	if k.underlying != nil {
 		return k.underlying.Contains(i)
 	}
@@ -52,7 +52,7 @@ func (k IntSet) Contains(i int) bool {
 }
 
 // Cardinality returns the number of elements in the set.
-func (k IntSet) Cardinality() int {
+func (k ResourceSet) Cardinality() int {
 	if k.underlying != nil {
 		return k.underlying.Cardinality()
 	}
@@ -60,82 +60,82 @@ func (k IntSet) Cardinality() int {
 }
 
 // Difference returns a new set with all elements of k not in other.
-func (k IntSet) Difference(other IntSet) IntSet {
+func (k ResourceSet) Difference(other ResourceSet) ResourceSet {
 	if k.underlying == nil {
-		return IntSet{underlying: other.underlying}
+		return ResourceSet{underlying: other.underlying}
 	} else if other.underlying == nil {
-		return IntSet{underlying: k.underlying}
+		return ResourceSet{underlying: k.underlying}
 	}
 
-	return IntSet{underlying: k.underlying.Difference(other.underlying)}
+	return ResourceSet{underlying: k.underlying.Difference(other.underlying)}
 }
 
 // Intersect returns a new set with the intersection of the members of both sets.
-func (k IntSet) Intersect(other IntSet) IntSet {
+func (k ResourceSet) Intersect(other ResourceSet) ResourceSet {
 	if k.underlying != nil && other.underlying != nil {
-		return IntSet{underlying: k.underlying.Intersect(other.underlying)}
+		return ResourceSet{underlying: k.underlying.Intersect(other.underlying)}
 	}
-	return IntSet{}
+	return ResourceSet{}
 }
 
 // Union returns a new set with the union of the members of both sets.
-func (k IntSet) Union(other IntSet) IntSet {
+func (k ResourceSet) Union(other ResourceSet) ResourceSet {
 	if k.underlying == nil {
-		return IntSet{underlying: other.underlying}
+		return ResourceSet{underlying: other.underlying}
 	} else if other.underlying == nil {
-		return IntSet{underlying: k.underlying}
+		return ResourceSet{underlying: k.underlying}
 	}
 
-	return IntSet{underlying: k.underlying.Union(other.underlying)}
+	return ResourceSet{underlying: k.underlying.Union(other.underlying)}
 }
 
 // AsSlice returns a slice of the elements in the set. The order is unspecified.
-func (k IntSet) AsSlice() []int {
+func (k ResourceSet) AsSlice() []Resource {
 	if k.underlying == nil {
 		return nil
 	}
-	elems := make([]int, 0, k.Cardinality())
+	elems := make([]Resource, 0, k.Cardinality())
 	for elem := range k.underlying.Iter() {
-		elems = append(elems, elem.(int))
+		elems = append(elems, elem.(Resource))
 	}
 	return elems
 }
 
 // AsSortedSlice returns a slice of the elements in the set, sorted using the passed less function.
-func (k IntSet) AsSortedSlice(less func(i, j int) bool) []int {
+func (k ResourceSet) AsSortedSlice(less func(i, j Resource) bool) []Resource {
 	slice := k.AsSlice()
 	if len(slice) < 2 {
 		return slice
 	}
 	// Since we're generating the code, we might as well use sort.Sort
 	// and avoid paying the reflection penalty of sort.Slice.
-	sortable := &sortableintSlice{slice: slice, less: less}
+	sortable := &sortableresourceSlice{slice: slice, less: less}
 	sort.Sort(sortable)
 	return sortable.slice
 }
 
-// NewIntSet returns a new set with the given key type.
-func NewIntSet(initial ...int) IntSet {
-	k := IntSet{underlying: mapset.NewSet()}
+// NewResourceSet returns a new set with the given key type.
+func NewResourceSet(initial ...Resource) ResourceSet {
+	k := ResourceSet{underlying: mapset.NewSet()}
 	for _, elem := range initial {
 		k.Add(elem)
 	}
 	return k
 }
 
-type sortableintSlice struct {
-	slice []int
-	less  func(i, j int) bool
+type sortableresourceSlice struct {
+	slice []Resource
+	less  func(i, j Resource) bool
 }
 
-func (s *sortableintSlice) Len() int {
+func (s *sortableresourceSlice) Len() int {
 	return len(s.slice)
 }
 
-func (s *sortableintSlice) Less(i, j int) bool {
+func (s *sortableresourceSlice) Less(i, j int) bool {
 	return s.less(s.slice[i], s.slice[j])
 }
 
-func (s *sortableintSlice) Swap(i, j int) {
+func (s *sortableresourceSlice) Swap(i, j int) {
 	s.slice[j], s.slice[i] = s.slice[i], s.slice[j]
 }

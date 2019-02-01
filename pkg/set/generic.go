@@ -1,6 +1,8 @@
 package set
 
 import (
+	"sort"
+
 	"github.com/deckarep/golang-set"
 	"github.com/mauricelam/genny/generic"
 )
@@ -16,6 +18,7 @@ import (
 //go:generate genny -in=$GOFILE -out=gen-string-$GOFILE gen "KeyType=string"
 //go:generate genny -in=$GOFILE -out=gen-int-$GOFILE gen "KeyType=int"
 //go:generate genny -in=$GOFILE -out=gen-uint32-$GOFILE gen "KeyType=uint32"
+//go:generate genny -in=$GOFILE -out=$GOPATH/src/github.com/stackrox/rox/pkg/auth/permissions/set.go -pkg permissions gen "KeyType=Resource"
 type KeyType generic.Type
 
 // KeyTypeSet will get translated to generic sets.
@@ -99,6 +102,19 @@ func (k KeyTypeSet) AsSlice() []KeyType {
 	return elems
 }
 
+// AsSortedSlice returns a slice of the elements in the set, sorted using the passed less function.
+func (k KeyTypeSet) AsSortedSlice(less func(i, j KeyType) bool) []KeyType {
+	slice := k.AsSlice()
+	if len(slice) < 2 {
+		return slice
+	}
+	// Since we're generating the code, we might as well use sort.Sort
+	// and avoid paying the reflection penalty of sort.Slice.
+	sortable := &sortableKeyTypeSlice{slice: slice, less: less}
+	sort.Sort(sortable)
+	return sortable.slice
+}
+
 // NewKeyTypeSet returns a new set with the given key type.
 func NewKeyTypeSet(initial ...KeyType) KeyTypeSet {
 	k := KeyTypeSet{underlying: mapset.NewSet()}
@@ -106,4 +122,21 @@ func NewKeyTypeSet(initial ...KeyType) KeyTypeSet {
 		k.Add(elem)
 	}
 	return k
+}
+
+type sortableKeyTypeSlice struct {
+	slice []KeyType
+	less  func(i, j KeyType) bool
+}
+
+func (s *sortableKeyTypeSlice) Len() int {
+	return len(s.slice)
+}
+
+func (s *sortableKeyTypeSlice) Less(i, j int) bool {
+	return s.less(s.slice[i], s.slice[j])
+}
+
+func (s *sortableKeyTypeSlice) Swap(i, j int) {
+	s.slice[j], s.slice[i] = s.slice[i], s.slice[j]
 }
