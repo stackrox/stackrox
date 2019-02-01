@@ -28,6 +28,8 @@ type ComplianceDataRepository interface {
 	NetworkFlows() []*storage.NetworkFlow
 	PolicyCategories() map[string]set.StringSet
 	Notifiers() []*storage.Notifier
+	CISDockerTriggered() bool
+	CISKubernetesTriggered() bool
 
 	// Per-host data
 	HostScraped() map[string]*compliance.ComplianceReturn

@@ -10,4 +10,6 @@ type Repository interface {
 	Controls(standardID string) ([]*v1.ComplianceControl, error)
 	GetCategoryByControl(controlID string) *Category
 	Groups(standardID string) ([]*v1.ComplianceControlGroup, error)
+	GetCISDockerStandardID() (string, error)
+	GetCISKubernetesStandardID() (string, error)
 }

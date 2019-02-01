@@ -48,6 +48,30 @@ func (mr *MockComplianceDataRepositoryMockRecorder) Alerts() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Alerts", reflect.TypeOf((*MockComplianceDataRepository)(nil).Alerts))
 }
 
+// CISDockerTriggered mocks base method
+func (m *MockComplianceDataRepository) CISDockerTriggered() bool {
+	ret := m.ctrl.Call(m, "CISDockerTriggered")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CISDockerTriggered indicates an expected call of CISDockerTriggered
+func (mr *MockComplianceDataRepositoryMockRecorder) CISDockerTriggered() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CISDockerTriggered", reflect.TypeOf((*MockComplianceDataRepository)(nil).CISDockerTriggered))
+}
+
+// CISKubernetesTriggered mocks base method
+func (m *MockComplianceDataRepository) CISKubernetesTriggered() bool {
+	ret := m.ctrl.Call(m, "CISKubernetesTriggered")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CISKubernetesTriggered indicates an expected call of CISKubernetesTriggered
+func (mr *MockComplianceDataRepositoryMockRecorder) CISKubernetesTriggered() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CISKubernetesTriggered", reflect.TypeOf((*MockComplianceDataRepository)(nil).CISKubernetesTriggered))
+}
+
 // Cluster mocks base method
 func (m *MockComplianceDataRepository) Cluster() *storage.Cluster {
 	ret := m.ctrl.Call(m, "Cluster")

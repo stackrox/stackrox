@@ -3,6 +3,8 @@ package data
 import (
 	alertStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/central/compliance/standards"
+	complianceStore "github.com/stackrox/rox/central/compliance/store"
 	imageStore "github.com/stackrox/rox/central/image/datastore"
 	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
@@ -29,6 +31,8 @@ type factory struct {
 	processIndicatorStore processIndicatorStore.DataStore
 	networkFlowStore      networkFlowStore.ClusterStore
 	notifierStore         notifierStore.Store
+	complianceStore       complianceStore.Store
+	standardsRepo         standards.Repository
 }
 
 // NewDefaultFactory creates a new RepositoryFactory using the default instances for accessing data.
@@ -43,6 +47,8 @@ func NewDefaultFactory() RepositoryFactory {
 		processIndicatorStore: processIndicatorStore.Singleton(),
 		networkFlowStore:      networkFlowStore.Singleton(),
 		notifierStore:         notifierStore.Singleton(),
+		complianceStore:       complianceStore.Singleton(),
+		standardsRepo:         standards.RegistrySingleton(),
 	}
 }
 

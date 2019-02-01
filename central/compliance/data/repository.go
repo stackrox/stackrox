@@ -18,16 +18,18 @@ type repository struct {
 	nodes       map[string]*storage.Node
 	deployments map[string]*storage.Deployment
 
-	alerts             []*storage.ListAlert
-	networkPolicies    map[string]*storage.NetworkPolicy
-	networkGraph       *v1.NetworkGraph
-	policies           map[string]*storage.Policy
-	images             []*storage.ListImage
-	imageIntegrations  []*storage.ImageIntegration
-	processIndicators  []*storage.ProcessIndicator
-	networkFlows       []*storage.NetworkFlow
-	notifiers          []*storage.Notifier
-	categoryToPolicies map[string]set.StringSet // maps categories to policy set
+	alerts                []*storage.ListAlert
+	networkPolicies       map[string]*storage.NetworkPolicy
+	networkGraph          *v1.NetworkGraph
+	policies              map[string]*storage.Policy
+	images                []*storage.ListImage
+	imageIntegrations     []*storage.ImageIntegration
+	processIndicators     []*storage.ProcessIndicator
+	networkFlows          []*storage.NetworkFlow
+	notifiers             []*storage.Notifier
+	cisDockerRunCheck     bool
+	cisKubernetesRunCheck bool
+	categoryToPolicies    map[string]set.StringSet // maps categories to policy set
 
 	hostScrape map[string]*compliance.ComplianceReturn
 }
@@ -86,6 +88,14 @@ func (r *repository) Alerts() []*storage.ListAlert {
 
 func (r *repository) HostScraped() map[string]*compliance.ComplianceReturn {
 	return r.hostScrape
+}
+
+func (r *repository) CISDockerTriggered() bool {
+	return r.cisDockerRunCheck
+}
+
+func (r *repository) CISKubernetesTriggered() bool {
+	return r.cisKubernetesRunCheck
 }
 
 func newRepository(domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn, factory *factory) (*repository, error) {
@@ -231,6 +241,28 @@ func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[s
 	}
 
 	r.hostScrape = scrapeResults
+
+	// check for latest compliance results to determine
+	// if CIS benchmarks were ever run
+	cisDockerStandardID, err := f.standardsRepo.GetCISDockerStandardID()
+	if err != nil {
+		return err
+	}
+
+	cisKubernetesStandardID, err := f.standardsRepo.GetCISKubernetesStandardID()
+	if err != nil {
+		return err
+	}
+
+	dockerCISRunResults, err := f.complianceStore.GetLatestRunResults(r.Cluster().GetId(), cisDockerStandardID)
+	if err == nil && len(dockerCISRunResults.GetClusterResults().GetControlResults()) > 0 {
+		r.cisDockerRunCheck = true
+	}
+
+	kubeCISRunResults, err := f.complianceStore.GetLatestRunResults(r.Cluster().GetId(), cisKubernetesStandardID)
+	if err == nil && len(kubeCISRunResults.GetClusterResults().GetControlResults()) > 0 {
+		r.cisKubernetesRunCheck = true
+	}
 
 	return nil
 }
