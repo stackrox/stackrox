@@ -36,9 +36,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .addLimits("memory", "0")
                     .addRequest("memory", "0")
                     .addRequest("cpu", "0")
-                    .addVolMountName("test")
-                    .addVolName("test")
-                    .addMountPath("/tmp")
+                    .addVolume("test", "/tmp")
                     .setSkipReplicaWait(true),
 
             new Deployment()

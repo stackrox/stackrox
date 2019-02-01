@@ -6,31 +6,32 @@ import orchestratormanager.OrchestratorType
 class Deployment {
     String name
     String namespace = Constants.ORCHESTRATOR_NAMESPACE
-    Map<String, String> volNames = [:]
-    List<String> volMounts = new ArrayList<String>()
-    String volType
     String image
-    String mountpath
-    List<String> secretNames = new ArrayList<String>()
-    Map<String, String> labels = new HashMap<>()
-    Map<Integer, String> ports = new HashMap<>()
+    Map<String, String> labels = [:]
+    Map<Integer, String> ports = [:]
     Integer targetport
-    Map<String,String> annotation = new HashMap<>()
-    List<String> command = new ArrayList<>()
-    List<Pod> pods = new ArrayList<>()
-    String deploymentUid
-    Boolean skipReplicaWait = false
+    Map<String, String> volumes = [:]
+    Map<String, String> volumeMounts = [:]
+    Map<String, String> secretNames = [:]
+    List<String> imagePullSecret = []
+    Map<String,String> annotation = [:]
+    List<String> command = []
+    List<String> args = []
     Integer replicas = 1
-    List<String> args = new ArrayList<>()
-    Boolean exposeAsService = false
-    Map<String, String> env = new HashMap<>()
+    Map<String, String> env = [:]
     Boolean isPrivileged = false
-    Map<String , String> limits = new HashMap<>()
-    Map<String , String> request = new HashMap<>()
-    Boolean createLoadBalancer = false
+    Map<String , String> limits = [:]
+    Map<String , String> request = [:]
+    Boolean hostNetwork = false
+
+    // Misc
     String loadBalancerIP = null
+    String deploymentUid
+    List<Pod> pods = []
+    Boolean skipReplicaWait = false
+    Boolean exposeAsService = false
+    Boolean createLoadBalancer = false
     String serviceName
-    List<String> imagePullSecret = new ArrayList<String>()
 
     Deployment setName(String n) {
         this.name = n
@@ -39,23 +40,8 @@ class Deployment {
         return this
     }
 
-    Deployment setServiceName(String name) {
-        this.serviceName = name
-        return this
-    }
-
-    Deployment addImagePullSecret(String sec) {
-        this.imagePullSecret.add(sec)
-        return this
-    }
-
     Deployment setNamespace(String n) {
         this.namespace = n
-        return this
-    }
-
-    Deployment setTargetPort(int port) {
-        this.targetport = port
         return this
     }
 
@@ -64,38 +50,39 @@ class Deployment {
         return this
     }
 
-    Deployment addVolType(String type) {
-        this.volType = type
-        return this
-    }
-
-    Deployment addMountPath(String m) {
-        this.mountpath = m
-        return this
-    }
-
     Deployment addLabel(String k, String v) {
         this.labels[k] = v
         return this
     }
 
-    Deployment addLimits(String key, String val) {
-        this.limits.put(key, val)
+    Deployment addPort(Integer p, String protocol = "TCP") {
+        this.ports.put(p, protocol)
         return this
     }
 
-    Deployment addRequest(String key, String val) {
-        this.request.put(key, val)
+    Deployment setTargetPort(int port) {
+        this.targetport = port
+        return this
+    }
+
+    Deployment addVolume(String v, String p, boolean enableHostPath = false) {
+        enableHostPath ? this.volumes.put(v, p) : this.volumes.put(v, null)
+        this.volumeMounts.put(v, p)
+        return this
+    }
+
+    Deployment addSecretName(String v, String s) {
+        this.secretNames.put(v, s)
+        return this
+    }
+
+    Deployment addImagePullSecret(String sec) {
+        this.imagePullSecret.add(sec)
         return this
     }
 
     Deployment addAnnotation(String key, String val) {
         this.annotation[key] = val
-        return this
-    }
-
-    Deployment addPort(Integer p, String protocol = "TCP") {
-        this.ports.put(p, protocol)
         return this
     }
 
@@ -109,33 +96,33 @@ class Deployment {
         return this
     }
 
-    Deployment setExposeAsService(Boolean expose) {
-        this.exposeAsService = expose
+    Deployment setReplicas(Integer n) {
+        this.replicas = n
         return this
     }
 
-    Deployment setCreateLoadBalancer(Boolean lb) {
-        this.createLoadBalancer = lb
+    Deployment setEnv(Map<String, String> env) {
+        this.env = env
         return this
     }
 
-    Deployment addSecretName(String s) {
-        this.secretNames.add(s)
+    Deployment setPrivilegedFlag(boolean val) {
+        this.isPrivileged = val
         return this
     }
 
-    Deployment addVolName(String v, String p = null) {
-        this.volNames.put(v, p)
+    Deployment addLimits(String key, String val) {
+        this.limits.put(key, val)
         return this
     }
 
-    Deployment addVolMountName(String v) {
-        this.volMounts.add(v)
+    Deployment addRequest(String key, String val) {
+        this.request.put(key, val)
         return this
     }
 
-    Deployment setSkipReplicaWait(Boolean skip) {
-        this.skipReplicaWait = skip
+    Deployment setHostNetwork(boolean val) {
+        this.hostNetwork = val
         return this
     }
 
@@ -152,13 +139,23 @@ class Deployment {
         return this
     }
 
-    Deployment setEnv(Map<String, String> env) {
-        this.env = env
+    Deployment setSkipReplicaWait(Boolean skip) {
+        this.skipReplicaWait = skip
         return this
     }
 
-    Deployment setReplicas(Integer n) {
-        this.replicas = n
+    Deployment setExposeAsService(Boolean expose) {
+        this.exposeAsService = expose
+        return this
+    }
+
+    Deployment setCreateLoadBalancer(Boolean lb) {
+        this.createLoadBalancer = lb
+        return this
+    }
+
+    Deployment setServiceName(String name) {
+        this.serviceName = name
         return this
     }
 
@@ -169,11 +166,6 @@ class Deployment {
 
     def delete() {
         OrchestratorType.orchestrator.deleteDeployment(this)
-    }
-
-    Deployment setPrivilegedFlag(boolean val) {
-        this.isPrivileged = val
-        return this
     }
 }
 

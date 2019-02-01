@@ -125,9 +125,7 @@ class IntegrationsTest extends BaseSpecification {
                        .setEnv([ "SPLUNK_START_ARGS": "--accept-license", "SPLUNK_USER": "root" ])
                        .addLabel("app", "splunk")
                        .setPrivilegedFlag(true)
-                       .addVolMountName("test")
-                       .addVolName("test")
-                       .addMountPath("/tmp")
+                       .addVolume("test", "/tmp")
                        .setSkipReplicaWait(true)
                        .addImagePullSecret("stackrox")
 

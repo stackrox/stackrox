@@ -775,24 +775,10 @@ class Kubernetes implements OrchestratorMain {
             )
         }
 
-        List<VolumeMount> volMounts = deployment.volMounts.collect {
-            new VolumeMount(deployment.mountpath, null, it, true, null)
-        }
-
         List<LocalObjectReference> imagePullSecrets = new LinkedList<>()
         for (String str : deployment.getImagePullSecret()) {
             LocalObjectReference obj = new LocalObjectReference(name: str)
             imagePullSecrets.add(obj)
-        }
-
-        List<VolumeMount> mounts = new LinkedList<>()
-        for (int i = 0; i < deployment.getVolMounts().size(); ++i) {
-            VolumeMount mount = new VolumeMount(
-                    name: deployment.getVolMounts().get(i),
-                    mountPath: deployment.getMountpath(),
-                    readOnly: true
-            )
-            mounts.add(mount)
         }
 
         List<EnvVar> envVars = deployment.env.collect {
@@ -800,20 +786,27 @@ class Kubernetes implements OrchestratorMain {
         }
 
         List<Volume> volumes = []
-        deployment.volNames.each {
+        deployment.volumes.each {
             k, v -> Volume vol = new Volume(
                     name: k,
                     hostPath: v ? new HostPathVolumeSource(
                             path: v,
                             type: "Directory") :
+                            null,
+                    secret: deployment.secretNames.get(k) ?
+                            new SecretVolumeSource(secretName: deployment.secretNames.get(k)) :
                             null
             )
-            if (deployment.secretNames != null || deployment.secretNames.size() != 0) {
-                for (String secret : deployment.secretNames) {
-                    vol.setSecret(new SecretVolumeSource(null, null, null, secret))
-                }
-            }
             volumes.add(vol)
+        }
+
+        List<VolumeMount> volMounts = []
+        deployment.volumeMounts.each {
+            k, v -> VolumeMount volMount = new VolumeMount(
+                    mountPath: v,
+                    name: k
+            )
+            volMounts.add(volMount)
         }
 
         Map<String , Quantity> limits = new HashMap<>()
@@ -843,7 +836,8 @@ class Kubernetes implements OrchestratorMain {
         PodSpec podSpec = new PodSpec(
                 containers: [container],
                 volumes: volumes,
-                imagePullSecrets: imagePullSecrets
+                imagePullSecrets: imagePullSecrets,
+                hostNetwork: deployment.hostNetwork
         )
         return podSpec
     }

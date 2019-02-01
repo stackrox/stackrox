@@ -88,7 +88,7 @@ ruleset {
     // rulesets/convention.xml
     ConfusingTernary 
     CouldBeElvis 
-    CouldBeSwitchStatement 
+    // CouldBeSwitchStatement
     // FieldTypeRequired
     HashtableIsObsolete 
     IfStatementCouldBeTernary 

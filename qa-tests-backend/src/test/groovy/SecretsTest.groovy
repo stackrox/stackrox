@@ -12,10 +12,8 @@ class SecretsTest extends BaseSpecification {
                 .setNamespace("qa")
                 .setImage ("nginx:1.7.9")
                 .addLabel ( "app", "test" )
-                .addVolName("test")
-                .addVolMountName("test")
-                .addMountPath("/etc/try")
-                .addSecretName(secretName)
+                .addVolume("test", "/etc/try")
+                .addSecretName("test", secretName)
     }
 
     @Category(BAT)

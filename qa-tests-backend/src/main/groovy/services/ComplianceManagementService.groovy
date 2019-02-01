@@ -36,11 +36,14 @@ class ComplianceManagementService extends BaseService {
         ComplianceRun complianceRun = triggerComplianceRun(standardId, clusterId)
         println "triggered ${standardId} compliance run"
         println "waiting for the run to finish..."
-        while (complianceRun.state != ComplianceRun.State.FINISHED) {
+        Long startTime = System.currentTimeMillis()
+        while (complianceRun.state != ComplianceRun.State.FINISHED &&
+                (System.currentTimeMillis() - startTime) < 30000) {
+            sleep 1000
             complianceRun = getRecentRuns(standardId).find { it.id == complianceRun.id }
-            sleep 2000
         }
-        println "${standardId} run completed!"
+        assert complianceRun.state == ComplianceRun.State.FINISHED
+        println "${standardId} run completed! Run took ${(System.currentTimeMillis() - startTime) / 1000}s"
         return complianceRun.id
     }
 
@@ -58,20 +61,18 @@ class ComplianceManagementService extends BaseService {
     }
 
     static triggerComplianceRunsAndWait(String standardId = null, String clusterId = null) {
-        def complianceRunIds = [:]
         List<ComplianceRun> complianceRuns = triggerComplianceRuns(standardId, clusterId)
-        println complianceRuns
         println "triggered ${standardId ?: "all"} compliance run${standardId ? "" : "s"}"
         println "waiting for the run${standardId ? "" : "s"} to finish..."
-        for (ComplianceRun run : complianceRuns) {
-            while (run.state != ComplianceRun.State.FINISHED) {
-                run = getRecentRuns(standardId).find { it.id == run.id }
-                sleep 2000
-            }
-            println "${run.standardId} run completed!"
-            complianceRunIds.put(run.standardId, run.id)
+        Long startTime = System.currentTimeMillis()
+        while (complianceRuns.any { it.state != ComplianceRun.State.FINISHED } &&
+                (System.currentTimeMillis() - startTime) < 30000) {
+            sleep 1000
+            complianceRuns = getRunStatuses(complianceRuns*.id).runsList
         }
-        return complianceRunIds
+        assert !complianceRuns.any { it.state != ComplianceRun.State.FINISHED }
+        println "Compliance run${standardId ? "" : "s"} took ${(System.currentTimeMillis() - startTime) / 1000}s"
+        return complianceRuns.collectEntries { [(it.standardId) : it.id] }
     }
 
     static getRunStatuses(List<String> runIds) {
