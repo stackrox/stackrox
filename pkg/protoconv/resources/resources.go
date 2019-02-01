@@ -315,6 +315,10 @@ func (w *DeploymentWrap) populateSecurityContext(podSpec v1.PodSpec) {
 				sc.Privileged = *p
 			}
 
+			if p := s.ReadOnlyRootFilesystem; p != nil {
+				sc.ReadOnlyRootFilesystem = *p
+			}
+
 			if SELinux := s.SELinuxOptions; SELinux != nil {
 				sc.Selinux = &storage.SecurityContext_SELinux{
 					User:  SELinux.User,

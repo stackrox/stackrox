@@ -17,7 +17,6 @@ func init() {
 }
 
 func clusterIsCompliant(ctx framework.ComplianceContext) {
-	common.ClusterHasNetworkPolicies(ctx)
 	common.CheckAnyPolicyInLifeCycle(ctx, storage.LifecycleStage_BUILD)
 	common.CheckAnyPolicyInLifeCycle(ctx, storage.LifecycleStage_DEPLOY)
 	common.CheckAnyPolicyInLifeCycle(ctx, storage.LifecycleStage_RUNTIME)

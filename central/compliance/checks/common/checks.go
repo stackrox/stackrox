@@ -52,6 +52,10 @@ func CheckImageScannerWasUsed(ctx framework.ComplianceContext) {
 // CheckFixedCVES returns true if we find any fixed cves in images.
 func CheckFixedCVES(ctx framework.ComplianceContext) {
 	for _, image := range ctx.Data().Images() {
+		if image.SetCves == nil {
+			framework.Failf(ctx, "Image %s was never scanned for CVEs", image.GetName())
+			return
+		}
 		if image.GetFixableCves() > 0 {
 			framework.Failf(ctx, "Image %s has %d fixed CVE(s). An image upgrade is required.", image.GetName(), image.GetFixableCves())
 		} else {
@@ -146,6 +150,22 @@ func DeploymentHasHostMounts(deployment *storage.Deployment) bool {
 		}
 	}
 	return false
+}
+
+// DeploymentHasReadOnlyFS checks if the deployment has read-only File System.
+func DeploymentHasReadOnlyFS(ctx framework.ComplianceContext) {
+	deployments := ctx.Data().Deployments()
+	for _, deployment := range deployments {
+		for _, container := range deployment.GetContainers() {
+			securityContext := container.GetSecurityContext()
+			readOnlyRootFS := securityContext.GetReadOnlyRootFilesystem()
+			if !readOnlyRootFS {
+				framework.Fail(ctx, "Deployments found using read-write filesystem")
+				return
+			}
+		}
+	}
+	framework.Pass(ctx, "Deployments are using read-only filesystem")
 }
 
 // IsPolicyEnabled returns true if the policy is enabled.

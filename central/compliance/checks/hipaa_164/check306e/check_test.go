@@ -94,6 +94,9 @@ func (s *suiteImpl) TestPass() {
 	images := []*storage.ListImage{
 		{
 			Name: "nginx",
+			SetCves: &storage.ListImage_Cves{
+				Cves: 0,
+			},
 			SetFixable: &storage.ListImage_FixableCves{
 				FixableCves: 0,
 			},

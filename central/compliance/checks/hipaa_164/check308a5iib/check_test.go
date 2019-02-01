@@ -7,9 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/networkentity"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -44,19 +42,7 @@ func (s *suiteImpl) TestFail() {
 		},
 	}
 
-	testNetworkPolicies := s.networkPolicies()
-	testNetworkGraph := &v1.NetworkGraph{
-		Nodes: []*v1.NetworkNode{
-			{
-				Entity:    networkentity.ForDeployment(testDeployments[0].GetId()).ToProto(),
-				PolicyIds: []string{testNetworkPolicies[0].GetId()},
-			},
-		},
-	}
-
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
-	data.EXPECT().NetworkPolicies().AnyTimes().Return(toMap(testNetworkPolicies))
-	data.EXPECT().NetworkGraph().AnyTimes().Return(testNetworkGraph)
 	data.EXPECT().Policies().AnyTimes().Return(nil)
 
 	run, err := framework.NewComplianceRun(check)
@@ -75,13 +61,6 @@ func (s *suiteImpl) TestFail() {
 	s.Equal(framework.FailStatus, checkResults.Evidence()[0].Status)
 	s.Equal(framework.FailStatus, checkResults.Evidence()[1].Status)
 	s.Equal(framework.FailStatus, checkResults.Evidence()[2].Status)
-
-	for _, deployment := range domain.Deployments() {
-		deploymentResults := checkResults.ForChild(deployment)
-		s.NoError(deploymentResults.Error())
-		s.Len(deploymentResults.Evidence(), 1)
-		s.Equal(framework.FailStatus, deploymentResults.Evidence()[0].Status)
-	}
 }
 
 func (s *suiteImpl) TestPass() {
@@ -96,22 +75,9 @@ func (s *suiteImpl) TestPass() {
 	}
 
 	testNodes := s.nodes()
-
-	testNetworkPolicies := s.networkPolicies()
 	testPolicies := s.policies()
 
-	testNetworkGraph := &v1.NetworkGraph{
-		Nodes: []*v1.NetworkNode{
-			{
-				Entity:    networkentity.ForDeployment(testDeployments[0].GetId()).ToProto(),
-				PolicyIds: []string{testNetworkPolicies[0].GetId(), testNetworkPolicies[1].GetId()},
-			},
-		},
-	}
-
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
-	data.EXPECT().NetworkPolicies().AnyTimes().Return(toMap(testNetworkPolicies))
-	data.EXPECT().NetworkGraph().AnyTimes().Return(testNetworkGraph)
 	data.EXPECT().Policies().AnyTimes().Return(testPolicies)
 
 	run, err := framework.NewComplianceRun(check)
@@ -130,13 +96,6 @@ func (s *suiteImpl) TestPass() {
 	s.Equal(framework.PassStatus, checkResults.Evidence()[0].Status)
 	s.Equal(framework.PassStatus, checkResults.Evidence()[1].Status)
 	s.Equal(framework.PassStatus, checkResults.Evidence()[2].Status)
-
-	for _, deployment := range domain.Deployments() {
-		deploymentResults := checkResults.ForChild(deployment)
-		s.NoError(deploymentResults.Error())
-		s.Len(deploymentResults.Evidence(), 1)
-		s.Equal(framework.PassStatus, deploymentResults.Evidence()[0].Status)
-	}
 }
 
 // Helper functions for test data.

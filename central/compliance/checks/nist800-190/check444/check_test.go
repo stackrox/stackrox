@@ -12,19 +12,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var (
-	testDeployments = []*storage.Deployment{
-		{
-			Id:   uuid.NewV4().String(),
-			Name: "foo",
-		},
-		{
-			Id:   uuid.NewV4().String(),
-			Name: "boo",
-		},
-	}
-)
-
 func TestCheck(t *testing.T) {
 	t.Parallel()
 	suite.Run(t, new(suiteImpl))
@@ -66,8 +53,24 @@ func (s *suiteImpl) TestPass() {
 		},
 	}
 
+	testDeployments := []*storage.Deployment{
+		{
+			Id:   uuid.NewV4().String(),
+			Name: "Foo",
+			Containers: []*storage.Container{
+				{
+					Name: "container-foo",
+					SecurityContext: &storage.SecurityContext{
+						ReadOnlyRootFilesystem: true,
+					},
+				},
+			},
+		},
+	}
+
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
 	data.EXPECT().Policies().AnyTimes().Return(toMap(testPolicies))
+	data.EXPECT().Deployments().AnyTimes().Return(toMapDeployments(testDeployments))
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
@@ -79,8 +82,10 @@ func (s *suiteImpl) TestPass() {
 	results := run.GetAllResults()
 	checkResults := results[standardID]
 	s.NotNil(checkResults)
-	s.Len(checkResults.Evidence(), 1)
+	s.Len(checkResults.Evidence(), 2)
 	s.Equal(framework.PassStatus, checkResults.Evidence()[0].Status)
+	s.Equal(framework.PassStatus, checkResults.Evidence()[1].Status)
+
 }
 
 func (s *suiteImpl) TestFail() {
@@ -105,8 +110,24 @@ func (s *suiteImpl) TestFail() {
 		},
 	}
 
+	testDeployments := []*storage.Deployment{
+		{
+			Id:   uuid.NewV4().String(),
+			Name: "Foo",
+			Containers: []*storage.Container{
+				{
+					Name: "container-foo",
+					SecurityContext: &storage.SecurityContext{
+						ReadOnlyRootFilesystem: false,
+					},
+				},
+			},
+		},
+	}
+
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
 	data.EXPECT().Policies().AnyTimes().Return(toMap(testPolicies))
+	data.EXPECT().Deployments().AnyTimes().Return(toMapDeployments(testDeployments))
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
@@ -118,8 +139,10 @@ func (s *suiteImpl) TestFail() {
 	results := run.GetAllResults()
 	checkResults := results[standardID]
 	s.NotNil(checkResults)
-	s.Len(checkResults.Evidence(), 1)
+	s.Len(checkResults.Evidence(), 2)
 	s.Equal(framework.FailStatus, checkResults.Evidence()[0].Status)
+	s.Equal(framework.FailStatus, checkResults.Evidence()[1].Status)
+
 }
 
 // Helper functions for test data.
@@ -151,6 +174,14 @@ func (s *suiteImpl) nodes() []*storage.Node {
 
 func toMap(in []*storage.Policy) map[string]*storage.Policy {
 	merp := make(map[string]*storage.Policy, len(in))
+	for _, np := range in {
+		merp[np.GetId()] = np
+	}
+	return merp
+}
+
+func toMapDeployments(in []*storage.Deployment) map[string]*storage.Deployment {
+	merp := make(map[string]*storage.Deployment, len(in))
 	for _, np := range in {
 		merp[np.GetId()] = np
 	}

@@ -5,7 +5,6 @@ import (
 	"regexp"
 
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -21,10 +20,8 @@ func init() {
 	framework.MustRegisterNewCheck(
 		standardID,
 		framework.ClusterKind,
-		[]string{"Policies"},
-		func(ctx framework.ComplianceContext) {
-			checkNIST414(ctx)
-		})
+		[]string{"Deployments", "Policies"},
+		checkNIST414)
 }
 
 // This is a partial check. We still need to do,
@@ -38,7 +35,8 @@ func checkNIST414(ctx framework.ComplianceContext) {
 }
 
 func checkSecretFilePerms(ctx framework.ComplianceContext) {
-	framework.ForEachDeployment(ctx, func(ctx framework.ComplianceContext, deployment *storage.Deployment) {
+	deployments := ctx.Data().Deployments()
+	for _, deployment := range deployments {
 		secretFilePath := ""
 		for _, container := range deployment.Containers {
 			for _, vol := range container.Volumes {
@@ -51,32 +49,46 @@ func checkSecretFilePerms(ctx framework.ComplianceContext) {
 					}
 					perm := info.Mode().Perm()
 					if perm != 0600 {
+						// since this control is clusterkind, returning on first failed condition
+						// not all the evidence is recorded
 						framework.Failf(ctx, "Deployment has secret file in %d mode instead of 0600", perm)
-					} else {
-						framework.Pass(ctx, "Deployment is using secrets securely")
+						return
 					}
 				}
 			}
 		}
-	})
+	}
+	framework.Pass(ctx, "Deployment is not using any secret volume mounts")
 }
 
 func checkSecretsInEnv(ctx framework.ComplianceContext) {
 	policies := ctx.Data().Policies()
 	for _, policy := range policies {
-		matchUpperCaseSecret, err := regexp.MatchString("SECRET", policy.GetFields().GetEnv().GetKey())
+		matchSecret, err := regexp.MatchString("(?i)secret", policy.GetFields().GetEnv().GetKey())
 		if err != nil {
 			log.Error(err)
 		}
-		matchLowerCaseSecret, err := regexp.MatchString("secret", policy.GetFields().GetEnv().GetKey())
-		if err != nil {
-			log.Error(err)
+		enabled := false
+		if matchSecret && err == nil &&
+			policy.GetFields().GetEnv().GetValue() != "" && !policy.GetDisabled() {
+			enabled = true
 		}
-		if (matchUpperCaseSecret || matchLowerCaseSecret) && err == nil &&
+
+		enforced := false
+		if (matchSecret) && err == nil &&
 			policy.GetFields().GetEnv().GetValue() != "" && !policy.GetDisabled() &&
 			len(policy.GetEnforcementActions()) != 0 {
-			framework.Pass(ctx, "Detecting Secrets in env is enabled and enforced")
+			enforced = true
+		}
+
+		if enabled && enforced {
+			framework.Pass(ctx, "Detecting secrets in env is enabled and enforced")
+			return
+		}
+		if enabled && !enforced {
+			framework.Fail(ctx, "Detecting secrets in env is enabled and not enforced")
 			return
 		}
 	}
+	framework.Fail(ctx, "No policy to detect secrets in env")
 }

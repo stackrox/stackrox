@@ -594,6 +594,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"addCapabilities: [String!]!",
 		"dropCapabilities: [String!]!",
 		"privileged: Boolean!",
+		"readOnlyRootFilesystem: Boolean!",
 		"selinux: SecurityContext_SELinux",
 	})
 	builder.AddType("SecurityContext_SELinux", []string{
@@ -5119,6 +5120,11 @@ func (resolver *securityContextResolver) DropCapabilities() []string {
 
 func (resolver *securityContextResolver) Privileged() bool {
 	value := resolver.data.GetPrivileged()
+	return value
+}
+
+func (resolver *securityContextResolver) ReadOnlyRootFilesystem() bool {
+	value := resolver.data.GetReadOnlyRootFilesystem()
 	return value
 }
 

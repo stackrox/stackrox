@@ -136,6 +136,7 @@ message SecurityContext {
     SELinux selinux                     = 2;
     repeated string drop_capabilities   = 3 [(gogoproto.moretags) = "search:\"Drop Capabilities,store\""];
     repeated string add_capabilities    = 4 [(gogoproto.moretags) = "search:\"Add Capabilities,store\""];
+    bool read_only_root_filesystem      = 5 [(gogoproto.moretags) = "search:\"Read Only Root Filesystem,store\""];
 }
 
 message Risk {

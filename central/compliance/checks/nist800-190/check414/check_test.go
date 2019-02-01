@@ -19,7 +19,33 @@ var (
 		Id: uuid.NewV4().String(),
 	}
 
-	testDeployments = []*storage.Deployment{
+	testNodes = []*storage.Node{
+		{
+			Id: uuid.NewV4().String(),
+		},
+		{
+			Id: uuid.NewV4().String(),
+		},
+	}
+)
+
+func TestNIST414_Success(t *testing.T) {
+	f1, err := os.OpenFile("/tmp/username", os.O_CREATE, 0600)
+	assert.NoError(t, err)
+
+	f2, err := os.OpenFile("/tmp/passwd", os.O_CREATE, 0600)
+	assert.NoError(t, err)
+
+	defer func() {
+		os.Remove(f1.Name())
+		os.Remove(f2.Name())
+	}()
+
+	registry := framework.RegistrySingleton()
+	check := registry.Lookup(standardID)
+	require.NotNil(t, check)
+
+	testDeployments := []*storage.Deployment{
 		{
 			Id:   uuid.NewV4().String(),
 			Name: "container1",
@@ -52,18 +78,7 @@ var (
 		},
 	}
 
-	testNodes = []*storage.Node{
-		{
-			Id: uuid.NewV4().String(),
-		},
-		{
-			Id: uuid.NewV4().String(),
-		},
-	}
-
-	domain = framework.NewComplianceDomain(testCluster, testNodes, testDeployments)
-
-	envSecretsEnabledAndEnforced = storage.Policy{
+	envSecretsEnabledAndEnforced := storage.Policy{
 		Id:   uuid.NewV4().String(),
 		Name: "Foo",
 		Fields: &storage.PolicyFields{
@@ -75,35 +90,18 @@ var (
 		Disabled:           false,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 	}
-	envLowerSecretsEnabledAndEnforced = storage.Policy{
+	envLowerSecretsEnabledAndEnforced := storage.Policy{
 		Id:   uuid.NewV4().String(),
 		Name: "Foo",
 		Fields: &storage.PolicyFields{
 			Env: &storage.KeyValuePolicy{
-				Key:   "FOO_secret_Blah",
+				Key:   "FOO_Secret_Blah",
 				Value: "34463",
 			},
 		},
 		Disabled:           false,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
 	}
-)
-
-func TestNIST414_Success(t *testing.T) {
-	f1, err := os.OpenFile("/tmp/username", os.O_CREATE, 0600)
-	assert.NoError(t, err)
-
-	f2, err := os.OpenFile("/tmp/passwd", os.O_CREATE, 0600)
-	assert.NoError(t, err)
-
-	defer func() {
-		os.Remove(f1.Name())
-		os.Remove(f2.Name())
-	}()
-
-	registry := framework.RegistrySingleton()
-	check := registry.Lookup(standardID)
-	require.NotNil(t, check)
 
 	policies := make(map[string]*storage.Policy)
 	policies[envSecretsEnabledAndEnforced.GetName()] = &envSecretsEnabledAndEnforced
@@ -115,6 +113,9 @@ func TestNIST414_Success(t *testing.T) {
 	data := complianceMocks.NewMockComplianceDataRepository(mockCtrl)
 	data.EXPECT().Cluster().AnyTimes().Return(testCluster)
 	data.EXPECT().Policies().AnyTimes().Return(policies)
+	data.EXPECT().Deployments().AnyTimes().Return(toMapDeployments(testDeployments))
+
+	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments)
 
 	run, err := framework.NewComplianceRun(check)
 	require.NoError(t, err)
@@ -125,15 +126,9 @@ func TestNIST414_Success(t *testing.T) {
 	checkResults := results[standardID]
 	require.NotNil(t, checkResults)
 
-	require.Len(t, checkResults.Evidence(), 1)
+	require.Len(t, checkResults.Evidence(), 2)
 	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[0].Status)
-
-	for _, deployment := range domain.Deployments() {
-		deploymentResults := checkResults.ForChild(deployment)
-		assert.NoError(t, deploymentResults.Error())
-		require.Len(t, deploymentResults.Evidence(), 1)
-		assert.Equal(t, framework.PassStatus, deploymentResults.Evidence()[0].Status)
-	}
+	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[1].Status)
 }
 
 func TestNIST414_FAIL(t *testing.T) {
@@ -148,6 +143,64 @@ func TestNIST414_FAIL(t *testing.T) {
 		os.Remove(f2.Name())
 	}()
 
+	testDeployments := []*storage.Deployment{
+		{
+			Id:   uuid.NewV4().String(),
+			Name: "container1",
+			Containers: []*storage.Container{
+				{
+					Volumes: []*storage.Volume{
+						{
+							Name:        "username",
+							Destination: "/tmp/",
+							Type:        "secret",
+						},
+					},
+				},
+			},
+		},
+		{
+			Id:   uuid.NewV4().String(),
+			Name: "container2",
+			Containers: []*storage.Container{
+				{
+					Volumes: []*storage.Volume{
+						{
+							Name:        "passwd",
+							Destination: "/tmp/",
+							Type:        "secret",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	envSecretsEnabledAndEnforced := storage.Policy{
+		Id:   uuid.NewV4().String(),
+		Name: "Foo",
+		Fields: &storage.PolicyFields{
+			Env: &storage.KeyValuePolicy{
+				Key:   "FOO_SECRET",
+				Value: "34463",
+			},
+		},
+		Disabled:           true,
+		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
+	}
+	envLowerSecretsEnabledAndEnforced := storage.Policy{
+		Id:   uuid.NewV4().String(),
+		Name: "Foo",
+		Fields: &storage.PolicyFields{
+			Env: &storage.KeyValuePolicy{
+				Key:   "FOO_secret_Blah",
+				Value: "34463",
+			},
+		},
+		Disabled:           true,
+		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
+	}
+
 	registry := framework.RegistrySingleton()
 	check := registry.Lookup(standardID)
 	require.NotNil(t, check)
@@ -162,6 +215,9 @@ func TestNIST414_FAIL(t *testing.T) {
 	data := complianceMocks.NewMockComplianceDataRepository(mockCtrl)
 	data.EXPECT().Cluster().AnyTimes().Return(testCluster)
 	data.EXPECT().Policies().AnyTimes().Return(policies)
+	data.EXPECT().Deployments().AnyTimes().Return(toMapDeployments(testDeployments))
+
+	domain := framework.NewComplianceDomain(testCluster, testNodes, testDeployments)
 
 	run, err := framework.NewComplianceRun(check)
 	require.NoError(t, err)
@@ -172,13 +228,16 @@ func TestNIST414_FAIL(t *testing.T) {
 	checkResults := results[standardID]
 	require.NotNil(t, checkResults)
 
-	require.Len(t, checkResults.Evidence(), 1)
-	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[0].Status)
+	require.Len(t, checkResults.Evidence(), 2)
+	assert.Equal(t, framework.FailStatus, checkResults.Evidence()[0].Status)
+	assert.Equal(t, framework.FailStatus, checkResults.Evidence()[1].Status)
 
-	for _, deployment := range domain.Deployments() {
-		deploymentResults := checkResults.ForChild(deployment)
-		assert.NoError(t, deploymentResults.Error())
-		require.Len(t, deploymentResults.Evidence(), 1)
-		assert.Equal(t, framework.FailStatus, deploymentResults.Evidence()[0].Status)
+}
+
+func toMapDeployments(in []*storage.Deployment) map[string]*storage.Deployment {
+	merp := make(map[string]*storage.Deployment, len(in))
+	for _, np := range in {
+		merp[np.GetId()] = np
 	}
+	return merp
 }
