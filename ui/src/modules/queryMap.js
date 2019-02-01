@@ -126,7 +126,7 @@ export default [
     },
     {
         context: [contextTypes.COMPLIANCE],
-        pageType: [pageTypes.DASHBOARD, pageTypes.LIST],
+        pageType: [pageTypes.DASHBOARD],
         entityType: [],
         component: [componentTypes.STANDARDS_BY_CLUSTER],
         config: {
@@ -147,7 +147,7 @@ export default [
     },
     {
         context: [contextTypes.COMPLIANCE],
-        pageType: [pageTypes.DASHBOARD, pageTypes.LIST],
+        pageType: [pageTypes.DASHBOARD],
         entityType: [],
         component: [componentTypes.STANDARDS_ACROSS_CLUSTERS],
         config: {
@@ -160,7 +160,7 @@ export default [
     },
     {
         context: [contextTypes.COMPLIANCE],
-        pageType: [pageTypes.DASHBOARD, pageTypes.LIST],
+        pageType: [pageTypes.DASHBOARD],
         entityType: [],
         component: [componentTypes.STANDARDS_ACROSS_NAMESPACES],
         config: {
@@ -173,7 +173,7 @@ export default [
     },
     {
         context: [contextTypes.COMPLIANCE],
-        pageType: [pageTypes.DASHBOARD, pageTypes.LIST],
+        pageType: [pageTypes.DASHBOARD],
         entityType: [],
         component: [componentTypes.STANDARDS_ACROSS_NODES],
         config: {
