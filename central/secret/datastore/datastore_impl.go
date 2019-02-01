@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/secret/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 type datastoreImpl struct {
@@ -54,4 +55,8 @@ func (d *datastoreImpl) RemoveSecret(id string) error {
 		return err
 	}
 	return d.indexer.RemoveSecret(id)
+}
+
+func (d *datastoreImpl) Search(q *v1.Query) ([]searchPkg.Result, error) {
+	return d.searcher.Search(q)
 }

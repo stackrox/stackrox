@@ -64,6 +64,6 @@ func BenchmarkSearchAlert(b *testing.B) {
 	indexer := getAlertIndex()
 	qb := search.NewQueryBuilder().AddStrings(search.Cluster, "prod cluster")
 	for i := 0; i < b.N; i++ {
-		indexer.SearchAlerts(qb.ProtoQuery())
+		indexer.Search(qb.ProtoQuery())
 	}
 }

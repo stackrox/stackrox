@@ -6,7 +6,6 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -15,7 +14,6 @@ var (
 
 // Searcher provides search functionality on existing alerts
 type Searcher interface {
-	Search(q *v1.Query) ([]search.Result, error)
 	SearchRawProcessIndicators(q *v1.Query) ([]*storage.ProcessIndicator, error)
 }
 

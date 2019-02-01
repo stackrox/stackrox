@@ -27,6 +27,11 @@ func (ds *searcherImpl) SearchSecrets(q *v1.Query) ([]*v1.SearchResult, error) {
 	return ds.resultsToSearchResults(results)
 }
 
+// Search returns the raw search results from the query
+func (ds *searcherImpl) Search(q *v1.Query) ([]search.Result, error) {
+	return ds.getSearchResults(q)
+}
+
 // SearchSecrets returns the secrets and relationships that match the query.
 func (ds *searcherImpl) SearchListSecrets(q *v1.Query) ([]*storage.ListSecret, error) {
 	results, err := ds.getSearchResults(q)

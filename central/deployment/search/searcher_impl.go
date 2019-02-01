@@ -16,10 +16,6 @@ type searcherImpl struct {
 	indexer index.Indexer
 }
 
-func (ds *searcherImpl) Search(q *v1.Query) ([]search.Result, error) {
-	return ds.indexer.Search(q)
-}
-
 func (ds *searcherImpl) buildIndex() error {
 	deployments, err := ds.storage.GetDeployments()
 	if err != nil {
@@ -47,7 +43,7 @@ func (ds *searcherImpl) SearchListDeployments(q *v1.Query) ([]*storage.ListDeplo
 }
 
 func (ds *searcherImpl) searchListDeployments(q *v1.Query) ([]*storage.ListDeployment, []search.Result, error) {
-	results, err := ds.Search(q)
+	results, err := ds.indexer.Search(q)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -82,7 +78,7 @@ func (ds *searcherImpl) SearchDeployments(q *v1.Query) ([]*v1.SearchResult, erro
 }
 
 func (ds *searcherImpl) searchDeployments(q *v1.Query) ([]*storage.Deployment, error) {
-	results, err := ds.Search(q)
+	results, err := ds.indexer.Search(q)
 	if err != nil {
 		return nil, err
 	}

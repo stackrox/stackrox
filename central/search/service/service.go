@@ -22,11 +22,10 @@ type Service interface {
 
 	AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error)
 
-	Search(ctx context.Context, request *v1.RawSearchRequest) (*v1.SearchResponse, error)
-	Options(ctx context.Context, request *v1.SearchOptionsRequest) (*v1.SearchOptionsResponse, error)
+	v1.SearchServiceServer
 }
 
-// New returns a new Service instance using the given DataStore.
+// New returns a search service
 func New(alerts alertDataStore.DataStore, deployments deploymentDataStore.DataStore, images imageDataStore.DataStore, policies policyDataStore.DataStore, secrets secretDataStore.DataStore) Service {
 	s := &serviceImpl{
 		alerts:      alerts,

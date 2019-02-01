@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/image/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is an intermediary to AlertStorage.
@@ -15,6 +16,7 @@ type DataStore interface {
 	ListImage(sha string) (*storage.ListImage, bool, error)
 	ListImages() ([]*storage.ListImage, error)
 
+	Search(q *v1.Query) ([]searchPkg.Result, error)
 	SearchImages(q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawImages(q *v1.Query) ([]*storage.Image, error)
 

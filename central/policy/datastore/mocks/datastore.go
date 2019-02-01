@@ -8,6 +8,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	search "github.com/stackrox/rox/pkg/search"
 	reflect "reflect"
 )
 
@@ -122,6 +123,19 @@ func (m *MockDataStore) RenamePolicyCategory(arg0 *v1.RenamePolicyCategoryReques
 // RenamePolicyCategory indicates an expected call of RenamePolicyCategory
 func (mr *MockDataStoreMockRecorder) RenamePolicyCategory(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenamePolicyCategory", reflect.TypeOf((*MockDataStore)(nil).RenamePolicyCategory), arg0)
+}
+
+// Search mocks base method
+func (m *MockDataStore) Search(arg0 *v1.Query) ([]search.Result, error) {
+	ret := m.ctrl.Call(m, "Search", arg0)
+	ret0, _ := ret[0].([]search.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search
+func (mr *MockDataStoreMockRecorder) Search(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), arg0)
 }
 
 // SearchPolicies mocks base method

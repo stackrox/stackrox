@@ -18,7 +18,7 @@ type Indexer interface {
 	AddProcessIndicators([]*storage.ProcessIndicator) error
 	DeleteProcessIndicator(id string) error
 	DeleteProcessIndicators(ids ...string) error
-	SearchProcessIndicators(q *v1.Query) ([]search.Result, error)
+	Search(q *v1.Query) ([]search.Result, error)
 }
 
 // New returns a new instance of Indexer using the bleve Index provided.

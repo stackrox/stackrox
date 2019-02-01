@@ -27,7 +27,7 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) Search(q *v1.Query) ([]pkgSearch.Result, error) {
-	return ds.searcher.Search(q)
+	return ds.indexer.Search(q)
 }
 
 func (ds *datastoreImpl) SearchRawProcessIndicators(q *v1.Query) ([]*storage.ProcessIndicator, error) {

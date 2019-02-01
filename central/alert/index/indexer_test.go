@@ -73,7 +73,7 @@ func (suite *alertIndexTestSuite) TestDefaultStaleness() {
 			if c.state != "" {
 				qb.AddStrings(search.ViolationState, c.state)
 			}
-			alerts, err := suite.indexer.SearchAlerts(qb.ProtoQuery())
+			alerts, err := suite.indexer.Search(qb.ProtoQuery())
 			assert.NoError(t, err)
 
 			alertIDs := make([]string, 0, len(alerts))

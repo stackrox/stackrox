@@ -22,7 +22,7 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) Search(q *v1.Query) ([]pkgSearch.Result, error) {
-	return ds.deploymentSearcher.Search(q)
+	return ds.deploymentIndexer.Search(q)
 }
 
 func (ds *datastoreImpl) ListDeployment(id string) (*storage.ListDeployment, bool, error) {

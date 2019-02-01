@@ -21,10 +21,18 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+const maxAutocompleteResults = 10
+
+type autocompleteResult struct {
+	value string
+	score float64
+}
 
 type searchFunc func(q *v1.Query) ([]*v1.SearchResult, error)
 
@@ -35,6 +43,18 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]searchFunc {
 		v1.SearchCategory_IMAGES:      s.images.SearchImages,
 		v1.SearchCategory_POLICIES:    s.policies.SearchPolicies,
 		v1.SearchCategory_SECRETS:     s.secrets.SearchSecrets,
+	}
+}
+
+type autocompleteFunc func(q *v1.Query) ([]search.Result, error)
+
+func (s *serviceImpl) getAutocompleteFuncs() map[v1.SearchCategory]autocompleteFunc {
+	return map[v1.SearchCategory]autocompleteFunc{
+		v1.SearchCategory_ALERTS:      s.alerts.Search,
+		v1.SearchCategory_DEPLOYMENTS: s.deployments.Search,
+		v1.SearchCategory_IMAGES:      s.images.Search,
+		v1.SearchCategory_POLICIES:    s.policies.Search,
+		v1.SearchCategory_SECRETS:     s.secrets.Search,
 	}
 }
 
@@ -73,6 +93,67 @@ type serviceImpl struct {
 	authorizer authz.Authorizer
 }
 
+func (s *serviceImpl) autocomplete(queryString string, categories []v1.SearchCategory) ([]string, error) {
+	query, err := search.ParseAutocompleteRawQuery(queryString)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "unable to parse query %q: %v", queryString, err)
+	}
+	// Set the max return size for the query
+	query.MaxResultSize = maxAutocompleteResults
+
+	searchFuncMap := s.getAutocompleteFuncs()
+	if len(categories) == 0 {
+		categories = GetAllSearchableCategories()
+	}
+	var autocompleteResults []autocompleteResult
+	for _, category := range categories {
+		if category == v1.SearchCategory_ALERTS && !shouldProcessAlerts(query) {
+			continue
+		}
+		searchFunc, ok := searchFuncMap[category]
+		if !ok {
+			return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("Search category '%s' is not implemented", category.String()))
+		}
+		results, err := searchFunc(query)
+		if err != nil {
+			log.Error(err)
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		for _, r := range results {
+			for _, match := range r.Matches {
+				for _, value := range match {
+					autocompleteResults = append(autocompleteResults, autocompleteResult{value: value, score: r.Score})
+				}
+			}
+		}
+	}
+
+	sort.Slice(autocompleteResults, func(i, j int) bool { return autocompleteResults[i].score > autocompleteResults[j].score })
+	resultSet := set.NewStringSet()
+
+	var stringResults []string
+	for _, a := range autocompleteResults {
+		if added := resultSet.Add(a.value); added {
+			stringResults = append(stringResults, a.value)
+		}
+		if resultSet.Cardinality() == maxAutocompleteResults {
+			break
+		}
+	}
+	return stringResults, nil
+}
+
+func (s *serviceImpl) Autocomplete(ctx context.Context, req *v1.RawSearchRequest) (*v1.AutocompleteResponse, error) {
+	if req.GetQuery() == "" {
+		return nil, status.Error(codes.InvalidArgument, "query cannot be empty")
+	}
+	results, err := s.autocomplete(req.GetQuery(), req.GetCategories())
+	if err != nil {
+		return nil, err
+	}
+	return &v1.AutocompleteResponse{Values: results}, nil
+}
+
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
 	v1.RegisterSearchServiceServer(grpcServer, s)
@@ -93,6 +174,7 @@ func (s *serviceImpl) initializeAuthorizer() {
 		user.With(requiredPermissions...): {
 			"/v1.SearchService/Search",
 			"/v1.SearchService/Options",
+			"/v1.SearchService/Autocomplete",
 		},
 	})
 }

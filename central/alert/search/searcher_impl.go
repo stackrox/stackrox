@@ -51,7 +51,7 @@ func (ds *searcherImpl) SearchRawAlerts(q *v1.Query) ([]*storage.Alert, error) {
 }
 
 func (ds *searcherImpl) searchListAlerts(q *v1.Query) ([]*storage.ListAlert, []search.Result, error) {
-	results, err := ds.indexer.SearchAlerts(q)
+	results, err := ds.indexer.Search(q)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -73,7 +73,7 @@ func (ds *searcherImpl) searchListAlerts(q *v1.Query) ([]*storage.ListAlert, []s
 }
 
 func (ds *searcherImpl) searchAlerts(q *v1.Query) ([]*storage.Alert, error) {
-	results, err := ds.indexer.SearchAlerts(q)
+	results, err := ds.indexer.Search(q)
 	if err != nil {
 		return nil, err
 	}

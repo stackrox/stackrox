@@ -6,12 +6,17 @@ import (
 	"github.com/stackrox/rox/central/policy/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 type datastoreImpl struct {
 	storage  store.Store
 	indexer  index.Indexer
 	searcher search.Searcher
+}
+
+func (ds *datastoreImpl) Search(q *v1.Query) ([]searchPkg.Result, error) {
+	return ds.indexer.Search(q)
 }
 
 // SearchPolicies

@@ -5,6 +5,11 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/logging"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // ParseRawQueryOrEmpty is a convenience wrapper around ParseRawQuery which returns the empty
@@ -13,7 +18,7 @@ func ParseRawQueryOrEmpty(query string) (*v1.Query, error) {
 	if query == "" {
 		return EmptyQuery(), nil
 	}
-	return parseRawQuery(query)
+	return parseRawQuery(query, false)
 }
 
 // ParseRawQuery takes the text based query and converts to the query proto.
@@ -22,7 +27,7 @@ func ParseRawQuery(query string) (*v1.Query, error) {
 	if query == "" {
 		return nil, errors.New("empty query received")
 	}
-	return parseRawQuery(query)
+	return parseRawQuery(query, false)
 }
 
 // ParseRawQueryIntoMap returns a map[search key] []values from a string query
@@ -31,7 +36,7 @@ func ParseRawQueryIntoMap(query string) map[string][]string {
 	resultMap := make(map[string][]string)
 
 	for _, pair := range pairs {
-		key, commaSeparatedValues, valid := parsePair(pair)
+		key, commaSeparatedValues, valid := parsePair(pair, false)
 		if !valid {
 			continue
 		}
@@ -40,16 +45,26 @@ func ParseRawQueryIntoMap(query string) map[string][]string {
 	return resultMap
 }
 
-func parseRawQuery(query string) (*v1.Query, error) {
+// ParseAutocompleteRawQuery parses the query, but extends the last value with .* and highlights
+func ParseAutocompleteRawQuery(query string) (*v1.Query, error) {
+	return parseRawQuery(query, true)
+}
+
+func parseRawQuery(query string, isAutocompleteQuery bool) (*v1.Query, error) {
 	pairs := strings.Split(query, "+")
 
 	queries := make([]*v1.Query, 0, len(pairs))
-	for _, pair := range pairs {
-		key, commaSeparatedValues, valid := parsePair(pair)
+	for i, pair := range pairs {
+		key, commaSeparatedValues, valid := parsePair(pair, isAutocompleteQuery)
 		if !valid {
 			continue
 		}
-		queries = append(queries, queryFromKeyValue(key, commaSeparatedValues))
+		if i == len(pairs)-1 && isAutocompleteQuery {
+			queries = append(queries, queryFromFieldValues(key, strings.Split(commaSeparatedValues, ","), true))
+
+		} else {
+			queries = append(queries, queryFromKeyValue(key, commaSeparatedValues))
+		}
 	}
 
 	// We always want to return an error here, because it means that the query is ill-defined.
@@ -67,7 +82,7 @@ func queryFromKeyValue(key, commaSeparatedValues string) *v1.Query {
 }
 
 // Extracts "key", "value1,value2" from a string in the format key:value1,value2
-func parsePair(pair string) (key string, values string, valid bool) {
+func parsePair(pair string, allowEmpty bool) (key string, values string, valid bool) {
 	pair = strings.TrimSpace(pair)
 	if len(pair) == 0 {
 		return
@@ -75,7 +90,7 @@ func parsePair(pair string) (key string, values string, valid bool) {
 
 	spl := strings.SplitN(pair, ":", 2)
 	// len < 2 implies there isn't a colon and the second check verifies that the : wasn't the last char
-	if len(spl) < 2 || spl[1] == "" {
+	if len(spl) < 2 || (spl[1] == "" && !allowEmpty) {
 		return
 	}
 	return spl[0], spl[1], true

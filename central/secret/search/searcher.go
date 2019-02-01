@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -15,6 +16,7 @@ var (
 // Searcher provides search functionality on existing secrets.
 //go:generate mockgen-wrapper Searcher
 type Searcher interface {
+	Search(query *v1.Query) ([]search.Result, error)
 	SearchSecrets(*v1.Query) ([]*v1.SearchResult, error)
 	SearchListSecrets(query *v1.Query) ([]*storage.ListSecret, error)
 }

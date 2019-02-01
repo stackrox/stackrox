@@ -20,6 +20,10 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
+func (ds *datastoreImpl) Search(q *v1.Query) ([]searchCommon.Result, error) {
+	return ds.indexer.Search(q)
+}
+
 func (ds *datastoreImpl) SearchListAlerts(q *v1.Query) ([]*storage.ListAlert, error) {
 	return ds.searcher.SearchListAlerts(q)
 }

@@ -17,7 +17,7 @@ type Indexer interface {
 	AddPolicy(policy *storage.Policy) error
 	AddPolicies(policies []*storage.Policy) error
 	DeletePolicy(id string) error
-	SearchPolicies(q *v1.Query) ([]search.Result, error)
+	Search(q *v1.Query) ([]search.Result, error)
 }
 
 // New returns a new instance of Indexer using the bleve Index provided.

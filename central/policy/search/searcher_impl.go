@@ -28,7 +28,7 @@ func (ds *searcherImpl) SearchRawPolicies(q *v1.Query) ([]*storage.Policy, error
 	return policies, err
 }
 
-// SearchPolicies retrieves SearchResults from the indexer and storage
+// Search retrieves SearchResults from the indexer and storage
 func (ds *searcherImpl) SearchPolicies(q *v1.Query) ([]*v1.SearchResult, error) {
 	policies, results, err := ds.searchPolicies(q)
 	if err != nil {
@@ -42,7 +42,7 @@ func (ds *searcherImpl) SearchPolicies(q *v1.Query) ([]*v1.SearchResult, error) 
 }
 
 func (ds *searcherImpl) searchPolicies(q *v1.Query) ([]*storage.Policy, []search.Result, error) {
-	results, err := ds.indexer.SearchPolicies(q)
+	results, err := ds.indexer.Search(q)
 	if err != nil {
 		return nil, nil, err
 	}

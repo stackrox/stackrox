@@ -16,11 +16,19 @@ import (
 
 const maxSearchResponses = 20000
 
-var logger = logging.LoggerForModule()
+var (
+	logger = logging.LoggerForModule()
+
+	subQueryContext = context{maxResultSize: maxSearchResponses}
+)
 
 type relationship struct {
 	src v1.SearchCategory
 	dst v1.SearchCategory
+}
+
+type context struct {
+	maxResultSize int
 }
 
 func newRelationship(src v1.SearchCategory, dst v1.SearchCategory) relationship {
@@ -158,7 +166,7 @@ func getValuesFromFields(field string, m map[string]interface{}) []string {
 // we first run a query for image tag = "latest" on images, and then extract the image ids from matching images.
 // The query returned by this function is then a query on deployments, which matches the deployment's image id field against
 // all the returned ids from the subquery we ran.
-func resolveMatchFieldQuery(index bleve.Index, category v1.SearchCategory, searchFieldsAndValues []searchFieldAndValue, highlightCtx highlightContext) (query.Query, error) {
+func resolveMatchFieldQuery(ctx context, index bleve.Index, category v1.SearchCategory, searchFieldsAndValues []searchFieldAndValue, highlightCtx highlightContext) (query.Query, error) {
 	// This is a programming error
 	if len(searchFieldsAndValues) == 0 {
 		panic("Empty slice of searchFieldsAndValues passed to resolveMatchFieldQuery")
@@ -168,7 +176,7 @@ func resolveMatchFieldQuery(index bleve.Index, category v1.SearchCategory, searc
 
 	// Base case is that the category you are looking for is the search field category so just get a "normal search query"
 	if category == passedFieldsCategory {
-		return matchAllFieldsQuery(index, category, searchFieldsAndValues, highlightCtx)
+		return matchAllFieldsQuery(ctx, index, category, searchFieldsAndValues, highlightCtx)
 	}
 
 	// Get the map of result -> next link
@@ -190,12 +198,12 @@ func resolveMatchFieldQuery(index bleve.Index, category v1.SearchCategory, searc
 	}
 
 	// Go get the query that needs to be run
-	subQuery, err := resolveMatchFieldQuery(index, nextHopCategory, searchFieldsAndValues, highlightCtx)
+	subQuery, err := resolveMatchFieldQuery(subQueryContext, index, nextHopCategory, searchFieldsAndValues, highlightCtx)
 	if err != nil {
 		return nil, fmt.Errorf("resolving query with next hop: '%s': %s", nextHopCategory, err)
 	}
 
-	results, err := runQuery(subQuery, index, highlightCtx, relationshipField.dstField)
+	results, err := runQuery(subQueryContext, subQuery, index, highlightCtx, relationshipField.dstField)
 	if err != nil {
 		return nil, fmt.Errorf("running sub query to retrieve field %s: %s", relationshipField.dstField, err)
 	}
@@ -234,16 +242,23 @@ func resolveMatchFieldQuery(index bleve.Index, category v1.SearchCategory, searc
 
 // RunSearchRequest builds a query and runs it against the index.
 func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index, optionsMap searchPkg.OptionsMap) ([]searchPkg.Result, error) {
-	bleveQuery, highlightContext, err := buildQuery(index, category, q, optionsMap)
+	ctx := context{
+		maxResultSize: int(q.GetMaxResultSize()),
+	}
+
+	bleveQuery, highlightContext, err := buildQuery(ctx, index, category, q, optionsMap)
 	if err != nil {
 		return nil, err
 	}
-	return runQuery(bleveQuery, index, highlightContext)
+	return runQuery(ctx, bleveQuery, index, highlightContext)
 }
 
-func runBleveQuery(query query.Query, index bleve.Index, highlightCtx highlightContext, includeLocations bool, fields ...string) (*bleve.SearchResult, error) {
+func runBleveQuery(ctx context, query query.Query, index bleve.Index, highlightCtx highlightContext, includeLocations bool, fields ...string) (*bleve.SearchResult, error) {
 	searchRequest := bleve.NewSearchRequest(query)
 	// Initial size is 10 which seems small
+	if ctx.maxResultSize > 0 {
+		searchRequest.Size = ctx.maxResultSize
+	}
 	searchRequest.Size = maxSearchResponses
 	searchRequest.IncludeLocations = includeLocations
 
@@ -256,8 +271,8 @@ func runBleveQuery(query query.Query, index bleve.Index, highlightCtx highlightC
 }
 
 // runQuery runs the actual query and then collapses the results into a simpler format
-func runQuery(query query.Query, index bleve.Index, highlightCtx highlightContext, fields ...string) ([]searchPkg.Result, error) {
-	searchResult, err := runBleveQuery(query, index, highlightCtx, false, fields...)
+func runQuery(ctx context, query query.Query, index bleve.Index, highlightCtx highlightContext, fields ...string) ([]searchPkg.Result, error) {
+	searchResult, err := runBleveQuery(ctx, query, index, highlightCtx, false, fields...)
 	if err != nil {
 		return nil, err
 	}
@@ -266,13 +281,13 @@ func runQuery(query query.Query, index bleve.Index, highlightCtx highlightContex
 
 // buildQuery builds a bleve query for the input query
 // It is okay for the input query to be nil or empty; in this case, a query matching all documents of the given category will be returned.
-func buildQuery(index bleve.Index, category v1.SearchCategory, q *v1.Query, optionsMap searchPkg.OptionsMap) (query.Query, highlightContext, error) {
+func buildQuery(ctx context, index bleve.Index, category v1.SearchCategory, q *v1.Query, optionsMap searchPkg.OptionsMap) (query.Query, highlightContext, error) {
 	if q.GetQuery() == nil {
 		return typeQuery(category), nil, nil
 	}
 
 	queryConverter := newQueryConverter(category, index, optionsMap)
-	bleveQuery, highlightCtx, err := queryConverter.convert(q)
+	bleveQuery, highlightCtx, err := queryConverter.convert(ctx, q)
 	if err != nil {
 		return nil, nil, fmt.Errorf("converting to bleve query: %s", err)
 	}

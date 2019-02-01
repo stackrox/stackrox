@@ -57,6 +57,7 @@ message Query {
         DisjunctionQuery disjunction = 2;
         BaseQuery        base_query  = 3;
     }
+    int32 maxResultSize              = 4;
 }
 
 // StringQuery represents a query that matches documents that contain the
@@ -129,6 +130,10 @@ message SearchOptionsResponse {
     repeated string options = 1;
 }
 
+message AutocompleteResponse {
+    repeated string values = 1;
+}
+
 service SearchService {
 
     rpc Search (RawSearchRequest) returns (SearchResponse) {
@@ -140,6 +145,12 @@ service SearchService {
     rpc Options (SearchOptionsRequest) returns (SearchOptionsResponse) {
         option (google.api.http) = {
             get: "/v1/search/metadata/options"
+        };
+    }
+
+    rpc Autocomplete (RawSearchRequest) returns (AutocompleteResponse) {
+        option (google.api.http) = {
+            get: "/v1/search/autocomplete"
         };
     }
 

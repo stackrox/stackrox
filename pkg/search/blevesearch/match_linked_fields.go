@@ -99,7 +99,7 @@ func matchAndHighlight(hit *search.DocumentMatch, fieldsAndValues []searchFieldA
 	return true
 }
 
-func matchAllFieldsQuery(index bleve.Index, category v1.SearchCategory, fieldsAndValues []searchFieldAndValue, highlightCtx highlightContext) (query.Query, error) {
+func matchAllFieldsQuery(ctx context, index bleve.Index, category v1.SearchCategory, fieldsAndValues []searchFieldAndValue, highlightCtx highlightContext) (query.Query, error) {
 	if len(fieldsAndValues) == 0 {
 		return bleve.NewMatchNoneQuery(), nil
 	}
@@ -132,7 +132,7 @@ func matchAllFieldsQuery(index bleve.Index, category v1.SearchCategory, fieldsAn
 		}
 	}
 	conjunction := bleve.NewConjunctionQuery(mfQs...)
-	searchResult, err := runBleveQuery(conjunction, index, highlightCtx, true)
+	searchResult, err := runBleveQuery(ctx, conjunction, index, highlightCtx, true)
 	if err != nil {
 		return nil, fmt.Errorf("running sub query for category %s, fieldsAndValues: %+v: %s", category, fieldsAndValues, err)
 	}

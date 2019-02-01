@@ -19,7 +19,7 @@ var OptionsMap = search.OptionsMapFromMap(mergeMaps(map[search.FieldLabel]*v1.Se
 	search.CPUCoresLimit:    search.NewStoredNumericField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.resources.cpu_cores_limit"),
 	search.CPUCoresRequest:  search.NewStoredNumericField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.resources.cpu_cores_request"),
 	search.DeploymentID:     search.NewField(v1.SearchCategory_DEPLOYMENTS, "deployment.id", v1.SearchDataType_SEARCH_STRING, search.OptionHidden|search.OptionStore),
-	search.DeploymentName:   search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.name"),
+	search.DeploymentName:   search.NewStoredStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.name"),
 	search.DeploymentType:   search.NewStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.type"),
 	search.AddCapabilities:  search.NewStoredStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.security_context.add_capabilities"),
 	search.DropCapabilities: search.NewStoredStringField(v1.SearchCategory_DEPLOYMENTS, "deployment.containers.security_context.drop_capabilities"),

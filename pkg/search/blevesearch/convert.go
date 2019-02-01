@@ -25,37 +25,37 @@ func newQueryConverter(category v1.SearchCategory, index bleve.Index, optionsMap
 	}
 }
 
-func (c *queryConverter) convert(q *v1.Query) (query.Query, highlightContext, error) {
-	bleveQuery, err := c.convertHelper(q)
+func (c *queryConverter) convert(ctx context, q *v1.Query) (query.Query, highlightContext, error) {
+	bleveQuery, err := c.convertHelper(ctx, q)
 	return bleveQuery, c.highlightCtx, err
 }
 
-func (c *queryConverter) convertHelper(q *v1.Query) (query.Query, error) {
+func (c *queryConverter) convertHelper(ctx context, q *v1.Query) (query.Query, error) {
 	if q.GetQuery() == nil {
 		return nil, nil
 	}
 	switch typedQ := q.GetQuery().(type) {
 	case *v1.Query_BaseQuery:
-		return c.baseQueryToBleve(typedQ.BaseQuery)
+		return c.baseQueryToBleve(ctx, typedQ.BaseQuery)
 	case *v1.Query_Conjunction:
-		return c.conjunctionQueryToBleve(typedQ.Conjunction)
+		return c.conjunctionQueryToBleve(ctx, typedQ.Conjunction)
 	case *v1.Query_Disjunction:
-		return c.disjunctionQueryToBleve(typedQ.Disjunction)
+		return c.disjunctionQueryToBleve(ctx, typedQ.Disjunction)
 	default:
 		panic(fmt.Sprintf("Unhandled query type: %T", typedQ))
 	}
 }
 
-func (c *queryConverter) baseQueryToBleve(bq *v1.BaseQuery) (bleveQuery query.Query, err error) {
+func (c *queryConverter) baseQueryToBleve(ctx context, bq *v1.BaseQuery) (bleveQuery query.Query, err error) {
 	if bq.GetQuery() == nil {
 		return
 	}
 
 	switch bq := bq.GetQuery().(type) {
 	case *v1.BaseQuery_MatchFieldQuery:
-		return c.matchLinkedFieldsQueryToBleve([]*v1.MatchFieldQuery{bq.MatchFieldQuery})
+		return c.matchLinkedFieldsQueryToBleve(ctx, []*v1.MatchFieldQuery{bq.MatchFieldQuery})
 	case *v1.BaseQuery_MatchLinkedFieldsQuery:
-		return c.matchLinkedFieldsQueryToBleve(bq.MatchLinkedFieldsQuery.GetQuery())
+		return c.matchLinkedFieldsQueryToBleve(ctx, bq.MatchLinkedFieldsQuery.GetQuery())
 	case *v1.BaseQuery_DocIdQuery:
 		if len(bq.DocIdQuery.GetIds()) > 0 {
 			bleveQuery = bleve.NewDocIDQuery(bq.DocIdQuery.GetIds())
@@ -66,7 +66,7 @@ func (c *queryConverter) baseQueryToBleve(bq *v1.BaseQuery) (bleveQuery query.Qu
 	}
 }
 
-func (c *queryConverter) matchLinkedFieldsQueryToBleve(mfqs []*v1.MatchFieldQuery) (bleveQuery query.Query, err error) {
+func (c *queryConverter) matchLinkedFieldsQueryToBleve(ctx context, mfqs []*v1.MatchFieldQuery) (bleveQuery query.Query, err error) {
 	searchFieldsAndValues := make([]searchFieldAndValue, 0, len(mfqs))
 
 	var category v1.SearchCategory
@@ -100,7 +100,7 @@ func (c *queryConverter) matchLinkedFieldsQueryToBleve(mfqs []*v1.MatchFieldQuer
 	if mustHighlight {
 		highlightCtx = make(highlightContext)
 	}
-	bleveQuery, err = resolveMatchFieldQuery(c.index, c.category, searchFieldsAndValues, highlightCtx)
+	bleveQuery, err = resolveMatchFieldQuery(ctx, c.index, c.category, searchFieldsAndValues, highlightCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -110,11 +110,11 @@ func (c *queryConverter) matchLinkedFieldsQueryToBleve(mfqs []*v1.MatchFieldQuer
 	return
 }
 
-func (c *queryConverter) conjunctionQueryToBleve(cq *v1.ConjunctionQuery) (query.Query, error) {
+func (c *queryConverter) conjunctionQueryToBleve(ctx context, cq *v1.ConjunctionQuery) (query.Query, error) {
 	if len(cq.GetQueries()) == 0 {
 		return nil, nil
 	}
-	bleveSubQueries, err := c.getBleveSubQueries(cq.GetQueries())
+	bleveSubQueries, err := c.getBleveSubQueries(ctx, cq.GetQueries())
 	if err != nil {
 		return nil, err
 	}
@@ -124,12 +124,12 @@ func (c *queryConverter) conjunctionQueryToBleve(cq *v1.ConjunctionQuery) (query
 	return bleve.NewConjunctionQuery(bleveSubQueries...), nil
 }
 
-func (c *queryConverter) disjunctionQueryToBleve(dq *v1.DisjunctionQuery) (query.Query, error) {
+func (c *queryConverter) disjunctionQueryToBleve(ctx context, dq *v1.DisjunctionQuery) (query.Query, error) {
 	if len(dq.GetQueries()) == 0 {
 		return nil, nil
 	}
 
-	bleveSubQueries, err := c.getBleveSubQueries(dq.GetQueries())
+	bleveSubQueries, err := c.getBleveSubQueries(ctx, dq.GetQueries())
 	if err != nil {
 		return nil, err
 	}
@@ -139,10 +139,10 @@ func (c *queryConverter) disjunctionQueryToBleve(dq *v1.DisjunctionQuery) (query
 	return bleve.NewDisjunctionQuery(bleveSubQueries...), nil
 }
 
-func (c *queryConverter) getBleveSubQueries(qs []*v1.Query) ([]query.Query, error) {
+func (c *queryConverter) getBleveSubQueries(ctx context, qs []*v1.Query) ([]query.Query, error) {
 	bleveSubQueries := make([]query.Query, 0, len(qs))
 	for _, q := range qs {
-		bleveSubQuery, err := c.convertHelper(q)
+		bleveSubQuery, err := c.convertHelper(ctx, q)
 		if err != nil {
 			return nil, err
 		}

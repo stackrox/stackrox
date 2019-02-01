@@ -77,7 +77,7 @@ func (suite *PolicyIndexTestSuite) TestPolicySearch() {
 
 	for _, c := range cases {
 		suite.T().Run(c.name, func(t *testing.T) {
-			results, err := suite.indexer.SearchPolicies(c.q)
+			results, err := suite.indexer.Search(c.q)
 			require.NoError(t, err)
 			resultIDs := make([]string, 0, len(results))
 			for _, r := range results {

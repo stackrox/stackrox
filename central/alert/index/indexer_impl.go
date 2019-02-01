@@ -61,8 +61,8 @@ func (b *indexerImpl) DeleteAlert(id string) error {
 	return b.index.Delete(id)
 }
 
-// SearchAlerts takes a SearchRequest and finds any matches
-func (b *indexerImpl) SearchAlerts(q *v1.Query) ([]search.Result, error) {
+// Search takes a SearchRequest and finds any matches
+func (b *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "Alert")
 
 	var querySpecifiesStateField bool

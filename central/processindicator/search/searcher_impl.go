@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search"
 )
 
 // searcherImpl provides an intermediary implementation layer for ProcessStorage.
@@ -26,7 +25,7 @@ func (s *searcherImpl) buildIndex() error {
 
 // SearchRawIndicators retrieves Policies from the indexer and storage
 func (s *searcherImpl) SearchRawProcessIndicators(q *v1.Query) ([]*storage.ProcessIndicator, error) {
-	results, err := s.indexer.SearchProcessIndicators(q)
+	results, err := s.indexer.Search(q)
 	if err != nil {
 		return nil, err
 	}
@@ -43,9 +42,4 @@ func (s *searcherImpl) SearchRawProcessIndicators(q *v1.Query) ([]*storage.Proce
 		indicators = append(indicators, indicator)
 	}
 	return indicators, nil
-}
-
-// SearchIndicators retrieves SearchResults from the indexer and storage
-func (s *searcherImpl) Search(q *v1.Query) ([]search.Result, error) {
-	return s.indexer.SearchProcessIndicators(q)
 }

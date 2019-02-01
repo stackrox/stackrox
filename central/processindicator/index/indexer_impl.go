@@ -73,7 +73,7 @@ func (b *indexerImpl) DeleteProcessIndicators(ids ...string) error {
 }
 
 // SearchIndicators takes a SearchRequest and finds any matches
-func (b *indexerImpl) SearchProcessIndicators(q *v1.Query) ([]search.Result, error) {
+func (b *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Search, "ProcessIndicator")
 	return blevesearch.RunSearchRequest(v1.SearchCategory_PROCESS_INDICATORS, q, b.index, mappings.OptionsMap)
 }

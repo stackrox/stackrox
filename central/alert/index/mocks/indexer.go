@@ -71,15 +71,15 @@ func (mr *MockIndexerMockRecorder) DeleteAlert(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteAlert", reflect.TypeOf((*MockIndexer)(nil).DeleteAlert), arg0)
 }
 
-// SearchAlerts mocks base method
-func (m *MockIndexer) SearchAlerts(arg0 *v1.Query) ([]search.Result, error) {
-	ret := m.ctrl.Call(m, "SearchAlerts", arg0)
+// Search mocks base method
+func (m *MockIndexer) Search(arg0 *v1.Query) ([]search.Result, error) {
+	ret := m.ctrl.Call(m, "Search", arg0)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SearchAlerts indicates an expected call of SearchAlerts
-func (mr *MockIndexerMockRecorder) SearchAlerts(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchAlerts", reflect.TypeOf((*MockIndexer)(nil).SearchAlerts), arg0)
+// Search indicates an expected call of Search
+func (mr *MockIndexerMockRecorder) Search(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockIndexer)(nil).Search), arg0)
 }

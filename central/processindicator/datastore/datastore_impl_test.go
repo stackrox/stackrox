@@ -60,7 +60,7 @@ func (suite *IndicatorDataStoreTestSuite) setupDataStoreNoPruning() {
 }
 
 func (suite *IndicatorDataStoreTestSuite) verifyIndicatorsAre(indicators ...*storage.ProcessIndicator) {
-	indexResults, err := suite.indexer.SearchProcessIndicators(search.EmptyQuery())
+	indexResults, err := suite.indexer.Search(search.EmptyQuery())
 	suite.NoError(err)
 	suite.Len(indexResults, len(indicators))
 	resultIDs := make([]string, 0, len(indexResults))

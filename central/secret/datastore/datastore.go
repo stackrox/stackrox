@@ -8,11 +8,13 @@ import (
 	"github.com/stackrox/rox/central/secret/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 // DataStore is an intermediary to SecretStorage.
 //go:generate mockgen-wrapper DataStore
 type DataStore interface {
+	Search(q *v1.Query) ([]searchPkg.Result, error)
 	SearchSecrets(q *v1.Query) ([]*v1.SearchResult, error)
 	SearchListSecrets(q *v1.Query) ([]*storage.ListSecret, error)
 
