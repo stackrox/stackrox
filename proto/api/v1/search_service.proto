@@ -16,6 +16,7 @@ enum SearchCategory {
     DEPLOYMENTS  = 4;
     SECRETS      = 5;
     PROCESS_INDICATORS = 6;
+    COMPLIANCE   = 7;
 }
 
 enum SearchDataType {
@@ -135,7 +136,6 @@ service SearchService {
             get: "/v1/search"
         };
     }
-
 
     rpc Options (SearchOptionsRequest) returns (SearchOptionsResponse) {
         option (google.api.http) = {

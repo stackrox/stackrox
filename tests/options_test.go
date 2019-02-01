@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/search/options"
+	searchService "github.com/stackrox/rox/central/search/service"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -47,9 +48,10 @@ func TestOptions(t *testing.T) {
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 
 	// All category
+
 	categories = categories[:0]
-	for i := 1; i < len(v1.SearchCategory_name); i++ {
-		categories = append(categories, v1.SearchCategory(i))
+	for _, v := range searchService.GlobalSearchCategories.ToSlice() {
+		categories = append(categories, v.(v1.SearchCategory))
 	}
 
 	resp, err = service.Options(ctx, &v1.SearchOptionsRequest{Categories: categories})

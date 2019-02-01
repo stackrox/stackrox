@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/deckarep/golang-set"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/alert/index/mappings"
@@ -38,6 +39,15 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]searchFunc {
 }
 
 var (
+	// GlobalSearchCategories is exposed for e2e options test
+	GlobalSearchCategories = mapset.NewSet(
+		v1.SearchCategory_ALERTS,
+		v1.SearchCategory_DEPLOYMENTS,
+		v1.SearchCategory_IMAGES,
+		v1.SearchCategory_POLICIES,
+		v1.SearchCategory_SECRETS,
+	)
+
 	// To access search, we require users to have view access to every searchable resource.
 	// We could consider allowing people to search across just the things they have access to,
 	// but that requires non-trivial refactoring, so we'll do it if we feel the need later.
@@ -159,7 +169,7 @@ func GetAllSearchableCategories() (categories []v1.SearchCategory) {
 	for i := 1; i < len(v1.SearchCategory_name); i++ {
 		category := v1.SearchCategory(i)
 		// For now, process indicators are not covered in global search.
-		if category == v1.SearchCategory_PROCESS_INDICATORS {
+		if !GlobalSearchCategories.Contains(category) {
 			continue
 		}
 		categories = append(categories, category)

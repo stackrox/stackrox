@@ -12,6 +12,7 @@ import (
 	"github.com/blevesearch/bleve/index/scorch"
 	"github.com/blevesearch/bleve/mapping"
 	alertMapping "github.com/stackrox/rox/central/alert/index/mappings"
+	complianceMapping "github.com/stackrox/rox/central/compliance/search"
 	deploymentMapping "github.com/stackrox/rox/central/deployment/index/mappings"
 	imageMapping "github.com/stackrox/rox/central/image/index/mappings"
 	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
@@ -24,14 +25,26 @@ import (
 )
 
 var (
-	// CategoryToOptionsMap is a mapping from search categories to the options map for that category.
-	CategoryToOptionsMap = map[v1.SearchCategory]search.OptionsMap{
+	// EntityOptionsMap is a mapping from search categories to the options map for that category.
+	// search document maps are also built off this map
+	EntityOptionsMap = map[v1.SearchCategory]search.OptionsMap{
 		v1.SearchCategory_ALERTS:             alertMapping.OptionsMap,
 		v1.SearchCategory_DEPLOYMENTS:        deploymentMapping.OptionsMap,
 		v1.SearchCategory_IMAGES:             imageMapping.OptionsMap,
 		v1.SearchCategory_POLICIES:           policyMapping.OptionsMap,
 		v1.SearchCategory_SECRETS:            secretOptions.Map,
 		v1.SearchCategory_PROCESS_INDICATORS: processIndicatorMapping.OptionsMap,
+	}
+
+	// SearchOptionsMap includes options maps that are not required for document mapping
+	SearchOptionsMap = func() map[v1.SearchCategory]search.OptionsMap {
+		var searchMap = map[v1.SearchCategory]search.OptionsMap{
+			v1.SearchCategory_COMPLIANCE: complianceMapping.OptionsMap,
+		}
+		for k, v := range EntityOptionsMap {
+			searchMap[k] = v
+		}
+		return searchMap
 	}
 
 	logger = logging.LoggerForModule()
@@ -92,7 +105,7 @@ func getIndexMapping() mapping.IndexMapping {
 	indexMapping.StoreDynamic = false
 	indexMapping.TypeField = "Type"
 
-	for category, optMap := range CategoryToOptionsMap {
+	for category, optMap := range EntityOptionsMap {
 		indexMapping.AddDocumentMapping(category.String(), blevesearch.DocumentMappingFromOptionsMap(optMap.Original()))
 	}
 

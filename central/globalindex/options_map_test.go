@@ -120,7 +120,7 @@ func TestCategoryToOptionsMap(t *testing.T) {
 		v1.SearchCategory_PROCESS_INDICATORS: {"process_indicator", storage.ProcessIndicator{}},
 	}
 
-	for category, optionsMap := range CategoryToOptionsMap {
+	for category, optionsMap := range EntityOptionsMap {
 		t.Run(category.String(), func(t *testing.T) {
 
 			for option, searchField := range optionsMap.Original() {
