@@ -49,7 +49,10 @@ const ListTable = ({ params, selectedRow, page, updateSelectedRow, setTablePage 
                 );
             }
             return (
-                <Panel header={params.entityType} headerComponents={paginationComponent}>
+                <Panel
+                    header={`${params.entityType} controls`}
+                    headerComponents={paginationComponent}
+                >
                     {contents}
                 </Panel>
             );

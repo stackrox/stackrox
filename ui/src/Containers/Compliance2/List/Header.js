@@ -23,7 +23,7 @@ const ListHeader = ({ match, location, searchComponent }) => {
         [standardTypes.NIST_800_190]: `${labels.standardLabels.NIST} Standard`,
         [standardTypes.HIPAA_164]: `${labels.standardLabels.HIPAA} Standard`,
         [standardTypes.CIS_DOCKER_V1_1_0]: `${labels.standardLabels.CIS_DOCKER} Standard`,
-        [standardTypes.CIS_KUBERENETES_V1_2_0]: `${labels.standardLabels.CIS_KUBERENETES} Standard`
+        [standardTypes.CIS_KUBERENETES_V1_2_0]: `${labels.standardLabels.CIS_KUBERNETES} Standard`
     };
     const params = URLService.getParams(match, location);
     const { entityType } = params;

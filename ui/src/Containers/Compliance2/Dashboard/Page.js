@@ -21,10 +21,14 @@ const ComplianceDashboardPage = ({ match, location }) => {
                     <StandardsByEntity type={resourceTypes.CLUSTERS} params={params} />
                     <StandardsAcrossEntity type={resourceTypes.NAMESPACES} params={params} />
                     <StandardsAcrossEntity type={resourceTypes.NODES} params={params} />
-                    <ComplianceByStandard type={standardTypes.PCI} params={params} />
-                    <ComplianceByStandard type={standardTypes.NIST} params={params} />
-                    <ComplianceByStandard type={standardTypes.HIPAA} params={params} />
-                    <ComplianceByStandard type={standardTypes.CIS} params={params} />
+                    <ComplianceByStandard type={standardTypes.PCI_DSS_3_2} params={params} />
+                    <ComplianceByStandard type={standardTypes.NIST_800_190} params={params} />
+                    <ComplianceByStandard type={standardTypes.HIPAA_164} params={params} />
+                    <ComplianceByStandard type={standardTypes.CIS_DOCKER_V1_1_0} params={params} />
+                    <ComplianceByStandard
+                        type={standardTypes.CIS_KUBERENETES_V1_2_0}
+                        params={params}
+                    />
                 </div>
             </div>
         </section>

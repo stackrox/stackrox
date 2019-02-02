@@ -14,10 +14,11 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 
 function getStandardTypeFromName(standardName) {
-    if (standardName.includes('NIST')) return standardTypes.NIST;
-    if (standardName.includes('PCI')) return standardTypes.PCI;
-    if (standardName.includes('HIPAA')) return standardTypes.HIPAA;
-    if (standardName.includes('CIS')) return standardTypes.CIS;
+    if (standardName.includes('NIST')) return standardTypes.NIST_800_190;
+    if (standardName.includes('PCI')) return standardTypes.PCI_DSS_3_2;
+    if (standardName.includes('HIPAA')) return standardTypes.HIPAA_164;
+    if (standardName.includes('CIS Docker')) return standardTypes.CIS_DOCKER_V1_1_0;
+    if (standardName.includes('CIS Kubernetes')) return standardTypes.CIS_KUBERENETES_V1_2_0;
     return null;
 }
 const EntityCompliance = ({ params, history }) => {
