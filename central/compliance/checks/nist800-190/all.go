@@ -8,6 +8,7 @@ import (
 	_ "github.com/stackrox/rox/central/compliance/checks/nist800-190/check422"
 	_ "github.com/stackrox/rox/central/compliance/checks/nist800-190/check433"
 	_ "github.com/stackrox/rox/central/compliance/checks/nist800-190/check442"
+	_ "github.com/stackrox/rox/central/compliance/checks/nist800-190/check443"
 	_ "github.com/stackrox/rox/central/compliance/checks/nist800-190/check444"
 	_ "github.com/stackrox/rox/central/compliance/checks/nist800-190/check455"
 )

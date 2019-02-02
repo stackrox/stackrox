@@ -378,3 +378,13 @@ func deploymentHasAlert(deployment *storage.Deployment, policyLifeCycle storage.
 	}
 	return count
 }
+
+// CISBenchmarksSatisfied checks if either Docker or Kube benchmarks were run.
+func CISBenchmarksSatisfied(ctx framework.ComplianceContext) {
+	if ctx.Data().CISDockerTriggered() || ctx.Data().CISKubernetesTriggered() {
+		framework.Pass(ctx, "CIS Benchmarks have been run.")
+		return
+	}
+
+	framework.Fail(ctx, "No CIS Benchmarks have been run.")
+}
