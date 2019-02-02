@@ -6,6 +6,7 @@ import (
 	"time"
 
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/cluster/index"
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	nodeStore "github.com/stackrox/rox/central/node/store"
@@ -18,6 +19,7 @@ import (
 )
 
 type datastoreImpl struct {
+	indexer index.Indexer
 	storage store.Store
 
 	ads alertDataStore.DataStore
@@ -25,6 +27,19 @@ type datastoreImpl struct {
 	ns  nodeStore.GlobalStore
 	ss  secretDataStore.DataStore
 	sm  streamer.Manager
+}
+
+func (ds *datastoreImpl) buildIndex() error {
+	clusters, err := ds.storage.GetClusters()
+	if err != nil {
+		return err
+	}
+	return ds.indexer.AddClusters(clusters)
+}
+
+// Search searches through the clusters
+func (ds *datastoreImpl) Search(q *v1.Query) ([]search.Result, error) {
+	return ds.indexer.Search(q)
 }
 
 // GetCluster is a pass through function to the underlying storage.

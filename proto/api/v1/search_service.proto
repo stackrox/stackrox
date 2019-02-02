@@ -17,6 +17,9 @@ enum SearchCategory {
     SECRETS      = 5;
     PROCESS_INDICATORS = 6;
     COMPLIANCE   = 7;
+    CLUSTERS     = 8;
+    NAMESPACES   = 9;
+    NODES        = 10;
 }
 
 // TODO(cgorman) collapse these into Go code and not proto
