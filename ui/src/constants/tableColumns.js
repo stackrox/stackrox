@@ -34,10 +34,10 @@ const clusterColumns = [
     }
 ];
 
-const controlColumns = [
+const getStandardColumns = standard => [
     {
         accessor: 'control',
-        Header: 'PCI Controls',
+        Header: `${standard} Controls`,
         headerClassName: `w-5/6 ${defaultHeaderClassName}`,
         className: `w-5/6 ${defaultColumnClassName}`
     },
@@ -74,7 +74,11 @@ const namespaceColumns = [
 const entityToColumns = {
     compliance: complianceColumns,
     clusters: clusterColumns,
-    control: controlColumns,
+    'PCI DSS 3.2': getStandardColumns('PCI'),
+    'NIST 800-190': getStandardColumns('NIST'),
+    'HIPAA 164': getStandardColumns('HIPAA'),
+    'CIS Kubernetes v1.2.0': getStandardColumns('CIS Kubernetes'),
+    'CIS Docker v1.1.0': getStandardColumns('CIS Docker'),
     nodes: nodeColumns,
     namespaces: namespaceColumns
 };

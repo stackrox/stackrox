@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { standardTypes } from 'constants/entityTypes';
 
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
@@ -8,7 +9,6 @@ import Loader from 'Components/Loader';
 import TablePagination from 'Components/TablePagination';
 import TableGroup from 'Components/TableGroup';
 import entityToColumns from 'constants/tableColumns';
-import { groupedData } from 'mockData/tableDataMock';
 import componentTypes from 'constants/componentTypes';
 import AppQuery from 'Components/AppQuery';
 
@@ -21,26 +21,25 @@ const ListTable = ({ params, selectedRow, page, updateSelectedRow, setTablePage 
 
             if (!loading && data) {
                 tableData = data.results;
-                contents =
-                    params.entityType === 'compliance' ? (
-                        <TableGroup
-                            groups={groupedData}
-                            tableColumns={entityToColumns[params.entityType]}
-                            onRowClick={updateSelectedRow}
-                            idAttribute={params.entityType}
-                            selectedRowId={selectedRow ? selectedRow[params.entityType] : null}
-                        />
-                    ) : (
-                        <Table
-                            rows={tableData}
-                            columns={entityToColumns[params.entityType]}
-                            onRowClick={updateSelectedRow}
-                            idAttribute="node"
-                            selectedRowId={selectedRow ? selectedRow.node : null}
-                            noDataText="No results found. Please refine your search."
-                            page={page}
-                        />
-                    );
+                contents = Object.values(standardTypes).includes(params.entityType) ? (
+                    <TableGroup
+                        groups={tableData}
+                        tableColumns={entityToColumns[params.entityType]}
+                        onRowClick={updateSelectedRow}
+                        idAttribute="control"
+                        selectedRowId={selectedRow ? selectedRow.control : null}
+                    />
+                ) : (
+                    <Table
+                        rows={tableData}
+                        columns={entityToColumns[params.entityType]}
+                        onRowClick={updateSelectedRow}
+                        idAttribute="id"
+                        selectedRowId={selectedRow ? selectedRow.id : null}
+                        noDataText="No results found. Please refine your search."
+                        page={page}
+                    />
+                );
                 paginationComponent = (
                     <TablePagination
                         page={page}

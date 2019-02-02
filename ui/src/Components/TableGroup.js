@@ -39,6 +39,12 @@ class TableGroup extends Component {
                 idAttribute={idAttribute}
                 showPagination={false}
                 pageSize={rows.length}
+                defaultSorted={[
+                    {
+                        id: 'control',
+                        desc: false
+                    }
+                ]}
             />
         );
     };

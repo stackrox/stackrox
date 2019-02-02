@@ -2,15 +2,11 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
-import entityTypes from 'constants/entityTypes';
 import URLService from 'modules/URLService';
 import AppLink from 'Components/AppLink';
 
 import Panel from 'Components/Panel';
 import CollapsibleBanner from 'Components/CollapsibleBanner/CollapsibleBanner';
-import StandardsAcrossEntity from 'Containers/Compliance2/widgets/StandardsAcrossEntity';
-import StandardsByEntity from 'Containers/Compliance2/widgets/StandardsByEntity';
-import ComplianceByStandard from 'Containers/Compliance2/widgets/ComplianceByStandard';
 import ComplianceEntityPage from 'Containers/Compliance2/Entity/Page';
 import pageTypes from 'constants/pageTypes';
 import SearchInput from './SearchInput';
@@ -99,11 +95,7 @@ class ComplianceListPage extends Component {
             <section className="flex flex-col h-full">
                 <Header searchComponent={<SearchInput />} />
                 <CollapsibleBanner>
-                    <StandardsAcrossEntity type={entityTypes.CLUSTERS} params={params} />
-                    <StandardsByEntity type={entityTypes.CLUSTERS} params={params} />
-                    <ComplianceByStandard type={entityTypes.PCI} params={params} />
-                    <StandardsAcrossEntity type={entityTypes.NAMESPACES} params={params} />
-                    <StandardsAcrossEntity type={entityTypes.NODES} params={params} />
+                    <div>widgets here</div>
                 </CollapsibleBanner>
                 <div className="flex flex-1 overflow-y-auto">
                     <ListTable

@@ -1,5 +1,6 @@
 import { singular } from 'pluralize';
 import toUpper from 'lodash/toUpper';
+import isEmpty from 'lodash/isEmpty';
 import queryMap from './queryMap';
 
 function constructWhereClause(mappedVariables, params) {
@@ -49,14 +50,17 @@ function getQuery(params, component) {
         } else {
             let queryParamValue = params[param.queryParam];
             if (param.queryParam === 'entityType') {
-                queryParamValue = toUpper(singular(queryParamValue));
+                queryParamValue =
+                    param.graphQLParam === 'where'
+                        ? `Standard:${queryParamValue}`
+                        : toUpper(singular(queryParamValue));
             }
             acc[param.graphQLParam] = queryParamValue;
         }
         return acc;
     }, {});
 
-    mappedVariables = constructWhereClause(mappedVariables, params);
+    if (!isEmpty(params.query)) mappedVariables = constructWhereClause(mappedVariables, params);
 
     return {
         query,

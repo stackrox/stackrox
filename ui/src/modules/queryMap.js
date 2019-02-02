@@ -7,7 +7,7 @@ import { NAMESPACE_QUERY, RELATED_DEPLOYMENTS } from 'queries/namespace';
 import { CLUSTERS_QUERY, NAMESPACES_QUERY, NODES_QUERY } from 'queries/table';
 import { NODE_QUERY } from 'queries/node';
 import AGGREGATED_RESULTS from 'queries/controls';
-import ENTITY_COMPLIANCE from 'queries/standard';
+import { LIST_STANDARD, ENTITY_COMPLIANCE } from 'queries/standard';
 
 /**
  * context:     Array of contextTypes to match
@@ -122,6 +122,49 @@ export default [
         config: {
             query: NODES_QUERY,
             variables: [{ graphQLParam: 'id', queryParam: 'entityId' }]
+        }
+    },
+    {
+        context: [contextTypes.COMPLIANCE],
+        pageType: [pageTypes.LIST],
+        entityType: [
+            entityTypes.PCI_DSS_3_2,
+            entityTypes.NIST_800_190,
+            entityTypes.HIPAA_164,
+            entityTypes.CIS_DOCKER_V1_1_0,
+            entityTypes.CIS_KUBERENETES_V1_2_0
+        ],
+        component: [componentTypes.LIST_TABLE],
+        config: {
+            query: LIST_STANDARD,
+            variables: [{ graphQLParam: 'where', queryParam: 'entityType' }],
+            format(data) {
+                if (!data.results) return null;
+                const formattedData = { results: [] };
+                const groups = {};
+                data.results.forEach(({ keys, numPassing, numFailing }) => {
+                    const { name, groupId, description } = keys[1];
+                    if (!groups[groupId]) {
+                        groups[groupId] = {
+                            name: `${name} ${description}`,
+                            rows: []
+                        };
+                    }
+                    const compliance =
+                        numPassing + numFailing === 0
+                            ? '0%'
+                            : `${(numPassing / (numPassing + numFailing)).toFixed(2) * 100}%`;
+                    groups[groupId].rows.push({
+                        control: `${name} - ${description}`,
+                        compliance,
+                        group: groupId
+                    });
+                });
+                Object.keys(groups).forEach(groupId => {
+                    formattedData.results.push(groups[groupId]);
+                });
+                return formattedData;
+            }
         }
     },
     {

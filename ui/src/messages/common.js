@@ -36,7 +36,8 @@ const common = Object.freeze({
         PCI: 'PCI',
         NIST: 'NIST',
         HIPAA: 'HIPAA',
-        CIS: 'CIS'
+        CIS_KUBERNETES: 'CIS Kubernetes',
+        CIS_DOCKER: 'CIS Docker'
     }
 });
 
