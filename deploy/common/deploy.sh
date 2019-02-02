@@ -47,6 +47,10 @@ function wait_for_central {
     until $(curl_central --output /dev/null --silent --fail "https://$LOCAL_API_ENDPOINT/v1/ping"); do
         if [[ "$(date '+%s')" > "$deadline" ]]; then
             echo >&2 "Exceeded deadline waiting for Central."
+            central_pod="$("${ORCH_CMD}" -n stackrox get pods -l app=central -ojsonpath={.items[0].metadata.name})"
+            if [[ -n "$central_pod" ]]; then
+                "${ORCH_CMD}" -n stackrox exec "${central_pod}" -c central -- kill -ABRT 1
+            fi
             exit 1
         fi
         echo -n '.'
