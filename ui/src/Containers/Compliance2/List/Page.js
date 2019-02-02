@@ -3,21 +3,21 @@ import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import URLService from 'modules/URLService';
-import AppLink from 'Components/AppLink';
 
-import Panel from 'Components/Panel';
 import CollapsibleBanner from 'Components/CollapsibleBanner/CollapsibleBanner';
-import ComplianceEntityPage from 'Containers/Compliance2/Entity/Page';
-import pageTypes from 'constants/pageTypes';
+import ComplianceAcrossEntities from 'Containers/Compliance2/widgets/ComplianceAcrossEntities';
 import SearchInput from './SearchInput';
 import Header from './Header';
 import ListTable from './Table';
+import SidePanel from './SidePanel';
 
 class ComplianceListPage extends Component {
     static propTypes = {
         match: ReactRouterPropTypes.match.isRequired,
         location: ReactRouterPropTypes.location.isRequired,
-        params: PropTypes.shape({})
+        params: PropTypes.shape({
+            entityType: PropTypes.string.isRequired
+        })
     };
 
     static defaultProps = {
@@ -27,7 +27,6 @@ class ComplianceListPage extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            page: 0,
             selectedRow: null
         };
     }
@@ -38,74 +37,32 @@ class ComplianceListPage extends Component {
         this.setState({ selectedRow: null });
     };
 
-    renderSidePanel = () => {
-        const { selectedRow } = this.state;
-        if (!selectedRow) return '';
-
-        const { match, location } = this.props;
-        const { context, query, entityType } = URLService.getParams(match, location);
-
-        const pageParams = {
-            context,
-            pageType: pageTypes.ENTITY,
-            entityType,
-            entityId: selectedRow.control
-        };
-
-        const linkParams = {
-            query,
-            entityId: selectedRow.id,
-            entityType
-        };
-
-        const headerTextComponent = (
-            <AppLink
-                context={context}
-                pageType={pageTypes.ENTITY}
-                entityType={entityType}
-                params={linkParams}
-            >
-                <div
-                    className="flex flex-1 text-base-600 uppercase items-center tracking-wide pl-4 pt-1 leading-normal font-700"
-                    data-test-id="panel-header"
-                >
-                    {selectedRow.id}
-                </div>
-            </AppLink>
-        );
-
-        return (
-            <Panel
-                className="w-2/3"
-                headerTextComponent={headerTextComponent}
-                onClose={this.clearSelectedRow}
-            >
-                <ComplianceEntityPage params={pageParams} sidePanelMode />
-            </Panel>
-        );
-    };
-
-    setTablePage = page => this.setState({ page });
-
     render() {
         const { match, location } = this.props;
+        const { selectedRow } = this.state;
         const params = URLService.getParams(match, location);
-        const { selectedRow, page } = this.state;
         return (
             <section className="flex flex-col h-full">
                 <Header searchComponent={<SearchInput />} />
                 <CollapsibleBanner>
-                    <div>widgets here</div>
+                    <ComplianceAcrossEntities params={params} />
+                    <ComplianceAcrossEntities params={params} />
+                    <ComplianceAcrossEntities params={params} />
                 </CollapsibleBanner>
                 <div className="flex flex-1 overflow-y-auto">
                     <ListTable
                         selectedRow={selectedRow}
-                        page={page}
                         params={params}
                         updateSelectedRow={this.updateSelectedRow}
-                        setTablePage={this.setTablePage}
                     />
-                    {this.renderSidePanel()}
+                    {selectedRow && (
+                        <SidePanel
+                            match={match}
+                            location={location}
+                            selectedRow={selectedRow}
+                            clearSelectedRow={this.clearSelectedRow}
+                        />
+                    )}
                 </div>
             </section>
         );

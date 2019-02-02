@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { standardTypes } from 'constants/entityTypes';
 
@@ -12,64 +12,79 @@ import entityToColumns from 'constants/tableColumns';
 import componentTypes from 'constants/componentTypes';
 import AppQuery from 'Components/AppQuery';
 
-const ListTable = ({ params, selectedRow, page, updateSelectedRow, setTablePage }) => (
-    <AppQuery params={params} componentType={componentTypes.LIST_TABLE}>
-        {({ loading, data }) => {
-            let tableData;
-            let contents = <Loader />;
-            let paginationComponent;
+const standardTypeValues = Object.values(standardTypes);
 
-            if (!loading && data) {
-                tableData = data.results;
-                contents = Object.values(standardTypes).includes(params.entityType) ? (
-                    <TableGroup
-                        groups={tableData}
-                        tableColumns={entityToColumns[params.entityType]}
-                        onRowClick={updateSelectedRow}
-                        idAttribute="control"
-                        selectedRowId={selectedRow ? selectedRow.control : null}
-                    />
-                ) : (
-                    <Table
-                        rows={tableData}
-                        columns={entityToColumns[params.entityType]}
-                        onRowClick={updateSelectedRow}
-                        idAttribute="id"
-                        selectedRowId={selectedRow ? selectedRow.id : null}
-                        noDataText="No results found. Please refine your search."
-                        page={page}
-                    />
-                );
-                paginationComponent = (
-                    <TablePagination
-                        page={page}
-                        dataLength={tableData.length}
-                        setPage={setTablePage}
-                    />
-                );
-            }
-            return (
-                <Panel
-                    header={`${params.entityType} controls`}
-                    headerComponents={paginationComponent}
-                >
-                    {contents}
-                </Panel>
-            );
-        }}
-    </AppQuery>
-);
+class ListTable extends Component {
+    static propTypes = {
+        params: PropTypes.shape({}).isRequired,
+        selectedRow: PropTypes.shape({}),
+        updateSelectedRow: PropTypes.func.isRequired
+    };
 
-ListTable.propTypes = {
-    params: PropTypes.shape({}).isRequired,
-    selectedRow: PropTypes.shape({}),
-    page: PropTypes.number.isRequired,
-    updateSelectedRow: PropTypes.func.isRequired,
-    setTablePage: PropTypes.func.isRequired
-};
+    static defaultProps = {
+        selectedRow: null
+    };
 
-ListTable.defaultProps = {
-    selectedRow: null
-};
+    constructor(props) {
+        super(props);
+        this.state = {
+            page: 0
+        };
+    }
+
+    setTablePage = page => this.setState({ page });
+
+    render() {
+        const { params, selectedRow, updateSelectedRow } = this.props;
+        const { page } = this.state;
+        return (
+            <AppQuery params={params} componentType={componentTypes.LIST_TABLE}>
+                {({ loading, data }) => {
+                    let tableData;
+                    let contents = <Loader />;
+                    let paginationComponent;
+
+                    if (!loading && data) {
+                        tableData = data.results;
+                        contents = standardTypeValues.includes(params.entityType) ? (
+                            <TableGroup
+                                groups={tableData}
+                                tableColumns={entityToColumns[params.entityType]}
+                                onRowClick={updateSelectedRow}
+                                idAttribute="control"
+                                selectedRowId={selectedRow ? selectedRow.control : null}
+                            />
+                        ) : (
+                            <Table
+                                rows={tableData}
+                                columns={entityToColumns[params.entityType]}
+                                onRowClick={updateSelectedRow}
+                                idAttribute="id"
+                                selectedRowId={selectedRow ? selectedRow.id : null}
+                                noDataText="No results found. Please refine your search."
+                                page={page}
+                            />
+                        );
+                        paginationComponent = (
+                            <TablePagination
+                                page={page}
+                                dataLength={tableData.length}
+                                setPage={this.setTablePage}
+                            />
+                        );
+                    }
+                    return (
+                        <Panel
+                            header={`${params.entityType} controls`}
+                            headerComponents={paginationComponent}
+                        >
+                            {contents}
+                        </Panel>
+                    );
+                }}
+            </AppQuery>
+        );
+    }
+}
 
 export default ListTable;

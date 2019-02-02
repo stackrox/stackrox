@@ -47,6 +47,8 @@ function getQuery(params, component) {
     let mappedVariables = variables.reduce((acc, param) => {
         if (param.graphQLValue) {
             acc[param.graphQLParam] = param.graphQLValue;
+        } else if (param.paramsFunc) {
+            acc[param.graphQLParam] = param.paramsFunc(params);
         } else {
             let queryParamValue = params[param.queryParam];
             if (param.queryParam === 'entityType') {

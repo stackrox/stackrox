@@ -1,5 +1,5 @@
 import componentTypes from 'constants/componentTypes';
-import entityTypes from 'constants/entityTypes';
+import entityTypes, { standardTypes } from 'constants/entityTypes';
 import contextTypes from 'constants/contextTypes';
 import pageTypes from 'constants/pageTypes';
 import { CLUSTER_QUERY } from 'queries/cluster';
@@ -8,6 +8,8 @@ import { CLUSTERS_QUERY, NAMESPACES_QUERY, NODES_QUERY } from 'queries/table';
 import { NODE_QUERY } from 'queries/node';
 import AGGREGATED_RESULTS from 'queries/controls';
 import { LIST_STANDARD, ENTITY_COMPLIANCE } from 'queries/standard';
+
+import pluralize from 'pluralize';
 
 /**
  * context:     Array of contextTypes to match
@@ -20,8 +22,12 @@ import { LIST_STANDARD, ENTITY_COMPLIANCE } from 'queries/standard';
  *                      URL       =   /:entityType/:entityId
  *                      GraphQL   =   query getCluster($id: ID!)
  *                      variables =   [{ graphQLParam: 'id', queryParam: 'entityId' }]
+ *                  or  variables =   [{ graphQLParam: 'groupBy', graphQLValue: ['STANDARD', 'CLUSTER'] }]
+ *                  or  variables =   [{ graphQLParam: 'groupBy', paramsFunc: params => ['STANDARD', params.entityType] }]
  *      format:     A function run on the result set before returning.
  */
+
+const isStandard = type => Object.keys(standardTypes).includes(type);
 
 function getSubField(data, path) {
     const fields = path.split('.');
@@ -224,6 +230,28 @@ export default [
             variables: [
                 { graphQLParam: 'groupBy', graphQLValue: ['STANDARD'] },
                 { graphQLParam: 'unit', graphQLValue: 'NODE' }
+            ]
+        }
+    },
+    {
+        context: [contextTypes.COMPLIANCE],
+        pageType: [pageTypes.LIST],
+        entityType: [],
+        component: [
+            componentTypes.COMPLIANCE_ACROSS_RESOURCES,
+            componentTypes.COMPLIANCE_ACROSS_STANDARDS
+        ],
+        config: {
+            query: AGGREGATED_RESULTS,
+            variables: [
+                { graphQLParam: 'groupBy', graphQLValue: ['STANDARD'] },
+                {
+                    graphQLParam: 'unit',
+                    paramsFunc: ({ entityType }) => {
+                        if (isStandard(entityType)) return 'CONTROL';
+                        return pluralize.singular(entityType).toUpperCase();
+                    }
+                }
             ]
         }
     }

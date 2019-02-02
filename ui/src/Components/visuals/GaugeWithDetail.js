@@ -28,8 +28,13 @@ const buildValue = hoveredCell => {
 
 class GaugeWithDetail extends Component {
     static propTypes = {
-        data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-        dataProperty: PropTypes.string.isRequired
+        data: PropTypes.arrayOf(
+            PropTypes.shape({
+                title: PropTypes.string.isRequired,
+                passing: PropTypes.number.isRequired,
+                failing: PropTypes.number.isRequired
+            })
+        ).isRequired
     };
 
     constructor(props) {
@@ -42,18 +47,16 @@ class GaugeWithDetail extends Component {
     }
 
     componentDidMount() {
-        const { dataProperty } = this.props;
-        this.setState({ data: this.calculateMultiGaugeData(dataProperty) });
+        this.setState({ data: this.calculateMultiGaugeData() });
     }
 
     getPropsData = () => {
-        const { dataProperty } = this.props;
-        const modifiedData = this.calculateMultiGaugeData(dataProperty);
+        const modifiedData = this.calculateMultiGaugeData();
         this.setState({ data: modifiedData });
         return modifiedData;
     };
 
-    calculateMultiGaugeData = property => {
+    calculateMultiGaugeData = () => {
         if (!this.props.data.length) return null;
         const pi = Math.PI;
         const fullAngle = 2 * pi;
@@ -68,7 +71,7 @@ class GaugeWithDetail extends Component {
             const outerCircle = {
                 ...d,
                 color: colors[index],
-                angle0: 2 * pi * (d[property] / 100),
+                angle0: 2 * pi * (d.passing / (d.passing + d.failing)),
                 angle: fullAngle,
                 opacity: 0.2,
                 radius0,
@@ -81,7 +84,7 @@ class GaugeWithDetail extends Component {
                 ...d,
                 color: colors[index],
                 angle0: 0,
-                angle: 2 * pi * (d[property] / 100),
+                angle: 2 * pi * (d.passing / (d.passing + d.failing)),
                 radius0,
                 radius: radius1,
                 index,
@@ -145,6 +148,7 @@ class GaugeWithDetail extends Component {
                 }),
                 { passing: 0, total: 0 }
             );
+            if (totalValues.total === 0) return 0;
             totalPassing = Math.round((totalValues.passing / totalValues.total) * 100);
         }
         return totalPassing;
@@ -154,7 +158,11 @@ class GaugeWithDetail extends Component {
         let value = 0;
         const { arc, passing, failing } = this.state.selectedData;
         // 'inner' refers to passing and 'outer' refers to failing
-        value = arc === 'inner' ? passing : failing;
+        if (passing === 0 && failing === 0) return 0;
+        value =
+            arc === 'inner'
+                ? Math.round((passing / (passing + failing)) * 100)
+                : Math.round((failing / (passing + failing)) * 100);
         return value;
     };
 
