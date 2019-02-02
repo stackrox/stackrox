@@ -95,7 +95,7 @@ func schemaExpand(p reflect.Type) string {
 		}
 	case reflect.Ptr:
 		if p == timestampType {
-			return "Time!"
+			return "Time"
 		}
 		if isProto(p) {
 			return p.Elem().Name()

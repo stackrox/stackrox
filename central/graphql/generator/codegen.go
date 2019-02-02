@@ -205,7 +205,7 @@ func getFieldTransform(fd fieldData) (templateName string, returnType string) {
 		}
 	case reflect.Ptr:
 		if fd.Type == timestampType {
-			return "time", "(graphql.Time, error)"
+			return "time", "(*graphql.Time, error)"
 		}
 		if fd.Type.Implements(messageType) {
 			if isListType(fd.Type) {

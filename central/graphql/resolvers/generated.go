@@ -17,14 +17,14 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	builder.AddType("Alert", []string{
 		"deployment: Deployment",
 		"enforcement: Alert_Enforcement",
-		"firstOccurred: Time!",
+		"firstOccurred: Time",
 		"id: ID!",
 		"lifecycleStage: LifecycleStage!",
 		"policy: Policy",
 		"processViolation: Alert_ProcessViolation",
-		"snoozeTill: Time!",
+		"snoozeTill: Time",
 		"state: ViolationState!",
-		"time: Time!",
+		"time: Time",
 		"violations: [Alert_Violation]!",
 	})
 	builder.AddType("Alert_Enforcement", []string{
@@ -58,10 +58,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_Impact(0)))
 	builder.AddType("Cert", []string{
 		"algorithm: String!",
-		"endDate: Time!",
+		"endDate: Time",
 		"issuer: CertName",
 		"sans: [String!]!",
-		"startDate: Time!",
+		"startDate: Time",
 		"subject: CertName",
 	})
 	builder.AddType("CertName", []string{
@@ -79,7 +79,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"admissionController: Boolean!",
 		"centralApiEndpoint: String!",
 		"id: ID!",
-		"lastContact: Time!",
+		"lastContact: Time",
 		"mainImage: String!",
 		"monitoringEndpoint: String!",
 		"name: String!",
@@ -164,11 +164,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	builder.AddType("ComplianceRun", []string{
 		"clusterId: String!",
 		"errorMessage: String!",
-		"finishTime: Time!",
+		"finishTime: Time",
 		"id: ID!",
 		"scheduleId: String!",
 		"standardId: String!",
-		"startTime: Time!",
+		"startTime: Time",
 		"state: ComplianceRun_State!",
 	})
 	builder.AddType("ComplianceRunSchedule", []string{
@@ -181,7 +181,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	builder.AddType("ComplianceRunScheduleInfo", []string{
 		"lastCompletedRun: ComplianceRun",
 		"lastRun: ComplianceRun",
-		"nextRunTime: Time!",
+		"nextRunTime: Time",
 		"schedule: ComplianceRunSchedule",
 	})
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.ComplianceRun_State(0)))
@@ -255,7 +255,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"serviceAccount: String!",
 		"tolerations: [Toleration]!",
 		"type: String!",
-		"updatedAt: Time!",
+		"updatedAt: Time",
 		"version: String!",
 	})
 	builder.AddType("DockerfileLineRuleField", []string{
@@ -306,7 +306,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	builder.AddType("ImageLayer", []string{
 		"author: String!",
 		"components: [ImageScanComponent]!",
-		"created: Time!",
+		"created: Time",
 		"empty: Boolean!",
 		"instruction: String!",
 		"value: String!",
@@ -329,7 +329,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	})
 	builder.AddType("ImageScan", []string{
 		"components: [ImageScanComponent]!",
-		"scanTime: Time!",
+		"scanTime: Time",
 	})
 	builder.AddType("ImageScanComponent", []string{
 		"license: License",
@@ -385,7 +385,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	})
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NetworkEntityInfo_Type(0)))
 	builder.AddType("NetworkFlow", []string{
-		"lastSeenTimestamp: Time!",
+		"lastSeenTimestamp: Time",
 		"props: NetworkFlowProperties",
 	})
 	builder.AddType("NetworkFlowProperties", []string{
@@ -478,7 +478,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	builder.AddType("ProcessIndicator", []string{
 		"containerName: String!",
 		"deploymentId: String!",
-		"emitTimestamp: Time!",
+		"emitTimestamp: Time",
 		"id: ID!",
 		"podId: String!",
 		"signal: ProcessSignal",
@@ -502,7 +502,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"lineage: [String!]!",
 		"name: String!",
 		"pid: Int!",
-		"time: Time!",
+		"time: Time",
 		"uid: Int!",
 	})
 	builder.AddType("ProviderMetadata", []string{
@@ -563,7 +563,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"annotations: [Label!]!",
 		"clusterId: String!",
 		"clusterName: String!",
-		"createdAt: Time!",
+		"createdAt: Time",
 		"files: [SecretDataFile]!",
 		"id: ID!",
 		"labels: [Label!]!",
@@ -620,9 +620,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	})
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.TaintEffect(0)))
 	builder.AddType("TokenMetadata", []string{
-		"expiration: Time!",
+		"expiration: Time",
 		"id: ID!",
-		"issuedAt: Time!",
+		"issuedAt: Time",
 		"name: String!",
 		"revoked: Boolean!",
 		"role: String!",
@@ -636,7 +636,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Toleration_Operator(0)))
 	builder.AddType("V1Metadata", []string{
 		"author: String!",
-		"created: Time!",
+		"created: Time",
 		"digest: String!",
 		"layers: [ImageLayer]!",
 	})
@@ -667,7 +667,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	builder.AddType("Whitelist", []string{
 		"container: Whitelist_Container",
 		"deployment: Whitelist_Deployment",
-		"expiration: Time!",
+		"expiration: Time",
 		"name: String!",
 	})
 	builder.AddType("Whitelist_Container", []string{
@@ -750,7 +750,7 @@ func (resolver *alertResolver) Enforcement() (*alert_EnforcementResolver, error)
 	return resolver.root.wrapAlert_Enforcement(value, true, nil)
 }
 
-func (resolver *alertResolver) FirstOccurred() (graphql.Time, error) {
+func (resolver *alertResolver) FirstOccurred() (*graphql.Time, error) {
 	resolver.ensureData()
 	value := resolver.data.GetFirstOccurred()
 	return timestamp(value)
@@ -784,7 +784,7 @@ func (resolver *alertResolver) ProcessViolation() (*alert_ProcessViolationResolv
 	return resolver.root.wrapAlert_ProcessViolation(value, true, nil)
 }
 
-func (resolver *alertResolver) SnoozeTill() (graphql.Time, error) {
+func (resolver *alertResolver) SnoozeTill() (*graphql.Time, error) {
 	resolver.ensureData()
 	value := resolver.data.GetSnoozeTill()
 	return timestamp(value)
@@ -798,7 +798,7 @@ func (resolver *alertResolver) State() string {
 	return value.String()
 }
 
-func (resolver *alertResolver) Time() (graphql.Time, error) {
+func (resolver *alertResolver) Time() (*graphql.Time, error) {
 	value := resolver.data.GetTime()
 	if resolver.data == nil {
 		value = resolver.list.GetTime()
@@ -1102,7 +1102,7 @@ func (resolver *certResolver) Algorithm() string {
 	return value
 }
 
-func (resolver *certResolver) EndDate() (graphql.Time, error) {
+func (resolver *certResolver) EndDate() (*graphql.Time, error) {
 	value := resolver.data.GetEndDate()
 	return timestamp(value)
 }
@@ -1117,7 +1117,7 @@ func (resolver *certResolver) Sans() []string {
 	return value
 }
 
-func (resolver *certResolver) StartDate() (graphql.Time, error) {
+func (resolver *certResolver) StartDate() (*graphql.Time, error) {
 	value := resolver.data.GetStartDate()
 	return timestamp(value)
 }
@@ -1233,7 +1233,7 @@ func (resolver *clusterResolver) Id() graphql.ID {
 	return graphql.ID(value)
 }
 
-func (resolver *clusterResolver) LastContact() (graphql.Time, error) {
+func (resolver *clusterResolver) LastContact() (*graphql.Time, error) {
 	value := resolver.data.GetLastContact()
 	return timestamp(value)
 }
@@ -1883,7 +1883,7 @@ func (resolver *complianceRunResolver) ErrorMessage() string {
 	return value
 }
 
-func (resolver *complianceRunResolver) FinishTime() (graphql.Time, error) {
+func (resolver *complianceRunResolver) FinishTime() (*graphql.Time, error) {
 	value := resolver.data.GetFinishTime()
 	return timestamp(value)
 }
@@ -1903,7 +1903,7 @@ func (resolver *complianceRunResolver) StandardId() string {
 	return value
 }
 
-func (resolver *complianceRunResolver) StartTime() (graphql.Time, error) {
+func (resolver *complianceRunResolver) StartTime() (*graphql.Time, error) {
 	value := resolver.data.GetStartTime()
 	return timestamp(value)
 }
@@ -1994,7 +1994,7 @@ func (resolver *complianceRunScheduleInfoResolver) LastRun() (*complianceRunReso
 	return resolver.root.wrapComplianceRun(value, true, nil)
 }
 
-func (resolver *complianceRunScheduleInfoResolver) NextRunTime() (graphql.Time, error) {
+func (resolver *complianceRunScheduleInfoResolver) NextRunTime() (*graphql.Time, error) {
 	value := resolver.data.GetNextRunTime()
 	return timestamp(value)
 }
@@ -2567,7 +2567,7 @@ func (resolver *deploymentResolver) Type() string {
 	return value
 }
 
-func (resolver *deploymentResolver) UpdatedAt() (graphql.Time, error) {
+func (resolver *deploymentResolver) UpdatedAt() (*graphql.Time, error) {
 	value := resolver.data.GetUpdatedAt()
 	if resolver.data == nil {
 		value = resolver.list.GetUpdatedAt()
@@ -2993,7 +2993,7 @@ func (resolver *imageLayerResolver) Components() ([]*imageScanComponentResolver,
 	return resolver.root.wrapImageScanComponents(value, nil)
 }
 
-func (resolver *imageLayerResolver) Created() (graphql.Time, error) {
+func (resolver *imageLayerResolver) Created() (*graphql.Time, error) {
 	value := resolver.data.GetCreated()
 	return timestamp(value)
 }
@@ -3160,7 +3160,7 @@ func (resolver *imageScanResolver) Components() ([]*imageScanComponentResolver, 
 	return resolver.root.wrapImageScanComponents(value, nil)
 }
 
-func (resolver *imageScanResolver) ScanTime() (graphql.Time, error) {
+func (resolver *imageScanResolver) ScanTime() (*graphql.Time, error) {
 	value := resolver.data.GetScanTime()
 	return timestamp(value)
 }
@@ -3631,7 +3631,7 @@ func (resolver *Resolver) wrapNetworkFlows(values []*storage.NetworkFlow, err er
 	return output, nil
 }
 
-func (resolver *networkFlowResolver) LastSeenTimestamp() (graphql.Time, error) {
+func (resolver *networkFlowResolver) LastSeenTimestamp() (*graphql.Time, error) {
 	value := resolver.data.GetLastSeenTimestamp()
 	return timestamp(value)
 }
@@ -4257,7 +4257,7 @@ func (resolver *processIndicatorResolver) DeploymentId() string {
 	return value
 }
 
-func (resolver *processIndicatorResolver) EmitTimestamp() (graphql.Time, error) {
+func (resolver *processIndicatorResolver) EmitTimestamp() (*graphql.Time, error) {
 	value := resolver.data.GetEmitTimestamp()
 	return timestamp(value)
 }
@@ -4416,7 +4416,7 @@ func (resolver *processSignalResolver) Pid() int32 {
 	return int32(value)
 }
 
-func (resolver *processSignalResolver) Time() (graphql.Time, error) {
+func (resolver *processSignalResolver) Time() (*graphql.Time, error) {
 	value := resolver.data.GetTime()
 	return timestamp(value)
 }
@@ -4896,7 +4896,7 @@ func (resolver *secretResolver) ClusterName() string {
 	return value
 }
 
-func (resolver *secretResolver) CreatedAt() (graphql.Time, error) {
+func (resolver *secretResolver) CreatedAt() (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
 	if resolver.data == nil {
 		value = resolver.list.GetCreatedAt()
@@ -5349,7 +5349,7 @@ func (resolver *Resolver) wrapTokenMetadatas(values []*storage.TokenMetadata, er
 	return output, nil
 }
 
-func (resolver *tokenMetadataResolver) Expiration() (graphql.Time, error) {
+func (resolver *tokenMetadataResolver) Expiration() (*graphql.Time, error) {
 	value := resolver.data.GetExpiration()
 	return timestamp(value)
 }
@@ -5359,7 +5359,7 @@ func (resolver *tokenMetadataResolver) Id() graphql.ID {
 	return graphql.ID(value)
 }
 
-func (resolver *tokenMetadataResolver) IssuedAt() (graphql.Time, error) {
+func (resolver *tokenMetadataResolver) IssuedAt() (*graphql.Time, error) {
 	value := resolver.data.GetIssuedAt()
 	return timestamp(value)
 }
@@ -5468,7 +5468,7 @@ func (resolver *v1MetadataResolver) Author() string {
 	return value
 }
 
-func (resolver *v1MetadataResolver) Created() (graphql.Time, error) {
+func (resolver *v1MetadataResolver) Created() (*graphql.Time, error) {
 	value := resolver.data.GetCreated()
 	return timestamp(value)
 }
@@ -5701,7 +5701,7 @@ func (resolver *whitelistResolver) Deployment() (*whitelist_DeploymentResolver, 
 	return resolver.root.wrapWhitelist_Deployment(value, true, nil)
 }
 
-func (resolver *whitelistResolver) Expiration() (graphql.Time, error) {
+func (resolver *whitelistResolver) Expiration() (*graphql.Time, error) {
 	value := resolver.data.GetExpiration()
 	return timestamp(value)
 }
