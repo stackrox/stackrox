@@ -26,14 +26,14 @@ const EntityCompliance = ({ params, history }) => {
     const entityTypeLabel = pluralize.singular(entityType);
 
     function getBarData(results) {
-        return results.aggregatedResults.map(item => ({
+        return results.aggregatedResults.results.map(item => ({
             x: item.aggregationKeys[0].id,
             y: (item.numPassing / (item.numPassing + item.numFailing)) * 100
         }));
     }
 
     function getTotals(results) {
-        return results.aggregatedResults.reduce(
+        return results.aggregatedResults.results.reduce(
             (acc, curr) => {
                 acc.numPassing += curr.numPassing;
                 acc.total += curr.numPassing + curr.numFailing;

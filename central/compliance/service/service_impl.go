@@ -32,12 +32,12 @@ var (
 	})
 )
 
-// New returns a service object for registering with grpc
-func New() Service {
+// New returns a service object for registering with grpc.
+func New(complianceStore store.Store, standardsRepo standards.Repository, clusterStore datastore.DataStore) Service {
 	return &serviceImpl{
-		store:         store.Singleton(),
-		standardsRepo: standards.RegistrySingleton(),
-		clusters:      datastore.Singleton(),
+		store:         complianceStore,
+		standardsRepo: standardsRepo,
+		clusters:      clusterStore,
 	}
 }
 
@@ -125,10 +125,14 @@ func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.Comp
 	if err != nil {
 		return nil, err
 	}
-	results, _ := aggregation.GetAggregatedResults(request.GetGroupBy(), request.GetUnit(), runResults)
+
+	validResults, sources := store.ValidResultsAndSources(runResults)
+
+	results, _ := aggregation.GetAggregatedResults(request.GetGroupBy(), request.GetUnit(), validResults)
 
 	return &v1.ComplianceAggregation_Response{
 		Results: results,
+		Sources: sources,
 	}, nil
 }
 
@@ -138,6 +142,7 @@ func (s *serviceImpl) GetRunResults(ctx context.Context, request *v1.GetComplian
 		return nil, err
 	}
 	return &v1.GetComplianceRunResultsResponse{
-		Results: results,
+		Results:    results.LastSuccessfulResults,
+		FailedRuns: results.FailedRuns,
 	}, nil
 }

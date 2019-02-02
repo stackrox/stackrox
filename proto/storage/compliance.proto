@@ -79,9 +79,13 @@ message ComplianceDomain {
 message ComplianceRunMetadata {
     string run_id = 1;
     string standard_id = 2;
+    string cluster_id = 3;
 
-    google.protobuf.Timestamp start_timestamp  = 3;
-    google.protobuf.Timestamp finish_timestamp = 4;
+    google.protobuf.Timestamp start_timestamp  = 4;
+    google.protobuf.Timestamp finish_timestamp = 5;
+
+    bool success = 6;
+    string error_message = 7;
 }
 
 // Next available tag: 6

@@ -79,8 +79,7 @@ message ComplianceRun {
         STARTED = 2;
         WAIT_FOR_DATA = 3;
         EVALUTING_CHECKS = 4;
-        STORING_RESULTS = 5;
-        FINISHED = 6;
+        FINISHED = 5;
     }
 
     string id = 1;

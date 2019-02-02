@@ -67,15 +67,6 @@ func (r *runInstance) Start(scrapePromise *scrapePromise, resultsStore store.Sto
 func (r *runInstance) Run(scrapePromise *scrapePromise, resultsStore store.Store) {
 	defer r.cancel()
 
-	concurrency.WithLock(&r.mutex, func() {
-		r.startTime = time.Now()
-		r.status = v1.ComplianceRun_STARTED
-	})
-	defer concurrency.WithLock(&r.mutex, func() {
-		r.finishTime = time.Now()
-		r.status = v1.ComplianceRun_FINISHED
-	})
-
 	if r.schedule != nil {
 		concurrency.WithLock(&r.schedule.mutex, func() {
 			r.schedule.lastRun = r
@@ -85,36 +76,50 @@ func (r *runInstance) Run(scrapePromise *scrapePromise, resultsStore store.Store
 		})
 	}
 
-	err := r.doRun(scrapePromise, resultsStore)
+	run, err := r.doRun(scrapePromise)
 
-	concurrency.WithLock(&r.mutex, func() {
-		r.err = err
-	})
+	if err == nil {
+		results := r.collectResults(run)
+		if storeErr := resultsStore.StoreRunResults(results); storeErr != nil {
+			err = fmt.Errorf("storing results: %v", err)
+		}
+	}
+	if err != nil {
+		concurrency.WithLock(&r.mutex, func() {
+			r.err = err
+		})
+		metadata := r.metadataProto(true)
+		if storeErr := resultsStore.StoreFailure(metadata); storeErr != nil {
+			log.Errorf("Failed to store metadata for failed compliance run: %v", storeErr)
+		}
+	}
 }
 
-func (r *runInstance) doRun(scrapePromise *scrapePromise, resultsStore store.Store) error {
+func (r *runInstance) doRun(scrapePromise *scrapePromise) (framework.ComplianceRun, error) {
+	concurrency.WithLock(&r.mutex, func() {
+		r.startTime = time.Now()
+		r.status = v1.ComplianceRun_STARTED
+	})
+	defer concurrency.WithLock(&r.mutex, func() {
+		r.finishTime = time.Now()
+		r.status = v1.ComplianceRun_FINISHED
+	})
+
 	log.Infof("Starting compliance run %s for cluster %q and standard %q", r.id, r.domain.Cluster().Cluster().Name, r.standard.Standard.Name)
 
 	r.updateStatus(v1.ComplianceRun_WAIT_FOR_DATA)
 	data, err := scrapePromise.WaitForResult(r.ctx)
 	if err != nil {
-		return fmt.Errorf("waiting for compliance data: %v", err)
+		return nil, fmt.Errorf("waiting for compliance data: %v", err)
 	}
 
 	run, err := framework.NewComplianceRun(r.standard.Checks...)
 	if err != nil {
-		return fmt.Errorf("creating compliance run: %v", err)
+		return nil, fmt.Errorf("creating compliance run: %v", err)
 	}
 
 	r.updateStatus(v1.ComplianceRun_EVALUTING_CHECKS)
-	if err := run.Run(r.ctx, r.domain, data); err != nil {
-		return err
-	}
-
-	r.updateStatus(v1.ComplianceRun_STORING_RESULTS)
-	results := r.collectResults(run)
-
-	return resultsStore.StoreRunResults(results)
+	return run, run.Run(r.ctx, r.domain, data)
 }
 
 func timeToProto(t time.Time) *types.Timestamp {

@@ -2,6 +2,7 @@ package manager
 
 import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/data"
 	complianceResultsStore "github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/central/deployment/datastore"
@@ -17,11 +18,6 @@ const (
 	Wildcard = "*"
 )
 
-// ClusterStandardPair is a (cluster ID, standard ID) combination.
-type ClusterStandardPair struct {
-	ClusterID, StandardID string
-}
-
 // ComplianceManager manages compliance schedules and one-off compliance runs.
 type ComplianceManager interface {
 	Start() error
@@ -36,9 +32,9 @@ type ComplianceManager interface {
 	GetRecentRuns(request *v1.GetRecentComplianceRunsRequest) []*v1.ComplianceRun
 	GetRecentRun(id string) (*v1.ComplianceRun, error)
 
-	ExpandSelection(clusterIDOrWildcard, standardIDOrWildcard string) ([]ClusterStandardPair, error)
+	ExpandSelection(clusterIDOrWildcard, standardIDOrWildcard string) ([]compliance.ClusterStandardPair, error)
 
-	TriggerRuns(clusterStandardPairs ...ClusterStandardPair) ([]*v1.ComplianceRun, error)
+	TriggerRuns(clusterStandardPairs ...compliance.ClusterStandardPair) ([]*v1.ComplianceRun, error)
 
 	// GetRunStatuses returns the statuses for the runs with the given IDs. Any runs that could not be located (e.g.,
 	// because they are too old or the ID is invalid) will be returned in the id to error map.

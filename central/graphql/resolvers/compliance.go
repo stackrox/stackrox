@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/compliance/aggregation"
+	"github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -33,7 +34,7 @@ func InitCompliance() {
 		schema := getBuilder()
 		schema.AddQuery("complianceStandard(id:ID!): ComplianceStandardMetadata")
 		schema.AddQuery("complianceStandards: [ComplianceStandardMetadata!]!")
-		schema.AddQuery("aggregatedResults(groupBy:[ComplianceAggregation_Scope!],unit:ComplianceAggregation_Scope!,where:String): [ComplianceAggregation_Result!]!")
+		schema.AddQuery("aggregatedResults(groupBy:[ComplianceAggregation_Scope!],unit:ComplianceAggregation_Scope!,where:String): ComplianceAggregation_Response!")
 		schema.AddExtraResolver("ComplianceStandardMetadata", "controls: [ComplianceControl!]!")
 		schema.AddExtraResolver("ComplianceStandardMetadata", "groups: [ComplianceControlGroup!]!")
 		schema.AddType("Namespace", []string{"cluster: Cluster", "name: String!"})
@@ -67,7 +68,7 @@ type aggregatedResultQuery struct {
 }
 
 // AggregatedResults returns the aggregration of the last runs aggregated by scope, unit and filtered by a query
-func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregatedResultQuery) ([]*complianceAggregationResultWithDomainResolver, error) {
+func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregatedResultQuery) (*complianceAggregationResponseWithDomainResolver, error) {
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
@@ -96,15 +97,20 @@ func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregated
 	if err != nil {
 		return nil, err
 	}
-	results, domainFunc := aggregation.GetAggregatedResults(toComplianceAggregation_Scopes(args.GroupBy), toComplianceAggregation_Scope(&args.Unit), runResults)
-	output := make([]*complianceAggregationResultWithDomainResolver, len(results))
-	for i, res := range results {
-		output[i] = &complianceAggregationResultWithDomainResolver{
-			complianceAggregation_ResultResolver{resolver, res},
-			domainFunc(i),
-		}
-	}
-	return output, nil
+
+	validResults, sources := store.ValidResultsAndSources(runResults)
+	results, domainFunc := aggregation.GetAggregatedResults(toComplianceAggregation_Scopes(args.GroupBy), toComplianceAggregation_Scope(&args.Unit), validResults)
+
+	return &complianceAggregationResponseWithDomainResolver{
+		complianceAggregation_ResponseResolver: complianceAggregation_ResponseResolver{
+			root: resolver,
+			data: &v1.ComplianceAggregation_Response{
+				Results: results,
+				Sources: sources,
+			},
+		},
+		domainFunc: domainFunc,
+	}, nil
 }
 
 type complianceDomainKeyResolver struct {

@@ -46,9 +46,19 @@ message ComplianceAggregation {
         int32 num_failing = 4;
     }
 
-    // Next available tag: 2
+    // Next available tag: 5
+    message Source {
+        string cluster_id  = 1;
+        string standard_id = 2;
+
+        storage.ComplianceRunMetadata successful_run       = 3;
+        repeated storage.ComplianceRunMetadata failed_runs = 4;
+    }
+
+    // Next available tag: 3
     message Response {
         repeated Result results = 1;
+        repeated Source sources = 2;
     }
 }
 
@@ -98,6 +108,7 @@ message GetComplianceRunResultsRequest {
 
 message GetComplianceRunResultsResponse {
     storage.ComplianceRunResults results = 1;
+    repeated storage.ComplianceRunMetadata failed_runs = 2;
 }
 
 service ComplianceService {

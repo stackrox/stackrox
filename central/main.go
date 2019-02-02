@@ -206,7 +206,7 @@ func startGRPCServer() {
 	}
 	if features.Compliance.Enabled() {
 		servicesToRegister = append(servicesToRegister,
-			complianceService.New(),
+			complianceService.Singleton(),
 			complianceManagerService.Singleton())
 
 		if err := manager.Singleton().Start(); err != nil {

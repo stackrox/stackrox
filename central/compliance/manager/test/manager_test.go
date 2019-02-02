@@ -6,6 +6,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	clusterDatastoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	"github.com/stackrox/rox/central/compliance"
 	complianceDataMocks "github.com/stackrox/rox/central/compliance/data/mocks"
 	"github.com/stackrox/rox/central/compliance/manager"
 	complianceMgrMocks "github.com/stackrox/rox/central/compliance/manager/mocks"
@@ -41,7 +42,7 @@ func TestManager(t *testing.T) {
 func (s *managerTestSuite) TestExpandSelection_OneOne() {
 	pairs, err := s.manager.ExpandSelection("cluster1", "standard1")
 	s.NoError(err)
-	s.ElementsMatch(pairs, []manager.ClusterStandardPair{
+	s.ElementsMatch(pairs, []compliance.ClusterStandardPair{
 		{ClusterID: "cluster1", StandardID: "standard1"},
 	})
 }
@@ -57,7 +58,7 @@ func (s *managerTestSuite) TestExpandSelection_AllOne_OK() {
 	}, nil)
 	pairs, err := s.manager.ExpandSelection(manager.Wildcard, "standard1")
 	s.NoError(err)
-	s.ElementsMatch(pairs, []manager.ClusterStandardPair{
+	s.ElementsMatch(pairs, []compliance.ClusterStandardPair{
 		{ClusterID: "cluster1", StandardID: "standard1"},
 		{ClusterID: "cluster2", StandardID: "standard1"},
 	})
@@ -76,7 +77,7 @@ func (s *managerTestSuite) TestExpandSelection_OneAll_OK() {
 	})
 	pairs, err := s.manager.ExpandSelection("cluster1", manager.Wildcard)
 	s.NoError(err)
-	s.ElementsMatch(pairs, []manager.ClusterStandardPair{
+	s.ElementsMatch(pairs, []compliance.ClusterStandardPair{
 		{ClusterID: "cluster1", StandardID: "standard1"},
 		{ClusterID: "cluster1", StandardID: "standard2"},
 	})
@@ -93,7 +94,7 @@ func (s *managerTestSuite) TestExpandSelection_AllAll_OK() {
 	})
 	pairs, err := s.manager.ExpandSelection(manager.Wildcard, manager.Wildcard)
 	s.NoError(err)
-	s.ElementsMatch(pairs, []manager.ClusterStandardPair{
+	s.ElementsMatch(pairs, []compliance.ClusterStandardPair{
 		{ClusterID: "cluster1", StandardID: "standard1"},
 		{ClusterID: "cluster1", StandardID: "standard2"},
 		{ClusterID: "cluster2", StandardID: "standard1"},

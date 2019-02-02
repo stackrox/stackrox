@@ -95,7 +95,7 @@ export default [
                 const formattedData = {
                     ...data
                 };
-                formattedData.results = getSubField(data, 'aggregatedResults.results');
+                formattedData.results = getSubField(data, 'aggregatedResults.results.results');
                 return formattedData;
             }
         }

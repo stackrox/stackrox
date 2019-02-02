@@ -7,6 +7,7 @@ import (
 	"time"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/data"
 	"github.com/stackrox/rox/central/compliance/framework"
 	complianceResultsStore "github.com/stackrox/rox/central/compliance/store"
@@ -152,7 +153,7 @@ func (m *manager) createRun(domain framework.ComplianceDomain, standard Standard
 }
 
 func (m *manager) createRunFromSchedule(schedule *scheduleInstance) ([]*runInstance, error) {
-	return m.createAndLaunchRuns([]ClusterStandardPair{schedule.clusterAndStandard()}, schedule)
+	return m.createAndLaunchRuns([]compliance.ClusterStandardPair{schedule.clusterAndStandard()}, schedule)
 }
 
 func (m *manager) runSchedules(schedulesToRun []*scheduleInstance) error {
@@ -442,7 +443,7 @@ func (m *manager) GetRecentRun(id string) (*v1.ComplianceRun, error) {
 	return run.ToProto(), nil
 }
 
-func (m *manager) ExpandSelection(clusterIDOrWildcard, standardIDOrWildcard string) ([]ClusterStandardPair, error) {
+func (m *manager) ExpandSelection(clusterIDOrWildcard, standardIDOrWildcard string) ([]compliance.ClusterStandardPair, error) {
 	var clusterIDs []string
 	if clusterIDOrWildcard == Wildcard {
 		clusters, err := m.clusterStore.GetClusters()
@@ -468,11 +469,11 @@ func (m *manager) ExpandSelection(clusterIDOrWildcard, standardIDOrWildcard stri
 		standardIDs = []string{standardIDOrWildcard}
 	}
 
-	result := make([]ClusterStandardPair, 0, len(clusterIDs)*len(standardIDs))
+	result := make([]compliance.ClusterStandardPair, 0, len(clusterIDs)*len(standardIDs))
 
 	for _, clusterID := range clusterIDs {
 		for _, standardID := range standardIDs {
-			result = append(result, ClusterStandardPair{
+			result = append(result, compliance.ClusterStandardPair{
 				ClusterID:  clusterID,
 				StandardID: standardID,
 			})
@@ -482,7 +483,7 @@ func (m *manager) ExpandSelection(clusterIDOrWildcard, standardIDOrWildcard stri
 	return result, nil
 }
 
-func (m *manager) TriggerRuns(clusterStandardPairs ...ClusterStandardPair) ([]*v1.ComplianceRun, error) {
+func (m *manager) TriggerRuns(clusterStandardPairs ...compliance.ClusterStandardPair) ([]*v1.ComplianceRun, error) {
 	runs, err := m.createAndLaunchRuns(clusterStandardPairs, nil)
 	if err != nil {
 		return nil, err
@@ -495,7 +496,7 @@ func (m *manager) TriggerRuns(clusterStandardPairs ...ClusterStandardPair) ([]*v
 	return runProtos, nil
 }
 
-func (m *manager) createAndLaunchRuns(clusterStandardPairs []ClusterStandardPair, schedule *scheduleInstance) ([]*runInstance, error) {
+func (m *manager) createAndLaunchRuns(clusterStandardPairs []compliance.ClusterStandardPair, schedule *scheduleInstance) ([]*runInstance, error) {
 	// Step 1: Group all standard implementations that need to run by cluster ID.
 	standardImplsByClusterID := make(map[string][]StandardImplementation)
 	for _, clusterAndStandard := range clusterStandardPairs {

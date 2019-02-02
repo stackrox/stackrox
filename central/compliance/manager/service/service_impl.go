@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -115,7 +116,7 @@ func (s *service) GetRunSchedules(ctx context.Context, req *v1.GetComplianceRunS
 }
 
 func (s *service) TriggerRun(ctx context.Context, req *v1.TriggerComplianceRunRequest) (*v1.TriggerComplianceRunResponse, error) {
-	runs, err := s.manager.TriggerRuns(manager.ClusterStandardPair{
+	runs, err := s.manager.TriggerRuns(compliance.ClusterStandardPair{
 		ClusterID:  req.GetClusterId(),
 		StandardID: req.GetStandardId(),
 	})

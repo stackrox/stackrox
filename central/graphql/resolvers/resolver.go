@@ -12,6 +12,7 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	complianceManager "github.com/stackrox/rox/central/compliance/manager"
 	"github.com/stackrox/rox/central/compliance/manager/service"
+	complianceService "github.com/stackrox/rox/central/compliance/service"
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
 	complianceStore "github.com/stackrox/rox/central/compliance/store"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
@@ -37,6 +38,7 @@ type Resolver struct {
 	ClusterDataStore            clusterDatastore.DataStore
 	ComplianceDataStore         complianceStore.Store
 	ComplianceStandardStore     complianceStandards.Repository
+	ComplianceService           v1.ComplianceServiceServer
 	ComplianceManagementService v1.ComplianceManagementServiceServer
 	ComplianceManager           complianceManager.ComplianceManager
 	DeploymentDataStore         deploymentDatastore.DataStore
@@ -72,6 +74,7 @@ func New() *Resolver {
 		resolver.ComplianceDataStore = complianceStore.Singleton()
 		resolver.ComplianceManagementService = service.Singleton()
 		resolver.ComplianceManager = complianceManager.Singleton()
+		resolver.ComplianceService = complianceService.Singleton()
 	}
 	return resolver
 }

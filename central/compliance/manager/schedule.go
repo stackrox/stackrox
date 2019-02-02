@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -50,11 +51,11 @@ func (s *scheduleInstance) isSuspended() bool {
 	return s.spec.GetSuspended()
 }
 
-func (s *scheduleInstance) clusterAndStandard() ClusterStandardPair {
+func (s *scheduleInstance) clusterAndStandard() compliance.ClusterStandardPair {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
-	return ClusterStandardPair{
+	return compliance.ClusterStandardPair{
 		ClusterID:  s.spec.GetClusterId(),
 		StandardID: s.spec.GetStandardId(),
 	}

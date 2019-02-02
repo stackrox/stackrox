@@ -5,6 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -114,7 +115,7 @@ func collectEntityResults(entity framework.ComplianceTarget, checks []framework.
 	}
 }
 
-func (r *runInstance) metadataProto() *storage.ComplianceRunMetadata {
+func (r *runInstance) metadataProto(fixTimestamps bool) *storage.ComplianceRunMetadata {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
@@ -134,11 +135,27 @@ func (r *runInstance) metadataProto() *storage.ComplianceRunMetadata {
 		}
 	}
 
+	if fixTimestamps {
+		if startTS == nil {
+			startTS = types.TimestampNow()
+		}
+		if finishTS == nil {
+			finishTS = types.TimestampNow()
+		}
+	}
+	var errMsg string
+	if r.err != nil {
+		errMsg = r.err.Error()
+	}
+
 	return &storage.ComplianceRunMetadata{
 		RunId:           r.id,
+		ClusterId:       r.domain.Cluster().Cluster().GetId(),
 		StandardId:      r.standard.Standard.ID,
 		StartTimestamp:  startTS,
 		FinishTimestamp: finishTS,
+		Success:         r.status == v1.ComplianceRun_FINISHED && r.err == nil,
+		ErrorMessage:    errMsg,
 	}
 }
 
@@ -159,13 +176,9 @@ func (r *runInstance) collectResults(run framework.ComplianceRun) *storage.Compl
 		deploymentResults[deployment.ID()] = collectEntityResults(deployment, checks, allResults)
 	}
 
-	runMetadataProto := r.metadataProto()
-	if runMetadataProto.StartTimestamp == nil {
-		runMetadataProto.StartTimestamp = types.TimestampNow()
-	}
-	if runMetadataProto.FinishTimestamp == nil {
-		runMetadataProto.FinishTimestamp = types.TimestampNow()
-	}
+	runMetadataProto := r.metadataProto(true)
+	// need to mark this explicitly
+	runMetadataProto.Success = true
 
 	return &storage.ComplianceRunResults{
 		Domain:            domainProto,

@@ -195,10 +195,11 @@ func CSVHandler() http.HandlerFunc {
 			writeErr(w, http.StatusInternalServerError, err)
 			return
 		}
+		validResults, _ := store.ValidResultsAndSources(data)
 		var output csvResults
 		output.header = []string{"standard", "cluster", "namespace", "type", "object", "control", "description", "state", "evidence", "timestamp"}
 		standards := standards.RegistrySingleton()
-		for _, d := range data {
+		for _, d := range validResults {
 			controls := make(map[string]*v1.ComplianceControl)
 			standardName := d.GetRunMetadata().GetStandardId()
 			timestamp := fromTS(d.GetRunMetadata().GetFinishTimestamp())

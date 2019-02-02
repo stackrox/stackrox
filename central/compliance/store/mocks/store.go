@@ -6,6 +6,8 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	compliance "github.com/stackrox/rox/central/compliance"
+	store "github.com/stackrox/rox/central/compliance/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
@@ -35,9 +37,9 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // GetLatestRunResults mocks base method
-func (m *MockStore) GetLatestRunResults(arg0, arg1 string) (*storage.ComplianceRunResults, error) {
+func (m *MockStore) GetLatestRunResults(arg0, arg1 string) (store.ResultsWithStatus, error) {
 	ret := m.ctrl.Call(m, "GetLatestRunResults", arg0, arg1)
-	ret0, _ := ret[0].(*storage.ComplianceRunResults)
+	ret0, _ := ret[0].(store.ResultsWithStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -48,9 +50,9 @@ func (mr *MockStoreMockRecorder) GetLatestRunResults(arg0, arg1 interface{}) *go
 }
 
 // GetLatestRunResultsBatch mocks base method
-func (m *MockStore) GetLatestRunResultsBatch(arg0, arg1 []string) ([]*storage.ComplianceRunResults, error) {
+func (m *MockStore) GetLatestRunResultsBatch(arg0, arg1 []string) (map[compliance.ClusterStandardPair]store.ResultsWithStatus, error) {
 	ret := m.ctrl.Call(m, "GetLatestRunResultsBatch", arg0, arg1)
-	ret0, _ := ret[0].([]*storage.ComplianceRunResults)
+	ret0, _ := ret[0].(map[compliance.ClusterStandardPair]store.ResultsWithStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -61,9 +63,9 @@ func (mr *MockStoreMockRecorder) GetLatestRunResultsBatch(arg0, arg1 interface{}
 }
 
 // GetLatestRunResultsFiltered mocks base method
-func (m *MockStore) GetLatestRunResultsFiltered(arg0, arg1 func(string) bool) ([]*storage.ComplianceRunResults, error) {
+func (m *MockStore) GetLatestRunResultsFiltered(arg0, arg1 func(string) bool) (map[compliance.ClusterStandardPair]store.ResultsWithStatus, error) {
 	ret := m.ctrl.Call(m, "GetLatestRunResultsFiltered", arg0, arg1)
-	ret0, _ := ret[0].([]*storage.ComplianceRunResults)
+	ret0, _ := ret[0].(map[compliance.ClusterStandardPair]store.ResultsWithStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -84,6 +86,18 @@ func (m *MockStore) QueryControlResults(arg0 *v1.Query) ([]*storage.ComplianceCo
 // QueryControlResults indicates an expected call of QueryControlResults
 func (mr *MockStoreMockRecorder) QueryControlResults(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryControlResults", reflect.TypeOf((*MockStore)(nil).QueryControlResults), arg0)
+}
+
+// StoreFailure mocks base method
+func (m *MockStore) StoreFailure(arg0 *storage.ComplianceRunMetadata) error {
+	ret := m.ctrl.Call(m, "StoreFailure", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// StoreFailure indicates an expected call of StoreFailure
+func (mr *MockStoreMockRecorder) StoreFailure(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreFailure", reflect.TypeOf((*MockStore)(nil).StoreFailure), arg0)
 }
 
 // StoreRunResults mocks base method

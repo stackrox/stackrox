@@ -7,13 +7,15 @@ const AGGREGATED_RESULTS = gql`
         $where: String!
     ) {
         results: aggregatedResults(groupBy: $groupBy, unit: $unit, where: $where) {
-            aggregationKeys {
-                id
-                scope
+            results {
+                aggregationKeys {
+                    id
+                    scope
+                }
+                numFailing
+                numPassing
+                unit
             }
-            numFailing
-            numPassing
-            unit
         }
         complianceStandards: complianceStandards {
             id

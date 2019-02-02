@@ -103,6 +103,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	})
 	builder.AddType("ComplianceAggregation_Response", []string{
 		"results: [ComplianceAggregation_Result]!",
+		"sources: [ComplianceAggregation_Source]!",
 	})
 	builder.AddType("ComplianceAggregation_Result", []string{
 		"aggregationKeys: [ComplianceAggregation_AggregationKey]!",
@@ -111,6 +112,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"unit: ComplianceAggregation_Scope!",
 	})
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.ComplianceAggregation_Scope(0)))
+	builder.AddType("ComplianceAggregation_Source", []string{
+		"clusterId: String!",
+		"failedRuns: [ComplianceRunMetadata]!",
+		"standardId: String!",
+		"successfulRun: ComplianceRunMetadata",
+	})
 	builder.AddType("ComplianceControl", []string{
 		"description: String!",
 		"groupId: String!",
@@ -170,6 +177,15 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"standardId: String!",
 		"startTime: Time",
 		"state: ComplianceRun_State!",
+	})
+	builder.AddType("ComplianceRunMetadata", []string{
+		"clusterId: String!",
+		"errorMessage: String!",
+		"finishTimestamp: Time",
+		"runId: String!",
+		"standardId: String!",
+		"startTimestamp: Time",
+		"success: Boolean!",
 	})
 	builder.AddType("ComplianceRunSchedule", []string{
 		"clusterId: String!",
@@ -1417,6 +1433,11 @@ func (resolver *complianceAggregation_ResponseResolver) Results() ([]*compliance
 	return resolver.root.wrapComplianceAggregation_Results(value, nil)
 }
 
+func (resolver *complianceAggregation_ResponseResolver) Sources() ([]*complianceAggregation_SourceResolver, error) {
+	value := resolver.data.GetSources()
+	return resolver.root.wrapComplianceAggregation_Sources(value, nil)
+}
+
 type complianceAggregation_ResultResolver struct {
 	root *Resolver
 	data *v1.ComplianceAggregation_Result
@@ -1476,6 +1497,49 @@ func toComplianceAggregation_Scopes(values *[]string) []v1.ComplianceAggregation
 		output[i] = toComplianceAggregation_Scope(&v)
 	}
 	return output
+}
+
+type complianceAggregation_SourceResolver struct {
+	root *Resolver
+	data *v1.ComplianceAggregation_Source
+}
+
+func (resolver *Resolver) wrapComplianceAggregation_Source(value *v1.ComplianceAggregation_Source, ok bool, err error) (*complianceAggregation_SourceResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceAggregation_SourceResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceAggregation_Sources(values []*v1.ComplianceAggregation_Source, err error) ([]*complianceAggregation_SourceResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceAggregation_SourceResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceAggregation_SourceResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceAggregation_SourceResolver) ClusterId() string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *complianceAggregation_SourceResolver) FailedRuns() ([]*complianceRunMetadataResolver, error) {
+	value := resolver.data.GetFailedRuns()
+	return resolver.root.wrapComplianceRunMetadatas(value, nil)
+}
+
+func (resolver *complianceAggregation_SourceResolver) StandardId() string {
+	value := resolver.data.GetStandardId()
+	return value
+}
+
+func (resolver *complianceAggregation_SourceResolver) SuccessfulRun() (*complianceRunMetadataResolver, error) {
+	value := resolver.data.GetSuccessfulRun()
+	return resolver.root.wrapComplianceRunMetadata(value, true, nil)
 }
 
 type complianceControlResolver struct {
@@ -1911,6 +1975,64 @@ func (resolver *complianceRunResolver) StartTime() (*graphql.Time, error) {
 func (resolver *complianceRunResolver) State() string {
 	value := resolver.data.GetState()
 	return value.String()
+}
+
+type complianceRunMetadataResolver struct {
+	root *Resolver
+	data *storage.ComplianceRunMetadata
+}
+
+func (resolver *Resolver) wrapComplianceRunMetadata(value *storage.ComplianceRunMetadata, ok bool, err error) (*complianceRunMetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &complianceRunMetadataResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapComplianceRunMetadatas(values []*storage.ComplianceRunMetadata, err error) ([]*complianceRunMetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*complianceRunMetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &complianceRunMetadataResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *complianceRunMetadataResolver) ClusterId() string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *complianceRunMetadataResolver) ErrorMessage() string {
+	value := resolver.data.GetErrorMessage()
+	return value
+}
+
+func (resolver *complianceRunMetadataResolver) FinishTimestamp() (*graphql.Time, error) {
+	value := resolver.data.GetFinishTimestamp()
+	return timestamp(value)
+}
+
+func (resolver *complianceRunMetadataResolver) RunId() string {
+	value := resolver.data.GetRunId()
+	return value
+}
+
+func (resolver *complianceRunMetadataResolver) StandardId() string {
+	value := resolver.data.GetStandardId()
+	return value
+}
+
+func (resolver *complianceRunMetadataResolver) StartTimestamp() (*graphql.Time, error) {
+	value := resolver.data.GetStartTimestamp()
+	return timestamp(value)
+}
+
+func (resolver *complianceRunMetadataResolver) Success() bool {
+	value := resolver.data.GetSuccess()
+	return value
 }
 
 type complianceRunScheduleResolver struct {
