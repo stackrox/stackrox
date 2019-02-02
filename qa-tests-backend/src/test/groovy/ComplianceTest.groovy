@@ -352,19 +352,7 @@ class ComplianceTest extends BaseSpecification {
 
     @Category([BAT])
     def "Verify checks based on Integrations"() {
-        def successEvidence = ["Cluster has an image scanner in use"]
         def failureEvidence = ["No image scanners are being used in the cluster"]
-        def baseControls = [
-                new Control("PCI_DSS_3_2:6_1", successEvidence, ComplianceState.COMPLIANCE_STATE_SUCCESS),
-                new Control("PCI_DSS_3_2:6_5_6", successEvidence, ComplianceState.COMPLIANCE_STATE_SUCCESS),
-                new Control("PCI_DSS_3_2:11_2_1", successEvidence, ComplianceState.COMPLIANCE_STATE_SUCCESS),
-                new Control("NIST_800_190:4_1_1", successEvidence, ComplianceState.COMPLIANCE_STATE_FAILURE),
-                new Control("NIST_800_190:4_1_2", successEvidence, ComplianceState.COMPLIANCE_STATE_FAILURE),
-                new Control("HIPAA_164:306_e", successEvidence, ComplianceState.COMPLIANCE_STATE_SUCCESS),
-                new Control("HIPAA_164:308_a_1_ii_b", successEvidence, ComplianceState.COMPLIANCE_STATE_SUCCESS),
-                new Control("HIPAA_164:308_a_7_ii_e", successEvidence, ComplianceState.COMPLIANCE_STATE_SUCCESS),
-                new Control("HIPAA_164:310_a_1", successEvidence, ComplianceState.COMPLIANCE_STATE_SUCCESS),
-        ]
         def controls = [
                 new Control("PCI_DSS_3_2:6_1", failureEvidence, ComplianceState.COMPLIANCE_STATE_FAILURE),
                 new Control("PCI_DSS_3_2:6_5_6", failureEvidence, ComplianceState.COMPLIANCE_STATE_FAILURE),
@@ -378,26 +366,6 @@ class ComplianceTest extends BaseSpecification {
         ]
 
         given:
-        "existing compliance run passes"
-        Map<String, ComplianceResultValue> clusterResults = [:]
-        clusterResults << BASE_RESULTS.get(PCI_ID).getClusterResults().controlResultsMap
-        clusterResults << BASE_RESULTS.get(NIST_ID).getClusterResults().controlResultsMap
-        clusterResults << BASE_RESULTS.get(HIPAA_ID).getClusterResults().controlResultsMap
-        assert clusterResults
-        def missingControls = []
-        for (Control control : baseControls) {
-            if (clusterResults.keySet().contains(control.id)) {
-                println "Validating ${control.id}"
-                ComplianceResultValue value = clusterResults.get(control.id)
-                assert value.overallState == control.state
-                assert value.evidenceList*.message.containsAll(control.evidenceMessages)
-            } else {
-                missingControls.add(control)
-            }
-        }
-        assert missingControls*.id.size() == 0
-
-        and:
         "remove image integrations"
         def removed = Services.deleteDockerTrustedRegistry(dtrId)
 
@@ -417,23 +385,23 @@ class ComplianceTest extends BaseSpecification {
 
         then:
         "confirm state and evidence of expected controls"
-        Map<String, ComplianceResultValue> clusterResultsPost = [:]
-        clusterResultsPost << pciResults.getClusterResults().controlResultsMap
-        clusterResultsPost << nistResults.getClusterResults().controlResultsMap
-        clusterResultsPost << hipaaResults.getClusterResults().controlResultsMap
-        assert clusterResultsPost
-        def missingControlsPost = []
+        Map<String, ComplianceResultValue> clusterResults = [:]
+        clusterResults << pciResults.getClusterResults().controlResultsMap
+        clusterResults << nistResults.getClusterResults().controlResultsMap
+        clusterResults << hipaaResults.getClusterResults().controlResultsMap
+        assert clusterResults
+        def missingControls = []
         for (Control control : controls) {
-            if (clusterResultsPost.keySet().contains(control.id)) {
+            if (clusterResults.keySet().contains(control.id)) {
                 println "Validating ${control.id}"
-                ComplianceResultValue value = clusterResultsPost.get(control.id)
+                ComplianceResultValue value = clusterResults.get(control.id)
                 assert value.overallState == control.state
                 assert value.evidenceList*.message.containsAll(control.evidenceMessages)
             } else {
-                missingControlsPost.add(control)
+                missingControls.add(control)
             }
         }
-        assert missingControlsPost*.id.size() == 0
+        assert missingControls*.id.size() == 0
 
         cleanup:
         "re-add image integrations"
