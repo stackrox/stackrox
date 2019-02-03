@@ -3,12 +3,14 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "protobuf/gogoproto/gogo.proto";
+
 package storage;
 
 message Namespace {
     string              id           = 1;
-    string              name         = 2;
-    string              cluster_id   = 3;
-    string              cluster_name = 4;
-    map<string, string> labels       = 5;
+    string              name         = 2 [(gogoproto.moretags) = "search:\"Namespace\""];
+    string              cluster_id   = 3 [(gogoproto.moretags) = "search:\"Cluster Id,hidden\""];
+    string              cluster_name = 4 [(gogoproto.moretags) = "search:\"Cluster\""];
+    map<string, string> labels       = 5 [(gogoproto.moretags) = "search:\"Label\""];
 }

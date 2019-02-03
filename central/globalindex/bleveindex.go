@@ -15,6 +15,7 @@ import (
 	complianceMapping "github.com/stackrox/rox/central/compliance/search"
 	deploymentMapping "github.com/stackrox/rox/central/deployment/index/mappings"
 	imageMapping "github.com/stackrox/rox/central/image/index/mappings"
+	namespaceMapping "github.com/stackrox/rox/central/namespace/index/mappings"
 	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
 	processIndicatorMapping "github.com/stackrox/rox/central/processindicator/index/mappings"
 	secretOptions "github.com/stackrox/rox/central/secret/search/options"
@@ -34,6 +35,7 @@ var (
 		v1.SearchCategory_POLICIES:           policyMapping.OptionsMap,
 		v1.SearchCategory_SECRETS:            secretOptions.Map,
 		v1.SearchCategory_PROCESS_INDICATORS: processIndicatorMapping.OptionsMap,
+		v1.SearchCategory_NAMESPACES:         namespaceMapping.OptionsMap,
 	}
 
 	// SearchOptionsMap includes options maps that are not required for document mapping
