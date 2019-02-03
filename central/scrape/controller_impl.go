@@ -23,6 +23,10 @@ func (s *controllerImpl) RunScrape(domain framework.ComplianceDomain, kill concu
 	for _, node := range framework.Nodes(domain) {
 		expectedHosts.Add(node.GetName())
 	}
+	// If no hosts need to be scraped, just bounce, otherwise we will be waiting for nothing.
+	if expectedHosts.Cardinality() == 0 {
+		return make(map[string]*compliance.ComplianceReturn), nil
+	}
 
 	// Create the scrape and register it so it can be updated.
 	scrape := newScrape(domain.Cluster().ID(), expectedHosts)
