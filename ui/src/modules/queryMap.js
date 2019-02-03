@@ -16,15 +16,16 @@ import pluralize from 'pluralize';
  * pageType:    Array of pageTypes to match
  * entityType:  Array of entityTypes to match
  * config:      Contains information about the query
- *      query:      GraphQL query text
- *      variables:  A mapping of GraphQL parameter names to URL/Query parameter names used byApp Query to pass url params to the query.
- *                  e.g.:
- *                      URL       =   /:entityType/:entityId
- *                      GraphQL   =   query getCluster($id: ID!)
- *                      variables =   [{ graphQLParam: 'id', queryParam: 'entityId' }]
- *                  or  variables =   [{ graphQLParam: 'groupBy', graphQLValue: ['STANDARD', 'CLUSTER'] }]
- *                  or  variables =   [{ graphQLParam: 'groupBy', paramsFunc: params => ['STANDARD', params.entityType] }]
- *      format:     A function run on the result set before returning.
+ *      query:              GraphQL query text
+ *      variables:          A mapping of GraphQL parameter names to URL/Query parameter names used byApp Query to pass url params to the query.
+ *                          e.g.:
+ *                              URL       =   /:entityType/:entityId
+ *                              GraphQL   =   query getCluster($id: ID!)
+ *                              variables =   [{ graphQLParam: 'id', queryParam: 'entityId' }]
+ *                          or  variables =   [{ graphQLParam: 'groupBy', graphQLValue: ['STANDARD', 'CLUSTER'] }]
+ *                          or  variables =   [{ graphQLParam: 'groupBy', paramsFunc: params => ['STANDARD', params.entityType] }]
+ *      format:             A function run on the result set before returning.
+ *      bypassCache:        A boolean that tells the Query whether to bypass the cache
  */
 
 const isStandard = type => Object.keys(standardTypes).includes(type);
@@ -252,7 +253,8 @@ export default [
                         return pluralize.singular(entityType).toUpperCase();
                     }
                 }
-            ]
+            ],
+            bypassCache: true
         }
     }
 ];

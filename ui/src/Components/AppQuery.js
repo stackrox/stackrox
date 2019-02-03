@@ -14,7 +14,12 @@ const AppQuery = ({ children, params, componentType, ...rest }) => {
     }
 
     return (
-        <Query query={queryConfig.query} variables={queryConfig.variables} {...rest}>
+        <Query
+            query={queryConfig.query}
+            variables={queryConfig.variables}
+            fetchPolicy={queryConfig.bypassCache ? 'network-only' : 'cache-and-network'}
+            {...rest}
+        >
             {queryResult => {
                 if (queryResult.error) {
                     Raven.captureException(queryResult.error);

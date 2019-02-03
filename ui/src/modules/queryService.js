@@ -43,7 +43,7 @@ function getQuery(params, component) {
             `More than one query matching ${context}, ${pageType}, ${entityType}, ${component}`
         );
 
-    const { query, variables, format } = matches[0].config;
+    const { query, variables, format, bypassCache = false } = matches[0].config;
     let mappedVariables = variables.reduce((acc, param) => {
         if (param.graphQLValue) {
             acc[param.graphQLParam] = param.graphQLValue;
@@ -67,7 +67,8 @@ function getQuery(params, component) {
     return {
         query,
         variables: mappedVariables,
-        format
+        format,
+        bypassCache
     };
 }
 

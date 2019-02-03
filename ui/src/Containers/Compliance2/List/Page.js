@@ -43,7 +43,7 @@ class ComplianceListPage extends Component {
         const params = URLService.getParams(match, location);
         return (
             <section className="flex flex-col h-full">
-                <Header searchComponent={<SearchInput />} />
+                <Header searchComponent={<SearchInput categories={['COMPLIANCE']} />} />
                 <CollapsibleBanner>
                     <ComplianceAcrossEntities params={params} />
                     <ComplianceAcrossEntities params={params} />
