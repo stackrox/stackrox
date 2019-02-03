@@ -30,7 +30,7 @@ function processData(data) {
                 title: `${standard.name} Standard - ${percentagePassing}%`,
                 body: `[] failing across ${numFailing + numPassing} clusters`
             },
-            axisLink: `/main/compliance2/${standard.name}`
+            axisLink: `/main/compliance2/${standard.id}`
         };
         return dataPoint;
     });

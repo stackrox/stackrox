@@ -35,3 +35,45 @@ export const LIST_STANDARD = gql`
         }
     }
 `;
+
+export const COMPLIANCE_STANDARDS = gql`
+    query complianceStandards {
+        complianceStandards {
+            id
+            name
+            controls {
+                standardId
+                groupId
+                id
+                name
+                description
+            }
+            groups {
+                standardId
+                id
+                name
+                description
+            }
+        }
+        groupResults: aggregatedResults(groupBy: [CATEGORY], unit: CONTROL) {
+            results {
+                aggregationKeys {
+                    id
+                }
+                numFailing
+                numPassing
+                unit
+            }
+        }
+        controlResults: aggregatedResults(groupBy: [CONTROL], unit: CONTROL) {
+            results {
+                aggregationKeys {
+                    id
+                }
+                numFailing
+                numPassing
+                unit
+            }
+        }
+    }
+`;

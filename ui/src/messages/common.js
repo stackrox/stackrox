@@ -31,13 +31,6 @@ const common = Object.freeze({
         CLUSTER: 'cluster',
         NAMESPACE: 'namespace',
         NODE: 'node'
-    },
-    standardLabels: {
-        PCI: 'PCI',
-        NIST: 'NIST',
-        HIPAA: 'HIPAA',
-        CIS_KUBERNETES: 'CIS Kubernetes',
-        CIS_DOCKER: 'CIS Docker'
     }
 });
 

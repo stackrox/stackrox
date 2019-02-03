@@ -7,7 +7,7 @@ import { NAMESPACE_QUERY, RELATED_DEPLOYMENTS } from 'queries/namespace';
 import { CLUSTERS_QUERY, NAMESPACES_QUERY, NODES_QUERY } from 'queries/table';
 import { NODE_QUERY } from 'queries/node';
 import AGGREGATED_RESULTS from 'queries/controls';
-import { LIST_STANDARD, ENTITY_COMPLIANCE } from 'queries/standard';
+import { LIST_STANDARD, ENTITY_COMPLIANCE, COMPLIANCE_STANDARDS } from 'queries/standard';
 
 import pluralize from 'pluralize';
 
@@ -255,6 +255,16 @@ export default [
                 }
             ],
             bypassCache: true
+        }
+    },
+    {
+        context: [contextTypes.COMPLIANCE],
+        pageType: [pageTypes.DASHBOARD],
+        entityType: [],
+        component: [componentTypes.COMPLIANCE_BY_STANDARD],
+        config: {
+            query: COMPLIANCE_STANDARDS,
+            variables: []
         }
     }
 ];

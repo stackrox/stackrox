@@ -11,11 +11,11 @@ export const standardEntityTypes = {
 };
 
 export const standardTypes = {
-    PCI_DSS_3_2: 'PCI DSS 3.2',
-    NIST_800_190: 'NIST 800-190',
-    HIPAA_164: 'HIPAA 164',
-    CIS_KUBERENETES_V1_2_0: 'CIS Kubernetes v1.2.0',
-    CIS_DOCKER_V1_1_0: 'CIS Docker v1.1.0'
+    PCI_DSS_3_2: 'PCI_DSS_3_2',
+    NIST_800_190: 'NIST_800_190',
+    HIPAA_164: 'HIPAA_164',
+    CIS_KUBERENETES_V1_2_0: 'CIS_Kubernetes_v1_2_0',
+    CIS_DOCKER_V1_1_0: 'CIS_Docker_v1_1_0'
 };
 
 export default {

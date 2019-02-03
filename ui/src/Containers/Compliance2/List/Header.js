@@ -7,6 +7,7 @@ import * as Icon from 'react-feather';
 
 import ReactRouterPropTypes from 'react-router-prop-types';
 import URLService from 'modules/URLService';
+import standardLabels from 'messages/standards';
 
 const handleExport = () => {
     throw new Error('"Export" is not supported yet.');
@@ -16,7 +17,7 @@ const ListHeader = ({ match, location, searchComponent }) => {
     const params = URLService.getParams(match, location);
     const { entityType } = params;
 
-    const headerText = entityType;
+    const headerText = standardLabels[entityType];
 
     return (
         <PageHeader header={headerText} subHeader="Resource List">

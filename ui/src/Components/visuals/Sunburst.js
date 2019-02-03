@@ -87,6 +87,7 @@ export default class BasicSunburst extends React.Component {
 
     getCenterLabel = () => {
         const { data } = this.props;
+        let label;
         const val = data.reduce(
             (acc, curr) => ({ total: acc.total + 100, passing: acc.passing + curr.value }),
             {
@@ -94,8 +95,12 @@ export default class BasicSunburst extends React.Component {
                 passing: 0
             }
         );
-        const label = Math.round((val.passing / val.total) * 100);
-        return <LabelSeries data={[{ x: 0, y: 10, label: `${label}%`, style: LABEL_STYLE }]} />;
+        if (val.total === 0) {
+            label = 'No Data Available';
+        } else {
+            label = `${Math.round((val.passing / val.total) * 100)}%`;
+        }
+        return <LabelSeries data={[{ x: 0, y: 10, label: `${label}`, style: LABEL_STYLE }]} />;
     };
 
     onValueMouseOverHandler = datum => {

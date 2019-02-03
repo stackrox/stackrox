@@ -6,15 +6,18 @@ import Loader from 'Components/Loader';
 import PropTypes from 'prop-types';
 import Gauge from 'Components/visuals/GaugeWithDetail';
 import { standardTypes } from 'constants/entityTypes';
+import standardLabels from 'messages/standards';
 
 const isStandard = type => Object.keys(standardTypes).includes(type);
 
 function processData(type, { results, complianceStandards }) {
     let filteredResults;
     if (isStandard(type)) {
-        filteredResults = results.filter(result => result.aggregationKeys[0].id.includes(type));
+        filteredResults = results.results.filter(result =>
+            result.aggregationKeys[0].id.includes(type)
+        );
     } else {
-        filteredResults = results;
+        filteredResults = results.results;
     }
     if (!filteredResults.length) return [{ title: type, passing: 0, failing: 0 }];
     return filteredResults.map(result => {
@@ -41,8 +44,8 @@ const ComplianceAcrossEntities = ({ params }) => (
         {({ loading, data }) => {
             let contents = <Loader />;
             const headerText = isStandard(params.entityType)
-                ? `Compliance Across ${params.entityType} Controls`
-                : `Compliance Across ${params.entityType}`;
+                ? `Compliance Across ${standardLabels[params.entityType]} Controls`
+                : `Compliance Across ${standardLabels[params.entityType]}`;
             if (!loading && data) {
                 const results = processData(params.entityType, data);
 

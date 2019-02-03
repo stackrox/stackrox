@@ -51,6 +51,8 @@ class HorizontalBarChart extends Component {
         };
     }
 
+    showLabel = value => value >= 20;
+
     setHintData = val => {
         if (val.hint) {
             this.setState({
@@ -76,7 +78,7 @@ class HorizontalBarChart extends Component {
         this.props.data.map(item => {
             let label = '';
             // This prevents overlap between the value label and the axis label
-            if (item.x > 10) {
+            if (this.showLabel(item.x)) {
                 label = this.props.valueFormat(item.x).toString() || '';
             }
             const val = {
@@ -85,7 +87,8 @@ class HorizontalBarChart extends Component {
                 yOffset: 1,
                 label
             };
-            val.x -= 2.4 * val.label.length;
+            // x offset for label
+            val.x -= 6 * val.label.length;
             return val;
         });
 

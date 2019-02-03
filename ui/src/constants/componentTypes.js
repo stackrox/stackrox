@@ -9,7 +9,8 @@ const componentTypes = {
     STANDARDS_ACROSS_NODES: 'standardsAcrossNodes',
     COMPLIANCE_ACROSS_RESOURCES: 'complianceAcrossResources',
     COMPLIANCE_ACROSS_STANDARDS: 'complianceAcrossStandards',
-    RESOURCE_COUNT: 'resourceCount'
+    RESOURCE_COUNT: 'resourceCount',
+    COMPLIANCE_BY_STANDARD: 'complianceByStandard'
 };
 
 export default componentTypes;

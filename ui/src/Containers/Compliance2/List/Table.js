@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { standardTypes } from 'constants/entityTypes';
+import standardLabels from 'messages/standards';
 
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
@@ -75,7 +76,7 @@ class ListTable extends Component {
                     }
                     return (
                         <Panel
-                            header={`${params.entityType} controls`}
+                            header={`${standardLabels[params.entityType]} controls`}
                             headerComponents={paginationComponent}
                         >
                             {contents}
