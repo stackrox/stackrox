@@ -4,10 +4,11 @@ import { Link, withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 
 const AppLink = ({ context, pageType, params, children, ...rest }) => {
+    const { staticContext, entityType, ...linkParams } = rest;
     const to = URLService.getLinkTo(context, pageType, params);
 
     return (
-        <Link to={to} {...rest}>
+        <Link to={to} {...linkParams}>
             {children}
         </Link>
     );

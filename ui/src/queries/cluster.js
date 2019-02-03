@@ -14,6 +14,10 @@ export const CLUSTER_QUERY = gql`
         results: cluster(id: $id) {
             id
             name
+            nodes {
+                id
+                name
+            }
         }
     }
 `;

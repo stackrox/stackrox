@@ -48,9 +48,12 @@ function getParams(match, location) {
 
 function getLinkTo(context, pageType, params) {
     const { query, ...urlParams } = params;
+    const pathname = getPath(context, pageType, urlParams);
+    const search = query ? qs.stringify(query, { addQueryPrefix: true }) : null;
     return {
-        pathname: getPath(context, pageType, urlParams),
-        search: query ? qs.stringify(query, { addQueryPrefix: true }) : null
+        pathname,
+        search,
+        url: pathname + search
     };
 }
 

@@ -3,9 +3,9 @@ import { withRouter, Switch, Route } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
 import URLService from 'modules/URLService';
-import ClusterPage from './Cluster';
 import NodePage from './Node';
 import NamespacePage from './Namespace';
+import ClusterPage from './Cluster';
 
 const ComplianceEntityPage = ({ match, location, params, sidePanelMode }) => {
     const pageParams = URLService.getParams(match, location);

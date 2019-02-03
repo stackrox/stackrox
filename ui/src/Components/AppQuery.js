@@ -6,7 +6,12 @@ import PropTypes from 'prop-types';
 
 const AppQuery = ({ children, params, componentType, ...rest }) => {
     const queryConfig = queryService.getQuery(params, componentType);
-    if (!queryConfig) throw Error(`No query config found for ${componentType}`);
+    if (!queryConfig) {
+        const { context, pageType, entityType } = params || {};
+        throw Error(
+            `No query config found for ${context}, ${pageType}, ${entityType}, ${componentType}`
+        );
+    }
 
     return (
         <Query query={queryConfig.query} variables={queryConfig.variables} {...rest}>
