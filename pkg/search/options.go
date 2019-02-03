@@ -91,6 +91,9 @@ var (
 
 	// Compliance search fields
 	Standard = newFieldLabel("Standard")
+
+	// Node search fields
+	Node = newFieldLabel("Node")
 )
 
 func newFieldLabel(s string) FieldLabel {

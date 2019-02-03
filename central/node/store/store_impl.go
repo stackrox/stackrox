@@ -9,6 +9,11 @@ type storeImpl struct {
 	crud proto.MessageCrud
 }
 
+// New returns a new Node store
+func New(crud proto.MessageCrud) Store {
+	return &storeImpl{crud: crud}
+}
+
 func (s *storeImpl) CountNodes() (int, error) {
 	return s.crud.Count()
 }

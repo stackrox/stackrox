@@ -9,7 +9,7 @@ import (
 	clusterIndexMocks "github.com/stackrox/rox/central/cluster/index/mocks"
 	clusterMocks "github.com/stackrox/rox/central/cluster/store/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	nodeMocks "github.com/stackrox/rox/central/node/store/mocks"
+	nodeMocks "github.com/stackrox/rox/central/node/globalstore/mocks"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"

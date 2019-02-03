@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/rox/central/node/store"
+	"github.com/stackrox/rox/central/node/globalstore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,11 +28,11 @@ var (
 )
 
 type nodeServiceImpl struct {
-	nodeStore store.GlobalStore
+	nodeStore globalstore.GlobalStore
 }
 
 // New creates a new node service from the given node store.
-func New(nodeStore store.GlobalStore) pkgGRPC.APIService {
+func New(nodeStore globalstore.GlobalStore) pkgGRPC.APIService {
 	return &nodeServiceImpl{
 		nodeStore: nodeStore,
 	}

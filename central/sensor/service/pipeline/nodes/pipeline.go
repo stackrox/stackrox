@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	countMetrics "github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/node/store"
+	"github.com/stackrox/rox/central/node/globalstore"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
@@ -19,14 +19,14 @@ var (
 //////////////////////////////////////////////////////////////////////////////////////
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(nodes store.GlobalStore) pipeline.Fragment {
+func NewPipeline(nodes globalstore.GlobalStore) pipeline.Fragment {
 	return &pipelineImpl{
 		nodeStore: nodes,
 	}
 }
 
 type pipelineImpl struct {
-	nodeStore store.GlobalStore
+	nodeStore globalstore.GlobalStore
 }
 
 func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {

@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/standards"
 	complianceStoreMocks "github.com/stackrox/rox/central/compliance/store/mocks"
 	deploymentDatastoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	nodeStoreMocks "github.com/stackrox/rox/central/node/store/mocks"
+	nodeStoreMocks "github.com/stackrox/rox/central/node/globalstore/mocks"
 	scrapeMocks "github.com/stackrox/rox/central/scrape/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"

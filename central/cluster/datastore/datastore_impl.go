@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/index"
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	nodeStore "github.com/stackrox/rox/central/node/store"
+	nodeStore "github.com/stackrox/rox/central/node/globalstore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/streamer"
 	"github.com/stackrox/rox/generated/api/v1"

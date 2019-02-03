@@ -9,7 +9,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
-	nodeStore "github.com/stackrox/rox/central/node/store"
+	nodeStore "github.com/stackrox/rox/central/node/globalstore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/streamer"
 	"github.com/stackrox/rox/pkg/utils"

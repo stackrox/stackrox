@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/data"
 	complianceResultsStore "github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/node/store"
+	nodeStore "github.com/stackrox/rox/central/node/globalstore"
 	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -42,6 +42,6 @@ type ComplianceManager interface {
 }
 
 // NewManager creates and returns a new compliance manager.
-func NewManager(standardImplStore StandardImplementationStore, scheduleStore ScheduleStore, clusterStore clusterDatastore.DataStore, nodeStore store.GlobalStore, deploymentStore datastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory scrape.Factory, resultsStore complianceResultsStore.Store) (ComplianceManager, error) {
+func NewManager(standardImplStore StandardImplementationStore, scheduleStore ScheduleStore, clusterStore clusterDatastore.DataStore, nodeStore nodeStore.GlobalStore, deploymentStore datastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory scrape.Factory, resultsStore complianceResultsStore.Store) (ComplianceManager, error) {
 	return newManager(standardImplStore, scheduleStore, clusterStore, nodeStore, deploymentStore, dataRepoFactory, scrapeFactory, resultsStore)
 }

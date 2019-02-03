@@ -19,7 +19,7 @@ import (
 	groupDataStore "github.com/stackrox/rox/central/group/store"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
-	nodeStore "github.com/stackrox/rox/central/node/store"
+	nodeStore "github.com/stackrox/rox/central/node/globalstore"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"

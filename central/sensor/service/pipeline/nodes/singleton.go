@@ -3,7 +3,7 @@ package nodes
 import (
 	"sync"
 
-	"github.com/stackrox/rox/central/node/store"
+	nodeStore "github.com/stackrox/rox/central/node/globalstore"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 )
 
@@ -14,7 +14,7 @@ var (
 )
 
 func initialize() {
-	nodesPipeline = NewPipeline(store.Singleton())
+	nodesPipeline = NewPipeline(nodeStore.Singleton())
 }
 
 // Singleton provides the instance of the cluster status pipeline.
