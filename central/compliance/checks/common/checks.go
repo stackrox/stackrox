@@ -79,19 +79,6 @@ func CheckBuildTimePolicyEnforced(ctx framework.ComplianceContext) {
 	framework.Fail(ctx, "Unable to find a build time policy that is enabled and enforced")
 }
 
-// CheckPolicyInUse checks if a policy is in use.
-func CheckPolicyInUse(ctx framework.ComplianceContext, name string) {
-	policies := ctx.Data().Policies()
-	p := policies[name]
-
-	if p.GetDisabled() {
-		framework.Failf(ctx, "'%s' policy is not in use", name)
-		return
-	}
-
-	framework.Passf(ctx, "'%s' policy is in use", name)
-}
-
 // AnyPoliciesEnforced checks if any policy in the given list is being enforced.
 func AnyPoliciesEnforced(ctx framework.ComplianceContext, policyNames []string) int {
 	policies := ctx.Data().Policies()

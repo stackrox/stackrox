@@ -172,6 +172,18 @@ var hipaa164 = Standard{
 				},
 			},
 		},
+		{
+			ID:          "312_e",
+			Name:        "312.e",
+			Description: "Integrity.",
+			Controls: []Control{
+				{
+					ID:          "312_e",
+					Name:        "312.e",
+					Description: "Implement technical security measures to guard against unauthorized access to electronic protected health information that is being transmitted over an electronic communications network.",
+				},
+			},
+		},
 	},
 }
 
