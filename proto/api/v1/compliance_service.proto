@@ -3,6 +3,7 @@ syntax = "proto3";
 option go_package = "v1";
 
 import weak "google/api/annotations.proto";
+import "protobuf/gogoproto/gogo.proto";
 import "storage/compliance.proto";
 import "api/v1/search_service.proto";
 import "api/v1/common.proto";
@@ -63,30 +64,30 @@ message ComplianceAggregation {
 }
 
 message ComplianceStandardMetadata {
-    string id          = 1;
-    string name        = 2;
+    string id          = 1 [(gogoproto.moretags) = "search:\"Standard Id,hidden\""];
+    string name        = 2 [(gogoproto.moretags) = "search:\"Standard,hidden\""];
     string description = 3;
 }
 
 message ComplianceControlGroup {
-    string id          = 1;
-    string standard_id = 2;
-    string name        = 3;
+    string id          = 1 [(gogoproto.moretags) = "search:\"Control Group Id\""];
+    string standard_id = 2 [(gogoproto.moretags) = "search:\"Standard Id\""];
+    string name        = 3 [(gogoproto.moretags) = "search:\"Control Group\""];
     string description = 4;
 }
 
 message ComplianceControl {
-    string id          = 1;
-    string standard_id = 2;
-    string group_id    = 3;
-    string name        = 4;
+    string id          = 1 [(gogoproto.moretags) = "search:\"Control Id,hidden\""];
+    string standard_id = 2 [(gogoproto.moretags) = "search:\"Standard Id,hidden\""];
+    string group_id    = 3 [(gogoproto.moretags) = "search:\"Control Group Id,hidden\""];
+    string name        = 4 [(gogoproto.moretags) = "search:\"Control\""];
     string description = 5;
 }
 
 message ComplianceStandard {
-    ComplianceStandardMetadata metadata    = 1;
-    repeated ComplianceControlGroup groups = 2;
-    repeated ComplianceControl controls    = 3;
+    ComplianceStandardMetadata metadata    = 1 [(gogoproto.moretags) = "search:\"Control Id,hidden\""];
+    repeated ComplianceControlGroup groups = 2 [(gogoproto.moretags) = "search:\"-\""];
+    repeated ComplianceControl controls    = 3 [(gogoproto.moretags) = "search:\"-\""];
 }
 
 message GetComplianceStandardResponse {

@@ -90,7 +90,14 @@ var (
 	SecretExpiration = newFieldLabel("Cert Expiration")
 
 	// Compliance search fields
-	Standard = newFieldLabel("Standard")
+	Standard   = newFieldLabel("Standard")
+	StandardID = newFieldLabel("Standard Id")
+
+	ControlGroupID = newFieldLabel("Control Group Id")
+	ControlGroup   = newFieldLabel("Control Group")
+
+	ControlID = newFieldLabel("Control Id")
+	Control   = newFieldLabel("Control")
 
 	// Node search fields
 	Node = newFieldLabel("Node")

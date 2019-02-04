@@ -197,5 +197,5 @@ var nist800_190 = Standard{
 }
 
 func init() {
-	utils.Must(RegistrySingleton().RegisterStandard(&nist800_190))
+	utils.Must(RegisterStandard(&nist800_190))
 }

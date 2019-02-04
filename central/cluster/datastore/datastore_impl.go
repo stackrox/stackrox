@@ -59,12 +59,19 @@ func (ds *datastoreImpl) CountClusters() (int, error) {
 
 // GetCluster is a pass through function to the underlying storage.
 func (ds *datastoreImpl) AddCluster(cluster *storage.Cluster) (string, error) {
-	return ds.storage.AddCluster(cluster)
+	id, err := ds.storage.AddCluster(cluster)
+	if err != nil {
+		return "", err
+	}
+	return id, ds.indexer.AddCluster(cluster)
 }
 
 // GetCluster is a pass through function to the underlying storage.
 func (ds *datastoreImpl) UpdateCluster(cluster *storage.Cluster) error {
-	return ds.storage.UpdateCluster(cluster)
+	if err := ds.storage.UpdateCluster(cluster); err != nil {
+		return err
+	}
+	return ds.indexer.AddCluster(cluster)
 }
 
 // GetCluster is a pass through function to the underlying storage.
@@ -88,7 +95,7 @@ func (ds *datastoreImpl) RemoveCluster(id string) error {
 	}
 
 	go ds.postRemoveCluster(cluster)
-	return nil
+	return ds.indexer.DeleteCluster(id)
 }
 
 func (ds *datastoreImpl) postRemoveCluster(cluster *storage.Cluster) {

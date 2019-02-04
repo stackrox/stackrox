@@ -584,5 +584,5 @@ var cisDocker = Standard{
 }
 
 func init() {
-	utils.Must(RegistrySingleton().RegisterStandard(&cisDocker))
+	utils.Must(RegisterStandard(&cisDocker))
 }

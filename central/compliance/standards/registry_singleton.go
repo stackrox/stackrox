@@ -1,6 +1,12 @@
 package standards
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/stackrox/rox/central/compliance/standards/index"
+	"github.com/stackrox/rox/central/globalindex"
+	"github.com/stackrox/rox/pkg/utils"
+)
 
 var (
 	registryInstance     *Registry
@@ -10,7 +16,9 @@ var (
 // RegistrySingleton returns the singleton instance of the compliance standards Registry.
 func RegistrySingleton() *Registry {
 	registryInstanceInit.Do(func() {
-		registryInstance = NewRegistry()
+		indexer := index.New(globalindex.GetGlobalIndex())
+		registryInstance = NewRegistry(indexer)
+		utils.Must(registryInstance.RegisterStandards())
 	})
 	return registryInstance
 }

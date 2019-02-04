@@ -6,17 +6,15 @@ import (
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/compliance/aggregation"
-	"github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
-	log            = logging.LoggerForModule()
+	log = logging.LoggerForModule()
+
 	complianceOnce sync.Once
 )
 
@@ -72,40 +70,24 @@ func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregated
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-
-	standards, err := resolver.ComplianceStandardStore.Standards()
-	if err != nil {
-		return nil, err
-	}
-
-	clusters, err := resolver.ClusterDataStore.GetClusters()
-	if err != nil {
-		return nil, err
-	}
-
-	var clusterIDs, standardIDs []string
+	var where string
 	if args.Where != nil {
-		searchMap := search.ParseRawQueryIntoMap(*args.Where)
-		standardIDs = aggregation.FilterStandards(standards, searchMap[search.Standard.String()])
-		clusterIDs = aggregation.FilterClusters(clusters, searchMap[search.Cluster.String()])
-	} else {
-		standardIDs = aggregation.FilterStandards(standards, nil)
-		clusterIDs = aggregation.FilterClusters(clusters, nil)
+		where = *args.Where
 	}
 
-	runResults, err := resolver.ComplianceDataStore.GetLatestRunResultsBatch(clusterIDs, standardIDs)
+	groupBy := toComplianceAggregation_Scopes(args.GroupBy)
+	unit := toComplianceAggregation_Scope(&args.Unit)
+
+	validResults, sources, domainFunc, err := resolver.ComplianceAggregator.Aggregate(where, groupBy, unit)
 	if err != nil {
 		return nil, err
 	}
-
-	validResults, sources := store.ValidResultsAndSources(runResults)
-	results, domainFunc := aggregation.GetAggregatedResults(toComplianceAggregation_Scopes(args.GroupBy), toComplianceAggregation_Scope(&args.Unit), validResults)
 
 	return &complianceAggregationResponseWithDomainResolver{
 		complianceAggregation_ResponseResolver: complianceAggregation_ResponseResolver{
 			root: resolver,
 			data: &v1.ComplianceAggregation_Response{
-				Results: results,
+				Results: validResults,
 				Sources: sources,
 			},
 		},

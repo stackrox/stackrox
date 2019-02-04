@@ -7,6 +7,16 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 )
 
+// HasApplicableOptions determines if a parsed user map has any applicable options to this particular options map
+func HasApplicableOptions(userQuery map[string][]string, optionsMap OptionsMap) bool {
+	for k := range userQuery {
+		if _, ok := optionsMap.Get(k); ok {
+			return true
+		}
+	}
+	return false
+}
+
 // An OptionsMap is a mapping from field labels to search field that permits case-insensitive lookups.
 type OptionsMap interface {
 	// Get looks for the given string in the OptionsMap. The string is usually user-entered.

@@ -114,6 +114,11 @@ func (k Uint32Set) AsSortedSlice(less func(i, j uint32) bool) []uint32 {
 	return sortable.slice
 }
 
+// IsInitialized returns whether the set has been initialized
+func (k Uint32Set) IsInitialized() bool {
+	return k.underlying != nil
+}
+
 // NewUint32Set returns a new set with the given key type.
 func NewUint32Set(initial ...uint32) Uint32Set {
 	k := Uint32Set{underlying: mapset.NewSet()}

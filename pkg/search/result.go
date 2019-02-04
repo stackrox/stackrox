@@ -20,3 +20,12 @@ func GetProtoMatchesMap(m map[string][]string) map[string]*v1.SearchResult_Match
 	}
 	return matches
 }
+
+// ResultsToIDs takes a results slice and gets a slice of just the IDs
+func ResultsToIDs(results []Result) []string {
+	ids := make([]string, 0, len(results))
+	for _, r := range results {
+		ids = append(ids, r.ID)
+	}
+	return ids
+}

@@ -33,8 +33,9 @@ var (
 )
 
 // New returns a service object for registering with grpc.
-func New(complianceStore store.Store, standardsRepo standards.Repository, clusterStore datastore.DataStore) Service {
+func New(aggregator aggregation.Aggregator, complianceStore store.Store, standardsRepo standards.Repository, clusterStore datastore.DataStore) Service {
 	return &serviceImpl{
+		aggregator:    aggregator,
 		store:         complianceStore,
 		standardsRepo: standardsRepo,
 		clusters:      clusterStore,
@@ -42,6 +43,7 @@ func New(complianceStore store.Store, standardsRepo standards.Repository, cluste
 }
 
 type serviceImpl struct {
+	aggregator    aggregation.Aggregator
 	store         store.Store
 	standardsRepo standards.Repository
 	clusters      datastore.DataStore
@@ -107,31 +109,13 @@ func (s *serviceImpl) GetComplianceControlResults(ctx context.Context, query *v1
 }
 
 func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.ComplianceAggregation_Request) (*v1.ComplianceAggregation_Response, error) {
-	searchMap := search.ParseRawQueryIntoMap(request.GetWhere().GetQuery())
-
-	standards, err := s.standardsRepo.Standards()
+	validResults, sources, _, err := s.aggregator.Aggregate(request.GetWhere().GetQuery(), request.GetGroupBy(), request.GetUnit())
 	if err != nil {
 		return nil, err
 	}
-	standardIDs := aggregation.FilterStandards(standards, searchMap[search.Standard.String()])
-
-	clusters, err := s.clusters.GetClusters()
-	if err != nil {
-		return nil, err
-	}
-	clusterIDs := aggregation.FilterClusters(clusters, searchMap[search.Cluster.String()])
-
-	runResults, err := s.store.GetLatestRunResultsBatch(clusterIDs, standardIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	validResults, sources := store.ValidResultsAndSources(runResults)
-
-	results, _ := aggregation.GetAggregatedResults(request.GetGroupBy(), request.GetUnit(), validResults)
 
 	return &v1.ComplianceAggregation_Response{
-		Results: results,
+		Results: validResults,
 		Sources: sources,
 	}, nil
 }

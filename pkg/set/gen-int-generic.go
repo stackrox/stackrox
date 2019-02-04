@@ -114,6 +114,11 @@ func (k IntSet) AsSortedSlice(less func(i, j int) bool) []int {
 	return sortable.slice
 }
 
+// IsInitialized returns whether the set has been initialized
+func (k IntSet) IsInitialized() bool {
+	return k.underlying != nil
+}
+
 // NewIntSet returns a new set with the given key type.
 func NewIntSet(initial ...int) IntSet {
 	k := IntSet{underlying: mapset.NewSet()}

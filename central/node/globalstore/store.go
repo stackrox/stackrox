@@ -17,6 +17,7 @@ type GlobalStore interface {
 	RemoveClusterNodeStore(clusterID string) error
 
 	CountAllNodes() (int, error)
+
 	Search(q *v1.Query) ([]search.Result, error)
 }
 

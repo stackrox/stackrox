@@ -700,5 +700,5 @@ var cisKubernetes = Standard{
 }
 
 func init() {
-	utils.Must(RegistrySingleton().RegisterStandard(&cisKubernetes))
+	utils.Must(RegisterStandard(&cisKubernetes))
 }

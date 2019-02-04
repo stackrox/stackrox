@@ -5,8 +5,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -128,7 +130,10 @@ func mockFlatChecks(clusterID, standardID string) []flatCheck {
 }
 
 func TestGetFlatChecksFromRunResult(t *testing.T) {
-	assert.ElementsMatch(t, mockFlatChecks("cluster1", "standard1"), getFlatChecksFromRunResult(mockRunResult("cluster1", "standard1")))
+	ag := &aggregatorImpl{
+		standards: standards.NewRegistry(nil),
+	}
+	assert.ElementsMatch(t, mockFlatChecks("cluster1", "standard1"), ag.getFlatChecksFromRunResult(mockRunResult("cluster1", "standard1"), [numScopes]set.StringSet{}))
 }
 
 func testName(groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) string {
@@ -239,7 +244,10 @@ func TestGetAggregatedResults(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(testName(c.groupBy, c.unit), func(t *testing.T) {
-			results, _ := GetAggregatedResults(c.groupBy, c.unit, runResults)
+			ag := &aggregatorImpl{
+				standards: standards.NewRegistry(nil),
+			}
+			results, _ := ag.getAggregatedResults(c.groupBy, c.unit, runResults, [numScopes]set.StringSet{})
 			require.Equal(t, c.numResults, len(results))
 			for _, r := range results {
 				assert.Equal(t, c.passPerResult, r.NumPassing)

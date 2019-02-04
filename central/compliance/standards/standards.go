@@ -1,6 +1,9 @@
 package standards
 
-import "github.com/stackrox/rox/generated/api/v1"
+import (
+	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
+)
 
 // Repository is an interface for a collection of standards and controls
 type Repository interface {
@@ -12,4 +15,7 @@ type Repository interface {
 	Groups(standardID string) ([]*v1.ComplianceControlGroup, error)
 	GetCISDockerStandardID() (string, error)
 	GetCISKubernetesStandardID() (string, error)
+
+	SearchStandards(q *v1.Query) ([]search.Result, error)
+	SearchControls(q *v1.Query) ([]search.Result, error)
 }

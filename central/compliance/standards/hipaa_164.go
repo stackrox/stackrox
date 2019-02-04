@@ -200,5 +200,5 @@ var hipaa164 = Standard{
 }
 
 func init() {
-	utils.Must(RegistrySingleton().RegisterStandard(&hipaa164))
+	utils.Must(RegisterStandard(&hipaa164))
 }

@@ -9,17 +9,20 @@ import "api/v1/common.proto";
 package v1;
 
 enum SearchCategory {
-    SEARCH_UNSET = 0;
-    ALERTS       = 1;
-    IMAGES       = 2;
-    POLICIES     = 3;
-    DEPLOYMENTS  = 4;
-    SECRETS      = 5;
-    PROCESS_INDICATORS = 6;
-    COMPLIANCE   = 7;
-    CLUSTERS     = 8;
-    NAMESPACES   = 9;
-    NODES        = 10;
+    SEARCH_UNSET             = 0;
+    ALERTS                   = 1;
+    IMAGES                   = 2;
+    POLICIES                 = 3;
+    DEPLOYMENTS              = 4;
+    SECRETS                  = 5;
+    PROCESS_INDICATORS       = 6;
+    COMPLIANCE               = 7;
+    CLUSTERS                 = 8;
+    NAMESPACES               = 9;
+    NODES                    = 10;
+    COMPLIANCE_STANDARD      = 11;
+    COMPLIANCE_CONTROL_GROUP = 12;
+    COMPLIANCE_CONTROL       = 13;
 }
 
 // TODO(cgorman) collapse these into Go code and not proto

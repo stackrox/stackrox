@@ -6,43 +6,83 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/stackrox/rox/central/compliance/standards/index"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/search"
 )
+
+var (
+	standardRegistry = make(map[string]*Standard)
+)
+
+// RegisterStandard adds the standard to the standard registry
+func RegisterStandard(s *Standard) error {
+	if _, ok := standardRegistry[s.ID]; ok {
+		return fmt.Errorf("Standard %s is already registered", s.ID)
+	}
+	standardRegistry[s.ID] = s
+	return nil
+}
 
 // Registry stores compliance standards by their ID.
 type Registry struct {
 	mutex             sync.RWMutex
 	standardsByID     map[string]*Standard
 	controlToCategory map[string]*Category
+	controls          map[string]*Control
+	indexer           index.Indexer
 }
 
 // NewRegistry creates and returns a new standards registry.
-func NewRegistry() *Registry {
+func NewRegistry(indexer index.Indexer) *Registry {
 	return &Registry{
 		standardsByID:     make(map[string]*Standard),
 		controlToCategory: make(map[string]*Category),
+		controls:          make(map[string]*Control),
+		indexer:           indexer,
 	}
 }
 
-// RegisterStandard registers a given standard. This function returns an error if a different standard with the same
-// ID is already registered.
-func (r *Registry) RegisterStandard(standard *Standard) error {
+func getFullyQualifiedName(standardID, controlID string) string {
+	return fmt.Sprintf("%s:%s", standardID, controlID)
+}
+
+// RegisterStandards registers all of the standards in the standard registry
+func (r *Registry) RegisterStandards() error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	existingStandard := r.standardsByID[standard.ID]
-	if existingStandard == nil {
-		r.standardsByID[standard.ID] = standard
-	} else if existingStandard != standard {
-		return fmt.Errorf("different compliance standard with id %q already registered", standard.ID)
-	}
+	for _, standard := range standardRegistry {
+		existingStandard := r.standardsByID[standard.ID]
+		if existingStandard == nil {
+			r.standardsByID[standard.ID] = standard
+		} else if existingStandard != standard {
+			return fmt.Errorf("different compliance standard with id %q already registered", standard.ID)
+		}
 
-	for i, category := range standard.Categories {
-		for _, control := range category.Controls {
-			r.controlToCategory[fmt.Sprintf("%s:%s", standard.ID, control.ID)] = &standard.Categories[i]
+		for i, category := range standard.Categories {
+			for _, control := range category.Controls {
+				fqn := getFullyQualifiedName(standard.ID, control.ID)
+				r.controlToCategory[fqn] = &standard.Categories[i]
+				if err := r.registerControl(standard.ID, control); err != nil {
+					return err
+				}
+			}
+		}
+		if err := r.indexer.IndexStandard(standard.ToProto()); err != nil {
+			return err
 		}
 	}
+	return nil
+}
 
+// registerControl does not need to be locked, because it is locked by registerStandard
+func (r *Registry) registerControl(fqn string, control Control) error {
+	if existingControl, ok := r.controls[control.ID]; !ok {
+		r.controls[fqn] = &control
+	} else if *existingControl != control {
+		return fmt.Errorf("different compliance control with id %q already registered", fqn)
+	}
 	return nil
 }
 
@@ -167,4 +207,21 @@ func (r *Registry) GetCISKubernetesStandardID() (string, error) {
 		}
 	}
 	return "", errors.New("Unable to find CIS Kubernetes standard")
+}
+
+func (r *Registry) controlByID(id string) *Control {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
+	return r.controls[id]
+}
+
+// SearchStandards searches across standards
+func (r *Registry) SearchStandards(q *v1.Query) ([]search.Result, error) {
+	return r.indexer.SearchStandards(q)
+}
+
+// SearchControls searches across controls
+func (r *Registry) SearchControls(q *v1.Query) ([]search.Result, error) {
+	return r.indexer.SearchControls(q)
 }

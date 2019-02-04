@@ -114,6 +114,11 @@ func (k StringSet) AsSortedSlice(less func(i, j string) bool) []string {
 	return sortable.slice
 }
 
+// IsInitialized returns whether the set has been initialized
+func (k StringSet) IsInitialized() bool {
+	return k.underlying != nil
+}
+
 // NewStringSet returns a new set with the given key type.
 func NewStringSet(initial ...string) StringSet {
 	k := StringSet{underlying: mapset.NewSet()}

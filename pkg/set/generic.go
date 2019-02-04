@@ -115,6 +115,11 @@ func (k KeyTypeSet) AsSortedSlice(less func(i, j KeyType) bool) []KeyType {
 	return sortable.slice
 }
 
+// IsInitialized returns whether the set has been initialized
+func (k KeyTypeSet) IsInitialized() bool {
+	return k.underlying != nil
+}
+
 // NewKeyTypeSet returns a new set with the given key type.
 func NewKeyTypeSet(initial ...KeyType) KeyTypeSet {
 	k := KeyTypeSet{underlying: mapset.NewSet()}

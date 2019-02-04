@@ -1413,5 +1413,5 @@ var pciDss3_2 = Standard{
 }
 
 func init() {
-	utils.Must(RegistrySingleton().RegisterStandard(&pciDss3_2))
+	utils.Must(RegisterStandard(&pciDss3_2))
 }

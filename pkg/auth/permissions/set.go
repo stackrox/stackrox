@@ -114,6 +114,11 @@ func (k ResourceSet) AsSortedSlice(less func(i, j Resource) bool) []Resource {
 	return sortable.slice
 }
 
+// IsInitialized returns whether the set has been initialized
+func (k ResourceSet) IsInitialized() bool {
+	return k.underlying != nil
+}
+
 // NewResourceSet returns a new set with the given key type.
 func NewResourceSet(initial ...Resource) ResourceSet {
 	k := ResourceSet{underlying: mapset.NewSet()}
