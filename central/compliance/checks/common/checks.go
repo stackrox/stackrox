@@ -1,12 +1,17 @@
 package common
 
 import (
+	"os"
+	"regexp"
 	"strings"
 
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 )
+
+var log = logging.LoggerForModule()
 
 // CheckNotifierInUse checks if any notifiers have been sent up for alerts.
 func CheckNotifierInUse(ctx framework.ComplianceContext) {
@@ -69,7 +74,7 @@ func CheckBuildTimePolicyEnforced(ctx framework.ComplianceContext) {
 	policies := ctx.Data().Policies()
 	for _, p := range policies {
 		for _, stage := range p.GetLifecycleStages() {
-			if stage == storage.LifecycleStage_BUILD && !p.Disabled && len(p.EnforcementActions) != 0 {
+			if stage == storage.LifecycleStage_BUILD && !p.Disabled && IsPolicyEnforced(p) {
 				framework.Pass(ctx, "At least one build time policy is enabled and enforced")
 				return
 			}
@@ -89,7 +94,7 @@ func AnyPoliciesEnforced(ctx framework.ComplianceContext, policyNames []string) 
 		if p.GetDisabled() {
 			continue
 		}
-		if len(p.GetEnforcementActions()) > 0 {
+		if IsPolicyEnforced(p) {
 			count++
 		}
 	}
@@ -374,4 +379,65 @@ func CISBenchmarksSatisfied(ctx framework.ComplianceContext) {
 	}
 
 	framework.Fail(ctx, "No CIS Benchmarks have been run.")
+}
+
+// CheckSecretFilePerms determines if any container in a deployment has a secret vol that is not mounted with perm 0600
+func CheckSecretFilePerms(ctx framework.ComplianceContext) {
+	deployments := ctx.Data().Deployments()
+	for _, deployment := range deployments {
+		secretFilePath := ""
+		for _, container := range deployment.Containers {
+			for _, vol := range container.Volumes {
+				if vol.Type == "secret" {
+					secretFilePath = vol.GetDestination() + vol.Name
+					info, err := os.Lstat(secretFilePath)
+					if err != nil {
+						log.Error(err)
+						continue
+					}
+					perm := info.Mode().Perm()
+					if perm != 0600 {
+						// since this control is clusterkind, returning on first failed condition
+						// not all the evidence is recorded
+						framework.Failf(ctx, "Deployment has secret file in %d mode instead of 0600", perm)
+						return
+					}
+				}
+			}
+		}
+	}
+	framework.Pass(ctx, "Deployment is not using any secret volume mounts")
+}
+
+// CheckSecretsInEnv check if any policy is configured to alert on the string secret contained in env vars
+func CheckSecretsInEnv(ctx framework.ComplianceContext) {
+	policies := ctx.Data().Policies()
+	for _, policy := range policies {
+		matchSecret, err := regexp.MatchString("(?i)secret", policy.GetFields().GetEnv().GetKey())
+		if err != nil {
+			log.Error(err)
+		}
+		enabled := false
+		if matchSecret && err == nil &&
+			policy.GetFields().GetEnv().GetValue() != "" && !policy.GetDisabled() {
+			enabled = true
+		}
+
+		enforced := false
+		if (matchSecret) && err == nil &&
+			policy.GetFields().GetEnv().GetValue() != "" && !policy.GetDisabled() &&
+			IsPolicyEnforced(policy) {
+			enforced = true
+		}
+
+		if enabled && enforced {
+			framework.Pass(ctx, "Detecting secrets in env is enabled and enforced")
+			return
+		}
+		if enabled && !enforced {
+			framework.Fail(ctx, "Detecting secrets in env is enabled and not enforced")
+			return
+		}
+	}
+	framework.Fail(ctx, "No policy to detect secrets in env")
 }

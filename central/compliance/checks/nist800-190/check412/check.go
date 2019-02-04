@@ -84,7 +84,7 @@ func sshPolicyEnforced(ctx framework.ComplianceContext) bool {
 		if !policyHasSSH(p) {
 			continue
 		}
-		return len(p.GetEnforcementActions()) != 0
+		return common.IsPolicyEnforced(p)
 	}
 	return false
 }
