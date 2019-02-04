@@ -538,6 +538,9 @@ class ComplianceTest extends BaseSpecification {
         if (service) {
             orchestrator.deleteService(service.name, service.namespace)
         }
+        if (policyId) {
+            orchestrator.deleteNetworkPolicy(policy)
+        }
     }
 
     // Legacy Benchmark Test - to remove once Compliance is done
