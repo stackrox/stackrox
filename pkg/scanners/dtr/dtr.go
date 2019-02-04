@@ -139,7 +139,7 @@ func (d *dtr) getScan(image *storage.Image) (*storage.ImageScan, error) {
 		return nil, errors.New(errMsg)
 	}
 	if len(scans) == 0 {
-		return nil, fmt.Errorf("expected to receive at least one scan for %v", image.String())
+		return nil, fmt.Errorf("expected to receive at least one scan for %v", image.GetName().GetFullName())
 	}
 
 	// Find the last scan time
@@ -150,7 +150,7 @@ func (d *dtr) getScan(image *storage.Image) (*storage.ImageScan, error) {
 		}
 	}
 	if lastScan.CheckCompletedAt.IsZero() {
-		return nil, fmt.Errorf("expected to receive at least one scan for %s", image.String())
+		return nil, fmt.Errorf("expected to receive at least one scan for %s", image.GetName().GetFullName())
 	}
 
 	scan := convertTagScanSummaryToImageScan(lastScan)
