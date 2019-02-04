@@ -15,5 +15,10 @@ func init() {
 		checkID,
 		framework.ClusterKind,
 		[]string{"ImageIntegrations"},
-		common.IsImageScannerInUse)
+		clusterIsCompliant)
+}
+
+func clusterIsCompliant(ctx framework.ComplianceContext) {
+	common.IsImageScannerInUse(ctx)
+	common.CheckImageScannerWasUsed(ctx)
 }
