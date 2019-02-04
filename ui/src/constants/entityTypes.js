@@ -1,8 +1,8 @@
 export const resourceTypes = {
-    NAMESPACES: 'namespaces',
-    CLUSTERS: 'clusters',
-    NODES: 'nodes',
-    DEPLOYMENTS: 'deployments'
+    NAMESPACE: 'NAMESPACE',
+    CLUSTER: 'CLUSTER',
+    NODE: 'NODE',
+    DEPLOYMENT: 'DEPLOYMENT'
 };
 
 export const standardEntityTypes = {

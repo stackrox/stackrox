@@ -10,8 +10,6 @@ import { NODE_QUERY } from 'queries/node';
 import AGGREGATED_RESULTS from 'queries/controls';
 import { LIST_STANDARD, ENTITY_COMPLIANCE, COMPLIANCE_STANDARDS } from 'queries/standard';
 
-import pluralize from 'pluralize';
-
 /**
  * context:     Array of contextTypes to match
  * pageType:    Array of pageTypes to match
@@ -45,7 +43,7 @@ export default [
     {
         context: [contextTypes.COMPLIANCE],
         pageType: [pageTypes.ENTITY],
-        entityType: [entityTypes.CLUSTERS],
+        entityType: [entityTypes.CLUSTER],
         component: [componentTypes.HEADER],
         config: {
             query: CLUSTER_QUERY,
@@ -55,7 +53,7 @@ export default [
     {
         context: [contextTypes.COMPLIANCE],
         pageType: [pageTypes.ENTITY],
-        entityType: [entityTypes.NAMESPACES],
+        entityType: [entityTypes.NAMESPACE],
         component: [componentTypes.HEADER],
         config: {
             query: NAMESPACE_QUERY,
@@ -65,7 +63,7 @@ export default [
     {
         context: [contextTypes.COMPLIANCE],
         pageType: [pageTypes.ENTITY],
-        entityType: [entityTypes.NODES],
+        entityType: [entityTypes.NODE],
         component: [componentTypes.HEADER],
         config: {
             query: NODE_QUERY,
@@ -75,7 +73,7 @@ export default [
     {
         context: [contextTypes.COMPLIANCE],
         pageType: [pageTypes.ENTITY],
-        entityType: [entityTypes.CLUSTERS],
+        entityType: [entityTypes.CLUSTER],
         component: [componentTypes.RELATED_ENTITIES_LIST],
         config: {
             query: RELATED_DEPLOYMENTS,
@@ -85,7 +83,7 @@ export default [
     {
         context: [contextTypes.COMPLIANCE],
         pageType: [pageTypes.ENTITY],
-        entityType: [entityTypes.CLUSTERS, entityTypes.NODES, entityTypes.NAMESPACES],
+        entityType: [entityTypes.CLUSTER, entityTypes.NODE, entityTypes.NAMESPACE],
         component: [componentTypes.ENTITY_COMPLIANCE],
         config: {
             query: ENTITY_COMPLIANCE,
@@ -105,7 +103,7 @@ export default [
     {
         context: [contextTypes.COMPLIANCE],
         pageType: [pageTypes.LIST],
-        entityType: [entityTypes.CLUSTERS],
+        entityType: [entityTypes.CLUSTER],
         component: [componentTypes.LIST_TABLE],
         config: {
             query: CLUSTERS_QUERY,
@@ -115,7 +113,7 @@ export default [
     {
         context: [contextTypes.COMPLIANCE],
         pageType: [pageTypes.LIST],
-        entityType: [entityTypes.NAMESPACES],
+        entityType: [entityTypes.NAMESPACE],
         component: [componentTypes.LIST_TABLE],
         config: {
             query: NAMESPACES_QUERY,
@@ -125,7 +123,7 @@ export default [
     {
         context: [contextTypes.COMPLIANCE],
         pageType: [pageTypes.LIST],
-        entityType: [entityTypes.NODES],
+        entityType: [entityTypes.NODE],
         component: [componentTypes.LIST_TABLE],
         config: {
             query: NODES_QUERY,
@@ -256,7 +254,7 @@ export default [
                     graphQLParam: 'unit',
                     paramsFunc: ({ entityType }) => {
                         if (isStandard(entityType)) return 'CONTROL';
-                        return pluralize.singular(entityType).toUpperCase();
+                        return entityType;
                     }
                 }
             ],

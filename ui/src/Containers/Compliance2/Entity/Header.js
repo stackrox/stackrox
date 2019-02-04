@@ -15,9 +15,9 @@ const handleExport = () => {
 };
 
 const subHeaderTexts = {
-    [resourceTypes.NODES]: labels.resourceLabels.NODE,
-    [resourceTypes.NAMESPACES]: labels.resourceLabels.NAMESPACE,
-    [resourceTypes.CLUSTERS]: labels.resourceLabels.CLUSTER
+    [resourceTypes.NODE]: labels.resourceLabels.NODE,
+    [resourceTypes.NAMESPACE]: labels.resourceLabels.NAMESPACE,
+    [resourceTypes.CLUSTER]: labels.resourceLabels.CLUSTER
 };
 
 const EntityHeader = ({ params, searchComponent }) => (

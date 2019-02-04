@@ -3,14 +3,28 @@ import pageTypes from 'constants/pageTypes';
 import { resourceTypes } from 'constants/entityTypes';
 import contextTypes from 'constants/contextTypes';
 import { generatePath } from 'react-router-dom';
-import { nestedCompliancePaths } from '../routePaths';
+import { nestedCompliancePaths, resourceTypesToUrl } from '../routePaths';
 
+function isResource(type) {
+    return Object.values(resourceTypes).includes(type);
+}
+
+function getResourceTypeFromMatch(match) {
+    if (!match || !match.params || !match.params.entityType) return null;
+
+    const entityEntry = Object.entries(resourceTypesToUrl).find(
+        entry => entry[1] === match.params.entityType
+    );
+    if (!entityEntry) return null;
+
+    return entityEntry[0];
+}
 function getPath(context, pageType, urlParams) {
-    const isResource = Object.values(resourceTypes).includes(urlParams.entityType);
+    const isResourceType = urlParams.entityType ? isResource(urlParams.entityType) : false;
     const pathMap = {
         [contextTypes.COMPLIANCE]: {
             [pageTypes.DASHBOARD]: nestedCompliancePaths.DASHBOARD,
-            [pageTypes.ENTITY]: isResource
+            [pageTypes.ENTITY]: isResourceType
                 ? nestedCompliancePaths.RESOURCE
                 : nestedCompliancePaths.CONTROL,
             [pageTypes.LIST]: nestedCompliancePaths.LIST
@@ -23,7 +37,11 @@ function getPath(context, pageType, urlParams) {
     const path = contextData[pageType];
     if (!path) return null;
 
-    return generatePath(path, urlParams);
+    const params = { ...urlParams };
+    if (isResourceType) {
+        params.entityType = resourceTypesToUrl[urlParams.entityType];
+    }
+    return generatePath(path, params);
 }
 
 function getContext(match) {
@@ -38,6 +56,9 @@ function getPageType(match) {
 }
 
 function getParams(match, location) {
+    const newParams = { ...match.params };
+    newParams.entityType = getResourceTypeFromMatch(match);
+
     return {
         ...match.params,
         context: getContext(match),

@@ -6,13 +6,12 @@ import Loader from 'Components/Loader';
 import PropTypes from 'prop-types';
 import VerticalBarChart from 'Components/visuals/VerticalClusterBar';
 import { resourceTypes } from 'constants/entityTypes';
-import pluralize from 'pluralize';
-import capitalize from 'lodash/capitalize';
 import URLService from 'modules/URLService';
 import pageTypes from 'constants/pageTypes';
+import resourceLabels from 'messages/common';
 
 const componentTypeMapping = {
-    [resourceTypes.CLUSTERS]: componentTypes.STANDARDS_BY_CLUSTER
+    [resourceTypes.CLUSTER]: componentTypes.STANDARDS_BY_CLUSTER
 };
 
 function processData(data, type, params) {
@@ -29,7 +28,7 @@ function processData(data, type, params) {
         const link = URLService.getLinkTo(params.context, pageTypes.LIST, {
             entityType: standard.id,
             query: {
-                [capitalize(pluralize.singular(type))]: entity.name
+                [type]: entity.name
             }
         });
         const dataPoint = {
@@ -37,7 +36,7 @@ function processData(data, type, params) {
             y: percentagePassing,
             hint: {
                 title: standard.id,
-                body: `${numFailing} controls failing in this ${pluralize.singular(type)}`
+                body: `${numFailing} controls failing in this ${resourceLabels[type]}`
             },
             link
         };

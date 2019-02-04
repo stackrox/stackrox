@@ -30,7 +30,8 @@ const common = Object.freeze({
     resourceLabels: {
         CLUSTER: 'cluster',
         NAMESPACE: 'namespace',
-        NODE: 'node'
+        NODE: 'node',
+        DEPLOYMENT: 'deployment'
     }
 });
 

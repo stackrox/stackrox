@@ -8,9 +8,9 @@ import HorizontalBarChart from 'Components/visuals/HorizontalBar';
 import { resourceTypes } from 'constants/entityTypes';
 
 const componentTypeMapping = {
-    [resourceTypes.CLUSTERS]: componentTypes.STANDARDS_ACROSS_CLUSTERS,
-    [resourceTypes.NAMESPACES]: componentTypes.STANDARDS_ACROSS_NAMESPACES,
-    [resourceTypes.NODES]: componentTypes.STANDARDS_ACROSS_NODES
+    [resourceTypes.CLUSTER]: componentTypes.STANDARDS_ACROSS_CLUSTERS,
+    [resourceTypes.NAMESPACE]: componentTypes.STANDARDS_ACROSS_NAMESPACES,
+    [resourceTypes.NODE]: componentTypes.STANDARDS_ACROSS_NODES
 };
 
 function formatAsPercent(x) {

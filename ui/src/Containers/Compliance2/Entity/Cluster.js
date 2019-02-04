@@ -24,7 +24,7 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                         Widget 2<br />
                         Widget 2<br />
                     </Widget>
-                    <ResourceCount type={entityTypes.NODES} params={params} />
+                    <ResourceCount type={entityTypes.NODE} params={params} />
                 </div>
                 {/* TO-DO: need to make sure these are the cluster widgets we want */}
                 <ComplianceByStandard type={entityTypes.PCI_DSS_3_2} params={params} />

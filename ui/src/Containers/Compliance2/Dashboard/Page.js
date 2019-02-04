@@ -17,10 +17,10 @@ const ComplianceDashboardPage = ({ match, location }) => {
             <DashboardHeader params={params} />
             <div className="flex-1 relative bg-base-200 p-4 overflow-auto">
                 <div className="grid xl:grid-columns-3 md:grid-columns-2 sm:grid-columns-1 grid-gap-6">
-                    <StandardsAcrossEntity type={resourceTypes.CLUSTERS} params={params} />
-                    <StandardsByEntity type={resourceTypes.CLUSTERS} params={params} />
-                    <StandardsAcrossEntity type={resourceTypes.NAMESPACES} params={params} />
-                    <StandardsAcrossEntity type={resourceTypes.NODES} params={params} />
+                    <StandardsAcrossEntity type={resourceTypes.CLUSTER} params={params} />
+                    <StandardsByEntity type={resourceTypes.CLUSTER} params={params} />
+                    <StandardsAcrossEntity type={resourceTypes.NAMESPACE} params={params} />
+                    <StandardsAcrossEntity type={resourceTypes.NODE} params={params} />
                     <ComplianceByStandard type={standardTypes.PCI_DSS_3_2} params={params} />
                     <ComplianceByStandard type={standardTypes.NIST_800_190} params={params} />
                     <ComplianceByStandard type={standardTypes.HIPAA_164} params={params} />

@@ -9,14 +9,14 @@ import PropTypes from 'prop-types';
 import AppLink from 'Components/AppLink';
 
 const pageToWidgetEntityMap = {
-    [resourceTypes.CLUSTERS]: resourceTypes.DEPLOYMENTS,
-    [resourceTypes.NAMESPACES]: resourceTypes.DEPLOYMENTS,
-    [resourceTypes.NODES]: resourceTypes.DEPLOYMENTS
+    [resourceTypes.CLUSTER]: resourceTypes.DEPLOYMENT,
+    [resourceTypes.NAMESPACE]: resourceTypes.DEPLOYMENT,
+    [resourceTypes.NODE]: resourceTypes.DEPLOYMENT
 };
 
 const entityTypeToNameMap = {
-    [resourceTypes.NAMESPACES]: `${labels.resourceLabels.NAMESPACE}S`,
-    [resourceTypes.DEPLOYMENTS]: `${labels.resourceLabels.DEPLOYMENTS}S`
+    [resourceTypes.NAMESPACE]: `${labels.resourceLabels.NAMESPACE}S`,
+    [resourceTypes.DEPLOYMENT]: `${labels.resourceLabels.DEPLOYMENTS}S`
 };
 
 const RelatedEntitiesList = ({ params }) => {

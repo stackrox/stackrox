@@ -6,12 +6,12 @@ import ArcSingle from 'Components/visuals/ArcSingle';
 import Query from 'Components/AppQuery';
 import componentTypes from 'constants/componentTypes';
 import Loader from 'Components/Loader';
-import pluralize from 'pluralize';
 import pageTypes from 'constants/pageTypes';
 import { standardTypes } from 'constants/entityTypes';
 import URLService from 'modules/URLService';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
+import resourceLabels from 'messages/common';
 
 function getStandardTypeFromName(standardName) {
     if (standardName.includes('NIST')) return standardTypes.NIST_800_190;
@@ -23,7 +23,7 @@ function getStandardTypeFromName(standardName) {
 }
 const EntityCompliance = ({ params, history }) => {
     const { entityType } = params;
-    const entityTypeLabel = pluralize.singular(entityType);
+    const entityTypeLabel = resourceLabels[entityType];
 
     function getBarData(results) {
         return results.aggregatedResults.results.map(item => ({

@@ -7,12 +7,11 @@ import { resourceTypes } from 'constants/entityTypes';
 import CountWidget from 'Components/CountWidget';
 import URLService from 'modules/URLService';
 import pageTypes from 'constants/pageTypes';
-import pluralize from 'pluralize';
 import { NODES_BY_CLUSTER } from '../../../queries/node';
 
 const queryMap = {
-    [resourceTypes.NODES]: NODES_BY_CLUSTER
-    // TODO: [resourceTypes.NAMESPACES] : NETWORK_POLICIES_BY_NAMESPACE
+    [resourceTypes.NODE]: NODES_BY_CLUSTER
+    // TODO: [resourceTypes.NAMESPACE] : NETWORK_POLICIES_BY_NAMESPACE
 };
 
 const ResourceCount = ({ type, params }) => {
@@ -22,17 +21,17 @@ const ResourceCount = ({ type, params }) => {
         };
         if (params.entityId && params.entityType) {
             linkParams.query = {
-                [pluralize.singular(params.entityType)]: params.entityId
+                [params.entityType]: params.entityId
             };
         }
         return URLService.getLinkTo(params.context, pageTypes.LIST, linkParams).url;
     }
 
     function processData(data) {
-        if (type === resourceTypes.NODES) {
+        if (type === resourceTypes.NODE) {
             return data.nodes.length;
         }
-        if (type === resourceTypes.NAMESPACES) {
+        if (type === resourceTypes.NAMESPACE) {
             return data.namespaces.length;
         }
         return 0;
@@ -45,7 +44,7 @@ const ResourceCount = ({ type, params }) => {
         <Query query={query} variables={variables}>
             {({ loading, data }) => {
                 const contents = <Loader />;
-                const headerText = `${pluralize.singular(type)} Count`;
+                const headerText = `${type} Count`;
                 if (!loading && data && data.results) {
                     const url = getUrl(type, params);
                     const count = processData(data.results);

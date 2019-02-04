@@ -23,9 +23,18 @@ export const accessControlPath = `${mainPath}/access`;
 /**
  *Compliance-related route paths
  */
+export const resourceTypesToUrl = {
+    [resourceTypes.NAMESPACE]: 'namespaces',
+    [resourceTypes.CLUSTER]: 'clusters',
+    [resourceTypes.NODE]: 'nodes',
+    [resourceTypes.DEPLOYMENT]: 'deployments'
+};
+
+const resourceURLs = Object.values(resourceTypesToUrl);
+
 export const compliance2Path = `${mainPath}/compliance2`;
 const standardsMatcher = `(${Object.values(standardTypes).join('|')})`;
-const resourcesMatcher = `(${Object.values(resourceTypes).join('|')})`;
+const resourcesMatcher = `(${resourceURLs.join('|')})`;
 
 export const nestedCompliancePaths = {
     DASHBOARD: `${compliance2Path}/`,
