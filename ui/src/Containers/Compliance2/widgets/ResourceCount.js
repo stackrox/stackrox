@@ -48,7 +48,6 @@ const ResourceCount = ({ type, params }) => {
                 if (!loading && data && data.results) {
                     const url = getUrl(type, params);
                     const count = processData(data.results);
-
                     return <CountWidget title={headerText} count={count} linkUrl={url} />;
                 }
                 return (

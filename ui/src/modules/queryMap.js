@@ -8,7 +8,7 @@ import { NAMESPACE_QUERY, RELATED_DEPLOYMENTS } from 'queries/namespace';
 import { CLUSTERS_QUERY, NAMESPACES_QUERY, NODES_QUERY } from 'queries/table';
 import { NODE_QUERY } from 'queries/node';
 import AGGREGATED_RESULTS from 'queries/controls';
-import { LIST_STANDARD, ENTITY_COMPLIANCE, COMPLIANCE_STANDARDS } from 'queries/standard';
+import { LIST_STANDARD, COMPLIANCE_STANDARDS } from 'queries/standard';
 
 /**
  * context:     Array of contextTypes to match
@@ -29,16 +29,6 @@ import { LIST_STANDARD, ENTITY_COMPLIANCE, COMPLIANCE_STANDARDS } from 'queries/
 
 const isStandard = type => Object.keys(standardTypes).includes(type);
 
-function getSubField(data, path) {
-    const fields = path.split('.');
-    if (!data) return null;
-    let subfield = data;
-    for (let i = 0; i < fields.length; i += 1) {
-        subfield = subfield[fields[i]];
-        if (!subfield) return data;
-    }
-    return subfield;
-}
 export default [
     {
         context: [contextTypes.COMPLIANCE],
@@ -78,26 +68,6 @@ export default [
         config: {
             query: RELATED_DEPLOYMENTS,
             variables: [{ graphQLParam: 'id', queryParam: 'entityId' }]
-        }
-    },
-    {
-        context: [contextTypes.COMPLIANCE],
-        pageType: [pageTypes.ENTITY],
-        entityType: [entityTypes.CLUSTER, entityTypes.NODE, entityTypes.NAMESPACE],
-        component: [componentTypes.ENTITY_COMPLIANCE],
-        config: {
-            query: ENTITY_COMPLIANCE,
-            variables: [
-                { graphQLParam: 'id', queryParam: 'entityId' },
-                { graphQLParam: 'entityType', queryParam: 'entityType' }
-            ],
-            format(data) {
-                const formattedData = {
-                    ...data
-                };
-                formattedData.results = getSubField(data, 'aggregatedResults.results.results');
-                return formattedData;
-            }
         }
     },
     {
@@ -263,7 +233,7 @@ export default [
     },
     {
         context: [contextTypes.COMPLIANCE],
-        pageType: [pageTypes.DASHBOARD],
+        pageType: [pageTypes.DASHBOARD, pageTypes.ENTITY],
         entityType: [],
         component: [componentTypes.COMPLIANCE_BY_STANDARD],
         config: {

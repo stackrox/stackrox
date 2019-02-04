@@ -1,5 +1,6 @@
 const contexts = {
-    COMPLIANCE: 'compliance'
+    COMPLIANCE: 'compliance',
+    RISK: 'risk'
 };
 
 export default contexts;

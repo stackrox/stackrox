@@ -3,15 +3,15 @@ import PropTypes from 'prop-types';
 import Widget from 'Components/Widget';
 import VerticalBarChart from 'Components/visuals/VerticalBar';
 import ArcSingle from 'Components/visuals/ArcSingle';
-import Query from 'Components/AppQuery';
-import componentTypes from 'constants/componentTypes';
+import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import pageTypes from 'constants/pageTypes';
 import { standardTypes } from 'constants/entityTypes';
 import URLService from 'modules/URLService';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
-import resourceLabels from 'messages/common';
+import { resourceLabels } from 'messages/common';
+import AGGREGATED_RESULTS from 'queries/controls';
 
 function getStandardTypeFromName(standardName) {
     if (standardName.includes('NIST')) return standardTypes.NIST_800_190;
@@ -26,14 +26,14 @@ const EntityCompliance = ({ params, history }) => {
     const entityTypeLabel = resourceLabels[entityType];
 
     function getBarData(results) {
-        return results.aggregatedResults.results.map(item => ({
+        return results.map(item => ({
             x: item.aggregationKeys[0].id,
             y: (item.numPassing / (item.numPassing + item.numFailing)) * 100
         }));
     }
 
     function getTotals(results) {
-        return results.aggregatedResults.results.reduce(
+        return results.reduce(
             (acc, curr) => {
                 acc.numPassing += curr.numPassing;
                 acc.total += curr.numPassing + curr.numFailing;
@@ -54,14 +54,16 @@ const EntityCompliance = ({ params, history }) => {
         const URL = URLService.getLinkTo(context, pageTypes.LIST, linkParams);
         history.push(URL);
     }
-
     return (
-        <Query params={params} componentType={componentTypes.ENTITY_COMPLIANCE}>
+        <Query
+            query={AGGREGATED_RESULTS}
+            variables={{ unit: 'CONTROL', groupBy: ['STANDARD', entityType] }}
+        >
             {({ loading, data }) => {
                 let contents = <Loader />;
                 if (!loading && data && data.results) {
-                    const barData = getBarData(data.results);
-                    const totals = getTotals(data.results);
+                    const barData = getBarData(data.results.results);
+                    const totals = getTotals(data.results.results);
                     const pct = Math.round((totals.numPassing / totals.total) * 100);
                     contents = (
                         <React.Fragment>

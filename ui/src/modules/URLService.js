@@ -3,22 +3,25 @@ import pageTypes from 'constants/pageTypes';
 import { resourceTypes } from 'constants/entityTypes';
 import contextTypes from 'constants/contextTypes';
 import { generatePath } from 'react-router-dom';
-import { nestedCompliancePaths, resourceTypesToUrl } from '../routePaths';
+import { nestedCompliancePaths, resourceTypesToUrl, riskPath } from '../routePaths';
 
 function isResource(type) {
     return Object.values(resourceTypes).includes(type);
 }
 
-function getResourceTypeFromMatch(match) {
+function getEntityTypeFromMatch(match) {
     if (!match || !match.params || !match.params.entityType) return null;
 
+    const { entityType } = match.params;
+
+    // Handle url to resourceType mapping for resources
     const entityEntry = Object.entries(resourceTypesToUrl).find(
         entry => entry[1] === match.params.entityType
     );
-    if (!entityEntry) return null;
 
-    return entityEntry[0];
+    return entityEntry ? entityEntry[0] : entityType;
 }
+
 function getPath(context, pageType, urlParams) {
     const isResourceType = urlParams.entityType ? isResource(urlParams.entityType) : false;
     const pathMap = {
@@ -28,6 +31,10 @@ function getPath(context, pageType, urlParams) {
                 ? nestedCompliancePaths.RESOURCE
                 : nestedCompliancePaths.CONTROL,
             [pageTypes.LIST]: nestedCompliancePaths.LIST
+        },
+        [contextTypes.RISK]: {
+            [pageTypes.ENTITY]: riskPath,
+            [pageTypes.LIST]: '/main/risk'
         }
     };
 
@@ -46,6 +53,7 @@ function getPath(context, pageType, urlParams) {
 
 function getContext(match) {
     if (match.url.includes('/compliance')) return contextTypes.COMPLIANCE;
+    if (match.url.includes('/risk')) return contextTypes.RISK;
     return null;
 }
 
@@ -57,10 +65,10 @@ function getPageType(match) {
 
 function getParams(match, location) {
     const newParams = { ...match.params };
-    newParams.entityType = getResourceTypeFromMatch(match);
+    newParams.entityType = getEntityTypeFromMatch(match);
 
     return {
-        ...match.params,
+        ...newParams,
         context: getContext(match),
         pageType: getPageType(match),
         query: qs.parse(location.search, { ignoreQueryPrefix: true })
@@ -70,7 +78,16 @@ function getParams(match, location) {
 function getLinkTo(context, pageType, params) {
     const { query, ...urlParams } = params;
     const pathname = getPath(context, pageType, urlParams);
-    const search = query ? qs.stringify(query, { addQueryPrefix: true }) : null;
+    const normalizedQuery = query
+        ? Object.entries(query).reduce((acc, entry) => {
+              const key = entry[0].toLowerCase();
+              // eslint-disable-next-line
+              acc[key] = entry[1];
+              return acc;
+          }, {})
+        : null;
+    const search = query ? qs.stringify(normalizedQuery, { addQueryPrefix: true }) : null;
+
     return {
         pathname,
         search,

@@ -32,7 +32,9 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                 <ComplianceByStandard type={entityTypes.HIPAA_164} params={params} />
                 <ComplianceByStandard type={entityTypes.CIS_KUBERENETES_V1_2_0} params={params} />
                 <ComplianceByStandard type={entityTypes.CIS_DOCKER_V1_1_0} params={params} />
-                {!sidePanelMode && <RelatedEntitiesList params={params} />}
+                {!sidePanelMode && (
+                    <RelatedEntitiesList type={entityTypes.DEPLOYMENT} params={params} />
+                )}
             </div>
         </div>
     </section>
