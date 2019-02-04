@@ -3,10 +3,13 @@ package nodes
 import (
 	"fmt"
 
+	"github.com/gogo/protobuf/proto"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/node/globalstore"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 )
@@ -19,14 +22,16 @@ var (
 //////////////////////////////////////////////////////////////////////////////////////
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(nodes globalstore.GlobalStore) pipeline.Fragment {
+func NewPipeline(clusters clusterDataStore.DataStore, nodes globalstore.GlobalStore) pipeline.Fragment {
 	return &pipelineImpl{
-		nodeStore: nodes,
+		clusterStore: clusters,
+		nodeStore:    nodes,
 	}
 }
 
 type pipelineImpl struct {
-	nodeStore globalstore.GlobalStore
+	clusterStore clusterDataStore.DataStore
+	nodeStore    globalstore.GlobalStore
 }
 
 func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
@@ -53,6 +58,13 @@ func (p *pipelineImpl) Run(msg *central.MsgFromSensor, _ pipeline.MsgInjector) e
 
 	if event.GetAction() == central.ResourceAction_REMOVE_RESOURCE {
 		return store.RemoveNode(node.GetId())
+	}
+
+	node = proto.Clone(node).(*storage.Node)
+	node.ClusterId = clusterID
+	cluster, ok, err := p.clusterStore.GetCluster(clusterID)
+	if err == nil && ok {
+		node.ClusterName = cluster.GetName()
 	}
 	return store.UpsertNode(node)
 }

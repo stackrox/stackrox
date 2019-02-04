@@ -3,6 +3,7 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "google/protobuf/timestamp.proto";
 import "storage/taints.proto";
 
 import "protobuf/gogoproto/gogo.proto";
@@ -10,12 +11,26 @@ import "protobuf/gogoproto/gogo.proto";
 package storage;
 
 // Node represents information about a node in the cluster.
-// next available tag: 4
+// next available tag: 14
 message Node {
     // A unique ID identifying this node.
-    string id   = 1;
+    string id                             = 1;
     // The (host)name of the node. Might or might not be the same as ID.
     string name = 2 [(gogoproto.moretags) = "search:\"Node\""];
     // Taints on the host
-    repeated Taint taints = 3;
+    repeated Taint taints                 = 3;
+    string cluster_id                     = 4;
+    string cluster_name                   = 5;
+    map<string, string> labels            = 6;
+    map<string, string> annotations       = 7;
+    // node internal IP addresses
+    repeated string internal_ip_addresses = 8;
+    // node external IP addresses
+    repeated string external_ip_addresses = 9;
+    // From NodeInfo
+    string container_runtime_version      = 10;
+    string kernel_version                 = 11;
+    string os_image                       = 12;
+    // When the cluster reported the node was added
+    google.protobuf.Timestamp joined_at   = 13;
 }

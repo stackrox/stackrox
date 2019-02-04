@@ -411,8 +411,18 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"srcEntity: NetworkEntityInfo",
 	})
 	builder.AddType("Node", []string{
+		"annotations: [Label!]!",
+		"clusterId: String!",
+		"clusterName: String!",
+		"containerRuntimeVersion: String!",
+		"externalIpAddresses: [String!]!",
 		"id: ID!",
+		"internalIpAddresses: [String!]!",
+		"joinedAt: Time",
+		"kernelVersion: String!",
+		"labels: [Label!]!",
 		"name: String!",
+		"osImage: String!",
 		"taints: [Taint]!",
 	})
 	builder.AddType("Notifier", []string{
@@ -3829,13 +3839,63 @@ func (resolver *Resolver) wrapNodes(values []*storage.Node, err error) ([]*nodeR
 	return output, nil
 }
 
+func (resolver *nodeResolver) Annotations() labels {
+	value := resolver.data.GetAnnotations()
+	return labelsResolver(value)
+}
+
+func (resolver *nodeResolver) ClusterId() string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *nodeResolver) ClusterName() string {
+	value := resolver.data.GetClusterName()
+	return value
+}
+
+func (resolver *nodeResolver) ContainerRuntimeVersion() string {
+	value := resolver.data.GetContainerRuntimeVersion()
+	return value
+}
+
+func (resolver *nodeResolver) ExternalIpAddresses() []string {
+	value := resolver.data.GetExternalIpAddresses()
+	return value
+}
+
 func (resolver *nodeResolver) Id() graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
+func (resolver *nodeResolver) InternalIpAddresses() []string {
+	value := resolver.data.GetInternalIpAddresses()
+	return value
+}
+
+func (resolver *nodeResolver) JoinedAt() (*graphql.Time, error) {
+	value := resolver.data.GetJoinedAt()
+	return timestamp(value)
+}
+
+func (resolver *nodeResolver) KernelVersion() string {
+	value := resolver.data.GetKernelVersion()
+	return value
+}
+
+func (resolver *nodeResolver) Labels() labels {
+	value := resolver.data.GetLabels()
+	return labelsResolver(value)
+}
+
 func (resolver *nodeResolver) Name() string {
 	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *nodeResolver) OsImage() string {
+	value := resolver.data.GetOsImage()
 	return value
 }
 

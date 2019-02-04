@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
@@ -52,10 +53,30 @@ func (h *nodeDispatcher) ProcessEvent(obj interface{}, action central.ResourceAc
 		h.endpointManager.OnNodeUpdateOrRemove(node.Name)
 	}
 
+	var internal, external []string
+
+	for _, entry := range node.Status.Addresses {
+		switch entry.Type {
+		case v1.NodeInternalIP:
+			internal = append(internal, entry.Address)
+		case v1.NodeExternalIP:
+			external = append(external, entry.Address)
+		}
+	}
+
+	creation := (&node.CreationTimestamp).ProtoTime()
 	nodeResource := &storage.Node{
-		Id:     string(node.UID),
-		Name:   node.Name,
-		Taints: convertTaints(node.Spec.Taints),
+		Id:                      string(node.UID),
+		Name:                    node.Name,
+		Taints:                  convertTaints(node.Spec.Taints),
+		Labels:                  node.GetLabels(),
+		Annotations:             node.GetAnnotations(),
+		JoinedAt:                &types.Timestamp{Seconds: creation.Seconds, Nanos: creation.Nanos},
+		InternalIpAddresses:     internal,
+		ExternalIpAddresses:     external,
+		ContainerRuntimeVersion: node.Status.NodeInfo.ContainerRuntimeVersion,
+		KernelVersion:           node.Status.NodeInfo.KernelVersion,
+		OsImage:                 node.Status.NodeInfo.OSImage,
 	}
 
 	events := []*central.SensorEvent{
