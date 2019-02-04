@@ -57,7 +57,7 @@ function getLabelLinks(data, type, params) {
     entityList.forEach(entity => {
         const link = URLService.getLinkTo(params.context, pageTypes.ENTITY, {
             entityType: type,
-            entityId: entity.name
+            entityId: entity.id
         });
         labelLinks[entity.name] = link;
     });

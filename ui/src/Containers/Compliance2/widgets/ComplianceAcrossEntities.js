@@ -8,7 +8,7 @@ import Gauge from 'Components/visuals/GaugeWithDetail';
 import { standardTypes } from 'constants/entityTypes';
 import standardLabels from 'messages/standards';
 
-const isStandard = type => Object.keys(standardTypes).includes(type);
+const isStandard = type => Object.values(standardTypes).includes(type);
 
 function processData(type, { results, complianceStandards }) {
     let filteredResults;
@@ -45,7 +45,7 @@ const ComplianceAcrossEntities = ({ params }) => (
             let contents = <Loader />;
             const headerText = isStandard(params.entityType)
                 ? `Compliance Across ${standardLabels[params.entityType]} Controls`
-                : `Compliance Across ${standardLabels[params.entityType]}`;
+                : `Compliance Across ${params.entityType}`;
             if (!loading && data) {
                 const results = processData(params.entityType, data);
 

@@ -41,13 +41,17 @@ class ListTable extends Component {
         return (
             <AppQuery params={params} componentType={componentTypes.LIST_TABLE}>
                 {({ loading, data }) => {
+                    const isStandard = standardTypeValues.includes(params.entityType);
                     let tableData;
                     let contents = <Loader />;
                     let paginationComponent;
+                    const headerText = isStandard
+                        ? `${standardLabels[params.entityType]} controls`
+                        : `${params.entityType}`;
 
                     if (!loading && data) {
                         tableData = data.results;
-                        contents = standardTypeValues.includes(params.entityType) ? (
+                        contents = isStandard ? (
                             <TableGroup
                                 groups={tableData}
                                 tableColumns={entityToColumns[params.entityType]}
@@ -75,10 +79,7 @@ class ListTable extends Component {
                         );
                     }
                     return (
-                        <Panel
-                            header={`${standardLabels[params.entityType]} controls`}
-                            headerComponents={paginationComponent}
-                        >
+                        <Panel header={headerText} headerComponents={paginationComponent}>
                             {contents}
                         </Panel>
                     );

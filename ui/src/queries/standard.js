@@ -18,20 +18,22 @@ export const ENTITY_COMPLIANCE = gql`
 export const LIST_STANDARD = gql`
     query controls($where: String) {
         results: aggregatedResults(groupBy: [CONTROL, CATEGORY], unit: CHECK, where: $where) {
-            aggregationKeys {
-                id
-                scope
-            }
-            keys {
-                ... on ComplianceControl {
+            results {
+                aggregationKeys {
                     id
-                    name
-                    description
-                    groupId
+                    scope
                 }
+                keys {
+                    ... on ComplianceControl {
+                        id
+                        name
+                        description
+                        groupId
+                    }
+                }
+                numPassing
+                numFailing
             }
-            numPassing
-            numFailing
         }
     }
 `;

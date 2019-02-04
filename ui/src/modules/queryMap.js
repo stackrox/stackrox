@@ -1,5 +1,6 @@
 import componentTypes from 'constants/componentTypes';
 import entityTypes, { standardTypes } from 'constants/entityTypes';
+import standardLabels from 'messages/standards';
 import contextTypes from 'constants/contextTypes';
 import pageTypes from 'constants/pageTypes';
 import { CLUSTER_QUERY } from 'queries/cluster';
@@ -144,12 +145,17 @@ export default [
         component: [componentTypes.LIST_TABLE],
         config: {
             query: LIST_STANDARD,
-            variables: [{ graphQLParam: 'where', queryParam: 'entityType' }],
+            variables: [
+                {
+                    graphQLParam: 'where',
+                    paramsFunc: params => `Standard=${standardLabels[params.entityType]}`
+                }
+            ],
             format(data) {
                 if (!data.results) return null;
                 const formattedData = { results: [] };
                 const groups = {};
-                data.results.forEach(({ keys, numPassing, numFailing }) => {
+                data.results.results.forEach(({ keys, numPassing, numFailing }) => {
                     const { name, groupId, description } = keys[1];
                     if (!groups[groupId]) {
                         groups[groupId] = {

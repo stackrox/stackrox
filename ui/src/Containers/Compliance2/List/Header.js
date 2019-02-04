@@ -1,13 +1,16 @@
 import React from 'react';
 import { withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
+import ReactRouterPropTypes from 'react-router-prop-types';
+import URLService from 'modules/URLService';
+import standardLabels from 'messages/standards';
+import { standardTypes } from 'constants/entityTypes';
+
 import PageHeader from 'Components/PageHeader';
 import Button from 'Components/Button';
 import * as Icon from 'react-feather';
 
-import ReactRouterPropTypes from 'react-router-prop-types';
-import URLService from 'modules/URLService';
-import standardLabels from 'messages/standards';
+const isStandard = type => Object.values(standardTypes).includes(type);
 
 const handleExport = () => {
     throw new Error('"Export" is not supported yet.');
@@ -17,7 +20,7 @@ const ListHeader = ({ match, location, searchComponent }) => {
     const params = URLService.getParams(match, location);
     const { entityType } = params;
 
-    const headerText = standardLabels[entityType];
+    const headerText = isStandard(entityType) ? standardLabels[entityType] : entityType;
 
     return (
         <PageHeader header={headerText} subHeader="Resource List">

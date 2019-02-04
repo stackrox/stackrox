@@ -1,14 +1,18 @@
-import { singular } from 'pluralize';
-import toUpper from 'lodash/toUpper';
-import isEmpty from 'lodash/isEmpty';
+import qs from 'qs';
+import merge from 'deepmerge';
 import queryMap from './queryMap';
 
 function constructWhereClause(mappedVariables, params) {
     const newlyCreatedMappedVariables = { ...mappedVariables };
     let whereClause = '';
 
-    Object.keys(params.query).forEach((queryParamKey, index) => {
-        const queryParamValue = params.query[queryParamKey];
+    let { query } = params;
+    if (mappedVariables.where) {
+        query = merge(query, qs.parse(mappedVariables.where));
+    }
+
+    Object.keys(query).forEach((queryParamKey, index) => {
+        const queryParamValue = query[queryParamKey];
         if (Array.isArray(queryParamValue)) {
             whereClause = `${whereClause}${
                 index !== 0 ? '+' : ''
@@ -50,19 +54,13 @@ function getQuery(params, component) {
         } else if (param.paramsFunc) {
             acc[param.graphQLParam] = param.paramsFunc(params);
         } else {
-            let queryParamValue = params[param.queryParam];
-            if (param.queryParam === 'entityType') {
-                queryParamValue =
-                    param.graphQLParam === 'where'
-                        ? `Standard:${queryParamValue}`
-                        : toUpper(singular(queryParamValue));
-            }
+            const queryParamValue = params[param.queryParam];
             acc[param.graphQLParam] = queryParamValue;
         }
         return acc;
     }, {});
 
-    if (!isEmpty(params.query)) mappedVariables = constructWhereClause(mappedVariables, params);
+    mappedVariables = constructWhereClause(mappedVariables, params);
 
     return {
         query,
