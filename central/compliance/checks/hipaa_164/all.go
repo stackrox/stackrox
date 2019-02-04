@@ -16,4 +16,5 @@ import (
 	_ "github.com/stackrox/rox/central/compliance/checks/hipaa_164/check312c"
 	_ "github.com/stackrox/rox/central/compliance/checks/hipaa_164/check312e"
 	_ "github.com/stackrox/rox/central/compliance/checks/hipaa_164/check314a2ic"
+	_ "github.com/stackrox/rox/central/compliance/checks/hipaa_164/check316b2iii"
 )

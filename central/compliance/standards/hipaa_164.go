@@ -148,7 +148,7 @@ var hipaa164 = Standard{
 		{
 			ID:          "312_c",
 			Name:        "312.c",
-			Description: "Integrity.",
+			Description: "Integrity",
 			Controls: []Control{
 				{
 					ID:   "312_c",
@@ -181,6 +181,18 @@ var hipaa164 = Standard{
 					ID:          "312_e",
 					Name:        "312.e",
 					Description: "Implement technical security measures to guard against unauthorized access to electronic protected health information that is being transmitted over an electronic communications network.",
+				},
+			},
+		},
+		{
+			ID:          "316_b_2_iii",
+			Name:        "316.b.2.iii",
+			Description: "Policies and procedures",
+			Controls: []Control{
+				{
+					ID:          "316_b_2_iii",
+					Name:        "316.b.2.iii",
+					Description: "Review documentation periodically, and update as needed, in response to environmental or operational changes affecting the security of the electronic protected health information.",
 				},
 			},
 		},
