@@ -16,46 +16,51 @@ import (
 
 func init() {
 	framework.MustRegisterChecks(
-		runningContainerCheck("CIS_Docker_v1_1_0:5_1", appArmor),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_2", selinux),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_3", capabilities),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_4", privileged),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_5", sensitiveHostMounts),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_1", appArmor, "has an AppArmor profile configured"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_2", selinux, "has SELinux configured"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_3", capabilities, "has extra capabilities enabled"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_4", privileged, "is not running in privileged mode"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_5", sensitiveHostMounts, "does not mount any sensitive host directories"),
 		common.PerNodeNoteCheck("CIS_Docker_v1_1_0:5_6", "Check containers to ensure SSH is not running within them"),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_7", privilegedPorts),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_8", necessaryPorts),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_9", sharedNetwork),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_10", memoryLimit),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_11", cpuShares),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_12", readonlyFS),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_13", specificHostInterface),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_14", restartPolicy),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_15", pidNamespace),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_16", ipcNamespace),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_17", hostDevices),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_18", ulimit),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_19", mountPropagation),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_20", utsNamespace),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_21", seccomp),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_7", privilegedPorts, "does not bind to a privileged host port"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_8", necessaryPorts, "does not bind to any host ports"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_9", sharedNetwork, "does not use the 'host' network mode"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_10", memoryLimit, "has memory limits configured"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_11", cpuShares, "has CPU shares configured"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_12", readonlyFS, "uses a read-only root filesystem"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_13", specificHostInterface, "does not bind to all host interface addresses (0.0.0.0)"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_14", restartPolicy, "has an on-failure restart policy with a maximum of 5 retries"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_15", pidNamespace, "is not using the host PID namespace"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_16", ipcNamespace, "is not using the host IPC namespace"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_17", hostDevices, "has not mounted any host devices"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_18", ulimit, "does not override ulimits"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_19", mountPropagation, "does not have any mounts that use shared propagation"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_20", utsNamespace, "does not use the host UTS namespace"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_21", seccomp, "does not have seccomp set to unconfined"),
 
 		// 5.22 and 5.23 are in file.go
 
-		runningContainerCheck("CIS_Docker_v1_1_0:5_24", cgroup),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_25", acquiringPrivileges),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_26", healthcheck),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_24", cgroup, "does not use a non-standard cgroup parent"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_25", acquiringPrivileges, "sets no-new-privileges in its security options"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_26", healthcheck, "has a correctly configured health check"),
 		common.PerNodeNoteCheck("CIS_Docker_v1_1_0:5_27", "Pulling images is invasive and not always possible depending on credential management"),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_28", pidCgroup),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_29", bridgeNetwork),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_30", userNamespace),
-		runningContainerCheck("CIS_Docker_v1_1_0:5_31", noDockerSocket),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_28", pidCgroup, "has a PID limit set"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_29", bridgeNetwork, "is not running on the bridge network"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_30", userNamespace, "is not using the host user namespace"),
+		runningContainerCheck("CIS_Docker_v1_1_0:5_31", noDockerSocket, "does not mount the docker socket"),
 
 		// One off
-		runningContainerCheck("CIS_Docker_v1_1_0:4_1", usersInContainer),
+		runningContainerCheck("CIS_Docker_v1_1_0:4_1", usersInContainer, "is not running as the root user"),
 	)
 }
 
-func runningContainerCheck(name string, f func(ctx framework.ComplianceContext, container types.ContainerJSON)) framework.Check {
-	return framework.NewCheckFromFunc(name, framework.NodeKind, nil, containerCheckWrapper(f, true))
+func runningContainerCheck(name string, f func(ctx framework.ComplianceContext, container types.ContainerJSON), desc string) framework.Check {
+	md := framework.CheckMetadata{
+		ID:                 name,
+		Scope:              framework.NodeKind,
+		InterpretationText: fmt.Sprintf("StackRox checks that every running container on each node %s", desc),
+	}
+	return framework.NewCheckFromFunc(md, containerCheckWrapper(f, true))
 }
 
 func containerCheckWrapper(f func(ctx framework.ComplianceContext, container types.ContainerJSON), runningOnly bool) framework.CheckFunc {
@@ -145,7 +150,7 @@ func cpuShares(ctx framework.ComplianceContext, container types.ContainerJSON) {
 	if container.HostConfig.CPUShares == 0 {
 		framework.Failf(ctx, "Container %q does not have CPU shares set", container.Name)
 	} else {
-		framework.Passf(ctx, "Container %q hasCPU shares set to %d", container.Name, container.HostConfig.CPUShares)
+		framework.Passf(ctx, "Container %q has CPU shares set to %d", container.Name, container.HostConfig.CPUShares)
 	}
 }
 
@@ -196,7 +201,7 @@ func mountPropagation(ctx framework.ComplianceContext, container types.Container
 		}
 	}
 	if !failed {
-		framework.Passf(ctx, "Container %q has not mounts that use shared propagation", container.Name)
+		framework.Passf(ctx, "Container %q has no mounts that use shared propagation", container.Name)
 	}
 }
 

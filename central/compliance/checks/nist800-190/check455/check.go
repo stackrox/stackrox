@@ -12,9 +12,12 @@ const (
 
 func init() {
 	framework.MustRegisterNewCheck(
-		standardID,
-		framework.DeploymentKind,
-		[]string{"Deployments"},
+		framework.CheckMetadata{
+			ID:                 standardID,
+			Scope:              framework.DeploymentKind,
+			DataDependencies:   []string{"Deployments"},
+			InterpretationText: interpretationText,
+		},
 		checkNIST455)
 }
 

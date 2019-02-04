@@ -1,6 +1,7 @@
 package docker
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/stackrox/rox/central/compliance/checks/common"
@@ -16,17 +17,22 @@ func init() {
 		common.PerNodeNoteCheck("CIS_Docker_v1_1_0:4_3", "Check if the packages inside the image are necessary"),
 		common.PerNodeNoteCheck("CIS_Docker_v1_1_0:4_4", "Check if images are scanned"),
 		common.PerNodeNoteCheck("CIS_Docker_v1_1_0:4_5", "Docker content trust is set on an individual basis via environment variable"),
-		imageCheck("CIS_Docker_v1_1_0:4_6", healthcheckInstruction),
-		imageCheck("CIS_Docker_v1_1_0:4_7", noUpdateInstruction),
+		imageCheck("CIS_Docker_v1_1_0:4_6", healthcheckInstruction, "has a health check configured"),
+		imageCheck("CIS_Docker_v1_1_0:4_7", noUpdateInstruction, "does not use update commands such as `apt-get update`"),
 		common.PerNodeNoteCheck("CIS_Docker_v1_1_0:4_8", "Check if setuid and setgid permissions are removed in the images"),
-		imageCheck("CIS_Docker_v1_1_0:4_9", copyInstruction),
+		imageCheck("CIS_Docker_v1_1_0:4_9", copyInstruction, "uses COPY instead of ADD"),
 		common.PerNodeNoteCheck("CIS_Docker_v1_1_0:4_10", "Ensure secrets are not stored in Dockerfiles"),
 		common.PerNodeNoteCheck("CIS_Docker_v1_1_0:4_11", "Check if only verified packages are installed"),
 	)
 }
 
-func imageCheck(name string, f func(ctx framework.ComplianceContext, wrap docker.ImageWrap)) framework.Check {
-	return framework.NewCheckFromFunc(name, framework.NodeKind, nil, imageCheckWrapper(f))
+func imageCheck(name string, f func(ctx framework.ComplianceContext, wrap docker.ImageWrap), desc string) framework.Check {
+	md := framework.CheckMetadata{
+		ID:                 name,
+		Scope:              framework.NodeKind,
+		InterpretationText: fmt.Sprintf("StackRox checks that each image on every node %s", desc),
+	}
+	return framework.NewCheckFromFunc(md, imageCheckWrapper(f))
 }
 
 func imageCheckWrapper(f func(ctx framework.ComplianceContext, wrap docker.ImageWrap)) framework.CheckFunc {

@@ -11,8 +11,11 @@ const (
 
 func init() {
 	framework.MustRegisterNewCheck(
-		standardID,
-		framework.ClusterKind,
-		[]string{"CISBenchmarks"},
+		framework.CheckMetadata{
+			ID:                 standardID,
+			Scope:              framework.ClusterKind,
+			DataDependencies:   []string{"CISBenchmarks"},
+			InterpretationText: interpretationText,
+		},
 		common.CISBenchmarksSatisfied)
 }

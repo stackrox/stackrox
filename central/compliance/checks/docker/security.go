@@ -8,8 +8,18 @@ import (
 
 func init() {
 	framework.MustRegisterChecks(
-		framework.NewCheckFromFunc("CIS_Docker_v1_1_0:6_1", framework.NodeKind, nil, imageSprawl),
-		framework.NewCheckFromFunc("CIS_Docker_v1_1_0:6_2", framework.NodeKind, nil, containerSprawl),
+		framework.NewCheckFromFunc(
+			framework.CheckMetadata{
+				ID:                 "CIS_Docker_v1_1_0:6_1",
+				Scope:              framework.NodeKind,
+				InterpretationText: "StackRox checks how many of the images present on each node are actually in use",
+			}, imageSprawl),
+		framework.NewCheckFromFunc(
+			framework.CheckMetadata{
+				ID:                 "CIS_Docker_v1_1_0:6_2",
+				Scope:              framework.NodeKind,
+				InterpretationText: "StackRox checks how many of the containers present on each node are actually running",
+			}, containerSprawl),
 	)
 }
 

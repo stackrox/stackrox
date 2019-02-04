@@ -9,8 +9,11 @@ const checkID = "PCI_DSS_3_2:1_3_4"
 
 func init() {
 	framework.MustRegisterNewCheck(
-		checkID,
-		framework.DeploymentKind,
-		[]string{"NetworkGraph", "NetworkPolicies"},
+		framework.CheckMetadata{
+			ID:                 checkID,
+			Scope:              framework.DeploymentKind,
+			DataDependencies:   []string{"NetworkGraph", "NetworkPolicies"},
+			InterpretationText: interpretationText,
+		},
 		common.ClusterHasEgressNetworkPolicies)
 }

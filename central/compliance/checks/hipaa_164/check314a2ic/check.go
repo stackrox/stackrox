@@ -9,8 +9,11 @@ const checkID = "HIPAA_164:314_a_2_i_c"
 
 func init() {
 	framework.MustRegisterNewCheck(
-		checkID,
-		framework.ClusterKind,
-		[]string{"Notifiers"},
+		framework.CheckMetadata{
+			ID:                 checkID,
+			Scope:              framework.ClusterKind,
+			DataDependencies:   []string{"Notifiers"},
+			InterpretationText: interpretationText,
+		},
 		common.CheckNotifierInUse)
 }

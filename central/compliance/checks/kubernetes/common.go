@@ -8,7 +8,11 @@ import (
 )
 
 func genericKubernetesCommandlineCheck(name string, processName string, key, target, defaultVal string, evalFunc common.CommandEvaluationFunc) framework.Check {
-	return framework.NewCheckFromFunc(name, framework.NodeKind, nil, common.PerNodeCheck(
+	md := framework.CheckMetadata{
+		ID:    name,
+		Scope: framework.NodeKind,
+	}
+	return framework.NewCheckFromFunc(md, common.PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {
 			process, exists := common.GetProcess(ret, processName)
 			if !exists {
@@ -20,7 +24,11 @@ func genericKubernetesCommandlineCheck(name string, processName string, key, tar
 }
 
 func multipleFlagsSetCheck(name string, processName string, keys ...string) framework.Check {
-	return framework.NewCheckFromFunc(name, framework.NodeKind, nil, common.PerNodeCheck(
+	md := framework.CheckMetadata{
+		ID:    name,
+		Scope: framework.NodeKind,
+	}
+	return framework.NewCheckFromFunc(md, common.PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {
 			process, exists := common.GetProcess(ret, processName)
 			if !exists {

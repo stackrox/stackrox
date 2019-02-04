@@ -19,9 +19,12 @@ var (
 
 func init() {
 	framework.MustRegisterNewCheck(
-		standardID,
-		framework.ClusterKind,
-		[]string{"Policies", "ImageIntegrations", "ProcessIndicators", "Deployments"},
+		framework.CheckMetadata{
+			ID:                 standardID,
+			Scope:              framework.ClusterKind,
+			DataDependencies:   []string{"Policies", "ImageIntegrations", "ProcessIndicators", "Deployments"},
+			InterpretationText: interpretationText,
+		},
 		func(ctx framework.ComplianceContext) {
 			checkNIST412(ctx)
 		})

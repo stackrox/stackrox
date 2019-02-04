@@ -21,7 +21,11 @@ func PerNodeCheck(f func(ctx framework.ComplianceContext, ret *compliance.Compli
 
 // CommandLineFileOwnership returns a check that checks the ownership of a file that is specified by the command line
 func CommandLineFileOwnership(name string, processName, flag, user, group string) framework.Check {
-	return framework.NewCheckFromFunc(name, framework.NodeKind, nil, PerNodeCheck(
+	md := framework.CheckMetadata{
+		ID:    name,
+		Scope: framework.NodeKind,
+	}
+	return framework.NewCheckFromFunc(md, PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {
 			process, exists := GetProcess(ret, processName)
 			if !exists {
@@ -39,7 +43,11 @@ func CommandLineFileOwnership(name string, processName, flag, user, group string
 
 // CommandLineFilePermissions returns a check that checks the permissions of a file that is specified by the command line
 func CommandLineFilePermissions(name string, processName, flag string, perms uint32) framework.Check {
-	return framework.NewCheckFromFunc(name, framework.NodeKind, nil, PerNodeCheck(
+	md := framework.CheckMetadata{
+		ID:    name,
+		Scope: framework.NodeKind,
+	}
+	return framework.NewCheckFromFunc(md, PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {
 			process, exists := GetProcess(ret, processName)
 			if !exists {

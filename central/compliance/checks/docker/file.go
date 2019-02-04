@@ -2,6 +2,7 @@ package docker
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
@@ -10,7 +11,7 @@ import (
 
 func init() {
 	framework.MustRegisterChecks(
-		framework.NewCheckFromFunc("CIS_Docker_v1_1_0:1_1", framework.NodeKind, nil, containerPartition),
+		framework.NewCheckFromFunc(framework.CheckMetadata{ID: "CIS_Docker_v1_1_0:1_1", Scope: framework.NodeKind}, containerPartition),
 		common.PerNodeNoteCheck("CIS_Docker_v1_1_0:1_2", "Ensure the host is hardened with the latest kernel"),
 		common.PerNodeNoteCheck("CIS_Docker_v1_1_0:1_3", "Ensure that Docker is updated"),
 		common.PerNodeNoteCheck("CIS_Docker_v1_1_0:1_4", "Ensure that only trusted users can access the Docker daemon"),
@@ -24,15 +25,20 @@ func init() {
 		auditCheck("CIS_Docker_v1_1_0:1_12", "/usr/bin/docker-containerd"),
 		auditCheck("CIS_Docker_v1_1_0:1_13", "/usr/bin/docker-runc"),
 
-		framework.NewCheckFromFunc("CIS_Docker_v1_1_0:5_22", framework.NodeKind, nil, privilegedDockerExec),
-		framework.NewCheckFromFunc("CIS_Docker_v1_1_0:5_23", framework.NodeKind, nil, userDockerExec),
+		framework.NewCheckFromFunc(framework.CheckMetadata{ID: "CIS_Docker_v1_1_0:5_22", Scope: framework.NodeKind}, privilegedDockerExec),
+		framework.NewCheckFromFunc(framework.CheckMetadata{ID: "CIS_Docker_v1_1_0:5_23", Scope: framework.NodeKind}, userDockerExec),
 	)
 }
 
 const auditFile = "/etc/audit/audit.rules"
 
 func auditCheck(name, file string) framework.Check {
-	return framework.NewCheckFromFunc(name, framework.NodeKind, nil, auditCheckFunc(file))
+	md := framework.CheckMetadata{
+		ID:                 name,
+		Scope:              framework.NodeKind,
+		InterpretationText: fmt.Sprintf("StackRox checks that auditd rules exist for file %s (if present)", file),
+	}
+	return framework.NewCheckFromFunc(md, auditCheckFunc(file))
 }
 
 func auditCheckFunc(file string) framework.CheckFunc {

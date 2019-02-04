@@ -16,9 +16,12 @@ var (
 
 func init() {
 	framework.MustRegisterNewCheck(
-		standardID,
-		framework.ClusterKind,
-		[]string{"Deployments", "Policies"},
+		framework.CheckMetadata{
+			ID:                 standardID,
+			Scope:              framework.ClusterKind,
+			DataDependencies:   []string{"Deployments", "Policies"},
+			InterpretationText: interpretationText,
+		},
 		checkNIST414)
 }
 

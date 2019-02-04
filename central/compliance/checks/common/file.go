@@ -1,6 +1,8 @@
 package common
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 )
@@ -22,26 +24,42 @@ func HasOwnershipGroup(f *compliance.File, group string) bool {
 
 // SystemdOwnershipCheck checks the users and groups of the file
 func SystemdOwnershipCheck(name, file, user, group string) framework.Check {
-	return framework.NewCheckFromFunc(name, framework.NodeKind,
-		nil, systemdOwnershipCheckFunc(file, user, group))
+	md := framework.CheckMetadata{
+		ID:                 name,
+		Scope:              framework.NodeKind,
+		InterpretationText: fmt.Sprintf("StackRox checks that the systemd file %s on each node is owned by user %q and group %q", file, user, group),
+	}
+	return framework.NewCheckFromFunc(md, systemdOwnershipCheckFunc(file, user, group))
 }
 
 // OwnershipCheck checks the users and groups of the file
 func OwnershipCheck(name, file, user, group string) framework.Check {
-	return framework.NewCheckFromFunc(name, framework.NodeKind,
-		nil, ownershipCheckFunc(file, user, group, false))
+	md := framework.CheckMetadata{
+		ID:                 name,
+		Scope:              framework.NodeKind,
+		InterpretationText: fmt.Sprintf("StackRox checks that the file %s on each node is owned by user %q and group %q", file, user, group),
+	}
+	return framework.NewCheckFromFunc(md, ownershipCheckFunc(file, user, group, false))
 }
 
 // OptionalOwnershipCheck checks the users and groups of the file
 func OptionalOwnershipCheck(name, file, user, group string) framework.Check {
-	return framework.NewCheckFromFunc(name, framework.NodeKind,
-		nil, ownershipCheckFunc(file, user, group, true))
+	md := framework.CheckMetadata{
+		ID:                 name,
+		Scope:              framework.NodeKind,
+		InterpretationText: fmt.Sprintf("StackRox checks that the file %s on each node (if existing) is owned by user %q and group %q", file, user, group),
+	}
+	return framework.NewCheckFromFunc(md, ownershipCheckFunc(file, user, group, true))
 }
 
 // RecursiveOwnershipCheck is a framework Check for recursively checking the ownership
 func RecursiveOwnershipCheck(name, dir, user, group string) framework.Check {
-	return framework.NewCheckFromFunc(name, framework.NodeKind,
-		nil, recursiveOwnershipCheckFunc(dir, user, group))
+	md := framework.CheckMetadata{
+		ID:                 name,
+		Scope:              framework.NodeKind,
+		InterpretationText: fmt.Sprintf("StackRox checks that all files under the path %s are owned by user %q and group %q", dir, user, group),
+	}
+	return framework.NewCheckFromFunc(md, recursiveOwnershipCheckFunc(dir, user, group))
 }
 
 // CheckRecursiveOwnership checks the files against the passed user and group
@@ -101,26 +119,42 @@ func ownershipCheck(ctx framework.ComplianceContext, f *compliance.File, user, g
 
 // PermissionCheck checks the permissions of the file
 func PermissionCheck(name, file string, permissions uint32) framework.Check {
-	return framework.NewCheckFromFunc(name, framework.NodeKind,
-		nil, permissionCheckFunc(file, permissions, false))
+	md := framework.CheckMetadata{
+		ID:                 name,
+		Scope:              framework.NodeKind,
+		InterpretationText: fmt.Sprintf("StackRox checks that the permissions on file %s on each node are set to '%#o'", file, permissions),
+	}
+	return framework.NewCheckFromFunc(md, permissionCheckFunc(file, permissions, false))
 }
 
 // OptionalPermissionCheck checks the permissions of the optional file
 func OptionalPermissionCheck(name, file string, permissions uint32) framework.Check {
-	return framework.NewCheckFromFunc(name, framework.NodeKind,
-		nil, permissionCheckFunc(file, permissions, true))
+	md := framework.CheckMetadata{
+		ID:                 name,
+		Scope:              framework.NodeKind,
+		InterpretationText: fmt.Sprintf("StackRox checks that the permissions on file %s on each node (if existing) are set to '%#o'", file, permissions),
+	}
+	return framework.NewCheckFromFunc(md, permissionCheckFunc(file, permissions, true))
 }
 
 // SystemdPermissionCheck checks the permissions of the file
 func SystemdPermissionCheck(name, file string, permissions uint32) framework.Check {
-	return framework.NewCheckFromFunc(name, framework.NodeKind,
-		nil, systemdPermissionCheckFunc(file, permissions))
+	md := framework.CheckMetadata{
+		ID:                 name,
+		Scope:              framework.NodeKind,
+		InterpretationText: fmt.Sprintf("StackRox checks that the permissions on the systemd file %s on each node are set to '%#o'", file, permissions),
+	}
+	return framework.NewCheckFromFunc(md, systemdPermissionCheckFunc(file, permissions))
 }
 
 // RecursivePermissionCheck recursively checks the permissions of the file
 func RecursivePermissionCheck(name, file string, permissions uint32) framework.Check {
-	return framework.NewCheckFromFunc(name, framework.NodeKind,
-		nil, recursivePermissionCheckFunc(file, permissions))
+	md := framework.CheckMetadata{
+		ID:                 name,
+		Scope:              framework.NodeKind,
+		InterpretationText: fmt.Sprintf("StackRox checks that the permissions of all files under the path %s on each node are set to '%#o'", file, permissions),
+	}
+	return framework.NewCheckFromFunc(md, recursivePermissionCheckFunc(file, permissions))
 }
 
 func systemdPermissionCheckFunc(path string, permissions uint32) framework.CheckFunc {

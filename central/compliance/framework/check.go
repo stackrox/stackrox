@@ -18,6 +18,14 @@ type Check interface {
 	Run(ctx ComplianceContext)
 }
 
+// CheckMetadata stores metadata associated with a check.
+type CheckMetadata struct {
+	ID                 string
+	Scope              TargetKind
+	DataDependencies   []string
+	InterpretationText string
+}
+
 // CheckFunc is the function realizing a compliance check. While every `Check` has a `CheckFunc` (namely `chk.Run` for
 // a Check `chk`), not every `CheckFunc` corresponds to a check. Rather, a `Check` (or a `CheckFunc`) can be realized
 // by invoking multiple `CheckFunc`s, e.g., one for each node/deployment in the cluster (remember that a `Check` is
@@ -25,42 +33,30 @@ type Check interface {
 type CheckFunc func(ComplianceContext)
 
 type checkFromFunc struct {
-	id               string
-	scope            TargetKind
-	dataDependencies []string
-	checkFn          CheckFunc
+	metadata CheckMetadata
+	checkFn  CheckFunc
 }
 
 // NewCheckFromFunc returns a new check with the given metadata from the given `CheckFunc`.
-func NewCheckFromFunc(id string, scope TargetKind, dataDependencies []string, checkFn CheckFunc) Check {
+func NewCheckFromFunc(metadata CheckMetadata, checkFn CheckFunc) Check {
 	return &checkFromFunc{
-		id:               id,
-		scope:            scope,
-		dataDependencies: dataDependencies,
-		checkFn:          checkFn,
+		metadata: metadata,
+		checkFn:  checkFn,
 	}
 }
 
 func (c *checkFromFunc) ID() string {
-	return c.id
+	return c.metadata.ID
 }
 
 func (c *checkFromFunc) Scope() TargetKind {
-	return c.scope
+	return c.metadata.Scope
 }
 
 func (c *checkFromFunc) DataDependencies() []string {
-	return c.dataDependencies
+	return c.metadata.DataDependencies
 }
 
 func (c *checkFromFunc) Run(ctx ComplianceContext) {
 	c.checkFn(ctx)
-}
-
-// NoteCheck simply publishes the passes description as evidence for a NoteStatus
-func NoteCheck(name, desc string) Check {
-	return NewCheckFromFunc(name, NodeKind,
-		nil, func(ctx ComplianceContext) {
-			NoteNow(ctx, desc)
-		})
 }

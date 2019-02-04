@@ -9,8 +9,11 @@ const checkID = "PCI_DSS_3_2:3_6_2"
 
 func init() {
 	framework.MustRegisterNewCheck(
-		checkID,
-		framework.ClusterKind,
-		[]string{"Policies"},
+		framework.CheckMetadata{
+			ID:                 checkID,
+			Scope:              framework.ClusterKind,
+			DataDependencies:   []string{"Policies"},
+			InterpretationText: interpretationText,
+		},
 		common.CheckSecretsInEnv)
 }

@@ -57,7 +57,12 @@ func masterAPIServerCommandLine(name string, key, target, defaultVal string, eva
 }
 
 func encryptionProvider() framework.Check {
-	return framework.NewCheckFromFunc("CIS_Kubernetes_v1_2_0:1_1_34", framework.NodeKind, nil, common.PerNodeCheck(
+	md := framework.CheckMetadata{
+		ID:                 "CIS_Kubernetes_v1_2_0:1_1_34",
+		Scope:              framework.NodeKind,
+		InterpretationText: "StackRox checks that the Kubernetes API server uses the `aescbc` encryption provider",
+	}
+	return framework.NewCheckFromFunc(md, common.PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {
 			process, exists := common.GetProcess(ret, kubeAPIProcessName)
 			if !exists {

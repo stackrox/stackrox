@@ -13,9 +13,12 @@ const checkID = "PCI_DSS_3_2:2_2_1"
 
 func init() {
 	framework.MustRegisterNewCheck(
-		checkID,
-		framework.DeploymentKind,
-		[]string{"ProcessIndicators"},
+		framework.CheckMetadata{
+			ID:                 checkID,
+			Scope:              framework.DeploymentKind,
+			DataDependencies:   []string{"ProcessIndicators"},
+			InterpretationText: interpretationText,
+		},
 		checkClusterIsCompliant)
 }
 

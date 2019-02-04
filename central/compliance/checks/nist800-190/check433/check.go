@@ -11,8 +11,11 @@ const (
 
 func init() {
 	framework.MustRegisterNewCheck(
-		standardID,
-		framework.DeploymentKind,
-		[]string{"NetworkGraph", "NetworkPolicies"},
+		framework.CheckMetadata{
+			ID:                 standardID,
+			Scope:              framework.DeploymentKind,
+			DataDependencies:   []string{"NetworkGraph", "NetworkPolicies"},
+			InterpretationText: interpretationText,
+		},
 		common.ClusterHasNetworkPolicies)
 }

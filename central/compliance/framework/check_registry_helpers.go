@@ -24,6 +24,6 @@ func MustRegisterChecks(checks ...Check) {
 
 // MustRegisterNewCheck creates a check from a function with the given metadata and registers it. If an error occurs,
 // it panics.
-func MustRegisterNewCheck(id string, scope TargetKind, dataDependencies []string, checkFn CheckFunc) {
-	MustRegisterChecks(NewCheckFromFunc(id, scope, dataDependencies, checkFn))
+func MustRegisterNewCheck(metadata CheckMetadata, checkFn CheckFunc) {
+	MustRegisterChecks(NewCheckFromFunc(metadata, checkFn))
 }

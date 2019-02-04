@@ -69,13 +69,20 @@ func TestOKRun(t *testing.T) {
 	}
 	expectedClusterIDs := set.NewStringSet(testCluster.Id)
 
-	nodeCheck := NewCheckFromFunc("node-check", NodeKind, nil, func(ctx ComplianceContext) {
-		ForEachNode(ctx, nodeCheckFn)
-	})
-	deploymentCheck := NewCheckFromFunc("deployment-check", DeploymentKind, nil, func(ctx ComplianceContext) {
-		ForEachDeployment(ctx, deploymentCheckFn)
-	})
-	clusterCheck := NewCheckFromFunc("cluster-check", ClusterKind, nil, clusterCheckFn)
+	nodeCheck := NewCheckFromFunc(
+		CheckMetadata{ID: "node-check", Scope: NodeKind},
+		func(ctx ComplianceContext) {
+			ForEachNode(ctx, nodeCheckFn)
+		})
+	deploymentCheck := NewCheckFromFunc(
+		CheckMetadata{ID: "deployment-check", Scope: DeploymentKind},
+		func(ctx ComplianceContext) {
+			ForEachDeployment(ctx, deploymentCheckFn)
+		})
+
+	clusterCheck := NewCheckFromFunc(
+		CheckMetadata{ID: "cluster-check", Scope: ClusterKind},
+		clusterCheckFn)
 
 	run, err := newComplianceRun(clusterCheck, nodeCheck, deploymentCheck)
 	require.NoError(t, err)
@@ -93,7 +100,9 @@ func TestRunWithContextError(t *testing.T) {
 	clusterCheckFn := func(ctx ComplianceContext) {
 		syncSig.Wait()
 	}
-	clusterCheck := NewCheckFromFunc("cluster-check", ClusterKind, nil, clusterCheckFn)
+	clusterCheck := NewCheckFromFunc(
+		CheckMetadata{ID: "cluster-check", Scope: ClusterKind},
+		clusterCheckFn)
 
 	run, err := newComplianceRun(clusterCheck)
 	require.NoError(t, err)
@@ -115,7 +124,9 @@ func TestRunWithTerminate(t *testing.T) {
 	clusterCheckFn := func(ctx ComplianceContext) {
 		syncSig.Wait()
 	}
-	clusterCheck := NewCheckFromFunc("cluster-check", ClusterKind, nil, clusterCheckFn)
+	clusterCheck := NewCheckFromFunc(
+		CheckMetadata{ID: "cluster-check", Scope: ClusterKind},
+		clusterCheckFn)
 
 	run, err := newComplianceRun(clusterCheck)
 	require.NoError(t, err)

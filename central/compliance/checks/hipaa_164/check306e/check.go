@@ -9,9 +9,12 @@ const checkID = "HIPAA_164:306_e"
 
 func init() {
 	framework.MustRegisterNewCheck(
-		checkID,
-		framework.ClusterKind,
-		[]string{"ImageIntegrations", "Images"},
+		framework.CheckMetadata{
+			ID:                 checkID,
+			Scope:              framework.ClusterKind,
+			DataDependencies:   []string{"ImageIntegrations", "Images"},
+			InterpretationText: interpretationText,
+		},
 		clusterIsCompliant)
 }
 

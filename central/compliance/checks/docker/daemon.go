@@ -41,7 +41,12 @@ func init() {
 }
 
 func networkRestrictionCheck() framework.Check {
-	return framework.NewCheckFromFunc("CIS_Docker_v1_1_0:2_1", framework.NodeKind, nil, perNodeCheckWithDockerData(
+	md := framework.CheckMetadata{
+		ID:                 "CIS_Docker_v1_1_0:2_1",
+		Scope:              framework.NodeKind,
+		InterpretationText: "StackRox checks that ICC is not enabled for the bridge network",
+	}
+	return framework.NewCheckFromFunc(md, perNodeCheckWithDockerData(
 		func(ctx framework.ComplianceContext, data *docker.Data) {
 			if data.BridgeNetwork.Options["com.docker.network.bridge.enable_icc"] == "true" {
 				framework.Failf(ctx, "Enable icc is true on bridge network")
@@ -52,7 +57,7 @@ func networkRestrictionCheck() framework.Check {
 }
 
 func dockerInfoCheck(name string, f func(ctx framework.ComplianceContext, info types.Info)) framework.Check {
-	return framework.NewCheckFromFunc(name, framework.NodeKind, nil, perNodeCheckWithDockerData(
+	return framework.NewCheckFromFunc(framework.CheckMetadata{ID: name, Scope: framework.NodeKind}, perNodeCheckWithDockerData(
 		func(ctx framework.ComplianceContext, data *docker.Data) {
 			f(ctx, data.Info)
 		}))
@@ -151,7 +156,7 @@ func getDockerdProcess(ret *compliance.ComplianceReturn) (*compliance.CommandLin
 // Handle the command line inputs as well as if the daemon exists
 // Here are all the handlers for just the daemon portion
 func genericDockerCommandlineCheck(name string, key, target, defaultVal string, evalFunc common.CommandEvaluationFunc) framework.Check {
-	return framework.NewCheckFromFunc(name, framework.NodeKind, nil, common.PerNodeCheck(
+	return framework.NewCheckFromFunc(framework.CheckMetadata{ID: name, Scope: framework.NodeKind}, common.PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {
 			dockerdProcess, config, err := getDockerdProcess(ret)
 			if err != nil {
@@ -163,7 +168,7 @@ func genericDockerCommandlineCheck(name string, key, target, defaultVal string, 
 }
 
 func tlsVerifyCheck(name string) framework.Check {
-	return framework.NewCheckFromFunc(name, framework.NodeKind, nil, common.PerNodeCheck(
+	return framework.NewCheckFromFunc(framework.CheckMetadata{ID: name, Scope: framework.NodeKind}, common.PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {
 			dockerdProcess, config, err := getDockerdProcess(ret)
 			if err != nil {

@@ -58,7 +58,12 @@ func getDirectoryFileFromCommandLine(ctx framework.ComplianceContext, ret *compl
 }
 
 func cniFilePermissions() framework.Check {
-	return framework.NewCheckFromFunc("CIS_Kubernetes_v1_2_0:1_4_9", framework.NodeKind, nil, common.PerNodeCheck(
+	md := framework.CheckMetadata{
+		ID:                 "CIS_Kubernetes_v1_2_0:1_4_9",
+		Scope:              framework.NodeKind,
+		InterpretationText: "StackRox checks that the permissions of files in the CNI configuration and binary directories are set to at most '0644'",
+	}
+	return framework.NewCheckFromFunc(md, common.PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {
 			if dirFile := getDirectoryFileFromCommandLine(ctx, ret, "kubelet", "cni-conf-dir", "/etc/cni/net.d"); dirFile != nil {
 				common.CheckRecursivePermissions(ctx, dirFile, 0644)
@@ -70,7 +75,12 @@ func cniFilePermissions() framework.Check {
 }
 
 func cniFileOwnership() framework.Check {
-	return framework.NewCheckFromFunc("CIS_Kubernetes_v1_2_0:1_4_10", framework.NodeKind, nil, common.PerNodeCheck(
+	md := framework.CheckMetadata{
+		ID:                 "CIS_Kubernetes_v1_2_0:1_4_10",
+		Scope:              framework.NodeKind,
+		InterpretationText: "StackRox checks that the owner and group of files in the CNI configuration and binary directories is root:root",
+	}
+	return framework.NewCheckFromFunc(md, common.PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {
 			if dirFile := getDirectoryFileFromCommandLine(ctx, ret, "kubelet", "cni-conf-dir", "/etc/cni/net.d"); dirFile != nil {
 				common.CheckRecursiveOwnership(ctx, dirFile, "root", "root")
@@ -82,7 +92,12 @@ func cniFileOwnership() framework.Check {
 }
 
 func etcdDataPermissions() framework.Check {
-	return framework.NewCheckFromFunc("CIS_Kubernetes_v1_2_0:1_4_11", framework.NodeKind, nil, common.PerNodeCheck(
+	md := framework.CheckMetadata{
+		ID:                 "CIS_Kubernetes_v1_2_0:1_4_11",
+		Scope:              framework.NodeKind,
+		InterpretationText: "StackRox checks that the permissions of the etcd data directory are set to '0700'",
+	}
+	return framework.NewCheckFromFunc(md, common.PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {
 			if dirFile := getDirectoryFileFromCommandLine(ctx, ret, "etcd", "data-dir", "/var/lib/etcddisk"); dirFile != nil {
 				common.CheckRecursivePermissions(ctx, dirFile, 0700)
@@ -91,7 +106,12 @@ func etcdDataPermissions() framework.Check {
 }
 
 func etcdDataOwnership() framework.Check {
-	return framework.NewCheckFromFunc("CIS_Kubernetes_v1_2_0:1_4_12", framework.NodeKind, nil, common.PerNodeCheck(
+	md := framework.CheckMetadata{
+		ID:                 "CIS_Kubernetes_v1_2_0:1_4_12",
+		Scope:              framework.NodeKind,
+		InterpretationText: "StackRox checks that the owner and group of the etcd data directory are set to etcd:etcd",
+	}
+	return framework.NewCheckFromFunc(md, common.PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {
 			if dirFile := getDirectoryFileFromCommandLine(ctx, ret, "etcd", "data-dir", "/var/lib/etcddisk"); dirFile != nil {
 				common.CheckRecursiveOwnership(ctx, dirFile, "etcd", "etcd")
