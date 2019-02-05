@@ -1,6 +1,4 @@
-package standards
-
-import "github.com/stackrox/rox/pkg/utils"
+package metadata
 
 var pciDss3_2 = Standard{
 	ID:   "PCI_DSS_3_2",
@@ -1413,5 +1411,5 @@ var pciDss3_2 = Standard{
 }
 
 func init() {
-	utils.Must(RegisterStandard(&pciDss3_2))
+	AllStandards = append(AllStandards, pciDss3_2)
 }

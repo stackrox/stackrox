@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/data"
 	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/central/compliance/standards"
 	complianceResultsStore "github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	nodeStore "github.com/stackrox/rox/central/node/globalstore"
@@ -37,7 +38,7 @@ var (
 
 type manager struct {
 	scheduleStore     ScheduleStore
-	standardImplStore StandardImplementationStore
+	standardsRegistry *standards.Registry
 
 	mutex         sync.RWMutex
 	runsByID      map[string]*runInstance
@@ -56,10 +57,10 @@ type manager struct {
 	resultsStore complianceResultsStore.Store
 }
 
-func newManager(standardImplStore StandardImplementationStore, scheduleStore ScheduleStore, clusterStore clusterDatastore.DataStore, nodeStore nodeStore.GlobalStore, deploymentStore datastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory scrape.Factory, resultsStore complianceResultsStore.Store) (*manager, error) {
+func newManager(standardsRegistry *standards.Registry, scheduleStore ScheduleStore, clusterStore clusterDatastore.DataStore, nodeStore nodeStore.GlobalStore, deploymentStore datastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory scrape.Factory, resultsStore complianceResultsStore.Store) (*manager, error) {
 	mgr := &manager{
 		scheduleStore:     scheduleStore,
-		standardImplStore: standardImplStore,
+		standardsRegistry: standardsRegistry,
 
 		runsByID:      make(map[string]*runInstance),
 		schedulesByID: make(map[string]*scheduleInstance),
@@ -142,7 +143,7 @@ func (m *manager) createDomain(clusterID string) (framework.ComplianceDomain, er
 	return framework.NewComplianceDomain(cluster, nodes, deployments), nil
 }
 
-func (m *manager) createRun(domain framework.ComplianceDomain, standard StandardImplementation, schedule *scheduleInstance) *runInstance {
+func (m *manager) createRun(domain framework.ComplianceDomain, standard *standards.Standard, schedule *scheduleInstance) *runInstance {
 	runID := uuid.NewV4().String()
 	run := createRun(runID, domain, standard)
 	run.schedule = schedule
@@ -312,8 +313,8 @@ func (m *manager) AddSchedule(spec *storage.ComplianceRunSchedule) (*v1.Complian
 		return nil, fmt.Errorf("could not check cluster ID %q: %v", spec.GetClusterId(), err)
 	}
 
-	if _, err := m.standardImplStore.LookupStandardImplementation(spec.GetStandardId()); err != nil {
-		return nil, fmt.Errorf("invalid standard ID %q: %v", spec.GetStandardId(), err)
+	if standard := m.standardsRegistry.LookupStandard(spec.GetStandardId()); standard == nil {
+		return nil, fmt.Errorf("invalid standard ID %q", spec.GetStandardId())
 	}
 
 	spec.Id = uuid.NewV4().String()
@@ -343,8 +344,8 @@ func (m *manager) UpdateSchedule(spec *storage.ComplianceRunSchedule) (*v1.Compl
 		return nil, fmt.Errorf("could not check cluster ID %q: %v", spec.GetClusterId(), err)
 	}
 
-	if _, err := m.standardImplStore.LookupStandardImplementation(spec.GetStandardId()); err != nil {
-		return nil, fmt.Errorf("invalid standard ID %q: %v", spec.GetStandardId(), err)
+	if standard := m.standardsRegistry.LookupStandard(spec.GetStandardId()); standard == nil {
+		return nil, fmt.Errorf("invalid standard ID %q", spec.GetStandardId())
 	}
 
 	var scheduleInstance *scheduleInstance
@@ -460,10 +461,10 @@ func (m *manager) ExpandSelection(clusterIDOrWildcard, standardIDOrWildcard stri
 
 	var standardIDs []string
 	if standardIDOrWildcard == Wildcard {
-		standardImpls := m.standardImplStore.ListStandardImplementations()
-		standardIDs = make([]string, 0, len(standardImpls))
-		for _, standardImpl := range standardImpls {
-			standardIDs = append(standardIDs, standardImpl.Standard.ID)
+		allStandards := m.standardsRegistry.AllStandards()
+		standardIDs = make([]string, 0, len(allStandards))
+		for _, standard := range allStandards {
+			standardIDs = append(standardIDs, standard.ID)
 		}
 	} else {
 		standardIDs = []string{standardIDOrWildcard}
@@ -498,19 +499,19 @@ func (m *manager) TriggerRuns(clusterStandardPairs ...compliance.ClusterStandard
 
 func (m *manager) createAndLaunchRuns(clusterStandardPairs []compliance.ClusterStandardPair, schedule *scheduleInstance) ([]*runInstance, error) {
 	// Step 1: Group all standard implementations that need to run by cluster ID.
-	standardImplsByClusterID := make(map[string][]StandardImplementation)
+	standardsByClusterID := make(map[string][]*standards.Standard)
 	for _, clusterAndStandard := range clusterStandardPairs {
-		standardImpl, err := m.standardImplStore.LookupStandardImplementation(clusterAndStandard.StandardID)
-		if err != nil {
-			return nil, fmt.Errorf("invalid compliance standard ID: %v", err)
+		standard := m.standardsRegistry.LookupStandard(clusterAndStandard.StandardID)
+		if standard == nil {
+			return nil, fmt.Errorf("invalid compliance standard ID %q", clusterAndStandard.StandardID)
 		}
-		standardImplsByClusterID[clusterAndStandard.ClusterID] = append(standardImplsByClusterID[clusterAndStandard.ClusterID], standardImpl)
+		standardsByClusterID[clusterAndStandard.ClusterID] = append(standardsByClusterID[clusterAndStandard.ClusterID], standard)
 	}
 
 	var runs []*runInstance
 
 	// Step 2: For each cluster, instantiate domains and scrape promises, and create runs.
-	for clusterID, standardImpls := range standardImplsByClusterID {
+	for clusterID, standardImpls := range standardsByClusterID {
 		domain, err := m.createDomain(clusterID)
 		if err != nil {
 			return nil, fmt.Errorf("could not create domain for cluster ID %q: %v", clusterID, err)

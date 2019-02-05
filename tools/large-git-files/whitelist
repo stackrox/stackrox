@@ -1,7 +1,7 @@
 ui/src/fonts/Open_Sans_Regular.json
 ui/src/images/globalSearchEmptyState.svg
 ui/yarn.lock
-central/compliance/standards/pci_dss_3_2.go
+central/compliance/standards/metadata/pci_dss_3_2.go
 central/graphql/resolvers/generated.go
 Gopkg.lock
 proto/storage/proto.lock

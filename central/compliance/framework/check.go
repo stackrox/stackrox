@@ -12,6 +12,9 @@ type Check interface {
 	// DataDependencies is a list of IDs for data required by a check.
 	DataDependencies() []string
 
+	// InterpretationText returns a string describing how StackRox is implementing this check.
+	InterpretationText() string
+
 	// Run is the entry point for the check logic. It is *always* invoked on a context with a 'cluster' target kind;
 	// it is the responsibility of the implementation to call `RunForTarget`/`ForEachNode`/`ForEachDeployment` to cover
 	// all objects at the indicated scope.
@@ -47,6 +50,10 @@ func NewCheckFromFunc(metadata CheckMetadata, checkFn CheckFunc) Check {
 
 func (c *checkFromFunc) ID() string {
 	return c.metadata.ID
+}
+
+func (c *checkFromFunc) InterpretationText() string {
+	return c.metadata.InterpretationText
 }
 
 func (c *checkFromFunc) Scope() TargetKind {

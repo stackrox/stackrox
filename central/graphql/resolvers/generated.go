@@ -122,6 +122,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"description: String!",
 		"groupId: String!",
 		"id: ID!",
+		"implemented: Boolean!",
+		"interpretationText: String!",
 		"name: String!",
 		"standardId: String!",
 	})
@@ -129,6 +131,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"description: String!",
 		"id: ID!",
 		"name: String!",
+		"numImplementedChecks: Int!",
 		"standardId: String!",
 	})
 	builder.AddType("ComplianceControlResult", []string{
@@ -210,6 +213,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"description: String!",
 		"id: ID!",
 		"name: String!",
+		"numImplementedChecks: Int!",
 	})
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ComplianceState(0)))
 	builder.AddType("Component", []string{
@@ -1604,6 +1608,16 @@ func (resolver *complianceControlResolver) Id() graphql.ID {
 	return graphql.ID(value)
 }
 
+func (resolver *complianceControlResolver) Implemented() bool {
+	value := resolver.data.GetImplemented()
+	return value
+}
+
+func (resolver *complianceControlResolver) InterpretationText() string {
+	value := resolver.data.GetInterpretationText()
+	return value
+}
+
 func (resolver *complianceControlResolver) Name() string {
 	value := resolver.data.GetName()
 	return value
@@ -1649,6 +1663,11 @@ func (resolver *complianceControlGroupResolver) Id() graphql.ID {
 
 func (resolver *complianceControlGroupResolver) Name() string {
 	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *complianceControlGroupResolver) NumImplementedChecks() int32 {
+	value := resolver.data.GetNumImplementedChecks()
 	return value
 }
 
@@ -2241,6 +2260,11 @@ func (resolver *complianceStandardMetadataResolver) Id() graphql.ID {
 
 func (resolver *complianceStandardMetadataResolver) Name() string {
 	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *complianceStandardMetadataResolver) NumImplementedChecks() int32 {
+	value := resolver.data.GetNumImplementedChecks()
 	return value
 }
 

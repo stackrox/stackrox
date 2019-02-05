@@ -131,7 +131,7 @@ func mockFlatChecks(clusterID, standardID string) []flatCheck {
 
 func TestGetFlatChecksFromRunResult(t *testing.T) {
 	ag := &aggregatorImpl{
-		standards: standards.NewRegistry(nil),
+		standards: standards.NewRegistry(nil, nil),
 	}
 	assert.ElementsMatch(t, mockFlatChecks("cluster1", "standard1"), ag.getFlatChecksFromRunResult(mockRunResult("cluster1", "standard1"), [numScopes]set.StringSet{}))
 }
@@ -245,7 +245,7 @@ func TestGetAggregatedResults(t *testing.T) {
 	for _, c := range cases {
 		t.Run(testName(c.groupBy, c.unit), func(t *testing.T) {
 			ag := &aggregatorImpl{
-				standards: standards.NewRegistry(nil),
+				standards: standards.NewRegistry(nil, nil),
 			}
 			results, _ := ag.getAggregatedResults(c.groupBy, c.unit, runResults, [numScopes]set.StringSet{})
 			require.Equal(t, c.numResults, len(results))

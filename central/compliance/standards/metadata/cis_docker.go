@@ -1,6 +1,4 @@
-package standards
-
-import "github.com/stackrox/rox/pkg/utils"
+package metadata
 
 var cisDocker = Standard{
 	ID:   "CIS_Docker_v1_1_0",
@@ -584,5 +582,5 @@ var cisDocker = Standard{
 }
 
 func init() {
-	utils.Must(RegisterStandard(&cisDocker))
+	AllStandards = append(AllStandards, cisDocker)
 }

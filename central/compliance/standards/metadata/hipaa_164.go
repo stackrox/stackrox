@@ -1,6 +1,4 @@
-package standards
-
-import "github.com/stackrox/rox/pkg/utils"
+package metadata
 
 var hipaa164 = Standard{
 	ID:   "HIPAA_164",
@@ -200,5 +198,5 @@ var hipaa164 = Standard{
 }
 
 func init() {
-	utils.Must(RegisterStandard(&hipaa164))
+	AllStandards = append(AllStandards, hipaa164)
 }

@@ -1,6 +1,4 @@
-package standards
-
-import "github.com/stackrox/rox/pkg/utils"
+package metadata
 
 var nist800_190 = Standard{
 	ID:   "NIST_800_190",
@@ -197,5 +195,5 @@ var nist800_190 = Standard{
 }
 
 func init() {
-	utils.Must(RegisterStandard(&nist800_190))
+	AllStandards = append(AllStandards, nist800_190)
 }

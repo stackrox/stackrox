@@ -1,6 +1,4 @@
-package standards
-
-import "github.com/stackrox/rox/pkg/utils"
+package metadata
 
 var cisKubernetes = Standard{
 	ID:   "CIS_Kubernetes_v1_2_0",
@@ -700,5 +698,5 @@ var cisKubernetes = Standard{
 }
 
 func init() {
-	utils.Must(RegisterStandard(&cisKubernetes))
+	AllStandards = append(AllStandards, cisKubernetes)
 }

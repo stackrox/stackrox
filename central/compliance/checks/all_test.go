@@ -12,7 +12,9 @@ func TestAllCheckIDsAreValid(t *testing.T) {
 	allChecks := framework.RegistrySingleton().GetAll()
 	var allControls []string
 	for _, standard := range standards.RegistrySingleton().AllStandards() {
-		allControls = append(allControls, standard.AllControlIDs(true)...)
+		for _, ctrl := range standard.AllControls() {
+			allControls = append(allControls, ctrl.QualifiedID())
+		}
 	}
 
 	for _, check := range allChecks {

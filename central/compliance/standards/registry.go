@@ -6,84 +6,69 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards/index"
+	"github.com/stackrox/rox/central/compliance/standards/metadata"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
 )
 
-var (
-	standardRegistry = make(map[string]*Standard)
-)
-
-// RegisterStandard adds the standard to the standard registry
-func RegisterStandard(s *Standard) error {
-	if _, ok := standardRegistry[s.ID]; ok {
-		return fmt.Errorf("Standard %s is already registered", s.ID)
-	}
-	standardRegistry[s.ID] = s
-	return nil
-}
-
 // Registry stores compliance standards by their ID.
 type Registry struct {
-	mutex             sync.RWMutex
-	standardsByID     map[string]*Standard
-	controlToCategory map[string]*Category
-	controls          map[string]*Control
-	indexer           index.Indexer
+	mutex          sync.RWMutex
+	standardsByID  map[string]*Standard
+	categoriesByID map[string]*Category
+	controlsByID   map[string]*Control
+
+	indexer       index.Indexer
+	checkRegistry framework.CheckRegistry
 }
 
 // NewRegistry creates and returns a new standards registry.
-func NewRegistry(indexer index.Indexer) *Registry {
-	return &Registry{
-		standardsByID:     make(map[string]*Standard),
-		controlToCategory: make(map[string]*Category),
-		controls:          make(map[string]*Control),
-		indexer:           indexer,
+func NewRegistry(indexer index.Indexer, checkRegistry framework.CheckRegistry) *Registry {
+	r := &Registry{
+		standardsByID:  make(map[string]*Standard),
+		categoriesByID: make(map[string]*Category),
+		controlsByID:   make(map[string]*Control),
+		indexer:        indexer,
+		checkRegistry:  checkRegistry,
 	}
-}
-
-func getFullyQualifiedName(standardID, controlID string) string {
-	return fmt.Sprintf("%s:%s", standardID, controlID)
+	return r
 }
 
 // RegisterStandards registers all of the standards in the standard registry
-func (r *Registry) RegisterStandards() error {
+func (r *Registry) RegisterStandards(standardMDs ...metadata.Standard) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	for _, standard := range standardRegistry {
-		existingStandard := r.standardsByID[standard.ID]
-		if existingStandard == nil {
-			r.standardsByID[standard.ID] = standard
-		} else if existingStandard != standard {
-			return fmt.Errorf("different compliance standard with id %q already registered", standard.ID)
-		}
-
-		for i, category := range standard.Categories {
-			for _, control := range category.Controls {
-				fqn := getFullyQualifiedName(standard.ID, control.ID)
-				r.controlToCategory[fqn] = &standard.Categories[i]
-				if err := r.registerControl(standard.ID, control); err != nil {
-					return err
-				}
-			}
-		}
-		if err := r.indexer.IndexStandard(standard.ToProto()); err != nil {
-			return err
+	for _, standardMD := range standardMDs {
+		if err := r.registerStandardNoLock(standardMD); err != nil {
+			return fmt.Errorf("registering standard %q: %v", standardMD.ID, err)
 		}
 	}
+
 	return nil
 }
 
-// registerControl does not need to be locked, because it is locked by registerStandard
-func (r *Registry) registerControl(fqn string, control Control) error {
-	if existingControl, ok := r.controls[control.ID]; !ok {
-		r.controls[fqn] = &control
-	} else if *existingControl != control {
-		return fmt.Errorf("different compliance control with id %q already registered", fqn)
+func (r *Registry) registerStandardNoLock(standardMD metadata.Standard) error {
+	if _, existing := r.standardsByID[standardMD.ID]; existing {
+		return fmt.Errorf("compliance standard with ID %q already registered", standardMD.ID)
 	}
-	return nil
+
+	standard := newStandard(standardMD, r.checkRegistry)
+	r.standardsByID[standard.ID] = standard
+
+	for _, category := range standard.categories {
+		r.categoriesByID[category.QualifiedID()] = category
+	}
+	for _, ctrl := range standard.controls {
+		r.controlsByID[ctrl.QualifiedID()] = ctrl
+	}
+
+	if r.indexer == nil {
+		return nil
+	}
+	return r.indexer.IndexStandard(standard.ToProto())
 }
 
 // LookupStandard returns the standard object with the given ID.
@@ -180,7 +165,11 @@ func (r *Registry) GetCategoryByControl(controlID string) *Category {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
-	return r.controlToCategory[controlID]
+	ctrl := r.controlsByID[controlID]
+	if ctrl == nil {
+		return nil
+	}
+	return ctrl.Category
 }
 
 // GetCISDockerStandardID returns the Docker CIS standard ID.
@@ -213,7 +202,7 @@ func (r *Registry) controlByID(id string) *Control {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
-	return r.controls[id]
+	return r.controlsByID[id]
 }
 
 // SearchStandards searches across standards

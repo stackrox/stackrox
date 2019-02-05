@@ -8,6 +8,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/compliance/framework"
+	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -27,7 +28,7 @@ type runInstance struct {
 	id string
 
 	domain        framework.ComplianceDomain
-	standard      StandardImplementation
+	standard      *standards.Standard
 	scrapePromise *scrapePromise
 
 	schedule *scheduleInstance
@@ -40,7 +41,7 @@ type runInstance struct {
 	err                   error
 }
 
-func createRun(id string, domain framework.ComplianceDomain, standard StandardImplementation) *runInstance {
+func createRun(id string, domain framework.ComplianceDomain, standard *standards.Standard) *runInstance {
 	r := &runInstance{
 		id:       id,
 		domain:   domain,
@@ -113,7 +114,7 @@ func (r *runInstance) doRun(scrapePromise *scrapePromise) (framework.ComplianceR
 		return nil, fmt.Errorf("waiting for compliance data: %v", err)
 	}
 
-	run, err := framework.NewComplianceRun(r.standard.Checks...)
+	run, err := framework.NewComplianceRun(r.standard.AllChecks()...)
 	if err != nil {
 		return nil, fmt.Errorf("creating compliance run: %v", err)
 	}
