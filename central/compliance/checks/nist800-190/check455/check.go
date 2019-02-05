@@ -3,7 +3,6 @@ package check455
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/generated/storage"
 )
 
 const (
@@ -14,23 +13,30 @@ func init() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
 			ID:                 standardID,
-			Scope:              framework.DeploymentKind,
-			DataDependencies:   []string{"Deployments"},
+			Scope:              framework.ClusterKind,
+			DataDependencies:   []string{"Policies"},
 			InterpretationText: interpretationText,
 		},
 		checkNIST455)
 }
 
 func checkNIST455(ctx framework.ComplianceContext) {
-	checkDeploymentHostMounts(ctx)
-}
-
-func checkDeploymentHostMounts(ctx framework.ComplianceContext) {
-	framework.ForEachDeployment(ctx, func(ctx framework.ComplianceContext, deployment *storage.Deployment) {
-		if common.DeploymentHasHostMounts(deployment) {
-			framework.Failf(ctx, "Deployment %s is using host mounts.", deployment.GetName())
-		} else {
-			framework.Passf(ctx, "Deployment %s has no host mounts.", deployment.GetName())
+	policies := ctx.Data().Policies()
+	policyFound := false
+	policyEnabled := false
+	for _, policy := range policies {
+		if policy.GetFields().GetVolumePolicy().GetSource() != "" {
+			policyFound = true
+			if common.IsPolicyEnabled(policy) {
+				policyEnabled = true
+			}
 		}
-	})
+	}
+	if !policyFound {
+		framework.Fail(ctx, "No policies to detect sensitive host mounts was found")
+	} else if policyFound && !policyEnabled {
+		framework.Fail(ctx, "Policy to detect sensitive host mounts is not enabled")
+	} else {
+		framework.Pass(ctx, "Policies to detect sensitive host mounts is enabled")
+	}
 }

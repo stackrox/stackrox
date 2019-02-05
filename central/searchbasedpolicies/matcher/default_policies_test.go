@@ -447,6 +447,17 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.mustIndexDepAndImages(depWithEnforcementBypassAnnotation)
 
+	hostMountDep := &storage.Deployment{
+		Id: "HOSTMOUNT",
+		Containers: []*storage.Container{
+			{Volumes: []*storage.Volume{
+				{Source: "/etc/passwd", Name: "HOSTMOUNT"},
+				{Source: "/var/lib/kubelet", Name: "KUBELET"},
+			}},
+		},
+	}
+	suite.mustIndexDepAndImages(hostMountDep)
+
 	// Index processes
 	bashLineage := []string{"/bin/bash"}
 	fixtureDepAptIndicator := suite.mustAddIndicator(fixtureDep.GetId(), "apt", "", "/usr/bin/apt", bashLineage)
@@ -680,6 +691,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				sysAdminDep.GetId():                               {},
 				depWithAllResourceLimitsRequestsSpecified.GetId(): {},
 				depWithEnforcementBypassAnnotation.GetId():        {},
+				hostMountDep.GetId():                              {},
 			},
 			sampleViolationForMatched: "Image has not been scanned",
 		},
@@ -880,6 +892,20 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 				depWithEnforcementBypassAnnotation.GetId(): {AlertViolations: []*storage.Alert_Violation{{
 					Message: "Disallowed annotation found (key = 'admission.stackrox.io/break-glass')",
 				},
+				},
+				},
+			},
+		},
+		{
+			policyName: "Mounting Sensitive Host Directories",
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				hostMountDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
+					{Message: "Volume source '/etc/passwd' matched (/etc/.*|/sys/.*|/dev/.*|/proc/.*|/var/.*)"},
+					{Message: "Volume source '/var/lib/kubelet' matched (/etc/.*|/sys/.*|/dev/.*|/proc/.*|/var/.*)"},
+				},
+				},
+				dockerSockDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
+					{Message: "Volume source '/var/run/docker.sock' matched (/etc/.*|/sys/.*|/dev/.*|/proc/.*|/var/.*)"},
 				},
 				},
 			},

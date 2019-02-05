@@ -1,16 +1,34 @@
 {
   "id": "a9b9ecf7-9707-4e32-8b62-d03018ed454f",
-  "name": "Sensitive file access",
-  "description": "Sensitive files being accessed",
-  "categories": ["System Modification"],
-  "severity": "HIGH_SEVERITY",
-  "lifecycle_stages": ["RUNTIME"],
+  "name": "Mounting Sensitive Host Directories",
+  "description": "Alert on deployments mounting sensitive host directories",
+  "severity": "MEDIUM_SEVERITY",
+  "lifecycle_stages": ["DEPLOY"],
+  "categories": ["Security Best Practices"],
   "fields": {
-    "process_policy" : {
-      "args": "/etc/shadow|/etc/sudoers|/etc/pam.conf"
+    "volume_policy": {
+      "source": "(/etc/.*|/sys/.*|/dev/.*|/proc/.*|/var/.*)"
     }
   },
-  "disabled": true,
-  "rationale": "Attempts to access sudo/shadow files is unusual in containers at runtime.",
-  "remediation": "Audit processes that require to modify such files during production."
+  "rationale": "Mounting system directories from host implies container access to sensitive files on the host. This expands the attack surface of the container and gives an intruder an opportunity to break containment if the host is not properly secured.",
+  "remediation": "Ensure that deployments do not mount sensitive host directories, or whitelist this deployment if host mount is required.",
+  "whitelists": [
+    {
+      "name": "Don't alert on StackRox collector",
+      "deployment": {
+        "name": "collector",
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on kube namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    }
+  ]
 }

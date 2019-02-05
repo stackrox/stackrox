@@ -45,7 +45,8 @@ func (s *suiteImpl) TestPass() {
 				{
 					Volumes: []*storage.Volume{
 						{
-							Type: "EmptyDir",
+							Source: "/tmp/blah",
+							Type:   "EmptyDir",
 						},
 					},
 				},
@@ -57,7 +58,8 @@ func (s *suiteImpl) TestPass() {
 				{
 					Volumes: []*storage.Volume{
 						{
-							Type: "EmptyDir",
+							Source: "/tmp/blah",
+							Type:   "EmptyDir",
 						},
 					},
 				},
@@ -65,8 +67,19 @@ func (s *suiteImpl) TestPass() {
 		},
 	}
 
+	policies := []*storage.Policy{
+		{
+			Fields: &storage.PolicyFields{
+				VolumePolicy: &storage.VolumePolicy{
+					Source: "/etc/passwd",
+				},
+			},
+		},
+	}
+
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
 	data.EXPECT().Deployments().AnyTimes().Return(toMap(testDeployments))
+	data.EXPECT().Policies().AnyTimes().Return(policiesToMap(policies))
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
@@ -78,13 +91,7 @@ func (s *suiteImpl) TestPass() {
 	results := run.GetAllResults()
 	checkResults := results[standardID]
 	s.NotNil(checkResults)
-
-	for _, deployment := range domain.Deployments() {
-		deploymentResults := checkResults.ForChild(deployment)
-		s.NoError(deploymentResults.Error())
-		s.Len(deploymentResults.Evidence(), 1)
-		s.Equal(framework.PassStatus, deploymentResults.Evidence()[0].Status)
-	}
+	s.Equal(framework.PassStatus, checkResults.Evidence()[0].Status)
 }
 
 func (s *suiteImpl) TestFail() {
@@ -123,8 +130,19 @@ func (s *suiteImpl) TestFail() {
 		},
 	}
 
+	policies := []*storage.Policy{
+		{
+			Fields: &storage.PolicyFields{
+				VolumePolicy: &storage.VolumePolicy{
+					Destination: "/etc/passwd",
+				},
+			},
+		},
+	}
+
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
 	data.EXPECT().Deployments().AnyTimes().Return(toMap(testDeployments))
+	data.EXPECT().Policies().AnyTimes().Return(policiesToMap(policies))
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
@@ -136,13 +154,7 @@ func (s *suiteImpl) TestFail() {
 	results := run.GetAllResults()
 	checkResults := results[standardID]
 	s.NotNil(checkResults)
-
-	for _, deployment := range domain.Deployments() {
-		deploymentResults := checkResults.ForChild(deployment)
-		s.NoError(deploymentResults.Error())
-		s.Len(deploymentResults.Evidence(), 1)
-		s.Equal(framework.FailStatus, deploymentResults.Evidence()[0].Status)
-	}
+	s.Equal(framework.FailStatus, checkResults.Evidence()[0].Status)
 }
 
 // Helper functions for test data.
@@ -174,6 +186,14 @@ func (s *suiteImpl) nodes() []*storage.Node {
 
 func toMap(in []*storage.Deployment) map[string]*storage.Deployment {
 	merp := make(map[string]*storage.Deployment, len(in))
+	for _, np := range in {
+		merp[np.GetId()] = np
+	}
+	return merp
+}
+
+func policiesToMap(in []*storage.Policy) map[string]*storage.Policy {
+	merp := make(map[string]*storage.Policy, len(in))
 	for _, np := range in {
 		merp[np.GetId()] = np
 	}

@@ -64,7 +64,7 @@ func readPolicyFile(path string) (*storage.Policy, error) {
 	r := new(storage.Policy)
 	err = jsonpb.Unmarshal(bytes.NewReader(contents), r)
 	if err != nil {
-		log.Errorf("Unable to unmarshal policy json: %s", err)
+		log.Errorf("Unable to unmarshal policy (%s) json: %s", path, err)
 		return nil, err
 	}
 

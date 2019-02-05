@@ -437,10 +437,6 @@ class ComplianceTest extends BaseSpecification {
                         ["Deployment has exposed ports that are not receiving traffic: [80]"],
                         ComplianceState.COMPLIANCE_STATE_FAILURE),
                 new Control(
-                        "NIST_800_190:4_5_5",
-                        ["Deployment compliance-deployment is using host mounts."],
-                        ComplianceState.COMPLIANCE_STATE_FAILURE),
-                new Control(
                         "NIST_800_190:4_3_3",
                         ["No egress network policies apply to this deployment, hence all egress connections are " +
                                  "allowed",
@@ -466,7 +462,6 @@ class ComplianceTest extends BaseSpecification {
                 .setName("compliance-deployment")
                 .setImage("nginx:1.15.4-alpine")
                 .addPort(80, "UDP")
-                .addVolume("test", "/tmp", true)
                 .setCommand(["/bin/sh", "-c",])
                 .setArgs(["dd if=/dev/zero of=/dev/null & yes"])
                 .setHostNetwork(true)
