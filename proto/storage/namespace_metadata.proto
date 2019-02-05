@@ -12,7 +12,7 @@ package storage;
 message NamespaceMetadata {
     string              id                  = 1;
     string              name                = 2 [(gogoproto.moretags) = "search:\"Namespace\""];
-    string              cluster_id          = 3 [(gogoproto.moretags) = "search:\"Cluster Id,hidden\""];
+    string              cluster_id          = 3 [(gogoproto.moretags) = "search:\"Cluster ID,hidden\""];
     string              cluster_name        = 4 [(gogoproto.moretags) = "search:\"Cluster\""];
     map<string, string> labels              = 5 [(gogoproto.moretags) = "search:\"Label\""];
     google.protobuf.Timestamp creation_time = 6;

@@ -19,10 +19,10 @@ message Node {
     string name = 2 [(gogoproto.moretags) = "search:\"Node\""];
     // Taints on the host
     repeated Taint taints                 = 3;
-    string cluster_id                     = 4;
-    string cluster_name                   = 5;
-    map<string, string> labels            = 6;
-    map<string, string> annotations       = 7;
+    string cluster_id                     = 4 [(gogoproto.moretags) = "search:\"Cluster ID\""];
+    string cluster_name                   = 5 [(gogoproto.moretags) = "search:\"Cluster\""];
+    map<string, string> labels            = 6 [(gogoproto.moretags) = "search:\"Label\""];
+    map<string, string> annotations       = 7 [(gogoproto.moretags) = "search:\"Annotation\""];
     // node internal IP addresses
     repeated string internal_ip_addresses = 8;
     // node external IP addresses

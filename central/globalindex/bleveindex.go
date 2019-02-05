@@ -46,18 +46,29 @@ var (
 	}
 
 	// SearchOptionsMap includes options maps that are not required for document mapping
-	SearchOptionsMap = func() map[v1.SearchCategory]search.OptionsMap {
-		var searchMap = map[v1.SearchCategory]search.OptionsMap{
-			v1.SearchCategory_COMPLIANCE: complianceMapping.OptionsMap,
+	SearchOptionsMap = func() map[v1.SearchCategory][]search.FieldLabel {
+		var searchMap = map[v1.SearchCategory][]search.FieldLabel{
+			v1.SearchCategory_COMPLIANCE: complianceMapping.Options,
 		}
 		for k, v := range EntityOptionsMap {
-			searchMap[k] = v
+			searchMap[k] = optionsMapToSlice(v)
 		}
 		return searchMap
 	}
 
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
+
+func optionsMapToSlice(options search.OptionsMap) []search.FieldLabel {
+	labels := make([]search.FieldLabel, 0, len(options.Original()))
+	for k, v := range options.Original() {
+		if v.GetHidden() {
+			continue
+		}
+		labels = append(labels, k)
+	}
+	return labels
+}
 
 // TempInitializeIndices initializes the index under the tmp system folder in the specified path.
 func TempInitializeIndices(mossPath string) (bleve.Index, error) {
@@ -95,7 +106,7 @@ func initializeIndices(mossPath string) (bleve.Index, error) {
 	// Bleve requires that the directory we provide is already empty.
 	err := os.RemoveAll(mossPath)
 	if err != nil {
-		logger.Warnf("Could not clean up search index path %s: %v", mossPath, err)
+		log.Warnf("Could not clean up search index path %s: %v", mossPath, err)
 	}
 	globalIndex, err := bleve.NewUsing(mossPath, indexMapping, scorch.Name, scorch.Name, kvconfig)
 	if err != nil {

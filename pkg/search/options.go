@@ -14,12 +14,12 @@ var (
 	FieldLabelSet = set.NewStringSet()
 
 	Cluster   = newFieldLabel("Cluster")
-	ClusterID = newFieldLabel("Cluster Id")
+	ClusterID = newFieldLabel("Cluster ID")
 	Namespace = newFieldLabel("Namespace")
 	Label     = newFieldLabel("Label")
 	PodLabel  = newFieldLabel("PodLabel")
 
-	PolicyID       = newFieldLabel("Policy Id")
+	PolicyID       = newFieldLabel("Policy ID")
 	Enforcement    = newFieldLabel("Enforcement")
 	PolicyName     = newFieldLabel("Policy")
 	LifecycleStage = newFieldLabel("Lifecycle Stage")
@@ -45,8 +45,8 @@ var (
 	Annotation             = newFieldLabel("Annotation")
 	CPUCoresLimit          = newFieldLabel("CPU Cores Limit")
 	CPUCoresRequest        = newFieldLabel("CPU Cores Request")
-	ContainerID            = newFieldLabel("Container Id")
-	DeploymentID           = newFieldLabel("Deployment Id")
+	ContainerID            = newFieldLabel("Container ID")
+	DeploymentID           = newFieldLabel("Deployment ID")
 	DeploymentName         = newFieldLabel("Deployment")
 	DeploymentType         = newFieldLabel("Deployment Type")
 	AddCapabilities        = newFieldLabel("Add Capabilities")
@@ -60,7 +60,7 @@ var (
 	Port                   = newFieldLabel("Port")
 	PortProtocol           = newFieldLabel("Port Protocol")
 	Privileged             = newFieldLabel("Privileged")
-	SecretID               = newFieldLabel("Secret Id")
+	SecretID               = newFieldLabel("Secret ID")
 	SecretName             = newFieldLabel("Secret")
 	SecretPath             = newFieldLabel("Secret Path")
 	ServiceAccount         = newFieldLabel("Service Account")
@@ -91,12 +91,12 @@ var (
 
 	// Compliance search fields
 	Standard   = newFieldLabel("Standard")
-	StandardID = newFieldLabel("Standard Id")
+	StandardID = newFieldLabel("Standard ID")
 
-	ControlGroupID = newFieldLabel("Control Group Id")
+	ControlGroupID = newFieldLabel("Control Group ID")
 	ControlGroup   = newFieldLabel("Control Group")
 
-	ControlID = newFieldLabel("Control Id")
+	ControlID = newFieldLabel("Control ID")
 	Control   = newFieldLabel("Control")
 
 	// Node search fields

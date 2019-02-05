@@ -11,7 +11,7 @@ import "protobuf/gogoproto/gogo.proto";
 package storage;
 
 message Policy {
-    string id                                   = 1 [(gogoproto.moretags) = "search:\"Policy Id,store,hidden\""];
+    string id                                   = 1 [(gogoproto.moretags) = "search:\"Policy ID,store,hidden\""];
     string name                                 = 2 [(gogoproto.moretags) = "search:\"Policy\""];
     string description                          = 3 [(gogoproto.moretags) = "search:\"Description\""];
     string rationale                            = 4;

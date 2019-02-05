@@ -13,9 +13,9 @@ package storage;
 
 message Alert {
     string id                                = 1;
-    Policy policy                            = 2 [(gogoproto.moretags) = "search_index:\"Policy Id,Policy,Category,Severity\""];
+    Policy policy                            = 2 [(gogoproto.moretags) = "search_index:\"Policy ID,Policy,Category,Severity\""];
     LifecycleStage lifecycle_stage           = 3 [(gogoproto.moretags) = "search:\"Lifecycle Stage\""];
-    Deployment deployment                    = 4 [(gogoproto.moretags) = "search_index:\"Deployment Id,Cluster,Namespace,Label,Deployment\""];
+    Deployment deployment                    = 4 [(gogoproto.moretags) = "search_index:\"Deployment ID,Cluster,Namespace,Label,Deployment\""];
 
     message Violation {
         string message                                 = 1 [(gogoproto.moretags) = "search:\"Violation\""];

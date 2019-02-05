@@ -53,7 +53,7 @@ func directorySize(path string) int64 {
 		return err
 	})
 	if err != nil {
-		logger.Error(err)
+		log.Error(err)
 	}
 	return size
 }
@@ -78,7 +78,7 @@ func walkStatsMap(parentPrefix string, m map[string]interface{}) {
 			}
 			gauge.Set(float64(value))
 		default:
-			logger.Warnf("Unhandled metric %q", currPrefix)
+			log.Warnf("Unhandled metric %q", currPrefix)
 		}
 	}
 }

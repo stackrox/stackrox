@@ -12,14 +12,10 @@ import (
 // CategoryToOptionsSet is a map of all option sets by category, with a category for each indexed data type.
 var CategoryToOptionsSet map[v1.SearchCategory]set.StringSet
 
-func generateSetFromOptionsMap(maps ...map[searchCommon.FieldLabel]*v1.SearchField) set.StringSet {
+func generateSetFromOptionsMap(labels []searchCommon.FieldLabel) set.StringSet {
 	s := set.NewStringSet()
-	for _, m := range maps {
-		for k, v := range m {
-			if !v.GetHidden() {
-				s.Add(k.String())
-			}
-		}
+	for _, l := range labels {
+		s.Add(l.String())
 	}
 	return s
 }
@@ -37,7 +33,7 @@ func GetOptions(categories []v1.SearchCategory) []string {
 
 func init() {
 	CategoryToOptionsSet = make(map[v1.SearchCategory]set.StringSet)
-	for category, optionsMap := range globalindex.SearchOptionsMap() {
-		CategoryToOptionsSet[category] = generateSetFromOptionsMap(optionsMap.Original())
+	for category, optionsSlice := range globalindex.SearchOptionsMap() {
+		CategoryToOptionsSet[category] = generateSetFromOptionsMap(optionsSlice)
 	}
 }
