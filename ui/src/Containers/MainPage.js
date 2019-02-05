@@ -34,8 +34,6 @@ import CLIModal from 'Containers/CLI/CLIModal';
 
 import ErrorBoundary from 'Containers/ErrorBoundary';
 
-import CSSGrid from 'Containers/CSSGrid';
-
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
 const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/NetworkPage'));
@@ -85,15 +83,11 @@ class MainPage extends Component {
         <section className="flex-auto w-full overflow-hidden">
             <ErrorBoundary>
                 <Switch>
-                    <ProtectedRoute
-                        devOnly
-                        path={compliance2Path}
-                        component={AsyncCompliance2Page}
-                    />
                     <ProtectedRoute path={dashboardPath} component={AsyncDashboardPage} />
                     <ProtectedRoute path={networkPath} component={AsyncNetworkPage} />
                     <ProtectedRoute path={violationsPath} component={AsyncViolationsPage} />
                     <ProtectedRoute path={compliancePath} component={AsyncCompliancePage} />
+                    <ProtectedRoute path={compliance2Path} component={AsyncCompliance2Page} />
                     <ProtectedRoute path={integrationsPath} component={AsyncIntegrationsPage} />
                     <ProtectedRoute path={policiesPath} component={AsyncPoliciesPage} />
                     <ProtectedRoute path={riskPath} component={AsyncRiskPage} />
@@ -101,7 +95,6 @@ class MainPage extends Component {
                     <ProtectedRoute path={secretsPath} component={AsyncSecretsPage} />
                     <ProtectedRoute path={accessControlPath} component={AsyncAccessControlPage} />
                     <ProtectedRoute path={apidocsPath} component={AsyncApiDocsPage} />
-                    <ProtectedRoute devOnly path="/main/test" component={CSSGrid} />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
             </ErrorBoundary>
