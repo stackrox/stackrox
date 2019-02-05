@@ -34,6 +34,18 @@ func (m *MockOrchestrator) EXPECT() *MockOrchestratorMockRecorder {
 	return m.recorder
 }
 
+// CleanUp mocks base method
+func (m *MockOrchestrator) CleanUp(arg0 bool) error {
+	ret := m.ctrl.Call(m, "CleanUp", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CleanUp indicates an expected call of CleanUp
+func (mr *MockOrchestratorMockRecorder) CleanUp(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CleanUp", reflect.TypeOf((*MockOrchestrator)(nil).CleanUp), arg0)
+}
+
 // Kill mocks base method
 func (m *MockOrchestrator) Kill(arg0 string) error {
 	ret := m.ctrl.Call(m, "Kill", arg0)

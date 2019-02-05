@@ -7,15 +7,22 @@ import (
 
 	"github.com/stackrox/rox/pkg/benchmarks"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	v1beta12 "k8s.io/api/extensions/v1beta1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/typed/extensions/v1beta1"
 	"k8s.io/client-go/rest"
+)
+
+const (
+	ownershipLabel = `owner.stackrox.io/sensor`
 )
 
 var (
@@ -26,11 +33,13 @@ type kubernetesOrchestrator struct {
 	client    *kubernetes.Clientset
 	converter converter
 	namespace string
+
+	sensorInstanceID string
 }
 
 // MustCreate returns a new Kubernetes orchestrator client, or panics.
-func MustCreate() orchestrators.Orchestrator {
-	o, err := New()
+func MustCreate(sensorInstanceID string) orchestrators.Orchestrator {
+	o, err := New(sensorInstanceID)
 	if err != nil {
 		panic(err)
 	}
@@ -38,16 +47,17 @@ func MustCreate() orchestrators.Orchestrator {
 }
 
 // New returns a new kubernetes orchestrator client.
-func New() (orchestrators.Orchestrator, error) {
+func New(sensorInstanceID string) (orchestrators.Orchestrator, error) {
 	c, err := setupClient()
 	if err != nil {
 		log.Errorf("unable to create kubernetes client: %s", err)
 		return nil, err
 	}
 	return &kubernetesOrchestrator{
-		client:    c,
-		converter: newConverter(),
-		namespace: env.Namespace.Setting(),
+		client:           c,
+		converter:        newConverter(),
+		namespace:        env.Namespace.Setting(),
+		sensorInstanceID: sensorInstanceID,
 	}, nil
 }
 
@@ -75,9 +85,17 @@ func (k *kubernetesOrchestrator) launch(setInterface v1beta1.DaemonSetInterface,
 	return "", errors.New("unable to launch daemonset")
 }
 
+func (k *kubernetesOrchestrator) patchLabels(labels *map[string]string) {
+	if *labels == nil {
+		*labels = make(map[string]string)
+	}
+	(*labels)[ownershipLabel] = k.sensorInstanceID
+}
+
 func (k *kubernetesOrchestrator) Launch(service orchestrators.SystemService) (string, error) {
 	if service.Global {
 		ds := k.converter.asDaemonSet(k.newServiceWrap(service))
+		k.patchLabels(&ds.Labels)
 		launchedName, err := k.launch(k.client.ExtensionsV1beta1().DaemonSets(k.namespace), ds)
 		if err != nil {
 			log.Errorf("unable to create daemonset %s: %s", service.Name, err)
@@ -87,6 +105,7 @@ func (k *kubernetesOrchestrator) Launch(service orchestrators.SystemService) (st
 	}
 
 	deploy := k.converter.asDeployment(k.newServiceWrap(service))
+	k.patchLabels(&deploy.Labels)
 	actual, err := k.client.ExtensionsV1beta1().Deployments(k.namespace).Create(deploy)
 	if err != nil {
 		log.Errorf("unable to create deployment %s: %s", service.Name, err)
@@ -137,4 +156,48 @@ func (k *kubernetesOrchestrator) Kill(name string) error {
 func (k *kubernetesOrchestrator) WaitForCompletion(_ string, timeout time.Duration) error {
 	time.Sleep(timeout)
 	return nil
+}
+
+func (k *kubernetesOrchestrator) labelSelector(ownedByThisInstance bool) (labels.Selector, error) {
+	hasLabelReq, err := labels.NewRequirement(ownershipLabel, selection.Exists, nil)
+	if err != nil {
+		return nil, err
+	}
+	var op selection.Operator
+	if ownedByThisInstance {
+		op = selection.Equals
+	} else {
+		op = selection.NotEquals
+	}
+	labelMatchesReq, err := labels.NewRequirement(ownershipLabel, op, []string{k.sensorInstanceID})
+	if err != nil {
+		return nil, err
+	}
+	return labels.NewSelector().Add(*hasLabelReq, *labelMatchesReq), nil
+}
+
+func (k *kubernetesOrchestrator) CleanUp(ownedByThisInstance bool) error {
+	ls, err := k.labelSelector(ownedByThisInstance)
+	if err != nil {
+		return fmt.Errorf("creating label selector: %v", err)
+	}
+	listOpts := metav1.ListOptions{
+		LabelSelector: ls.String(),
+	}
+	propagationPolicy := metav1.DeletePropagationBackground
+	deleteOpts := &metav1.DeleteOptions{
+		PropagationPolicy: &propagationPolicy,
+	}
+
+	var errList errorhelpers.ErrorList
+	err = k.client.ExtensionsV1beta1().DaemonSets(k.namespace).DeleteCollection(deleteOpts, listOpts)
+	if err != nil {
+		errList.AddStringf("deleting daemonsets: %v", err)
+	}
+	err = k.client.ExtensionsV1beta1().Deployments(k.namespace).DeleteCollection(deleteOpts, listOpts)
+	if err != nil {
+		errList.AddStringf("deleting deployments: %v", err)
+	}
+
+	return errList.ToError()
 }

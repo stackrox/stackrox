@@ -166,6 +166,12 @@ func (s *Sensor) Start() {
 		go s.runSensor()
 	}
 
+	if s.orchestrator != nil {
+		if err := s.orchestrator.CleanUp(false); err != nil {
+			s.logger.Errorf("Could not clean up deployments by previous sensor instances: %v", err)
+		}
+	}
+
 	s.logger.Info("Sensor started")
 }
 
@@ -190,6 +196,12 @@ func (s *Sensor) Stop() {
 
 	if s.profilingServer != nil {
 		s.profilingServer.Close()
+	}
+
+	if s.orchestrator != nil {
+		if err := s.orchestrator.CleanUp(true); err != nil {
+			s.logger.Errorf("Could not clean up this sensor's deployments: %v", err)
+		}
 	}
 
 	s.logger.Info("Sensor shutdown complete")

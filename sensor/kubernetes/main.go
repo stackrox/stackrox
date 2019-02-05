@@ -6,6 +6,7 @@ import (
 	"syscall"
 
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/sensor"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
@@ -20,11 +21,13 @@ func main() {
 	signal.Notify(sigs, os.Interrupt)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
+	sensorInstanceID := uuid.NewV4().String()
+
 	s := sensor.NewSensor(
 		logger,
 		listener.New(),
 		enforcer.MustCreate(),
-		orchestrator.MustCreate(),
+		orchestrator.MustCreate(sensorInstanceID),
 		manager.Singleton(),
 	)
 	s.Start()
@@ -34,7 +37,6 @@ func main() {
 		case sig := <-sigs:
 			logger.Infof("Caught %s signal", sig)
 			s.Stop()
-			return
 		case <-s.Stopped().Done():
 			if err := s.Stopped().Err(); err != nil {
 				logger.Fatalf("Sensor exited with error: %v", err)

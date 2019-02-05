@@ -36,4 +36,5 @@ type Orchestrator interface {
 	Kill(id string) error
 	LaunchBenchmark(service SystemService) (string, error)
 	WaitForCompletion(service string, timeout time.Duration) error
+	CleanUp(ownedByThisInstance bool) error
 }
