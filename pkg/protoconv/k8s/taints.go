@@ -18,7 +18,6 @@ func ToRoxTolerationOperator(op v1.TolerationOperator) storage.Toleration_Operat
 	case v1.TolerationOpEqual:
 		return storage.Toleration_TOLERATION_OPERATOR_EQUAL
 	default:
-		log.Errorf("Unsupported TolerationOperator %s", op)
 		return storage.Toleration_TOLERATION_OPERATION_UNKNOWN
 	}
 }
@@ -33,7 +32,6 @@ func ToRoxTaintEffect(effect v1.TaintEffect) storage.TaintEffect {
 	case v1.TaintEffectNoExecute:
 		return storage.TaintEffect_NO_EXECUTE_TAINT_EFFECT
 	default:
-		log.Errorf("Unsupported TaintEffect %s", effect)
 		return storage.TaintEffect_UNKNOWN_TAINT_EFFECT
 	}
 }
