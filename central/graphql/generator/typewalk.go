@@ -12,10 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoreflect"
 )
 
-var (
-	protoMessageType = reflect.TypeOf((*protoreflect.ProtoMessage)(nil)).Elem()
-)
-
 type fieldData struct {
 	Name string
 	Type reflect.Type

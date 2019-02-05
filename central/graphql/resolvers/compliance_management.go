@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func init() {
@@ -14,10 +15,12 @@ func init() {
 		return
 	}
 	schema := getBuilder()
-	schema.AddQuery("complianceRecentRuns(clusterId:ID, standardId:ID, since:Time): [ComplianceRun!]!")
-	schema.AddQuery("complianceRun(id:ID!): ComplianceRun")
-	schema.AddMutation("complianceTriggerRuns(clusterId:ID!,standardId:ID!): [ComplianceRun!]!")
-	schema.AddQuery("complianceRunStatuses(ids: [ID!]!): GetComplianceRunStatusesResponse!")
+	utils.Must(
+		schema.AddQuery("complianceRecentRuns(clusterId:ID, standardId:ID, since:Time): [ComplianceRun!]!"),
+		schema.AddQuery("complianceRun(id:ID!): ComplianceRun"),
+		schema.AddMutation("complianceTriggerRuns(clusterId:ID!,standardId:ID!): [ComplianceRun!]!"),
+		schema.AddQuery("complianceRunStatuses(ids: [ID!]!): GetComplianceRunStatusesResponse!"),
+	)
 }
 
 // ComplianceTriggerRuns is a mutation to trigger compliance runs on a specific cluster and standard (or all clusters/all standards)

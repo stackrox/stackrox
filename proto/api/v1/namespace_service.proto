@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
+import "storage/namespace_metadata.proto";
+
+package v1;
+
+message Namespace {
+    storage.NamespaceMetadata metadata = 1;
+    int32 num_deployments              = 2;
+    int32 num_secrets                  = 3;
+    int32 num_network_policies         = 4;
+}
+
+message GetNamespacesResponse {
+    repeated Namespace namespaces = 1;
+}
+
+service NamespaceService {
+
+    rpc GetNamespaces(Empty) returns (GetNamespacesResponse) {
+        option (google.api.http) = {
+            get: "/v1/namespaces"
+        };
+    }
+
+    rpc GetNamespace(ResourceByID) returns (Namespace) {
+        option (google.api.http) = {
+            get: "/v1/namespaces/{id}"
+        };
+    }
+
+}

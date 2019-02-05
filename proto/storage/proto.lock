@@ -33,23 +33,46 @@
               {
                 "id": 2,
                 "name": "policy",
-                "type": "Policy"
+                "type": "Policy",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search_index:\\\"Policy Id,Policy,Category,Severity\\"
+                  }
+                ]
               },
               {
                 "id": 3,
                 "name": "lifecycle_stage",
-                "type": "LifecycleStage"
+                "type": "LifecycleStage",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Lifecycle Stage\\"
+                  }
+                ]
               },
               {
                 "id": 4,
                 "name": "deployment",
-                "type": "Deployment"
+                "type": "Deployment",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search_index:\\\"Deployment Id,Cluster,Namespace,Label,Deployment\\"
+                  }
+                ]
               },
               {
                 "id": 5,
                 "name": "violations",
                 "type": "Violation",
                 "is_repeated": true
+              },
+              {
+                "id": 13,
+                "name": "process_violation",
+                "type": "ProcessViolation"
               },
               {
                 "id": 6,
@@ -69,7 +92,13 @@
               {
                 "id": 11,
                 "name": "state",
-                "type": "ViolationState"
+                "type": "ViolationState",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Violation State\\"
+                  }
+                ]
               },
               {
                 "id": 12,
@@ -84,7 +113,13 @@
                   {
                     "id": 1,
                     "name": "message",
-                    "type": "string"
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\\\"Violation\\"
+                      }
+                    ]
                   },
                   {
                     "id": 2,
@@ -93,9 +128,37 @@
                   },
                   {
                     "id": 3,
+                    "name": "DEPRECATED_processes",
+                    "type": "ProcessIndicator",
+                    "is_repeated": true,
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\\\"-\\"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "ProcessViolation",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "message",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
                     "name": "processes",
                     "type": "ProcessIndicator",
-                    "is_repeated": true
+                    "is_repeated": true,
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\\\"-\\"
+                      }
+                    ]
                   }
                 ]
               },
@@ -105,7 +168,13 @@
                   {
                     "id": 1,
                     "name": "action",
-                    "type": "storage.EnforcementAction"
+                    "type": "storage.EnforcementAction",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\\\"Enforcement\\"
+                      }
+                    ]
                   },
                   {
                     "id": 2,
@@ -230,6 +299,9 @@
           },
           {
             "path": "storage/process_indicator.proto"
+          },
+          {
+            "path": "protobuf/gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -808,7 +880,13 @@
               {
                 "id": 2,
                 "name": "name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster\\"
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -899,6 +977,9 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "protobuf/gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -1015,12 +1096,24 @@
               {
                 "id": 1,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Deployment Id,store,hidden\\"
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Deployment,store\\"
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -1030,12 +1123,24 @@
               {
                 "id": 4,
                 "name": "type",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Deployment Type\\"
+                  }
+                ]
               },
               {
                 "id": 5,
                 "name": "namespace",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Namespace\\"
+                  }
+                ]
               },
               {
                 "id": 6,
@@ -1055,12 +1160,24 @@
               {
                 "id": 9,
                 "name": "cluster_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster Id,store,hidden\\"
+                  }
+                ]
               },
               {
                 "id": 10,
                 "name": "cluster_name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster\\"
+                  }
+                ]
               },
               {
                 "id": 11,
@@ -1087,17 +1204,35 @@
                 "id": 17,
                 "name": "image_pull_secrets",
                 "type": "string",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Image Pull Secret\\"
+                  }
+                ]
               },
               {
                 "id": 18,
                 "name": "service_account",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Service Account\\"
+                  }
+                ]
               },
               {
                 "id": 21,
                 "name": "host_network",
                 "type": "bool"
+              },
+              {
+                "id": 22,
+                "name": "tolerations",
+                "type": "Toleration",
+                "is_repeated": true
               }
             ],
             "maps": [
@@ -1106,7 +1241,13 @@
                 "field": {
                   "id": 7,
                   "name": "labels",
-                  "type": "string"
+                  "type": "string",
+                  "options": [
+                    {
+                      "name": "(gogoproto.moretags)",
+                      "value": "search:\\\"Label\\"
+                    }
+                  ]
                 }
               },
               {
@@ -1114,7 +1255,13 @@
                 "field": {
                   "id": 19,
                   "name": "pod_labels",
-                  "type": "string"
+                  "type": "string",
+                  "options": [
+                    {
+                      "name": "(gogoproto.moretags)",
+                      "value": "search:\\\"PodLabel\\"
+                    }
+                  ]
                 }
               },
               {
@@ -1122,7 +1269,13 @@
                 "field": {
                   "id": 14,
                   "name": "annotations",
-                  "type": "string"
+                  "type": "string",
+                  "options": [
+                    {
+                      "name": "(gogoproto.moretags)",
+                      "value": "search:\\\"Annotation\\"
+                    }
+                  ]
                 }
               }
             ]
@@ -1143,7 +1296,13 @@
               {
                 "id": 3,
                 "name": "image",
-                "type": "Image"
+                "type": "Image",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search_index:\\\"Image Sha\\\" search_xref:\\\"all\\"
+                  }
+                ]
               },
               {
                 "id": 4,
@@ -1192,22 +1351,46 @@
               {
                 "id": 1,
                 "name": "cpu_cores_request",
-                "type": "float"
+                "type": "float",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"CPU Cores Request,store\\"
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "cpu_cores_limit",
-                "type": "float"
+                "type": "float",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"CPU Cores Limit,store\\"
+                  }
+                ]
               },
               {
                 "id": 3,
                 "name": "memory_mb_request",
-                "type": "float"
+                "type": "float",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Memory Request (MB),store\\"
+                  }
+                ]
               },
               {
                 "id": 4,
                 "name": "memory_mb_limit",
-                "type": "float"
+                "type": "float",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Memory Limit (MB),store\\"
+                  }
+                ]
               }
             ]
           },
@@ -1217,27 +1400,57 @@
               {
                 "id": 1,
                 "name": "name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Volume Name,store\\"
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "source",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Volume Source,store\\"
+                  }
+                ]
               },
               {
                 "id": 3,
                 "name": "destination",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Volume Destination,store\\"
+                  }
+                ]
               },
               {
                 "id": 4,
                 "name": "read_only",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Volume ReadOnly,store\\"
+                  }
+                ]
               },
               {
                 "id": 5,
                 "name": "type",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Volume Type,store\\"
+                  }
+                ]
               }
             ]
           },
@@ -1288,12 +1501,24 @@
               {
                 "id": 1,
                 "name": "name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Secret\\"
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "path",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Secret Path\\"
+                  }
+                ]
               }
             ]
           },
@@ -1308,12 +1533,24 @@
               {
                 "id": 2,
                 "name": "container_port",
-                "type": "int32"
+                "type": "int32",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Port,store\\"
+                  }
+                ]
               },
               {
                 "id": 3,
                 "name": "protocol",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Port Protocol,store\\"
+                  }
+                ]
               },
               {
                 "id": 4,
@@ -1371,12 +1608,24 @@
                   {
                     "id": 1,
                     "name": "key",
-                    "type": "string"
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\\\"Environment Key,store\\"
+                      }
+                    ]
                   },
                   {
                     "id": 2,
                     "name": "value",
-                    "type": "string"
+                    "type": "string",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\\\"Environment Value,store\\"
+                      }
+                    ]
                   }
                 ]
               }
@@ -1388,7 +1637,13 @@
               {
                 "id": 1,
                 "name": "privileged",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Privileged,store\\"
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -1399,18 +1654,36 @@
                 "id": 3,
                 "name": "drop_capabilities",
                 "type": "string",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Drop Capabilities,store\\"
+                  }
+                ]
               },
               {
                 "id": 4,
                 "name": "add_capabilities",
                 "type": "string",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Add Capabilities,store\\"
+                  }
+                ]
               },
               {
                 "id": 5,
                 "name": "read_only_root_filesystem",
-                "type": "bool"
+                "type": "bool",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Read Only Root Filesystem,store\\"
+                  }
+                ]
               }
             ],
             "messages": [
@@ -1547,6 +1820,12 @@
           },
           {
             "path": "storage/image.proto"
+          },
+          {
+            "path": "storage/taints.proto"
+          },
+          {
+            "path": "protobuf/gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -1675,7 +1954,13 @@
               {
                 "id": 4,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Image Sha,store,hidden\\"
+                  }
+                ]
               },
               {
                 "id": 1,
@@ -1700,7 +1985,13 @@
               {
                 "id": 1,
                 "name": "scan_time",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Image Scan Time,store\\"
+                  }
+                ]
               },
               {
                 "id": 2,
@@ -1716,12 +2007,24 @@
               {
                 "id": 1,
                 "name": "name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Component,store\\"
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "version",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Component Version,store\\"
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -1762,12 +2065,24 @@
               {
                 "id": 1,
                 "name": "cve",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"CVE,store\\"
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "cvss",
-                "type": "float"
+                "type": "float",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"CVSS,store\\"
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -1777,7 +2092,13 @@
               {
                 "id": 4,
                 "name": "link",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"CVE Link,store,hidden\\"
+                  }
+                ]
               },
               {
                 "id": 5,
@@ -1873,7 +2194,13 @@
               {
                 "id": 2,
                 "name": "created",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Image Created Time,store\\"
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -1894,12 +2221,24 @@
               {
                 "id": 1,
                 "name": "instruction",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Dockerfile Instruction Keyword,store\\"
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "value",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Dockerfile Instruction Value,store\\"
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -1930,22 +2269,46 @@
               {
                 "id": 1,
                 "name": "registry",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Image Registry,store\\"
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "remote",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Image Remote,store\\"
+                  }
+                ]
               },
               {
                 "id": 3,
                 "name": "tag",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Image Tag,store\\"
+                  }
+                ]
               },
               {
                 "id": 4,
                 "name": "full_name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Image,store\\"
+                  }
+                ]
               }
             ]
           },
@@ -1988,6 +2351,9 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "protobuf/gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -2311,6 +2677,11 @@
             ]
           }
         ],
+        "imports": [
+          {
+            "path": "protobuf/gogoproto/gogo.proto"
+          }
+        ],
         "package": {
           "name": "storage"
         }
@@ -2357,11 +2728,11 @@
       }
     },
     {
-      "protopath": "namespace.proto",
+      "protopath": "namespace_metadata.proto",
       "def": {
         "messages": [
           {
-            "name": "Namespace",
+            "name": "NamespaceMetadata",
             "fields": [
               {
                 "id": 1,
@@ -2371,17 +2742,40 @@
               {
                 "id": 2,
                 "name": "name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Namespace\\"
+                  }
+                ]
               },
               {
                 "id": 3,
                 "name": "cluster_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster Id,hidden\\"
+                  }
+                ]
               },
               {
                 "id": 4,
                 "name": "cluster_name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster\\"
+                  }
+                ]
+              },
+              {
+                "id": 6,
+                "name": "creation_time",
+                "type": "google.protobuf.Timestamp"
               }
             ],
             "maps": [
@@ -2390,10 +2784,24 @@
                 "field": {
                   "id": 5,
                   "name": "labels",
-                  "type": "string"
+                  "type": "string",
+                  "options": [
+                    {
+                      "name": "(gogoproto.moretags)",
+                      "value": "search:\\\"Label\\"
+                    }
+                  ]
                 }
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "protobuf/gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -2788,9 +3196,92 @@
               {
                 "id": 2,
                 "name": "name",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Node\\"
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "taints",
+                "type": "Taint",
+                "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "cluster_id",
                 "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "cluster_name",
+                "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "internal_ip_addresses",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 9,
+                "name": "external_ip_addresses",
+                "type": "string",
+                "is_repeated": true
+              },
+              {
+                "id": 10,
+                "name": "container_runtime_version",
+                "type": "string"
+              },
+              {
+                "id": 11,
+                "name": "kernel_version",
+                "type": "string"
+              },
+              {
+                "id": 12,
+                "name": "os_image",
+                "type": "string"
+              },
+              {
+                "id": 13,
+                "name": "joined_at",
+                "type": "google.protobuf.Timestamp"
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 6,
+                  "name": "labels",
+                  "type": "string"
+                }
+              },
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 7,
+                  "name": "annotations",
+                  "type": "string"
+                }
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/taints.proto"
+          },
+          {
+            "path": "protobuf/gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -3072,17 +3563,35 @@
               {
                 "id": 1,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Policy Id,store,hidden\\"
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Policy\\"
+                  }
+                ]
               },
               {
                 "id": 3,
                 "name": "description",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Description\\"
+                  }
+                ]
               },
               {
                 "id": 4,
@@ -3103,7 +3612,13 @@
                 "id": 7,
                 "name": "categories",
                 "type": "string",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Category\\"
+                  }
+                ]
               },
               {
                 "id": 8,
@@ -3114,7 +3629,13 @@
                 "id": 9,
                 "name": "lifecycle_stages",
                 "type": "LifecycleStage",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Lifecycle Stage\\"
+                  }
+                ]
               },
               {
                 "id": 10,
@@ -3131,13 +3652,25 @@
               {
                 "id": 12,
                 "name": "severity",
-                "type": "Severity"
+                "type": "Severity",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Severity\\"
+                  }
+                ]
               },
               {
                 "id": 13,
                 "name": "enforcement_actions",
                 "type": "EnforcementAction",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Enforcement\\"
+                  }
+                ]
               },
               {
                 "id": 14,
@@ -3509,7 +4042,13 @@
                   {
                     "id": 3,
                     "name": "image_name",
-                    "type": "ImageName"
+                    "type": "ImageName",
+                    "options": [
+                      {
+                        "name": "(gogoproto.moretags)",
+                        "value": "search:\\\"-\\"
+                      }
+                    ]
                   }
                 ]
               },
@@ -3540,6 +4079,9 @@
           },
           {
             "path": "storage/image.proto"
+          },
+          {
+            "path": "protobuf/gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -3557,12 +4099,24 @@
               {
                 "id": 1,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Process ID,store,hidden\\"
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "deployment_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Deployment Id,store,hidden\\"
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -3627,7 +4181,13 @@
               {
                 "id": 2,
                 "name": "container_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Container Id,hidden\\"
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -3637,17 +4197,35 @@
               {
                 "id": 4,
                 "name": "name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Process Name\\"
+                  }
+                ]
               },
               {
                 "id": 5,
                 "name": "args",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Process Arguments\\"
+                  }
+                ]
               },
               {
                 "id": 6,
                 "name": "exec_file_path",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Process Path\\"
+                  }
+                ]
               },
               {
                 "id": 7,
@@ -3668,7 +4246,13 @@
                 "id": 10,
                 "name": "lineage",
                 "type": "string",
-                "is_repeated": true
+                "is_repeated": true,
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Process Ancestor\\"
+                  }
+                ]
               }
             ]
           }
@@ -3676,6 +4260,9 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "protobuf/gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -3843,27 +4430,57 @@
               {
                 "id": 1,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Secret Id,store,hidden\\"
+                  }
+                ]
               },
               {
                 "id": 2,
                 "name": "name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Secret\\"
+                  }
+                ]
               },
               {
                 "id": 3,
                 "name": "cluster_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster Id,store,hidden\\"
+                  }
+                ]
               },
               {
                 "id": 4,
                 "name": "cluster_name",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cluster\\"
+                  }
+                ]
               },
               {
                 "id": 5,
                 "name": "namespace",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Namespace\\"
+                  }
+                ]
               },
               {
                 "id": 6,
@@ -4005,7 +4622,13 @@
               {
                 "id": 2,
                 "name": "type",
-                "type": "SecretType"
+                "type": "SecretType",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Secret Type\\"
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -4041,7 +4664,13 @@
               {
                 "id": 5,
                 "name": "end_date",
-                "type": "google.protobuf.Timestamp"
+                "type": "google.protobuf.Timestamp",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Cert Expiration\\"
+                  }
+                ]
               },
               {
                 "id": 6,
@@ -4105,6 +4734,9 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "protobuf/gogoproto/gogo.proto"
           }
         ],
         "package": {
@@ -4177,6 +4809,134 @@
                 "type": "ServiceType"
               }
             ]
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
+      }
+    },
+    {
+      "protopath": "taints.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "TaintEffect",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN_TAINT_EFFECT"
+              },
+              {
+                "name": "NO_SCHEDULE_TAINT_EFFECT",
+                "integer": 1
+              },
+              {
+                "name": "PREFER_NO_SCHEDULE_TAINT_EFFECT",
+                "integer": 2
+              },
+              {
+                "name": "NO_EXECUTE_TAINT_EFFECT",
+                "integer": 3
+              }
+            ]
+          },
+          {
+            "name": "Toleration.Operator",
+            "enum_fields": [
+              {
+                "name": "TOLERATION_OPERATION_UNKNOWN"
+              },
+              {
+                "name": "TOLERATION_OPERATOR_EXISTS",
+                "integer": 1
+              },
+              {
+                "name": "TOLERATION_OPERATOR_EQUAL",
+                "integer": 2
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "Taint",
+            "fields": [
+              {
+                "id": 1,
+                "name": "key",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Taint Key\\"
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "value",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Taint Value\\"
+                  }
+                ]
+              },
+              {
+                "id": 3,
+                "name": "taint_effect",
+                "type": "TaintEffect",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Taint Effect\\"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Toleration",
+            "fields": [
+              {
+                "id": 1,
+                "name": "key",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Toleration Key\\"
+                  }
+                ]
+              },
+              {
+                "id": 2,
+                "name": "operator",
+                "type": "Operator"
+              },
+              {
+                "id": 3,
+                "name": "value",
+                "type": "string",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Toleration Value\\"
+                  }
+                ]
+              },
+              {
+                "id": 4,
+                "name": "taint_effect",
+                "type": "TaintEffect"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "protobuf/gogoproto/gogo.proto"
           }
         ],
         "package": {

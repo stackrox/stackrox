@@ -27,6 +27,7 @@ var (
 			reflect.TypeOf((*storage.Image)(nil)),
 			reflect.TypeOf((*storage.ListImage)(nil)),
 			reflect.TypeOf((*v1.Metadata)(nil)),
+			reflect.TypeOf((*v1.Namespace)(nil)),
 			reflect.TypeOf((*storage.NetworkFlow)(nil)),
 			reflect.TypeOf((*storage.Node)(nil)),
 			reflect.TypeOf((*storage.Notifier)(nil)),

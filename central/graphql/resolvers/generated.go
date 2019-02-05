@@ -386,6 +386,20 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	builder.AddType("Metadata", []string{
 		"version: String!",
 	})
+	builder.AddType("Namespace", []string{
+		"metadata: NamespaceMetadata",
+		"numDeployments: Int!",
+		"numNetworkPolicies: Int!",
+		"numSecrets: Int!",
+	})
+	builder.AddType("NamespaceMetadata", []string{
+		"clusterId: String!",
+		"clusterName: String!",
+		"creationTime: Time",
+		"id: ID!",
+		"labels: [Label!]!",
+		"name: String!",
+	})
 	builder.AddType("NetworkEntityInfo", []string{
 		"id: ID!",
 		"type: NetworkEntityInfo_Type!",
@@ -3632,6 +3646,102 @@ func (resolver *Resolver) wrapMetadatas(values []*v1.Metadata, err error) ([]*me
 
 func (resolver *metadataResolver) Version() string {
 	value := resolver.data.GetVersion()
+	return value
+}
+
+type namespaceResolver struct {
+	root *Resolver
+	data *v1.Namespace
+}
+
+func (resolver *Resolver) wrapNamespace(value *v1.Namespace, ok bool, err error) (*namespaceResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &namespaceResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapNamespaces(values []*v1.Namespace, err error) ([]*namespaceResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*namespaceResolver, len(values))
+	for i, v := range values {
+		output[i] = &namespaceResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *namespaceResolver) Metadata() (*namespaceMetadataResolver, error) {
+	value := resolver.data.GetMetadata()
+	return resolver.root.wrapNamespaceMetadata(value, true, nil)
+}
+
+func (resolver *namespaceResolver) NumDeployments() int32 {
+	value := resolver.data.GetNumDeployments()
+	return value
+}
+
+func (resolver *namespaceResolver) NumNetworkPolicies() int32 {
+	value := resolver.data.GetNumNetworkPolicies()
+	return value
+}
+
+func (resolver *namespaceResolver) NumSecrets() int32 {
+	value := resolver.data.GetNumSecrets()
+	return value
+}
+
+type namespaceMetadataResolver struct {
+	root *Resolver
+	data *storage.NamespaceMetadata
+}
+
+func (resolver *Resolver) wrapNamespaceMetadata(value *storage.NamespaceMetadata, ok bool, err error) (*namespaceMetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &namespaceMetadataResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapNamespaceMetadatas(values []*storage.NamespaceMetadata, err error) ([]*namespaceMetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*namespaceMetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &namespaceMetadataResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *namespaceMetadataResolver) ClusterId() string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *namespaceMetadataResolver) ClusterName() string {
+	value := resolver.data.GetClusterName()
+	return value
+}
+
+func (resolver *namespaceMetadataResolver) CreationTime() (*graphql.Time, error) {
+	value := resolver.data.GetCreationTime()
+	return timestamp(value)
+}
+
+func (resolver *namespaceMetadataResolver) Id() graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *namespaceMetadataResolver) Labels() labels {
+	value := resolver.data.GetLabels()
+	return labelsResolver(value)
+}
+
+func (resolver *namespaceMetadataResolver) Name() string {
+	value := resolver.data.GetName()
 	return value
 }
 

@@ -34,7 +34,7 @@ func (suite *NamespaceIndexTestSuite) TearDownTest() {
 }
 
 func (suite *NamespaceIndexTestSuite) TestIndexing() {
-	ns := &storage.Namespace{
+	ns := &storage.NamespaceMetadata{
 		Id:   "namespace1",
 		Name: "namespace1",
 	}

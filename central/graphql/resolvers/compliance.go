@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -30,14 +31,16 @@ func InitCompliance() {
 	}
 	complianceOnce.Do(func() {
 		schema := getBuilder()
-		schema.AddQuery("complianceStandard(id:ID!): ComplianceStandardMetadata")
-		schema.AddQuery("complianceStandards: [ComplianceStandardMetadata!]!")
-		schema.AddQuery("aggregatedResults(groupBy:[ComplianceAggregation_Scope!],unit:ComplianceAggregation_Scope!,where:String): ComplianceAggregation_Response!")
-		schema.AddExtraResolver("ComplianceStandardMetadata", "controls: [ComplianceControl!]!")
-		schema.AddExtraResolver("ComplianceStandardMetadata", "groups: [ComplianceControlGroup!]!")
-		schema.AddType("Namespace", []string{"cluster: Cluster", "name: String!"})
-		schema.AddUnionType("ComplianceDomainKey", []string{"ComplianceStandardMetadata", "ComplianceControl", "Cluster", "Deployment", "Node", "Namespace"})
-		schema.AddExtraResolver("ComplianceAggregation_Result", "keys: [ComplianceDomainKey!]!")
+
+		utils.Must(
+			schema.AddQuery("complianceStandard(id:ID!): ComplianceStandardMetadata"),
+			schema.AddQuery("complianceStandards: [ComplianceStandardMetadata!]!"),
+			schema.AddQuery("aggregatedResults(groupBy:[ComplianceAggregation_Scope!],unit:ComplianceAggregation_Scope!,where:String): ComplianceAggregation_Response!"),
+			schema.AddExtraResolver("ComplianceStandardMetadata", "controls: [ComplianceControl!]!"),
+			schema.AddExtraResolver("ComplianceStandardMetadata", "groups: [ComplianceControlGroup!]!"),
+			schema.AddUnionType("ComplianceDomainKey", []string{"ComplianceStandardMetadata", "ComplianceControl", "Cluster", "Deployment", "Node"}),
+			schema.AddExtraResolver("ComplianceAggregation_Result", "keys: [ComplianceDomainKey!]!"),
+		)
 	})
 }
 
@@ -126,33 +129,6 @@ func (resolver *complianceDomainKeyResolver) ToNode() (node *nodeResolver, found
 		if found {
 			return &nodeResolver{resolver.root, node}, found
 		}
-	}
-	return nil, false
-}
-
-type namespaceResolver struct {
-	root    *Resolver
-	name    string
-	cluster *storage.Cluster
-}
-
-func (resolver *namespaceResolver) Name() string {
-	return resolver.name
-}
-
-func (resolver *namespaceResolver) Cluster() *clusterResolver {
-	if resolver.cluster == nil {
-		return nil
-	}
-	return &clusterResolver{
-		resolver.root,
-		resolver.cluster,
-	}
-}
-
-func (resolver *complianceDomainKeyResolver) ToNamespace() (namespace *namespaceResolver, found bool) {
-	if resolver.key.GetScope() == v1.ComplianceAggregation_NAMESPACE {
-		return &namespaceResolver{resolver.root, resolver.key.GetId(), resolver.domain.GetCluster()}, true
 	}
 	return nil, false
 }

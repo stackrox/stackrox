@@ -28,8 +28,8 @@ func init() {
 
 type namespaceGetter struct{}
 
-func (n *namespaceGetter) GetNamespaces() ([]*storage.Namespace, error) {
-	return []*storage.Namespace{
+func (n *namespaceGetter) GetNamespaces() ([]*storage.NamespaceMetadata, error) {
+	return []*storage.NamespaceMetadata{
 		{
 			Name: "default",
 			Labels: map[string]string{
@@ -55,25 +55,25 @@ func newMockGraphEvaluator() *evaluatorImpl {
 func TestDoesNamespaceMatchLabel(t *testing.T) {
 	cases := []struct {
 		name      string
-		namespace *storage.Namespace
+		namespace *storage.NamespaceMetadata
 		selector  *storage.LabelSelector
 		expected  bool
 	}{
 		{
 			name:      "No values in selector - no namespace labels",
-			namespace: &storage.Namespace{},
+			namespace: &storage.NamespaceMetadata{},
 			selector:  &storage.LabelSelector{},
 			expected:  true,
 		},
 		{
 			name:      "No values in selector - some namespace labels",
-			namespace: &storage.Namespace{},
+			namespace: &storage.NamespaceMetadata{},
 			selector:  &storage.LabelSelector{},
 			expected:  true,
 		},
 		{
 			name: "matching values in selector",
-			namespace: &storage.Namespace{
+			namespace: &storage.NamespaceMetadata{
 				Labels: map[string]string{
 					"hello": "hi",
 				},
@@ -87,7 +87,7 @@ func TestDoesNamespaceMatchLabel(t *testing.T) {
 		},
 		{
 			name: "non matching values in selector",
-			namespace: &storage.Namespace{
+			namespace: &storage.NamespaceMetadata{
 				Labels: map[string]string{
 					"hello": "hi1",
 				},

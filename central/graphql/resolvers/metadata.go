@@ -2,12 +2,15 @@ package resolvers
 
 import (
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
 )
 
 func init() {
 	schema := getBuilder()
-	schema.AddQuery("metadata: Metadata")
+	utils.Must(
+		schema.AddQuery("metadata: Metadata"),
+	)
 }
 
 // Metadata returns a metadata object containing the stackrox version.

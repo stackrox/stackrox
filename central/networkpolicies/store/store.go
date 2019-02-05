@@ -19,6 +19,7 @@ var (
 type Store interface {
 	GetNetworkPolicy(id string) (*storage.NetworkPolicy, bool, error)
 	GetNetworkPolicies(request *v1.GetNetworkPoliciesRequest) ([]*storage.NetworkPolicy, error)
+	CountMatchingNetworkPolicies(request *v1.GetNetworkPoliciesRequest) (int, error)
 	CountNetworkPolicies() (int, error)
 	AddNetworkPolicy(np *storage.NetworkPolicy) error
 	UpdateNetworkPolicy(np *storage.NetworkPolicy) error

@@ -5,7 +5,7 @@ option go_package = "central";
 import "internalapi/compliance/compliance_data.proto";
 import "storage/cluster.proto";
 import "storage/deployment.proto";
-import "storage/namespace.proto";
+import "storage/namespace_metadata.proto";
 import "storage/network_policy.proto";
 import "storage/node.proto";
 import "storage/secret.proto";
@@ -32,11 +32,11 @@ message SensorEvent {
     string         cluster_id                   = 3;
 
     oneof resource {
-        storage.NetworkPolicy    network_policy    = 4;
-        storage.Deployment       deployment        = 5;
-        storage.Namespace        namespace         = 6;
-        storage.Secret           secret            = 7;
-        storage.Node             node              = 9;
+        storage.NetworkPolicy     network_policy    = 4;
+        storage.Deployment        deployment        = 5;
+        storage.NamespaceMetadata namespace         = 6;
+        storage.Secret            secret            = 7;
+        storage.Node              node              = 9;
 
         // Indicators
         storage.ProcessIndicator process_indicator = 8;

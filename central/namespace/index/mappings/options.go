@@ -7,4 +7,4 @@ import (
 )
 
 // OptionsMap defines the options for search by namespace
-var OptionsMap = blevesearch.Walk(v1.SearchCategory_NAMESPACES, "namespace", (*storage.Namespace)(nil))
+var OptionsMap = blevesearch.Walk(v1.SearchCategory_NAMESPACES, "namespace", (*storage.NamespaceMetadata)(nil))

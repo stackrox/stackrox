@@ -1,8 +1,6 @@
 package store
 
 import (
-	"os"
-	"sort"
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
@@ -35,8 +33,16 @@ func (suite *NetworkPolicyStoreTestSuite) SetupSuite() {
 }
 
 func (suite *NetworkPolicyStoreTestSuite) TearDownSuite() {
-	suite.db.Close()
-	os.Remove(suite.db.Path())
+	suite.NoError(suite.db.Close())
+}
+
+func (suite *NetworkPolicyStoreTestSuite) expectPolicies(req *v1.GetNetworkPoliciesRequest, wantPolicies ...*storage.NetworkPolicy) {
+	gotPolicies, err := suite.store.GetNetworkPolicies(req)
+	suite.Require().NoError(err)
+	suite.ElementsMatch(gotPolicies, wantPolicies)
+	gotCount, err := suite.store.CountMatchingNetworkPolicies(req)
+	suite.Require().NoError(err)
+	suite.Equal(len(wantPolicies), gotCount)
 }
 
 func (suite *NetworkPolicyStoreTestSuite) TestNetworkPolicies() {
@@ -44,10 +50,12 @@ func (suite *NetworkPolicyStoreTestSuite) TestNetworkPolicies() {
 		{
 			Id:        "1fooID",
 			ClusterId: "1",
+			Namespace: "NS1",
 		},
 		{
 			Id:        "2barID",
 			ClusterId: "2",
+			Namespace: "NS2",
 		},
 	}
 
@@ -63,27 +71,16 @@ func (suite *NetworkPolicyStoreTestSuite) TestNetworkPolicies() {
 		suite.Equal(got, d)
 	}
 
-	policies, err := suite.store.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{})
-	suite.Require().NoError(err)
-	suite.Len(policies, 2)
-	sort.Slice(policies, func(i, j int) bool {
-		return policies[i].GetId() < policies[j].GetId()
-	})
-	suite.Equal(policies, networkPolicies)
-
-	policies, err = suite.store.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "1"})
-	suite.Require().NoError(err)
-	suite.Len(policies, 1)
-	suite.Equal(policies[0], networkPolicies[0])
-
-	policies, err = suite.store.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "2"})
-	suite.Require().NoError(err)
-	suite.Len(policies, 1)
-	suite.Equal(policies[0], networkPolicies[1])
-
-	policies, err = suite.store.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "INVALID"})
-	suite.Require().NoError(err)
-	suite.Len(policies, 0)
+	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{}, networkPolicies...)
+	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "1"}, networkPolicies[0])
+	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "2"}, networkPolicies[1])
+	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "INVALID"})
+	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{Namespace: "NS1"}, networkPolicies[0])
+	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "1", Namespace: "INVALID"})
+	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "INVALID", Namespace: "NS1"})
+	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{Namespace: "NS2"}, networkPolicies[1])
+	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "2", Namespace: "NS2"}, networkPolicies[1])
+	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "1", Namespace: "NS2"})
 
 	// Test Update
 	for _, d := range networkPolicies {

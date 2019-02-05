@@ -42,11 +42,8 @@ func (b *storeImpl) GetNetworkPolicy(id string) (np *storage.NetworkPolicy, exis
 	return
 }
 
-// GetNetworkPolicies retrieves network policies matching the request from bolt
-func (b *storeImpl) GetNetworkPolicies(request *v1.GetNetworkPoliciesRequest) ([]*storage.NetworkPolicy, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "NetworkPolicy")
-	var policies []*storage.NetworkPolicy
-	err := b.View(func(tx *bolt.Tx) error {
+func (b *storeImpl) doForMatchingPolicies(request *v1.GetNetworkPoliciesRequest, f func(*storage.NetworkPolicy)) error {
+	return b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(networkPolicyBucket)
 		return bucket.ForEach(func(k, v []byte) error {
 			var np storage.NetworkPolicy
@@ -56,11 +53,30 @@ func (b *storeImpl) GetNetworkPolicies(request *v1.GetNetworkPoliciesRequest) ([
 			if request.GetClusterId() != "" && np.GetClusterId() != request.GetClusterId() {
 				return nil
 			}
-			policies = append(policies, &np)
+			if request.GetNamespace() != "" && np.GetNamespace() != request.GetNamespace() {
+				return nil
+			}
+			f(&np)
 			return nil
 		})
 	})
+}
+
+// GetNetworkPolicies retrieves network policies matching the request from bolt
+func (b *storeImpl) GetNetworkPolicies(request *v1.GetNetworkPoliciesRequest) ([]*storage.NetworkPolicy, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "NetworkPolicy")
+	var policies []*storage.NetworkPolicy
+	err := b.doForMatchingPolicies(request, func(np *storage.NetworkPolicy) {
+		policies = append(policies, np)
+	})
 	return policies, err
+}
+
+func (b *storeImpl) CountMatchingNetworkPolicies(request *v1.GetNetworkPoliciesRequest) (count int, err error) {
+	err = b.doForMatchingPolicies(request, func(_ *storage.NetworkPolicy) {
+		count++
+	})
+	return
 }
 
 // CountNetworkPolicies returns the number of network policies.

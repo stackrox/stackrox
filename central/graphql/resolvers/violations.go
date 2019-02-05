@@ -6,12 +6,15 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func init() {
 	schema := getBuilder()
-	schema.AddQuery("violations(query: String): [Alert!]!")
-	schema.AddQuery("violation(id: ID!): Alert")
+	utils.Must(
+		schema.AddQuery("violations(query: String): [Alert!]!"),
+		schema.AddQuery("violation(id: ID!): Alert"),
+	)
 }
 
 // Violations returns a list of all violations, or those that match the requested query

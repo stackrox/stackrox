@@ -21,26 +21,26 @@ type indexerImpl struct {
 }
 
 type namespaceWrapper struct {
-	*storage.Namespace `json:"namespace"`
-	Type               string `json:"type"`
+	*storage.NamespaceMetadata `json:"namespace"`
+	Type                       string `json:"type"`
 }
 
 // AddNamespace adds the cluster to the index
-func (b *indexerImpl) AddNamespace(namespace *storage.Namespace) error {
+func (b *indexerImpl) AddNamespace(namespace *storage.NamespaceMetadata) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.Add, "Namespace")
-	return b.index.Index(namespace.GetId(), &namespaceWrapper{Type: v1.SearchCategory_NAMESPACES.String(), Namespace: namespace})
+	return b.index.Index(namespace.GetId(), &namespaceWrapper{Type: v1.SearchCategory_NAMESPACES.String(), NamespaceMetadata: namespace})
 }
 
-func (b *indexerImpl) processBatch(namespaces []*storage.Namespace) error {
+func (b *indexerImpl) processBatch(namespaces []*storage.NamespaceMetadata) error {
 	batch := b.index.NewBatch()
 	for _, namespace := range namespaces {
-		batch.Index(namespace.GetId(), &namespaceWrapper{Type: v1.SearchCategory_NAMESPACES.String(), Namespace: namespace})
+		batch.Index(namespace.GetId(), &namespaceWrapper{Type: v1.SearchCategory_NAMESPACES.String(), NamespaceMetadata: namespace})
 	}
 	return b.index.Batch(batch)
 }
 
 // AddNamespaces adds a slice of namespaces to the index
-func (b *indexerImpl) AddNamespaces(namespaces []*storage.Namespace) error {
+func (b *indexerImpl) AddNamespaces(namespaces []*storage.NamespaceMetadata) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "Namespace")
 	batchManager := batcher.New(len(namespaces), batchSize)
 	for start, end, ok := batchManager.Next(); ok; start, end, ok = batchManager.Next() {

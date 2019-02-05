@@ -5,12 +5,15 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func init() {
 	schema := getBuilder()
-	schema.AddQuery("images(query:String): [Image!]!")
-	schema.AddQuery("image(sha:ID!): Image")
+	utils.Must(
+		schema.AddQuery("images(query:String): [Image!]!"),
+		schema.AddQuery("image(sha:ID!): Image"),
+	)
 }
 
 // Images returns GraphQL resolvers for all images

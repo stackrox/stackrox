@@ -57,7 +57,7 @@ func (s *pipelineImpl) Run(msg *central.MsgFromSensor, _ pipeline.MsgInjector) e
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, event *storage.Namespace) error {
+func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, event *storage.NamespaceMetadata) error {
 	// Validate the the event we receive has necessary fields set.
 	if err := s.validateInput(event); err != nil {
 		return err
@@ -73,7 +73,7 @@ func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, event *s
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, ns *storage.Namespace) error {
+func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, ns *storage.NamespaceMetadata) error {
 	if err := s.validateInput(ns); err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, ns *sto
 	return nil
 }
 
-func (s *pipelineImpl) validateInput(np *storage.Namespace) error {
+func (s *pipelineImpl) validateInput(np *storage.NamespaceMetadata) error {
 	// validate input.
 	if np == nil {
 		return fmt.Errorf("namespace must not be empty")
@@ -98,7 +98,7 @@ func (s *pipelineImpl) validateInput(np *storage.Namespace) error {
 	return nil
 }
 
-func (s *pipelineImpl) enrichCluster(ns *storage.Namespace) error {
+func (s *pipelineImpl) enrichCluster(ns *storage.NamespaceMetadata) error {
 	ns.ClusterName = ""
 
 	cluster, clusterExists, err := s.clusters.GetCluster(ns.ClusterId)
@@ -113,7 +113,7 @@ func (s *pipelineImpl) enrichCluster(ns *storage.Namespace) error {
 	return nil
 }
 
-func (s *pipelineImpl) persistNamespace(action central.ResourceAction, ns *storage.Namespace) error {
+func (s *pipelineImpl) persistNamespace(action central.ResourceAction, ns *storage.NamespaceMetadata) error {
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE:
 		return s.namespaces.AddNamespace(ns)

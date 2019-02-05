@@ -4,12 +4,15 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func init() {
 	schema := getBuilder()
-	schema.AddQuery("groups: [Group!]!")
-	schema.AddQuery("group(authProviderId: String, key: String, value: String): Group")
+	utils.Must(
+		schema.AddQuery("groups: [Group!]!"),
+		schema.AddQuery("group(authProviderId: String, key: String, value: String): Group"),
+	)
 }
 
 // Groups returns GraphQL resolvers for all groups

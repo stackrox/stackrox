@@ -11,12 +11,15 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func init() {
 	schema := getBuilder()
-	schema.AddQuery("searchOptions(categories: [SearchCategory!]): [String!]!")
-	schema.AddQuery("globalSearch(categories: [SearchCategory!], query: String!): [SearchResult!]!")
+	utils.Must(
+		schema.AddQuery("searchOptions(categories: [SearchCategory!]): [String!]!"),
+		schema.AddQuery("globalSearch(categories: [SearchCategory!], query: String!): [SearchResult!]!"),
+	)
 }
 
 type rawQuery struct {

@@ -5,12 +5,15 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func init() {
 	schema := getBuilder()
-	schema.AddQuery("notifiers: [Notifier!]!")
-	schema.AddQuery("notifier(id: ID!): Notifier")
+	utils.Must(
+		schema.AddQuery("notifiers: [Notifier!]!"),
+		schema.AddQuery("notifier(id: ID!): Notifier"),
+	)
 }
 
 // Notifiers gets all available notifiers. In theory v1.GetNotifiersRequest has fields that we should represent here,

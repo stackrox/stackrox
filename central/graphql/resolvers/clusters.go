@@ -4,18 +4,24 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/namespace"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func init() {
 	schema := getBuilder()
-	schema.AddQuery("clusters: [Cluster!]!")
-	schema.AddQuery("cluster(id: ID!): Cluster")
+	utils.Must(
+		schema.AddQuery("clusters: [Cluster!]!"),
+		schema.AddQuery("cluster(id: ID!): Cluster"),
 
-	schema.AddExtraResolver("Cluster", `alerts: [Alert!]!`)
-	schema.AddExtraResolver("Cluster", `deployments: [Deployment!]!`)
-	schema.AddExtraResolver("Cluster", `nodes: [Node!]!`)
-	schema.AddExtraResolver("Cluster", `node(node: ID!): Node`)
+		schema.AddExtraResolver("Cluster", `alerts: [Alert!]!`),
+		schema.AddExtraResolver("Cluster", `deployments: [Deployment!]!`),
+		schema.AddExtraResolver("Cluster", `nodes: [Node!]!`),
+		schema.AddExtraResolver("Cluster", `node(node: ID!): Node`),
+		schema.AddExtraResolver("Cluster", `namespaces: [Namespace!]!`),
+		schema.AddExtraResolver("Cluster", `namespace(name: String!): Namespace`),
+	)
 }
 
 // Cluster returns a GraphQL resolver for the given cluster
@@ -77,4 +83,22 @@ func (resolver *clusterResolver) Node(ctx context.Context, args struct{ Node gra
 	}
 	node, err := store.GetNode(string(args.Node))
 	return resolver.root.wrapNode(node, node != nil, err)
+}
+
+// Namespace returns a given namespace on a cluster.
+func (resolver *clusterResolver) Namespaces(ctx context.Context) ([]*namespaceResolver, error) {
+	if err := readNamespaces(ctx); err != nil {
+		return nil, err
+	}
+	return resolver.root.wrapNamespaces(namespace.ResolveByClusterID(resolver.data.GetId(),
+		resolver.root.NamespaceDataStore, resolver.root.DeploymentDataStore, resolver.root.SecretsDataStore,
+		resolver.root.NetworkPoliciesStore))
+}
+
+// Namespace returns a given namespace on a cluster.
+func (resolver *clusterResolver) Namespace(ctx context.Context, args struct{ Name string }) (*namespaceResolver, error) {
+	return resolver.root.NamespaceByClusterIDAndName(ctx, clusterIDAndNameQuery{
+		ClusterID: graphql.ID(resolver.data.GetId()),
+		Name:      args.Name,
+	})
 }

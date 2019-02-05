@@ -22,7 +22,7 @@ type Evaluator interface {
 }
 
 type namespaceProvider interface {
-	GetNamespaces() ([]*storage.Namespace, error)
+	GetNamespaces() ([]*storage.NamespaceMetadata, error)
 }
 
 // evaluatorImpl handles all of the graph calculations
@@ -257,10 +257,10 @@ func (g *evaluatorImpl) matchPolicyPeer(deployment *storage.Deployment, policyNa
 	return true
 }
 
-func (g *evaluatorImpl) getNamespace(deployment *storage.Deployment) *storage.Namespace {
+func (g *evaluatorImpl) getNamespace(deployment *storage.Deployment) *storage.NamespaceMetadata {
 	namespaces, err := g.namespaceStore.GetNamespaces()
 	if err != nil {
-		return &storage.Namespace{
+		return &storage.NamespaceMetadata{
 			Name: deployment.GetNamespace(),
 		}
 	}
@@ -269,12 +269,12 @@ func (g *evaluatorImpl) getNamespace(deployment *storage.Deployment) *storage.Na
 			return n
 		}
 	}
-	return &storage.Namespace{
+	return &storage.NamespaceMetadata{
 		Name: deployment.GetNamespace(),
 	}
 }
 
-func doesNamespaceMatchLabel(namespace *storage.Namespace, selector *storage.LabelSelector) bool {
+func doesNamespaceMatchLabel(namespace *storage.NamespaceMetadata, selector *storage.LabelSelector) bool {
 	return labels.MatchLabels(selector, namespace.GetLabels())
 }
 

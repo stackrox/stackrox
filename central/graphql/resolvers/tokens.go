@@ -5,12 +5,15 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func init() {
 	schema := getBuilder()
-	schema.AddQuery("tokens(revoked:Boolean): [TokenMetadata!]!")
-	schema.AddQuery("token(id:ID!): TokenMetadata")
+	utils.Must(
+		schema.AddQuery("tokens(revoked:Boolean): [TokenMetadata!]!"),
+		schema.AddQuery("token(id:ID!): TokenMetadata"),
+	)
 }
 
 // Tokens gets a list of all tokens (or just the ones that are or are not resolved)

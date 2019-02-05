@@ -16,6 +16,7 @@ package v1;
 
 message GetNetworkPoliciesRequest {
     string cluster_id = 1;
+    string namespace  = 2;
 }
 
 message NetworkPoliciesResponse {

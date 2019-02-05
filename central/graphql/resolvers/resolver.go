@@ -21,6 +21,7 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
+	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
 	nodeStore "github.com/stackrox/rox/central/node/globalstore"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
@@ -49,6 +50,7 @@ type Resolver struct {
 	GroupDataStore              groupDataStore.Store
 	NamespaceDataStore          namespaceDataStore.DataStore
 	NetworkFlowStore            networkFlowStore.ClusterStore
+	NetworkPoliciesStore        networkPoliciesStore.Store
 	NodeGlobalStore             nodeStore.GlobalStore
 	NotifierStore               notifierStore.Store
 	PolicyDataStore             policyDatastore.DataStore
@@ -67,6 +69,7 @@ func New() *Resolver {
 		ImageDataStore:        imageDatastore.Singleton(),
 		GroupDataStore:        groupDataStore.Singleton(),
 		NamespaceDataStore:    namespaceDataStore.Singleton(),
+		NetworkPoliciesStore:  networkPoliciesStore.Singleton(),
 		NetworkFlowStore:      networkFlowStore.Singleton(),
 		NodeGlobalStore:       nodeStore.Singleton(),
 		NotifierStore:         notifierStore.Singleton(),
@@ -96,6 +99,7 @@ var (
 	readGroups                = readAuth(resources.Group)
 	readImages                = readAuth(resources.Image)
 	readIndicators            = readAuth(resources.Indicator)
+	readNamespaces            = readAuth(resources.Namespace)
 	readNodes                 = readAuth(resources.Node)
 	readNotifiers             = readAuth(resources.Notifier)
 	readPolicies              = readAuth(resources.Policy)

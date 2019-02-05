@@ -7,15 +7,18 @@ import (
 	"github.com/stackrox/rox/central/processindicator/service"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func init() {
 	schema := getBuilder()
-	schema.AddExtraResolver("Deployment", `cluster: Cluster`)
-	schema.AddExtraResolver("Deployment", `groupedProcesses: [ProcessNameGroup!]!`)
-	schema.AddExtraResolver("Deployment", `alerts: [Alert!]!`)
-	schema.AddQuery("deployment(id: ID): Deployment")
-	schema.AddQuery("deployments(query: String): [Deployment!]!")
+	utils.Must(
+		schema.AddExtraResolver("Deployment", `cluster: Cluster`),
+		schema.AddExtraResolver("Deployment", `groupedProcesses: [ProcessNameGroup!]!`),
+		schema.AddExtraResolver("Deployment", `alerts: [Alert!]!`),
+		schema.AddQuery("deployment(id: ID): Deployment"),
+		schema.AddQuery("deployments(query: String): [Deployment!]!"),
+	)
 }
 
 // Deployment returns a GraphQL resolver for a given id

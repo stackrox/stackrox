@@ -13,10 +13,9 @@ var (
 )
 
 // Indexer provides indexing of Namespace objects.
-//go:generate mockgen-wrapper Indexer
 type Indexer interface {
-	AddNamespace(namespace *storage.Namespace) error
-	AddNamespaces(namespaces []*storage.Namespace) error
+	AddNamespace(namespace *storage.NamespaceMetadata) error
+	AddNamespaces(namespaces []*storage.NamespaceMetadata) error
 	DeleteNamespace(id string) error
 	Search(q *v1.Query) ([]search.Result, error)
 }

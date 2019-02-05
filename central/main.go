@@ -44,6 +44,7 @@ import (
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	"github.com/stackrox/rox/central/metrics"
+	namespaceService "github.com/stackrox/rox/central/namespace/service"
 	networkFlowService "github.com/stackrox/rox/central/networkflow/service"
 	networkPolicyService "github.com/stackrox/rox/central/networkpolicies/service"
 	nodeService "github.com/stackrox/rox/central/node/service"
@@ -189,6 +190,7 @@ func startGRPCServer() {
 		imageService.Singleton(),
 		iiService.Singleton(),
 		metadataService.New(),
+		namespaceService.Singleton(),
 		networkFlowService.Singleton(),
 		networkPolicyService.Singleton(),
 		nodeService.Singleton(),
