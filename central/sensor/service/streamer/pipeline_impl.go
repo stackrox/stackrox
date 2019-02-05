@@ -1,6 +1,8 @@
 package streamer
 
 import (
+	"errors"
+
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -10,38 +12,48 @@ import (
 var log = logging.LoggerForModule()
 
 type channeledImpl struct {
-	onFinish func(error)
+	pl pipeline.Pipeline
+
+	stopC    concurrency.ErrorSignal
+	stoppedC concurrency.ErrorSignal
 }
 
 // Start starts pulling, procesing, and pushing.
-func (s *channeledImpl) Start(eventsIn <-chan *central.MsgFromSensor, pl pipeline.Pipeline, injector pipeline.MsgInjector, stopSig concurrency.ReadOnlyErrorSignal) {
-	go s.process(eventsIn, pl, injector, stopSig)
+func (s *channeledImpl) Start(msgsIn <-chan *central.MsgFromSensor, injector pipeline.MsgInjector, dependents ...Stoppable) {
+	go s.process(msgsIn, injector, dependents...)
 }
 
-func (s *channeledImpl) process(msgsIn <-chan *central.MsgFromSensor, pl pipeline.Pipeline, injector pipeline.MsgInjector, stopSig concurrency.ReadOnlyErrorSignal) {
-	err := s.doProcess(msgsIn, pl, injector, stopSig)
-	// When we no longer have anything to process, close the sending channel.
-	s.onFinish(err)
+func (s *channeledImpl) Stop(err error) bool {
+	return s.stopC.SignalWithError(err)
 }
 
-func (s *channeledImpl) doProcess(msgsIn <-chan *central.MsgFromSensor, pl pipeline.Pipeline, injector pipeline.MsgInjector, stopSig concurrency.ReadOnlyErrorSignal) error {
-	defer pl.OnFinish()
+func (s *channeledImpl) Stopped() concurrency.ReadOnlyErrorSignal {
+	return &s.stoppedC
+}
 
-	for {
+func (s *channeledImpl) process(msgsIn <-chan *central.MsgFromSensor, injector pipeline.MsgInjector, dependents ...Stoppable) {
+	defer func() {
+		s.pl.OnFinish()
+		s.stoppedC.SignalWithError(s.stopC.Err())
+		StopAll(s.stoppedC.Err(), dependents...)
+	}()
+
+	for !s.stopC.IsDone() {
 		select {
 		case msg, ok := <-msgsIn:
 			// Looping stops when the output from pending events closes.
 			if !ok {
-				return nil
+				s.stopC.SignalWithError(errors.New("channel unexpectedly closed"))
+				return
 			}
 
-			err := pl.Run(msg, injector)
+			err := s.pl.Run(msg, injector)
 			if err != nil {
 				log.Errorf("error processing msg from sensor: %s", err)
-				continue
 			}
-		case <-stopSig.Done():
-			return stopSig.Err()
+
+		case <-s.stopC.Done():
+			return
 		}
 	}
 }

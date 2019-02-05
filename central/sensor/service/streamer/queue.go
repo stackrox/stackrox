@@ -1,4 +1,4 @@
-package queue
+package streamer
 
 import (
 	"container/list"
@@ -7,38 +7,35 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/concurrency"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
-// Queue provides an interface for a queue that stores MsgFromSensor.
-type Queue interface {
-	Push(sensor *central.MsgFromSensor) error
-	Pull() (*central.MsgFromSensor, error)
-}
-
 type queueImpl struct {
-	mutex sync.Mutex
-
+	mutex             sync.Mutex
+	notEmptySig       concurrency.Signal
 	queue             *list.List
 	resourceIDToEvent map[string]*list.Element
 }
 
-// NewQueue initializes a SensorEvent queue
-func NewQueue() Queue {
+func newQueue() *queueImpl {
 	return &queueImpl{
+		notEmptySig:       concurrency.NewSignal(),
 		queue:             list.New(),
 		resourceIDToEvent: make(map[string]*list.Element),
 	}
 }
 
-// Pull attempts to get the next item from the queue.
-// When no items are available, both the event and error will be nil.
-func (p *queueImpl) Pull() (*central.MsgFromSensor, error) {
+func (p *queueImpl) notEmpty() concurrency.WaitableChan {
+	return p.notEmptySig.WaitC()
+}
+
+func (p *queueImpl) pull() *central.MsgFromSensor {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
 	if p.queue.Len() == 0 {
-		return nil, nil
+		return nil
 	}
 
 	evt := p.queue.Remove(p.queue.Front()).(*central.MsgFromSensor)
@@ -48,22 +45,27 @@ func (p *queueImpl) Pull() (*central.MsgFromSensor, error) {
 		delete(p.resourceIDToEvent, evt.GetEvent().GetId())
 	}
 
-	return evt, nil
+	if p.queue.Len() == 0 {
+		p.notEmptySig.Reset()
+	}
+	return evt
 }
 
 // Push attempts to add an item to the queue, and returns an error if it is unable.
-func (p *queueImpl) Push(msg *central.MsgFromSensor) error {
+func (p *queueImpl) push(msg *central.MsgFromSensor) {
 	metrics.IncrementSensorEventQueueCounter(ops.Add, common.GetMessageType(msg))
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	return p.pushNoLock(msg)
+
+	defer p.notEmptySig.Signal()
+	p.pushNoLock(msg)
 }
 
-func (p *queueImpl) pushNoLock(msg *central.MsgFromSensor) error {
+func (p *queueImpl) pushNoLock(msg *central.MsgFromSensor) {
 	if msg.GetEvent().GetAction() == central.ResourceAction_CREATE_RESOURCE || msg.GetEvent() == nil {
 		p.queue.PushBack(msg)
 		// Purposefully don't cache the CREATE because it should never be deduped
-		return nil
+		return
 	}
 	var msgInserted *list.Element
 	if evt, ok := p.resourceIDToEvent[msg.GetEvent().GetId()]; ok {
@@ -74,5 +76,5 @@ func (p *queueImpl) pushNoLock(msg *central.MsgFromSensor) error {
 		msgInserted = p.queue.PushBack(msg)
 	}
 	p.resourceIDToEvent[msg.GetEvent().GetId()] = msgInserted
-	return nil
+	return
 }

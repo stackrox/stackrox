@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
-	"github.com/stackrox/rox/central/sensor/service/queue"
 )
 
 type managerImpl struct {
@@ -21,13 +20,12 @@ func (m *managerImpl) CreateStreamer(clusterID string, pf pipeline.Factory) (Str
 		return nil, fmt.Errorf("there already is an active connection for cluster %s", clusterID)
 	}
 
-	qu := queue.NewQueue()
 	pl, err := pf.GetPipeline(clusterID)
 	if err != nil {
 		return nil, err
 	}
 
-	streamer := NewStreamer(clusterID, qu, pl)
+	streamer := NewStreamer(clusterID, pl)
 	if err != nil {
 		return nil, err
 	}
