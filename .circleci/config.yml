@@ -61,18 +61,15 @@ setupGCP: &setupGCP
       echo $GKE_SERVICE_ACCOUNT > /tmp/gcp.json
       gcloud auth activate-service-account --key-file /tmp/gcp.json
       gcloud config set project stackrox-ci
-      gcloud config set compute/zone us-central1-b
+      gcloud config set compute/region us-central1
+      gcloud config unset compute/zone
       gcloud config set core/disable_prompts True
 
 createGKE: &createGKE
   run:
     name: Create GKE cluster
     command: |
-      .circleci/create-cluster.sh || (
-        echo "Retrying in case this was a transient GCP failure...";
-        gcloud container clusters delete "prevent-ci-${CIRCLE_BUILD_NUM}";
-        .circleci/create-cluster.sh
-      )
+      .circleci/create-cluster.sh
 
 # See https://stackoverflow.com/a/46316672 for why we have to use user/pass.
 # This step requires the GCP IAM permission "Kubernetes Engine Admin".
@@ -205,7 +202,7 @@ teardownGKE: &teardownGKE
   run:
     name: Tear down GKE cluster
     command: |
-      gcloud container clusters delete --async "prevent-ci-${CIRCLE_BUILD_NUM}"
+      gcloud container clusters delete "prevent-ci-${CIRCLE_BUILD_NUM}" --async
     when: always
 
 collectK8sLogs: &collectK8sLogs
