@@ -23,6 +23,7 @@ var (
 		user.With(permissions.View(resources.Role)): {
 			"/v1.RoleService/GetRoles",
 			"/v1.RoleService/GetRole",
+			"/v1.RoleService/GetResources",
 		},
 		user.With(permissions.Modify(resources.Role)): {
 			"/v1.RoleService/CreateRole",
@@ -103,4 +104,16 @@ func (s *serviceImpl) DeleteRole(ctx context.Context, id *v1.ResourceByID) (*v1.
 		return nil, err
 	}
 	return &v1.Empty{}, nil
+}
+
+// GetResources returns all the possible resources in the system
+func (s *serviceImpl) GetResources(context.Context, *v1.Empty) (*v1.GetResourcesResponse, error) {
+	resourceList := resources.ListAll()
+	resources := make([]string, 0, len(resourceList))
+	for _, r := range resourceList {
+		resources = append(resources, string(r))
+	}
+	return &v1.GetResourcesResponse{
+		Resources: resources,
+	}, nil
 }

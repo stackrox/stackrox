@@ -22,6 +22,10 @@ message GetRolesResponse {
     repeated storage.Role roles = 1;
 }
 
+message GetResourcesResponse {
+    repeated string resources = 1;
+}
+
 service RoleService {
 
     rpc GetRoles (Empty) returns (GetRolesResponse) {
@@ -56,4 +60,9 @@ service RoleService {
         };
     }
 
+    rpc GetResources (Empty) returns (GetResourcesResponse) {
+        option (google.api.http) = {
+            get: "/v1/resources"
+        };
+    }
 }
