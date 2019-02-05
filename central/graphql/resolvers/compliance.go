@@ -6,6 +6,8 @@ import (
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/compliance/aggregation"
+	"github.com/stackrox/rox/central/namespace"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -38,7 +40,7 @@ func InitCompliance() {
 			schema.AddQuery("aggregatedResults(groupBy:[ComplianceAggregation_Scope!],unit:ComplianceAggregation_Scope!,where:String): ComplianceAggregation_Response!"),
 			schema.AddExtraResolver("ComplianceStandardMetadata", "controls: [ComplianceControl!]!"),
 			schema.AddExtraResolver("ComplianceStandardMetadata", "groups: [ComplianceControlGroup!]!"),
-			schema.AddUnionType("ComplianceDomainKey", []string{"ComplianceStandardMetadata", "ComplianceControl", "Cluster", "Deployment", "Node"}),
+			schema.AddUnionType("ComplianceDomainKey", []string{"ComplianceStandardMetadata", "ComplianceControl", "Cluster", "Deployment", "Node", "Namespace"}),
 			schema.AddExtraResolver("ComplianceAggregation_Result", "keys: [ComplianceDomainKey!]!"),
 		)
 	})
@@ -118,6 +120,18 @@ func (resolver *complianceDomainKeyResolver) ToDeployment() (deployment *deploym
 		deployment, found := resolver.domain.GetDeployments()[resolver.key.GetId()]
 		if found {
 			return &deploymentResolver{resolver.root, deployment, nil}, found
+		}
+	}
+	return nil, false
+}
+
+func (resolver *complianceDomainKeyResolver) ToNamespace() (*namespaceResolver, bool) {
+	if resolver.key.GetScope() == v1.ComplianceAggregation_NAMESPACE {
+		clusterID, name := aggregation.ClusterIDAndNameFromNamespaceIdentifier(resolver.key.GetId())
+		receivedNS, found, err := namespace.ResolveByClusterIDAndName(clusterID, name, resolver.root.NamespaceDataStore,
+			resolver.root.DeploymentDataStore, resolver.root.SecretsDataStore, resolver.root.NetworkPoliciesStore)
+		if err == nil && found {
+			return &namespaceResolver{resolver.root, receivedNS}, true
 		}
 	}
 	return nil, false

@@ -13,6 +13,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func qualifiedNamespace(clusterID, namespace string) string {
+	return clusterID + namespace
+}
+
+func qualifiedNamespaceIdentifier(clusterID, namespace string) string {
+	return fmt.Sprintf("%s/%s", clusterID, qualifiedNamespace(clusterID, namespace))
+}
+
 func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 	return &storage.ComplianceRunResults{
 		Domain: &storage.ComplianceDomain{
@@ -22,15 +30,18 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 			Deployments: map[string]*storage.Deployment{
 				cluster + "deployment1": {
 					Id:        cluster + "deployment1",
-					Namespace: cluster + "namespace1",
+					Namespace: qualifiedNamespace(cluster, "namespace1"),
+					ClusterId: cluster,
 				},
 				cluster + "deployment2": {
 					Id:        cluster + "deployment2",
-					Namespace: cluster + "namespace2",
+					Namespace: qualifiedNamespace(cluster, "namespace2"),
+					ClusterId: cluster,
 				},
 				cluster + "deployment3": {
 					Id:        cluster + "deployment3",
 					Namespace: cluster + "namespace3",
+					ClusterId: cluster,
 				},
 			},
 			Nodes: map[string]*storage.Node{
@@ -120,12 +131,12 @@ func mockFlatChecks(clusterID, standardID string) []flatCheck {
 		newFlatCheck(clusterID, "", standardID, "", "control4", clusterID+"node1", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
 		newFlatCheck(clusterID, "", standardID, "", "control3", clusterID+"node2", "", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
 		newFlatCheck(clusterID, "", standardID, "", "control4", clusterID+"node2", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
-		newFlatCheck(clusterID, clusterID+"namespace1", standardID, "", "control5", "", clusterID+"deployment1", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
-		newFlatCheck(clusterID, clusterID+"namespace1", standardID, "", "control6", "", clusterID+"deployment1", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
-		newFlatCheck(clusterID, clusterID+"namespace2", standardID, "", "control5", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
-		newFlatCheck(clusterID, clusterID+"namespace2", standardID, "", "control6", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
-		newFlatCheck(clusterID, clusterID+"namespace3", standardID, "", "control5", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
-		newFlatCheck(clusterID, clusterID+"namespace3", standardID, "", "control6", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
+		newFlatCheck(clusterID, qualifiedNamespaceIdentifier(clusterID, "namespace1"), standardID, "", "control5", "", clusterID+"deployment1", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
+		newFlatCheck(clusterID, qualifiedNamespaceIdentifier(clusterID, "namespace1"), standardID, "", "control6", "", clusterID+"deployment1", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
+		newFlatCheck(clusterID, qualifiedNamespaceIdentifier(clusterID, "namespace2"), standardID, "", "control5", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
+		newFlatCheck(clusterID, qualifiedNamespaceIdentifier(clusterID, "namespace2"), standardID, "", "control6", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
+		newFlatCheck(clusterID, qualifiedNamespaceIdentifier(clusterID, "namespace3"), standardID, "", "control5", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
+		newFlatCheck(clusterID, qualifiedNamespaceIdentifier(clusterID, "namespace3"), standardID, "", "control6", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
 	}
 }
 

@@ -223,7 +223,7 @@ func (a *aggregatorImpl) getFlatChecksFromRunResult(runResults *storage.Complian
 			continue
 		}
 		for control, r := range controlResults.GetControlResults() {
-			fc := newFlatCheck(clusterID, deployment.GetNamespace(), standardID, a.getCategoryID(control), control, "", deployment.GetId(), r.GetOverallState())
+			fc := newFlatCheck(clusterID, namespaceIdentifierFromDeployment(deployment), standardID, a.getCategoryID(control), control, "", deployment.GetId(), r.GetOverallState())
 			if isValidCheck(mask, fc) {
 				flatChecks = append(flatChecks, fc)
 			}
