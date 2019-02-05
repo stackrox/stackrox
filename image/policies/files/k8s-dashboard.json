@@ -1,4 +1,5 @@
 {
+  "id": "0ac267ae-9128-42c7-b15e-0e926844aa2f",
   "name": "Kubernetes Dashboard Deployed",
   "description": "Alert on the presence of the Kubernetes dashboard service",
   "severity": "LOW_SEVERITY",

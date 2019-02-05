@@ -1,4 +1,5 @@
 {
+  "id": "6e0239e1-f4ca-43d0-ad3f-79ec683db811",
   "name": "Shadow File Modification",
   "description": "Processes that indicate attempts to modify shadow files",
   "categories": ["System Modification"],

@@ -1,4 +1,5 @@
 {
+  "id": "0a2ee697-cb88-4e13-8e62-c6a2a887e0cc",
   "name": "chkconfig Execution",
   "description": "Detected usage of the chkconfig service manager; typically this is not used within a container",
   "severity": "LOW_SEVERITY",

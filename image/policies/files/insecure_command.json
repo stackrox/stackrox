@@ -1,4 +1,5 @@
 {
+  "id": "657f4d37-55ab-42f2-bdce-9a4b74a67328",
   "name": "Insecure specified in CMD",
   "description": "Alert on deployments using 'insecure' in the command",
   "severity": "LOW_SEVERITY",

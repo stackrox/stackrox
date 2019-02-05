@@ -1,4 +1,5 @@
 {
+  "id": "3ebdc07d-7c01-4508-9f81-3f3673fce536",
     "name": "Process Targeting Cluster Kubernetes Docker Stats Endpoint",
     "description": "Detects misuse of the Kubernetes docker stats endpoint",
     "categories": ["Kubernetes"],

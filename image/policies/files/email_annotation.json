@@ -1,4 +1,5 @@
 {
+  "id": "014a03c6-9053-49b5-88ea-c1efcf19804f",
   "name": "Required Annotation: Email",
   "severity": "LOW_SEVERITY",
   "lifecycle_stages": ["DEPLOY"],

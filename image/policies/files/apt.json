@@ -1,4 +1,5 @@
 {
+  "id": "74cfb824-2e65-46b7-b1b4-ba897e53af1f",
   "name": "Ubuntu Package Manager in Image",
   "description": "Alert on deployments with components of the Debian/Ubuntu package management system in the image.",
   "severity": "LOW_SEVERITY",

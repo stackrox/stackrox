@@ -1,4 +1,5 @@
 {
+  "id": "251136ca-c92c-4474-a2c7-4949c71b745f",
     "name": "Process Targeting Kubernetes Service Endpoint",
     "description": "Detects misuse of the Kubernetes Service API endpoint",
     "categories": ["Kubernetes"],

@@ -1,4 +1,5 @@
 {
+  "id": "1c4e2cab-ce24-4e2a-9a66-f61028e79931",
   "name": "Login Binaries",
   "description": "Processes that indicate login attempts",
   "categories": ["Security Best Practices"],

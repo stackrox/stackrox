@@ -1,4 +1,5 @@
 {
+  "id": "629f847d-72b1-4009-8891-cbe479ab10ab",
   "name": "Secure Shell (ssh) Port Exposed in Image",
   "description": "Alert on deployments exposing port 22, commonly reserved for SSH access.",
   "severity": "HIGH_SEVERITY",

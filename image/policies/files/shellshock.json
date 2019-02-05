@@ -1,4 +1,5 @@
 {
+  "id": "2b251b91-fd41-4a71-ad01-586c385714ba",
   "name": "Shellshock: CVE-2014-6271",
   "description": "Alert on deployments with images containing Shellshock vulnerability (CVE-2014-6271)",
   "severity": "CRITICAL_SEVERITY",

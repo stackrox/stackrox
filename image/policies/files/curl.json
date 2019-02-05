@@ -1,4 +1,5 @@
 {
+  "id": "1913283f-ce3c-4134-84ef-195c4cd687ae",
   "name": "Curl in Image",
   "description": "Alert on deployments with curl present",
   "severity": "LOW_SEVERITY",

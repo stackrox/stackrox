@@ -69,7 +69,9 @@ func (b *storeImpl) GetPolicies() ([]*storage.Policy, error) {
 // AddPolicy adds a policy to bolt
 func (b *storeImpl) AddPolicy(policy *storage.Policy) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Policy")
-	policy.Id = uuid.NewV4().String()
+	if policy.Id == "" {
+		policy.Id = uuid.NewV4().String()
+	}
 	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(policyBucket)
 		_, exists, err := b.getPolicy(policy.GetId(), bucket)

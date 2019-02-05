@@ -1,4 +1,5 @@
 {
+  "id": "6abf0df8-736b-4530-8849-6a1344cf17fe",
     "name": "Netcat Execution Detected",
     "description": "Detects execution of netcat in a container",
     "categories": ["Network Tools"],

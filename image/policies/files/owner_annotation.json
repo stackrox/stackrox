@@ -1,4 +1,5 @@
 {
+  "id": "1a498d97-0cc2-45f5-b32e-1f3cca6a3113",
   "name": "Required Annotation: Owner",
   "severity": "LOW_SEVERITY",
   "lifecycle_stages": ["DEPLOY"],

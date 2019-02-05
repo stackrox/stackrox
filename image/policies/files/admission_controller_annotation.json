@@ -1,4 +1,5 @@
 {
+  "id": "3a98be1e-d427-41ba-ad60-994e848a5554",
   "name": "Emergency Deployment Annotation",
   "severity": "HIGH_SEVERITY",
   "lifecycle_stages": ["DEPLOY"],

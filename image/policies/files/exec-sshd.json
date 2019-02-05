@@ -1,4 +1,5 @@
 {
+  "id": "618e65ca-737b-4fec-bb42-57a04e7dfc28",
     "name": "Secure Shell Server (sshd) Execution",
     "description": "Detects container running the SSH daemon",
     "categories": ["Network Tools"],

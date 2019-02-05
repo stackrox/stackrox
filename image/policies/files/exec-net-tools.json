@@ -1,4 +1,5 @@
 {
+  "id": "2361bb4c-4cf6-4997-bae6-825da6cf932e",
     "name": "Network Management Execution",
     "description": "Detects execution of binaries that can be used to manipulate network configuration and management.",
     "categories": ["Network Tools"],

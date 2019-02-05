@@ -1,4 +1,5 @@
 {
+  "id": "ddb7af9c-5ec1-45e1-a0cf-c36e3ef2b2ce",
   "name": "Red Hat Package Manager Execution",
   "description": "Detects execution of binaries which are components of the Red Hat/Fedora/CentOS package management system.",
   "severity": "LOW_SEVERITY",

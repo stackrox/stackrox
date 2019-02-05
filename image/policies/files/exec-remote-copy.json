@@ -1,4 +1,5 @@
 {
+  "id": "3e546913-de60-445c-a6d5-e70ac4ed4e98",
     "name": "Remote File Copy Binary Execution",
     "description": "Alert on deployments that execute a remote file copy tool", 
     "categories": ["Network Tools"],

@@ -1,4 +1,5 @@
 {
+  "id": "886c3c94-3a6a-4f2b-82fc-d6bf5a310840",
   "name": "No resource requests or limits specified",
   "description": "Alert on deployments that have containers without resource requests and limits",
   "severity": "MEDIUM_SEVERITY",

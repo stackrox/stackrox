@@ -1,4 +1,5 @@
 {
+  "id": "fe9de18b-86db-44d5-a7c4-74173ccffe2e",
   "name": "Privileged Container",
   "description": "Alert on deployments with containers running in privileged mode",
   "severity": "MEDIUM_SEVERITY",

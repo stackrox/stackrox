@@ -1,4 +1,5 @@
 {
+  "id": "f95ff08d-130a-465a-a27e-32ed1fb05555",
   "name": "Red Hat Package Manager in Image",
   "description": "Alert on deployments with compoenents of the Red Hat/Fedora/CentOS package management system.",
   "severity": "LOW_SEVERITY",

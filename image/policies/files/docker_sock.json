@@ -1,4 +1,5 @@
 {
+  "id": "ccd66f67-0b69-4081-9d01-da692f7db3b4",
   "name": "Mount Docker Socket",
   "description": "Alert on deployments with volume mount on docker socket",
   "severity": "MEDIUM_SEVERITY",

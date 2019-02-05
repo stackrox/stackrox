@@ -1,4 +1,5 @@
 {
+  "id": "a5248b33-5027-4aaf-a6b6-896f73fc6d28",
   "name": "Alpine Linux Package Manager (apk) in Image",
   "description": "Alert on deployments with the Alpine Linux package manager (apk) present",
   "severity": "LOW_SEVERITY",

@@ -1,4 +1,5 @@
 {
+  "id": "900990b5-60ef-44e5-b7f6-4a1f22215d7f",
   "name": "Apache Struts: CVE-2017-5638",
   "description": "Alert on deployments with images containing Apache Struts vulnerability CVE-2017-5638",
   "severity": "CRITICAL_SEVERITY",

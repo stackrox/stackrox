@@ -1,4 +1,5 @@
 {
+  "id": "f0bacecd-87be-4f51-89a5-8f86ad523620",
   "name": "nmap Execution",
   "description": "Alerts when the nmap process launches in a container during run time",
   "severity": "HIGH_SEVERITY",

@@ -1,4 +1,5 @@
 {
+  "id": "101952d3-ec69-4ebe-bfa3-ff26b6e4c29d",
     "name": "Compiler Tool Execution",
     "description": "Detects process execution of make",
     "description": "Detects execution of binaries which are used to compile software",

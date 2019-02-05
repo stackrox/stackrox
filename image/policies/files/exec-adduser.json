@@ -1,4 +1,5 @@
 {
+  "id": "32081d8e-84cd-4d67-b016-fe481c55b93a",
   "name": "Linux User Add Execution",
   "description": "Detects when the 'useradd' or 'adduser' binary is executed, which can be used to add a new linux user.",
   "severity": "HIGH_SEVERITY",

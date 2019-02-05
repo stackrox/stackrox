@@ -1,4 +1,5 @@
 {
+  "id": "93f4b2dd-ef5a-419e-8371-38aed480fb36",
   "name": "CVSS >= 6 and Privileged",
   "description": "Alert on deployments with vulnerabilities with a CVSS score >= 6 and running in Privileged Mode",
   "severity": "HIGH_SEVERITY",

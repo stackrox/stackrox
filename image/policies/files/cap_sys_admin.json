@@ -1,4 +1,5 @@
 {
+  "id": "30e8cb50-d93f-42a1-b022-ec7de7ab7b65",
   "name": "CAP_SYS_ADMIN capability added",
   "description": "Alert on deployments with containers escalating with CAP_SYS_ADMIN",
   "severity": "MEDIUM_SEVERITY",

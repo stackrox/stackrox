@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/readable"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -85,6 +86,13 @@ func (suite *DefaultPoliciesTestSuite) TearDownTest() {
 	suite.bleveIndex.Close()
 	suite.db.Close()
 	os.Remove(suite.db.Path())
+}
+
+func (suite *DefaultPoliciesTestSuite) TestNoDuplicatePolicyIDs() {
+	ids := set.NewStringSet()
+	for _, p := range suite.defaultPolicies {
+		suite.True(ids.Add(p.GetId()))
+	}
 }
 
 func (suite *DefaultPoliciesTestSuite) MustGetPolicy(name string) *storage.Policy {

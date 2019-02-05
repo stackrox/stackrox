@@ -1,4 +1,5 @@
 {
+  "id": "2e90874a-3521-44de-85c6-5720f519a701",
   "name": "Latest tag",
   "description": "Alert on deployments with images using tag 'latest'",
   "severity": "LOW_SEVERITY",

@@ -1,4 +1,5 @@
 {
+  "id": "842feb9f-ecb1-4e3c-a4bf-8a1dcb63948a",
   "name": "Wget in Image",
   "description": "Alert on deployments with wget present",
   "severity": "LOW_SEVERITY",

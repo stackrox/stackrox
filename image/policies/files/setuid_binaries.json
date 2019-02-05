@@ -1,4 +1,5 @@
 {
+  "id": "98c8396e-3541-48b9-a30a-371c86a8f0ef",
   "name": "SetUID Processes",
   "description": "Processes that are known to use setuid binaries",
   "categories": ["System Modification"],

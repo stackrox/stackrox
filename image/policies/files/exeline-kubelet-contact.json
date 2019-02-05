@@ -1,4 +1,5 @@
 {
+  "id": "86804b96-e87e-4eae-b56e-1718a8a55763",
     "name": "Process Targeting Cluster Kubelet Endpoint",
     "description": "Detects misuse of the healthz/kubelet API/heapster endpoint",
     "categories": ["Kubernetes"],

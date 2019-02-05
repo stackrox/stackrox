@@ -1,4 +1,5 @@
 {
+  "id": "60e7c7f3-dc78-4367-9e9a-68aa3b7467f0",
   "name": "Required Label: Email",
   "severity": "LOW_SEVERITY",
   "lifecycle_stages": ["DEPLOY"],

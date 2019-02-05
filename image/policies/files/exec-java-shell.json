@@ -1,4 +1,5 @@
 {
+  "id": "0501ac8b-5869-4e1e-b360-84dbf01f2c6c",
     "name": "Shell Spawned by Java Application",
     "description": "Detects execution of shell (bash/csh/sh/zsh) as a subprocess of a java application",
     "categories": ["System Modification"],

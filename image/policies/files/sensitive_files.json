@@ -1,4 +1,5 @@
 {
+  "id": "a9b9ecf7-9707-4e32-8b62-d03018ed454f",
   "name": "Sensitive file access",
   "description": "Sensitive files being accessed",
   "categories": ["System Modification"],

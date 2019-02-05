@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
@@ -45,11 +46,15 @@ func newWithoutDefaults(db *bolt.DB) Store {
 }
 
 func addDefaults(store Store) {
+	policyIDSet := set.NewStringSet()
+	policyNameSet := set.NewStringSet()
 	if policies, err := store.GetPolicies(); err != nil {
 		panic(err)
 	} else if len(policies) > 0 {
-		// This means the policies have already been inserted
-		return
+		for _, p := range policies {
+			policyIDSet.Add(p.GetId())
+			policyNameSet.Add(p.GetName())
+		}
 	}
 
 	// Preload the default policies.
@@ -57,10 +62,16 @@ func addDefaults(store Store) {
 	if err != nil {
 		panic(err)
 	}
+	var count int
 	for _, p := range policies {
+		// If the ID or Name already exists then ignore
+		if policyIDSet.Contains(p.GetId()) || policyNameSet.Contains(p.GetName()) {
+			continue
+		}
+		count++
 		if _, err := store.AddPolicy(p); err != nil {
 			panic(err)
 		}
 	}
-	log.Infof("Loaded %d default Policies", len(policies))
+	log.Infof("Loaded %d new default Policies", count)
 }

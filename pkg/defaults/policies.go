@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -27,6 +28,7 @@ func Policies() (policies []*storage.Policy, err error) {
 		return
 	}
 
+	errList := errorhelpers.NewErrorList("Default policy validation")
 	for _, f := range files {
 		if filepath.Ext(f.Name()) != `.json` {
 			log.Debugf("Ignoring non-json file: %s", f.Name())
@@ -36,11 +38,18 @@ func Policies() (policies []*storage.Policy, err error) {
 		var p *storage.Policy
 		p, err = readPolicyFile(path.Join(dir, f.Name()))
 		if err != nil {
-			return
+			errList.AddError(err)
+			continue
+		}
+		if p.GetId() == "" {
+			errList.AddStringf("policy %s does not have an ID defined", p.GetName())
+			continue
 		}
 
 		policies = append(policies, p)
 	}
+
+	err = errList.ToError()
 
 	return
 }
