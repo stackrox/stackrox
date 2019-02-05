@@ -1,4 +1,7 @@
 class TestGroups {
+	protected static final SMOKE_CATEGORY = "smoke"
+	protected static final SMOKE_CATEGORY_CLASS = "groups.SMOKE"
+
 	protected static final BAT_CATEGORY = "bat"
 	protected static final BAT_CATEGORY_CLASS = "groups.BAT"
 
@@ -9,7 +12,8 @@ class TestGroups {
 	protected static final ENFORCEMENT_CATEGORY_CLASS = "groups.PolicyEnforcement"
 
 	private static final groupDefinitions = [
-			(BAT_CATEGORY)    : BAT_CATEGORY_CLASS,
+ 			(SMOKE_CATEGORY)          : SMOKE_CATEGORY_CLASS,
+			(BAT_CATEGORY)            : BAT_CATEGORY_CLASS,
 			(INTEGRATION_CATEGORY)    : INTEGRATION_CATEGORY_CLASS,
 			(ENFORCEMENT_CATEGORY)    : ENFORCEMENT_CATEGORY_CLASS
 	]

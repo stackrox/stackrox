@@ -5,9 +5,18 @@ LOCAL_PORT=${LOCAL_PORT:-8000}
 NAMESPACE="${NAMESPACE:-stackrox}"
 
 pkill -f "kubectl port-forward -n ${NAMESPACE}" || true
-export CENTRAL_POD="$(kubectl get pod -n $NAMESPACE --selector 'app=central' --output=jsonpath='{.items..metadata.name} {.items..status.phase}' | grep Running | cut -f 1 -d ' ')"
 
-echo "Setting port-forwarding..."
+CENTRAL_POD=""
+echo -n "Waiting for a running Central pod"
+until [ -n "${CENTRAL_POD}" ]; do
+  echo -n '.'
+  sleep 2
+  CENTRAL_POD="$(kubectl get pod -n $NAMESPACE --selector 'app=central' | grep Running | awk '{print $1}')"
+done
+echo "found Central pod: ${CENTRAL_POD}"
+
+
+echo -n "Setting up port-forwarding..."
 
 # kubectl should be killed whenever this script is killed
 trap 'kill -TERM ${PID}; wait ${PID}' TERM INT

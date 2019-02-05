@@ -1,5 +1,6 @@
 package groups
 
+@interface SMOKE { }
 @interface BAT { }
 @interface Integration { }
 @interface NetworkPolicySimulation { }

@@ -1,6 +1,7 @@
 import static Services.getPolicies
 import static Services.waitForViolation
 import groups.BAT
+import groups.SMOKE
 import objects.Deployment
 import org.junit.experimental.categories.Category
 import spock.lang.Unroll
@@ -37,7 +38,7 @@ class RuntimePolicyTest extends BaseSpecification  {
     }
 
     @Unroll
-    @Category(BAT)
+    @Category([BAT, SMOKE])
     def "Verify runtime policy : #policyName can be triggered"() {
         when:
         "Validate if policy is present"

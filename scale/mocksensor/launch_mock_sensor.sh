@@ -22,11 +22,11 @@ source "$ROX_DIR/deploy/common/env.sh"
 source "$ROX_DIR/deploy/k8s/env.sh"
 
 # set auth
-ROX_ADMIN_PASSWORD="${ROX_PASSWORD:-}"
+export ROX_ADMIN_PASSWORD="${ROX_PASSWORD:-}"
 if [ -z "$ROX_ADMIN_PASSWORD" ]; then
-  ROX_ADMIN_PASSWORD="$(< ...)"
+  echo >&2 "Please set ROX_PASSWORD before running this script."
+  exit 1
 fi
-export ROX_ADMIN_PASSWORD
 
 get_cluster_zip localhost:8000 "mock-cluster-$1" KUBERNETES_CLUSTER "$MAIN_IMAGE" "central.stackrox:443" "$DIR" "true" ""
 
@@ -53,7 +53,7 @@ else
 fi
 envsubst < "$DIR/mocksensor.yaml.tmpl" > "$newYAML"
 
-kubectl -n stackrox delete deploy/sensor || true
+kubectl -n stackrox delete deploy/sensor 2>/dev/null || true
 kubectl create -f "${newYAML}"
 
 # Clean up the mock sensor artifacts

@@ -15,6 +15,7 @@ import io.stackrox.proto.storage.DeploymentOuterClass.Risk.Result
 import org.junit.Assume
 
 import groups.BAT
+import groups.SMOKE
 import org.junit.experimental.categories.Category
 import spock.lang.Stepwise
 import spock.lang.Unroll
@@ -67,7 +68,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category(BAT)
+    @Category([BAT, SMOKE])
     def "Verify policy #policyName is triggered" (String policyName, String deploymentName,
                                                   String testId) {
         when:

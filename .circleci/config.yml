@@ -109,7 +109,19 @@ waitForAPI: &waitForAPI
     name: Wait for the API server to be up
     command: |
       export PING_URL="https://127.0.0.1:${LOCAL_PORT}/v1/ping"
-      curl -k --connect-timeout 5 --max-time 10 --retry 10 --retry-connrefused --retry-delay 1 --retry-max-time 30 "${PING_URL}"
+      set +e
+      SUCCESS=0
+      for i in $(seq 1 10); do
+        if [[ "$(curl -sk --connect-timeout 5 --max-time 10 "${PING_URL}" | jq '.status' -r)" == "ok" ]]; then
+          SUCCESS=1
+          break
+        fi
+        sleep 5
+      done
+      if [[ "${SUCCESS}" == 0 ]]; then
+        echo "Failed to connect to Central"
+        exit 1
+      fi
 
 waitForSensorK8s: &waitForSensorK8s
   run:
@@ -519,6 +531,7 @@ jobs:
       - LOCAL_PORT: 8000
       - MONITORING_SUPPORT: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
+      - STORAGE: pvc
     steps:
       - checkout
       - setup_remote_docker
@@ -548,11 +561,41 @@ jobs:
           command: |
             ./scale/mocksensor/launch_multiple_mock_sensors.sh -instances=10 -max-deployments=200 -max-indicators=4000 -max-network-flows=20 -max-updates=2000
             mkdir /tmp/pprof
-            ./scale/profiler/pprof.sh /tmp/pprof localhost:8000 10
+            ./scale/profiler/pprof.sh /tmp/pprof localhost:8000 6
       - *storeProfilingResults
+      - run:
+          name: Delete all mock sensors
+          command: kubectl -n stackrox delete deployments --selector "type=mocksensor"
+
+      - run:
+          name: Launch da real sensor
+          command: |
+            kubectl create clusterrolebinding temporary-admin --clusterrole=cluster-admin --user circleci-gke@ultra-current-825.iam.gserviceaccount.com
+            ./deploy/k8s/sensor.sh
+            kubectl delete clusterrolebinding temporary-admin
+
+      - *waitForSensorK8s
+
+      - run:
+          name: Kill our pods a few times
+          command: ./scripts/ci/chaos_monkey.sh
+      - run:
+          name: Restart port forward
+          command: ./scripts/k8s/local-port-forward.sh
+          background: true
+      - *waitForAPI
+      - *waitForSensorK8s
+      - *restoreGradle
+      - run:
+          name: QA Automation Platform
+          command: |
+            export CLUSTER=K8S
+            export HOSTNAME=localhost
+            export PORT=${LOCAL_PORT}
+            make -C qa-tests-backend smoke-test
+
       - *collectK8sLogs
       - *storeK8sLogs
-
       - *teardownGKE
 
 

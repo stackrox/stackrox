@@ -178,7 +178,9 @@ func (s *Sensor) Start() {
 // Stop shuts down background tasks.
 func (s *Sensor) Stop() {
 	// Stop the sensor.
-	s.sensorInstance.Stop(nil)
+	if s.sensorInstance != nil {
+		s.sensorInstance.Stop(nil)
+	}
 
 	// Stop all of our listeners.
 	if s.listener != nil {
