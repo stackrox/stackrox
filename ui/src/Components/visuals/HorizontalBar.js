@@ -253,13 +253,19 @@ class HorizontalBarChart extends Component {
 
                     {/* Empty Background */}
                     <HorizontalBarSeries
-                        data={sortedData.map(item => ({ x: 0, x0: 100, y: item.y }))}
+                        data={sortedData.map(item => ({
+                            x: 0,
+                            x0: 100,
+                            y: item.y,
+                            barLink: item.barLink
+                        }))}
                         style={{
                             height: seriesProps.style.height,
                             stroke: 'var(--base-200)',
                             fill: `url(#bar-background)`,
                             cursor: 'pointer'
                         }}
+                        onValueClick={this.onValueClickHandler}
                     />
 
                     {/* Values */}

@@ -7,10 +7,10 @@ function constructWhereClause(mappedVariables, params) {
     let whereClause = '';
 
     let { query } = params;
+    const { groupBy, ...rest } = query;
     if (mappedVariables.where) {
-        query = merge(query, qs.parse(mappedVariables.where));
+        query = merge(rest, qs.parse(mappedVariables.where));
     }
-
     Object.keys(query).forEach((queryParamKey, index) => {
         const queryParamValue = query[queryParamKey];
         if (Array.isArray(queryParamValue)) {

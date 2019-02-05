@@ -30,6 +30,7 @@ const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRo
             pageType={pageTypes.ENTITY}
             entityType={entityType}
             params={linkParams}
+            className="w-full"
         >
             <div
                 className="flex flex-1 text-base-600 uppercase items-center tracking-wide pl-4 pt-1 leading-normal font-700"

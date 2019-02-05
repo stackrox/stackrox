@@ -1,38 +1,48 @@
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import { standardTypes, resourceTypes } from 'constants/entityTypes';
 
+const getColumnValue = (row, accessor) => (row[accessor] ? row[accessor] : 'N/A');
+
 const complianceColumns = [
     {
-        accessor: 'node',
-        Header: 'Node'
+        accessor: standardTypes.PCI_DSS_3_2,
+        Header: 'PCI',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.PCI_DSS_3_2)
     },
     {
-        accessor: 'pci',
-        Header: 'PCI'
+        accessor: standardTypes.NIST_800_190,
+        Header: 'NIST',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.NIST_800_190)
     },
     {
-        accessor: 'nist',
-        Header: 'NIST'
+        accessor: standardTypes.HIPAA_164,
+        Header: 'HIPAA',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.HIPAA_164)
     },
     {
-        accessor: 'hippa',
-        Header: 'HIPPA'
+        accessor: standardTypes.CIS_KUBERENETES_V1_2_0,
+        Header: 'CIS Kube',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_KUBERENETES_V1_2_0)
     },
     {
-        accessor: 'cis',
-        Header: 'CIS'
+        accessor: standardTypes.CIS_DOCKER_V1_1_0,
+        Header: 'CIS Docker',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_DOCKER_V1_1_0)
     }
 ];
 
 const clusterColumns = [
     {
         accessor: 'id',
-        Header: 'ID'
+        Header: 'id',
+        headerClassName: 'hidden',
+        className: 'hidden'
     },
     {
         accessor: 'name',
-        Header: 'Name'
-    }
+        Header: 'Cluster'
+    },
+    ...complianceColumns
 ];
 
 const getStandardColumns = standard => [
@@ -53,27 +63,35 @@ const getStandardColumns = standard => [
 const nodeColumns = [
     {
         accessor: 'id',
-        Header: 'ID'
+        Header: 'id',
+        headerClassName: 'hidden',
+        className: 'hidden'
     },
     {
         accessor: 'name',
-        Header: 'Name'
+        Header: 'Node'
+    },
+    {
+        accessor: standardTypes.CIS_KUBERENETES_V1_2_0,
+        Header: 'CIS Kube',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_KUBERENETES_V1_2_0)
+    },
+    {
+        accessor: standardTypes.CIS_DOCKER_V1_1_0,
+        Header: 'CIS Docker',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_DOCKER_V1_1_0)
     }
 ];
 
 const namespaceColumns = [
     {
         accessor: 'id',
-        Header: 'ID'
+        Header: 'Namespace'
     },
-    {
-        accessor: 'namespace',
-        Header: 'Name'
-    }
+    ...complianceColumns
 ];
 
 const entityToColumns = {
-    compliance: complianceColumns,
     [resourceTypes.CLUSTER]: clusterColumns,
     [standardTypes.PCI_DSS_3_2]: getStandardColumns('PCI'),
     [standardTypes.NIST_800_190]: getStandardColumns('NIST'),

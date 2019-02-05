@@ -19,7 +19,7 @@ function formatAsPercent(x) {
     return `${x}%`;
 }
 
-function processData(data) {
+function processData(data, type) {
     const { complianceStandards } = data;
     if (!complianceStandards) return [];
     const barData = data.results.results.map(result => {
@@ -33,6 +33,7 @@ function processData(data) {
                 title: `${standard.name} Standard - ${percentagePassing}%`,
                 body: `[] failing across ${numFailing + numPassing} clusters`
             },
+            barLink: `/main/compliance2/${standard.id}?groupBy=${type}`,
             axisLink: `/main/compliance2/${standard.id}`
         };
         return dataPoint;

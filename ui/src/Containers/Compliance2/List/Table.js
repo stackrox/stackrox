@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { standardTypes } from 'constants/entityTypes';
 import standardLabels from 'messages/standards';
+import pluralize from 'pluralize';
 
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
@@ -12,6 +13,7 @@ import TableGroup from 'Components/TableGroup';
 import entityToColumns from 'constants/tableColumns';
 import componentTypes from 'constants/componentTypes';
 import AppQuery from 'Components/AppQuery';
+import NoResultsMessage from 'Components/NoResultsMessage';
 
 const standardTypeValues = Object.values(standardTypes);
 
@@ -45,11 +47,19 @@ class ListTable extends Component {
                     let tableData;
                     let contents = <Loader />;
                     let paginationComponent;
-                    const headerText = isStandard
-                        ? `${standardLabels[params.entityType]} controls`
-                        : `${params.entityType}`;
+                    let headerText;
                     if (!loading || (data && data.results)) {
                         tableData = data.results;
+                        if (!tableData) return <NoResultsMessage />;
+                        const total = tableData.length;
+                        const groupedByText = params.query.groupBy
+                            ? `in ${tableData.length} ${pluralize(params.query.groupBy, total)}`
+                            : '';
+                        headerText = isStandard
+                            ? `${data.totalControls} ${
+                                  standardLabels[params.entityType]
+                              } ${pluralize('control', data.totalControls)} ${groupedByText}`
+                            : `${total} ${pluralize(params.entityType, total)} ${groupedByText}`;
                         contents = isStandard ? (
                             <TableGroup
                                 groups={tableData}
@@ -72,7 +82,7 @@ class ListTable extends Component {
                         paginationComponent = (
                             <TablePagination
                                 page={page}
-                                dataLength={tableData.length}
+                                dataLength={total}
                                 setPage={this.setTablePage}
                             />
                         );

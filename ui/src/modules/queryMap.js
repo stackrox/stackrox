@@ -5,7 +5,7 @@ import contextTypes from 'constants/contextTypes';
 import pageTypes from 'constants/pageTypes';
 import { CLUSTER_QUERY } from 'queries/cluster';
 import { NAMESPACE_QUERY, RELATED_DEPLOYMENTS } from 'queries/namespace';
-import { CLUSTERS_QUERY, NAMESPACES_QUERY, NODES_QUERY } from 'queries/table';
+import { CLUSTERS_LIST_QUERY, NAMESPACES_LIST_QUERY, NODES_QUERY } from 'queries/table';
 import { NODE_QUERY } from 'queries/node';
 import AGGREGATED_RESULTS from 'queries/controls';
 import { LIST_STANDARD, COMPLIANCE_STANDARDS } from 'queries/standard';
@@ -28,6 +28,36 @@ import { LIST_STANDARD, COMPLIANCE_STANDARDS } from 'queries/standard';
  */
 
 const isStandard = type => Object.keys(standardTypes).includes(type);
+const complianceRate = (numPassing, numFailing) =>
+    numPassing + numFailing === 0
+        ? '0%'
+        : `${((numPassing / (numPassing + numFailing)) * 100).toFixed(2)}%`;
+
+const formatComplianceTableData = (data, entityType) => {
+    if (!data.results) return null;
+    const formattedData = { results: [] };
+    const entityMap = {};
+    let standardKeyIndex = 0;
+    let entityKeyIndex = 0;
+    data.results.results[0].aggregationKeys.forEach((key, idx) => {
+        if (key.scope === 'STANDARD') standardKeyIndex = idx;
+        if (key.scope === entityType) entityKeyIndex = idx;
+    });
+    data.results.results.forEach(({ aggregationKeys, keys, numPassing, numFailing }) => {
+        const curEntity = aggregationKeys[entityKeyIndex].id;
+        const curStandard = aggregationKeys[standardKeyIndex].id;
+        if (!entityMap[curEntity])
+            entityMap[curEntity] = {
+                name: keys && keys[entityKeyIndex].name,
+                id: curEntity
+            };
+        entityMap[curEntity][curStandard] = complianceRate(numPassing, numFailing);
+    });
+    Object.keys(entityMap).forEach(cluster => {
+        formattedData.results.push(entityMap[cluster]);
+    });
+    return formattedData;
+};
 
 export default [
     {
@@ -76,8 +106,11 @@ export default [
         entityType: [entityTypes.CLUSTER],
         component: [componentTypes.LIST_TABLE],
         config: {
-            query: CLUSTERS_QUERY,
-            variables: [{ graphQLParam: 'id', queryParam: 'entityId' }]
+            query: CLUSTERS_LIST_QUERY,
+            variables: [{ graphQLParam: 'id', queryParam: 'entityId' }],
+            format(data) {
+                return formatComplianceTableData(data, 'CLUSTER');
+            }
         }
     },
     {
@@ -86,8 +119,11 @@ export default [
         entityType: [entityTypes.NAMESPACE],
         component: [componentTypes.LIST_TABLE],
         config: {
-            query: NAMESPACES_QUERY,
-            variables: [{ graphQLParam: 'id', queryParam: 'entityId' }]
+            query: NAMESPACES_LIST_QUERY,
+            variables: [{ graphQLParam: 'id', queryParam: 'entityId' }],
+            format(data) {
+                return formatComplianceTableData(data, 'NAMESPACE');
+            }
         }
     },
     {
@@ -97,7 +133,10 @@ export default [
         component: [componentTypes.LIST_TABLE],
         config: {
             query: NODES_QUERY,
-            variables: [{ graphQLParam: 'id', queryParam: 'entityId' }]
+            variables: [{ graphQLParam: 'id', queryParam: 'entityId' }],
+            format(data) {
+                return formatComplianceTableData(data, 'NODE');
+            }
         }
     },
     {
@@ -117,33 +156,52 @@ export default [
                 {
                     graphQLParam: 'where',
                     paramsFunc: params => `Standard=${standardLabels[params.entityType]}`
+                },
+                {
+                    graphQLParam: 'groupBy',
+                    paramsFunc: params => {
+                        const groupByArray = ['CONTROL', 'CATEGORY'];
+                        if (params.query.groupBy)
+                            groupByArray.push(`${params.query.groupBy.toUpperCase()}`);
+                        return groupByArray;
+                    }
                 }
             ],
             format(data) {
                 if (!data.results) return null;
-                const formattedData = { results: [] };
+                const formattedData = { results: [], totalControls: 0 };
                 const groups = {};
-                data.results.results.forEach(({ keys, numPassing, numFailing }) => {
-                    const { id, name, groupId, description } = keys[1];
-                    if (!groups[groupId]) {
-                        groups[groupId] = {
-                            name: `${name} ${description}`,
-                            rows: []
-                        };
+                let controlKeyIndex = 0;
+                let groupByKeyIndex = 0;
+                data.results.results[0].aggregationKeys.forEach((key, idx) => {
+                    if (key.scope === 'CONTROL') {
+                        controlKeyIndex = idx;
                     }
-                    const compliance =
-                        numPassing + numFailing === 0
-                            ? '0%'
-                            : `${(numPassing / (numPassing + numFailing)).toFixed(2) * 100}%`;
-                    groups[groupId].rows.push({
-                        id,
-                        control: `${name} - ${description}`,
-                        compliance,
-                        group: groupId
-                    });
+                    if (key.scope !== 'CATEGORY' && key.scope !== 'CONTROL') groupByKeyIndex = idx;
                 });
-                Object.keys(groups).forEach(groupId => {
-                    formattedData.results.push(groups[groupId]);
+                if (groupByKeyIndex === -1) groupByKeyIndex = 1;
+                data.results.results.forEach(
+                    ({ aggregationKeys, keys, numPassing, numFailing }) => {
+                        const { id, name, description, groupId } = keys[controlKeyIndex];
+                        let groupKey = groupId;
+                        if (!groupId) groupKey = aggregationKeys[controlKeyIndex].id;
+                        if (!groups[groupKey]) {
+                            groups[groupKey] = {
+                                name: `${groupKey}`,
+                                rows: []
+                            };
+                        }
+                        groups[groupKey].rows.push({
+                            id,
+                            control: `${name} - ${description}`,
+                            compliance: complianceRate(numPassing, numFailing),
+                            group: groupKey
+                        });
+                    }
+                );
+                Object.keys(groups).forEach(group => {
+                    formattedData.results.push(groups[group]);
+                    formattedData.totalControls += groups[group].rows.length;
                 });
                 return formattedData;
             }

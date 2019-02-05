@@ -53,9 +53,11 @@ class TableGroup extends Component {
         const { idAttribute } = this.props;
         return (
             <div className="flex justify-between cursor-pointer bg-base-300 border-b border-base-400 w-full">
-                <div className="flex w-full">
-                    <div className="flex pl-3 p-2">{icons[state]}</div>
-                    <h1 className="p-3 pb-2 pl-0 text-base-600 font-600 text-lg w-full">{name}</h1>
+                <div className="flex w-full justify-between">
+                    <div className="flex">
+                        <div className="flex pl-3 p-2">{icons[state]}</div>
+                        <h1 className="p-3 pb-2 pl-0 text-base-600 font-600 text-lg">{name}</h1>
+                    </div>
                     <div className="flex items-center flex-no-shrink italic font-700 text-sm p-2">{`${
                         rows.length
                     } ${idAttribute}${rows.length === 1 ? '' : 's'}`}</div>

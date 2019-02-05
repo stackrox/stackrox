@@ -1,8 +1,8 @@
 import gql from 'graphql-tag';
 
 export const LIST_STANDARD = gql`
-    query controls($where: String) {
-        results: aggregatedResults(groupBy: [CONTROL, CATEGORY], unit: CHECK, where: $where) {
+    query controls($groupBy: [ComplianceAggregation_Scope!], $where: String) {
+        results: aggregatedResults(groupBy: $groupBy, unit: CHECK, where: $where) {
             results {
                 aggregationKeys {
                     id
