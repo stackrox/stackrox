@@ -66,7 +66,6 @@ func TestDefaultPolicies(t *testing.T) {
 	for _, listPolicy := range listResp.GetPolicies() {
 		policy, err := getPolicy(service, listPolicy.GetId())
 		assert.NoError(t, err)
-		policy.Id = ""
 		policiesMap[listPolicy.GetName()] = policy
 	}
 
