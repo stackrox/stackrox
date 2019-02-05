@@ -172,6 +172,20 @@ func (r *Registry) GetCategoryByControl(controlID string) *Category {
 	return ctrl.Category
 }
 
+// Control returns the control for the ID, if it matches.
+func (r *Registry) Control(controlID string) *v1.ComplianceControl {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+	return r.controlsByID[controlID].ToProto()
+}
+
+// Group returns the proto object for a single group
+func (r *Registry) Group(groupID string) *v1.ComplianceControlGroup {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+	return r.categoriesByID[groupID].ToProto()
+}
+
 // GetCISDockerStandardID returns the Docker CIS standard ID.
 func (r *Registry) GetCISDockerStandardID() (string, error) {
 	r.mutex.RLock()

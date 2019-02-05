@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"strings"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -33,14 +32,13 @@ func InitCompliance() {
 	}
 	complianceOnce.Do(func() {
 		schema := getBuilder()
-
 		utils.Must(
 			schema.AddQuery("complianceStandard(id:ID!): ComplianceStandardMetadata"),
 			schema.AddQuery("complianceStandards: [ComplianceStandardMetadata!]!"),
 			schema.AddQuery("aggregatedResults(groupBy:[ComplianceAggregation_Scope!],unit:ComplianceAggregation_Scope!,where:String): ComplianceAggregation_Response!"),
 			schema.AddExtraResolver("ComplianceStandardMetadata", "controls: [ComplianceControl!]!"),
 			schema.AddExtraResolver("ComplianceStandardMetadata", "groups: [ComplianceControlGroup!]!"),
-			schema.AddUnionType("ComplianceDomainKey", []string{"ComplianceStandardMetadata", "ComplianceControl", "Cluster", "Deployment", "Node", "Namespace"}),
+			schema.AddUnionType("ComplianceDomainKey", []string{"ComplianceStandardMetadata", "ComplianceControlGroup", "ComplianceControl", "Cluster", "Deployment", "Node", "Namespace"}),
 			schema.AddExtraResolver("ComplianceAggregation_Result", "keys: [ComplianceDomainKey!]!"),
 		)
 	})
@@ -157,19 +155,31 @@ func (resolver *complianceDomainKeyResolver) ToComplianceStandardMetadata() (sta
 	return nil, false
 }
 
+// ToComplianceControl returns a resolver for a control if the domain key refers to a control and it exists
 func (resolver *complianceDomainKeyResolver) ToComplianceControl() (control *complianceControlResolver, found bool) {
 	if resolver.key.GetScope() == v1.ComplianceAggregation_CONTROL {
 		controlID := resolver.key.GetId()
-		parts := strings.SplitN(controlID, ":", 2)
-		if len(parts) == 2 {
-			controls, err := resolver.root.ComplianceStandardStore.Controls(parts[0])
-			if err == nil {
-				for _, c := range controls {
-					if c.GetId() == parts[1] {
-						return &complianceControlResolver{resolver.root, c}, true
-					}
-				}
-			}
+		control := resolver.root.ComplianceStandardStore.Control(controlID)
+		if control != nil {
+			return &complianceControlResolver{
+				root: resolver.root,
+				data: control,
+			}, true
+		}
+	}
+	return nil, false
+}
+
+// ToComplianceControlGroup returns a resolver for a group if the domain key refers to a control group and it exists
+func (resolver *complianceDomainKeyResolver) ToComplianceControlGroup() (group *complianceControlGroupResolver, found bool) {
+	if (resolver.key.GetScope()) == v1.ComplianceAggregation_CATEGORY {
+		groupID := resolver.key.GetId()
+		control := resolver.root.ComplianceStandardStore.Group(groupID)
+		if control != nil {
+			return &complianceControlGroupResolver{
+				root: resolver.root,
+				data: control,
+			}, true
 		}
 	}
 	return nil, false

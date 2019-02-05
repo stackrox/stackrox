@@ -193,7 +193,7 @@ func (a *aggregatorImpl) getCategoryID(controlID string) string {
 		errorhelpers.PanicOnDevelopment(fmt.Errorf("no category found for control %q", controlID))
 		return ""
 	}
-	return category.ID
+	return category.QualifiedID()
 }
 
 func (a *aggregatorImpl) getFlatChecksFromRunResult(runResults *storage.ComplianceRunResults, mask [numScopes]set.StringSet) []flatCheck {

@@ -11,8 +11,10 @@ type Repository interface {
 	StandardMetadata(id string) (*v1.ComplianceStandardMetadata, bool, error)
 	Standard(id string) (*v1.ComplianceStandard, bool, error)
 	Controls(standardID string) ([]*v1.ComplianceControl, error)
+	Control(controlID string) *v1.ComplianceControl
 	GetCategoryByControl(controlID string) *Category
 	Groups(standardID string) ([]*v1.ComplianceControlGroup, error)
+	Group(groupID string) *v1.ComplianceControlGroup
 	GetCISDockerStandardID() (string, error)
 	GetCISKubernetesStandardID() (string, error)
 

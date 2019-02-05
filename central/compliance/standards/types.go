@@ -115,6 +115,9 @@ func (c *Category) AllControls() []*Control {
 
 // ToProto returns the proto representation of the category's metadata.
 func (c *Category) ToProto() *v1.ComplianceControlGroup {
+	if c == nil {
+		return nil
+	}
 	return &v1.ComplianceControlGroup{
 		Id:                   c.QualifiedID(),
 		StandardId:           c.Standard.ID,
@@ -141,6 +144,9 @@ func (c *Control) QualifiedID() string {
 
 // ToProto returns the proto representation of a control.
 func (c *Control) ToProto() *v1.ComplianceControl {
+	if c == nil {
+		return nil
+	}
 	var interpretationText string
 	if c.Check != nil {
 		interpretationText = c.Check.InterpretationText()
