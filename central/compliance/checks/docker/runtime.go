@@ -64,7 +64,7 @@ func runningContainerCheck(name string, f func(ctx framework.ComplianceContext, 
 }
 
 func containerCheckWrapper(f func(ctx framework.ComplianceContext, container types.ContainerJSON), runningOnly bool) framework.CheckFunc {
-	return perNodeCheckWithDockerData(func(ctx framework.ComplianceContext, data *docker.Data) {
+	return common.PerNodeCheckWithDockerData(func(ctx framework.ComplianceContext, data *docker.Data) {
 		for _, c := range data.Containers {
 			if runningOnly && (c.State == nil || !c.State.Running) {
 				continue

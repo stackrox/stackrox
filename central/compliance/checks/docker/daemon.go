@@ -15,14 +15,23 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 func init() {
 	framework.MustRegisterChecks(
 		networkRestrictionCheck(),
 		genericDockerCommandlineCheck("CIS_Docker_v1_1_0:2_2", "log-level", "info", "info", common.Matches),
 		genericDockerCommandlineCheck("CIS_Docker_v1_1_0:2_3", "iptables", "false", "true", common.Matches),
-		dockerInfoCheck("CIS_Docker_v1_1_0:2_4", insecureRegistries),
+		framework.NewCheckFromFunc(
+			framework.CheckMetadata{
+				ID:                 "CIS_Docker_v1_1_0:2_4",
+				Scope:              framework.NodeKind,
+				DataDependencies:   []string{"DockerData"},
+				InterpretationText: `StackRox checks that no insecure Docker Registries are configured on any host, except for those with an IP in a private subnet (such as 127.0.0.0/8 or 10.0.0.0/8)`,
+			},
+			common.CheckNoInsecureRegistries),
 		dockerInfoCheck("CIS_Docker_v1_1_0:2_5", aufs),
 		tlsVerifyCheck("CIS_Docker_v1_1_0:2_6"),
 		genericDockerCommandlineCheck("CIS_Docker_v1_1_0:2_7", "default-ulimit", "", "", common.Set),
@@ -46,7 +55,7 @@ func networkRestrictionCheck() framework.Check {
 		Scope:              framework.NodeKind,
 		InterpretationText: "StackRox checks that ICC is not enabled for the bridge network",
 	}
-	return framework.NewCheckFromFunc(md, perNodeCheckWithDockerData(
+	return framework.NewCheckFromFunc(md, common.PerNodeCheckWithDockerData(
 		func(ctx framework.ComplianceContext, data *docker.Data) {
 			if data.BridgeNetwork.Options["com.docker.network.bridge.enable_icc"] == "true" {
 				framework.Failf(ctx, "Enable icc is true on bridge network")
@@ -56,11 +65,17 @@ func networkRestrictionCheck() framework.Check {
 		}))
 }
 
-func dockerInfoCheck(name string, f func(ctx framework.ComplianceContext, info types.Info)) framework.Check {
-	return framework.NewCheckFromFunc(framework.CheckMetadata{ID: name, Scope: framework.NodeKind}, perNodeCheckWithDockerData(
-		func(ctx framework.ComplianceContext, data *docker.Data) {
-			f(ctx, data.Info)
-		}))
+func dockerInfoCheck(name string, f func(ctx framework.ComplianceContext, info types.Info), optInterpretation ...string) framework.Check {
+	var interpretationText string
+	if len(optInterpretation) > 0 {
+		interpretationText = optInterpretation[0]
+	}
+	return framework.NewCheckFromFunc(
+		framework.CheckMetadata{ID: name, Scope: framework.NodeKind, InterpretationText: interpretationText},
+		common.PerNodeCheckWithDockerData(
+			func(ctx framework.ComplianceContext, data *docker.Data) {
+				f(ctx, data.Info)
+			}))
 }
 
 func aufs(ctx framework.ComplianceContext, info types.Info) {
@@ -84,23 +99,6 @@ func disableExperimental(ctx framework.ComplianceContext, info types.Info) {
 		framework.Failf(ctx, "Docker is running in experimental mode")
 	}
 	framework.Pass(ctx, "Docker is not running in experimental mode")
-}
-
-func insecureRegistries(ctx framework.ComplianceContext, info types.Info) {
-	if info.RegistryConfig == nil {
-		framework.PassNow(ctx, "No insecure registries are configured")
-	}
-	var failed bool
-	for _, registry := range info.RegistryConfig.InsecureRegistryCIDRs {
-		if strings.HasPrefix(registry.String(), "127.") { // Localhost prefix can be ignored
-			continue
-		}
-		failed = true
-		framework.Failf(ctx, "Insecure registry with CIDR '%s' is configured", registry.IP.String())
-	}
-	if !failed {
-		framework.Pass(ctx, "Docker is not running with insecure registries")
-	}
 }
 
 func liveRestoreEnabled(ctx framework.ComplianceContext, info types.Info) {

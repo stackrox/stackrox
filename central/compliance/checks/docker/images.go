@@ -36,7 +36,7 @@ func imageCheck(name string, f func(ctx framework.ComplianceContext, wrap docker
 }
 
 func imageCheckWrapper(f func(ctx framework.ComplianceContext, wrap docker.ImageWrap)) framework.CheckFunc {
-	return perNodeCheckWithDockerData(func(ctx framework.ComplianceContext, data *docker.Data) {
+	return common.PerNodeCheckWithDockerData(func(ctx framework.ComplianceContext, data *docker.Data) {
 		for _, i := range data.Images {
 			f(ctx, i)
 		}
