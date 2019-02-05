@@ -52,11 +52,11 @@ class SunburstDetailSection extends Component {
         }
 
         return (
-            <div className="pt-3 pl-3">
+            <div className="pt-3 px-3">
                 {bullets.map(({ text, link, value }, idx) => (
                     <div
                         key={text}
-                        className={`widget-detail-bullet ${
+                        className={`widget-detail-bullet font-600 ${
                             parentDatum && parentDatum.name && idx === 0 ? 'text-base-500' : ''
                         }`}
                     >
@@ -83,8 +83,8 @@ class SunburstDetailSection extends Component {
         const { clicked } = this.props;
         return (
             <div className="border-t border-base-300 border-dashed flex justify-center h-7 text-base-500 text-sm">
-                <div className="flex self-center">
-                    <Icon.Info className="h-3 w-3 pr-1" />
+                <div className="flex items-center">
+                    <Icon.Info size="16" className="pr-1" />
                     {`click to ${clicked ? 'un' : ''}lock selection`}
                 </div>
             </div>
@@ -93,7 +93,7 @@ class SunburstDetailSection extends Component {
 
     render() {
         return (
-            <div className="border-base-300 border-l flex flex-col justify-between w-1/3">
+            <div className="border-base-300 border-l flex flex-col justify-between w-3/5">
                 {this.getContent()}
                 {this.getLockHint()}
             </div>

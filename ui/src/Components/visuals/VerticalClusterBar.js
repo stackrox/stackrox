@@ -92,7 +92,7 @@ class BarChart extends Component {
         // Default props
         const defaultPlotProps = {
             xType: 'ordinal',
-            yDomain: [0, 110]
+            yDomain: [0, 160]
         };
 
         const defaultContainerProps = {
@@ -166,31 +166,35 @@ class BarChart extends Component {
 
         return (
             <div {...containerProps}>
-                <FlexibleXYPlot {...plotProps}>
-                    <VerticalGridLines
-                        left={330 / clusterNames.length / 2 + 30}
-                        tickValues={clusterNames.slice(0, clusterNames.length - 1)}
-                    />
-                    <HorizontalGridLines tickValues={tickValues} />
-                    <YAxis tickValues={tickValues} tickSize={0} tickFormat={tickFormat} />
-                    {series}
+                <div className="flex flex-col h-full">
+                    <FlexibleXYPlot {...plotProps}>
+                        <VerticalGridLines
+                            left={330 / clusterNames.length / 2 + 30}
+                            tickValues={clusterNames.slice(0, clusterNames.length - 1)}
+                        />
+                        <HorizontalGridLines tickValues={tickValues} />
+                        <YAxis tickValues={tickValues} tickSize={0} tickFormat={tickFormat} />
+                        {series}
 
-                    <XAxis tickSize={0} tickFormat={formatTicks} />
-                    <DiscreteColorLegend
-                        orientation="horizontal"
-                        items={this.getLegendData()}
-                        colors={colors}
-                        className="horizontal-bar-legend"
-                    />
-                </FlexibleXYPlot>
-                {this.state.hintData ? (
-                    <HoverHint
-                        top={this.state.hintY}
-                        left={this.state.hintX}
-                        title={this.state.hintData.title}
-                        body={this.state.hintData.body}
-                    />
-                ) : null}
+                        <XAxis tickSize={0} tickFormat={formatTicks} />
+                    </FlexibleXYPlot>
+                    <div>
+                        <DiscreteColorLegend
+                            orientation="horizontal"
+                            items={this.getLegendData()}
+                            colors={colors}
+                            className="horizontal-bar-legend"
+                        />
+                    </div>
+                    {this.state.hintData ? (
+                        <HoverHint
+                            top={this.state.hintY}
+                            left={this.state.hintX}
+                            title={this.state.hintData.title}
+                            body={this.state.hintData.body}
+                        />
+                    ) : null}
+                </div>
             </div>
         );
     }

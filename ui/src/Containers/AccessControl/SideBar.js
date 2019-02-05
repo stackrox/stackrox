@@ -71,7 +71,7 @@ class SideBar extends Component {
         return (
             <Panel header={header} headerClassName={panelHeaderClassName}>
                 <div className="flex flex-col w-full h-full bg-base-100">
-                    <div className="overflow-auto">
+                    <div className="overflow-auto table-reset-padding">
                         <List
                             columns={columns}
                             rows={rows}

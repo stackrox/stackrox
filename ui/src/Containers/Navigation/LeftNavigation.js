@@ -99,7 +99,9 @@ class LeftNavigation extends Component {
         }
 
         if (
-            (pathname.includes('policies') || pathname.includes('integrations')) &&
+            (pathname.includes('policies') ||
+                pathname.includes('integrations') ||
+                pathname.includes('access')) &&
             navText === 'configure'
         ) {
             return baseActiveClass;

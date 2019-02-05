@@ -35,7 +35,7 @@ class NodesUpdateSection extends Component {
     render() {
         if (!this.props.lastUpdatedTimestamp) return null;
         return (
-            <div className="absolute pin-t pin-network-update-label-left mt-2 mr-2 p-2 bg-base-100 rounded-sm shadow text-base-500 text-sm font-700">
+            <div className="absolute pin-t pin-network-update-label-left mt-2 mr-2 p-2 bg-base-100 rounded-sm border-2 border-base-400 text-base-500 text-xs font-700">
                 <div className="uppercase">{`Last Updated: ${dateFns.format(
                     this.props.lastUpdatedTimestamp,
                     'hh:mm:ssA'

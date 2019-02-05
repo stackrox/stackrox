@@ -70,7 +70,7 @@ const RelatedEntitiesList = ({ type, params }) => {
             {({ loading, data }) => {
                 let headerText = `Related ${pluralize(type)}`;
                 let widget = (
-                    <Widget header={headerText}>
+                    <Widget className="s-2" header={headerText}>
                         <Loader />
                     </Widget>
                 );
@@ -89,13 +89,12 @@ const RelatedEntitiesList = ({ type, params }) => {
                         );
                     } else {
                         widget = (
-                            <Widget header={headerText}>
+                            <Widget className="s-2" header={headerText}>
                                 <NoResultsMessage message="No data available" />
                             </Widget>
                         );
                     }
                 }
-
                 return widget;
             }}
         </Query>

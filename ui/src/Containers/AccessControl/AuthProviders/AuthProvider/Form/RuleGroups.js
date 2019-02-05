@@ -15,12 +15,8 @@ import formDescriptor from './formDescriptor';
 const MenuList = ({ toggleModal, ...props }) => (
     <components.MenuList {...props}>
         {props.children}
-        <div className="border-b border-primary-400 w-full p-1">
-            <button
-                type="button"
-                className="border border-primary-600 text-primary-600 p-3 w-full"
-                onClick={toggleModal}
-            >
+        <div className="border-b border-t border-primary-400 w-full p-3">
+            <button type="button" className="btn btn-primary w-full" onClick={toggleModal}>
                 Create New Role
             </button>
         </div>
@@ -106,7 +102,7 @@ class RuleGroups extends Component {
                                 styles={selectMenuOnTopStyles}
                             />
                         </div>
-                        <div className="flex items-center">
+                        <div className="flex items-center mt-2">
                             <Icon.ArrowRight className="h-4 w-4" />
                         </div>
                         <div className="w-full">
@@ -121,13 +117,18 @@ class RuleGroups extends Component {
                                 styles={selectMenuOnTopStyles}
                             />
                         </div>
-                        <button className="pl-2 pr-2" type="button">
+                        <button className="pl-2 pr-2 mt-2" type="button">
                             <Icon.Trash2 className="h-4 w-4" onClick={deleteRule(value, idx)} />
                         </button>
                     </div>
                 ))}
-                {/* eslint-disable-next-line */}
-                <button className="btn btn-primary ml-1" type="button" onClick={addRule}>
+                {/* eslint-disable */}
+                <button
+                    className="border-2 bg-primary-200 border-primary-400 text-sm text-primary-700 hover:bg-primary-300 hover:border-primary-500 rounded-sm block px-3 py-2 uppercase ml-1 mb-4"
+                    type="button"
+                    onClick={addRule}
+                >
+                    {/* eslint-enable */}
                     Add New Rule
                 </button>
             </div>

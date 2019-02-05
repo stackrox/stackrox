@@ -93,13 +93,13 @@ class Widget extends Component {
 
         return (
             <div
-                className={`flex flex-col border border-base-400 relative rounded bg-base-100 ${className}`}
+                className={`flex flex-col shadow rounded relative rounded bg-base-100 h-full ${className}`}
                 data-test-id="widget"
             >
-                <div className="border-b border-base-400">
+                <div className="border-b border-base-300">
                     <div className="flex w-full h-10 word-break">
                         <div
-                            className="flex flex-1 text-base-600 uppercase items-center tracking-wide pl-2 pr-2 leading-normal font-700"
+                            className="flex flex-1 text-base-600 pt-1 uppercase items-center tracking-wide px-3 leading-normal font-700"
                             data-test-id="widget-header"
                         >
                             <div className="flex-grow">{header}</div>
@@ -112,7 +112,7 @@ class Widget extends Component {
                         )}
                     </div>
                 </div>
-                <div className={`flex h-full overflow-y-auto ${bodyClassName}`}>
+                <div className={`flex h-full ${bodyClassName}`}>
                     <ErrorBoundary>{childrenWithPageProp}</ErrorBoundary>
                 </div>
                 {pagerControls ? pagerControls.dots : null}

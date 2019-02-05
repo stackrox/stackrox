@@ -31,7 +31,7 @@ class Buttons extends Component {
                 <PanelButton
                     icon={<Icon.ArrowLeft className="h-4 w-4" />}
                     text="Previous"
-                    className="btn btn-primary"
+                    className="btn btn-base"
                     onClick={this.goBackToPreview}
                 />
                 <PanelButton

@@ -78,11 +78,15 @@ class AuthProviders extends Component {
 
     render() {
         const { selectedAuthProvider, groups } = this.props;
-        const className = this.props.isEditing ? 'pointer-events-none opacity-50' : '';
+        const className = this.props.isEditing
+            ? 'before before:absolute before:h-full before:opacity-50 before:bg-secondary-900 before:w-full before:z-10'
+            : '';
         return (
             <section className="flex flex-1 h-full">
-                <div className={`w-1/4 m-4 ${className}`}>{this.renderSideBar()}</div>
-                <div className="w-3/4 my-4 mr-4">
+                <div className={`w-1/4 flex flex-col ${className}`}>
+                    <div className="m-4 h-full">{this.renderSideBar()}</div>
+                </div>
+                <div className="w-3/4 my-4 mr-4 z-10">
                     <AuthProvider
                         isEditing={this.props.isEditing}
                         selectedAuthProvider={selectedAuthProvider}

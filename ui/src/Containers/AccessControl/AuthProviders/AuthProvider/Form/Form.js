@@ -57,12 +57,15 @@ class Form extends Component {
         return (
             <>
                 <form
-                    className="w-full justify-between overflow-auto h-full"
+                    className="w-full justify-between overflow-auto h-full p-4"
                     onSubmit={handleSubmit(onSubmit)}
                     initialvalues={initialValues}
                 >
-                    <CollapsibleCard title="1. Configuration">
-                        <div className="w-full h-full p-4">
+                    <CollapsibleCard
+                        title="1. Configuration"
+                        titleClassName="border-b border-warning-300 leading-normal cursor-pointer flex justify-between items-center bg-warning-200 hover:border-warning-400"
+                    >
+                        <div className="w-full h-full p-3 pb-0">
                             {fields.map((field, index) => (
                                 <Field key={index} {...field} />
                             ))}
@@ -73,8 +76,9 @@ class Form extends Component {
                             title={`2. Assign StackRox Roles to your (${
                                 initialValues.type
                             }) attributes`}
+                            titleClassName="border-b border-warning-300 leading-normal cursor-pointer flex justify-between items-center bg-warning-200 hover:border-warning-400"
                         >
-                            <div className="w-full p-2">
+                            <div className="w-full p-3 pb-0">
                                 <Field
                                     label="Default Role"
                                     type="select"

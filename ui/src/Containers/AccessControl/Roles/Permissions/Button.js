@@ -6,13 +6,13 @@ import SaveButton from 'Containers/AccessControl/SaveButton';
 function Button(props) {
     if (!props.isEditing)
         return (
-            <button className="btn btn-primary" type="button" onClick={props.onEdit}>
+            <button className="btn btn-base" type="button" onClick={props.onEdit}>
                 Edit
             </button>
         );
     return (
         <div className="flex flex-row">
-            <button className="btn btn-primary mr-2" type="button" onClick={props.onCancel}>
+            <button className="btn btn-base mr-2" type="button" onClick={props.onCancel}>
                 Cancel
             </button>
             <SaveButton formName="role-form" />

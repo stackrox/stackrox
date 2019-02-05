@@ -130,8 +130,11 @@ const ComplianceByStandard = ({ type, params }) => {
                         );
                     }
                 }
-
-                return <Widget header={headerText}>{contents}</Widget>;
+                return (
+                    <Widget className="s-2" header={headerText}>
+                        {contents}
+                    </Widget>
+                );
             }}
         </Query>
     );

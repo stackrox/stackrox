@@ -89,7 +89,7 @@ const StandardsByEntity = ({ type, params }) => (
             }
 
             return (
-                <Widget pages={pages} header={headerText}>
+                <Widget className="sx-2 sy-2" pages={pages} header={headerText} bodyClassName="p-4">
                     {contents}
                 </Widget>
             );

@@ -155,7 +155,7 @@ class ImageDetails extends Component {
 
     renderCVEsTable = () => {
         const { scan, fixableCves } = this.props.image;
-        if (!scan) return <div>No scanner setup for this registry</div>;
+        if (!scan) return <div className="p-3">No scanner setup for this registry</div>;
         return <CVETable components={scan.components} isFixable={fixableCves} />;
     };
 

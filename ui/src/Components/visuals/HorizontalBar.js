@@ -128,11 +128,11 @@ class HorizontalBarChart extends Component {
         // This determines how far to push the bar graph to the right based on the longest axis label character's length
         const maxLength = sortedData.reduce((acc, curr) => Math.max(curr.y.length, acc), 0);
         const defaultPlotProps = {
-            height: minimal ? 30 : 270,
-            xDomain: [0, 105],
+            height: minimal ? 30 : 271,
+            xDomain: [0, 102],
             yType: 'category',
             yRange: sortedData.map((item, i) => (i + 1) * 23).concat([0]),
-            margin: minimal ? minimalMargin : { top: 30, left: Math.ceil(maxLength * 6.4) },
+            margin: minimal ? minimalMargin : { top: 18, left: Math.ceil(maxLength * 4.8) },
             stackBy: 'x',
             animation: hintsEnabled ? false : ''
         };
@@ -184,7 +184,11 @@ class HorizontalBarChart extends Component {
             let inner = value;
             if (axisLinks[value])
                 inner = (
-                    <Link className="underline" to={axisLinks[value]}>
+                    <Link
+                        className="underline font-condensed text-base-600 hover:text-primary-700"
+                        style={{ fill: 'currentColor' }}
+                        to={axisLinks[value]}
+                    >
                         {value}
                     </Link>
                 );
@@ -196,7 +200,8 @@ class HorizontalBarChart extends Component {
             <div {...containerProps}>
                 {/* Bar Background  */}
                 <svg
-                    height={`${minimal ? '0' : '10'}`}
+                    className="absolute"
+                    height={`${minimal ? '0' : '0'}`}
                     width="10"
                     xmlns="http://www.w3.org/2000/svg"
                     version="1.1"
@@ -205,16 +210,16 @@ class HorizontalBarChart extends Component {
                         <pattern
                             id="bar-background"
                             patternUnits="userSpaceOnUse"
-                            width="10"
-                            height="10"
+                            width="6"
+                            height="6"
                         >
                             background-color: #ffffff;
                             <image
-                                xlinkHref="data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ccc9d2' fill-opacity='.3' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E"
+                                xlinkHref="data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ccc9d2' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M5 0h1L0 6V5zM6 5v1H5z'/%3E%3C/g%3E%3C/svg%3E"
                                 x="0"
                                 y="0"
-                                width="10"
-                                height="10"
+                                width="6"
+                                height="6"
                             />
                         </pattern>
                     </defs>
@@ -265,7 +270,7 @@ class HorizontalBarChart extends Component {
                         labelAnchorY="no-change"
                         labelAnchorX="end-alignment"
                         style={{
-                            fill: 'var(--base-800)',
+                            fill: 'var(--primary-500)',
                             cursor: 'pointer'
                         }}
                     />

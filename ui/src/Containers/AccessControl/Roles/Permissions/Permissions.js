@@ -75,9 +75,7 @@ class Permissions extends Component {
                 headerClassName={panelHeaderClassName}
                 headerComponents={headerComponents}
             >
-                <div className="w-full h-full bg-base-100 flex flex-1 p-4">
-                    {this.displayContent()}
-                </div>
+                <div className="w-full h-full bg-base-100 flex flex-1">{this.displayContent()}</div>
             </Panel>
         );
     }

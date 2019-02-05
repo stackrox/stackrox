@@ -27,13 +27,15 @@ class CreateRoleModal extends Component {
                     <span className="flex flex-1 uppercase">New Authorization Role</span>
                     <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.props.onClose} />
                 </header>
-                <div className="flex flex-1 p-3">
+                <div className="flex flex-1">
                     <div className="flex flex-col w-full">
-                        <Form
-                            onSubmit={this.saveRoleHandler}
-                            initialValues={{ resourceToAccess: defaultPermissions }}
-                        />
-                        <SaveButton className="min-h-10 w-1/4 mx-auto" formName="role-form" />
+                        <div className="border-b border-base-300 flex flex-col">
+                            <Form
+                                onSubmit={this.saveRoleHandler}
+                                initialValues={{ resourceToAccess: defaultPermissions }}
+                            />
+                        </div>
+                        <SaveButton className="min-h-10 w-1/4 mx-auto m-3" formName="role-form" />
                     </div>
                 </div>
             </Modal>

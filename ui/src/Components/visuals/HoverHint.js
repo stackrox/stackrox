@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 const HoverHint = props => (
     <div
-        className="graph-hint visible text-xs text-base-600 absolute p-2 pb-1 pt-1 border border-tertiary-400 bg-tertiary-200 rounded min-w-32"
+        className="graph-hint visible text-xs text-base-600 absolute p-2 pb-1 pt-1 border z-10 border-tertiary-400 bg-tertiary-200 rounded min-w-32"
         style={{ top: props.top, left: props.left }}
     >
         <h1 className="graph-hint-title text-uppercase border-b border-grey-light leading-loose text-xs mb-1 py-1">

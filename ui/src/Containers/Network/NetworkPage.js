@@ -184,7 +184,7 @@ class NetworkPage extends Component {
         const { selectedNodeId } = this.props;
         const className = `${
             selectedNodeId || this.state.simulatorMode ? 'w-1/3' : 'w-0'
-        } h-full absolute pin-r z-1 bg-primary-200`;
+        } h-full absolute pin-r z-1 bg-primary-200 shadow-lg`;
         return (
             <div className={className}>
                 {this.renderSidePanel()}

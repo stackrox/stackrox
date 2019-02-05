@@ -3,15 +3,16 @@ import PropTypes from 'prop-types';
 
 const renderSubHeader = subHeader => {
     if (!subHeader) return null;
-    return <div className="text-base-500 mt-1 italic capitalize">{subHeader}</div>;
+    return <div className="mt-1 italic capitalize opacity-75">{subHeader}</div>;
 };
 
 const PageHeader = props => (
-    <div className="flex bg-base-100 h-18 px-4 border-b border-base-400 w-full">
+    <div
+        className={`flex h-20 px-4 border-b border-base-400 w-full ${props.classes}`}
+        style={props.bgStyle}
+    >
         <div className="w-48 self-center">
-            <div className="text-base-600 uppercase text-lg tracking-widest font-700 pt-1">
-                {props.header}
-            </div>
+            <div className="uppercase text-lg tracking-widest font-700 pt-1">{props.header}</div>
             {renderSubHeader(props.subHeader)}
         </div>
         <div className="flex w-full items-center">{props.children}</div>
@@ -21,12 +22,16 @@ const PageHeader = props => (
 PageHeader.propTypes = {
     header: PropTypes.string.isRequired,
     subHeader: PropTypes.string,
+    classes: PropTypes.string,
+    bgStyle: PropTypes.string,
     children: PropTypes.oneOfType([PropTypes.element, PropTypes.arrayOf(PropTypes.element)])
 };
 
 PageHeader.defaultProps = {
     children: null,
-    subHeader: null
+    subHeader: null,
+    classes: null,
+    bgStyle: null
 };
 
 export default PageHeader;

@@ -6,13 +6,17 @@ import SaveButton from 'Containers/AccessControl/SaveButton';
 function Button(props) {
     if (!props.isEditing)
         return (
-            <button className="btn btn-primary" type="button" onClick={props.onEdit}>
-                Edit
+            <button
+                className="border-2 bg-primary-200 border-primary-400 text-sm text-primary-700 hover:bg-primary-300 hover:border-primary-500 rounded-sm block px-3 py-2 uppercase"
+                type="button"
+                onClick={props.onEdit}
+            >
+                Edit provider
             </button>
         );
     return (
         <div className="flex flex-row">
-            <button className="btn btn-primary mr-2" type="button" onClick={props.onCancel}>
+            <button className="btn btn-base mr-2" type="button" onClick={props.onCancel}>
                 Cancel
             </button>
             <SaveButton formName="auth-provider-form" />

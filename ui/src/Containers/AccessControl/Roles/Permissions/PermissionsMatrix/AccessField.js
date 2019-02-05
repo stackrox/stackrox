@@ -17,17 +17,19 @@ const AccessField = ({ input, resourceToAccess, resourceName, isEditing }) => {
     const name = input ? input.name : '';
     return (
         <tr>
-            <th className="p-2 border-r border-base-300 flex">{resourceName}</th>
-            <th className="p-2">
+            <td className="border-r border-base-300 text-left font-600 border-b border-base-300">
+                <span className="p-2">{resourceName}</span>
+            </td>
+            <td className="p-2 text-center border-b border-base-300">
                 <ReadWriteIcon value={value} type="READ" />
-            </th>
-            <th className="p-2">
+            </td>
+            <td className="p-2 text-center border-b border-base-300">
                 <ReadWriteIcon value={value} type="WRITE" />
-            </th>
+            </td>
             {isEditing && (
-                <th className="p-2">
+                <td className="p-2 border-b border-base-300">
                     <ReduxSelectField name={name} options={options} />
-                </th>
+                </td>
             )}
         </tr>
     );

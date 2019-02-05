@@ -56,7 +56,7 @@ const StandardsAcrossEntity = ({ type, params }) => (
                 contents = <Loader />;
             }
             return (
-                <Widget header={headerText} bodyClassName="p-2">
+                <Widget className="sx-2 sy-2" header={headerText} bodyClassName="p-4">
                     {contents}
                 </Widget>
             );

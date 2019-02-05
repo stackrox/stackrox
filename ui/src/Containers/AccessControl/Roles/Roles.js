@@ -65,7 +65,11 @@ class Roles extends Component {
     };
 
     renderAddRoleButton = () => (
-        <button className="btn btn-primary" type="button" onClick={this.onCreateNewRole}>
+        <button
+            className="border-2 bg-primary-200 border-primary-400 text-sm text-primary-700 hover:bg-primary-300 hover:border-primary-500 rounded-sm block px-3 py-2 uppercase"
+            type="button"
+            onClick={this.onCreateNewRole}
+        >
             Add New Role
         </button>
     );
@@ -89,11 +93,15 @@ class Roles extends Component {
 
     render() {
         const { selectedRole } = this.props;
-        const className = this.state.isEditing ? 'pointer-events-none opacity-50' : '';
+        const className = this.state.isEditing
+            ? 'before before:absolute before:h-full before:opacity-50 before:bg-secondary-900 before:w-full before:z-10'
+            : '';
         return (
             <section className="flex flex-1 h-full">
-                <div className={`w-1/4 m-4 ${className}`}>{this.renderSideBar()}</div>
-                <div className="w-3/4 my-4 mr-4">
+                <div className={`w-1/4 flex flex-col ${className}`}>
+                    <div className="m-4 h-full">{this.renderSideBar()}</div>
+                </div>
+                <div className="w-3/4 my-4 mr-4 z-10">
                     <Permissions
                         isEditing={this.state.isEditing}
                         selectedRole={selectedRole}

@@ -6,20 +6,17 @@ import PermissionsMatrix from 'Containers/AccessControl/Roles/Permissions/Permis
 const Details = props => {
     const { name, resourceToAccess } = props.role;
     return (
-        <div className="w-full justify-between overflow-auto">
+        <div className="w-full justify-between overflow-auto p-4">
             <div className="mb-4">
-                <div className="py-2 text-base-600 font-700">Role Name</div>
+                <div className="py-2 text-base-600 font-700 text-lg">Role Name</div>
                 <div>{name}</div>
             </div>
-            <div className="">
-                <div className="py-2 text-base-600 font-700">Permissions</div>
-                <div>
-                    <PermissionsMatrix
-                        name="resourceToAccess"
-                        resourceToAccess={resourceToAccess}
-                        isEditing={false}
-                    />
-                </div>
+            <div>
+                <PermissionsMatrix
+                    name="resourceToAccess"
+                    resourceToAccess={resourceToAccess}
+                    isEditing={false}
+                />
             </div>
         </div>
     );

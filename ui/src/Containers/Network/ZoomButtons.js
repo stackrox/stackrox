@@ -4,10 +4,10 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 
 const ZoomButtons = props => (
-    <div className="graph-zoom-buttons m-4 absolute pin-b pin-network-zoom-buttons-left">
+    <div className="graph-zoom-buttons m-4 absolute pin-b pin-network-zoom-buttons-left border-2 border-base-400">
         <button
             type="button"
-            className="btn-icon btn-base border-b border-base-300 shadow"
+            className="btn-icon btn-base border-b border-base-300"
             onClick={props.networkGraph && props.networkGraph.zoomIn}
         >
             <Icon.Plus className="h-4 w-4" />

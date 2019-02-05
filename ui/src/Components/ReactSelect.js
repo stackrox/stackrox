@@ -23,12 +23,12 @@ export const selectMenuOnTopStyles = {
 const Control = ({ className, ...props }) => (
     <selectComponents.Control
         {...props}
-        className={`${className} bg-base-100 cursor-text border-2 border-base-300 flex items-center items-center text-xl shadow-none overflow-auto hover:border-base-400`}
+        className={`${className} bg-base-100 h-full cursor-text border-2 leading-normal min-h-10 border-base-300 flex items-center items-center font-600 shadow-none overflow-auto hover:border-base-400`}
     />
 );
 
 const Menu = ({ className, ...props }) => (
-    <selectComponents.Menu className={`${className} z-20`} {...props} />
+    <selectComponents.Menu className={`${className} z-20 font-600 text-left`} {...props} />
 );
 
 const MultiValue = props => (

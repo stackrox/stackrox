@@ -80,7 +80,7 @@ class MainPage extends Component {
     };
 
     renderRouter = () => (
-        <section className="flex-auto w-full overflow-hidden">
+        <section className="flex-auto w-full overflow-auto">
             <ErrorBoundary>
                 <Switch>
                     <ProtectedRoute path={dashboardPath} component={AsyncDashboardPage} />

@@ -4,228 +4,228 @@
 
 /* open-sans-300 - latin */
 @font-face {
-    font-family: "Open Sans";
-    font-style: normal;
-    font-weight: 300;
-    src: local("Open Sans Light"), local("OpenSans-Light"),
-        url("fonts/open-sans-v15-latin/open-sans-v15-latin-300.woff2")
-            format("woff2"),
-        /* Chrome 26+, Opera 23+, Firefox 39+ */
-            url("fonts/open-sans-v15-latin/open-sans-v15-latin-300.woff")
-            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+  font-family: "Open Sans";
+  font-style: normal;
+  font-weight: 300;
+  src: local("Open Sans Light"), local("OpenSans-Light"),
+    url("fonts/open-sans-v15-latin/open-sans-v15-latin-300.woff2")
+      format("woff2"),
+    /* Chrome 26+, Opera 23+, Firefox 39+ */
+      url("fonts/open-sans-v15-latin/open-sans-v15-latin-300.woff")
+      format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 /* open-sans-regular - latin */
 @font-face {
-    font-family: "Open Sans";
-    font-style: normal;
-    font-weight: 400;
-    src: local("Open Sans Regular"), local("OpenSans-Regular"),
-        url("fonts/open-sans-v15-latin/open-sans-v15-latin-regular.woff2")
-            format("woff2"),
-        /* Chrome 26+, Opera 23+, Firefox 39+ */
-            url("fonts/open-sans-v15-latin/open-sans-v15-latin-regular.woff")
-            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+  font-family: "Open Sans";
+  font-style: normal;
+  font-weight: 400;
+  src: local("Open Sans Regular"), local("OpenSans-Regular"),
+    url("fonts/open-sans-v15-latin/open-sans-v15-latin-regular.woff2")
+      format("woff2"),
+    /* Chrome 26+, Opera 23+, Firefox 39+ */
+      url("fonts/open-sans-v15-latin/open-sans-v15-latin-regular.woff")
+      format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 /* open-sans-600 - latin */
 @font-face {
-    font-family: "Open Sans";
-    font-style: normal;
-    font-weight: 600;
-    src: local("Open Sans SemiBold"), local("OpenSans-SemiBold"),
-        url("fonts/open-sans-v15-latin/open-sans-v15-latin-600.woff2")
-            format("woff2"),
-        /* Chrome 26+, Opera 23+, Firefox 39+ */
-            url("fonts/open-sans-v15-latin/open-sans-v15-latin-600.woff")
-            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+  font-family: "Open Sans";
+  font-style: normal;
+  font-weight: 600;
+  src: local("Open Sans SemiBold"), local("OpenSans-SemiBold"),
+    url("fonts/open-sans-v15-latin/open-sans-v15-latin-600.woff2")
+      format("woff2"),
+    /* Chrome 26+, Opera 23+, Firefox 39+ */
+      url("fonts/open-sans-v15-latin/open-sans-v15-latin-600.woff")
+      format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 /* open-sans-700 - latin */
 @font-face {
-    font-family: "Open Sans";
-    font-style: normal;
-    font-weight: 700;
-    src: local("Open Sans Bold"), local("OpenSans-Bold"),
-        url("fonts/open-sans-v15-latin/open-sans-v15-latin-700.woff2")
-            format("woff2"),
-        /* Chrome 26+, Opera 23+, Firefox 39+ */
-            url("fonts/open-sans-v15-latin/open-sans-v15-latin-700.woff")
-            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+  font-family: "Open Sans";
+  font-style: normal;
+  font-weight: 700;
+  src: local("Open Sans Bold"), local("OpenSans-Bold"),
+    url("fonts/open-sans-v15-latin/open-sans-v15-latin-700.woff2")
+      format("woff2"),
+    /* Chrome 26+, Opera 23+, Firefox 39+ */
+      url("fonts/open-sans-v15-latin/open-sans-v15-latin-700.woff")
+      format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 
 /* open-sans-condensed-700 - latin */
 @font-face {
-    font-family: "Open Sans Condensed";
-    font-style: normal;
-    font-weight: 700;
-    src: local("Open Sans Condensed Bold"), local("OpenSansCondensed-Bold"),
-        url("fonts/open-sans-condensed-v12-latin/open-sans-condensed-v12-latin-700.woff2")
-            format("woff2"),
-        /* Chrome 26+, Opera 23+, Firefox 39+ */
-            url("fonts/open-sans-condensed-v12-latin/open-sans-condensed-v12-latin-700.woff")
-            format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+  font-family: "Open Sans Condensed";
+  font-style: normal;
+  font-weight: 700;
+  src: local("Open Sans Condensed Bold"), local("OpenSansCondensed-Bold"),
+    url("fonts/open-sans-condensed-v12-latin/open-sans-condensed-v12-latin-700.woff2")
+      format("woff2"),
+    /* Chrome 26+, Opera 23+, Firefox 39+ */
+      url("fonts/open-sans-condensed-v12-latin/open-sans-condensed-v12-latin-700.woff")
+      format("woff"); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 
 .theme-light {
-    --base-100: hsla(225, 0%, 100%, 1);
-    --base-200: hsla(225, 45%, 98%, 1);
-    --base-300: hsla(225, 43%, 94%, 1);
-    --base-400: hsla(225, 44%, 87%, 1);
-    --base-500: hsla(225, 17%, 63%, 1);
-    --base-600: hsla(225, 14%, 43%, 1);
-    --base-700: hsla(225, 18%, 32%, 1);
-    --base-800: hsla(225, 24%, 22%, 1);
-    --base-900: hsla(225, 27%, 16%, 1);
+  --base-100: hsla(225, 0%, 100%, 1);
+  --base-200: hsla(225, 45%, 98%, 1);
+  --base-300: hsla(225, 43%, 94%, 1);
+  --base-400: hsla(225, 44%, 87%, 1);
+  --base-500: hsla(225, 17%, 63%, 1);
+  --base-600: hsla(225, 14%, 43%, 1);
+  --base-700: hsla(225, 18%, 32%, 1);
+  --base-800: hsla(225, 24%, 22%, 1);
+  --base-900: hsla(225, 27%, 16%, 1);
 
-    --primary-100: hsla(225, 100%, 99%, 1);
-    --primary-200: hsla(225, 100%, 96%, 1);
-    --primary-300: hsla(225, 80%, 92%, 1);
-    --primary-400: hsla(225, 68%, 78%, 1);
-    --primary-500: hsla(225, 65%, 68%, 1);
-    --primary-600: hsla(225, 90%, 67%, 1);
-    --primary-700: hsla(225, 51%, 52%, 1);
-    --primary-800: hsla(225, 37%, 36%, 1);
-    --primary-900: hsla(225, 28%, 21%, 1);
+  --primary-100: hsla(225, 100%, 99%, 1);
+  --primary-200: hsla(225, 100%, 96%, 1);
+  --primary-300: hsla(225, 80%, 92%, 1);
+  --primary-400: hsla(225, 68%, 78%, 1);
+  --primary-500: hsla(225, 65%, 68%, 1);
+  --primary-600: hsla(225, 90%, 67%, 1);
+  --primary-700: hsla(225, 51%, 52%, 1);
+  --primary-800: hsla(225, 37%, 36%, 1);
+  --primary-900: hsla(225, 28%, 21%, 1);
 
-    --secondary-100: hsla(257, 45%, 98%, 1);
-    --secondary-200: hsla(257, 100%, 96%, 1);
-    --secondary-300: hsla(257, 81%, 90%, 1);
-    --secondary-400: hsla(257, 68%, 78%, 1);
-    --secondary-500: hsla(257, 66%, 68%, 1);
-    --secondary-600: hsla(257, 100%, 67%, 1);
-    --secondary-700: hsla(257, 50%, 52%, 1);
-    --secondary-800: hsla(257, 37%, 36%, 1);
-    --secondary-900: hsla(257, 28%, 21%, 1);
+  --secondary-100: hsla(257, 45%, 98%, 1);
+  --secondary-200: hsla(257, 100%, 96%, 1);
+  --secondary-300: hsla(257, 81%, 90%, 1);
+  --secondary-400: hsla(257, 68%, 78%, 1);
+  --secondary-500: hsla(257, 66%, 68%, 1);
+  --secondary-600: hsla(257, 100%, 67%, 1);
+  --secondary-700: hsla(257, 50%, 52%, 1);
+  --secondary-800: hsla(257, 37%, 36%, 1);
+  --secondary-900: hsla(257, 28%, 21%, 1);
 
-    --tertiary-100: hsla(210, 45%, 98%, 1);
-    --tertiary-200: hsla(210, 100%, 96%, 1);
-    --tertiary-300: hsla(210, 81%, 90%, 1);
-    --tertiary-400: hsla(210, 68%, 78%, 1);
-    --tertiary-500: hsla(210, 66%, 68%, 1);
-    --tertiary-600: hsla(210, 93%, 58%, 1);
-    --tertiary-700: hsla(210, 47%, 48%, 1);
-    --tertiary-800: hsla(210, 37%, 36%, 1);
-    --tertiary-900: hsla(210, 28%, 21%, 1);
+  --tertiary-100: hsla(210, 45%, 98%, 1);
+  --tertiary-200: hsla(210, 100%, 96%, 1);
+  --tertiary-300: hsla(210, 81%, 90%, 1);
+  --tertiary-400: hsla(210, 68%, 78%, 1);
+  --tertiary-500: hsla(210, 66%, 68%, 1);
+  --tertiary-600: hsla(210, 93%, 58%, 1);
+  --tertiary-700: hsla(210, 47%, 48%, 1);
+  --tertiary-800: hsla(210, 37%, 36%, 1);
+  --tertiary-900: hsla(210, 28%, 21%, 1);
 
-    --accent-100: hsla(293, 45%, 98%, 1);
-    --accent-200: hsla(293, 100%, 96%, 1);
-    --accent-300: hsla(293, 80%, 90%, 1);
-    --accent-400: hsla(293, 64%, 80%, 1);
-    --accent-500: hsla(293, 62%, 71%, 1);
-    --accent-600: hsla(293, 68%, 62%, 1);
-    --accent-700: hsla(293, 34%, 50%, 1);
-    --accent-800: hsla(293, 34%, 37%, 1);
-    --accent-900: hsla(293, 28%, 21%, 1);
+  --accent-100: hsla(293, 45%, 98%, 1);
+  --accent-200: hsla(293, 100%, 96%, 1);
+  --accent-300: hsla(293, 80%, 90%, 1);
+  --accent-400: hsla(293, 64%, 80%, 1);
+  --accent-500: hsla(293, 62%, 71%, 1);
+  --accent-600: hsla(293, 68%, 62%, 1);
+  --accent-700: hsla(293, 34%, 50%, 1);
+  --accent-800: hsla(293, 34%, 37%, 1);
+  --accent-900: hsla(293, 28%, 21%, 1);
 
-    --success-100: hsla(155, 45%, 98%, 1);
-    --success-200: hsla(155, 100%, 96%, 1);
-    --success-300: hsla(155, 81%, 90%, 1);
-    --success-400: hsla(155, 68%, 78%, 1);
-    --success-500: hsla(155, 66%, 68%, 1);
-    --success-600: hsla(155, 52%, 46%, 1);
-    --success-700: hsla(155, 62%, 37%, 1);
-    --success-800: hsla(155, 37%, 36%, 1);
-    --success-900: hsla(155, 28%, 21%, 1);
+  --success-100: hsla(155, 45%, 98%, 1);
+  --success-200: hsla(155, 100%, 96%, 1);
+  --success-300: hsla(155, 81%, 90%, 1);
+  --success-400: hsla(155, 68%, 78%, 1);
+  --success-500: hsla(155, 66%, 68%, 1);
+  --success-600: hsla(155, 52%, 46%, 1);
+  --success-700: hsla(155, 62%, 37%, 1);
+  --success-800: hsla(155, 37%, 36%, 1);
+  --success-900: hsla(155, 28%, 21%, 1);
 
-    --warning-100: hsla(39, 45%, 98%, 1);
-    --warning-200: hsla(39, 100%, 96%, 1);
-    --warning-300: hsla(39, 80%, 90%, 1);
-    --warning-400: hsla(39, 64%, 80%, 1);
-    --warning-500: hsla(39, 62%, 71%, 1);
-    --warning-600: hsla(39, 100%, 66%, 1);
-    --warning-700: hsla(39, 38%, 52%, 1);
-    --warning-800: hsla(39, 34%, 37%, 1);
-    --warning-900: hsla(39, 28%, 21%, 1);
+  --warning-100: hsla(39, 45%, 98%, 1);
+  --warning-200: hsla(39, 100%, 96%, 1);
+  --warning-300: hsla(39, 80%, 90%, 1);
+  --warning-400: hsla(39, 64%, 80%, 1);
+  --warning-500: hsla(39, 62%, 71%, 1);
+  --warning-600: hsla(39, 100%, 66%, 1);
+  --warning-700: hsla(39, 38%, 52%, 1);
+  --warning-800: hsla(39, 34%, 37%, 1);
+  --warning-900: hsla(39, 28%, 21%, 1);
 
-    --caution-100: hsla(16, 45%, 98%, 1);
-    --caution-200: hsla(16, 100%, 96%, 1);
-    --caution-300: hsla(16, 81%, 90%, 1);
-    --caution-400: hsla(16, 68%, 78%, 1);
-    --caution-500: hsla(16, 66%, 68%, 1);
-    --caution-600: hsla(16, 87%, 65%, 1);
-    --caution-700: hsla(16, 47%, 48%, 1);
-    --caution-800: hsla(16, 37%, 36%, 1);
-    --caution-900: hsla(16, 28%, 21%, 1);
+  --caution-100: hsla(16, 45%, 98%, 1);
+  --caution-200: hsla(16, 100%, 96%, 1);
+  --caution-300: hsla(16, 81%, 90%, 1);
+  --caution-400: hsla(16, 68%, 78%, 1);
+  --caution-500: hsla(16, 66%, 68%, 1);
+  --caution-600: hsla(16, 87%, 65%, 1);
+  --caution-700: hsla(16, 47%, 48%, 1);
+  --caution-800: hsla(16, 37%, 36%, 1);
+  --caution-900: hsla(16, 28%, 21%, 1);
 
-    --alert-100: hsla(358, 45%, 98%, 1);
-    --alert-200: hsla(358, 100%, 96%, 1);
-    --alert-300: hsla(358, 81%, 90%, 1);
-    --alert-400: hsla(358, 68%, 78%, 1);
-    --alert-500: hsla(358, 66%, 68%, 1);
-    --alert-600: hsla(358, 96%, 67%, 1);
-    --alert-700: hsla(358, 50%, 52%, 1);
-    --alert-800: hsla(358, 37%, 36%, 1);
-    --alert-900: hsla(358, 28%, 21%, 1);
+  --alert-100: hsla(358, 45%, 98%, 1);
+  --alert-200: hsla(358, 100%, 96%, 1);
+  --alert-300: hsla(358, 81%, 90%, 1);
+  --alert-400: hsla(358, 68%, 78%, 1);
+  --alert-500: hsla(358, 66%, 68%, 1);
+  --alert-600: hsla(358, 96%, 67%, 1);
+  --alert-700: hsla(358, 50%, 52%, 1);
+  --alert-800: hsla(358, 37%, 36%, 1);
+  --alert-900: hsla(358, 28%, 21%, 1);
 }
 
 @tailwind preflight;
 @tailwind utilities;
 
 body {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .sticky {
-    position: sticky !important;
+  position: sticky !important;
 }
 
 button:focus {
-    outline: none;
+  outline: none;
 }
 
 button,
 select {
-    @apply text-base-600 text-base font-600 appearance-none !important;
-    line-height: 14px; /*weird render bug fix where select text gets clipped at bottom */
+  @apply text-base-600 text-base font-600 appearance-none !important;
+  line-height: 14px; /*weird render bug fix where select text gets clipped at bottom */
 }
 
 button[disabled] {
-    @apply .opacity-25 .pointer-events-none !important;
+  @apply .opacity-25 .pointer-events-none !important;
 }
 
 .content-box {
-    background-clip: content-box;
+  background-clip: content-box;
 }
 
 .pills {
-    @apply flex flex-col flex-auto rounded-sm border border-base-300 .overflow-hidden !important;
+  @apply flex flex-col flex-auto rounded-sm border border-base-300 .overflow-hidden !important;
 }
 
 @screen md {
-    .pills {
-        @apply flex-row !important;
-    }
+  .pills {
+    @apply flex-row !important;
+  }
 }
 
 .shadow-underline {
-    box-shadow: inset 0 -1px 0px 0 hsla(0, 0%, 0%, 0.1);
+  box-shadow: inset 0 -1px 0px 0 hsla(0, 0%, 0%, 0.1);
 }
 
 .disabled {
-    @apply opacity-50 .cursor-not-allowed .pointer-events-none !important;
+  @apply opacity-50 .cursor-not-allowed .pointer-events-none !important;
 }
 
 .border-collapse {
-    border-collapse: collapse;
+  border-collapse: collapse;
 }
 
 [class~="flex-1"] {
-    @apply min-h-0 !important;
-    /* Firefox needs this property to properly scroll panels with flex/overflow. Tailwind throws an exception error when using
+  @apply min-h-0 !important;
+  /* Firefox needs this property to properly scroll panels with flex/overflow. Tailwind throws an exception error when using
 their built-in classes, so this is a workaround to `bundle` the Firefox fix with every `flex-1` class by default*/
 }
 
 .word-break {
-    word-break: break-word;
+  word-break: break-word;
 }
 
 .word-break-all {
-    word-break: break-all;
+  word-break: break-all;
 }
 
 ul,
@@ -240,329 +240,313 @@ h3,
 h4,
 h5,
 h6 {
-    @apply break-words !important;
+  @apply break-words !important;
 }
 
 .react-modal-overlay {
-    @apply .fixed .pin-t .pin-l .w-full .h-full z-20 !important;
-    background-color: hsla(225, 41%, 32%, 0.82);
+  @apply .fixed .pin-t .pin-l .w-full .h-full z-20 !important;
+  background-color: hsla(225, 41%, 32%, 0.82);
 }
 
 .pill {
-    @apply select-none bg-base-200 cursor-pointer p-2 m-2 rounded-sm .whitespace-no-wrap .flex-1 .text-center .text-xs .text-base-500 .font-600 !important;
+  @apply select-none bg-base-200 cursor-pointer p-2 m-2 rounded-sm .whitespace-no-wrap .flex-1 .text-center .text-xs .text-base-500 .font-600 !important;
 }
 
 .pill-active {
-    @apply .select-none .cursor-pointer .p-2 .m-2 .bg-base-300 .rounded-sm .whitespace-no-wrap .flex-1 .text-center .text-xs .text-base-700 .font-600 !important;
+  @apply .select-none .cursor-pointer .p-2 .m-2 .bg-base-300 .rounded-sm .whitespace-no-wrap .flex-1 .text-center .text-xs .text-base-700 .font-600 !important;
 }
 
 .transition {
-    animation: fadein 0.25s ease-in;
+  animation: fadein 0.25s ease-in;
 }
 
 .transition-out {
-    animation: fadeout 0.25s ease-out;
+  animation: fadeout 0.25s ease-out;
 }
 
 @keyframes fadein {
-    from {
-        opacity: 0;
-    }
+  from {
+    opacity: 0;
+  }
 
-    to {
-        opacity: 1;
-    }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeout {
-    from {
-        opacity: 1;
-    }
+  from {
+    opacity: 1;
+  }
 
-    to {
-        opacity: 0;
-    }
+  to {
+    opacity: 0;
+  }
 }
 
 .logo {
-    width: 48px;
-    height: 48px;
-    position: relative;
-    top: 1px;
+  width: 48px;
+  height: 48px;
+  position: relative;
+  top: 1px;
 }
 
 .tab-row {
-    box-shadow: inset 0 -1px 0 0 config("colors.base-400"),
-        0 15px 30px 0 config("colors.base-200");
+  box-shadow: inset 0 -1px 0 0 config("colors.base-400"),
+    0 15px 30px 0 config("colors.base-200");
 }
 
 .tab {
-    box-shadow: inset -1px 0px 0px 0px config("colors.base-400"),
-        inset 0px -1px 0px 0px config("colors.base-400");
+  box-shadow: inset -1px 0px 0px 0px config("colors.base-400"),
+    inset 0px -1px 0px 0px config("colors.base-400");
 }
 
 .tab-active {
-    box-shadow: inset 0px 2px 0px 0px config("colors.primary-400"),
-        inset -1px 0px 0px 0px config("colors.base-400");
+  box-shadow: inset 0px 2px 0px 0px config("colors.primary-400"),
+    inset -1px 0px 0px 0px config("colors.base-400");
 }
 
 .pill:hover {
-    @apply .text-primary-500 !important;
+  @apply .text-primary-500 !important;
 }
 
 .pill-active {
-    @apply .text-primary-500 !important;
+  @apply .text-primary-500 !important;
 }
 
 .transform-rotate-half-turn {
-    transform: rotate(0.5turn);
+  transform: rotate(0.5turn);
 }
 
 .login-border-t {
-    background: linear-gradient(
-        90deg,
-        hsl(26, 94%, 73%) 0%,
-        hsl(4, 100%, 82%) 44.95%,
-        hsl(262, 85%, 74%) 100%
-    );
-    height: 5px;
+  background: linear-gradient(
+    90deg,
+    hsl(26, 94%, 73%) 0%,
+    hsl(4, 100%, 82%) 44.95%,
+    hsl(262, 85%, 74%) 100%
+  );
+  height: 5px;
 }
 
 .login-bg {
-    background-image: url("images/login-stripes.svg");
-    background-position: top left;
-    background-repeat: no-repeat;
+  background-image: url("images/login-stripes.svg");
+  background-position: top left;
+  background-repeat: no-repeat;
 }
 
 .login-bg::before {
-    background-image: url(images/login-stripes.svg);
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    background-repeat: no-repeat;
-    bottom: 0;
-    right: 0;
-    content: "";
-    transform: rotate(180deg);
-    pointer-events: none;
+  background-image: url(images/login-stripes.svg);
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  background-repeat: no-repeat;
+  bottom: 0;
+  right: 0;
+  content: "";
+  transform: rotate(180deg);
+  pointer-events: none;
 }
 
 /* will clean this up at some point... */
 .panel-actions:not(:empty) + div:before {
-    @apply bg-base-300 absolute .rounded-full;
-    content: "";
-    left: 9px;
-    top: 50%;
-    width: 2px;
-    height: 50%;
-    transform: translateY(-50%);
+  @apply bg-base-300 absolute .rounded-full;
+  content: "";
+  left: 9px;
+  top: 50%;
+  width: 2px;
+  height: 50%;
+  transform: translateY(-50%);
 }
 
 .close-button:before {
-    display: none !important;
+  display: none !important;
 }
 
 .navigation-gradient {
-    height: 2px;
-    background-image: linear-gradient(
-        90deg,
-        #d1a0ea 0%,
-        #a3acff 44%,
-        #78effb 99%
-    );
-    top: 0;
-    z-index: 2;
-    position: absolute;
-    width: 100%;
+  height: 2px;
+  background-image: linear-gradient(
+    90deg,
+    #d1a0ea 0%,
+    #a3acff 44%,
+    #78effb 99%
+  );
+  top: 0;
+  z-index: 2;
+  position: absolute;
+  width: 100%;
 }
 
 .navigation-panel {
-    position: absolute;
-    left: 81px;
-    z-index: 1001;
-    top: 0;
-    height: 100%;
-    background-color: hsla(0, 0%, 21%, 0.85);
+  position: absolute;
+  left: 81px;
+  z-index: 1001;
+  top: 0;
+  height: 100%;
+  background-color: hsla(0, 0%, 21%, 0.85);
 }
 
 .navigation-panel ul {
-    width: 270px;
+  width: 270px;
 }
 
 .search-modal {
-    position: absolute;
-    left: 0;
-    z-index: 10;
-    top: 63px;
-    height: 100%;
-    background-color: hsla(225, 30%, 21%, 0.85);
-    padding-bottom: 84px;
+  position: absolute;
+  left: 0;
+  z-index: 10;
+  top: 63px;
+  height: 100%;
+  background-color: hsla(225, 30%, 21%, 0.85);
+  padding-bottom: 84px;
 }
 
 /* Collapsible CSS */
 
 .Collapsible__trigger.is-open + .Collapsible__contentOuter {
-    overflow: visible !important;
+  overflow: visible !important;
 }
 
 /* React Select CSS */
 
 .react-select__single-value {
-    color: inherit !important;
+  color: inherit !important;
 }
 
 .react-select__option {
-    @apply .px-2 .cursor-pointer !important;
+  @apply .px-2 .cursor-pointer !important;
 }
 
 .react-select__menu {
-    @apply .m-0 !important;
+  @apply .m-0 !important;
 }
 
 .react-select__menu-notice--no-options {
-    @apply .text-left !important;
+  @apply .text-left !important;
 }
 
 .react-select__control--is-focused,
 .react-select__control--is-focused:hover {
-    @apply .border-base-400 !important;
+  @apply .border-base-400 !important;
 }
 
 .react-select__value-container--is-multi {
-    @apply .pb-0 pl-1 !important;
+  @apply .pb-0 pl-1 !important;
 }
 
 .react-select__input input {
-    @apply .text-base-600 .font-600 !important;
-    margin-left: -2px !important;
+  @apply .text-base-600 .font-600 !important;
+  margin-left: -2px !important;
 }
 
 .react-select__indicators {
-    @apply .cursor-pointer;
+  @apply .cursor-pointer;
 }
 
 .react-select__multi-value__label {
-    @apply px-2 !important;
+  @apply px-2 !important;
 }
 
 .react-select__multi-value__remove {
-    @apply .cursor-pointer;
+  @apply .cursor-pointer;
 }
 
 .react-select__multi-value__remove:hover {
-    @apply .shadow-inner;
+  @apply .shadow-inner;
 }
 
 .react-select__menu-list {
-    @apply .p-0 !important;
+  @apply .p-0 !important;
 }
 
 .search-option-categories {
-    @apply .bg-primary-100 .text-base-600 .border-2 .border-primary-300 .rounded-sm .p-1;
+  @apply .bg-primary-100 .text-base-600 .border-2 .border-primary-300 .rounded-sm .p-1;
 }
 
 .severity-tile {
-    background: hsla(0, 0%, 100%, 0.19);
+  background: hsla(0, 0%, 100%, 0.19);
 }
 
 .slick-initialized.slick-slider,
 .slick-list,
 .slick-track {
-    height: 100%;
+  height: 100%;
 }
 
 .slick-arrow::before {
-    display: none;
+  display: none;
 }
 
 .carousel-prev-arrow,
 .carousel-next-arrow {
-    position: absolute;
-    top: 0%;
-    z-index: 2;
+  position: absolute;
+  top: 0%;
+  z-index: 2;
 }
 .carousel-prev-arrow,
 .carousel-next-arrow {
-    position: absolute;
-    top: 0%;
-    z-index: 2;
+  position: absolute;
+  top: 0%;
+  z-index: 2;
 }
 
 .carousel-prev-arrow {
-    right: 70px;
+  right: 70px;
 }
 
 .carousel-next-arrow {
-    right: 24px;
+  right: 24px;
 }
 
 .cursor-text {
-    cursor: text !important;
+  cursor: text !important;
 }
 
 .rc-tooltip-inner {
-    background-color: hsla(230, 13%, 34%, 1) !important;
-    text-align: inherit !important;
+  background-color: hsla(230, 13%, 34%, 1) !important;
+  text-align: inherit !important;
 }
 
 .rc-tooltip-arrow {
-    border-top-color: hsla(230, 13%, 34%, 1) !important;
+  border-top-color: hsla(230, 13%, 34%, 1) !important;
 }
 
 .recharts-responsive-container .recharts-tooltip-cursor {
-    fill-opacity: 0;
+  fill-opacity: 0;
 }
 
 .bg-inherit {
-    background: inherit;
+  background: inherit;
 }
 
 .left-navigation {
-    width: 81px;
+  width: 81px;
 }
 
 .bg-global-search-empty-state {
-    background-image: url("images/globalSearchEmptyState.svg");
-    background-repeat: no-repeat;
-    background-position-x: 50%;
-    background-position-y: 50%;
+  background-image: url("images/globalSearchEmptyState.svg");
+  background-repeat: no-repeat;
+  background-position-x: 50%;
+  background-position-y: 50%;
 }
 
 .text-critical-severity {
-    color: hsl(7, 50%, 55%);
+  color: hsl(7, 50%, 55%);
 }
 
 .text-high-severity {
-    color: hsl(349, 50%, 78%);
+  color: hsl(349, 50%, 78%);
 }
 
 .network-grid-bg {
-    background-color: rgba(157, 163, 193, 0.1);
-    background-image: -webkit-linear-gradient(
-            rgba(157, 163, 193, 0.3) 1px,
-            transparent 1px
-        ),
-        -webkit-linear-gradient(left, rgba(157, 163, 193, 0.3) 1px, transparent
-                    1px),
-        -webkit-linear-gradient(rgba(157, 163, 193, 0.3) 1px, transparent 1px),
-        -webkit-linear-gradient(left, rgba(157, 163, 193, 0.2) 1px, transparent
-                    1px);
-    background-image: -o-linear-gradient(
-            rgba(157, 163, 193, 0.3) 1px,
-            transparent 1px
-        ),
-        -o-linear-gradient(left, rgba(157, 163, 193, 0.3) 1px, transparent 1px),
-        -o-linear-gradient(rgba(157, 163, 193, 0.3) 1px, transparent 1px),
-        -o-linear-gradient(left, rgba(157, 163, 193, 0.2) 1px, transparent 1px);
-    background-image: linear-gradient(
-            rgba(157, 163, 193, 0.2) 1px,
-            transparent 1px
-        ),
-        linear-gradient(90deg, rgba(157, 163, 193, 0.2) 1px, transparent 1px),
-        linear-gradient(rgba(157, 163, 193, 0.1) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(157, 163, 193, 0.1) 1px, transparent 1px);
-    background-size: 20px 20px, 20px 20px, 4px 4px, 4px 4px;
-    background-position: -2px -2px, -2px -2px, -2px -2px, -2px -2px;
+  background-color: hsla(216, 100%, 97%, 1);
+  background-image: linear-gradient(
+      hsla(216, 62%, 85%, 0.52) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, hsla(216, 22%, 69%, 0.2) 1px, transparent 1px),
+    linear-gradient(hsla(216, 33%, 77%, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, hsla(216, 67%, 81%, 0.1) 1px, transparent 1px);
+  background-size: 32px 32px, 32px 32px, 4px 4px, 4px 4px;
+  background-position: -2px -2px, -2px -2px, -2px -2px, -2px -2px;
 }
 
 /**
@@ -570,168 +554,168 @@ h6 {
  */
 .simulator-mode.success:before,
 .simulator-mode.error:before {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    z-index: 2;
-    pointer-events: none;
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  pointer-events: none;
 }
 
 .simulator-mode.error:before {
-    -webkit-box-shadow: inset 0px 0px 0px 4px config("colors.alert-600");
-    -moz-box-shadow: inset 0px 0px 0px 4px config("colors.alert-600");
-    box-shadow: inset 0px 0px 0px 4px config("colors.alert-600");
+  -webkit-box-shadow: inset 0px 0px 0px 4px config("colors.alert-600");
+  -moz-box-shadow: inset 0px 0px 0px 4px config("colors.alert-600");
+  box-shadow: inset 0px 0px 0px 4px config("colors.alert-600");
 }
 
 .simulator-mode.success:before {
-    -webkit-box-shadow: inset 0px 0px 0px 4px config("colors.success-600");
-    -moz-box-shadow: inset 0px 0px 0px 4px config("colors.success-600");
-    box-shadow: inset 0px 0px 0px 4px config("colors.success-600");
+  -webkit-box-shadow: inset 0px 0px 0px 4px config("colors.success-600");
+  -moz-box-shadow: inset 0px 0px 0px 4px config("colors.success-600");
+  box-shadow: inset 0px 0px 0px 4px config("colors.success-600");
 }
 
 .top-navigation {
-    box-shadow: inset 0px -1px 0 0 #cfd4ec;
+  box-shadow: inset 0px -1px 0 0 #cfd4ec;
 }
 
 .__react_component_tooltip.type-dark.place-top:after {
-    border-top-color: inherit !important;
+  border-top-color: inherit !important;
 }
 
 .btn-class {
-    @apply .flex .px-1 .rounded-sm .font-600 .uppercase .text-center .items-center .min-w-24 .justify-center .border-2 !important;
+  @apply .flex .px-1 .rounded-sm .font-600 .uppercase .text-center .items-center .min-w-24 .justify-center .border-2 !important;
 }
 
 .btn-sm {
-    @apply .btn-class .py-1 .text-xs !important;
+  @apply .btn-class .py-1 .text-xs !important;
 }
 
 .btn {
-    @apply .btn-class .py-2 .text-sm !important;
+  @apply .btn-class .py-2 .text-sm !important;
 }
 
 .btn-icon {
-    @apply .flex .py-2 .px-2 .rounded-sm .font-600 .uppercase .text-center .text-sm .items-center .justify-center .bg-base-200 .border !important;
+  @apply .flex .py-2 .px-2 .rounded-sm .font-600 .uppercase .text-center .text-sm .items-center .justify-center .bg-base-200 .border !important;
 }
 
 .btn-success {
-    @apply .text-success-600 .border-success-200 .bg-base-200 !important;
+  @apply .text-success-700 .border-success-500 .bg-success-200 !important;
 }
 
 .btn-success:hover {
-    @apply .btn-success .bg-success-100 .bg-base-200 !important;
+  @apply .btn-success .bg-success-300 .text-success-800 !important;
 }
 
 .btn-alert {
-    @apply .text-alert-100 .border-alert-600 .bg-alert-600 !important;
+  @apply .text-alert-100 .border-alert-600 .bg-alert-600 !important;
 }
 
 .btn-alert:hover {
-    @apply .btn-alert .border-alert-700 .bg-alert-700 !important;
+  @apply .btn-alert .border-alert-700 .bg-alert-700 !important;
 }
 
 .btn-primary {
-    @apply .text-primary-600 .border-primary-200 .bg-base-100 !important;
+  @apply border-primary-300 text-primary-600 !important;
 }
 
 .btn-primary:hover {
-    @apply .btn-primary .bg-primary-100 .bg-base-200 !important;
+  @apply .btn-primary .bg-primary-100 .bg-base-200 border-primary-400 !important;
 }
 
 .btn-base {
-    @apply .text-base-600 .border-base-400 .bg-base-100 !important;
+  @apply .text-base-600 .border-base-300 .bg-base-100 text-base-600 !important;
 }
 
 .btn-base:hover {
-    @apply .btn-base .bg-base-200 !important;
+  @apply .btn-base .bg-base-200 border-base-400 text-base-700 !important;
 }
 
 /* Network Graph CSS Classes */
 
 .pin-network-zoom-buttons-left {
-    left: -70px !important;
+  left: -70px !important;
 }
 
 .pin-network-update-label-left {
-    left: -175px !important;
+  left: -175px !important;
 }
 
 .btn-graph-refresh circle {
-    fill: hsla(225, 51%, 52%, 1);
-    stroke: hsla(225, 51%, 52%, 1);
+  fill: hsla(225, 51%, 52%, 1);
+  stroke: hsla(225, 51%, 52%, 1);
 }
 
 .node circle {
-    fill: hsl(232, 35%, 38%);
+  fill: hsl(232, 35%, 38%);
 }
 
 .node.internetAccess circle:first-child {
-    fill: hsl(316, 93%, 89%);
+  fill: hsl(316, 93%, 89%);
 }
 
 .bg-header {
-    position: relative;
-    z-index: 0;
+  position: relative;
+  z-index: 0;
 }
 
 .bg-header:before {
-    background-image: url("images/header-bg.svg");
-    background-position: 100% 0%;
-    background-repeat: no-repeat;
-    background-size: 640px;
-    content: "";
-    width: 100%;
-    height: 100%;
-    top: 0;
-    position: absolute;
-    right: 0;
-    z-index: -1;
+  background-image: url("images/header-bg.svg");
+  background-position: 100% 0%;
+  background-repeat: no-repeat;
+  background-size: 640px;
+  content: "";
+  width: 100%;
+  height: 100%;
+  top: 0;
+  position: absolute;
+  right: 0;
+  z-index: -1;
 }
 
 .bg-dashboard {
-    background-image: url("images/dashboard-bg.svg"),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%239C92AC' fill-opacity='0.3' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
-    background-position: right top, center center;
-    background-repeat: no-repeat, repeat;
-    background-size: 1650px 450px, 4px 4px;
+  background-image: url("images/dashboard-bg.svg"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%239C92AC' fill-opacity='0.3' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
+  background-position: right top, center center;
+  background-repeat: no-repeat, repeat;
+  background-size: 1650px 450px, 4px 4px;
 }
 
 .text-separator {
-    overflow: hidden;
+  overflow: hidden;
 }
 
 .text-separator:before,
 .text-separator:after {
-    content: "";
-    position: absolute;
-    width: 100%;
-    height: 1px;
-    overflow: hidden;
-    border: 1px solid currentColor;
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  overflow: hidden;
+  border: 1px solid currentColor;
 }
 
 .text-separator:before {
-    transform: translateX(-100%) translateY(-50%);
-    top: 50%;
+  transform: translateX(-100%) translateY(-50%);
+  top: 50%;
 }
 
 .text-separator:after {
-    transform: translateY(-50%);
-    top: 50%;
+  transform: translateY(-50%);
+  top: 50%;
 }
 
 /* React Select override */
 .hide-dropdown > div:last-child {
-    @apply .hidden;
+  @apply .hidden;
 }
 
 /* React Table overrides. Delete this file once all react Table properties are ported over properly to avoid the use of !important*/
 @import "../node_modules/react-table/react-table.css";
 
 .ReactTable .rt-table {
-    overflow: overlay !important;
+  overflow: overlay !important;
 }
 
 /* .rt-table:before {
@@ -751,275 +735,281 @@ h6 {
 } */
 
 .ReactTable .-pagination {
-    @apply .shadow-none .border-t .shadow-underline .pt-2 .pb-2 .pl-0 .pr-0 !important;
+  @apply .shadow-none .border-t .shadow-underline .pt-2 .pb-2 .pl-0 .pr-0 !important;
 }
 
 .ReactTable input[type="checkbox"] {
-    transform: scale(1.2);
-    cursor: pointer;
+  transform: scale(1.2);
+  cursor: pointer;
 }
 
 .ReactTable input[type="checkbox"]:hover,
 .ReactTable input[type="checkbox"]:focus {
-    @apply .shadow;
+  @apply .shadow;
 }
 
 .ReactTable .rt-thead {
-    position: sticky;
-    @apply .pin-t .bg-base-100 !important;
-    z-index: 4 !important;
+  position: sticky;
+  @apply .pin-t .bg-base-100 !important;
+  z-index: 4 !important;
 }
 
 .ReactTable .rt-tbody {
-    overflow: initial !important;
+  overflow: initial !important;
 }
 
 .ReactTable .rt-thead .rt-th:focus {
-    @apply .outline-none !important;
+  @apply .outline-none !important;
 }
 
 .ReactTable .rt-thead.-header {
-    @apply .shadow-none !important;
+  @apply .shadow-none !important;
 }
 
 .ReactTable .rt-thead.-header .rt-tr {
-    box-shadow: -10px 0 0 white, 10px 0 0 white,
-        0 2px 8px 0 hsla(230, 50%, 70%, 0.25) !important;
-    @apply bg-base-100 !important;
+  box-shadow: -10px 0 0 white, 10px 0 0 white,
+    0 2px 8px 0 hsla(230, 50%, 70%, 0.25) !important;
+  @apply bg-base-100 !important;
 }
 
 .ReactTable .rt-thead .rt-th.-sort-desc,
 .ReactTable .rt-thead .rt-th.-sort-asc {
-    @apply .shadow-none !important;
+  @apply .shadow-none !important;
 }
 
 .ReactTable .rt-thead .rt-th.-sort-desc div:after {
-    content: " ↓";
-    position: absolute;
-    margin-left: 4px;
+  content: " ↓";
+  position: absolute;
+  margin-left: 4px;
 }
 
 .ReactTable .rt-thead .rt-th.-sort-asc div:after {
-    content: " ↑";
-    position: absolute;
-    margin-left: 4px;
+  content: " ↑";
+  position: absolute;
+  margin-left: 4px;
 }
 .ReactTable .rt-tbody,
 .ReactTable .rt-thead {
-    @apply .px-3 !important;
+  @apply .px-3 !important;
 }
 
 .ReactTable .rt-tbody .rt-tr {
-    @apply .min-h-12 bg-base-100 !important;
+  @apply .min-h-12 bg-base-100 !important;
 }
 
 .ReactTable .rt-tbody .rt-tr .rt-td {
-    box-shadow: 0px -1px 0 0 config("colors.base-300"),
-        inset 0px -1px 0 0 config("colors.base-300");
+  box-shadow: 0px -1px 0 0 config("colors.base-300"),
+    inset 0px -1px 0 0 config("colors.base-300");
 }
 
 .ReactTable .rt-tbody .rt-tr:hover .rt-td {
-    @apply .bg-base-200 !important;
-    z-index: 3 !important;
-    box-shadow: 0px -1px 0 0 config("colors.base-400"),
-        inset 0px -1px 0 0 config("colors.base-400");
+  @apply .bg-base-200 !important;
+  z-index: 3 !important;
+  box-shadow: 0px -1px 0 0 config("colors.base-400"),
+    inset 0px -1px 0 0 config("colors.base-400");
 }
 
 .ReactTable .rt-tbody .rt-tr.row-active .rt-td,
 .ReactTable .rt-tbody .rt-tr.row-active:hover .rt-td {
-    @apply .text-tertiary-700 .bg-tertiary-200 !important;
-    box-shadow: 0px -1px 0 0 config("colors.tertiary-400"),
-        inset 0px -1px 0 0 config("colors.tertiary-400");
-    z-index: 3 !important;
+  @apply .text-tertiary-700 .bg-tertiary-200 !important;
+  box-shadow: 0px -1px 0 0 config("colors.tertiary-400"),
+    inset 0px -1px 0 0 config("colors.tertiary-400");
+  z-index: 3 !important;
 }
 
 .ReactTable .rt-tbody .rt-tr-group {
-    @apply .flex-no-grow .cursor-pointer !important;
-    border: none !important;
+  @apply .flex-no-grow .cursor-pointer !important;
+  border: none !important;
 }
 
 .ReactTable .rt-tr {
-    @apply .relative !important;
+  @apply .relative !important;
 }
 
 .ReactTable .rt-tbody .rt-td.rt-tr-actions {
-    position: sticky !important;
-    top: auto;
-    right: 10px !important;
-    z-index: 1;
-    width: 0 !important;
-    overflow: inherit !important;
-    flex: 0 !important;
-    @apply .flex-row-reverse .pin-l .min-w-0 .m-0 !important;
+  position: sticky !important;
+  top: auto;
+  right: 10px !important;
+  z-index: 1;
+  width: 0 !important;
+  overflow: inherit !important;
+  flex: 0 !important;
+  @apply .flex-row-reverse .pin-l .min-w-0 .m-0 !important;
 }
 
 .ReactTable .rt-tr:hover .rt-tr-actions {
-    @apply .flex !important;
+  @apply .flex !important;
 }
 
 .ReactTable .-previous .-btn,
 .ReactTable .-next .-btn {
-    @apply .bg-primary-100 .rounded-none .text-primary-600 !important;
+  @apply .bg-primary-100 .rounded-none .text-primary-600 !important;
 }
 
 .ReactTable .-previous .-btn:hover,
 .ReactTable .-next .-btn:hover {
-    @apply .bg-primary-300 .text-base-100 .rounded-none !important;
+  @apply .bg-primary-300 .text-base-100 .rounded-none !important;
 }
 
 /* will clean up and refactor all selectors at some point */
 
-.ReactTable .rt-tbody .rt-td:first-child {
-    background: inherit;
-    position: sticky !important;
-    left: 0px;
-    z-index: 1 !important;
-    box-shadow: 0px -1px 0 0 config("colors.base-300"),
-        inset 0px -1px 0 0 config("colors.base-300"),
-        11px 0 8px -4px config("colors.base-100");
+.ReactTable .rt-tbody .rt-td:nth-last-child(n + 2),
+.ReactTable .rt-tbody .rt-td:nth-last-child(n + 2) ~ li {
+  background: inherit;
+  position: sticky !important;
+  left: 0px;
+  z-index: 1 !important;
+  box-shadow: 0px -1px 0 0 config("colors.base-300"),
+    inset 0px -1px 0 0 config("colors.base-300"),
+    11px 0 8px -4px config("colors.base-100");
 }
 
 .ReactTable .rt-thead .rt-th:first-child {
-    background: inherit;
-    position: sticky !important;
-    left: 0px;
-    z-index: 1 !important;
-    box-shadow: 11px 0 8px -4px config("colors.base-100");
+  background: inherit;
+  position: sticky !important;
+  left: 0px;
+  z-index: 1 !important;
+  box-shadow: 11px 0 8px -4px config("colors.base-100");
 }
 
 .ReactTable .rt-thead .rt-tr {
-    min-width: min-content !important;
+  min-width: min-content !important;
 }
 
 .ReactTable .rt-thead .rt-th {
-    @apply bg-base-100;
+  @apply bg-base-100;
 }
 
 .ReactTable .rt-tbody .rt-td.sticky-column {
-    background: inherit !important;
-    position: sticky !important;
-    left: 0;
-    z-index: 1;
-    box-shadow: 0px -1px 0 0 config("colors.base-300"),
-        inset 0px -1px 0 0 config("colors.base-300"),
-        11px 0 8px -4px config("colors.base-100");
+  background: inherit !important;
+  position: sticky !important;
+  left: 0;
+  z-index: 1;
+  box-shadow: 0px -1px 0 0 config("colors.base-300"),
+    inset 0px -1px 0 0 config("colors.base-300"),
+    11px 0 8px -4px config("colors.base-100");
 }
 
 .ReactTable .rt-thead .rt-th.sticky-column {
-    background: inherit !important;
-    position: sticky !important;
-    left: 0;
-    z-index: 1 !important;
-    box-shadow: 11px 0 8px -4px config("colors.base-100");
+  background: inherit !important;
+  position: sticky !important;
+  left: 0;
+  z-index: 1 !important;
+  box-shadow: 11px 0 8px -4px config("colors.base-100");
 }
 
 .ReactTable .rt-thead .rt-th.sticky-column:hover {
-    @apply .bg-primary-200 !important;
+  @apply .bg-primary-200 !important;
 }
 
 .ReactTable .rt-tbody .rt-tr:hover .rt-td.sticky-column,
 .ReactTable .rt-tbody .rt-tr:hover .rt-td:first-child {
-    box-shadow: 0px -1px 0 0 config("colors.base-400"),
-        inset 0px -1px 0 0 config("colors.base-400"),
-        11px 0 8px -4px config("colors.base-200");
-    z-index: 2 !important;
+  box-shadow: 0px -1px 0 0 config("colors.base-400"),
+    inset 0px -1px 0 0 config("colors.base-400"),
+    11px 0 8px -4px config("colors.base-200");
+  z-index: 2 !important;
 }
 
 .ReactTable .rt-tbody .rt-tr.row-active .rt-td.sticky-column,
 .ReactTable .rt-tbody .rt-tr.row-active:hover .rt-td.sticky-column,
-.ReactTable .rt-tbody .rt-tr.row-active .rt-td:first-child {
-    box-shadow: 0px -1px 0 0 config("colors.tertiary-400"),
-        inset 0px -1px 0 0 config("colors.tertiary-400"),
-        11px 0 8px -4px config("colors.tertiary-200");
-    z-index: 3 !important;
+.ReactTable .rt-tbody .rt-tr.row-active .rt-td:nth-last-child(n + 3),
+.ReactTable .rt-tbody .rt-tr.row-active .rt-td:nth-last-child(n + 3) ~ .rt-tr {
+  box-shadow: 0px -1px 0 0 config("colors.tertiary-400"),
+    inset 0px -1px 0 0 config("colors.tertiary-400"),
+    11px 0 8px -4px config("colors.tertiary-200");
+  z-index: 3 !important;
 }
 
 .ReactTable .rt-tbody .rt-td.sticky-column.left-checkbox-offset,
 .ReactTable .rt-thead .rt-th.sticky-column.left-checkbox-offset {
-    left: 28px !important;
+  left: 28px !important;
 }
 
 .cve-table .rt-table .rt-tbody,
 .cve-table .rt-table .rt-thead,
 .dockerfile-table .rt-table .rt-tbody,
 .dockerfile-table .rt-table .rt-thead {
-    @apply .p-0 !important;
+  @apply .p-0 !important;
 }
 
 .cve-table .rt-tbody .rt-tr,
 .cve-table .rt-thead .rt-tr,
 .dockerfile-table .cve-table .rt-tbody .rt-tr,
 .dockerfile-table .cve-table .rt-thead .rt-tr {
-    @apply .min-h-0 !important;
+  @apply .min-h-0 !important;
 }
 
 .cve-table .rt-thead .rt-th:first-child,
 .dockerfile-table .cve-table .rt-thead .rt-th:first-child {
-    @apply .shadow-none !important;
+  @apply .shadow-none !important;
+}
+
+.table-reset-padding .ReactTable .rt-tbody {
+  @apply p-0 !important;
 }
 
 .overflow-overlay {
-    overflow: overlay;
+  overflow: overlay;
 }
 
 .redoc-wrap,
 .redoc-wrap .menu-content {
-    @apply .h-full !important;
+  @apply .h-full !important;
 }
 
 .redoc-wrap .api-content {
-    @apply .overflow-auto !important;
+  @apply .overflow-auto !important;
 }
 
 /* CHECKBOX TOGGLE SWITCH */
 .form-switch,
 .form-switch-reverse {
-    @apply relative select-none w-12 mr-2 leading-normal;
+  @apply relative select-none w-12 mr-2 leading-normal;
 }
 
 .form-switch-checkbox {
-    @apply hidden;
+  @apply hidden;
 }
 
 .form-switch-checkbox:disabled + .form-switch-label {
-    @apply opacity-50;
+  @apply opacity-50;
 }
 
 .form-switch-checkbox:disabled + .form-switch-label:before {
-    @apply bg-base-200;
+  @apply bg-base-200;
 }
 
 .form-switch-label {
-    @apply block overflow-hidden cursor-pointer  border rounded h-6;
+  @apply block overflow-hidden cursor-pointer  border rounded h-6;
 
-    transition: background-color 0.2s ease-in;
+  transition: background-color 0.2s ease-in;
 }
 
 .form-switch .form-switch-label,
 .form-switch-reverse .form-switch-checkbox:checked + .form-switch-label {
-    @apply bg-base-600 shadow-inner;
+  @apply bg-base-600 shadow-inner;
 }
 
 .form-switch-label:before {
-    @apply absolute block bg-base-100 pin-y w-6 border rounded -ml-1;
+  @apply absolute block bg-base-100 pin-y w-6 border rounded -ml-1;
 
-    right: 50%;
-    content: "";
-    transition: all 0.2s ease-in;
+  right: 50%;
+  content: "";
+  transition: all 0.2s ease-in;
 }
 
 .form-switch .form-switch-checkbox:checked + .form-switch-label,
 .form-switch-reverse .form-switch-checkbox + .form-switch-label {
-    @apply bg-primary-600 shadow-none;
+  @apply bg-primary-600 shadow-none;
 }
 
 .form-switch-reverse .form-switch-checkbox:checked + .form-switch-label:before {
-    right: 50%;
+  right: 50%;
 }
 
 .form-switch .form-switch-checkbox:checked + .form-switch-label:before,
 .form-switch-reverse .form-switch-checkbox + .form-switch-label:before {
-    @apply pin-r;
+  @apply pin-r;
 }
 
 /* React-vis */
@@ -1027,52 +1017,64 @@ h6 {
 
 /* Legend */
 .horizontal-bar-legend .rv-discrete-color-legend-item {
-    padding: 3px 10px;
+  padding: 3px 10px;
 }
 
 .horizontal-bar-legend {
-    border-top: 1px solid var(--base-300);
-    padding: 2px 0;
+  border-top: 1px solid var(--base-300);
+  padding: 2px 0;
 }
 /* Legend color swatch */
 .horizontal-bar-legend .rv-discrete-color-legend-item__color__path {
-    stroke-width: 3px;
-    stroke-linecap: round;
+  stroke-width: 3px;
+  stroke-linecap: round;
 }
 /* Legend item text */
 .horizontal-bar-legend
-    .rv-discrete-color-legend-item.horizontal
-    .rv-discrete-color-legend-item__title {
-    display: inline-block;
-    font-size: 0.8em;
-    padding-left: 5px;
+  .rv-discrete-color-legend-item.horizontal
+  .rv-discrete-color-legend-item__title {
+  display: inline-block;
+  font-size: 0.8em;
+  padding-left: 5px;
 }
 
 /* widget detail */
 .widget-detail-bullet {
-    position: relative;
-    @apply font-500
+  position: relative;
+  @apply font-500;
 }
 
 .widget-detail-bullet::before {
-    position: absolute;
-    left: -18px;
-    top: 10px;
-    content: '';
-    @apply rounded-full border-2 border-base-400 bg-base-100 w-3 h-3
+  position: absolute;
+  left: -18px;
+  top: 10px;
+  content: "";
+  @apply rounded-full border-2 border-base-400 bg-base-100 w-3 h-3;
 }
 
 .widget-detail-bullet:not(:last-child) {
-    @apply pt-2 pb-2 border-b border-base-300;
+  @apply pt-2 pb-2 border-b border-base-300;
 }
 
 .widget-detail-bullet:last-child {
-    @apply pt-2;
+  @apply pt-2;
 }
 
 .banner-background {
-    background-image: url("images/list-bg.svg");
-    background-repeat: no-repeat;
-    background-position-y: bottom;
-    background-size: contain;
+  background-image: url("images/list-bg.svg");
+  background-repeat: no-repeat;
+  background-position-y: bottom;
+  background-size: contain;
+}
+
+@variants hover, responsive {
+  .before:before {
+    content: var(--before, " ");
+  }
+}
+
+@variants hover, responsive {
+  .after:after {
+    content: var(--after, " ");
+  }
 }

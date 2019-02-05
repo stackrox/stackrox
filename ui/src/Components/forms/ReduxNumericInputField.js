@@ -15,7 +15,7 @@ const ReduxNumericInput = props => (
         placeholder={props.placeholder}
         onBlur={props.input.onChange}
         noStyle
-        className="border rounded-l p-3 border-base-300 w-full font-400"
+        className="border-2 rounded-l p-3 border-base-300 w-full font-600"
     />
 );
 
@@ -40,7 +40,7 @@ const ReduxNumericInputField = ({ name, min, max, placeholder, step }) => (
         max={max}
         step={step}
         component={ReduxNumericInput}
-        className="border bg-base-100 border-base-300 text-base-600 p-3 pr-8 rounded-r-sm cursor-pointer z-1 focus:border-base-300 w-full font-400"
+        className="border bg-base-100 border-base-300 text-base-600 p-3 pr-8 rounded-r-sm cursor-pointer z-1 focus:border-base-300 w-full font-600"
     />
 );
 

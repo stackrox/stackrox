@@ -26,9 +26,12 @@ const Details = props => {
     const propsTitle = `2. Assign StackRox Roles to your ${name} address`;
     const fields = formDescriptor[type];
     return (
-        <div className="w-full justify-between overflow-auto">
-            <CollapsibleCard title={title}>
-                <div className="w-full h-full p-4">
+        <div className="w-full justify-between overflow-auto p-4">
+            <CollapsibleCard
+                title={title}
+                titleClassName="border-b border-warning-300 leading-normal cursor-pointer flex justify-between items-center bg-warning-200 hover:border-warning-400"
+            >
+                <div className="w-full h-full p-4 pt-2 pb-2">
                     {fields &&
                         fields.map((field, index) => (
                             <Field key={index} {...field} authProvider={props.authProvider} />
@@ -36,7 +39,10 @@ const Details = props => {
                 </div>
             </CollapsibleCard>
             <div className="mt-4">
-                <CollapsibleCard title={propsTitle}>
+                <CollapsibleCard
+                    title={propsTitle}
+                    titleClassName="border-b border-warning-300 leading-normal cursor-pointer flex justify-between items-center bg-warning-200 hover:border-warning-400"
+                >
                     <div className="flex flex-col">
                         <div className="p-4 w-full">
                             <div className="text-base-600 font-700 pb-2">Default Role</div>

@@ -152,7 +152,7 @@ class FieldGroupCards extends Component {
                 <div className="px-3 pt-5" data-test-id={fieldGroupKey} key={fieldGroupKey}>
                     <div className={`bg-base-100 ${border} border-base-200 shadow`}>
                         <div
-                            className={`p-3 pb-2 border-b border-base-300 text-base-600 font-700 text-lg capitalize flex justify-between ${leading}`}
+                            className={`p-2 pb-2 border-b border-base-300 text-base-600 font-700 text-lg capitalize flex justify-between ${leading}`}
                         >
                             {fieldGroupName}
                             {headerControl}

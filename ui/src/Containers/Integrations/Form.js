@@ -176,7 +176,7 @@ class Form extends Component {
                     <PanelButton
                         icon={<Icon.Check className="h-4 w-4" />}
                         text="Test"
-                        className="btn btn-primary"
+                        className="btn btn-base"
                         onClick={this.onTest}
                     />
                 )}

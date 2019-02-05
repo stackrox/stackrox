@@ -100,7 +100,7 @@ export default class BasicSunburst extends React.Component {
         } else {
             label = `${Math.round((val.passing / val.total) * 100)}%`;
         }
-        return <LabelSeries data={[{ x: 0, y: 10, label: `${label}`, style: LABEL_STYLE }]} />;
+        return <LabelSeries data={[{ x: 1, y: 9, label: `${label}`, style: LABEL_STYLE }]} />;
     };
 
     onValueMouseOverHandler = datum => {
@@ -145,9 +145,9 @@ export default class BasicSunburst extends React.Component {
     getSunburstProps = () => {
         const defaultSunburstProps = {
             colorType: 'literal',
-            width: 275,
-            height: 250,
-            className: 'self-start',
+            width: 280,
+            height: 271,
+            className: 'cursor-pointer pointer-events-none my-auto',
             onValueMouseOver: this.onValueMouseOverHandler,
             onValueMouseOut: this.onValueMouseOutHandler,
             onValueClick: this.onValueClickHandler
@@ -174,7 +174,7 @@ export default class BasicSunburst extends React.Component {
                         const childResult = {
                             ...props,
                             radius: 60,
-                            radius0: 100,
+                            radius0: 120,
                             size: 1,
                             style: {
                                 stroke: 'var(--base-100)',
@@ -216,7 +216,7 @@ export default class BasicSunburst extends React.Component {
                         orientation="horizontal"
                         items={legendData.map(item => item.title)}
                         colors={legendData.map(item => item.color)}
-                        className="w-full horizontal-bar-legend border-t border-base-300 h-7"
+                        className="w-full horizontal-bar-legend border-t border-base-300 h-7 flex justify-between items-center"
                     />
                 </div>
                 <SunburstDetailSection

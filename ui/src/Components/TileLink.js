@@ -5,7 +5,7 @@ import Loader from 'Components/Loader';
 
 const TileLink = ({ value, caption, to, loading }) => {
     const content = loading ? (
-        <Loader message="" />
+        <Loader className="text-base-100" message="" />
     ) : (
         <>
             <div className="text-3xl tracking-widest">{value}</div>
@@ -16,7 +16,7 @@ const TileLink = ({ value, caption, to, loading }) => {
     );
     return (
         <Link to={to} className="no-underline">
-            <div className="flex flex-col border border-base-400 text-base-500 items-center justify-center font-600 p-2 px-4 min-w-24 rounded-sm hover:bg-base-200">
+            <div className="flex flex-col items-center justify-center px-4 min-w-24 border-2 border-primary-400 text-base-100 rounded min-h-14 uppercase hover:bg-primary-800">
                 {content}
             </div>
         </Link>

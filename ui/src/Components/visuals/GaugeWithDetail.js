@@ -189,7 +189,7 @@ class GaugeWithDetail extends Component {
         const { hoveredCell } = this.state;
         return (
             <Hint value={buildValue(hoveredCell)}>
-                <div className="text-base-600 text-xs p-2 pb-1 pt-1 border border-tertiary-400 bg-tertiary-200 rounded min-w-32">
+                <div className="text-base-600 text-xs p-2 pb-1 pt-1 border z-10 border-tertiary-400 bg-tertiary-200 rounded min-w-32">
                     <h1 className="text-uppercase border-b-2 border-base-400 leading-loose text-xs pb-1">
                         {hoveredCell.title}
                     </h1>

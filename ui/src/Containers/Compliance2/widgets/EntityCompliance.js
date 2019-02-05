@@ -84,7 +84,7 @@ const EntityCompliance = ({ params, history }) => {
                     );
                 }
                 return (
-                    <Widget header={`${entityTypeLabel} Compliance`} className="sx-2 sy-1">
+                    <Widget header={`${entityTypeLabel} Compliance`} className="sx-2">
                         {contents}
                     </Widget>
                 );

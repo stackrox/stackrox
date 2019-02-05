@@ -79,7 +79,7 @@ class Buttons extends Component {
             <PanelButton
                 icon={<Icon.ArrowRight className="h-4 w-4" />}
                 text="Next"
-                className="btn btn-primary"
+                className="btn btn-base"
                 onClick={this.goToPreview}
             />
         );

@@ -10,18 +10,31 @@ const Form = props => {
     const disableNameField = !!initialValues && !!initialValues.name;
     return (
         <form
-            className="w-full justify-between overflow-auto"
+            className="w-full justify-between overflow-auto p-4"
             onSubmit={handleSubmit(onSubmit)}
             initialvalues={initialValues}
         >
-            <div className="mb-4">
-                <div className="py-2 text-base-600 font-700">Role Name</div>
-                <div className="w-1/3" data-test-id="role-name">
-                    <ReduxTextField name="name" disabled={disableNameField} />
+            <div className="mb-4 flex flex-wrap md:flex-no-wrap items-center">
+                <div className="flex-no-shrink w-full md:w-1/3 pr-8 mb-4 md:mb-0">
+                    <div className="py-2 text-base-600 font-700 text-lg">Role Name</div>
+                    <div data-test-id="role-name" className="pb-2">
+                        <ReduxTextField name="name" disabled={disableNameField} />
+                    </div>
+                </div>
+                <div className="bg-warning-200 border-2 border-warning-400 p-3 rounded leading-normal text-warning-800">
+                    <p className="mb-3">
+                        <strong>Note: </strong> Users may experience issues loading certain pages
+                        unless they are granted a minimum set of read permissions. If this role is
+                        configured for a user, please assign at least the following read
+                        permissions:{' '}
+                    </p>
+                    <strong>
+                        Alert, Benchmark, Cluster, Deployment, Image, NetworkPolicy, NetworkGraph,
+                        Policy, Secret
+                    </strong>
                 </div>
             </div>
             <div>
-                <div className="py-2 text-base-600 font-700">Permissions</div>
                 <PermissionsMatrix
                     name="resourceToAccess"
                     resourceToAccess={initialValues.resourceToAccess}
