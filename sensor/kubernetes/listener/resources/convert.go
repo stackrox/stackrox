@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/uuid"
+	"k8s.io/api/batch/v1beta1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -132,6 +133,12 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 		podLabels = o.Labels
 
 		labelSelector = w.populateKubeProxyIfNecessary(o)
+	case *v1beta1.CronJob:
+		// Cron jobs have a Job spec that then have a Pod Template underneath
+		podLabels = o.Spec.JobTemplate.Spec.Template.GetLabels()
+		labelSelector = &metav1.LabelSelector{
+			MatchLabels: podLabels,
+		}
 	default:
 		podTemplate, ok := spec.FieldByName("Template").Interface().(v1.PodTemplateSpec)
 		if !ok {
