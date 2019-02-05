@@ -1,14 +1,15 @@
 import React from 'react';
-import { withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import PageHeader from 'Components/PageHeader';
-import Button from 'Components/Button';
-import * as Icon from 'react-feather';
-
-import Query from 'Components/AppQuery';
+import { withRouter } from 'react-router-dom';
 import { resourceTypes } from 'constants/entityTypes';
 import componentTypes from 'constants/componentTypes';
 import labels from 'messages/common';
+
+import Query from 'Components/AppQuery';
+import PageHeader from 'Components/PageHeader';
+import Button from 'Components/Button';
+import ScanButton from 'Containers/Compliance2/ScanButton';
+import * as Icon from 'react-feather';
 
 const handleExport = () => {
     throw new Error('"Export" is not supported yet.');
@@ -35,6 +36,9 @@ const EntityHeader = ({ params, searchComponent }) => (
                     <div className="flex flex-1 justify-end">
                         <div className="ml-3 border-l border-base-300 mr-3" />
                         <div className="flex">
+                            <div className="flex items-center mr-3">
+                                <ScanButton text="Scan" clusterId={params.entityId} />
+                            </div>
                             <div className="flex items-center">
                                 <Button
                                     className="btn btn-base"

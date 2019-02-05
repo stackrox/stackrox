@@ -58,6 +58,7 @@ const EntityCompliance = ({ params, history }) => {
         <Query
             query={AGGREGATED_RESULTS}
             variables={{ unit: 'CONTROL', groupBy: ['STANDARD', entityType] }}
+            pollInterval={5000}
         >
             {({ loading, data }) => {
                 let contents = <Loader />;

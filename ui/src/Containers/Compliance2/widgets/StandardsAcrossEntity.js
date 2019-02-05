@@ -1,11 +1,13 @@
 import React from 'react';
 import componentTypes from 'constants/componentTypes';
+import { resourceTypes } from 'constants/entityTypes';
+
 import Widget from 'Components/Widget';
 import Query from 'Components/AppQuery';
 import Loader from 'Components/Loader';
 import PropTypes from 'prop-types';
 import HorizontalBarChart from 'Components/visuals/HorizontalBar';
-import { resourceTypes } from 'constants/entityTypes';
+import NoResultsMessage from 'Components/NoResultsMessage';
 
 const componentTypeMapping = {
     [resourceTypes.CLUSTER]: componentTypes.STANDARDS_ACROSS_CLUSTERS,
@@ -19,6 +21,7 @@ function formatAsPercent(x) {
 
 function processData(data) {
     const { complianceStandards } = data;
+    if (!complianceStandards) return [];
     const barData = data.results.results.map(result => {
         const standard = complianceStandards.find(cs => cs.id === result.aggregationKeys[0].id);
         const { numPassing, numFailing } = result;
@@ -38,14 +41,19 @@ function processData(data) {
 }
 
 const StandardsAcrossEntity = ({ type, params }) => (
-    <Query params={params} componentType={componentTypeMapping[type]}>
+    <Query params={params} componentType={componentTypeMapping[type]} pollInterval={5000}>
         {({ loading, data }) => {
-            let contents = <Loader />;
+            let contents;
             const headerText = `Standards Across ${type}`;
-            if (!loading && data) {
+            if (!loading || data.complianceStandards) {
                 const results = processData(data, type);
-
-                contents = <HorizontalBarChart data={results} valueFormat={formatAsPercent} />;
+                if (!results.length) {
+                    contents = <NoResultsMessage message="No Data Available" />;
+                } else {
+                    contents = <HorizontalBarChart data={results} valueFormat={formatAsPercent} />;
+                }
+            } else {
+                contents = <Loader />;
             }
             return (
                 <Widget header={headerText} bodyClassName="p-2">

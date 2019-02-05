@@ -4,13 +4,10 @@ import PageHeader from 'Components/PageHeader';
 import Button from 'Components/Button';
 import * as Icon from 'react-feather';
 
+import ScanButton from 'Containers/Compliance2/ScanButton';
 import ClustersTile from './tiles/ClustersTile';
 import NamespacesTile from './tiles/NamespacesTile';
 import NodesTile from './tiles/NodesTile';
-
-const handleScanAll = () => () => {
-    throw new Error('"Scan All" is not supported yet.');
-};
 
 const handleExport = () => () => {
     throw new Error('"Export" is not supported yet.');
@@ -31,12 +28,7 @@ const ComplianceDashboardHeader = () => (
             <div className="ml-3 border-l border-base-300 mr-3" />
             <div className="flex">
                 <div className="flex items-center mr-3">
-                    <Button
-                        className="btn btn-base"
-                        text="Scan All"
-                        icon={<Icon.RefreshCcw className="h-4 w-4 mr-3" />}
-                        onClick={handleScanAll()}
-                    />
+                    <ScanButton text="Scan All" clusterId="*" standardId="*" />
                 </div>
                 <div className="flex items-center">
                     <Button

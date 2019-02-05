@@ -151,16 +151,18 @@ class BarChart extends Component {
 
         // Create Barseries for each data set
         const series = [];
-        Object.keys(data).forEach((key, i) => {
-            series.push(
-                <VerticalBarSeries
-                    data={data[key]}
-                    color={colors[i % colors.length]}
-                    {...seriesProps}
-                    key={key}
-                />
-            );
-        });
+        Object.keys(data)
+            .sort()
+            .forEach((key, i) => {
+                series.push(
+                    <VerticalBarSeries
+                        data={data[key]}
+                        color={colors[i % colors.length]}
+                        {...seriesProps}
+                        key={key}
+                    />
+                );
+            });
 
         return (
             <div {...containerProps}>

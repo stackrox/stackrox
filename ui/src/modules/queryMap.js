@@ -124,7 +124,7 @@ export default [
                 const formattedData = { results: [] };
                 const groups = {};
                 data.results.results.forEach(({ keys, numPassing, numFailing }) => {
-                    const { name, groupId, description } = keys[1];
+                    const { id, name, groupId, description } = keys[1];
                     if (!groups[groupId]) {
                         groups[groupId] = {
                             name: `${name} ${description}`,
@@ -136,6 +136,7 @@ export default [
                             ? '0%'
                             : `${(numPassing / (numPassing + numFailing)).toFixed(2) * 100}%`;
                     groups[groupId].rows.push({
+                        id,
                         control: `${name} - ${description}`,
                         compliance,
                         group: groupId

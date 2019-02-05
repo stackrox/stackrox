@@ -39,7 +39,7 @@ class ListTable extends Component {
         const { params, selectedRow, updateSelectedRow } = this.props;
         const { page } = this.state;
         return (
-            <AppQuery params={params} componentType={componentTypes.LIST_TABLE}>
+            <AppQuery params={params} componentType={componentTypes.LIST_TABLE} pollInterval={5000}>
                 {({ loading, data }) => {
                     const isStandard = standardTypeValues.includes(params.entityType);
                     let tableData;
@@ -48,8 +48,7 @@ class ListTable extends Component {
                     const headerText = isStandard
                         ? `${standardLabels[params.entityType]} controls`
                         : `${params.entityType}`;
-
-                    if (!loading && data) {
+                    if (!loading || (data && data.results)) {
                         tableData = data.results;
                         contents = isStandard ? (
                             <TableGroup

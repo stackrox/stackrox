@@ -42,7 +42,7 @@ export const COMPLIANCE_STANDARDS = gql`
                 description
             }
         }
-        groupResults: aggregatedResults(groupBy: [CATEGORY], unit: CONTROL) {
+        groupResults: aggregatedResults(groupBy: [STANDARD, CATEGORY], unit: CONTROL) {
             results {
                 aggregationKeys {
                     id
@@ -52,7 +52,7 @@ export const COMPLIANCE_STANDARDS = gql`
                 unit
             }
         }
-        controlResults: aggregatedResults(groupBy: [CONTROL], unit: CONTROL) {
+        controlResults: aggregatedResults(groupBy: [STANDARD, CONTROL], unit: CONTROL) {
             results {
                 aggregationKeys {
                     id
@@ -60,6 +60,33 @@ export const COMPLIANCE_STANDARDS = gql`
                 numFailing
                 numPassing
                 unit
+            }
+        }
+    }
+`;
+
+export const TRIGGER_SCAN = gql`
+    mutation triggerScan($clusterId: ID!, $standardId: ID!) {
+        complianceTriggerRuns(clusterId: $clusterId, standardId: $standardId) {
+            id
+            standardId
+            clusterId
+            state
+            errorMessage
+        }
+    }
+`;
+
+export const RUN_STATUSES = gql`
+    query runStatuses($ids: [ID!]!) {
+        complianceRunStatuses(ids: $ids) {
+            invalidRunIds
+            runs {
+                id
+                standardId
+                clusterId
+                state
+                errorMessage
             }
         }
     }

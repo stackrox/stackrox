@@ -16,6 +16,12 @@ import HoverHint from './HoverHint';
 
 const minimalMargin = { top: 0, bottom: 0, left: 0, right: 0 };
 
+const sortByYValue = (a, b) => {
+    if (a.y < b.y) return -1;
+    if (a.y > b.y) return 1;
+    return 0;
+};
+
 class HorizontalBarChart extends Component {
     static propTypes = {
         data: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
@@ -75,7 +81,7 @@ class HorizontalBarChart extends Component {
     };
 
     getLabelData = () =>
-        this.props.data.map(item => {
+        this.props.data.sort(sortByYValue).map(item => {
             let label = '';
             // This prevents overlap between the value label and the axis label
             if (this.showLabel(item.x)) {
@@ -117,14 +123,15 @@ class HorizontalBarChart extends Component {
     };
 
     getPlotProps = hintsEnabled => {
-        const { data, minimal } = this.props;
+        const { minimal, data } = this.props;
+        const sortedData = data.sort(sortByYValue);
         // This determines how far to push the bar graph to the right based on the longest axis label character's length
-        const maxLength = data.reduce((acc, curr) => Math.max(curr.y.length, acc), 0);
+        const maxLength = sortedData.reduce((acc, curr) => Math.max(curr.y.length, acc), 0);
         const defaultPlotProps = {
             height: minimal ? 30 : 270,
             xDomain: [0, 105],
             yType: 'category',
-            yRange: data.map((item, i) => (i + 1) * 23).concat([0]),
+            yRange: sortedData.map((item, i) => (i + 1) * 23).concat([0]),
             margin: minimal ? minimalMargin : { top: 30, left: Math.ceil(maxLength * 6.4) },
             stackBy: 'x',
             animation: hintsEnabled ? false : ''
@@ -157,12 +164,14 @@ class HorizontalBarChart extends Component {
             minimal
         } = this.props;
 
+        const sortedData = data.sort(sortByYValue);
+
         const { hintX, hintY, hintData } = this.state;
 
-        const hintsEnabled = !!data.find(item => item.hint);
+        const hintsEnabled = !!sortedData.find(item => item.hint);
 
         // Generate y axis links
-        const axisLinks = data.reduce((acc, curr) => {
+        const axisLinks = sortedData.reduce((acc, curr) => {
             if (curr.axisLink) acc[curr.y] = curr.axisLink;
             return acc;
         }, {});
@@ -239,7 +248,7 @@ class HorizontalBarChart extends Component {
 
                     {/* Empty Background */}
                     <HorizontalBarSeries
-                        data={data.map(item => ({ x: 0, x0: 100, y: item.y }))}
+                        data={sortedData.map(item => ({ x: 0, x0: 100, y: item.y }))}
                         style={{
                             height: seriesProps.style.height,
                             stroke: 'var(--base-200)',
@@ -249,7 +258,7 @@ class HorizontalBarChart extends Component {
                     />
 
                     {/* Values */}
-                    <HorizontalBarSeries data={data} {...seriesProps} />
+                    <HorizontalBarSeries data={sortedData} {...seriesProps} />
                     <LabelSeries
                         data={this.getLabelData()}
                         className="text-xs"

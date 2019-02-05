@@ -1,21 +1,23 @@
 import React from 'react';
-import componentTypes from 'constants/componentTypes';
-import Widget from 'Components/Widget';
-import Query from 'Components/AppQuery';
-import Loader from 'Components/Loader';
 import PropTypes from 'prop-types';
-import VerticalBarChart from 'Components/visuals/VerticalClusterBar';
+import componentTypes from 'constants/componentTypes';
 import { resourceTypes } from 'constants/entityTypes';
 import URLService from 'modules/URLService';
 import pageTypes from 'constants/pageTypes';
 import resourceLabels from 'messages/common';
+
+import Widget from 'Components/Widget';
+import Query from 'Components/AppQuery';
+import Loader from 'Components/Loader';
+import VerticalBarChart from 'Components/visuals/VerticalClusterBar';
+import NoResultsMessage from 'Components/NoResultsMessage';
 
 const componentTypeMapping = {
     [resourceTypes.CLUSTER]: componentTypes.STANDARDS_BY_CLUSTER
 };
 
 function processData(data, type, params) {
-    if (!data.results || !data.entityList) return [];
+    if (!data.results.results.length || !data.entityList) return [];
     const standardsGrouping = {};
     const { results, entityList, complianceStandards } = data;
     results.results.forEach(result => {
@@ -64,22 +66,26 @@ function getLabelLinks(data, type, params) {
 }
 
 const StandardsByEntity = ({ type, params }) => (
-    <Query params={params} componentType={componentTypeMapping[type]}>
+    <Query params={params} componentType={componentTypeMapping[type]} pollInterval={5000}>
         {({ loading, data }) => {
             let contents = <Loader />;
             const headerText = `Standards By ${type}`;
             let pages;
-            if (!loading && data && data.results) {
+            if (!loading || data.results) {
                 const results = processData(data, type, params);
                 const labelLinks = getLabelLinks(data, type, params);
                 pages = results.length;
 
-                const VerticalBarChartPaged = ({ currentPage }) => (
-                    <VerticalBarChart data={results[currentPage]} labelLinks={labelLinks} />
-                );
-                VerticalBarChartPaged.propTypes = { currentPage: PropTypes.number };
-                VerticalBarChartPaged.defaultProps = { currentPage: 0 };
-                contents = <VerticalBarChartPaged />;
+                if (pages) {
+                    const VerticalBarChartPaged = ({ currentPage }) => (
+                        <VerticalBarChart data={results[currentPage]} labelLinks={labelLinks} />
+                    );
+                    VerticalBarChartPaged.propTypes = { currentPage: PropTypes.number };
+                    VerticalBarChartPaged.defaultProps = { currentPage: 0 };
+                    contents = <VerticalBarChartPaged />;
+                } else {
+                    contents = <NoResultsMessage message="No Data Available" />;
+                }
             }
 
             return (

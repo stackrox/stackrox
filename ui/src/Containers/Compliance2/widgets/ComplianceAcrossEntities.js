@@ -40,6 +40,7 @@ const ComplianceAcrossEntities = ({ params }) => (
                 ? componentTypes.COMPLIANCE_ACROSS_STANDARDS
                 : componentTypes.COMPLIANCE_ACROSS_RESOURCES
         }
+        pollInterval={5000}
     >
         {({ loading, data }) => {
             let contents = <Loader />;

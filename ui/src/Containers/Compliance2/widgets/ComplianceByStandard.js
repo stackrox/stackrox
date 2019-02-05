@@ -30,99 +30,112 @@ const sunburstLegendData = [
     { title: '< 50%', color: 'var(--alert-400)' }
 ];
 
+const filterByStandard = type => ({ aggregationKeys }) => aggregationKeys[0].id === type;
+
 const processSunburstData = (data, type) => {
+    if (!data || !data.groupResults || !data.groupResults.results.length) return [];
+
     const groupStatsMapping = {};
     const controlStatsMapping = {};
     const groupMapping = {};
 
-    data.groupResults.results.forEach(({ aggregationKeys, numPassing, numFailing }) => {
-        groupStatsMapping[`${aggregationKeys[0].id}`] =
-            Math.round((numPassing / (numFailing + numPassing)) * 100) || 0;
-    });
-
-    data.controlResults.results.forEach(({ aggregationKeys, numPassing, numFailing }) => {
-        controlStatsMapping[`${aggregationKeys[0].id}`] =
-            Math.round((numPassing / (numFailing + numPassing)) * 100) || 0;
-    });
-
-    data.complianceStandards
-        .filter(datum => datum.id.includes(type))
-        .forEach(({ groups, controls }) => {
-            groups
-                .filter(group => group.standardId.includes(type))
-                .forEach(datum => {
-                    const value = groupStatsMapping[datum.id] || 0;
-                    groupMapping[datum.id] = {
-                        name: `${datum.name}. ${datum.description.substring(0, MAX_CHAR)}${
-                            datum.description.length > MAX_CHAR ? '...' : ''
-                        }`,
-                        color: getColor(value),
-                        value,
-                        children: []
-                    };
-                });
-            controls
-                .filter(control => control.standardId.includes(type))
-                .forEach(datum => {
-                    if (groupMapping[datum.groupId]) {
-                        const group = groupMapping[datum.groupId];
-                        const value = controlStatsMapping[`${datum.standardId}:${datum.id}`] || 0;
-                        group.children.push({
-                            name: `${datum.name} - ${datum.description.substring(0, MAX_CHAR)}${
-                                datum.description.length > MAX_CHAR ? '...' : ''
-                            }`,
-                            color: getColor(value),
-                            link: `main/compliance2/${datum.standardId}/${datum.id}`,
-                            value
-                        });
-                    }
-                });
+    data.groupResults.results
+        .filter(filterByStandard(type))
+        .forEach(({ aggregationKeys, numPassing, numFailing }) => {
+            groupStatsMapping[`${aggregationKeys[1].id}`] =
+                Math.round((numPassing / (numFailing + numPassing)) * 100) || 0;
         });
+
+    data.controlResults.results
+        .filter(filterByStandard(type))
+        .forEach(({ aggregationKeys, numPassing, numFailing }) => {
+            controlStatsMapping[`${aggregationKeys[1].id}`] =
+                Math.round((numPassing / (numFailing + numPassing)) * 100) || 0;
+        });
+
+    const { groups, controls } = data.complianceStandards.filter(datum => datum.id === type)[0];
+
+    groups.forEach(datum => {
+        const value = groupStatsMapping[datum.id] || 0;
+        groupMapping[`${datum.id}`] = {
+            name: `${datum.name}. ${datum.description.substring(0, MAX_CHAR)}${
+                datum.description.length > MAX_CHAR ? '...' : ''
+            }`,
+            color: getColor(value),
+            value,
+            children: []
+        };
+    });
+    controls
+        .filter(control => control.standardId === type)
+        .forEach(datum => {
+            const group = groupMapping[datum.groupId];
+            const value = controlStatsMapping[`${datum.standardId}:${datum.id}`] || 0;
+            group.children.push({
+                name: `${datum.name} - ${datum.description.substring(0, MAX_CHAR)}${
+                    datum.description.length > MAX_CHAR ? '...' : ''
+                }`,
+                color: getColor(value),
+                link: `main/compliance2/${datum.standardId}/${datum.id}`,
+                value
+            });
+        });
+
     return Object.values(groupMapping);
 };
 
 const getNumControls = sunburstData =>
     sunburstData.reduce((acc, curr) => acc + curr.children.length, 0);
 
-const ComplianceByStandard = ({ type, params }) => (
-    <Query params={params} componentType={componentTypes.COMPLIANCE_BY_STANDARD}>
-        {({ loading, data }) => {
-            let contents = <Loader />;
-            const headerText = `${standardLabels[type]} Compliance`;
-            if (!loading && data) {
-                const sunburstData = processSunburstData(data, type);
-                const sunburstRootData = [
-                    {
-                        text: `${sunburstData.length} Categories`
-                    },
-                    {
-                        text: `${getNumControls(sunburstData)} Controls`
+const ComplianceByStandard = ({ type, params }) => {
+    const newParams = { ...params };
+    newParams.query = {
+        Standard: type
+    };
+    return (
+        <Query
+            params={newParams}
+            componentType={componentTypes.COMPLIANCE_BY_STANDARD}
+            pollInterval={5000}
+        >
+            {({ loading, data }) => {
+                let contents = <Loader />;
+                const headerText = `${standardLabels[type]} Compliance`;
+                if (!loading || data) {
+                    const sunburstData = processSunburstData(data, type);
+                    const sunburstRootData = [
+                        {
+                            text: `${sunburstData.length} Categories`
+                        },
+                        {
+                            text: `${getNumControls(sunburstData)} Controls`
+                        }
+                    ];
+
+                    if (!sunburstData.length) {
+                        contents = (
+                            <>
+                                <div className="flex flex-1 items-center justify-center">
+                                    No Data Available
+                                </div>
+                            </>
+                        );
+                    } else {
+                        contents = (
+                            <Sunburst
+                                data={sunburstData}
+                                rootData={sunburstRootData}
+                                legendData={sunburstLegendData}
+                            />
+                        );
                     }
-                ];
-
-                if (!sunburstData.length) {
-                    contents = (
-                        <>
-                            <div className="flex flex-1 items-center justify-center">
-                                No Data Available
-                            </div>
-                        </>
-                    );
-                } else {
-                    contents = (
-                        <Sunburst
-                            data={sunburstData}
-                            rootData={sunburstRootData}
-                            legendData={sunburstLegendData}
-                        />
-                    );
                 }
-            }
 
-            return <Widget header={headerText}>{contents}</Widget>;
-        }}
-    </Query>
-);
+                return <Widget header={headerText}>{contents}</Widget>;
+            }}
+        </Query>
+    );
+};
 
 ComplianceByStandard.propTypes = {
     type: PropTypes.string.isRequired,

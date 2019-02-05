@@ -62,7 +62,11 @@ const RelatedEntitiesList = ({ type, params }) => {
     );
 
     return (
-        <Query params={params} componentType={componentTypes.RELATED_ENTITIES_LIST}>
+        <Query
+            params={params}
+            componentType={componentTypes.RELATED_ENTITIES_LIST}
+            pollInterval={5000}
+        >
             {({ loading, data }) => {
                 let headerText = `Related ${pluralize(type)}`;
                 let widget = (
@@ -70,7 +74,7 @@ const RelatedEntitiesList = ({ type, params }) => {
                         <Loader />
                     </Widget>
                 );
-                if (!loading && data) {
+                if (!loading || data.results) {
                     if (data.results) {
                         const results = processData(data.results);
                         const entityTypeText = pluralize(type, results.length);

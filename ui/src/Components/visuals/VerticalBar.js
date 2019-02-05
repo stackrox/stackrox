@@ -12,6 +12,12 @@ import PropTypes from 'prop-types';
 import merge from 'deepmerge';
 import HoverHint from './HoverHint';
 
+const sortByXValue = (a, b) => {
+    if (a.x < b.x) return -1;
+    if (a.x > b.x) return 1;
+    return 0;
+};
+
 class VerticalBarChart extends Component {
     static propTypes = {
         data: PropTypes.arrayOf(PropTypes.object).isRequired,
@@ -73,7 +79,6 @@ class VerticalBarChart extends Component {
 
     render() {
         const {
-            data,
             colors,
             tickValues,
             tickFormat,
@@ -82,6 +87,8 @@ class VerticalBarChart extends Component {
             onValueMouseOut,
             onValueClick
         } = this.props;
+
+        const data = this.props.data.sort(sortByXValue);
 
         // Default props
         const defaultPlotProps = {

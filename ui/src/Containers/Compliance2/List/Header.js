@@ -1,13 +1,14 @@
 import React from 'react';
-import { withRouter } from 'react-router-dom';
-import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
+import PropTypes from 'prop-types';
+import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
-import standardLabels from 'messages/standards';
 import { standardTypes } from 'constants/entityTypes';
+import standardLabels from 'messages/standards';
 
 import PageHeader from 'Components/PageHeader';
 import Button from 'Components/Button';
+import ScanButton from 'Containers/Compliance2/ScanButton';
 import * as Icon from 'react-feather';
 
 const isStandard = type => Object.values(standardTypes).includes(type);
@@ -29,6 +30,11 @@ const ListHeader = ({ match, location, searchComponent }) => {
                 <div className="ml-3 border-l border-base-300 mr-3" />
                 <div className="flex">
                     <div className="flex items-center">
+                        {isStandard(entityType) && (
+                            <div className="mr-2">
+                                <ScanButton text="Scan" standardId={entityType} />
+                            </div>
+                        )}
                         <Button
                             className="btn btn-base"
                             text="Export"

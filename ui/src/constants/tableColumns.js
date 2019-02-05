@@ -1,5 +1,5 @@
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import { standardTypes } from 'constants/entityTypes';
+import { standardTypes, resourceTypes } from 'constants/entityTypes';
 
 const complianceColumns = [
     {
@@ -74,14 +74,14 @@ const namespaceColumns = [
 
 const entityToColumns = {
     compliance: complianceColumns,
-    clusters: clusterColumns,
+    [resourceTypes.CLUSTER]: clusterColumns,
     [standardTypes.PCI_DSS_3_2]: getStandardColumns('PCI'),
     [standardTypes.NIST_800_190]: getStandardColumns('NIST'),
     [standardTypes.HIPAA_164]: getStandardColumns('HIPAA'),
     [standardTypes.CIS_KUBERENETES_V1_2_0]: getStandardColumns('CIS Kubernetes'),
     [standardTypes.CIS_DOCKER_V1_1_0]: getStandardColumns('CIS Docker'),
-    nodes: nodeColumns,
-    namespaces: namespaceColumns
+    [resourceTypes.NODE]: nodeColumns,
+    [resourceTypes.NAMESPACE]: namespaceColumns
 };
 
 export default entityToColumns;
