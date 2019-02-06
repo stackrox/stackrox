@@ -285,7 +285,7 @@ jobs:
 
       - run:
           name: Refresh base image
-          command: docker pull alpine:3.8
+          command: docker pull alpine:3.9
 
       - *restoreDep
       - *restoreUI
@@ -796,7 +796,7 @@ jobs:
       - run:
           name: Pack openshift volume
           command: |
-            docker create -v /data --name openshift alpine:3.8 /bin/true
+            docker create -v /data --name openshift alpine:3.9 /bin/true
             docker cp openshift/id_rsa            openshift:/data
             docker cp openshift/id_rsa.pub        openshift:/data
             docker cp openshift/terraform.tfstate openshift:/data

@@ -1,4 +1,4 @@
-FROM alpine:3.8
+FROM alpine:3.9
 LABEL "com.vendor"="StackRox (support@stackrox.com)"
 
 RUN printf "http://apk.rox.systems/v3.8/main\\nhttp://apk.rox.systems/v3.8/community" > /etc/apk/repositories

@@ -1,4 +1,4 @@
-FROM alpine:3.8
+FROM alpine:3.9
 
 COPY ./image/bin/mocksensor /mocksensor
 COPY ./image/bin/mockcollector /mockcollector

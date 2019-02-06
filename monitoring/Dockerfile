@@ -1,4 +1,4 @@
-FROM alpine:3.8
+FROM alpine:3.9
 
 ENV INFLUXDB_VERSION=1.6.2
 
