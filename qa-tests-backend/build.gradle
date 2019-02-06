@@ -121,6 +121,12 @@ test {
     environment "USERNAME" , System.getenv("USERNAME")
     environment "PASSWORD" , System.getenv("PASSWORD")
     environment "GKE_SERVICE_ACCOUNT", System.getenv("GKE_SERVICE_ACCOUNT")
+
+    // This ensures that repeated invocations of tests actually run the tests.
+    // Otherwise, if the tests pass, Gradle "caches" the result and doesn't actually run the tests,
+    // which is not the behaviour we expect of E2Es.
+    // https://stackoverflow.com/questions/42175235/force-gradle-to-run-task-even-if-it-is-up-to-date/42185919
+    outputs.upToDateWhen { false }
 }
 
 
