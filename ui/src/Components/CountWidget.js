@@ -33,14 +33,15 @@ const CountWidget = ({ title, count, description, linkUrl }) => {
 
 CountWidget.propTypes = {
     title: PropTypes.string.isRequired,
-    count: PropTypes.number.isRequired,
+    count: PropTypes.number,
     description: PropTypes.string,
     linkUrl: PropTypes.string
 };
 
 CountWidget.defaultProps = {
     description: null,
-    linkUrl: null
+    linkUrl: null,
+    count: 0
 };
 
 export default connect()(CountWidget);

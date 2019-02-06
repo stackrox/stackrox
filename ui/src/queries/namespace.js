@@ -11,10 +11,20 @@ export const NAMESPACES_QUERY = gql`
 `;
 
 export const NAMESPACE_QUERY = gql`
-    query getCluster($id: ID!) {
-        results: cluster(id: $id) {
-            id
-            name
+    query getNamespace($id: ID!) {
+        results: namespace(id: $id) {
+            metadata {
+                clusterId
+                clusterName
+                name
+                labels {
+                    key
+                    value
+                }
+            }
+            numDeployments
+            numNetworkPolicies
+            numSecrets
         }
     }
 `;

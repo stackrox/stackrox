@@ -75,18 +75,22 @@ function getParams(match, location) {
     };
 }
 
+// this just lowercases stuff, use queryservice
+function keysToLowerCase(query) {
+    if (!query) return null;
+
+    return Object.entries(query).reduce((acc, entry) => {
+        const key = entry[0].toLowerCase();
+        // eslint-disable-next-line
+        acc[key] = entry[1];
+        return acc;
+    }, {});
+}
+
 function getLinkTo(context, pageType, params) {
     const { query, ...urlParams } = params;
     const pathname = getPath(context, pageType, urlParams);
-    const normalizedQuery = query
-        ? Object.entries(query).reduce((acc, entry) => {
-              const key = entry[0].toLowerCase();
-              // eslint-disable-next-line
-              acc[key] = entry[1];
-              return acc;
-          }, {})
-        : null;
-    const search = query ? qs.stringify(normalizedQuery, { addQueryPrefix: true }) : null;
+    const search = query ? qs.stringify(keysToLowerCase(query), { addQueryPrefix: true }) : null;
 
     return {
         pathname,

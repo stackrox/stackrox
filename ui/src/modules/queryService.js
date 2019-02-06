@@ -2,30 +2,29 @@ import qs from 'qs';
 import merge from 'deepmerge';
 import queryMap from './queryMap';
 
+function objectToWhereClause(query) {
+    if (!query) return '';
+
+    return Object.entries(query)
+        .reduce((acc, entry) => {
+            let [key, value] = entry;
+            value = Array.isArray(value) ? value.join() : value;
+            key = key.toLowerCase();
+            return `${acc}${key}:${value}+`;
+        }, '')
+        .slice(0, -1);
+}
+
 function constructWhereClause(mappedVariables, params) {
     const newlyCreatedMappedVariables = { ...mappedVariables };
-    let whereClause = '';
 
     let { query } = params;
     const { groupBy, ...rest } = query;
     if (mappedVariables.where) {
         query = merge(rest, qs.parse(mappedVariables.where));
     }
-    Object.keys(query).forEach((queryParamKey, index) => {
-        const queryParamValue = query[queryParamKey];
-        if (Array.isArray(queryParamValue)) {
-            whereClause = `${whereClause}${
-                index !== 0 ? '+' : ''
-            }${queryParamKey}:${queryParamValue.join(',')}`;
-        } else {
-            whereClause = `${whereClause}${
-                index !== 0 ? '+' : ''
-            }${queryParamKey}:${queryParamValue}`;
-        }
-    });
 
-    newlyCreatedMappedVariables.where = whereClause;
-
+    newlyCreatedMappedVariables.where = objectToWhereClause(query);
     return newlyCreatedMappedVariables;
 }
 
@@ -71,5 +70,6 @@ function getQuery(params, component) {
 }
 
 export default {
-    getQuery
+    getQuery,
+    objectToWhereClause
 };

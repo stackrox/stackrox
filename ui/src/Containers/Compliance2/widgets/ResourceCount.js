@@ -7,6 +7,7 @@ import { resourceTypes } from 'constants/entityTypes';
 import CountWidget from 'Components/CountWidget';
 import URLService from 'modules/URLService';
 import pageTypes from 'constants/pageTypes';
+import { resourceLabels } from 'messages/common';
 import { NODES_BY_CLUSTER } from '../../../queries/node';
 
 const queryMap = {
@@ -14,10 +15,10 @@ const queryMap = {
     // TODO: [resourceTypes.NAMESPACE] : NETWORK_POLICIES_BY_NAMESPACE
 };
 
-const ResourceCount = ({ type, params }) => {
+const ResourceCount = ({ entityType, params, loading: parentLoading }) => {
     function getUrl() {
         const linkParams = {
-            entityType: type
+            entityType
         };
         if (params.entityId && params.entityType) {
             linkParams.query = {
@@ -28,25 +29,25 @@ const ResourceCount = ({ type, params }) => {
     }
 
     function processData(data) {
-        if (type === resourceTypes.NODE) {
+        if (entityType === resourceTypes.NODE) {
             return data.nodes.length;
         }
-        if (type === resourceTypes.NAMESPACE) {
+        if (entityType === resourceTypes.NAMESPACE) {
             return data.namespaces.length;
         }
         return 0;
     }
 
-    const query = queryMap[type];
+    const query = queryMap[entityType];
     const variables = { id: params.entityId };
 
     return (
         <Query query={query} variables={variables} pollInterval={5000}>
             {({ loading, data }) => {
                 const contents = <Loader />;
-                const headerText = `${type} Count`;
-                if (!loading && data && data.results) {
-                    const url = getUrl(type, params);
+                const headerText = `${resourceLabels[entityType]} Count`;
+                if (!loading && !parentLoading && data && data.results) {
+                    const url = getUrl(entityType, params);
                     const count = processData(data.results);
                     return <CountWidget title={headerText} count={count} linkUrl={url} />;
                 }
@@ -61,8 +62,13 @@ const ResourceCount = ({ type, params }) => {
 };
 
 ResourceCount.propTypes = {
-    type: PropTypes.string.isRequired,
-    params: PropTypes.shape({}).isRequired
+    entityType: PropTypes.string.isRequired,
+    params: PropTypes.shape({}).isRequired,
+    loading: PropTypes.bool
+};
+
+ResourceCount.defaultProps = {
+    loading: false
 };
 
 export default ResourceCount;

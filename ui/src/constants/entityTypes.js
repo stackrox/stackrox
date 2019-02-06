@@ -2,7 +2,8 @@ export const resourceTypes = {
     NAMESPACE: 'NAMESPACE',
     CLUSTER: 'CLUSTER',
     NODE: 'NODE',
-    DEPLOYMENT: 'DEPLOYMENT'
+    DEPLOYMENT: 'DEPLOYMENT',
+    NETWORK_POLICY: 'NETWORK_POLICY'
 };
 
 export const standardEntityTypes = {

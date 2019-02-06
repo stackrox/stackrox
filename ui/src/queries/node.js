@@ -11,11 +11,32 @@ export const NODES_QUERY = gql`
     }
 `;
 
+// export const NODE_QUERY = gql`
+//     query getCluster($id: ID!) {
+//         results: cluster(id: $id) {
+//             id
+//             name
+//         }
+//     }
+// `;
+
 export const NODE_QUERY = gql`
-    query getCluster($id: ID!) {
-        results: cluster(id: $id) {
+    query nodeDetails($id: ID!) {
+        results: node(id: $id) {
             id
             name
+            clusterId
+            clusterName
+            containerRuntimeVersion
+            externalIpAddresses
+            internalIpAddresses
+            joinedAt
+            kernelVersion
+            osImage
+            labels {
+                key
+                value
+            }
         }
     }
 `;
