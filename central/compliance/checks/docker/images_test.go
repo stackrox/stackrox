@@ -1,8 +1,11 @@
 package docker
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/docker/docker/api/types"
@@ -94,8 +97,9 @@ func TestDockerImagesChecks(t *testing.T) {
 		},
 	}
 
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
+	for _, cIt := range cases {
+		c := cIt
+		t.Run(strings.Replace(c.name, ":", "-", -1), func(t *testing.T) {
 			t.Parallel()
 
 			registry := framework.RegistrySingleton()
@@ -107,10 +111,12 @@ func TestDockerImagesChecks(t *testing.T) {
 			}
 			testNodes := []*storage.Node{
 				{
-					Id: "A",
+					Id:   "A",
+					Name: "A",
 				},
 				{
-					Id: "B",
+					Id:   "B",
+					Name: "B",
 				},
 			}
 
@@ -120,19 +126,22 @@ func TestDockerImagesChecks(t *testing.T) {
 			domain := framework.NewComplianceDomain(testCluster, testNodes, nil)
 			data := mocks.NewMockComplianceDataRepository(mockCtrl)
 
-			jsonData, err := json.Marshal(&docker.Data{
+			var buf bytes.Buffer
+			gz := gzip.NewWriter(&buf)
+			err := json.NewEncoder(gz).Encode(&docker.Data{
 				Images: []docker.ImageWrap{
 					c.image,
 				},
 			})
 			require.NoError(t, err)
+			require.NoError(t, gz.Close())
 
 			data.EXPECT().HostScraped().AnyTimes().Return(map[string]*compliance.ComplianceReturn{
 				"A": {
-					DockerData: &compliance.GZIPDataChunk{Gzip: jsonData},
+					DockerData: &compliance.GZIPDataChunk{Gzip: buf.Bytes()},
 				},
 				"B": {
-					DockerData: &compliance.GZIPDataChunk{Gzip: jsonData},
+					DockerData: &compliance.GZIPDataChunk{Gzip: buf.Bytes()},
 				},
 			})
 

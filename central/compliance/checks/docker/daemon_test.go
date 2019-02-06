@@ -5,7 +5,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
-	"net"
+	"strings"
 	"testing"
 
 	"github.com/docker/docker/api/types"
@@ -16,21 +16,16 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	localIPNet = registry.NetIPNet(net.IPNet{
-		IP:   net.IPv4(127, 0, 0, 0),
-		Mask: net.IPv4Mask(255, 255, 0, 0),
-	})
+	localIPNet = registry.NetIPNet(*netutil.MustParseCIDR("127.0.0.0/16"))
 
-	nonLocalIPNet = registry.NetIPNet(net.IPNet{
-		IP:   net.IPv4(0, 0, 0, 0),
-		Mask: net.IPv4Mask(255, 255, 255, 0),
-	})
+	nonLocalIPNet = registry.NetIPNet(*netutil.MustParseCIDR("0.0.0.0/24"))
 )
 
 func TestDockerInfoBasedChecks(t *testing.T) {
@@ -40,14 +35,14 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 		status framework.Status
 	}{
 		{
-			name: "CIS_Docker_v1_1_0:2_2",
+			name: "CIS_Docker_v1_1_0:2_5",
 			info: types.Info{
 				Driver: "aufs",
 			},
 			status: framework.FailStatus,
 		},
 		{
-			name: "CIS_Docker_v1_1_0:2_2",
+			name: "CIS_Docker_v1_1_0:2_5",
 			info: types.Info{
 				Driver: "overlay2",
 			},
@@ -118,8 +113,9 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 		},
 	}
 
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
+	for _, cIt := range cases {
+		c := cIt
+		t.Run(strings.Replace(c.name, ":", "-", -1), func(t *testing.T) {
 			t.Parallel()
 
 			registry := framework.RegistrySingleton()

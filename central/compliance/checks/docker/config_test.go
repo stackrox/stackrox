@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -73,8 +74,9 @@ func TestOwnershipAndPermissionChecks(t *testing.T) {
 		},
 	}
 
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
+	for _, cIt := range cases {
+		c := cIt
+		t.Run(strings.Replace(c.name, ":", "-", -1), func(t *testing.T) {
 			t.Parallel()
 
 			registry := framework.RegistrySingleton()
@@ -86,10 +88,12 @@ func TestOwnershipAndPermissionChecks(t *testing.T) {
 			}
 			testNodes := []*storage.Node{
 				{
-					Id: "A",
+					Id:   "A",
+					Name: "A",
 				},
 				{
-					Id: "B",
+					Id:   "B",
+					Name: "B",
 				},
 			}
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"fmt"
 
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
@@ -11,8 +12,7 @@ import (
 )
 
 func getDockerData(ret *compliance.ComplianceReturn) (*docker.Data, error) {
-	buf := bytes.NewBuffer(ret.GetDockerData().GetGzip())
-	reader := bytes.NewReader(buf.Bytes())
+	reader := bytes.NewReader(ret.GetDockerData().GetGzip())
 	gzReader, err := gzip.NewReader(reader)
 	if err != nil {
 		return nil, err
@@ -29,7 +29,7 @@ func PerNodeCheckWithDockerData(f func(ctx framework.ComplianceContext, data *do
 	return PerNodeCheck(func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {
 		data, err := getDockerData(ret)
 		if err != nil {
-			framework.FailNowf(ctx, "Could not process scraped data: %v", err)
+			framework.Abort(ctx, fmt.Errorf("could not process scraped data: %v", err))
 		}
 		f(ctx, data)
 	})

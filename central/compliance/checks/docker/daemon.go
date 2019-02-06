@@ -96,7 +96,7 @@ func daemonSeccomp(ctx framework.ComplianceContext, info types.Info) {
 
 func disableExperimental(ctx framework.ComplianceContext, info types.Info) {
 	if info.ExperimentalBuild {
-		framework.Failf(ctx, "Docker is running in experimental mode")
+		framework.FailNowf(ctx, "Docker is running in experimental mode")
 	}
 	framework.Pass(ctx, "Docker is not running in experimental mode")
 }
@@ -132,7 +132,7 @@ func getDockerdProcess(ret *compliance.ComplianceReturn) (*compliance.CommandLin
 		}
 	}
 	if dockerdProcess == nil {
-		return nil, nil, errors.New("Could not find an process that matched 'dockerd'")
+		return nil, nil, errors.New("Could not find a process that matched 'dockerd'")
 	}
 	// Get Daemon if it exists
 	var daemonConfigFile *compliance.File

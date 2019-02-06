@@ -52,7 +52,11 @@ func (r *checkRegistry) Lookup(id string) Check {
 	r.checksMutex.RLock()
 	defer r.checksMutex.RUnlock()
 
-	return r.checks[id]
+	c := r.checks[id]
+	if c != nil {
+		return c
+	}
+	return nil
 }
 
 func (r *checkRegistry) GetAll() []Check {

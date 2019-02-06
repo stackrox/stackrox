@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -38,8 +39,9 @@ func TestAuditCheck(t *testing.T) {
 		},
 	}
 
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
+	for _, cIt := range cases {
+		c := cIt
+		t.Run(strings.Replace(c.name, ":", "-", -1), func(t *testing.T) {
 			t.Parallel()
 			registry := framework.RegistrySingleton()
 			check := registry.Lookup(c.name)
@@ -50,10 +52,12 @@ func TestAuditCheck(t *testing.T) {
 			}
 			testNodes := []*storage.Node{
 				{
-					Id: "A",
+					Id:   "A",
+					Name: "A",
 				},
 				{
-					Id: "B",
+					Id:   "B",
+					Name: "B",
 				},
 			}
 
@@ -63,16 +67,19 @@ func TestAuditCheck(t *testing.T) {
 			domain := framework.NewComplianceDomain(testCluster, testNodes, nil)
 			data := mocks.NewMockComplianceDataRepository(mockCtrl)
 
+			allFiles := map[string]*compliance.File{
+				"/usr/bin/docker.service": {Path: "/usr/bin/docker.service"},
+				"/usr/bin/docker":         {Path: "/usr/bin/docker"},
+				"/etc/default/docker":     {Path: "/etc/default/docker"},
+				c.file.Path:               c.file,
+			}
+
 			data.EXPECT().HostScraped().AnyTimes().Return(map[string]*compliance.ComplianceReturn{
 				"A": {
-					Files: map[string]*compliance.File{
-						c.file.Path: c.file,
-					},
+					Files: allFiles,
 				},
 				"B": {
-					Files: map[string]*compliance.File{
-						c.file.Path: c.file,
-					},
+					Files: allFiles,
 				},
 			})
 

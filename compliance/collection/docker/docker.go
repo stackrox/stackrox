@@ -90,8 +90,7 @@ func GetDockerData() (*compliance.GZIPDataChunk, error) {
 	}
 
 	var buf bytes.Buffer
-	gz := gzip.NewWriter(&buf)
-	gz, err = gzip.NewWriterLevel(gz, gzip.BestCompression)
+	gz, err := gzip.NewWriterLevel(&buf, gzip.BestCompression)
 	if err != nil {
 		return nil, err
 	}

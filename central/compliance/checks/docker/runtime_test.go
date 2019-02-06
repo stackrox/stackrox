@@ -1,8 +1,11 @@
 package docker
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/docker/docker/api/types"
@@ -69,7 +72,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "specific-host-interface",
+			name: "CIS_Docker_v1_1_0:5_13",
 			container: types.ContainerJSON{
 				NetworkSettings: &types.NetworkSettings{
 					NetworkSettingsBase: types.NetworkSettingsBase{
@@ -82,7 +85,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "specific-host-interface",
+			name: "CIS_Docker_v1_1_0:5_13",
 			container: types.ContainerJSON{
 				NetworkSettings: &types.NetworkSettings{
 					NetworkSettingsBase: types.NetworkSettingsBase{
@@ -95,11 +98,11 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name:   "bridge-network",
+			name:   "CIS_Docker_v1_1_0:5_29",
 			status: framework.PassStatus,
 		},
 		{
-			name: "bridge-network",
+			name: "CIS_Docker_v1_1_0:5_29",
 			container: types.ContainerJSON{
 				NetworkSettings: &types.NetworkSettings{
 					Networks: map[string]*network.EndpointSettings{
@@ -110,7 +113,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "capabilities",
+			name: "CIS_Docker_v1_1_0:5_3",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &container.HostConfig{
@@ -121,7 +124,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.NoteStatus,
 		},
 		{
-			name: "capabilities",
+			name: "CIS_Docker_v1_1_0:5_3",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &container.HostConfig{
@@ -452,7 +455,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "readonly-fs",
+			name: "CIS_Docker_v1_1_0:5_12",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &container.HostConfig{
@@ -463,7 +466,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "readonly-fs",
+			name: "CIS_Docker_v1_1_0:5_12",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &container.HostConfig{
@@ -474,7 +477,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "restart-policy",
+			name: "CIS_Docker_v1_1_0:5_14",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &container.HostConfig{
@@ -488,7 +491,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.PassStatus,
 		},
 		{
-			name: "restart-policy",
+			name: "CIS_Docker_v1_1_0:5_14",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &container.HostConfig{
@@ -502,7 +505,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "seccomp",
+			name: "CIS_Docker_v1_1_0:5_21",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &container.HostConfig{
@@ -515,7 +518,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			status: framework.FailStatus,
 		},
 		{
-			name: "seccomp",
+			name: "CIS_Docker_v1_1_0:5_21",
 			container: types.ContainerJSON{
 				ContainerJSONBase: &types.ContainerJSONBase{
 					HostConfig: &container.HostConfig{
@@ -693,8 +696,9 @@ func TestDockerRuntimeChecks(t *testing.T) {
 		},
 	}
 
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
+	for _, cIt := range cases {
+		c := cIt
+		t.Run(strings.Replace(c.name, ":", "-", -1), func(t *testing.T) {
 			t.Parallel()
 
 			registry := framework.RegistrySingleton()
@@ -706,10 +710,12 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			}
 			testNodes := []*storage.Node{
 				{
-					Id: "A",
+					Id:   "A",
+					Name: "A",
 				},
 				{
-					Id: "B",
+					Id:   "B",
+					Name: "B",
 				},
 			}
 
@@ -746,12 +752,18 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			})
 			require.NoError(t, err)
 
+			var jsonDataGZ bytes.Buffer
+			gzWriter := gzip.NewWriter(&jsonDataGZ)
+			_, err = gzWriter.Write(jsonData)
+			require.NoError(t, err)
+			require.NoError(t, gzWriter.Flush())
+
 			data.EXPECT().HostScraped().AnyTimes().Return(map[string]*compliance.ComplianceReturn{
 				"A": {
-					DockerData: &compliance.GZIPDataChunk{Gzip: jsonData},
+					DockerData: &compliance.GZIPDataChunk{Gzip: jsonDataGZ.Bytes()},
 				},
 				"B": {
-					DockerData: &compliance.GZIPDataChunk{Gzip: jsonData},
+					DockerData: &compliance.GZIPDataChunk{Gzip: jsonDataGZ.Bytes()},
 				},
 			})
 
