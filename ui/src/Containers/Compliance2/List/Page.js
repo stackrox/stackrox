@@ -11,6 +11,7 @@ import Header from './Header';
 import ListTable from './Table';
 import SidePanel from './SidePanel';
 
+const pollInterval = 10000;
 class ComplianceListPage extends Component {
     static propTypes = {
         match: ReactRouterPropTypes.match.isRequired,
@@ -45,15 +46,16 @@ class ComplianceListPage extends Component {
             <section className="flex flex-col h-full">
                 <Header searchComponent={<SearchInput categories={['COMPLIANCE']} />} />
                 <CollapsibleBanner>
-                    <ComplianceAcrossEntities params={params} />
-                    <ComplianceAcrossEntities params={params} />
-                    <ComplianceAcrossEntities params={params} />
+                    <ComplianceAcrossEntities params={params} pollInterval={pollInterval} />
+                    <ComplianceAcrossEntities params={params} pollInterval={pollInterval} />
+                    <ComplianceAcrossEntities params={params} pollInterval={pollInterval} />
                 </CollapsibleBanner>
                 <div className="flex flex-1 overflow-y-auto">
                     <ListTable
                         selectedRow={selectedRow}
                         params={params}
                         updateSelectedRow={this.updateSelectedRow}
+                        pollInterval={pollInterval}
                     />
                     {selectedRow && (
                         <SidePanel

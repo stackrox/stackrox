@@ -8,4 +8,9 @@ const standardLabels = {
     [standardTypes.CIS_DOCKER_V1_1_0]: 'CIS Docker v1.1.0'
 };
 
+export const standardShortLabels = {
+    ...standardLabels,
+    [standardTypes.CIS_KUBERENETES_V1_2_0]: 'CIS Kube v1.2.0'
+};
+
 export default standardLabels;

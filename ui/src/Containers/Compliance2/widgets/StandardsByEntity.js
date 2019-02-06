@@ -5,6 +5,7 @@ import { resourceTypes } from 'constants/entityTypes';
 import URLService from 'modules/URLService';
 import pageTypes from 'constants/pageTypes';
 import resourceLabels from 'messages/common';
+import capitalize from 'lodash/capitalize';
 
 import Widget from 'Components/Widget';
 import Query from 'Components/AppQuery';
@@ -30,7 +31,7 @@ function processData(data, type, params) {
         const link = URLService.getLinkTo(params.context, pageTypes.LIST, {
             entityType: standard.id,
             query: {
-                [type]: entity.name
+                [`${capitalize(type)}`]: entity.name
             }
         });
         const dataPoint = {
@@ -65,8 +66,8 @@ function getLabelLinks(data, type, params) {
     return labelLinks;
 }
 
-const StandardsByEntity = ({ type, params }) => (
-    <Query params={params} componentType={componentTypeMapping[type]} pollInterval={5000}>
+const StandardsByEntity = ({ type, params, pollInterval }) => (
+    <Query params={params} componentType={componentTypeMapping[type]} pollInterval={pollInterval}>
         {({ loading, data }) => {
             let contents = <Loader />;
             const headerText = `Standards By ${type}`;
@@ -99,7 +100,12 @@ const StandardsByEntity = ({ type, params }) => (
 
 StandardsByEntity.propTypes = {
     type: PropTypes.string.isRequired,
-    params: PropTypes.shape({}).isRequired
+    params: PropTypes.shape({}).isRequired,
+    pollInterval: PropTypes.number
+};
+
+StandardsByEntity.defaultProps = {
+    pollInterval: 0
 };
 
 export default StandardsByEntity;

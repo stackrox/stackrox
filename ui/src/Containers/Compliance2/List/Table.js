@@ -21,11 +21,13 @@ class ListTable extends Component {
     static propTypes = {
         params: PropTypes.shape({}).isRequired,
         selectedRow: PropTypes.shape({}),
-        updateSelectedRow: PropTypes.func.isRequired
+        updateSelectedRow: PropTypes.func.isRequired,
+        pollInterval: PropTypes.number
     };
 
     static defaultProps = {
-        selectedRow: null
+        selectedRow: null,
+        pollInterval: 0
     };
 
     constructor(props) {
@@ -38,13 +40,13 @@ class ListTable extends Component {
     setTablePage = page => this.setState({ page });
 
     render() {
-        const { params, selectedRow, updateSelectedRow } = this.props;
+        const { params, selectedRow, updateSelectedRow, pollInterval } = this.props;
         const { page } = this.state;
         return (
             <AppQuery
                 params={params}
                 componentType={componentTypes.LIST_TABLE}
-                pollInterval={100000}
+                pollInterval={pollInterval}
             >
                 {({ loading, data }) => {
                     const isStandard = standardTypeValues.includes(params.entityType);

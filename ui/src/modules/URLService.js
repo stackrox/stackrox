@@ -80,7 +80,7 @@ function keysToLowerCase(query) {
     if (!query) return null;
 
     return Object.entries(query).reduce((acc, entry) => {
-        const key = entry[0].toLowerCase();
+        const key = entry[0];
         // eslint-disable-next-line
         acc[key] = entry[1];
         return acc;

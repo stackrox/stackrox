@@ -89,7 +89,8 @@ class MultiGaugeDetailSection extends Component {
             selectedGauge && selectedGauge.arc === 'inner' ? 'text-success-500' : '';
         const failingClassName =
             selectedGauge && selectedGauge.arc === 'outer' ? 'text-alert-500' : '';
-
+        const percentagePassing = Math.round((d.passing / (d.passing + d.failing)) * 100);
+        const percentageFailing = Math.round((d.failing / (d.passing + d.failing)) * 100);
         return (
             <div
                 key={`${d.title}-${d.arc}`}
@@ -106,7 +107,7 @@ class MultiGaugeDetailSection extends Component {
                         passingClassName}`}
                     onClick={this.onClick(d, 'inner', idx)}
                 >
-                    {d.passing}%
+                    {percentagePassing}%
                 </button>
                 <button
                     type="button"
@@ -115,7 +116,7 @@ class MultiGaugeDetailSection extends Component {
                         failingClassName}`}
                     onClick={this.onClick(d, 'outer', idx)}
                 >
-                    {d.failing}%
+                    {percentageFailing}%
                 </button>
             </div>
         );
@@ -133,7 +134,7 @@ class MultiGaugeDetailSection extends Component {
 
     render() {
         return (
-            <div className="border-base-300 border-l flex flex-col justify-between w-1/3">
+            <div className="border-base-300 border-l flex flex-col justify-between w-full">
                 {this.getContent()}
             </div>
         );

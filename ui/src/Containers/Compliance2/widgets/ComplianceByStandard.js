@@ -56,29 +56,35 @@ const processSunburstData = (data, type) => {
     const { groups, controls } = data.complianceStandards.filter(datum => datum.id === type)[0];
 
     groups.forEach(datum => {
-        const value = groupStatsMapping[datum.id] || 0;
-        groupMapping[`${datum.id}`] = {
-            name: `${datum.name}. ${datum.description.substring(0, MAX_CHAR)}${
-                datum.description.length > MAX_CHAR ? '...' : ''
-            }`,
-            color: getColor(value),
-            value,
-            children: []
-        };
+        const group = groupStatsMapping[datum.id];
+        if (group !== undefined) {
+            const value = group;
+            groupMapping[datum.id] = {
+                name: `${datum.name}. ${datum.description.substring(0, MAX_CHAR)}${
+                    datum.description.length > MAX_CHAR ? '...' : ''
+                }`,
+                color: getColor(value),
+                value,
+                children: []
+            };
+        }
     });
+
     controls
         .filter(control => control.standardId === type)
         .forEach(datum => {
             const group = groupMapping[datum.groupId];
-            const value = controlStatsMapping[`${datum.standardId}:${datum.id}`] || 0;
-            group.children.push({
-                name: `${datum.name} - ${datum.description.substring(0, MAX_CHAR)}${
-                    datum.description.length > MAX_CHAR ? '...' : ''
-                }`,
-                color: getColor(value),
-                link: `main/compliance2/${datum.standardId}/${datum.id}`,
-                value
-            });
+            if (group !== undefined) {
+                const value = controlStatsMapping[datum.id] || 0;
+                group.children.push({
+                    name: `${datum.name} - ${datum.description.substring(0, MAX_CHAR)}${
+                        datum.description.length > MAX_CHAR ? '...' : ''
+                    }`,
+                    color: getColor(value),
+                    link: `compliance2/${datum.standardId}/${datum.id}`,
+                    value
+                });
+            }
         });
 
     return Object.values(groupMapping);
@@ -87,7 +93,7 @@ const processSunburstData = (data, type) => {
 const getNumControls = sunburstData =>
     sunburstData.reduce((acc, curr) => acc + curr.children.length, 0);
 
-const ComplianceByStandard = ({ type, params }) => {
+const ComplianceByStandard = ({ type, params, pollInterval }) => {
     const newParams = { ...params };
     newParams.query = {
         Standard: type
@@ -96,7 +102,7 @@ const ComplianceByStandard = ({ type, params }) => {
         <Query
             params={newParams}
             componentType={componentTypes.COMPLIANCE_BY_STANDARD}
-            pollInterval={5000}
+            pollInterval={pollInterval}
         >
             {({ loading, data }) => {
                 let contents = <Loader />;
@@ -142,11 +148,13 @@ const ComplianceByStandard = ({ type, params }) => {
 
 ComplianceByStandard.propTypes = {
     type: PropTypes.string.isRequired,
-    params: PropTypes.shape({})
+    params: PropTypes.shape({}),
+    pollInterval: PropTypes.number
 };
 
 ComplianceByStandard.defaultProps = {
-    params: null
+    params: null,
+    pollInterval: 0
 };
 
 export default ComplianceByStandard;

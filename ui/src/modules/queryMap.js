@@ -190,13 +190,16 @@ export default [
                             rows: []
                         };
                     }
-                    const { id, name, description } = keys[controlKeyIndex];
-                    groups[groupName].rows.push({
-                        id,
-                        control: `${name} - ${description}`,
-                        compliance: complianceRate(numPassing, numFailing),
-                        group: groupName
-                    });
+                    if (controlKeyIndex) {
+                        const { id, name, description } = keys[controlKeyIndex];
+                        groups[groupName].rows.push({
+                            id,
+                            name,
+                            control: `${name} - ${description}`,
+                            compliance: complianceRate(numPassing, numFailing),
+                            group: groupName
+                        });
+                    }
                 });
                 Object.keys(groups).forEach(group => {
                     formattedData.results.push(groups[group]);

@@ -28,7 +28,7 @@ const areRunsFinished = data => {
     return runsFinished;
 };
 
-const ScanButton = ({ text, clusterId, standardId }) => (
+const ScanButton = ({ className, text, clusterId, standardId }) => (
     <Mutation mutation={TRIGGER_SCAN}>
         {(triggerScan, { data: triggerData }) => {
             const ids = getTriggerRunIds(triggerData);
@@ -41,6 +41,7 @@ const ScanButton = ({ text, clusterId, standardId }) => (
                         const showLoader = !scanningFinished;
                         return (
                             <Button
+                                className={className}
                                 text={text}
                                 icon={<Icon.RefreshCcw size="14" className="mr-3" />}
                                 onClick={scanOnClickHandler(triggerScan, clusterId, standardId)}
@@ -55,12 +56,14 @@ const ScanButton = ({ text, clusterId, standardId }) => (
 );
 
 ScanButton.propTypes = {
+    className: PropTypes.string,
     text: PropTypes.string.isRequired,
     clusterId: PropTypes.string,
     standardId: PropTypes.string
 };
 
 ScanButton.defaultProps = {
+    className: 'btn btn-base',
     clusterId: '*',
     standardId: '*'
 };

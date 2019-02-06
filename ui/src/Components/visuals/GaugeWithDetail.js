@@ -62,7 +62,7 @@ class GaugeWithDetail extends Component {
         const fullAngle = 2 * pi;
         // TODO: Dynamic technique to assign  radius & font size to the gauges.
         let radius = this.props.data.length > 1 ? 1 : 1.5;
-        LABEL_STYLE.fontSize = this.props.data.length > 1 ? '36px' : '48px';
+        LABEL_STYLE.fontSize = this.props.data.length > 1 ? '24px' : '36px';
         const data = [];
         [...this.props.data].forEach((d, index) => {
             const radius0 = radius + 0.1;
@@ -175,7 +175,7 @@ class GaugeWithDetail extends Component {
                 data={[
                     {
                         x: 0.1,
-                        y: this.props.data.length > 1 ? -0.85 : 1.1,
+                        y: this.props.data.length > 1 ? -0.8 : -1.1,
                         label: `${label}%`,
                         style: LABEL_STYLE
                     }
@@ -214,7 +214,13 @@ class GaugeWithDetail extends Component {
         const { data } = this.props;
         return (
             <div className="flex flex-row">
-                <XYPlot xDomain={[-3, 4]} yDomain={[-3, 4]} width={275} height={250}>
+                <XYPlot
+                    xDomain={[-1, 4]}
+                    yDomain={[4, 4]}
+                    width={275}
+                    height={200}
+                    className="w-1/2"
+                >
                     {this.getCenterLabel()}
                     {this.getHint()}
                     <ArcSeries

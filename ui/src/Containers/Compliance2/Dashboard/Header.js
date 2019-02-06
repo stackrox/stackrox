@@ -27,8 +27,18 @@ const ComplianceDashboardHeader = props => (
             <div className="ml-3 border-l border-base-100 mr-3" />
             <div className="flex">
                 <div className="flex items-center mr-3">
-                    <ScanButton text="Scan All" clusterId="*" standardId="*" />
-                    <ExportButton fileName="compliance-dashboard" />
+                    <ScanButton
+                        className="flex items-center justify-center border-2 border-primary-400 text-base-100 rounded p-2 uppercase hover:bg-primary-800 min-w-24"
+                        text="Scan All"
+                        clusterId="*"
+                        standardId="*"
+                    />
+                </div>
+                <div className="flex items-center">
+                    <ExportButton
+                        className="flex items-center border-2 border-primary-400 text-base-100 rounded p-2 uppercase hover:bg-primary-800"
+                        fileName="compliance-dashboard"
+                    />
                 </div>
             </div>
         </div>
@@ -37,7 +47,7 @@ const ComplianceDashboardHeader = props => (
 
 ComplianceDashboardHeader.propTypes = {
     classes: PropTypes.string,
-    bgStyle: PropTypes.string
+    bgStyle: PropTypes.shape({})
 };
 
 ComplianceDashboardHeader.defaultProps = {

@@ -72,10 +72,12 @@ class BarChart extends Component {
 
     getLegendData = () => {
         const { data, colors } = this.props;
-        return Object.keys(data).map((key, i) => ({
-            title: key,
-            color: colors[i % colors.length]
-        }));
+        return Object.keys(data)
+            .sort()
+            .map((key, i) => ({
+                title: key,
+                color: colors[i % colors.length]
+            }));
     };
 
     render() {

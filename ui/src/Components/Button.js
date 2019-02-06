@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { ClipLoader } from 'react-spinners';
 
-const Loader = () => <ClipLoader loading size={20} color="#5E667D" />;
+const Loader = () => <ClipLoader loading size={20} color="currentColor" />;
 
 const Button = ({ className, icon, text, onClick, disabled, isLoading }) => {
     const content = (

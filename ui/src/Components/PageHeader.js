@@ -23,7 +23,7 @@ PageHeader.propTypes = {
     header: PropTypes.string.isRequired,
     subHeader: PropTypes.string,
     classes: PropTypes.string,
-    bgStyle: PropTypes.string,
+    bgStyle: PropTypes.shape({}),
     children: PropTypes.oneOfType([PropTypes.element, PropTypes.arrayOf(PropTypes.element)])
 };
 

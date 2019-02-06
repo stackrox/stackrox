@@ -5,10 +5,17 @@ import Query from 'Components/AppQuery';
 import Loader from 'Components/Loader';
 import PropTypes from 'prop-types';
 import Gauge from 'Components/visuals/GaugeWithDetail';
+import NoResultsMessage from 'Components/NoResultsMessage';
 import { standardTypes } from 'constants/entityTypes';
-import standardLabels from 'messages/standards';
+import { standardShortLabels } from 'messages/standards';
 
 const isStandard = type => Object.values(standardTypes).includes(type);
+
+const sortByTitle = (a, b) => {
+    if (a.title < b.title) return -1;
+    if (a.title > b.title) return 1;
+    return 0;
+};
 
 function processData(type, { results, complianceStandards }) {
     let filteredResults;
@@ -20,19 +27,22 @@ function processData(type, { results, complianceStandards }) {
         filteredResults = results.results;
     }
     if (!filteredResults.length) return [{ title: type, passing: 0, failing: 0 }];
-    return filteredResults.map(result => {
-        const { numPassing, numFailing, aggregationKeys } = result;
-        const standard = complianceStandards.find(cs => cs.id === aggregationKeys[0].id);
-        const dataPoint = {
-            title: standard.name,
-            passing: numPassing,
-            failing: numFailing
-        };
-        return dataPoint;
-    });
+    return filteredResults
+        .map(result => {
+            const { numPassing, numFailing, aggregationKeys } = result;
+            const standard = complianceStandards.find(cs => cs.id === aggregationKeys[0].id);
+            const dataPoint = {
+                title: standardShortLabels[standard.id],
+                passing: numPassing,
+                failing: numFailing
+            };
+            return dataPoint;
+        })
+        .filter(datum => !(datum.passing === 0 && datum.failing === 0))
+        .sort(sortByTitle);
 }
 
-const ComplianceAcrossEntities = ({ params }) => (
+const ComplianceAcrossEntities = ({ params, pollInterval }) => (
     <Query
         params={params}
         componentType={
@@ -40,17 +50,20 @@ const ComplianceAcrossEntities = ({ params }) => (
                 ? componentTypes.COMPLIANCE_ACROSS_STANDARDS
                 : componentTypes.COMPLIANCE_ACROSS_RESOURCES
         }
-        pollInterval={5000}
+        pollInterval={pollInterval}
     >
         {({ loading, data }) => {
             let contents = <Loader />;
             const headerText = isStandard(params.entityType)
-                ? `Compliance Across ${standardLabels[params.entityType]} Controls`
+                ? `Compliance Across ${standardShortLabels[params.entityType]} Controls`
                 : `Compliance Across ${params.entityType}`;
             if (!loading && data) {
                 const results = processData(params.entityType, data);
-
-                contents = <Gauge data={results} dataProperty="passing" />;
+                if (!results.length) {
+                    contents = <NoResultsMessage message="No Data Available" />;
+                } else {
+                    contents = <Gauge data={results} dataProperty="passing" />;
+                }
             }
             return (
                 <Widget header={headerText} bodyClassName="p-2">
@@ -62,7 +75,12 @@ const ComplianceAcrossEntities = ({ params }) => (
 );
 
 ComplianceAcrossEntities.propTypes = {
-    params: PropTypes.shape({}).isRequired
+    params: PropTypes.shape({}).isRequired,
+    pollInterval: PropTypes.number
+};
+
+ComplianceAcrossEntities.defaultProps = {
+    pollInterval: 0
 };
 
 export default ComplianceAcrossEntities;
