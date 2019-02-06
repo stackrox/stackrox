@@ -31,6 +31,8 @@ metadata:
   name: {{.Namespace}}:monitor-deployments
 rules:
   - resources:
+    - cronjobs
+    - jobs
     - daemonsets
     - deployments
     - deploymentconfigs
@@ -67,6 +69,8 @@ metadata:
   name: {{.Namespace}}:enforce-policies
 rules:
   - resources:
+    - cronjobs
+    - jobs
     - daemonsets
     - deployments
     - deployments/scale
