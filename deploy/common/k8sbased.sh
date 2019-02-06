@@ -5,7 +5,13 @@ function launch_service {
     local service="$2"
 
     if [[ "${OUTPUT_FORMAT}" == "helm" ]]; then
-        helm install "$dir/$service" --name $service
+        for i in {1..5}; do
+            if helm install "$dir/$service" --name $service --tiller-connection-timeout 10; then
+                break
+            fi
+            sleep 5
+            echo "Waiting for helm to respond"
+        done
     else
         ${ORCH_CMD} create -R -f "$dir/$service"
     fi
@@ -59,11 +65,25 @@ function launch_central {
     launch_service $unzip_dir central
     echo
 
-    $unzip_dir/central/scripts/port-forward.sh 8000
-    wait_for_central "localhost:8000"
+    # if we have specified that we want to use a load balancer, then use that endpoint instead of localhost
+    if [[ "${LOAD_BALANCER}" == "lb" ]]; then
+        # wait for LB
+        echo "Waiting for LB to provision"
+        LB_IP=""
+        until [ -n "${LB_IP}" ]; do
+            echo -n "."
+            sleep 1
+            LB_IP=$(kubectl -n stackrox get svc/central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        done
+        export API_ENDPOINT="${LB_IP}:443"
+    else
+        $unzip_dir/central/scripts/port-forward.sh 8000
+    fi
+
+    wait_for_central "${API_ENDPOINT}"
     echo "Successfully deployed Central!"
-    echo "Access the UI at: https://localhost:8000"
-    setup_auth0 "localhost:8000"
+    echo "Access the UI at: https://${API_ENDPOINT}"
+    setup_auth0 "${API_ENDPOINT}"
 }
 
 function launch_sensor {
@@ -81,13 +101,13 @@ function launch_sensor {
 
     if [[ "${ORCH}" == "k8s" && -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }
-        roxctl -p "${ROX_ADMIN_PASSWORD}" --endpoint localhost:8000 sensor generate --image="${MAIN_IMAGE}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
+        roxctl -p ${ROX_ADMIN_PASSWORD} --endpoint "${API_ENDPOINT}" sensor generate --image="${MAIN_IMAGE}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
              --runtime="$RUNTIME_SUPPORT" --admission-controller="$ADMISSION_CONTROLLER" "${extra_config[@]+"${extra_config[@]}"}" ${ORCH}
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
     else
         local common_params="{ \"params\" : { \"namespace\": \"stackrox\" } }"
         extra_json_config+="\"${ORCH_FULLNAME}\": $common_params }"
-        get_cluster_zip localhost:8000 "$CLUSTER" ${CLUSTER_TYPE} "$MAIN_IMAGE" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$RUNTIME_SUPPORT" "$extra_json_config"
+        get_cluster_zip "$API_ENDPOINT" "$CLUSTER" ${CLUSTER_TYPE} "$MAIN_IMAGE" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$RUNTIME_SUPPORT" "$extra_json_config"
         unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"
         rm "$k8s_dir/sensor-deploy.zip"
     fi

@@ -11,10 +11,12 @@ import (
 const (
 	usernameEnvVar = `ROX_USERNAME`
 	passwordEnvVar = `ROX_PASSWORD`
+
+	ipEnvVar = "API_ENDPOINT"
 )
 
 var (
-	apiEndpoint = `localhost:8000`
+	apiEndpoint = os.Getenv(ipEnvVar)
 
 	username, password string
 )

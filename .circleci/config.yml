@@ -39,7 +39,14 @@ setupHelm: &setupHelm
     name: Setup tiller by default in GKE Cluster
     command:  |
        kubectl apply -f ./deploy/k8s/tillerbind.yaml
-       helm init --service-account helm --wait
+
+       for i in {1..5}; do
+         if helm init --service-account helm  --tiller-connection-timeout 5 --wait; then
+           break
+         fi
+         echo "Failed to connect to helm. Retrying in 5 seconds"
+         sleep 5
+       done
 
 setupRoxctl: &setupRoxctl
   run:
@@ -105,7 +112,14 @@ waitForAPI: &waitForAPI
   run:
     name: Wait for the API server to be up
     command: |
-      export PING_URL="https://127.0.0.1:${LOCAL_PORT}/v1/ping"
+      export API_HOSTNAME=localhost
+      export API_PORT=8000
+      if [[ "${LOAD_BALANCER}" == "lb" ]]; then
+        export API_HOSTNAME=$(./scripts/k8s/get-lb-ip.sh)
+        export API_PORT=443
+      fi
+      export PING_URL="https://${API_HOSTNAME}:${API_PORT}/v1/ping"
+      echo "PING_URL is set to ${PING_URL}"
       set +e
       SUCCESS=0
       for i in $(seq 1 10); do
@@ -119,6 +133,11 @@ waitForAPI: &waitForAPI
         echo "Failed to connect to Central"
         exit 1
       fi
+      cat >>"$BASH_ENV" <<EOF
+        export API_HOSTNAME="$API_HOSTNAME"
+        export API_PORT="$API_PORT"
+        export API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
+      EOF
 
 waitForSensorK8s: &waitForSensorK8s
   run:
@@ -164,7 +183,8 @@ runUIE2E: &runUIE2E
       if [ "${RUN_UI_DEV_SERVER}" = "true" ]; then
         export UI_BASE_URL="https://localhost:3000"
       else
-        export UI_BASE_URL="https://localhost:${LOCAL_PORT}"
+        export UI_BASE_URL="https://localhost:8000"
+        ./scripts/port-forward-ui.sh
       fi
 
       make -C ui test-e2e-ci
@@ -178,7 +198,7 @@ collectImbuedUILogs: &collectImbuedUILogs
       if [[ -n "$ROX_USERNAME" && -n "$ROX_PASSWORD" ]]; then
         curl_cmd+=(-u "${ROX_USERNAME}:${ROX_PASSWORD}")
       fi
-      status_code="$("${curl_cmd[@]}" -sk -o logs.zip -w "%{http_code}\n" "https://localhost:${LOCAL_PORT}/api/logimbue")"
+      status_code="$("${curl_cmd[@]}" -sk -o logs.zip -w "%{http_code}\n" "https://${API_ENDPOINT}/api/logimbue")"
       # Central returns 204 if there are no imbued logs
       if [ "${status_code}" -eq 204 ]; then
         echo "No imbued logs found."
@@ -402,9 +422,9 @@ jobs:
   k8s-tests:
     <<: *defaults
     environment:
-      - LOCAL_PORT: 8000
       - MONITORING_SUPPORT: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
+      - LOAD_BALANCER: lb
     steps:
       - checkout
 
@@ -432,7 +452,6 @@ jobs:
       - run:
           name: API tests
           command: |
-            export API_ENDPOINT=localhost:${LOCAL_PORT}
             make -C tests
 
       - *restoreUI
@@ -456,12 +475,14 @@ jobs:
   qa-tests:
     <<: *defaults
     environment:
-      - LOCAL_PORT: 8000
+      - LOCAL_PORT: 443
       - RUNTIME_SUPPORT: true
       - MONITORING_SUPPORT: true
       - OUTPUT_FORMAT: helm
       - ROX_COMPLIANCE_ENABLED: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
+      - LOAD_BALANCER: lb
+
     steps:
       - checkout
 
@@ -492,8 +513,8 @@ jobs:
           name: QA Automation Platform
           command: |
             export CLUSTER=K8S
-            export HOSTNAME=localhost
-            export PORT=${LOCAL_PORT}
+            export HOSTNAME="${API_HOSTNAME}"
+            export PORT="${API_PORT}"
             if [ "${CIRCLE_BRANCH}" = "master" ]; then
               echo "On master, running all QA tests..."
               make -C qa-tests-backend test
@@ -525,10 +546,10 @@ jobs:
   scale:
     <<: *defaults
     environment:
-      - LOCAL_PORT: 8000
       - MONITORING_SUPPORT: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - STORAGE: pvc
+      - LOAD_BALANCER: lb
     steps:
       - checkout
       - setup_remote_docker
@@ -558,7 +579,7 @@ jobs:
           command: |
             ./scale/mocksensor/launch_multiple_mock_sensors.sh -instances=10 -max-deployments=200 -max-indicators=4000 -max-network-flows=20 -max-updates=2000
             mkdir /tmp/pprof
-            ./scale/profiler/pprof.sh /tmp/pprof localhost:8000 6
+            ./scale/profiler/pprof.sh /tmp/pprof "${API_ENDPOINT}" 6
       - *storeProfilingResults
       - run:
           name: Delete all mock sensors
@@ -587,8 +608,8 @@ jobs:
           name: QA Automation Platform
           command: |
             export CLUSTER=K8S
-            export HOSTNAME=localhost
-            export PORT=${LOCAL_PORT}
+            export HOSTNAME="${API_HOSTNAME}"
+            export PORT="${API_PORT}"
             make -C qa-tests-backend smoke-test
 
       - *collectK8sLogs
