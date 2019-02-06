@@ -196,7 +196,7 @@ func (s *searchWalker) handleStruct(prefix string, original reflect.Type) {
 func (s *searchWalker) walkRecursive(prefix string, original reflect.Type) v1.SearchDataType {
 	switch original.Kind() {
 	case reflect.Ptr, reflect.Slice:
-		s.walkRecursive(prefix, original.Elem())
+		return s.walkRecursive(prefix, original.Elem())
 	case reflect.Struct:
 		s.handleStruct(prefix, original)
 	case reflect.Map:
@@ -217,7 +217,9 @@ func (s *searchWalker) walkRecursive(prefix string, original reflect.Type) v1.Se
 			panic(err)
 		}
 		for _, et := range fileDescriptor.GetEnumType() {
-			enums.Add(prefix, et)
+			if *et.Name == original.Name() {
+				enums.Add(prefix, et)
+			}
 		}
 		return v1.SearchDataType_SEARCH_ENUM
 	case reflect.Interface:

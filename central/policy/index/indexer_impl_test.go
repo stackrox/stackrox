@@ -44,6 +44,7 @@ func (suite *PolicyIndexTestSuite) SetupSuite() {
 	secondPolicy := fixtures.GetPolicy()
 	secondPolicy.Id = fakeID
 	secondPolicy.Severity = fakeSeverity
+	secondPolicy.LifecycleStages = []storage.LifecycleStage{storage.LifecycleStage_DEPLOY}
 	suite.NoError(suite.indexer.AddPolicies([]*storage.Policy{secondPolicy}))
 }
 
@@ -72,6 +73,11 @@ func (suite *PolicyIndexTestSuite) TestPolicySearch() {
 			name:        "Invalid query for policy",
 			q:           search.NewQueryBuilder().AddStrings(search.DeploymentName, "fake").ProtoQuery(),
 			expectedIDs: []string{},
+		},
+		{
+			name:        "Lifecycle stage",
+			q:           search.NewQueryBuilder().AddStrings(search.LifecycleStage, "deploy").ProtoQuery(),
+			expectedIDs: []string{fakeID},
 		},
 	}
 
