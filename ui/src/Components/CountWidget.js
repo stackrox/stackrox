@@ -5,7 +5,15 @@ import { Link } from 'react-router-dom';
 import Widget from 'Components/Widget';
 
 const CountWidget = ({ title, count, description, linkUrl }) => {
-    const countNode = <div className="text-6xl font-500">{count}</div>;
+    const countNode = (
+        <div
+            className={`${
+                count > 0 ? `hover:bg-tertiary-200` : ``
+            } text-6xl font-500 px-5 py-8 h-full flex items-center justify-center`}
+        >
+            {count}
+        </div>
+    );
     const descNode = description && <div className="text-base-500 pt-1">{description}</div>;
     return (
         <Widget

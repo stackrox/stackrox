@@ -81,13 +81,16 @@ const EntityCompliance = ({ entityType, entityName, history }) => {
                                 : 0;
                         contents = (
                             <React.Fragment>
-                                <div className="flex w-full" style={{ alignItems: 'center' }}>
-                                    <div className="p-2">
+                                <div className="flex w-full items-center">
+                                    <div className="px-2">
                                         <ArcSingle value={pct} />
                                     </div>
-                                    <div className="flex-grow -m-2">
+                                    <div
+                                        className="w-full flex justify-end overflow-hidden relative"
+                                        style={{ 'max-height': '129px' }}
+                                    >
                                         <VerticalBarChart
-                                            plotProps={{ height: 180, width: 250 }}
+                                            plotProps={{ height: 165, width: 257 }}
                                             data={barData}
                                             onValueClick={valueClick}
                                         />
@@ -97,11 +100,7 @@ const EntityCompliance = ({ entityType, entityName, history }) => {
                         );
                     }
                 }
-                return (
-                    <Widget header={`${entityTypeLabel} Compliance`} className="sx-2 sy-1">
-                        {contents}
-                    </Widget>
-                );
+                return <Widget header={`${entityTypeLabel} Compliance`}>{contents}</Widget>;
             }}
         </Query>
     );

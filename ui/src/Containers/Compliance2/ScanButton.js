@@ -41,7 +41,6 @@ const ScanButton = ({ text, clusterId, standardId }) => (
                         const showLoader = !scanningFinished;
                         return (
                             <Button
-                                className="flex items-center border-2 border-primary-400 text-base-100 rounded p-2 uppercase hover:bg-primary-800"
                                 text={text}
                                 icon={<Icon.RefreshCcw size="14" className="mr-3" />}
                                 onClick={scanOnClickHandler(triggerScan, clusterId, standardId)}

@@ -6,7 +6,8 @@ import downloadCsv from 'services/ComplianceDownloadService';
 import onClickOutside from 'react-onclickoutside';
 
 const btnClassName = 'btn border-base-400 bg-base-400 text-base-100 w-48';
-const selectedBtnClassName = 'btn border-primary-800 bg-primary-800 text-base-100 w-48';
+const selectedBtnClassName =
+    'btn border-primary-800 bg-primary-800 text-base-100 w-48 hover:bg-primary-900';
 const queryParamMap = {
     CLUSTER: 'clusterId',
     STANDARD: 'standardId'
@@ -59,10 +60,10 @@ class ExportButton extends Component {
         if (!toggleWidget) return null;
 
         return (
-            <div className="absolute pin-r pin-r z-10 uppercase flex flex-col text-base-600">
+            <div className="absolute pin-r pin-r z-10 uppercase flex flex-col text-base-600 min-w-64">
                 <div className="arrow-up self-end mr-5" />
                 <ul className="list-reset bg-base-100 border-2 border-primary-800 rounded">
-                    <li className="p-4 border-b border-base-400">
+                    <li className="p-4 border-b border-base-400 hidden">
                         <span>Export Evidence...</span>
                         <div className="pt-4 flex flex-row">
                             <button
@@ -77,7 +78,7 @@ class ExportButton extends Component {
                         </div>
                     </li>
                     <li className="p-4">
-                        <span>Download File...</span>
+                        <span>Download evidence CSV</span>
                         <div className="pt-4">
                             <button
                                 type="button"

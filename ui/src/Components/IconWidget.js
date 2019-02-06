@@ -5,21 +5,27 @@ import { Link } from 'react-router-dom';
 import Widget from 'Components/Widget';
 import Loader from 'Components/Loader';
 
-const IconWidget = ({ title, icon, description, linkUrl, loading }) => {
+const IconWidget = ({ title, icon, description, linkUrl, loading, textSizeClass }) => {
     const contents = loading ? (
         <Loader />
     ) : (
-        <div>
-            <div>{icon}</div>
-            <div className="pt-1 text-3xl">{description}</div>
-        </div>
+        <>
+            <div className="flex h-full items-end justify-center">
+                <img src={icon} alt={title} />
+            </div>
+            <div
+                className={`h-full flex font-600 items-start justify-center pt-3 ${textSizeClass}`}
+            >
+                <span>{description}</span>
+            </div>
+        </>
     );
 
     return (
         <Widget
             header={title}
             className="bg-base-100"
-            bodyClassName="flex-col h-full justify-center text-center text-base-600 font-500"
+            bodyClassName="flex-col h-full justify-center text-center text-base-600 font-500 px-3 pt-8 pb-3"
         >
             {linkUrl && !loading ? (
                 <Link
@@ -39,6 +45,7 @@ IconWidget.propTypes = {
     title: PropTypes.string.isRequired,
     icon: PropTypes.node.isRequired,
     description: PropTypes.string,
+    textSizeClass: PropTypes.string,
     linkUrl: PropTypes.string,
     loading: PropTypes.bool
 };
@@ -46,6 +53,7 @@ IconWidget.propTypes = {
 IconWidget.defaultProps = {
     description: null,
     linkUrl: null,
+    textSizeClass: 'text-2xl',
     loading: false
 };
 

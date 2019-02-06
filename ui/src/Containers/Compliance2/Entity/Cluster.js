@@ -32,28 +32,28 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                     <div className="flex-1 relative bg-base-200 p-6 overflow-auto">
                         <div
                             className={`grid ${
-                                !sidePanelMode
-                                    ? `grid grid-gap-6 md:grid-auto-fit md:grid-dense`
-                                    : ``
+                                !sidePanelMode ? `grid-gap-6 md:grid-auto-fit md:grid-dense` : ``
                             } sm:grid-columns-1 grid-gap-6`}
                         >
-                            <EntityCompliance
-                                entityType={entityTypes.CLUSTER}
-                                entityId={params.entityId}
-                                entityName={cluster.name}
-                            />
-
-                            <ComplianceByStandard type={entityTypes.PCI_DSS_3_2} params={params} />
-                            <ComplianceByStandard type={entityTypes.NIST_800_190} params={params} />
-                            <div className="grid md:sx-2 md:grid-auto-fit md:grid-dense">
-                                <div className="pr-3">
+                            <div
+                                className="grid s-2 md:grid-auto-fit md:grid-dense"
+                                style={{ '--min-tile-width': '50%' }}
+                            >
+                                <div className="s-full pb-3">
+                                    <EntityCompliance
+                                        entityType={entityTypes.CLUSTER}
+                                        entityId={params.entityId}
+                                        entityName={cluster.name}
+                                    />
+                                </div>
+                                <div className="md:pr-3 pt-3 rounded">
                                     <ResourceCount
                                         entityType={entityTypes.NODE}
                                         params={params}
                                         loading={loading}
                                     />
                                 </div>
-                                <div className="pl-3">
+                                <div className="md:pl-3 pt-3 rounded">
                                     <ResourceCount
                                         entityType={entityTypes.NODE}
                                         params={params}
@@ -62,6 +62,8 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                                 </div>
                             </div>
 
+                            <ComplianceByStandard type={entityTypes.PCI_DSS_3_2} params={params} />
+                            <ComplianceByStandard type={entityTypes.NIST_800_190} params={params} />
                             <ComplianceByStandard type={entityTypes.HIPAA_164} params={params} />
                             <ComplianceByStandard
                                 type={entityTypes.CIS_KUBERENETES_V1_2_0}

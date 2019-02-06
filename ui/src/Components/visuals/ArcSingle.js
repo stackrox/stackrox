@@ -34,7 +34,7 @@ const ArcSingle = ({ value }) => {
     const data = getDataFromValue(value);
 
     return (
-        <XYPlot xDomain={[-5, 5]} yDomain={[-5, 5]} width={150} height={125}>
+        <XYPlot xDomain={[-5, 5]} yDomain={[-5, 5]} width={135} height={121}>
             <LabelSeries
                 labelAnchorX="middle"
                 labelAnchorY="middle"
@@ -46,7 +46,7 @@ const ArcSingle = ({ value }) => {
                 center={{ x: -2, y: -2 }}
                 data={data}
                 colorType="literal"
-                radiusDomain={[0, 2]}
+                radiusDomain={[0, 1.8]}
             />
         </XYPlot>
     );

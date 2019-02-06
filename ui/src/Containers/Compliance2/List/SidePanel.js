@@ -25,20 +25,24 @@ const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRo
     };
 
     const headerTextComponent = (
-        <AppLink
-            context={context}
-            pageType={pageTypes.ENTITY}
-            entityType={entityType}
-            params={linkParams}
-            className="w-full flex"
-        >
-            <div
-                className="flex flex-1 text-base-600 uppercase items-center tracking-wide pl-4 leading-normal font-700"
-                data-test-id="panel-header"
-            >
-                {selectedRow.id}
+        <div className="w-full flex items-center">
+            <div>
+                <AppLink
+                    context={context}
+                    pageType={pageTypes.ENTITY}
+                    entityType={entityType}
+                    params={linkParams}
+                    className="w-full flex"
+                >
+                    <div
+                        className="flex flex-1 text-base-600 uppercase items-center tracking-wide pl-4 leading-normal font-700 hover:text-primary-700 focus:text-primary-700"
+                        data-test-id="panel-header"
+                    >
+                        {selectedRow.name}
+                    </div>
+                </AppLink>
             </div>
-        </AppLink>
+        </div>
     );
 
     return (

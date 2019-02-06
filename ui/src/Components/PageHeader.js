@@ -8,10 +8,10 @@ const renderSubHeader = subHeader => {
 
 const PageHeader = props => (
     <div
-        className={`flex h-20 px-4 border-b border-base-400 w-full ${props.classes}`}
+        className={`flex h-18 px-4 border-b border-base-400 w-full flex-no-shrink ${props.classes}`}
         style={props.bgStyle}
     >
-        <div className="w-48 self-center">
+        <div className="min-w-max pr-4 self-center">
             <div className="uppercase text-lg tracking-widest font-700 pt-1">{props.header}</div>
             {renderSubHeader(props.subHeader)}
         </div>

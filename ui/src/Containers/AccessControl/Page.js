@@ -13,7 +13,9 @@ function Page() {
     ];
     return (
         <section className="flex flex-col h-full">
-            <PageHeader header="Access Control" />
+            <div className="flex flex-no-shrink">
+                <PageHeader header="Access Control" />
+            </div>
             <div className="flex h-full">
                 <Tabs headers={tabHeaders}>
                     <TabContent>

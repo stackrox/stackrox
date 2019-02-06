@@ -4,9 +4,11 @@ import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import EntityCompliance from 'Containers/Compliance2/widgets/EntityCompliance';
 import Query from 'Components/ThrowingQuery';
+import Labels from 'Containers/Compliance2/widgets/Labels';
 import IconWidget from 'Components/IconWidget';
 import CountWidget from 'Components/CountWidget';
-import * as Icon from 'react-feather';
+import pluralize from 'pluralize';
+import Cluster from 'images/cluster.svg';
 import { NAMESPACE_QUERY as QUERY } from 'queries/namespace';
 import Widget from 'Components/Widget';
 import Header from './Header';
@@ -41,37 +43,58 @@ const NamespacePage = ({ sidePanelMode, params }) => (
                                     : ``
                             } sm:grid-columns-1 grid-gap-6`}
                         >
-                            <EntityCompliance
-                                entityType={entityTypes.NAMESPACE}
-                                entityId={params.entityId}
-                                entityName={namespace.name}
-                            />
-                            <Widget header={`${namespace.labels.length} Labels`}>
-                                <ul>
-                                    {namespace.labels.map(label => (
-                                        <li key={label.value}>{label.value}</li>
-                                    ))}
-                                </ul>
-                            </Widget>
-                            <ComplianceByStandard type={entityTypes.PCI_DSS_3_2} params={params} />
-                            <ComplianceByStandard type={entityTypes.NIST_800_190} params={params} />
-                            <div className="grid md:sx-2 md:grid-auto-fit md:grid-dense">
-                                <div className="pr-3">
+                            <div
+                                className="grid s-2 md:grid-auto-fit md:grid-dense"
+                                style={{ '--min-tile-width': '50%' }}
+                            >
+                                <div className="s-full pb-3">
+                                    <EntityCompliance
+                                        entityType={entityTypes.NAMESPACE}
+                                        entityId={params.entityId}
+                                        entityName={namespace.name}
+                                    />
+                                </div>
+                                <div className="md:pr-3 pt-3">
                                     <IconWidget
                                         title="Parent Cluster"
-                                        icon={<Icon.AlertTriangle />}
+                                        icon={Cluster}
                                         description={namespace.clusterName}
                                         loading={loading}
                                     />
                                 </div>
-                                <div className="pl-3">
+                                <div className="md:pl-3 pt-3">
                                     <CountWidget
                                         title="Network Policies"
                                         count={namespace.numNetworkPolicies}
                                     />
-                                    ;
                                 </div>
                             </div>
+
+                            <Widget
+                                className="sx-2"
+                                header={`${namespace.labels.length} ${pluralize(
+                                    'Label',
+                                    namespace.labels.length
+                                )}`}
+                            >
+                                <Labels list={Object.values(namespace.labels)} />
+                            </Widget>
+
+                            <Widget header="Annotations" className="sx-2">
+                                <div className="p-3 overflow-auto leading-loose">
+                                    <p>
+                                        The metadata in an annotation can be small or large,
+                                        structured or unstructured, but Gorman doesn’t see this
+                                        becoming too large. I think given the nature of the content,
+                                        we should let the widget grow to match it. If there are
+                                        special cases where this is incredibly long, we can consider
+                                        introducting a max-height boundary and enabling overflow
+                                        (though less ideal)
+                                    </p>
+                                </div>
+                            </Widget>
+                            <ComplianceByStandard type={entityTypes.PCI_DSS_3_2} params={params} />
+                            <ComplianceByStandard type={entityTypes.NIST_800_190} params={params} />
 
                             <ComplianceByStandard type={entityTypes.HIPAA_164} params={params} />
                             <ComplianceByStandard

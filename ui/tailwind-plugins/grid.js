@@ -12,7 +12,7 @@ module.exports = function({ grids = _.range(1, 12), gaps = {}, variants = ['resp
                 })),
                 {
                     [`.grid-auto-fit`]: {
-                        gridTemplateColumns: `repeat(auto-fit, minmax(var(--min-tile-width, 200px), 1fr))`,
+                        gridTemplateColumns: `repeat(auto-fit, minmax(var(--min-tile-width, 192px), 1fr))`,
                         gridAutoRows: `minmax(var(--min-tile-height, 180px), auto)`
                     }
                 },

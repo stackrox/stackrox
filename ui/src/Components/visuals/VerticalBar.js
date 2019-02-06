@@ -105,7 +105,7 @@ class VerticalBarChart extends Component {
 
         const defaultSeriesProps = {
             // animation: true, //causes onValueMouseOut to fail https://github.com/uber/react-vis/issues/381
-            barWidth: 0.28,
+            barWidth: 0.25,
             style: {
                 opacity: '.8',
                 ry: '2px',
@@ -150,7 +150,7 @@ class VerticalBarChart extends Component {
         }
 
         return (
-            <div {...containerProps}>
+            <div style={{ top: '-16px' }} {...containerProps}>
                 <FlexibleWidthXYPlot {...plotProps}>
                     <VerticalGridLines left={330 / data.length / 2 + 30} />
                     <HorizontalGridLines tickValues={tickValues} />

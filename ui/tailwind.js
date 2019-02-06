@@ -546,6 +546,7 @@ module.exports = {
         '24': '6rem',
         '32': '8rem',
         '48': '12rem',
+        '55': '13.75rem',
         '64': '16rem',
         '1/2': '50%',
         '1/3': '33.33333%',
@@ -639,6 +640,7 @@ module.exports = {
         '24': '6rem',
         '32': '8rem',
         '48': '12rem',
+        '55': '13.75rem',
         '64': '16rem',
         '72': '18rem',
         '1/2': '50%',
@@ -653,7 +655,10 @@ module.exports = {
         '1/6': '16.66667%',
         '1/8': '12.5%',
         '5/6': '83.33333%',
-        full: '100%'
+        full: '100%',
+        fit: 'fit-content',
+        min: 'min-content',
+        max: 'max-content'
     },
 
     /*
@@ -740,6 +745,7 @@ module.exports = {
         '24': '6rem',
         '32': '8rem',
         '48': '12rem',
+        '55': '13.75rem',
         '64': '16rem',
         '1/2': '50%',
         '1/3': '33.33333%',
@@ -762,7 +768,10 @@ module.exports = {
         '3xl': '80rem',
         '4xl': '90rem',
         '5xl': '100rem',
-        full: '100%'
+        full: '100%',
+        fit: 'fit-content',
+        min: 'min-content',
+        max: 'max-content'
     },
 
     /*
@@ -1090,7 +1099,7 @@ module.exports = {
   */
 
     plugins: [
-        function({ addVariant }) {
+        function addvariant({ addVariant }) {
             addVariant('first-child', ({ modifySelectors, separator }) => {
                 modifySelectors(({ className }) => `.fc${separator}${className} > *:first-child`);
             });
@@ -1146,6 +1155,17 @@ module.exports = {
                 '-3': -3,
                 '-4': -4,
                 '-5': -5
+            },
+            variants: ['responsive', 'first-child', 'last-child', 'before', 'after']
+        }),
+        require('./tailwind-plugins/columns.js')({
+            index: {
+                '0': 0,
+                '1': 1,
+                '2': 2,
+                '3': 3,
+                '4': 4,
+                '5': 5
             },
             variants: ['responsive', 'first-child', 'last-child', 'before', 'after']
         })
