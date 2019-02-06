@@ -71,6 +71,14 @@ var (
 		Name:      "total_network_flows_central_received_counter",
 		Help:      "A counter of the total number of network flows received by Central from Sensor",
 	}, []string{"ClusterID"})
+
+	riskProcessingHistogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.CentralSubsystem.String(),
+		Name:      "risk_processing_duration",
+		Help:      "Histogram of how long risk processing takes",
+		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
+	})
 )
 
 // IncrementPanicCounter increments the number of panic calls seen in a function
@@ -115,4 +123,9 @@ func IncrementResourceProcessedCounter(op metrics.Op, resource metrics.Resource)
 // IncrementTotalNetworkFlowsReceivedCounter registers the total number of flows received
 func IncrementTotalNetworkFlowsReceivedCounter(clusterID string, numberOfFlows int) {
 	totalNetworkFlowsReceivedCounter.With(prometheus.Labels{"ClusterID": clusterID}).Add(float64(numberOfFlows))
+}
+
+// ObserveRiskProcessingDuration adds an observation for risk processing duration.
+func ObserveRiskProcessingDuration(startTime time.Time) {
+	riskProcessingHistogram.Observe(startTimeToMS(startTime))
 }

@@ -173,7 +173,7 @@ func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string,
 	}
 
 	// Asynchronously update risk after processing.
-	defer m.riskManager.ReprocessDeploymentRiskAsync(deployment)
+	defer m.riskManager.ReprocessDeploymentRisk(deployment)
 
 	presentAlerts, err := m.deploytimeDetector.AlertsForDeployment(deployment)
 	if err != nil {
@@ -192,7 +192,7 @@ func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string,
 
 func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 	// Asynchronously update all deployments' risk after processing.
-	defer m.riskManager.ReprocessRiskAsync()
+	defer m.riskManager.ReprocessRisk()
 
 	var presentAlerts []*storage.Alert
 

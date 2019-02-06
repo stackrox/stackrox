@@ -20,5 +20,6 @@ func init() {
 		resourceProcessedCounterVec,
 		totalNetworkFlowsReceivedCounter,
 		sensorEventDurationHistogramVec,
+		riskProcessingHistogram,
 	)
 }

@@ -188,6 +188,6 @@ func (s *serviceImpl) DeleteCluster(ctx context.Context, request *v1.ResourceByI
 	if err := s.datastore.RemoveCluster(request.GetId()); err != nil {
 		return nil, err
 	}
-	s.riskManager.ReprocessRiskAsync()
+	s.riskManager.ReprocessRisk()
 	return &v1.Empty{}, nil
 }
