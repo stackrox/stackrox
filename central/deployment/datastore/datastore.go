@@ -4,9 +4,11 @@ import (
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/search"
 	"github.com/stackrox/rox/central/deployment/store"
+	"github.com/stackrox/rox/central/globaldb"
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
@@ -40,5 +42,6 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, p
 		deploymentIndexer:  indexer,
 		deploymentSearcher: searcher,
 		processDataStore:   processDataStore,
+		keyedMutex:         concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
 }

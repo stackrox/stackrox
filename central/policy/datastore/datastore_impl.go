@@ -6,13 +6,15 @@ import (
 	"github.com/stackrox/rox/central/policy/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	indexer  index.Indexer
-	searcher search.Searcher
+	storage    store.Store
+	indexer    index.Indexer
+	searcher   search.Searcher
+	keyedMutex *concurrency.KeyedMutex
 }
 
 func (ds *datastoreImpl) Search(q *v1.Query) ([]searchPkg.Result, error) {
@@ -53,6 +55,8 @@ func (ds *datastoreImpl) GetPolicyByName(name string) (policy *storage.Policy, e
 
 // AddPolicy inserts a policy into the storage and the indexer
 func (ds *datastoreImpl) AddPolicy(policy *storage.Policy) (string, error) {
+	// No need to lock here because nobody can update the policy
+	// until this function returns and they receive the id.
 	id, err := ds.storage.AddPolicy(policy)
 	if err != nil {
 		return id, err
@@ -62,6 +66,8 @@ func (ds *datastoreImpl) AddPolicy(policy *storage.Policy) (string, error) {
 
 // UpdatePolicy updates a policy from the storage and the indexer
 func (ds *datastoreImpl) UpdatePolicy(policy *storage.Policy) error {
+	ds.keyedMutex.Lock(policy.GetId())
+	defer ds.keyedMutex.Unlock(policy.GetId())
 	if err := ds.storage.UpdatePolicy(policy); err != nil {
 		return err
 	}
@@ -70,6 +76,8 @@ func (ds *datastoreImpl) UpdatePolicy(policy *storage.Policy) error {
 
 // RemovePolicy removes a policy from the storage and the indexer
 func (ds *datastoreImpl) RemovePolicy(id string) error {
+	ds.keyedMutex.Lock(id)
+	defer ds.keyedMutex.Unlock(id)
 	if err := ds.storage.RemovePolicy(id); err != nil {
 		return err
 	}

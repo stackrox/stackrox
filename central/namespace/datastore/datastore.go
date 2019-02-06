@@ -3,10 +3,12 @@ package datastore
 import (
 	"fmt"
 
+	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/namespace/index"
 	"github.com/stackrox/rox/central/namespace/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -25,8 +27,9 @@ type DataStore interface {
 // New returns a new DataStore instance using the provided store and indexer
 func New(store store.Store, indexer index.Indexer) (DataStore, error) {
 	ds := &datastoreImpl{
-		store:   store,
-		indexer: indexer,
+		store:      store,
+		indexer:    indexer,
+		keyedMutex: concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
 	if err := ds.buildIndex(); err != nil {
 		return nil, err
@@ -37,6 +40,8 @@ func New(store store.Store, indexer index.Indexer) (DataStore, error) {
 type datastoreImpl struct {
 	store   store.Store
 	indexer index.Indexer
+
+	keyedMutex *concurrency.KeyedMutex
 }
 
 func (b *datastoreImpl) buildIndex() error {
@@ -59,6 +64,8 @@ func (b *datastoreImpl) GetNamespaces() ([]*storage.NamespaceMetadata, error) {
 
 // AddNamespace adds a namespace to bolt
 func (b *datastoreImpl) AddNamespace(namespace *storage.NamespaceMetadata) error {
+	b.keyedMutex.Lock(namespace.GetId())
+	defer b.keyedMutex.Unlock(namespace.GetId())
 	if err := b.store.AddNamespace(namespace); err != nil {
 		return err
 	}
@@ -67,6 +74,8 @@ func (b *datastoreImpl) AddNamespace(namespace *storage.NamespaceMetadata) error
 
 // UpdateNamespace updates a namespace to bolt
 func (b *datastoreImpl) UpdateNamespace(namespace *storage.NamespaceMetadata) error {
+	b.keyedMutex.Lock(namespace.GetId())
+	defer b.keyedMutex.Unlock(namespace.GetId())
 	if err := b.store.UpdateNamespace(namespace); err != nil {
 		return err
 	}
@@ -75,6 +84,8 @@ func (b *datastoreImpl) UpdateNamespace(namespace *storage.NamespaceMetadata) er
 
 // RemoveNamespace removes a namespace.
 func (b *datastoreImpl) RemoveNamespace(id string) error {
+	b.keyedMutex.Lock(id)
+	defer b.keyedMutex.Unlock(id)
 	if err := b.store.RemoveNamespace(id); err != nil {
 		return err
 	}

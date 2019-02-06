@@ -9,6 +9,7 @@ import (
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/containerid"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
@@ -19,6 +20,7 @@ type datastoreImpl struct {
 	deploymentSearcher deploymentSearch.Searcher
 
 	processDataStore processDataStore.DataStore
+	keyedMutex       *concurrency.KeyedMutex
 }
 
 func (ds *datastoreImpl) Search(q *v1.Query) ([]pkgSearch.Result, error) {
@@ -77,6 +79,8 @@ func containerIds(deployment *storage.Deployment) (ids []string) {
 
 // UpsertDeployment inserts a deployment into deploymentStore and into the deploymentIndexer
 func (ds *datastoreImpl) UpsertDeployment(deployment *storage.Deployment) error {
+	ds.keyedMutex.Lock(deployment.GetId())
+	defer ds.keyedMutex.Unlock(deployment.GetId())
 	if err := ds.deploymentStore.UpsertDeployment(deployment); err != nil {
 		return fmt.Errorf("inserting deployment '%s' to store: %s", deployment.GetId(), err)
 	}
@@ -93,6 +97,8 @@ func (ds *datastoreImpl) UpsertDeployment(deployment *storage.Deployment) error 
 
 // UpdateDeployment updates a deployment in deploymentStore and in the deploymentIndexer
 func (ds *datastoreImpl) UpdateDeployment(deployment *storage.Deployment) error {
+	ds.keyedMutex.Lock(deployment.GetId())
+	defer ds.keyedMutex.Unlock(deployment.GetId())
 	if err := ds.deploymentStore.UpdateDeployment(deployment); err != nil {
 		return err
 	}
@@ -101,6 +107,8 @@ func (ds *datastoreImpl) UpdateDeployment(deployment *storage.Deployment) error 
 
 // RemoveDeployment removes an alert from the deploymentStore and the deploymentIndexer
 func (ds *datastoreImpl) RemoveDeployment(id string) error {
+	ds.keyedMutex.Lock(id)
+	defer ds.keyedMutex.Unlock(id)
 	if err := ds.deploymentStore.RemoveDeployment(id); err != nil {
 		return err
 	}

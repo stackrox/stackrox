@@ -9,15 +9,17 @@ import (
 	"github.com/stackrox/rox/central/alert/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	searchCommon "github.com/stackrox/rox/pkg/search"
 )
 
 // datastoreImpl is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert
 // objects.
 type datastoreImpl struct {
-	storage  store.Store
-	indexer  index.Indexer
-	searcher search.Searcher
+	storage    store.Store
+	indexer    index.Indexer
+	searcher   search.Searcher
+	keyedMutex *concurrency.KeyedMutex
 }
 
 func (ds *datastoreImpl) Search(q *v1.Query) ([]searchCommon.Result, error) {
@@ -82,6 +84,8 @@ func (ds *datastoreImpl) CountAlerts() (int, error) {
 
 // AddAlert inserts an alert into storage and into the indexer
 func (ds *datastoreImpl) AddAlert(alert *storage.Alert) error {
+	ds.keyedMutex.Lock(alert.GetId())
+	defer ds.keyedMutex.Unlock(alert.GetId())
 	if err := ds.storage.AddAlert(alert); err != nil {
 		return err
 	}
@@ -90,6 +94,8 @@ func (ds *datastoreImpl) AddAlert(alert *storage.Alert) error {
 
 // UpdateAlert updates an alert in storage and in the indexer
 func (ds *datastoreImpl) UpdateAlert(alert *storage.Alert) error {
+	ds.keyedMutex.Lock(alert.GetId())
+	defer ds.keyedMutex.Unlock(alert.GetId())
 	if err := ds.storage.UpdateAlert(alert); err != nil {
 		return err
 	}
