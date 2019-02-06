@@ -9,11 +9,23 @@ export const LIST_STANDARD = gql`
                     scope
                 }
                 keys {
+                    ... on ComplianceControlGroup {
+                        id
+                        name
+                        description
+                    }
                     ... on ComplianceControl {
                         id
                         name
                         description
-                        groupId
+                    }
+                    ... on Cluster {
+                        id
+                        name
+                    }
+                    ... on Node {
+                        id
+                        name
                     }
                 }
                 numPassing

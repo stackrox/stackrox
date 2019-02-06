@@ -12,6 +12,9 @@ export const CLUSTERS_LIST_QUERY = gql`
                     ... on Cluster {
                         name
                     }
+                    ... on ComplianceStandardMetadata {
+                        name
+                    }
                 }
                 numPassing
                 numFailing
@@ -27,6 +30,17 @@ export const NAMESPACES_LIST_QUERY = gql`
                 aggregationKeys {
                     id
                     scope
+                }
+                keys {
+                    ... on Namespace {
+                        metadata {
+                            id
+                            name
+                        }
+                    }
+                    ... on ComplianceStandardMetadata {
+                        name
+                    }
                 }
                 numPassing
                 numFailing
@@ -45,6 +59,9 @@ export const NODES_QUERY = gql`
                 }
                 keys {
                     ... on Node {
+                        name
+                    }
+                    ... on ComplianceStandardMetadata {
                         name
                     }
                 }

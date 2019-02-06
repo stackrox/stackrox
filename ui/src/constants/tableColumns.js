@@ -86,6 +86,12 @@ const nodeColumns = [
 const namespaceColumns = [
     {
         accessor: 'id',
+        Header: 'id',
+        headerClassName: 'hidden',
+        className: 'hidden'
+    },
+    {
+        accessor: 'name',
         Header: 'Namespace'
     },
     ...complianceColumns

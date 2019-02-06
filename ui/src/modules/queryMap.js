@@ -34,7 +34,7 @@ const complianceRate = (numPassing, numFailing) =>
         : `${((numPassing / (numPassing + numFailing)) * 100).toFixed(2)}%`;
 
 const formatComplianceTableData = (data, entityType) => {
-    if (!data.results) return null;
+    if (!data.results || data.results.results.length === 0) return null;
     const formattedData = { results: [] };
     const entityMap = {};
     let standardKeyIndex = 0;
@@ -46,11 +46,12 @@ const formatComplianceTableData = (data, entityType) => {
     data.results.results.forEach(({ aggregationKeys, keys, numPassing, numFailing }) => {
         const curEntity = aggregationKeys[entityKeyIndex].id;
         const curStandard = aggregationKeys[standardKeyIndex].id;
-        if (!entityMap[curEntity])
+        if (!entityMap[curEntity]) {
             entityMap[curEntity] = {
-                name: keys && keys[entityKeyIndex].name,
+                name: keys[entityKeyIndex].name || keys[entityKeyIndex].metadata.name,
                 id: curEntity
             };
+        }
         entityMap[curEntity][curStandard] = complianceRate(numPassing, numFailing);
     });
     Object.keys(entityMap).forEach(cluster => {
@@ -168,37 +169,35 @@ export default [
                 }
             ],
             format(data) {
-                if (!data.results) return null;
+                if (!data.results || data.results.results.length === 0) return null;
                 const formattedData = { results: [], totalControls: 0 };
                 const groups = {};
-                let controlKeyIndex = 0;
-                let groupByKeyIndex = 0;
+                let controlKeyIndex = null;
+                let controlGroupKeyIndex = null;
+                let groupByKeyIndex = null;
                 data.results.results[0].aggregationKeys.forEach((key, idx) => {
-                    if (key.scope === 'CONTROL') {
-                        controlKeyIndex = idx;
-                    }
+                    if (key.scope === 'CONTROL') controlKeyIndex = idx;
+                    if (key.scope === 'CATEGORY') controlGroupKeyIndex = idx;
                     if (key.scope !== 'CATEGORY' && key.scope !== 'CONTROL') groupByKeyIndex = idx;
                 });
-                if (groupByKeyIndex === -1) groupByKeyIndex = 1;
-                data.results.results.forEach(
-                    ({ aggregationKeys, keys, numPassing, numFailing }) => {
-                        const { id, name, description, groupId } = keys[controlKeyIndex];
-                        let groupKey = groupId;
-                        if (!groupId) groupKey = aggregationKeys[controlKeyIndex].id;
-                        if (!groups[groupKey]) {
-                            groups[groupKey] = {
-                                name: `${groupKey}`,
-                                rows: []
-                            };
-                        }
-                        groups[groupKey].rows.push({
-                            id,
-                            control: `${name} - ${description}`,
-                            compliance: complianceRate(numPassing, numFailing),
-                            group: groupKey
-                        });
+                data.results.results.forEach(({ keys, numPassing, numFailing }) => {
+                    const groupKey =
+                        groupByKeyIndex === null ? controlGroupKeyIndex : groupByKeyIndex;
+                    const { name: groupName, description: groupDescription } = keys[groupKey];
+                    if (!groups[groupName]) {
+                        groups[groupName] = {
+                            name: `${groupName} ${groupDescription ? `- ${groupDescription}` : ''}`,
+                            rows: []
+                        };
                     }
-                );
+                    const { id, name, description } = keys[controlKeyIndex];
+                    groups[groupName].rows.push({
+                        id,
+                        control: `${name} - ${description}`,
+                        compliance: complianceRate(numPassing, numFailing),
+                        group: groupName
+                    });
+                });
                 Object.keys(groups).forEach(group => {
                     formattedData.results.push(groups[group]);
                     formattedData.totalControls += groups[group].rows.length;

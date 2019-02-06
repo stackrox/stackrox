@@ -41,7 +41,11 @@ class ListTable extends Component {
         const { params, selectedRow, updateSelectedRow } = this.props;
         const { page } = this.state;
         return (
-            <AppQuery params={params} componentType={componentTypes.LIST_TABLE} pollInterval={5000}>
+            <AppQuery
+                params={params}
+                componentType={componentTypes.LIST_TABLE}
+                pollInterval={100000}
+            >
                 {({ loading, data }) => {
                     const isStandard = standardTypeValues.includes(params.entityType);
                     let tableData;
@@ -49,8 +53,11 @@ class ListTable extends Component {
                     let paginationComponent;
                     let headerText;
                     if (!loading || (data && data.results)) {
+                        if (!data)
+                            return (
+                                <NoResultsMessage message="No compliance data available. Please run a scan." />
+                            );
                         tableData = data.results;
-                        if (!tableData) return <NoResultsMessage />;
                         const total = tableData.length;
                         const groupedByText = params.query.groupBy
                             ? `in ${tableData.length} ${pluralize(params.query.groupBy, total)}`
@@ -77,6 +84,12 @@ class ListTable extends Component {
                                 selectedRowId={selectedRow ? selectedRow.id : null}
                                 noDataText="No results found. Please refine your search."
                                 page={page}
+                                defaultSorted={[
+                                    {
+                                        id: 'name',
+                                        desc: false
+                                    }
+                                ]}
                             />
                         );
                         paginationComponent = (
