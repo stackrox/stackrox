@@ -62,12 +62,12 @@ func doesFieldExist(value reflect.Value) bool {
 	return !reflect.DeepEqual(value, reflect.Value{})
 }
 
-func newDeploymentEventFromResource(obj interface{}, action central.ResourceAction, deploymentType string, lister v1listers.PodLister) *deploymentWrap {
+func newDeploymentEventFromResource(obj interface{}, action central.ResourceAction, deploymentType string, lister v1listers.PodLister, namespaceStore *namespaceStore) *deploymentWrap {
 	wrap := newWrap(obj, deploymentType)
 	if wrap == nil {
 		return nil
 	}
-	if err := wrap.populateNonStaticFields(obj, action, lister); err != nil {
+	if err := wrap.populateNonStaticFields(obj, action, lister, namespaceStore); err != nil {
 		logger.Error(err)
 		return nil
 	}
@@ -98,7 +98,7 @@ func (w *deploymentWrap) populateKubeProxyIfNecessary(o *v1.Pod) *metav1.LabelSe
 	return nil
 }
 
-func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central.ResourceAction, lister v1listers.PodLister) error {
+func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central.ResourceAction, lister v1listers.PodLister, namespaceStore *namespaceStore) error {
 	w.original = obj
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
 	spec := objValue.FieldByName("Spec")
@@ -160,6 +160,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 	w.PodLabels = podLabels
 	w.LabelSelector = labelSel
 	w.populatePorts()
+	w.populateNamespaceID(namespaceStore)
 
 	if action != central.ResourceAction_REMOVE_RESOURCE {
 		// If we have a standalone pod, we cannot use the labels to try and select that pod so we must directly populate the pod data
@@ -304,6 +305,12 @@ func (w *deploymentWrap) getLabelSelector(spec reflect.Value) (*metav1.LabelSele
 	}
 
 	return nil, fmt.Errorf("unable to get label selector for %+v", spec.Type())
+}
+
+func (w *deploymentWrap) populateNamespaceID(namespaceStore *namespaceStore) {
+	if namespaceID, found := namespaceStore.lookupNamespaceID(w.GetNamespace()); found {
+		w.NamespaceId = namespaceID
+	}
 }
 
 func (w *deploymentWrap) populatePorts() {

@@ -268,6 +268,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"labels: [Label!]!",
 		"name: String!",
 		"namespace: String!",
+		"namespaceId: String!",
 		"podLabels: [Label!]!",
 		"priority: Int!",
 		"replicas: Int!",
@@ -2690,6 +2691,12 @@ func (resolver *deploymentResolver) Namespace() string {
 	if resolver.data == nil {
 		value = resolver.list.GetNamespace()
 	}
+	return value
+}
+
+func (resolver *deploymentResolver) NamespaceId() string {
+	resolver.ensureData()
+	value := resolver.data.GetNamespaceId()
 	return value
 }
 

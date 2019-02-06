@@ -30,12 +30,13 @@ func NewDispatcherRegistry(podLister v1Listers.PodLister, entityStore *clusteren
 	serviceStore := newServiceStore()
 	deploymentStore := newDeploymentStore()
 	nodeStore := newNodeStore()
+	nsStore := newNamespaceStore()
 	endpointManager := newEndpointManager(serviceStore, deploymentStore, nodeStore, entityStore)
 
 	return &registryImpl{
-		deploymentHandler: newDeploymentHandler(serviceStore, deploymentStore, endpointManager, podLister),
+		deploymentHandler: newDeploymentHandler(serviceStore, deploymentStore, endpointManager, nsStore, podLister),
 
-		namespaceDispatcher:     newNamespaceDispatcher(serviceStore, deploymentStore),
+		namespaceDispatcher:     newNamespaceDispatcher(nsStore, serviceStore, deploymentStore),
 		serviceDispatcher:       newServiceDispatcher(serviceStore, deploymentStore, endpointManager),
 		secretDispatcher:        newSecretDispatcher(),
 		networkPolicyDispatcher: newNetworkPolicyDispatcher(),

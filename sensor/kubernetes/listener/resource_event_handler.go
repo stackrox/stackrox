@@ -20,8 +20,10 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 	podInformer := sif.Core().V1().Pods()
 	dispatchers := resources.NewDispatcherRegistry(podInformer.Lister(), clusterentities.StoreInstance())
 
+	namespaceInformer := sif.Core().V1().Namespaces().Informer()
+
 	// Non-deployment types.
-	handle(sif.Core().V1().Namespaces().Informer(), dispatchers.ForNamespaces(), output, nil)
+	handle(namespaceInformer, dispatchers.ForNamespaces(), output, nil)
 	handle(sif.Networking().V1().NetworkPolicies().Informer(), dispatchers.ForNetworkPolicies(), output, nil)
 	handle(sif.Core().V1().Nodes().Informer(), dispatchers.ForNodes(), output, nil)
 	handle(sif.Core().V1().Secrets().Informer(), dispatchers.ForSecrets(), output, nil)
@@ -41,9 +43,14 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 		handle(osf.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kubernetes.DeploymentConfig), output, &treatCreatesAsUpdates)
 	}
 
-	// Run the pod informer first since other handlers rely on it's output.
-	go podInformer.Informer().Run(stopSignal.Done())
-	cache.WaitForCacheSync(stopSignal.Done(), podInformer.Informer().HasSynced)
+	// Run the pod and namespace informers first since other handlers rely on their outputs.
+	informersToSync := []cache.SharedInformer{podInformer.Informer(), namespaceInformer}
+	syncFuncs := make([]cache.InformerSynced, len(informersToSync))
+	for i, informer := range informersToSync {
+		go informer.Run(stopSignal.Done())
+		syncFuncs[i] = informer.HasSynced
+	}
+	cache.WaitForCacheSync(stopSignal.Done(), syncFuncs...)
 
 	// Start our informers and wait for the caches of each to sync so that we know all objects that existed at startup
 	// have been consumed.

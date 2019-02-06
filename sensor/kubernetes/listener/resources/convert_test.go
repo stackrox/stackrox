@@ -18,6 +18,14 @@ import (
 	v1listers "k8s.io/client-go/listers/core/v1"
 )
 
+var (
+	mockNamespaceStore = func() *namespaceStore {
+		s := newNamespaceStore()
+		s.addNamespace(&storage.NamespaceMetadata{Id: "FAKENSID", Name: "namespace"})
+		return s
+	}()
+)
+
 func TestConvert(t *testing.T) {
 	t.Parallel()
 
@@ -230,6 +238,7 @@ func TestConvert(t *testing.T) {
 				Id:               "FooID",
 				Name:             "deployment",
 				Namespace:        "namespace",
+				NamespaceId:      "FAKENSID",
 				Type:             kubernetes.Deployment,
 				Version:          "100",
 				Replicas:         15,
@@ -375,7 +384,7 @@ func TestConvert(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			actual := newDeploymentEventFromResource(c.inputObj, c.action, c.deploymentType, c.podLister).GetDeployment()
+			actual := newDeploymentEventFromResource(c.inputObj, c.action, c.deploymentType, c.podLister, mockNamespaceStore).GetDeployment()
 			assert.Equal(t, c.expectedDeployment, actual)
 		})
 	}

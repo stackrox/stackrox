@@ -53,8 +53,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // PushSignals handles the bidirectional gRPC stream with the collector
 func (s *serviceImpl) PushSignals(stream sensorAPI.SignalService_PushSignalsServer) error {
-	s.receiveMessages(stream)
-	return nil
+	return s.receiveMessages(stream)
 }
 
 func (s *serviceImpl) Indicators() <-chan *central.SensorEvent {

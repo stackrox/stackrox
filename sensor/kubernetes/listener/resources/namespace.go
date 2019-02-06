@@ -15,14 +15,16 @@ type NamespaceDeletionListener interface {
 
 // namespaceDispatcher handles namespace resource events.
 type namespaceDispatcher struct {
+	nsStore           *namespaceStore
 	deletionListeners []NamespaceDeletionListener
 
 	k8sClient kubernetes.Clientset
 }
 
 // newNamespaceDispatcher creates and returns a new namespace handler.
-func newNamespaceDispatcher(deletionListeners ...NamespaceDeletionListener) *namespaceDispatcher {
+func newNamespaceDispatcher(nsStore *namespaceStore, deletionListeners ...NamespaceDeletionListener) *namespaceDispatcher {
 	return &namespaceDispatcher{
+		nsStore:           nsStore,
 		deletionListeners: deletionListeners,
 	}
 }
@@ -37,16 +39,20 @@ func (h *namespaceDispatcher) ProcessEvent(obj interface{}, action central.Resou
 		}
 	}
 
+	roxNamespace := &storage.NamespaceMetadata{
+		Id:           string(ns.GetUID()),
+		Name:         ns.GetName(),
+		Labels:       ns.GetLabels(),
+		CreationTime: protoconv.ConvertTimeToTimestamp(ns.GetCreationTimestamp().Time),
+	}
+
+	h.nsStore.addNamespace(roxNamespace)
+
 	return []*central.SensorEvent{{
 		Id:     string(ns.GetUID()),
 		Action: action,
 		Resource: &central.SensorEvent_Namespace{
-			Namespace: &storage.NamespaceMetadata{
-				Id:           string(ns.GetUID()),
-				Name:         ns.GetName(),
-				Labels:       ns.GetLabels(),
-				CreationTime: protoconv.ConvertTimeToTimestamp(ns.GetCreationTimestamp().Time),
-			},
+			Namespace: roxNamespace,
 		},
 	},
 	}

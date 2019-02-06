@@ -33,20 +33,22 @@ type deploymentHandler struct {
 	serviceStore    *serviceStore
 	deploymentStore *deploymentStore
 	endpointManager *endpointManager
+	namespaceStore  *namespaceStore
 }
 
 // newDeploymentHandler creates and returns a new deployment handler.
-func newDeploymentHandler(serviceStore *serviceStore, deploymentStore *deploymentStore, endpointManager *endpointManager, podLister v1listers.PodLister) *deploymentHandler {
+func newDeploymentHandler(serviceStore *serviceStore, deploymentStore *deploymentStore, endpointManager *endpointManager, namespaceStore *namespaceStore, podLister v1listers.PodLister) *deploymentHandler {
 	return &deploymentHandler{
 		podLister:       podLister,
 		serviceStore:    serviceStore,
 		deploymentStore: deploymentStore,
 		endpointManager: endpointManager,
+		namespaceStore:  namespaceStore,
 	}
 }
 
 func (d *deploymentHandler) processWithType(obj interface{}, action central.ResourceAction, deploymentType string) []*central.SensorEvent {
-	wrap := newDeploymentEventFromResource(obj, action, deploymentType, d.podLister)
+	wrap := newDeploymentEventFromResource(obj, action, deploymentType, d.podLister, d.namespaceStore)
 	if wrap == nil {
 		return d.maybeProcessPod(obj)
 	}
