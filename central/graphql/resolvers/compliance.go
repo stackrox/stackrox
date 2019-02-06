@@ -36,6 +36,8 @@ func InitCompliance() {
 			schema.AddQuery("complianceStandard(id:ID!): ComplianceStandardMetadata"),
 			schema.AddQuery("complianceStandards: [ComplianceStandardMetadata!]!"),
 			schema.AddQuery("aggregatedResults(groupBy:[ComplianceAggregation_Scope!],unit:ComplianceAggregation_Scope!,where:String): ComplianceAggregation_Response!"),
+			schema.AddQuery("complianceControl(id:ID!): ComplianceControl"),
+			schema.AddQuery("complianceControlGroup(id:ID!): ComplianceControlGroup"),
 			schema.AddExtraResolver("ComplianceStandardMetadata", "controls: [ComplianceControl!]!"),
 			schema.AddExtraResolver("ComplianceStandardMetadata", "groups: [ComplianceControlGroup!]!"),
 			schema.AddUnionType("ComplianceDomainKey", []string{"ComplianceStandardMetadata", "ComplianceControlGroup", "ComplianceControl", "Cluster", "Deployment", "Node", "Namespace"}),
@@ -60,6 +62,24 @@ func (resolver *Resolver) ComplianceStandard(ctx context.Context, args struct{ g
 	}
 	return resolver.wrapComplianceStandardMetadata(
 		resolver.ComplianceStandardStore.StandardMetadata(string(args.ID)))
+}
+
+// ComplianceControl retrieves an individual control by ID
+func (resolver *Resolver) ComplianceControl(ctx context.Context, args struct{ graphql.ID }) (*complianceControlResolver, error) {
+	if err := readCompliance(ctx); err != nil {
+		return nil, err
+	}
+	control := resolver.ComplianceStandardStore.Control(string(args.ID))
+	return resolver.wrapComplianceControl(control, control != nil, nil)
+}
+
+// ComplianceControlGroup retrieves a control group by ID
+func (resolver *Resolver) ComplianceControlGroup(ctx context.Context, args struct{ graphql.ID }) (*complianceControlGroupResolver, error) {
+	if err := readCompliance(ctx); err != nil {
+		return nil, err
+	}
+	group := resolver.ComplianceStandardStore.Group(string(args.ID))
+	return resolver.wrapComplianceControlGroup(group, group != nil, nil)
 }
 
 type aggregatedResultQuery struct {
