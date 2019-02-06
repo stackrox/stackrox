@@ -22,7 +22,12 @@ const ClusterPage = ({ sidePanelMode, params }) => (
             return (
                 <section className="flex flex-col h-full w-full">
                     {!sidePanelMode && (
-                        <Header header={header} subHeader="Cluster" scanCluster={params.entityId} />
+                        <Header
+                            header={header}
+                            subHeader="Cluster"
+                            scanCluster={params.entityId}
+                            type="CLUSTER"
+                        />
                     )}
                     <div className="flex-1 relative bg-base-200 p-6 overflow-auto">
                         <div

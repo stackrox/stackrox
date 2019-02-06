@@ -7,20 +7,14 @@ import { standardTypes } from 'constants/entityTypes';
 import standardLabels from 'messages/standards';
 
 import PageHeader from 'Components/PageHeader';
-import Button from 'Components/Button';
 import ScanButton from 'Containers/Compliance2/ScanButton';
-import * as Icon from 'react-feather';
+import ExportButton from 'Components/ExportButton';
 
 const isStandard = type => Object.values(standardTypes).includes(type);
-
-const handleExport = () => {
-    throw new Error('"Export" is not supported yet.');
-};
 
 const ListHeader = ({ match, location, searchComponent }) => {
     const params = URLService.getParams(match, location);
     const { entityType } = params;
-
     const headerText = isStandard(entityType) ? standardLabels[entityType] : entityType;
 
     return (
@@ -31,16 +25,15 @@ const ListHeader = ({ match, location, searchComponent }) => {
                 <div className="flex">
                     <div className="flex items-center">
                         {isStandard(entityType) && (
-                            <div className="mr-2">
+                            <div className="flex flex-row mr-2">
                                 <ScanButton text="Scan" standardId={entityType} />
+                                <ExportButton
+                                    fileName={headerText}
+                                    id={params.entityId}
+                                    type="STANDARD"
+                                />
                             </div>
                         )}
-                        <Button
-                            className="btn btn-base"
-                            text="Export"
-                            icon={<Icon.FileText className="h-4 w-4 mr-3" />}
-                            onClick={handleExport}
-                        />
                     </div>
                 </div>
             </div>

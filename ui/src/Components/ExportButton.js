@@ -1,0 +1,119 @@
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
+import Button from 'Components/Button';
+import * as Icon from 'react-feather';
+import downloadCsv from 'services/ComplianceDownloadService';
+import onClickOutside from 'react-onclickoutside';
+
+const btnClassName = 'btn border-base-400 bg-base-400 text-base-100 w-48';
+const selectedBtnClassName = 'btn border-primary-800 bg-primary-800 text-base-100 w-48';
+const queryParamMap = {
+    CLUSTER: 'clusterId',
+    STANDARD: 'standardId'
+};
+
+const downloadUrl = '/api/compliance/export/csv';
+
+class ExportButton extends Component {
+    static propTypes = {
+        fileName: PropTypes.string,
+        type: PropTypes.string.isRequired,
+        id: PropTypes.string
+    };
+
+    static defaultProps = {
+        fileName: 'compliance',
+        id: ''
+    };
+
+    state = {
+        selectedFormat: 'csv',
+        toggleWidget: false
+    };
+
+    handleClickOutside = () => this.setState({ toggleWidget: false });
+
+    selectDownloadFormat = format => () => {
+        this.setState({ selectedFormat: format });
+    };
+
+    downloadCsv = () => {
+        const { id, fileName, type } = this.props;
+        let query = {};
+        let value = null;
+        // Support for StandardId & ClusterId only
+        if (queryParamMap[type]) {
+            if (id) {
+                value = id;
+            } else {
+                value = type;
+            }
+            query = { [queryParamMap[type]]: value };
+        }
+
+        downloadCsv(query, fileName, downloadUrl);
+    };
+
+    renderContent = () => {
+        const { toggleWidget, selectedFormat } = this.state;
+        if (!toggleWidget) return null;
+
+        return (
+            <div className="absolute pin-r pin-r z-10 uppercase flex flex-col text-base-600">
+                <div className="arrow-up self-end mr-5" />
+                <ul className="list-reset bg-base-100 border-2 border-primary-800 rounded">
+                    <li className="p-4 border-b border-base-400">
+                        <span>Export Evidence...</span>
+                        <div className="pt-4 flex flex-row">
+                            <button
+                                className={
+                                    selectedFormat === 'csv' ? selectedBtnClassName : btnClassName
+                                }
+                                type="button"
+                                onClick={this.selectDownloadFormat('csv')}
+                            >
+                                CSV
+                            </button>
+                        </div>
+                    </li>
+                    <li className="p-4">
+                        <span>Download File...</span>
+                        <div className="pt-4">
+                            <button
+                                type="button"
+                                className={`${selectedBtnClassName} w-full`}
+                                onClick={this.downloadCsv}
+                            >
+                                Download {this.state.selectedFormat}
+                            </button>
+                        </div>
+                    </li>
+                    <li className="hidden">
+                        <span>or share to</span>
+                        <div>Slack</div>
+                    </li>
+                </ul>
+            </div>
+        );
+    };
+
+    openWidget = () => {
+        this.setState({ toggleWidget: true });
+    };
+
+    render() {
+        return (
+            <div className="relative pl-2">
+                <Button
+                    className="flex items-center border-2 border-primary-400 text-base-100 rounded p-2 uppercase hover:bg-primary-800"
+                    text="Export"
+                    icon={<Icon.FileText size="14" className="mr-3" />}
+                    onClick={this.openWidget}
+                />
+                {this.renderContent()}
+            </div>
+        );
+    }
+}
+
+export default onClickOutside(ExportButton);

@@ -24,10 +24,10 @@ export function saveFile({ method, url, data, name }) {
                 type: response.headers['content-type']
             });
 
-            if (matches !== null && matches[1]) {
-                FileSaver.saveAs(file, matches[1].replace(/['"]/g, ''));
-            } else if (name !== '') {
+            if (name !== '') {
                 FileSaver.saveAs(file, name);
+            } else if (matches !== null && matches[1]) {
+                FileSaver.saveAs(file, matches[1].replace(/['"]/g, ''));
             } else {
                 throw new Error('Unable to extract file name');
             }
