@@ -47,6 +47,12 @@ const clusterColumns = [
 
 const getStandardColumns = standard => [
     {
+        accessor: 'id',
+        Header: 'id',
+        headerClassName: 'hidden',
+        className: 'hidden'
+    },
+    {
         accessor: 'control',
         Header: `${standard} Controls`,
         headerClassName: `w-5/6 ${defaultHeaderClassName}`,

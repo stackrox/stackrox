@@ -72,8 +72,9 @@ class ListTable extends Component {
                                 groups={tableData}
                                 tableColumns={entityToColumns[params.entityType]}
                                 onRowClick={updateSelectedRow}
-                                idAttribute="control"
-                                selectedRowId={selectedRow ? selectedRow.control : null}
+                                entityType={params.query.groupBy || 'control'}
+                                idAttribute="id"
+                                selectedRowId={selectedRow ? selectedRow.id : null}
                             />
                         ) : (
                             <Table

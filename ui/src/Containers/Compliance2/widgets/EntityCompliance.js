@@ -11,7 +11,7 @@ import URLService from 'modules/URLService';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import { resourceLabels } from 'messages/common';
-import AGGREGATED_RESULTS from 'queries/controls';
+import { AGGREGATED_RESULTS } from 'queries/controls';
 import contextTypes from 'constants/contextTypes';
 import queryService from 'modules/queryService';
 import NoResultsMessage from 'Components/NoResultsMessage';

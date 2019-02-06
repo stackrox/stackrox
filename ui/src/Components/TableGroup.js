@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import Table from 'Components/Table';
 import Collapsible from 'react-collapsible';
 import * as Icon from 'react-feather';
+import pluralize from 'pluralize';
 
 const icons = {
     opened: <Icon.ChevronUp className="h-5 w-5" />,
@@ -20,6 +21,7 @@ class TableGroup extends Component {
         onRowClick: PropTypes.func.isRequired,
         tableColumns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
         idAttribute: PropTypes.string.isRequired,
+        entityType: PropTypes.string.isRequired,
         selectedRowId: PropTypes.string
     };
 
@@ -49,22 +51,19 @@ class TableGroup extends Component {
         );
     };
 
-    renderGroupByCollapsible = (state, { name, rows }) => {
-        const { idAttribute } = this.props;
-        return (
-            <div className="flex justify-between cursor-pointer bg-base-300 border-b border-base-400 w-full">
-                <div className="flex w-full justify-between">
-                    <div className="flex">
-                        <div className="flex pl-3 p-2">{icons[state]}</div>
-                        <h1 className="p-3 pb-2 pl-0 text-base-600 font-600 text-lg">{name}</h1>
-                    </div>
-                    <div className="flex items-center flex-no-shrink italic font-700 text-sm p-2">{`${
-                        rows.length
-                    } ${idAttribute}${rows.length === 1 ? '' : 's'}`}</div>
+    renderGroupByCollapsible = (state, { name, rows }) => (
+        <div className="flex justify-between cursor-pointer bg-base-300 border-b border-base-400 w-full">
+            <div className="flex w-full justify-between">
+                <div className="flex">
+                    <div className="flex pl-3 p-2">{icons[state]}</div>
+                    <h1 className="p-3 pb-2 pl-0 text-base-600 font-600 text-lg">{name}</h1>
                 </div>
+                <div className="flex items-center flex-no-shrink italic font-700 text-sm p-2">{`${
+                    rows.length
+                } ${pluralize(this.props.entityType, rows.length)}`}</div>
             </div>
-        );
-    };
+        </div>
+    );
 
     renderWhenOpened = group => this.renderGroupByCollapsible('opened', group);
 

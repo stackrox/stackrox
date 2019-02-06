@@ -1,6 +1,6 @@
 import gql from 'graphql-tag';
 
-const AGGREGATED_RESULTS = gql`
+export const AGGREGATED_RESULTS = gql`
     query getAggregatedResults(
         $groupBy: [ComplianceAggregation_Scope!]
         $unit: ComplianceAggregation_Scope!
@@ -28,4 +28,14 @@ const AGGREGATED_RESULTS = gql`
     }
 `;
 
-export default AGGREGATED_RESULTS;
+export const CONTROL_QUERY = gql`
+    query controlById($id: ID!) {
+        results: complianceControl(id: $id) {
+            interpretationText
+            description
+            id
+            name
+            standardId
+        }
+    }
+`;

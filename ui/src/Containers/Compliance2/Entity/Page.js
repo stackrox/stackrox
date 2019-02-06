@@ -6,6 +6,7 @@ import URLService from 'modules/URLService';
 import NodePage from './Node';
 import NamespacePage from './Namespace';
 import ClusterPage from './Cluster';
+import ControlPage from './Control';
 
 const ComplianceEntityPage = ({ match, location, params, sidePanelMode }) => {
     const pageParams = URLService.getParams(match, location);
@@ -16,12 +17,14 @@ const ComplianceEntityPage = ({ match, location, params, sidePanelMode }) => {
     const ClusterEntityPage = () => <ClusterPage {...pageProps} />;
     const NodeEntityPage = () => <NodePage {...pageProps} />;
     const NamespaceEntityPage = () => <NamespacePage {...pageProps} />;
+    const ControlEntityPage = () => <ControlPage {...pageProps} />;
     /* eslint-disable */
     return (
         <Switch>
             <Route path="/main/compliance2/clusters" render={ClusterEntityPage} />
             <Route path="/main/compliance2/nodes" render={NodeEntityPage} />
             <Route path="/main/compliance2/namespaces" render={NamespaceEntityPage} />
+            <Route path={`/main/compliance2/${pageParams.entityType}`} render={ControlEntityPage} />
         </Switch>
     );
     /* eslint-enable */

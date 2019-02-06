@@ -7,7 +7,7 @@ import { CLUSTER_QUERY } from 'queries/cluster';
 import { NAMESPACE_QUERY, RELATED_DEPLOYMENTS } from 'queries/namespace';
 import { CLUSTERS_LIST_QUERY, NAMESPACES_LIST_QUERY, NODES_QUERY } from 'queries/table';
 import { NODE_QUERY } from 'queries/node';
-import AGGREGATED_RESULTS from 'queries/controls';
+import { AGGREGATED_RESULTS } from 'queries/controls';
 import { LIST_STANDARD, COMPLIANCE_STANDARDS } from 'queries/standard';
 
 /**

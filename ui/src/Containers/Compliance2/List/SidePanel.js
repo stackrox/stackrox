@@ -15,7 +15,7 @@ const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRo
         context,
         pageType: pageTypes.ENTITY,
         entityType,
-        entityId: selectedRow.control
+        entityId: selectedRow.id
     };
 
     const linkParams = {
@@ -30,10 +30,10 @@ const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRo
             pageType={pageTypes.ENTITY}
             entityType={entityType}
             params={linkParams}
-            className="w-full"
+            className="w-full flex"
         >
             <div
-                className="flex flex-1 text-base-600 uppercase items-center tracking-wide pl-4 pt-1 leading-normal font-700"
+                className="flex flex-1 text-base-600 uppercase items-center tracking-wide pl-4 leading-normal font-700"
                 data-test-id="panel-header"
             >
                 {selectedRow.id}
