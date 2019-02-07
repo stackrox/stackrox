@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/central/compliance/aggregation"
 	"github.com/stackrox/rox/central/namespace"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -145,8 +144,7 @@ func (resolver *complianceDomainKeyResolver) ToDeployment() (deployment *deploym
 
 func (resolver *complianceDomainKeyResolver) ToNamespace() (*namespaceResolver, bool) {
 	if resolver.key.GetScope() == v1.ComplianceAggregation_NAMESPACE {
-		clusterID, name := aggregation.ClusterIDAndNameFromNamespaceIdentifier(resolver.key.GetId())
-		receivedNS, found, err := namespace.ResolveByClusterIDAndName(clusterID, name, resolver.root.NamespaceDataStore,
+		receivedNS, found, err := namespace.ResolveByID(resolver.key.GetId(), resolver.root.NamespaceDataStore,
 			resolver.root.DeploymentDataStore, resolver.root.SecretsDataStore, resolver.root.NetworkPoliciesStore)
 		if err == nil && found {
 			return &namespaceResolver{resolver.root, receivedNS}, true
