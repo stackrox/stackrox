@@ -1,6 +1,8 @@
 import React from 'react';
 import componentTypes from 'constants/componentTypes';
 import { resourceTypes } from 'constants/entityTypes';
+import { resourceLabels } from 'messages/common';
+import pluralize from 'pluralize';
 
 import Widget from 'Components/Widget';
 import Query from 'Components/AppQuery';
@@ -20,24 +22,45 @@ function formatAsPercent(x) {
 }
 
 function processData(data, type) {
+    if (!data || !data.results || !data.results.results.length) return [];
     const { complianceStandards } = data;
-    if (!complianceStandards) return [];
-    const barData = data.results.results.map(result => {
-        const standard = complianceStandards.find(cs => cs.id === result.aggregationKeys[0].id);
+    const standardsMapping = {};
+
+    data.results.results.forEach(result => {
+        const standardId = result.aggregationKeys[0].id;
         const { numPassing, numFailing } = result;
-        const percentagePassing = Math.round((numPassing / (numFailing + numPassing)) * 100) || 0;
+        if (!standardsMapping[standardId]) {
+            standardsMapping[standardId] = {
+                passing: numPassing,
+                total: numPassing + numFailing
+            };
+        } else {
+            standardsMapping[standardId] = {
+                passing: standardsMapping[standardId].passing + numPassing,
+                total: standardsMapping[standardId].total + (numPassing + numFailing)
+            };
+        }
+    });
+
+    const barData = Object.keys(standardsMapping).map(standardId => {
+        const standard = complianceStandards.find(cs => cs.id === standardId);
+        const { passing, total } = standardsMapping[standardId];
+        const percentagePassing = Math.round((passing / total) * 100) || 0;
         const dataPoint = {
             y: standard.name,
             x: percentagePassing,
             hint: {
-                title: `${standard.name} Standard - ${percentagePassing}%`,
-                body: `[] failing across ${numFailing + numPassing} clusters`
+                title: `${standard.name} Standard - ${percentagePassing}% Passing`,
+                body: `${total - passing} failing checks across all ${pluralize(
+                    resourceLabels[type]
+                )}`
             },
             barLink: `/main/compliance2/${standard.id}?groupBy=${type}`,
             axisLink: `/main/compliance2/${standard.id}`
         };
         return dataPoint;
     });
+
     return barData;
 }
 

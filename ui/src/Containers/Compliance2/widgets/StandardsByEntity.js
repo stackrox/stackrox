@@ -6,6 +6,7 @@ import URLService from 'modules/URLService';
 import pageTypes from 'constants/pageTypes';
 import resourceLabels from 'messages/common';
 import capitalize from 'lodash/capitalize';
+import pluralize from 'pluralize';
 
 import Widget from 'Components/Widget';
 import Query from 'Components/AppQuery';
@@ -70,7 +71,7 @@ const StandardsByEntity = ({ type, params, pollInterval }) => (
     <Query params={params} componentType={componentTypeMapping[type]} pollInterval={pollInterval}>
         {({ loading, data }) => {
             let contents = <Loader />;
-            const headerText = `Standards By ${type}`;
+            const headerText = `Standards By ${pluralize(type)}`;
             let pages;
             if (!loading || data.results) {
                 const results = processData(data, type, params);

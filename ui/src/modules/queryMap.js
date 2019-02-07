@@ -238,8 +238,8 @@ export default [
         config: {
             query: AGGREGATED_RESULTS,
             variables: [
-                { graphQLParam: 'groupBy', graphQLValue: ['STANDARD'] },
-                { graphQLParam: 'unit', graphQLValue: 'CLUSTER' }
+                { graphQLParam: 'groupBy', graphQLValue: ['STANDARD', 'CLUSTER'] },
+                { graphQLParam: 'unit', graphQLValue: 'CHECK' }
             ]
         }
     },
@@ -251,8 +251,8 @@ export default [
         config: {
             query: AGGREGATED_RESULTS,
             variables: [
-                { graphQLParam: 'groupBy', graphQLValue: ['STANDARD'] },
-                { graphQLParam: 'unit', graphQLValue: 'NAMESPACE' }
+                { graphQLParam: 'groupBy', graphQLValue: ['STANDARD', 'NAMESPACE'] },
+                { graphQLParam: 'unit', graphQLValue: 'CHECK' }
             ]
         }
     },
@@ -264,8 +264,8 @@ export default [
         config: {
             query: AGGREGATED_RESULTS,
             variables: [
-                { graphQLParam: 'groupBy', graphQLValue: ['STANDARD'] },
-                { graphQLParam: 'unit', graphQLValue: 'NODE' }
+                { graphQLParam: 'groupBy', graphQLValue: ['STANDARD', 'NODE'] },
+                { graphQLParam: 'unit', graphQLValue: 'CHECK' }
             ]
         }
     },

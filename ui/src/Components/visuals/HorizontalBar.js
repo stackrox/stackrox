@@ -128,11 +128,11 @@ class HorizontalBarChart extends Component {
         // This determines how far to push the bar graph to the right based on the longest axis label character's length
         const maxLength = sortedData.reduce((acc, curr) => Math.max(curr.y.length, acc), 0);
         const defaultPlotProps = {
-            height: minimal ? 30 : 271,
+            height: minimal ? 30 : 260,
             xDomain: [0, 102],
             yType: 'category',
             yRange: sortedData.map((item, i) => (i + 1) * 23).concat([0]),
-            margin: minimal ? minimalMargin : { top: 18, left: Math.ceil(maxLength * 4.8) },
+            margin: minimal ? minimalMargin : { top: 18, left: Math.ceil(maxLength * 5.4) },
             stackBy: 'x',
             animation: hintsEnabled ? false : ''
         };
@@ -282,7 +282,7 @@ class HorizontalBarChart extends Component {
                     />
 
                     {!minimal && (
-                        <YAxis tickSize={0} top={25} className="text-xs" tickFormat={tickFormat} />
+                        <YAxis tickSize={0} top={15} className="text-xs" tickFormat={tickFormat} />
                     )}
                 </FlexibleWidthXYPlot>
 
