@@ -1,6 +1,6 @@
 
 clusterType: {{.ClusterType.String}}
 
-namespace: {{.K8sConfig.Namespace}}
+namespace: stackrox
 
 image: {{.K8sConfig.ClairifyImage}}

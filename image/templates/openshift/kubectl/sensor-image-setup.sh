@@ -65,7 +65,7 @@ fi
 
 "${DOCKER[@]}" pull "${MAIN_IMAGE}"
 
-OC_PROJECT="${OC_PROJECT:-{{.Namespace}}}"
+OC_PROJECT="${OC_PROJECT:-stackrox}"
 oc new-project "$OC_PROJECT" || true
 oc project "$OC_PROJECT"
 

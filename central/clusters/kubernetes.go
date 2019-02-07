@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/zip"
 )
 
@@ -18,11 +17,6 @@ func newKubernetes() Deployer {
 	return &kubernetes{}
 }
 
-func addCommonKubernetesParams(params *storage.CommonKubernetesParams, fields map[string]interface{}) {
-	fields["Namespace"] = params.GetNamespace()
-	fields["NamespaceEnv"] = env.Namespace.EnvVar()
-}
-
 var monitoringFilenames = []string{
 	"kubernetes/kubectl/telegraf.conf",
 }
@@ -30,17 +24,10 @@ var monitoringFilenames = []string{
 var admissionController = "kubernetes/kubectl/admission-controller.yaml"
 
 func (k *kubernetes) Render(c Wrap, ca []byte) ([]*zip.File, error) {
-	var kubernetesParams *storage.KubernetesParams
-	clusterKube, ok := c.OrchestratorParams.(*storage.Cluster_Kubernetes)
-	if ok {
-		kubernetesParams = clusterKube.Kubernetes
-	}
-
 	fields, err := fieldsFromWrap(c)
 	if err != nil {
 		return nil, err
 	}
-	addCommonKubernetesParams(kubernetesParams.GetParams(), fields)
 
 	filenames := []string{
 		"kubernetes/kubectl/sensor.sh",

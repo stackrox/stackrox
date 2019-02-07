@@ -86,16 +86,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"providerMetadata: ProviderMetadata",
 		"runtimeSupport: Boolean!",
 		"type: ClusterType!",
-		"orchestratorParams: ClusterOrchestratorParams",
-	})
-	builder.AddUnionType("ClusterOrchestratorParams", []string{
-		"KubernetesParams",
-		"OpenshiftParams",
 	})
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterType(0)))
-	builder.AddType("CommonKubernetesParams", []string{
-		"namespace: String!",
-	})
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Comparator(0)))
 	builder.AddType("ComplianceAggregation_AggregationKey", []string{
 		"id: ID!",
@@ -368,9 +360,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"key: String!",
 		"value: String!",
 	})
-	builder.AddType("KubernetesParams", []string{
-		"params: CommonKubernetesParams",
-	})
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.L4Protocol(0)))
 	builder.AddType("LabelSelector", []string{
 		"matchLabels: [Label!]!",
@@ -463,9 +452,6 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	builder.AddType("NumericalPolicy", []string{
 		"op: Comparator!",
 		"value: Float!",
-	})
-	builder.AddType("OpenshiftParams", []string{
-		"params: CommonKubernetesParams",
 	})
 	builder.AddType("Policy", []string{
 		"categories: [String!]!",
@@ -1313,30 +1299,6 @@ func (resolver *clusterResolver) Type() string {
 	return value.String()
 }
 
-type clusterOrchestratorParamsResolver struct {
-	resolver *clusterResolver
-}
-
-func (resolver *clusterResolver) OrchestratorParams() *clusterOrchestratorParamsResolver {
-	return &clusterOrchestratorParamsResolver{resolver}
-}
-
-func (resolver *clusterOrchestratorParamsResolver) ToKubernetesParams() (*kubernetesParamsResolver, bool) {
-	value := resolver.resolver.data.GetKubernetes()
-	if value != nil {
-		return &kubernetesParamsResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
-}
-
-func (resolver *clusterOrchestratorParamsResolver) ToOpenshiftParams() (*openshiftParamsResolver, bool) {
-	value := resolver.resolver.data.GetOpenshift()
-	if value != nil {
-		return &openshiftParamsResolver{resolver.resolver.root, value}, true
-	}
-	return nil, false
-}
-
 func toClusterType(value *string) storage.ClusterType {
 	if value != nil {
 		return storage.ClusterType(storage.ClusterType_value[*value])
@@ -1353,34 +1315,6 @@ func toClusterTypes(values *[]string) []storage.ClusterType {
 		output[i] = toClusterType(&v)
 	}
 	return output
-}
-
-type commonKubernetesParamsResolver struct {
-	root *Resolver
-	data *storage.CommonKubernetesParams
-}
-
-func (resolver *Resolver) wrapCommonKubernetesParams(value *storage.CommonKubernetesParams, ok bool, err error) (*commonKubernetesParamsResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &commonKubernetesParamsResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapCommonKubernetesParamses(values []*storage.CommonKubernetesParams, err error) ([]*commonKubernetesParamsResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*commonKubernetesParamsResolver, len(values))
-	for i, v := range values {
-		output[i] = &commonKubernetesParamsResolver{resolver, v}
-	}
-	return output, nil
-}
-
-func (resolver *commonKubernetesParamsResolver) Namespace() string {
-	value := resolver.data.GetNamespace()
-	return value
 }
 
 func toComparator(value *string) storage.Comparator {
@@ -3461,34 +3395,6 @@ func (resolver *keyValuePolicyResolver) Value() string {
 	return value
 }
 
-type kubernetesParamsResolver struct {
-	root *Resolver
-	data *storage.KubernetesParams
-}
-
-func (resolver *Resolver) wrapKubernetesParams(value *storage.KubernetesParams, ok bool, err error) (*kubernetesParamsResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &kubernetesParamsResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapKubernetesParamses(values []*storage.KubernetesParams, err error) ([]*kubernetesParamsResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*kubernetesParamsResolver, len(values))
-	for i, v := range values {
-		output[i] = &kubernetesParamsResolver{resolver, v}
-	}
-	return output, nil
-}
-
-func (resolver *kubernetesParamsResolver) Params() (*commonKubernetesParamsResolver, error) {
-	value := resolver.data.GetParams()
-	return resolver.root.wrapCommonKubernetesParams(value, true, nil)
-}
-
 func toL4Protocol(value *string) storage.L4Protocol {
 	if value != nil {
 		return storage.L4Protocol(storage.L4Protocol_value[*value])
@@ -4174,34 +4080,6 @@ func (resolver *numericalPolicyResolver) Op() string {
 func (resolver *numericalPolicyResolver) Value() float64 {
 	value := resolver.data.GetValue()
 	return float64(value)
-}
-
-type openshiftParamsResolver struct {
-	root *Resolver
-	data *storage.OpenshiftParams
-}
-
-func (resolver *Resolver) wrapOpenshiftParams(value *storage.OpenshiftParams, ok bool, err error) (*openshiftParamsResolver, error) {
-	if !ok || err != nil || value == nil {
-		return nil, err
-	}
-	return &openshiftParamsResolver{resolver, value}, nil
-}
-
-func (resolver *Resolver) wrapOpenshiftParamses(values []*storage.OpenshiftParams, err error) ([]*openshiftParamsResolver, error) {
-	if err != nil || len(values) == 0 {
-		return nil, err
-	}
-	output := make([]*openshiftParamsResolver, len(values))
-	for i, v := range values {
-		output[i] = &openshiftParamsResolver{resolver, v}
-	}
-	return output, nil
-}
-
-func (resolver *openshiftParamsResolver) Params() (*commonKubernetesParamsResolver, error) {
-	value := resolver.data.GetParams()
-	return resolver.root.wrapCommonKubernetesParams(value, true, nil)
 }
 
 type policyResolver struct {

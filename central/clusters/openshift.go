@@ -17,17 +17,10 @@ func newOpenshift() Deployer {
 }
 
 func (o *openshift) Render(c Wrap, _ []byte) ([]*zip.File, error) {
-	var openshiftParams *storage.OpenshiftParams
-	clusterOpenshift, ok := c.OrchestratorParams.(*storage.Cluster_Openshift)
-	if ok {
-		openshiftParams = clusterOpenshift.Openshift
-	}
-
 	fields, err := fieldsFromWrap(c)
 	if err != nil {
 		return nil, err
 	}
-	addCommonKubernetesParams(openshiftParams.GetParams(), fields)
 	fields["OpenshiftAPIEnv"] = env.OpenshiftAPI.EnvVar()
 
 	filenames := []string{

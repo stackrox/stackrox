@@ -22,7 +22,6 @@ func getBaseConfig() Config {
 				HostPath: &HostPathPersistence{},
 				External: &ExternalPersistence{},
 			},
-			Namespace: "stackrox",
 		},
 		SecretsByteMap: map[string][]byte{
 			"ca.pem":                     {1},

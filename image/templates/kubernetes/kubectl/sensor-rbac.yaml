@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: sensor
-  namespace: {{.Namespace}}
+  namespace: stackrox
 imagePullSecrets:
 - name: stackrox
 ---
@@ -10,18 +10,18 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: benchmark
-  namespace: {{.Namespace}}
+  namespace: stackrox
 imagePullSecrets:
 - name: stackrox
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{.Namespace}}:monitor-deployments
+  name: stackrox:monitor-deployments
 subjects:
 - kind: ServiceAccount
   name: sensor
-  namespace: {{.Namespace}}
+  namespace: stackrox
 roleRef:
   kind: ClusterRole
   name: view
@@ -30,11 +30,11 @@ roleRef:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{.Namespace}}:enforce-policies
+  name: stackrox:enforce-policies
 subjects:
 - kind: ServiceAccount
   name: sensor
-  namespace: {{.Namespace}}
+  namespace: stackrox
 roleRef:
   kind: ClusterRole
   name: edit
@@ -44,11 +44,11 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: launch-benchmarks
-  namespace: {{.Namespace}}
+  namespace: stackrox
 subjects:
 - kind: ServiceAccount
   name: sensor
-  namespace: {{.Namespace}}
+  namespace: stackrox
 roleRef:
   kind: ClusterRole
   name: edit
@@ -57,7 +57,7 @@ roleRef:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{.Namespace}}:network-policies
+  name: stackrox:network-policies
 rules:
   - resources:
     - 'networkpolicies'
@@ -71,20 +71,20 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{.Namespace}}:network-policies-binding
+  name: stackrox:network-policies-binding
 subjects:
 - kind: ServiceAccount
   name: sensor
-  namespace: {{.Namespace}}
+  namespace: stackrox
 roleRef:
   kind: ClusterRole
-  name: {{.Namespace}}:network-policies
+  name: stackrox:network-policies
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{.Namespace}}:view-nodes
+  name: stackrox:view-nodes
 rules:
 - resources:
   - nodes
@@ -97,20 +97,20 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{.Namespace}}:view-nodes-binding
+  name: stackrox:view-nodes-binding
 subjects:
 - kind: ServiceAccount
   name: sensor
-  namespace: {{.Namespace}}
+  namespace: stackrox
 roleRef:
   kind: ClusterRole
-  name: {{.Namespace}}:view-nodes
+  name: stackrox:view-nodes
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{.Namespace}}:update-namespaces
+  name: stackrox:update-namespaces
 rules:
 - resources:
   - namespaces
@@ -121,12 +121,12 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{.Namespace}}:update-namespaces-binding
+  name: stackrox:update-namespaces-binding
 subjects:
 - kind: ServiceAccount
   name: sensor
-  namespace: {{.Namespace}}
+  namespace: stackrox
 roleRef:
   kind: ClusterRole
-  name: {{.Namespace}}:update-namespaces
+  name: stackrox:update-namespaces
   apiGroup: rbac.authorization.k8s.io

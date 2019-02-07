@@ -15,13 +15,5 @@ func k8s() *cobra.Command {
 			return fullClusterCreation()
 		},
 	}
-	commonParams := &storage.CommonKubernetesParams{}
-	kubernetesParams := &storage.KubernetesParams{
-		Params: commonParams,
-	}
-	cluster.OrchestratorParams = &storage.Cluster_Kubernetes{
-		Kubernetes: kubernetesParams,
-	}
-	c.PersistentFlags().StringVarP(&commonParams.Namespace, "namespace", "n", "stackrox", "namespace to deploy into")
 	return c
 }

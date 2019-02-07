@@ -97,13 +97,6 @@ func validateInput(cluster *storage.Cluster) error {
 	if stringutils.ContainsWhitespace(cluster.GetCentralApiEndpoint()) {
 		errorList.AddString("Central API endpoint cannot contain whitespace")
 	}
-	switch orchSpecific := cluster.GetOrchestratorParams().(type) {
-	case *storage.Cluster_Kubernetes:
-		// Kube validates namespaces and secret names using the DNS1123 Label validator.
-		errorList.AddError(validateDNS1123Field("namespace", orchSpecific.Kubernetes.GetParams().GetNamespace()))
-	case *storage.Cluster_Openshift:
-		errorList.AddError(validateDNS1123Field("namespace", orchSpecific.Openshift.GetParams().GetNamespace()))
-	}
 	if cluster.GetMonitoringEndpoint() != "" {
 		// Purposefully not checking the CAPath because only one is needed for an indication of monitoring not being enabled
 		if _, err := ioutil.ReadFile(monitoring.CAPath); err != nil {

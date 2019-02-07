@@ -1,35 +1,35 @@
 #!/usr/bin/env bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
-kubectl get namespace {{.Namespace}} > /dev/null || kubectl create namespace {{.Namespace}}
+kubectl get namespace stackrox > /dev/null || kubectl create namespace stackrox
 
-if ! kubectl get secret/stackrox -n {{.Namespace}} > /dev/null; then
+if ! kubectl get secret/stackrox -n stackrox > /dev/null; then
   registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.ImageRegistry}}")"
   [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
-  kubectl create --namespace "{{.Namespace}}" -f - <<EOF
+  kubectl create --namespace "stackrox" -f - <<EOF
 apiVersion: v1
 data:
   .dockerconfigjson: ${registry_auth}
 kind: Secret
 metadata:
   name: stackrox
-  namespace: {{.Namespace}}
+  namespace: stackrox
 type: kubernetes.io/dockerconfigjson
 EOF
 fi
 
 {{if .RuntimeSupport}}
-if ! kubectl get secret/collector-stackrox -n {{.Namespace}} > /dev/null; then
+if ! kubectl get secret/collector-stackrox -n stackrox > /dev/null; then
   registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.CollectorRegistry}}")"
   [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }
-  kubectl create --namespace "{{.Namespace}}" -f - <<EOF
+  kubectl create --namespace "stackrox" -f - <<EOF
 apiVersion: v1
 data:
   .dockerconfigjson: ${registry_auth}
 kind: Secret
 metadata:
   name: collector-stackrox
-  namespace: {{.Namespace}}
+  namespace: stackrox
 type: kubernetes.io/dockerconfigjson
 EOF
 fi
@@ -63,18 +63,18 @@ kubectl apply -f "$DIR/admission-controller.yaml"
 
 {{if .MonitoringEndpoint}}
 echo "Creating secrets for monitoring..."
-kubectl create secret -n "{{.Namespace}}" generic monitoring-client --from-file="$DIR/monitoring-client-cert.pem" --from-file="$DIR/monitoring-client-key.pem" --from-file="$DIR/monitoring-ca.pem"
-kubectl create cm -n "{{.Namespace}}" telegraf --from-file="$DIR/telegraf.conf"
+kubectl create secret -n "stackrox" generic monitoring-client --from-file="$DIR/monitoring-client-cert.pem" --from-file="$DIR/monitoring-client-key.pem" --from-file="$DIR/monitoring-ca.pem"
+kubectl create cm -n "stackrox" telegraf --from-file="$DIR/telegraf.conf"
 {{- end}}
 
 
 echo "Creating secrets for sensor..."
-kubectl create secret -n "{{.Namespace}}" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/ca.pem"
-kubectl create secret -n "{{.Namespace}}" generic benchmark-tls --from-file="$DIR/benchmark-cert.pem" --from-file="$DIR/benchmark-key.pem" --from-file="$DIR/ca.pem"
+kubectl create secret -n "stackrox" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/ca.pem"
+kubectl create secret -n "stackrox" generic benchmark-tls --from-file="$DIR/benchmark-cert.pem" --from-file="$DIR/benchmark-key.pem" --from-file="$DIR/ca.pem"
 
 {{if .RuntimeSupport}}
 echo "Creating secrets for collector..."
-kubectl create secret -n "{{.Namespace}}" generic collector-tls --from-file="$DIR/collector-cert.pem" --from-file="$DIR/collector-key.pem" --from-file="$DIR/ca.pem"
+kubectl create secret -n "stackrox" generic collector-tls --from-file="$DIR/collector-cert.pem" --from-file="$DIR/collector-key.pem" --from-file="$DIR/ca.pem"
 {{- end}}
 
 echo "Creating deployment..."

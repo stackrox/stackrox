@@ -8,12 +8,12 @@ fi
 
 printf 'Connecting...'
 while true; do
-    central_pod="$({{.K8sConfig.Command}} get pod -n '{{.K8sConfig.Namespace}}' --selector 'app=central' --field-selector 'status.phase=Running' --output 'jsonpath={.items..metadata.name}' 2>/dev/null)"
+    central_pod="$({{.K8sConfig.Command}} get pod -n 'stackrox' --selector 'app=central' --field-selector 'status.phase=Running' --output 'jsonpath={.items..metadata.name}' 2>/dev/null)"
     [ -z  "$central_pod" ] || break
     printf '.'
     sleep 1
 done
 echo
 
-nohup {{.K8sConfig.Command}} port-forward -n '{{.K8sConfig.Namespace}}' "$central_pod" "$1:443" 1>/dev/null 2>&1 &
+nohup {{.K8sConfig.Command}} port-forward -n 'stackrox' "$central_pod" "$1:443" 1>/dev/null 2>&1 &
 echo "Access central on https://localhost:$1"

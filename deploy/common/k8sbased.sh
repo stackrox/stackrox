@@ -105,8 +105,6 @@ function launch_sensor {
              --runtime="$RUNTIME_SUPPORT" --admission-controller="$ADMISSION_CONTROLLER" "${extra_config[@]+"${extra_config[@]}"}" ${ORCH}
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
     else
-        local common_params="{ \"params\" : { \"namespace\": \"stackrox\" } }"
-        extra_json_config+="\"${ORCH_FULLNAME}\": $common_params }"
         get_cluster_zip "$API_ENDPOINT" "$CLUSTER" ${CLUSTER_TYPE} "$MAIN_IMAGE" "$CLUSTER_API_ENDPOINT" "$k8s_dir" "$RUNTIME_SUPPORT" "$extra_json_config"
         unzip "$k8s_dir/sensor-deploy.zip" -d "$k8s_dir/sensor-deploy"
         rm "$k8s_dir/sensor-deploy.zip"

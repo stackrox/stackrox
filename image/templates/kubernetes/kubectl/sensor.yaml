@@ -2,7 +2,7 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: sensor
-  namespace: {{.Namespace}}
+  namespace: stackrox
   labels:
     app: sensor
   annotations:
@@ -16,7 +16,7 @@ spec:
       app: sensor
   template:
     metadata:
-      namespace: {{.Namespace}}
+      namespace: stackrox
       labels:
         app: sensor
     spec:
@@ -49,15 +49,11 @@ spec:
         - name: {{.ImageEnv}}
           value: {{.Image}}
         - name: {{.AdvertisedEndpointEnv}}
-          value: sensor.{{.Namespace}}:443
+          value: sensor.stackrox:443
           {{if eq .ClusterType "OPENSHIFT_CLUSTER"}}
         - name: {{.OpenshiftAPIEnv}}
           value: "true"
           {{- end}}
-        - name: {{.NamespaceEnv}}
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
         volumeMounts:
         - name: varlog
           mountPath: /var/log/stackrox/
@@ -124,7 +120,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: sensor
-  namespace: {{.Namespace}}
+  namespace: stackrox
 spec:
   ports:
   - name: https
@@ -139,7 +135,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: collector
-  namespace: {{.Namespace}}
+  namespace: stackrox
 imagePullSecrets:
 - name: stackrox
 - name: collector-stackrox
@@ -151,7 +147,7 @@ metadata:
     service: collector
     app: collector
   name: collector
-  namespace: {{.Namespace}}
+  namespace: stackrox
 spec:
   selector:
     matchLabels:
@@ -161,7 +157,7 @@ spec:
       labels:
         service: collector
         app: collector
-      namespace: {{.Namespace}}
+      namespace: stackrox
     spec:
       serviceAccount: collector
       containers:

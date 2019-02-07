@@ -13,11 +13,11 @@ function usage {
 }
 
 function create_ns {
-    {{.K8sConfig.Command}} get ns "{{.K8sConfig.Namespace}}" > /dev/null || {{.K8sConfig.Command}} create ns "{{.K8sConfig.Namespace}}"
+    {{.K8sConfig.Command}} get ns "stackrox" > /dev/null || {{.K8sConfig.Command}} create ns "stackrox"
 }
 function create_file {
     local file="$1"
-    {{.K8sConfig.Command}} create secret -n "{{.K8sConfig.Namespace}}" generic additional-ca --from-file="ca.crt=$file"
+    {{.K8sConfig.Command}} create secret -n "stackrox" generic additional-ca --from-file="ca.crt=$file"
 }
 
 function create_directory {
@@ -34,7 +34,7 @@ function create_directory {
         echo "Error: No filenames ending in \".crt\" in $dir. Please add some."
         exit 2
     fi
-    {{.K8sConfig.Command}} create secret -n "{{.K8sConfig.Namespace}}" generic additional-ca --from-file="$dir/"
+    {{.K8sConfig.Command}} create secret -n "stackrox" generic additional-ca --from-file="$dir/"
 }
 
 if [[ "$#" -lt 2 ]]; then

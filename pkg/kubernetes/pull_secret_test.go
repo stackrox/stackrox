@@ -1,21 +1,10 @@
 package kubernetes
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func TestGetCreateSecretTemplate(t *testing.T) {
-	res := GetCreateSecretTemplate("{{.Namespace}}", "{{.Registry}}", "{{.ImagePullSecret}}")
-
-	// naive expected
-	expected := strings.Replace(secretTemplate, "{{.NamespaceVar}}", "{{.Namespace}}", -1)
-	expected = strings.Replace(expected, "{{.RegistryVar}}", "{{.Registry}}", -1)
-	expected = strings.Replace(expected, "{{.ImagePullSecretVar}}", "{{.ImagePullSecret}}", -1)
-	assert.Equal(t, expected, res)
-}
 
 func TestResolvedRegistry(t *testing.T) {
 

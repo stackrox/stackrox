@@ -23,6 +23,8 @@ import (
 
 const (
 	ownershipLabel = `owner.stackrox.io/sensor`
+
+	namespace = "stackrox"
 )
 
 var (
@@ -56,7 +58,7 @@ func New(sensorInstanceID string) (orchestrators.Orchestrator, error) {
 	return &kubernetesOrchestrator{
 		client:           c,
 		converter:        newConverter(),
-		namespace:        env.Namespace.Setting(),
+		namespace:        namespace,
 		sensorInstanceID: sensorInstanceID,
 	}, nil
 }

@@ -134,66 +134,11 @@ func TestValidateCluster(t *testing.T) {
 			expectedError: true,
 		},
 		{
-			name: "K8s Empty Namespace",
-			cluster: &storage.Cluster{
-				Name:               "name",
-				MainImage:          "image",
-				CentralApiEndpoint: "central:443",
-				OrchestratorParams: &storage.Cluster_Kubernetes{
-					Kubernetes: &storage.KubernetesParams{
-						Params: &storage.CommonKubernetesParams{
-							Namespace: "",
-						},
-					},
-				},
-			},
-			expectedError: true,
-		},
-		{
-			name: "K8s Namespace with spaces",
-			cluster: &storage.Cluster{
-				Name:               "name",
-				MainImage:          "image",
-				CentralApiEndpoint: "central:443",
-				OrchestratorParams: &storage.Cluster_Kubernetes{
-					Kubernetes: &storage.KubernetesParams{
-						Params: &storage.CommonKubernetesParams{
-							Namespace: "I HAVE SPACES",
-						},
-					},
-				},
-			},
-			expectedError: true,
-		},
-		{
-			name: "OpenShift Namespace with spaces",
-			cluster: &storage.Cluster{
-				Name:               "name",
-				MainImage:          "image",
-				CentralApiEndpoint: "central:443",
-				OrchestratorParams: &storage.Cluster_Openshift{
-					Openshift: &storage.OpenshiftParams{
-						Params: &storage.CommonKubernetesParams{
-							Namespace: "I HAVE SPACES",
-						},
-					},
-				},
-			},
-			expectedError: true,
-		},
-		{
 			name: "Happy path K8s",
 			cluster: &storage.Cluster{
 				Name:               "name",
 				MainImage:          "image",
 				CentralApiEndpoint: "central:443",
-				OrchestratorParams: &storage.Cluster_Kubernetes{
-					Kubernetes: &storage.KubernetesParams{
-						Params: &storage.CommonKubernetesParams{
-							Namespace: "valid-dns-name-again",
-						},
-					},
-				},
 			},
 			expectedError: false,
 		},
@@ -212,7 +157,7 @@ func TestValidateCluster(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			err := validateInput(c.cluster)
 			if c.expectedError {
-				assert.NotNil(t, err)
+				assert.Error(t, err)
 			} else {
 				assert.Nil(t, err)
 			}

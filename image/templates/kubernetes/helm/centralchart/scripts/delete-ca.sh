@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-{{.K8sConfig.Command}} delete -n "{{.K8sConfig.Namespace}}" secret/additional-ca
+{{.K8sConfig.Command}} delete -n "stackrox" secret/additional-ca

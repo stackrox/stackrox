@@ -65,7 +65,6 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 
 	// Adds k8s specific flags
 	flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", "the deployment tool to use (kubectl, helm)", "central")
-	flagWrap.StringVarP(&k8sConfig.Namespace, "namespace", "n", "stackrox", "namespace", "central")
 	flagWrap.StringVarP(&k8sConfig.MainImage, "main-image", "i", defaults.MainImage, "main image to use", "central")
 
 	// Monitoring Flags

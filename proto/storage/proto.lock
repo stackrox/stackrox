@@ -942,36 +942,6 @@
             "reserved_ids": [
               10
             ]
-          },
-          {
-            "name": "KubernetesParams",
-            "fields": [
-              {
-                "id": 1,
-                "name": "params",
-                "type": "CommonKubernetesParams"
-              }
-            ]
-          },
-          {
-            "name": "CommonKubernetesParams",
-            "fields": [
-              {
-                "id": 1,
-                "name": "namespace",
-                "type": "string"
-              }
-            ]
-          },
-          {
-            "name": "OpenshiftParams",
-            "fields": [
-              {
-                "id": 1,
-                "name": "params",
-                "type": "CommonKubernetesParams"
-              }
-            ]
           }
         ],
         "imports": [

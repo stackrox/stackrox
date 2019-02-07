@@ -83,7 +83,7 @@ fi
 "${DOCKER[@]}" pull "${MAIN_IMAGE}"
 "${DOCKER[@]}" pull "${CLAIRIFY_IMAGE}"
 
-OC_PROJECT="${OC_PROJECT:-{{.K8sConfig.Namespace}}}"
+OC_PROJECT="${OC_PROJECT:-stackrox}"
 oc new-project "$OC_PROJECT" || true
 oc project "$OC_PROJECT"
 

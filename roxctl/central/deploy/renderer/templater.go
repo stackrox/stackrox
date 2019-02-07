@@ -141,8 +141,7 @@ type K8sConfig struct {
 	ConfigType v1.DeploymentFormat
 
 	// k8s fields
-	Namespace string
-	Registry  string
+	Registry string
 
 	// These variables are not prompted for by Cobra, but are set based on
 	// provided inputs for use in templating.

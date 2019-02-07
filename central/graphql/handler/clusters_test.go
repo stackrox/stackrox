@@ -16,16 +16,10 @@ func TestGetClusters(t *testing.T) {
 			Id:   fakeClusterID,
 			Name: "fake cluster",
 			Type: storage.ClusterType_KUBERNETES_CLUSTER,
-			OrchestratorParams: &storage.Cluster_Kubernetes{
-				Kubernetes: &storage.KubernetesParams{
-					Params: &storage.CommonKubernetesParams{Namespace: "stackrox"},
-				},
-			},
 		},
 	}, nil)
-	response := executeTestQuery(t, mocks, "{clusters {id name type orchestratorParams {... on KubernetesParams { params {namespace}}}}}")
+	response := executeTestQuery(t, mocks, "{clusters {id name type}}")
 	assertJSONMatches(t, response.Body, ".data.clusters[0].id", fakeClusterID)
-	assertJSONMatches(t, response.Body, ".data.clusters[0].orchestratorParams.params.namespace", "stackrox")
 	assert.Equal(t, 200, response.Code)
 }
 

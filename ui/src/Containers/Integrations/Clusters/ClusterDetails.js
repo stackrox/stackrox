@@ -1,12 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import get from 'lodash/get';
 
 import { clusterTypes } from 'reducers/clusters';
 import LabeledValue from 'Components/LabeledValue';
 
 const clusterTypeLabels = {
-    SWARM_CLUSTER: 'Swarm',
     OPENSHIFT_CLUSTER: 'OpenShift',
     KUBERNETES_CLUSTER: 'Kubernetes'
 };
@@ -36,10 +34,6 @@ CommonDetails.propTypes = {
 const K8sDetails = ({ cluster }) => (
     <React.Fragment>
         <CommonDetails cluster={cluster} />
-        <LabeledValue
-            label="Namespace"
-            value={get(cluster, 'kubernetes.params.namespace', 'N/A')}
-        />
         <LabeledValue label="Monitoring Endpoint" value={cluster.monitoringEndpoint || 'N/A'} />
         <LabeledValue
             label="Admission Controller"
@@ -48,47 +42,19 @@ const K8sDetails = ({ cluster }) => (
     </React.Fragment>
 );
 K8sDetails.propTypes = {
-    cluster: PropTypes.shape({
-        kubernetes: PropTypes.shape({
-            params: PropTypes.shape({
-                namespace: PropTypes.string,
-                imagePullSecret: PropTypes.string
-            })
-        })
-    }).isRequired
+    cluster: PropTypes.shape({}).isRequired
 };
 
 const OpenShiftDetails = ({ cluster }) => (
     <React.Fragment>
         <CommonDetails cluster={cluster} />
-        <LabeledValue label="Namespace" value={get(cluster, 'openshift.params.namespace', 'N/A')} />
     </React.Fragment>
 );
 OpenShiftDetails.propTypes = {
-    cluster: PropTypes.shape({
-        openshift: PropTypes.shape({
-            params: PropTypes.shape({ namespace: PropTypes.string })
-        })
-    }).isRequired
-};
-
-const DockerDetails = ({ cluster }) => (
-    <React.Fragment>
-        <CommonDetails cluster={cluster} />
-        <LabeledValue
-            label="Swarm TLS Disabled"
-            value={get(cluster, 'swarm.disableSwarmTls') ? 'Yes' : 'No'}
-        />
-    </React.Fragment>
-);
-DockerDetails.propTypes = {
-    cluster: PropTypes.shape({
-        swarm: PropTypes.shape({ disableSwarmTls: PropTypes.bool })
-    }).isRequired
+    cluster: PropTypes.shape({}).isRequired
 };
 
 const detailsComponents = {
-    SWARM_CLUSTER: DockerDetails,
     OPENSHIFT_CLUSTER: OpenShiftDetails,
     KUBERNETES_CLUSTER: K8sDetails
 };

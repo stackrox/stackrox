@@ -52,9 +52,6 @@ const K8sFields = ({ metadata }) => (
         <CommonFields />
         <StackRoxImageFormField version={metadata.version} />
         <CentralAPIFormField placeholder="central.stackrox:443" />
-        <FormField label="Namespace" required>
-            <ReduxTextField name="kubernetes.params.namespace" placeholder="stackrox" />
-        </FormField>
         <MonitoringEndpointFormField />
         <RuntimeSupportFormField />
         <FormField label="Enable Admission Controller">
@@ -72,9 +69,6 @@ const OpenShiftFields = ({ metadata }) => (
         <CommonFields />
         <StackRoxImageFormField version={metadata.version} />
         <CentralAPIFormField placeholder="central.stackrox:443" />
-        <FormField label="Namespace" required>
-            <ReduxTextField name="openshift.params.namespace" placeholder="stackrox" />
-        </FormField>
         <MonitoringEndpointFormField />
         <RuntimeSupportFormField />
     </React.Fragment>
@@ -129,23 +123,12 @@ const initialValuesFactories = {
     OPENSHIFT_CLUSTER: metadata => ({
         mainImage: `stackrox.io/main:${metadata.version}`,
         centralApiEndpoint: 'central.stackrox:443',
-        openshift: {
-            params: {
-                namespace: 'stackrox'
-            }
-        },
         monitoringEndpoint: 'monitoring.stackrox:443',
         runtimeSupport: true
     }),
     KUBERNETES_CLUSTER: metadata => ({
         mainImage: `stackrox.io/main:${metadata.version}`,
         centralApiEndpoint: 'central.stackrox:443',
-        kubernetes: {
-            imagePullSecret: 'stackrox',
-            params: {
-                namespace: 'stackrox'
-            }
-        },
         monitoringEndpoint: 'monitoring.stackrox:443',
         runtimeSupport: true,
         admissionController: true

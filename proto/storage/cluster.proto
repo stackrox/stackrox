@@ -40,24 +40,8 @@ message Cluster {
     bool                      runtime_support             = 7;
     string                    monitoring_endpoint         = 8;
 
-    reserved 10;
-    oneof orchestrator_params {
-        KubernetesParams kubernetes       = 9;
-        OpenshiftParams  openshift        = 11;
-    }
+    reserved 9,10,11;
 
     ProviderMetadata          provider_metadata           = 12;
     bool                      admission_controller        = 13;
-}
-
-message KubernetesParams {
-    CommonKubernetesParams params = 1;
-}
-
-message CommonKubernetesParams {
-    string namespace         = 1;
-}
-
-message OpenshiftParams {
-    CommonKubernetesParams params = 1;
 }
