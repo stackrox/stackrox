@@ -125,12 +125,14 @@ func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *storage.
 	}
 	sortCategories(request.Categories)
 
-	if err := s.datastore.UpdateImageIntegration(request); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
 	if err := s.toNotify.NotifyUpdated(request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
+	if err := s.datastore.UpdateImageIntegration(request); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	go s.enrichAndDetectLoop.ShortCircuit()
 	return &v1.Empty{}, nil
 }
@@ -154,8 +156,10 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 	request.Id = id
 
 	if err := s.toNotify.NotifyUpdated(request); err != nil {
+		s.datastore.RemoveImageIntegration(request.Id)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
 	go s.enrichAndDetectLoop.ShortCircuit()
 	return request, nil
 }
