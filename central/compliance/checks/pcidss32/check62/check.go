@@ -18,5 +18,9 @@ func init() {
 			DataDependencies:   []string{"Images"},
 			InterpretationText: interpretationText,
 		},
-		common.CheckFixedCVES)
+		clusterIsCompliant)
+}
+func clusterIsCompliant(ctx framework.ComplianceContext) {
+	common.CheckFixedCVES(ctx)
+	common.CISBenchmarksSatisfied(ctx)
 }
