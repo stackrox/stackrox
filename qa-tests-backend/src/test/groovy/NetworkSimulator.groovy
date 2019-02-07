@@ -493,15 +493,15 @@ class NetworkSimulator extends BaseSpecification {
         NotifierOuterClass.Notifier notifier
         switch (notifierType) {
             case "SLACK":
-                notifier = NetworkPolicyService.addSlackNotifier("Slack Test")
+                notifier = Services.addSlackNotifier("Slack Test")
                 break
 
             case "JIRA":
-                notifier = NetworkPolicyService.addJiraNotifier("Jira Test")
+                notifier = Services.addJiraNotifier("Jira Test")
                 break
 
             case "EMAIL":
-                notifier = NetworkPolicyService.addEmailNotifier("Email Test")
+                notifier = Services.addEmailNotifier("Email Test")
                 break
         }
         assert notifier != null
@@ -523,7 +523,7 @@ class NetworkSimulator extends BaseSpecification {
         cleanup:
         "delete notifier"
         if (notifier != null) {
-            NetworkPolicyService.deleteNotifier(notifier.id)
+            Services.deleteNotifier(notifier.id)
         }
 
         where:

@@ -46,6 +46,7 @@ setupHelm: &setupHelm
          fi
          echo "Failed to connect to helm. Retrying in 5 seconds"
          sleep 5
+         kubectl -n kube-system get pod
        done
 
 setupRoxctl: &setupRoxctl
@@ -130,6 +131,7 @@ waitForAPI: &waitForAPI
         sleep 5
       done
       if [[ "${SUCCESS}" == 0 ]]; then
+        kubectl -n stackrox get pod
         echo "Failed to connect to Central"
         exit 1
       fi
