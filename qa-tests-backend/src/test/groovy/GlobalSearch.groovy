@@ -66,9 +66,14 @@ class GlobalSearch extends BaseSpecification {
         if (searchCategories.size() > 0) {
             assert searchCategories.toSet() == presentCategories
         } else {
-            // Else, we just make sure that the expectedCategories passed in all exist in the results.
-            assert presentCategories.containsAll(expectedCategoriesInResult) \
-                && presentCategories.size() == expectedCategoriesInResult.size()
+            println "Present categories: ${presentCategories}"
+            println "Expected categories: ${expectedCategoriesInResult}"
+
+            assert presentCategories.size() == expectedCategoriesInResult.size()
+            // Iterate over the expectedCategoriesInResult so we can at least see which one was missing in the report
+            for (SearchServiceOuterClass.SearchCategory category : expectedCategoriesInResult ) {
+                assert presentCategories.contains(category)
+            }
         }
 
         where:
