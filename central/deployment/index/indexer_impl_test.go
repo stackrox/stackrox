@@ -598,3 +598,20 @@ func (suite *DeploymentIndexTestSuite) TestCaseInsensitivityOfFieldNames() {
 		suite.Len(results, 1)
 	}
 }
+
+func (suite *DeploymentIndexTestSuite) TestDeploymentDelete() {
+	dep := fixtures.GetDeployment()
+	suite.NoError(suite.indexer.AddDeployment(dep))
+
+	ns := dep.GetNamespace()
+	upperCaseQ, err := search.ParseRawQuery(fmt.Sprintf("Namespace:%s", ns))
+	suite.NoError(err)
+	results, err := suite.indexer.Search(upperCaseQ)
+	suite.NoError(err)
+	suite.Len(results, 1)
+
+	suite.NoError(suite.indexer.DeleteDeployment(dep.GetId()))
+	results, err = suite.indexer.Search(upperCaseQ)
+	suite.NoError(err)
+	suite.Len(results, 0)
+}

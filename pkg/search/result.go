@@ -2,6 +2,7 @@ package search
 
 import (
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // Result is a wrapper around the search results
@@ -26,6 +27,15 @@ func ResultsToIDs(results []Result) []string {
 	ids := make([]string, 0, len(results))
 	for _, r := range results {
 		ids = append(ids, r.ID)
+	}
+	return ids
+}
+
+// ResultsToIDSet takes a results slice and gets a set of IDs
+func ResultsToIDSet(results []Result) set.StringSet {
+	ids := set.NewStringSet()
+	for _, r := range results {
+		ids.Add(r.ID)
 	}
 	return ids
 }

@@ -16,6 +16,11 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// GetPipeline returns an instantiation of this particular pipeline
+func GetPipeline() pipeline.Fragment {
+	return NewPipeline(processDataStore.Singleton(), datastore.Singleton(), lifecycle.SingletonManager())
+}
+
 // NewPipeline returns a new instance of Pipeline.
 func NewPipeline(indicators processDataStore.DataStore, deployments datastore.DataStore, manager lifecycle.Manager) pipeline.Fragment {
 	return &pipelineImpl{
@@ -29,6 +34,11 @@ type pipelineImpl struct {
 	indicators  processDataStore.DataStore
 	deployments datastore.DataStore
 	manager     lifecycle.Manager
+}
+
+func (s *pipelineImpl) Reconcile(clusterID string) error {
+	// Nothing to reconcile
+	return nil
 }
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {

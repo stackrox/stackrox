@@ -11,6 +11,9 @@ interface OrchestratorMain {
     def cleanup()
 
     //Deployments
+    io.fabric8.kubernetes.api.model.apps.Deployment getOrchestratorDeployment(String ns, String name)
+    def createOrchestratorDeployment(io.fabric8.kubernetes.api.model.apps.Deployment dep)
+
     def createDeploymentNoWait(Deployment deployment)
     def createDeployment(Deployment deployment)
     def batchCreateDeployments(List<Deployment> deployments)
@@ -44,9 +47,14 @@ interface OrchestratorMain {
     def deleteService(String serviceName, String namespace)
 
     //Secrets
-    def createSecret(String name)
+    def createSecret(String name, String namespace)
     def deleteSecret(String name, String namespace)
     def getSecretCount()
+
+    //Namespaces
+    String createNamespace(String ns)
+    def deleteNamespace(String ns)
+    def waitForNamespaceDeletion(String ns, int timeoutSeconds)
 
     //NetworkPolicies
     String applyNetworkPolicy(NetworkPolicy policy)

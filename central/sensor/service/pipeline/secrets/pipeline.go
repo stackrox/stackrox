@@ -7,10 +7,13 @@ import (
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -20,17 +23,44 @@ var (
 // Template design pattern. We define control flow here and defer logic to subclasses.
 //////////////////////////////////////////////////////////////////////////////////////
 
+// GetPipeline returns an instantiation of this particular pipeline
+func GetPipeline() pipeline.Fragment {
+	return NewPipeline(clusterDataStore.Singleton(), datastore.Singleton())
+}
+
 // NewPipeline returns a new instance of Pipeline for secrets
 func NewPipeline(clusters clusterDataStore.DataStore, secrets datastore.DataStore) pipeline.Fragment {
 	return &pipelineImpl{
-		clusters: clusters,
-		secrets:  secrets,
+		clusters:       clusters,
+		secrets:        secrets,
+		reconcileStore: reconciliation.NewStore(),
 	}
 }
 
 type pipelineImpl struct {
-	clusters clusterDataStore.DataStore
-	secrets  datastore.DataStore
+	clusters       clusterDataStore.DataStore
+	secrets        datastore.DataStore
+	reconcileStore reconciliation.Store
+}
+
+func (s *pipelineImpl) Reconcile(clusterID string) error {
+	defer s.reconcileStore.Close()
+
+	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	results, err := s.secrets.Search(query)
+	if err != nil {
+		return err
+	}
+
+	idsToDelete := search.ResultsToIDSet(results).Difference(s.reconcileStore.GetSet()).AsSlice()
+	if len(idsToDelete) > 0 {
+		log.Infof("Deleting secrets %+v as a part of reconciliation", idsToDelete)
+	}
+	errList := errorhelpers.NewErrorList("Secret reconciliation")
+	for _, id := range idsToDelete {
+		errList.AddError(s.runRemovePipeline(central.ResourceAction_REMOVE_RESOURCE, &storage.Secret{Id: id}))
+	}
+	return errList.ToError()
 }
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
@@ -49,6 +79,7 @@ func (s *pipelineImpl) Run(msg *central.MsgFromSensor, _ pipeline.MsgInjector) e
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(event.GetAction(), secret)
 	default:
+		s.reconcileStore.Add(event.GetId())
 		return s.runGeneralPipeline(event.GetAction(), secret)
 	}
 }

@@ -1,7 +1,7 @@
 package services
 
 import com.google.protobuf.Timestamp
-import io.stackrox.proto.api.v1.NetworkGraphOuterClass
+import io.stackrox.proto.api.v1.NetworkGraphOuterClass.NetworkGraphRequest
 import io.stackrox.proto.api.v1.NetworkGraphServiceGrpc
 
 class NetworkGraphService extends BaseService {
@@ -11,8 +11,8 @@ class NetworkGraphService extends BaseService {
 
     static getNetworkGraph(Timestamp since = null, String query = null) {
         try {
-            NetworkGraphOuterClass.NetworkGraphRequest.Builder request =
-                    NetworkGraphOuterClass.NetworkGraphRequest.newBuilder()
+            NetworkGraphRequest.Builder request =
+                    NetworkGraphRequest.newBuilder()
                             .setClusterId(ClusterService.getClusterId())
             if (since != null) {
                 request.setSince(since)

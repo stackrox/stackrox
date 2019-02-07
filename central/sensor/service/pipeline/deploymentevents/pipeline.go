@@ -9,11 +9,14 @@ import (
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/enforcers"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -22,6 +25,15 @@ var (
 
 // Template design pattern. We define control flow here and defer logic to subclasses.
 //////////////////////////////////////////////////////////////////////////////////////
+
+// GetPipeline returns an instantiation of this particular pipeline
+func GetPipeline() pipeline.Fragment {
+	return NewPipeline(clusterDataStore.Singleton(),
+		deploymentDataStore.Singleton(),
+		imageDataStore.Singleton(),
+		lifecycle.SingletonManager(),
+		graph.Singleton())
+}
 
 // NewPipeline returns a new instance of Pipeline.
 func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentDataStore.DataStore,
@@ -35,6 +47,8 @@ func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentData
 		createResponse:    newCreateResponse(manager.DeploymentUpdated, manager.DeploymentRemoved),
 
 		graphEvaluator: graphEvaluator,
+		deployments:    deployments,
+		reconcileStore: reconciliation.NewStore(),
 	}
 }
 
@@ -46,7 +60,32 @@ type pipelineImpl struct {
 	persistDeployment *persistDeploymentImpl
 	createResponse    *createResponseImpl
 
+	deployments deploymentDataStore.DataStore
+
 	graphEvaluator graph.Evaluator
+
+	reconcileStore reconciliation.Store
+}
+
+func (s *pipelineImpl) Reconcile(clusterID string) error {
+	defer s.reconcileStore.Close()
+
+	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	results, err := s.deployments.Search(query)
+	if err != nil {
+		return err
+	}
+
+	idsToDelete := search.ResultsToIDSet(results).Difference(s.reconcileStore.GetSet()).AsSlice()
+	if len(idsToDelete) > 0 {
+		log.Infof("Deleting deployments %+v as a part of reconciliation", idsToDelete)
+	}
+	errList := errorhelpers.NewErrorList("Deployment reconciliation")
+	for _, id := range idsToDelete {
+		_, err := s.runRemovePipeline(central.ResourceAction_REMOVE_RESOURCE, &storage.Deployment{Id: id})
+		errList.AddError(err)
+	}
+	return errList.ToError()
 }
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
@@ -67,6 +106,7 @@ func (s *pipelineImpl) Run(msg *central.MsgFromSensor, injector pipeline.MsgInje
 	case central.ResourceAction_REMOVE_RESOURCE:
 		resp, err = s.runRemovePipeline(event.GetAction(), deployment)
 	default:
+		s.reconcileStore.Add(event.GetId())
 		resp, err = s.runGeneralPipeline(event.GetAction(), deployment)
 	}
 	if err != nil {

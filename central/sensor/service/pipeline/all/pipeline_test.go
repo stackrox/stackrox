@@ -28,7 +28,7 @@ func (suite *PipelineTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.depMock = mocks.NewMockFragment(suite.mockCtrl)
 
-	suite.tested = NewPipeline(suite.depMock)
+	suite.tested = NewPipeline("clusterID", suite.depMock)
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {

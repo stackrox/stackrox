@@ -4,6 +4,8 @@ import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import org.junit.experimental.categories.Category
+import services.NetworkGraphService
+import services.NetworkPolicyService
 import spock.lang.Unroll
 import util.NetworkGraphUtil
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass
@@ -57,14 +59,14 @@ class NetworkSimulator extends BaseSpecification {
                 .addPodSelector()
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
         def policyId = orchestrator.applyNetworkPolicy(policy)
-        assert Services.waitForNetworkPolicy(policyId)
-        def baseline = Services.getNetworkGraph()
+        assert NetworkPolicyService.waitForNetworkPolicy(policyId)
+        def baseline = NetworkGraphService.getNetworkGraph()
 
         and:
         "generate simulation"
         policy.addPolicyType(NetworkPolicyTypes.EGRESS)
         def policyYAML = orchestrator.generateYaml(policy)
-        def simulation = Services.submitNetworkGraphSimulation(policyYAML)
+        def simulation = NetworkPolicyService.submitNetworkGraphSimulation(policyYAML)
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
 
@@ -106,8 +108,8 @@ class NetworkSimulator extends BaseSpecification {
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
         def policyId = orchestrator.applyNetworkPolicy(policy1)
-        assert Services.waitForNetworkPolicy(policyId)
-        def baseline = Services.getNetworkGraph()
+        assert NetworkPolicyService.waitForNetworkPolicy(policyId)
+        def baseline = NetworkGraphService.getNetworkGraph()
 
         and:
         "generate simulation"
@@ -115,7 +117,7 @@ class NetworkSimulator extends BaseSpecification {
                 .setNamespace("qa")
                 .addPodSelector(["app": WEBDEPLOYMENT])
                 .addIngressNamespaceSelector()
-        def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2))
+        def simulation = NetworkPolicyService.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2))
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
         def webAppIndex = simulation.simulatedGraph.nodesList.indexOf(
@@ -170,7 +172,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
         def policyId = orchestrator.applyNetworkPolicy(policy1)
-        assert Services.waitForNetworkPolicy(policyId)
+        assert NetworkPolicyService.waitForNetworkPolicy(policyId)
 
         and:
         "generate simulation"
@@ -184,7 +186,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addPodSelector(["app": CLIENTDEPLOYMENT])
                 .addEgressPodSelector(["app": WEBDEPLOYMENT])
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
-        def simulation = Services.submitNetworkGraphSimulation(
+        def simulation = NetworkPolicyService.submitNetworkGraphSimulation(
                 orchestrator.generateYaml(policy2) + orchestrator.generateYaml(policy3),
                 "Deployment:web,client+Namespace:qa")
         assert simulation != null
@@ -244,7 +246,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
         def policyId = orchestrator.applyNetworkPolicy(policy1)
-        assert Services.waitForNetworkPolicy(policyId)
+        assert NetworkPolicyService.waitForNetworkPolicy(policyId)
 
         and:
         "generate simulation"
@@ -252,7 +254,7 @@ class NetworkSimulator extends BaseSpecification {
                 .setNamespace("qa")
                 .addPodSelector(["app": WEBDEPLOYMENT])
                 .addIngressNamespaceSelector()
-        def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2),
+        def simulation = NetworkPolicyService.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2),
                 "Deployment:web,central+Namespace:qa,stackrox")
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
@@ -307,7 +309,7 @@ class NetworkSimulator extends BaseSpecification {
                 .setNamespace("qa")
                 .addPodSelector(["app": WEBDEPLOYMENT])
                 .addIngressNamespaceSelector()
-        def simulation = Services.submitNetworkGraphSimulation(
+        def simulation = NetworkPolicyService.submitNetworkGraphSimulation(
                 orchestrator.generateYaml(policy1) + orchestrator.generateYaml(policy2)
         )
         assert simulation != null
@@ -354,7 +356,7 @@ class NetworkSimulator extends BaseSpecification {
 
         then:
         "attempt to simulate on the yaml"
-        assert Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy)) == null
+        assert NetworkPolicyService.submitNetworkGraphSimulation(orchestrator.generateYaml(policy)) == null
     }
 
     @Category([NetworkPolicySimulation])
@@ -365,13 +367,13 @@ class NetworkSimulator extends BaseSpecification {
 
         then:
         "attempt to simulate on the yaml"
-        assert Services.submitNetworkGraphSimulation(
+        assert NetworkPolicyService.submitNetworkGraphSimulation(
                 orchestrator.generateYaml(policy)
                         .replaceAll("\\s", "")) == null
-        assert Services.submitNetworkGraphSimulation(
+        assert NetworkPolicyService.submitNetworkGraphSimulation(
                 orchestrator.generateYaml(policy) +
                         "ksdmflka\nlsadkfmasl") == null
-        assert Services.submitNetworkGraphSimulation(
+        assert NetworkPolicyService.submitNetworkGraphSimulation(
                 orchestrator.generateYaml(policy)
                         .replace("apiVersion:", "apiVersion=")) == null
     }
@@ -381,12 +383,13 @@ class NetworkSimulator extends BaseSpecification {
     def "Verify NetworkPolicy Simulator results"() {
         when:
         "Get Base Graph"
-        def baseline = Services.getNetworkGraph()
+        def baseline = NetworkGraphService.getNetworkGraph()
         def appId = baseline.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
 
         then:
         "verify simulation"
-        def simulation = Services.submitNetworkGraphSimulation(orchestrator.generateYaml(policy))?.simulatedGraph
+        def simulation = NetworkPolicyService.submitNetworkGraphSimulation(
+                orchestrator.generateYaml(policy))?.simulatedGraph
         assert simulation != null
         assert targets == _ ?
                 true :
@@ -490,15 +493,15 @@ class NetworkSimulator extends BaseSpecification {
         NotifierOuterClass.Notifier notifier
         switch (notifierType) {
             case "SLACK":
-                notifier = Services.addSlackNotifier("Slack Test")
+                notifier = NetworkPolicyService.addSlackNotifier("Slack Test")
                 break
 
             case "JIRA":
-                notifier = Services.addJiraNotifier("Jira Test")
+                notifier = NetworkPolicyService.addJiraNotifier("Jira Test")
                 break
 
             case "EMAIL":
-                notifier = Services.addEmailNotifier("Email Test")
+                notifier = NetworkPolicyService.addEmailNotifier("Email Test")
                 break
         }
         assert notifier != null
@@ -512,7 +515,7 @@ class NetworkSimulator extends BaseSpecification {
 
         then:
         "send simulation notification"
-        Services.sendSimulationNotification(
+        NetworkPolicyService.sendSimulationNotification(
                 notifier.id,
                 orchestrator.generateYaml(policy)
         )
@@ -520,7 +523,7 @@ class NetworkSimulator extends BaseSpecification {
         cleanup:
         "delete notifier"
         if (notifier != null) {
-            Services.deleteNotifier(notifier.id)
+            NetworkPolicyService.deleteNotifier(notifier.id)
         }
 
         where:
@@ -536,7 +539,7 @@ class NetworkSimulator extends BaseSpecification {
     def "Verify invalid clusterId passed to notification API"() {
         when:
         "create slack notifier"
-        NotifierOuterClass.Notifier notifier = Services.addSlackNotifier("Slack Test")
+        NotifierOuterClass.Notifier notifier = NetworkPolicyService.addSlackNotifier("Slack Test")
 
         and:
         "create Netowrk Policy yaml"
@@ -547,15 +550,15 @@ class NetworkSimulator extends BaseSpecification {
 
         then:
         "notify against invalid clusterId"
-        assert Services.sendSimulationNotification(
+        assert NetworkPolicyService.sendSimulationNotification(
                 notifier.id,
                 orchestrator.generateYaml(policy),
                 "11111111-bbbb-0000-aaaa-111111111111") == null
-        assert Services.sendSimulationNotification(
+        assert NetworkPolicyService.sendSimulationNotification(
                 notifier.id,
                 orchestrator.generateYaml(policy),
                 null) == null
-        assert Services.sendSimulationNotification(
+        assert NetworkPolicyService.sendSimulationNotification(
                 notifier.id,
                 orchestrator.generateYaml(policy),
                 "") == null
@@ -563,7 +566,7 @@ class NetworkSimulator extends BaseSpecification {
         cleanup:
         "remove notifier"
         if (notifier != null) {
-            Services.deleteNotifier(notifier.id)
+            NetworkPolicyService.deleteNotifier(notifier.id)
         }
     }
 
@@ -578,13 +581,13 @@ class NetworkSimulator extends BaseSpecification {
 
         then:
         "notify against invalid clusterId"
-        assert Services.sendSimulationNotification(
+        assert NetworkPolicyService.sendSimulationNotification(
                 "11111111-bbbb-0000-aaaa-111111111111",
                 orchestrator.generateYaml(policy)) == null
-        assert Services.sendSimulationNotification(
+        assert NetworkPolicyService.sendSimulationNotification(
                 null,
                 orchestrator.generateYaml(policy)) == null
-        assert Services.sendSimulationNotification(
+        assert NetworkPolicyService.sendSimulationNotification(
                 "",
                 orchestrator.generateYaml(policy)) == null
     }

@@ -5,13 +5,16 @@ import (
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
-	namespaceDataStore "github.com/stackrox/rox/central/namespace/store"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 var (
@@ -21,19 +24,45 @@ var (
 // Template design pattern. We define control flow here and defer logic to subclasses.
 //////////////////////////////////////////////////////////////////////////////////////
 
+// GetPipeline returns an instantiation of this particular pipeline
+func GetPipeline() pipeline.Fragment {
+	return NewPipeline(clusterDataStore.Singleton(), namespaceDataStore.Singleton(), graph.Singleton())
+}
+
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(clusters clusterDataStore.DataStore, namespaces namespaceDataStore.Store, graphEvaluator graph.Evaluator) pipeline.Fragment {
+func NewPipeline(clusters clusterDataStore.DataStore, namespaces namespaceDataStore.DataStore, graphEvaluator graph.Evaluator) pipeline.Fragment {
 	return &pipelineImpl{
 		clusters:       clusters,
 		namespaces:     namespaces,
 		graphEvaluator: graphEvaluator,
+		reconcileStore: reconciliation.NewStore(),
 	}
 }
 
 type pipelineImpl struct {
 	clusters       clusterDataStore.DataStore
-	namespaces     namespaceDataStore.Store
+	namespaces     namespaceDataStore.DataStore
 	graphEvaluator graph.Evaluator
+	reconcileStore reconciliation.Store
+}
+
+func (s *pipelineImpl) Reconcile(clusterID string) error {
+	defer s.reconcileStore.Close()
+
+	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+	results, err := s.namespaces.Search(query)
+	if err != nil {
+		return err
+	}
+	idsToDelete := search.ResultsToIDSet(results).Difference(s.reconcileStore.GetSet()).AsSlice()
+	if len(idsToDelete) > 0 {
+		log.Infof("Deleting namespaces %+v as a part of reconciliation", idsToDelete)
+	}
+	errList := errorhelpers.NewErrorList("Namespace reconciliation")
+	for _, id := range idsToDelete {
+		errList.AddError(s.runRemovePipeline(central.ResourceAction_REMOVE_RESOURCE, &storage.NamespaceMetadata{Id: id}))
+	}
+	return errList.ToError()
 }
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
@@ -52,6 +81,7 @@ func (s *pipelineImpl) Run(msg *central.MsgFromSensor, _ pipeline.MsgInjector) e
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(event.GetAction(), namespace)
 	default:
+		s.reconcileStore.Add(event.GetId())
 		return s.runGeneralPipeline(event.GetAction(), namespace)
 	}
 }

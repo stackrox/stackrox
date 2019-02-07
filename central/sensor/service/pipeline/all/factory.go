@@ -27,14 +27,14 @@ func (s *factoryImpl) GetPipeline(clusterID string) (pipeline.Pipeline, error) {
 		return nil, err
 	}
 
-	return NewPipeline(deploymentevents.Singleton(),
-		processindicators.Singleton(),
-		networkpolicies.Singleton(),
-		namespaces.Singleton(),
-		secrets.Singleton(),
-		nodes.Singleton(),
-		providermetadata.Singleton(),
-		scrapeupdate.Singleton(),
+	return NewPipeline(clusterID, deploymentevents.GetPipeline(),
+		processindicators.GetPipeline(),
+		networkpolicies.GetPipeline(),
+		namespaces.GetPipeline(),
+		secrets.GetPipeline(),
+		nodes.GetPipeline(),
+		providermetadata.GetPipeline(),
+		scrapeupdate.GetPipeline(),
 		flowUpdateFragment,
 	), nil
 }

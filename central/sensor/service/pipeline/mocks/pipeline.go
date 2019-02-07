@@ -56,6 +56,18 @@ func (mr *MockFragmentMockRecorder) OnFinish() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnFinish", reflect.TypeOf((*MockFragment)(nil).OnFinish))
 }
 
+// Reconcile mocks base method
+func (m *MockFragment) Reconcile(arg0 string) error {
+	ret := m.ctrl.Call(m, "Reconcile", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Reconcile indicates an expected call of Reconcile
+func (mr *MockFragmentMockRecorder) Reconcile(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reconcile", reflect.TypeOf((*MockFragment)(nil).Reconcile), arg0)
+}
+
 // Run mocks base method
 func (m *MockFragment) Run(arg0 *central.MsgFromSensor, arg1 pipeline.MsgInjector) error {
 	ret := m.ctrl.Call(m, "Run", arg0, arg1)

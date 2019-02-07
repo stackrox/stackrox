@@ -16,6 +16,11 @@ var (
 // Template design pattern. We define control flow here and defer logic to subclasses.
 //////////////////////////////////////////////////////////////////////////////////////
 
+// GetPipeline returns an instantiation of this particular pipeline
+func GetPipeline() pipeline.Fragment {
+	return NewPipeline(clusterDataStore.Singleton())
+}
+
 // NewPipeline returns a new instance of Pipeline.
 func NewPipeline(clusters clusterDataStore.DataStore) pipeline.Fragment {
 	return &pipelineImpl{
@@ -25,6 +30,11 @@ func NewPipeline(clusters clusterDataStore.DataStore) pipeline.Fragment {
 
 type pipelineImpl struct {
 	clusters clusterDataStore.DataStore
+}
+
+func (s *pipelineImpl) Reconcile(clusterID string) error {
+	// Nothing to reconcile
+	return nil
 }
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {

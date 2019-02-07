@@ -63,6 +63,12 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 
 	// Set the flag that all objects present at start up have been consumed.
 	treatCreatesAsUpdates.Set(false)
+
+	output <- &central.SensorEvent{
+		Resource: &central.SensorEvent_Synced{
+			Synced: &central.SensorEvent_ResourcesSynced{},
+		},
+	}
 }
 
 // Helper function that creates and adds a handler to an informer.

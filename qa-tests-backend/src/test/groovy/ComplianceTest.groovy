@@ -13,6 +13,7 @@ import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.ComplianceManagementService
 import services.ComplianceService
+import services.NetworkPolicyService
 import services.ProcessService
 import spock.lang.Shared
 import spock.lang.Unroll
@@ -477,7 +478,7 @@ class ComplianceTest extends BaseSpecification {
                 .addPodSelector()
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
         def policyId = orchestrator.applyNetworkPolicy(policy)
-        assert Services.waitForNetworkPolicy(policyId)
+        assert NetworkPolicyService.waitForNetworkPolicy(policyId)
 
         and:
         "verify deployment fully detected"

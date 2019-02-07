@@ -21,6 +21,7 @@ type Factory interface {
 type Fragment interface {
 	Pipeline
 	Match(msg *central.MsgFromSensor) bool
+	Reconcile(clusterID string) error
 }
 
 // FragmentFactory returns a Fragment for the given cluster.

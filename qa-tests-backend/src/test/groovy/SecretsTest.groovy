@@ -1,4 +1,4 @@
-import static Services.getSecret
+import services.SecretService
 import org.junit.experimental.categories.Category
 import groups.BAT
 import objects.Deployment
@@ -25,7 +25,7 @@ class SecretsTest extends BaseSpecification {
 
         then:
         "Verify Secret is added to the list"
-        assert getSecret(secID) != null
+        assert SecretService.getSecret(secID) != null
 
         cleanup:
         "Remove Secret #secretName"
@@ -47,7 +47,7 @@ class SecretsTest extends BaseSpecification {
 
         then:
         "Verify the deployment is binding with the secret"
-        assert getSecret(secID) != null
+        assert SecretService.getSecret(secID) != null
         Set<String> secretSet = orchestrator.getDeploymentSecrets(deployment)
         assert secretSet.contains(secretName)
 
@@ -68,7 +68,7 @@ class SecretsTest extends BaseSpecification {
 
         orchestrator.createDeployment(deployment)
 
-        Secret secretInfo = getSecret(secID)
+        Secret secretInfo = SecretService.getSecret(secID)
         int preNum = secretInfo.getRelationship().getDeploymentRelationshipsCount()
 
         and:
@@ -85,7 +85,7 @@ class SecretsTest extends BaseSpecification {
 
         //Add waiting logic cause stackrox need some time to response the number of deployments' change
         for (int waitTime = 0; waitTime < maxWaitTime; waitTime++) {
-            secretUpdate = getSecret(secID)
+            secretUpdate = SecretService.getSecret(secID)
             if (secretUpdate.getRelationship().getDeploymentRelationshipsCount() == (preNum - 1)) {
                 break
             }
@@ -121,7 +121,7 @@ class SecretsTest extends BaseSpecification {
 
         then:
         "Verify the secret should show the new bounding deployment"
-        Secret secretInfo = getSecret(secID)
+        Secret secretInfo = SecretService.getSecret(secID)
         assert secretInfo.getRelationship().getDeploymentRelationshipsCount() == 1
         assert secretInfo.getRelationship().getDeploymentRelationships(0).getName() == deploymentSecName
 
@@ -161,8 +161,8 @@ class SecretsTest extends BaseSpecification {
 
         then:
         "Verify the secret should show the new bounding deployment"
-        Secret secretInfoOne = getSecret(secIDOne)
-        Secret secretInfoTwo = getSecret(secIDTwo)
+        Secret secretInfoOne = SecretService.getSecret(secIDOne)
+        Secret secretInfoTwo = SecretService.getSecret(secIDTwo)
 
         assert secretInfoOne.getRelationship().getDeploymentRelationships(0).getName() == deploymentNameTwo
         assert secretInfoTwo.getRelationship().getDeploymentRelationships(0).getName() == deploymentNameOne

@@ -29,6 +29,11 @@ type pipelineImpl struct {
 	storeUpdater flowStoreUpdater
 }
 
+func (s *pipelineImpl) Reconcile(clusterID string) error {
+	// Nothing to reconcile
+	return nil
+}
+
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 	return msg.GetNetworkFlowUpdate() != nil
 }

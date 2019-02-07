@@ -131,6 +131,16 @@ class Kubernetes implements OrchestratorMain {
         println "removing the deployment:" + deployment.name
     }
 
+    def createOrchestratorDeployment(io.fabric8.kubernetes.api.model.apps.Deployment dep) {
+        dep.setApiVersion("")
+        dep.metadata.setResourceVersion("")
+        return client.apps().deployments().create(dep)
+    }
+
+    io.fabric8.kubernetes.api.model.apps.Deployment getOrchestratorDeployment(String ns, String name) {
+        return client.apps().deployments().inNamespace(ns).withName(name).get()
+    }
+
     String getDeploymentId(Deployment deployment) {
         return client.apps().deployments()
                 .inNamespace(deployment.namespace)
@@ -415,10 +425,10 @@ class Kubernetes implements OrchestratorMain {
             sleep(sleepDuration)
             waitTime += sleepDuration
         }
-        println "Timed out waiting for " + secretName
+        println "Timed out waiting for secret ${secretName}"
     }
 
-    String createSecret(String name) {
+    String createSecret(String name, String namespace = this.namespace) {
         Map<String, String> data = new HashMap<String, String>()
         data.put("username", "YWRtaW4=")
         data.put("password", "MWYyZDFlMmU2N2Rm")
@@ -434,9 +444,9 @@ class Kubernetes implements OrchestratorMain {
         )
 
         try {
-            Secret createdSecret = client.secrets().inNamespace("qa").createOrReplace(secret)
+            Secret createdSecret = client.secrets().inNamespace(namespace).createOrReplace(secret)
             if (createdSecret != null) {
-                waitForSecretCreation(name, this.namespace)
+                waitForSecretCreation(name, namespace)
                 return createdSecret.metadata.uid
             }
         } catch (Exception e) {
@@ -943,4 +953,29 @@ class Kubernetes implements OrchestratorMain {
     def createAdmissionController(V1beta1ValidatingWebhookConfiguration config) {
         println "create admission controllers stub: ${config}"
     }
+
+    String createNamespace(String ns) {
+        Namespace namespace = new Namespace("v1", null, new ObjectMeta(name: ns), null, null)
+        return client.namespaces().createOrReplace(namespace).metadata.getUid()
+    }
+
+    def deleteNamespace(String ns) {
+        client.namespaces().withName(ns).delete()
+    }
+
+    def waitForNamespaceDeletion(String ns, int timeoutSeconds = 30) {
+        int intervalSeconds = 3
+        println "Waiting for namespace ${ns} to be deleted"
+        for (int waitTime = 0; waitTime < timeoutSeconds / intervalSeconds; waitTime++) {
+            if (client.namespaces().withName(ns).get() == null ) {
+                println "K8s found that namespace ${ns} was deleted"
+                return true
+            }
+            println "Retrying in ${intervalSeconds}..."
+            sleep(intervalSeconds * 1000)
+        }
+        println "K8s did not detect that namespace ${ns} was deleted"
+        return false
+    }
+
 }

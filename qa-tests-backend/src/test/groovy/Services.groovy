@@ -1,9 +1,7 @@
-import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass.BuildDetectionRequest
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import orchestratormanager.OrchestratorType
 import services.BaseService
-import services.ClusterService
 import io.stackrox.proto.api.v1.AlertServiceGrpc
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
@@ -20,10 +18,6 @@ import io.stackrox.proto.api.v1.SearchServiceGrpc
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
-import io.stackrox.proto.api.v1.SecretServiceGrpc
-import io.stackrox.proto.api.v1.NetworkPolicyServiceGrpc
-import io.stackrox.proto.storage.SecretOuterClass.Secret
-import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass.Alert
 import io.stackrox.proto.storage.AlertOuterClass.ListAlert
 import io.stackrox.proto.storage.DeploymentOuterClass.ListDeployment
@@ -67,14 +61,6 @@ class Services extends BaseService {
     static getSearchServiceClient() {
         return SearchServiceGrpc.newBlockingStub(getChannel())
       }
-
-    static getSecretServiceClient() {
-        return SecretServiceGrpc.newBlockingStub(getChannel())
-      }
-
-    static getNetworkPolicyClient() {
-        return NetworkPolicyServiceGrpc.newBlockingStub(getChannel())
-    }
 
     static getNotifierClient() {
         return NotifierServiceGrpc.newBlockingStub(getChannel())
@@ -150,23 +136,6 @@ class Services extends BaseService {
                         .setQuery(query)
                         .build()
         return getSearchServiceClient().search(rawSearchRequest)
-      }
-
-    static Secret getSecret(String id) {
-        int intervalSeconds = 1
-        int waitTime
-        for (waitTime = 0; waitTime < 50000 / intervalSeconds; waitTime++) {
-            try {
-                Secret sec = getSecretServiceClient().getSecret(ResourceByID.newBuilder().setId(id).build())
-                return sec
-            } catch (Exception e) {
-                println "Exception checking for getting the secret, retrying...:"
-                println e.toString()
-                sleep(intervalSeconds * 1000)
-            }
-        }
-        println "Failed to add secret " + id + " after waiting " + waitTime * intervalSeconds + " seconds"
-        return null
       }
 
     static waitForViolation(String deploymentName, String policyName, int timeoutSeconds = 30) {
@@ -373,37 +342,6 @@ class Services extends BaseService {
         return policyMeta.getEnforcementActionsList()
     }
 
-    static submitNetworkGraphSimulation(String yaml, String query = null) {
-        println "Generating simulation using YAML:"
-        println yaml
-        try {
-            NetworkPolicyServiceOuterClass.SimulateNetworkGraphRequest.Builder request =
-                    NetworkPolicyServiceOuterClass.SimulateNetworkGraphRequest.newBuilder()
-                            .setClusterId(ClusterService.getClusterId())
-                            .setModification(
-                                NetworkPolicyServiceOuterClass.NetworkPolicyModification.newBuilder()
-                                    .setApplyYaml(yaml))
-            if (query != null) {
-                request.setQuery(query)
-            }
-            return getNetworkPolicyClient().simulateNetworkGraph(request.build())
-        } catch (Exception e) {
-            println e.toString()
-        }
-    }
-
-    static getNetworkGraph() {
-        try {
-            return getNetworkPolicyClient().getNetworkGraph(
-                    NetworkPolicyServiceOuterClass.GetNetworkGraphRequest.newBuilder()
-                            .setClusterId(ClusterService.getClusterId())
-                            .build()
-            )
-        } catch (Exception e) {
-            println e.toString()
-        }
-    }
-
     static addSlackNotifier(String name) {
         try {
             return getNotifierClient().postNotifier(
@@ -503,23 +441,6 @@ class Services extends BaseService {
         }
     }
 
-    static sendSimulationNotification(
-            String notifierId,
-            String yaml,
-            String clusterId = ClusterService.getClusterId()) {
-        try {
-            NetworkPolicyServiceOuterClass.SendNetworkPolicyYamlRequest.Builder request =
-                    NetworkPolicyServiceOuterClass.SendNetworkPolicyYamlRequest.newBuilder()
-            notifierId == null ?: request.setNotifierId(notifierId)
-            clusterId == null ?: request.setClusterId(clusterId)
-            yaml == null ?: request.setYaml(yaml)
-            return getNetworkPolicyClient().sendNetworkPolicyYAML(request.build())
-        } catch (Exception e) {
-            println e.toString()
-            assert e instanceof StatusRuntimeException
-        }
-    }
-
     static String addGcrRegistryAndScanner() {
         String serviceAccount = System.getenv("GKE_SERVICE_ACCOUNT")
         String gcrId = ""
@@ -557,24 +478,6 @@ class Services extends BaseService {
         } catch (Exception e) {
             println e.toString()
         }
-    }
-
-    static waitForNetworkPolicy(String id, int timeoutSeconds = 30) {
-        int intervalSeconds = 1
-        int waitTime
-        for (waitTime = 0; waitTime < timeoutSeconds / intervalSeconds; waitTime++) {
-            try {
-                getNetworkPolicyClient().getNetworkPolicy(ResourceByID.newBuilder().setId(id).build())
-                return true
-            } catch (Exception e) {
-                println "Exception checking for NetworkPolicy in SR, retrying...:"
-                println e.toString()
-                sleep(intervalSeconds * 1000)
-            }
-        }
-
-        println "SR did not detect the network policy"
-        return false
     }
 
     static boolean roxDetectedDeployment(String deploymentID) {

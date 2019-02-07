@@ -8,10 +8,14 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
@@ -21,12 +25,18 @@ var (
 // Template design pattern. We define control flow here and defer logic to subclasses.
 //////////////////////////////////////////////////////////////////////////////////////
 
+// GetPipeline returns an instantiation of this particular pipeline
+func GetPipeline() pipeline.Fragment {
+	return NewPipeline(clusterDataStore.Singleton(), networkPoliciesStore.Singleton(), graph.Singleton())
+}
+
 // NewPipeline returns a new instance of Pipeline.
 func NewPipeline(clusters clusterDataStore.DataStore, networkPolicies networkPoliciesStore.Store, graphEvaluator graph.Evaluator) pipeline.Fragment {
 	return &pipelineImpl{
 		clusters:        clusters,
 		networkPolicies: networkPolicies,
 		graphEvaluator:  graphEvaluator,
+		reconcileStore:  reconciliation.NewStore(),
 	}
 }
 
@@ -34,6 +44,31 @@ type pipelineImpl struct {
 	clusters        clusterDataStore.DataStore
 	networkPolicies networkPoliciesStore.Store
 	graphEvaluator  graph.Evaluator
+	reconcileStore  reconciliation.Store
+}
+
+func (s *pipelineImpl) Reconcile(clusterID string) error {
+	defer s.reconcileStore.Close()
+
+	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: clusterID})
+	if err != nil {
+		return err
+	}
+
+	existingIDs := set.NewStringSet()
+	for _, n := range networkPolicies {
+		existingIDs.Add(n.GetId())
+	}
+
+	idsToDelete := existingIDs.Difference(s.reconcileStore.GetSet()).AsSlice()
+	if len(idsToDelete) > 0 {
+		log.Infof("Deleting network policies %+v as a part of reconciliation", idsToDelete)
+	}
+	errList := errorhelpers.NewErrorList("Network Policy reconciliation")
+	for _, id := range idsToDelete {
+		errList.AddError(s.runRemovePipeline(central.ResourceAction_REMOVE_RESOURCE, &storage.NetworkPolicy{Id: id}))
+	}
+	return errList.ToError()
 }
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
@@ -52,6 +87,7 @@ func (s *pipelineImpl) Run(msg *central.MsgFromSensor, _ pipeline.MsgInjector) e
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(event.GetAction(), networkPolicy)
 	default:
+		s.reconcileStore.Add(event.GetId())
 		return s.runGeneralPipeline(event.GetAction(), networkPolicy)
 	}
 }
