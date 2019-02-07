@@ -93,7 +93,7 @@ function launch_sensor {
     local extra_json_config=()
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then
         extra_config+=("--monitoring-endpoint=monitoring.stackrox:443")
-        extra_json_config+='"monitoringEndpoint": "monitoring.stackrox:443", '
+        extra_json_config+=', "monitoringEndpoint": "monitoring.stackrox:443"'
     fi
 
     # Delete path

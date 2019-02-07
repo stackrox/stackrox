@@ -68,7 +68,7 @@ function wait_for_central {
 #   - image reference (e.g., stackrox/main:$(git describe --tags --abbrev=10 --dirty))
 #   - central API endpoint reachable from the container (e.g., my-host:8080)
 #   - directory to drop files in
-#   - extra fields in JSON format
+#   - extra fields in JSON format (a leading comma MUST be added; a trailing comma must NOT be added)
 function get_cluster_zip {
     LOCAL_API_ENDPOINT="$1"
     CLUSTER_NAME="$2"
@@ -80,9 +80,6 @@ function get_cluster_zip {
     EXTRA_JSON="$8"
 
     echo "Creating a new cluster"
-    if [ "$EXTRA_JSON" != "" ]; then
-        EXTRA_JSON=", $EXTRA_JSON"
-    fi
     export CLUSTER_JSON="{\"name\": \"$CLUSTER_NAME\", \"type\": \"$CLUSTER_TYPE\", \"main_image\": \"$CLUSTER_IMAGE\", \"central_api_endpoint\": \"$CLUSTER_API_ENDPOINT\", \"runtime_support\": $RUNTIME_SUPPORT, \"admission_controller\": $ADMISSION_CONTROLLER $EXTRA_JSON}"
 
     TMP=$(mktemp)
