@@ -27,26 +27,26 @@ import (
 )
 
 const (
-	kubeProxyLabelKey   = "component"
-	kubeProxyLabelValue = "kube-proxy"
-	kubeProxyType       = "StaticPods"
-	kubeSystemNamespace = "kube-system"
+	k8sStandalonePodType = "StaticPods"
+	kubeSystemNamespace  = "kube-system"
 )
 
 var (
 	logger = logging.LoggerForModule()
 
-	kubeProxyDeploymentName = "static-kube-proxy-pods"
-	kubeProxyDeploymentID   = getKubeProxyDeploymentID()
+	k8sComponentLabelKeys = []string{
+		"component",
+		"k8s-app",
+	}
 )
 
-func getKubeProxyDeploymentID() string {
+func getK8sComponentID(component string) string {
 	u, err := uuid.FromString(env.ClusterID.Setting())
 	if err != nil {
 		logger.Error(err)
 		return ""
 	}
-	return uuid.NewV5(u, "kube-proxy").String()
+	return uuid.NewV5(u, component).String()
 }
 
 type deploymentWrap struct {
@@ -84,15 +84,21 @@ func newWrap(obj interface{}, kind string) *deploymentWrap {
 	}
 }
 
-func (w *deploymentWrap) populateKubeProxyIfNecessary(o *v1.Pod) *metav1.LabelSelector {
-	if o.Namespace == kubeSystemNamespace && o.Labels[kubeProxyLabelKey] == kubeProxyLabelValue {
-		w.Id = kubeProxyDeploymentID
-		w.Name = kubeProxyDeploymentName
-		w.Type = kubeProxyType
-		return &metav1.LabelSelector{
-			MatchLabels: map[string]string{
-				kubeProxyLabelKey: kubeProxyLabelValue,
-			},
+func (w *deploymentWrap) populateK8sComponentIfNecessary(o *v1.Pod) *metav1.LabelSelector {
+	if o.Namespace == kubeSystemNamespace {
+		for _, labelKey := range k8sComponentLabelKeys {
+			value, ok := o.Labels[labelKey]
+			if !ok {
+				continue
+			}
+			w.Id = getK8sComponentID(value)
+			w.Name = fmt.Sprintf("static-%s-pods", value)
+			w.Type = k8sStandalonePodType
+			return &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					labelKey: value,
+				},
+			}
 		}
 	}
 	return nil
@@ -132,7 +138,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 		// instead of looking for it inside a PodTemplate.
 		podLabels = o.Labels
 
-		labelSelector = w.populateKubeProxyIfNecessary(o)
+		labelSelector = w.populateK8sComponentIfNecessary(o)
 	case *v1beta1.CronJob:
 		// Cron jobs have a Job spec that then have a Pod Template underneath
 		podLabels = o.Spec.JobTemplate.Spec.Template.GetLabels()
@@ -165,7 +171,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 	if action != central.ResourceAction_REMOVE_RESOURCE {
 		// If we have a standalone pod, we cannot use the labels to try and select that pod so we must directly populate the pod data
 		// We need to special case kube-proxy because we are consolidating it into a deployment
-		if pod, ok := obj.(*v1.Pod); ok && w.Id != kubeProxyDeploymentID {
+		if pod, ok := obj.(*v1.Pod); ok && w.Type != k8sStandalonePodType {
 			w.populateDataFromPods(pod)
 		} else {
 			if err := w.populatePodData(w.Name, labelSelector, lister); err != nil {
