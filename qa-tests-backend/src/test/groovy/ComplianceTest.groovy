@@ -425,11 +425,6 @@ class ComplianceTest extends BaseSpecification {
                          "Deployment uses host network, which allows it to subvert network policies"],
                         ComplianceState.COMPLIANCE_STATE_FAILURE),
                 new Control(
-                        "PCI_DSS_3_2:2_2_1",
-                        ["Container compliance-deployment in Deployment is running processes from multiple binaries, " +
-                                 "indicating the container is performing multiple tasks"],
-                        ComplianceState.COMPLIANCE_STATE_FAILURE),
-                new Control(
                         "PCI_DSS_3_2:1_3_2",
                         ["Deployment uses host network, which allows it to subvert network policies"],
                         ComplianceState.COMPLIANCE_STATE_FAILURE),
