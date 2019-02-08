@@ -1,12 +1,12 @@
 import React from 'react';
 import ComplianceByStandard from 'Containers/Compliance2/widgets/ComplianceByStandard';
-import RelatedEntitiesList from 'Containers/Compliance2/widgets/RelatedEntitiesList';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import EntityCompliance from 'Containers/Compliance2/widgets/EntityCompliance';
 import ResourceCount from 'Containers/Compliance2/widgets/ResourceCount';
 import Query from 'Components/ThrowingQuery';
 import { CLUSTER_QUERY as QUERY } from 'queries/cluster';
+import ResourceRelatedResourceList from 'Containers/Compliance2/widgets/ResourceRelatedResourceList';
 import Header from './Header';
 
 function processData(data) {
@@ -18,12 +18,11 @@ const ClusterPage = ({ sidePanelMode, params }) => (
     <Query query={QUERY} variables={{ id: params.entityId }} pollInterval={5000}>
         {({ loading, data }) => {
             const cluster = processData(data);
-            const header = cluster.name;
             return (
                 <section className="flex flex-col h-full w-full">
                     {!sidePanelMode && (
                         <Header
-                            header={header}
+                            header={cluster.name}
                             subHeader="Cluster"
                             scanCluster={params.entityId}
                             type="CLUSTER"
@@ -74,10 +73,20 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                                 params={params}
                             />
                             {!sidePanelMode && (
-                                <RelatedEntitiesList
-                                    type={entityTypes.DEPLOYMENT}
-                                    params={params}
-                                />
+                                <>
+                                    <ResourceRelatedResourceList
+                                        listEntityType={entityTypes.NAMESPACE}
+                                        pageEntityType={entityTypes.CLUSTER}
+                                        pageEntity={cluster}
+                                        className="s-2"
+                                    />
+                                    <ResourceRelatedResourceList
+                                        listEntityType={entityTypes.DEPLOYMENT}
+                                        pageEntityType={entityTypes.CLUSTER}
+                                        pageEntity={cluster}
+                                        className="s-2"
+                                    />
+                                </>
                             )}
                         </div>
                     </div>

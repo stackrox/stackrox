@@ -87,7 +87,7 @@ const EntityCompliance = ({ entityType, entityName, history }) => {
                                     </div>
                                     <div
                                         className="w-full flex justify-end overflow-hidden relative"
-                                        style={{ 'max-height': '129px' }}
+                                        style={{ maxHeight: '129px' }}
                                     >
                                         <VerticalBarChart
                                             plotProps={{ height: 165, width: 257 }}

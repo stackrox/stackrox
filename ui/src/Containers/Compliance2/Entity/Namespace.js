@@ -11,12 +11,14 @@ import pluralize from 'pluralize';
 import Cluster from 'images/cluster.svg';
 import { NAMESPACE_QUERY as QUERY } from 'queries/namespace';
 import Widget from 'Components/Widget';
+import ResourceRelatedResourceList from 'Containers/Compliance2/widgets/ResourceRelatedResourceList';
 import Header from './Header';
 
 function processData(data) {
     const defaultValue = {
         labels: []
     };
+
     if (!data || !data.results || !data.results.metadata) return defaultValue;
 
     const { metadata, ...rest } = data.results;
@@ -77,7 +79,7 @@ const NamespacePage = ({ sidePanelMode, params }) => (
                                     namespace.labels.length
                                 )}`}
                             >
-                                <Labels list={Object.values(namespace.labels)} />
+                                <Labels list={namespace.labels.map(label => label.value)} />
                             </Widget>
 
                             <Widget header="Annotations" className="sx-2">
@@ -105,12 +107,18 @@ const NamespacePage = ({ sidePanelMode, params }) => (
                                 type={entityTypes.CIS_DOCKER_V1_1_0}
                                 params={params}
                             />
-                            {/* {!sidePanelMode && (
-                                <RelatedEntitiesList
-                                    type={entityTypes.DEPLOYMENT}
-                                    params={params}
-                                />
-                            )} */}
+                            <ResourceRelatedResourceList
+                                listEntityType={entityTypes.DEPLOYMENT}
+                                pageEntityType={entityTypes.NAMESPACE}
+                                pageEntity={namespace}
+                                className="s-2"
+                            />
+                            <ResourceRelatedResourceList
+                                listEntityType={entityTypes.SECRET}
+                                pageEntityType={entityTypes.NAMESPACE}
+                                pageEntity={namespace}
+                                className="s-2"
+                            />
                         </div>
                     </div>
                 </section>

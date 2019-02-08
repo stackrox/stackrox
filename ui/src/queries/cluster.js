@@ -21,3 +21,27 @@ export const CLUSTER_QUERY = gql`
         }
     }
 `;
+
+export const CLUSTER_WITH_NAMESPACES = gql`
+    query getCluster($id: ID!) {
+        results: cluster(id: $id) {
+            id
+            name
+            nodes {
+                id
+                name
+            }
+            namespaces {
+                metadata {
+                    clusterId
+                    clusterName
+                    name
+                    labels {
+                        key
+                        value
+                    }
+                }
+            }
+        }
+    }
+`;

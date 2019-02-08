@@ -31,7 +31,8 @@ const common = Object.freeze({
         CLUSTER: 'cluster',
         NAMESPACE: 'namespace',
         NODE: 'node',
-        DEPLOYMENT: 'deployment'
+        DEPLOYMENT: 'deployment',
+        SECRET: 'secret'
     }
 });
 

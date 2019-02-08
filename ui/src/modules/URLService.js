@@ -3,7 +3,7 @@ import pageTypes from 'constants/pageTypes';
 import { resourceTypes } from 'constants/entityTypes';
 import contextTypes from 'constants/contextTypes';
 import { generatePath } from 'react-router-dom';
-import { nestedCompliancePaths, resourceTypesToUrl, riskPath } from '../routePaths';
+import { nestedCompliancePaths, resourceTypesToUrl, riskPath, secretsPath } from '../routePaths';
 
 function isResource(type) {
     return Object.values(resourceTypes).includes(type);
@@ -35,6 +35,10 @@ function getPath(context, pageType, urlParams) {
         [contextTypes.RISK]: {
             [pageTypes.ENTITY]: riskPath,
             [pageTypes.LIST]: '/main/risk'
+        },
+        [contextTypes.SECRET]: {
+            [pageTypes.ENTITY]: secretsPath,
+            [pageTypes.LIST]: '/main/secrets'
         }
     };
 
@@ -45,9 +49,18 @@ function getPath(context, pageType, urlParams) {
     if (!path) return null;
 
     const params = { ...urlParams };
+
+    // Patching url params for legacy contexts
+    if (context === contextTypes.SECRET) {
+        params.secretId = params.entityId;
+    } else if (context === contextTypes.RISK) {
+        params.deploymentId = params.entityid;
+    }
+
     if (isResourceType) {
         params.entityType = resourceTypesToUrl[urlParams.entityType];
     }
+
     return generatePath(path, params);
 }
 
@@ -80,7 +93,7 @@ function keysToLowerCase(query) {
     if (!query) return null;
 
     return Object.entries(query).reduce((acc, entry) => {
-        const key = entry[0];
+        const key = entry[0][0].toUpperCase() + entry[0].substring(1).toLowerCase();
         // eslint-disable-next-line
         acc[key] = entry[1];
         return acc;
@@ -90,7 +103,7 @@ function keysToLowerCase(query) {
 function getLinkTo(context, pageType, params) {
     const { query, ...urlParams } = params;
     const pathname = getPath(context, pageType, urlParams);
-    const search = query ? qs.stringify(keysToLowerCase(query), { addQueryPrefix: true }) : null;
+    const search = query ? qs.stringify(keysToLowerCase(query), { addQueryPrefix: true }) : '';
 
     return {
         pathname,

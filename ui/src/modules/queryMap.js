@@ -6,7 +6,7 @@ import standardLabels from 'messages/standards';
 import contextTypes from 'constants/contextTypes';
 import pageTypes from 'constants/pageTypes';
 import { CLUSTER_QUERY } from 'queries/cluster';
-import { NAMESPACE_QUERY, RELATED_DEPLOYMENTS } from 'queries/namespace';
+import { NAMESPACE_QUERY } from 'queries/namespace';
 import { CLUSTERS_LIST_QUERY, NAMESPACES_LIST_QUERY, NODES_QUERY } from 'queries/table';
 import { NODE_QUERY } from 'queries/node';
 import { AGGREGATED_RESULTS } from 'queries/controls';
@@ -90,16 +90,6 @@ export default [
         component: [componentTypes.HEADER],
         config: {
             query: NODE_QUERY,
-            variables: [{ graphQLParam: 'id', queryParam: 'entityId' }]
-        }
-    },
-    {
-        context: [contextTypes.COMPLIANCE],
-        pageType: [pageTypes.ENTITY],
-        entityType: [entityTypes.CLUSTER],
-        component: [componentTypes.RELATED_ENTITIES_LIST],
-        config: {
-            query: RELATED_DEPLOYMENTS,
             variables: [{ graphQLParam: 'id', queryParam: 'entityId' }]
         }
     },

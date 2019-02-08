@@ -24,6 +24,16 @@ export const AGGREGATED_RESULTS = gql`
         clusters {
             id
             name
+            namespaces {
+                metadata {
+                    id
+                    name
+                }
+            }
+            nodes {
+                id
+                name
+            }
         }
     }
 `;
@@ -36,6 +46,11 @@ export const CONTROL_QUERY = gql`
             id
             name
             standardId
+        }
+
+        complianceStandards {
+            id
+            name
         }
     }
 `;

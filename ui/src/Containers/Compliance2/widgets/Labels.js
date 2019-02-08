@@ -8,8 +8,8 @@ const Labels = ({ list }) => (
                 key={label}
                 className="border-b border-base-300 p-2 truncate"
                 style={{
-                    'column-break-inside': 'avoid',
-                    'page-break-inside': 'avoid'
+                    columnBreakInside: 'avoid',
+                    pageBreakInside: 'avoid'
                 }}
             >
                 {label}
@@ -19,7 +19,7 @@ const Labels = ({ list }) => (
 );
 
 Labels.propTypes = {
-    list: PropTypes.string.isRequired
+    list: PropTypes.arrayOf(PropTypes.string).isRequired
 };
 
 export default Labels;

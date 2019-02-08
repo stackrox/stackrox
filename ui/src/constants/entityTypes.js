@@ -3,12 +3,13 @@ export const resourceTypes = {
     CLUSTER: 'CLUSTER',
     NODE: 'NODE',
     DEPLOYMENT: 'DEPLOYMENT',
-    NETWORK_POLICY: 'NETWORK_POLICY'
+    NETWORK_POLICY: 'NETWORK_POLICY',
+    SECRET: 'SECRET'
 };
 
 export const standardEntityTypes = {
-    CONTROL: 'control',
-    GROUP: 'group'
+    CONTROL: 'CONTROL',
+    CATEGORY: 'CATEGORY'
 };
 
 export const standardTypes = {
@@ -29,5 +30,6 @@ export const standardBaseTypes = {
 
 export default {
     ...resourceTypes,
-    ...standardTypes
+    ...standardTypes,
+    ...standardEntityTypes
 };

@@ -1,65 +1,107 @@
-import React, { Component } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
-import { withRouter } from 'react-router-dom';
-
+import { Link } from 'react-router-dom';
 import Widget from 'Components/Widget';
-import List from 'Components/List';
-import { defaultColumnClassName } from 'Components/Table';
+import Loader from 'Components/Loader';
+import Message from 'Components/Message';
+import Query from 'Components/ThrowingQuery';
 
-class LinkListWidget extends Component {
-    static propTypes = {
-        title: PropTypes.string.isRequired,
-        data: PropTypes.arrayOf(
-            PropTypes.shape({
-                name: PropTypes.string.isRequired,
-                link: PropTypes.string.isRequired
-            })
-        ),
-        limit: PropTypes.number,
-        headerComponents: PropTypes.node,
-        history: PropTypes.shape({
-            push: PropTypes.func
-        }).isRequired
-    };
+function getLI(item) {
+    if (!item) return null;
 
-    static defaultProps = {
-        data: null,
-        limit: null,
-        headerComponents: null
-    };
-
-    onRowSelectHandler = () => ({ link }) => {
-        this.props.history.push(link);
-    };
-
-    render() {
-        const { title, data, limit, headerComponents } = this.props;
-        const columns = [
-            {
-                id: 'name',
-                accessor: 'name',
-                className: `${defaultColumnClassName} underline`,
-                Cell: ({ value }) => <div className="truncate pr-4">{value}</div>
-            }
-        ];
-        let truncatedData = data;
-        if (limit) truncatedData = data.slice(0, limit);
-        return (
-            <Widget
-                header={title}
-                headerComponents={headerComponents}
-                className="s-2"
-                bodyClassName="bg-base-100 flex-col"
-            >
-                <List
-                    columns={columns}
-                    rows={truncatedData}
-                    selectRow={this.onRowSelectHandler()}
-                    selectedIdAttribute="name"
-                />
-            </Widget>
-        );
-    }
+    const content = item.link ? (
+        <Link
+            to={item.link}
+            className="font-600 text-base-600 leading-normal p-2 inline-block w-full"
+        >
+            {item.label}
+        </Link>
+    ) : (
+        item.label
+    );
+    return (
+        <li
+            key={item.label}
+            className="border-b border-base-300 truncate"
+            style={{
+                columnBreakInside: 'avoid',
+                pageBreakInside: 'avoid'
+            }}
+        >
+            {content}
+        </li>
+    );
 }
 
-export default withRouter(LinkListWidget);
+const LinkListWidget = ({
+    query,
+    variables,
+    processData,
+    getHeadline,
+    className,
+    headerComponents,
+    numColumns
+}) => (
+    <Query query={query} variables={variables}>
+        {({ loading, data, error }) => {
+            let contents;
+            let headline = getHeadline();
+
+            if (loading) {
+                contents = <Loader />;
+            } else if (error) {
+                contents = <Message type="error" message="An error occured loading this data" />;
+            } else if (data) {
+                const items = processData(data);
+
+                if (items.length === 0) {
+                    return null;
+                }
+
+                headline = getHeadline(items);
+                contents = (
+                    <ul
+                        className={`columns-${numColumns} list-reset p-3 pt-0 w-full leading-normal`}
+                    >
+                        {items.map(item => getLI(item))}
+                    </ul>
+                );
+            }
+
+            return (
+                <Widget
+                    className={`${className}`}
+                    header={headline}
+                    headerComponents={headerComponents}
+                >
+                    {contents}
+                </Widget>
+            );
+        }}
+    </Query>
+);
+
+LinkListWidget.propTypes = {
+    query: PropTypes.shape({}).isRequired,
+    variables: PropTypes.shape({}),
+    processData: PropTypes.func,
+    getHeadline: PropTypes.func,
+    className: PropTypes.string,
+    headerComponents: PropTypes.node,
+    numColumns: PropTypes.number
+};
+
+LinkListWidget.defaultProps = {
+    variables: null,
+    processData(data) {
+        return data;
+    },
+    getHeadline() {
+        return null;
+    },
+    className: null,
+    headerComponents: null,
+    numColumns: 1
+};
+
+export default LinkListWidget;

@@ -22,13 +22,14 @@ function List(props) {
 List.propTypes = {
     rows: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
     columns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    selectRow: PropTypes.func.isRequired,
+    selectRow: PropTypes.func,
     selectedListItem: PropTypes.shape({}),
     selectedIdAttribute: PropTypes.string.isRequired
 };
 
 List.defaultProps = {
-    selectedListItem: null
+    selectedListItem: null,
+    selectRow: null
 };
 
 export default List;
