@@ -11,6 +11,7 @@ const (
 	ProcessIndicator
 	Image
 	Secret
+	OrchestratorMetadata
 	Namespace
 	NetworkPolicy
 	Node

@@ -191,8 +191,8 @@ func (b *storeImpl) getClusterContactTime(tx *bolt.Tx, id string) (*timestamp.Ti
 	return t, nil
 }
 
-// UpdateMetadata updates the cluster with cloud provider metadata
-func (b *storeImpl) UpdateMetadata(id string, metadata *storage.ProviderMetadata) error {
+// UpdateProviderMetadata updates the cluster with cloud provider metadata
+func (b *storeImpl) UpdateProviderMetadata(id string, metadata *storage.ProviderMetadata) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Cluster")
 
 	return b.Update(func(tx *bolt.Tx) error {
@@ -204,6 +204,23 @@ func (b *storeImpl) UpdateMetadata(id string, metadata *storage.ProviderMetadata
 			return fmt.Errorf("could not enrich cluster with metadata. Cluster %q does not exist", id)
 		}
 		cluster.ProviderMetadata = metadata
+		return b.updateCluster(tx, cluster)
+	})
+}
+
+// UpdateOrchestratorMetadata updates the orchestrator metadata of the cluster
+func (b *storeImpl) UpdateOrchestratorMetadata(id string, metadata *storage.OrchestratorMetadata) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Cluster")
+
+	return b.Update(func(tx *bolt.Tx) error {
+		cluster, exists, err := b.getCluster(tx, id, tx.Bucket(clusterBucket))
+		if err != nil {
+			return err
+		}
+		if !exists {
+			return fmt.Errorf("could not enrich cluster with metadata. Cluster %q does not exist", id)
+		}
+		cluster.OrchestratorMetadata = metadata
 		return b.updateCluster(tx, cluster)
 	})
 }

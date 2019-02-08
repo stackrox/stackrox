@@ -83,6 +83,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"mainImage: String!",
 		"monitoringEndpoint: String!",
 		"name: String!",
+		"orchestratorMetadata: OrchestratorMetadata",
 		"providerMetadata: ProviderMetadata",
 		"runtimeSupport: Boolean!",
 		"type: ClusterType!",
@@ -452,6 +453,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	builder.AddType("NumericalPolicy", []string{
 		"op: Comparator!",
 		"value: Float!",
+	})
+	builder.AddType("OrchestratorMetadata", []string{
+		"buildDate: Time",
+		"version: String!",
 	})
 	builder.AddType("Policy", []string{
 		"categories: [String!]!",
@@ -1282,6 +1287,11 @@ func (resolver *clusterResolver) MonitoringEndpoint() string {
 func (resolver *clusterResolver) Name() string {
 	value := resolver.data.GetName()
 	return value
+}
+
+func (resolver *clusterResolver) OrchestratorMetadata() (*orchestratorMetadataResolver, error) {
+	value := resolver.data.GetOrchestratorMetadata()
+	return resolver.root.wrapOrchestratorMetadata(value, true, nil)
 }
 
 func (resolver *clusterResolver) ProviderMetadata() (*providerMetadataResolver, error) {
@@ -4080,6 +4090,39 @@ func (resolver *numericalPolicyResolver) Op() string {
 func (resolver *numericalPolicyResolver) Value() float64 {
 	value := resolver.data.GetValue()
 	return float64(value)
+}
+
+type orchestratorMetadataResolver struct {
+	root *Resolver
+	data *storage.OrchestratorMetadata
+}
+
+func (resolver *Resolver) wrapOrchestratorMetadata(value *storage.OrchestratorMetadata, ok bool, err error) (*orchestratorMetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &orchestratorMetadataResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapOrchestratorMetadatas(values []*storage.OrchestratorMetadata, err error) ([]*orchestratorMetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*orchestratorMetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &orchestratorMetadataResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *orchestratorMetadataResolver) BuildDate() (*graphql.Time, error) {
+	value := resolver.data.GetBuildDate()
+	return timestamp(value)
+}
+
+func (resolver *orchestratorMetadataResolver) Version() string {
+	value := resolver.data.GetVersion()
+	return value
 }
 
 type policyResolver struct {

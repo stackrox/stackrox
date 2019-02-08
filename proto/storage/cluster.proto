@@ -30,6 +30,11 @@ message ProviderMetadata {
     }
 }
 
+message OrchestratorMetadata {
+    string                    version    = 1;
+    google.protobuf.Timestamp build_date = 2;
+}
+
 message Cluster {
     string                    id                          = 1;
     string                    name                        = 2 [(gogoproto.moretags) = "search:\"Cluster\""];
@@ -44,4 +49,5 @@ message Cluster {
 
     ProviderMetadata          provider_metadata           = 12;
     bool                      admission_controller        = 13;
+    OrchestratorMetadata      orchestrator_metadata       = 14;
 }

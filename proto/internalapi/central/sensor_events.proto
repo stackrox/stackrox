@@ -44,6 +44,7 @@ message SensorEvent {
         storage.ProcessIndicator process_indicator = 8;
         storage.ProviderMetadata provider_metadata = 10;
         ResourcesSynced          synced            = 11;
+        storage.OrchestratorMetadata orchestrator_metadata = 12;
     }
 }
 

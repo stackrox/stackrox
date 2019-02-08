@@ -1,4 +1,4 @@
-package providermetadata
+package clustermetadata
 
 import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -38,7 +38,7 @@ func (s *pipelineImpl) Reconcile(clusterID string) error {
 }
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
-	return msg.GetEvent().GetProviderMetadata() != nil
+	return msg.GetEvent().GetOrchestratorMetadata() != nil
 }
 
 // Run runs the pipeline template on the input and returns the output.
@@ -46,7 +46,7 @@ func (s *pipelineImpl) Run(msg *central.MsgFromSensor, _ pipeline.MsgInjector) e
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ProviderMetadata)
 
 	event := msg.GetEvent()
-	return s.clusters.UpdateProviderMetadata(event.GetClusterId(), event.GetProviderMetadata())
+	return s.clusters.UpdateOrchestratorMetadata(event.GetClusterId(), event.GetOrchestratorMetadata())
 }
 
 func (s *pipelineImpl) OnFinish() {}

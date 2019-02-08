@@ -2,6 +2,7 @@ package all
 
 import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/clustermetadata"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/deploymentevents"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/namespaces"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/networkflowupdate"
@@ -36,5 +37,6 @@ func (s *factoryImpl) GetPipeline(clusterID string) (pipeline.Pipeline, error) {
 		providermetadata.GetPipeline(),
 		scrapeupdate.GetPipeline(),
 		flowUpdateFragment,
+		clustermetadata.GetPipeline(),
 	), nil
 }

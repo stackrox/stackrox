@@ -188,7 +188,12 @@ func (ds *datastoreImpl) markAlertsStale(alerts []*storage.ListAlert) error {
 	return errorList.ToError()
 }
 
-// UpdateMetadata updates the cluster with cloud provider metadata
-func (ds *datastoreImpl) UpdateMetadata(id string, metadata *storage.ProviderMetadata) error {
-	return ds.storage.UpdateMetadata(id, metadata)
+// UpdateProviderMetadata updates the cluster with cloud provider metadata
+func (ds *datastoreImpl) UpdateProviderMetadata(id string, metadata *storage.ProviderMetadata) error {
+	return ds.storage.UpdateProviderMetadata(id, metadata)
+}
+
+// UpdateOrchestratorMetadata updates the cluster with orchestrator metadata
+func (ds *datastoreImpl) UpdateOrchestratorMetadata(id string, metadata *storage.OrchestratorMetadata) error {
+	return ds.storage.UpdateOrchestratorMetadata(id, metadata)
 }

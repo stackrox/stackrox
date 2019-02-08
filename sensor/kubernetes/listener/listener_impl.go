@@ -1,9 +1,13 @@
 package listener
 
 import (
+	"time"
+
 	"github.com/openshift/client-go/apps/informers/externalversions"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/providers"
 	"k8s.io/client-go/informers"
 )
@@ -22,6 +26,7 @@ type listenerImpl struct {
 
 func (k *listenerImpl) Start() {
 	k.sendClusterMetadata()
+	k.sendCloudProviderMetadata()
 
 	// Create informer factories for needed orchestrators.
 	var k8sFactory informers.SharedInformerFactory
@@ -47,13 +52,37 @@ func (k *listenerImpl) Events() <-chan *central.SensorEvent {
 }
 
 func (k *listenerImpl) sendClusterMetadata() {
+	version, err := k.clients.k8s.ServerVersion()
+	if err != nil {
+		log.Errorf("Could not get cluster metadata: %v", err)
+		return
+	}
+
+	buildDate, err := time.Parse(time.RFC3339, version.BuildDate)
+	if err != nil {
+		log.Error(err)
+	}
+
+	k.eventsC <- &central.SensorEvent{
+		Id:     "cluster metadata",
+		Action: central.ResourceAction_UPDATE_RESOURCE,
+		Resource: &central.SensorEvent_OrchestratorMetadata{
+			OrchestratorMetadata: &storage.OrchestratorMetadata{
+				Version:   version.GitVersion,
+				BuildDate: protoconv.ConvertTimeToTimestamp(buildDate),
+			},
+		},
+	}
+}
+
+func (k *listenerImpl) sendCloudProviderMetadata() {
 	m := providers.GetMetadata()
 	if m == nil {
 		log.Infof("No Cloud Provider metadata is found")
 		return
 	}
 	k.eventsC <- &central.SensorEvent{
-		Id:     "metadata",
+		Id:     "cloud provider metadata",
 		Action: central.ResourceAction_UPDATE_RESOURCE, // updates a cluster object
 		Resource: &central.SensorEvent_ProviderMetadata{
 			ProviderMetadata: m,
