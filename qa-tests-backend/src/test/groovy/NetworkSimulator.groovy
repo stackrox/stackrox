@@ -539,7 +539,7 @@ class NetworkSimulator extends BaseSpecification {
     def "Verify invalid clusterId passed to notification API"() {
         when:
         "create slack notifier"
-        NotifierOuterClass.Notifier notifier = NetworkPolicyService.addSlackNotifier("Slack Test")
+        NotifierOuterClass.Notifier notifier = Services.addSlackNotifier("Slack Test")
 
         and:
         "create Netowrk Policy yaml"
