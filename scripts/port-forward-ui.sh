@@ -17,4 +17,4 @@ central_pod="$(kubectl get pod -n stackrox --selector 'app=central' --field-sele
   exit 1;
 }
 
-kubectl port-forward -n stackrox "${central_pod}" 8000:443 & >/dev/null
+kubectl port-forward -n stackrox "${central_pod}" 8000:443 & >/dev/null 2>&1
