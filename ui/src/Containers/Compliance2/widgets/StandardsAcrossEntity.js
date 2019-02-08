@@ -68,7 +68,7 @@ const StandardsAcrossEntity = ({ type, params, pollInterval }) => (
     <Query params={params} componentType={componentTypeMapping[type]} pollInterval={pollInterval}>
         {({ loading, data }) => {
             let contents;
-            const headerText = `Standards Across ${type}`;
+            const headerText = `Standards Across ${type}s`;
             if (!loading || data.complianceStandards) {
                 const results = processData(data, type);
                 if (!results.length) {

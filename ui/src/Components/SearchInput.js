@@ -6,7 +6,7 @@ import * as Icon from 'react-feather';
 import { Creatable } from 'Components/ReactSelect';
 
 const placeholderCreator = placeholderText => () => (
-    <span className="text-base-500 flex h-full items-center pointer-events-none">
+    <span className="text-base-500 flex h-full items-center pointer-events-none text-lg">
         <span className="font-600 absolute">{placeholderText}</span>
     </span>
 );

@@ -5,7 +5,8 @@ import * as Icon from 'react-feather';
 const arrowButtonClass = 'absolute shadow bg-primary-100 h-16 cursor-pointer';
 const arrowIconClass = 'h-8 w-8 text-primary-600 ';
 const arrowStyles = {
-    top: 'calc(50% - 24px)' // centers the next/prev arrow within the container and takes into account the icon size
+    transform: 'translateY(-50%)',
+    top: '50%'
 };
 const arrowPropTypes = {
     className: PropTypes.string,
@@ -26,12 +27,13 @@ const NextArrow = props => {
     const isDisabled = isArrowDisabled(className);
     return (
         <div
-            style={{ ...style, ...arrowStyles }}
-            className={`${className} absolute z-10 pin-r ${isDisabled && 'hidden'}`}
+            className={`${className} absolute z-10 pin-r h-full pointer-events-none ${isDisabled &&
+                'hidden'}`}
         >
             <button
                 type="button"
-                className={`${arrowButtonClass} pin-r rounded-l-full`}
+                style={{ ...style, ...arrowStyles }}
+                className={`${arrowButtonClass} pin-r rounded-l-full hover:bg-secondary-200 pointer-events-auto`}
                 onClick={onClick}
             >
                 <Icon.ChevronRight className={`${arrowIconClass} ml-3`} />
@@ -49,11 +51,13 @@ const PrevArrow = props => {
     return (
         <div
             style={{ ...style, ...arrowStyles }}
-            className={`${className} absolute z-10 pin-l ${isDisabled && 'hidden'}`}
+            className={`${className} absolute z-10 pin-l h-full pointer-events-none ${isDisabled &&
+                'hidden'}`}
         >
             <button
                 type="button"
-                className={`${arrowButtonClass} pin-l rounded-r-full`}
+                style={{ ...style, ...arrowStyles }}
+                className={`${arrowButtonClass} pin-l rounded-r-full hover:bg-secondary-200 pointer-events-auto`}
                 onClick={onClick}
             >
                 <Icon.ChevronLeft className={`${arrowIconClass} mr-3`} />

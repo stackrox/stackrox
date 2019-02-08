@@ -9,7 +9,7 @@ const Tile = props => {
     const { enabled } = props;
     return (
         <div className={`p-3 w-full ${!enabled && 'opacity-50'}`}>
-            <div className="flex flex-row w-full bg-primary-100 border-3 rounded border-primary-300">
+            <div className="flex w-full bg-primary-100 border-3 rounded border-primary-300">
                 <div className="flex flex-col h-full border-r-3 border-primary-200">
                     <div className="px-5">
                         <Visual image={props.enforcement.image} label={props.enforcement.label} />

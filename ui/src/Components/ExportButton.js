@@ -24,7 +24,7 @@ class ExportButton extends Component {
     };
 
     static defaultProps = {
-        className: 'btn btn-base',
+        className: 'btn btn-base h-10',
         fileName: 'compliance',
         type: null,
         id: ''
@@ -68,7 +68,7 @@ class ExportButton extends Component {
                 <ul className="list-reset bg-base-100 border-2 border-primary-800 rounded">
                     <li className="p-4 border-b border-base-400 hidden">
                         <span>Export Evidence...</span>
-                        <div className="pt-4 flex flex-row">
+                        <div className="pt-4 flex">
                             <button
                                 className={
                                     selectedFormat === 'csv' ? selectedBtnClassName : btnClassName
@@ -111,7 +111,7 @@ class ExportButton extends Component {
                 <Button
                     className={this.props.className}
                     text="Export"
-                    icon={<Icon.FileText size="14" className="mr-3" />}
+                    icon={<Icon.FileText size="14" className="ml-1 mr-3" />}
                     onClick={this.openWidget}
                 />
                 {this.renderContent()}

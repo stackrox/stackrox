@@ -61,7 +61,7 @@ class SunburstDetailSection extends Component {
                         }`}
                     >
                         {link && (
-                            <a className="underline text-base-600" href={link}>
+                            <a className="underline text-base-600 leading-normal" href={link}>
                                 {text}
                             </a>
                         )}

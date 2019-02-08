@@ -31,13 +31,14 @@ const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRo
             <div>
                 <AppLink
                     context={context}
+                    externalLink
                     pageType={pageTypes.ENTITY}
                     entityType={entityType}
                     params={linkParams}
-                    className="w-full flex"
+                    className="w-full flex text-primary-700 hover:text-primary-800 focus:text-primary-700"
                 >
                     <div
-                        className="flex flex-1 text-base-600 uppercase items-center tracking-wide pl-4 leading-normal font-700 hover:text-primary-700 focus:text-primary-700"
+                        className="flex flex-1 uppercase items-center tracking-wide pl-4 leading-normal font-700"
                         data-test-id="panel-header"
                     >
                         {standard ? `${standardBaseTypes[standard]} ${name}` : name}
@@ -49,7 +50,7 @@ const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRo
 
     return (
         <Panel
-            className="w-2/3"
+            className="bg-primary-200 z-40 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-72 md:relative"
             headerTextComponent={headerTextComponent}
             onClose={clearSelectedRow}
         >

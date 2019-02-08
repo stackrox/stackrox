@@ -145,15 +145,15 @@
   --caution-800: hsla(16, 37%, 36%, 1);
   --caution-900: hsla(16, 28%, 21%, 1);
 
-  --alert-100: hsla(358, 45%, 98%, 1);
-  --alert-200: hsla(358, 100%, 96%, 1);
-  --alert-300: hsla(358, 81%, 90%, 1);
-  --alert-400: hsla(358, 68%, 78%, 1);
-  --alert-500: hsla(358, 66%, 68%, 1);
-  --alert-600: hsla(358, 96%, 67%, 1);
-  --alert-700: hsla(358, 50%, 52%, 1);
-  --alert-800: hsla(358, 37%, 36%, 1);
-  --alert-900: hsla(358, 28%, 21%, 1);
+  --alert-100: hsla(348, 45%, 98%, 1);
+  --alert-200: hsla(348, 100%, 96%, 1);
+  --alert-300: hsla(348, 81%, 90%, 1);
+  --alert-400: hsla(348, 68%, 78%, 1);
+  --alert-500: hsla(348, 66%, 68%, 1);
+  --alert-600: hsla(348, 96%, 67%, 1);
+  --alert-700: hsla(348, 50%, 52%, 1);
+  --alert-800: hsla(348, 37%, 36%, 1);
+  --alert-900: hsla(348, 28%, 21%, 1);
 }
 
 @tailwind preflight;
@@ -469,6 +469,7 @@ h6 {
 .slick-list,
 .slick-track {
   height: 100%;
+  user-select: text;
 }
 
 .slick-arrow::before {
@@ -719,19 +720,19 @@ h6 {
 }
 
 /* .rt-table:before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0px;
-    width: 100%;
-    height: 100%;
-    z-index: 3;
-    pointer-events: none;
-    background-image: linear-gradient(90deg, rgba(255,255,255,0.16) 1%, #FFFFFF 20px), linear-gradient(180deg, rgba(255,255,255,0.16) 1%, #FFFFFF 20px);
-    background-size: 20px 100%, 100% 20px;
-    background-repeat: no-repeat, no-repeat;
-    width: 100%;
-    background-position: right, bottom;
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none;
+  background-image: linear-gradient(90deg, rgba(255,255,255,0.16) 1%, #FFFFFF 20px), linear-gradient(180deg, rgba(255,255,255,0.16) 1%, #FFFFFF 20px);
+  background-size: 20px 100%, 100% 20px;
+  background-repeat: no-repeat, no-repeat;
+  width: 100%;
+  background-position: right, bottom;
 } */
 
 .ReactTable .-pagination {
@@ -751,7 +752,7 @@ h6 {
 .ReactTable .rt-thead {
   position: sticky;
   @apply .pin-t .bg-base-100 !important;
-  z-index: 4 !important;
+  z-index: 5 !important;
 }
 
 .ReactTable .rt-tbody {
@@ -800,6 +801,7 @@ h6 {
 .ReactTable .rt-tbody .rt-tr .rt-td {
   box-shadow: 0px -1px 0 0 config("colors.base-300"),
     inset 0px -1px 0 0 config("colors.base-300");
+  @apply .whitespace-normal !important;
 }
 
 .ReactTable .rt-tbody .rt-tr:hover .rt-td {
@@ -814,7 +816,7 @@ h6 {
   @apply .text-tertiary-700 .bg-tertiary-200 !important;
   box-shadow: 0px -1px 0 0 config("colors.tertiary-400"),
     inset 0px -1px 0 0 config("colors.tertiary-400");
-  z-index: 3 !important;
+  z-index: 4 !important;
 }
 
 .ReactTable .rt-tbody .rt-tr-group {
@@ -853,8 +855,7 @@ h6 {
 
 /* will clean up and refactor all selectors at some point */
 
-.ReactTable .rt-tbody .rt-td:nth-last-child(n + 2),
-.ReactTable .rt-tbody .rt-td:nth-last-child(n + 2) ~ li {
+.ReactTable .rt-tbody .rt-td:first-child {
   background: inherit;
   position: sticky !important;
   left: 0px;
@@ -912,12 +913,11 @@ h6 {
 
 .ReactTable .rt-tbody .rt-tr.row-active .rt-td.sticky-column,
 .ReactTable .rt-tbody .rt-tr.row-active:hover .rt-td.sticky-column,
-.ReactTable .rt-tbody .rt-tr.row-active .rt-td:nth-last-child(n + 3),
-.ReactTable .rt-tbody .rt-tr.row-active .rt-td:nth-last-child(n + 3) ~ .rt-tr {
+.ReactTable .rt-tbody .rt-tr.row-active .rt-td:first-child {
   box-shadow: 0px -1px 0 0 config("colors.tertiary-400"),
     inset 0px -1px 0 0 config("colors.tertiary-400"),
     11px 0 8px -4px config("colors.tertiary-200");
-  z-index: 3 !important;
+  z-index: 4 !important;
 }
 
 .ReactTable .rt-tbody .rt-td.sticky-column.left-checkbox-offset,
@@ -1041,23 +1041,15 @@ h6 {
 /* widget detail */
 .widget-detail-bullet {
   position: relative;
-  @apply font-500;
+  @apply font-500 p-2 py-3 border-b border-base-300;
 }
 
 .widget-detail-bullet::before {
   position: absolute;
   left: -18px;
-  top: 10px;
   content: "";
+  margin-top: 1px;
   @apply rounded-full border-2 border-base-400 bg-base-100 w-3 h-3;
-}
-
-.widget-detail-bullet:not(:last-child) {
-  @apply pt-2 pb-2 border-b border-base-300;
-}
-
-.widget-detail-bullet:last-child {
-  @apply pt-2;
 }
 
 .banner-background {
@@ -1110,4 +1102,17 @@ h6 {
   border-bottom: 8px solid transparent;
 
   border-right: 8px solid var(--primary-800);
+}
+
+.table-group {
+  box-shadow: inset 0px -1px 0px 0px var(--base-400), 0 -1px 0 0 var(--base-400);
+}
+
+.table-group:hover {
+  box-shadow: inset 0 -1px 0px 0px var(--success-400),
+    0 -1px 0 0 var(--success-400);
+}
+
+.table-group-active {
+  box-shadow: 0 1px 0px 0px var(--success-600), 0 -1px 0 0 var(--success-600);
 }

@@ -194,7 +194,7 @@ class LeftNavigation extends Component {
 
     render() {
         return (
-            <div className="flex flex-col justify-between bg-primary-800 flex-none overflow-overlay z-20">
+            <div className="flex flex-col justify-between bg-primary-800 flex-none overflow-overlay z-40">
                 <nav className="left-navigation">{this.renderLeftSideNavLinks()}</nav>
                 {this.renderFooter()}
                 {this.renderNavigationPanel()}

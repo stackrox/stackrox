@@ -24,19 +24,19 @@ const ComplianceDashboardHeader = props => (
             <div className="ml-3">
                 <NodesTile />
             </div>
-            <div className="ml-3 border-l border-base-100 mr-3" />
+            <div className="ml-3 border-l border-base-100 mr-3 opacity-50" />
             <div className="flex">
-                <div className="flex items-center mr-3">
+                <div className="flex items-center">
                     <ScanButton
-                        className="flex items-center justify-center border-2 border-primary-400 text-base-100 rounded p-2 uppercase hover:bg-primary-800 min-w-24"
-                        text="Scan All"
+                        className="flex items-center justify-center border-2 border-primary-400 text-base-100 rounded p-2 uppercase hover:bg-primary-800 min-w-43 h-10"
+                        text="Scan environment"
                         clusterId="*"
                         standardId="*"
                     />
                 </div>
                 <div className="flex items-center">
                     <ExportButton
-                        className="flex items-center border-2 border-primary-400 text-base-100 rounded p-2 uppercase hover:bg-primary-800"
+                        className="flex items-center border-2 border-primary-400 text-base-100 rounded p-2 uppercase hover:bg-primary-800 h-10"
                         fileName="compliance-dashboard"
                     />
                 </div>

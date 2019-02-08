@@ -16,7 +16,7 @@ const Panel = props => {
     );
     return (
         <div
-            className={`flex flex-col h-full border border-base-400 min-w-0 ${props.className}`}
+            className={`flex flex-col h-full border-r border-base-400 min-w-0 ${props.className}`}
             data-test-id="panel"
         >
             <div className="border-b border-base-400">

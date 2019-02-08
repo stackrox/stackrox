@@ -28,11 +28,17 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                             type="CLUSTER"
                         />
                     )}
-                    <div className="flex-1 relative bg-base-200 p-6 overflow-auto">
+                    <div
+                        className={`flex-1 relative bg-base-200 overflow-auto ${
+                            !sidePanelMode ? `p-6` : `p-4`
+                        } `}
+                    >
                         <div
                             className={`grid ${
-                                !sidePanelMode ? `grid-gap-6 md:grid-auto-fit md:grid-dense` : ``
-                            } sm:grid-columns-1 grid-gap-6`}
+                                !sidePanelMode
+                                    ? `grid grid-gap-6 md:grid-auto-fit md:grid-dense`
+                                    : ``
+                            } sm:grid-columns-1 grid-gap-5`}
                         >
                             <div
                                 className="grid s-2 md:grid-auto-fit md:grid-dense"

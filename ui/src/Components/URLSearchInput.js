@@ -13,7 +13,7 @@ const valueOptionClass = `bg-base-200 text-base-600 ${borderClass}`;
 
 const placeholderCreator = placeholderText => () => (
     <span className="text-base-500 flex h-full items-center pointer-events-none">
-        <span className="font-600 absolute">{placeholderText}</span>
+        <span className="font-600 absolute text-lg">{placeholderText}</span>
     </span>
 );
 

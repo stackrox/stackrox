@@ -10,15 +10,31 @@ import { NextArrow, PrevArrow } from 'Components/CollapsibleBanner/BannerArrows'
 const triggerClassName = 'flex w-full justify-center absolute pin-b';
 const triggerIconClassName = 'text-primary-600 h-4';
 const triggerElementStyle = {
-    top: '-10px' // adjusts position of the trigger element further up to overlap the border
+    top: '-11px' // adjusts position of the trigger element further up to overlap the border
 };
 
 const sliderSettings = {
     dots: false,
     infinite: false,
-    speed: 500,
+    responsive: [
+        {
+            breakpoint: 930,
+            settings: {
+                slidesToShow: 1,
+                slidesToScroll: 1
+            }
+        },
+        {
+            breakpoint: 1350,
+            settings: {
+                slidesToShow: 2,
+                slidesToScroll: 1
+            }
+        }
+    ],
     slidesToShow: 3,
     slidesToScroll: 1,
+    speed: 500,
     nextArrow: <NextArrow />,
     prevArrow: <PrevArrow />
 };
@@ -41,7 +57,7 @@ class CollapsibleBanner extends Component {
         const content = (
             <div className="absolute">
                 <div
-                    className="bg-base-100 border-2 border-primary-400 px-3 rounded-full z-10 relative cursor-pointer"
+                    className="bg-base-100 border-2 border-primary-400 px-3 rounded-full z-10 relative cursor-pointer flex hover:bg-primary-200 hover:border-primary-500"
                     style={triggerElementStyle}
                 >
                     {icon}
@@ -59,7 +75,7 @@ class CollapsibleBanner extends Component {
         let content = null;
         if (Array.isArray(this.props.children)) {
             content = this.props.children.map((child, i) => (
-                <div className="p-4" key={i}>
+                <div className="p-3" key={i}>
                     {child}
                 </div>
             ));
@@ -77,7 +93,10 @@ class CollapsibleBanner extends Component {
                 triggerClassName={triggerClassName}
                 triggerOpenedClassName={triggerClassName}
             >
-                <Slider {...sliderSettings} className="banner-background  bg-primary-200 h-64">
+                <Slider
+                    {...sliderSettings}
+                    className="banner-background px-3 py-1 bg-primary-200 h-64"
+                >
                     {content}
                 </Slider>
             </Collapsible>

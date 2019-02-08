@@ -15,17 +15,18 @@ const isStandard = type => Object.values(standardTypes).includes(type);
 const ListHeader = ({ match, location, searchComponent }) => {
     const params = URLService.getParams(match, location);
     const { entityType } = params;
-    const headerText = isStandard(entityType) ? standardLabels[entityType] : entityType;
+    const headerText = isStandard(entityType) ? standardLabels[entityType] : `${entityType}s`;
+    const subHeaderText = isStandard(entityType) ? 'Standard' : 'Resource list';
 
     return (
-        <PageHeader header={headerText} subHeader="Resource List">
+        <PageHeader header={headerText} subHeader={subHeaderText}>
             <div className="w-full">{searchComponent}</div>
-            <div className="flex flex-1 justify-end">
-                <div className="ml-3 border-l border-base-300 mr-3" />
-                <div className="flex">
-                    <div className="flex items-center">
-                        {isStandard(entityType) && (
-                            <div className="flex flex-row mr-2">
+            {isStandard(entityType) && (
+                <div className="flex flex-1 justify-end">
+                    <div className="border-l border-base-300 mx-3" />
+                    <div className="flex">
+                        <div className="flex items-center">
+                            <div className="flex">
                                 <ScanButton text="Scan" standardId={entityType} />
                                 <ExportButton
                                     fileName={headerText}
@@ -33,10 +34,10 @@ const ListHeader = ({ match, location, searchComponent }) => {
                                     type="STANDARD"
                                 />
                             </div>
-                        )}
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
         </PageHeader>
     );
 };

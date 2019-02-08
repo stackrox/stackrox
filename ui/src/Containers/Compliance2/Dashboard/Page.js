@@ -17,7 +17,7 @@ const ComplianceDashboardPage = ({ match, location }) => {
     const params = URLService.getParams(match, location);
 
     return (
-        <section className="flex flex-col relative">
+        <section className="flex flex-col relative min-h-full">
             <DashboardHeader
                 classes="bg-gradient-horizontal z-10 sticky pin-t text-base-100"
                 bgStyle={{
@@ -43,7 +43,10 @@ const ComplianceDashboardPage = ({ match, location }) => {
                     style={{ top: '-130px' }}
                     alt="Wave"
                 />
-                <div className="grid grid-gap-6 md:grid-auto-fit md:grid-dense">
+                <div
+                    className="grid grid-gap-6 md:grid-auto-fit md:grid-dense"
+                    style={{ '--min-tile-height': '160px' }}
+                >
                     <StandardsAcrossEntity
                         type={resourceTypes.CLUSTER}
                         params={params}

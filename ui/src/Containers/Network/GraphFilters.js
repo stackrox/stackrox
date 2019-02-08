@@ -33,10 +33,10 @@ class GraphFilters extends Component {
             <div
                 className={`absolute pin-t pin-l px-2 py-2 ${
                     this.props.offset ? 'mt-8' : 'mt-2'
-                } ml-2 absolute z-1 bg-primary-100 uppercase flex flex-row items-center text-sm border-base-400 border-2`}
+                } ml-2 absolute z-1 bg-primary-100 uppercase flex items-center text-sm border-base-400 border-2`}
             >
                 <span className="text-base-500 font-700 mr-2">Connections:</span>
-                <div className="flex flex-row items-center">
+                <div className="flex items-center">
                     <button
                         type="button"
                         value={value}

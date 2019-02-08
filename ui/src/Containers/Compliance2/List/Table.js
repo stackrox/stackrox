@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { standardTypes } from 'constants/entityTypes';
-import standardLabels from 'messages/standards';
 import pluralize from 'pluralize';
 
 import Table from 'Components/Table';
@@ -62,10 +61,10 @@ class ListTable extends Component {
                         tableData = data.results;
                         const total = tableData.length;
                         const groupedByText = params.query.groupBy
-                            ? `in ${tableData.length} ${pluralize(params.query.groupBy, total)}`
+                            ? `across ${tableData.length} ${pluralize(params.query.groupBy, total)}`
                             : '';
                         headerText = isStandard
-                            ? `${data.totalRows} ${standardLabels[params.entityType]} ${pluralize(
+                            ? `${data.totalRows} ${pluralize(
                                   'control',
                                   data.totalRows
                               )} ${groupedByText}`

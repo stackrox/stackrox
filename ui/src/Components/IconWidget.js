@@ -14,7 +14,7 @@ const IconWidget = ({ title, icon, description, linkUrl, loading, textSizeClass 
                 <img src={icon} alt={title} />
             </div>
             <div
-                className={`h-full flex font-600 items-start justify-center pt-3 ${textSizeClass}`}
+                className={`h-full flex font-600 items-start justify-center pt-3 leading-normal ${textSizeClass}`}
             >
                 <span>{description}</span>
             </div>

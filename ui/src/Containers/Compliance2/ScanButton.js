@@ -43,7 +43,7 @@ const ScanButton = ({ className, text, clusterId, standardId }) => (
                             <Button
                                 className={className}
                                 text={text}
-                                icon={<Icon.RefreshCcw size="14" className="mr-3" />}
+                                icon={<Icon.RefreshCcw size="14" className="ml-1 mr-3" />}
                                 onClick={scanOnClickHandler(triggerScan, clusterId, standardId)}
                                 isLoading={showLoader}
                             />
@@ -63,7 +63,7 @@ ScanButton.propTypes = {
 };
 
 ScanButton.defaultProps = {
-    className: 'btn btn-base',
+    className: 'btn btn-base h-10',
     clusterId: '*',
     standardId: '*'
 };

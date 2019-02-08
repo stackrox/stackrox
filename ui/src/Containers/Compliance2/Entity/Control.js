@@ -25,13 +25,17 @@ const ControlPage = ({ sidePanelMode, params }) => (
                             subHeader="Control"
                         />
                     )}
-                    <div className="flex-1 relative bg-base-200 p-6 overflow-auto">
+                    <div
+                        className={`flex-1 relative bg-base-200 overflow-auto ${
+                            !sidePanelMode ? `p-6` : `p-4`
+                        } `}
+                    >
                         <div
                             className={`grid ${
                                 !sidePanelMode
                                     ? `grid grid-gap-6 md:grid-auto-fit md:grid-dense`
                                     : ``
-                            } sm:grid-columns-1 md:grid-columns-3 grid-gap-6`}
+                            }sm:grid-columns-1 grid-gap-5`}
                         >
                             <ControlDetails
                                 standardId={standardId}

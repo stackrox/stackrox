@@ -15,7 +15,7 @@ function Button(props) {
             </button>
         );
     return (
-        <div className="flex flex-row">
+        <div className="flex">
             <button className="btn btn-base mr-2" type="button" onClick={props.onCancel}>
                 Cancel
             </button>

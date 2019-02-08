@@ -56,7 +56,7 @@ const ComplianceAcrossEntities = ({ params, pollInterval }) => (
             let contents = <Loader />;
             const headerText = isStandard(params.entityType)
                 ? `Compliance Across ${standardShortLabels[params.entityType]} Controls`
-                : `Compliance Across ${params.entityType}`;
+                : `Compliance Across ${params.entityType}s`;
             if (!loading && data) {
                 const results = processData(params.entityType, data);
                 if (!results.length) {

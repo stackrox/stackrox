@@ -83,7 +83,7 @@ class RuleGroups extends Component {
         return (
             <div className="w-full p-2">
                 {fields.map((group, idx, value) => (
-                    <div className="flex flex-row" key={idx}>
+                    <div className="flex" key={idx}>
                         <div className="w-full">
                             <Field
                                 jsonPath={`${group}.props.key`}

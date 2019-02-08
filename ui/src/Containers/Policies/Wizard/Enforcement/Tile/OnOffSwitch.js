@@ -20,7 +20,7 @@ class OnOffSwitch extends Component {
         const offSwitchClass = `px-2 py-1 border-2 bg-base-100 ${offSwitchColor} font-700 rounded-sm text-base-600 text-xs uppercase`;
 
         return (
-            <div className="flex flex-row py-2 w-full justify-center">
+            <div className="flex py-2 w-full justify-center">
                 <button
                     type="button"
                     className={onSwitchClass}

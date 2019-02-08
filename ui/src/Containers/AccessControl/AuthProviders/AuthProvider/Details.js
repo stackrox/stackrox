@@ -49,7 +49,7 @@ const Details = props => {
                             <div>{defaultRole}</div>
                         </div>
                         {groups.map((group, idx) => (
-                            <div className="p-4 flex flex-row w-full" key={idx}>
+                            <div className="p-4 flex w-full" key={idx}>
                                 <div className="w-full">
                                     <div className="text-base-600 font-700 pb-2">Key</div>
                                     <div>{group.props.key}</div>

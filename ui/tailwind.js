@@ -545,6 +545,7 @@ module.exports = {
         '20': '4.5rem',
         '24': '6rem',
         '32': '8rem',
+        '43': '10.875rem',
         '48': '12rem',
         '55': '13.75rem',
         '64': '16rem',
@@ -600,6 +601,7 @@ module.exports = {
         '20': '4.5rem',
         '24': '6rem',
         '32': '8rem',
+        '43': '10.875rem',
         '48': '12rem',
         '55': '13.75rem',
         '64': '16rem',
@@ -639,6 +641,7 @@ module.exports = {
         '20': '4.5rem',
         '24': '6rem',
         '32': '8rem',
+        '43': '10.875rem',
         '48': '12rem',
         '55': '13.75rem',
         '64': '16rem',
@@ -694,6 +697,7 @@ module.exports = {
         '20': '4.5rem',
         '24': '6rem',
         '32': '8rem',
+        '43': '10.875rem',
         '48': '12rem',
         '55': '13.75rem',
         '64': '16rem',
@@ -744,6 +748,7 @@ module.exports = {
         '20': '4.5rem',
         '24': '6rem',
         '32': '8rem',
+        '43': '10.875rem',
         '48': '12rem',
         '55': '13.75rem',
         '64': '16rem',
@@ -1081,7 +1086,7 @@ module.exports = {
         visibility: ['responsive', 'first-child', 'last-child', 'before', 'after'],
         whitespace: ['responsive', 'first-child', 'last-child', 'before', 'after'],
         width: ['responsive', 'first-child', 'last-child', 'before', 'after'],
-        zIndex: ['responsive', 'first-child', 'last-child', 'before', 'after']
+        zIndex: ['responsive', 'hover', 'first-child', 'last-child', 'before', 'after']
     },
 
     /*

@@ -43,8 +43,8 @@ class HorizontalBarChart extends Component {
         containerProps: {},
         plotProps: {},
         seriesProps: {},
-        valueGradientColorStart: 'var(--tertiary-300)',
-        valueGradientColorEnd: 'var(--tertiary-300',
+        valueGradientColorStart: '#B3DCFF',
+        valueGradientColorEnd: '#BDF3FF',
         onValueMouseOver: null,
         onValueMouseOut: null,
         minimal: false
@@ -143,8 +143,8 @@ class HorizontalBarChart extends Component {
         const defaultSeriesProps = {
             color: 'url(#horizontalGradient)',
             style: {
-                height: 12,
-                rx: '3px',
+                height: 14,
+                rx: '2px',
                 cursor: 'pointer'
             },
             onValueMouseOver: this.onValueMouseOverHandler,
@@ -185,8 +185,8 @@ class HorizontalBarChart extends Component {
             if (axisLinks[value])
                 inner = (
                     <Link
-                        className="underline font-condensed text-base-600 hover:text-primary-700"
                         style={{ fill: 'currentColor' }}
+                        className="underline font-condensed text-base-600 hover:text-primary-700"
                         to={axisLinks[value]}
                     >
                         {value}
@@ -261,8 +261,10 @@ class HorizontalBarChart extends Component {
                         }))}
                         style={{
                             height: seriesProps.style.height,
-                            stroke: 'var(--base-200)',
+                            stroke: 'var(--base-300)',
                             fill: `url(#bar-background)`,
+                            rx: '2',
+                            ry: '2',
                             cursor: 'pointer'
                         }}
                         onValueClick={this.onValueClickHandler}
@@ -276,7 +278,7 @@ class HorizontalBarChart extends Component {
                         labelAnchorY="no-change"
                         labelAnchorX="end-alignment"
                         style={{
-                            fill: 'var(--primary-500)',
+                            fill: 'var(--base-700)',
                             cursor: 'pointer'
                         }}
                     />

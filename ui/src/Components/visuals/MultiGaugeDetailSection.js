@@ -46,9 +46,9 @@ class MultiGaugeDetailSection extends Component {
     getSingleGaugeContent = (d, idx) => {
         const selectedGauge = this.state.selectedData;
         const passingClassName =
-            selectedGauge && selectedGauge.arc === 'inner' ? 'text-success-500' : '';
+            selectedGauge && selectedGauge.arc === 'inner' ? 'text-success-700' : '';
         const failingClassName =
-            selectedGauge && selectedGauge.arc === 'outer' ? 'text-alert-500' : '';
+            selectedGauge && selectedGauge.arc === 'outer' ? 'text-alert-700' : '';
         return (
             <div key={`${d.title}-${d.arc}`}>
                 <div
@@ -58,7 +58,7 @@ class MultiGaugeDetailSection extends Component {
                 >
                     <button
                         type="button"
-                        className={`text-base-500 underline pl-2 cursor-pointer ${passingClassName}`}
+                        className={`text-base-600 font-600 hover:text-success-700 underline cursor-pointer ${passingClassName}`}
                         onClick={this.onClick(d, 'inner', idx)}
                     >
                         {d.passing} passing controls
@@ -72,7 +72,7 @@ class MultiGaugeDetailSection extends Component {
                 >
                     <button
                         type="button"
-                        className={`text-base-500 underline pl-2 cursor-pointer ${failingClassName}`}
+                        className={`text-base-600 font-600 hover:text-alert-700 underline cursor-pointer ${failingClassName}`}
                         onClick={this.onClick(d, 'outer', idx)}
                     >
                         {d.failing} failing controls
@@ -86,44 +86,47 @@ class MultiGaugeDetailSection extends Component {
         const { colors } = this.props;
         const selectedGauge = this.state.selectedData;
         const passingClassName =
-            selectedGauge && selectedGauge.arc === 'inner' ? 'text-success-500' : '';
+            selectedGauge && selectedGauge.arc === 'inner' ? 'text-success-600' : '';
         const failingClassName =
-            selectedGauge && selectedGauge.arc === 'outer' ? 'text-alert-500' : '';
+            selectedGauge && selectedGauge.arc === 'outer' ? 'text-alert-600' : '';
         const percentagePassing = Math.round((d.passing / (d.passing + d.failing)) * 100);
         const percentageFailing = Math.round((d.failing / (d.passing + d.failing)) * 100);
         return (
             <div
                 key={`${d.title}-${d.arc}`}
-                className={`widget-detail-bullet ${
-                    selectedGauge && selectedGauge.index === idx ? '' : 'text-base-500'
+                className={`widget-detail-bullet flex items-center word-break py-2 ${
+                    selectedGauge && selectedGauge.index === idx ? '' : 'text-base-600 font-600'
                 }`}
             >
-                <Icon.Square fill={colors[idx]} stroke={d.color} className="h-3 w-3 pt-1" />
-                <span className="pl-1">{d.title}</span>
-                <button
-                    type="button"
-                    className={`text-base-500 underline pl-2 cursor-pointer ${selectedGauge &&
-                        selectedGauge.index === idx &&
-                        passingClassName}`}
-                    onClick={this.onClick(d, 'inner', idx)}
-                >
-                    {percentagePassing}%
-                </button>
-                <button
-                    type="button"
-                    className={`text-base-500 underline pl-2 cursor-pointer ${selectedGauge &&
-                        selectedGauge.index === idx &&
-                        failingClassName}`}
-                    onClick={this.onClick(d, 'outer', idx)}
-                >
-                    {percentageFailing}%
-                </button>
+                <Icon.Square fill={colors[idx]} stroke={d.color} className="h-2 w-2" />
+                <span className="pl-1 font-600 truncate">{d.title}</span>
+                <div className="ml-auto text-right flex flex-no-shrink">
+                    <button
+                        type="button"
+                        className={`text-sm text-base-600 font-600 hover:text-success-600 underline pl-2 cursor-pointer ${selectedGauge &&
+                            selectedGauge.index === idx &&
+                            passingClassName}`}
+                        onClick={this.onClick(d, 'inner', idx)}
+                    >
+                        {percentagePassing}%
+                    </button>
+                    <span className="px-1"> / </span>
+                    <button
+                        type="button"
+                        className={`text-sm text-base-600 hover:text-alert-600 font-600 underline cursor-pointer ${selectedGauge &&
+                            selectedGauge.index === idx &&
+                            failingClassName}`}
+                        onClick={this.onClick(d, 'outer', idx)}
+                    >
+                        {percentageFailing}%
+                    </button>
+                </div>
             </div>
         );
     };
 
     getContent = () => (
-        <div className="pt-3 pl-3">
+        <div className="pl-3">
             {this.props.data.map((d, idx) =>
                 this.props.data.length === 1
                     ? this.getSingleGaugeContent(d, idx)
@@ -134,7 +137,7 @@ class MultiGaugeDetailSection extends Component {
 
     render() {
         return (
-            <div className="border-base-300 border-l flex flex-col justify-between w-full">
+            <div className="border-base-300 border-l flex flex-col justify-between w-full text-sm">
                 {this.getContent()}
             </div>
         );
