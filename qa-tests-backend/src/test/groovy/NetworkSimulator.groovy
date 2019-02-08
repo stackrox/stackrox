@@ -566,7 +566,7 @@ class NetworkSimulator extends BaseSpecification {
         cleanup:
         "remove notifier"
         if (notifier != null) {
-            NetworkPolicyService.deleteNotifier(notifier.id)
+            Services.deleteNotifier(notifier.id)
         }
     }
 
