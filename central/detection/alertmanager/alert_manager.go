@@ -13,7 +13,8 @@ type AlertManager interface {
 	// we're looking at. It then pulls out the alerts matching the filters, and compares the alerts in the DB with the ones
 	// that have been produced, and takes care of the logic of marking alerts no longer being produced as resolved,
 	// notifying of new alerts, and updating the timestamp of updated alerts.
-	AlertAndNotify(alerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) error
+	// It returns true if it has actually added/removed/updated alerts.
+	AlertAndNotify(alerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (modified bool, err error)
 }
 
 // New returns a new instance of AlertManager. You should just use the singleton instance instead.

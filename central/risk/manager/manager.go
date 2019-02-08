@@ -23,6 +23,7 @@ type Manager interface {
 
 	ReprocessRisk()
 	ReprocessDeploymentRisk(deployment *storage.Deployment)
+	ReprocessRiskForDeployments(deploymentIDs ...string)
 }
 
 type managerImpl struct {
@@ -72,6 +73,24 @@ func (e *managerImpl) RemoveMultiplier(id string) {
 	e.ReprocessRisk()
 }
 
+func (e *managerImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
+	for _, id := range deploymentIDs {
+		deployment, exists, err := e.deploymentStorage.GetDeployment(id)
+		if err != nil {
+			log.Errorf("Couldn't retrieve deployment %q: %v", id, err)
+			continue
+		}
+		if !exists {
+			// Possible under normal operation.
+			continue
+		}
+		if err := e.addRiskToDeployment(deployment); err != nil {
+			log.Errorf("Error reprocessing deployment %q risk: %v", deployment.GetId(), err)
+		}
+	}
+
+}
+
 // ReprocessRisk iterates over all of the deployments and reprocesses the risk for them
 func (e *managerImpl) ReprocessRisk() {
 	deployments, err := e.deploymentStorage.GetDeployments()
@@ -90,7 +109,6 @@ func (e *managerImpl) ReprocessRisk() {
 
 // ReprocessDeploymentRisk will reprocess the passed deployments risk and save the results
 func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
-	defer metrics.ObserveRiskProcessingDuration(time.Now())
 	deployment = protoutils.CloneStorageDeployment(deployment)
 	if err := e.addRiskToDeployment(deployment); err != nil {
 		log.Errorf("Error reprocessing risk for deployment %s: %s", deployment.GetName(), err)
@@ -99,6 +117,7 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 
 // addRiskToDeployment will add the risk
 func (e *managerImpl) addRiskToDeployment(deployment *storage.Deployment) error {
+	defer metrics.ObserveRiskProcessingDuration(time.Now())
 	deployment.Risk = e.scorer.Score(deployment)
 	return e.deploymentStorage.UpdateDeployment(deployment)
 }

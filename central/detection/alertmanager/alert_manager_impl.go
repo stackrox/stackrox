@@ -28,21 +28,25 @@ type alertManagerImpl struct {
 	runtimeDetector runtime.Detector
 }
 
-func (d *alertManagerImpl) AlertAndNotify(currentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) error {
+func (d *alertManagerImpl) AlertAndNotify(currentAlerts []*storage.Alert, oldAlertFilters ...AlertFilterOption) (modified bool, err error) {
 	// Merge the old and the new alerts.
 	newAlerts, updatedAlerts, staleAlerts, err := d.mergeManyAlerts(currentAlerts, oldAlertFilters...)
 	if err != nil {
-		return err
+		return
 	}
+	modified = len(newAlerts) > 0 || len(updatedAlerts) > 0 || len(staleAlerts) > 0
 
 	// Mark any old alerts no longer generated as stale, and insert new alerts.
-	if err := d.notifyAndUpdateBatch(newAlerts); err != nil {
-		return err
+	err = d.notifyAndUpdateBatch(newAlerts)
+	if err != nil {
+		return
 	}
-	if err := d.updateBatch(updatedAlerts); err != nil {
-		return err
+	err = d.updateBatch(updatedAlerts)
+	if err != nil {
+		return
 	}
-	return d.markAlertsStale(staleAlerts)
+	err = d.markAlertsStale(staleAlerts)
+	return
 }
 
 // UpdateBatch updates all of the alerts in the datastore.

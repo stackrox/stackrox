@@ -101,14 +101,16 @@ func queryHasFields(fields ...search.FieldLabel) func(interface{}) bool {
 func (suite *AlertManagerTestSuite) TestGetAlertsByPolicy() {
 	suite.alertsMock.EXPECT().SearchRawAlerts(testutils.PredMatcher("query for violation state, policy", queryHasFields(search.ViolationState, search.PolicyID))).Return(([]*storage.Alert)(nil), nil)
 
-	err := suite.alertManager.AlertAndNotify(nil, WithPolicyID("pid"))
+	modified, err := suite.alertManager.AlertAndNotify(nil, WithPolicyID("pid"))
+	suite.False(modified)
 	suite.NoError(err, "update should succeed")
 }
 
 func (suite *AlertManagerTestSuite) TestGetAlertsByDeployment() {
 	suite.alertsMock.EXPECT().SearchRawAlerts(testutils.PredMatcher("query for violation state, deployment", queryHasFields(search.ViolationState, search.DeploymentID))).Return(([]*storage.Alert)(nil), nil)
 
-	err := suite.alertManager.AlertAndNotify(nil, WithDeploymentIDs("did"))
+	modified, err := suite.alertManager.AlertAndNotify(nil, WithDeploymentIDs("did"))
+	suite.False(modified)
 	suite.NoError(err, "update should succeed")
 }
 
@@ -120,7 +122,8 @@ func (suite *AlertManagerTestSuite) TestOnUpdatesWhenAlertsDoNotChange() {
 	suite.alertsMock.EXPECT().UpdateAlert(alerts[1]).Return(nil)
 	suite.alertsMock.EXPECT().UpdateAlert(alerts[2]).Return(nil)
 
-	err := suite.alertManager.AlertAndNotify(alerts)
+	modified, err := suite.alertManager.AlertAndNotify(alerts)
+	suite.True(modified)
 	suite.NoError(err, "update should succeed")
 }
 
@@ -136,7 +139,8 @@ func (suite *AlertManagerTestSuite) TestMarksOldAlertsStale() {
 	suite.alertsMock.EXPECT().SearchRawAlerts(gomock.Any()).Return(alerts, nil)
 
 	// Make one of the alerts not appear in the current alerts.
-	err := suite.alertManager.AlertAndNotify(alerts[1:])
+	modified, err := suite.alertManager.AlertAndNotify(alerts[1:])
+	suite.True(modified)
 	suite.NoError(err, "update should succeed")
 }
 
@@ -154,7 +158,8 @@ func (suite *AlertManagerTestSuite) TestSendsNotificationsForNewAlerts() {
 	// Make one of the alerts not appear in the previous alerts.
 	suite.alertsMock.EXPECT().SearchRawAlerts(gomock.Any()).Return(alerts[1:], nil)
 
-	err := suite.alertManager.AlertAndNotify(alerts)
+	modified, err := suite.alertManager.AlertAndNotify(alerts)
+	suite.True(modified)
 	suite.NoError(err, "update should succeed")
 }
 

@@ -98,9 +98,11 @@ func (m *managerImpl) flushIndicatorQueue() {
 		return
 	}
 
-	err = m.alertManager.AlertAndNotify(newAlerts, alertmanager.WithLifecycleStage(storage.LifecycleStage_RUNTIME), alertmanager.WithDeploymentIDs(deploymentIDs...))
+	modified, err := m.alertManager.AlertAndNotify(newAlerts, alertmanager.WithLifecycleStage(storage.LifecycleStage_RUNTIME), alertmanager.WithDeploymentIDs(deploymentIDs...))
 	if err != nil {
 		logger.Errorf("Couldn't alert and notify: %s", err)
+	} else if modified {
+		defer m.riskManager.ReprocessRiskForDeployments(deploymentIDs...)
 	}
 
 	containersSet := containersToKill(newAlerts, copiedQueue)
@@ -180,7 +182,7 @@ func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string,
 		return "", storage.EnforcementAction_UNSET_ENFORCEMENT, fmt.Errorf("fetching deploy time alerts: %s", err)
 	}
 
-	if err := m.alertManager.AlertAndNotify(presentAlerts,
+	if _, err := m.alertManager.AlertAndNotify(presentAlerts,
 		alertmanager.WithLifecycleStage(storage.LifecycleStage_DEPLOY), alertmanager.WithDeploymentIDs(deployment.GetId())); err != nil {
 		return "", storage.EnforcementAction_UNSET_ENFORCEMENT, err
 	}
@@ -230,11 +232,13 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 	}
 
 	// Perform notifications and update DB.
-	return m.alertManager.AlertAndNotify(presentAlerts, alertmanager.WithPolicyID(policy.GetId()))
+	_, err := m.alertManager.AlertAndNotify(presentAlerts, alertmanager.WithPolicyID(policy.GetId()))
+	return err
 }
 
 func (m *managerImpl) DeploymentRemoved(deployment *storage.Deployment) error {
-	return m.alertManager.AlertAndNotify(nil, alertmanager.WithDeploymentIDs(deployment.GetId()))
+	_, err := m.alertManager.AlertAndNotify(nil, alertmanager.WithDeploymentIDs(deployment.GetId()))
+	return err
 }
 
 func (m *managerImpl) RemovePolicy(policyID string) error {
@@ -244,7 +248,8 @@ func (m *managerImpl) RemovePolicy(policyID string) error {
 	if err := m.runtimeDetector.RemovePolicy(policyID); err != nil {
 		return err
 	}
-	return m.alertManager.AlertAndNotify(nil, alertmanager.WithPolicyID(policyID))
+	_, err := m.alertManager.AlertAndNotify(nil, alertmanager.WithPolicyID(policyID))
+	return err
 }
 
 // determineEnforcement returns the alert and its enforcement action to use from the input list (if any have enforcement).
