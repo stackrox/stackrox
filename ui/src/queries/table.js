@@ -1,8 +1,8 @@
 import gql from 'graphql-tag';
 
 export const CLUSTERS_LIST_QUERY = gql`
-    query clustersList {
-        results: aggregatedResults(groupBy: [CLUSTER, STANDARD], unit: CHECK) {
+    query clustersList($where: String) {
+        results: aggregatedResults(groupBy: [CLUSTER, STANDARD], unit: CHECK, where: $where) {
             results {
                 aggregationKeys {
                     id
@@ -24,8 +24,8 @@ export const CLUSTERS_LIST_QUERY = gql`
 `;
 
 export const NAMESPACES_LIST_QUERY = gql`
-    query namespaceList {
-        results: aggregatedResults(groupBy: [NAMESPACE, STANDARD], unit: CHECK) {
+    query namespaceList($where: String) {
+        results: aggregatedResults(groupBy: [NAMESPACE, STANDARD], unit: CHECK, where: $where) {
             results {
                 aggregationKeys {
                     id
@@ -50,8 +50,8 @@ export const NAMESPACES_LIST_QUERY = gql`
 `;
 
 export const NODES_QUERY = gql`
-    query nodesList {
-        results: aggregatedResults(groupBy: [NODE, STANDARD], unit: CHECK) {
+    query nodesList($where: String) {
+        results: aggregatedResults(groupBy: [NODE, STANDARD], unit: CHECK, where: $where) {
             results {
                 aggregationKeys {
                     id

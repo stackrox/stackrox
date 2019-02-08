@@ -1,14 +1,16 @@
 import React from 'react';
-import Widget from 'Components/Widget';
-import Query from 'Components/ThrowingQuery';
-import Loader from 'Components/Loader';
 import PropTypes from 'prop-types';
 import { resourceTypes } from 'constants/entityTypes';
-import CountWidget from 'Components/CountWidget';
 import URLService from 'modules/URLService';
 import pageTypes from 'constants/pageTypes';
 import { resourceLabels } from 'messages/common';
-import { NODES_BY_CLUSTER } from '../../../queries/node';
+import { NODES_BY_CLUSTER } from 'queries/node';
+import capitalize from 'lodash/capitalize';
+
+import Widget from 'Components/Widget';
+import Query from 'Components/ThrowingQuery';
+import Loader from 'Components/Loader';
+import CountWidget from 'Components/CountWidget';
 
 const queryMap = {
     [resourceTypes.NODE]: NODES_BY_CLUSTER
@@ -16,13 +18,13 @@ const queryMap = {
 };
 
 const ResourceCount = ({ entityType, params, loading: parentLoading }) => {
-    function getUrl() {
+    function getUrl(name) {
         const linkParams = {
             entityType
         };
         if (params.entityId && params.entityType) {
             linkParams.query = {
-                [params.entityType]: params.entityId
+                [capitalize(params.entityType)]: name
             };
         }
         return URLService.getLinkTo(params.context, pageTypes.LIST, linkParams).url;
@@ -47,7 +49,7 @@ const ResourceCount = ({ entityType, params, loading: parentLoading }) => {
                 const contents = <Loader />;
                 const headerText = `${resourceLabels[entityType]} Count`;
                 if (!loading && !parentLoading && data && data.results) {
-                    const url = getUrl(entityType, params);
+                    const url = getUrl(data.results.name);
                     const count = processData(data.results);
                     return <CountWidget title={headerText} count={count} linkUrl={url} />;
                 }

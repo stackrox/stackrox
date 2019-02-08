@@ -45,6 +45,7 @@ export const NODES_BY_CLUSTER = gql`
     query getNodesByCluster($id: ID!) {
         results: cluster(id: $id) {
             id
+            name
             nodes {
                 id
                 name

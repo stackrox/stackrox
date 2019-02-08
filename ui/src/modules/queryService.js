@@ -7,9 +7,9 @@ function objectToWhereClause(query) {
 
     return Object.entries(query)
         .reduce((acc, entry) => {
-            let [key, value] = entry;
+            const key = entry[0];
+            let value = entry[1];
             value = Array.isArray(value) ? value.join() : value;
-            key = key.toLowerCase();
             return `${acc}${key}:${value}+`;
         }, '')
         .slice(0, -1);
