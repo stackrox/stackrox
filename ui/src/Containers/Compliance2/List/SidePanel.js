@@ -7,8 +7,10 @@ import pageTypes from 'constants/pageTypes';
 import Panel from 'Components/Panel';
 import ComplianceEntityPage from 'Containers/Compliance2/Entity/Page';
 import AppLink from 'Components/AppLink';
+import { standardBaseTypes } from 'constants/entityTypes';
 
 const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRow }) => {
+    const { name, standard } = selectedRow;
     const { context, query, entityType } = URLService.getParams(match, location);
 
     const pageParams = {
@@ -38,7 +40,7 @@ const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRo
                         className="flex flex-1 text-base-600 uppercase items-center tracking-wide pl-4 leading-normal font-700 hover:text-primary-700 focus:text-primary-700"
                         data-test-id="panel-header"
                     >
-                        {selectedRow.name}
+                        {standard ? `${standardBaseTypes[standard]} ${name}` : name}
                     </div>
                 </AppLink>
             </div>

@@ -5,7 +5,6 @@ export const LIST_STANDARD = gql`
         results: aggregatedResults(groupBy: $groupBy, unit: CHECK, where: $where) {
             results {
                 aggregationKeys {
-                    id
                     scope
                 }
                 keys {
@@ -18,6 +17,7 @@ export const LIST_STANDARD = gql`
                         id
                         name
                         description
+                        standardId
                     }
                     ... on Cluster {
                         id

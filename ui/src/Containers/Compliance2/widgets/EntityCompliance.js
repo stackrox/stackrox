@@ -6,7 +6,7 @@ import ArcSingle from 'Components/visuals/ArcSingle';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import pageTypes from 'constants/pageTypes';
-import { standardTypes } from 'constants/entityTypes';
+import { standardBaseTypes, standardTypes } from 'constants/entityTypes';
 import URLService from 'modules/URLService';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
@@ -29,7 +29,7 @@ const EntityCompliance = ({ entityType, entityName, history }) => {
 
     function getBarData(results) {
         return results.map(item => ({
-            x: item.aggregationKeys[0].id,
+            x: standardBaseTypes[item.aggregationKeys[0].id],
             y: (item.numPassing / (item.numPassing + item.numFailing)) * 100
         }));
     }

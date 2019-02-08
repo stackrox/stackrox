@@ -1,3 +1,5 @@
+import orderBy from 'lodash/orderBy';
+
 import componentTypes from 'constants/componentTypes';
 import entityTypes, { standardTypes } from 'constants/entityTypes';
 import standardLabels from 'messages/standards';
@@ -39,9 +41,9 @@ const formatComplianceTableData = (data, entityType) => {
     const entityMap = {};
     let standardKeyIndex = 0;
     let entityKeyIndex = 0;
-    data.results.results[0].aggregationKeys.forEach((key, idx) => {
-        if (key.scope === 'STANDARD') standardKeyIndex = idx;
-        if (key.scope === entityType) entityKeyIndex = idx;
+    data.results.results[0].aggregationKeys.forEach(({ scope }, idx) => {
+        if (scope === 'STANDARD') standardKeyIndex = idx;
+        if (scope === entityType) entityKeyIndex = idx;
     });
     data.results.results.forEach(({ aggregationKeys, keys, numPassing, numFailing }) => {
         const curEntity = aggregationKeys[entityKeyIndex].id;
@@ -170,31 +172,32 @@ export default [
             ],
             format(data) {
                 if (!data.results || data.results.results.length === 0) return null;
-                const formattedData = { results: [], totalControls: 0 };
+                const formattedData = { results: [], totalRows: 0 };
                 const groups = {};
                 let controlKeyIndex = null;
-                let controlGroupKeyIndex = null;
+                let categoryKeyIndex = null;
                 let groupByKeyIndex = null;
-                data.results.results[0].aggregationKeys.forEach((key, idx) => {
-                    if (key.scope === 'CONTROL') controlKeyIndex = idx;
-                    if (key.scope === 'CATEGORY') controlGroupKeyIndex = idx;
-                    if (key.scope !== 'CATEGORY' && key.scope !== 'CONTROL') groupByKeyIndex = idx;
+                data.results.results[0].aggregationKeys.forEach(({ scope }, idx) => {
+                    if (scope === 'CONTROL') controlKeyIndex = idx;
+                    if (scope === 'CATEGORY') categoryKeyIndex = idx;
+                    if (scope !== 'CATEGORY' && scope !== 'CONTROL') groupByKeyIndex = idx;
                 });
                 data.results.results.forEach(({ keys, numPassing, numFailing }) => {
-                    const groupKey =
-                        groupByKeyIndex === null ? controlGroupKeyIndex : groupByKeyIndex;
+                    const groupKey = groupByKeyIndex === null ? categoryKeyIndex : groupByKeyIndex;
                     const { name: groupName, description: groupDescription } = keys[groupKey];
                     if (!groups[groupName]) {
                         groups[groupName] = {
+                            groupId: parseInt(groupName, 10),
                             name: `${groupName} ${groupDescription ? `- ${groupDescription}` : ''}`,
                             rows: []
                         };
                     }
                     if (controlKeyIndex) {
-                        const { id, name, description } = keys[controlKeyIndex];
+                        const { id, name, description, standardId } = keys[controlKeyIndex];
                         groups[groupName].rows.push({
                             id,
                             name,
+                            standard: standardId,
                             control: `${name} - ${description}`,
                             compliance: complianceRate(numPassing, numFailing),
                             group: groupName
@@ -203,8 +206,13 @@ export default [
                 });
                 Object.keys(groups).forEach(group => {
                     formattedData.results.push(groups[group]);
-                    formattedData.totalControls += groups[group].rows.length;
+                    formattedData.totalRows += groups[group].rows.length;
                 });
+                formattedData.results = orderBy(
+                    formattedData.results,
+                    ['groupId', 'name'],
+                    ['asc', 'asc']
+                );
                 return formattedData;
             }
         }

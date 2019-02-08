@@ -6,7 +6,7 @@ import standardLabels from 'messages/standards';
 import Query from 'Components/ThrowingQuery';
 import { CONTROL_QUERY as QUERY } from 'queries/controls';
 import ControlDetails from 'Containers/Compliance2/widgets/ControlDetails';
-import ControlGuidance from 'Containers/Compliance2/widgets/ControlGuidance';
+import Widget from 'Components/Widget';
 import Header from './Header';
 
 const ControlPage = ({ sidePanelMode, params }) => (
@@ -36,7 +36,11 @@ const ControlPage = ({ sidePanelMode, params }) => (
                                 control={name}
                                 description={description}
                             />
-                            <ControlGuidance interpretationText={interpretationText} />
+                            {!!interpretationText.length && (
+                                <Widget header="Control guidance">
+                                    <div className="p-4 leading-loose">{interpretationText}</div>
+                                </Widget>
+                            )}
                         </div>
                     </div>
                 </section>

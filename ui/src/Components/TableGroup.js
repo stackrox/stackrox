@@ -18,6 +18,7 @@ class TableGroup extends Component {
                 rows: PropTypes.arrayOf(PropTypes.shape())
             })
         ).isRequired,
+        totalRows: PropTypes.number.isRequired,
         onRowClick: PropTypes.func.isRequired,
         tableColumns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
         idAttribute: PropTypes.string.isRequired,
@@ -70,11 +71,12 @@ class TableGroup extends Component {
     renderWhenClosed = group => this.renderGroupByCollapsible('closed', group);
 
     render() {
-        const { groups } = this.props;
+        const { groups, totalRows } = this.props;
         return (
             <div className="flex flex-col w-full">
-                {groups.map(group => (
+                {groups.map((group, idx) => (
                     <Collapsible
+                        open={idx === 0 || totalRows < 25}
                         key={group.name}
                         trigger={this.renderWhenClosed(group)}
                         triggerWhenOpen={this.renderWhenOpened(group)}

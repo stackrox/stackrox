@@ -11,6 +11,7 @@ import PropTypes from 'prop-types';
 import { withRouter, Link } from 'react-router-dom';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import merge from 'deepmerge';
+import { standardBaseTypes } from 'constants/entityTypes';
 import HoverHint from './HoverHint';
 
 class BarChart extends Component {
@@ -75,7 +76,7 @@ class BarChart extends Component {
         return Object.keys(data)
             .sort()
             .map((key, i) => ({
-                title: key,
+                title: standardBaseTypes[key],
                 color: colors[i % colors.length]
             }));
     };

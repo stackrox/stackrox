@@ -65,13 +65,15 @@ class ListTable extends Component {
                             ? `in ${tableData.length} ${pluralize(params.query.groupBy, total)}`
                             : '';
                         headerText = isStandard
-                            ? `${data.totalControls} ${
-                                  standardLabels[params.entityType]
-                              } ${pluralize('control', data.totalControls)} ${groupedByText}`
+                            ? `${data.totalRows} ${standardLabels[params.entityType]} ${pluralize(
+                                  'control',
+                                  data.totalRows
+                              )} ${groupedByText}`
                             : `${total} ${pluralize(params.entityType, total)} ${groupedByText}`;
                         contents = isStandard ? (
                             <TableGroup
                                 groups={tableData}
+                                totalRows={data.totalRows}
                                 tableColumns={entityToColumns[params.entityType]}
                                 onRowClick={updateSelectedRow}
                                 entityType={params.query.groupBy || 'control'}

@@ -78,6 +78,11 @@ const nodeColumns = [
         Header: 'Node'
     },
     {
+        accessor: standardTypes.NIST_800_190,
+        Header: 'NIST',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.NIST_800_190)
+    },
+    {
         accessor: standardTypes.CIS_KUBERENETES_V1_2_0,
         Header: 'CIS Kube',
         Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_KUBERENETES_V1_2_0)
