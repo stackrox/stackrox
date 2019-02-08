@@ -263,6 +263,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"namespace: String!",
 		"namespaceId: String!",
 		"podLabels: [Label!]!",
+		"ports: [PortConfig]!",
 		"priority: Int!",
 		"replicas: Int!",
 		"risk: Risk",
@@ -2648,6 +2649,12 @@ func (resolver *deploymentResolver) PodLabels() labels {
 	resolver.ensureData()
 	value := resolver.data.GetPodLabels()
 	return labelsResolver(value)
+}
+
+func (resolver *deploymentResolver) Ports() ([]*portConfigResolver, error) {
+	resolver.ensureData()
+	value := resolver.data.GetPorts()
+	return resolver.root.wrapPortConfigs(value, nil)
 }
 
 func (resolver *deploymentResolver) Priority() int32 {

@@ -26,12 +26,10 @@ func clusterIsCompliant(ctx framework.ComplianceContext) {
 }
 
 func deploymentIsCompliant(ctx framework.ComplianceContext, deployment *storage.Deployment) {
-	for _, container := range deployment.GetContainers() {
-		for _, portConfig := range container.GetPorts() {
-			if strings.ToLower(portConfig.GetProtocol()) == "udp" {
-				framework.Fail(ctx, failText())
-				return
-			}
+	for _, portConfig := range deployment.GetPorts() {
+		if strings.ToLower(portConfig.GetProtocol()) == "udp" {
+			framework.Fail(ctx, failText())
+			return
 		}
 	}
 	framework.Pass(ctx, passText())

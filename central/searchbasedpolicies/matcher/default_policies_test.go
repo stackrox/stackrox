@@ -352,11 +352,9 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	containerPort22Dep := &storage.Deployment{
 		Id: "CONTAINERPORT22DEP",
-		Containers: []*storage.Container{
-			{Ports: []*storage.PortConfig{
-				{Protocol: "tcp", ContainerPort: 22},
-				{Protocol: "udp", ContainerPort: 4125},
-			}},
+		Ports: []*storage.PortConfig{
+			{Protocol: "tcp", ContainerPort: 22},
+			{Protocol: "udp", ContainerPort: 4125},
 		},
 	}
 	suite.mustIndexDepAndImages(containerPort22Dep)

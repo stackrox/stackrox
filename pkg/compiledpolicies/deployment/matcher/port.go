@@ -25,8 +25,8 @@ type portMatcherImpl struct {
 	portPolicy *storage.PortPolicy
 }
 
-func (p *portMatcherImpl) match(container *storage.Container) []*storage.Alert_Violation {
-	ports := container.GetPorts()
+func (p *portMatcherImpl) match(deployment *storage.Deployment) []*storage.Alert_Violation {
+	ports := deployment.GetPorts()
 	var violations []*storage.Alert_Violation
 	for _, port := range ports {
 		violations = append(violations, p.matchPort(port)...)

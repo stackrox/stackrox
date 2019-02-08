@@ -257,6 +257,22 @@ func TestConvert(t *testing.T) {
 				},
 				UpdatedAt:   &timestamp.Timestamp{Seconds: 1000},
 				Tolerations: []*storage.Toleration{},
+				Ports: []*storage.PortConfig{
+					{
+						Name:          "api",
+						ContainerPort: 9092,
+						ExposedPort:   9092,
+						Protocol:      "TCP",
+						Exposure:      storage.PortConfig_INTERNAL,
+					},
+					{
+						Name:          "status",
+						ContainerPort: 443,
+						ExposedPort:   443,
+						Protocol:      "UCP",
+						Exposure:      storage.PortConfig_INTERNAL,
+					},
+				},
 				Containers: []*storage.Container{
 					{
 						Id:   "FooID:container1",
@@ -277,22 +293,6 @@ func TestConvert(t *testing.T) {
 								Remote:   "stackrox/kafka",
 								Tag:      "latest",
 								FullName: "docker.io/stackrox/kafka:latest",
-							},
-						},
-						Ports: []*storage.PortConfig{
-							{
-								Name:          "api",
-								ContainerPort: 9092,
-								ExposedPort:   9092,
-								Protocol:      "TCP",
-								Exposure:      storage.PortConfig_INTERNAL,
-							},
-							{
-								Name:          "status",
-								ContainerPort: 443,
-								ExposedPort:   443,
-								Protocol:      "UCP",
-								Exposure:      storage.PortConfig_INTERNAL,
 							},
 						},
 						Secrets: []*storage.EmbeddedSecret{
@@ -322,6 +322,22 @@ func TestConvert(t *testing.T) {
 									Node: "mynode",
 								},
 								ContainingPodId: "deployment-blah-blah.myns@ebf487f0-a7c3-11e8-8600-42010a8a0066",
+							},
+						},
+						Ports: []*storage.PortConfig{
+							{
+								Name:          "api",
+								ContainerPort: 9092,
+								ExposedPort:   9092,
+								Protocol:      "TCP",
+								Exposure:      storage.PortConfig_INTERNAL,
+							},
+							{
+								Name:          "status",
+								ContainerPort: 443,
+								ExposedPort:   443,
+								Protocol:      "UCP",
+								Exposure:      storage.PortConfig_INTERNAL,
 							},
 						},
 					},

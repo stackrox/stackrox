@@ -104,25 +104,17 @@ func (s *suiteImpl) deployments() []*storage.Deployment {
 	return []*storage.Deployment{
 		{
 			Id: uuid.NewV4().String(),
-			Containers: []*storage.Container{
+			Ports: []*storage.PortConfig{
 				{
-					Ports: []*storage.PortConfig{
-						{
-							Protocol: "TCP",
-						},
-					},
+					Protocol: "TCP",
 				},
 			},
 		},
 		{
 			Id: uuid.NewV4().String(),
-			Containers: []*storage.Container{
+			Ports: []*storage.PortConfig{
 				{
-					Ports: []*storage.PortConfig{
-						{
-							Protocol: "UDP",
-						},
-					},
+					Protocol: "UDP",
 				},
 			},
 		},

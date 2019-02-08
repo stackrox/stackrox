@@ -315,8 +315,10 @@ func (w *deploymentWrap) populateNamespaceID(namespaceStore *namespaceStore) {
 
 func (w *deploymentWrap) populatePorts() {
 	w.portConfigs = make(map[portRef]*storage.PortConfig)
+	w.Ports = nil
 	for _, c := range w.GetContainers() {
 		for _, p := range c.GetPorts() {
+			w.Ports = append(w.Ports, p)
 			w.portConfigs[portRef{Port: intstr.FromInt(int(p.ContainerPort)), Protocol: v1.Protocol(p.Protocol)}] = p
 			if p.Name != "" {
 				w.portConfigs[portRef{Port: intstr.FromString(p.Name), Protocol: v1.Protocol(p.Protocol)}] = p
@@ -362,11 +364,23 @@ func (w *deploymentWrap) updatePortExposure(svc *serviceWrap) (updated bool) {
 
 	exposure := svc.exposure()
 	for _, svcPort := range svc.Spec.Ports {
-		portCfg := w.portConfigs[portRef{Port: svcPort.TargetPort, Protocol: svcPort.Protocol}]
+		ref := portRef{Port: svcPort.TargetPort, Protocol: svcPort.Protocol}
+		portCfg := w.portConfigs[ref]
 		if portCfg == nil {
-			continue
-		}
-		if containers.IncreasedExposureLevel(portCfg.Exposure, exposure) {
+			if svcPort.TargetPort.Type == intstr.String {
+				// named ports MUST be defined in the pod spec
+				continue
+			}
+			portCfg = &storage.PortConfig{
+				ContainerPort: svcPort.TargetPort.IntVal,
+				Protocol:      string(svcPort.Protocol),
+				ExposedPort:   svcPort.Port,
+				Exposure:      exposure,
+			}
+			w.Ports = append(w.Ports, portCfg)
+			w.portConfigs[ref] = portCfg
+			updated = true
+		} else if containers.IncreasedExposureLevel(portCfg.Exposure, exposure) {
 			portCfg.Exposure = exposure
 			updated = true
 		}

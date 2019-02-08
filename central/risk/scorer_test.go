@@ -55,9 +55,9 @@ func TestScore(t *testing.T) {
 		{
 			Name: multipliers.ReachabilityHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Container library/nginx exposes port 8082 to external clients"},
-				{Message: "Container library/nginx exposes port 8083 in the cluster"},
-				{Message: "Container library/nginx exposes port 8084 on node interfaces"},
+				{Message: "Port 8082 is exposed to external clients"},
+				{Message: "Port 8083 is exposed in the cluster"},
+				{Message: "Port 8084 is exposed on node interfaces"},
 			},
 			Score: 1.6,
 		},
@@ -118,6 +118,26 @@ func TestScore(t *testing.T) {
 func getMockDeployment() *storage.Deployment {
 	return &storage.Deployment{
 		ClusterId: "cluster",
+		Ports: []*storage.PortConfig{
+			{
+				Name:          "Port1",
+				ContainerPort: 22,
+				Exposure:      storage.PortConfig_EXTERNAL,
+				ExposedPort:   8082,
+			},
+			{
+				Name:          "Port2",
+				ContainerPort: 23,
+				Exposure:      storage.PortConfig_INTERNAL,
+				ExposedPort:   8083,
+			},
+			{
+				Name:          "Port3",
+				ContainerPort: 24,
+				Exposure:      storage.PortConfig_NODE,
+				ExposedPort:   8084,
+			},
+		},
 		Containers: []*storage.Container{
 			{
 				Volumes: []*storage.Volume{
@@ -162,26 +182,6 @@ func getMockDeployment() *storage.Deployment {
 						V1: &storage.V1Metadata{
 							Created: protoconv.ConvertTimeToTimestamp(time.Now().Add(-(180 * 24 * time.Hour))),
 						},
-					},
-				},
-				Ports: []*storage.PortConfig{
-					{
-						Name:          "Port1",
-						ContainerPort: 22,
-						Exposure:      storage.PortConfig_EXTERNAL,
-						ExposedPort:   8082,
-					},
-					{
-						Name:          "Port2",
-						ContainerPort: 23,
-						Exposure:      storage.PortConfig_INTERNAL,
-						ExposedPort:   8083,
-					},
-					{
-						Name:          "Port3",
-						ContainerPort: 24,
-						Exposure:      storage.PortConfig_NODE,
-						ExposedPort:   8084,
 					},
 				},
 			},

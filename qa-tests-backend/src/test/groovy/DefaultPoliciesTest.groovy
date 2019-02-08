@@ -166,7 +166,7 @@ class DefaultPoliciesTest extends BaseSpecification {
                 null
 
         "Service Reachability"            | 2.0f     |
-                "Container legacy-apps/struts-app exposes port 80 in the cluster"
+                "Port 80 is exposed in the cluster"
 
         "Image Vulnerabilities"           | 4.0f     |
                 "Image contains 143 CVEs with CVSS scores ranging between 1.9 and 10.0"

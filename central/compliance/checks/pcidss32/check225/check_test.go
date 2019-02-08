@@ -40,25 +40,17 @@ func (s *suiteImpl) TestUnusedPorts() {
 	deployments := []*storage.Deployment{
 		{
 			Id: uuid.NewV4().String(),
-			Containers: []*storage.Container{
+			Ports: []*storage.PortConfig{
 				{
-					Ports: []*storage.PortConfig{
-						{
-							ExposedPort: 3,
-						},
-					},
+					ExposedPort: 3,
 				},
 			},
 		},
 		{
 			Id: uuid.NewV4().String(),
-			Containers: []*storage.Container{
+			Ports: []*storage.PortConfig{
 				{
-					Ports: []*storage.PortConfig{
-						{
-							ExposedPort: 3,
-						},
-					},
+					ExposedPort: 3,
 				},
 			},
 		},
@@ -110,25 +102,17 @@ func (s *suiteImpl) TestPass() {
 	deployments := []*storage.Deployment{
 		{
 			Id: uuid.NewV4().String(),
-			Containers: []*storage.Container{
+			Ports: []*storage.PortConfig{
 				{
-					Ports: []*storage.PortConfig{
-						{
-							ExposedPort: 3,
-						},
-					},
+					ExposedPort: 3,
 				},
 			},
 		},
 		{
 			Id: uuid.NewV4().String(),
-			Containers: []*storage.Container{
+			Ports: []*storage.PortConfig{
 				{
-					Ports: []*storage.PortConfig{
-						{
-							ExposedPort: 3,
-						},
-					},
+					ExposedPort: 3,
 				},
 			},
 		},

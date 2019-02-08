@@ -16,7 +16,7 @@ enum ContainerRuntime {
     DOCKER_CONTAINER_RUNTIME  = 1;
 }
 
-// Next available tag: 24
+// Next available tag: 25
 message Deployment {
     string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\""];
     string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
@@ -40,6 +40,7 @@ message Deployment {
     string service_account                     = 18 [(gogoproto.moretags) = "search:\"Service Account\""];
     bool host_network                          = 21;
     repeated Toleration tolerations            = 22;
+    repeated PortConfig ports                  = 24;
 }
 
 message Container {

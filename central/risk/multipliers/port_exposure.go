@@ -29,14 +29,12 @@ func (s *reachabilityMultiplier) Score(deployment *storage.Deployment) *storage.
 	riskResult := &storage.Risk_Result{
 		Name: ReachabilityHeading,
 	}
-	for _, c := range deployment.GetContainers() {
-		for _, p := range c.GetPorts() {
-			score += exposureValue(p.GetExposure())
+	for _, p := range deployment.GetPorts() {
+		score += exposureValue(p.GetExposure())
 
-			riskResult.Factors = append(riskResult.Factors,
-				&storage.Risk_Result_Factor{Message: fmt.Sprintf("Container %s exposes port %d %s",
-					c.GetImage().GetName().GetRemote(), p.GetExposedPort(), exposureString(p.GetExposure()))})
-		}
+		riskResult.Factors = append(riskResult.Factors,
+			&storage.Risk_Result_Factor{Message: fmt.Sprintf("Port %d is exposed %s",
+				p.GetExposedPort(), exposureString(p.GetExposure()))})
 	}
 	if score == 0 {
 		return nil

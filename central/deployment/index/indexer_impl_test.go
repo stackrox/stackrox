@@ -185,11 +185,9 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 
 	containerPort22Dep := &storage.Deployment{
 		Id: "CONTAINERPORT22DEP",
-		Containers: []*storage.Container{
-			{Ports: []*storage.PortConfig{
-				{Protocol: "tcp", ContainerPort: 22},
-				{Protocol: "udp", ContainerPort: 4125},
-			}},
+		Ports: []*storage.PortConfig{
+			{Protocol: "tcp", ContainerPort: 22},
+			{Protocol: "udp", ContainerPort: 4125},
 		},
 	}
 	suite.NoError(suite.indexer.AddDeployment(containerPort22Dep))
@@ -448,8 +446,8 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			highlightLinkedFields: true,
 			expectedIDs:           []string{containerPort22Dep.GetId()},
 			expectedMatches: map[string][]string{
-				"deployment.containers.ports.container_port": {"22"},
-				"deployment.containers.ports.protocol":       {"tcp"},
+				"deployment.ports.container_port": {"22"},
+				"deployment.ports.protocol":       {"tcp"},
 			},
 		},
 		{
