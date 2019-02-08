@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/docker/distribution/reference"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/monitoring"
@@ -14,12 +13,12 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/stringutils"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -81,22 +80,7 @@ func validateDNS1123Field(fieldName, value string) error {
 }
 
 func validateInput(cluster *storage.Cluster) error {
-	errorList := errorhelpers.NewErrorList("Cluster Validation")
-	if cluster.GetName() == "" {
-		errorList.AddString("Cluster name is required")
-	}
-	if _, err := reference.ParseAnyReference(cluster.GetMainImage()); err != nil {
-		errorList.AddError(fmt.Errorf("invalid image '%s': %s", cluster.GetMainImage(), err))
-	}
-	if cluster.GetCentralApiEndpoint() == "" {
-		errorList.AddString("Central API Endpoint is required")
-	} else if !strings.Contains(cluster.GetCentralApiEndpoint(), ":") {
-		errorList.AddString("Central API Endpoint must have port specified")
-	}
-
-	if stringutils.ContainsWhitespace(cluster.GetCentralApiEndpoint()) {
-		errorList.AddString("Central API endpoint cannot contain whitespace")
-	}
+	errorList := clusterValidation.Validate(cluster)
 	if cluster.GetMonitoringEndpoint() != "" {
 		// Purposefully not checking the CAPath because only one is needed for an indication of monitoring not being enabled
 		if _, err := ioutil.ReadFile(monitoring.CAPath); err != nil {
@@ -116,9 +100,13 @@ func (s *serviceImpl) PostCluster(ctx context.Context, request *storage.Cluster)
 	if err := validateInput(request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+
 	id, err := s.datastore.AddCluster(request)
 	if err != nil {
-		return nil, err
+		if errWrap, ok := err.(*errorhelpers.ErrorWrap); ok && errWrap.Type == errorhelpers.ErrAlreadyExists {
+			return nil, status.Error(codes.AlreadyExists, err.Error())
+		}
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	request.Id = id
 	return s.getCluster(request.GetId())

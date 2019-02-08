@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/secondarykey"
@@ -77,10 +78,11 @@ func (b *storeImpl) AddCluster(cluster *storage.Cluster) (string, error) {
 			return err
 		}
 		if exists {
-			return fmt.Errorf("Cluster %v (%v) cannot be added because it already exists", currCluster.GetId(), currCluster.GetName())
+			return errorhelpers.Newf(errorhelpers.ErrAlreadyExists,
+				"Cluster %v (%v) cannot be added because it already exists", currCluster.GetId(), currCluster.GetName())
 		}
 		if err := secondarykey.CheckUniqueKeyExistsAndInsert(tx, clusterBucket, cluster.GetId(), cluster.GetName()); err != nil {
-			return fmt.Errorf("Could not add cluster due to name validation: %s", err)
+			return errorhelpers.Newf(errorhelpers.ErrAlreadyExists, "Could not add cluster due to name validation: %s", err)
 		}
 		bytes, err := proto.Marshal(cluster)
 		if err != nil {
