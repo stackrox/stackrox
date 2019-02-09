@@ -155,33 +155,34 @@ class DefaultPoliciesTest extends BaseSpecification {
         println "Risk Factor found in ${System.currentTimeMillis() - start}ms: ${riskFactor}"
         riskResult.score <= maxScore
         riskResult.score >= 1.0f
+
         message == null ?: riskResult.factorsList.get(0).message == message
+        regex == null ?: riskResult.factorsList.get(0).message.matches(regex)
 
         where:
         "data inputs"
 
-        riskFactor                        | maxScore |
-                message
-        "Policy Violations"               | 4.0f     |
-                null
+        riskFactor                        | maxScore | message   | regex
+        "Policy Violations"               | 4.0f     | null      | null
 
         "Service Reachability"            | 2.0f     |
-                "Port 80 is exposed in the cluster"
+                "Port 80 is exposed in the cluster"  | null
 
-        "Image Vulnerabilities"           | 4.0f     |
-                "Image contains 143 CVEs with CVSS scores ranging between 1.9 and 10.0"
+        "Image Vulnerabilities"           | 4.0f     | null |
+                // This makes sure it has at least a 100 CVEs.
+                "Image contains \\d{2}\\d+ CVEs with CVSS scores ranging between " +
+                     "\\d+(\\.\\d{1,2})? and \\d+(\\.\\d{1,2})?"
 
         "Service Configuration"           | 2.0f     |
-                "No capabilities were dropped"
+                "No capabilities were dropped" | null
 
         "Components Useful for Attackers" | 1.5f     |
-                "An image contains component(s) useful for attackers: apt, bash, curl, wget"
+                "An image contains component(s) useful for attackers: apt, bash, curl, wget" | null
 
         "Number of Components in Image"   | 1.5f     |
-                "Image apollo-dtr.rox.systems/legacy-apps/struts-app:latest contains 206 components"
+                "Image apollo-dtr.rox.systems/legacy-apps/struts-app:latest contains 206 components" | null
 
-        "Image Freshness"                 | 1.5f     |
-                null
+        "Image Freshness"                 | 1.5f     | null | null
     }
 
     @Category(BAT)
