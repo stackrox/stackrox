@@ -15,5 +15,5 @@ func init() {
 			DataDependencies:   []string{"ImageIntegrations"},
 			InterpretationText: interpretationText,
 		},
-		common.IsImageScannerInUse)
+		common.CheckImageScannerInUseByCluster)
 }

@@ -136,6 +136,11 @@ var nist800_190 = Standard{
 					Description: "App vulnerabilities\nExisting host-based intrusion detection processes and tools are often unable to detect and prevent attacks within containers due to the differing technical architecture and operational practices. These profiles should then be able to prevent and detect anomalies at runtime, including events such as:\n• Invalid or unexpected process execution,\n• Invalid or unexpected system calls,\n• Changes to protected configuration files and binaries,\n• Writes to unexpected locations and file types,\n• Creation of unexpected network listeners,\n• Traffic sent to unexpected network destinations, and\n• Malware storage or execution.\nContainers should also be run with their root filesystems in read-only mode.",
 				},
 				{
+					ID:          "4_4_4_deployment",
+					Name:        "4.4.4.deployment",
+					Description: "App vulnerabilities\nExisting host-based intrusion detection processes and tools are often unable to detect and prevent attacks within containers due to the differing technical architecture and operational practices. These profiles should then be able to prevent and detect anomalies at runtime, including events such as:\n• Invalid or unexpected process execution,\n• Invalid or unexpected system calls,\n• Changes to protected configuration files and binaries,\n• Writes to unexpected locations and file types,\n• Creation of unexpected network listeners,\n• Traffic sent to unexpected network destinations, and\n• Malware storage or execution.\nContainers should also be run with their root filesystems in read-only mode.",
+				},
+				{
 					ID:          "4_4_5",
 					Name:        "4.4.5",
 					Description: "Rogue containers\nOrganizations should institute separate environments for development, test, production, and other scenarios, each with specific controls to provide role-based access control for container deployment and management activities. All container creation should be associated with individual user identities and logged to provide a clear audit trail of activity. Further, organizations are encouraged to use security tools that can enforce baseline requirements for vulnerability management and compliance prior to allowing an image to be run",

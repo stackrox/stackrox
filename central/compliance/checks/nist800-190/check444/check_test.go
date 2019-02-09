@@ -82,10 +82,8 @@ func (s *suiteImpl) TestPass() {
 	results := run.GetAllResults()
 	checkResults := results[standardID]
 	s.NotNil(checkResults)
-	s.Len(checkResults.Evidence(), 2)
+	s.Len(checkResults.Evidence(), 1)
 	s.Equal(framework.PassStatus, checkResults.Evidence()[0].Status)
-	s.Equal(framework.PassStatus, checkResults.Evidence()[1].Status)
-
 }
 
 func (s *suiteImpl) TestFail() {
@@ -139,9 +137,8 @@ func (s *suiteImpl) TestFail() {
 	results := run.GetAllResults()
 	checkResults := results[standardID]
 	s.NotNil(checkResults)
-	s.Len(checkResults.Evidence(), 2)
+	s.Len(checkResults.Evidence(), 1)
 	s.Equal(framework.FailStatus, checkResults.Evidence()[0].Status)
-	s.Equal(framework.FailStatus, checkResults.Evidence()[1].Status)
 
 }
 

@@ -1,4 +1,4 @@
-package check455
+package check444deployment
 
 import (
 	"context"
@@ -40,47 +40,21 @@ func (s *suiteImpl) TestPass() {
 
 	testDeployments := []*storage.Deployment{
 		{
-			Id: uuid.NewV4().String(),
+			Id:   uuid.NewV4().String(),
+			Name: "Foo",
 			Containers: []*storage.Container{
 				{
-					Volumes: []*storage.Volume{
-						{
-							Source: "/tmp/blah",
-							Type:   "EmptyDir",
-						},
+					Name: "container-foo",
+					SecurityContext: &storage.SecurityContext{
+						ReadOnlyRootFilesystem: true,
 					},
-				},
-			},
-		},
-		{
-			Id: uuid.NewV4().String(),
-			Containers: []*storage.Container{
-				{
-					Volumes: []*storage.Volume{
-						{
-							Source: "/tmp/blah",
-							Type:   "EmptyDir",
-						},
-					},
-				},
-			},
-		},
-	}
-
-	policies := []*storage.Policy{
-		{
-			Fields: &storage.PolicyFields{
-				VolumePolicy: &storage.VolumePolicy{
-					Source: "/etc/passwd",
 				},
 			},
 		},
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
-	data.EXPECT().Deployments().AnyTimes().Return(toMap(testDeployments))
-	data.EXPECT().Policies().AnyTimes().Return(policiesToMap(policies))
-	data.EXPECT().Alerts().AnyTimes().Return(nil)
+	data.EXPECT().Deployments().AnyTimes().Return(toMapDeployments(testDeployments))
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
@@ -112,48 +86,20 @@ func (s *suiteImpl) TestFail() {
 	testDeployments := []*storage.Deployment{
 		{
 			Id:   uuid.NewV4().String(),
-			Name: "foo",
+			Name: "Foo",
 			Containers: []*storage.Container{
 				{
-					Volumes: []*storage.Volume{
-						{
-							Source: "/etc/passwd",
-							Type:   "HostPath (bare host directory volume)",
-						},
+					Name: "container-foo",
+					SecurityContext: &storage.SecurityContext{
+						ReadOnlyRootFilesystem: false,
 					},
-				},
-			},
-		},
-		{
-			Id:   uuid.NewV4().String(),
-			Name: "boo",
-			Containers: []*storage.Container{
-				{
-					Volumes: []*storage.Volume{
-						{
-							Source: "/var/run/docker.sock",
-							Type:   "HostPath (bare host directory volume)",
-						},
-					},
-				},
-			},
-		},
-	}
-
-	policies := []*storage.Policy{
-		{
-			Fields: &storage.PolicyFields{
-				VolumePolicy: &storage.VolumePolicy{
-					Destination: "/etc/passwd",
 				},
 			},
 		},
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
-	data.EXPECT().Deployments().AnyTimes().Return(toMap(testDeployments))
-	data.EXPECT().Policies().AnyTimes().Return(policiesToMap(policies))
-	data.EXPECT().Alerts().AnyTimes().Return(nil)
+	data.EXPECT().Deployments().AnyTimes().Return(toMapDeployments(testDeployments))
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
@@ -165,9 +111,9 @@ func (s *suiteImpl) TestFail() {
 	results := run.GetAllResults()
 	checkResults := results[standardID]
 	s.NotNil(checkResults)
+
 	for _, deployment := range domain.Deployments() {
 		deploymentResults := checkResults.ForChild(deployment)
-		s.NotNil(deploymentResults)
 		s.NoError(deploymentResults.Error())
 		if s.Len(deploymentResults.Evidence(), 1) {
 			s.Equal(framework.FailStatus, deploymentResults.Evidence()[0].Status)
@@ -202,16 +148,8 @@ func (s *suiteImpl) nodes() []*storage.Node {
 	}
 }
 
-func toMap(in []*storage.Deployment) map[string]*storage.Deployment {
+func toMapDeployments(in []*storage.Deployment) map[string]*storage.Deployment {
 	merp := make(map[string]*storage.Deployment, len(in))
-	for _, np := range in {
-		merp[np.GetId()] = np
-	}
-	return merp
-}
-
-func policiesToMap(in []*storage.Policy) map[string]*storage.Policy {
-	merp := make(map[string]*storage.Policy, len(in))
 	for _, np := range in {
 		merp[np.GetId()] = np
 	}

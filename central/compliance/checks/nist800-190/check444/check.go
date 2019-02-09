@@ -23,5 +23,4 @@ func init() {
 
 func checkNIST444(ctx framework.ComplianceContext) {
 	common.CheckAnyPolicyInLifeCycle(ctx, storage.LifecycleStage_RUNTIME)
-	common.DeploymentHasReadOnlyFS(ctx)
 }

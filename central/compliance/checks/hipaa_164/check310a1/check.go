@@ -19,6 +19,6 @@ func init() {
 }
 
 func clusterIsCompliant(ctx framework.ComplianceContext) {
-	common.IsImageScannerInUse(ctx)
-	common.ClusterHasNetworkPolicies(ctx)
+	common.CheckImageScannerInUseByCluster(ctx)
+	common.CheckNetworkPoliciesByDeployment(ctx)
 }

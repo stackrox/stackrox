@@ -17,5 +17,5 @@ func init() {
 			DataDependencies:   []string{"NetworkGraph", "NetworkPolicies"},
 			InterpretationText: interpretationText,
 		},
-		common.ClusterHasNetworkPolicies)
+		common.CheckNetworkPoliciesByDeployment)
 }

@@ -13,8 +13,8 @@ import (
 
 var log = logging.LoggerForModule()
 
-// CheckNotifierInUse checks if any notifiers have been sent up for alerts.
-func CheckNotifierInUse(ctx framework.ComplianceContext) {
+// CheckNotifierInUseByCluster checks if any notifiers have been sent up for alerts.
+func CheckNotifierInUseByCluster(ctx framework.ComplianceContext) {
 	for _, notifier := range ctx.Data().Notifiers() {
 		if notifier.GetEnabled() == true {
 			framework.Pass(ctx, "At least one notifier is enabled.")
@@ -24,8 +24,8 @@ func CheckNotifierInUse(ctx framework.ComplianceContext) {
 	framework.Fail(ctx, "There are no enabled notifiers for alerts.")
 }
 
-// IsImageScannerInUse checks if we have atleast one image scanner in use.
-func IsImageScannerInUse(ctx framework.ComplianceContext) {
+// CheckImageScannerInUseByCluster checks if we have atleast one image scanner in use.
+func CheckImageScannerInUseByCluster(ctx framework.ComplianceContext) {
 	var scanners []string
 	for _, integration := range ctx.Data().ImageIntegrations() {
 		for _, category := range integration.GetCategories() {
@@ -43,7 +43,7 @@ func IsImageScannerInUse(ctx framework.ComplianceContext) {
 	framework.Fail(ctx, "No image scanners are being used in the cluster")
 }
 
-// CheckImageScannerWasUsed checks if image scanner was used atleast once.
+// CheckImageScannerWasUsed checks if images were scanned atleast once.
 func CheckImageScannerWasUsed(ctx framework.ComplianceContext) {
 	for _, image := range ctx.Data().Images() {
 		if image.GetSetCves() != nil {
@@ -54,22 +54,24 @@ func CheckImageScannerWasUsed(ctx framework.ComplianceContext) {
 	}
 }
 
-// CheckFixedCVES returns true if we find any fixed cves in images.
+// CheckFixedCVES checks if there are fixed CVEs in images.
+// Check fails if we find fixed CVEs since we need to upgrade the image.
 func CheckFixedCVES(ctx framework.ComplianceContext) {
 	for _, image := range ctx.Data().Images() {
 		if image.SetCves == nil {
 			framework.Failf(ctx, "Image %s was never scanned for CVEs", image.GetName())
-			return
+			continue
 		}
 		if image.GetFixableCves() > 0 {
-			framework.Failf(ctx, "Image %s has %d fixed CVE(s). An image upgrade is required.", image.GetName(), image.GetFixableCves())
+			framework.Failf(ctx, "Image %s has %d fixed CVEs. An image upgrade is required.", image.GetName(), image.GetFixableCves())
 		} else {
-			framework.Passf(ctx, "Image %s has no fixed CVE(s).", image.GetName())
+			framework.Passf(ctx, "Image %s has no fixed CVEs.", image.GetName())
 		}
 	}
 }
 
-// CheckBuildTimePolicyEnforced checks if any build time policies are being enforced.
+// CheckBuildTimePolicyEnforced checks if there is atleast one build
+// time policy that is enabled and enforced.
 func CheckBuildTimePolicyEnforced(ctx framework.ComplianceContext) {
 	policies := ctx.Data().Policies()
 	for _, p := range policies {
@@ -116,7 +118,8 @@ func CheckAnyPolicyInLifeCycle(ctx framework.ComplianceContext, policyLifeCycle 
 	framework.Failf(ctx, "There are no enabled policies in lifecycle %q", strings.ToLower(storage.LifecycleStage_name[int32(policyLifeCycle)]))
 }
 
-// CheckAnyPolicyInCategoryEnforced checks if there are any enabled policies in the given category and are enforced.
+// CheckAnyPolicyInCategoryEnforced checks if there are any policies in the given category
+// which are enabled and enforced.
 func CheckAnyPolicyInCategoryEnforced(ctx framework.ComplianceContext, category string) {
 	categoryPolicies := ctx.Data().PolicyCategories()
 	policySet := categoryPolicies[category]
@@ -132,32 +135,23 @@ func CheckAnyPolicyInCategoryEnforced(ctx framework.ComplianceContext, category 
 	}
 }
 
-// DeploymentHasHostMounts returns true if the deployment has host mounts.
-func DeploymentHasHostMounts(deployment *storage.Deployment) bool {
-	for _, container := range deployment.Containers {
-		for _, vol := range container.Volumes {
-			if strings.Contains(vol.Type, "HostPath") {
-				return true
-			}
-		}
-	}
-	return false
+// CheckDeploymentHasReadOnlyFSByDeployment checks if the deployment has read-only File System.
+func CheckDeploymentHasReadOnlyFSByDeployment(ctx framework.ComplianceContext) {
+	framework.ForEachDeployment(ctx, func(ctx framework.ComplianceContext, deployment *storage.Deployment) {
+		deploymentHasReadOnlyRootFS(ctx, deployment)
+	})
 }
 
-// DeploymentHasReadOnlyFS checks if the deployment has read-only File System.
-func DeploymentHasReadOnlyFS(ctx framework.ComplianceContext) {
-	deployments := ctx.Data().Deployments()
-	for _, deployment := range deployments {
-		for _, container := range deployment.GetContainers() {
-			securityContext := container.GetSecurityContext()
-			readOnlyRootFS := securityContext.GetReadOnlyRootFilesystem()
-			if !readOnlyRootFS {
-				framework.Fail(ctx, "Deployments found using read-write filesystem")
-				return
-			}
+func deploymentHasReadOnlyRootFS(ctx framework.ComplianceContext, deployment *storage.Deployment) {
+	for _, container := range deployment.GetContainers() {
+		securityContext := container.GetSecurityContext()
+		readOnlyRootFS := securityContext.GetReadOnlyRootFilesystem()
+		if !readOnlyRootFS {
+			framework.Failf(ctx, "Deployment %s is using read-write filesystem", deployment.GetName())
+		} else {
+			framework.Passf(ctx, "Deployment %s is using read-only filesystem", deployment.GetName())
 		}
 	}
-	framework.Pass(ctx, "Deployments are using read-only filesystem")
 }
 
 // IsPolicyEnabled returns true if the policy is enabled.
@@ -175,9 +169,10 @@ func IsPolicyEnforced(p *storage.Policy) bool {
 	return false
 }
 
-// ClusterHasNetworkPolicies ensures the cluster has ingress and egress network policies and does
-// not use host network namespace.
-func ClusterHasNetworkPolicies(ctx framework.ComplianceContext) {
+// CheckNetworkPoliciesByDeployment ensures that every deployment in the cluster
+// has ingress and egress network policies and does not use host network namespace.
+// Use this with DeploymentKind control checks.
+func CheckNetworkPoliciesByDeployment(ctx framework.ComplianceContext) {
 	// Map deployments to nodes.
 	networkGraph := ctx.Data().NetworkGraph()
 	deploymentIDToNodes := make(map[string]*v1.NetworkNode, len(networkGraph.GetNodes()))
@@ -332,8 +327,8 @@ func isKubeSystem(deployment *storage.Deployment) bool {
 	return deployment.GetNamespace() == "kube-system"
 }
 
-// AlertsForDeployments checks if any deployments has alerts for a given policy lifecycle.
-func AlertsForDeployments(ctx framework.ComplianceContext, policyLifeCycle storage.LifecycleStage) {
+// CheckViolationsForPolicyByDeployment checks if the deployments have violations for a given policy.
+func CheckViolationsForPolicyByDeployment(ctx framework.ComplianceContext, policy *storage.Policy) {
 	alerts := ctx.Data().Alerts()
 	deploymentIDToAlerts := make(map[string][]*storage.ListAlert)
 	for _, alert := range alerts {
@@ -341,7 +336,8 @@ func AlertsForDeployments(ctx framework.ComplianceContext, policyLifeCycle stora
 		if alert.State == storage.ViolationState_RESOLVED {
 			continue
 		}
-		// enforcement is enabled.
+
+		// enforcement actions taken.
 		if alert.GetEnforcementCount() > 0 {
 			continue
 		}
@@ -351,24 +347,18 @@ func AlertsForDeployments(ctx framework.ComplianceContext, policyLifeCycle stora
 	}
 
 	framework.ForEachDeployment(ctx, func(ctx framework.ComplianceContext, deployment *storage.Deployment) {
-		count := deploymentHasAlert(deployment, policyLifeCycle, deploymentIDToAlerts)
-		if count > 0 {
-			framework.Failf(ctx, "Deployment has active alert(s) in '%s' lifecycle not being enforced.", strings.ToLower(storage.LifecycleStage_name[int32(policyLifeCycle)]))
-			return
+		checkFailed := false
+		alerts := deploymentIDToAlerts[deployment.GetId()]
+		for _, alert := range alerts {
+			if policy.GetName() == alert.GetPolicy().GetName() {
+				framework.Failf(ctx, "Deployment has active violations for %q policy not being enforced.", policy.GetName())
+				checkFailed = true
+			}
 		}
-		framework.Passf(ctx, "Deployment has no active alert(s) in '%s' lifecycle.", strings.ToLower(storage.LifecycleStage_name[int32(policyLifeCycle)]))
+		if !checkFailed {
+			framework.Passf(ctx, "Deployment has no active violations for %q policy.", policy.GetName())
+		}
 	})
-}
-
-func deploymentHasAlert(deployment *storage.Deployment, policyLifeCycle storage.LifecycleStage, deploymentIDToAlerts map[string][]*storage.ListAlert) int {
-	alerts := deploymentIDToAlerts[deployment.GetId()]
-	count := 0
-	for _, alert := range alerts {
-		if policyLifeCycle == alert.GetLifecycleStage() {
-			count++
-		}
-	}
-	return count
 }
 
 // CISBenchmarksSatisfied checks if either Docker or Kube benchmarks were run.

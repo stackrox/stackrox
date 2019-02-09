@@ -33,7 +33,7 @@ func init() {
 func checkNIST412(ctx framework.ComplianceContext) {
 	checkSSHPortAndProcesses(ctx)
 	checkPrivilegedCategoryPolicies(ctx)
-	common.IsImageScannerInUse(ctx)
+	common.CheckImageScannerInUseByCluster(ctx)
 	common.CheckBuildTimePolicyEnforced(ctx)
 }
 

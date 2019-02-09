@@ -15,5 +15,5 @@ func init() {
 			DataDependencies:   []string{"Notifiers"},
 			InterpretationText: interpretationText,
 		},
-		common.CheckNotifierInUse)
+		common.CheckNotifierInUseByCluster)
 }

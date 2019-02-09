@@ -19,6 +19,6 @@ func init() {
 }
 
 func clusterIsCompliant(ctx framework.ComplianceContext) {
-	common.IsImageScannerInUse(ctx)
+	common.CheckImageScannerInUseByCluster(ctx)
 	common.CheckFixedCVES(ctx)
 }

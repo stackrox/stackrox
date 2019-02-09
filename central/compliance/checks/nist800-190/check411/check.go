@@ -25,7 +25,7 @@ func init() {
 
 func checkNIST411(ctx framework.ComplianceContext) {
 	checkCVSS7PolicyEnforced(ctx)
-	common.IsImageScannerInUse(ctx)
+	common.CheckImageScannerInUseByCluster(ctx)
 	common.CheckBuildTimePolicyEnforced(ctx)
 }
 

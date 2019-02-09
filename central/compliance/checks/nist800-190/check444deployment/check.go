@@ -1,4 +1,4 @@
-package check433
+package check444deployment
 
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	standardID = "NIST_800_190:4_3_3"
+	standardID = "NIST_800_190:4_4_4_deployment"
 )
 
 func init() {
@@ -14,8 +14,8 @@ func init() {
 		framework.CheckMetadata{
 			ID:                 standardID,
 			Scope:              framework.DeploymentKind,
-			DataDependencies:   []string{"NetworkGraph", "NetworkPolicies"},
+			DataDependencies:   []string{"Deployments"},
 			InterpretationText: interpretationText,
 		},
-		common.CheckNetworkPoliciesByDeployment)
+		common.CheckDeploymentHasReadOnlyFSByDeployment)
 }

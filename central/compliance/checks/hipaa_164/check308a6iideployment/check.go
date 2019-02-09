@@ -1,18 +1,16 @@
-package check433
+package check308a6iideployment
 
 import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 )
 
-const (
-	standardID = "NIST_800_190:4_3_3"
-)
+const checkID = "HIPAA_164:308_a_6_ii_deployment"
 
 func init() {
 	framework.MustRegisterNewCheck(
 		framework.CheckMetadata{
-			ID:                 standardID,
+			ID:                 checkID,
 			Scope:              framework.DeploymentKind,
 			DataDependencies:   []string{"NetworkGraph", "NetworkPolicies"},
 			InterpretationText: interpretationText,

@@ -20,9 +20,9 @@ func init() {
 }
 
 func clusterIsCompliant(ctx framework.ComplianceContext) {
-	common.CheckNotifierInUse(ctx)
-	common.IsImageScannerInUse(ctx)
-	common.ClusterHasNetworkPolicies(ctx)
+	common.CheckNotifierInUseByCluster(ctx)
+	common.CheckImageScannerInUseByCluster(ctx)
+	common.CheckNetworkPoliciesByDeployment(ctx)
 	common.CheckFixedCVES(ctx)
 	common.CheckAnyPolicyInLifeCycle(ctx, storage.LifecycleStage_RUNTIME)
 	common.CheckAnyPolicyInLifeCycle(ctx, storage.LifecycleStage_BUILD)
