@@ -185,8 +185,14 @@ runUIE2E: &runUIE2E
       if [ "${RUN_UI_DEV_SERVER}" = "true" ]; then
         export UI_BASE_URL="https://localhost:3000"
       else
-        export UI_BASE_URL="https://localhost:8000"
-        ./scripts/port-forward-ui.sh
+        if [[ "${LOAD_BALANCER}" == "lb" ]]; then
+          LB_IP=$(./scripts/k8s/get-lb-ip.sh)
+          sudo sh -c "echo >>/etc/hosts ${LB_IP} central-lb"
+          export UI_BASE_URL="https://central-lb:443"
+        else
+          export UI_BASE_URL="https://localhost:8000"
+          ./scripts/port-forward-ui.sh
+        fi
       fi
 
       make -C ui test-e2e-ci
