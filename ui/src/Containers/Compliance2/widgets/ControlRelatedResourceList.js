@@ -47,16 +47,14 @@ const ControlRelatedEntitiesList = ({
             if (!filteredIds.includes(id)) filteredIds.push(id);
         });
 
-        return filteredIds
-            .map(id => ({
-                label: getEntityName(id),
-                link: URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.ENTITY, {
-                    entityId: id,
-                    query: { standard, [pageEntityType]: pageEntity.name },
-                    entityType: listEntityType
-                }).url
-            }))
-            .slice(0, limit);
+        return filteredIds.map(id => ({
+            label: getEntityName(id),
+            link: URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.ENTITY, {
+                entityId: id,
+                query: { standard, [pageEntityType]: pageEntity.name },
+                entityType: listEntityType
+            }).url
+        }));
     }
 
     function getHeadline(items) {
@@ -96,6 +94,7 @@ const ControlRelatedEntitiesList = ({
             processData={processData}
             getHeadline={getHeadline}
             headerComponents={viewAllLink}
+            limit={limit}
         />
     );
 };

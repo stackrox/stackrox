@@ -38,6 +38,35 @@ export const AGGREGATED_RESULTS = gql`
     }
 `;
 
+export const AGGREGATED_RESULTS_WITH_CONTROLS = gql`
+    query getAggregatedResults(
+        $groupBy: [ComplianceAggregation_Scope!]
+        $unit: ComplianceAggregation_Scope!
+        $where: String!
+    ) {
+        results: aggregatedResults(groupBy: $groupBy, unit: $unit, where: $where) {
+            results {
+                aggregationKeys {
+                    id
+                    scope
+                }
+                numFailing
+                numPassing
+                unit
+            }
+        }
+        complianceStandards {
+            id
+            name
+            controls {
+                id
+                name
+                description
+            }
+        }
+    }
+`;
+
 export const CONTROL_QUERY = gql`
     query controlById($id: ID!) {
         results: complianceControl(id: $id) {

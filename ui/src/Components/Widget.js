@@ -16,7 +16,7 @@ class Widget extends Component {
 
     static defaultProps = {
         header: '',
-        bodyClassName: null,
+        bodyClassName: '',
         className: 'w-full bg-base-100',
         headerComponents: null,
         pages: 0,

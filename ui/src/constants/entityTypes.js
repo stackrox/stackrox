@@ -9,7 +9,8 @@ export const resourceTypes = {
 
 export const standardEntityTypes = {
     CONTROL: 'CONTROL',
-    CATEGORY: 'CATEGORY'
+    CATEGORY: 'CATEGORY',
+    STANDARD: 'STANDARD'
 };
 
 export const standardTypes = {

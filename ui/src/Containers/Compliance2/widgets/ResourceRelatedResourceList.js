@@ -48,16 +48,14 @@ const ResourceRelatedEntitiesList = ({
                 .filter(item => item.clusterName === pageEntity.name);
         }
 
-        return items
-            .map(item => ({
-                label: item.name,
-                link: URLService.getLinkTo(linkContext, pageTypes.ENTITY, {
-                    query: { [pageEntityType]: pageEntity.name },
-                    entityId: item.id,
-                    entityType: listEntityType
-                }).url
-            }))
-            .slice(0, limit);
+        return items.map(item => ({
+            label: item.name,
+            link: URLService.getLinkTo(linkContext, pageTypes.ENTITY, {
+                query: { [pageEntityType]: pageEntity.name },
+                entityId: item.id,
+                entityType: listEntityType
+            }).url
+        }));
     }
 
     const viewAllLink =
@@ -87,8 +85,9 @@ const ResourceRelatedEntitiesList = ({
         };
     }
 
-    function getHeadline() {
-        return `Related ${pluralize(resourceLabel)}`;
+    function getHeadline(list) {
+        if (!list) return `Related ${pluralize(resourceLabel)}`;
+        return `${list.length} Related ${pluralize(resourceLabel)}`;
     }
 
     return (
@@ -99,6 +98,7 @@ const ResourceRelatedEntitiesList = ({
             getHeadline={getHeadline}
             headerComponents={viewAllLink}
             className={className}
+            limit={limit}
         />
     );
 };

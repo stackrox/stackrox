@@ -40,7 +40,8 @@ const LinkListWidget = ({
     getHeadline,
     className,
     headerComponents,
-    numColumns
+    numColumns,
+    limit
 }) => (
     <Query query={query} variables={variables}>
         {({ loading, data, error }) => {
@@ -61,9 +62,9 @@ const LinkListWidget = ({
                 headline = getHeadline(items);
                 contents = (
                     <ul
-                        className={`columns-${numColumns} list-reset p-3 pt-0 w-full leading-normal`}
+                        className={`columns-${numColumns} list-reset p-3 pt-0 w-full leading-normal overflow-hidden`}
                     >
-                        {items.map(item => getLI(item))}
+                        {items.slice(0, limit).map(item => getLI(item))}
                     </ul>
                 );
             }
@@ -88,7 +89,8 @@ LinkListWidget.propTypes = {
     getHeadline: PropTypes.func,
     className: PropTypes.string,
     headerComponents: PropTypes.node,
-    numColumns: PropTypes.number
+    numColumns: PropTypes.number,
+    limit: PropTypes.number
 };
 
 LinkListWidget.defaultProps = {
@@ -101,7 +103,8 @@ LinkListWidget.defaultProps = {
     },
     className: null,
     headerComponents: null,
-    numColumns: 1
+    numColumns: 1,
+    limit: 10
 };
 
 export default LinkListWidget;

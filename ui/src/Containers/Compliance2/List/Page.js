@@ -6,6 +6,7 @@ import URLService from 'modules/URLService';
 
 import CollapsibleBanner from 'Components/CollapsibleBanner/CollapsibleBanner';
 import ComplianceAcrossEntities from 'Containers/Compliance2/widgets/ComplianceAcrossEntities';
+import ControlsMostFailed from 'Containers/Compliance2/widgets/ControlsMostFailed';
 import SearchInput from './SearchInput';
 import Header from './Header';
 import ListTable from './Table';
@@ -48,7 +49,7 @@ class ComplianceListPage extends Component {
                 <CollapsibleBanner>
                     <ComplianceAcrossEntities params={params} pollInterval={pollInterval} />
                     <ComplianceAcrossEntities params={params} pollInterval={pollInterval} />
-                    <ComplianceAcrossEntities params={params} pollInterval={pollInterval} />
+                    <ControlsMostFailed params={params} />
                 </CollapsibleBanner>
                 <div className="flex flex-1 overflow-y-auto">
                     <ListTable
