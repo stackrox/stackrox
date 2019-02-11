@@ -70,7 +70,7 @@ class ImageDetails extends Component {
         const button = (
             <button
                 type="button"
-                className="flex mx-auto my-2 py-3 px-2 w-5/6 rounded-sm text-primary-600 hover:text-base-100 hover:bg-primary-400 uppercase justify-center text-sm items-center bg-base-100 border-2 border-primary-400"
+                className="flex mx-auto my-2 py-2 px-2 w-5/6 rounded-sm text-primary-700 no-underline hover:bg-primary-200 hover:border-primary-500 uppercase justify-center text-sm items-center bg-base-100 border-2 border-primary-400"
                 onClick={this.openModal}
                 disabled={!(image.metadata && image.metadata.v1)}
             >
@@ -123,7 +123,7 @@ class ImageDetails extends Component {
                                 <span className="w-1/2">
                                     <button
                                         type="button"
-                                        className="flex mx-auto my-2 py-3 px-2 w-5/6 rounded-sm text-primary-600 no-underline hover:text-base-100 hover:bg-primary-400 uppercase justify-center text-sm items-center bg-base-100 border-2 border-primary-400"
+                                        className="flex mx-auto my-2 py-2 px-2 w-5/6 rounded-sm text-primary-700 no-underline hover:bg-primary-200 hover:border-primary-500 uppercase justify-center text-sm items-center bg-base-100 border-2 border-primary-400"
                                         onClick={this.onViewDeploymentsClick}
                                     >
                                         View Deployments

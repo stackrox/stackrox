@@ -18,6 +18,7 @@ const downloadUrl = '/api/compliance/export/csv';
 class ExportButton extends Component {
     static propTypes = {
         className: PropTypes.string,
+        textClass: PropTypes.string,
         fileName: PropTypes.string,
         type: PropTypes.string,
         id: PropTypes.string
@@ -25,6 +26,7 @@ class ExportButton extends Component {
 
     static defaultProps = {
         className: 'btn btn-base h-10',
+        textClass: null,
         fileName: 'compliance',
         type: null,
         id: ''
@@ -111,7 +113,9 @@ class ExportButton extends Component {
                 <Button
                     className={this.props.className}
                     text="Export"
-                    icon={<Icon.FileText size="14" className="ml-1 mr-3" />}
+                    textCondensed="Export"
+                    textClass={this.props.textClass}
+                    icon={<Icon.FileText size="14" className="mx-1 lg:ml-1 lg:mr-3" />}
                     onClick={this.openWidget}
                 />
                 {this.renderContent()}

@@ -14,7 +14,7 @@ import merge from 'deepmerge';
 
 import HoverHint from './HoverHint';
 
-const minimalMargin = { top: 0, bottom: 0, left: 0, right: 0 };
+const minimalMargin = { top: -15, bottom: 0, left: 0, right: 0 };
 
 const sortByYValue = (a, b) => {
     if (a.y < b.y) return -1;
@@ -57,7 +57,7 @@ class HorizontalBarChart extends Component {
         };
     }
 
-    showLabel = value => value >= 20;
+    showLabel = value => value >= 7;
 
     setHintData = val => {
         if (val.hint) {
@@ -87,14 +87,15 @@ class HorizontalBarChart extends Component {
             if (this.showLabel(item.x)) {
                 label = this.props.valueFormat(item.x).toString() || '';
             }
+            const { minimal } = this.props;
             const val = {
-                x: 0,
+                x: minimal ? -14 : -3.2,
                 y: item.y,
-                yOffset: 1,
+                yOffset: minimal ? -6 : -3,
                 label
             };
             // x offset for label
-            val.x -= 6 * val.label.length;
+            val.x -= val.label.length;
             return val;
         });
 
@@ -116,7 +117,7 @@ class HorizontalBarChart extends Component {
 
     getContainerProps = hintsEnabled => {
         const defaultContainerProps = {
-            className: 'relative chart-container w-full',
+            className: 'relative chart-container w-full horizontal-bar-responsive',
             onMouseMove: hintsEnabled ? this.setHintPosition : null
         };
         return merge(defaultContainerProps, this.props.containerProps);
@@ -128,11 +129,11 @@ class HorizontalBarChart extends Component {
         // This determines how far to push the bar graph to the right based on the longest axis label character's length
         const maxLength = sortedData.reduce((acc, curr) => Math.max(curr.y.length, acc), 0);
         const defaultPlotProps = {
-            height: minimal ? 30 : 260,
+            height: minimal ? 25 : 350,
             xDomain: [0, 102],
             yType: 'category',
-            yRange: sortedData.map((item, i) => (i + 1) * 23).concat([0]),
-            margin: minimal ? minimalMargin : { top: 18, left: Math.ceil(maxLength * 5.4) },
+            yRange: sortedData.map((item, i) => (i + 1) * 41).concat([0]),
+            margin: minimal ? minimalMargin : { top: 33.3, left: Math.ceil(maxLength * 7.5) },
             stackBy: 'x',
             animation: hintsEnabled ? false : ''
         };
@@ -140,10 +141,11 @@ class HorizontalBarChart extends Component {
     };
 
     getSeriesProps = () => {
+        const { minimal } = this.props;
         const defaultSeriesProps = {
             color: 'url(#horizontalGradient)',
             style: {
-                height: 14,
+                height: minimal ? 15 : 20,
                 rx: '2px',
                 cursor: 'pointer'
             },
@@ -186,7 +188,7 @@ class HorizontalBarChart extends Component {
                 inner = (
                     <Link
                         style={{ fill: 'currentColor' }}
-                        className="underline font-condensed text-base-600 hover:text-primary-700"
+                        className="underline text-2xs font-800 text-base-600 hover:text-primary-700"
                         to={axisLinks[value]}
                     >
                         {value}
@@ -201,7 +203,7 @@ class HorizontalBarChart extends Component {
                 {/* Bar Background  */}
                 <svg
                     className="absolute"
-                    height={`${minimal ? '0' : '0'}`}
+                    height="0"
                     width="10"
                     xmlns="http://www.w3.org/2000/svg"
                     version="1.1"
@@ -274,17 +276,18 @@ class HorizontalBarChart extends Component {
                     <HorizontalBarSeries data={sortedData} {...seriesProps} />
                     <LabelSeries
                         data={this.getLabelData()}
-                        className="text-xs"
+                        className="text-xs pointer-events-none"
                         labelAnchorY="no-change"
                         labelAnchorX="end-alignment"
                         style={{
                             fill: 'var(--base-700)',
+
                             cursor: 'pointer'
                         }}
                     />
 
                     {!minimal && (
-                        <YAxis tickSize={0} top={15} className="text-xs" tickFormat={tickFormat} />
+                        <YAxis tickSize={0} top={26} className="text-xs" tickFormat={tickFormat} />
                     )}
                 </FlexibleWidthXYPlot>
 

@@ -16,7 +16,7 @@ const TileLink = ({ value, caption, to, loading }) => {
     );
     return (
         <Link to={to} className="no-underline">
-            <div className="flex flex-col items-center justify-center px-4 min-w-24 border-2 border-primary-400 text-base-100 rounded min-h-14 uppercase hover:bg-primary-800">
+            <div className="flex flex-col items-center justify-center px-2 lg:px-4 min-w-20 lg:min-w-24 border-2 border-primary-400 text-base-100 rounded min-h-14 uppercase hover:bg-primary-800">
                 {content}
             </div>
         </Link>

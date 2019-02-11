@@ -331,6 +331,7 @@ module.exports = {
   */
 
     textSizes: {
+        '2xs': remCalc('9'),
         xs: remCalc('10'),
         sm: remCalc('11'),
         base: remCalc('12'),

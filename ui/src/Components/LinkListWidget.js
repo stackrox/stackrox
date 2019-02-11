@@ -12,7 +12,7 @@ function getLI(item) {
     const content = item.link ? (
         <Link
             to={item.link}
-            className="font-600 text-base-600 leading-normal p-2 inline-block w-full"
+            className="font-600 text-base-600 hover:bg-primary-100 focus:bg-primary-100 focus:text-primary-700 hover:text-primary-700 leading-normal p-2 inline-block w-full"
         >
             {item.label}
         </Link>

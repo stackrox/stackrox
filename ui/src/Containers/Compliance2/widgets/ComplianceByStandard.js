@@ -8,8 +8,6 @@ import Sunburst from 'Components/visuals/Sunburst';
 import Query from 'Components/AppQuery';
 import Loader from 'Components/Loader';
 
-const MAX_CHAR = 100;
-
 const colors = [
     'var(--tertiary-400)',
     'var(--warning-400)',
@@ -60,9 +58,7 @@ const processSunburstData = (data, type) => {
         if (group !== undefined) {
             const value = group;
             groupMapping[datum.id] = {
-                name: `${datum.name}. ${datum.description.substring(0, MAX_CHAR)}${
-                    datum.description.length > MAX_CHAR ? '...' : ''
-                }`,
+                name: `${datum.name}. ${datum.description}`,
                 color: getColor(value),
                 value,
                 children: []
@@ -77,9 +73,7 @@ const processSunburstData = (data, type) => {
             if (group !== undefined) {
                 const value = controlStatsMapping[datum.id] || 0;
                 group.children.push({
-                    name: `${datum.name} - ${datum.description.substring(0, MAX_CHAR)}${
-                        datum.description.length > MAX_CHAR ? '...' : ''
-                    }`,
+                    name: `${datum.name} - ${datum.description}`,
                     color: getColor(value),
                     link: `compliance2/${datum.standardId}/${datum.id}`,
                     value
@@ -121,8 +115,8 @@ const ComplianceByStandard = ({ type, params, pollInterval }) => {
                     if (!sunburstData.length) {
                         contents = (
                             <>
-                                <div className="flex flex-1 items-center justify-center">
-                                    No Data Available
+                                <div className="flex flex-1 items-center justify-center p-4 leading-loose">
+                                    No data available. Please run a scan.
                                 </div>
                             </>
                         );

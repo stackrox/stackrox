@@ -119,6 +119,7 @@ class AuthProvider extends Component {
         const panelHeaderClassName = `${headerClassName} bg-base-100`;
         return (
             <Panel
+                className="border"
                 header={headerText}
                 headerClassName={panelHeaderClassName}
                 headerComponents={headerComponents}

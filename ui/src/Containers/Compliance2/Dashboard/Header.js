@@ -28,8 +28,10 @@ const ComplianceDashboardHeader = props => (
             <div className="flex">
                 <div className="flex items-center">
                     <ScanButton
-                        className="flex items-center justify-center border-2 border-primary-400 text-base-100 rounded p-2 uppercase hover:bg-primary-800 min-w-43 h-10"
+                        className="flex items-center justify-center border-2 border-primary-400 text-base-100 rounded p-2 uppercase hover:bg-primary-800 lg:min-w-32 xl:min-w-43 h-10"
                         text="Scan environment"
+                        textClass="hidden lg:block"
+                        textCondensed="Scan all"
                         clusterId="*"
                         standardId="*"
                     />
@@ -38,6 +40,7 @@ const ComplianceDashboardHeader = props => (
                     <ExportButton
                         className="flex items-center border-2 border-primary-400 text-base-100 rounded p-2 uppercase hover:bg-primary-800 h-10"
                         fileName="compliance-dashboard"
+                        textClass="hidden lg:block"
                     />
                 </div>
             </div>

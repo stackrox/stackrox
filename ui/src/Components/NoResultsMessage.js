@@ -2,10 +2,8 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 const NoResultsMessage = props => (
-    <div className="flex flex-col h-full border-r border-base-400 min-w-0 w-full justify-center items-center">
-        <div className="text-warning-800 bg-warning-200 border-2 border-warning-300 p-6 rounded">
-            {props.message}
-        </div>
+    <div className="flex flex-1 items-center justify-center w-full leading-loose text-center h-full">
+        {props.message}
     </div>
 );
 

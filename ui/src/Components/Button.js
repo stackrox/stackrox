@@ -4,10 +4,29 @@ import { ClipLoader } from 'react-spinners';
 
 const Loader = () => <ClipLoader loading size={20} color="currentColor" />;
 
-const Button = ({ className, icon, text, onClick, disabled, isLoading }) => {
+const Button = ({
+    className,
+    icon,
+    text,
+    textCondensed,
+    textClass,
+    onClick,
+    disabled,
+    isLoading
+}) => {
     const content = (
         <div className="flex">
-            {icon} {text}
+            {icon}
+            {textCondensed ? (
+                <>
+                    <span className={`${textClass} lg:hidden`}> {textCondensed} </span>
+                    <span className="hidden lg:block"> {text} </span>
+                </>
+            ) : (
+                <>
+                    <span> {text} </span>
+                </>
+            )}
         </div>
     );
     return (
@@ -21,6 +40,8 @@ Button.propTypes = {
     className: PropTypes.string.isRequired,
     icon: PropTypes.element,
     text: PropTypes.string,
+    textCondensed: PropTypes.string,
+    textClass: PropTypes.string,
     onClick: PropTypes.func.isRequired,
     disabled: PropTypes.bool,
     isLoading: PropTypes.bool
@@ -29,6 +50,8 @@ Button.propTypes = {
 Button.defaultProps = {
     icon: null,
     text: null,
+    textCondensed: null,
+    textClass: null,
     disabled: false,
     isLoading: false
 };

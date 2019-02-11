@@ -35,7 +35,7 @@ const ComplianceDashboardPage = ({ match, location }) => {
             />
             <div
                 className="flex-1 relative bg-gradient-diagonal p-6"
-                style={{ '--start': '#F5F2FF', '--end': '#F0F6FF' }}
+                style={{ '--start': '#e2e6ff', '--end': '#e2f0ff' }}
             >
                 <img
                     className="absolute pin-l pointer-events-none w-full"
@@ -50,21 +50,25 @@ const ComplianceDashboardPage = ({ match, location }) => {
                     <StandardsAcrossEntity
                         type={resourceTypes.CLUSTER}
                         params={params}
+                        bodyClassName="pr-4 py-1"
                         pollInterval={pollInterval}
                     />
                     <StandardsByEntity
                         type={resourceTypes.CLUSTER}
                         params={params}
+                        bodyClassName="p-4"
                         pollInterval={pollInterval}
                     />
                     <StandardsAcrossEntity
                         type={resourceTypes.NAMESPACE}
                         params={params}
+                        bodyClassName="px-4 pt-1"
                         pollInterval={pollInterval}
                     />
                     <StandardsAcrossEntity
                         type={resourceTypes.NODE}
                         params={params}
+                        bodyClassName="pr-4 py-1"
                         pollInterval={pollInterval}
                     />
                     <ComplianceByStandard

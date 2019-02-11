@@ -23,7 +23,7 @@ const ListHeader = ({ match, location, searchComponent }) => {
             <div className="w-full">{searchComponent}</div>
             {isStandard(entityType) && (
                 <div className="flex flex-1 justify-end">
-                    <div className="border-l border-base-300 mx-3" />
+                    <div className="border-l-2 border-base-300 mx-3" />
                     <div className="flex">
                         <div className="flex items-center">
                             <div className="flex">

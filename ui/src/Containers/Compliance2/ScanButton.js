@@ -28,7 +28,7 @@ const areRunsFinished = data => {
     return runsFinished;
 };
 
-const ScanButton = ({ className, text, clusterId, standardId }) => (
+const ScanButton = ({ className, text, textCondensed, textClass, clusterId, standardId }) => (
     <Mutation mutation={TRIGGER_SCAN}>
         {(triggerScan, { data: triggerData }) => {
             const ids = getTriggerRunIds(triggerData);
@@ -43,7 +43,11 @@ const ScanButton = ({ className, text, clusterId, standardId }) => (
                             <Button
                                 className={className}
                                 text={text}
-                                icon={<Icon.RefreshCcw size="14" className="ml-1 mr-3" />}
+                                textCondensed={textCondensed}
+                                textClass={textClass}
+                                icon={
+                                    <Icon.RefreshCcw size="14" className="mx-1 lg:ml-1 lg:mr-3" />
+                                }
                                 onClick={scanOnClickHandler(triggerScan, clusterId, standardId)}
                                 isLoading={showLoader}
                             />
@@ -58,6 +62,8 @@ const ScanButton = ({ className, text, clusterId, standardId }) => (
 ScanButton.propTypes = {
     className: PropTypes.string,
     text: PropTypes.string.isRequired,
+    textCondensed: PropTypes.string,
+    textClass: PropTypes.string,
     clusterId: PropTypes.string,
     standardId: PropTypes.string
 };
@@ -65,6 +71,8 @@ ScanButton.propTypes = {
 ScanButton.defaultProps = {
     className: 'btn btn-base h-10',
     clusterId: '*',
+    textClass: null,
+    textCondensed: null,
     standardId: '*'
 };
 

@@ -99,7 +99,7 @@ class Roles extends Component {
         return (
             <section className="flex flex-1 h-full">
                 <div className={`w-1/4 flex flex-col ${className}`}>
-                    <div className="m-4 h-full">{this.renderSideBar()}</div>
+                    <div className="m-4 h-full shadow-sm">{this.renderSideBar()}</div>
                 </div>
                 <div className="w-3/4 my-4 mr-4 z-10">
                     <Permissions

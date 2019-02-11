@@ -65,7 +65,7 @@ function getLabelLinks(data, type, params) {
     return labelLinks;
 }
 
-const StandardsByEntity = ({ type, params, pollInterval }) => (
+const StandardsByEntity = ({ type, params, pollInterval, bodyClassName }) => (
     <Query params={params} componentType={componentTypeMapping[type]} pollInterval={pollInterval}>
         {({ loading, data }) => {
             let contents = <Loader />;
@@ -84,12 +84,17 @@ const StandardsByEntity = ({ type, params, pollInterval }) => (
                     VerticalBarChartPaged.defaultProps = { currentPage: 0 };
                     contents = <VerticalBarChartPaged />;
                 } else {
-                    contents = <NoResultsMessage message="No Data Available" />;
+                    contents = <NoResultsMessage message="No data available. Please run a scan." />;
                 }
             }
 
             return (
-                <Widget className="sx-2 sy-2" pages={pages} header={headerText} bodyClassName="p-4">
+                <Widget
+                    className="sx-2 sy-2"
+                    pages={pages}
+                    header={headerText}
+                    bodyClassName={`graph-bottom-border ${bodyClassName}`}
+                >
                     {contents}
                 </Widget>
             );
@@ -99,12 +104,14 @@ const StandardsByEntity = ({ type, params, pollInterval }) => (
 
 StandardsByEntity.propTypes = {
     type: PropTypes.string.isRequired,
+    bodyClassName: PropTypes.string,
     params: PropTypes.shape({}).isRequired,
     pollInterval: PropTypes.number
 };
 
 StandardsByEntity.defaultProps = {
-    pollInterval: 0
+    pollInterval: 0,
+    bodyClassName: 'p-4'
 };
 
 export default StandardsByEntity;

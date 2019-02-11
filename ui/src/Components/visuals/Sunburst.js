@@ -96,7 +96,7 @@ export default class BasicSunburst extends React.Component {
             }
         );
         if (val.total === 0) {
-            label = 'No Data Available';
+            label = 'No data available';
         } else {
             label = `${Math.round((val.passing / val.total) * 100)}%`;
         }
@@ -145,7 +145,7 @@ export default class BasicSunburst extends React.Component {
     getSunburstProps = () => {
         const defaultSunburstProps = {
             colorType: 'literal',
-            width: 280,
+            width: 265,
             height: 271,
             className: 'cursor-pointer pointer-events-none my-auto',
             onValueMouseOver: this.onValueMouseOverHandler,

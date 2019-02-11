@@ -95,11 +95,12 @@ class BarChart extends Component {
         // Default props
         const defaultPlotProps = {
             xType: 'ordinal',
-            yDomain: [0, 160]
+            yDomain: [0, 100],
+            height: 270
         };
 
         const defaultContainerProps = {
-            className: 'relative chart-container w-full',
+            className: 'relative chart-container w-full horizontal-bar-responsive',
             onMouseMove: this.setHintPosition
         };
 
@@ -107,8 +108,8 @@ class BarChart extends Component {
             // animation: true, //causes onValueMouseOut to fail https://github.com/uber/react-vis/issues/381
             barWidth: 0.5,
             style: {
-                opacity: '.8',
-                width: '6px',
+                opacity: '.85',
+                width: '10px',
                 ry: '2px',
                 cursor: 'pointer'
             },
@@ -134,7 +135,11 @@ class BarChart extends Component {
             let inner = value;
             if (labelLinks[value])
                 inner = (
-                    <Link className="underline" to={labelLinks[value]}>
+                    <Link
+                        style={{ fill: 'currentColor' }}
+                        className="underline text-base-600 hover:text-primary-700"
+                        to={labelLinks[value]}
+                    >
                         {value}
                     </Link>
                 );

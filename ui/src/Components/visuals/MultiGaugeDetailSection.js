@@ -100,7 +100,7 @@ class MultiGaugeDetailSection extends Component {
             >
                 <Icon.Square fill={colors[idx]} stroke={d.color} className="h-2 w-2" />
                 <span className="pl-1 font-600 truncate">{d.title}</span>
-                <div className="ml-auto text-right flex flex-no-shrink">
+                <div className="ml-auto text-right flex flex-no-shrink items-center">
                     <button
                         type="button"
                         className={`text-sm text-base-600 font-600 hover:text-success-600 underline pl-2 cursor-pointer ${selectedGauge &&

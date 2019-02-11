@@ -53,7 +53,7 @@ class TableGroup extends Component {
     };
 
     renderGroupByCollapsible = (state, { name, rows }) => (
-        <div className="flex justify-between cursor-pointer w-full py-2">
+        <div className="flex justify-between cursor-pointer w-full py-1">
             <div className="flex w-full justify-between">
                 <div className="flex items-center">
                     <div className="flex ml-4 mr-3 rounded-full bg-base-100 h-5 w-5 justify-center text-success-700 items-center border border-success-400">
@@ -84,7 +84,7 @@ class TableGroup extends Component {
                         triggerOpenedClassName="table-group-active bg-success-300 text-success-900 block z-30 pin-t sticky"
                         trigger={this.renderWhenClosed(group)}
                         triggerWhenOpen={this.renderWhenOpened(group)}
-                        transitionTime={0.000000001}
+                        transitionTime={0.001}
                         contentOuterClassName="before before:absolute before:bg-success-300 before:h-full before:pin-l before:w-2 before:z-10 px-1 relative"
                     >
                         {this.renderSubTable(group)}

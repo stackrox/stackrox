@@ -1,6 +1,6 @@
 import React from 'react';
 import componentTypes from 'constants/componentTypes';
-import { resourceTypes } from 'constants/entityTypes';
+import { standardBaseTypes, resourceTypes } from 'constants/entityTypes';
 import { resourceLabels } from 'messages/common';
 import pluralize from 'pluralize';
 
@@ -47,7 +47,7 @@ function processData(data, type) {
         const { passing, total } = standardsMapping[standardId];
         const percentagePassing = Math.round((passing / total) * 100) || 0;
         const dataPoint = {
-            y: standard.name,
+            y: standardBaseTypes[standardId],
             x: percentagePassing,
             hint: {
                 title: `${standard.name} Standard - ${percentagePassing}% Passing`,
@@ -64,7 +64,7 @@ function processData(data, type) {
     return barData;
 }
 
-const StandardsAcrossEntity = ({ type, params, pollInterval }) => (
+const StandardsAcrossEntity = ({ type, params, pollInterval, bodyClassName }) => (
     <Query params={params} componentType={componentTypeMapping[type]} pollInterval={pollInterval}>
         {({ loading, data }) => {
             let contents;
@@ -72,7 +72,7 @@ const StandardsAcrossEntity = ({ type, params, pollInterval }) => (
             if (!loading || data.complianceStandards) {
                 const results = processData(data, type);
                 if (!results.length) {
-                    contents = <NoResultsMessage message="No Data Available" />;
+                    contents = <NoResultsMessage message="No data available. Please run a scan." />;
                 } else {
                     contents = <HorizontalBarChart data={results} valueFormat={formatAsPercent} />;
                 }
@@ -80,7 +80,11 @@ const StandardsAcrossEntity = ({ type, params, pollInterval }) => (
                 contents = <Loader />;
             }
             return (
-                <Widget className="sx-2 sy-2" header={headerText} bodyClassName="p-4">
+                <Widget
+                    className="sx-2 sy-2"
+                    header={headerText}
+                    bodyClassName={`graph-bottom-border ${bodyClassName}`}
+                >
                     {contents}
                 </Widget>
             );
@@ -91,11 +95,13 @@ const StandardsAcrossEntity = ({ type, params, pollInterval }) => (
 StandardsAcrossEntity.propTypes = {
     type: PropTypes.string.isRequired,
     params: PropTypes.shape({}).isRequired,
+    bodyClassName: PropTypes.string,
     pollInterval: PropTypes.number
 };
 
 StandardsAcrossEntity.defaultProps = {
-    pollInterval: 0
+    pollInterval: 0,
+    bodyClassName: 'px-4 pt-1'
 };
 
 export default StandardsAcrossEntity;

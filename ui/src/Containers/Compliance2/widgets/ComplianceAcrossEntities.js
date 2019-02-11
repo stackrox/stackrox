@@ -60,7 +60,7 @@ const ComplianceAcrossEntities = ({ params, pollInterval }) => (
             if (!loading && data) {
                 const results = processData(params.entityType, data);
                 if (!results.length) {
-                    contents = <NoResultsMessage message="No Data Available" />;
+                    contents = <NoResultsMessage message="No data available. Please run a scan." />;
                 } else {
                     contents = <Gauge data={results} dataProperty="passing" />;
                 }

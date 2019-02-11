@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
+import Truncate from 'react-truncate';
 
 import HorizontalBarChart from 'Components/visuals/HorizontalBar';
 
@@ -52,7 +53,7 @@ class SunburstDetailSection extends Component {
         }
 
         return (
-            <div className="pt-3 px-3">
+            <div className="py-2 px-3 fc:border-b fc:border-base-300 fc:pb-3 fc:mb-1">
                 {bullets.map(({ text, link, value }, idx) => (
                     <div
                         key={text}
@@ -61,11 +62,20 @@ class SunburstDetailSection extends Component {
                         }`}
                     >
                         {link && (
-                            <a className="underline text-base-600 leading-normal" href={link}>
-                                {text}
+                            <a
+                                className="underline text-base-600 hover:text-primary-700 leading-normal flex w-full word-break"
+                                href={link}
+                            >
+                                <Truncate lines={6} ellipsis={<>...</>}>
+                                    {text}
+                                </Truncate>
                             </a>
                         )}
-                        {!link && text}
+                        <span className="flex w-full word-break leading-tight">
+                            <Truncate lines={4} ellipsis={<>...</>}>
+                                {!link && text}
+                            </Truncate>
+                        </span>
                         {selectedDatum && (
                             <HorizontalBarChart
                                 data={[{ y: '', x: value }]}
@@ -82,8 +92,8 @@ class SunburstDetailSection extends Component {
     getLockHint = () => {
         const { clicked } = this.props;
         return (
-            <div className="border-t border-base-300 border-dashed flex justify-center h-7 text-base-500 text-sm">
-                <div className="flex items-center">
+            <div className="border-t border-base-300 border-dashed flex justify-end px-2 h-7 text-base-500 text-sm">
+                <div className="flex items-center font-condensed opacity-75">
                     <Icon.Info size="16" className="pr-1" />
                     {`click to ${clicked ? 'un' : ''}lock selection`}
                 </div>

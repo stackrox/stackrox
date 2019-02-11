@@ -10,9 +10,8 @@ const EntityHeader = ({ header, subHeader, searchComponent, scanCluster, scanSta
     <PageHeader header={header} subHeader={subHeader}>
         {searchComponent}
         <div className="flex flex-1 justify-end">
-            <div className="ml-3 border-l border-base-300 mr-3" />
             <div className="flex">
-                <div className="flex items-center mr-3">
+                <div className="flex items-center">
                     <ScanButton text="Scan" clusterId={scanCluster} standardId={scanStandard} />
                     {type === 'CLUSTER' && (
                         <ExportButton fileName={header} type={type} id={scanCluster} />
