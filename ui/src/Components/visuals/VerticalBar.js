@@ -38,7 +38,8 @@ class VerticalBarChart extends Component {
             'var(--primary-500)',
             'var(--accent-500)',
             'var(--success-500)',
-            'var(--tertiary-500)'
+            'var(--tertiary-500)',
+            'var(--secondary-500)'
         ],
         containerProps: {},
         plotProps: {},
