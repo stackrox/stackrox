@@ -17,7 +17,6 @@ export const LIST_STANDARD = gql`
                         id
                         name
                         description
-                        standardId
                     }
                     ... on Cluster {
                         id
@@ -26,6 +25,12 @@ export const LIST_STANDARD = gql`
                     ... on Node {
                         id
                         name
+                    }
+                    ... on Namespace {
+                        metadata {
+                            id
+                            name
+                        }
                     }
                 }
                 numPassing

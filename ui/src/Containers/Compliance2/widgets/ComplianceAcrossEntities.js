@@ -6,10 +6,8 @@ import Loader from 'Components/Loader';
 import PropTypes from 'prop-types';
 import Gauge from 'Components/visuals/GaugeWithDetail';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import { standardTypes } from 'constants/entityTypes';
+import { standardBaseTypes } from 'constants/entityTypes';
 import { standardShortLabels } from 'messages/standards';
-
-const isStandard = type => Object.values(standardTypes).includes(type);
 
 const sortByTitle = (a, b) => {
     if (a.title < b.title) return -1;
@@ -19,7 +17,7 @@ const sortByTitle = (a, b) => {
 
 function processData(type, { results, complianceStandards }) {
     let filteredResults;
-    if (isStandard(type)) {
+    if (standardBaseTypes[type]) {
         filteredResults = results.results.filter(result =>
             result.aggregationKeys[0].id.includes(type)
         );
@@ -45,16 +43,12 @@ function processData(type, { results, complianceStandards }) {
 const ComplianceAcrossEntities = ({ params, pollInterval }) => (
     <Query
         params={params}
-        componentType={
-            isStandard(params.entityType)
-                ? componentTypes.COMPLIANCE_ACROSS_STANDARDS
-                : componentTypes.COMPLIANCE_ACROSS_RESOURCES
-        }
+        componentType={componentTypes.COMPLIANCE_ACROSS_ENTITIES}
         pollInterval={pollInterval}
     >
         {({ loading, data }) => {
             let contents = <Loader />;
-            const headerText = isStandard(params.entityType)
+            const headerText = standardBaseTypes[params.entityType]
                 ? `Compliance Across ${standardShortLabels[params.entityType]} Controls`
                 : `Compliance Across ${params.entityType}s`;
             if (!loading && data) {

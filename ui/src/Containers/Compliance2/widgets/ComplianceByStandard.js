@@ -71,17 +71,15 @@ const processSunburstData = (data, type) => {
         .filter(control => control.standardId === type)
         .forEach(datum => {
             const group = groupMapping[datum.groupId];
-            if (group !== undefined) {
-                const control = controlStatsMapping[datum.id];
-                if (control !== undefined) {
-                    const value = control;
-                    group.children.push({
-                        name: `${datum.name} - ${datum.description}`,
-                        color: getColor(value),
-                        link: `compliance2/${datum.standardId}/${datum.id}`,
-                        value
-                    });
-                }
+            const control = controlStatsMapping[datum.id];
+            if (group !== undefined && control !== undefined) {
+                const value = control;
+                group.children.push({
+                    name: `${datum.name} - ${datum.description}`,
+                    color: getColor(value),
+                    link: `/main/compliance2/${datum.standardId}/${datum.id}`,
+                    value
+                });
             }
         });
 

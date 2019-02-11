@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { standardTypes } from 'constants/entityTypes';
+import { standardBaseTypes } from 'constants/entityTypes';
 import pluralize from 'pluralize';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 
@@ -14,8 +14,6 @@ import entityToColumns from 'constants/tableColumns';
 import componentTypes from 'constants/componentTypes';
 import AppQuery from 'Components/AppQuery';
 import NoResultsMessage from 'Components/NoResultsMessage';
-
-const standardTypeValues = Object.values(standardTypes);
 
 class ListTable extends Component {
     static propTypes = {
@@ -73,7 +71,7 @@ class ListTable extends Component {
                 pollInterval={pollInterval}
             >
                 {({ loading, data }) => {
-                    const isStandard = standardTypeValues.includes(params.entityType);
+                    const isStandard = standardBaseTypes[params.entityType];
                     let tableData;
                     let contents = <Loader />;
                     let paginationComponent;
@@ -84,23 +82,20 @@ class ListTable extends Component {
                                 <NoResultsMessage message="No compliance data available. Please run a scan." />
                             );
                         tableData = this.filterByComplianceState(data, params);
-                        const total = tableData.length;
-                        const groupedByText = params.query.groupBy
-                            ? `across ${tableData.length} ${pluralize(params.query.groupBy, total)}`
+                        const total = isStandard ? data.totalRows : tableData.length;
+                        const { groupBy } = params.query;
+                        const groupedByText = groupBy
+                            ? `across ${tableData.length} ${pluralize(groupBy, tableData.length)}`
                             : '';
-                        headerText = isStandard
-                            ? `${data.totalRows} ${pluralize(
-                                  'control',
-                                  data.totalRows
-                              )} ${groupedByText}`
-                            : `${total} ${pluralize(params.entityType, total)} ${groupedByText}`;
+                        const entityType = isStandard ? 'control' : params.entityType;
+                        headerText = `${total} ${pluralize(entityType, total)} ${groupedByText}`;
                         contents = isStandard ? (
                             <TableGroup
                                 groups={tableData}
                                 totalRows={data.totalRows}
                                 tableColumns={entityToColumns[params.entityType]}
                                 onRowClick={updateSelectedRow}
-                                entityType={params.query.groupBy || 'control'}
+                                entityType={entityType}
                                 idAttribute="id"
                                 selectedRowId={selectedRow ? selectedRow.id : null}
                             />

@@ -6,7 +6,7 @@ import ArcSingle from 'Components/visuals/ArcSingle';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import pageTypes from 'constants/pageTypes';
-import { standardBaseTypes, standardTypes } from 'constants/entityTypes';
+import { standardBaseTypes } from 'constants/entityTypes';
 import URLService from 'modules/URLService';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
@@ -16,21 +16,14 @@ import contextTypes from 'constants/contextTypes';
 import queryService from 'modules/queryService';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
-function getStandardTypeFromName(standardName) {
-    if (standardName.includes('NIST')) return standardTypes.NIST_800_190;
-    if (standardName.includes('PCI')) return standardTypes.PCI_DSS_3_2;
-    if (standardName.includes('HIPAA')) return standardTypes.HIPAA_164;
-    if (standardName.includes('CIS_Docker')) return standardTypes.CIS_DOCKER_V1_1_0;
-    if (standardName.includes('CIS_Kubernetes')) return standardTypes.CIS_KUBERENETES_V1_2_0;
-    return null;
-}
 const EntityCompliance = ({ entityType, entityName, history }) => {
     const entityTypeLabel = resourceLabels[entityType];
 
     function getBarData(results) {
         return results.map(item => ({
             x: standardBaseTypes[item.aggregationKeys[0].id],
-            y: (item.numPassing / (item.numPassing + item.numFailing)) * 100
+            y: (item.numPassing / (item.numPassing + item.numFailing)) * 100,
+            standard: item.aggregationKeys[0].id
         }));
     }
 
@@ -46,7 +39,7 @@ const EntityCompliance = ({ entityType, entityName, history }) => {
     }
     function valueClick(datum) {
         const linkParams = {
-            entityType: getStandardTypeFromName(datum.x),
+            entityType: datum.standard,
             query: {
                 [entityType]: entityName
             }

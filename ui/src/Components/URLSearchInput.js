@@ -37,7 +37,9 @@ const ValueContainer = ({ ...props }) => (
 const MultiValue = props => (
     <components.MultiValue
         {...props}
-        className={props.data.type === 'categoryOption' ? categoryOptionClass : valueOptionClass}
+        className={`${
+            props.data.type === 'categoryOption' ? categoryOptionClass : valueOptionClass
+        } ${props.data.ignore ? 'hidden' : ''}`}
     />
 );
 
@@ -59,16 +61,18 @@ class URLSearchInput extends Component {
     createCategoryOption = category => ({
         label: `${category}:`,
         value: `${category}:`,
-        type: 'categoryOption'
+        type: 'categoryOption',
+        ignore: category === 'groupBy'
     });
 
     getCategory = option => option.value.replace(':', '');
 
     isCategoryOption = option => option.type === 'categoryOption';
 
-    createValueOption = value => ({
+    createValueOption = (value, key) => ({
         label: `${value}`,
         value: `${value}`,
+        ignore: key === 'groupBy',
         __isNew__: true
     });
 
@@ -77,6 +81,8 @@ class URLSearchInput extends Component {
     transformCategoryOptions = options => options.map(option => this.createCategoryOption(option));
 
     transformSearchOptionsToQueryString = searchOptions => {
+        const { search: prevSearch } = this.props.location;
+        const prevQueryJSON = queryString.parse(prevSearch, { ignoreQueryPrefix: true });
         const queryJSON = {};
         let categoryKey = '';
         searchOptions.forEach(option => {
@@ -93,6 +99,8 @@ class URLSearchInput extends Component {
                 }
             }
         });
+        // to not clear the `groupBy` query. will need to remove once search officially supports groupBy
+        if (prevQueryJSON.groupBy) queryJSON.groupBy = prevQueryJSON.groupBy;
         const search = queryString.stringify(queryJSON, { encode: false, arrayFormat: 'repeat' });
         return search;
     };
@@ -112,7 +120,7 @@ class URLSearchInput extends Component {
                         queryStringOptions.push(this.createValueOption(v));
                     });
                 } else if (value && value !== '') {
-                    queryStringOptions.push(this.createValueOption(value));
+                    queryStringOptions.push(this.createValueOption(value, key));
                 }
             }
         });

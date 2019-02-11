@@ -147,7 +147,7 @@ class HorizontalBarChart extends Component {
             style: {
                 height: minimal ? 15 : 20,
                 rx: '2px',
-                cursor: 'pointer'
+                cursor: `${this.props.minimal ? '' : 'pointer'}`
             },
             onValueMouseOver: this.onValueMouseOverHandler,
             onValueMouseOut: this.onValueMouseOutHandler,
@@ -267,7 +267,7 @@ class HorizontalBarChart extends Component {
                             fill: `url(#bar-background)`,
                             rx: '2',
                             ry: '2',
-                            cursor: 'pointer'
+                            cursor: `${minimal ? '' : 'pointer'}`
                         }}
                         onValueClick={this.onValueClickHandler}
                     />
@@ -281,8 +281,7 @@ class HorizontalBarChart extends Component {
                         labelAnchorX="end-alignment"
                         style={{
                             fill: 'var(--base-700)',
-
-                            cursor: 'pointer'
+                            cursor: `${minimal ? '' : 'pointer'}`
                         }}
                     />
 

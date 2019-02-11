@@ -1,7 +1,7 @@
 import orderBy from 'lodash/orderBy';
 
 import componentTypes from 'constants/componentTypes';
-import entityTypes, { standardTypes } from 'constants/entityTypes';
+import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
 import standardLabels from 'messages/standards';
 import contextTypes from 'constants/contextTypes';
 import pageTypes from 'constants/pageTypes';
@@ -29,7 +29,6 @@ import { LIST_STANDARD, COMPLIANCE_STANDARDS } from 'queries/standard';
  *      bypassCache:        A boolean that tells the Query whether to bypass the cache
  */
 
-const isStandard = type => Object.keys(standardTypes).includes(type);
 const complianceRate = (numPassing, numFailing) =>
     numPassing + numFailing === 0
         ? '0%'
@@ -174,21 +173,22 @@ export default [
                 });
                 data.results.results.forEach(({ keys, numPassing, numFailing }) => {
                     const groupKey = groupByKeyIndex === null ? categoryKeyIndex : groupByKeyIndex;
-                    const { name: groupName, description: groupDescription } = keys[groupKey];
+                    const { name, description: groupDescription, metadata } = keys[groupKey];
+                    const groupName = name || metadata.name;
                     if (!groups[groupName]) {
+                        const groupId = parseInt(groupName, 10) || groupName;
                         groups[groupName] = {
-                            groupId: parseInt(groupName, 10),
+                            groupId,
                             name: `${groupName} ${groupDescription ? `- ${groupDescription}` : ''}`,
                             rows: []
                         };
                     }
                     if (controlKeyIndex) {
-                        const { id, name, description, standardId } = keys[controlKeyIndex];
+                        const { id, name: controlName, description } = keys[controlKeyIndex];
                         groups[groupName].rows.push({
                             id,
-                            name,
-                            standard: standardId,
-                            control: `${name} - ${description}`,
+                            name: controlName,
+                            control: `${controlName} - ${description}`,
                             compliance: complianceRate(numPassing, numFailing),
                             group: groupName
                         });
@@ -271,10 +271,7 @@ export default [
         context: [contextTypes.COMPLIANCE],
         pageType: [pageTypes.LIST],
         entityType: [],
-        component: [
-            componentTypes.COMPLIANCE_ACROSS_RESOURCES,
-            componentTypes.COMPLIANCE_ACROSS_STANDARDS
-        ],
+        component: [componentTypes.COMPLIANCE_ACROSS_ENTITIES],
         config: {
             query: AGGREGATED_RESULTS,
             variables: [
@@ -282,7 +279,7 @@ export default [
                 {
                     graphQLParam: 'unit',
                     paramsFunc: ({ entityType }) => {
-                        if (isStandard(entityType)) return 'CONTROL';
+                        if (standardBaseTypes[entityType]) return 'CONTROL';
                         return entityType;
                     }
                 }
