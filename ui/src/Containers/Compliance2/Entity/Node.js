@@ -135,15 +135,29 @@ const NodePage = ({ sidePanelMode, params }) => (
                                 <Labels list={node.labels.map(label => label.value)} />
                             </Widget>
 
-                            <ComplianceByStandard type={entityTypes.PCI_DSS_3_2} params={params} />
-                            <ComplianceByStandard type={entityTypes.NIST_800_190} params={params} />
-                            <ComplianceByStandard type={entityTypes.HIPAA_164} params={params} />
+                            <ComplianceByStandard
+                                type={entityTypes.PCI_DSS_3_2}
+                                entityName={node.name}
+                                params={params}
+                            />
+                            <ComplianceByStandard
+                                type={entityTypes.NIST_800_190}
+                                entityName={node.name}
+                                params={params}
+                            />
+                            <ComplianceByStandard
+                                type={entityTypes.HIPAA_164}
+                                entityName={node.name}
+                                params={params}
+                            />
                             <ComplianceByStandard
                                 type={entityTypes.CIS_KUBERENETES_V1_2_0}
+                                entityName={node.name}
                                 params={params}
                             />
                             <ComplianceByStandard
                                 type={entityTypes.CIS_DOCKER_V1_1_0}
+                                entityName={node.name}
                                 params={params}
                             />
                         </div>

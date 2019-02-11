@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import Truncate from 'react-truncate';
-
+import { Link } from 'react-router-dom';
 import HorizontalBarChart from 'Components/visuals/HorizontalBar';
 
 function formatAsPercent(x) {
@@ -62,14 +62,14 @@ class SunburstDetailSection extends Component {
                         }`}
                     >
                         {link && (
-                            <a
+                            <Link
                                 className="underline text-base-600 hover:text-primary-700 leading-normal flex w-full word-break"
-                                href={link}
+                                to={link}
                             >
                                 <Truncate lines={6} ellipsis={<>...</>}>
                                     {text}
                                 </Truncate>
-                            </a>
+                            </Link>
                         )}
                         <span className="flex w-full word-break leading-tight">
                             <Truncate lines={4} ellipsis={<>...</>}>
