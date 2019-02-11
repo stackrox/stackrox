@@ -77,5 +77,9 @@ func (s *nodeServiceImpl) GetNode(ctx context.Context, req *v1.GetNodeRequest) (
 		return nil, status.Errorf(codes.Internal, "could not locate node %q in per-cluster node store for cluster %s: %v", req.GetNodeId(), req.GetClusterId(), err)
 	}
 
+	if node == nil {
+		return nil, status.Errorf(codes.NotFound, "node %q in cluster %q does not exist", req.GetNodeId(), req.GetClusterId())
+	}
+
 	return node, nil
 }

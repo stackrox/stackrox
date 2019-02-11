@@ -35,6 +35,9 @@ func (s *storeImpl) GetNode(id string) (*storage.Node, error) {
 	if err != nil {
 		return nil, err
 	}
+	if value == nil {
+		return nil, nil
+	}
 	return value.(*storage.Node), nil
 }
 
