@@ -24,6 +24,7 @@ var (
 		user.With(permissions.View(resources.Image)): {
 			"/v1.ImageService/GetImage",
 			"/v1.ImageService/ListImages",
+			"/v1.ImageService/InvalidateScanAndRegistryCaches",
 		},
 	})
 )
