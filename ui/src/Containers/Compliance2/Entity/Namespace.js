@@ -86,19 +86,6 @@ const NamespacePage = ({ sidePanelMode, params }) => (
                                 <Labels list={namespace.labels.map(label => label.value)} />
                             </Widget>
 
-                            <Widget header="Annotations" className="sx-2">
-                                <div className="p-3 overflow-auto leading-loose">
-                                    <p>
-                                        The metadata in an annotation can be small or large,
-                                        structured or unstructured, but Gorman doesn’t see this
-                                        becoming too large. I think given the nature of the content,
-                                        we should let the widget grow to match it. If there are
-                                        special cases where this is incredibly long, we can consider
-                                        introducting a max-height boundary and enabling overflow
-                                        (though less ideal)
-                                    </p>
-                                </div>
-                            </Widget>
                             <ComplianceByStandard type={entityTypes.PCI_DSS_3_2} params={params} />
                             <ComplianceByStandard type={entityTypes.NIST_800_190} params={params} />
 

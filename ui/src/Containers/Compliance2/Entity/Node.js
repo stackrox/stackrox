@@ -1,25 +1,29 @@
 import React from 'react';
-import ComplianceByStandard from 'Containers/Compliance2/widgets/ComplianceByStandard';
 import PropTypes from 'prop-types';
+import ComplianceByStandard from 'Containers/Compliance2/widgets/ComplianceByStandard';
 import entityTypes from 'constants/entityTypes';
-import EntityCompliance from 'Containers/Compliance2/widgets/EntityCompliance';
-import Labels from 'Containers/Compliance2/widgets/Labels';
-import IconWidget from 'Components/IconWidget';
-import InfoWidget from 'Components/InfoWidget';
-import Query from 'Components/ThrowingQuery';
-import { NODE_QUERY as QUERY } from 'queries/node';
+import { NODE_QUERY } from 'queries/node';
 import { format } from 'date-fns';
-import Widget from 'Components/Widget';
+import pluralize from 'pluralize';
+
 import Cluster from 'images/cluster.svg';
 import IpAddress from 'images/ip-address.svg';
 import Hostname from 'images/hostname.svg';
 import ContainerRuntime from 'images/container-runtime.svg';
+
+import Widget from 'Components/Widget';
+import Query from 'Components/ThrowingQuery';
+import IconWidget from 'Components/IconWidget';
+import InfoWidget from 'Components/InfoWidget';
+import Labels from 'Containers/Compliance2/widgets/Labels';
+import EntityCompliance from 'Containers/Compliance2/widgets/EntityCompliance';
+import Loader from 'Components/Loader';
 import Header from './Header';
 
 function processData(data) {
-    if (!data || !data.results) return {};
+    if (!data || !data.node) return {};
 
-    const result = { ...data.results };
+    const result = { ...data.node };
     const [ipAddress] = result.internalIpAddresses;
     result.ipAddress = ipAddress;
 
@@ -29,25 +33,10 @@ function processData(data) {
     return result;
 }
 
-const labels = ['label1 has long text to show how this works', 'label2', 'label3', 'label4'];
-const manyLabels = [
-    'label1 has long text to show how this works',
-    'label2',
-    'label3',
-    'label4',
-    'label5',
-    'label6',
-    'label7',
-    'label8',
-    'label9',
-    'label10',
-    'label11',
-    'label12'
-];
-
 const NodePage = ({ sidePanelMode, params }) => (
-    <Query query={QUERY} variables={{ id: params.entityId }} pollInterval={5000}>
+    <Query query={NODE_QUERY} variables={{ id: params.entityId }} pollInterval={5000}>
         {({ loading, data }) => {
+            if (loading || !data) return <Loader />;
             const node = processData(data);
             const header = node.name || 'Loading...';
             return (
@@ -136,25 +125,14 @@ const NodePage = ({ sidePanelMode, params }) => (
                                 </div>
                             </div>
 
-                            <Widget className="sx-2" header="labels here">
-                                <Labels list={labels} />
-                            </Widget>
-                            <Widget className="sx-2" header="labels here">
-                                <Labels list={manyLabels} />
-                            </Widget>
-
-                            <Widget header="Annotations" className="sx-2">
-                                <div className="p-3 overflow-auto leading-loose">
-                                    <p>
-                                        The metadata in an annotation can be small or large,
-                                        structured or unstructured, but Gorman doesn’t see this
-                                        becoming too large. I think given the nature of the content,
-                                        we should let the widget grow to match it. If there are
-                                        special cases where this is incredibly long, we can consider
-                                        introducting a max-height boundary and enabling overflow
-                                        (though less ideal)
-                                    </p>
-                                </div>
+                            <Widget
+                                className="sx-2"
+                                header={`${node.labels.length} ${pluralize(
+                                    'Label',
+                                    node.labels.length
+                                )}`}
+                            >
+                                <Labels list={node.labels.map(label => label.value)} />
                             </Widget>
 
                             <ComplianceByStandard type={entityTypes.PCI_DSS_3_2} params={params} />

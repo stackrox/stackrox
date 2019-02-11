@@ -11,18 +11,9 @@ export const NODES_QUERY = gql`
     }
 `;
 
-// export const NODE_QUERY = gql`
-//     query getCluster($id: ID!) {
-//         results: cluster(id: $id) {
-//             id
-//             name
-//         }
-//     }
-// `;
-
 export const NODE_QUERY = gql`
-    query nodeDetails($id: ID!) {
-        results: node(id: $id) {
+    query getNode($id: ID!) {
+        node(id: $id) {
             id
             name
             clusterId

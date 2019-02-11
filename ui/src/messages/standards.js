@@ -10,7 +10,7 @@ const standardLabels = {
 
 export const standardShortLabels = {
     ...standardLabels,
-    [standardTypes.CIS_KUBERENETES_V1_2_0]: 'CIS Kube v1.2.0'
+    [standardTypes.CIS_KUBERENETES_V1_2_0]: 'CIS k8s v1.2.0'
 };
 
 export default standardLabels;

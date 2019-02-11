@@ -3,7 +3,7 @@ import { XYPlot, ArcSeries, LabelSeries } from 'react-vis';
 import PropTypes from 'prop-types';
 
 const RADIUS = 3;
-const VALUE_THICKNESS = 0.1;
+const VALUE_THICKNESS = 0.2;
 const FULL_ANGLE = 2 * Math.PI;
 
 function getDataFromValue(value) {
@@ -13,7 +13,7 @@ function getDataFromValue(value) {
             angle: (FULL_ANGLE * value) / 100,
             radius0: RADIUS - VALUE_THICKNESS,
             radius: RADIUS,
-            color: 'var(--primary-400)'
+            color: 'var(--success-500)'
         },
         {
             angle0: (FULL_ANGLE * value) / 100,
@@ -27,7 +27,7 @@ function getDataFromValue(value) {
 const LABEL_STYLE = {
     fontSize: '36px',
     fill: 'var(--primary-800)',
-    fontWeight: 800
+    fontWeight: 500
 };
 
 const ArcSingle = ({ value }) => {
