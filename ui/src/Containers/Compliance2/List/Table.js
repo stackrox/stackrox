@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { standardTypes } from 'constants/entityTypes';
 import pluralize from 'pluralize';
+import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 
 import Table from 'Components/Table';
 import Panel from 'Components/Panel';
@@ -38,6 +39,30 @@ class ListTable extends Component {
 
     setTablePage = page => this.setState({ page });
 
+    // This is a client-side implementation of filtering by the "Compliance State" Search Option
+    filterByComplianceState = (data, params) => {
+        const searchKey = SEARCH_OPTIONS.COMPLIANCE.STATE;
+        if (!params.query[searchKey]) return data.results;
+        const isPassing = params.query[searchKey].toLowerCase() === 'passing';
+        const isFailing = params.query[searchKey].toLowerCase() === 'failing';
+        const { results } = data;
+        return results.filter(result => {
+            const { id, name, ...standards } = result;
+            return Object.values(standards).reduce((acc, strValue) => {
+                const intValue = parseInt(strValue, 10); // strValue comes in the format "100.00%"
+                if (isPassing) {
+                    if (acc === false) return acc;
+                    return intValue === 100;
+                }
+                if (isFailing) {
+                    if (acc === true) return acc;
+                    return intValue !== 100;
+                }
+                return acc;
+            }, null);
+        });
+    };
+
     render() {
         const { params, selectedRow, updateSelectedRow, pollInterval } = this.props;
         const { page } = this.state;
@@ -58,7 +83,7 @@ class ListTable extends Component {
                             return (
                                 <NoResultsMessage message="No compliance data available. Please run a scan." />
                             );
-                        tableData = data.results;
+                        tableData = this.filterByComplianceState(data, params);
                         const total = tableData.length;
                         const groupedByText = params.query.groupBy
                             ? `across ${tableData.length} ${pluralize(params.query.groupBy, total)}`

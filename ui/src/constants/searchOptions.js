@@ -5,7 +5,14 @@ export const SEARCH_CATEGORIES = {
     POLICIES: 'POLICIES',
     PROCESS_INDICATORS: 'PROCESS_INDICATORS',
     SEARCH_UNSET: 'SEARCH_UNSET',
-    SECRETS: 'SECRETS'
+    SECRETS: 'SECRETS',
+    COMPLIANCE: 'COMPLIANCE'
+};
+
+export const CLIENT_SIDE_SEARCH_OPTIONS = {
+    COMPLIANCE: {
+        STATE: 'Compliance State'
+    }
 };
 
 export const availableSearchOptions = Object.values(SEARCH_CATEGORIES);
