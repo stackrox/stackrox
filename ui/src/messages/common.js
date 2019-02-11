@@ -10,6 +10,11 @@ const common = Object.freeze({
         SWARM_CLUSTER: 'Swarm Clusters',
         OPENSHIFT_CLUSTER: 'OpenShift Clusters'
     },
+    clusterVersionLabels: {
+        KUBERNETES_CLUSTER: 'K8s Version',
+        SWARM_CLUSTER: 'Swarm Version',
+        OPENSHIFT_CLUSTER: 'OpenShift Version'
+    },
     lifecycleStageLabels: {
         BUILD: 'Build',
         DEPLOY: 'Deploy',

@@ -17,7 +17,7 @@ const queryMap = {
     // TODO: [resourceTypes.NAMESPACE] : NETWORK_POLICIES_BY_NAMESPACE
 };
 
-const ResourceCount = ({ entityType, params, loading: parentLoading }) => {
+const ResourceCount = ({ entityType, params }) => {
     function getUrl(name) {
         const linkParams = {
             entityType
@@ -48,7 +48,7 @@ const ResourceCount = ({ entityType, params, loading: parentLoading }) => {
             {({ loading, data }) => {
                 const contents = <Loader />;
                 const headerText = `${resourceLabels[entityType]} Count`;
-                if (!loading && !parentLoading && data && data.results) {
+                if (!loading && data && data.results) {
                     const url = getUrl(data.results.name);
                     const count = processData(data.results);
                     return <CountWidget title={headerText} count={count} linkUrl={url} />;
@@ -65,12 +65,7 @@ const ResourceCount = ({ entityType, params, loading: parentLoading }) => {
 
 ResourceCount.propTypes = {
     entityType: PropTypes.string.isRequired,
-    params: PropTypes.shape({}).isRequired,
-    loading: PropTypes.bool
-};
-
-ResourceCount.defaultProps = {
-    loading: false
+    params: PropTypes.shape({}).isRequired
 };
 
 export default ResourceCount;

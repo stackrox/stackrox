@@ -45,3 +45,17 @@ export const CLUSTER_WITH_NAMESPACES = gql`
         }
     }
 `;
+
+export const CLUSTER_VERSION_QUERY = gql`
+    query getClusterVersion($id: ID!) {
+        cluster(id: $id) {
+            id
+            name
+            type
+            orchestratorMetadata {
+                version
+                buildDate
+            }
+        }
+    }
+`;

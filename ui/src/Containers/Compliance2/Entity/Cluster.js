@@ -4,9 +4,11 @@ import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
 import EntityCompliance from 'Containers/Compliance2/widgets/EntityCompliance';
 import ResourceCount from 'Containers/Compliance2/widgets/ResourceCount';
+import ClusterVersion from 'Containers/Compliance2/widgets/ClusterVersion';
 import Query from 'Components/ThrowingQuery';
 import { CLUSTER_QUERY as QUERY } from 'queries/cluster';
 import ResourceRelatedResourceList from 'Containers/Compliance2/widgets/ResourceRelatedResourceList';
+import Loader from 'Components/Loader';
 import Header from './Header';
 
 function processData(data) {
@@ -17,6 +19,7 @@ function processData(data) {
 const ClusterPage = ({ sidePanelMode, params }) => (
     <Query query={QUERY} variables={{ id: params.entityId }} pollInterval={5000}>
         {({ loading, data }) => {
+            if (loading) return <Loader />;
             const cluster = processData(data);
             return (
                 <section className="flex flex-col h-full w-full">
@@ -52,17 +55,12 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                                     />
                                 </div>
                                 <div className="md:pr-3 pt-3 rounded">
-                                    <ResourceCount
-                                        entityType={entityTypes.NODE}
-                                        params={params}
-                                        loading={loading}
-                                    />
+                                    <ResourceCount entityType={entityTypes.NODE} params={params} />
                                 </div>
                                 <div className="md:pl-3 pt-3 rounded">
-                                    <ResourceCount
-                                        entityType={entityTypes.NODE}
+                                    <ClusterVersion
+                                        entityType={entityTypes.CLUSTER}
                                         params={params}
-                                        loading={loading}
                                     />
                                 </div>
                             </div>
