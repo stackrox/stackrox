@@ -30,9 +30,7 @@ import { LIST_STANDARD, COMPLIANCE_STANDARDS } from 'queries/standard';
  */
 
 const complianceRate = (numPassing, numFailing) =>
-    numPassing + numFailing === 0
-        ? '0%'
-        : `${((numPassing / (numPassing + numFailing)) * 100).toFixed(2)}%`;
+    `${Math.round((numPassing / (numPassing + numFailing)) * 100)}%`;
 
 const formatComplianceTableData = (data, entityType) => {
     if (!data.results || data.results.results.length === 0) return null;
@@ -48,15 +46,30 @@ const formatComplianceTableData = (data, entityType) => {
         const curEntity = aggregationKeys[entityKeyIndex].id;
         const curStandard = aggregationKeys[standardKeyIndex].id;
         if (!entityMap[curEntity]) {
+            const entity = keys[entityKeyIndex];
             entityMap[curEntity] = {
-                name: keys[entityKeyIndex].name || keys[entityKeyIndex].metadata.name,
-                id: curEntity
+                name: entity.name || entity.metadata.name,
+                id: curEntity,
+                overall: {
+                    numPassing: 0,
+                    numFailing: 0,
+                    average: 0
+                }
             };
+            if (entityType !== entityTypes.CLUSTER) {
+                entityMap[curEntity].cluster = entity.clusterName || entity.metadata.clusterName;
+            }
         }
-        entityMap[curEntity][curStandard] = complianceRate(numPassing, numFailing);
+        if (numPassing + numFailing > 0)
+            entityMap[curEntity][curStandard] = complianceRate(numPassing, numFailing);
+        entityMap[curEntity].overall.numPassing += numPassing;
+        entityMap[curEntity].overall.numFailing += numFailing;
     });
     Object.keys(entityMap).forEach(cluster => {
-        formattedData.results.push(entityMap[cluster]);
+        const overallCluster = Object.assign({}, entityMap[cluster]);
+        const { numPassing, numFailing } = overallCluster.overall;
+        overallCluster.overall.average = complianceRate(numPassing, numFailing);
+        formattedData.results.push(overallCluster);
     });
     return formattedData;
 };
@@ -183,7 +196,7 @@ export default [
                             rows: []
                         };
                     }
-                    if (controlKeyIndex) {
+                    if (controlKeyIndex && numPassing + numFailing > 0) {
                         const { id, name: controlName, description } = keys[controlKeyIndex];
                         groups[groupName].rows.push({
                             id,

@@ -2,7 +2,7 @@ import gql from 'graphql-tag';
 
 export const CLUSTERS_LIST_QUERY = gql`
     query clustersList($where: String) {
-        results: aggregatedResults(groupBy: [CLUSTER, STANDARD], unit: CHECK, where: $where) {
+        results: aggregatedResults(groupBy: [CLUSTER, STANDARD], unit: CONTROL, where: $where) {
             results {
                 aggregationKeys {
                     id
@@ -25,7 +25,7 @@ export const CLUSTERS_LIST_QUERY = gql`
 
 export const NAMESPACES_LIST_QUERY = gql`
     query namespaceList($where: String) {
-        results: aggregatedResults(groupBy: [NAMESPACE, STANDARD], unit: CHECK, where: $where) {
+        results: aggregatedResults(groupBy: [NAMESPACE, STANDARD], unit: CONTROL, where: $where) {
             results {
                 aggregationKeys {
                     id
@@ -36,6 +36,7 @@ export const NAMESPACES_LIST_QUERY = gql`
                         metadata {
                             id
                             name
+                            clusterName
                         }
                     }
                     ... on ComplianceStandardMetadata {
@@ -51,7 +52,7 @@ export const NAMESPACES_LIST_QUERY = gql`
 
 export const NODES_QUERY = gql`
     query nodesList($where: String) {
-        results: aggregatedResults(groupBy: [NODE, STANDARD], unit: CHECK, where: $where) {
+        results: aggregatedResults(groupBy: [NODE, STANDARD], unit: CONTROL, where: $where) {
             results {
                 aggregationKeys {
                     id
@@ -60,6 +61,7 @@ export const NODES_QUERY = gql`
                 keys {
                     ... on Node {
                         name
+                        clusterName
                     }
                     ... on ComplianceStandardMetadata {
                         name

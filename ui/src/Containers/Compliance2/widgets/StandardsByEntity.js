@@ -4,8 +4,10 @@ import componentTypes from 'constants/componentTypes';
 import { resourceTypes } from 'constants/entityTypes';
 import URLService from 'modules/URLService';
 import pageTypes from 'constants/pageTypes';
-import resourceLabels from 'messages/common';
+import labels from 'messages/common';
 import capitalize from 'lodash/capitalize';
+import sortBy from 'lodash/sortBy';
+import chunk from 'lodash/chunk';
 import Widget from 'Components/Widget';
 import Query from 'Components/AppQuery';
 import Loader from 'Components/Loader';
@@ -38,7 +40,7 @@ function processData(data, type, params) {
             y: percentagePassing,
             hint: {
                 title: standard.id,
-                body: `${numFailing} controls failing in this ${resourceLabels[type]}`
+                body: `${numFailing} controls failing in this ${labels.resourceLabels[type]}`
             },
             link
         };
@@ -49,7 +51,21 @@ function processData(data, type, params) {
             standardsGrouping[standard.id] = [dataPoint];
         }
     });
-    return [standardsGrouping];
+    const sortedStandardsGrouping = {};
+    const GRAPHS_PER_PAGE = 3;
+    const pagedStandardsGrouping = [];
+
+    Object.keys(standardsGrouping).forEach(standard => {
+        sortedStandardsGrouping[standard] = sortBy(standardsGrouping[standard], ['x']);
+        const pageArray = chunk(sortedStandardsGrouping[standard], GRAPHS_PER_PAGE);
+        pageArray.forEach((page, pageIdx) => {
+            if (!pagedStandardsGrouping[pageIdx]) {
+                pagedStandardsGrouping[pageIdx] = {};
+            }
+            pagedStandardsGrouping[pageIdx][standard] = pageArray[pageIdx];
+        });
+    });
+    return pagedStandardsGrouping;
 }
 
 function getLabelLinks(data, type, params) {

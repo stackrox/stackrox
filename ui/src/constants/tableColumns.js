@@ -5,19 +5,9 @@ const getColumnValue = (row, accessor) => (row[accessor] ? row[accessor] : 'N/A'
 
 const complianceColumns = [
     {
-        accessor: standardTypes.PCI_DSS_3_2,
-        Header: 'PCI',
-        Cell: ({ original }) => getColumnValue(original, standardTypes.PCI_DSS_3_2)
-    },
-    {
-        accessor: standardTypes.NIST_800_190,
-        Header: 'NIST',
-        Cell: ({ original }) => getColumnValue(original, standardTypes.NIST_800_190)
-    },
-    {
-        accessor: standardTypes.HIPAA_164,
-        Header: 'HIPAA',
-        Cell: ({ original }) => getColumnValue(original, standardTypes.HIPAA_164)
+        accessor: standardTypes.CIS_DOCKER_V1_1_0,
+        Header: 'CIS Docker',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_DOCKER_V1_1_0)
     },
     {
         accessor: standardTypes.CIS_KUBERENETES_V1_2_0,
@@ -25,9 +15,19 @@ const complianceColumns = [
         Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_KUBERENETES_V1_2_0)
     },
     {
-        accessor: standardTypes.CIS_DOCKER_V1_1_0,
-        Header: 'CIS Docker',
-        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_DOCKER_V1_1_0)
+        accessor: standardTypes.HIPAA_164,
+        Header: 'HIPAA',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.HIPAA_164)
+    },
+    {
+        accessor: standardTypes.NIST_800_190,
+        Header: 'NIST',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.NIST_800_190)
+    },
+    {
+        accessor: standardTypes.PCI_DSS_3_2,
+        Header: 'PCI',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.PCI_DSS_3_2)
     }
 ];
 
@@ -42,7 +42,11 @@ const clusterColumns = [
         accessor: 'name',
         Header: 'Cluster'
     },
-    ...complianceColumns
+    ...complianceColumns,
+    {
+        accessor: 'overall.average',
+        Header: 'Overall'
+    }
 ];
 
 const getStandardColumns = standard => [
@@ -78,9 +82,13 @@ const nodeColumns = [
         Header: 'Node'
     },
     {
-        accessor: standardTypes.NIST_800_190,
-        Header: 'NIST',
-        Cell: ({ original }) => getColumnValue(original, standardTypes.NIST_800_190)
+        accessor: 'cluster',
+        Header: 'Cluster'
+    },
+    {
+        accessor: standardTypes.CIS_DOCKER_V1_1_0,
+        Header: 'CIS Docker',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_DOCKER_V1_1_0)
     },
     {
         accessor: standardTypes.CIS_KUBERENETES_V1_2_0,
@@ -88,9 +96,13 @@ const nodeColumns = [
         Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_KUBERENETES_V1_2_0)
     },
     {
-        accessor: standardTypes.CIS_DOCKER_V1_1_0,
-        Header: 'CIS Docker',
-        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_DOCKER_V1_1_0)
+        accessor: standardTypes.NIST_800_190,
+        Header: 'NIST',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.NIST_800_190)
+    },
+    {
+        accessor: 'overall.average',
+        Header: 'Overall'
     }
 ];
 
@@ -105,7 +117,29 @@ const namespaceColumns = [
         accessor: 'name',
         Header: 'Namespace'
     },
-    ...complianceColumns
+    {
+        accessor: 'cluster',
+        Header: 'Cluster'
+    },
+    {
+        accessor: standardTypes.HIPAA_164,
+        Header: 'HIPAA',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.HIPAA_164)
+    },
+    {
+        accessor: standardTypes.NIST_800_190,
+        Header: 'NIST',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.NIST_800_190)
+    },
+    {
+        accessor: standardTypes.PCI_DSS_3_2,
+        Header: 'PCI',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.PCI_DSS_3_2)
+    },
+    {
+        accessor: 'overall.average',
+        Header: 'Overall'
+    }
 ];
 
 const entityToColumns = {
