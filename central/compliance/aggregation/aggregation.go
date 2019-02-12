@@ -303,6 +303,7 @@ func (a *aggregatorImpl) getAggregatedResults(groupBy []v1.ComplianceAggregation
 			NumFailing:      int32(counts.fail),
 		})
 	}
+	sortAggregations(results)
 	return results, func(i int) *storage.ComplianceDomain { return domainMap[i] }
 }
 
