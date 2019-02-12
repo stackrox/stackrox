@@ -1,4 +1,4 @@
-package common
+package signal
 
 import (
 	"github.com/stackrox/rox/generated/storage"

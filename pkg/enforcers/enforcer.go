@@ -17,7 +17,7 @@ type EnforceFunc func(*central.SensorEnforcement) error
 
 // Enforcer is an abstraction for taking enforcement actions on deployments.
 type Enforcer interface {
-	Actions() chan<- *central.SensorEnforcement
+	SendEnforcement(*central.SensorEnforcement) bool
 	Start()
 	Stop()
 }
@@ -39,11 +39,18 @@ type enforcer struct {
 	stoppedC       concurrency.Signal
 }
 
-func (e *enforcer) Actions() chan<- *central.SensorEnforcement {
-	return e.actionsC
+func (e *enforcer) SendEnforcement(enforcement *central.SensorEnforcement) bool {
+	select {
+	case e.actionsC <- enforcement:
+		return true
+	case <-e.stoppedC.Done():
+		return false
+	}
 }
 
 func (e *enforcer) Start() {
+	defer e.stoppedC.Signal()
+
 	for {
 		select {
 		case action := <-e.actionsC:
@@ -60,7 +67,6 @@ func (e *enforcer) Start() {
 			}
 		case <-e.stopC.Done():
 			logger.Info("Shutting down Enforcer")
-			e.stoppedC.Signal()
 			return
 		}
 	}

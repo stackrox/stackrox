@@ -24,7 +24,6 @@ func main() {
 	sensorInstanceID := uuid.NewV4().String()
 
 	s := sensor.NewSensor(
-		logger,
 		listener.New(),
 		enforcer.MustCreate(),
 		orchestrator.MustCreate(sensorInstanceID),

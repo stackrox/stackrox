@@ -10,7 +10,6 @@ import (
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
-	sensor "github.com/stackrox/rox/sensor/common"
 	"google.golang.org/grpc"
 )
 
@@ -32,7 +31,7 @@ type serviceImpl struct {
 	queue      chan *v1.Signal
 	indicators chan *central.SensorEvent
 
-	processPipeline sensor.Pipeline
+	processPipeline Pipeline
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

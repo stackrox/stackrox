@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/orchestrators"
-	sensor "github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	networkConnManager "github.com/stackrox/rox/sensor/common/networkflow/manager"
@@ -51,8 +50,6 @@ var (
 // A Sensor object configures a StackRox Sensor.
 // Its functions execute common tasks across supported platforms.
 type Sensor struct {
-	logger *logging.Logger
-
 	clusterID          string
 	centralEndpoint    string
 	advertisedEndpoint string
@@ -62,23 +59,21 @@ type Sensor struct {
 	enforcer           enforcers.Enforcer
 	orchestrator       orchestrators.Orchestrator
 	networkConnManager networkConnManager.Manager
+	commandHandler     compliance.CommandHandler
 
 	server          pkgGRPC.API
 	profilingServer *http.Server
 	benchScheduler  *benchmarks.SchedulerClient
 
-	conn *grpc.ClientConn
-
-	sensorInstance sensor.Sensor
+	centralConnection    *grpc.ClientConn
+	centralCommunication CentralCommunication
 
 	stoppedSig concurrency.ErrorSignal
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
-func NewSensor(log *logging.Logger, l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orchestrator, n networkConnManager.Manager) *Sensor {
+func NewSensor(l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orchestrator, n networkConnManager.Manager) *Sensor {
 	return &Sensor{
-		logger: log,
-
 		clusterID:          env.ClusterID.Setting(),
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
@@ -88,6 +83,7 @@ func NewSensor(log *logging.Logger, l listeners.Listener, e enforcers.Enforcer, 
 		enforcer:           e,
 		orchestrator:       o,
 		networkConnManager: n,
+		commandHandler:     compliance.NewCommandHandler(env.Image.Setting(), o),
 
 		stoppedSig: concurrency.NewErrorSignal(),
 	}
@@ -111,14 +107,14 @@ func (s *Sensor) startProfilingServer() *http.Server {
 // It returns once tasks have succesfully started.
 func (s *Sensor) Start() {
 	// Start up connections.
-	s.logger.Infof("Connecting to Central server %s", s.centralEndpoint)
+	log.Infof("Connecting to Central server %s", s.centralEndpoint)
 	var err error
-	s.conn, err = clientconn.AuthenticatedGRPCConnection(s.centralEndpoint, clientconn.Central)
+	s.centralConnection, err = clientconn.AuthenticatedGRPCConnection(s.centralEndpoint, clientconn.Central)
 	if err != nil {
-		s.logger.Fatalf("Error connecting to central: %s", err)
+		log.Fatalf("Error connecting to central: %s", err)
 	}
 
-	s.benchScheduler, err = benchmarks.NewSchedulerClient(s.orchestrator, s.advertisedEndpoint, s.image, s.conn, s.clusterID)
+	s.benchScheduler, err = benchmarks.NewSchedulerClient(s.orchestrator, s.advertisedEndpoint, s.image, s.centralConnection, s.clusterID)
 	if err != nil {
 		panic(err)
 	}
@@ -128,7 +124,7 @@ func (s *Sensor) Start() {
 	customRoutes = append(customRoutes, routes.CustomRoute{
 		Route:         "/admissioncontroller",
 		Authorizer:    allow.Anonymous(),
-		ServerHandler: admissioncontroller.NewHandler(s.conn),
+		ServerHandler: admissioncontroller.NewHandler(s.centralConnection),
 		Compression:   false,
 	})
 
@@ -153,33 +149,33 @@ func (s *Sensor) Start() {
 	if s.benchScheduler != nil {
 		go s.benchScheduler.Start()
 	}
-
 	if s.networkConnManager != nil {
 		go s.networkConnManager.Start()
 	}
+	if s.commandHandler != nil {
+		s.commandHandler.Start(compliance.Singleton().Output())
+	}
 
 	// Wait for central so we can initiate our GRPC connection to send sensor events.
-	s.waitUntilCentralIsReady(s.conn)
+	s.waitUntilCentralIsReady(s.centralConnection)
 
 	// If everything is brought up correctly, start the sensor.
 	if s.listener != nil && s.enforcer != nil {
-		go s.runSensor()
+		go s.communicationWithCentral()
 	}
 
 	if s.orchestrator != nil {
 		if err := s.orchestrator.CleanUp(false); err != nil {
-			s.logger.Errorf("Could not clean up deployments by previous sensor instances: %v", err)
+			log.Errorf("Could not clean up deployments by previous sensor instances: %v", err)
 		}
 	}
-
-	s.logger.Info("Sensor started")
 }
 
 // Stop shuts down background tasks.
 func (s *Sensor) Stop() {
-	// Stop the sensor.
-	if s.sensorInstance != nil {
-		s.sensorInstance.Stop(nil)
+	// Stop communication with central.
+	if s.centralConnection != nil {
+		s.centralCommunication.Stop(nil)
 	}
 
 	// Stop all of our listeners.
@@ -195,28 +191,30 @@ func (s *Sensor) Stop() {
 	if s.networkConnManager != nil {
 		s.networkConnManager.Stop()
 	}
-
 	if s.profilingServer != nil {
 		s.profilingServer.Close()
+	}
+	if s.commandHandler != nil {
+		s.commandHandler.Stop(nil)
 	}
 
 	if s.orchestrator != nil {
 		if err := s.orchestrator.CleanUp(true); err != nil {
-			s.logger.Errorf("Could not clean up this sensor's deployments: %v", err)
+			log.Errorf("Could not clean up this sensor's deployments: %v", err)
 		}
 	}
 
-	s.logger.Info("Sensor shutdown complete")
+	log.Info("Sensor shutdown complete")
 }
 
 func (s *Sensor) registerAPIServices() {
 	s.server.Register(
-		benchmarks.NewBenchmarkResultsService(benchmarks.NewLRURelayer(s.conn)),
+		benchmarks.NewBenchmarkResultsService(benchmarks.NewLRURelayer(s.centralConnection)),
 		signalService.Singleton(),
 		networkFlowService.Singleton(),
 		compliance.Singleton(),
 	)
-	s.logger.Info("API services registered")
+	log.Info("API services registered")
 }
 
 // Function does not complete until central is pingable.
@@ -224,7 +222,7 @@ func (s *Sensor) waitUntilCentralIsReady(conn *grpc.ClientConn) {
 	pingService := v1.NewPingServiceClient(conn)
 	err := pingWithTimeout(pingService)
 	for err != nil {
-		s.logger.Infof("Ping to Central failed: %s. Retrying...", err)
+		log.Infof("Ping to Central failed: %s. Retrying...", err)
 		time.Sleep(2 * time.Second)
 		err = pingWithTimeout(pingService)
 	}
@@ -238,16 +236,15 @@ func pingWithTimeout(svc v1.PingServiceClient) (err error) {
 	return
 }
 
-func (s *Sensor) runSensor() {
-	s.sensorInstance = sensor.NewSensor(s.conn, compliance.NewCommandHandler(s.image, s.orchestrator))
-	s.logger.Info("Starting central connection.")
-	s.sensorInstance.Start(s.listener.Events(), signalService.Singleton().Indicators(), s.networkConnManager.FlowUpdates(), compliance.Singleton().Output(), s.enforcer.Actions())
+func (s *Sensor) communicationWithCentral() {
+	s.centralCommunication = NewCentralCommunication(s.commandHandler, s.enforcer, s.listener, signalService.Singleton(), s.networkConnManager, compliance.Singleton())
+	s.centralCommunication.Start(s.centralConnection)
 
-	if err := s.sensorInstance.Wait(); err != nil {
-		s.logger.Errorf("Sensor reported an error: %v", err)
+	if err := s.centralCommunication.Stopped().Wait(); err != nil {
+		log.Errorf("Sensor reported an error: %v", err)
 		s.stoppedSig.SignalWithError(err)
 	} else {
-		s.logger.Info("Terminating central connection.")
+		log.Info("Terminating central connection.")
 		s.stoppedSig.Signal()
 	}
 }
