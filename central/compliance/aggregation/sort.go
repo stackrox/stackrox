@@ -64,7 +64,7 @@ func aBeforeB(a, b []*v1.ComplianceAggregation_AggregationKey) bool {
 func versionCompare(a, b string) int {
 	as := strings.Split(a, "_")
 	bs := strings.Split(b, "_")
-	for i := 0; i < len(as) && i < len(b); i++ {
+	for i := 0; i < len(as) && i < len(bs); i++ {
 		av, aErr := strconv.Atoi(as[i])
 		bv, bErr := strconv.Atoi(bs[i])
 		if aErr == nil && bErr == nil { // Both are numbers.
