@@ -18,5 +18,5 @@ func (compliance) Name() string {
 }
 
 func (c compliance) Enabled() bool {
-	return isEnabled(os.Getenv(c.EnvVar()), false)
+	return isEnabled(os.Getenv(c.EnvVar()), true)
 }
