@@ -46,7 +46,8 @@ class IntegrationsPage extends Component {
     state = {
         modalOpen: false,
         selectedSource: '',
-        selectedType: ''
+        selectedType: '',
+        selectedVisibleType: ''
     };
 
     getEntities = (source, type) => {
@@ -82,7 +83,8 @@ class IntegrationsPage extends Component {
         this.setState({
             modalOpen: true,
             selectedSource: integrationCategory.source,
-            selectedType: integrationCategory.type
+            selectedType: integrationCategory.type,
+            selectedVisibleType: integrationCategory.visibleType
         });
     };
 
@@ -91,7 +93,8 @@ class IntegrationsPage extends Component {
         this.setState({
             modalOpen: false,
             selectedSource: '',
-            selectedType: ''
+            selectedType: '',
+            selectedVisibleType: ''
         });
     };
 
@@ -134,7 +137,7 @@ class IntegrationsPage extends Component {
     }
 
     renderIntegrationModal() {
-        const { modalOpen, selectedSource, selectedType } = this.state;
+        const { modalOpen, selectedSource, selectedType, selectedVisibleType } = this.state;
         if (!modalOpen) return null;
 
         if (selectedSource === 'clusters') {
@@ -151,6 +154,7 @@ class IntegrationsPage extends Component {
                 integrations={integrations}
                 source={selectedSource}
                 type={selectedType}
+                visibleType={selectedVisibleType}
                 onRequestClose={this.fetchEntitiesAndCloseModal}
             />
         );

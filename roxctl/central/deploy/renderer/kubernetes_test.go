@@ -15,8 +15,8 @@ func getBaseConfig() Config {
 		ClusterType: storage.ClusterType_KUBERNETES_CLUSTER,
 		K8sConfig: &K8sConfig{
 			CommonConfig: CommonConfig{
-				MainImage:     "stackrox/main:2.2.11.0-57-g392c0f5bed-dirty",
-				ClairifyImage: "stackrox.io/clairify:0.4.2",
+				MainImage:    "stackrox/main:2.2.11.0-57-g392c0f5bed-dirty",
+				ScannerImage: "stackrox.io/scanner:0.4.2",
 			},
 			Monitoring: MonitoringConfig{
 				HostPath: &HostPathPersistence{},

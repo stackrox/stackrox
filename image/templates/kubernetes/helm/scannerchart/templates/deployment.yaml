@@ -1,10 +1,10 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: clairify
+  name: scanner
   namespace: {{.Values.namespace}}
   labels:
-    app: clairify
+    app: scanner
   annotations:
     owner: stackrox
     email: support@stackrox.com
@@ -13,15 +13,15 @@ spec:
   minReadySeconds: 15
   selector:
     matchLabels:
-      app: clairify
+      app: scanner
   template:
     metadata:
       namespace: {{.Values.namespace}}
       labels:
-        app: clairify
+        app: scanner
     spec:
       containers:
-      - name: clairify
+      - name: scanner
         image: {{.Values.image}}
         resources:
           requests:
@@ -45,5 +45,4 @@ spec:
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
-          readOnlyRootFilesystem: true
-      serviceAccount: clairify
+      serviceAccount: scanner

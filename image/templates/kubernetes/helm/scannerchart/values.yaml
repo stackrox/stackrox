@@ -3,4 +3,4 @@ clusterType: {{.ClusterType.String}}
 
 namespace: stackrox
 
-image: {{.K8sConfig.ClairifyImage}}
+image: {{.K8sConfig.ScannerImage}}

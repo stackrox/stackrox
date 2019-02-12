@@ -28,9 +28,9 @@ func GetCentralChart() *chart.Chart {
 	return ch
 }
 
-// GetClairifyChart returns the Helm chart for Clairify
-func GetClairifyChart() *chart.Chart {
-	ch, err := getChart(K8sBox, "helm/clairifychart/")
+// GetScannerChart returns the Helm chart for the scanner
+func GetScannerChart() *chart.Chart {
+	ch, err := getChart(K8sBox, "helm/scannerchart/")
 	if err != nil {
 		panic(err)
 	}

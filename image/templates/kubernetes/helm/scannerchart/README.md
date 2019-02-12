@@ -1,10 +1,10 @@
 {{if eq .K8sConfig.DeploymentFormat.String "HELM"}}
-# StackRox Clairify Chart
+# StackRox Scanner Chart
 
-This Helm chart is for StackRox Central
+This Helm chart is for StackRox Scanner
 
 You can render this chart with
 ```
-helm install --name clairify .
+helm install --name scanner .
 ```
 {{- end}}

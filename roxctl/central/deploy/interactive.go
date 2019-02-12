@@ -28,8 +28,8 @@ func getFlagGroupMap() map[string]*flagGroup {
 			optional:   false,
 			groupOrder: 0,
 		},
-		"clairify": {
-			name:       "clairify",
+		"scanner": {
+			name:       "scanner",
 			optional:   false,
 			groupOrder: 1,
 		},

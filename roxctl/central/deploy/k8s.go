@@ -82,8 +82,8 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 	flagWrap.StringVarPWithSubGroup(&k8sConfig.Monitoring.HostPath.NodeSelectorKey, "monitoring-node-selector-key", "", "", "monitoring node selector key (e.g. kubernetes.io/hostname)", "monitoring", "hostpath")
 	flagWrap.StringVarPWithSubGroup(&k8sConfig.Monitoring.HostPath.NodeSelectorValue, "monitoring-node-selector-value", "", "", "monitoring node selector value", "monitoring", "hostpath")
 
-	// Clairify
-	flagWrap.StringVarP(&k8sConfig.ClairifyImage, "clairify-image", "", defaults.ClairifyImage, "Clairify image to use", "clairify")
+	// Scanner
+	flagWrap.StringVarP(&k8sConfig.ScannerImage, "scanner-image", "", defaults.ScannerImage, "Scanner image to use", "scanner")
 
 	return c
 }

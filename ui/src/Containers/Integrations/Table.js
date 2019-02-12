@@ -21,6 +21,7 @@ class IntegrationTable extends Component {
         source: PropTypes.oneOf(['imageIntegrations', 'notifiers', 'authProviders']).isRequired,
 
         type: PropTypes.string.isRequired,
+        visibleType: PropTypes.string.isRequired,
 
         buttonsEnabled: PropTypes.bool.isRequired,
 
@@ -137,8 +138,12 @@ class IntegrationTable extends Component {
     renderTableContent = () => {
         const rows = this.props.integrations;
 
-        if (!rows.length)
-            return <NoResultsMessage message={`No ${this.props.type} integrations`} />;
+        let { visibleType } = this.props;
+        if (visibleType === undefined) {
+            visibleType = this.props.type;
+        }
+
+        if (!rows.length) return <NoResultsMessage message={`No ${visibleType} integrations`} />;
         return (
             <CheckboxTable
                 ref={this.props.setTable}
@@ -149,7 +154,7 @@ class IntegrationTable extends Component {
                 toggleSelectAll={this.props.toggleSelectAll}
                 selection={this.props.selection}
                 selectedRowId={this.props.selectedIntegrationId}
-                noDataText={`No ${this.props.type} integrations`}
+                noDataText={`No ${visibleType} integrations`}
                 minRows={20}
             />
         );
@@ -157,12 +162,20 @@ class IntegrationTable extends Component {
 
     render() {
         const { type, selection, integrations } = this.props;
+        let { visibleType } = this.props;
+        if (visibleType === undefined) {
+            visibleType = type;
+        }
         const selectionCount = selection.length;
         const integrationsCount = integrations.length;
         const headerText =
             selectionCount !== 0
-                ? `${selectionCount} ${type} Integration${selectionCount === 1 ? '' : 's'} selected`
-                : `${integrationsCount} ${type} Integration${integrationsCount === 1 ? '' : 's'}`;
+                ? `${selectionCount} ${visibleType} Integration${
+                      selectionCount === 1 ? '' : 's'
+                  } selected`
+                : `${integrationsCount} ${visibleType} Integration${
+                      integrationsCount === 1 ? '' : 's'
+                  }`;
         return (
             <div className="flex flex-1">
                 <Panel header={headerText} buttons={this.getPanelButtons()}>

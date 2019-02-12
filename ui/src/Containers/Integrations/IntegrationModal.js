@@ -28,6 +28,7 @@ class IntegrationModal extends Component {
         ).isRequired,
         source: PropTypes.oneOf(['imageIntegrations', 'notifiers', 'authProviders']).isRequired,
         type: PropTypes.string.isRequired,
+        visibleType: PropTypes.string.isRequired,
         onRequestClose: PropTypes.func.isRequired,
         deleteIntegrations: PropTypes.func.isRequired,
         isCreating: PropTypes.bool,
@@ -127,9 +128,13 @@ class IntegrationModal extends Component {
 
     renderHeader = () => {
         const { source, type } = this.props;
+        let { visibleType } = this.props;
+        if (visibleType === undefined) visibleType = type;
         return (
             <header className="flex items-center w-full p-4 bg-primary-600 text-base-100 uppercase">
-                <span className="flex flex-1">{`Configure ${type} ${SOURCE_LABELS[source]}`}</span>
+                <span className="flex flex-1">{`Configure ${visibleType} ${
+                    SOURCE_LABELS[source]
+                }`}</span>
                 <Icon.X className="h-4 w-4 cursor-pointer" onClick={this.props.onRequestClose} />
             </header>
         );
@@ -140,6 +145,7 @@ class IntegrationModal extends Component {
             integrations={this.props.integrations}
             source={this.props.source}
             type={this.props.type}
+            visibleType={this.props.visibleType}
             buttonsEnabled={!this.formIsOpen()}
             onRowClick={this.onTableRowClick}
             toggleRow={this.toggleRow}

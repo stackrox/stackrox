@@ -3,7 +3,7 @@ package version
 var (
 	mainVersion      string
 	collectorVersion string
-	clairifyVersion  string
+	scannerVersion   string
 )
 
 // GetMainVersion returns the tag of Prevent
@@ -16,7 +16,7 @@ func GetCollectorVersion() string {
 	return collectorVersion
 }
 
-// GetClairifyVersion returns the current clairify tag
-func GetClairifyVersion() string {
-	return clairifyVersion
+// GetScannerVersion returns the current scanner tag
+func GetScannerVersion() string {
+	return scannerVersion
 }

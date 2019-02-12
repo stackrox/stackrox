@@ -56,6 +56,10 @@ spec:
           limits:
             memory: "200Mi"
             cpu: "200m"
+        securityContext:
+          capabilities:
+            drop: ["NET_RAW"]
+          readOnlyRootFilesystem: true
         volumeMounts:
           - name: monitoring-db-volume
             mountPath: /run/secrets/stackrox.io/monitoring/certs/

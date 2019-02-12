@@ -34,11 +34,11 @@ func (k *kubernetes) renderKubectl(c Config) ([]*zip.File, error) {
 		return nil, fmt.Errorf("error rendering central files: %v", err)
 	}
 
-	clairifyRenderedFiles, err := k.renderHelmFiles(c, image.GetClairifyChart(), "clairify")
+	scannerRenderedFiles, err := k.renderHelmFiles(c, image.GetScannerChart(), "scanner")
 	if err != nil {
-		return nil, fmt.Errorf("error rendering clairify files: %v", err)
+		return nil, fmt.Errorf("error rendering scanner files: %v", err)
 	}
-	renderedFiles = append(renderedFiles, clairifyRenderedFiles...)
+	renderedFiles = append(renderedFiles, scannerRenderedFiles...)
 
 	if c.K8sConfig.Monitoring.Type.OnPrem() {
 		monitoringFiles, err := k.renderHelmFiles(c, image.GetMonitoringChart(), "monitoring")
@@ -97,8 +97,8 @@ const helmInstructionTemplate = instructionPrefix + `
   - Deploy Central
     - Run central/scripts/setup.sh
     - Run helm install --name central central
-  - Deploy Clairify
-    - If you want to run the StackRox Clairify scanner, run helm install --name clairify clairify
+  - Deploy Scanner
+    - If you want to run the StackRox scanner, run helm install --name scanner scanner
 `
 
 const kubectlInstructionTemplate = instructionPrefix + `{{if not .K8sConfig.Monitoring.Type.None}}
@@ -109,8 +109,8 @@ const kubectlInstructionTemplate = instructionPrefix + `{{if not .K8sConfig.Moni
   - Deploy Central
     - Run central/scripts/setup.sh
     - Run {{.K8sConfig.Command}} create -R -f central
-  - Deploy Clairify
-    - If you want to run the StackRox Clairify scanner, run {{.K8sConfig.Command}} create -R -f clairify
+  - Deploy Scanner
+    - If you want to run the StackRox scanner, run {{.K8sConfig.Command}} create -R -f scanner
 `
 
 func (k *kubernetes) Instructions(c Config) string {
@@ -128,6 +128,6 @@ func (k *kubernetes) Instructions(c Config) string {
 }
 
 func injectImageTags(c *Config) {
-	c.K8sConfig.ClairifyImageTag = utils.GenerateImageFromString(c.K8sConfig.ClairifyImage).GetName().GetTag()
+	c.K8sConfig.ScannerImageTag = utils.GenerateImageFromString(c.K8sConfig.ScannerImage).GetName().GetTag()
 	c.K8sConfig.MainImageTag = utils.GenerateImageFromString(c.K8sConfig.MainImage).GetName().GetTag()
 }

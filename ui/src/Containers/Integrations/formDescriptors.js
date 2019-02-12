@@ -500,7 +500,7 @@ const formDescriptors = {
                 label: 'Integration Name',
                 jsonpath: 'name',
                 type: 'text',
-                placeholder: 'Clairify'
+                placeholder: 'StackRox Scanner'
             },
             {
                 label: 'Types',
@@ -513,7 +513,7 @@ const formDescriptors = {
                 label: 'Endpoint',
                 jsonpath: 'clairify.endpoint',
                 type: 'text',
-                placeholder: 'http://clairify.stackrox:8080'
+                placeholder: 'http://scanner.stackrox:8080'
             }
         ],
         google: [

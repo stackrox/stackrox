@@ -55,8 +55,8 @@ func (h *HostPathPersistence) WithNodeSelector() bool {
 // Image is an example as it can be parameterized per orchestrator with different defaults so it cannot be placed
 // at the top level
 type CommonConfig struct {
-	MainImage     string
-	ClairifyImage string
+	MainImage    string
+	ScannerImage string
 }
 
 // MonitoringType is the enum for the place monitoring is hosted
@@ -145,8 +145,8 @@ type K8sConfig struct {
 
 	// These variables are not prompted for by Cobra, but are set based on
 	// provided inputs for use in templating.
-	MainImageTag     string
-	ClairifyImageTag string
+	MainImageTag    string
+	ScannerImageTag string
 
 	DeploymentFormat v1.DeploymentFormat
 	LoadBalancerType v1.LoadBalancerType

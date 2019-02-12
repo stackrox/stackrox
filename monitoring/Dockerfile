@@ -16,6 +16,7 @@ COPY --from=0 /telegraf /telegraf
 
 COPY ./influxdb/influx-post-start.sh /influx-post-start.sh
 
+VOLUME /etc/grafana
 
 COPY ./grafana/dashboard-config.yaml /etc/grafana/provisioning/dashboards/dashboard-config.yaml
 COPY ./grafana/dashboards/* /etc/grafana/dashboards/

@@ -24,7 +24,8 @@ const integrationsList = {
     ],
     imageIntegrations: [
         {
-            label: 'Clairify',
+            label: 'StackRox Scanner',
+            visibleType: 'scanner',
             type: 'clairify',
             categories: 'Scanner',
             source: 'imageIntegrations',

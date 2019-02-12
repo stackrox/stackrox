@@ -1,5 +1,5 @@
-name: clairify
-description: StackRox Clairify
+name: scanner
+description: StackRox Scanner
 version: {{.Version}}
 maintainers:
   - name: stackrox

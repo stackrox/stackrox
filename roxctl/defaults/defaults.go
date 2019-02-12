@@ -7,12 +7,12 @@ import (
 )
 
 var (
-	// ClairifyImage is the Docker image name for the "clairify" image. Image
+	// ScannerImage is the Docker image name for the scanner image. Image
 	// repo changes depending on the main tag.
 	// Example:
-	// When main tag is 2.3.14.0-44-gc8a679af2b → docker.io/stackrox/clairify:0.5.2
-	// When main tag is 2.3.14.1                → stackrox.io/clairify:0.5.2
-	ClairifyImage = defaultClairifyImage()
+	// When main tag is 2.3.14.0-44-gc8a679af2b → docker.io/stackrox/scanner:0.5.2
+	// When main tag is 2.3.14.1                → stackrox.io/scanner:0.5.2
+	ScannerImage = defaultScannerImage()
 
 	// MainImage is the Docker image name for the "main" image. Image repo
 	// changes depending on the main tag.
@@ -26,15 +26,15 @@ var (
 	reShapshotSuffix = regexp.MustCompilePOSIX(`-[0-9]+-g[0-9a-f]+$`)
 )
 
-func defaultClairifyImage() string {
+func defaultScannerImage() string {
 	var (
-		clairifyTag = version.GetClairifyVersion()
-		mainTag     = version.GetMainVersion()
+		scannerTag = version.GetScannerVersion()
+		mainTag    = version.GetMainVersion()
 	)
 	if isSnapshot(mainTag) {
-		return "docker.io/stackrox/clairify:" + clairifyTag
+		return "docker.io/stackrox/scanner:" + scannerTag
 	}
-	return "stackrox.io/clairify:" + clairifyTag
+	return "stackrox.io/scanner:" + scannerTag
 }
 
 func defaultMainImage() string {

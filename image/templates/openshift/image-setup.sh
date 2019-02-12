@@ -19,18 +19,18 @@ if [ -z "$MAIN_IMAGE_TAG" ]; then
   MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-{{.K8sConfig.MainImageTag}}}"
 fi
 
-if [ -z "$CLAIRIFY_IMAGE_TAG" ]; then
-  echo -n "Enter StackRox Clairify image tag (default: {{.K8sConfig.ClairifyImageTag}}): "
-  read CLAIRIFY_IMAGE_TAG
-  CLAIRIFY_IMAGE_TAG="${CLAIRIFY_IMAGE_TAG:-{{.K8sConfig.ClairifyImageTag}}}"
+if [ -z "$SCANNER_IMAGE_TAG" ]; then
+  echo -n "Enter StackRox Scanner image tag (default: {{.K8sConfig.ScannerImageTag}}): "
+  read SCANNER_IMAGE_TAG
+  SCANNER_IMAGE_TAG="${SCANNER_IMAGE_TAG:-{{.K8sConfig.ScannerImageTag}}}"
 fi
 
 if [ "$ROX_IMAGE_REGISTRY" = "stackrox.io" ]; then
 	MAIN_IMAGE_REPO="main"
-	CLAIRIFY_IMAGE_REPO="clairify"
+	SCANNER_IMAGE_REPO="scanner"
 elif [ "$ROX_IMAGE_REGISTRY" = "docker.io" ]; then
 	MAIN_IMAGE_REPO="stackrox/main"
-	CLAIRIFY_IMAGE_REPO="stackrox/clairify"
+	SCANNER_IMAGE_REPO="stackrox/scanner"
 fi
 
 if [ -z "$MAIN_IMAGE_REPO" ]; then
@@ -39,18 +39,18 @@ if [ -z "$MAIN_IMAGE_REPO" ]; then
   MAIN_IMAGE_REPO="${MAIN_IMAGE_REPO:-main}"
 fi
 
-if [ -z "$CLAIRIFY_IMAGE_REPO" ]; then
-	echo -n "Enter StackRox Clairify Repo: "
-	read CLAIRIFY_IMAGE_REPO
-  CLAIRIFY_IMAGE_REPO="${CLAIRIFY_IMAGE_REPO:-clairify}"
+if [ -z "$SCANNER_IMAGE_REPO" ]; then
+	echo -n "Enter StackRox Scanner Repo: "
+	read SCANNER_IMAGE_REPO
+  SCANNER_IMAGE_REPO="${SCANNER_IMAGE_REPO:-scanner}"
 fi
 
 MAIN_IMAGE="${ROX_IMAGE_REGISTRY}/${MAIN_IMAGE_REPO}:${MAIN_IMAGE_TAG}"
-CLAIRIFY_IMAGE="${ROX_IMAGE_REGISTRY}/${CLAIRIFY_IMAGE_REPO}:${CLAIRIFY_IMAGE_TAG}"
+SCANNER_IMAGE="${ROX_IMAGE_REGISTRY}/${SCANNER_IMAGE_REPO}:${SCANNER_IMAGE_TAG}"
 
 echo "Images to pull:"
 echo "  - ${MAIN_IMAGE}"
-echo "  - ${CLAIRIFY_IMAGE}"
+echo "  - ${SCANNER_IMAGE}"
 echo -n "Does that look correct? Hit any key to continue, or ctrl-C to exit. "
 read -s -n 1
 echo
@@ -81,7 +81,7 @@ else
 fi
 
 "${DOCKER[@]}" pull "${MAIN_IMAGE}"
-"${DOCKER[@]}" pull "${CLAIRIFY_IMAGE}"
+"${DOCKER[@]}" pull "${SCANNER_IMAGE}"
 
 OC_PROJECT="${OC_PROJECT:-stackrox}"
 oc new-project "$OC_PROJECT" || true
@@ -102,5 +102,5 @@ echo "Pulling and pushing images to $PRIVATE_REGISTRY"
 "${DOCKER[@]}" tag "${MAIN_IMAGE}" "$PRIVATE_REGISTRY/$OC_PROJECT/main:$MAIN_IMAGE_TAG"
 "${DOCKER[@]}" push "$PRIVATE_REGISTRY/$OC_PROJECT/main:$MAIN_IMAGE_TAG"
 
-"${DOCKER[@]}" tag "${CLAIRIFY_IMAGE}" "$PRIVATE_REGISTRY/$OC_PROJECT/clairify:$CLAIRIFY_IMAGE_TAG"
-"${DOCKER[@]}" push "$PRIVATE_REGISTRY/$OC_PROJECT/clairify:$CLAIRIFY_IMAGE_TAG"
+"${DOCKER[@]}" tag "${SCANNER_IMAGE}" "$PRIVATE_REGISTRY/$OC_PROJECT/scanner:$SCANNER_IMAGE_TAG"
+"${DOCKER[@]}" push "$PRIVATE_REGISTRY/$OC_PROJECT/scanner:$SCANNER_IMAGE_TAG"

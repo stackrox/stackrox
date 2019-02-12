@@ -124,11 +124,11 @@ func (k *kubernetes) renderHelm(c Config) ([]*zip.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	clairifyFiles, err := chartToFiles("clairify", image.GetClairifyChart(), c)
+	scannerFiles, err := chartToFiles("scanner", image.GetScannerChart(), c)
 	if err != nil {
 		return nil, err
 	}
-	renderedFiles = append(renderedFiles, clairifyFiles...)
+	renderedFiles = append(renderedFiles, scannerFiles...)
 	if c.K8sConfig.Monitoring.Type.OnPrem() {
 		monitoringFiles, err := chartToFiles("monitoring", image.GetMonitoringChart(), c)
 		if err != nil {
