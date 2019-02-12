@@ -127,7 +127,7 @@ func (a *aggregatorImpl) Aggregate(queryString string, groupBy []v1.ComplianceAg
 		return nil, nil, nil, err
 	}
 
-	runResults, err := a.compliance.GetLatestRunResultsBatch(clusterIDs, standardIDs)
+	runResults, err := a.compliance.GetLatestRunResultsBatch(clusterIDs, standardIDs, 0)
 	if err != nil {
 		return nil, nil, nil, err
 	}

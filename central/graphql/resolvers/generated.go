@@ -162,6 +162,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	})
 	builder.AddType("ComplianceResultValue_Evidence", []string{
 		"message: String!",
+		"messageId: Int!",
 		"state: ComplianceState!",
 	})
 	builder.AddType("ComplianceRun", []string{
@@ -1895,6 +1896,11 @@ func (resolver *Resolver) wrapComplianceResultValue_Evidences(values []*storage.
 
 func (resolver *complianceResultValue_EvidenceResolver) Message() string {
 	value := resolver.data.GetMessage()
+	return value
+}
+
+func (resolver *complianceResultValue_EvidenceResolver) MessageId() int32 {
+	value := resolver.data.GetMessageId()
 	return value
 }
 

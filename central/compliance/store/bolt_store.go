@@ -23,6 +23,7 @@ var (
 
 	resultsKey  = []byte("results")
 	metadataKey = []byte("metadata")
+	stringsKey  = []byte("strings")
 
 	log = logging.LoggerForModule()
 )
@@ -49,8 +50,8 @@ func (s *boltStore) QueryControlResults(query *v1.Query) ([]*storage.ComplianceC
 	return nil, errors.New("not yet implemented")
 }
 
-func (s *boltStore) GetLatestRunResults(clusterID, standardID string) (ResultsWithStatus, error) {
-	allResults, err := s.GetLatestRunResultsBatch([]string{clusterID}, []string{standardID})
+func (s *boltStore) GetLatestRunResults(clusterID, standardID string, flags GetFlags) (ResultsWithStatus, error) {
+	allResults, err := s.GetLatestRunResultsBatch([]string{clusterID}, []string{standardID}, flags)
 	if err != nil {
 		return ResultsWithStatus{}, err
 	}
@@ -60,7 +61,21 @@ func (s *boltStore) GetLatestRunResults(clusterID, standardID string) (ResultsWi
 	return allResults[compliance.ClusterStandardPair{ClusterID: clusterID, StandardID: standardID}], nil
 }
 
-func readResults(resultsBucket *bbolt.Bucket) (*storage.ComplianceRunMetadata, *storage.ComplianceRunResults, error) {
+func loadMessageStrings(resultsBucket *bbolt.Bucket, resultsProto *storage.ComplianceRunResults) error {
+	var stringsProto storage.ComplianceStrings
+	stringsBytes := resultsBucket.Get(stringsKey)
+	if stringsBytes != nil {
+		if err := stringsProto.Unmarshal(stringsBytes); err != nil {
+			return err
+		}
+	}
+	if !reconstituteStrings(resultsProto, &stringsProto) {
+		return errors.New("some message strings could not be loaded")
+	}
+	return nil
+}
+
+func readResults(resultsBucket *bbolt.Bucket, flags GetFlags) (*storage.ComplianceRunMetadata, *storage.ComplianceRunResults, error) {
 	metadataBytes := resultsBucket.Get(metadataKey)
 	if metadataBytes == nil {
 		return nil, nil, errors.New("bucket does not have a metadata entry")
@@ -84,10 +99,19 @@ func readResults(resultsBucket *bbolt.Bucket) (*storage.ComplianceRunMetadata, *
 		return nil, nil, fmt.Errorf("unmarshalling results: %v", err)
 	}
 	results.RunMetadata = &metadata
+
+	if flags&(WithMessageStrings|RequireMessageStrings) != 0 {
+		if err := loadMessageStrings(resultsBucket, &results); err != nil {
+			if flags&RequireMessageStrings != 0 {
+				return nil, nil, fmt.Errorf("loading message strings: %v", err)
+			}
+			log.Errorf("Could not load message strings for compliance run results: %v", err)
+		}
+	}
 	return &metadata, &results, nil
 }
 
-func getLatestRunResults(standardBucket *bbolt.Bucket) ResultsWithStatus {
+func getLatestRunResults(standardBucket *bbolt.Bucket, flags GetFlags) ResultsWithStatus {
 	cursor := standardBucket.Cursor()
 
 	var results ResultsWithStatus
@@ -97,7 +121,7 @@ func getLatestRunResults(standardBucket *bbolt.Bucket) ResultsWithStatus {
 			continue
 		}
 
-		metadata, runResults, err := readResults(runBucket)
+		metadata, runResults, err := readResults(runBucket, flags)
 		if err != nil {
 			log.Errorf("Could not read results from bucket %s: %v", string(latestRunBucketKey), err)
 			continue
@@ -114,7 +138,7 @@ func getLatestRunResults(standardBucket *bbolt.Bucket) ResultsWithStatus {
 	return results
 }
 
-func (s *boltStore) GetLatestRunResultsBatch(clusterIDs, standardIDs []string) (map[compliance.ClusterStandardPair]ResultsWithStatus, error) {
+func (s *boltStore) GetLatestRunResultsBatch(clusterIDs, standardIDs []string, flags GetFlags) (map[compliance.ClusterStandardPair]ResultsWithStatus, error) {
 	results := make(map[compliance.ClusterStandardPair]ResultsWithStatus)
 	err := s.resultsBucket.View(func(b *bbolt.Bucket) error {
 		for _, clusterID := range clusterIDs {
@@ -128,7 +152,7 @@ func (s *boltStore) GetLatestRunResultsBatch(clusterIDs, standardIDs []string) (
 					continue
 				}
 
-				resultsWithStatus := getLatestRunResults(standardBucket)
+				resultsWithStatus := getLatestRunResults(standardBucket, flags)
 				results[compliance.ClusterStandardPair{ClusterID: clusterID, StandardID: standardID}] = resultsWithStatus
 			}
 		}
@@ -140,7 +164,7 @@ func (s *boltStore) GetLatestRunResultsBatch(clusterIDs, standardIDs []string) (
 	return results, nil
 }
 
-func (s *boltStore) GetLatestRunResultsFiltered(clusterIDFilter, standardIDFilter func(string) bool) (map[compliance.ClusterStandardPair]ResultsWithStatus, error) {
+func (s *boltStore) GetLatestRunResultsFiltered(clusterIDFilter, standardIDFilter func(string) bool, flags GetFlags) (map[compliance.ClusterStandardPair]ResultsWithStatus, error) {
 	results := make(map[compliance.ClusterStandardPair]ResultsWithStatus)
 	err := s.resultsBucket.View(func(b *bbolt.Bucket) error {
 		clusterCursor := b.Cursor()
@@ -167,7 +191,7 @@ func (s *boltStore) GetLatestRunResultsFiltered(clusterIDFilter, standardIDFilte
 					continue
 				}
 
-				resultsWithStatus := getLatestRunResults(standardBucket)
+				resultsWithStatus := getLatestRunResults(standardBucket, flags)
 				results[compliance.ClusterStandardPair{ClusterID: clusterID, StandardID: standardID}] = resultsWithStatus
 			}
 		}
@@ -231,6 +255,13 @@ func (s *boltStore) StoreRunResults(runResults *storage.ComplianceRunResults) er
 	if err != nil {
 		return fmt.Errorf("serializing metadata: %v", err)
 	}
+
+	stringsProto := externalizeStrings(runResults)
+	serializedStrings, err := stringsProto.Marshal()
+	if err != nil {
+		return fmt.Errorf("serializing message strings: %v", err)
+	}
+
 	serializedResults, err := runResults.Marshal()
 	if err != nil {
 		return fmt.Errorf("serializing results: %v", err)
@@ -244,7 +275,10 @@ func (s *boltStore) StoreRunResults(runResults *storage.ComplianceRunResults) er
 		if err := runBucket.Put(metadataKey, serializedMD); err != nil {
 			return err
 		}
-		return runBucket.Put(resultsKey, serializedResults)
+		if err := runBucket.Put(resultsKey, serializedResults); err != nil {
+			return err
+		}
+		return runBucket.Put(stringsKey, serializedStrings)
 	})
 }
 

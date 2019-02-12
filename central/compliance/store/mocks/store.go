@@ -37,42 +37,42 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // GetLatestRunResults mocks base method
-func (m *MockStore) GetLatestRunResults(arg0, arg1 string) (store.ResultsWithStatus, error) {
-	ret := m.ctrl.Call(m, "GetLatestRunResults", arg0, arg1)
+func (m *MockStore) GetLatestRunResults(arg0, arg1 string, arg2 store.GetFlags) (store.ResultsWithStatus, error) {
+	ret := m.ctrl.Call(m, "GetLatestRunResults", arg0, arg1, arg2)
 	ret0, _ := ret[0].(store.ResultsWithStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetLatestRunResults indicates an expected call of GetLatestRunResults
-func (mr *MockStoreMockRecorder) GetLatestRunResults(arg0, arg1 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResults", reflect.TypeOf((*MockStore)(nil).GetLatestRunResults), arg0, arg1)
+func (mr *MockStoreMockRecorder) GetLatestRunResults(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResults", reflect.TypeOf((*MockStore)(nil).GetLatestRunResults), arg0, arg1, arg2)
 }
 
 // GetLatestRunResultsBatch mocks base method
-func (m *MockStore) GetLatestRunResultsBatch(arg0, arg1 []string) (map[compliance.ClusterStandardPair]store.ResultsWithStatus, error) {
-	ret := m.ctrl.Call(m, "GetLatestRunResultsBatch", arg0, arg1)
+func (m *MockStore) GetLatestRunResultsBatch(arg0, arg1 []string, arg2 store.GetFlags) (map[compliance.ClusterStandardPair]store.ResultsWithStatus, error) {
+	ret := m.ctrl.Call(m, "GetLatestRunResultsBatch", arg0, arg1, arg2)
 	ret0, _ := ret[0].(map[compliance.ClusterStandardPair]store.ResultsWithStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetLatestRunResultsBatch indicates an expected call of GetLatestRunResultsBatch
-func (mr *MockStoreMockRecorder) GetLatestRunResultsBatch(arg0, arg1 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResultsBatch", reflect.TypeOf((*MockStore)(nil).GetLatestRunResultsBatch), arg0, arg1)
+func (mr *MockStoreMockRecorder) GetLatestRunResultsBatch(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResultsBatch", reflect.TypeOf((*MockStore)(nil).GetLatestRunResultsBatch), arg0, arg1, arg2)
 }
 
 // GetLatestRunResultsFiltered mocks base method
-func (m *MockStore) GetLatestRunResultsFiltered(arg0, arg1 func(string) bool) (map[compliance.ClusterStandardPair]store.ResultsWithStatus, error) {
-	ret := m.ctrl.Call(m, "GetLatestRunResultsFiltered", arg0, arg1)
+func (m *MockStore) GetLatestRunResultsFiltered(arg0, arg1 func(string) bool, arg2 store.GetFlags) (map[compliance.ClusterStandardPair]store.ResultsWithStatus, error) {
+	ret := m.ctrl.Call(m, "GetLatestRunResultsFiltered", arg0, arg1, arg2)
 	ret0, _ := ret[0].(map[compliance.ClusterStandardPair]store.ResultsWithStatus)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetLatestRunResultsFiltered indicates an expected call of GetLatestRunResultsFiltered
-func (mr *MockStoreMockRecorder) GetLatestRunResultsFiltered(arg0, arg1 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResultsFiltered", reflect.TypeOf((*MockStore)(nil).GetLatestRunResultsFiltered), arg0, arg1)
+func (mr *MockStoreMockRecorder) GetLatestRunResultsFiltered(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestRunResultsFiltered", reflect.TypeOf((*MockStore)(nil).GetLatestRunResultsFiltered), arg0, arg1, arg2)
 }
 
 // QueryControlResults mocks base method

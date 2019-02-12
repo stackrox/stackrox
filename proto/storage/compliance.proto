@@ -55,6 +55,7 @@ message ComplianceResultValue {
     message Evidence {
         ComplianceState state = 1;
         string message        = 2;
+        int32 message_id      = 3;
     }
     repeated Evidence evidence    = 1;
     ComplianceState overall_state = 2;
@@ -101,4 +102,10 @@ message ComplianceRunResults {
     EntityResults cluster_results                 = 3;
     map<string, EntityResults> node_results       = 4;
     map<string, EntityResults> deployment_results = 5;
+}
+
+// Next available tag: 2
+// @protolock:skip
+message ComplianceStrings {
+    repeated string strings = 1;
 }

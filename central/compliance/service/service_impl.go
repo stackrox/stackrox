@@ -121,7 +121,7 @@ func (s *serviceImpl) GetAggregatedResults(ctx context.Context, request *v1.Comp
 }
 
 func (s *serviceImpl) GetRunResults(ctx context.Context, request *v1.GetComplianceRunResultsRequest) (*v1.GetComplianceRunResultsResponse, error) {
-	results, err := s.store.GetLatestRunResults(request.GetClusterId(), request.GetStandardId())
+	results, err := s.store.GetLatestRunResults(request.GetClusterId(), request.GetStandardId(), store.WithMessageStrings)
 	if err != nil {
 		return nil, err
 	}

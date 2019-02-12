@@ -190,7 +190,7 @@ func CSVHandler() http.HandlerFunc {
 			writeErr(w, http.StatusBadRequest, err)
 			return
 		}
-		data, err := complianceStore.GetLatestRunResultsFiltered(options.clusterIDFilter(), options.standardIDFilter())
+		data, err := complianceStore.GetLatestRunResultsFiltered(options.clusterIDFilter(), options.standardIDFilter(), store.WithMessageStrings)
 		if err != nil {
 			writeErr(w, http.StatusInternalServerError, err)
 			return
