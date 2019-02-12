@@ -17,5 +17,10 @@ func init() {
 			DataDependencies:   []string{"CISBenchmarks"},
 			InterpretationText: interpretationText,
 		},
-		common.CISBenchmarksSatisfied)
+		clusterisCompliant)
+}
+
+func clusterisCompliant(ctx framework.ComplianceContext) {
+	common.CISBenchmarksSatisfied(ctx)
+	common.CheckKHostOperatingSystem(ctx)
 }
