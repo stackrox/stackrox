@@ -2,6 +2,7 @@ package concurrency
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -57,4 +58,24 @@ func TestSignalTriggerAndReset(t *testing.T) {
 	a.True(IsDone(wc), "old wait channel should still be closed")
 
 	a.False(s.Reset(), "calling reset a second time should return false")
+}
+
+func TestSignalDoWithTimeout(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	var done bool
+	action := func() {
+		done = true
+	}
+
+	s := NewSignal()
+	a.False(DoWithTimeout(&s, action, 100*time.Millisecond))
+	a.False(done)
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		s.Signal()
+	}()
+	a.True(DoWithTimeout(&s, action, 100*time.Millisecond))
+	a.True(done)
 }
