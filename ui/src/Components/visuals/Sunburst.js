@@ -58,6 +58,7 @@ export default class BasicSunburst extends React.Component {
                 link: PropTypes.string
             })
         ).isRequired,
+        totalValue: PropTypes.number.isRequired,
         legendData: PropTypes.arrayOf(PropTypes.object).isRequired,
         sunburstProps: PropTypes.shape({}),
         onValueMouseOver: PropTypes.func,
@@ -86,21 +87,8 @@ export default class BasicSunburst extends React.Component {
     }
 
     getCenterLabel = () => {
-        const { data } = this.props;
-        let label;
-        const val = data.reduce(
-            (acc, curr) => ({ total: acc.total + 100, passing: acc.passing + curr.value }),
-            {
-                total: 0,
-                passing: 0
-            }
-        );
-        if (val.total === 0) {
-            label = 'No data available';
-        } else {
-            label = `${Math.round((val.passing / val.total) * 100)}%`;
-        }
-        return <LabelSeries data={[{ x: 1, y: 9, label: `${label}`, style: LABEL_STYLE }]} />;
+        const label = `${this.props.totalValue}%`;
+        return <LabelSeries data={[{ x: 1, y: 9, label, style: LABEL_STYLE }]} />;
     };
 
     onValueMouseOverHandler = datum => {

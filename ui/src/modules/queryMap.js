@@ -1,7 +1,7 @@
 import orderBy from 'lodash/orderBy';
 
 import componentTypes from 'constants/componentTypes';
-import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
+import entityTypes from 'constants/entityTypes';
 import standardLabels from 'messages/standards';
 import contextTypes from 'constants/contextTypes';
 import pageTypes from 'constants/pageTypes';
@@ -250,7 +250,7 @@ export default [
             query: AGGREGATED_RESULTS,
             variables: [
                 { graphQLParam: 'groupBy', graphQLValue: ['STANDARD', 'CLUSTER'] },
-                { graphQLParam: 'unit', graphQLValue: 'CHECK' }
+                { graphQLParam: 'unit', graphQLValue: 'CONTROL' }
             ]
         }
     },
@@ -263,7 +263,7 @@ export default [
             query: AGGREGATED_RESULTS,
             variables: [
                 { graphQLParam: 'groupBy', graphQLValue: ['STANDARD', 'NAMESPACE'] },
-                { graphQLParam: 'unit', graphQLValue: 'CHECK' }
+                { graphQLParam: 'unit', graphQLValue: 'CONTROL' }
             ]
         }
     },
@@ -276,28 +276,8 @@ export default [
             query: AGGREGATED_RESULTS,
             variables: [
                 { graphQLParam: 'groupBy', graphQLValue: ['STANDARD', 'NODE'] },
-                { graphQLParam: 'unit', graphQLValue: 'CHECK' }
+                { graphQLParam: 'unit', graphQLValue: 'CONTROL' }
             ]
-        }
-    },
-    {
-        context: [contextTypes.COMPLIANCE],
-        pageType: [pageTypes.LIST],
-        entityType: [],
-        component: [componentTypes.COMPLIANCE_ACROSS_ENTITIES],
-        config: {
-            query: AGGREGATED_RESULTS,
-            variables: [
-                { graphQLParam: 'groupBy', graphQLValue: ['STANDARD'] },
-                {
-                    graphQLParam: 'unit',
-                    paramsFunc: ({ entityType }) => {
-                        if (standardBaseTypes[entityType]) return 'CONTROL';
-                        return entityType;
-                    }
-                }
-            ],
-            bypassCache: true
         }
     },
     {

@@ -59,19 +59,9 @@ export const COMPLIANCE_STANDARDS = gql`
                 description
             }
         }
-        groupResults: aggregatedResults(groupBy: [STANDARD, CATEGORY], unit: CHECK, where: $where) {
-            results {
-                aggregationKeys {
-                    id
-                }
-                numFailing
-                numPassing
-                unit
-            }
-        }
-        controlResults: aggregatedResults(
-            groupBy: [STANDARD, CONTROL]
-            unit: CHECK
+        results: aggregatedResults(
+            groupBy: [STANDARD, CATEGORY, CONTROL]
+            unit: CONTROL
             where: $where
         ) {
             results {

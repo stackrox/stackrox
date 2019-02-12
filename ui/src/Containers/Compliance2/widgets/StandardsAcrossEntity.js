@@ -1,8 +1,10 @@
 import React from 'react';
 import componentTypes from 'constants/componentTypes';
-import { standardBaseTypes, resourceTypes } from 'constants/entityTypes';
+import { standardBaseTypes, resourceTypes, standardEntityTypes } from 'constants/entityTypes';
 import { resourceLabels } from 'messages/common';
 import pluralize from 'pluralize';
+import contextTypes from 'constants/contextTypes';
+import pageTypes from 'constants/pageTypes';
 
 import Widget from 'Components/Widget';
 import Query from 'Components/AppQuery';
@@ -10,6 +12,7 @@ import Loader from 'Components/Loader';
 import PropTypes from 'prop-types';
 import HorizontalBarChart from 'Components/visuals/HorizontalBar';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import URLService from 'modules/URLService';
 
 const componentTypeMapping = {
     [resourceTypes.CLUSTER]: componentTypes.STANDARDS_ACROSS_CLUSTERS,
@@ -46,17 +49,29 @@ function processData(data, type) {
         const standard = complianceStandards.find(cs => cs.id === standardId);
         const { passing, total } = standardsMapping[standardId];
         const percentagePassing = Math.round((passing / total) * 100) || 0;
+        const barLink = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
+            entityType: standard.id,
+            query: {
+                groupBy: type
+            }
+        });
+        const axisLink = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
+            entityType: standard.id,
+            query: {
+                groupBy: standardEntityTypes.CATEGORY
+            }
+        });
         const dataPoint = {
             y: standardBaseTypes[standardId],
             x: percentagePassing,
             hint: {
                 title: `${standard.name} Standard - ${percentagePassing}% Passing`,
-                body: `${total - passing} failing checks across all ${pluralize(
+                body: `${total - passing} failing controls across all ${pluralize(
                     resourceLabels[type]
                 )}`
             },
-            barLink: `/main/compliance2/${standard.id}?groupBy=${type}`,
-            axisLink: `/main/compliance2/${standard.id}`
+            barLink: barLink.url,
+            axisLink: axisLink.url
         };
         return dataPoint;
     });
@@ -68,7 +83,7 @@ const StandardsAcrossEntity = ({ type, params, pollInterval, bodyClassName }) =>
     <Query params={params} componentType={componentTypeMapping[type]} pollInterval={pollInterval}>
         {({ loading, data }) => {
             let contents;
-            const headerText = `Standards Across ${type}s`;
+            const headerText = `Standards Passing Across ${type}s`;
             if (!loading || data.complianceStandards) {
                 const results = processData(data, type);
                 if (!results.length) {

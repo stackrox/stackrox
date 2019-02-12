@@ -12,6 +12,7 @@ import { withRouter, Link } from 'react-router-dom';
 import DiscreteColorLegend from 'react-vis/dist/legends/discrete-color-legend';
 import merge from 'deepmerge';
 import { standardBaseTypes } from 'constants/entityTypes';
+import colors from 'constants/visuals/colors';
 import HoverHint from './HoverHint';
 
 class BarChart extends Component {
@@ -29,12 +30,7 @@ class BarChart extends Component {
     };
 
     static defaultProps = {
-        colors: [
-            'var(--primary-500)',
-            'var(--secondary-500)',
-            'var(--tertiary-500)',
-            'var(--accent-500)'
-        ],
+        colors,
         containerProps: {},
         plotProps: {},
         seriesProps: {},
@@ -72,19 +68,19 @@ class BarChart extends Component {
     };
 
     getLegendData = () => {
-        const { data, colors } = this.props;
+        const { data, colors: colorRange } = this.props;
         return Object.keys(data)
             .sort()
             .map((key, i) => ({
                 title: standardBaseTypes[key],
-                color: colors[i % colors.length]
+                color: colorRange[i % colorRange.length]
             }));
     };
 
     render() {
         const {
             data,
-            colors,
+            colors: colorRange,
             tickValues,
             tickFormat,
             labelLinks,
@@ -165,7 +161,7 @@ class BarChart extends Component {
                 series.push(
                     <VerticalBarSeries
                         data={data[key]}
-                        color={colors[i % colors.length]}
+                        color={colorRange[i % colorRange.length]}
                         {...seriesProps}
                         key={key}
                     />

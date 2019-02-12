@@ -1,13 +1,15 @@
 import React from 'react';
-import componentTypes from 'constants/componentTypes';
 import Widget from 'Components/Widget';
-import Query from 'Components/AppQuery';
+import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PropTypes from 'prop-types';
 import Gauge from 'Components/visuals/GaugeWithDetail';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { standardBaseTypes } from 'constants/entityTypes';
 import { standardShortLabels } from 'messages/standards';
+import { AGGREGATED_RESULTS } from 'queries/controls';
+
+const isStandard = type => !!standardBaseTypes[type];
 
 const sortByTitle = (a, b) => {
     if (a.title < b.title) return -1;
@@ -25,48 +27,68 @@ function processData(type, { results, complianceStandards }) {
         filteredResults = results.results;
     }
     if (!filteredResults.length) return [{ title: type, passing: 0, failing: 0 }];
-    return filteredResults
-        .map(result => {
-            const { numPassing, numFailing, aggregationKeys } = result;
-            const standard = complianceStandards.find(cs => cs.id === aggregationKeys[0].id);
-            const dataPoint = {
-                title: standardShortLabels[standard.id],
-                passing: numPassing,
-                failing: numFailing
-            };
-            return dataPoint;
-        })
+    const standardDataMapping = filteredResults
         .filter(datum => !(datum.passing === 0 && datum.failing === 0))
-        .sort(sortByTitle);
+        .reduce((accMapping, currValue) => {
+            const newMapping = { ...accMapping };
+            const { id: standardId } = currValue.aggregationKeys[0];
+            const standard = complianceStandards.find(cs => cs.id === standardId);
+            let { numPassing: totalPassing, numFailing: totalFailing } = currValue;
+            if (newMapping[standardId]) {
+                totalPassing += newMapping[standardId].passing;
+                totalFailing += newMapping[standardId].failing;
+            }
+            newMapping[standardId] = {
+                title: standardShortLabels[standard.id],
+                passing: totalPassing,
+                failing: totalFailing
+            };
+            return newMapping;
+        }, {});
+    return Object.values(standardDataMapping).sort(sortByTitle);
 }
 
-const ComplianceAcrossEntities = ({ params, pollInterval }) => (
-    <Query
-        params={params}
-        componentType={componentTypes.COMPLIANCE_ACROSS_ENTITIES}
-        pollInterval={pollInterval}
-    >
-        {({ loading, data }) => {
-            let contents = <Loader />;
-            const headerText = standardBaseTypes[params.entityType]
-                ? `Compliance Across ${standardShortLabels[params.entityType]} Controls`
-                : `Compliance Across ${params.entityType}s`;
-            if (!loading && data) {
-                const results = processData(params.entityType, data);
-                if (!results.length) {
-                    contents = <NoResultsMessage message="No data available. Please run a scan." />;
-                } else {
-                    contents = <Gauge data={results} dataProperty="passing" />;
+const getQueryVariables = params => {
+    const groupBy = ['STANDARD'];
+    if (params.query && params.query.groupBy) {
+        groupBy.push(params.query.groupBy);
+    } else if (!isStandard(params.entityType)) {
+        groupBy.push(params.entityType);
+    }
+    return {
+        groupBy,
+        unit: 'CONTROL'
+    };
+};
+
+const ComplianceAcrossEntities = ({ params, pollInterval }) => {
+    const variables = getQueryVariables(params);
+    return (
+        <Query query={AGGREGATED_RESULTS} variables={variables} pollInterval={pollInterval}>
+            {({ loading, data }) => {
+                let contents = <Loader />;
+                const headerText = standardBaseTypes[params.entityType]
+                    ? `Compliance Across ${standardShortLabels[params.entityType]} Controls`
+                    : `Compliance Across ${params.entityType}s`;
+                if (!loading && data) {
+                    const results = processData(params.entityType, data);
+                    if (!results.length) {
+                        contents = (
+                            <NoResultsMessage message="No data available. Please run a scan." />
+                        );
+                    } else {
+                        contents = <Gauge data={results} dataProperty="passing" />;
+                    }
                 }
-            }
-            return (
-                <Widget header={headerText} bodyClassName="p-2">
-                    {contents}
-                </Widget>
-            );
-        }}
-    </Query>
-);
+                return (
+                    <Widget header={headerText} bodyClassName="p-2">
+                        {contents}
+                    </Widget>
+                );
+            }}
+        </Query>
+    );
+};
 
 ComplianceAcrossEntities.propTypes = {
     params: PropTypes.shape({}).isRequired,

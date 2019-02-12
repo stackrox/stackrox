@@ -32,32 +32,46 @@ const sunburstLegendData = [
 ];
 
 const processSunburstData = (data, type) => {
-    if (!data || !data.groupResults || !data.groupResults.results.length) return [];
+    if (!data || !data.results || !data.results.results.length)
+        return { sunburstData: [], totalPassing: 0 };
 
     const groupMapping = {};
 
     const statsReducer = (statsMapping, { aggregationKeys, numPassing, numFailing }) => {
-        const newMapping = { ...statsMapping };
-        newMapping[`${aggregationKeys[1].id}`] = Math.round(
-            (numPassing / (numFailing + numPassing)) * 100
-        );
-        return newMapping;
+        const groupsMapping = { ...statsMapping.groupsMapping };
+        const controlsMapping = { ...statsMapping.controlsMapping };
+        const groupKey = `${aggregationKeys[1].id}`;
+        const controlKey = `${aggregationKeys[2].id}`;
+        const group = groupsMapping[groupKey];
+        const passing = group ? group.passing : 0;
+        const total = group ? group.total : 0;
+        groupsMapping[groupKey] = {
+            passing: passing + numPassing,
+            total: total + numPassing + numFailing
+        };
+        controlsMapping[controlKey] = {
+            passing: numPassing,
+            total: numPassing + numFailing
+        };
+        return {
+            groupsMapping,
+            controlsMapping
+        };
     };
 
-    const groupStatsMapping = data.groupResults.results
+    const {
+        groupsMapping: groupStatsMapping,
+        controlsMapping: controlStatsMapping
+    } = data.results.results
         .filter(result => result.numPassing + result.numFailing > 0)
-        .reduce(statsReducer, {});
-
-    const controlStatsMapping = data.controlResults.results
-        .filter(result => result.numPassing + result.numFailing > 0)
-        .reduce(statsReducer, {});
+        .reduce(statsReducer, { groupsMapping: {}, controlsMapping: {} });
 
     const { groups, controls } = data.complianceStandards.filter(datum => datum.id === type)[0];
 
     groups.forEach(datum => {
-        const group = groupStatsMapping[datum.id];
-        if (group !== undefined) {
-            const value = group;
+        const groupStat = groupStatsMapping[datum.id];
+        if (groupStat !== undefined) {
+            const value = Math.round((groupStat.passing / groupStat.total) * 100);
             groupMapping[datum.id] = {
                 name: `${datum.name}. ${datum.description}`,
                 color: getColor(value),
@@ -71,9 +85,9 @@ const processSunburstData = (data, type) => {
         .filter(control => control.standardId === type)
         .forEach(datum => {
             const group = groupMapping[datum.groupId];
-            const control = controlStatsMapping[datum.id];
-            if (group !== undefined && control !== undefined) {
-                const value = control;
+            const controlStat = controlStatsMapping[datum.id];
+            if (group !== undefined && controlStat !== undefined) {
+                const value = Math.round((controlStat.passing / controlStat.total) * 100);
                 group.children.push({
                     name: `${datum.name} - ${datum.description}`,
                     color: getColor(value),
@@ -83,7 +97,20 @@ const processSunburstData = (data, type) => {
             }
         });
 
-    return Object.values(groupMapping);
+    const { passing, total } = Object.values(controlStatsMapping).reduce(
+        (acc, currVal) => ({
+            passing: acc.passing + currVal.passing,
+            total: acc.total + currVal.total
+        }),
+        { passing: 0, total: 0 }
+    );
+
+    const totalPassing = Math.round((passing / total) * 100);
+
+    return {
+        sunburstData: Object.values(groupMapping),
+        totalPassing
+    };
 };
 
 const getNumControls = sunburstData =>
@@ -126,7 +153,7 @@ const ComplianceByStandard = ({ type, entityName, params, pollInterval }) => {
                 let contents = <Loader />;
                 const headerText = `${standardLabels[type]} Compliance`;
                 if (!loading || data) {
-                    const sunburstData = processSunburstData(data, type);
+                    const { sunburstData, totalPassing } = processSunburstData(data, type);
                     const link = createURLLink(params, type, entityName);
                     const sunburstRootData = [
                         {
@@ -152,6 +179,7 @@ const ComplianceByStandard = ({ type, entityName, params, pollInterval }) => {
                                 data={sunburstData}
                                 rootData={sunburstRootData}
                                 legendData={sunburstLegendData}
+                                totalValue={totalPassing}
                             />
                         );
                     }

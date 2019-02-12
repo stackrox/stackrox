@@ -7,6 +7,7 @@ import {
     HorizontalGridLines,
     VerticalBarSeries
 } from 'react-vis';
+import colors from 'constants/visuals/colors';
 
 import PropTypes from 'prop-types';
 import merge from 'deepmerge';
@@ -34,13 +35,7 @@ class VerticalBarChart extends Component {
     };
 
     static defaultProps = {
-        colors: [
-            'var(--primary-500)',
-            'var(--accent-500)',
-            'var(--success-500)',
-            'var(--tertiary-500)',
-            'var(--secondary-500)'
-        ],
+        colors,
         containerProps: {},
         plotProps: {},
         seriesProps: {},
@@ -80,7 +75,7 @@ class VerticalBarChart extends Component {
 
     render() {
         const {
-            colors,
+            colors: colorRange,
             tickValues,
             tickFormat,
             labelLinks,
@@ -114,7 +109,7 @@ class VerticalBarChart extends Component {
             },
 
             colorDomain: data.map(datum => datum.y),
-            colorRange: colors,
+            colorRange,
             onValueMouseOver: datum => {
                 this.setHintData(datum);
                 if (onValueMouseOver) onValueMouseOver(datum);

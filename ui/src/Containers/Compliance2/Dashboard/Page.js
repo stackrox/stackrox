@@ -72,12 +72,12 @@ const ComplianceDashboardPage = ({ match, location }) => {
                         pollInterval={pollInterval}
                     />
                     <ComplianceByStandard
-                        type={standardTypes.PCI_DSS_3_2}
+                        type={standardTypes.CIS_DOCKER_V1_1_0}
                         params={params}
                         pollInterval={pollInterval}
                     />
                     <ComplianceByStandard
-                        type={standardTypes.NIST_800_190}
+                        type={standardTypes.CIS_KUBERENETES_V1_2_0}
                         params={params}
                         pollInterval={pollInterval}
                     />
@@ -87,12 +87,12 @@ const ComplianceDashboardPage = ({ match, location }) => {
                         pollInterval={pollInterval}
                     />
                     <ComplianceByStandard
-                        type={standardTypes.CIS_DOCKER_V1_1_0}
+                        type={standardTypes.NIST_800_190}
                         params={params}
                         pollInterval={pollInterval}
                     />
                     <ComplianceByStandard
-                        type={standardTypes.CIS_KUBERENETES_V1_2_0}
+                        type={standardTypes.PCI_DSS_3_2}
                         params={params}
                         pollInterval={pollInterval}
                     />

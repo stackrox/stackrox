@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-
+import colors from 'constants/visuals/colors';
 import { XYPlot, ArcSeries, LabelSeries, Hint } from 'react-vis';
 import PropTypes from 'prop-types';
 import MultiGaugeDetailSection from './MultiGaugeDetailSection';
@@ -9,13 +9,6 @@ const LABEL_STYLE = {
     fill: 'var(--primary-800)',
     fontWeight: 400
 };
-
-const colors = [
-    'var(--primary-400)',
-    'var(--secondary-400)',
-    'var(--tertiary-400)',
-    'var(--accent-400)'
-];
 
 const buildValue = hoveredCell => {
     const { radius, angle, angle0 } = hoveredCell;

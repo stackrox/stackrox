@@ -85,7 +85,7 @@ const StandardsByEntity = ({ type, params, pollInterval, bodyClassName }) => (
     <Query params={params} componentType={componentTypeMapping[type]} pollInterval={pollInterval}>
         {({ loading, data }) => {
             let contents = <Loader />;
-            const headerText = `Standards By ${type}`;
+            const headerText = `Standards Passing By ${type}`;
             let pages;
             if (!loading || data.results) {
                 const results = processData(data, type, params);
