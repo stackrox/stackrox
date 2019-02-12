@@ -116,7 +116,7 @@ class MainPage extends Component {
         return (
             <div className="flex w-full items-center p-3 bg-warning-200 text-warning-800 border-b border-base-400 justify-center font-700">
                 <span>
-                    Uh oh, it looks like your UI is out of date and may not behave properly. Please{' '}
+                    It looks like this page is out of date and may not behave properly. Please{' '}
                     <Button
                         text="refresh this page"
                         className="text-tertiary-700 hover:text-tertiary-800 underline font-700 justify-center"
