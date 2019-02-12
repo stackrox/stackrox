@@ -117,7 +117,38 @@ const renderFileCard = file => (
     </div>
 );
 
-const renderDataDetails = secret => secret.files.map(file => renderFileCard(file));
+const renderDeterminedDataDetails = secret =>
+    secret.files.filter(file => file.type !== 'UNDETERMINED').map(file => renderFileCard(file));
+
+const renderFileName = name => <div className="w-full h-full p-3 font-600">{name}</div>;
+
+const renderUndeterminedDataDetails = secret => {
+    const undeterminedFiles = secret.files.filter(file => file.type === 'UNDETERMINED');
+    if (undeterminedFiles.length === 0) {
+        return null;
+    }
+    return (
+        <div className="px-3 pt-5 w-full">
+            <div className="bg-base-100 shadow text-primary-600 tracking-wide">
+                <CollapsibleCard title="Undetermined Fields">
+                    {undeterminedFiles.map(file => renderFileName(file.name))}
+                </CollapsibleCard>
+            </div>
+        </div>
+    );
+};
+
+const renderFiles = secret => {
+    if (!secret.files || secret.files.length === 0) {
+        return null;
+    }
+    return (
+        <div>
+            {renderDeterminedDataDetails(secret)}
+            {renderUndeterminedDataDetails(secret)}
+        </div>
+    );
+};
 
 const SecretDetails = ({ secret }) => {
     if (!secret) return <NoResultsMessage message="No Secret Details Available" />;
@@ -141,7 +172,7 @@ const SecretDetails = ({ secret }) => {
                     </CollapsibleCard>
                 </div>
             </div>
-            {secret.files && secret.files.length !== 0 && renderDataDetails(secret)}
+            {renderFiles(secret)}
         </div>
     );
 };
