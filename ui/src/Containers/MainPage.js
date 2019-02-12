@@ -11,7 +11,6 @@ import {
     networkPath,
     violationsPath,
     compliancePath,
-    compliance2Path,
     integrationsPath,
     policiesPath,
     riskPath,
@@ -44,8 +43,7 @@ const AsyncIntegrationsPage = asyncComponent(() =>
 const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/ViolationsPage'));
 const AsyncPoliciesPage = asyncComponent(() => import('Containers/Policies/Page'));
 const AsyncImagesPage = asyncComponent(() => import('Containers/Images/ImagesPage'));
-const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/CompliancePage'));
-const AsyncCompliance2Page = asyncComponent(() => import('Containers/Compliance2/Page'));
+const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/Page'));
 
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
 const AsyncSecretsPage = asyncComponent(() => import('Containers/Secrets/SecretsPage'));
@@ -93,7 +91,6 @@ class MainPage extends Component {
                     <ProtectedRoute path={networkPath} component={AsyncNetworkPage} />
                     <ProtectedRoute path={violationsPath} component={AsyncViolationsPage} />
                     <ProtectedRoute path={compliancePath} component={AsyncCompliancePage} />
-                    <ProtectedRoute path={compliance2Path} component={AsyncCompliance2Page} />
                     <ProtectedRoute path={integrationsPath} component={AsyncIntegrationsPage} />
                     <ProtectedRoute path={policiesPath} component={AsyncPoliciesPage} />
                     <ProtectedRoute path={riskPath} component={AsyncRiskPage} />

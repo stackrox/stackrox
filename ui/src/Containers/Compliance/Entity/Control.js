@@ -6,8 +6,8 @@ import entityTypes from 'constants/entityTypes';
 import Widget from 'Components/Widget';
 import Query from 'Components/ThrowingQuery';
 import { CONTROL_QUERY as QUERY } from 'queries/controls';
-import ControlDetails from 'Containers/Compliance2/widgets/ControlDetails';
-import ControlRelatedResourceList from 'Containers/Compliance2/widgets/ControlRelatedResourceList';
+import ControlDetails from 'Containers/Compliance/widgets/ControlDetails';
+import ControlRelatedResourceList from 'Containers/Compliance/widgets/ControlRelatedResourceList';
 import Header from './Header';
 
 const ControlPage = ({ sidePanelMode, params }) => (

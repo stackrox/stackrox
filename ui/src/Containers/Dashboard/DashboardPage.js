@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
-import Slider from 'react-slick';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 
@@ -9,7 +8,7 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import TwoLevelPieChart from 'Components/visuals/TwoLevelPieChart';
-import DashboardBenchmarks from 'Containers/Dashboard/DashboardBenchmarks';
+import DashboardCompliance from 'Containers/Dashboard/DashboardCompliance';
 import SeverityTile from 'Containers/Dashboard/SeverityTile';
 import TopRiskyDeployments from 'Containers/Dashboard/TopRiskyDeployments';
 import { severityLabels } from 'messages/common';
@@ -17,7 +16,6 @@ import { selectors } from 'reducers';
 import { actions as dashboardActions } from 'reducers/dashboard';
 import severityColorMap from 'constants/severityColors';
 import AlertsByTimeseriesChart from 'Containers/Dashboard/AlertsByTimeseriesChart';
-import slickSettings from 'constants/slickSettings';
 import ViolationsByClusterChart from './ViolationsByClusterChart';
 
 const severityPropType = PropTypes.oneOf([
@@ -45,8 +43,6 @@ class DashboardPage extends Component {
         globalViolationsCounts: groupedViolationsPropType.isRequired,
         violationsByCluster: groupedViolationsPropType.isRequired,
         alertsByTimeseries: PropTypes.arrayOf(PropTypes.shape()).isRequired,
-        benchmarks: PropTypes.arrayOf(PropTypes.shape()).isRequired,
-        clustersByName: PropTypes.object.isRequired, // eslint-disable-line react/forbid-prop-types,
         deployments: PropTypes.arrayOf(PropTypes.object).isRequired,
         history: PropTypes.shape({
             push: PropTypes.func.isRequired
@@ -169,25 +165,6 @@ class DashboardPage extends Component {
         );
     };
 
-    renderClusterBenchmarks = () => {
-        if (!this.props.benchmarks || !this.props.benchmarks.length) {
-            return (
-                <NoResultsMessage message="No data available. Please ensure your cluster is properly configured." />
-            );
-        }
-        return (
-            <div className="p-0 h-full w-full dashboard-benchmarks">
-                <Slider {...slickSettings}>
-                    {this.props.benchmarks.map((cluster, index) => (
-                        <div key={index}>
-                            <DashboardBenchmarks cluster={cluster} />
-                        </div>
-                    ))}
-                </Slider>
-            </div>
-        );
-    };
-
     renderTopRiskyDeployments = () => {
         if (!this.props.deployments) return '';
         return <TopRiskyDeployments deployments={this.props.deployments} />;
@@ -217,7 +194,9 @@ class DashboardPage extends Component {
                                 {this.renderEnvironmentRisk()}
                             </div>
                             <div className="w-full lg:w-1/2 py-6 border-l-2 border-base-400 z-1">
-                                {this.renderClusterBenchmarks()}
+                                <div className="p-0 h-full w-full dashboard-benchmarks">
+                                    <DashboardCompliance />
+                                </div>
                             </div>
                         </div>
                         <div className="overflow-auto bg-base-200 relative border-t border-base-400">
@@ -268,18 +247,6 @@ const getTopRiskyDeployments = createSelector(
     deployments => deployments.sort((a, b) => a.priority - b.priority).slice(0, 5)
 );
 
-const getClustersByName = createSelector(
-    [selectors.getClusters],
-    clusters =>
-        clusters.reduce(
-            (result, cluster) => ({
-                ...result,
-                [cluster.name]: cluster
-            }),
-            {}
-        )
-);
-
 const isViewFiltered = createSelector(
     [selectors.getDashboardSearchOptions],
     searchOptions => searchOptions.length !== 0
@@ -290,9 +257,7 @@ const mapStateToProps = createStructuredSelector({
     globalViolationsCounts: selectors.getGlobalAlertCounts,
     violationsByCluster: selectors.getAlertCountsByCluster,
     alertsByTimeseries: selectors.getAlertsByTimeseries,
-    benchmarks: selectors.getBenchmarksByCluster,
     deployments: getTopRiskyDeployments,
-    clustersByName: getClustersByName,
     searchOptions: selectors.getDashboardSearchOptions,
     searchModifiers: selectors.getDashboardSearchModifiers,
     searchSuggestions: selectors.getDashboardSearchSuggestions,

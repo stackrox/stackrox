@@ -11,7 +11,6 @@ export const authResponsePrefix = '/auth/response/';
 export const dashboardPath = `${mainPath}/dashboard`;
 export const networkPath = `${mainPath}/network`;
 export const violationsPath = `${mainPath}/violations/:alertId?`;
-export const compliancePath = `${mainPath}/compliance/:clusterId?`;
 export const integrationsPath = `${mainPath}/integrations`;
 export const policiesPath = `${mainPath}/policies/:policyId?`;
 export const riskPath = `${mainPath}/risk/:deploymentId?`;
@@ -32,13 +31,13 @@ export const resourceTypesToUrl = {
 
 const resourceURLs = Object.values(resourceTypesToUrl);
 
-export const compliance2Path = `${mainPath}/compliance2`;
+export const compliancePath = `${mainPath}/compliance`;
 const standardsMatcher = `(${Object.values(standardTypes).join('|')})`;
 const resourcesMatcher = `(${resourceURLs.join('|')})`;
 
 export const nestedCompliancePaths = {
-    DASHBOARD: `${compliance2Path}/`,
-    LIST: `${compliance2Path}/:entityType`,
-    CONTROL: `${compliance2Path}/:entityType${standardsMatcher}/:entityId`,
-    RESOURCE: `${compliance2Path}/:entityType${resourcesMatcher}/:entityId`
+    DASHBOARD: `${compliancePath}/`,
+    LIST: `${compliancePath}/:entityType`,
+    CONTROL: `${compliancePath}/:entityType${standardsMatcher}/:entityId`,
+    RESOURCE: `${compliancePath}/:entityType${resourcesMatcher}/:entityId`
 };

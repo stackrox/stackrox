@@ -7,7 +7,7 @@ import { standardBaseTypes } from 'constants/entityTypes';
 import standardLabels from 'messages/standards';
 
 import PageHeader from 'Components/PageHeader';
-import ScanButton from 'Containers/Compliance2/ScanButton';
+import ScanButton from 'Containers/Compliance/ScanButton';
 import ExportButton from 'Components/ExportButton';
 
 const ListHeader = ({ match, location, searchComponent }) => {

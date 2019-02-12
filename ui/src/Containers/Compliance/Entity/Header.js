@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 
 import PageHeader from 'Components/PageHeader';
-import ScanButton from 'Containers/Compliance2/ScanButton';
+import ScanButton from 'Containers/Compliance/ScanButton';
 import ExportButton from 'Components/ExportButton';
 
 const EntityHeader = ({ header, subHeader, searchComponent, scanCluster, scanStandard, type }) => (

@@ -1,6 +1,5 @@
 import { url as dashboardUrl, selectors } from './constants/DashboardPage';
 
-import { url as complianceUrl } from './constants/CompliancePage';
 import { url as violationsUrl } from './constants/ViolationsPage';
 import * as api from './constants/apiEndpoints';
 import withAuth from './helpers/basicAuth';
@@ -11,60 +10,6 @@ describe('Dashboard page', () => {
     it('should select item in nav bar', () => {
         cy.visit(dashboardUrl);
         cy.get(selectors.navLink).should('have.class', 'bg-primary-700');
-    });
-
-    it('should display benchmarks data for multiple clusters', () => {
-        cy.server();
-        cy.route('GET', api.benchmarks.summary, 'fixture:benchmarks/summary.json').as(
-            'benchmarksSummary'
-        );
-
-        cy.visit(dashboardUrl);
-        cy.wait('@benchmarksSummary');
-
-        cy.get(selectors.sectionHeaders.benchmarks).should('contain', 'remote');
-        cy.get(selectors.slick.dashboardBenchmarks.nextButton).click();
-        cy.get(selectors.sectionHeaders.benchmarks).should('contain', 'no-benchmarks-cluster');
-        cy.get(selectors.slick.dashboardBenchmarks.currentSlide).contains('No Benchmark Results');
-
-        // return back to the first cluster and test it extensively
-        // but first need to make sure sliding animation is over, otherwise "previous" button doesn't work in Slick component
-        cy.get(selectors.slick.dashboardBenchmarks.track).should(
-            'have.css',
-            'transition-duration',
-            '0s'
-        );
-        cy.get(selectors.slick.dashboardBenchmarks.prevButton).click();
-        cy.get(selectors.sectionHeaders.benchmarks).should('contain', 'remote');
-
-        cy.get(selectors.sectionHeaders.benchmarks)
-            .next()
-            .children()
-            .as('benchmarkSummaries');
-        cy.get('@benchmarkSummaries')
-            .find('a')
-            .first()
-            .should('have.text', 'CIS Docker v1.1.0 Benchmark');
-
-        cy.get('@benchmarkSummaries')
-            .find('a')
-            .next()
-            .children()
-            .spread((pass, warn, info, note) => {
-                expect(pass.getAttribute('style')).to.have.string('width: 30%');
-                expect(warn.getAttribute('style')).to.have.string('width: 31%');
-                expect(info.getAttribute('style')).to.have.string('width: 9%');
-                expect(note.getAttribute('style')).to.have.string('width: 32%');
-            });
-        cy.get('@benchmarkSummaries')
-            .find('a')
-            .first()
-            .click();
-        cy.location().should(location => {
-            expect(location.pathname).to.eq(
-                `${complianceUrl}/422642b9-1e4e-47a5-a739-e4fb39230822`
-            );
-        });
     });
 
     it('should display system violations tiles', () => {

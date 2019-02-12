@@ -1,13 +1,13 @@
 import React from 'react';
-import ComplianceByStandard from 'Containers/Compliance2/widgets/ComplianceByStandard';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
-import EntityCompliance from 'Containers/Compliance2/widgets/EntityCompliance';
-import ResourceCount from 'Containers/Compliance2/widgets/ResourceCount';
-import ClusterVersion from 'Containers/Compliance2/widgets/ClusterVersion';
+import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
+import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
+import ClusterVersion from 'Containers/Compliance/widgets/ClusterVersion';
 import Query from 'Components/ThrowingQuery';
 import { CLUSTER_QUERY as QUERY } from 'queries/cluster';
-import ResourceRelatedResourceList from 'Containers/Compliance2/widgets/ResourceRelatedResourceList';
+import ResourceRelatedResourceList from 'Containers/Compliance/widgets/ResourceRelatedResourceList';
+import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
 import Loader from 'Components/Loader';
 import Header from './Header';
 

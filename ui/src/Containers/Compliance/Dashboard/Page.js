@@ -4,9 +4,9 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import URLService from 'modules/URLService';
 import { resourceTypes, standardTypes } from 'constants/entityTypes';
 
-import StandardsByEntity from 'Containers/Compliance2/widgets/StandardsByEntity';
-import StandardsAcrossEntity from 'Containers/Compliance2/widgets/StandardsAcrossEntity';
-import ComplianceByStandard from 'Containers/Compliance2/widgets/ComplianceByStandard';
+import StandardsByEntity from 'Containers/Compliance/widgets/StandardsByEntity';
+import StandardsAcrossEntity from 'Containers/Compliance/widgets/StandardsAcrossEntity';
+import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
 import WaveBackground from 'images/wave-bg.svg';
 import WaveBackground2 from 'images/wave-bg-2.svg';
 import DashboardHeader from './Header';

@@ -10,16 +10,6 @@ export const clusters = {
     zip: 'api/extensions/clusters/zip'
 };
 
-export const benchmarks = {
-    configs: 'v1/benchmarks/configs',
-    benchmarkScans: 'v1/benchmarks/scans?benchmarkId=*',
-    scanHostResults: '/v1/benchmarks/scans/*/*',
-    scans: '/v1/benchmarks/scans/*',
-    triggers: 'v1/benchmarks/triggers/*',
-    summary: 'v1/benchmarks/summary/scans*',
-    schedules: '/v1/benchmarks/schedules*'
-};
-
 export const risks = {
     riskyDeployments: 'v1/deployments*'
 };
@@ -56,3 +46,9 @@ export const policies = {
 export const roles = {
     list: '/v1/roles/*'
 };
+
+export const summary = {
+    counts: '/v1/summary/counts'
+};
+
+export const compliance = {};

@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import ComplianceByStandard from 'Containers/Compliance2/widgets/ComplianceByStandard';
 import entityTypes from 'constants/entityTypes';
 import { NODE_QUERY } from 'queries/node';
 import { format } from 'date-fns';
@@ -15,8 +14,9 @@ import Widget from 'Components/Widget';
 import Query from 'Components/ThrowingQuery';
 import IconWidget from 'Components/IconWidget';
 import InfoWidget from 'Components/InfoWidget';
-import Labels from 'Containers/Compliance2/widgets/Labels';
-import EntityCompliance from 'Containers/Compliance2/widgets/EntityCompliance';
+import Labels from 'Containers/Compliance/widgets/Labels';
+import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
+import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
 import Loader from 'Components/Loader';
 import Header from './Header';
 

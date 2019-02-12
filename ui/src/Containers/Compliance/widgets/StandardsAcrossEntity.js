@@ -2,9 +2,10 @@ import React from 'react';
 import componentTypes from 'constants/componentTypes';
 import { standardBaseTypes, resourceTypes, standardEntityTypes } from 'constants/entityTypes';
 import { resourceLabels } from 'messages/common';
-import pluralize from 'pluralize';
+import URLService from 'modules/URLService';
 import contextTypes from 'constants/contextTypes';
 import pageTypes from 'constants/pageTypes';
+import pluralize from 'pluralize';
 
 import Widget from 'Components/Widget';
 import Query from 'Components/AppQuery';
@@ -12,7 +13,6 @@ import Loader from 'Components/Loader';
 import PropTypes from 'prop-types';
 import HorizontalBarChart from 'Components/visuals/HorizontalBar';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import URLService from 'modules/URLService';
 
 const componentTypeMapping = {
     [resourceTypes.CLUSTER]: componentTypes.STANDARDS_ACROSS_CLUSTERS,

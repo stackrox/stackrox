@@ -1,5 +1,5 @@
 import { url as loginUrl, selectors } from './constants/LoginPage';
-import { url as complianceUrl } from './constants/CompliancePage';
+import { url as complianceURL } from './constants/CompliancePage';
 
 import * as api from './constants/apiEndpoints';
 
@@ -20,33 +20,48 @@ describe('Authentication', () => {
         cy.wait('@authProviders');
     };
 
+    const stubAPIs = () => {
+        cy.server();
+        cy.route('GET', api.clusters.list, 'fixture:clusters/couple.json').as('clusters');
+        cy.route('GET', api.search.options, 'fixture:search/metadataOptions.json').as(
+            'searchOptions'
+        );
+        cy.route('GET', api.summary.counts, {}).as('summaryCounts');
+    };
+
     it('should redirect user to login page, authenticate and redirect to the requested page', () => {
-        setupAuth(complianceUrl);
+        setupAuth(complianceURL);
+        cy.server();
+        cy.route('GET', api.clusters.list, 'fixture:clusters/couple.json').as('clusters');
+        cy.route('GET', api.search.options, 'fixture:search/metadataOptions.json').as(
+            'searchOptions'
+        );
+        cy.route('GET', api.summary.counts, {}).as('summaryCounts');
         cy.url().should('contain', loginUrl);
         cy.get(selectors.providerSelect).should('have.text', 'auth-provider-name');
         cy.get(selectors.loginButton).click(); // stubbed auth provider will simulate redirect with 'my-token'
         cy.wait('@authStatus').then(xhr => {
             expect(xhr.request.headers.Authorization).to.eq('Bearer my-token');
         });
-        cy.url().should('contain', complianceUrl);
+        cy.url().should('contain', complianceURL);
     });
 
     it('should allow authenticated user to enter', () => {
         localStorage.setItem('access_token', 'my-token'); // simulate authenticated user
-        setupAuth(complianceUrl);
-        cy.url().should('contain', complianceUrl);
+        setupAuth(complianceURL);
+        cy.url().should('contain', complianceURL);
     });
 
     it('should logout previously authenticated user with invalid token', () => {
         localStorage.setItem('access_token', 'my-token'); // invalid token
-        setupAuth(complianceUrl, false);
+        setupAuth(complianceURL, false);
         cy.url().should('contain', loginUrl);
     });
 
     // TODO(ROX-990): Fix and re-enable this test. It was flaky on OpenShift and K8s (failure rate was higher on OpenShift though).
     xit('should logout user by request', () => {
         localStorage.setItem('access_token', 'my-token'); // authenticated user
-        setupAuth(complianceUrl);
+        setupAuth(complianceURL);
         cy.get('button:contains("Logout")').click();
         cy.url().should('contain', loginUrl);
     });
@@ -61,23 +76,28 @@ describe('Authentication', () => {
          */
         localStorage.setItem('access_token', 'first-token');
         cy.server();
+        cy.route('GET', api.clusters.list, 'fixture:clusters/couple.json').as('clusters');
+        cy.route('GET', api.search.options, 'fixture:search/metadataOptions.json').as(
+            'searchOptions'
+        );
         cy.route({
             method: 'GET',
-            url: api.benchmarks.configs,
+            url: api.summary.counts,
             status: 401,
             delay: 200,
             response: {},
             onRequest: () => {
                 localStorage.setItem('access_token', 'new-token');
             }
-        }).as('benchmarks');
-        setupAuth(complianceUrl);
+        }).as('summaryCounts');
+        setupAuth(complianceURL);
+        stubAPIs();
 
-        cy.wait('@benchmarks').then(xhr => {
+        cy.wait('@summaryCounts').then(xhr => {
             expect(xhr.request.headers.Authorization).to.eq('Bearer first-token');
         });
         // should retry request with a new token
-        cy.wait('@benchmarks').then(xhr => {
+        cy.wait('@summaryCounts').then(xhr => {
             expect(xhr.request.headers.Authorization).to.eq('Bearer new-token');
         });
     });

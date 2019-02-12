@@ -5,6 +5,7 @@ import standardLabels from 'messages/standards';
 import capitalize from 'lodash/capitalize';
 import URLService from 'modules/URLService';
 import pageTypes from 'constants/pageTypes';
+import contextTypes from 'constants/contextTypes';
 
 import Widget from 'Components/Widget';
 import Sunburst from 'Components/visuals/Sunburst';
@@ -86,12 +87,16 @@ const processSunburstData = (data, type) => {
         .forEach(datum => {
             const group = groupMapping[datum.groupId];
             const controlStat = controlStatsMapping[datum.id];
+            const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.ENTITY, {
+                entityType: datum.standardId,
+                entityId: datum.id
+            });
             if (group !== undefined && controlStat !== undefined) {
                 const value = Math.round((controlStat.passing / controlStat.total) * 100);
                 group.children.push({
                     name: `${datum.name} - ${datum.description}`,
                     color: getColor(value),
-                    link: `/main/compliance2/${datum.standardId}/${datum.id}`,
+                    link: link.url,
                     value
                 });
             }

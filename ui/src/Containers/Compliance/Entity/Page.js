@@ -1,8 +1,12 @@
 import React from 'react';
-import { withRouter, Switch, Route } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
+import { withRouter, Switch, Route } from 'react-router-dom';
 import URLService from 'modules/URLService';
+import contextTypes from 'constants/contextTypes';
+import pageTypes from 'constants/pageTypes';
+import entityTypes from 'constants/entityTypes';
+
 import NodePage from './Node';
 import NamespacePage from './Namespace';
 import ClusterPage from './Cluster';
@@ -18,13 +22,27 @@ const ComplianceEntityPage = ({ match, location, params, sidePanelMode }) => {
     const NodeEntityPage = () => <NodePage {...pageProps} />;
     const NamespaceEntityPage = () => <NamespacePage {...pageProps} />;
     const ControlEntityPage = () => <ControlPage {...pageProps} />;
+
+    const clusterLink = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
+        entityType: entityTypes.CLUSTER
+    });
+    const namespaceLink = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
+        entityType: entityTypes.NAMESPACE
+    });
+    const nodeLink = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
+        entityType: entityTypes.NODE
+    });
+    const controlLink = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
+        entityType: pageParams.entityType
+    });
+
     /* eslint-disable */
     return (
         <Switch>
-            <Route path="/main/compliance2/clusters" render={ClusterEntityPage} />
-            <Route path="/main/compliance2/nodes" render={NodeEntityPage} />
-            <Route path="/main/compliance2/namespaces" render={NamespaceEntityPage} />
-            <Route path={`/main/compliance2/${pageParams.entityType}`} render={ControlEntityPage} />
+            <Route path={clusterLink.url} render={ClusterEntityPage} />
+            <Route path={namespaceLink.url} render={NamespaceEntityPage} />
+            <Route path={nodeLink.url} render={NodeEntityPage} />
+            <Route path={controlLink.url} render={ControlEntityPage} />
         </Switch>
     );
     /* eslint-enable */

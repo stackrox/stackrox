@@ -32,9 +32,8 @@ const navLinks = [
     },
     {
         text: 'Compliance',
-        to: '',
-        renderIcon: () => <Icon.CheckSquare className={iconClassName} />,
-        panelType: 'compliance'
+        to: '/main/compliance',
+        renderIcon: () => <Icon.CheckSquare className={iconClassName} />
     },
     {
         text: 'Risk',
@@ -94,9 +93,6 @@ class LeftNavigation extends Component {
         const { pathname } = this.props.location;
         const navText = navLink.text.toLowerCase();
         const baseActiveClass = 'text-base-100 bg-primary-700 hover:bg-primary-700';
-        if (pathname.includes('compliance') && navText === 'compliance') {
-            return baseActiveClass;
-        }
 
         if (
             (pathname.includes('policies') ||

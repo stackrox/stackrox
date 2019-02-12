@@ -1,17 +1,17 @@
 import React from 'react';
-import ComplianceByStandard from 'Containers/Compliance2/widgets/ComplianceByStandard';
+import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
 import PropTypes from 'prop-types';
 import entityTypes from 'constants/entityTypes';
-import EntityCompliance from 'Containers/Compliance2/widgets/EntityCompliance';
+import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import Query from 'Components/ThrowingQuery';
-import Labels from 'Containers/Compliance2/widgets/Labels';
+import Labels from 'Containers/Compliance/widgets/Labels';
 import IconWidget from 'Components/IconWidget';
 import CountWidget from 'Components/CountWidget';
 import pluralize from 'pluralize';
 import Cluster from 'images/cluster.svg';
 import { NAMESPACE_QUERY as QUERY } from 'queries/namespace';
 import Widget from 'Components/Widget';
-import ResourceRelatedResourceList from 'Containers/Compliance2/widgets/ResourceRelatedResourceList';
+import ResourceRelatedResourceList from 'Containers/Compliance/widgets/ResourceRelatedResourceList';
 import Header from './Header';
 
 function processData(data) {

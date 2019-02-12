@@ -42,7 +42,6 @@ const sortValue = (a, b) => {
 };
 
 /**
- * Placeholder function till migration of benchmarks table to react table
  * Sort Numbers by property name
  * @param key
  * @returns {number}

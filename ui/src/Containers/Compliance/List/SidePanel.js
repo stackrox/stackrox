@@ -5,7 +5,7 @@ import URLService from 'modules/URLService';
 import pageTypes from 'constants/pageTypes';
 
 import Panel from 'Components/Panel';
-import ComplianceEntityPage from 'Containers/Compliance2/Entity/Page';
+import ComplianceEntityPage from 'Containers/Compliance/Entity/Page';
 import AppLink from 'Components/AppLink';
 import { standardBaseTypes } from 'constants/entityTypes';
 

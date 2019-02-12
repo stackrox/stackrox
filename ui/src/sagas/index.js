@@ -3,7 +3,6 @@ import { all, fork } from 'redux-saga/effects';
 import alerts from './alertSagas';
 import apiTokens from './apiTokenSagas';
 import authProviders from './authSagas';
-import benchmarks from './benchmarkSagas';
 import clusters from './clusterSagas';
 import deployments from './deploymentSagas';
 import images from './imageSagas';
@@ -26,7 +25,6 @@ export default function* root() {
         fork(alerts),
         fork(apiTokens),
         fork(authProviders),
-        fork(benchmarks),
         fork(cli),
         fork(clusters),
         fork(deployments),

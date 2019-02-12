@@ -41,20 +41,6 @@ describe('General sanity checks', () => {
         });
     });
 
-    it('should handle toggle click on Compliance navigation link', () => {
-        cy.visit('/');
-
-        cy.get(selectors.navLinks.compliance).as('compliance');
-
-        cy.get('@compliance').click();
-
-        cy.get(selectors.sidePanel).should('be.visible');
-
-        cy.get('@compliance').click();
-
-        cy.get('.navigation-panel').should('not.be.visible');
-    });
-
     it('should go to API docs', () => {
         cy.visit('/');
         cy.get(selectors.navLinks.apidocs).as('apidocs');
