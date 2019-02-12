@@ -40,14 +40,21 @@ setupHelm: &setupHelm
     command:  |
        kubectl apply -f ./deploy/k8s/tillerbind.yaml
 
-       for i in {1..5}; do
+       SUCCESS=0
+       for i in {1..10}; do
          if helm init --service-account helm  --tiller-connection-timeout 5 --wait; then
+           SUCCESS=1
            break
          fi
          echo "Failed to connect to helm. Retrying in 5 seconds"
          sleep 5
          kubectl -n kube-system get pod
        done
+
+       if [[ "${SUCCESS}" -eq 0 ]]; then
+         echo "Failed to connect to helm"
+         exit 1
+       fi
 
 setupRoxctl: &setupRoxctl
   run:
