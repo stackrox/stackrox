@@ -1,17 +1,32 @@
-import { call, fork, put } from 'redux-saga/effects';
+import { all, call, fork, put } from 'redux-saga/effects';
 
 import { fetchMetadata } from 'services/MetadataService';
 import { actions } from 'reducers/metadata';
+import { delay } from 'redux-saga';
 
-function* fetchVersion() {
+// Fetches the version and sends it to the given action.
+// The action must be a "fetching" action type, which has
+// .success and .failure methods.
+function* fetchVersionAndSendTo(action) {
     try {
         const result = yield call(fetchMetadata);
-        yield put(actions.fetchMetadata.success(result.response));
+        yield put(action.success(result.response));
     } catch (error) {
-        yield put(actions.fetchMetadata.failure(error));
+        yield put(action.failure(error));
+    }
+}
+
+function* fetchVersion() {
+    yield call(fetchVersionAndSendTo, actions.initialFetchMetadata);
+}
+
+function* pollVersion() {
+    while (true) {
+        yield call(delay, 60000);
+        yield call(fetchVersionAndSendTo, actions.pollMetadata);
     }
 }
 
 export default function* metadata() {
-    yield fork(fetchVersion);
+    yield all([fork(fetchVersion), fork(pollVersion)]);
 }

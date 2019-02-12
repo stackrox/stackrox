@@ -25,6 +25,7 @@ import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { actions as cliSearchActions } from 'reducers/cli';
 
 import asyncComponent from 'Components/AsyncComponent';
+import Button from 'Components/Button';
 import ProtectedRoute from 'Components/ProtectedRoute';
 import Notifications from 'Containers/Notifications';
 import TopNavigation from 'Containers/Navigation/TopNavigation';
@@ -56,7 +57,12 @@ class MainPage extends Component {
         toggleGlobalSearchView: PropTypes.func.isRequired,
         toggleCLIDownloadView: PropTypes.func.isRequired,
         globalSearchView: PropTypes.bool.isRequired,
-        cliDownloadView: PropTypes.bool.isRequired
+        cliDownloadView: PropTypes.bool.isRequired,
+        metadata: PropTypes.shape({ stale: PropTypes.bool.isRequired })
+    };
+
+    static defaultProps = {
+        metadata: { stale: false }
     };
 
     onSearchCloseHandler = toURL => {
@@ -101,11 +107,33 @@ class MainPage extends Component {
         </section>
     );
 
+    windowReloadHandler = () => {
+        window.location.reload();
+    };
+
+    renderVersionOutOfDate = () => {
+        if (!this.props.metadata.stale) return null;
+        return (
+            <div className="flex w-full items-center p-3 bg-warning-200 text-warning-800 border-b border-base-400 justify-center font-700">
+                <span>
+                    Uh oh, it looks like your UI is out of date and may not behave properly. Please{' '}
+                    <Button
+                        text="refresh this page"
+                        className="text-tertiary-700 hover:text-tertiary-800 underline font-700 justify-center"
+                        onClick={this.windowReloadHandler}
+                    />{' '}
+                    to correct any issues.
+                </span>
+            </div>
+        );
+    };
+
     render() {
         return (
             <section className="flex flex-1 flex-col h-full relative">
                 <Notifications />
                 <div className="navigation-gradient" />
+                {this.renderVersionOutOfDate()}
                 <header className="flex z-1">
                     <TopNavigation />
                 </header>
@@ -122,7 +150,8 @@ class MainPage extends Component {
 
 const mapStateToProps = createStructuredSelector({
     globalSearchView: selectors.getGlobalSearchView,
-    cliDownloadView: selectors.getCLIDownloadView
+    cliDownloadView: selectors.getCLIDownloadView,
+    metadata: selectors.getMetadata
 });
 
 const mapDispatchToProps = dispatch => ({

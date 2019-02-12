@@ -5,20 +5,28 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 // Action types
 
 export const types = {
-    FETCH_METADATA: createFetchingActionTypes('metadata/FETCH_METADATA')
+    INITIAL_FETCH_METADATA: createFetchingActionTypes('metadata/INITIAL_FETCH_METADATA'),
+    POLL_METADATA: createFetchingActionTypes('metadata/POLL_METADATA')
 };
 
 // Actions
 
 export const actions = {
-    fetchMetadata: createFetchingActions(types.FETCH_METADATA)
+    initialFetchMetadata: createFetchingActions(types.INITIAL_FETCH_METADATA),
+    pollMetadata: createFetchingActions(types.POLL_METADATA)
 };
 
 // Reducers
 
 const metadata = (state = {}, action) => {
-    if (action.type === types.FETCH_METADATA.SUCCESS) {
-        return action.response;
+    if (action.type === types.INITIAL_FETCH_METADATA.SUCCESS) {
+        return { version: action.response.version, stale: false };
+    }
+    if (action.type === types.POLL_METADATA.SUCCESS) {
+        if (action.response.version !== state.version) {
+            return Object.assign({}, state, { stale: true });
+        }
+        return Object.assign({}, state, { stale: false });
     }
     return state;
 };
