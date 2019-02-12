@@ -93,7 +93,10 @@ function keysToLowerCase(query) {
     if (!query) return null;
 
     return Object.entries(query).reduce((acc, entry) => {
-        const key = entry[0][0].toUpperCase() + entry[0].substring(1).toLowerCase();
+        const keystring = entry[0];
+        let key = keystring;
+        if (keystring !== 'groupBy')
+            key = keystring[0].toUpperCase() + keystring.substring(1).toLowerCase();
         // eslint-disable-next-line
         acc[key] = entry[1];
         return acc;
