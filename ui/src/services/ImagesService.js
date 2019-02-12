@@ -15,7 +15,7 @@ const imagesUrl = '/v1/images';
 export function fetchImages(options) {
     const params = queryString.stringify(
         { query: searchOptionsToQuery(options) },
-        { encode: false, arrayFormat: 'repeat' }
+        { arrayFormat: 'repeat' }
     );
     return axios
         .get(`${imagesUrl}?${params}`)

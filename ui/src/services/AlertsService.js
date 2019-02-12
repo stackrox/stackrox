@@ -14,7 +14,7 @@ const baseUrl = '/v1/alerts';
  * @returns {Promise<Object, Error>} fulfilled with normalized response
  */
 export function fetchAlerts(filters) {
-    const params = queryString.stringify({ ...filters }, { encode: false, arrayFormat: 'repeat' });
+    const params = queryString.stringify({ ...filters }, { arrayFormat: 'repeat' });
     return axios.get(`${baseUrl}?${params}`).then(response => ({
         response: normalize(response.data, alertsSchema)
     }));

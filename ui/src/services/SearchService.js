@@ -27,7 +27,7 @@ export function fetchOptions(query = '') {
  * @returns {Promise<Object, Error>} fulfilled with options response
  */
 export function fetchGlobalSearchResults(filters) {
-    const params = queryString.stringify({ ...filters }, { encode: false, arrayFormat: 'repeat' });
+    const params = queryString.stringify({ ...filters }, { arrayFormat: 'repeat' });
     return axios.get(`${baseUrl}?${params}`).then(response => ({
         response: response.data
     }));

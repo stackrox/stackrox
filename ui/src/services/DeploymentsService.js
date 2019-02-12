@@ -15,7 +15,7 @@ const deploymentsUrl = '/v1/deployments';
 export function fetchDeployments(options) {
     const params = queryString.stringify(
         { query: searchOptionsToQuery(options) },
-        { encode: false, arrayFormat: 'repeat' }
+        { arrayFormat: 'repeat' }
     );
     return axios
         .get(`${deploymentsUrl}?${params}`)

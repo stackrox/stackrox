@@ -101,7 +101,7 @@ class URLSearchInput extends Component {
         });
         // to not clear the `groupBy` query. will need to remove once search officially supports groupBy
         if (prevQueryJSON.groupBy) queryJSON.groupBy = prevQueryJSON.groupBy;
-        const search = queryString.stringify(queryJSON, { encode: false, arrayFormat: 'repeat' });
+        const search = queryString.stringify(queryJSON, { arrayFormat: 'repeat' });
         return search;
     };
 

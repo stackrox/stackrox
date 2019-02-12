@@ -146,7 +146,7 @@ export function triggerScan(benchmark) {
  * @returns {Promise<Object, Error>} fulfilled in case of success or rejected with an error
  */
 export async function fetchBenchmarksByCluster(filters) {
-    const params = queryString.stringify({ ...filters }, { encode: false, arrayFormat: 'repeat' });
+    const params = queryString.stringify({ ...filters }, { arrayFormat: 'repeat' });
     const benchmarksSummaryUrl = `${baseUrl}/summary/scans?${params}`;
     return axios.get(benchmarksSummaryUrl).then(response => response.data.clusters);
 }

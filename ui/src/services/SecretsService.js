@@ -15,7 +15,7 @@ const secretsUrl = '/v1/secrets';
 export function fetchSecrets(options) {
     const params = queryString.stringify(
         { query: searchOptionsToQuery(options) },
-        { encode: false, arrayFormat: 'repeat' }
+        { arrayFormat: 'repeat' }
     );
     return axios.get(`${secretsUrl}?${params}`).then(response => ({
         response: normalize(response.data.secrets, [secretSchema])

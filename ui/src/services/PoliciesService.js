@@ -27,7 +27,7 @@ export function fetchPolicy(policyId) {
  * @returns {Promise<Object, Error>} fulfilled with array of policies (as defined in .proto)
  */
 export function fetchPolicies(filters) {
-    const params = queryString.stringify({ ...filters }, { encode: false, arrayFormat: 'repeat' });
+    const params = queryString.stringify({ ...filters }, { arrayFormat: 'repeat' });
     return axios.get(`${baseUrl}?${params}`).then(response => ({
         response: normalize(response.data, { policies: [policySchema] })
     }));
