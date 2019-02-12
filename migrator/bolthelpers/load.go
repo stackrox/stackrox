@@ -14,8 +14,9 @@ const (
 	dbFileName  = "stackrox.db"
 )
 
-// New returns an instance of the persistent BoltDB store
-func New() (*bolt.DB, error) {
+// Load loads an instance of Bolt from disk.
+// It returns nil and no error if no DB is found in the expected location; the caller MUST check for this.
+func Load() (*bolt.DB, error) {
 	dbPath := filepath.Join(dbMountPath, dbFileName)
 	_, err := os.Stat(dbPath)
 	if os.IsNotExist(err) {

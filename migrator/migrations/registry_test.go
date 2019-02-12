@@ -15,11 +15,11 @@ func TestValidityOfRegistry(t *testing.T) {
 		a.Equal(startingSeqNum+1, int(m.VersionAfter.GetSeqNum()))
 	}
 
-	for i := 1; i < migrations.CurrentDBVersionSeqNum; i++ {
+	for i := 0; i < migrations.CurrentDBVersionSeqNum; i++ {
 		_, exists := migrationRegistry[i]
 		a.True(exists, "No registered migration found for starting seq num: %d", i)
 	}
 
-	a.Equal(migrations.CurrentDBVersionSeqNum, len(migrationRegistry)+1,
+	a.Equal(migrations.CurrentDBVersionSeqNum, len(migrationRegistry),
 		"The DB version number and the migration counts aren't in sync!")
 }

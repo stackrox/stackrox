@@ -13,3 +13,14 @@ func RetrieveElementAtKey(bucketRef BucketRef, key []byte) ([]byte, error) {
 	})
 	return val, err
 }
+
+// BucketExists returns whether the given top level bucket exists.
+func BucketExists(db *bolt.DB, bucketName []byte) (exists bool, err error) {
+	err = db.View(func(tx *bolt.Tx) error {
+		if bucket := tx.Bucket(bucketName); bucket != nil {
+			exists = true
+		}
+		return nil
+	})
+	return
+}

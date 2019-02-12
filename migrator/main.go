@@ -17,7 +17,7 @@ func main() {
 }
 
 func run() error {
-	db, err := bolthelpers.New()
+	db, err := bolthelpers.Load()
 	if err != nil {
 		return fmt.Errorf("failed to open DB: %s", err)
 	}

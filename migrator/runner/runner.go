@@ -15,9 +15,6 @@ func Run(db *bolt.DB) error {
 	if err != nil {
 		return err
 	}
-	if dbSeqNum == 0 {
-		return nil
-	}
 	currSeqNum := pkgMigrations.CurrentDBVersionSeqNum
 	if dbSeqNum > currSeqNum {
 		return fmt.Errorf("DB sequence number %d is greater than the latest one we have (%d). This means "+
