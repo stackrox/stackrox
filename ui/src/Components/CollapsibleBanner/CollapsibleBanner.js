@@ -16,6 +16,7 @@ const triggerElementStyle = {
 const sliderSettings = {
     dots: false,
     infinite: false,
+    variableWidth: false,
     responsive: [
         {
             breakpoint: 930,
@@ -75,7 +76,10 @@ class CollapsibleBanner extends Component {
         let content = null;
         if (Array.isArray(this.props.children)) {
             content = this.props.children.map((child, i) => (
-                <div className="p-3" key={i}>
+                <div
+                    className={`p-3 ${i === 0 ? 'xl:w-1/3 xxl:w-1/4' : 'xl:w-2/3 xxl:w-3/4'}`}
+                    key={i}
+                >
                     {child}
                 </div>
             ));

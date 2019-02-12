@@ -168,7 +168,7 @@ class GaugeWithDetail extends Component {
                 data={[
                     {
                         x: 0.1,
-                        y: this.props.data.length > 1 ? 0.75 : -1.1,
+                        y: this.props.data.length > 1 ? -0.8 : -1.1,
                         label: `${label}%`,
                         style: LABEL_STYLE
                     }
@@ -207,32 +207,25 @@ class GaugeWithDetail extends Component {
         const { data } = this.props;
         return (
             <div className="flex w-full">
-                <div className="flex flex-col justify-between">
-                    <div
-                        className="relative z-10 pointer-events-none"
-                        style={{ top: '-15px', left: '10px' }}
-                    >
-                        <XYPlot
-                            xDomain={[-1, 4]}
-                            yDomain={[4, 4]}
-                            width={240}
-                            height={230}
-                            className="h-48 w-48"
-                        >
-                            {this.getCenterLabel()}
-                            {this.getHint()}
-                            <ArcSeries
-                                arcClassName="cursor-pointer"
-                                radiusDomain={[0, 2.3]}
-                                data={this.state.data}
-                                colorType="literal"
-                                onValueClick={this.onArcClick}
-                                onValueMouseOver={this.onValueMouseOver}
-                                onValueMouseOut={this.onValueMouseOut}
-                            />
-                        </XYPlot>
-                    </div>
-                </div>
+                <XYPlot
+                    xDomain={[-1, 4]}
+                    yDomain={[4, 4]}
+                    width={300}
+                    height={200}
+                    className="w-48"
+                >
+                    {this.getCenterLabel()}
+                    {this.getHint()}
+                    <ArcSeries
+                        arcClassName="cursor-pointer"
+                        radiusDomain={[0, 2]}
+                        data={this.state.data}
+                        colorType="literal"
+                        onValueClick={this.onArcClick}
+                        onValueMouseOver={this.onValueMouseOver}
+                        onValueMouseOut={this.onValueMouseOut}
+                    />
+                </XYPlot>
                 <MultiGaugeDetailSection
                     data={data}
                     onClick={this.setSelectedData}

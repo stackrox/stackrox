@@ -33,7 +33,7 @@ const ControlPage = ({ sidePanelMode, params }) => (
                         <div
                             className={`grid ${
                                 !sidePanelMode
-                                    ? `grid grid-gap-6 md:grid-auto-fit md:grid-dense`
+                                    ? `grid grid-gap-6 xxxl:grid-gap-8 md:grid-auto-fit xxl:grid-auto-fit-wide md:grid-dense`
                                     : ``
                             }sm:grid-columns-1 grid-gap-5`}
                         >
@@ -41,9 +41,10 @@ const ControlPage = ({ sidePanelMode, params }) => (
                                 standardId={standardId}
                                 control={name}
                                 description={description}
+                                className="s-2"
                             />
                             {!!interpretationText.length && (
-                                <Widget header="Control guidance">
+                                <Widget className="sx-2" header="Control guidance">
                                     <div className="p-4 leading-loose">{interpretationText}</div>
                                 </Widget>
                             )}

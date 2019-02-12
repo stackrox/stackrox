@@ -85,7 +85,7 @@ const StandardsByEntity = ({ type, params, pollInterval, bodyClassName }) => (
     <Query params={params} componentType={componentTypeMapping[type]} pollInterval={pollInterval}>
         {({ loading, data }) => {
             let contents = <Loader />;
-            const headerText = `Standards Passing By ${type}`;
+            const headerText = `Passing standards by ${type}`;
             let pages;
             if (!loading || data.results) {
                 const results = processData(data, type, params);
@@ -106,7 +106,7 @@ const StandardsByEntity = ({ type, params, pollInterval, bodyClassName }) => (
 
             return (
                 <Widget
-                    className="sx-2 sy-2"
+                    className="s-2"
                     pages={pages}
                     header={headerText}
                     bodyClassName={`graph-bottom-border ${bodyClassName}`}

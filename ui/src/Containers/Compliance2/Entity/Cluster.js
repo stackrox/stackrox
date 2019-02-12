@@ -39,7 +39,7 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                         <div
                             className={`grid ${
                                 !sidePanelMode
-                                    ? `grid grid-gap-6 md:grid-auto-fit md:grid-dense`
+                                    ? `grid grid-gap-6 xxxl:grid-gap-8 md:grid-auto-fit xxl:grid-auto-fit-wide md:grid-dense`
                                     : ``
                             } sm:grid-columns-1 grid-gap-5`}
                         >
@@ -96,13 +96,13 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                                         listEntityType={entityTypes.NAMESPACE}
                                         pageEntityType={entityTypes.CLUSTER}
                                         pageEntity={cluster}
-                                        className="s-2"
+                                        className="sx-2"
                                     />
                                     <ResourceRelatedResourceList
                                         listEntityType={entityTypes.DEPLOYMENT}
                                         pageEntityType={entityTypes.CLUSTER}
                                         pageEntity={cluster}
-                                        className="s-2"
+                                        className="sx-2"
                                     />
                                 </>
                             )}

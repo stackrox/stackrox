@@ -48,7 +48,6 @@ class ComplianceListPage extends Component {
                 <Header searchComponent={<SearchInput categories={['COMPLIANCE']} />} />
                 <CollapsibleBanner>
                     <ComplianceAcrossEntities params={params} pollInterval={pollInterval} />
-                    <ComplianceAcrossEntities params={params} pollInterval={pollInterval} />
                     <ControlsMostFailed params={params} />
                 </CollapsibleBanner>
                 <div className="flex flex-1 overflow-y-auto">

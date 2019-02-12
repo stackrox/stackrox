@@ -11,7 +11,7 @@ const complianceColumns = [
     },
     {
         accessor: standardTypes.CIS_KUBERENETES_V1_2_0,
-        Header: 'CIS Kube',
+        Header: 'CIS K8s',
         Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_KUBERENETES_V1_2_0)
     },
     {
@@ -92,7 +92,7 @@ const nodeColumns = [
     },
     {
         accessor: standardTypes.CIS_KUBERENETES_V1_2_0,
-        Header: 'CIS Kube',
+        Header: 'CIS K8s',
         Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_KUBERENETES_V1_2_0)
     },
     {

@@ -71,8 +71,10 @@ const ControlsMostFailed = ({ params, limit }) => {
     }
 
     function getHeadline() {
-        const titleEntity = isResource ? pluralize(resourceLabels[entityType]) : 'Standard';
-        return `Controls Most Failed Across ${titleEntity}`;
+        const titleEntity = isResource
+            ? `across ${pluralize(resourceLabels[entityType])}`
+            : 'in this standard';
+        return `Controls most failed ${titleEntity}`;
     }
 
     return (

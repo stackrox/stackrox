@@ -259,7 +259,9 @@ module.exports = {
         sm: remCalc('576'),
         md: remCalc('768'),
         lg: remCalc('992'),
-        xl: remCalc('1440')
+        xl: remCalc('1440'),
+        xxl: remCalc('1830'),
+        xxxl: remCalc('2130')
     },
 
     /*

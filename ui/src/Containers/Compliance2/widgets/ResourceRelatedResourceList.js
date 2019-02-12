@@ -117,7 +117,7 @@ ResourceRelatedEntitiesList.propTypes = {
 ResourceRelatedEntitiesList.defaultProps = {
     pageEntity: null,
     className: null,
-    limit: 10
+    limit: 20
 };
 
 export default ResourceRelatedEntitiesList;

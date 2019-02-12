@@ -90,6 +90,7 @@ const ControlRelatedEntitiesList = ({
     return (
         <LinkListWidget
             query={QUERY}
+            className="sx-2"
             variables={variables}
             processData={processData}
             getHeadline={getHeadline}

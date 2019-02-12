@@ -63,6 +63,7 @@ class SunburstDetailSection extends Component {
                     >
                         {link && (
                             <Link
+                                title={text}
                                 className="underline text-base-600 hover:text-primary-700 leading-normal flex w-full word-break"
                                 to={link}
                             >

@@ -16,6 +16,15 @@ module.exports = function({ grids = _.range(1, 12), gaps = {}, variants = ['resp
                         gridAutoRows: `minmax(var(--min-tile-height, 180px), auto)`
                     }
                 },
+                {
+                    [`.grid-auto-fit-wide`]: {
+                        gridTemplateColumns: `repeat(auto-fit, minmax(var(--min-tile-width, 230px), 1fr))`,
+                        gridAutoRows: `minmax(var(--min-tile-height, 180px), auto)`,
+                        maxWidth: `2570px`,
+                        marginLeft: `auto`,
+                        marginRight: `auto`
+                    }
+                },
                 ...grids.map(columns => ({
                     [`.grid-columns-${columns}`]: {
                         gridTemplateColumns: `repeat(${columns}, minmax(var(--min-tile-width, 180px), 1fr))`,

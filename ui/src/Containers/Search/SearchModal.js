@@ -47,7 +47,7 @@ class SearchModal extends Component {
                 <div className="flex w-full bg-base-100">
                     <PageHeader header="Search All:">
                         <SearchInput
-                            className="w-full"
+                            className="w-full flex-shrink"
                             searchOptions={this.props.searchOptions}
                             searchModifiers={this.props.searchModifiers}
                             searchSuggestions={this.props.searchSuggestions}
@@ -56,14 +56,16 @@ class SearchModal extends Component {
                             setSearchSuggestions={this.props.setSearchSuggestions}
                             isGlobal
                         />
+                        <div className="flex items-center border-l border-base-300 h-full w-20 -mr-4 ml-4">
+                            <button
+                                type="button"
+                                className="w-full h-full px-4 hover:bg-base-200 flex items-center justify-center"
+                                onClick={this.props.onClose}
+                            >
+                                <Icon.X size="28" />
+                            </button>
+                        </div>
                     </PageHeader>
-                    <button
-                        type="button"
-                        className="flex items-center justify-center border-b border-base-300 border-l px-4 hover:bg-base-200"
-                        onClick={this.props.onClose}
-                    >
-                        <Icon.X className="h-4 w-4" />
-                    </button>
                 </div>
                 <SearchResults onClose={this.props.onClose} />
             </div>
@@ -74,7 +76,7 @@ class SearchModal extends Component {
 const SearchModalContainer = props => {
     const EnhancedSearchModal = onClickOutside(SearchModal);
     return (
-        <div className="search-modal pl-4 pr-4 border-t border-base-300 w-full z-20 absolute">
+        <div className="search-modal pl-4 pr-4 border-t border-base-300 w-full z-40 absolute">
             <EnhancedSearchModal {...props} />
         </div>
     );

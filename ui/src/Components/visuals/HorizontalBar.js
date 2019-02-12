@@ -188,7 +188,7 @@ class HorizontalBarChart extends Component {
                 inner = (
                     <Link
                         style={{ fill: 'currentColor' }}
-                        className="underline text-2xs font-800 text-base-600 hover:text-primary-700"
+                        className="underline text-xs font-800 text-base-600 hover:text-primary-700"
                         to={axisLinks[value]}
                     >
                         {value}

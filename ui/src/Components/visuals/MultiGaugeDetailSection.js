@@ -94,15 +94,18 @@ class MultiGaugeDetailSection extends Component {
         return (
             <div
                 key={`${d.title}-${d.arc}`}
-                className={`widget-detail-bullet flex items-center word-break py-2 ${
+                className={`widget-detail-bullet flex items-center word-break leading-tight border-b border-base-300 py-2 ${
                     selectedGauge && selectedGauge.index === idx ? '' : 'text-base-600 font-600'
                 }`}
             >
-                <Icon.Square fill={colors[idx]} stroke={d.color} className="h-2 w-2" />
+                <div>
+                    <Icon.Square fill={colors[idx]} stroke={d.color} className="h-2 w-2" />
+                </div>
                 <span className="pl-1 font-600 truncate">{d.title}</span>
                 <div className="ml-auto text-right flex flex-no-shrink items-center">
                     <button
                         type="button"
+                        title="Passing"
                         className={`text-sm text-base-600 font-600 hover:text-success-600 underline pl-2 cursor-pointer ${selectedGauge &&
                             selectedGauge.index === idx &&
                             passingClassName}`}
@@ -113,6 +116,7 @@ class MultiGaugeDetailSection extends Component {
                     <span className="px-1"> / </span>
                     <button
                         type="button"
+                        title="Failing"
                         className={`text-sm text-base-600 hover:text-alert-600 font-600 underline cursor-pointer ${selectedGauge &&
                             selectedGauge.index === idx &&
                             failingClassName}`}

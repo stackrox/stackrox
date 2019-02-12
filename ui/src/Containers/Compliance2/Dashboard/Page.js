@@ -34,8 +34,8 @@ const ComplianceDashboardPage = ({ match, location }) => {
                 alt="Waves"
             />
             <div
-                className="flex-1 relative bg-gradient-diagonal p-6"
-                style={{ '--start': '#e2e6ff', '--end': '#e2f0ff' }}
+                className="flex-1 relative bg-gradient-diagonal p-6 xxxl:p-8"
+                style={{ '--start': '#d3d9ff', '--end': '#b9dbff' }}
             >
                 <img
                     className="absolute pin-l pointer-events-none w-full"
@@ -44,7 +44,7 @@ const ComplianceDashboardPage = ({ match, location }) => {
                     alt="Wave"
                 />
                 <div
-                    className="grid grid-gap-6 md:grid-auto-fit md:grid-dense"
+                    className="grid grid-gap-6 xxxl:grid-gap-8 md:grid-auto-fit xxl:grid-auto-fit-wide md:grid-dense"
                     style={{ '--min-tile-height': '160px' }}
                 >
                     <StandardsAcrossEntity

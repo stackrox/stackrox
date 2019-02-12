@@ -45,7 +45,7 @@ const NamespacePage = ({ sidePanelMode, params }) => (
                         <div
                             className={`grid ${
                                 !sidePanelMode
-                                    ? `grid grid-gap-6 md:grid-auto-fit md:grid-dense`
+                                    ? `grid grid-gap-6 xxxl:grid-gap-8 md:grid-auto-fit xxl:grid-auto-fit-wide md:grid-dense`
                                     : ``
                             } sm:grid-columns-1 grid-gap-5`}
                         >
@@ -115,13 +115,13 @@ const NamespacePage = ({ sidePanelMode, params }) => (
                                 listEntityType={entityTypes.DEPLOYMENT}
                                 pageEntityType={entityTypes.NAMESPACE}
                                 pageEntity={namespace}
-                                className="s-2"
+                                className="sx-2"
                             />
                             <ResourceRelatedResourceList
                                 listEntityType={entityTypes.SECRET}
                                 pageEntityType={entityTypes.NAMESPACE}
                                 pageEntity={namespace}
-                                className="s-2"
+                                className="sx-2"
                             />
                         </div>
                     </div>

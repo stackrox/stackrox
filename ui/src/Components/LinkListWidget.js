@@ -12,9 +12,10 @@ function getLI(item) {
     const content = item.link ? (
         <Link
             to={item.link}
-            className="font-600 text-base-600 hover:bg-primary-100 focus:bg-primary-100 focus:text-primary-700 hover:text-primary-700 leading-normal p-2 inline-block w-full"
+            title={item.label}
+            className="font-600 text-base-600 hover:bg-primary-100 focus:bg-primary-100 focus:text-primary-700 hover:text-primary-700 leading-normal px-2 inline-block w-full h-8 items-center flex"
         >
-            {item.label}
+            <span className="truncate w-full">{item.label}</span>
         </Link>
     ) : (
         item.label
@@ -22,7 +23,7 @@ function getLI(item) {
     return (
         <li
             key={item.label}
-            className="border-b border-base-300 truncate"
+            className="border-b border-base-300"
             style={{
                 columnBreakInside: 'avoid',
                 pageBreakInside: 'avoid'
@@ -40,7 +41,6 @@ const LinkListWidget = ({
     getHeadline,
     className,
     headerComponents,
-    numColumns,
     limit
 }) => (
     <Query query={query} variables={variables}>
@@ -51,7 +51,7 @@ const LinkListWidget = ({
             if (loading) {
                 contents = <Loader />;
             } else if (error) {
-                contents = <Message type="error" message="An error occured loading this data" />;
+                contents = <Message type="error" message="An error occurred loading this data" />;
             } else if (data) {
                 const items = processData(data);
 
@@ -62,7 +62,9 @@ const LinkListWidget = ({
                 headline = getHeadline(items);
                 contents = (
                     <ul
-                        className={`columns-${numColumns} list-reset p-3 pt-0 w-full leading-normal overflow-hidden`}
+                        className={`${
+                            items.length > 5 ? `columns-2` : `columns-1`
+                        } list-reset p-3 py-1 w-full leading-normal overflow-hidden`}
                     >
                         {items.slice(0, limit).map(item => getLI(item))}
                     </ul>
@@ -89,7 +91,6 @@ LinkListWidget.propTypes = {
     getHeadline: PropTypes.func,
     className: PropTypes.string,
     headerComponents: PropTypes.node,
-    numColumns: PropTypes.number,
     limit: PropTypes.number
 };
 
@@ -103,7 +104,6 @@ LinkListWidget.defaultProps = {
     },
     className: null,
     headerComponents: null,
-    numColumns: 1,
     limit: 10
 };
 

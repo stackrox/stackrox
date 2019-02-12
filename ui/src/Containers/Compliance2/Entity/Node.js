@@ -53,7 +53,7 @@ const NodePage = ({ sidePanelMode, params }) => (
                             style={{ '--min-tile-height': '190px' }}
                             className={`grid ${
                                 !sidePanelMode
-                                    ? `grid grid-gap-6 md:grid-auto-fit md:grid-dense`
+                                    ? `grid grid-gap-6 xxxl:grid-gap-8 md:grid-auto-fit xxl:grid-auto-fit-wide md:grid-dense`
                                     : ``
                             } sm:grid-columns-1 grid-gap-5`}
                         >
