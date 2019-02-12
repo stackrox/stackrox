@@ -1,14 +1,14 @@
 FROM alpine:3.9
 LABEL "com.vendor"="StackRox (support@stackrox.com)"
 
-RUN printf "http://apk.rox.systems/v3.8/main\\nhttp://apk.rox.systems/v3.8/community" > /etc/apk/repositories
+RUN printf "http://apk.rox.systems/v3.9/main\\nhttp://apk.rox.systems/v3.9/community" > /etc/apk/repositories
 
 # Pulled from https://github.com/connorgorman/telegraf/releases with the slimmed down version of telegraf
 RUN wget https://github.com/connorgorman/telegraf/releases/download/1.8.0%2B49-slim/telegraf -O /telegraf && chmod +x /telegraf
 
 RUN apk update && \
     apk add --no-cache \
-        ca-certificates=20171114-r3 \
+        ca-certificates=20190108-r0 \
         procps=3.3.15-r0 \
         && \
     apk --purge del apk-tools \
