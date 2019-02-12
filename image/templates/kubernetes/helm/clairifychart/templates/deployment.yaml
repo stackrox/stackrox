@@ -45,4 +45,5 @@ spec:
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
+          readOnlyRootFilesystem: true
       serviceAccount: clairify

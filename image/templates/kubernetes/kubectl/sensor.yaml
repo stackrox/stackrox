@@ -84,6 +84,7 @@ spec:
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
+          readOnlyRootFilesystem: true
         volumeMounts:
           - name: varlog
             mountPath: /var/log/stackrox/
@@ -225,6 +226,7 @@ spec:
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
+          readOnlyRootFilesystem: true
         volumeMounts:
           - name: monitoring-client-volume
             mountPath: /run/secrets/stackrox.io/monitoring/certs

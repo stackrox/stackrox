@@ -147,9 +147,9 @@ func deploymentHasReadOnlyRootFS(ctx framework.ComplianceContext, deployment *st
 		securityContext := container.GetSecurityContext()
 		readOnlyRootFS := securityContext.GetReadOnlyRootFilesystem()
 		if !readOnlyRootFS {
-			framework.Failf(ctx, "Deployment %s is using read-write filesystem", deployment.GetName())
+			framework.Failf(ctx, "Deployment %s (container %s) is using read-write filesystem", deployment.GetName(), container.GetName())
 		} else {
-			framework.Passf(ctx, "Deployment %s is using read-only filesystem", deployment.GetName())
+			framework.Passf(ctx, "Deployment %s (container %s) is using read-only filesystem", deployment.GetName(), container.GetName())
 		}
 	}
 }

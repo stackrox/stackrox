@@ -22,6 +22,10 @@ import (
 
 var (
 	log = logging.LoggerForModule()
+	// filter out all the containers with these labels
+	whiteListContainerWithLabels = map[string]string{
+		"com.stackrox.io/service": "compliance", // Ref: sensor/common/compliance/command_handler_impl.go:189
+	}
 )
 
 const requestTimeout = time.Second * 5
@@ -41,7 +45,7 @@ func main() {
 	}
 
 	var err error
-	msgReturn.DockerData, err = docker.GetDockerData()
+	msgReturn.DockerData, err = docker.GetDockerData(whiteListContainerWithLabels)
 	if err != nil {
 		log.Error(err)
 	}

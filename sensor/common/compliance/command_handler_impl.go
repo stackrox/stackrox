@@ -186,6 +186,7 @@ func (c *commandHandlerImpl) createService(scrapeID string) *orchestrators.Syste
 		GenerateName: scrapeServiceName,
 		ExtraPodLabels: map[string]string{
 			"compliance.stackrox.io/scrape-id": scrapeID,
+			"com.stackrox.io/service":          "compliance",
 		},
 		Command: []string{scrapeCommand},
 		Mounts:  scrapeMounts,

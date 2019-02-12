@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -69,7 +70,7 @@ func getClient() (*client.Client, error) {
 }
 
 // GetDockerData returns the marshaled JSON from scraping Docker
-func GetDockerData() (*compliance.GZIPDataChunk, error) {
+func GetDockerData(whiteListContainersWithLabels map[string]string) (*compliance.GZIPDataChunk, error) {
 	var dockerData docker.Data
 
 	client, err := getClient()
@@ -82,7 +83,7 @@ func GetDockerData() (*compliance.GZIPDataChunk, error) {
 		return nil, err
 	}
 
-	dockerData.Containers, err = getContainers(client)
+	dockerData.Containers, err = getContainers(client, whiteListContainersWithLabels)
 	if err != nil {
 		return nil, err
 	}
@@ -127,12 +128,17 @@ func inspectContainer(client *client.Client, id string) (types.ContainerJSON, er
 	return client.ContainerInspect(ctx, id)
 }
 
-func getContainers(c *client.Client) ([]docker.ContainerJSON, error) {
+func getContainers(c *client.Client, whiteListContainersWithLabels map[string]string) ([]docker.ContainerJSON, error) {
 	ctx, cancel := getContext()
 	defer cancel()
 
 	dockerRateLimiter.Wait(context.Background())
-	containerList, err := c.ContainerList(ctx, types.ContainerListOptions{All: true})
+	filterArgs := filters.NewArgs()
+	for key, val := range whiteListContainersWithLabels {
+		keyVal := fmt.Sprintf("%s=%s", key, val)
+		filterArgs.Add("label", keyVal)
+	}
+	containerList, err := c.ContainerList(ctx, types.ContainerListOptions{Filters: filterArgs})
 	if err != nil {
 		return nil, err
 	}

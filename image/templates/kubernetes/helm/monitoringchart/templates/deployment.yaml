@@ -35,6 +35,7 @@ spec:
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
+          readOnlyRootFilesystem: true
         volumeMounts:
           - name: influxdb-config-volume
             mountPath: /etc/influxdb/
@@ -80,6 +81,7 @@ spec:
         securityContext:
           capabilities:
             drop: ["NET_RAW"]
+          readOnlyRootFilesystem: true
         volumeMounts:
           - name: monitoring-ui-volume
             mountPath: /run/secrets/stackrox.io/monitoring/certs/
