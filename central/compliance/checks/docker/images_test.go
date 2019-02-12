@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/golang/mock/gomock"
@@ -31,8 +30,8 @@ func TestDockerImagesChecks(t *testing.T) {
 		{
 			name: "CIS_Docker_v1_1_0:4_6",
 			image: docker.ImageWrap{
-				Image: types.ImageInspect{
-					Config: &container.Config{},
+				Image: docker.ImageInspect{
+					Config: &docker.Config{},
 				},
 			},
 			status: framework.FailStatus,
@@ -40,8 +39,8 @@ func TestDockerImagesChecks(t *testing.T) {
 		{
 			name: "CIS_Docker_v1_1_0:4_6",
 			image: docker.ImageWrap{
-				Image: types.ImageInspect{
-					Config: &container.Config{
+				Image: docker.ImageInspect{
+					Config: &docker.Config{
 						Healthcheck: &container.HealthConfig{},
 					},
 				},

@@ -2,28 +2,27 @@ package docker
 
 import (
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 )
 
 // Data is the wrapper around all of the Docker info required for compliance
 type Data struct {
 	Info          types.Info
-	Containers    []types.ContainerJSON
+	Containers    []ContainerJSON
 	Images        []ImageWrap
 	BridgeNetwork types.NetworkResource
 }
 
 // ImageWrap is a wrapper around a docker image because normally the image doesn't give the history
 type ImageWrap struct {
-	Image   types.ImageInspect          `json:"image"`
+	Image   ImageInspect                `json:"image"`
 	History []image.HistoryResponseItem `json:"history"`
 }
 
 // Config returns an empty config if one does not exist or the config from the Image object
-func (i ImageWrap) Config() *container.Config {
+func (i ImageWrap) Config() *Config {
 	if i.Image.Config == nil {
-		return &container.Config{}
+		return &Config{}
 	}
 	return i.Image.Config
 }

@@ -31,6 +31,14 @@ var (
 	dockerRateLimiter = rate.NewLimiter(rate.Every(50*time.Millisecond), 1)
 )
 
+func marshalAndUnmarshal(in, out interface{}) error {
+	bytes, err := json.Marshal(in)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(bytes, out)
+}
+
 func getContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), timeout)
 }
@@ -119,7 +127,7 @@ func inspectContainer(client *client.Client, id string) (types.ContainerJSON, er
 	return client.ContainerInspect(ctx, id)
 }
 
-func getContainers(c *client.Client) ([]types.ContainerJSON, error) {
+func getContainers(c *client.Client) ([]docker.ContainerJSON, error) {
 	ctx, cancel := getContext()
 	defer cancel()
 
@@ -129,7 +137,7 @@ func getContainers(c *client.Client) ([]types.ContainerJSON, error) {
 		return nil, err
 	}
 
-	containers := make([]types.ContainerJSON, 0, len(containerList))
+	containers := make([]docker.ContainerJSON, 0, len(containerList))
 	for _, container := range containerList {
 		containerJSON, err := inspectContainer(c, container.ID)
 		if client.IsErrContainerNotFound(err) {
@@ -138,7 +146,12 @@ func getContainers(c *client.Client) ([]types.ContainerJSON, error) {
 		if err != nil {
 			return nil, err
 		}
-		containers = append(containers, containerJSON)
+
+		var containerJSONType docker.ContainerJSON
+		if err := marshalAndUnmarshal(&containerJSON, &containerJSONType); err != nil {
+			return nil, err
+		}
+		containers = append(containers, containerJSONType)
 	}
 	return containers, nil
 }
@@ -184,7 +197,13 @@ func getImages(c *client.Client) ([]docker.ImageWrap, error) {
 		if err != nil {
 			return nil, err
 		}
-		images = append(images, docker.ImageWrap{Image: image, History: histories})
+
+		var imageType docker.ImageInspect
+		if err := marshalAndUnmarshal(&image, &imageType); err != nil {
+			return nil, err
+		}
+
+		images = append(images, docker.ImageWrap{Image: imageType, History: histories})
 	}
 	return images, nil
 }
