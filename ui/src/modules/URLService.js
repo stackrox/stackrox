@@ -54,7 +54,7 @@ function getPath(context, pageType, urlParams) {
     if (context === contextTypes.SECRET) {
         params.secretId = params.entityId;
     } else if (context === contextTypes.RISK) {
-        params.deploymentId = params.entityid;
+        params.deploymentId = params.entityId;
     }
 
     if (isResourceType) {
