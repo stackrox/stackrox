@@ -109,11 +109,11 @@ class URLSearchInput extends Component {
         const queryStringOptions = [];
         const queryJSON = queryString.parse(search, { ignoreQueryPrefix: true });
         Object.keys(queryJSON).forEach(key => {
-            if (
-                this.props.categoryOptions.find(category => category === key) ||
-                key === 'groupBy'
-            ) {
-                queryStringOptions.push(this.createCategoryOption(key));
+            const matchedOptionKey = this.props.categoryOptions.find(
+                category => category.toLowerCase() === key.toLowerCase()
+            );
+            if (matchedOptionKey) {
+                queryStringOptions.push(this.createCategoryOption(matchedOptionKey));
                 const value = queryJSON[key];
                 if (Array.isArray(value)) {
                     value.forEach(v => {
