@@ -3,13 +3,15 @@ package handlers
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
+	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
+	"github.com/stackrox/rox/central/globaldb/export"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -18,37 +20,17 @@ var (
 )
 
 const (
-	dbFileFormat = "stackrox_2006_01_02_15_04_05.db"
-
-	tempUploadName = "stackrox_temp.db"
+	dbFileFormat = "stackrox_db_2006_01_02_15_04_05.zip"
 )
 
-// BackupDB is a handler that writes a consistent view of the database to the HTTP response.
-func BackupDB(db *bolt.DB) http.Handler {
-	return serializeDB(db, "")
+// BackupDB is a handler that writes a consistent view of the databases to the HTTP response.
+func BackupDB(boltDB *bolt.DB, badgerDB *badger.DB) http.Handler {
+	return serializeDB(boltDB, badgerDB, false)
 }
 
-// ExportDB is a handler that writes a consistent view of the database without secrets to the HTTP response.
-func ExportDB(db *bolt.DB) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-
-		exportedFilepath := filepath.Join(filepath.Dir(db.Path()), "exported.db")
-		compactedFilepath := filepath.Join(filepath.Dir(db.Path()), "compacted.db")
-
-		db, err := export(db, exportedFilepath, compactedFilepath)
-		if err != nil {
-			handleError(w, err)
-			return
-		}
-
-		serializeDB(db, compactedFilepath).ServeHTTP(w, req)
-	})
-}
-
-func undoRestore(dst, src string) {
-	if err := os.Rename(src, dst); err != nil {
-		log.Errorf("Error undoing restore: %v", err)
-	}
+// ExportDB is a handler that writes a consistent view of the databases without secrets to the HTTP response.
+func ExportDB(boltDB *bolt.DB, badgerDB *badger.DB) http.Handler {
+	return serializeDB(boltDB, badgerDB, true)
 }
 
 func logAndWriteErrorMsg(w http.ResponseWriter, code int, t string, args ...interface{}) {
@@ -66,80 +48,84 @@ func deferredExit(code int) {
 }
 
 // RestoreDB is a handler that takes in a DB and restores Central to it
-func RestoreDB(db *bolt.DB) http.Handler {
+func RestoreDB(boltDB *bolt.DB, badgerDB *badger.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		dbPath := db.Path()
-
-		dir := filepath.Dir(dbPath)
-		tempUploadPath := filepath.Join(dir, tempUploadName)
-
-		// Write the new file and try and open it, returning an error if unsuccessful
-		file, err := os.Create(tempUploadPath)
+		tempFile, err := ioutil.TempFile("", "dbrestore-")
 		if err != nil {
-			logAndWriteErrorMsg(w, http.StatusInternalServerError, "creating db %q: %v", dbPath, err)
+			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not create temporary file for DB upload: %v", err)
 			return
 		}
-		if _, err := io.Copy(file, req.Body); err != nil {
-			os.Remove(tempUploadPath)
-			logAndWriteErrorMsg(w, http.StatusInternalServerError, "error copying added file: %v", err)
+		defer os.Remove(tempFile.Name())
+		defer tempFile.Close()
+
+		if _, err := io.Copy(tempFile, req.Body); err != nil {
+			req.Body.Close()
+			logAndWriteErrorMsg(w, http.StatusInternalServerError, "error storing upload in temporary location: %v", err)
+			return
+		}
+		req.Body.Close()
+
+		if _, err := tempFile.Seek(0, 0); err != nil {
+			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not rewind to beginning of temporary file: %v", err)
 			return
 		}
 
-		if _, err := bolt.Open(tempUploadPath, 0600, nil); err != nil {
-			os.Remove(tempUploadPath)
-			logAndWriteErrorMsg(w, http.StatusBadRequest, "unable to open file to restore: %v", err)
+		if err := export.Restore(tempFile); err != nil {
+			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not restore database backup: %v", err)
 			return
 		}
 
 		// Now that we have verified the uploaded DB, close the current DB
 		// Do two renames and bounce Central
 		defer deferredExit(1)
-		if err := db.Close(); err != nil {
-			log.Errorf("unable to close DB: %v", err)
-			return
+
+		if err := boltDB.Close(); err != nil {
+			log.Errorf("unable to close bolt DB: %v", err)
+		}
+		if err := badgerDB.Close(); err != nil {
+			log.Errorf("unable to close badger DB: %v", err)
 		}
 
-		// Backup the DB to a new path
-		replacementPath := filepath.Join(filepath.Dir(dbPath), "replaced_"+filepath.Base(dbPath))
-		if err := os.Rename(dbPath, replacementPath); err != nil {
-			logAndWriteErrorMsg(w, http.StatusInternalServerError, "unable to rename %q: %v", dbPath, err)
-			return
-		}
-
-		if err := os.Rename(tempUploadPath, dbPath); err != nil {
-			undoRestore(dbPath, replacementPath)
-			logAndWriteErrorMsg(w, http.StatusInternalServerError, "unable to rename uploaded file %q: %v", tempUploadPath, err)
-			return
-		}
 		log.Infof("Bouncing Central to pick up newly imported DB")
 		deferredExit(0)
 	})
 }
 
-func serializeDB(db *bolt.DB, removalPath string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+func serializeDB(boltDB *bolt.DB, badgerDB *badger.DB, scrubSecrets bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
 		filename := time.Now().Format(dbFileFormat)
-		// This will block all other transactions until this has completed. We could use View for a hot backup
-		err := db.Update(func(tx *bolt.Tx) error {
-			w.Header().Set("Content-Type", "application/octet-stream")
-			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%v\"", filename))
-			w.Header().Set("Content-Length", strconv.Itoa(int(tx.Size())))
-			_, err := tx.WriteTo(w)
-			return err
-		})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		if removalPath != "" {
-			db.Close()
-			if err := os.Remove(removalPath); err != nil {
-				log.Error(err)
-			}
-		}
-	})
-}
 
-func handleError(w http.ResponseWriter, err error) {
-	log.Error(err)
-	http.Error(w, err.Error(), http.StatusInternalServerError)
+		tempFile, err := ioutil.TempFile("", "db-backup-")
+		if err != nil {
+			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not create temporary ZIP file for database export: %v", err)
+		}
+		defer os.Remove(tempFile.Name())
+		defer tempFile.Close()
+
+		if err := export.Backup(boltDB, badgerDB, tempFile, scrubSecrets); err != nil {
+			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not create database backup: %v", err)
+			return
+		}
+
+		size, err := tempFile.Seek(0, 1)
+		if err != nil {
+			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not determine size of database backup: %v", err)
+			return
+		}
+
+		_, err = tempFile.Seek(0, 0)
+		if err != nil {
+			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not rewind to beginning of backup file: %v", err)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/zip")
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+		w.Header().Set("Content-Length", strconv.Itoa(int(size)))
+
+		if _, err := io.Copy(w, tempFile); err != nil {
+			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not copy to output stream: %v", err)
+			return
+		}
+	}
 }

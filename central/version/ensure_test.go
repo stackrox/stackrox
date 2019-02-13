@@ -3,9 +3,11 @@ package version
 import (
 	"testing"
 
+	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/version/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -19,26 +21,29 @@ func TestEnsurer(t *testing.T) {
 type EnsurerTestSuite struct {
 	suite.Suite
 
-	db           *bolt.DB
+	boltDB       *bolt.DB
+	badgerDB     *badger.DB
 	versionStore store.Store
 }
 
 func (suite *EnsurerTestSuite) SetupTest() {
-	db, err := bolthelper.NewTemp(testutils.DBFileName(suite.Suite))
-	if err != nil {
-		suite.FailNow("Failed to make BoltDB", err.Error())
-	}
+	boltDB, err := bolthelper.NewTemp(testutils.DBFileName(suite.Suite))
+	suite.Require().NoError(err, "Failed to make BoltDB")
 
-	suite.db = db
-	suite.versionStore = store.New(db)
+	badgerDB, _, err := badgerhelper.NewTemp(suite.T().Name())
+	suite.Require().NoError(err, "Failed to create BadgerDB")
+
+	suite.boltDB = boltDB
+	suite.badgerDB = badgerDB
+	suite.versionStore = store.New(boltDB, badgerDB)
 }
 
 func (suite *EnsurerTestSuite) TearDownTest() {
-	suite.NoError(suite.db.Close())
+	suite.NoError(suite.boltDB.Close())
 }
 
 func (suite *EnsurerTestSuite) TestWithEmptyDB() {
-	suite.NoError(Ensure(suite.db))
+	suite.NoError(Ensure(suite.boltDB, suite.badgerDB))
 	version, err := suite.versionStore.GetVersion()
 	suite.NoError(err)
 	suite.Equal(migrations.CurrentDBVersionSeqNum, int(version.GetSeqNum()))
@@ -46,7 +51,7 @@ func (suite *EnsurerTestSuite) TestWithEmptyDB() {
 
 func (suite *EnsurerTestSuite) TestWithCurrentVersion() {
 	suite.NoError(suite.versionStore.UpdateVersion(&storage.Version{SeqNum: migrations.CurrentDBVersionSeqNum}))
-	suite.NoError(Ensure(suite.db))
+	suite.NoError(Ensure(suite.boltDB, suite.badgerDB))
 
 	version, err := suite.versionStore.GetVersion()
 	suite.NoError(err)
@@ -55,5 +60,5 @@ func (suite *EnsurerTestSuite) TestWithCurrentVersion() {
 
 func (suite *EnsurerTestSuite) TestWithIncorrectVersion() {
 	suite.NoError(suite.versionStore.UpdateVersion(&storage.Version{SeqNum: migrations.CurrentDBVersionSeqNum - 2}))
-	suite.Error(Ensure(suite.db))
+	suite.Error(Ensure(suite.boltDB, suite.badgerDB))
 }

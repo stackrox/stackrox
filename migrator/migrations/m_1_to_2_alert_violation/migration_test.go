@@ -1,4 +1,4 @@
-package migrations
+package m1to2
 
 import (
 	"os"
@@ -111,7 +111,7 @@ func (suite *Migration1To2TestSuite) TestWithOnlyNormalAlerts() {
 		suite.mustInsertAlert(getNormalAlert(id))
 	}
 
-	suite.NoError(alertViolationMigration.Run(suite.db))
+	suite.NoError(alertViolationMigration.Run(suite.db, nil))
 
 	for _, id := range ids {
 		got := suite.mustGetAlert(id)
@@ -125,7 +125,7 @@ func (suite *Migration1To2TestSuite) TestWithProcessAlerts() {
 		suite.mustInsertAlert(getLegacyAlertWithProcesses(id))
 	}
 
-	suite.NoError(alertViolationMigration.Run(suite.db))
+	suite.NoError(alertViolationMigration.Run(suite.db, nil))
 
 	for _, id := range processIDs {
 		got := suite.mustGetAlert(id)
@@ -143,7 +143,7 @@ func (suite *Migration1To2TestSuite) TestWithBothKindsOfAlerts() {
 		suite.mustInsertAlert(getLegacyAlertWithProcesses(id))
 	}
 
-	suite.NoError(alertViolationMigration.Run(suite.db))
+	suite.NoError(alertViolationMigration.Run(suite.db, nil))
 	for _, id := range processIDs {
 		got := suite.mustGetAlert(id)
 		suite.Equal(getNewStyleAlertWithProcesses(id), got)

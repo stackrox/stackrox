@@ -1,10 +1,11 @@
-package store
+package bolt
 
 import (
 	"fmt"
 	"math"
 	"testing"
 
+	"github.com/stackrox/rox/central/networkflow/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/logging"
@@ -36,7 +37,7 @@ func getFlows(maxNetworkFlows int) []*storage.NetworkFlow {
 	return flows
 }
 
-func preloadDB(t require.TestingT, preload int) (int, FlowStore) {
+func preloadDB(t require.TestingT, preload int) (int, store.FlowStore) {
 	boltdb, err := bolthelper.NewTemp("bench_test.db")
 	require.NoError(t, err)
 

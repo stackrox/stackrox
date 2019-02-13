@@ -14,6 +14,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:386e5a632be2aa525a327e13694bd22bde42fe6fe925c3bfef89b59c6e10b08f"
+  name = "github.com/AndreasBriese/bbloom"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "343706a395b76e5ca5c7dca46a5d937b48febc74"
+
+[[projects]]
+  branch = "master"
   digest = "1:81f8c061c3d18ed1710957910542bc17d2b789c6cd19e0f654c30b35fd255ca5"
   name = "github.com/Azure/go-ansiterm"
   packages = [
@@ -343,6 +351,28 @@
   version = "v1.7.1"
 
 [[projects]]
+  digest = "1:489d1165704f65ea260ff407954cf4cae01787c35a63c8dc4c2586d36e791b6f"
+  name = "github.com/dgraph-io/badger"
+  packages = [
+    ".",
+    "options",
+    "pb",
+    "skl",
+    "table",
+    "y",
+  ]
+  pruneopts = "NUT"
+  revision = "28ef9bfd243809d6f4abc7dfa1ad92984eac9b66"
+
+[[projects]]
+  branch = "master"
+  digest = "1:732f1ecc44c3c405aabbca2a319763d77586f0fed9f9c6bca6c82d24c6ebf8d1"
+  name = "github.com/dgryski/go-farm"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "034397ccbc02fb560575f7319909cc7683ab0461"
+
+[[projects]]
   digest = "1:308c92bf62537868fb4553c640c3c7844e73112efff617ae954746463f9c1f41"
   name = "github.com/docker/distribution"
   packages = [
@@ -449,6 +479,14 @@
   packages = ["."]
   pruneopts = "NUT"
   revision = "aabc10ec26b754e797f9028f4589c5b7bd90dc20"
+
+[[projects]]
+  digest = "1:b7ffca49e9cfd3dfb04a8e0a59347708c6f78f68476a32c5e0a0edca5d1b258c"
+  name = "github.com/dustin/go-humanize"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "9f541cc9db5d55bce703bd99987c9d5cb8eea45e"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -1832,6 +1870,7 @@
     "github.com/coreos/go-oidc",
     "github.com/coreos/go-systemd/dbus",
     "github.com/deckarep/golang-set",
+    "github.com/dgraph-io/badger",
     "github.com/docker/distribution/manifest/schema1",
     "github.com/docker/distribution/manifest/schema2",
     "github.com/docker/distribution/reference",

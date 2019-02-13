@@ -210,3 +210,7 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
 [[constraint]]
   name = "github.com/mailru/easyjson"
   branch = "master"
+
+[[constraint]]
+  name = "github.com/dgraph-io/badger"
+  revision = "28ef9bfd243809d6f4abc7dfa1ad92984eac9b66"

@@ -8,15 +8,17 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	bolt "github.com/etcd-io/bbolt"
+	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/secondarykey"
 )
 
 const (
-	dbMountPath = "/var/lib/stackrox"
-	dbFileName  = "stackrox.db"
-	txMaxSize   = 65536
+	// DBFileName is the name of the file (within `migrations.DBMountPath`) containing the Bolt database.
+	DBFileName = "stackrox.db"
+	txMaxSize  = 65536
 )
 
 // New returns an instance of the persistent BoltDB store
@@ -40,7 +42,7 @@ func New(path string) (*bolt.DB, error) {
 
 // NewWithDefaults returns an instance of the persistent BoltDB store with default values loaded.
 func NewWithDefaults() (*bolt.DB, error) {
-	db, err := New(filepath.Join(dbMountPath, dbFileName))
+	db, err := New(filepath.Join(migrations.DBMountPath, DBFileName))
 	if err != nil {
 		return db, err
 	}
@@ -54,7 +56,7 @@ func NewTemp(dbPath string) (*bolt.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return New(filepath.Join(tmpDir, dbPath))
+	return New(filepath.Join(tmpDir, strings.Replace(dbPath, "/", "_", -1)))
 }
 
 // RegisterBucket registers a new bucket in the global DB.

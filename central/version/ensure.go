@@ -3,6 +3,7 @@ package version
 import (
 	"fmt"
 
+	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/version/store"
@@ -21,11 +22,11 @@ var (
 // It will returns an error if the DB is of an old version.
 // If Ensure returns an error, the state of the DB is undefined, and it is not safe for Central to try to
 // function normally.
-func Ensure(db *bolt.DB) error {
-	versionStore := store.New(db)
+func Ensure(boltDB *bolt.DB, badgerDB *badger.DB) error {
+	versionStore := store.New(boltDB, badgerDB)
 	version, err := versionStore.GetVersion()
 	if err != nil {
-		return fmt.Errorf("failed to read version from DB: %vs", err)
+		return fmt.Errorf("failed to read version from DB: %v", err)
 	}
 
 	// No version in the DB. This means that we're starting from scratch, with a blank DB, so we can just

@@ -1,4 +1,4 @@
-package store
+package bolt
 
 import (
 	"os"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	bolt "github.com/etcd-io/bbolt"
+	"github.com/stackrox/rox/central/networkflow/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -21,7 +22,7 @@ type FlowStoreTestSuite struct {
 	suite.Suite
 
 	db     *bolt.DB
-	tested FlowStore
+	tested store.FlowStore
 }
 
 func (suite *FlowStoreTestSuite) SetupSuite() {

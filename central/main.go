@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime/debug"
 	"syscall"
 	"time"
@@ -84,6 +85,7 @@ import (
 	authzUser "github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/ui"
 )
@@ -107,6 +109,10 @@ const (
 
 func main() {
 	ensureDB()
+
+	// Now that we verified that the DB can be loaded, remove the .backup directory
+	os.RemoveAll(filepath.Join(migrations.DBMountPath, ".backup"))
+
 	go startGRPCServer()
 
 	signalsC := make(chan os.Signal, 1)
@@ -115,7 +121,7 @@ func main() {
 }
 
 func ensureDB() {
-	err := version.Ensure(globaldb.GetGlobalDB())
+	err := version.Ensure(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB())
 	if err != nil {
 		log.Panicf("DB version check failed. You may need to run migrations: %v", err)
 	}
@@ -266,19 +272,19 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/db/backup",
 			Authorizer:    authzUser.With(allResourcesViewPermissions()...),
-			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB()),
+			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB()),
 			Compression:   true,
 		},
 		{
 			Route:         "/db/export",
 			Authorizer:    authzUser.With(allResourcesViewPermissions()...),
-			ServerHandler: globaldbHandlers.ExportDB(globaldb.GetGlobalDB()),
+			ServerHandler: globaldbHandlers.ExportDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB()),
 			Compression:   true,
 		},
 		{
 			Route:         "/db/restore",
 			Authorizer:    authzUser.With(allResourcesModifyPermissions()...),
-			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB()),
+			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB()),
 		},
 		{
 			Route:         "/metrics",

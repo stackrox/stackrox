@@ -21,6 +21,7 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
+	networkFlowStoreSingleton "github.com/stackrox/rox/central/networkflow/store/singleton"
 	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
 	nodeStore "github.com/stackrox/rox/central/node/globalstore"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
@@ -70,7 +71,7 @@ func New() *Resolver {
 		GroupDataStore:        groupDataStore.Singleton(),
 		NamespaceDataStore:    namespaceDataStore.Singleton(),
 		NetworkPoliciesStore:  networkPoliciesStore.Singleton(),
-		NetworkFlowStore:      networkFlowStore.Singleton(),
+		NetworkFlowStore:      networkFlowStoreSingleton.Singleton(),
 		NodeGlobalStore:       nodeStore.Singleton(),
 		NotifierStore:         notifierStore.Singleton(),
 		PolicyDataStore:       policyDatastore.Singleton(),

@@ -1098,3 +1098,12 @@ dependencies:
       LICENSE: 87baa92c3100cf37441761262d622db99492ee386a063460d4676143db49af57
     attribution:
       - Mail.Ru Group
+
+  vendor/github.com/dgraph-io/badger:
+    url: "https://github.com/dgraph-io/badger"
+    license: Apache-2.0
+    files:
+      LICENSE: a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9
+    attribution:
+    - Dgraph Labs, Inc. and Contributors
+

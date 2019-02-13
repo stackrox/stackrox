@@ -3,7 +3,7 @@ package networkflowupdate
 import (
 	"sync"
 
-	"github.com/stackrox/rox/central/networkflow/store"
+	networkFlowStoreSingleton "github.com/stackrox/rox/central/networkflow/store/singleton"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 )
 
@@ -14,7 +14,7 @@ var (
 )
 
 func initialize() {
-	pi = NewFactory(store.Singleton())
+	pi = NewFactory(networkFlowStoreSingleton.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

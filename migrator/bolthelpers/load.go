@@ -7,17 +7,17 @@ import (
 	"path/filepath"
 
 	bolt "github.com/etcd-io/bbolt"
+	"github.com/stackrox/rox/pkg/migrations"
 )
 
 const (
-	dbMountPath = "/var/lib/stackrox"
-	dbFileName  = "stackrox.db"
+	dbFileName = "stackrox.db"
 )
 
 // Load loads an instance of Bolt from disk.
 // It returns nil and no error if no DB is found in the expected location; the caller MUST check for this.
 func Load() (*bolt.DB, error) {
-	dbPath := filepath.Join(dbMountPath, dbFileName)
+	dbPath := filepath.Join(migrations.DBMountPath, dbFileName)
 	_, err := os.Stat(dbPath)
 	if os.IsNotExist(err) {
 		return nil, nil

@@ -1,8 +1,10 @@
-package migrations
+package m0tom1
 
 import (
+	"github.com/dgraph-io/badger"
 	"github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
 )
 
@@ -14,7 +16,7 @@ var (
 	// about what the DB will look like, since this can be called from any version starting from 2.3.11 to 2.13.15.
 	migration23To24 = types.Migration{
 		StartingSeqNum: 0,
-		Run: func(db *bbolt.DB) error {
+		Run: func(db *bbolt.DB, _ *badger.DB) error {
 			return db.Update(func(tx *bbolt.Tx) error {
 				_, err := tx.CreateBucketIfNotExists(versionBucket)
 				return err
@@ -25,5 +27,5 @@ var (
 )
 
 func init() {
-	mustRegisterMigration(migration23To24)
+	migrations.MustRegisterMigration(migration23To24)
 }

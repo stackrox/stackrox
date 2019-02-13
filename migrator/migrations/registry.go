@@ -10,8 +10,8 @@ var (
 	migrationRegistry = make(map[int]types.Migration)
 )
 
-// mustRegisterMigration registers a Migration, panic-ing if there's an error.
-func mustRegisterMigration(m types.Migration) {
+// MustRegisterMigration registers a Migration, panic-ing if there's an error.
+func MustRegisterMigration(m types.Migration) {
 	if _, ok := migrationRegistry[m.StartingSeqNum]; ok {
 		panic(fmt.Sprintf("Found multiple migrations starting at seq num %d", m.StartingSeqNum))
 	}

@@ -8,7 +8,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/golang/mock/gomock"
 	dDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
+	networkFlowStore "github.com/stackrox/rox/central/networkflow/store/mocks"
 	npGraphMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -37,7 +37,7 @@ func (suite *NetworkGraphServiceTestSuite) SetupTest() {
 
 	suite.db = db
 
-	clusterStore := networkFlowStore.NewClusterStore(db)
+	clusterStore := networkFlowStore.NewMockClusterStore(suite.mockCtrl)
 	suite.evaluator = npGraphMocks.NewMockEvaluator(suite.mockCtrl)
 
 	suite.tested = New(clusterStore, suite.deployments, suite.evaluator)

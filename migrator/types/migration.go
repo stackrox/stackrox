@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -14,7 +15,7 @@ type Migration struct {
 	// It can safely assume that, if it has been called, the DB is of the version it expects
 	// It is also NOT responsible for writing the updated version to the DB on conclusion -- that logic
 	// exists in the runner, and does not need to be included in every migration.
-	Run func(db *bolt.DB) error
+	Run func(boltDB *bolt.DB, badgerDB *badger.DB) error
 	// The VersionAfter is the version put into the DB after the migration runs.
 	// The seq num in VersionAfter MUST be one greater than the StartingSeqNum of this migration.
 	// All other (optional) metadata can be whatever the user desires, and has no bearing on the

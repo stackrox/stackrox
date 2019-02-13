@@ -27,11 +27,3 @@ func GetGlobalDB() *bolt.DB {
 	once.Do(initialize)
 	return globalDB
 }
-
-// Close closes the global db. Should only be used at central shutdown time.
-func Close() {
-	once.Do(initialize)
-	if err := globalDB.Close(); err != nil {
-		logger.Errorf("unable to close bolt db: %s", err)
-	}
-}

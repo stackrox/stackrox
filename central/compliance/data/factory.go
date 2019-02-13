@@ -8,6 +8,7 @@ import (
 	imageStore "github.com/stackrox/rox/central/image/datastore"
 	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
+	networkFlowStoreSingleton "github.com/stackrox/rox/central/networkflow/store/singleton"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
@@ -45,7 +46,7 @@ func NewDefaultFactory() RepositoryFactory {
 		imageStore:            imageStore.Singleton(),
 		imageIntegrationStore: imageIntegrationStore.Singleton(),
 		processIndicatorStore: processIndicatorStore.Singleton(),
-		networkFlowStore:      networkFlowStore.Singleton(),
+		networkFlowStore:      networkFlowStoreSingleton.Singleton(),
 		notifierStore:         notifierStore.Singleton(),
 		complianceStore:       complianceStore.Singleton(),
 		standardsRepo:         standards.RegistrySingleton(),

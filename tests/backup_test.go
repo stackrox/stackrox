@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"archive/zip"
 	"context"
 	"crypto/tls"
 	"io"
@@ -44,9 +45,9 @@ func TestBackup(t *testing.T) {
 
 	checkDeploymentExists(t)
 
-	out, err := os.Create("backup.db")
+	out, err := os.Create("backup.zip")
 	require.NoError(t, err)
-	defer os.Remove("backup.db")
+	defer os.Remove("backup.zip")
 
 	client := &http.Client{
 		Timeout: 10 * time.Second,
@@ -68,6 +69,31 @@ func TestBackup(t *testing.T) {
 	require.NoError(t, err)
 
 	out.Close()
+
+	zipFile, err := zip.OpenReader("backup.zip")
+	require.NoError(t, err)
+	defer zipFile.Close()
+
+	var boltFileEntry *zip.File
+	for _, f := range zipFile.File {
+		if f.Name == "bolt.db" {
+			boltFileEntry = f
+			break
+		}
+	}
+	require.NotNil(t, boltFileEntry)
+
+	boltFile, err := boltFileEntry.Open()
+	require.NoError(t, err)
+
+	boltOut, err := os.Create("backup.db")
+	require.NoError(t, err)
+	defer os.Remove("backup.db")
+
+	_, err = io.Copy(boltOut, boltFile)
+	require.NoError(t, err)
+	require.NoError(t, boltFile.Close())
+	require.NoError(t, boltOut.Close())
 
 	b, err := bolthelper.New("backup.db")
 	require.NoError(t, err)

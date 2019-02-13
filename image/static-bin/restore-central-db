@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -e
+
+if [ -d "/var/lib/stackrox/.restore" ]; then
+	echo "Database restore directory found. Moving database files to their desired location."
+	mkdir /var/lib/stackrox/.backup
+	mv /var/lib/stackrox/* /var/lib/stackrox/.backup  # this will ignire hidden directories such as .backup and .restore.
+	mv /var/lib/stackrox/.restore/* /var/lib/stackrox/
+	rmdir /var/lib/stackrox/.restore
+else
+	echo "No database restore directory found."
+fi

@@ -1,12 +1,14 @@
-package migrations
+package m1to2
 
 import (
 	"fmt"
 
+	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
+	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
 )
 
@@ -16,7 +18,7 @@ var (
 	alertViolationMigration = types.Migration{
 		StartingSeqNum: 1,
 		VersionAfter:   storage.Version{SeqNum: 2},
-		Run: func(db *bolt.DB) error {
+		Run: func(db *bolt.DB, _ *badger.DB) error {
 			alertsBucket := bolthelpers.TopLevelRef(db, alertsBucket)
 			modifiedAlertBytes := make(map[string][]byte)
 			err := alertsBucket.View(func(b *bolt.Bucket) error {
@@ -66,5 +68,5 @@ var (
 )
 
 func init() {
-	mustRegisterMigration(alertViolationMigration)
+	migrations.MustRegisterMigration(alertViolationMigration)
 }

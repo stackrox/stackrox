@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
+	networkFlowStoreSingleton "github.com/stackrox/rox/central/networkflow/store/singleton"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 )
 
@@ -15,7 +15,7 @@ var (
 )
 
 func initialize() {
-	as = New(networkFlowStore.Singleton(), deploymentDataStore.Singleton(), graph.Singleton())
+	as = New(networkFlowStoreSingleton.Singleton(), deploymentDataStore.Singleton(), graph.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

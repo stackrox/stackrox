@@ -1,6 +1,7 @@
 package store
 
 import (
+	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -20,7 +21,7 @@ type Store interface {
 }
 
 // New returns a new ready-to-use store.
-func New(db *bolt.DB) Store {
-	bolthelper.RegisterBucketOrPanic(db, versionBucket)
-	return &storeImpl{bucketRef: bolthelper.TopLevelRef(db, versionBucket)}
+func New(boltDB *bolt.DB, badgerDB *badger.DB) Store {
+	bolthelper.RegisterBucketOrPanic(boltDB, versionBucket)
+	return &storeImpl{bucketRef: bolthelper.TopLevelRef(boltDB, versionBucket), badgerDB: badgerDB}
 }

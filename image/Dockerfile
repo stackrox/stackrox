@@ -27,6 +27,7 @@ COPY ./bin/central /stackrox/
 COPY ./bin/compliance /stackrox/compliance
 COPY ./bin/roxctl* /assets/downloads/cli/
 COPY ./bin/kubernetes-sensor /stackrox/
+COPY ./static-bin/* /stackrox/
 COPY ./ui/build  /ui/
 COPY ./docs/api/v1/swagger.json /docs/api/v1/swagger.json
 
@@ -50,3 +51,6 @@ VOLUME /tmp/search
 VOLUME /var/lib/stackrox
 # The log file is stored at this path
 VOLUME /var/log/stackrox
+
+# /tmp needs to be a read-write filesystem.
+VOLUME /tmp
