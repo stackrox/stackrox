@@ -21,4 +21,5 @@ func init() {
 func clusterIsCompliant(ctx framework.ComplianceContext) {
 	common.CheckImageScannerInUseByCluster(ctx)
 	common.CheckImageScannerWasUsed(ctx)
+	common.CheckRuntimeSupportInCluster(ctx)
 }

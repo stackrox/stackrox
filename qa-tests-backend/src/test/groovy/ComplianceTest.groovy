@@ -70,11 +70,13 @@ class ComplianceTest extends BaseSpecification {
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
                 new Control(
                         "HIPAA_164:308_a_3_ii_a",
-                        ["StackRox gives you a visual representation of network and service topology."],
+                        ["StackRox collects runtime process information and network flow data. This data is used to " +
+                          "render a visual representation of network and service topology."],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
                 new Control(
                         "HIPAA_164:310_d",
-                        ["StackRox provides a view of both active network connections and network policy effects."],
+                        ["StackRox collects runtime process information and network flow data. This data is used to " +
+                          "render a visual representation of network and service topology."],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
         ]
 

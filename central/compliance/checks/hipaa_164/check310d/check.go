@@ -1,6 +1,7 @@
 package check310d
 
 import (
+	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 )
 
@@ -13,9 +14,5 @@ func init() {
 			Scope:              framework.ClusterKind,
 			InterpretationText: interpretationText,
 		},
-		clusterIsCompliant)
-}
-
-func clusterIsCompliant(ctx framework.ComplianceContext) {
-	framework.Pass(ctx, passText())
+		common.CheckRuntimeSupportInCluster)
 }

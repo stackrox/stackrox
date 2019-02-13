@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
@@ -54,8 +55,11 @@ func (s *suiteImpl) TestFail() {
 	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
+	data.EXPECT().Cluster().AnyTimes().Return(s.cluster())
 	data.EXPECT().ImageIntegrations().AnyTimes().Return(imageIntegrations)
 	data.EXPECT().Images().AnyTimes().Return(images)
+	data.EXPECT().ProcessIndicators().AnyTimes().Return(nil)
+	data.EXPECT().NetworkFlows().AnyTimes().Return(nil)
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
@@ -69,8 +73,9 @@ func (s *suiteImpl) TestFail() {
 	s.NotNil(checkResults)
 
 	s.NoError(checkResults.Error())
-	s.Len(checkResults.Evidence(), 2)
+	s.Len(checkResults.Evidence(), 3)
 	s.Equal(framework.FailStatus, checkResults.Evidence()[0].Status)
+	s.Equal(framework.FailStatus, checkResults.Evidence()[1].Status)
 	s.Equal(framework.FailStatus, checkResults.Evidence()[1].Status)
 }
 
@@ -103,10 +108,23 @@ func (s *suiteImpl) TestPass() {
 			},
 		},
 	}
+	processIndicators := []*storage.ProcessIndicator{
+		{
+			ContainerName: "foo",
+		},
+	}
+	flows := []*storage.NetworkFlow{
+		{
+			LastSeenTimestamp: types.TimestampNow(),
+		},
+	}
 
 	data := mocks.NewMockComplianceDataRepository(s.mockCtrl)
+	data.EXPECT().Cluster().AnyTimes().Return(s.cluster())
 	data.EXPECT().ImageIntegrations().AnyTimes().Return(imageIntegrations)
 	data.EXPECT().Images().AnyTimes().Return(images)
+	data.EXPECT().ProcessIndicators().AnyTimes().Return(processIndicators)
+	data.EXPECT().NetworkFlows().AnyTimes().Return(flows)
 
 	run, err := framework.NewComplianceRun(check)
 	s.NoError(err)
@@ -118,11 +136,11 @@ func (s *suiteImpl) TestPass() {
 	results := run.GetAllResults()
 	checkResults := results[checkID]
 	s.NotNil(checkResults)
-
 	s.NoError(checkResults.Error())
-	s.Len(checkResults.Evidence(), 2)
+	s.Len(checkResults.Evidence(), 3)
 	s.Equal(framework.PassStatus, checkResults.Evidence()[0].Status)
 	s.Equal(framework.PassStatus, checkResults.Evidence()[1].Status)
+	s.Equal(framework.PassStatus, checkResults.Evidence()[2].Status)
 }
 
 // Helper functions for test data.
@@ -137,6 +155,7 @@ func (s *suiteImpl) verifyCheckRegistered() framework.Check {
 
 func (s *suiteImpl) cluster() *storage.Cluster {
 	return &storage.Cluster{
-		Id: uuid.NewV4().String(),
+		Id:             uuid.NewV4().String(),
+		RuntimeSupport: true,
 	}
 }

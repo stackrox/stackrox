@@ -1,8 +1,3 @@
 package check310d
 
-var interpretationText = `StackRox continuous monitors network communication, as well as helps you manage the effects
-and implementation of network policies.`
-
-func passText() string {
-	return "StackRox provides a view of both active network connections and network policy effects."
-}
+var interpretationText = `StackRox collects runtime process information and network flow data. This data is used to render a visual representation of network and service topology.`
