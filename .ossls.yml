@@ -1090,3 +1090,11 @@ dependencies:
       LICENSE: 73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68
     attribution:
       - CoreOS, Inc
+
+  vendor/github.com/mailru/easyjson:
+    url: "https://github.com/mailru/easyjson"
+    license: MIT
+    files:
+      LICENSE: 87baa92c3100cf37441761262d622db99492ee386a063460d4676143db49af57
+    attribution:
+      - Mail.Ru Group

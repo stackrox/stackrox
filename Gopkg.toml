@@ -206,3 +206,7 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
 [[constraint]]
   name = "github.com/coreos/go-systemd"
   version = "v18"
+
+[[constraint]]
+  name = "github.com/mailru/easyjson"
+  branch = "master"

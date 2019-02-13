@@ -3,9 +3,9 @@ package common
 import (
 	"bytes"
 	"compress/gzip"
-	"encoding/json"
 	"fmt"
 
+	"github.com/mailru/easyjson"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/docker"
@@ -17,8 +17,9 @@ func getDockerData(ret *compliance.ComplianceReturn) (*docker.Data, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	var dockerData docker.Data
-	if err := json.NewDecoder(gzReader).Decode(&dockerData); err != nil {
+	if err := easyjson.UnmarshalFromReader(gzReader, &dockerData); err != nil {
 		return nil, err
 	}
 	return &dockerData, nil

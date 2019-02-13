@@ -6,3 +6,4 @@ central/graphql/resolvers/generated.go
 Gopkg.lock
 proto/storage/proto.lock
 central/compliance/checks/fixtures/scraped.go
+pkg/docker/types_easyjson.go

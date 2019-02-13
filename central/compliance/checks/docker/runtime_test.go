@@ -754,7 +754,7 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			gzWriter := gzip.NewWriter(&jsonDataGZ)
 			_, err = gzWriter.Write(jsonData)
 			require.NoError(t, err)
-			require.NoError(t, gzWriter.Flush())
+			require.NoError(t, gzWriter.Close())
 
 			data.EXPECT().HostScraped().AnyTimes().Return(map[string]*compliance.ComplianceReturn{
 				"A": {

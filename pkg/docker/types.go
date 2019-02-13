@@ -6,6 +6,7 @@ import (
 )
 
 // Data is the wrapper around all of the Docker info required for compliance
+// easyjson:json
 type Data struct {
 	Info          types.Info
 	Containers    []ContainerJSON

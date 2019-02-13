@@ -840,6 +840,19 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:853fe95bef4c5e8a70dcd405b5206b38a9ff09e9c26fef93d1d0adeaea39f9ce"
+  name = "github.com/mailru/easyjson"
+  packages = [
+    ".",
+    "buffer",
+    "jlexer",
+    "jwriter",
+  ]
+  pruneopts = "NUT"
+  revision = "60711f1a8329503b04e1c88535f419d0bb440bff"
+
+[[projects]]
+  branch = "master"
   digest = "1:04ceda71def965b54370f9089593723a00f72db5062d377b9d5a11114c41ad1f"
   name = "github.com/markbates/oncer"
   packages = ["."]
@@ -1831,6 +1844,7 @@
     "github.com/docker/docker/api/types/network",
     "github.com/docker/docker/api/types/registry",
     "github.com/docker/docker/api/types/strslice",
+    "github.com/docker/docker/api/types/swarm",
     "github.com/docker/docker/client",
     "github.com/docker/docker/image",
     "github.com/docker/docker/registry",
@@ -1864,6 +1878,9 @@
     "github.com/grpc-ecosystem/grpc-gateway/utilities",
     "github.com/hashicorp/golang-lru",
     "github.com/heroku/docker-registry-client/registry",
+    "github.com/mailru/easyjson",
+    "github.com/mailru/easyjson/jlexer",
+    "github.com/mailru/easyjson/jwriter",
     "github.com/mauricelam/genny/generic",
     "github.com/mitchellh/go-wordwrap",
     "github.com/opencontainers/go-digest",

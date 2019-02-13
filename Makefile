@@ -3,6 +3,8 @@ TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 TAG=$(shell git describe --tags --abbrev=10 --dirty)
 
+FORMATTING_FILES=$(shell find . -name vendor -prune -o -name generated -prune -o -name mocks -prune -o -name '*_easyjson.go' -prune -o -name '*.go' -print)
+
 .PHONY: all
 all: deps style test image
 
@@ -28,12 +30,12 @@ fmt:
 ifdef CI
 		@echo "The environment indicates we are in CI; checking gofmt."
 		@echo 'If this fails, run `make style`.'
-		@$(eval FMT=`find . -name vendor -prune -o -name generated -prune -o -name mocks -prune -o -name '*.go' -print | xargs gofmt -s -l`)
+		@$(eval FMT=`echo $(FORMATTING_FILES) | xargs gofmt -s -l`)
 		@echo "gofmt problems in the following files, if any:"
 		@echo $(FMT)
 		@test -z "$(FMT)"
 endif
-	@find . -name vendor -prune -o -name generated -prune -o -name mocks -prune -o -name '*.go' -print | xargs gofmt -s -l -w
+	@echo $(FORMATTING_FILES) | xargs gofmt -s -l -w
 
 .PHONY: imports
 imports: deps volatile-generated-srcs
@@ -41,12 +43,12 @@ imports: deps volatile-generated-srcs
 ifdef CI
 		@echo "The environment indicates we are in CI; checking goimports."
 		@echo 'If this fails, run `make style`.'
-		@$(eval IMPORTS=`find . -name vendor -prune -o -name generated -prune -o -name mocks -prune -o -name '*.go' -print | xargs goimports -l`)
+		@$(eval IMPORTS=`echo $(FORMATTING_FILES) | xargs goimports -l`)
 		@echo "goimports problems in the following files, if any:"
 		@echo $(IMPORTS)
 		@test -z "$(IMPORTS)"
 endif
-	@find . -name vendor -prune -name generated -prune -o -name mocks -prune -o -name '*.go' -print | xargs goimports -w
+	@echo $(FORMATTING_FILES) | xargs goimports -w
 
 .PHONY: crosspkgimports
 crosspkgimports:
@@ -140,8 +142,23 @@ clean-packr-srcs:
 	@echo "+ $@"
 	@find . -name '*-packr.go' -exec rm {} \;
 
+EASYJSON_BIN := $(GOPATH)/bin/easyjson
+$(EASYJSON_BIN):
+	@echo "+ $@"
+	@$(BASE_PATH)/scripts/go-get-version.sh github.com/mailru/easyjson/easyjson 60711f1a8329503b04e1c88535f419d0bb440bff
+
+.PHONY: go-easyjson-srcs
+go-easyjson-srcs: $(EASYJSON_BIN)
+	@echo "+ $@"
+	@easyjson -pkg pkg/docker/types.go
+
+.PHONY: clean-easyjson-srcs
+clean-easyjson-srcs:
+	@echo "+ $@"
+	@find . -name '*_easyjson.go' -exec rm {} \;
+
 .PHONY: go-generated-srcs
-go-generated-srcs: $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
+go-generated-srcs: go-easyjson-srcs $(MOCKGEN_BIN) $(STRINGER_BIN) $(GENNY_BIN)
 	@echo "+ $@"
 	PATH=$(PATH):$(BASE_DIR)/tools/generate-helpers go generate ./...
 
@@ -157,7 +174,7 @@ volatile-generated-srcs: proto-generated-srcs go-packr-srcs
 generated-srcs: volatile-generated-srcs go-generated-srcs
 
 .PHONY: clean-generated-srcs
-clean-generated-srcs: clean-packr-srcs
+clean-generated-srcs: clean-packr-srcs clean-easyjson-srcs
 	@echo "+ $@"
 	git clean -xdf generated
 
