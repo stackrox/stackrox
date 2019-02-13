@@ -21,12 +21,12 @@ type CentralSender interface {
 func NewCentralSender(listener listeners.Listener,
 	signalService signal.Service,
 	networkConnManager networkConnManager.Manager,
-	scrapeReceiver compliance.Service) CentralSender {
+	scrapeCommandHandler compliance.CommandHandler) CentralSender {
 	return &centralSenderImpl{
-		listener:           listener,
-		signalService:      signalService,
-		networkConnManager: networkConnManager,
-		scrapeReceiver:     scrapeReceiver,
+		listener:             listener,
+		signalService:        signalService,
+		networkConnManager:   networkConnManager,
+		scrapeCommandHandler: scrapeCommandHandler,
 
 		stopC:    concurrency.NewErrorSignal(),
 		stoppedC: concurrency.NewErrorSignal(),

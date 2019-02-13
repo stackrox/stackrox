@@ -237,7 +237,7 @@ func pingWithTimeout(svc v1.PingServiceClient) (err error) {
 }
 
 func (s *Sensor) communicationWithCentral() {
-	s.centralCommunication = NewCentralCommunication(s.commandHandler, s.enforcer, s.listener, signalService.Singleton(), s.networkConnManager, compliance.Singleton())
+	s.centralCommunication = NewCentralCommunication(s.commandHandler, s.enforcer, s.listener, signalService.Singleton(), s.networkConnManager)
 	s.centralCommunication.Start(s.centralConnection)
 
 	if err := s.centralCommunication.Stopped().Wait(); err != nil {

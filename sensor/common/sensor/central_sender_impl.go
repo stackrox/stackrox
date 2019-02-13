@@ -15,10 +15,10 @@ import (
 
 type centralSenderImpl struct {
 	// Generate messages to be sent to central.
-	listener           listeners.Listener
-	signalService      signal.Service
-	networkConnManager networkConnManager.Manager
-	scrapeReceiver     compliance.Service
+	listener             listeners.Listener
+	signalService        signal.Service
+	networkConnManager   networkConnManager.Manager
+	scrapeCommandHandler compliance.CommandHandler
 
 	stopC    concurrency.ErrorSignal
 	stoppedC concurrency.ErrorSignal
@@ -80,18 +80,14 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 					NetworkFlowUpdate: flowUpdate,
 				},
 			}
-		case complianceReturn, ok := <-s.scrapeReceiver.Output():
+		case scrapeUpdate, ok := <-s.scrapeCommandHandler.Output():
 			if !ok {
-				s.stopC.SignalWithError(errors.New("compliance returns channel closed"))
+				s.stopC.SignalWithError(errors.New("scrape command handler channel closed"))
 				return
 			}
 			msg = &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_ScrapeUpdate{
-					ScrapeUpdate: &central.ScrapeUpdate{
-						Update: &central.ScrapeUpdate_ComplianceReturn{
-							ComplianceReturn: complianceReturn,
-						},
-					},
+					ScrapeUpdate: scrapeUpdate,
 				},
 			}
 		case <-s.stopC.Done():
