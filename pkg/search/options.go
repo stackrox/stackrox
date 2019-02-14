@@ -101,6 +101,9 @@ var (
 
 	// Node search fields
 	Node = newFieldLabel("Node")
+
+	// Namespace Search Fields
+	NamespaceID = newFieldLabel("Namespace ID")
 )
 
 func newFieldLabel(s string) FieldLabel {

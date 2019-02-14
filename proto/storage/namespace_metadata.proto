@@ -10,7 +10,7 @@ import "protobuf/gogoproto/gogo.proto";
 package storage;
 
 message NamespaceMetadata {
-    string              id                  = 1;
+    string              id                  = 1 [(gogoproto.moretags) = "search:\"Namespace ID\""];
     string              name                = 2 [(gogoproto.moretags) = "search:\"Namespace\""];
     string              cluster_id          = 3 [(gogoproto.moretags) = "search:\"Cluster ID,hidden\""];
     string              cluster_name        = 4 [(gogoproto.moretags) = "search:\"Cluster\""];
