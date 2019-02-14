@@ -47,6 +47,7 @@ func NewRiskyComponents() Multiplier {
 func (c *riskyComponentCountMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
 	// Get the largest number of risky components in an image
 	var largestRiskySet *set.StringSet
+	var riskiestImage *storage.Image
 	for _, container := range deployment.GetContainers() {
 		// Create a name to version map of all the image components.
 		presentComponents := set.NewStringSet()
@@ -60,6 +61,7 @@ func (c *riskyComponentCountMultiplier) Score(deployment *storage.Deployment) *s
 		// Keep track of the image with the largest number of risky components.
 		if largestRiskySet == nil || riskySet.Cardinality() > largestRiskySet.Cardinality() {
 			largestRiskySet = &riskySet
+			riskiestImage = container.GetImage()
 		}
 	}
 	if largestRiskySet == nil || largestRiskySet.Cardinality() == 0 {
@@ -75,27 +77,51 @@ func (c *riskyComponentCountMultiplier) Score(deployment *storage.Deployment) *s
 	return &storage.Risk_Result{
 		Name: RiskyComponentCountHeading,
 		Factors: []*storage.Risk_Result_Factor{
-			{Message: generateMessage(largestRiskySet.AsSlice())},
+			{Message: generateMessage(riskiestImage.GetName().GetFullName(), largestRiskySet.AsSlice())},
 		},
 		Score: score,
 	}
 }
 
-func generateMessage(largestRiskySet []string) string {
+func generateMessage(imageName string, largestRiskySet []string) string {
+	return fmt.Sprintf("%s %s", generatePrefix(imageName), generateSuffix(largestRiskySet))
+}
+
+func generatePrefix(imageName string) string {
+	if imageName != "" {
+		return fmt.Sprintf("Image %s", imageName)
+	}
+	return "An image"
+}
+
+func generateSuffix(largestRiskySet []string) string {
+	if len(largestRiskySet) == 1 {
+		return generateSuffixForOneComponent(largestRiskySet[0])
+	}
+
 	// Sort for message stability.
 	sort.SliceStable(largestRiskySet, func(i, j int) bool {
 		return largestRiskySet[i] < largestRiskySet[j]
 	})
 
-	// If we have more than 5 risky components, prune the message.
-	if len(largestRiskySet) > maxComponentsInMessage {
-		componentsInMessage := largestRiskySet[:5]
-		componentsString := strings.Join(componentsInMessage, ", ")
-		diff := len(largestRiskySet) - maxComponentsInMessage
-		return fmt.Sprintf("An image contains components: %s and %d other(s) that are useful for attackers", componentsString, diff)
+	if len(largestRiskySet) <= maxComponentsInMessage {
+		return generateSuffixForMultipleButLessThanMax(largestRiskySet)
 	}
+	return generateSuffixForMoreThanMax(largestRiskySet)
+}
 
-	// Otherwise use all of the components in the message.
+func generateSuffixForOneComponent(riskyComponent string) string {
+	return fmt.Sprintf("contains component %s", riskyComponent)
+}
+
+func generateSuffixForMultipleButLessThanMax(largestRiskySet []string) string {
 	componentsString := strings.Join(largestRiskySet, ", ")
-	return fmt.Sprintf("An image contains component(s) useful for attackers: %s", componentsString)
+	return fmt.Sprintf("contains components useful for attackers: %s", componentsString)
+}
+
+func generateSuffixForMoreThanMax(largestRiskySet []string) string {
+	componentsInMessage := largestRiskySet[:5]
+	componentsString := strings.Join(componentsInMessage, ", ")
+	diff := len(largestRiskySet) - maxComponentsInMessage
+	return fmt.Sprintf("contains components: %s and %d other(s) that are useful for attackers", componentsString, diff)
 }

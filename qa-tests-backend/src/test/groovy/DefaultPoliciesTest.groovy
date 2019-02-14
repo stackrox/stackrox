@@ -177,7 +177,8 @@ class DefaultPoliciesTest extends BaseSpecification {
                 "No capabilities were dropped" | null
 
         "Components Useful for Attackers" | 1.5f     |
-                "An image contains component(s) useful for attackers: apt, bash, curl, wget" | null
+                "Image apollo-dtr.rox.systems/legacy-apps/struts-app:latest contains components useful for attackers:" +
+                    " apt, bash, curl, wget" | null
 
         "Number of Components in Image"   | 1.5f     |
                 "Image apollo-dtr.rox.systems/legacy-apps/struts-app:latest contains 206 components" | null
