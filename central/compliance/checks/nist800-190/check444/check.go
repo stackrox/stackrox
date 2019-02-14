@@ -15,7 +15,8 @@ func init() {
 		framework.CheckMetadata{
 			ID:                 standardID,
 			Scope:              framework.ClusterKind,
-			DataDependencies:   []string{"Policies"},
+			AdditionalScopes:   []framework.TargetKind{framework.DeploymentKind},
+			DataDependencies:   []string{"Policies", "Deployments"},
 			InterpretationText: interpretationText,
 		},
 		checkNIST444)
@@ -23,4 +24,5 @@ func init() {
 
 func checkNIST444(ctx framework.ComplianceContext) {
 	common.CheckAnyPolicyInLifeCycle(ctx, storage.LifecycleStage_RUNTIME)
+	common.CheckDeploymentHasReadOnlyFSByDeployment(ctx)
 }

@@ -84,6 +84,14 @@ func (s *suiteImpl) TestPass() {
 	s.NotNil(checkResults)
 	s.Len(checkResults.Evidence(), 1)
 	s.Equal(framework.PassStatus, checkResults.Evidence()[0].Status)
+
+	for _, deployment := range domain.Deployments() {
+		deploymentResults := checkResults.ForChild(deployment)
+		s.NoError(deploymentResults.Error())
+		if s.Len(deploymentResults.Evidence(), 1) {
+			s.Equal(framework.PassStatus, deploymentResults.Evidence()[0].Status)
+		}
+	}
 }
 
 func (s *suiteImpl) TestFail() {
@@ -140,6 +148,13 @@ func (s *suiteImpl) TestFail() {
 	s.Len(checkResults.Evidence(), 1)
 	s.Equal(framework.FailStatus, checkResults.Evidence()[0].Status)
 
+	for _, deployment := range domain.Deployments() {
+		deploymentResults := checkResults.ForChild(deployment)
+		s.NoError(deploymentResults.Error())
+		if s.Len(deploymentResults.Evidence(), 1) {
+			s.Equal(framework.FailStatus, deploymentResults.Evidence()[0].Status)
+		}
+	}
 }
 
 // Helper functions for test data.

@@ -91,7 +91,7 @@ func getResultValueProto(entityResults framework.Results, errors []error) *stora
 func collectEntityResults(entity framework.ComplianceTarget, checks []framework.Check, allResults map[string]framework.Results) *storage.ComplianceRunResults_EntityResults {
 	controlResults := make(map[string]*storage.ComplianceResultValue)
 	for _, check := range checks {
-		if check.Scope() != entity.Kind() {
+		if !check.AppliesToScope(entity.Kind()) {
 			continue
 		}
 

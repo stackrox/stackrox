@@ -67,6 +67,9 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 				"control2": {
 					OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 				},
+				"control7": {
+					OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
+				},
 			},
 		},
 		NodeResults: map[string]*storage.ComplianceRunResults_EntityResults{
@@ -100,6 +103,9 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 					"control6": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 					},
+					"control7": {
+						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
+					},
 				},
 			},
 			cluster + "deployment2": {
@@ -110,6 +116,9 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 					"control6": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SUCCESS,
 					},
+					"control7": {
+						OverallState: storage.ComplianceState_COMPLIANCE_STATE_FAILURE,
+					},
 				},
 			},
 			cluster + "deployment3": {
@@ -118,6 +127,9 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SKIP,
 					},
 					"control6": {
+						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SKIP,
+					},
+					"control7": {
 						OverallState: storage.ComplianceState_COMPLIANCE_STATE_SKIP,
 					},
 				},
@@ -130,16 +142,20 @@ func mockFlatChecks(clusterID, standardID string) []flatCheck {
 	return []flatCheck{
 		newFlatCheck(clusterID, "", standardID, "", "control1", "", "", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
 		newFlatCheck(clusterID, "", standardID, "", "control2", "", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
+		newFlatCheck(clusterID, "", standardID, "", "control7", "", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
 		newFlatCheck(clusterID, "", standardID, "", "control3", clusterID+"node1", "", storage.ComplianceState_COMPLIANCE_STATE_ERROR),
 		newFlatCheck(clusterID, "", standardID, "", "control4", clusterID+"node1", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
 		newFlatCheck(clusterID, "", standardID, "", "control3", clusterID+"node2", "", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
 		newFlatCheck(clusterID, "", standardID, "", "control4", clusterID+"node2", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
 		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace1"), standardID, "", "control5", "", clusterID+"deployment1", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
 		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace1"), standardID, "", "control6", "", clusterID+"deployment1", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
+		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace1"), standardID, "", "control7", "", clusterID+"deployment1", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
 		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace2"), standardID, "", "control5", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
 		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace2"), standardID, "", "control6", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
+		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace2"), standardID, "", "control7", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
 		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace3"), standardID, "", "control5", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
 		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace3"), standardID, "", "control6", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
+		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace3"), standardID, "", "control7", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
 	}
 }
 
@@ -155,7 +171,7 @@ func testName(groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggreg
 	for _, g := range groupBy {
 		groupBys = append(groupBys, g.String())
 	}
-	return fmt.Sprintf("GroupBy: %s - Unit: %s", strings.Join(groupBys, "-"), unit.String())
+	return fmt.Sprintf("GroupBy %s - Unit %s", strings.Join(groupBys, "-"), unit.String())
 }
 
 func TestGetAggregatedResults(t *testing.T) {
@@ -193,7 +209,7 @@ func TestGetAggregatedResults(t *testing.T) {
 		},
 		{
 			unit:          v1.ComplianceAggregation_CONTROL,
-			failPerResult: 3,
+			failPerResult: 4,
 			passPerResult: 3,
 			numResults:    1,
 		},
@@ -230,22 +246,22 @@ func TestGetAggregatedResults(t *testing.T) {
 		{
 			groupBy:       []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER},
 			unit:          v1.ComplianceAggregation_CONTROL,
-			failPerResult: 3,
+			failPerResult: 4,
 			passPerResult: 3,
 			numResults:    2,
 		},
 		{
 			groupBy:       []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER, v1.ComplianceAggregation_STANDARD},
 			unit:          v1.ComplianceAggregation_CONTROL,
-			failPerResult: 3,
+			failPerResult: 4,
 			passPerResult: 3,
 			numResults:    4,
 		},
 		{
 			groupBy:       []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER},
 			unit:          v1.ComplianceAggregation_CHECK,
-			failPerResult: 10,
-			passPerResult: 10,
+			failPerResult: 12,
+			passPerResult: 14,
 			numResults:    2,
 		},
 	}

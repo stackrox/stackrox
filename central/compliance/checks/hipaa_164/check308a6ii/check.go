@@ -13,6 +13,7 @@ func init() {
 		framework.CheckMetadata{
 			ID:                 checkID,
 			Scope:              framework.ClusterKind,
+			AdditionalScopes:   []framework.TargetKind{framework.DeploymentKind},
 			DataDependencies:   []string{"Notifiers", "Images", "ImageIntegrations", "Policies", "NetworkGraph", "NetworkPolicies"},
 			InterpretationText: interpretationText,
 		},
@@ -27,4 +28,5 @@ func clusterIsCompliant(ctx framework.ComplianceContext) {
 	common.CheckAnyPolicyInLifeCycle(ctx, storage.LifecycleStage_RUNTIME)
 	common.CheckAnyPolicyInLifeCycle(ctx, storage.LifecycleStage_BUILD)
 	common.CheckAnyPolicyInLifeCycle(ctx, storage.LifecycleStage_DEPLOY)
+	common.CheckNetworkPoliciesByDeployment(ctx)
 }
