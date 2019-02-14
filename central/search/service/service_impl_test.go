@@ -6,16 +6,20 @@ import (
 
 	"github.com/golang/mock/gomock"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
-	"github.com/stackrox/rox/central/deployment/datastore"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	"github.com/stackrox/rox/central/deployment/index"
+	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/globalindex"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
+	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
+	policyIndex "github.com/stackrox/rox/central/policy/index"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
+	"github.com/stackrox/rox/pkg/search/enumregistry/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -33,7 +37,13 @@ func TestSearchFuncs(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	s := New(alertMocks.NewMockDataStore(mockCtrl), deploymentMocks.NewMockDataStore(mockCtrl), imageMocks.NewMockDataStore(mockCtrl), policyMocks.NewMockDataStore(mockCtrl), secretMocks.NewMockDataStore(mockCtrl))
+	s := New(alertMocks.NewMockDataStore(mockCtrl),
+		deploymentMocks.NewMockDataStore(mockCtrl),
+		imageMocks.NewMockDataStore(mockCtrl),
+		policyMocks.NewMockDataStore(mockCtrl),
+		secretMocks.NewMockDataStore(mockCtrl),
+		mocks.NewMockRegistry(mockCtrl),
+	)
 	searchFuncMap := s.(*serviceImpl).getSearchFuncs()
 	for _, searchCategory := range GetAllSearchableCategories() {
 		_, ok := searchFuncMap[searchCategory]
@@ -50,7 +60,7 @@ func TestAutocomplete(t *testing.T) {
 	// Create Deployment Indexer
 	idx, err := globalindex.MemOnlyIndex()
 	require.NoError(t, err)
-	deploymentIndexer := index.New(idx)
+	deploymentIndexer := deploymentIndex.New(idx)
 
 	deploymentNameOneOff := fixtures.GetDeployment()
 	require.NoError(t, deploymentIndexer.AddDeployment(deploymentNameOneOff))
@@ -70,7 +80,7 @@ func TestAutocomplete(t *testing.T) {
 	deploymentName2.Name = "name12"
 	require.NoError(t, deploymentIndexer.AddDeployment(deploymentName2))
 
-	ds := datastore.New(nil, deploymentIndexer, nil, nil)
+	ds := deploymentDatastore.New(nil, deploymentIndexer, nil, nil)
 
 	service := New(
 		alertMocks.NewMockDataStore(mockCtrl),
@@ -78,6 +88,7 @@ func TestAutocomplete(t *testing.T) {
 		imageMocks.NewMockDataStore(mockCtrl),
 		policyMocks.NewMockDataStore(mockCtrl),
 		secretMocks.NewMockDataStore(mockCtrl),
+		enumregistry.Singleton(),
 	).(*serviceImpl)
 
 	q := search.NewQueryBuilder().AddStrings(search.DeploymentName, deploymentNameOneOff.Name).Query()
@@ -95,4 +106,29 @@ func TestAutocomplete(t *testing.T) {
 	results, err = service.autocomplete(q, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
 	require.NoError(t, err)
 	assert.Equal(t, []string{"name12", "nginx_server", "name1"}, results)
+}
+
+func TestAutocompleteForEnums(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	// Create Deployment Indexer
+	idx, err := globalindex.MemOnlyIndex()
+	require.NoError(t, err)
+	policyIndexer := policyIndex.New(idx)
+	require.NoError(t, policyIndexer.AddPolicy(fixtures.GetPolicy()))
+
+	ds := policyDatastore.New(nil, policyIndexer, nil)
+
+	service := New(alertMocks.NewMockDataStore(mockCtrl),
+		deploymentMocks.NewMockDataStore(mockCtrl),
+		imageMocks.NewMockDataStore(mockCtrl),
+		ds,
+		secretMocks.NewMockDataStore(mockCtrl),
+		enumregistry.Singleton(),
+	).(*serviceImpl)
+
+	results, err := service.autocomplete(fmt.Sprintf("%s:", search.Severity), []v1.SearchCategory{v1.SearchCategory_POLICIES})
+	require.NoError(t, err)
+	assert.Equal(t, []string{fixtures.GetPolicy().GetSeverity().String()}, results)
 }

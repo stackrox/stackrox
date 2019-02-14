@@ -14,7 +14,7 @@ package storage;
 message Alert {
     string id                                = 1;
     Policy policy                            = 2 [(gogoproto.moretags) = "search_index:\"Policy ID,Policy,Category,Severity\""];
-    LifecycleStage lifecycle_stage           = 3 [(gogoproto.moretags) = "search:\"Lifecycle Stage\""];
+    LifecycleStage lifecycle_stage           = 3 [(gogoproto.moretags) = "search:\"Lifecycle Stage,store\""];
     Deployment deployment                    = 4 [(gogoproto.moretags) = "search_index:\"Deployment ID,Cluster,Namespace,Label,Deployment\""];
 
     message Violation {
@@ -31,14 +31,14 @@ message Alert {
     ProcessViolation process_violation      = 13;
 
     message Enforcement {
-        storage.EnforcementAction action = 1 [(gogoproto.moretags) = "search:\"Enforcement\""];
+        storage.EnforcementAction action = 1 [(gogoproto.moretags) = "search:\"Enforcement,store\""];
         string message                   = 2;
     }
     Enforcement enforcement                  = 6;
 
     google.protobuf.Timestamp time           = 7;
     google.protobuf.Timestamp first_occurred = 10;
-    ViolationState state                     = 11 [(gogoproto.moretags) = "search:\"Violation State\""];
+    ViolationState state                     = 11 [(gogoproto.moretags) = "search:\"Violation State,store\""];
     google.protobuf.Timestamp snooze_till    = 12;
 }
 

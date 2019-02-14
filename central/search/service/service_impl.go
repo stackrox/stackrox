@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 
 	"github.com/deckarep/golang-set"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -84,13 +86,27 @@ var (
 
 // SearchService provides APIs for search.
 type serviceImpl struct {
-	alerts      alertDataStore.DataStore
-	deployments deploymentDataStore.DataStore
-	images      imageDataStore.DataStore
-	policies    policyDataStore.DataStore
-	secrets     secretDataStore.DataStore
+	alerts       alertDataStore.DataStore
+	deployments  deploymentDataStore.DataStore
+	images       imageDataStore.DataStore
+	policies     policyDataStore.DataStore
+	secrets      secretDataStore.DataStore
+	enumRegistry enumregistry.Registry
 
 	authorizer authz.Authorizer
+}
+
+func (s *serviceImpl) handleMatch(fieldPath, value string, isEnum bool) string {
+	if !isEnum {
+		return value
+	}
+	if val, err := strconv.ParseInt(value, 10, 32); err == nil {
+		// Lookup if the field path is an enum and if so, take the string representation
+		if enumString := s.enumRegistry.Lookup(fieldPath, int32(val)); enumString != "" {
+			return enumString
+		}
+	}
+	return value
 }
 
 func (s *serviceImpl) autocomplete(queryString string, categories []v1.SearchCategory) ([]string, error) {
@@ -120,8 +136,10 @@ func (s *serviceImpl) autocomplete(queryString string, categories []v1.SearchCat
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 		for _, r := range results {
-			for _, match := range r.Matches {
-				for _, value := range match {
+			for fieldPath, match := range r.Matches {
+				isEnum := s.enumRegistry.IsEnum(fieldPath)
+				for _, v := range match {
+					value := s.handleMatch(fieldPath, v, isEnum)
 					autocompleteResults = append(autocompleteResults, autocompleteResult{value: value, score: r.Score})
 				}
 			}

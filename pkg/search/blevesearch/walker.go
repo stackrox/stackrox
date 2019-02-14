@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -20,7 +21,7 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	enums = newEnumRegistry()
+	enums = enumregistry.Singleton()
 
 	typeToSearchCategory = map[string]v1.SearchCategory{
 		"Image":            v1.SearchCategory_IMAGES,

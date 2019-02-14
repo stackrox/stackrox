@@ -8,6 +8,7 @@ import (
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 )
 
 var (
@@ -17,7 +18,14 @@ var (
 )
 
 func initialize() {
-	as = New(alertDataStore.Singleton(), deploymentDataStore.Singleton(), imageDataStore.Singleton(), policyDataStore.Singleton(), secretDataStore.Singleton())
+	as = New(
+		alertDataStore.Singleton(),
+		deploymentDataStore.Singleton(),
+		imageDataStore.Singleton(),
+		policyDataStore.Singleton(),
+		secretDataStore.Singleton(),
+		enumregistry.Singleton(),
+	)
 }
 
 // Singleton provides the instance of the Service interface to register.

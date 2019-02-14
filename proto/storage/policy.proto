@@ -20,10 +20,10 @@ message Policy {
     repeated string categories                  = 7 [(gogoproto.moretags) = "search:\"Category,store\""];
     PolicyFields fields                         = 8;
 
-    repeated LifecycleStage lifecycle_stages       = 9  [(gogoproto.moretags) = "search:\"Lifecycle Stage\""];
+    repeated LifecycleStage lifecycle_stages       = 9  [(gogoproto.moretags) = "search:\"Lifecycle Stage,store\""];
     repeated Whitelist whitelists                  = 10;
     repeated Scope scope                           = 11;
-    Severity severity                              = 12 [(gogoproto.moretags) = "search:\"Severity\""];
+    Severity severity                              = 12 [(gogoproto.moretags) = "search:\"Severity,store\""];
     repeated EnforcementAction enforcement_actions = 13 [(gogoproto.moretags) = "search:\"Enforcement\""];
     repeated string notifiers                      = 14;
 }

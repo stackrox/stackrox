@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"golang.org/x/net/context"
 )
 
@@ -26,13 +27,14 @@ type Service interface {
 }
 
 // New returns a search service
-func New(alerts alertDataStore.DataStore, deployments deploymentDataStore.DataStore, images imageDataStore.DataStore, policies policyDataStore.DataStore, secrets secretDataStore.DataStore) Service {
+func New(alerts alertDataStore.DataStore, deployments deploymentDataStore.DataStore, images imageDataStore.DataStore, policies policyDataStore.DataStore, secrets secretDataStore.DataStore, enumRegistry enumregistry.Registry) Service {
 	s := &serviceImpl{
-		alerts:      alerts,
-		deployments: deployments,
-		images:      images,
-		policies:    policies,
-		secrets:     secrets,
+		alerts:       alerts,
+		deployments:  deployments,
+		images:       images,
+		policies:     policies,
+		secrets:      secrets,
+		enumRegistry: enumRegistry,
 	}
 	s.initializeAuthorizer()
 	return s
