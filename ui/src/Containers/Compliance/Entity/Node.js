@@ -39,6 +39,7 @@ const NodePage = ({ sidePanelMode, params }) => (
             if (loading || !data) return <Loader />;
             const node = processData(data);
             const header = node.name || 'Loading...';
+            const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
             return (
                 <section className="flex flex-col h-full w-full">
                     {!sidePanelMode && <Header header={header} subHeader="Node" params={params} />}
@@ -46,6 +47,7 @@ const NodePage = ({ sidePanelMode, params }) => (
                         className={`flex-1 relative bg-base-200 overflow-auto ${
                             !sidePanelMode ? `p-6` : `p-4`
                         } `}
+                        id="capture-dashboard"
                     >
                         <div
                             style={{ '--min-tile-height': '190px' }}
@@ -56,7 +58,7 @@ const NodePage = ({ sidePanelMode, params }) => (
                             } sm:grid-columns-1 grid-gap-5`}
                         >
                             <div
-                                className="grid s-2 md:grid-auto-fit md:grid-dense"
+                                className={`grid s-2 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
                                 style={{ '--min-tile-width': '50%' }}
                             >
                                 <div className="s-full pb-3">
@@ -85,7 +87,7 @@ const NodePage = ({ sidePanelMode, params }) => (
                             </div>
 
                             <div
-                                className="grid s-2 md:grid-auto-fit md:grid-dense"
+                                className={`grid s-2 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
                                 style={{ '--min-tile-width': '50%' }}
                             >
                                 <div className="md:pr-3 pb-3">
@@ -124,7 +126,7 @@ const NodePage = ({ sidePanelMode, params }) => (
                             </div>
 
                             <Widget
-                                className="sx-2"
+                                className={`sx-2 ${pdfClassName}`}
                                 header={`${node.labels.length} ${pluralize(
                                     'Label',
                                     node.labels.length
@@ -136,16 +138,19 @@ const NodePage = ({ sidePanelMode, params }) => (
                                 type={entityTypes.NIST_800_190}
                                 entityName={node.name}
                                 params={params}
+                                className={pdfClassName}
                             />
                             <ComplianceByStandard
                                 type={entityTypes.CIS_KUBERENETES_V1_2_0}
                                 entityName={node.name}
                                 params={params}
+                                className={pdfClassName}
                             />
                             <ComplianceByStandard
                                 type={entityTypes.CIS_DOCKER_V1_1_0}
                                 entityName={node.name}
                                 params={params}
+                                className={pdfClassName}
                             />
                         </div>
                     </div>

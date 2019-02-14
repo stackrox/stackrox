@@ -13,27 +13,29 @@ const EntityHeader = ({
     searchComponent,
     scanCluster,
     scanStandard,
-    params
+    params,
+    type
 }) => (
     <PageHeader header={header} subHeader={subHeader}>
         {searchComponent}
         <div className="flex flex-1 justify-end">
             <div className="flex">
                 <div className="flex items-center">
-                    {params.entityType === entityTypes.CLUSTER && (
-                        <>
+                    <>
+                        {params.entityType === entityTypes.CLUSTER && (
                             <ScanButton
                                 text="Scan"
                                 clusterId={scanCluster}
                                 standardId={scanStandard}
                             />
-                            <ExportButton
-                                fileName={header}
-                                type={params.entityType}
-                                id={scanCluster}
-                            />
-                        </>
-                    )}
+                        )}
+                        <ExportButton
+                            fileName={header}
+                            type={type}
+                            id={scanCluster}
+                            pdfId="capture-dashboard"
+                        />
+                    </>
                 </div>
             </div>
         </div>
@@ -46,7 +48,8 @@ EntityHeader.propTypes = {
     searchComponent: PropTypes.node,
     scanCluster: PropTypes.string,
     scanStandard: PropTypes.string,
-    params: PropTypes.shape({})
+    params: PropTypes.shape({}),
+    type: PropTypes.string
 };
 
 EntityHeader.defaultProps = {
@@ -55,7 +58,8 @@ EntityHeader.defaultProps = {
     scanCluster: '*',
     scanStandard: '*',
     searchComponent: null,
-    params: null
+    params: null,
+    type: ''
 };
 
 export default withRouter(EntityHeader);

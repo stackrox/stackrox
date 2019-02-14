@@ -16,7 +16,8 @@ const ControlRelatedEntitiesList = ({
     pageEntityType,
     pageEntity,
     limit,
-    standard
+    standard,
+    className
 }) => {
     const linkContext = contextTypes.COMPLIANCE;
 
@@ -90,7 +91,7 @@ const ControlRelatedEntitiesList = ({
     return (
         <LinkListWidget
             query={QUERY}
-            className="sx-2"
+            className={`sx-2 ${className}`}
             variables={variables}
             processData={processData}
             getHeadline={getHeadline}
@@ -108,12 +109,14 @@ ControlRelatedEntitiesList.propTypes = {
         name: PropTypes.string
     }),
     limit: PropTypes.number,
-    standard: PropTypes.string.isRequired
+    standard: PropTypes.string.isRequired,
+    className: PropTypes.string
 };
 
 ControlRelatedEntitiesList.defaultProps = {
     pageEntity: null,
-    limit: 10
+    limit: 10,
+    className: ''
 };
 
 export default ControlRelatedEntitiesList;

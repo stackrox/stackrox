@@ -43,9 +43,9 @@ class ComplianceListPage extends Component {
         const { selectedRow } = this.state;
         const params = URLService.getParams(match, location);
         return (
-            <section className="flex flex-col h-full relative">
+            <section className="flex flex-col h-full relative" id="capture-list">
                 <Header searchComponent={<SearchInput categories={['COMPLIANCE']} />} />
-                <CollapsibleBanner>
+                <CollapsibleBanner className="pdf-page">
                     <ComplianceAcrossEntities params={params} />
                     <ControlsMostFailed params={params} />
                 </CollapsibleBanner>
@@ -54,6 +54,7 @@ class ComplianceListPage extends Component {
                         selectedRow={selectedRow}
                         params={params}
                         updateSelectedRow={this.updateSelectedRow}
+                        pdfId="capture-list"
                     />
                     {selectedRow && (
                         <SidePanel

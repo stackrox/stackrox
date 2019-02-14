@@ -25,6 +25,7 @@ import processes, { selectors as processSelectors } from './processes';
 import groups, { selectors as groupsSelectors } from './groups';
 import attributes, { selectors as attributesSelectors } from './attributes';
 import cli, { selectors as cliSelectors } from './cli';
+import pdfDownload, { selectors as pdfDownloadSelectors } from './pdfDownload';
 
 // Reducers
 
@@ -50,7 +51,8 @@ const appReducer = combineReducers({
     network,
     processes,
     groups,
-    attributes
+    attributes,
+    pdfDownload
 });
 
 const rootReducer = combineReducers({
@@ -87,6 +89,7 @@ const getProcesses = state => getApp(state).processes;
 const getRuleGroups = state => getApp(state).groups;
 const getAttributes = state => getApp(state).attributes;
 const getCLI = state => getApp(state).cli;
+const getPdfDownload = state => getApp(state).pdfDownload;
 
 const boundSelectors = {
     ...bindSelectors(getAlerts, alertSelectors),
@@ -111,7 +114,8 @@ const boundSelectors = {
     ...bindSelectors(getProcesses, processSelectors),
     ...bindSelectors(getRuleGroups, groupsSelectors),
     ...bindSelectors(getAttributes, attributesSelectors),
-    ...bindSelectors(getCLI, cliSelectors)
+    ...bindSelectors(getCLI, cliSelectors),
+    ...bindSelectors(getPdfDownload, pdfDownloadSelectors)
 };
 
 export const selectors = {

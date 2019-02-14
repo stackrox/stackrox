@@ -19,12 +19,10 @@ const svgMapping = {
     [entityTypes.NIST_800_190]: NIST
 };
 
-const ControlDetails = ({ standardId, control, description }) => (
-    <Widget className="sx-2" header="Control details" bodyClassName="flex-col">
-        <div className="flex bg-tertiary-200 m-1 items-center p-2">
-            <div>
-                <img src={svgMapping[standardId]} alt={standardId} className="h-18" />
-            </div>
+const ControlDetails = ({ standardId, control, description, className }) => (
+    <Widget header="Control details" bodyClassName="flex-col" className={className}>
+        <div className="flex bg-tertiary-200 m-1">
+            <img src={svgMapping[standardId]} alt={standardId} className="h-18" />
             <div className="flex flex-col justify-center pl-3">
                 <div className="pb-2">
                     <span className="font-700 pr-1">Standard:</span>
@@ -43,7 +41,12 @@ const ControlDetails = ({ standardId, control, description }) => (
 ControlDetails.propTypes = {
     standardId: PropTypes.string.isRequired,
     control: PropTypes.string.isRequired,
-    description: PropTypes.string.isRequired
+    description: PropTypes.string.isRequired,
+    className: PropTypes.string
+};
+
+ControlDetails.defaultProps = {
+    className: ''
 };
 
 export default connect()(ControlDetails);

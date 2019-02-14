@@ -72,7 +72,7 @@ function processData(data, type) {
     return barData;
 }
 
-const StandardsAcrossEntity = ({ type, params, bodyClassName }) => (
+const StandardsAcrossEntity = ({ type, params, bodyClassName, className }) => (
     <Query params={params} componentType={componentTypeMapping[type]}>
         {({ loading, data }) => {
             let contents;
@@ -89,7 +89,7 @@ const StandardsAcrossEntity = ({ type, params, bodyClassName }) => (
             }
             return (
                 <Widget
-                    className="s-2"
+                    className={`s-2 ${className}`}
                     header={headerText}
                     bodyClassName={`graph-bottom-border ${bodyClassName}`}
                 >
@@ -103,11 +103,13 @@ const StandardsAcrossEntity = ({ type, params, bodyClassName }) => (
 StandardsAcrossEntity.propTypes = {
     type: PropTypes.string.isRequired,
     params: PropTypes.shape({}).isRequired,
-    bodyClassName: PropTypes.string
+    bodyClassName: PropTypes.string,
+    className: PropTypes.string
 };
 
 StandardsAcrossEntity.defaultProps = {
-    bodyClassName: 'px-4 pt-1'
+    bodyClassName: 'px-4 pt-1',
+    className: ''
 };
 
 export default StandardsAcrossEntity;

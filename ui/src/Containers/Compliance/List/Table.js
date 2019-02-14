@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { standardBaseTypes } from 'constants/entityTypes';
 import pluralize from 'pluralize';
+import toLower from 'lodash/toLower';
+import startCase from 'lodash/startCase';
 import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOptions';
 
 import Table from 'Components/Table';
@@ -15,15 +17,81 @@ import componentTypes from 'constants/componentTypes';
 import AppQuery from 'Components/AppQuery';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
+const createPDFTable = (tableData, params, pdfId) => {
+    const { entityType } = params;
+    const table = document.getElementById('pdf-table');
+    const parent = document.getElementById(pdfId);
+    if (table) {
+        parent.removeChild(table);
+    }
+    let type = null;
+    if (params.query.groupBy) {
+        type = startCase(toLower(params.query.groupBy));
+    } else if (standardBaseTypes[params.entityType]) {
+        type = 'Standard';
+    }
+    if (tableData.length) {
+        const headers = entityToColumns[entityType]
+            .map(col => col.Header)
+            .filter(header => header !== 'id');
+        const headerKeys = entityToColumns[entityType]
+            .map(col => col.accessor)
+            .filter(header => header !== 'id');
+
+        if (tableData[0].rows) {
+            headers.unshift(type);
+            headerKeys.unshift(type);
+        }
+        const tbl = document.createElement('table');
+        tbl.style.width = '100%';
+        tbl.setAttribute('border', '1');
+        const tbdy = document.createElement('tbody');
+        const trh = document.createElement('tr');
+
+        headers.forEach(val => {
+            const th = document.createElement('th');
+            th.appendChild(document.createTextNode(val));
+            trh.appendChild(th);
+        });
+        tbdy.appendChild(trh);
+        const addRows = val => {
+            const tr = document.createElement('tr');
+            headerKeys.forEach(key => {
+                const td = document.createElement('td');
+                const trimmedStr = val[key] && val[key].replace(/\s+/g, ' ').trim();
+                td.appendChild(document.createTextNode(trimmedStr || 'N/A'));
+                tr.appendChild(td);
+            });
+            tbdy.appendChild(tr);
+        };
+        tableData.forEach(val => {
+            if (val.rows) {
+                val.rows.forEach(row => {
+                    Object.assign(row, { [type]: val.name });
+                    addRows(row);
+                });
+            } else {
+                addRows(val);
+            }
+        });
+        tbl.appendChild(tbdy);
+        tbl.id = 'pdf-table';
+        tbl.className = 'hidden';
+        if (parent) parent.appendChild(tbl);
+    }
+};
+
 class ListTable extends Component {
     static propTypes = {
         params: PropTypes.shape({}).isRequired,
         selectedRow: PropTypes.shape({}),
-        updateSelectedRow: PropTypes.func.isRequired
+        updateSelectedRow: PropTypes.func.isRequired,
+        pdfId: PropTypes.string
     };
 
     static defaultProps = {
-        selectedRow: null
+        selectedRow: null,
+        pdfId: null
     };
 
     constructor(props) {
@@ -60,7 +128,7 @@ class ListTable extends Component {
     };
 
     render() {
-        const { params, selectedRow, updateSelectedRow } = this.props;
+        const { params, selectedRow, updateSelectedRow, pdfId } = this.props;
         const { page } = this.state;
         return (
             <AppQuery params={params} componentType={componentTypes.LIST_TABLE}>
@@ -76,6 +144,9 @@ class ListTable extends Component {
                                 <NoResultsMessage message="No compliance data available. Please run a scan." />
                             );
                         tableData = this.filterByComplianceState(data, params);
+                        if (tableData.length) {
+                            createPDFTable(tableData, params, pdfId);
+                        }
                         const total = isStandard ? data.totalRows : tableData.length;
                         const { groupBy } = params.query;
                         const groupedByText = groupBy

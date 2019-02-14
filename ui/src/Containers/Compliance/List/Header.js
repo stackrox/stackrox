@@ -5,6 +5,8 @@ import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 import { standardBaseTypes } from 'constants/entityTypes';
 import standardLabels from 'messages/standards';
+import lowerCase from 'lodash/lowerCase';
+import startCase from 'lodash/startCase';
 
 import PageHeader from 'Components/PageHeader';
 import ScanButton from 'Containers/Compliance/ScanButton';
@@ -15,29 +17,46 @@ const ListHeader = ({ match, location, searchComponent }) => {
     const { entityType } = params;
     const headerText = standardBaseTypes[entityType]
         ? standardLabels[entityType]
-        : `${entityType}s`;
+        : `${startCase(lowerCase(entityType))}s`;
+
     const subHeaderText = standardBaseTypes[entityType] ? 'Standard' : 'Resource list';
+    let type = null;
+    let tableOptions = null;
+    if (entityType === 'CLUSTER') {
+        type = 'CLUSTER';
+    } else if (standardBaseTypes[entityType]) {
+        type = 'STANDARD';
+        tableOptions = {
+            columnStyles: {
+                0: { columnWidth: 80 },
+                1: { columnWidth: 80 },
+                2: { columnWidth: 25 }
+            }
+        };
+    }
 
     return (
         <PageHeader header={headerText} subHeader={subHeaderText}>
             <div className="w-full">{searchComponent}</div>
-            {standardBaseTypes[entityType] && (
-                <div className="flex flex-1 justify-end">
-                    <div className="border-l-2 border-base-300 mx-3" />
-                    <div className="flex">
-                        <div className="flex items-center">
-                            <div className="flex">
+            <div className="flex flex-1 justify-end">
+                <div className="border-l-2 border-base-300 mx-3" />
+                <div className="flex">
+                    <div className="flex items-center">
+                        <div className="flex">
+                            {standardBaseTypes[entityType] && (
                                 <ScanButton text="Scan" standardId={entityType} />
-                                <ExportButton
-                                    fileName={headerText}
-                                    id={params.entityId}
-                                    type="STANDARD"
-                                />
-                            </div>
+                            )}
+                            <ExportButton
+                                fileName={headerText}
+                                id={params.entityId}
+                                type={type}
+                                pdfId="capture-list"
+                                tableOptions={tableOptions}
+                            />
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
         </PageHeader>
     );
 };

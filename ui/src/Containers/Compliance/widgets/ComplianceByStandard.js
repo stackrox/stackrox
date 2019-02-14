@@ -141,7 +141,7 @@ const createURLLink = (params, type, entityName) => {
     return link;
 };
 
-const ComplianceByStandard = ({ type, entityName, params }) => {
+const ComplianceByStandard = ({ type, entityName, params, className }) => {
     const newParams = constructURLWithQuery(params, type, entityName);
     return (
         <Query params={newParams} componentType={componentTypes.COMPLIANCE_BY_STANDARD}>
@@ -181,7 +181,7 @@ const ComplianceByStandard = ({ type, entityName, params }) => {
                     }
                 }
                 return (
-                    <Widget className="s-2" header={headerText}>
+                    <Widget className={`s-2 ${className}`} header={headerText}>
                         {contents}
                     </Widget>
                 );
@@ -193,12 +193,14 @@ const ComplianceByStandard = ({ type, entityName, params }) => {
 ComplianceByStandard.propTypes = {
     type: PropTypes.string.isRequired,
     entityName: PropTypes.string,
-    params: PropTypes.shape({})
+    params: PropTypes.shape({}),
+    className: PropTypes.string
 };
 
 ComplianceByStandard.defaultProps = {
     params: null,
-    entityName: null
+    entityName: null,
+    className: ''
 };
 
 export default ComplianceByStandard;

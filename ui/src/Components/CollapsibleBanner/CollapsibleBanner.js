@@ -99,7 +99,9 @@ class CollapsibleBanner extends Component {
             >
                 <Slider
                     {...sliderSettings}
-                    className="banner-background px-3 py-1 bg-primary-200 h-64"
+                    className={`banner-background px-3 py-1 bg-primary-200 h-64 ${
+                        this.props.className
+                    }`}
                 >
                     {content}
                 </Slider>
@@ -109,7 +111,12 @@ class CollapsibleBanner extends Component {
 }
 
 CollapsibleBanner.propTypes = {
-    children: PropTypes.node.isRequired
+    children: PropTypes.node.isRequired,
+    className: PropTypes.string
+};
+
+CollapsibleBanner.defaultProps = {
+    className: ''
 };
 
 export default CollapsibleBanner;

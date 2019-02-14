@@ -105,6 +105,17 @@ dependencies:
     attribution:
       - 2014-present Matt Zabriskie
 
+  ui/node_modules/computed-style-to-inline-style:
+        url: https://github.com/lukehorvat/computed-style-to-inline-style
+        license: MIT
+        files:
+          LICENSE: aab6b1136727bc0450cc4e3a5f08f80ff5b8e9098219b68176783d8dacd951b2
+          package.json:
+            author: 564b733867fe44164fd7feba1084bbdf4462c0dcbbe15319e07e866462647767
+            license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+        attribution:
+         - 2016 Luke Horvat
+
   ui/node_modules/d3:
     url: https://github.com/d3/d3
     license: BSD-3-Clause
@@ -172,6 +183,37 @@ dependencies:
       - React Training 2016-2018
       - Michael Jackson
 
+  ui/node_modules/html2canvas:
+      url: https://github.com/niklasvh/html2canvas
+      license: MIT
+      files:
+        LICENSE: 86200ce4e92d9a22c41c8647a55f7a5fddff304ff89b4d36ecc699ed8c123d2c
+        package.json:
+          author: 7f048b27757063b42f976156f79052586345aa2d4073a7e9364d280fb3a053ed
+          license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+      attribution:
+       - 2012 Niklas von Hertzen
+
+  ui/node_modules/jspdf:
+      url: https://github.com/mrrio/jspdf
+      license: MIT
+      files:
+        package.json:
+          license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+      attribution:
+       - 2010-2017 James Hall
+
+  ui/node_modules/jspdf-autotable:
+      url: https://github.com/simonbengtsson/jsPDF-AutoTable
+      license: MIT
+      files:
+        LICENSE.txt: 99a374e0385cf714d2faae5f6e02ec79217c6bcecec39bdb9e102091471b960a
+        package.json:
+          author: bc5102f92f1d7c0be6941c36d6882579b6e0c6f8abfebddb72a5d479dd777913
+          license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+      attribution:
+       - 2014 Simon Bengtsson
+
   ui/node_modules/lodash:
     url: https://github.com/lodash/lodash
     license: MIT
@@ -218,6 +260,17 @@ dependencies:
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
       - 2015 Jiri Spac
+
+  ui/node_modules/p-defer:
+    url: https://github.com/sindresorhus/p-defer
+    license: MIT
+    files:
+      license: 6fb9754611c20f6649f68805e8c990e83261f29316e29de9e6cedae607b8634c
+      package.json:
+        author: a79cf742e06a2994f196cd45b37bb1fab34f935f97b8a48cfbd6a563f160c59f
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+     - Sindre Sorhus
 
   ui/node_modules/pluralize:
     url: https://github.com/blakeembrey/pluralize

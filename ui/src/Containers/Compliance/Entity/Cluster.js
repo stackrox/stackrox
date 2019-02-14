@@ -21,6 +21,7 @@ const ClusterPage = ({ sidePanelMode, params }) => (
         {({ loading, data }) => {
             if (loading) return <Loader />;
             const cluster = processData(data);
+            const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
             return (
                 <section className="flex flex-col h-full w-full">
                     {!sidePanelMode && (
@@ -35,6 +36,7 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                         className={`flex-1 relative bg-base-200 overflow-auto ${
                             !sidePanelMode ? `p-6` : `p-4`
                         } `}
+                        id="capture-dashboard"
                     >
                         <div
                             className={`grid ${
@@ -44,7 +46,7 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                             } sm:grid-columns-1 grid-gap-5`}
                         >
                             <div
-                                className="grid s-2 md:grid-auto-fit md:grid-dense"
+                                className={`grid s-2 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
                                 style={{ '--min-tile-width': '50%' }}
                             >
                                 <div className="s-full pb-3">
@@ -69,26 +71,31 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                                 type={entityTypes.PCI_DSS_3_2}
                                 entityName={cluster.name}
                                 params={params}
+                                className={pdfClassName}
                             />
                             <ComplianceByStandard
                                 type={entityTypes.NIST_800_190}
                                 entityName={cluster.name}
                                 params={params}
+                                className={pdfClassName}
                             />
                             <ComplianceByStandard
                                 type={entityTypes.HIPAA_164}
                                 entityName={cluster.name}
                                 params={params}
+                                className={pdfClassName}
                             />
                             <ComplianceByStandard
                                 type={entityTypes.CIS_KUBERENETES_V1_2_0}
                                 entityName={cluster.name}
                                 params={params}
+                                className={pdfClassName}
                             />
                             <ComplianceByStandard
                                 type={entityTypes.CIS_DOCKER_V1_1_0}
                                 entityName={cluster.name}
                                 params={params}
+                                className={pdfClassName}
                             />
                             {!sidePanelMode && (
                                 <>
@@ -96,13 +103,13 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                                         listEntityType={entityTypes.NAMESPACE}
                                         pageEntityType={entityTypes.CLUSTER}
                                         pageEntity={cluster}
-                                        className="sx-2"
+                                        className={`sx-2 ${pdfClassName}`}
                                     />
                                     <ResourceRelatedResourceList
                                         listEntityType={entityTypes.DEPLOYMENT}
                                         pageEntityType={entityTypes.CLUSTER}
                                         pageEntity={cluster}
-                                        className="sx-2"
+                                        className={`sx-2 ${pdfClassName}`}
                                     />
                                 </>
                             )}

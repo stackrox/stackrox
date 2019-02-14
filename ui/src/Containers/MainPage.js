@@ -33,6 +33,7 @@ import SearchModal from 'Containers/Search/SearchModal';
 import CLIModal from 'Containers/CLI/CLIModal';
 
 import ErrorBoundary from 'Containers/ErrorBoundary';
+import Loader from 'Components/Loader';
 
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
@@ -56,11 +57,13 @@ class MainPage extends Component {
         toggleCLIDownloadView: PropTypes.func.isRequired,
         globalSearchView: PropTypes.bool.isRequired,
         cliDownloadView: PropTypes.bool.isRequired,
-        metadata: PropTypes.shape({ stale: PropTypes.bool.isRequired })
+        metadata: PropTypes.shape({ stale: PropTypes.bool.isRequired }),
+        pdfLoadingStatus: PropTypes.bool
     };
 
     static defaultProps = {
-        metadata: { stale: false }
+        metadata: { stale: false },
+        pdfLoadingStatus: false
     };
 
     onSearchCloseHandler = toURL => {
@@ -73,6 +76,13 @@ class MainPage extends Component {
         if (toURL && typeof toURL === 'string') this.props.history.push(toURL);
     };
 
+    renderPDFLoader = () =>
+        this.props.pdfLoadingStatus && (
+            <div className="absolute pin-l pin-t bg-base-100 z-40 mt-20 w-full h-full">
+                <Loader message="Exporting..." />
+            </div>
+        );
+
     renderSearchModal = () => {
         if (!this.props.globalSearchView) return '';
         return <SearchModal className="h-full w-full" onClose={this.onSearchCloseHandler} />;
@@ -84,7 +94,11 @@ class MainPage extends Component {
     };
 
     renderRouter = () => (
-        <section className="flex-auto w-full overflow-auto">
+        <section
+            className={`flex-auto w-full relative ${
+                this.props.pdfLoadingStatus ? '' : 'overflow-auto'
+            }`}
+        >
             <ErrorBoundary>
                 <Switch>
                     <ProtectedRoute path={dashboardPath} component={AsyncDashboardPage} />
@@ -100,6 +114,7 @@ class MainPage extends Component {
                     <ProtectedRoute path={apidocsPath} component={AsyncApiDocsPage} />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
+                {this.renderPDFLoader()}
             </ErrorBoundary>
         </section>
     );
@@ -148,7 +163,8 @@ class MainPage extends Component {
 const mapStateToProps = createStructuredSelector({
     globalSearchView: selectors.getGlobalSearchView,
     cliDownloadView: selectors.getCLIDownloadView,
-    metadata: selectors.getMetadata
+    metadata: selectors.getMetadata,
+    pdfLoadingStatus: selectors.getPdfLoadingStatus
 });
 
 const mapDispatchToProps = dispatch => ({

@@ -17,6 +17,7 @@ const ControlPage = ({ sidePanelMode, params }) => (
             if (isEmpty(control)) return null;
             const standard = standards.find(item => item.id === control.standardId);
             const { name, standardId, interpretationText, description } = control;
+            const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
             return (
                 <section className="flex flex-col h-full w-full">
                     {!sidePanelMode && (
@@ -30,6 +31,7 @@ const ControlPage = ({ sidePanelMode, params }) => (
                         className={`flex-1 relative bg-base-200 overflow-auto ${
                             !sidePanelMode ? `p-6` : `p-4`
                         } `}
+                        id="capture-dashboard"
                     >
                         <div
                             className={`grid ${
@@ -42,10 +44,13 @@ const ControlPage = ({ sidePanelMode, params }) => (
                                 standardId={standardId}
                                 control={name}
                                 description={description}
-                                className="s-2"
+                                className={`s-2 ${pdfClassName}`}
                             />
                             {!!interpretationText.length && (
-                                <Widget className="sx-2" header="Control guidance">
+                                <Widget
+                                    className={`sx-2 ${pdfClassName}`}
+                                    header="Control guidance"
+                                >
                                     <div className="p-4 leading-loose">{interpretationText}</div>
                                 </Widget>
                             )}
@@ -56,18 +61,21 @@ const ControlPage = ({ sidePanelMode, params }) => (
                                         pageEntityType={entityTypes.CONTROL}
                                         pageEntity={control}
                                         standard={standard ? standard.name : ''}
+                                        className={pdfClassName}
                                     />
                                     <ControlRelatedResourceList
                                         listEntityType={entityTypes.NAMESPACE}
                                         pageEntityType={entityTypes.CONTROL}
                                         pageEntity={control}
                                         standard={standard ? standard.name : ''}
+                                        className={pdfClassName}
                                     />
                                     <ControlRelatedResourceList
                                         listEntityType={entityTypes.NODE}
                                         pageEntityType={entityTypes.CONTROL}
                                         pageEntity={control}
                                         standard={standard ? standard.name : ''}
+                                        className={pdfClassName}
                                     />
                                 </>
                             )}

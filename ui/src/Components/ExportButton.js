@@ -4,13 +4,16 @@ import Button from 'Components/Button';
 import * as Icon from 'react-feather';
 import downloadCsv from 'services/ComplianceDownloadService';
 import onClickOutside from 'react-onclickoutside';
+import PDFExportButton from 'Components/PDFExportButton';
+import { format } from 'date-fns';
 
 const btnClassName = 'btn border-base-400 bg-base-400 text-base-100 w-48';
 const selectedBtnClassName =
     'btn border-primary-800 bg-primary-800 text-base-100 w-48 hover:bg-primary-900';
 const queryParamMap = {
     CLUSTER: 'clusterId',
-    STANDARD: 'standardId'
+    STANDARD: 'standardId',
+    ALL: ''
 };
 
 const downloadUrl = '/api/compliance/export/csv';
@@ -21,7 +24,9 @@ class ExportButton extends Component {
         textClass: PropTypes.string,
         fileName: PropTypes.string,
         type: PropTypes.string,
-        id: PropTypes.string
+        id: PropTypes.string,
+        pdfId: PropTypes.string,
+        tableOptions: PropTypes.shape({})
     };
 
     static defaultProps = {
@@ -29,18 +34,20 @@ class ExportButton extends Component {
         textClass: null,
         fileName: 'compliance',
         type: null,
-        id: ''
+        id: '',
+        pdfId: '',
+        tableOptions: {}
     };
 
     state = {
-        selectedFormat: 'csv',
+        selectedFormat: 'pdf',
         toggleWidget: false
     };
 
     handleClickOutside = () => this.setState({ toggleWidget: false });
 
-    selectDownloadFormat = format => () => {
-        this.setState({ selectedFormat: format });
+    selectDownloadFormat = selectedFormat => () => {
+        this.setState({ selectedFormat });
     };
 
     downloadCsv = () => {
@@ -60,38 +67,67 @@ class ExportButton extends Component {
         downloadCsv(query, fileName, downloadUrl);
     };
 
+    isTypeSupported = () => Object.keys(queryParamMap).includes(this.props.type);
+
     renderContent = () => {
         const { toggleWidget, selectedFormat } = this.state;
         if (!toggleWidget) return null;
+
+        const headerText = this.props.fileName;
+
+        const fileName = `StackRox:${headerText}-${format(new Date(), 'MM/DD/YYYY')}`;
 
         return (
             <div className="absolute pin-r pin-r z-10 uppercase flex flex-col text-base-600 min-w-64">
                 <div className="arrow-up self-end mr-5" />
                 <ul className="list-reset bg-base-100 border-2 border-primary-800 rounded">
-                    <li className="p-4 border-b border-base-400 hidden">
-                        <span>Export Evidence...</span>
-                        <div className="pt-4 flex">
+                    <li className="p-4 border-b border-base-400">
+                        <div className="flex uppercase">
                             <button
-                                className={
-                                    selectedFormat === 'csv' ? selectedBtnClassName : btnClassName
-                                }
+                                className={`${
+                                    selectedFormat === 'pdf' ? selectedBtnClassName : btnClassName
+                                }  ${this.isTypeSupported() ? 'mr-2' : 'w-full'}`}
                                 type="button"
-                                onClick={this.selectDownloadFormat('csv')}
+                                onClick={this.selectDownloadFormat('pdf')}
                             >
-                                CSV
+                                Page as PDF
                             </button>
+                            {this.isTypeSupported() && (
+                                <button
+                                    className={
+                                        selectedFormat === 'csv'
+                                            ? selectedBtnClassName
+                                            : btnClassName
+                                    }
+                                    type="button"
+                                    onClick={this.selectDownloadFormat('csv')}
+                                >
+                                    Evidence as CSV
+                                </button>
+                            )}
                         </div>
                     </li>
                     <li className="p-4">
-                        <span>Download evidence CSV</span>
-                        <div className="pt-4">
-                            <button
-                                type="button"
-                                className={`${selectedBtnClassName} w-full`}
-                                onClick={this.downloadCsv}
-                            >
-                                Download {this.state.selectedFormat}
-                            </button>
+                        <div>
+                            {selectedFormat === 'csv' && (
+                                <button
+                                    type="button"
+                                    className={`${selectedBtnClassName} w-full`}
+                                    onClick={this.downloadCsv}
+                                >
+                                    Download
+                                </button>
+                            )}
+                            {selectedFormat === 'pdf' && (
+                                <PDFExportButton
+                                    id={this.props.pdfId}
+                                    onClick={this.selectDownloadFormat('pdf')}
+                                    className={`${selectedBtnClassName} w-full`}
+                                    tableOptions={this.props.tableOptions}
+                                    fileName={fileName}
+                                    pdfTitle={headerText}
+                                />
+                            )}
                         </div>
                     </li>
                     <li className="hidden">

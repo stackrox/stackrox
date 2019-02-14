@@ -34,6 +34,7 @@ const NamespacePage = ({ sidePanelMode, params }) => (
         {({ loading, data }) => {
             const namespace = processData(data);
             const header = namespace.name || 'Loading';
+            const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
             return (
                 <section className="flex flex-col h-full w-full">
                     {!sidePanelMode && (
@@ -43,6 +44,7 @@ const NamespacePage = ({ sidePanelMode, params }) => (
                         className={`flex-1 relative bg-base-200 overflow-auto ${
                             !sidePanelMode ? `p-6` : `p-4`
                         } `}
+                        id="capture-dashboard"
                     >
                         <div
                             className={`grid ${
@@ -52,7 +54,7 @@ const NamespacePage = ({ sidePanelMode, params }) => (
                             } sm:grid-columns-1 grid-gap-5`}
                         >
                             <div
-                                className="grid s-2 md:grid-auto-fit md:grid-dense"
+                                className={`grid s-2 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
                                 style={{ '--min-tile-width': '50%' }}
                             >
                                 <div className="s-full pb-3">
@@ -79,7 +81,7 @@ const NamespacePage = ({ sidePanelMode, params }) => (
                             </div>
 
                             <Widget
-                                className="sx-2"
+                                className={`sx-2 ${pdfClassName}`}
                                 header={`${namespace.labels.length} ${pluralize(
                                     'Label',
                                     namespace.labels.length
@@ -92,16 +94,19 @@ const NamespacePage = ({ sidePanelMode, params }) => (
                                 type={entityTypes.PCI_DSS_3_2}
                                 entityName={namespace.name}
                                 params={params}
+                                className={pdfClassName}
                             />
                             <ComplianceByStandard
                                 type={entityTypes.NIST_800_190}
                                 entityName={namespace.name}
                                 params={params}
+                                className={pdfClassName}
                             />
                             <ComplianceByStandard
                                 type={entityTypes.HIPAA_164}
                                 entityName={namespace.name}
                                 params={params}
+                                className={pdfClassName}
                             />
                             {!sidePanelMode && (
                                 <>
@@ -109,13 +114,13 @@ const NamespacePage = ({ sidePanelMode, params }) => (
                                         listEntityType={entityTypes.DEPLOYMENT}
                                         pageEntityType={entityTypes.NAMESPACE}
                                         pageEntity={namespace}
-                                        className="sx-2"
+                                        className={`sx-2 ${pdfClassName}`}
                                     />
                                     <ResourceRelatedResourceList
                                         listEntityType={entityTypes.SECRET}
                                         pageEntityType={entityTypes.NAMESPACE}
                                         pageEntity={namespace}
-                                        className="sx-2"
+                                        className={`sx-2 ${pdfClassName}`}
                                     />
                                 </>
                             )}
