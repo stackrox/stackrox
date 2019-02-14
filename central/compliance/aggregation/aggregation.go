@@ -29,7 +29,7 @@ const (
 
 // Aggregator does compliance aggregation
 type Aggregator interface {
-	Aggregate(query string, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) ([]*v1.ComplianceAggregation_Result, []*v1.ComplianceAggregation_Source, DomainFunc, error)
+	Aggregate(query string, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) ([]*v1.ComplianceAggregation_Result, []*v1.ComplianceAggregation_Source, map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain, error)
 }
 
 // New returns a new aggregator
@@ -116,7 +116,7 @@ func (c flatCheck) passFailCounts() passFailCounts {
 }
 
 // Aggregate takes in a search query, groupby scopes and unit scope and returns the results of the aggregation
-func (a *aggregatorImpl) Aggregate(queryString string, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) ([]*v1.ComplianceAggregation_Result, []*v1.ComplianceAggregation_Source, DomainFunc, error) {
+func (a *aggregatorImpl) Aggregate(queryString string, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) ([]*v1.ComplianceAggregation_Result, []*v1.ComplianceAggregation_Source, map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
 	queryMap := search.ParseRawQueryIntoMap(queryString)
 	query, err := search.ParseRawQueryOrEmpty(queryString)
 	if err != nil {
@@ -139,9 +139,9 @@ func (a *aggregatorImpl) Aggregate(queryString string, groupBy []v1.ComplianceAg
 		return nil, nil, nil, err
 	}
 
-	results, domainFunc := a.getAggregatedResults(groupBy, unit, validResults, mask)
+	results, domainMap := a.getAggregatedResults(groupBy, unit, validResults, mask)
 
-	return results, sources, domainFunc, nil
+	return results, sources, domainMap, nil
 }
 
 func newFlatCheck(clusterID, namespaceID, standardID, category, controlID, nodeID, deploymentID string, state storage.ComplianceState) flatCheck {
@@ -241,7 +241,7 @@ type domainOffsetPair struct {
 }
 
 // getAggregatedResults aggregates the passed results by groupBy and unit
-func (a *aggregatorImpl) getAggregatedResults(groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope, runResults []*storage.ComplianceRunResults, mask [numScopes]set.StringSet) ([]*v1.ComplianceAggregation_Result, DomainFunc) {
+func (a *aggregatorImpl) getAggregatedResults(groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope, runResults []*storage.ComplianceRunResults, mask [numScopes]set.StringSet) ([]*v1.ComplianceAggregation_Result, map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain) {
 	var flatChecks []flatCheck
 	var domainIndices []domainOffsetPair
 	for _, r := range runResults {
@@ -275,7 +275,7 @@ func (a *aggregatorImpl) getAggregatedResults(groupBy []v1.ComplianceAggregation
 	}
 
 	results := make([]*v1.ComplianceAggregation_Result, 0, len(groups))
-	domainMap := make(map[int]*storage.ComplianceDomain)
+	domainMap := make(map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain)
 	for key, checks := range groups {
 		unitMap := make(map[string]passFailCounts)
 		for i, c := range checks {
@@ -295,16 +295,17 @@ func (a *aggregatorImpl) getAggregatedResults(groupBy []v1.ComplianceAggregation
 			counts = counts.Add(u.Reduce())
 		}
 
-		domainMap[len(results)] = domains[key]
-		results = append(results, &v1.ComplianceAggregation_Result{
+		result := &v1.ComplianceAggregation_Result{
 			AggregationKeys: getAggregationKeys(key),
 			Unit:            unit,
 			NumPassing:      int32(counts.pass),
 			NumFailing:      int32(counts.fail),
-		})
+		}
+		domainMap[result] = domains[key]
+		results = append(results, result)
 	}
 	sortAggregations(results)
-	return results, func(i int) *storage.ComplianceDomain { return domainMap[i] }
+	return results, domainMap
 }
 
 // getCheckMask returns an array of ComplianceAggregation scopes that contains a set of IDs that are allowed

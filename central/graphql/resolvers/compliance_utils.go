@@ -2,13 +2,13 @@
 package resolvers
 
 import (
-	"github.com/stackrox/rox/central/compliance/aggregation"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
 type complianceAggregationResponseWithDomainResolver struct {
 	complianceAggregation_ResponseResolver
-	domainFunc aggregation.DomainFunc
+	domainMap map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain
 }
 
 func (r *complianceAggregationResponseWithDomainResolver) Results() ([]*complianceAggregationResultWithDomainResolver, error) {
@@ -21,7 +21,7 @@ func (r *complianceAggregationResponseWithDomainResolver) Results() ([]*complian
 	for i, result := range results {
 		wrappedResults[i] = &complianceAggregationResultWithDomainResolver{
 			complianceAggregation_ResultResolver: *result,
-			domain:                               r.domainFunc(i),
+			domain:                               r.domainMap[results[i].data],
 		}
 	}
 	return wrappedResults, nil

@@ -100,7 +100,7 @@ func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregated
 	groupBy := toComplianceAggregation_Scopes(args.GroupBy)
 	unit := toComplianceAggregation_Scope(&args.Unit)
 
-	validResults, sources, domainFunc, err := resolver.ComplianceAggregator.Aggregate(where, groupBy, unit)
+	validResults, sources, domainMap, err := resolver.ComplianceAggregator.Aggregate(where, groupBy, unit)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregated
 				Sources: sources,
 			},
 		},
-		domainFunc: domainFunc,
+		domainMap: domainMap,
 	}, nil
 }
 

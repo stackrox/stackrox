@@ -286,3 +286,81 @@ func TestGetAggregatedResults(t *testing.T) {
 		})
 	}
 }
+
+func TestDomainAttribution(t *testing.T) {
+	ag := &aggregatorImpl{
+		standards: standards.NewRegistry(nil, nil),
+	}
+	complianceRunResults := []*storage.ComplianceRunResults{
+		{
+			NodeResults: map[string]*storage.ComplianceRunResults_EntityResults{
+				"cluster1-node1": {
+					ControlResults: map[string]*storage.ComplianceResultValue{
+						"check1": {},
+						"check2": {},
+					},
+				},
+				"cluster1-node2": {
+					ControlResults: map[string]*storage.ComplianceResultValue{
+						"check1": {},
+						"check2": {},
+					},
+				},
+			},
+			Domain: &storage.ComplianceDomain{
+				Nodes: map[string]*storage.Node{
+					"cluster1-node1": {
+						Id:   "cluster1-node1",
+						Name: "cluster1-node1",
+					},
+					"cluster1-node2": {
+						Id:   "cluster1-node2",
+						Name: "cluster1-node2",
+					},
+				},
+			},
+		},
+		{
+			NodeResults: map[string]*storage.ComplianceRunResults_EntityResults{
+				"cluster2-node1": {
+					ControlResults: map[string]*storage.ComplianceResultValue{
+						"check1": {},
+						"check2": {},
+					},
+				},
+				"cluster2-node2": {
+					ControlResults: map[string]*storage.ComplianceResultValue{
+						"check1": {},
+						"check2": {},
+					},
+				},
+			},
+			Domain: &storage.ComplianceDomain{
+				Nodes: map[string]*storage.Node{
+					"cluster2-node1": {
+						Id:   "cluster2-node1",
+						Name: "cluster2-node1",
+					},
+					"cluster2-node2": {
+						Id:   "cluster2-node2",
+						Name: "cluster2-node2",
+					},
+				},
+			},
+		},
+	}
+
+	results, domainMap := ag.getAggregatedResults(
+		[]v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CONTROL, v1.ComplianceAggregation_NODE},
+		v1.ComplianceAggregation_CHECK,
+		complianceRunResults,
+		[numScopes]set.StringSet{},
+	)
+
+	for i, r := range results {
+		nodeID := r.AggregationKeys[1].GetId()
+		mappedDomain := domainMap[results[i]].GetNodes()
+		_, ok := mappedDomain[nodeID]
+		assert.True(t, ok)
+	}
+}
