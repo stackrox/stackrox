@@ -36,6 +36,13 @@ const sortSeverity = (a, b) => {
 const sortValue = (a, b) => {
     if (a === undefined) return -1;
     if (b === undefined) return 1;
+    const numA = Number(a);
+    const numB = Number(b);
+    if (!Number.isNaN(numA) && !Number.isNaN(numB)) {
+        if (numA < numB) return -1;
+        if (numA > numB) return 1;
+        return 0;
+    }
     if (a < b) return -1;
     if (a > b) return 1;
     return 0;
