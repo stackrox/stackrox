@@ -1,6 +1,7 @@
 package registries
 
 import (
+	"sort"
 	"sync"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -23,6 +24,10 @@ func (e *setImpl) GetAll() []types.ImageRegistry {
 	for _, i := range e.integrations {
 		integrations = append(integrations, i)
 	}
+	// This just ensures that the registries that have username/passwords are processed first
+	sort.SliceStable(integrations, func(i, j int) bool {
+		return integrations[i].Config().Username != "" && integrations[j].Config().Username == ""
+	})
 	return integrations
 }
 
