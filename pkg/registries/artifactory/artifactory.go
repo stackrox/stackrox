@@ -6,8 +6,27 @@ import (
 	"github.com/stackrox/rox/pkg/registries/types"
 )
 
-// Creator provides the type and registries.Creator to add to the registries Registry.
+// Creator provides the type and registries.Creator to add to the registry of image registries.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageRegistry, error)) {
-	_, dockerCreator := docker.Creator()
-	return "artifactory", dockerCreator
+	return "artifactory", newRegistry
+}
+
+type registry struct {
+	*docker.Registry
+}
+
+func newRegistry(integration *storage.ImageIntegration) (types.ImageRegistry, error) {
+	dockerRegistry, err := docker.NewDockerRegistry(integration)
+	if err != nil {
+		return nil, err
+	}
+	return &registry{
+		Registry: dockerRegistry,
+	}, nil
+}
+
+// Test implements a valid Test function for Artifactory
+func (r *registry) Test() error {
+	_, err := r.Client.Repositories()
+	return err
 }
