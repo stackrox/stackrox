@@ -129,10 +129,9 @@ class SearchInput extends Component {
             actualSearchOptions.length === 1 &&
             !this.props.searchModifiers.find(x => x.value === actualSearchOptions[0].value)
         ) {
-            const prefix = `${this.props.defaultOption} `;
-            if (actualSearchOptions[0].label.startsWith(prefix)) {
-                actualSearchOptions[0] = actualSearchOptions[0].slice(prefix.length);
-            }
+            actualSearchOptions[0].label = this.trimDefaultOptionFromValueIfExists(
+                actualSearchOptions[0].label
+            );
             actualSearchOptions.unshift(this.props.defaultOption);
         }
         this.props.setSearchOptions(actualSearchOptions);
@@ -153,6 +152,14 @@ class SearchInput extends Component {
         this.props.searchOptions[this.props.searchOptions.length - 1].type !== 'categoryOption';
 
     formatValueWithDefaultOption = value => `${this.props.defaultOption.label} ${value}`;
+
+    trimDefaultOptionFromValueIfExists = value => {
+        const prefix = `${this.props.defaultOption.label} `;
+        if (value.startsWith(prefix)) {
+            return value.slice(prefix.length);
+        }
+        return value;
+    };
 
     getSuggestions = () => {
         const { searchOptions, searchModifiers } = this.props;
