@@ -113,18 +113,22 @@ const NamespacePage = ({ sidePanelMode, params }) => (
                                 entityName={namespace.name}
                                 params={params}
                             />
-                            <ResourceRelatedResourceList
-                                listEntityType={entityTypes.DEPLOYMENT}
-                                pageEntityType={entityTypes.NAMESPACE}
-                                pageEntity={namespace}
-                                className="sx-2"
-                            />
-                            <ResourceRelatedResourceList
-                                listEntityType={entityTypes.SECRET}
-                                pageEntityType={entityTypes.NAMESPACE}
-                                pageEntity={namespace}
-                                className="sx-2"
-                            />
+                            {!sidePanelMode && (
+                                <>
+                                    <ResourceRelatedResourceList
+                                        listEntityType={entityTypes.DEPLOYMENT}
+                                        pageEntityType={entityTypes.NAMESPACE}
+                                        pageEntity={namespace}
+                                        className="sx-2"
+                                    />
+                                    <ResourceRelatedResourceList
+                                        listEntityType={entityTypes.SECRET}
+                                        pageEntityType={entityTypes.NAMESPACE}
+                                        pageEntity={namespace}
+                                        className="sx-2"
+                                    />
+                                </>
+                            )}
                         </div>
                     </div>
                 </section>
