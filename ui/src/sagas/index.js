@@ -11,6 +11,7 @@ import integrations from './integrationSagas';
 import globalSearch from './globalSearchSagas';
 import roles from './roleSagas';
 import searches from './searchSagas';
+import searchAutoComplete from './searchAutocompleteSagas';
 import summaries from './summarySagas';
 import secrets from './secretSagas';
 import network from './networkSagas';
@@ -34,6 +35,7 @@ export default function* root() {
         fork(globalSearch),
         fork(roles),
         fork(searches),
+        fork(searchAutoComplete),
         fork(summaries),
         fork(secrets),
         fork(network),

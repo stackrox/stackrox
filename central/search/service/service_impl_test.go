@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -89,4 +90,9 @@ func TestAutocomplete(t *testing.T) {
 	require.NoError(t, err)
 	// This is odd, but this is correct. Bleve scores name12 higher than name1
 	assert.Equal(t, []string{"name12", "name1"}, results)
+
+	q = fmt.Sprintf("%s:", search.DeploymentName)
+	results, err = service.autocomplete(q, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"name12", "nginx_server", "name1"}, results)
 }

@@ -162,6 +162,7 @@ class SecretPage extends Component {
                             setSearchSuggestions={this.props.setSearchSuggestions}
                             onSearch={this.onSearch}
                             defaultOption={defaultOption}
+                            autoCompleteCategories={['SECRETS']}
                         />
                     </PageHeader>
                     <div className="flex flex-1 relative">

@@ -205,6 +205,7 @@ class RiskPage extends Component {
                             setSearchSuggestions={this.props.setSearchSuggestions}
                             onSearch={this.onSearch}
                             defaultOption={defaultOption}
+                            autoCompleteCategories={['DEPLOYMENTS']}
                         />
                     </PageHeader>
                     <div className="flex flex-1 relative">

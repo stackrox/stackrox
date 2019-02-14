@@ -12,12 +12,12 @@ package storage;
 
 message Policy {
     string id                                   = 1 [(gogoproto.moretags) = "search:\"Policy ID,store,hidden\""];
-    string name                                 = 2 [(gogoproto.moretags) = "search:\"Policy\""];
+    string name                                 = 2 [(gogoproto.moretags) = "search:\"Policy,store\""];
     string description                          = 3 [(gogoproto.moretags) = "search:\"Description\""];
     string rationale                            = 4;
     string remediation                          = 5;
     bool disabled                               = 6;
-    repeated string categories                  = 7 [(gogoproto.moretags) = "search:\"Category\""];
+    repeated string categories                  = 7 [(gogoproto.moretags) = "search:\"Category,store\""];
     PolicyFields fields                         = 8;
 
     repeated LifecycleStage lifecycle_stages       = 9  [(gogoproto.moretags) = "search:\"Lifecycle Stage\""];

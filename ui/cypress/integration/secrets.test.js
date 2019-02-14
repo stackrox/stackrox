@@ -24,8 +24,9 @@ describe('Secrets page', () => {
         // TODO: need to force the click because there is probably some issue with Electron / Cypress / product UI
         // that somehow table on it's appearance is scrolled down and first row is hidden behind the table header.
         cy.server();
-        cy.route('/v1/secrets?query=Secret:central').as('newSearchQuery');
-        cy.get(SecretsPageSelectors.searchInput).type('central{enter}', { force: true });
+        cy.route('/v1/secrets?query=Secret:central-tls').as('newSearchQuery');
+        // This implicitly tests that autocomplete completes central-t to central-tls
+        cy.get(SecretsPageSelectors.searchInput).type('central-t{enter}', { force: true });
         cy.wait('@newSearchQuery');
         cy.get(SecretsPageSelectors.table.firstRow).click({ force: true });
         cy.get(SecretsPageSelectors.deploymentLinks)

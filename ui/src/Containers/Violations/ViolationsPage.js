@@ -447,6 +447,7 @@ class ViolationsPage extends Component {
                             setSearchSuggestions={this.props.setSearchSuggestions}
                             onSearch={this.onSearch}
                             defaultOption={defaultOption}
+                            autoCompleteCategories={['ALERTS']}
                         />
                     </PageHeader>
                     <div className="flex flex-1 relative">

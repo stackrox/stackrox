@@ -93,6 +93,10 @@ func parsePair(pair string, allowEmpty bool) (key string, values string, valid b
 	if len(spl) < 2 || (spl[1] == "" && !allowEmpty) {
 		return
 	}
+	// If empty strings are allowed, it means we're treating them as wildcards.
+	if spl[1] == "" {
+		spl[1] = WildcardString
+	}
 	return spl[0], spl[1], true
 }
 

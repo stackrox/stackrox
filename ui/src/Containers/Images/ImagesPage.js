@@ -179,6 +179,7 @@ class ImagesPage extends Component {
                             setSearchSuggestions={this.props.setSearchSuggestions}
                             onSearch={this.onSearch}
                             defaultOption={defaultOption}
+                            autoCompleteCategories={['IMAGES']}
                         />
                     </PageHeader>
                     <div className="flex flex-1 relative">

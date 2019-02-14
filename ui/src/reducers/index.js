@@ -13,6 +13,7 @@ import notifications, { selectors as notificationSelectors } from './notificatio
 import globalSearch, { selectors as globalSearchSelectors } from './globalSearch';
 import policies, { selectors as policySelectors } from './policies/reducer';
 import roles, { selectors as roleSelectors } from './roles';
+import searchAutoComplete, { selectors as searchAutoCompleteSelectors } from './searchAutocomplete';
 import summaries, { selectors as summarySelectors } from './summaries';
 import secrets, { selectors as secretSelectors } from './secrets';
 import metadata, { selectors as metadataSelectors } from './metadata';
@@ -40,6 +41,7 @@ const appReducer = combineReducers({
     cli,
     policies,
     roles,
+    searchAutoComplete,
     summaries,
     secrets,
     dashboard,
@@ -74,6 +76,7 @@ const getNotifications = state => getApp(state).notifications;
 const getGlobalSearches = state => getApp(state).globalSearch;
 const getPolicies = state => getApp(state).policies;
 const getRoles = state => getApp(state).roles;
+const getSearchAutocomplete = state => getApp(state).searchAutoComplete;
 const getSummaries = state => getApp(state).summaries;
 const getSecrets = state => getApp(state).secrets;
 const getDashboard = state => getApp(state).dashboard;
@@ -98,6 +101,7 @@ const boundSelectors = {
     ...bindSelectors(getPolicies, policySelectors),
     ...bindSelectors(getRoles, roleSelectors),
     ...bindSelectors(getRoute, routeSelectors),
+    ...bindSelectors(getSearchAutocomplete, searchAutoCompleteSelectors),
     ...bindSelectors(getSummaries, summarySelectors),
     ...bindSelectors(getSecrets, secretSelectors),
     ...bindSelectors(getDashboard, dashboardSelectors),

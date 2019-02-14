@@ -2,6 +2,7 @@ import axios from 'axios';
 import queryString from 'qs';
 
 const baseUrl = '/v1/search';
+const autoCompleteURL = `${baseUrl}/autocomplete`;
 
 /**
  * Fetches search options
@@ -31,4 +32,10 @@ export function fetchGlobalSearchResults(filters) {
     return axios.get(`${baseUrl}?${params}`).then(response => ({
         response: response.data
     }));
+}
+
+// Fetches the autocomplete response.
+export function fetchAutoCompleteResults({ query, categories }) {
+    const params = queryString.stringify({ query, categories }, { arrayFormat: 'repeat' });
+    return axios.get(`${autoCompleteURL}?${params}`).then(response => response.data.values || []);
 }

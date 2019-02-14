@@ -22,7 +22,7 @@ message Deployment {
     string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
     string version                             = 3;
     string type                                = 4 [(gogoproto.moretags) = "search:\"Deployment Type\""];
-    string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace\""];
+    string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
     string namespace_id                        = 23;
     int64 replicas                             = 6;
     map<string, string> labels                 = 7 [(gogoproto.moretags) = "search:\"Label\""];
@@ -30,7 +30,7 @@ message Deployment {
     LabelSelector label_selector               = 20;
     google.protobuf.Timestamp updated_at       = 8;
     string cluster_id                          = 9 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
-    string cluster_name                        = 10 [(gogoproto.moretags) = "search:\"Cluster\""];
+    string cluster_name                        = 10 [(gogoproto.moretags) = "search:\"Cluster,store\""];
     repeated Container containers              = 11;
     Risk risk                                  = 12;
     map<string, string> annotations            = 14 [(gogoproto.moretags) = "search:\"Annotation\""];
