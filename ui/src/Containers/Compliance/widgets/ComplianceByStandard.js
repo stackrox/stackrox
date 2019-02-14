@@ -38,34 +38,27 @@ const processSunburstData = (data, type) => {
 
     const groupMapping = {};
 
-    const statsReducer = (statsMapping, { aggregationKeys, numPassing, numFailing }) => {
-        const groupsMapping = { ...statsMapping.groupsMapping };
-        const controlsMapping = { ...statsMapping.controlsMapping };
-        const groupKey = `${aggregationKeys[1].id}`;
-        const controlKey = `${aggregationKeys[2].id}`;
-        const group = groupsMapping[groupKey];
-        const passing = group ? group.passing : 0;
-        const total = group ? group.total : 0;
-        groupsMapping[groupKey] = {
-            passing: passing + numPassing,
-            total: total + numPassing + numFailing
+    const statsReducer = (statsMapping, { aggregationKeys, numPassing, numFailing, unit }) => {
+        const mapping = { ...statsMapping };
+        const isGroup = unit === 'CONTROL';
+        const keyIndex = isGroup ? 1 : 2;
+        const key = `${aggregationKeys[keyIndex].id}`;
+        const group = mapping[key];
+        const passing = isGroup && group ? group.passing + numPassing : numPassing;
+        const total =
+            isGroup && group ? group.total + numPassing + numFailing : numPassing + numFailing;
+        mapping[key] = {
+            passing,
+            total
         };
-        controlsMapping[controlKey] = {
-            passing: numPassing,
-            total: numPassing + numFailing
-        };
-        return {
-            groupsMapping,
-            controlsMapping
-        };
+        return mapping;
     };
+    const filterByNonZero = ({ numPassing, numFailing }) => numPassing + numFailing > 0;
 
-    const {
-        groupsMapping: groupStatsMapping,
-        controlsMapping: controlStatsMapping
-    } = data.results.results
-        .filter(result => result.numPassing + result.numFailing > 0)
-        .reduce(statsReducer, { groupsMapping: {}, controlsMapping: {} });
+    const groupStatsMapping = data.results.results.filter(filterByNonZero).reduce(statsReducer, {});
+    const controlStatsMapping = data.checks.results
+        .filter(filterByNonZero)
+        .reduce(statsReducer, {});
 
     const { groups, controls } = data.complianceStandards.filter(datum => datum.id === type)[0];
 
@@ -136,7 +129,9 @@ const constructURLWithQuery = (params, type, entityName) => {
 const createURLLink = (params, type, entityName) => {
     const linkParams = {
         entityType: type,
-        query: {}
+        query: {
+            groupBy: 'CATEGORY'
+        }
     };
     if (entityName) {
         const entityKey = capitalize(params.entityType);

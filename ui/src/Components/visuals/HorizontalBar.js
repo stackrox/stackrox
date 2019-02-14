@@ -112,7 +112,7 @@ class HorizontalBarChart extends Component {
     };
 
     onValueClickHandler = datum => {
-        if (datum.barLink) this.props.history.push(datum.barLink);
+        if (datum.link) this.props.history.push(datum.link);
     };
 
     getContainerProps = hintsEnabled => {
@@ -174,7 +174,7 @@ class HorizontalBarChart extends Component {
 
         // Generate y axis links
         const axisLinks = sortedData.reduce((acc, curr) => {
-            if (curr.axisLink) acc[curr.y] = curr.axisLink;
+            if (curr.link) acc[curr.y] = curr.link;
             return acc;
         }, {});
 
@@ -259,7 +259,7 @@ class HorizontalBarChart extends Component {
                             x: 0,
                             x0: 100,
                             y: item.y,
-                            barLink: item.barLink
+                            link: item.link
                         }))}
                         style={{
                             height: seriesProps.style.height,

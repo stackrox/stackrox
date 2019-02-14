@@ -73,6 +73,20 @@ export const COMPLIANCE_STANDARDS = gql`
                 unit
             }
         }
+        checks: aggregatedResults(
+            groupBy: [STANDARD, CATEGORY, CONTROL]
+            unit: CHECK
+            where: $where
+        ) {
+            results {
+                aggregationKeys {
+                    id
+                }
+                numFailing
+                numPassing
+                unit
+            }
+        }
     }
 `;
 

@@ -80,6 +80,7 @@ class TableGroup extends Component {
                     <Collapsible
                         open={idx === 0 || totalRows < 25}
                         key={group.name}
+                        triggerDisabled={group.rows.length === 0}
                         triggerClassName="table-group block bg-base-100 hover:bg-success-200 hover:text-success-800 z-10 relative hover:z-20"
                         triggerOpenedClassName="table-group-active bg-success-300 text-success-900 block z-30 pin-t sticky"
                         trigger={this.renderWhenClosed(group)}

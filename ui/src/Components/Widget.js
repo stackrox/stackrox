@@ -68,6 +68,8 @@ class Widget extends Component {
                     <PagerButtonGroup
                         onPageNext={this.handlePageNext}
                         onPagePrev={this.handlePagePrev}
+                        isPrev={currentPage - 1 >= 0}
+                        isNext={currentPage + 1 < pages}
                     />
                 ),
                 dots: (
@@ -75,6 +77,7 @@ class Widget extends Component {
                         onPageChange={this.handleSetPage}
                         pageCount={pages}
                         currentPage={currentPage}
+                        className="hidden"
                     />
                 )
             };

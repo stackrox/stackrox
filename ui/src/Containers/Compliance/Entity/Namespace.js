@@ -103,16 +103,6 @@ const NamespacePage = ({ sidePanelMode, params }) => (
                                 entityName={namespace.name}
                                 params={params}
                             />
-                            <ComplianceByStandard
-                                type={entityTypes.CIS_KUBERENETES_V1_2_0}
-                                entityName={namespace.name}
-                                params={params}
-                            />
-                            <ComplianceByStandard
-                                type={entityTypes.CIS_DOCKER_V1_1_0}
-                                entityName={namespace.name}
-                                params={params}
-                            />
                             {!sidePanelMode && (
                                 <>
                                     <ResourceRelatedResourceList

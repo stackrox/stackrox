@@ -212,7 +212,7 @@ class GaugeWithDetail extends Component {
                     yDomain={[4, 4]}
                     width={300}
                     height={200}
-                    className="w-48"
+                    className="w-48 z-1"
                 >
                     {this.getCenterLabel()}
                     {this.getHint()}

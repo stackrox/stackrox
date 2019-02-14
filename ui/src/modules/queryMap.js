@@ -30,7 +30,9 @@ import { LIST_STANDARD, COMPLIANCE_STANDARDS } from 'queries/standard';
  */
 
 const complianceRate = (numPassing, numFailing) =>
-    `${Math.round((numPassing / (numPassing + numFailing)) * 100)}%`;
+    numPassing + numFailing > 0
+        ? `${Math.round((numPassing / (numPassing + numFailing)) * 100)}%`
+        : 'N/A';
 
 const formatComplianceTableData = (data, entityType) => {
     if (!data.results || data.results.results.length === 0) return null;
@@ -196,7 +198,7 @@ export default [
                             rows: []
                         };
                     }
-                    if (controlKeyIndex && numPassing + numFailing > 0) {
+                    if (controlKeyIndex) {
                         const { id, name: controlName, description } = keys[controlKeyIndex];
                         groups[groupName].rows.push({
                             id,

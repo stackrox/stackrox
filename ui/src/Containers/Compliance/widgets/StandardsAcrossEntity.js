@@ -1,6 +1,6 @@
 import React from 'react';
 import componentTypes from 'constants/componentTypes';
-import { standardBaseTypes, resourceTypes, standardEntityTypes } from 'constants/entityTypes';
+import { standardBaseTypes, resourceTypes } from 'constants/entityTypes';
 import { resourceLabels } from 'messages/common';
 import URLService from 'modules/URLService';
 import contextTypes from 'constants/contextTypes';
@@ -49,16 +49,10 @@ function processData(data, type) {
         const standard = complianceStandards.find(cs => cs.id === standardId);
         const { passing, total } = standardsMapping[standardId];
         const percentagePassing = Math.round((passing / total) * 100) || 0;
-        const barLink = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
+        const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
             entityType: standard.id,
             query: {
                 groupBy: type
-            }
-        });
-        const axisLink = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
-            entityType: standard.id,
-            query: {
-                groupBy: standardEntityTypes.CATEGORY
             }
         });
         const dataPoint = {
@@ -70,8 +64,7 @@ function processData(data, type) {
                     resourceLabels[type]
                 )}`
             },
-            barLink: barLink.url,
-            axisLink: axisLink.url
+            link: link.url
         };
         return dataPoint;
     });
