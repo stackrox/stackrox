@@ -36,7 +36,9 @@ const NamespacePage = ({ sidePanelMode, params }) => (
             const header = namespace.name || 'Loading';
             return (
                 <section className="flex flex-col h-full w-full">
-                    {!sidePanelMode && <Header header={header} subHeader="Namespace" />}
+                    {!sidePanelMode && (
+                        <Header header={header} subHeader="Namespace" params={params} />
+                    )}
                     <div
                         className={`flex-1 relative bg-base-200 overflow-auto ${
                             !sidePanelMode ? `p-6` : `p-4`

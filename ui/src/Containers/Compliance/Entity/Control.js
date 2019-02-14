@@ -23,6 +23,7 @@ const ControlPage = ({ sidePanelMode, params }) => (
                         <Header
                             header={`${standardLabels[standardId]} ${name}`}
                             subHeader="Control"
+                            params={params}
                         />
                     )}
                     <div

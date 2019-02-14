@@ -28,7 +28,7 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                             header={cluster.name}
                             subHeader="Cluster"
                             scanCluster={params.entityId}
-                            type="CLUSTER"
+                            params={params}
                         />
                     )}
                     <div

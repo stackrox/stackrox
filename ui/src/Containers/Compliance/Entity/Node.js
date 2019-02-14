@@ -41,9 +41,7 @@ const NodePage = ({ sidePanelMode, params }) => (
             const header = node.name || 'Loading...';
             return (
                 <section className="flex flex-col h-full w-full">
-                    {!sidePanelMode && (
-                        <Header header={header} subHeader="Node" scanCluster={node.clusterId} />
-                    )}
+                    {!sidePanelMode && <Header header={header} subHeader="Node" params={params} />}
                     <div
                         className={`flex-1 relative bg-base-200 overflow-auto ${
                             !sidePanelMode ? `p-6` : `p-4`

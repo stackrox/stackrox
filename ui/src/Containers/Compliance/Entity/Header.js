@@ -5,16 +5,34 @@ import { withRouter } from 'react-router-dom';
 import PageHeader from 'Components/PageHeader';
 import ScanButton from 'Containers/Compliance/ScanButton';
 import ExportButton from 'Components/ExportButton';
+import entityTypes from 'constants/entityTypes';
 
-const EntityHeader = ({ header, subHeader, searchComponent, scanCluster, scanStandard, type }) => (
+const EntityHeader = ({
+    header,
+    subHeader,
+    searchComponent,
+    scanCluster,
+    scanStandard,
+    params
+}) => (
     <PageHeader header={header} subHeader={subHeader}>
         {searchComponent}
         <div className="flex flex-1 justify-end">
             <div className="flex">
                 <div className="flex items-center">
-                    <ScanButton text="Scan" clusterId={scanCluster} standardId={scanStandard} />
-                    {type === 'CLUSTER' && (
-                        <ExportButton fileName={header} type={type} id={scanCluster} />
+                    {params.entityType === entityTypes.CLUSTER && (
+                        <>
+                            <ScanButton
+                                text="Scan"
+                                clusterId={scanCluster}
+                                standardId={scanStandard}
+                            />
+                            <ExportButton
+                                fileName={header}
+                                type={params.entityType}
+                                id={scanCluster}
+                            />
+                        </>
                     )}
                 </div>
             </div>
@@ -28,7 +46,7 @@ EntityHeader.propTypes = {
     searchComponent: PropTypes.node,
     scanCluster: PropTypes.string,
     scanStandard: PropTypes.string,
-    type: PropTypes.string
+    params: PropTypes.shape({})
 };
 
 EntityHeader.defaultProps = {
@@ -37,7 +55,7 @@ EntityHeader.defaultProps = {
     scanCluster: '*',
     scanStandard: '*',
     searchComponent: null,
-    type: ''
+    params: null
 };
 
 export default withRouter(EntityHeader);
