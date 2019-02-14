@@ -17,4 +17,5 @@ const (
 	Node
 	ProviderMetadata
 	ComplianceReturn
+	ImageIntegration
 )

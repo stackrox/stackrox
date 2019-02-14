@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clustermetadata"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/deploymentevents"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/imageintegrations"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/namespaces"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/networkflowupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/networkpolicies"
@@ -38,5 +39,6 @@ func (s *factoryImpl) GetPipeline(clusterID string) (pipeline.Pipeline, error) {
 		scrapeupdate.GetPipeline(),
 		flowUpdateFragment,
 		clustermetadata.GetPipeline(),
+		imageintegrations.GetPipeline(),
 	), nil
 }

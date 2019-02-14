@@ -11,6 +11,7 @@ import "storage/node.proto";
 import "storage/secret.proto";
 import "storage/policy.proto";
 import "storage/process_indicator.proto";
+import "storage/image_integration.proto";
 
 
 package central;
@@ -45,6 +46,7 @@ message SensorEvent {
         storage.ProviderMetadata provider_metadata = 10;
         ResourcesSynced          synced            = 11;
         storage.OrchestratorMetadata orchestrator_metadata = 12;
+        storage.ImageIntegration     image_integration = 13;
     }
 }
 

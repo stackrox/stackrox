@@ -34,7 +34,10 @@ func (l *loopImpl) Stop() {
 }
 
 func (l *loopImpl) ShortCircuit() {
-	l.shortChan <- struct{}{}
+	select {
+	case l.shortChan <- struct{}{}:
+	case <-l.stopped.Done():
+	}
 }
 
 func (l *loopImpl) loop() {

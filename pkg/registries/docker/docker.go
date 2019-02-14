@@ -3,6 +3,7 @@ package docker
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/distribution/manifest/schema2"
@@ -12,6 +13,10 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
+)
+
+const (
+	registryTimeout = 5 * time.Second
 )
 
 var (
@@ -52,7 +57,11 @@ type Config struct {
 // NewDockerRegistryWithConfig creates a new instantiation of the docker registry
 // TODO(cgorman) AP-386 - properly put the base docker registry into another pkg
 func NewDockerRegistryWithConfig(cfg Config, integration *storage.ImageIntegration) (*Registry, error) {
-	url, err := urlfmt.FormatURL(cfg.Endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	endpoint := cfg.Endpoint
+	if strings.EqualFold(endpoint, "https://docker.io") || strings.EqualFold(endpoint, "docker.io") {
+		endpoint = "https://registry-1.docker.io"
+	}
+	url, err := urlfmt.FormatURL(endpoint, urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +70,6 @@ func NewDockerRegistryWithConfig(cfg Config, integration *storage.ImageIntegrati
 	if strings.Contains(cfg.Endpoint, "docker.io") {
 		registryServer = "docker.io"
 	}
-
 	var client *registry.Registry
 	if cfg.Insecure {
 		client, err = registry.NewInsecure(url, cfg.Username, cfg.Password)
@@ -74,6 +82,8 @@ func NewDockerRegistryWithConfig(cfg Config, integration *storage.ImageIntegrati
 
 	// Turn off the logs
 	client.Logf = registry.Quiet
+
+	client.Client.Timeout = registryTimeout
 
 	return &Registry{
 		url:                   url,
@@ -101,7 +111,7 @@ func NewDockerRegistry(integration *storage.ImageIntegration) (*Registry, error)
 
 // Match decides if the image is contained within this registry
 func (r *Registry) Match(image *storage.Image) bool {
-	return r.registry == image.GetName().GetRegistry()
+	return urlfmt.TrimHTTPPrefixes(r.registry) == image.GetName().GetRegistry()
 }
 
 // Global returns whether or not this registry is available from all clusters
@@ -117,7 +127,6 @@ func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error
 	}
 
 	remote := image.GetName().GetRemote()
-
 	digest, manifestType, err := r.Client.ManifestDigest(remote, utils.Reference(image))
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get the manifest digest : %s", err)

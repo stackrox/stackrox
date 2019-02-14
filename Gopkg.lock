@@ -1836,6 +1836,22 @@
   source = "https://github.com/helm/helm.git"
   version = "v2.12.0"
 
+[[projects]]
+  digest = "1:c263611800c3a97991dbcf9d3bc4de390f6224aaa8ca0a7226a9d734f65a416a"
+  name = "k8s.io/klog"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "71442cd4037d612096940ceb0f3fec3f7fff66e0"
+  version = "v0.2.0"
+
+[[projects]]
+  digest = "1:03e9a8d230ac8eddff986a566513191bbb0809f4fbc755eb90765e6c45c52e00"
+  name = "k8s.io/kubernetes"
+  packages = ["pkg/credentialprovider"]
+  pruneopts = "NUT"
+  revision = "721bfa751924da8d1680787490c54b9179b1fed0"
+  version = "v1.13.3"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
@@ -2003,6 +2019,7 @@
     "k8s.io/helm/pkg/chartutil",
     "k8s.io/helm/pkg/proto/hapi/chart",
     "k8s.io/helm/pkg/renderutil",
+    "k8s.io/kubernetes/pkg/credentialprovider",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
