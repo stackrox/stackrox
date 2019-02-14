@@ -60,7 +60,7 @@ class BaseSpecification extends Specification {
 
     def cleanupSpec() {
         try {
-            Services.deleteDockerTrustedRegistry(dtrId)
+            Services.deleteImageIntegration(dtrId)
             orchestrator.cleanup()
         } catch (Exception e) {
             println "Error to clean up orchestrator"

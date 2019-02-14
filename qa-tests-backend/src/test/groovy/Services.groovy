@@ -1,5 +1,6 @@
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass.BuildDetectionRequest
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
+import io.stackrox.proto.storage.ImageIntegrationOuterClass.ImageIntegration
 import orchestratormanager.OrchestratorType
 import services.BaseService
 import io.stackrox.proto.api.v1.AlertServiceGrpc
@@ -171,7 +172,7 @@ class Services extends BaseService {
 
     static String addGenericDockerRegistry() {
         return getIntegrationClient().postImageIntegration(
-                        ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+                        ImageIntegration.newBuilder()
                                     .setName("dockerhub")
                                     .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
                                     .setType("docker")
@@ -188,69 +189,99 @@ class Services extends BaseService {
                         .getId()
       }
 
-    static deleteGenericDockerRegistry(String gdrId) {
-        getIntegrationClient().deleteImageIntegration(
-                        ResourceByID.newBuilder()
-                                    .setId(gdrId)
-                                    .build()
-            )
-      }
+    static String addDockerTrustedRegistry(boolean includeScanner = true) {
+        ImageIntegration.Builder builder = ImageIntegration.newBuilder()
+                .setName("dtr")
+                .setType("dtr")
+                .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
+                .setDtr(ImageIntegrationOuterClass.DTRConfig.newBuilder()
+                        .setEndpoint("https://apollo-dtr.rox.systems/")
+                        .setUsername("qa")
+                        .setPassword("W3g9xOPKyLTkBBMj")
+                        .setInsecure(false)
+                        .build()
+                )
+        if (includeScanner) {
+            builder.addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER)
+        }
+        return getIntegrationClient().postImageIntegration(builder.build()).getId()
+    }
 
-    static String addDockerTrustedRegistry() {
-        return getIntegrationClient().postImageIntegration(
-                        ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                                    .setName("dtr")
-                                    .setType("dtr")
-                                    .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
-                                    .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER)
-                                    .setDtr(ImageIntegrationOuterClass.DTRConfig.newBuilder()
-                                    .setEndpoint("https://apollo-dtr.rox.systems/")
-                                    .setUsername("qa")
-                                    .setPassword("W3g9xOPKyLTkBBMj")
-                                    .setInsecure(false)
-                                    .build()
+    static String addClairifyScanner(String clairifyEndpoint) {
+        def success = false
+        ImageIntegration integration = null
+        def start = System.currentTimeMillis()
+        while (!success && System.currentTimeMillis() - start < 30000) {
+            try {
+                integration = getIntegrationClient().postImageIntegration(
+                        ImageIntegration.newBuilder()
+                                .setName("clairify")
+                                .setType("clairify")
+                                .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER)
+                                .setClairify(ImageIntegrationOuterClass.ClairifyConfig.newBuilder()
+                                        .setEndpoint(clairifyEndpoint)
+                                        .build()
+                                )
+                                .build()
                         )
-                                    .build()
-            )
-                        .getId()
+                success = true
+            } catch (Exception e) {
+                if (e.toString().contains("INTERNAL: notifying of update errors:")) {
+                    def id = getIntegrationClient().getImageIntegrations().integrationsList.find {
+                        it.name == "clairify"
+                    }?.id
+                    if (id) {
+                        getIntegrationClient().deleteImageIntegration(
+                                ResourceByID.newBuilder().setId(id).build()
+                        )
+                    }
+                } else {
+                    println "Failed to create integration: ${e.toString()}"
+                }
+                sleep 3000
+            }
+        }
+        return integration?.id
       }
 
-    static deleteDockerTrustedRegistry(String dtrId) {
+    static deleteClairifyScanner(String clairifyId) {
         try {
             getIntegrationClient().deleteImageIntegration(
                     ResourceByID.newBuilder()
-                            .setId(dtrId)
+                            .setId(clairifyId)
                             .build()
             )
-            return true
         } catch (Exception e) {
             println "Failed to delete integration: ${e.toString()}"
             return false
         }
       }
 
-    static String addClairifyScanner(String clairifyEndpoint) {
-        return getIntegrationClient().postImageIntegration(
-                        ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                                    .setName("clairify")
-                                    .setType("clairify")
-                                    .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER)
-                                    .setClairify(ImageIntegrationOuterClass.ClairifyConfig.newBuilder()
-                                    .setEndpoint(clairifyEndpoint)
-                                    .build()
-                        )
-                                    .build()
+    static deleteImageIntegration(String integrationId) {
+        try {
+            getIntegrationClient().deleteImageIntegration(
+                    ResourceByID.newBuilder()
+                            .setId(integrationId)
+                            .build()
             )
-                        .getId()
-      }
-
-    static deleteClairifyScanner(String clairifyId) {
-        getIntegrationClient().deleteImageIntegration(
-                        ResourceByID.newBuilder()
-                                    .setId(clairifyId)
-                                    .build()
+        } catch (Exception e) {
+            println "Failed to delete integration: ${e.toString()}"
+            return false
+        }
+        try {
+            ImageIntegration integration = getIntegrationClient().getImageIntegration(
+                    ResourceByID.newBuilder().setId(integrationId).build()
             )
-      }
+            while (integration) {
+                integration = getIntegrationClient().getImageIntegration(
+                        ResourceByID.newBuilder().setId(integrationId).build()
+                )
+                sleep 2000
+            }
+        } catch (Exception e) {
+            return e.toString().contains("NOT_FOUND")
+        }
+    }
 
     static requestBuildImageScan(String registry, String remote, String tag) {
         return getDetectionClient().detectBuildTime(BuildDetectionRequest.newBuilder().setImage(

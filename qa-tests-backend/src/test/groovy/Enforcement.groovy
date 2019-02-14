@@ -35,7 +35,7 @@ class Enforcement extends BaseSpecification {
 
         when:
         "Create Deployment to test scale-down enforcement"
-        def count = orchestrator.getDeploymentCount()
+        def count = orchestrator.getDeploymentCount().size()
         Deployment d = new Deployment()
                 .setName("admission-controller-enforcement")
                 .setImage("nginx")
@@ -46,7 +46,7 @@ class Enforcement extends BaseSpecification {
         orchestrator.createDeploymentNoWait(d)
 
         then:
-        assert count == orchestrator.getDeploymentCount()
+        assert count == orchestrator.getDeploymentCount().size()
 
         cleanup:
         "restore enforcement state of policy and remove deployment"

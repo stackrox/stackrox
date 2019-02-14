@@ -22,7 +22,6 @@ class NamespaceService extends BaseService {
         }
         return null
     }
-
     static waitForNamespace(String id, int timeoutSeconds = 10) {
         int intervalSeconds = 1
         def startTime = System.currentTimeMillis()

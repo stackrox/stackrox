@@ -11,14 +11,24 @@ import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.storage.BenchmarkScanOuterClass.BenchmarkScan
 import io.stackrox.proto.storage.BenchmarkTriggerOuterClass.BenchmarkTrigger
 import io.stackrox.proto.storage.Compliance
-import io.stackrox.proto.storage.Compliance.ComplianceRunResults
 import io.stackrox.proto.storage.Compliance.ComplianceControlResult
+import org.apache.http.client.methods.CloseableHttpResponse
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.conn.ssl.NoopHostnameVerifier
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory
+import org.apache.http.conn.ssl.TrustAllStrategy
+import org.apache.http.impl.client.CloseableHttpClient
+import org.apache.http.impl.client.HttpClients
+import org.apache.http.ssl.SSLContextBuilder
 import v1.ComplianceServiceGrpc
 import v1.ComplianceServiceOuterClass
+import v1.ComplianceServiceOuterClass.GetComplianceRunResultsResponse
 import v1.ComplianceServiceOuterClass.ComplianceAggregation.Scope
 import v1.ComplianceServiceOuterClass.ComplianceStandard
 import v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
 
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.SSLContext
 import java.util.stream.Collectors
 
 class ComplianceService extends BaseService {
@@ -71,13 +81,13 @@ class ComplianceService extends BaseService {
         ]
     }
 
-    static ComplianceRunResults getComplianceRunResult(String standardId, String clusterId) {
+    static GetComplianceRunResultsResponse getComplianceRunResult(String standardId, String clusterId) {
         return getComplianceClient().getRunResults(
                 ComplianceServiceOuterClass.GetComplianceRunResultsRequest.newBuilder()
                         .setStandardId(standardId)
                         .setClusterId(clusterId)
                         .build()
-        ).results
+        )
     }
 
     static getAggregatedResults(Scope unit, List<Scope> groupBy, RawQuery where = RawQuery.newBuilder().build()) {
@@ -88,6 +98,52 @@ class ComplianceService extends BaseService {
                         .setWhere(where)
                         .build()
         ).resultsList
+    }
+
+    static exportComplianceCsv() {
+        SSLContext sslContext = SSLContextBuilder
+                .create()
+                .loadTrustMaterial(new TrustAllStrategy())
+                .build()
+        HostnameVerifier allowAllHosts = new NoopHostnameVerifier()
+        SSLConnectionSocketFactory connectionFactory = new SSLConnectionSocketFactory(sslContext, allowAllHosts)
+        CloseableHttpClient client = HttpClients
+                .custom()
+                .setSSLSocketFactory(connectionFactory)
+                .build()
+
+        HttpPost httpPost = new HttpPost(
+                "https://${System.getenv("HOSTNAME")}:${System.getenv("PORT")}" +
+                        "/api/compliance/export/csv")
+        String username = System.getenv("ROX_USERNAME") ?: ""
+        String password = System.getenv("ROX_PASSWORD") ?: ""
+
+        httpPost.addHeader(
+                "Authorization",
+                "Basic " +
+                        Base64.getEncoder().encodeToString((username + ":" + password).getBytes("UTF-8")))
+
+        def exportPath = System.getProperty("user.dir") + "/export"
+        File exportDir = new File(exportPath)
+        if (!exportDir.exists()) {
+            exportDir.mkdirs()
+        }
+        def filename = exportPath + "/export.csv"
+
+        try {
+            CloseableHttpResponse response = client.execute(httpPost)
+            def conn = new InputStreamReader(response.getEntity().getContent())
+            new File(filename).withOutputStream { out ->
+                conn.with { inp ->
+                    out << inp
+                    inp.close()
+                }
+            }
+        } catch (Exception e) {
+            e.toString()
+            return ""
+        }
+        return filename
     }
 
     /*

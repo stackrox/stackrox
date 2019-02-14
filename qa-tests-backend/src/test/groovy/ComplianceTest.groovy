@@ -1,9 +1,16 @@
+import com.opencsv.bean.CsvToBean
+import com.opencsv.bean.CsvToBeanBuilder
+import common.Constants
 import groups.BAT
+import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRunScheduleInfo
+import io.stackrox.proto.storage.Compliance
 import io.stackrox.proto.storage.Compliance.ComplianceResultValue
 import io.stackrox.proto.storage.Compliance.ComplianceRunResults
 import io.stackrox.proto.storage.Compliance.ComplianceState
+import io.stackrox.proto.storage.ImageOuterClass
 import objects.Control
+import objects.CsvRow
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
@@ -14,12 +21,18 @@ import services.ClusterService
 import services.ComplianceManagementService
 import services.ComplianceService
 import services.NetworkPolicyService
+import services.ImageService
 import services.ProcessService
 import spock.lang.Shared
 import spock.lang.Unroll
+import v1.ComplianceServiceOuterClass.ComplianceControl
+import v1.ComplianceServiceOuterClass.ComplianceStandard
 import v1.ComplianceServiceOuterClass.ComplianceAggregation.Result
 import v1.ComplianceServiceOuterClass.ComplianceAggregation.Scope
 import v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
+
+import java.nio.file.Files
+import java.nio.file.Paths
 
 class ComplianceTest extends BaseSpecification {
     @Shared
@@ -32,17 +45,39 @@ class ComplianceTest extends BaseSpecification {
     private static final Map<String, ComplianceRunResults> BASE_RESULTS = [:]
     @Shared
     private String clusterId
-    private static final SCHEDULES_SUPPORTED = false
+    @Shared
+    private clairifyId = ""
 
     def setupSpec() {
+        // Get cluster ID
         clusterId = ClusterService.getClusterId()
+
+        // Clear image cache and add clairify/remove dtr scanners
+        Services.deleteImageIntegration(dtrId)
+        ImageService.clearImageCaches()
+        dtrId = Services.addDockerTrustedRegistry(false)
+        orchestrator.createClairifyDeployment()
+        clairifyId = Services.addClairifyScanner(orchestrator.getClairifyEndpoint())
+
+        // Generate baseline compliance runs
         def complianceRuns = ComplianceManagementService.triggerComplianceRunsAndWait()
         for (String standard : complianceRuns.keySet()) {
             def runId = complianceRuns.get(standard)
-            ComplianceRunResults results = ComplianceService.getComplianceRunResult(standard, clusterId)
+            ComplianceRunResults results = ComplianceService.getComplianceRunResult(standard, clusterId).results
             assert runId == results.runMetadata.runId
             BASE_RESULTS.put(standard, results)
         }
+    }
+
+    def cleanupSpec() {
+        Services.deleteImageIntegration(clairifyId)
+        Services.deleteImageIntegration(dtrId)
+        orchestrator.deleteDeployment(new Deployment(name: "clairify", namespace: "stackrox"))
+        orchestrator.waitForDeploymentDeletion(new Deployment(name: "clairify", namespace: "stackrox"))
+        orchestrator.deleteService("clairify", "stackrox")
+        orchestrator.waitForServiceDeletion(new Service("clairify", "stackrox"))
+        ImageService.clearImageCaches()
+        dtrId = Services.addDockerTrustedRegistry()
     }
 
     @Category(BAT)
@@ -161,26 +196,20 @@ class ComplianceTest extends BaseSpecification {
         for (String standardId : BASE_RESULTS.keySet()) {
             ComplianceRunResults results = BASE_RESULTS.get(standardId)
             results.clusterResults.controlResultsMap.each {
-                if (it.value.overallState == ComplianceState.COMPLIANCE_STATE_ERROR
-                        // Skip NIST 4.1.4 for now, since we know it will fail
-                        && it.key != "NIST_800_190:4_1_4") {
+                if (it.value.overallState == ComplianceState.COMPLIANCE_STATE_ERROR) {
                     errorChecks.put(it.key, it.value.evidenceList)
                 }
             }
             results.nodeResultsMap.each {
                 it.value.controlResultsMap.each {
-                    if (it.value.overallState == ComplianceState.COMPLIANCE_STATE_ERROR
-                            // Skip NIST 4.1.4 for now, since we know it will fail
-                            && it.key != "NIST_800_190:4_1_4") {
+                    if (it.value.overallState == ComplianceState.COMPLIANCE_STATE_ERROR) {
                         errorChecks.put(it.key, it.value.evidenceList)
                     }
                 }
             }
             results.deploymentResultsMap.each {
                 it.value.controlResultsMap.each {
-                    if (it.value.overallState == ComplianceState.COMPLIANCE_STATE_ERROR
-                            // Skip NIST 4.1.4 for now, since we know it will fail
-                            && it.key != "NIST_800_190:4_1_4") {
+                    if (it.value.overallState == ComplianceState.COMPLIANCE_STATE_ERROR) {
                         errorChecks.put(it.key, it.value.evidenceList)
                     }
                 }
@@ -278,12 +307,103 @@ class ComplianceTest extends BaseSpecification {
         assert kubeSystemNotSkipped.size() == 0
     }
 
+    private convertStringState(String state) {
+        switch (state) {
+            case "Fail":
+                return ComplianceState.COMPLIANCE_STATE_FAILURE
+            case "Pass":
+                return ComplianceState.COMPLIANCE_STATE_SUCCESS
+            case "Error":
+                return ComplianceState.COMPLIANCE_STATE_ERROR
+            case "-":
+                return ComplianceState.COMPLIANCE_STATE_SKIP
+        }
+    }
+
+    private convertStandardToId(String standard) {
+        return standard
+                .replace('.', '_')
+                .replace(' ', '_')
+                .replace('-', '_')
+    }
+
+    @Category([BAT])
+    def "Verify compliance csv export"() {
+        when:
+        "a compliance CSV export file"
+        def exportFile = ComplianceService.exportComplianceCsv()
+
+        then:
+        "parse and verify export file"
+        try {
+            Reader reader = Files.newBufferedReader(Paths.get(exportFile))
+            CsvToBean<CsvRow> csvToBean = new CsvToBeanBuilder(reader)
+                    .withType(CsvRow)
+                    .withIgnoreLeadingWhiteSpace(true)
+                    .build()
+
+            Iterator<CsvRow> csvUserIterator = csvToBean.iterator()
+            int rowNumber = 0
+            int verifiedRows = 0
+
+            Map<String, ComplianceStandard> sDetails = ComplianceService.getComplianceStandards().collectEntries {
+                [(it.id) : ComplianceService.getComplianceStandardDetails(it.id)]
+            }
+
+            while (csvUserIterator.hasNext()) {
+                CsvRow row = csvUserIterator.next()
+                rowNumber++
+                ComplianceRunResults result = BASE_RESULTS.get(convertStandardToId(row.standard))
+                ComplianceControl control = sDetails.get(convertStandardToId(row.standard)).controlsList.find {
+                    it.id == row.control
+                }
+                ComplianceResultValue value
+                switch (row.type.toLowerCase()) {
+                    case "cluster":
+                        value = result.clusterResults.controlResultsMap.find {
+                            it.key == convertStandardToId(row.control)
+                        }.value
+                        break
+                    case "node":
+                        value = result.nodeResultsMap.get(
+                            result.domain.nodesMap.find { it.value.name == row.object }.key
+                        ).controlResultsMap.find {
+                            it.key == convertStandardToId(row.control)
+                        }.value
+                        break
+                    default:
+                        value = result.deploymentResultsMap.get(
+                            result.domain.deploymentsMap.find {
+                            it.value.name == row.object && it.value.namespace == row.namespace
+                            }.key
+                        ).controlResultsMap.find {
+                            it.key == convertStandardToId(row.control)
+                        }.value
+                        break
+                }
+                if (value.evidenceCount == 1) {
+                    println "Verifying CSV row ${rowNumber} : ${row.control}"
+                    assert convertStringState(row.state) ?
+                            convertStringState(row.state) == value.overallState :
+                            row.state == "Unknown"
+                    verifiedRows++
+                }
+                // disable description assert until ROX-1358 is resolved
+                //assert row.description == control.description
+                println "Description assert would = ${row.description == control.description}"
+            }
+            println "Verified ${verifiedRows} out of ${rowNumber} total rows"
+        } catch (Exception e) {
+            println e.printStackTrace()
+        }
+    }
+
     @Category(BAT)
     def "Verify compliance scheduling"() {
         // Schedules are not yet supported, so skipping this test for now.
         // Once we fully support Compliance Run scheduling, we can reneable.
         // Running this test now will expose ROX-1255
-        Assume.assumeTrue(SCHEDULES_SUPPORTED)
+        Assume.assumeTrue(Constants.SCHEDULES_SUPPORTED)
 
         given:
         "List of Standards"
@@ -366,24 +486,32 @@ class ComplianceTest extends BaseSpecification {
                 new Control("HIPAA_164:308_a_1_ii_b", failureEvidence, ComplianceState.COMPLIANCE_STATE_FAILURE),
                 new Control("HIPAA_164:308_a_7_ii_e", failureEvidence, ComplianceState.COMPLIANCE_STATE_FAILURE),
                 new Control("HIPAA_164:310_a_1", failureEvidence, ComplianceState.COMPLIANCE_STATE_FAILURE),
+                new Control(
+                        "HIPAA_164:314_a_2_i_c",
+                        ["At least one notifier is enabled."],
+                        ComplianceState.COMPLIANCE_STATE_SUCCESS),
         ]
 
         given:
         "remove image integrations"
-        def removed = Services.deleteDockerTrustedRegistry(dtrId)
+        def clairRemoved = Services.deleteImageIntegration(clairifyId)
+
+        and:
+        "add notifier integration"
+        def slackNotiferId = Services.addSlackNotifier("Slack Notifier").id
 
         when:
         "trigger compliance runs"
         def pciRunId = ComplianceManagementService.triggerComplianceRunAndWait(PCI_ID, clusterId)
-        ComplianceRunResults pciResults = ComplianceService.getComplianceRunResult(PCI_ID, clusterId)
+        ComplianceRunResults pciResults = ComplianceService.getComplianceRunResult(PCI_ID, clusterId).results
         assert pciResults.getRunMetadata().runId == pciRunId
 
         def nistRunId = ComplianceManagementService.triggerComplianceRunAndWait(NIST_ID, clusterId)
-        ComplianceRunResults nistResults = ComplianceService.getComplianceRunResult(NIST_ID, clusterId)
+        ComplianceRunResults nistResults = ComplianceService.getComplianceRunResult(NIST_ID, clusterId).results
         assert nistResults.getRunMetadata().runId == nistRunId
 
         def hipaaRunid = ComplianceManagementService.triggerComplianceRunAndWait(HIPAA_ID, clusterId)
-        ComplianceRunResults hipaaResults = ComplianceService.getComplianceRunResult(HIPAA_ID, clusterId)
+        ComplianceRunResults hipaaResults = ComplianceService.getComplianceRunResult(HIPAA_ID, clusterId).results
         assert hipaaResults.getRunMetadata().runId == hipaaRunid
 
         then:
@@ -408,8 +536,11 @@ class ComplianceTest extends BaseSpecification {
 
         cleanup:
         "re-add image integrations"
-        if (removed) {
-            dtrId = Services.addDockerTrustedRegistry()
+        if (clairRemoved) {
+            clairifyId = Services.addClairifyScanner(orchestrator.getClairifyEndpoint())
+        }
+        if (slackNotiferId) {
+            Services.deleteNotifier(slackNotiferId)
         }
     }
 
@@ -492,15 +623,15 @@ class ComplianceTest extends BaseSpecification {
         when:
         "trigger compliance runs"
         def pciRunId = ComplianceManagementService.triggerComplianceRunAndWait(PCI_ID, clusterId)
-        ComplianceRunResults pciResults = ComplianceService.getComplianceRunResult(PCI_ID, clusterId)
+        ComplianceRunResults pciResults = ComplianceService.getComplianceRunResult(PCI_ID, clusterId).results
         assert pciResults.getRunMetadata().runId == pciRunId
 
         def nistRunId = ComplianceManagementService.triggerComplianceRunAndWait(NIST_ID, clusterId)
-        ComplianceRunResults nistResults = ComplianceService.getComplianceRunResult(NIST_ID, clusterId)
+        ComplianceRunResults nistResults = ComplianceService.getComplianceRunResult(NIST_ID, clusterId).results
         assert nistResults.getRunMetadata().runId == nistRunId
 
         def hipaaRunid = ComplianceManagementService.triggerComplianceRunAndWait(HIPAA_ID, clusterId)
-        ComplianceRunResults hipaaResults = ComplianceService.getComplianceRunResult(HIPAA_ID, clusterId)
+        ComplianceRunResults hipaaResults = ComplianceService.getComplianceRunResult(HIPAA_ID, clusterId).results
         assert hipaaResults.getRunMetadata().runId == hipaaRunid
 
         then:
@@ -525,15 +656,177 @@ class ComplianceTest extends BaseSpecification {
 
         cleanup:
         "remove deployment"
-        if (deployment) {
+        if (deployment.deploymentUid) {
             orchestrator.deleteDeployment(deployment)
-        }
-        if (service) {
             orchestrator.deleteService(service.name, service.namespace)
         }
         if (policyId) {
             orchestrator.deleteNetworkPolicy(policy)
         }
+    }
+
+    @Category([BAT])
+    def "Verify controls that rely on CIS Benchmarks"() {
+        def controls = [
+                new Control(
+                        "PCI_DSS_3_2:2_2",
+                        ["CIS Benchmarks have been run."],
+                        ComplianceState.COMPLIANCE_STATE_SUCCESS),
+                new Control(
+                        "NIST_800_190:4_3_5",
+                        ["CIS Benchmarks have been run."],
+                        ComplianceState.COMPLIANCE_STATE_SUCCESS),
+                new Control(
+                        "NIST_800_190:4_4_3",
+                        ["CIS Benchmarks have been run."],
+                        ComplianceState.COMPLIANCE_STATE_SUCCESS),
+                new Control(
+                        "NIST_800_190:4_5_1",
+                        ["CIS Benchmarks have been run."],
+                        ComplianceState.COMPLIANCE_STATE_SUCCESS),
+        ]
+
+        given:
+        "re-run PCI and HIPAA to make sure they see the run CIS standards"
+        def pciRunId = ComplianceManagementService.triggerComplianceRunAndWait(PCI_ID, clusterId)
+        ComplianceRunResults pciResults = ComplianceService.getComplianceRunResult(PCI_ID, clusterId).results
+        assert pciResults.getRunMetadata().runId == pciRunId
+
+        def nistRunId = ComplianceManagementService.triggerComplianceRunAndWait(NIST_ID, clusterId)
+        ComplianceRunResults nistResults = ComplianceService.getComplianceRunResult(NIST_ID, clusterId).results
+        assert nistResults.getRunMetadata().runId == nistRunId
+
+        expect:
+        "check the CIS based controls for state"
+        Map<String, ComplianceResultValue> clusterResults = [:]
+        clusterResults << pciResults.clusterResults.controlResultsMap
+        clusterResults << nistResults.clusterResults.controlResultsMap
+        assert clusterResults
+        def missingControls = []
+        for (Control control : controls) {
+            if (clusterResults.keySet().contains(control.id)) {
+                println "Validating cluster control ${control.id}"
+                ComplianceResultValue value = clusterResults.get(control.id)
+                assert value.overallState == control.state
+                assert value.evidenceList*.message.containsAll(control.evidenceMessages)
+            } else {
+                missingControls.add(control)
+            }
+        }
+        assert missingControls*.id.size() == 0
+    }
+
+    @Category([BAT])
+    def "Verify controls that checks for fixable CVEs"() {
+        def controls = [
+                new Control(
+                        "PCI_DSS_3_2:6_2",
+                        ["Image apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest has 78 fixed CVEs. " +
+                                 "An image upgrade is required."],
+                        ComplianceState.COMPLIANCE_STATE_FAILURE),
+                new Control(
+                        "HIPAA_164:306_e",
+                        ["Image apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest has 78 fixed CVEs. " +
+                                 "An image upgrade is required."],
+                        ComplianceState.COMPLIANCE_STATE_FAILURE),
+        ]
+
+        given:
+        "skip test due to ROX-1336"
+        Assume.assumeTrue(Constants.CHECK_CVES_IN_COMPLIANCE)
+
+        and:
+        "deploy image with fixable CVEs"
+        Deployment cveDeployment = new Deployment()
+                .setName("cve-compliance-deployment")
+                .setImage("apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest")
+                .addLabel("app", "cve-compliance-deployment")
+        orchestrator.createDeployment(cveDeployment)
+
+        and:
+        "wait for image to be scanned"
+        def start = System.currentTimeMillis()
+        ImageOuterClass.ListImage image = ImageService.getImages().find { it.name == cveDeployment.image }
+        while (image?.getFixableCves() == 0 && System.currentTimeMillis() - start < 30000) {
+            sleep 2000
+            image = ImageService.getImages().find { it.name == cveDeployment.image }
+        }
+
+        when:
+        "trigger compliance runs"
+        def pciRunId = ComplianceManagementService.triggerComplianceRunAndWait(PCI_ID, clusterId)
+        ComplianceRunResults pciResults = ComplianceService.getComplianceRunResult(PCI_ID, clusterId).results
+        assert pciResults.getRunMetadata().runId == pciRunId
+
+        def hipaaRunId = ComplianceManagementService.triggerComplianceRunAndWait(HIPAA_ID, clusterId)
+        ComplianceRunResults hipaaResults = ComplianceService.getComplianceRunResult(HIPAA_ID, clusterId).results
+        assert hipaaResults.getRunMetadata().runId == hipaaRunId
+
+        then:
+        "confirm state and evidence of expected controls"
+        Map<String, ComplianceResultValue> clusterResults = [:]
+        clusterResults << pciResults.getClusterResults().controlResultsMap
+        clusterResults << hipaaResults.getClusterResults().controlResultsMap
+        assert clusterResults
+        def missingControls = []
+        for (Control control : controls) {
+            if (clusterResults.keySet().contains(control.id)) {
+                println "Validating ${control.id}"
+                ComplianceResultValue value = clusterResults.get(control.id)
+                assert value.overallState == control.state
+                assert value.evidenceList*.message.containsAll(control.evidenceMessages)
+            } else {
+                missingControls.add(control)
+            }
+        }
+        assert missingControls*.id.size() == 0
+
+        cleanup:
+        "re-add image integrations"
+        if (cveDeployment?.deploymentUid) {
+            orchestrator.deleteDeployment(cveDeployment)
+        }
+    }
+
+    @Category([BAT])
+    def "Verify failed run result"() {
+        given:
+        "Get Sensor pod name"
+        def sensorPod = orchestrator.getSensorContainerName()
+
+        when:
+        "trigger compliance run"
+        ComplianceManagementServiceOuterClass.ComplianceRun complianceRun =
+                ComplianceManagementService.triggerComplianceRun(PCI_ID, clusterId)
+        Long startTime = System.currentTimeMillis()
+
+        and:
+        "kill sensor"
+        orchestrator.deleteContainer(sensorPod, "stackrox")
+        while (complianceRun.state != ComplianceManagementServiceOuterClass.ComplianceRun.State.FINISHED &&
+                (System.currentTimeMillis() - startTime) < 30000) {
+            sleep 1000
+            complianceRun = ComplianceManagementService.getRecentRuns(PCI_ID).find { it.id == complianceRun.id }
+        }
+
+        then:
+        "validate failed run result"
+        List<Compliance.ComplianceRunMetadata> results =
+                ComplianceService.getComplianceRunResult(PCI_ID, clusterId).failedRunsList
+        assert results.size() > 0
+        Compliance.ComplianceRunMetadata last = results.get(0)
+        assert last.clusterId == clusterId
+        assert last.runId == complianceRun.id
+        assert last.standardId == PCI_ID
+        assert !last.success
+        assert last.errorMessage == "waiting for compliance data: scrape failed: connection to sensor was " +
+                "interrupted while scrape was ongoing"
+
+        cleanup:
+        "wait for sensor to come back up"
+        def start = System.currentTimeMillis()
+        orchestrator.waitForSensor()
+        println "waited ${System.currentTimeMillis() - start}ms for sensor to come back online"
     }
 
     // Legacy Benchmark Test - to remove once Compliance is done

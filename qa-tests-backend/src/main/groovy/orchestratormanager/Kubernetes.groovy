@@ -42,6 +42,7 @@ import objects.DaemonSet
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
+import objects.Node
 
 import java.util.stream.Collectors
 
@@ -55,6 +56,7 @@ class Kubernetes implements OrchestratorMain {
     Kubernetes(String ns) {
         this.namespace = ns
         this.client = new DefaultKubernetesClient()
+        this.client.configuration.setRollingTimeout(60 * 60 * 1000)
     }
 
     Kubernetes() {
@@ -192,8 +194,8 @@ class Kubernetes implements OrchestratorMain {
         return secretSet
     }
 
-    def getDeploymentCount() {
-        return client.apps().deployments().inAnyNamespace().list().getItems().size()
+    def getDeploymentCount(String ns = null) {
+        return client.apps().deployments().inNamespace(ns).list().getItems().collect { it.metadata.name }
     }
 
     /*
@@ -261,13 +263,17 @@ class Kubernetes implements OrchestratorMain {
         return null
     }
 
-    def getDaemonSetCount() {
-        return client.apps().daemonSets().inAnyNamespace().list().getItems().size()
+    def getDaemonSetCount(String ns = null) {
+        return client.apps().daemonSets().inNamespace(ns).list().getItems().collect { it.metadata.name }
     }
 
     /*
         Container Methods
     */
+
+    def deleteContainer(String containerName, String namespace = this.namespace) {
+        client.pods().inNamespace(namespace).withName(containerName).delete()
+    }
 
     def wasContainerKilled(String containerName, String namespace = this.namespace) {
         Long startTime = System.currentTimeMillis()
@@ -322,6 +328,20 @@ class Kubernetes implements OrchestratorMain {
         } catch (Exception e) {
             println "Error getting container logs: ${e.toString()}"
         }
+    }
+
+    def getStaticPodCount(String ns = null) {
+        // This method assumes that a static pod name will contain the node name that the pod is running on
+        def nodeNames = client.nodes().list().items.collect { it.metadata.name }
+        Set<String> staticPods = [] as Set
+        client.pods().inNamespace(ns).list().items.each {
+            for (String node : nodeNames) {
+                if (it.metadata.name.contains(node)) {
+                    staticPods.add(it.metadata.name[0..it.metadata.name.indexOf(node) - 2])
+                }
+            }
+        }
+        return staticPods
     }
 
     /*
@@ -382,6 +402,30 @@ class Kubernetes implements OrchestratorMain {
 
     def deleteService(String name, String namespace = this.namespace) {
         client.services().inNamespace(namespace).withName(name).delete()
+    }
+
+    def waitForServiceDeletion(objects.Service service) {
+        int waitTime = 0
+        boolean beenDeleted = false
+
+        while (waitTime < maxWaitTime && !beenDeleted) {
+            Service s =
+                    client.services().inNamespace(service.namespace).withName(service.name).get()
+            beenDeleted = true
+
+            println "Waiting for " + service.name + " to be deleted"
+            if (s != null) {
+                sleep(sleepDuration)
+                waitTime += sleepDuration
+                beenDeleted = false
+            }
+        }
+
+        if (beenDeleted) {
+            println service.name + ": service removed."
+        } else {
+            println "Timed out waiting for " + service.name
+        }
     }
 
     def createLoadBalancer(Deployment deployment) {
@@ -461,8 +505,8 @@ class Kubernetes implements OrchestratorMain {
         println name + ": Secret removed."
     }
 
-    def getSecretCount() {
-        return client.secrets().inAnyNamespace().list().getItems().findAll {
+    def getSecretCount(String ns = null) {
+        return client.secrets().inNamespace(ns).list().getItems().findAll {
             !it.type.startsWith("kubernetes.io/docker") &&
                     !it.type.startsWith("kubernetes.io/service-account-token")
         }.size()
@@ -500,6 +544,10 @@ class Kubernetes implements OrchestratorMain {
         return false
     }
 
+    def getNetworkPolicyCount(String ns) {
+        return client.network().networkPolicies().inNamespace(ns).list().items.size()
+    }
+
     /*
         Node Methods
      */
@@ -508,11 +556,46 @@ class Kubernetes implements OrchestratorMain {
         return client.nodes().list().getItems().size()
     }
 
+    List<Node> getNodeDetails() {
+        return client.nodes().list().items.collect {
+            new Node(
+                    uid: it.metadata.uid,
+                    name: it.metadata.name,
+                    labels: it.metadata.labels,
+                    annotations: it.metadata.annotations,
+                    internalIps: it.status.addresses.findAll { it.type == "InternalIP" }*.address,
+                    externalIps: it.status.addresses.findAll { it.type == "ExternalIP" }*.address,
+                    containerRuntimeVersion: it.status.nodeInfo.containerRuntimeVersion,
+                    kernelVersion: it.status.nodeInfo.kernelVersion,
+                    osImage: it.status.nodeInfo.osImage
+            )
+        }
+    }
+
     def supportsNetworkPolicies() {
         List<Node> gkeNodes = client.nodes().list().getItems().findAll {
             it.getStatus().getNodeInfo().getKubeletVersion().contains("gke")
         }
         return gkeNodes.size() > 0
+    }
+
+    /*
+        Namespace Methods
+     */
+
+    List<objects.Namespace> getNamespaceDetails() {
+        return client.namespaces().list().items.collect {
+            new objects.Namespace(
+                    uid: it.metadata.uid,
+                    name: it.metadata.name,
+                    labels: it.metadata.labels,
+                    deploymentCount: getDeploymentCount(it.metadata.name) +
+                            getDaemonSetCount(it.metadata.name) +
+                            getStaticPodCount(it.metadata.name),
+                    secretsCount: getSecretCount(it.metadata.name),
+                    networkPolicyCount: getNetworkPolicyCount(it.metadata.name)
+            )
+        }
     }
 
     /*
@@ -612,6 +695,31 @@ class Kubernetes implements OrchestratorMain {
 
     String getNameSpace() {
         return this.namespace
+    }
+
+    String getSensorContainerName() {
+        return client.pods().inNamespace("stackrox").list().items.find {
+            it.metadata.name.startsWith("sensor")
+        }.metadata.name
+    }
+
+    def waitForSensor() {
+        def start = System.currentTimeMillis()
+        def running = client.apps().deployments()
+                .inNamespace("stackrox")
+                .withName("sensor")
+                .get().status.readyReplicas < 1
+        while (!running && (System.currentTimeMillis() - start) < 30000) {
+            println "waiting for sensor to come back online. Trying again in 1s..."
+            sleep 1000
+            running = client.apps().deployments()
+                    .inNamespace("stackrox")
+                    .withName("sensor")
+                    .get().status.readyReplicas < 1
+        }
+        if (!running) {
+            println "Failed to detect sensor came back up within 30s... Future tests may be impacted."
+        }
     }
 
     /*

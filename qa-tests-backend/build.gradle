@@ -83,8 +83,11 @@ dependencies {
     compile group: 'com.github.docker-java', name: 'docker-java', version: '3.1.0-rc-3'
 
     compile group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
+    compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.7'
 
     compile 'com.google.api.grpc:googleapis-common-protos:0.0.3'
+
+    compile group: 'com.opencsv', name: 'opencsv', version: '4.0'
 
     testCompile group: 'org.spockframework', name: 'spock-core', version: '1.1-groovy-2.0'
     testCompile group: 'com.google.code.gson', name: 'gson', version: '2.7'
