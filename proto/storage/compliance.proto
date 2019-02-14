@@ -12,7 +12,6 @@ import "storage/node.proto";
 
 package storage;
 
-// @protolock:skip
 message ComplianceResource {
     message ClusterName {
         string id   = 1;
@@ -40,7 +39,6 @@ message ComplianceResource {
     }
 }
 
-// @protolock:skip
 enum ComplianceState {
     COMPLIANCE_STATE_UNKNOWN = 0;
     COMPLIANCE_STATE_SKIP    = 1;
@@ -50,7 +48,6 @@ enum ComplianceState {
     COMPLIANCE_STATE_ERROR   = 5;
 }
 
-// @protolock:skip
 message ComplianceResultValue {
     message Evidence {
         ComplianceState state = 1;
@@ -61,14 +58,12 @@ message ComplianceResultValue {
     ComplianceState overall_state = 2;
 }
 
-// @protolock:skip
 message ComplianceControlResult {
     ComplianceResource resource = 1;
     string control_id           = 2;
     ComplianceResultValue value = 3;
 }
 
-// @protolock:skip
 message ComplianceDomain {
     Cluster cluster = 1;
     map<string, Node> nodes = 2;
@@ -76,7 +71,6 @@ message ComplianceDomain {
 }
 
 // Next available tag: 5
-// @protolock:skip
 message ComplianceRunMetadata {
     string run_id = 1;
     string standard_id = 2;
@@ -90,7 +84,6 @@ message ComplianceRunMetadata {
 }
 
 // Next available tag: 6
-// @protolock:skip
 message ComplianceRunResults {
     message EntityResults {
         map<string, ComplianceResultValue> control_results = 1;
@@ -105,7 +98,6 @@ message ComplianceRunResults {
 }
 
 // Next available tag: 2
-// @protolock:skip
 message ComplianceStrings {
     repeated string strings = 1;
 }
