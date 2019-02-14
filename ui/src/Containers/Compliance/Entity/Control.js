@@ -11,7 +11,7 @@ import ControlRelatedResourceList from 'Containers/Compliance/widgets/ControlRel
 import Header from './Header';
 
 const ControlPage = ({ sidePanelMode, params }) => (
-    <Query query={QUERY} variables={{ id: params.entityId }} pollInterval={5000}>
+    <Query query={QUERY} variables={{ id: params.entityId }}>
         {({ data }) => {
             const { results: control, complianceStandards: standards } = data;
             if (isEmpty(control)) return null;

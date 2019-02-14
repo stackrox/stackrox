@@ -117,7 +117,6 @@ class DashboardCompliance extends Component {
                     unit: entityTypes.CONTROL,
                     groupBy: [entityTypes.STANDARD]
                 }}
-                pollInterval={5000}
             >
                 {({ loading, data }) => {
                     if (loading) return <Loader />;

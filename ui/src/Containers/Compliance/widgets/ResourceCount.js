@@ -44,7 +44,7 @@ const ResourceCount = ({ entityType, params }) => {
     const variables = { id: params.entityId };
 
     return (
-        <Query query={query} variables={variables} pollInterval={5000}>
+        <Query query={query} variables={variables}>
             {({ loading, data }) => {
                 const contents = <Loader />;
                 const headerText = `${resourceLabels[entityType]} Count`;

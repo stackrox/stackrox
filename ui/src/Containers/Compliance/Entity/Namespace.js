@@ -30,7 +30,7 @@ function processData(data) {
 }
 
 const NamespacePage = ({ sidePanelMode, params }) => (
-    <Query query={QUERY} variables={{ id: params.entityId }} pollInterval={5000}>
+    <Query query={QUERY} variables={{ id: params.entityId }}>
         {({ loading, data }) => {
             const namespace = processData(data);
             const header = namespace.name || 'Loading';

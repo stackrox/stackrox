@@ -17,7 +17,7 @@ function processData(data) {
 }
 
 const ClusterPage = ({ sidePanelMode, params }) => (
-    <Query query={QUERY} variables={{ id: params.entityId }} pollInterval={5000}>
+    <Query query={QUERY} variables={{ id: params.entityId }}>
         {({ loading, data }) => {
             if (loading) return <Loader />;
             const cluster = processData(data);

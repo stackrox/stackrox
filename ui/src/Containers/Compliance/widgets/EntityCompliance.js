@@ -57,7 +57,6 @@ const EntityCompliance = ({ entityType, entityName, history }) => {
                 groupBy: ['STANDARD', entityType],
                 where: queryService.objectToWhereClause(whereClause)
             }}
-            pollInterval={5000}
         >
             {({ loading, data }) => {
                 let contents = <Loader />;

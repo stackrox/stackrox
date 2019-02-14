@@ -81,8 +81,8 @@ function getLabelLinks(data, type, params) {
     return labelLinks;
 }
 
-const StandardsByEntity = ({ type, params, pollInterval, bodyClassName }) => (
-    <Query params={params} componentType={componentTypeMapping[type]} pollInterval={pollInterval}>
+const StandardsByEntity = ({ type, params, bodyClassName }) => (
+    <Query params={params} componentType={componentTypeMapping[type]}>
         {({ loading, data }) => {
             let contents = <Loader />;
             const headerText = `Passing standards by ${type}`;
@@ -121,12 +121,10 @@ const StandardsByEntity = ({ type, params, pollInterval, bodyClassName }) => (
 StandardsByEntity.propTypes = {
     type: PropTypes.string.isRequired,
     bodyClassName: PropTypes.string,
-    params: PropTypes.shape({}).isRequired,
-    pollInterval: PropTypes.number
+    params: PropTypes.shape({}).isRequired
 };
 
 StandardsByEntity.defaultProps = {
-    pollInterval: 0,
     bodyClassName: 'p-4'
 };
 

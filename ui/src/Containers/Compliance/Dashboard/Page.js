@@ -11,8 +11,6 @@ import WaveBackground from 'images/wave-bg.svg';
 import WaveBackground2 from 'images/wave-bg-2.svg';
 import DashboardHeader from './Header';
 
-const pollInterval = 5000;
-
 const ComplianceDashboardPage = ({ match, location }) => {
     const params = URLService.getParams(match, location);
 
@@ -51,51 +49,30 @@ const ComplianceDashboardPage = ({ match, location }) => {
                         type={resourceTypes.CLUSTER}
                         params={params}
                         bodyClassName="pr-4 py-1"
-                        pollInterval={pollInterval}
                     />
                     <StandardsByEntity
                         type={resourceTypes.CLUSTER}
                         params={params}
                         bodyClassName="p-4"
-                        pollInterval={pollInterval}
                     />
                     <StandardsAcrossEntity
                         type={resourceTypes.NAMESPACE}
                         params={params}
                         bodyClassName="px-4 pt-1"
-                        pollInterval={pollInterval}
                     />
                     <StandardsAcrossEntity
                         type={resourceTypes.NODE}
                         params={params}
                         bodyClassName="pr-4 py-1"
-                        pollInterval={pollInterval}
                     />
-                    <ComplianceByStandard
-                        type={standardTypes.CIS_DOCKER_V1_1_0}
-                        params={params}
-                        pollInterval={pollInterval}
-                    />
+                    <ComplianceByStandard type={standardTypes.CIS_DOCKER_V1_1_0} params={params} />
                     <ComplianceByStandard
                         type={standardTypes.CIS_KUBERENETES_V1_2_0}
                         params={params}
-                        pollInterval={pollInterval}
                     />
-                    <ComplianceByStandard
-                        type={standardTypes.HIPAA_164}
-                        params={params}
-                        pollInterval={pollInterval}
-                    />
-                    <ComplianceByStandard
-                        type={standardTypes.NIST_800_190}
-                        params={params}
-                        pollInterval={pollInterval}
-                    />
-                    <ComplianceByStandard
-                        type={standardTypes.PCI_DSS_3_2}
-                        params={params}
-                        pollInterval={pollInterval}
-                    />
+                    <ComplianceByStandard type={standardTypes.HIPAA_164} params={params} />
+                    <ComplianceByStandard type={standardTypes.NIST_800_190} params={params} />
+                    <ComplianceByStandard type={standardTypes.PCI_DSS_3_2} params={params} />
                 </div>
             </div>
         </section>

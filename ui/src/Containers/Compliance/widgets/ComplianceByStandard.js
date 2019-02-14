@@ -141,14 +141,10 @@ const createURLLink = (params, type, entityName) => {
     return link;
 };
 
-const ComplianceByStandard = ({ type, entityName, params, pollInterval }) => {
+const ComplianceByStandard = ({ type, entityName, params }) => {
     const newParams = constructURLWithQuery(params, type, entityName);
     return (
-        <Query
-            params={newParams}
-            componentType={componentTypes.COMPLIANCE_BY_STANDARD}
-            pollInterval={pollInterval}
-        >
+        <Query params={newParams} componentType={componentTypes.COMPLIANCE_BY_STANDARD}>
             {({ loading, data }) => {
                 let contents = <Loader />;
                 const headerText = `${standardLabels[type]} Compliance`;
@@ -197,14 +193,12 @@ const ComplianceByStandard = ({ type, entityName, params, pollInterval }) => {
 ComplianceByStandard.propTypes = {
     type: PropTypes.string.isRequired,
     entityName: PropTypes.string,
-    params: PropTypes.shape({}),
-    pollInterval: PropTypes.number
+    params: PropTypes.shape({})
 };
 
 ComplianceByStandard.defaultProps = {
     params: null,
-    entityName: null,
-    pollInterval: 0
+    entityName: null
 };
 
 export default ComplianceByStandard;

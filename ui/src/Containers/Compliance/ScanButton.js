@@ -7,10 +7,6 @@ import Button from 'Components/Button';
 import * as Icon from 'react-feather';
 import Query from 'Components/ThrowingQuery';
 
-const scanOnClickHandler = (triggerScan, clusterId, standardId) => () => {
-    triggerScan({ variables: { clusterId, standardId } });
-};
-
 const getTriggerRunIds = data => {
     if (data && data.complianceTriggerRuns.length) {
         return data.complianceTriggerRuns.map(run => run.id);
@@ -28,36 +24,68 @@ const areRunsFinished = data => {
     return runsFinished;
 };
 
-const ScanButton = ({ className, text, textCondensed, textClass, clusterId, standardId }) => (
-    <Mutation mutation={TRIGGER_SCAN}>
-        {(triggerScan, { data: triggerData }) => {
-            const ids = getTriggerRunIds(triggerData);
-            return (
-                <Query query={RUN_STATUSES} variables={{ ids }}>
-                    {({ data, startPolling, stopPolling }) => {
-                        startPolling(5000);
-                        const scanningFinished = areRunsFinished(data);
-                        if (scanningFinished) stopPolling();
-                        const showLoader = !scanningFinished;
-                        return (
-                            <Button
-                                className={className}
-                                text={text}
-                                textCondensed={textCondensed}
-                                textClass={textClass}
-                                icon={
-                                    <Icon.RefreshCcw size="14" className="mx-1 lg:ml-1 lg:mr-3" />
+class ScanButton extends React.Component {
+    state = { pendingRunIds: [] };
+
+    onClick = triggerScan => () => {
+        const { clusterId, standardId } = this.props;
+        triggerScan({ variables: { clusterId, standardId } }).then(this.mutationCompleted);
+    };
+
+    mutationCompleted = ({ data }) => {
+        this.setState({ pendingRunIds: getTriggerRunIds(data) });
+    };
+
+    queryCompleted = client => data => {
+        if (this.state.pendingRunIds.length && areRunsFinished(data)) {
+            this.setState({ pendingRunIds: [] });
+            client.resetStore();
+        }
+    };
+
+    render() {
+        const { className, text, textCondensed, textClass } = this.props;
+        return (
+            <Mutation mutation={TRIGGER_SCAN}>
+                {(triggerScan, { client }) => {
+                    const variables = { pendingRunIds: this.state.pendingRunIds };
+                    return (
+                        <Query
+                            query={RUN_STATUSES}
+                            variables={variables}
+                            onCompleted={this.queryCompleted(client)}
+                        >
+                            {({ startPolling, stopPolling }) => {
+                                const polling = !!this.state.pendingRunIds.length;
+                                if (polling) {
+                                    startPolling(5000);
+                                } else {
+                                    stopPolling();
                                 }
-                                onClick={scanOnClickHandler(triggerScan, clusterId, standardId)}
-                                isLoading={showLoader}
-                            />
-                        );
-                    }}
-                </Query>
-            );
-        }}
-    </Mutation>
-);
+                                return (
+                                    <Button
+                                        className={className}
+                                        text={text}
+                                        textCondensed={textCondensed}
+                                        textClass={textClass}
+                                        icon={
+                                            <Icon.RefreshCcw
+                                                size="14"
+                                                className="mx-1 lg:ml-1 lg:mr-3"
+                                            />
+                                        }
+                                        onClick={this.onClick(triggerScan)}
+                                        isLoading={polling}
+                                    />
+                                );
+                            }}
+                        </Query>
+                    );
+                }}
+            </Mutation>
+        );
+    }
+}
 
 ScanButton.propTypes = {
     className: PropTypes.string,

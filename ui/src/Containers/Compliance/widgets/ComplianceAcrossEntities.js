@@ -61,10 +61,10 @@ const getQueryVariables = params => {
     };
 };
 
-const ComplianceAcrossEntities = ({ params, pollInterval }) => {
+const ComplianceAcrossEntities = ({ params }) => {
     const variables = getQueryVariables(params);
     return (
-        <Query query={AGGREGATED_RESULTS} variables={variables} pollInterval={pollInterval}>
+        <Query query={AGGREGATED_RESULTS} variables={variables}>
             {({ loading, data }) => {
                 let contents = <Loader />;
                 const headerText = standardBaseTypes[params.entityType]
@@ -91,12 +91,7 @@ const ComplianceAcrossEntities = ({ params, pollInterval }) => {
 };
 
 ComplianceAcrossEntities.propTypes = {
-    params: PropTypes.shape({}).isRequired,
-    pollInterval: PropTypes.number
-};
-
-ComplianceAcrossEntities.defaultProps = {
-    pollInterval: 0
+    params: PropTypes.shape({}).isRequired
 };
 
 export default ComplianceAcrossEntities;

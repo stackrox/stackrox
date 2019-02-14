@@ -72,8 +72,8 @@ function processData(data, type) {
     return barData;
 }
 
-const StandardsAcrossEntity = ({ type, params, pollInterval, bodyClassName }) => (
-    <Query params={params} componentType={componentTypeMapping[type]} pollInterval={pollInterval}>
+const StandardsAcrossEntity = ({ type, params, bodyClassName }) => (
+    <Query params={params} componentType={componentTypeMapping[type]}>
         {({ loading, data }) => {
             let contents;
             const headerText = `Passing standards across ${type}s`;
@@ -103,12 +103,10 @@ const StandardsAcrossEntity = ({ type, params, pollInterval, bodyClassName }) =>
 StandardsAcrossEntity.propTypes = {
     type: PropTypes.string.isRequired,
     params: PropTypes.shape({}).isRequired,
-    bodyClassName: PropTypes.string,
-    pollInterval: PropTypes.number
+    bodyClassName: PropTypes.string
 };
 
 StandardsAcrossEntity.defaultProps = {
-    pollInterval: 0,
     bodyClassName: 'px-4 pt-1'
 };
 

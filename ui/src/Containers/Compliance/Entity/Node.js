@@ -34,7 +34,7 @@ function processData(data) {
 }
 
 const NodePage = ({ sidePanelMode, params }) => (
-    <Query query={NODE_QUERY} variables={{ id: params.entityId }} pollInterval={5000}>
+    <Query query={NODE_QUERY} variables={{ id: params.entityId }}>
         {({ loading, data }) => {
             if (loading || !data) return <Loader />;
             const node = processData(data);
