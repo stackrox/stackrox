@@ -52,6 +52,11 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrations() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsFiltering() {
+	// Remove the default integrations
+	for _, i := range store.DefaultImageIntegrations {
+		suite.NoError(suite.datastore.RemoveImageIntegration(i.GetId()))
+	}
+
 	integrations := []*storage.ImageIntegration{
 		{
 			Name: "registry1",

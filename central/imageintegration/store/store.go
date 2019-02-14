@@ -4,6 +4,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var imageIntegrationBucket = []byte("imageintegrations")
@@ -20,7 +21,17 @@ type Store interface {
 // New returns a new Store instance using the provided bolt DB instance.
 func New(db *bolt.DB) Store {
 	bolthelper.RegisterBucketOrPanic(db, imageIntegrationBucket)
-	return &storeImpl{
+	si := &storeImpl{
 		DB: db,
 	}
+
+	integrations, err := si.GetImageIntegrations()
+	utils.Must(err)
+	if len(integrations) == 0 {
+		// Add default integrations
+		for _, ii := range DefaultImageIntegrations {
+			utils.Must(si.UpdateImageIntegration(ii))
+		}
+	}
+	return si
 }

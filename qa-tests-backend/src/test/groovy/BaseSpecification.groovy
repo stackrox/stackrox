@@ -36,8 +36,6 @@ class BaseSpecification extends Specification {
     private testStartTime
 
     @Shared
-    private gdrId = ""
-    @Shared
     private dtrId = ""
 
     def setupSpec() {
@@ -46,7 +44,6 @@ class BaseSpecification extends Specification {
                 .setNanos((int) ((startTime % 1000) * 1000000)).build()
         RestAssured.useRelaxedHTTPSValidation()
         try {
-            gdrId = Services.addGenericDockerRegistry()
             dtrId = Services.addDockerTrustedRegistry()
             orchestrator.setup()
         } catch (Exception e) {
@@ -63,7 +60,6 @@ class BaseSpecification extends Specification {
 
     def cleanupSpec() {
         try {
-            Services.deleteGenericDockerRegistry(gdrId)
             Services.deleteDockerTrustedRegistry(dtrId)
             orchestrator.cleanup()
         } catch (Exception e) {
