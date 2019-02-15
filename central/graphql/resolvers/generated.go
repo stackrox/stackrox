@@ -530,6 +530,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"ancestor: String!",
 		"args: String!",
 		"name: String!",
+		"uid: String!",
 	})
 	builder.AddType("ProcessSignal", []string{
 		"args: String!",
@@ -4607,6 +4608,11 @@ func (resolver *processPolicyResolver) Args() string {
 
 func (resolver *processPolicyResolver) Name() string {
 	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *processPolicyResolver) Uid() string {
+	value := resolver.data.GetUid()
 	return value
 }
 

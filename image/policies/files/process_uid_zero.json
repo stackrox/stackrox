@@ -1,0 +1,41 @@
+{
+  "id": "7760a5f3-bca4-4ca8-94a7-ad89edbc0e2c",
+  "name": "Process with UID 0",
+  "description": "Alert on deployments that contain processes running with UID 0",
+  "rationale": "Processes that are running with UID 0 run as the root user. This can allow for unintended privilege escalation if a container mounts host directories that are owned by the host's root user",
+  "remediation": "Specify the USER instruction in the Docker image or the runAsUser field within the Pod Security Context",
+  "categories": [
+    "DevOps Best Practices",
+    "Security Best Practices"
+  ],
+  "fields": {
+    "processPolicy": {
+      "uid": "0"
+    }
+  },
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "whitelists": [
+    {
+      "name": "Don't alert on Kube System Namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on StackRox Namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    }
+  ],
+  "scope": [],
+  "severity": "HIGH_SEVERITY",
+  "enforcementActions": [],
+  "notifiers": []
+}

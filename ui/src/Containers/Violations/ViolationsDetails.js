@@ -48,7 +48,7 @@ class ViolationsDetails extends Component {
         const lastOccurrenceTimestamp = Math.max(...timestamps);
 
         const processesList = processes.map(process => {
-            const { time, args, execFilePath, containerId, lineage } = process.signal;
+            const { time, args, execFilePath, containerId, lineage, uid } = process.signal;
             const processTime = new Date(time);
             const timeFormat = format(processTime, dateTimeFormat);
             let ancestors = null;
@@ -72,6 +72,11 @@ class ViolationsDetails extends Component {
                         </div>
                         <div>
                             <span className="font-700">Time:</span> {timeFormat}
+                        </div>
+                    </div>
+                    <div className="flex flex-1 text-base-600 px-4 py-2">
+                        <div>
+                            <span className="font-700">User ID:</span> {uid}
                         </div>
                     </div>
                     <div className="flex flex-1 text-base-600 px-4 py-2">

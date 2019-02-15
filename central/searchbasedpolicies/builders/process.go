@@ -16,12 +16,22 @@ import (
 type ProcessQueryBuilder struct {
 }
 
+func allEmpty(strs ...string) bool {
+	for _, s := range strs {
+		if s != "" {
+			return false
+		}
+	}
+	return true
+}
+
 // Query implements the PolicyQueryBuilder interface.
 func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	processName := fields.GetProcessPolicy().GetName()
 	processArgs := fields.GetProcessPolicy().GetArgs()
 	processAncestor := fields.GetProcessPolicy().GetAncestor()
-	if processName == "" && processArgs == "" && processAncestor == "" {
+	processUID := fields.GetProcessPolicy().GetUid()
+	if allEmpty(processName, processArgs, processAncestor, processUID) {
 		return
 	}
 
@@ -41,6 +51,11 @@ func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[
 	}
 
 	processIDSearchField, err := getSearchFieldNotStored(search.ProcessID, optionsMap)
+	if err != nil {
+		err = fmt.Errorf("%s: %s", p.Name(), err)
+	}
+
+	_, err = getSearchFieldNotStored(search.ProcessUID, optionsMap)
 	if err != nil {
 		err = fmt.Errorf("%s: %s", p.Name(), err)
 	}
@@ -65,6 +80,12 @@ func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[
 	if processAncestor != "" {
 		fieldLabels = append(fieldLabels, search.ProcessAncestor)
 		queryStrings = append(queryStrings, search.RegexQueryString(processAncestor))
+		highlights = append(highlights, false)
+	}
+
+	if processUID != "" {
+		fieldLabels = append(fieldLabels, search.ProcessUID)
+		queryStrings = append(queryStrings, processUID)
 		highlights = append(highlights, false)
 	}
 
@@ -121,14 +142,16 @@ func UpdateRuntimeAlertViolationMessage(v *storage.Alert_ProcessViolation) {
 
 	pathSet := set.NewStringSet()
 	argsSet := set.NewStringSet()
+	uidSet := set.NewIntSet()
 	for _, process := range processes {
 		pathSet.Add(process.GetSignal().GetExecFilePath())
 		if process.GetSignal().GetArgs() != "" {
 			argsSet.Add(process.GetSignal().GetArgs())
 		}
+		uidSet.Add(int(process.GetSignal().GetUid()))
 	}
 
-	var countMessage, argsMessage, pathMessage string
+	var countMessage, argsMessage, pathMessage, uidMessage string
 	if len(processes) == 1 {
 		countMessage = "execution of"
 	} else {
@@ -147,5 +170,11 @@ func UpdateRuntimeAlertViolationMessage(v *storage.Alert_ProcessViolation) {
 		argsMessage = fmt.Sprintf(" with %d different arguments", argsSet.Cardinality())
 	}
 
-	v.Message = fmt.Sprintf("Detected %s%s%s", countMessage, pathMessage, argsMessage)
+	if uidSet.Cardinality() == 1 {
+		uidMessage = fmt.Sprintf(" with UID '%d'", processes[0].GetSignal().GetUid())
+	} else if uidSet.Cardinality() > 0 {
+		uidMessage = fmt.Sprintf(" with %d different uids", uidSet.Cardinality())
+	}
+
+	v.Message = fmt.Sprintf("Detected %s%s%s%s", countMessage, pathMessage, argsMessage, uidMessage)
 }

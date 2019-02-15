@@ -136,6 +136,7 @@ message ProcessPolicy {
     string name     = 1;
     string args     = 2;
     string ancestor = 3;
+    string uid      = 4;
 }
 
 message ResourcePolicy {

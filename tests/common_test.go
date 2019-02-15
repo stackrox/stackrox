@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/require"
 )
@@ -21,6 +22,10 @@ const (
 
 	alpineDeploymentName = `alpine`
 	alpineImageSha       = `7df6db5aa61ae9480f52f0b3a06a140ab98d427f86d8d5de0bedab9b8df6b1c0`
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 func retrieveDeployment(service v1.DeploymentServiceClient, listDeployment *storage.ListDeployment) (*storage.Deployment, error) {
@@ -65,13 +70,13 @@ func waitForDeployment(t *testing.T, deploymentName string) {
 			)
 			cancel()
 			if err != nil {
-				logger.Errorf("Error listing deployments: %s", err)
+				log.Errorf("Error listing deployments: %s", err)
 				continue
 			}
 
 			deployments, err := retrieveDeployments(service, listDeployments.GetDeployments())
 			if err != nil {
-				logger.Errorf("Error retrieving deployments: %s", err)
+				log.Errorf("Error retrieving deployments: %s", err)
 				continue
 			}
 
@@ -111,7 +116,7 @@ func waitForTermination(t *testing.T, deploymentName string) {
 			})
 			cancel()
 			if err != nil {
-				logger.Error(err)
+				log.Error(err)
 				continue
 			}
 

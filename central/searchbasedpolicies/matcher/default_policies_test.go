@@ -157,7 +157,7 @@ func (suite *DefaultPoliciesTestSuite) imageIDFromDep(deployment *storage.Deploy
 	return types.NewDigest(id).Digest()
 }
 
-func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args, path string, lineage []string) *storage.ProcessIndicator {
+func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args, path string, lineage []string, uid uint32) *storage.ProcessIndicator {
 	indicator := &storage.ProcessIndicator{
 		Id:           uuid.NewV4().String(),
 		DeploymentId: deploymentID,
@@ -167,6 +167,7 @@ func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args
 			ExecFilePath: path,
 			Time:         gogoTypes.TimestampNow(),
 			Lineage:      lineage,
+			Uid:          uid,
 		},
 	}
 	err := suite.processDataStore.AddProcessIndicator(indicator)
@@ -458,18 +459,18 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	// Index processes
 	bashLineage := []string{"/bin/bash"}
-	fixtureDepAptIndicator := suite.mustAddIndicator(fixtureDep.GetId(), "apt", "", "/usr/bin/apt", bashLineage)
-	sysAdminDepAptIndicator := suite.mustAddIndicator(sysAdminDep.GetId(), "apt", "install blah", "/usr/bin/apt", bashLineage)
+	fixtureDepAptIndicator := suite.mustAddIndicator(fixtureDep.GetId(), "apt", "", "/usr/bin/apt", bashLineage, 1)
+	sysAdminDepAptIndicator := suite.mustAddIndicator(sysAdminDep.GetId(), "apt", "install blah", "/usr/bin/apt", bashLineage, 1)
 
-	kubeletIndicator := suite.mustAddIndicator(containerPort22Dep.GetId(), "curl", "https://12.13.14.15:10250", "/bin/curl", bashLineage)
-	kubeletIndicator2 := suite.mustAddIndicator(containerPort22Dep.GetId(), "wget", "https://heapster.kube-system/metrics", "/bin/wget", bashLineage)
+	kubeletIndicator := suite.mustAddIndicator(containerPort22Dep.GetId(), "curl", "https://12.13.14.15:10250", "/bin/curl", bashLineage, 1)
+	kubeletIndicator2 := suite.mustAddIndicator(containerPort22Dep.GetId(), "wget", "https://heapster.kube-system/metrics", "/bin/wget", bashLineage, 1)
 
-	nmapIndicatorfixtureDep1 := suite.mustAddIndicator(fixtureDep.GetId(), "nmap", "blah", "/usr/bin/nmap", bashLineage)
-	nmapIndicatorfixtureDep2 := suite.mustAddIndicator(fixtureDep.GetId(), "nmap", "blah2", "/usr/bin/nmap", bashLineage)
-	nmapIndicatorNginx110Dep := suite.mustAddIndicator(nginx110Dep.GetId(), "nmap", "", "/usr/bin/nmap", bashLineage)
+	nmapIndicatorfixtureDep1 := suite.mustAddIndicator(fixtureDep.GetId(), "nmap", "blah", "/usr/bin/nmap", bashLineage, 1)
+	nmapIndicatorfixtureDep2 := suite.mustAddIndicator(fixtureDep.GetId(), "nmap", "blah2", "/usr/bin/nmap", bashLineage, 1)
+	nmapIndicatorNginx110Dep := suite.mustAddIndicator(nginx110Dep.GetId(), "nmap", "", "/usr/bin/nmap", bashLineage, 1)
 
 	javaLineage := []string{"/bin/bash", "/mnt/scripts/run_server.sh", "/bin/java"}
-	fixtureDepJavaIndicator := suite.mustAddIndicator(fixtureDep.GetId(), "/bin/bash", "-attack", "/bin/bash", javaLineage)
+	fixtureDepJavaIndicator := suite.mustAddIndicator(fixtureDep.GetId(), "/bin/bash", "-attack", "/bin/bash", javaLineage, 0)
 
 	// Find all the deployments indexed.
 	allDeployments, err := suite.deploymentIndexer.Search(search.EmptyQuery())
@@ -838,12 +839,12 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			policyName: "nmap Execution",
 			expectedViolations: map[string]searchbasedpolicies.Violations{
 				fixtureDep.GetId(): {ProcessViolation: &storage.Alert_ProcessViolation{
-					Message:   "Detected executions of binary '/usr/bin/nmap' with 2 different arguments",
+					Message:   "Detected executions of binary '/usr/bin/nmap' with 2 different arguments with UID '1'",
 					Processes: []*storage.ProcessIndicator{nmapIndicatorfixtureDep1, nmapIndicatorfixtureDep2},
 				},
 				},
 				nginx110Dep.GetId(): {ProcessViolation: &storage.Alert_ProcessViolation{
-					Message:   "Detected execution of binary '/usr/bin/nmap'",
+					Message:   "Detected execution of binary '/usr/bin/nmap' with UID '1'",
 					Processes: []*storage.ProcessIndicator{nmapIndicatorNginx110Dep},
 				},
 				},
@@ -853,7 +854,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			policyName: "Process Targeting Cluster Kubelet Endpoint",
 			expectedViolations: map[string]searchbasedpolicies.Violations{
 				containerPort22Dep.GetId(): {ProcessViolation: &storage.Alert_ProcessViolation{
-					Message:   "Detected executions of 2 binaries with 2 different arguments",
+					Message:   "Detected executions of 2 binaries with 2 different arguments with UID '1'",
 					Processes: []*storage.ProcessIndicator{kubeletIndicator, kubeletIndicator2},
 				},
 				},
@@ -863,13 +864,23 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			policyName: "Ubuntu Package Manager Execution",
 			expectedViolations: map[string]searchbasedpolicies.Violations{
 				fixtureDep.GetId(): {ProcessViolation: &storage.Alert_ProcessViolation{
-					Message:   "Detected execution of binary '/usr/bin/apt'",
+					Message:   "Detected execution of binary '/usr/bin/apt' with UID '1'",
 					Processes: []*storage.ProcessIndicator{fixtureDepAptIndicator},
 				},
 				},
 				sysAdminDep.GetId(): {ProcessViolation: &storage.Alert_ProcessViolation{
-					Message:   "Detected execution of binary '/usr/bin/apt' with arguments 'install blah'",
+					Message:   "Detected execution of binary '/usr/bin/apt' with arguments 'install blah' with UID '1'",
 					Processes: []*storage.ProcessIndicator{sysAdminDepAptIndicator},
+				},
+				},
+			},
+		},
+		{
+			policyName: "Process with UID 0",
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				fixtureDep.GetId(): {ProcessViolation: &storage.Alert_ProcessViolation{
+					Message:   "Detected execution of binary '/bin/bash' with arguments '-attack' with UID '0'",
+					Processes: []*storage.ProcessIndicator{fixtureDepJavaIndicator},
 				},
 				},
 			},
@@ -878,7 +889,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			policyName: "Shell Spawned by Java Application",
 			expectedViolations: map[string]searchbasedpolicies.Violations{
 				fixtureDep.GetId(): {ProcessViolation: &storage.Alert_ProcessViolation{
-					Message:   "Detected execution of binary '/bin/bash' with arguments '-attack'",
+					Message:   "Detected execution of binary '/bin/bash' with arguments '-attack' with UID '0'",
 					Processes: []*storage.ProcessIndicator{fixtureDepJavaIndicator},
 				},
 				},

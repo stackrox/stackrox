@@ -233,9 +233,10 @@ const fieldsMap = {
         label: 'Process Execution',
         formatValue: d => {
             const name = d.name ? `Process matches name "${d.name}"` : 'Process';
-            const args = d.args ? `and match args "${d.args}"` : '';
+            const args = d.args ? `and matches args "${d.args}"` : '';
             const ancestor = d.ancestor ? `and has ancestor matching "${d.ancestor}"` : '';
-            return `${name} ${args} ${ancestor}`;
+            const uid = d.uid ? `with uid ${d.uid}` : ``;
+            return `${name} ${args} ${ancestor} ${uid}`;
         }
     }
 };

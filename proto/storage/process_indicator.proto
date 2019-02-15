@@ -61,7 +61,7 @@ message ProcessSignal {
     uint32 pid                     = 7;
 
     // Real user ID
-    uint32 uid                     = 8;
+    uint32 uid                     = 8 [(gogoproto.moretags) = "search:\"Process UID\""];
 
     // Real group ID
     uint32 gid                     = 9;

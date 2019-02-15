@@ -508,6 +508,14 @@ const policyConfigurationDescriptor = [
         placeholder: 'install nmap',
         required: false,
         default: false
+    },
+    {
+        label: 'Process UID',
+        jsonpath: 'fields.processPolicy.uid',
+        type: 'text',
+        placeholder: '0',
+        required: false,
+        default: false
     }
 ];
 
