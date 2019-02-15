@@ -49,6 +49,8 @@ class MultiGaugeDetailSection extends Component {
             selectedGauge && selectedGauge.arc === 'inner' ? 'text-success-700' : '';
         const failingClassName =
             selectedGauge && selectedGauge.arc === 'outer' ? 'text-alert-700' : '';
+        const { value: passingValue } = d.passing;
+        const { value: failingValue } = d.failing;
         return (
             <div key={`${d.title}-${d.arc}`}>
                 <div
@@ -61,7 +63,7 @@ class MultiGaugeDetailSection extends Component {
                         className={`text-base-600 font-600 hover:text-success-700 underline cursor-pointer ${passingClassName}`}
                         onClick={this.onClick(d, 'inner', idx)}
                     >
-                        {d.passing} passing controls
+                        {passingValue} passing controls
                     </button>
                 </div>
                 <div
@@ -75,7 +77,7 @@ class MultiGaugeDetailSection extends Component {
                         className={`text-base-600 font-600 hover:text-alert-700 underline cursor-pointer ${failingClassName}`}
                         onClick={this.onClick(d, 'outer', idx)}
                     >
-                        {d.failing} failing controls
+                        {failingValue} failing controls
                     </button>
                 </div>
             </div>
@@ -89,8 +91,10 @@ class MultiGaugeDetailSection extends Component {
             selectedGauge && selectedGauge.arc === 'inner' ? 'text-success-600' : '';
         const failingClassName =
             selectedGauge && selectedGauge.arc === 'outer' ? 'text-alert-600' : '';
-        const percentagePassing = Math.round((d.passing / (d.passing + d.failing)) * 100);
-        const percentageFailing = Math.round((d.failing / (d.passing + d.failing)) * 100);
+        const { value: passingValue } = d.passing;
+        const { value: failingValue } = d.failing;
+        const percentagePassing = Math.round((passingValue / (passingValue + failingValue)) * 100);
+        const percentageFailing = Math.round((failingValue / (passingValue + failingValue)) * 100);
         return (
             <div
                 key={`${d.title}-${d.arc}`}

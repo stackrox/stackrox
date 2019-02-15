@@ -104,14 +104,34 @@ class ListTable extends Component {
     setTablePage = page => this.setState({ page });
 
     // This is a client-side implementation of filtering by the "Compliance State" Search Option
-    filterByComplianceState = (data, params) => {
-        const searchKey = SEARCH_OPTIONS.COMPLIANCE.STATE;
-        if (!params.query[searchKey]) return data.results;
-        const isPassing = params.query[searchKey].toLowerCase() === 'passing';
-        const isFailing = params.query[searchKey].toLowerCase() === 'failing';
+    filterByComplianceState = (data, params, isStandard) => {
+        const complianceStateKey = SEARCH_OPTIONS.COMPLIANCE.STATE;
+        if (!params.query[complianceStateKey]) return data.results;
+        const val = params.query[complianceStateKey].toLowerCase();
+        const isPassing = val === 'passing';
+        const isFailing = val === 'failing';
         const { results } = data;
+        if (isStandard) {
+            return results
+                .map(result => {
+                    const newResult = { ...result };
+                    newResult.rows = result.rows.filter(row => {
+                        const intValue = parseInt(row.compliance, 10); // strValue comes in the format "100.00%"
+                        if (Number.isNaN(intValue)) return false;
+                        if (isPassing) {
+                            return intValue === 100;
+                        }
+                        if (isFailing) {
+                            return intValue !== 100;
+                        }
+                        return true;
+                    });
+                    return newResult;
+                })
+                .filter(result => result.rows.length);
+        }
         return results.filter(result => {
-            const { id, name, ...standards } = result;
+            const { id, name, cluster, overall, ...standards } = result;
             return Object.values(standards).reduce((acc, strValue) => {
                 const intValue = parseInt(strValue, 10); // strValue comes in the format "100.00%"
                 if (isPassing) {
@@ -125,6 +145,13 @@ class ListTable extends Component {
                 return acc;
             }, null);
         });
+    };
+
+    getTotalRows = (data, isStandard) => {
+        if (!isStandard) {
+            return data.length;
+        }
+        return data.reduce((acc, group) => acc + group.rows.length, 0);
     };
 
     render() {
@@ -143,21 +170,24 @@ class ListTable extends Component {
                             return (
                                 <NoResultsMessage message="No compliance data available. Please run a scan." />
                             );
-                        tableData = this.filterByComplianceState(data, params);
+                        tableData = this.filterByComplianceState(data, params, isStandard);
                         if (tableData.length) {
                             createPDFTable(tableData, params, pdfId);
                         }
-                        const total = isStandard ? data.totalRows : tableData.length;
+                        const totalRows = this.getTotalRows(tableData, isStandard);
                         const { groupBy } = params.query;
                         const groupedByText = groupBy
                             ? `across ${tableData.length} ${pluralize(groupBy, tableData.length)}`
                             : '';
                         const entityType = isStandard ? 'control' : params.entityType;
-                        headerText = `${total} ${pluralize(entityType, total)} ${groupedByText}`;
+                        headerText = `${totalRows} ${pluralize(
+                            entityType,
+                            totalRows
+                        )} ${groupedByText}`;
                         contents = isStandard ? (
                             <TableGroup
                                 groups={tableData}
-                                totalRows={data.totalRows}
+                                totalRows={totalRows}
                                 tableColumns={entityToColumns[params.entityType]}
                                 onRowClick={updateSelectedRow}
                                 entityType={entityType}
@@ -184,7 +214,7 @@ class ListTable extends Component {
                         paginationComponent = (
                             <TablePagination
                                 page={page}
-                                dataLength={total}
+                                dataLength={totalRows}
                                 setPage={this.setTablePage}
                             />
                         );

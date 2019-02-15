@@ -7,7 +7,11 @@ import Gauge from 'Components/visuals/GaugeWithDetail';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { standardBaseTypes } from 'constants/entityTypes';
 import { standardShortLabels } from 'messages/standards';
+import { resourceLabels } from 'messages/common';
 import { AGGREGATED_RESULTS } from 'queries/controls';
+import URLService from 'modules/URLService';
+import contextTypes from 'constants/contextTypes';
+import pageTypes from 'constants/pageTypes';
 
 const isStandard = type => !!standardBaseTypes[type];
 
@@ -17,16 +21,23 @@ const sortByTitle = (a, b) => {
     return 0;
 };
 
-function processData(type, { results, complianceStandards }) {
+function processData({ entityType, query }, { results, complianceStandards }) {
     let filteredResults;
-    if (standardBaseTypes[type]) {
+    if (standardBaseTypes[entityType]) {
         filteredResults = results.results.filter(result =>
-            result.aggregationKeys[0].id.includes(type)
+            result.aggregationKeys[0].id.includes(entityType)
         );
     } else {
         filteredResults = results.results;
     }
-    if (!filteredResults.length) return [{ title: type, passing: 0, failing: 0 }];
+    if (!filteredResults.length)
+        return [
+            {
+                title: entityType,
+                passing: { value: 0, link: '' },
+                failing: { value: 0, link: '' }
+            }
+        ];
     const standardDataMapping = filteredResults
         .filter(datum => !(datum.passing === 0 && datum.failing === 0))
         .reduce((accMapping, currValue) => {
@@ -35,13 +46,39 @@ function processData(type, { results, complianceStandards }) {
             const standard = complianceStandards.find(cs => cs.id === standardId);
             let { numPassing: totalPassing, numFailing: totalFailing } = currValue;
             if (newMapping[standardId]) {
-                totalPassing += newMapping[standardId].passing;
-                totalFailing += newMapping[standardId].failing;
+                totalPassing += newMapping[standardId].passing.value;
+                totalFailing += newMapping[standardId].failing.value;
             }
+            const newQuery = { ...query };
+            newQuery['Compliance State'] = 'Passing';
+            newQuery.Standard = standard.name;
+            const passingLink = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
+                entityType,
+                query: newQuery
+            });
+            newQuery['Compliance State'] = 'Failing';
+            newQuery.Standard = standard.name;
+            const failingLink = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
+                entityType,
+                query: newQuery
+            });
+            delete newQuery['Compliance State'];
+            delete newQuery.Standard;
+            const defaultLink = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
+                entityType,
+                query: newQuery
+            });
             newMapping[standardId] = {
                 title: standardShortLabels[standard.id],
-                passing: totalPassing,
-                failing: totalFailing
+                passing: {
+                    value: totalPassing,
+                    link: passingLink.url
+                },
+                failing: {
+                    value: totalFailing,
+                    link: failingLink.url
+                },
+                defaultLink: defaultLink.url
             };
             return newMapping;
         }, {});
@@ -50,14 +87,16 @@ function processData(type, { results, complianceStandards }) {
 
 const getQueryVariables = params => {
     const groupBy = ['STANDARD'];
+    let unit = 'CONTROL';
     if (params.query && params.query.groupBy) {
         groupBy.push(params.query.groupBy);
     } else if (!isStandard(params.entityType)) {
         groupBy.push(params.entityType);
+        unit = params.entityType;
     }
     return {
         groupBy,
-        unit: 'CONTROL'
+        unit
     };
 };
 
@@ -68,16 +107,16 @@ const ComplianceAcrossEntities = ({ params }) => {
             {({ loading, data }) => {
                 let contents = <Loader />;
                 const headerText = standardBaseTypes[params.entityType]
-                    ? `Compliance Across ${standardShortLabels[params.entityType]} Controls`
-                    : `Compliance Across ${params.entityType}s`;
+                    ? `Controls in Compliance`
+                    : `${resourceLabels[params.entityType]}s in Compliance`;
                 if (!loading && data) {
-                    const results = processData(params.entityType, data);
+                    const results = processData(params, data);
                     if (!results.length) {
                         contents = (
                             <NoResultsMessage message="No data available. Please run a scan." />
                         );
                     } else {
-                        contents = <Gauge data={results} dataProperty="passing" />;
+                        contents = <Gauge data={results} />;
                     }
                 }
                 return (

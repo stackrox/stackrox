@@ -1,7 +1,13 @@
 import React, { Component } from 'react';
-import colors from 'constants/visuals/colors';
-import { XYPlot, ArcSeries, LabelSeries, Hint } from 'react-vis';
 import PropTypes from 'prop-types';
+import ReactRouterPropTypes from 'react-router-prop-types';
+import { withRouter } from 'react-router-dom';
+import findIndex from 'lodash/findIndex';
+import URLService from 'modules/URLService';
+import colors from 'constants/visuals/colors';
+import { CLIENT_SIDE_SEARCH_OPTIONS } from 'constants/searchOptions';
+
+import { XYPlot, ArcSeries, LabelSeries, Hint } from 'react-vis';
 import MultiGaugeDetailSection from './MultiGaugeDetailSection';
 
 const LABEL_STYLE = {
@@ -24,10 +30,20 @@ class GaugeWithDetail extends Component {
         data: PropTypes.arrayOf(
             PropTypes.shape({
                 title: PropTypes.string.isRequired,
-                passing: PropTypes.number.isRequired,
-                failing: PropTypes.number.isRequired
+                passing: PropTypes.shape({
+                    value: PropTypes.number.isRequired,
+                    link: PropTypes.string.isRequired
+                }),
+                failing: PropTypes.shape({
+                    value: PropTypes.number.isRequired,
+                    link: PropTypes.string.isRequired
+                }),
+                defaultLink: PropTypes.string.isRequired
             })
-        ).isRequired
+        ).isRequired,
+        history: ReactRouterPropTypes.history.isRequired,
+        match: ReactRouterPropTypes.match.isRequired,
+        location: ReactRouterPropTypes.location.isRequired
     };
 
     constructor(props) {
@@ -41,7 +57,30 @@ class GaugeWithDetail extends Component {
 
     componentDidMount() {
         this.setState({ data: this.calculateMultiGaugeData() });
+        this.setDefaultSelectedData();
     }
+
+    componentWillReceiveProps() {
+        if (this.state.selectedData) return;
+        this.setDefaultSelectedData();
+    }
+
+    setDefaultSelectedData = () => {
+        const { data, match, location } = this.props;
+        const params = URLService.getParams(match, location);
+        const complianceState = params.query[CLIENT_SIDE_SEARCH_OPTIONS.COMPLIANCE.STATE];
+        const standardName = params.query.Standard;
+        if (complianceState && standardName) {
+            const arc = complianceState.toLowerCase() === 'passing' ? 'inner' : 'outer';
+            const index = findIndex(data, datum => datum.title === standardName);
+            if (index !== -1) {
+                const selectedData = { ...data[index] };
+                selectedData.arc = arc;
+                selectedData.index = index;
+                this.setSelectedData(selectedData);
+            }
+        }
+    };
 
     getPropsData = () => {
         const modifiedData = this.calculateMultiGaugeData();
@@ -58,13 +97,15 @@ class GaugeWithDetail extends Component {
         LABEL_STYLE.fontSize = this.props.data.length > 1 ? '24px' : '36px';
         const data = [];
         [...this.props.data].forEach((d, index) => {
+            const { value: passingValue } = d.passing;
+            const { value: failingValue } = d.failing;
             const radius0 = radius + 0.1;
             const radius1 = radius + 0.2;
             radius = radius1;
             const outerCircle = {
                 ...d,
                 color: colors[index],
-                angle0: 2 * pi * (d.passing / (d.passing + d.failing)),
+                angle0: 2 * pi * (passingValue / (passingValue + failingValue)),
                 angle: fullAngle,
                 opacity: 0.2,
                 radius0,
@@ -77,7 +118,7 @@ class GaugeWithDetail extends Component {
                 ...d,
                 color: colors[index],
                 angle0: 0,
-                angle: 2 * pi * (d.passing / (d.passing + d.failing)),
+                angle: 2 * pi * (passingValue / (passingValue + failingValue)),
                 radius0,
                 radius: radius1,
                 index,
@@ -86,6 +127,24 @@ class GaugeWithDetail extends Component {
             data.push(outerCircle, innerCircle);
         });
         return data;
+    };
+
+    setPathWithLink = selectedData => {
+        if (
+            selectedData &&
+            this.state.selectedData &&
+            selectedData.arc === this.state.selectedData.arc &&
+            selectedData.title === this.state.selectedData.title
+        ) {
+            this.props.history.replace(selectedData.defaultLink);
+        }
+        if (!selectedData) {
+            this.props.history.replace(this.props.data[0].defaultLink);
+        } else {
+            this.props.history.replace(
+                selectedData.arc === 'outer' ? selectedData.failing.link : selectedData.passing.link
+            );
+        }
     };
 
     setSelectedData = selectedData => {
@@ -128,17 +187,31 @@ class GaugeWithDetail extends Component {
         this.setState({ data: newData });
     };
 
-    onArcClick = data => this.setSelectedData(data);
+    onMultiGaugeDetailClick = data => {
+        this.setSelectedData(data);
+        this.setPathWithLink(data);
+    };
+
+    onArcClick = data => {
+        const { selectedData } = this.state;
+        const newData = selectedData ? null : data;
+        this.setSelectedData(newData);
+        this.setPathWithLink(newData);
+    };
 
     getTotalPassing = () => {
         const { data } = this.state;
         let totalPassing = 0;
         if (data) {
             const totalValues = data.reduce(
-                (accumulator, value) => ({
-                    passing: accumulator.passing + value.passing,
-                    total: accumulator.total + value.failing + value.passing
-                }),
+                (accumulator, d) => {
+                    const { value: passingValue } = d.passing;
+                    const { value: failingValue } = d.failing;
+                    return {
+                        passing: accumulator.passing + passingValue,
+                        total: accumulator.total + passingValue + failingValue
+                    };
+                },
                 { passing: 0, total: 0 }
             );
             if (totalValues.total === 0) return 0;
@@ -150,12 +223,14 @@ class GaugeWithDetail extends Component {
     getSelectedPassingFailing = () => {
         let value = 0;
         const { arc, passing, failing } = this.state.selectedData;
+        const { value: passingValue } = passing;
+        const { value: failingValue } = failing;
         // 'inner' refers to passing and 'outer' refers to failing
-        if (passing === 0 && failing === 0) return 0;
+        if (passingValue === 0 && failingValue === 0) return 0;
         value =
             arc === 'inner'
-                ? Math.round((passing / (passing + failing)) * 100)
-                : Math.round((failing / (passing + failing)) * 100);
+                ? Math.round((passingValue / (passingValue + failingValue)) * 100)
+                : Math.round((failingValue / (passingValue + failingValue)) * 100);
         return value;
     };
 
@@ -180,6 +255,8 @@ class GaugeWithDetail extends Component {
     getHint = () => {
         if (!this.state.hoveredCell) return null;
         const { hoveredCell } = this.state;
+        const { value: passingValue } = hoveredCell.passing;
+        const { value: failingValue } = hoveredCell.failing;
         return (
             <Hint value={buildValue(hoveredCell)}>
                 <div className="text-base-600 text-xs p-2 pb-1 pt-1 border z-10 border-tertiary-400 bg-tertiary-200 rounded min-w-32">
@@ -188,10 +265,10 @@ class GaugeWithDetail extends Component {
                     </h1>
                     <div>
                         {hoveredCell.arc === 'inner' && (
-                            <div className="py-2">Passing: {hoveredCell.passing}</div>
+                            <div className="py-2">Passing: {passingValue}</div>
                         )}
                         {hoveredCell.arc !== 'inner' && (
-                            <div className="py-2">Failing: {hoveredCell.failing}</div>
+                            <div className="py-2">Failing: {failingValue}</div>
                         )}
                     </div>
                 </div>
@@ -208,9 +285,9 @@ class GaugeWithDetail extends Component {
         return (
             <div className="flex w-full">
                 <XYPlot
-                    xDomain={[-1, 4]}
+                    xDomain={[-2, 4]}
                     yDomain={[4, 4]}
-                    width={300}
+                    width={200}
                     height={200}
                     className="w-48 z-1"
                 >
@@ -228,7 +305,7 @@ class GaugeWithDetail extends Component {
                 </XYPlot>
                 <MultiGaugeDetailSection
                     data={data}
-                    onClick={this.setSelectedData}
+                    onClick={this.onMultiGaugeDetailClick}
                     selectedData={this.state.selectedData}
                     colors={colors}
                 />
@@ -237,4 +314,4 @@ class GaugeWithDetail extends Component {
     }
 }
 
-export default GaugeWithDetail;
+export default withRouter(GaugeWithDetail);
