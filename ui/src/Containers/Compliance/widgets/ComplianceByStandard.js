@@ -37,11 +37,17 @@ const processSunburstData = (data, type) => {
         return { sunburstData: [], totalPassing: 0 };
 
     const groupMapping = {};
+    let controlKeyIndex = 0;
+    let categoryKeyIndex = 0;
+    data.results.results[0].aggregationKeys.forEach(({ scope }, idx) => {
+        if (scope === 'CONTROL') controlKeyIndex = idx;
+        if (scope === 'CATEGORY') categoryKeyIndex = idx;
+    });
 
     const statsReducer = (statsMapping, { aggregationKeys, numPassing, numFailing, unit }) => {
         const mapping = { ...statsMapping };
         const isGroup = unit === 'CONTROL';
-        const keyIndex = isGroup ? 1 : 2;
+        const keyIndex = isGroup ? categoryKeyIndex : controlKeyIndex;
         const key = `${aggregationKeys[keyIndex].id}`;
         const group = mapping[key];
         const passing = isGroup && group ? group.passing + numPassing : numPassing;
@@ -114,14 +120,14 @@ const processSunburstData = (data, type) => {
 const getNumControls = sunburstData =>
     sunburstData.reduce((acc, curr) => acc + curr.children.length, 0);
 
-const constructURLWithQuery = (params, type, entityName) => {
+const constructURLWithQuery = (params, type, id) => {
     const newParams = { ...params };
     if (type) {
         newParams.query.Standard = standardLabels[type];
     }
-    if (entityName) {
-        const entityKey = capitalize(newParams.entityType);
-        newParams.query[entityKey] = entityName;
+    if (id) {
+        const entityKey = `${capitalize(newParams.entityType)} ID`;
+        newParams.query[entityKey] = id;
     }
     return newParams;
 };
@@ -142,7 +148,7 @@ const createURLLink = (params, type, entityName) => {
 };
 
 const ComplianceByStandard = ({ type, entityName, params, className }) => {
-    const newParams = constructURLWithQuery(params, type, entityName);
+    const newParams = constructURLWithQuery(params, type, params.entityId);
     return (
         <Query params={newParams} componentType={componentTypes.COMPLIANCE_BY_STANDARD}>
             {({ loading, data }) => {

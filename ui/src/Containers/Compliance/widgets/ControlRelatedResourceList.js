@@ -52,7 +52,7 @@ const ControlRelatedEntitiesList = ({
             label: getEntityName(id),
             link: URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.ENTITY, {
                 entityId: id,
-                query: { standard, [pageEntityType]: pageEntity.name },
+                query: {},
                 entityType: listEntityType
             }).url
         }));

@@ -41,7 +41,7 @@ export const LIST_STANDARD = gql`
 `;
 
 export const COMPLIANCE_STANDARDS = gql`
-    query complianceStandards($where: String) {
+    query complianceStandards($groupBy: [ComplianceAggregation_Scope!], $where: String) {
         complianceStandards {
             id
             name
@@ -59,28 +59,22 @@ export const COMPLIANCE_STANDARDS = gql`
                 description
             }
         }
-        results: aggregatedResults(
-            groupBy: [STANDARD, CATEGORY, CONTROL]
-            unit: CONTROL
-            where: $where
-        ) {
+        results: aggregatedResults(groupBy: $groupBy, unit: CONTROL, where: $where) {
             results {
                 aggregationKeys {
                     id
+                    scope
                 }
                 numFailing
                 numPassing
                 unit
             }
         }
-        checks: aggregatedResults(
-            groupBy: [STANDARD, CATEGORY, CONTROL]
-            unit: CHECK
-            where: $where
-        ) {
+        checks: aggregatedResults(groupBy: $groupBy, unit: CHECK, where: $where) {
             results {
                 aggregationKeys {
                     id
+                    scope
                 }
                 numFailing
                 numPassing

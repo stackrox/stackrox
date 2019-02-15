@@ -51,7 +51,7 @@ const ResourceRelatedEntitiesList = ({
         return items.map(item => ({
             label: item.name,
             link: URLService.getLinkTo(linkContext, pageTypes.ENTITY, {
-                query: { [pageEntityType]: pageEntity.name },
+                query: {},
                 entityId: item.id,
                 entityType: listEntityType
             }).url

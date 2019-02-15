@@ -57,14 +57,14 @@ const ControlsMostFailed = ({ params, limit, showEmpty }) => {
 
         const totals = results
             .filter(item => item.numPassing > 0 || item.numFailing > 0)
-            .reduce((acc, result) => {
-                const ctrlId = result.aggregationKeys[ctrlIndex].id;
-                const standardId = result.aggregationKeys[standardIndex].id;
+            .reduce((acc, { aggregationKeys, numFailing }) => {
+                const ctrlId = aggregationKeys[ctrlIndex].id;
+                const standardId = aggregationKeys[standardIndex].id;
                 if (acc[ctrlId]) {
-                    acc[ctrlId].totalFailing += result.numFailing;
+                    acc[ctrlId].totalFailing += numFailing;
                 } else {
                     acc[ctrlId] = {
-                        totalFailing: result.numFailing,
+                        totalFailing: numFailing,
                         standardId
                     };
                 }

@@ -289,7 +289,17 @@ export default [
         component: [componentTypes.COMPLIANCE_BY_STANDARD],
         config: {
             query: COMPLIANCE_STANDARDS,
-            variables: []
+            variables: [
+                {
+                    graphQLParam: 'groupBy',
+                    paramsFunc: params => {
+                        const groupByArray = ['STANDARD', 'CATEGORY', 'CONTROL'];
+                        if (params.pageType === pageTypes.ENTITY)
+                            groupByArray.push(params.entityType);
+                        return groupByArray;
+                    }
+                }
+            ]
         }
     }
 ];

@@ -12,6 +12,7 @@ import { standardBaseTypes } from 'constants/entityTypes';
 const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRow }) => {
     const { name } = selectedRow;
     const { context, query, entityType } = URLService.getParams(match, location);
+    const { groupBy, ...rest } = query;
 
     const pageParams = {
         context,
@@ -21,7 +22,7 @@ const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRo
     };
 
     const linkParams = {
-        query,
+        query: rest,
         entityId: selectedRow.id,
         entityType
     };
