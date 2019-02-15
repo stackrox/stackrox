@@ -11,7 +11,7 @@ import Loader from 'Components/Loader';
 import Query from 'Components/ThrowingQuery';
 
 const standardsResultsMap = {
-    passing: 'var(--success-400)',
+    passing: 'var(--tertiary-400)',
     failing: 'var(--alert-400)'
 };
 
@@ -44,7 +44,7 @@ class DashboardCompliance extends Component {
             return (
                 <div className="pb-3 flex w-full items-center" key={standard.name}>
                     <Link
-                        className="text-sm text-primary-700 hover:text-primary-800 tracking-wide underline w-1/3 text-left"
+                        className="text-sm text-primary-700 hover:text-primary-800 tracking-wide underline w-43 text-left"
                         to={standard.link}
                     >
                         {standard.name}
@@ -89,8 +89,10 @@ class DashboardCompliance extends Component {
         const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.DASHBOARD, {});
         return (
             <div className="h-full">
-                <h2 className="bg-base-100 inline-block leading-normal mb-4 p-3 pb-2 pl-6 pr-4 rounded-r-full text-base-600 text-lg text-primary-800 tracking-wide tracking-widest uppercase">
-                    Compliance
+                <h2 className="bg-base-100 inline-block leading-normal px-3 h-10 flex items-center pl-6 pr-4 rounded-r-full text-base-600 text-lg text-primary-800 tracking-wide tracking-widest uppercase">
+                    <Link className="text-base-600 hover:text-primary-600" to="/main/compliance">
+                        Compliance
+                    </Link>
                 </h2>
                 <div className="flex flex-col text-center font-700 items-center px-6">
                     <div className="flex flex-col p-4">
@@ -124,13 +126,18 @@ class DashboardCompliance extends Component {
                     if (!results.length) return <div>{this.renderScanButton()}</div>;
                     return (
                         <div>
-                            <h2 className="bg-base-100 inline-block leading-normal mb-4 p-3 pb-2 pl-6 pr-4 rounded-r-full text-base-600 text-lg text-primary-800 tracking-wide tracking-widest uppercase self-center">
-                                Compliance
-                            </h2>
-                            <div className="pt-4 px-6">{this.renderStandardsData(results)}</div>
-                            <div className="flex flex-1 justify-end w-full pt-4 px-2">
-                                {this.renderLegend()}
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="bg-base-100 inline-block leading-normal px-3 h-10 flex items-center pl-6 pr-4 rounded-r-full text-base-600 text-lg text-primary-800 tracking-wide tracking-widest uppercase">
+                                    <Link
+                                        className="text-base-600 hover:text-primary-600"
+                                        to="/main/compliance"
+                                    >
+                                        Compliance
+                                    </Link>
+                                </h2>
+                                <div className="flex mr-2">{this.renderLegend()}</div>
                             </div>
+                            <div className="pt-4 px-6">{this.renderStandardsData(results)}</div>
                         </div>
                     );
                 }}

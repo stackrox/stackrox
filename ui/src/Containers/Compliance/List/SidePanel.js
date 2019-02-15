@@ -53,7 +53,7 @@ const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRo
 
     return (
         <Panel
-            className="bg-primary-200 z-40 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-72 md:relative"
+            className="bg-primary-200 z-40 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-108 md:relative"
             headerTextComponent={headerTextComponent}
             onClose={clearSelectedRow}
         >

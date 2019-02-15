@@ -39,7 +39,7 @@ const ComplianceDashboardHeader = props => (
                 <div className="flex items-center">
                     <ExportButton
                         className="flex items-center border-2 border-primary-400 text-base-100 rounded p-2 uppercase hover:bg-primary-800 h-10"
-                        fileName="compliance-dashboard"
+                        fileName="Compliance Dashboard"
                         textClass="hidden lg:block"
                         type="ALL"
                         pdfId="capture-dashboard"

@@ -60,18 +60,23 @@ class PDFExportButton extends Component {
         const cc = Array.from(el.getElementsByClassName(printClassName));
 
         const promises = [];
-        const div = `<div class="flex flex-row justify-between bg-primary-800 items-center text-primary-100">
-            <img alt="stackrox-logo" src=${StackroxLogo} class="h-16 w-36" />
+        const div = `<div class="flex justify-between bg-primary-800 items-center text-primary-100 h-32">
+            <img alt="stackrox-logo" src=${StackroxLogo} class="h-24" />
             <div class="pr-4 text-right">
-                <div>${this.props.pdfTitle} Report</div>
-                <div class="pt-2">${dateFns.format(new Date(), 'MM/DD/YYYY')}</div>
+                <div class="text-2xl">${this.props.pdfTitle} Report</div>
+                <div class="pt-2 text-xl">${dateFns.format(new Date(), 'MM/DD/YYYY')}</div>
             </div>
         </div>`;
         const header = document.createElement('header');
         header.id = 'pdf-header';
         header.innerHTML = div;
         el.insertBefore(header, el.firstChild);
-        promises.push(html2canvas(header));
+        promises.push(
+            html2canvas(header, {
+                scale: 3
+            })
+        );
+
         for (let i = 0; i < cc.length; i += 1) {
             const clonedNode = cc[i].cloneNode(true);
             clonedNode.setAttribute('data-class-name', clonedNode.className);
@@ -83,7 +88,9 @@ class PDFExportButton extends Component {
             });
             cc[i].className = 'pdf-page hidden';
             const deferred = pDefer();
-            html2canvas(clonedNode).then(canvas => {
+            html2canvas(clonedNode, {
+                scale: 3
+            }).then(canvas => {
                 Object.assign(canvas, {
                     className: clonedNode.className.replace('pdf-page', 'pdf-page-image')
                 });
@@ -205,7 +212,11 @@ class PDFExportButton extends Component {
                             const tableOptions = Object.assign(
                                 {
                                     html: '#pdf-table',
-                                    startY: positionY + 2
+                                    startY: positionY + 2,
+                                    styles: {
+                                        fontSize: 6
+                                    },
+                                    margin: { left: 3, right: 3 }
                                 },
                                 this.props.tableOptions
                             );

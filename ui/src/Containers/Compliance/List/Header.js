@@ -43,7 +43,7 @@ const ListHeader = ({ match, location, searchComponent }) => {
                                 <ScanButton text="Scan" standardId={entityType} />
                             )}
                             <ExportButton
-                                fileName={headerText}
+                                fileName={`${headerText} Compliance`}
                                 id={entityType}
                                 type={standardBaseTypes[entityType] ? 'STANDARD' : ''}
                                 pdfId="capture-list"

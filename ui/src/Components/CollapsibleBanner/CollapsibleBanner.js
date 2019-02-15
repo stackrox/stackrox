@@ -58,7 +58,7 @@ class CollapsibleBanner extends Component {
         const content = (
             <div className="absolute">
                 <div
-                    className="bg-base-100 border-2 border-primary-400 px-3 rounded-full z-10 relative cursor-pointer flex hover:bg-primary-200 hover:border-primary-500"
+                    className="bg-base-100 border-2 border-primary-400 px-3 rounded-full z-50 relative cursor-pointer flex hover:bg-primary-200 hover:border-primary-500"
                     style={triggerElementStyle}
                 >
                     {icon}

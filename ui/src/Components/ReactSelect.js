@@ -28,7 +28,7 @@ const Control = ({ className, ...props }) => (
 );
 
 const Menu = ({ className, ...props }) => (
-    <selectComponents.Menu className={`${className} z-40 font-600 text-left`} {...props} />
+    <selectComponents.Menu className={`${className} z-60 font-600 text-left`} {...props} />
 );
 
 const MultiValue = props => (

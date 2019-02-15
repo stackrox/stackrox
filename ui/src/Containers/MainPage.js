@@ -78,7 +78,7 @@ class MainPage extends Component {
 
     renderPDFLoader = () =>
         this.props.pdfLoadingStatus && (
-            <div className="absolute pin-l pin-t bg-base-100 z-40 mt-20 w-full h-full">
+            <div className="absolute pin-l pin-t bg-tertiary-300 z-60 mt-20 w-full h-full text-tertiary-800">
                 <Loader message="Exporting..." />
             </div>
         );

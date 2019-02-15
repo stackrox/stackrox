@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import { connect } from 'react-redux';
@@ -145,10 +146,17 @@ class DashboardPage extends Component {
         const totalViolations = Object.values(counts).reduce((a, b) => a + b);
         return (
             <div className="w-full">
-                <h2 className="-ml-6 bg-base-100 inline-block leading-normal mb-6 p-3 pb-2 pl-6 pr-4 rounded-r-full text-base-600 text-lg text-primary-800 tracking-wide tracking-widest uppercase">
-                    {totalViolations === 1
-                        ? `${totalViolations} System Violation`
-                        : `${totalViolations} System Violations`}
+                <h2 className="-ml-6 bg-base-100 inline-block leading-normal mb-6 px-3 pl-6 pr-4 rounded-r-full text-base-600 text-lg text-primary-800 tracking-wide tracking-widest uppercase">
+                    <Link
+                        className="text-base-600 hover:text-primary-600 flex items-center h-10"
+                        to="/main/violations"
+                    >
+                        <span>
+                            {totalViolations === 1
+                                ? `${totalViolations} System Violation`
+                                : `${totalViolations} System Violations`}
+                        </span>
+                    </Link>
                 </h2>
                 <div className="flex">
                     {severities.map((severity, i) => (

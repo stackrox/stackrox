@@ -26,7 +26,7 @@ const ClusterVersion = ({ entityType, params }) => {
                     const { orchestratorMetadata, type } = data.cluster;
                     headerText = clusterVersionLabels[type];
                     contents = (
-                        <div className="px-2 py-8 w-full flex flex-col items-center justify-between">
+                        <div className="py-8 w-full flex flex-col items-center justify-between">
                             <div className="text-4xl text-primary-700 font-500">
                                 {orchestratorMetadata.version}
                             </div>

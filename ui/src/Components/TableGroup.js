@@ -56,7 +56,7 @@ class TableGroup extends Component {
         <div className="flex justify-between cursor-pointer w-full py-1">
             <div className="flex w-full justify-between">
                 <div className="flex items-center">
-                    <div className="flex ml-4 mr-3 rounded-full bg-base-100 h-5 w-5 justify-center text-success-700 items-center border border-success-400">
+                    <div className="flex ml-4 mr-3 rounded-full bg-base-100 h-5 w-5 justify-center text-tertiary-700 items-center border border-tertiary-400">
                         {icons[state]}
                     </div>
                     <h1 className="p-3 pl-0 font-600 text-lg leading-normal">{name}</h1>
@@ -81,12 +81,12 @@ class TableGroup extends Component {
                         open={idx === 0 || totalRows < 25}
                         key={group.name}
                         triggerDisabled={group.rows.length === 0}
-                        triggerClassName="table-group block bg-base-100 hover:bg-success-200 hover:text-success-800 z-10 relative hover:z-20"
-                        triggerOpenedClassName="table-group-active bg-success-300 text-success-900 block z-30 pin-t sticky"
+                        triggerClassName="table-group block bg-base-100 hover:bg-tertiary-200 hover:text-tertiary-800 z-10 relative hover:z-20"
+                        triggerOpenedClassName="table-group-active bg-tertiary-300 text-tertiary-900 block z-30 pin-t sticky"
                         trigger={this.renderWhenClosed(group)}
                         triggerWhenOpen={this.renderWhenOpened(group)}
                         transitionTime={0.001}
-                        contentOuterClassName="before before:absolute before:bg-success-300 before:h-full before:pin-l before:w-2 before:z-10 px-1 relative"
+                        contentOuterClassName="before before:absolute before:bg-tertiary-300 before:h-full before:pin-l before:w-2 before:z-10 px-1 relative"
                     >
                         {this.renderSubTable(group)}
                     </Collapsible>

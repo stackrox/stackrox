@@ -29,7 +29,7 @@ const EntityHeader = ({
                             />
                         )}
                         <ExportButton
-                            fileName={header}
+                            fileName={`${subHeader} "${header}" Compliance`}
                             type={params.entityType === entityTypes.CLUSTER ? 'CLUSTER' : ''}
                             id={scanCluster}
                             pdfId="capture-dashboard"

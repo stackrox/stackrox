@@ -47,24 +47,30 @@ class CLIModal extends Component {
 
     render() {
         return (
-            <div className="flex flex-col items-end">
-                <button onClick={this.handleDownloadMac} type="button" className={downloadBtnClass}>
-                    Mac 64-bit
-                </button>
-                <button
-                    onClick={this.handleDownloadLinux}
-                    type="button"
-                    className={downloadBtnClass}
-                >
-                    Linux 64-bit
-                </button>
-                <button
-                    onClick={this.handleDownloadWindows}
-                    type="button"
-                    className={downloadBtnClass}
-                >
-                    Windows 64-bit
-                </button>
+            <div className=" pointer-events-none">
+                <div className="pointer-events-all items-end flex flex-col">
+                    <button
+                        onClick={this.handleDownloadMac}
+                        type="button"
+                        className={downloadBtnClass}
+                    >
+                        Mac 64-bit
+                    </button>
+                    <button
+                        onClick={this.handleDownloadLinux}
+                        type="button"
+                        className={downloadBtnClass}
+                    >
+                        Linux 64-bit
+                    </button>
+                    <button
+                        onClick={this.handleDownloadWindows}
+                        type="button"
+                        className={downloadBtnClass}
+                    >
+                        Windows 64-bit
+                    </button>
+                </div>
             </div>
         );
     }
@@ -73,7 +79,7 @@ class CLIModal extends Component {
 const CLIModalContainer = props => {
     const EnhancedCLIModal = onClickOutside(CLIModal);
     return (
-        <div className="search-modal pl-4 pr-4 border-t border-base-300 w-full z-20 absolute">
+        <div className="search-modal pl-4 pr-4 border-t border-base-300 w-full z-60 absolute">
             <EnhancedCLIModal outsideClickIgnoreClass="ignore-cli-clickoutside" {...props} />
         </div>
     );

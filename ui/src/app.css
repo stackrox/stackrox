@@ -244,7 +244,7 @@ h6 {
 }
 
 .react-modal-overlay {
-  @apply .fixed .pin-t .pin-l .w-full .h-full z-20 !important;
+  @apply .fixed .pin-t .pin-l .w-full .h-full z-60 !important;
   background-color: hsla(225, 41%, 32%, 0.82);
 }
 
@@ -1111,12 +1111,12 @@ h6 {
 }
 
 .table-group:hover {
-  box-shadow: inset 0 -1px 0px 0px var(--success-400),
-    0 -1px 0 0 var(--success-400);
+  box-shadow: inset 0 -1px 0px 0px var(--tertiary-400),
+    0 -1px 0 0 var(--tertiary-400);
 }
 
 .table-group-active {
-  box-shadow: 0 1px 0px 0px var(--success-600), 0 -1px 0 0 var(--success-600);
+  box-shadow: 0 1px 0px 0px var(--tertiary-500), 0 -1px 0 0 var(--tertiary-500);
 }
 
 .horizontal-bar-responsive .rv-xy-plot {

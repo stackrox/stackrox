@@ -76,7 +76,7 @@ class SearchModal extends Component {
 const SearchModalContainer = props => {
     const EnhancedSearchModal = onClickOutside(SearchModal);
     return (
-        <div className="search-modal pl-4 pr-4 border-t border-base-300 w-full z-40 absolute">
+        <div className="search-modal pl-4 pr-4 border-t border-base-300 w-full z-60 absolute">
             <EnhancedSearchModal {...props} />
         </div>
     );

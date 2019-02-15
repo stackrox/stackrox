@@ -44,7 +44,7 @@ const ControlPage = ({ sidePanelMode, params }) => (
                                 standardId={standardId}
                                 control={name}
                                 description={description}
-                                className={`s-2 ${pdfClassName}`}
+                                className={`sx-2 ${pdfClassName}`}
                             />
                             {!!interpretationText.length && (
                                 <Widget

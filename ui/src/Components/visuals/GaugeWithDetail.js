@@ -168,7 +168,7 @@ class GaugeWithDetail extends Component {
                 data={[
                     {
                         x: 0.1,
-                        y: this.props.data.length > 1 ? -0.8 : -1.1,
+                        y: this.props.data.length > 1 ? -0.8 : -1.3,
                         label: `${label}%`,
                         style: LABEL_STYLE
                     }
