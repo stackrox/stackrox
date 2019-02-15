@@ -1,0 +1,23 @@
+{
+  "id": "4cdd9af4-70f8-4e50-af9d-7f419ed0d794",
+  "categories": [
+    "Vulnerability Management"
+  ],
+  "description": "Detect scanned images with a vulnerability with a CVSS >= 5",
+  "enforcementActions": [
+    "FAIL_BUILD_ENFORCEMENT"
+  ],
+  "fields": {
+    "cvss": {
+      "op": "GREATER_THAN_OR_EQUALS",
+      "value": 5
+    }
+  },
+  "lifecycle_stages": [
+    "BUILD"
+  ],
+  "name": "CI CVSS >= 5",
+  "rationale": "If an image has a vulnerability with a CVSS greater than 5, the container may pose an unnecessarily high risk of exploitation.",
+  "remediation": "Speak with your security team to identify and mitigate the vulnerabilities.",
+  "severity": "MEDIUM_SEVERITY"
+}
