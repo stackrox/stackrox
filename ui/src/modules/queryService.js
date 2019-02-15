@@ -7,10 +7,10 @@ function objectToWhereClause(query) {
 
     return Object.entries(query)
         .reduce((acc, entry) => {
-            const key = entry[0];
-            let value = entry[1];
-            value = Array.isArray(value) ? value.join() : value;
-            return `${acc}${key}:${value}+`;
+            const [key, value] = entry;
+            if (!value) return acc;
+            const flatValue = Array.isArray(value) ? value.join() : value;
+            return `${acc}${key}:${flatValue}+`;
         }, '')
         .slice(0, -1);
 }

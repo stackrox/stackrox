@@ -47,7 +47,7 @@ class ComplianceListPage extends Component {
                 <Header searchComponent={<SearchInput categories={['COMPLIANCE']} />} />
                 <CollapsibleBanner className="pdf-page">
                     <ComplianceAcrossEntities params={params} />
-                    <ControlsMostFailed params={params} />
+                    <ControlsMostFailed params={params} showEmpty />
                 </CollapsibleBanner>
                 <div className="flex flex-1 overflow-y-auto">
                     <ListTable

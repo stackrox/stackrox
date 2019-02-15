@@ -5,6 +5,7 @@ import Widget from 'Components/Widget';
 import Loader from 'Components/Loader';
 import Message from 'Components/Message';
 import Query from 'Components/ThrowingQuery';
+import NoResultsMessage from 'Components/NoResultsMessage';
 
 function getLI(item) {
     if (!item) return null;
@@ -41,7 +42,8 @@ const LinkListWidget = ({
     getHeadline,
     className,
     headerComponents,
-    limit
+    limit,
+    showEmpty
 }) => (
     <Query query={query} variables={variables}>
         {({ loading, data, error }) => {
@@ -54,21 +56,24 @@ const LinkListWidget = ({
                 contents = <Message type="error" message="An error occurred loading this data" />;
             } else if (data) {
                 const items = processData(data);
+                headline = getHeadline(items);
 
                 if (items.length === 0) {
-                    return null;
+                    if (!showEmpty) {
+                        return null;
+                    }
+                    contents = <NoResultsMessage message="No data matched your search" />;
+                } else {
+                    contents = (
+                        <ul
+                            className={`${
+                                items.length > 5 ? `columns-2` : `columns-1`
+                            } list-reset p-3 py-1 w-full leading-normal overflow-hidden`}
+                        >
+                            {items.slice(0, limit).map(item => getLI(item))}
+                        </ul>
+                    );
                 }
-
-                headline = getHeadline(items);
-                contents = (
-                    <ul
-                        className={`${
-                            items.length > 5 ? `columns-2` : `columns-1`
-                        } list-reset p-3 py-1 w-full leading-normal overflow-hidden`}
-                    >
-                        {items.slice(0, limit).map(item => getLI(item))}
-                    </ul>
-                );
             }
 
             return (
@@ -91,7 +96,8 @@ LinkListWidget.propTypes = {
     getHeadline: PropTypes.func,
     className: PropTypes.string,
     headerComponents: PropTypes.node,
-    limit: PropTypes.number
+    limit: PropTypes.number,
+    showEmpty: PropTypes.bool
 };
 
 LinkListWidget.defaultProps = {
@@ -104,7 +110,8 @@ LinkListWidget.defaultProps = {
     },
     className: null,
     headerComponents: null,
-    limit: 10
+    limit: 10,
+    showEmpty: false
 };
 
 export default LinkListWidget;

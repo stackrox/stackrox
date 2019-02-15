@@ -7,19 +7,26 @@ import pluralize from 'pluralize';
 import entityTypes, { resourceTypes } from 'constants/entityTypes';
 import contextTypes from 'constants/contextTypes';
 import { resourceLabels } from 'messages/common';
+import standardLabels from 'messages/standards';
+
 import { AGGREGATED_RESULTS_WITH_CONTROLS as QUERY } from 'queries/controls';
 import queryService from 'modules/queryService';
 
-const ControlsMostFailed = ({ params, limit }) => {
+const ControlsMostFailed = ({ params, limit, showEmpty }) => {
     const { entityType, query } = params;
-
+    const whereClauseValues = { ...query };
     const isResource = !!resourceTypes[entityType];
     const groupBy = [entityTypes.CONTROL, entityTypes.STANDARD];
-    if (isResource) groupBy.push(entityType);
+    if (isResource) {
+        groupBy.push(entityType);
+    } else {
+        whereClauseValues[entityTypes.STANDARD] = standardLabels[entityType];
+    }
+
     const variables = {
         groupBy,
         unit: entityTypes.CONTROL,
-        where: queryService.objectToWhereClause(query)
+        where: queryService.objectToWhereClause(whereClauseValues)
     };
 
     function processData(data) {
@@ -28,10 +35,17 @@ const ControlsMostFailed = ({ params, limit }) => {
 
         const { results } = data.results;
         const { complianceStandards } = data;
-        const controlNameLookup = complianceStandards.reduce(
-            (acc, standard) => acc.concat(standard.controls),
-            []
-        );
+        const controls = complianceStandards.reduce((acc, standard) => {
+            const standardName = standard.name;
+            const standardControls = standard.controls.map(control => ({
+                id: control.id,
+                label: isResource
+                    ? `${standardName} - ${control.name}: ${control.description}`
+                    : `${control.name}: ${control.description}`
+            }));
+
+            return acc.concat(standardControls);
+        }, []);
 
         let ctrlIndex;
         let standardIndex;
@@ -60,8 +74,8 @@ const ControlsMostFailed = ({ params, limit }) => {
         return Object.entries(totals)
             .sort((a, b) => b[1].totalFailing - a[1].totalFailing)
             .map(entry => {
-                const control = controlNameLookup.find(ctrl => ctrl.id === entry[0]);
-                const label = control ? `${control.name} - ${control.description}` : '';
+                const control = controls.find(ctrl => ctrl.id === entry[0]);
+                const label = control ? control.label : '';
                 const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.ENTITY, {
                     entityId: entry[0],
                     entityType: entry[1].standardId
@@ -73,7 +87,7 @@ const ControlsMostFailed = ({ params, limit }) => {
     function getHeadline() {
         const titleEntity = isResource
             ? `across ${pluralize(resourceLabels[entityType])}`
-            : 'in this standard';
+            : `in ${standardLabels[entityType]}`;
         return `Controls most failed ${titleEntity}`;
     }
 
@@ -84,6 +98,7 @@ const ControlsMostFailed = ({ params, limit }) => {
             processData={processData}
             getHeadline={getHeadline}
             limit={limit}
+            showEmpty={showEmpty}
         />
     );
 };
@@ -94,11 +109,13 @@ ControlsMostFailed.propTypes = {
         context: PropTypes.string,
         query: PropTypes.shape({})
     }).isRequired,
-    limit: PropTypes.number
+    limit: PropTypes.number,
+    showEmpty: PropTypes.bool
 };
 
 ControlsMostFailed.defaultProps = {
-    limit: 10
+    limit: 10,
+    showEmpty: false
 };
 
 export default ControlsMostFailed;
