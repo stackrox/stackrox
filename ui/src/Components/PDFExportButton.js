@@ -106,7 +106,7 @@ class PDFExportButton extends Component {
             onClick
         } = this.props;
         setPDFRequestState();
-        onClick();
+        if (onClick) onClick();
         const { paperSize, mode, marginType } = options;
         const element = document.getElementById(id);
         const imgElements = element.getElementsByClassName(imagesClassName);
@@ -228,7 +228,13 @@ class PDFExportButton extends Component {
     };
 
     render() {
-        return <Button className={this.props.className} text="DOWNLOAD" onClick={this.saveFn} />;
+        return (
+            <Button
+                className={this.props.className}
+                text="DOWNLOAD PAGE AS PDF"
+                onClick={this.saveFn}
+            />
+        );
     }
 }
 

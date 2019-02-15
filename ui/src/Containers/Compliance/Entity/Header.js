@@ -13,8 +13,7 @@ const EntityHeader = ({
     searchComponent,
     scanCluster,
     scanStandard,
-    params,
-    type
+    params
 }) => (
     <PageHeader header={header} subHeader={subHeader}>
         {searchComponent}
@@ -31,7 +30,7 @@ const EntityHeader = ({
                         )}
                         <ExportButton
                             fileName={header}
-                            type={type}
+                            type={params.entityType === entityTypes.CLUSTER ? 'CLUSTER' : ''}
                             id={scanCluster}
                             pdfId="capture-dashboard"
                         />
@@ -48,8 +47,7 @@ EntityHeader.propTypes = {
     searchComponent: PropTypes.node,
     scanCluster: PropTypes.string,
     scanStandard: PropTypes.string,
-    params: PropTypes.shape({}),
-    type: PropTypes.string
+    params: PropTypes.shape({})
 };
 
 EntityHeader.defaultProps = {
@@ -58,8 +56,7 @@ EntityHeader.defaultProps = {
     scanCluster: '*',
     scanStandard: '*',
     searchComponent: null,
-    params: null,
-    type: ''
+    params: null
 };
 
 export default withRouter(EntityHeader);

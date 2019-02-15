@@ -81,7 +81,7 @@ function getLabelLinks(data, type, params) {
     return labelLinks;
 }
 
-const StandardsByEntity = ({ type, params, bodyClassName }) => (
+const StandardsByEntity = ({ type, params, bodyClassName, className }) => (
     <Query params={params} componentType={componentTypeMapping[type]}>
         {({ loading, data }) => {
             let contents = <Loader />;
@@ -106,7 +106,7 @@ const StandardsByEntity = ({ type, params, bodyClassName }) => (
 
             return (
                 <Widget
-                    className="s-2"
+                    className={`s-2 ${className}`}
                     pages={pages}
                     header={headerText}
                     bodyClassName={`graph-bottom-border ${bodyClassName}`}
@@ -121,11 +121,13 @@ const StandardsByEntity = ({ type, params, bodyClassName }) => (
 StandardsByEntity.propTypes = {
     type: PropTypes.string.isRequired,
     bodyClassName: PropTypes.string,
-    params: PropTypes.shape({}).isRequired
+    params: PropTypes.shape({}).isRequired,
+    className: PropTypes.string
 };
 
 StandardsByEntity.defaultProps = {
-    bodyClassName: 'p-4'
+    bodyClassName: 'p-4',
+    className: ''
 };
 
 export default StandardsByEntity;

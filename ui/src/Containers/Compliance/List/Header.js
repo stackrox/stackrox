@@ -20,12 +20,8 @@ const ListHeader = ({ match, location, searchComponent }) => {
         : `${startCase(lowerCase(entityType))}s`;
 
     const subHeaderText = standardBaseTypes[entityType] ? 'Standard' : 'Resource list';
-    let type = null;
     let tableOptions = null;
-    if (entityType === 'CLUSTER') {
-        type = 'CLUSTER';
-    } else if (standardBaseTypes[entityType]) {
-        type = 'STANDARD';
+    if (standardBaseTypes[entityType]) {
         tableOptions = {
             columnStyles: {
                 0: { columnWidth: 80 },
@@ -48,8 +44,8 @@ const ListHeader = ({ match, location, searchComponent }) => {
                             )}
                             <ExportButton
                                 fileName={headerText}
-                                id={params.entityId}
-                                type={type}
+                                id={entityType}
+                                type={standardBaseTypes[entityType] ? 'STANDARD' : ''}
                                 pdfId="capture-list"
                                 tableOptions={tableOptions}
                             />
