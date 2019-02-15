@@ -23,12 +23,12 @@ type flowStoreImpl struct {
 var updatedTSKey = []byte("\x00")
 
 // GetAllFlows returns all the flows in the store.
-func (s *flowStoreImpl) GetAllFlows() (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
+func (s *flowStoreImpl) GetAllFlows(since *types.Timestamp) (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
 
 	err = s.flowsBucket.View(func(b *bolt.Bucket) error {
 		var err error
-		flows, ts, err = readAllFlows(b)
+		flows, ts, err = readAllFlows(b, since)
 		return err
 	})
 
@@ -91,7 +91,7 @@ func (s *flowStoreImpl) RemoveFlow(props *storage.NetworkFlowProperties) error {
 // Static helper functions.
 /////////////////////////
 
-func readAllFlows(bucket *bolt.Bucket) (flows []*storage.NetworkFlow, lastUpdateTS types.Timestamp, err error) {
+func readAllFlows(bucket *bolt.Bucket, since *types.Timestamp) (flows []*storage.NetworkFlow, lastUpdateTS types.Timestamp, err error) {
 	err = bucket.ForEach(func(k, v []byte) error {
 		if bytes.Equal(k, updatedTSKey) {
 			return proto.Unmarshal(v, &lastUpdateTS)
@@ -101,6 +101,12 @@ func readAllFlows(bucket *bolt.Bucket) (flows []*storage.NetworkFlow, lastUpdate
 		err = proto.Unmarshal(v, flow)
 		if err != nil {
 			return err
+		}
+
+		if since != nil && flow.LastSeenTimestamp != nil {
+			if protoconv.CompareProtoTimestamps(flow.LastSeenTimestamp, since) < 0 {
+				return nil
+			}
 		}
 
 		flows = append(flows, flow)

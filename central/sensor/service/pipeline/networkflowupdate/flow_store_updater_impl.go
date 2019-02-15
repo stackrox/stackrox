@@ -33,7 +33,7 @@ func (s *flowStoreUpdaterImpl) update(newFlows []*storage.NetworkFlow, updateTS 
 }
 
 func (s *flowStoreUpdaterImpl) addExistingNonTerminatedFlows(updatedFlows map[networkFlowProperties]timestamp.MicroTS) error {
-	existingFlows, lastUpdateTS, err := s.flowStore.GetAllFlows()
+	existingFlows, lastUpdateTS, err := s.flowStore.GetAllFlows(nil)
 	if err != nil {
 		return err
 	}

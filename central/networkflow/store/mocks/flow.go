@@ -36,8 +36,8 @@ func (m *MockFlowStore) EXPECT() *MockFlowStoreMockRecorder {
 }
 
 // GetAllFlows mocks base method
-func (m *MockFlowStore) GetAllFlows() ([]*storage.NetworkFlow, types.Timestamp, error) {
-	ret := m.ctrl.Call(m, "GetAllFlows")
+func (m *MockFlowStore) GetAllFlows(arg0 *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error) {
+	ret := m.ctrl.Call(m, "GetAllFlows", arg0)
 	ret0, _ := ret[0].([]*storage.NetworkFlow)
 	ret1, _ := ret[1].(types.Timestamp)
 	ret2, _ := ret[2].(error)
@@ -45,8 +45,8 @@ func (m *MockFlowStore) GetAllFlows() ([]*storage.NetworkFlow, types.Timestamp, 
 }
 
 // GetAllFlows indicates an expected call of GetAllFlows
-func (mr *MockFlowStoreMockRecorder) GetAllFlows() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllFlows", reflect.TypeOf((*MockFlowStore)(nil).GetAllFlows))
+func (mr *MockFlowStoreMockRecorder) GetAllFlows(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllFlows", reflect.TypeOf((*MockFlowStore)(nil).GetAllFlows), arg0)
 }
 
 // GetFlow mocks base method

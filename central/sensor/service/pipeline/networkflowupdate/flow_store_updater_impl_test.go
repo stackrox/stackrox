@@ -112,7 +112,7 @@ func (suite *FlowStoreUpdaterTestSuite) TestUpdate() {
 	}
 
 	// Return storedFlows on DB read.
-	suite.mockFlowStore.EXPECT().GetAllFlows().Return(storedFlows, *firstTimestamp, nil)
+	suite.mockFlowStore.EXPECT().GetAllFlows(gomock.Any()).Return(storedFlows, *firstTimestamp, nil)
 
 	// Check that the given write matches expectations.
 	suite.mockFlowStore.EXPECT().UpsertFlows(testutils.PredMatcher("matches expected updates", func(actualUpdates []*storage.NetworkFlow) bool {

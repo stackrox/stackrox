@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
@@ -11,11 +12,11 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/timestamp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -56,9 +57,13 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 		return nil, status.Errorf(codes.InvalidArgument, "cluster ID must be specified")
 	}
 
-	since := timestamp.FromProtobuf(request.GetSince())
-	if since == 0 {
-		since = timestamp.FromGoTime(time.Now().Add(defaultSince))
+	since := request.GetSince()
+	if since == nil {
+		var err error
+		since, err = types.TimestampProto(time.Now().Add(defaultSince))
+		if err != nil {
+			errorhelpers.PanicOnDevelopment(err)
+		}
 	}
 
 	// Get the deployments we want to check connectivity between.
@@ -77,7 +82,7 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 		return nil, status.Errorf(codes.NotFound, "no flows found for cluster %s", request.GetClusterId())
 	}
 
-	flows, _, err := flowStore.GetAllFlows()
+	flows, _, err := flowStore.GetAllFlows(since)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +91,6 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 
 	// Filter by deployments, and then by time.
 	filteredFlows := filterNetworkFlowsByDeployments(flows, deployments)
-	filteredFlows = filterNetworkFlowsByTime(filteredFlows, since)
 
 	builder.AddFlows(filteredFlows)
 	return builder.Build(), nil
@@ -111,20 +115,6 @@ func filterNetworkFlowsByDeployments(flows []*storage.NetworkFlow, deployments [
 			continue
 		}
 
-		filtered = append(filtered, flow)
-	}
-
-	return
-}
-
-func filterNetworkFlowsByTime(flows []*storage.NetworkFlow, since timestamp.MicroTS) (filtered []*storage.NetworkFlow) {
-	filtered = flows[:0]
-
-	for _, flow := range flows {
-		flowTS := timestamp.FromProtobuf(flow.LastSeenTimestamp)
-		if flowTS != 0 && flowTS < since {
-			continue
-		}
 		filtered = append(filtered, flow)
 	}
 

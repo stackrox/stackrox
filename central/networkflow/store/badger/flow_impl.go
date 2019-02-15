@@ -29,9 +29,9 @@ type flowStoreImpl struct {
 var updatedTSKey = []byte("\x00")
 
 // GetAllFlows returns all the flows in the store.
-func (s *flowStoreImpl) GetAllFlows() (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
+func (s *flowStoreImpl) GetAllFlows(since *types.Timestamp) (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
-	flows, ts, err = s.readAllFlows()
+	flows, ts, err = s.readAllFlows(since)
 	return flows, ts, err
 }
 
@@ -91,7 +91,7 @@ func (s *flowStoreImpl) getID(props *storage.NetworkFlowProperties) []byte {
 	return append(s.keyPrefix, []byte(fmt.Sprintf("%x:%s:%x:%s:%x:%x", props.GetSrcEntity().GetType(), props.GetSrcEntity().GetId(), props.GetDstEntity().GetType(), props.GetDstEntity().GetId(), props.GetDstPort(), props.GetL4Protocol()))...)
 }
 
-func (s *flowStoreImpl) readAllFlows() (flows []*storage.NetworkFlow, lastUpdateTS types.Timestamp, err error) {
+func (s *flowStoreImpl) readAllFlows(since *types.Timestamp) (flows []*storage.NetworkFlow, lastUpdateTS types.Timestamp, err error) {
 	err = s.db.View(func(txn *badger.Txn) error {
 		return badgerhelper.ForEachWithPrefix(txn, s.keyPrefix, badgerhelper.ForEachOptions{StripKeyPrefix: true},
 			func(k, v []byte) error {
@@ -102,6 +102,9 @@ func (s *flowStoreImpl) readAllFlows() (flows []*storage.NetworkFlow, lastUpdate
 				flow := new(storage.NetworkFlow)
 				if err := proto.Unmarshal(v, flow); err != nil {
 					return err
+				}
+				if since != nil && protoconv.CompareProtoTimestamps(flow.LastSeenTimestamp, since) < 0 {
+					return nil
 				}
 				flows = append(flows, flow)
 				return nil

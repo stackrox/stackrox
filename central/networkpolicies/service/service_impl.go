@@ -8,6 +8,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	"github.com/stackrox/rox/central/networkpolicies/generator"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -40,6 +42,9 @@ var (
 		user.With(permissions.Modify(resources.Notifier)): {
 			"/v1.NetworkPolicyService/SendNetworkPolicyYAML",
 		},
+		user.With(permissions.View(resources.NetworkPolicy), permissions.View(resources.NetworkGraph)): {
+			"/v1.NetworkPolicyService/GenerateNetworkPolicies",
+		},
 	})
 )
 
@@ -50,6 +55,8 @@ type serviceImpl struct {
 	networkPolicies networkPoliciesStore.Store
 	notifierStore   notifierStore.Store
 	graphEvaluator  graph.Evaluator
+
+	policyGenerator generator.Generator
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -255,7 +262,40 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 }
 
 func (s *serviceImpl) GenerateNetworkPolicies(ctx context.Context, req *v1.GenerateNetworkPoliciesRequest) (*v1.GenerateNetworkPoliciesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
+	if s.policyGenerator == nil || !features.NetworkPolicyGenerator.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "not implemented")
+	}
+
+	// Default to `none` delete existing mode.
+	if req.DeleteExisting == v1.GenerateNetworkPoliciesRequest_UNKNOWN {
+		req.DeleteExisting = v1.GenerateNetworkPoliciesRequest_NONE
+	}
+
+	generated, toDelete, err := s.policyGenerator.Generate(req)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "error generating network policies: %v", err)
+	}
+
+	var applyYAML string
+	for _, generatedPolicy := range generated {
+		yaml, err := networkPolicyConversion.RoxNetworkPolicyWrap{NetworkPolicy: generatedPolicy}.ToYaml()
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "error converting generated network policy to YAML: %v", err)
+		}
+		if applyYAML != "" {
+			applyYAML += "\n---\n"
+		}
+		applyYAML += yaml
+	}
+
+	mod := &v1.NetworkPolicyModification{
+		ApplyYaml: applyYAML,
+		ToDelete:  toDelete,
+	}
+
+	return &v1.GenerateNetworkPoliciesResponse{
+		Modification: mod,
+	}, nil
 }
 
 func (s *serviceImpl) getDeployments(clusterID, query string) (deployments []*storage.Deployment, err error) {

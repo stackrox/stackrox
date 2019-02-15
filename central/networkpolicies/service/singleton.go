@@ -5,6 +5,7 @@ import (
 
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
+	flowStoreSingleton "github.com/stackrox/rox/central/networkflow/store/singleton"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/networkpolicies/store"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
@@ -17,7 +18,7 @@ var (
 )
 
 func initialize() {
-	as = New(store.Singleton(), deploymentDS.Singleton(), graph.Singleton(), clusterDS.Singleton(), notifierStore.Singleton())
+	as = New(store.Singleton(), deploymentDS.Singleton(), graph.Singleton(), clusterDS.Singleton(), notifierStore.Singleton(), flowStoreSingleton.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

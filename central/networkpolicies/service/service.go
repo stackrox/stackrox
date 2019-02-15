@@ -5,6 +5,8 @@ import (
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
+	flowStore "github.com/stackrox/rox/central/networkflow/store"
+	"github.com/stackrox/rox/central/networkpolicies/generator"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/networkpolicies/store"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
@@ -27,12 +29,13 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(store store.Store, deployments deploymentDataStore.DataStore, graphEvaluator graph.Evaluator, clusterStore clusterDataStore.DataStore, notifierStore notifierStore.Store) Service {
+func New(store store.Store, deployments deploymentDataStore.DataStore, graphEvaluator graph.Evaluator, clusterStore clusterDataStore.DataStore, notifierStore notifierStore.Store, globalFlowStore flowStore.ClusterStore) Service {
 	return &serviceImpl{
 		deployments:     deployments,
 		networkPolicies: store,
 		notifierStore:   notifierStore,
 		clusterStore:    clusterStore,
 		graphEvaluator:  graphEvaluator,
+		policyGenerator: generator.New(store, deployments, globalFlowStore),
 	}
 }

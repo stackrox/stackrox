@@ -4,6 +4,7 @@ option go_package = "v1";
 option java_package = "io.stackrox.proto.api.v1";
 
 import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
 import "api/v1/network_graph.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
@@ -87,7 +88,7 @@ message NetworkPolicyModification {
     repeated NetworkPolicyReference to_delete = 2;
 }
 
-// Next available tag: 4
+// Next available tag: 5
 message GenerateNetworkPoliciesRequest {
     enum DeleteExistingPoliciesMode {
         UNKNOWN        = 0;
@@ -97,14 +98,15 @@ message GenerateNetworkPoliciesRequest {
     }
 
     string cluster_id                          = 1;
-    repeated string namespaces                 = 2;
+    string query                               = 2;
     DeleteExistingPoliciesMode delete_existing = 3;
+
+    google.protobuf.Timestamp network_data_since = 4;
 }
 
-// Next available tag: 3
+// Next available tag: 2
 message GenerateNetworkPoliciesResponse {
-    SimulateNetworkGraphResponse simulation = 1;
-    NetworkPolicyModification modification  = 2;
+    NetworkPolicyModification modification  = 1;
 }
 
 service NetworkPolicyService {

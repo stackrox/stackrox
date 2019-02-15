@@ -212,7 +212,7 @@ func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[s
 	}
 
 	flowStore := f.networkFlowStore.GetFlowStore(domain.Cluster().ID())
-	r.networkFlows, _, err = flowStore.GetAllFlows()
+	r.networkFlows, _, err = flowStore.GetAllFlows(nil)
 	if err != nil {
 		return err
 	}

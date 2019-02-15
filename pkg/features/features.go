@@ -1,45 +1,32 @@
 // Package features helps enable or disable features.
 package features
 
-import (
-	"strings"
-)
-
 // A Feature is a product behavior that can be enabled or disabled.
 type Feature interface {
 	Name() string
+	EnvVar() string
 	Enabled() bool
 }
 
 // A FeatureFlag is an environment variable configuration that can be
 // provided to control whether one or more features is enabled.
-type FeatureFlag interface {
-	Name() string
-	EnvVar() string
-}
+type FeatureFlag = Feature
 
 var (
 	// Features contains all defined Features by name.
-	Features = map[string]Feature{
-		HtpasswdAuth.Name(): HtpasswdAuth,
-		Compliance.Name():   Compliance,
-	}
+	Features = make(map[string]Feature)
 
 	// Flags contains all defined FeatureFlags by name.
-	Flags = map[string]FeatureFlag{
-		HtpasswdAuth.Name(): HtpasswdAuth,
-		Compliance.Name():   Compliance,
-	}
+	Flags = make(map[string]FeatureFlag)
 )
 
-func isEnabled(val string, defaultValue bool) bool {
-	switch strings.ToLower(val) {
-	case "false":
-		return false
-	case "true":
-		return true
-	default:
-		return defaultValue
+func registerFeature(name, envVar string, defaultValue bool) Feature {
+	f := &feature{
+		name:         name,
+		envVar:       envVar,
+		defaultValue: defaultValue,
 	}
-
+	Features[f.Name()] = f
+	Flags[f.Name()] = f
+	return f
 }

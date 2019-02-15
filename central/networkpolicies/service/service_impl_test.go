@@ -12,6 +12,7 @@ import (
 	notifierStoreMocks "github.com/stackrox/rox/central/notifier/store/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	grpcTestutils "github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
@@ -92,11 +93,15 @@ func (suite *ServiceTestSuite) SetupTest() {
 	suite.deployments = dDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.notifiers = notifierStoreMocks.NewMockStore(suite.mockCtrl)
 
-	suite.tested = New(suite.networkPolicies, suite.deployments, suite.evaluator, suite.clusters, suite.notifiers)
+	suite.tested = New(suite.networkPolicies, suite.deployments, suite.evaluator, suite.clusters, suite.notifiers, nil)
 }
 
 func (suite *ServiceTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
+}
+
+func (suite *ServiceTestSuite) TestAuth() {
+	grpcTestutils.AssertAuthzWorks(suite.T(), suite.tested)
 }
 
 func (suite *ServiceTestSuite) TestFailsIfClusterIsNotSet() {

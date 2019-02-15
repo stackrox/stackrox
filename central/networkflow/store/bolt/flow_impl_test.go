@@ -86,14 +86,14 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.NoError(err, "remove should succeed when not present")
 
 	var actualFlows []*storage.NetworkFlow
-	actualFlows, _, err = suite.tested.GetAllFlows()
+	actualFlows, _, err = suite.tested.GetAllFlows(nil)
 	suite.Equal(1, len(actualFlows), "only flows[0] should be present")
 	suite.Equal(flows[0], actualFlows[0], "flows should be equal")
 
 	err = suite.tested.UpsertFlows(flows, timestamp.Now())
 	suite.NoError(err, "upsert should succeed")
 
-	actualFlows, _, err = suite.tested.GetAllFlows()
+	actualFlows, _, err = suite.tested.GetAllFlows(nil)
 	suite.Equal(2, len(actualFlows), "expected number of flows does not match")
 	suite.ElementsMatch(flows, actualFlows, "upserted values should be as expected")
 

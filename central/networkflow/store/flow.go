@@ -9,7 +9,7 @@ import (
 // FlowStore stores all of the flows for a single cluster.
 //go:generate mockgen-wrapper FlowStore
 type FlowStore interface {
-	GetAllFlows() ([]*storage.NetworkFlow, types.Timestamp, error)
+	GetAllFlows(since *types.Timestamp) ([]*storage.NetworkFlow, types.Timestamp, error)
 	GetFlow(props *storage.NetworkFlowProperties) (*storage.NetworkFlow, error)
 
 	UpsertFlows(flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
