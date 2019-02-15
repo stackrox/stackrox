@@ -59,7 +59,7 @@ enum LifecycleStage {
     RUNTIME   = 2;
 }
 
-// Next Available Tag: 25
+// Next Available Tag: 26
 message PolicyFields {
     ImageNamePolicy image_name          = 1;
 
@@ -105,6 +105,10 @@ message PolicyFields {
     ResourcePolicy container_resource_policy = 21;
     reserved 22;
     ProcessPolicy process_policy = 23;
+
+    oneof set_read_only_root_fs {
+        bool read_only_root_fs = 25;
+    }
 }
 
 message Component {

@@ -225,6 +225,10 @@ const fieldsMap = {
         label: 'Privileged',
         formatValue: d => (d === true ? 'Yes' : 'No')
     },
+    readOnlyRootFs: {
+        label: 'Read Only Root Filesystem',
+        formatValue: d => (d === true ? 'Yes' : 'Not Enabled')
+    },
     containerResourcePolicy: {
         label: 'Container Resources',
         formatValue: formatResources

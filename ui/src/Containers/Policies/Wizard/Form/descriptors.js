@@ -470,6 +470,14 @@ const policyConfigurationDescriptor = [
         default: false
     },
     {
+        label: 'Read-Only Root Filesystem',
+        jsonpath: 'fields.readOnlyRootFs',
+        type: 'select',
+        options: [{ label: 'No', value: false }],
+        required: false,
+        default: false
+    },
+    {
         label: 'Drop Capabilities',
         jsonpath: 'fields.dropCapabilities',
         type: 'multiselect',

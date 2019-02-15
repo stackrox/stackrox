@@ -311,9 +311,8 @@ func (w *DeploymentWrap) populateImages(podSpec v1.PodSpec) {
 
 func (w *DeploymentWrap) populateSecurityContext(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
+		sc := &storage.SecurityContext{}
 		if s := c.SecurityContext; s != nil {
-			sc := &storage.SecurityContext{}
-
 			if p := s.Privileged; p != nil {
 				sc.Privileged = *p
 			}
@@ -341,8 +340,8 @@ func (w *DeploymentWrap) populateSecurityContext(podSpec v1.PodSpec) {
 				}
 			}
 
-			w.Deployment.Containers[i].SecurityContext = sc
 		}
+		w.Deployment.Containers[i].SecurityContext = sc
 	}
 }
 

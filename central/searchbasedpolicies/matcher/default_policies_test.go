@@ -651,6 +651,29 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
+			policyName: "Container using read-write root filesystem",
+			expectedViolations: map[string]searchbasedpolicies.Violations{
+				heartbleedDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
+					{
+						Message: "Container using read-write root filesystem found",
+					},
+				},
+				},
+				fixtureDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
+					{
+						Message: "Container using read-write root filesystem found",
+					},
+				},
+				},
+				sysAdminDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
+					{
+						Message: "Container using read-write root filesystem found",
+					},
+				},
+				},
+			},
+		},
+		{
 			policyName: "Insecure specified in CMD",
 			expectedViolations: map[string]searchbasedpolicies.Violations{
 				insecureCMDDep.GetId(): {AlertViolations: []*storage.Alert_Violation{

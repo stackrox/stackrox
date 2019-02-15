@@ -27,4 +27,5 @@ var Registry = []searchbasedpolicies.PolicyQueryBuilder{
 	builders.NewDropCapQueryBuilder(),
 	resourcePolicy,
 	builders.ProcessQueryBuilder{},
+	builders.ReadOnlyRootFSQueryBuilder{},
 }

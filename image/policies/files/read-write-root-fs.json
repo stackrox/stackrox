@@ -1,0 +1,40 @@
+{
+  "id": "8ac93556-4ad4-4220-a275-3f518db0ceb9",
+  "name": "Container using read-write root filesystem",
+  "description": "Alert on deployments with containers with read-write root filesystem",
+  "severity": "MEDIUM_SEVERITY",
+  "lifecycle_stages": ["DEPLOY"],
+  "categories": ["Privileges"],
+  "fields": {
+    "readOnlyRootFs": false
+  },
+  "disabled": true,
+  "rationale": "Containers running with read-write root filesystem represent greater post-exploitation risk by allowing an attacker to modify important files in the container.",
+  "remediation": "Use a read-only root filesystem, and use volume mounts to allow writes to specific sub-directories depending on your application's needs.",
+  "whitelists": [
+    {
+      "name": "Don't alert on kube-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-node namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-node"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on openshift-sdn namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-sdn"
+        }
+      }
+    }
+  ]
+}
