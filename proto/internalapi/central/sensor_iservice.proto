@@ -9,16 +9,18 @@ package central;
 
 message MsgFromSensor {
     oneof msg {
-        SensorEvent       event = 1;
-        NetworkFlowUpdate network_flow_update = 2;
-        ScrapeUpdate      scrape_update = 3;
+        SensorEvent                  event                           = 1;
+        NetworkFlowUpdate            network_flow_update             = 2;
+        ScrapeUpdate                 scrape_update                   = 3;
+        ApplyNetworkPoliciesResponse apply_network_policies_response = 4;
     }
 }
 
 message MsgToSensor {
     oneof msg {
-        SensorEnforcement enforcement    = 1;
-        ScrapeCommand     scrape_command = 2;
+        SensorEnforcement           enforcement                    = 1;
+        ScrapeCommand               scrape_command                 = 2;
+        ApplyNetworkPoliciesCommand apply_network_policies_command = 3;
     }
 }
 

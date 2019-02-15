@@ -2,6 +2,7 @@ syntax = "proto3";
 
 option go_package = "central";
 
+import "api/v1/network_policy_service.proto";
 import "internalapi/compliance/compliance_data.proto";
 import "storage/cluster.proto";
 import "storage/deployment.proto";
@@ -113,4 +114,29 @@ message ScrapeStarted {
 
 message ScrapeKilled {
     string error_message = 1;
+}
+
+// Network policy application.
+////////////////////////////////////////
+
+message ApplyNetworkPoliciesCommand {
+    string command_id = 1;
+
+    v1.NetworkPolicyModification modification = 2;
+}
+
+message ApplyNetworkPoliciesResponse {
+    string command_id = 1;
+
+    message Success {
+        v1.NetworkPolicyModification undo_modification = 1;
+    }
+    message Failure {
+        string error_message = 1;
+    }
+
+    oneof response {
+        Success success = 2;
+        Failure failure = 3;
+    }
 }
