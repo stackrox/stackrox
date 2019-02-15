@@ -312,20 +312,30 @@ func (a *aggregatorImpl) getAggregatedResults(groupBy []v1.ComplianceAggregation
 // if the set is nil, then it means all are allowed
 func (a *aggregatorImpl) getCheckMask(query *v1.Query, queryMap map[string][]string, standardIDs, clusterIDs []string) ([numScopes]set.StringSet, error) {
 	var mask [numScopes]set.StringSet
-	if search.HasApplicableOptions(queryMap, nodeMappings.OptionsMap) {
+
+	nodeOptions := search.HasApplicableOptions(queryMap, nodeMappings.OptionsMap)
+	namespaceOptions := search.HasApplicableOptions(queryMap, namespaceMappings.OptionsMap)
+
+	if nodeOptions {
 		results, err := a.nodes.Search(query)
 		if err != nil {
 			return mask, err
 		}
 		mask[getMaskIndex(v1.ComplianceAggregation_NODE)] = set.NewStringSet(search.ResultsToIDs(results)...)
+	} else if namespaceOptions {
+		mask[getMaskIndex(v1.ComplianceAggregation_NODE)] = set.NewStringSet()
 	}
-	if search.HasApplicableOptions(queryMap, namespaceMappings.OptionsMap) {
+
+	if namespaceOptions {
 		results, err := a.namespaces.Search(query)
 		if err != nil {
 			return mask, err
 		}
 		mask[getMaskIndex(v1.ComplianceAggregation_NAMESPACE)] = set.NewStringSet(search.ResultsToIDs(results)...)
+	} else if nodeOptions {
+		mask[getMaskIndex(v1.ComplianceAggregation_NAMESPACE)] = set.NewStringSet()
 	}
+
 	if search.HasApplicableOptions(queryMap, standardsIndex.ControlOptions) {
 		results, err := a.standards.SearchControls(query)
 		if err != nil {
