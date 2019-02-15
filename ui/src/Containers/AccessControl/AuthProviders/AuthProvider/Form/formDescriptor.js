@@ -1,5 +1,10 @@
 import React from 'react';
 
+const baseURL = `${window.location.protocol}//${window.location.host}`;
+const oidcFragmentCallbackURL = `${baseURL}/auth/response/oidc`;
+const oidcPostCallbackURL = `${baseURL}/sso/providers/oidc/callback`;
+const samlACSURL = `${baseURL}/sso/providers/saml/acs`;
+
 const formDescriptors = {
     oidc: [
         {
@@ -32,6 +37,37 @@ const formDescriptors = {
             type: 'text',
             placeholder: '',
             immutable: true
+        },
+        {
+            html: (
+                <div className="text-tertiary-800 bg-tertiary-200 p-3 pb-2 rounded border-2 border-tertiary-300 ">
+                    <p className="border-b-2 border-tertiary-300 pb-3">
+                        <strong>Note: </strong> if required by your IdP, use the following callback
+                        URLs:
+                    </p>
+                    <ul className="pl-4 mt-2 leading-loose">
+                        <li>
+                            For <span className="font-700">Fragment</span> mode:{' '}
+                            <a
+                                className="text-tertiary-800 hover:text-tertiary-900"
+                                href={oidcFragmentCallbackURL}
+                            >
+                                {oidcFragmentCallbackURL}
+                            </a>
+                        </li>
+                        <li>
+                            For <span className="font-700">HTTP POST</span> mode:{' '}
+                            <a
+                                className="text-tertiary-800 hover:text-tertiary-900"
+                                href={oidcPostCallbackURL}
+                            >
+                                {oidcPostCallbackURL}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            ),
+            type: 'html'
         }
     ],
     auth0: [
@@ -54,6 +90,27 @@ const formDescriptors = {
             type: 'text',
             placeholder: '',
             immutable: true
+        },
+        {
+            html: (
+                <div className="text-tertiary-800 bg-tertiary-200 p-3 pb-2 rounded border-2 border-tertiary-300 ">
+                    <p className="border-b-2 border-tertiary-300 pb-3">
+                        <strong>Note: </strong> if required by your IdP, use the following callback
+                        URL:
+                    </p>
+                    <ul className="pl-4 mt-2 leading-loose">
+                        <li>
+                            <a
+                                className="text-tertiary-800 hover:text-tertiary-900"
+                                href={oidcFragmentCallbackURL}
+                            >
+                                {oidcFragmentCallbackURL}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            ),
+            type: 'html'
         }
     ],
     saml: [
@@ -114,6 +171,27 @@ const formDescriptors = {
             placeholder:
                 '-----BEGIN CERTIFICATE-----\nYour certificate data\n-----END CERTIFICATE-----',
             immutable: true
+        },
+        {
+            html: (
+                <div className="text-tertiary-800 bg-tertiary-200 p-3 pb-2 rounded border-2 border-tertiary-300 ">
+                    <p className="border-b-2 border-tertiary-300 pb-3">
+                        <strong>Note: </strong> if required by your IdP, use the following Assertion
+                        Consumer Service (ACS) URL:
+                    </p>
+                    <ul className="pl-4 mt-2 leading-loose">
+                        <li>
+                            <a
+                                className="text-tertiary-800 hover:text-tertiary-900"
+                                href={samlACSURL}
+                            >
+                                {samlACSURL}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            ),
+            type: 'html'
         }
     ],
     attrToRole: {

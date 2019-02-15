@@ -29,7 +29,7 @@ const Details = props => {
         <div className="w-full justify-between overflow-auto p-4">
             <CollapsibleCard
                 title={title}
-                titleClassName="border-b border-warning-300 leading-normal cursor-pointer flex justify-between items-center bg-warning-200 hover:border-warning-400"
+                titleClassName="border-b px-1 border-warning-300 leading-normal cursor-pointer flex justify-between items-center bg-warning-200 hover:border-warning-400"
             >
                 <div className="w-full h-full p-4 pt-2 pb-2">
                     {fields &&
@@ -41,7 +41,7 @@ const Details = props => {
             <div className="mt-4">
                 <CollapsibleCard
                     title={propsTitle}
-                    titleClassName="border-b border-warning-300 leading-normal cursor-pointer flex justify-between items-center bg-warning-200 hover:border-warning-400"
+                    titleClassName="border-b px-1 border-warning-300 leading-normal cursor-pointer flex justify-between items-center bg-warning-200 hover:border-warning-400"
                 >
                     <div className="flex flex-col">
                         <div className="p-4 w-full">

@@ -38,15 +38,15 @@ const Field = props => {
             field = <ReduxTextAreaField name={jsonPath} placeholder={placeholder} />;
             break;
         case 'html':
-            return <div className="w-full mb-8 mt-8">{html}</div>;
+            return <div className="w-full mb-5">{html}</div>;
         default:
             field = null;
             break;
     }
     return (
         <div className="mb-4">
-            <div className="p-1 text-base-600 font-700">{label}</div>
-            <div className="w-full p-1">{field}</div>
+            <div className="py-1 text-base-600 font-700">{label}</div>
+            <div className="w-full py-1">{field}</div>
         </div>
     );
 };

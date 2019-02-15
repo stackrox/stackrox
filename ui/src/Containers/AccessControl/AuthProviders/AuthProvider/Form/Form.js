@@ -63,9 +63,9 @@ class Form extends Component {
                 >
                     <CollapsibleCard
                         title="1. Configuration"
-                        titleClassName="border-b border-warning-300 leading-normal cursor-pointer flex justify-between items-center bg-warning-200 hover:border-warning-400"
+                        titleClassName="border-b px-1 border-warning-300 leading-normal cursor-pointer flex justify-between items-center bg-warning-200 hover:border-warning-400"
                     >
-                        <div className="w-full h-full p-3 pb-0">
+                        <div className="w-full h-full px-4 py-3 pb-0">
                             {fields.map((field, index) => (
                                 <Field key={index} {...field} />
                             ))}
@@ -76,9 +76,9 @@ class Form extends Component {
                             title={`2. Assign StackRox Roles to your (${
                                 initialValues.type
                             }) attributes`}
-                            titleClassName="border-b border-warning-300 leading-normal cursor-pointer flex justify-between items-center bg-warning-200 hover:border-warning-400"
+                            titleClassName="border-b px-1 border-warning-300 leading-normal cursor-pointer flex justify-between items-center bg-warning-200 hover:border-warning-400"
                         >
-                            <div className="w-full p-3 pb-0">
+                            <div className="w-full p-4 pb-0">
                                 <Field
                                     label="Default Role"
                                     type="select"
