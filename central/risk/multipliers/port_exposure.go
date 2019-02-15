@@ -34,7 +34,7 @@ func (s *reachabilityMultiplier) Score(deployment *storage.Deployment) *storage.
 
 		riskResult.Factors = append(riskResult.Factors,
 			&storage.Risk_Result_Factor{Message: fmt.Sprintf("Port %d is exposed %s",
-				p.GetExposedPort(), exposureString(p.GetExposure()))})
+				p.GetContainerPort(), exposureString(p.GetExposure()))})
 	}
 	if score == 0 {
 		return nil
@@ -43,11 +43,11 @@ func (s *reachabilityMultiplier) Score(deployment *storage.Deployment) *storage.
 	return riskResult
 }
 
-func exposureValue(exposure storage.PortConfig_Exposure) float32 {
+func exposureValue(exposure storage.PortConfig_ExposureLevel) float32 {
 	switch exposure {
 	case storage.PortConfig_EXTERNAL:
 		return 3
-	case storage.PortConfig_NODE:
+	case storage.PortConfig_NODE, storage.PortConfig_HOST:
 		return 2
 	case storage.PortConfig_INTERNAL:
 		return 1
@@ -56,10 +56,12 @@ func exposureValue(exposure storage.PortConfig_Exposure) float32 {
 	}
 }
 
-func exposureString(exposure storage.PortConfig_Exposure) string {
+func exposureString(exposure storage.PortConfig_ExposureLevel) string {
 	switch exposure {
 	case storage.PortConfig_INTERNAL:
 		return "in the cluster"
+	case storage.PortConfig_HOST:
+		return "on every node running the deployment"
 	case storage.PortConfig_NODE:
 		return "on node interfaces"
 	case storage.PortConfig_EXTERNAL:

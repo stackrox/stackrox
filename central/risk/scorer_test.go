@@ -55,9 +55,9 @@ func TestScore(t *testing.T) {
 		{
 			Name: multipliers.ReachabilityHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Port 8082 is exposed to external clients"},
-				{Message: "Port 8083 is exposed in the cluster"},
-				{Message: "Port 8084 is exposed on node interfaces"},
+				{Message: "Port 22 is exposed to external clients"},
+				{Message: "Port 23 is exposed in the cluster"},
+				{Message: "Port 24 is exposed on node interfaces"},
 			},
 			Score: 1.6,
 		},
@@ -123,19 +123,16 @@ func getMockDeployment() *storage.Deployment {
 				Name:          "Port1",
 				ContainerPort: 22,
 				Exposure:      storage.PortConfig_EXTERNAL,
-				ExposedPort:   8082,
 			},
 			{
 				Name:          "Port2",
 				ContainerPort: 23,
 				Exposure:      storage.PortConfig_INTERNAL,
-				ExposedPort:   8083,
 			},
 			{
 				Name:          "Port3",
 				ContainerPort: 24,
 				Exposure:      storage.PortConfig_NODE,
-				ExposedPort:   8084,
 			},
 		},
 		Containers: []*storage.Container{

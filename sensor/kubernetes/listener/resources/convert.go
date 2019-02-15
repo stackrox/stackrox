@@ -343,53 +343,56 @@ func (w *deploymentWrap) toEvent(action central.ResourceAction) *central.SensorE
 	}
 }
 
-func (w *deploymentWrap) resetPortExposure() (updated bool) {
-	for _, portCfg := range w.portConfigs {
-		if portCfg.Exposure != storage.PortConfig_INTERNAL {
-			portCfg.Exposure = storage.PortConfig_INTERNAL
-			updated = true
+func filterHostExposure(exposureInfos []*storage.PortConfig_ExposureInfo) (filtered []*storage.PortConfig_ExposureInfo, level storage.PortConfig_ExposureLevel) {
+	for _, exposureInfo := range exposureInfos {
+		if exposureInfo.GetLevel() != storage.PortConfig_HOST {
+			continue
 		}
+		filtered = append(filtered, exposureInfo)
+		level = storage.PortConfig_HOST
 	}
 	return
 }
 
-func (w *deploymentWrap) updatePortExposureFromStore(store *serviceStore) (updated bool) {
-	updated = w.resetPortExposure()
+func (w *deploymentWrap) resetPortExposure() {
+	for _, portCfg := range w.portConfigs {
+		portCfg.ExposureInfos, portCfg.Exposure = filterHostExposure(portCfg.ExposureInfos)
+	}
+}
+
+func (w *deploymentWrap) updatePortExposureFromStore(store *serviceStore) {
+	w.resetPortExposure()
 
 	svcs := store.getMatchingServices(w.Namespace, w.PodLabels)
 	for _, svc := range svcs {
-		updated = w.updatePortExposure(svc) || updated
+		w.updatePortExposure(svc)
 	}
-	return
 }
 
-func (w *deploymentWrap) updatePortExposure(svc *serviceWrap) (updated bool) {
+func (w *deploymentWrap) updatePortExposure(svc *serviceWrap) {
 	if !svc.selector.Matches(labels.Set(w.PodLabels)) {
 		return
 	}
 
-	exposure := svc.exposure()
-	for _, svcPort := range svc.Spec.Ports {
-		ref := portRef{Port: svcPort.TargetPort, Protocol: svcPort.Protocol}
+	for ref, exposureInfo := range svc.exposure() {
 		portCfg := w.portConfigs[ref]
 		if portCfg == nil {
-			if svcPort.TargetPort.Type == intstr.String {
+			if ref.Port.Type == intstr.String {
 				// named ports MUST be defined in the pod spec
 				continue
 			}
 			portCfg = &storage.PortConfig{
-				ContainerPort: svcPort.TargetPort.IntVal,
-				Protocol:      string(svcPort.Protocol),
-				ExposedPort:   svcPort.Port,
-				Exposure:      exposure,
+				ContainerPort: ref.Port.IntVal,
+				Protocol:      string(ref.Protocol),
 			}
 			w.Ports = append(w.Ports, portCfg)
 			w.portConfigs[ref] = portCfg
-			updated = true
-		} else if containers.IncreasedExposureLevel(portCfg.Exposure, exposure) {
-			portCfg.Exposure = exposure
-			updated = true
+		}
+
+		portCfg.ExposureInfos = append(portCfg.ExposureInfos, exposureInfo)
+
+		if containers.CompareExposureLevel(portCfg.Exposure, exposureInfo.GetLevel()) < 0 {
+			portCfg.Exposure = exposureInfo.GetLevel()
 		}
 	}
-	return
 }

@@ -19,15 +19,42 @@ func wrapService(svc *v1.Service) *serviceWrap {
 	}
 }
 
-func (s *serviceWrap) exposure() storage.PortConfig_Exposure {
-	switch s.Spec.Type {
-	case v1.ServiceTypeLoadBalancer:
-		return storage.PortConfig_EXTERNAL
-	case v1.ServiceTypeNodePort:
-		return storage.PortConfig_NODE
-	default:
-		return storage.PortConfig_INTERNAL
+func (s *serviceWrap) exposure() map[portRef]*storage.PortConfig_ExposureInfo {
+	if s.Spec.Type == v1.ServiceTypeExternalName {
+		return nil
 	}
+
+	exposureTemplate := storage.PortConfig_ExposureInfo{
+		Level:            storage.PortConfig_INTERNAL,
+		ServiceId:        string(s.UID),
+		ServiceName:      string(s.Name),
+		ServiceClusterIp: s.Spec.ClusterIP,
+	}
+
+	if s.Spec.Type == v1.ServiceTypeNodePort {
+		exposureTemplate.Level = storage.PortConfig_NODE
+	} else if s.Spec.Type == v1.ServiceTypeLoadBalancer {
+		exposureTemplate.Level = storage.PortConfig_EXTERNAL
+		for _, lbIngress := range s.Status.LoadBalancer.Ingress {
+			if lbIngress.IP != "" {
+				exposureTemplate.ExternalIps = append(exposureTemplate.ExternalIps, lbIngress.IP)
+			}
+			if lbIngress.Hostname != "" {
+				exposureTemplate.ExternalHostnames = append(exposureTemplate.ExternalHostnames, lbIngress.Hostname)
+			}
+		}
+	}
+
+	result := make(map[portRef]*storage.PortConfig_ExposureInfo, len(s.Spec.Ports))
+	for _, port := range s.Spec.Ports {
+		ref := portRefOf(port)
+		exposureInfo := exposureTemplate
+		exposureInfo.ServicePort = port.Port
+		exposureInfo.NodePort = port.NodePort
+		result[ref] = &exposureInfo
+	}
+
+	return result
 }
 
 // serviceDispatcher handles servidce resource events.
@@ -73,9 +100,8 @@ func (sh *serviceDispatcher) ProcessEvent(obj interface{}, action central.Resour
 
 func (sh *serviceDispatcher) updateDeploymentsFromStore(namespace string, sel selector) (events []*central.SensorEvent) {
 	for _, deploymentWrap := range sh.deploymentStore.getMatchingDeployments(namespace, sel) {
-		if deploymentWrap.updatePortExposureFromStore(sh.serviceStore) {
-			events = append(events, deploymentWrap.toEvent(central.ResourceAction_UPDATE_RESOURCE))
-		}
+		deploymentWrap.updatePortExposureFromStore(sh.serviceStore)
+		events = append(events, deploymentWrap.toEvent(central.ResourceAction_UPDATE_RESOURCE))
 	}
 	sh.endpointManager.OnServiceUpdateOrRemove(namespace, sel)
 	return
@@ -85,9 +111,8 @@ func (sh *serviceDispatcher) processCreate(svc *v1.Service) (events []*central.S
 	wrap := wrapService(svc)
 	sh.serviceStore.addOrUpdateService(wrap)
 	for _, deploymentWrap := range sh.deploymentStore.getMatchingDeployments(svc.Namespace, wrap.selector) {
-		if deploymentWrap.updatePortExposure(wrap) {
-			events = append(events, deploymentWrap.toEvent(central.ResourceAction_UPDATE_RESOURCE))
-		}
+		deploymentWrap.updatePortExposure(wrap)
+		events = append(events, deploymentWrap.toEvent(central.ResourceAction_UPDATE_RESOURCE))
 	}
 	sh.endpointManager.OnServiceCreate(wrap)
 	return

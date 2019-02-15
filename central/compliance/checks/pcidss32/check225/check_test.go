@@ -42,7 +42,7 @@ func (s *suiteImpl) TestUnusedPorts() {
 			Id: uuid.NewV4().String(),
 			Ports: []*storage.PortConfig{
 				{
-					ExposedPort: 3,
+					ContainerPort: 3,
 				},
 			},
 		},
@@ -50,7 +50,7 @@ func (s *suiteImpl) TestUnusedPorts() {
 			Id: uuid.NewV4().String(),
 			Ports: []*storage.PortConfig{
 				{
-					ExposedPort: 3,
+					ContainerPort: 3,
 				},
 			},
 		},
@@ -104,7 +104,7 @@ func (s *suiteImpl) TestPass() {
 			Id: uuid.NewV4().String(),
 			Ports: []*storage.PortConfig{
 				{
-					ExposedPort: 3,
+					ContainerPort: 3,
 				},
 			},
 		},
@@ -112,7 +112,7 @@ func (s *suiteImpl) TestPass() {
 			Id: uuid.NewV4().String(),
 			Ports: []*storage.PortConfig{
 				{
-					ExposedPort: 3,
+					ContainerPort: 3,
 				},
 			},
 		},

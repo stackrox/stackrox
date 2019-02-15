@@ -57,7 +57,8 @@ func (d deduper) Send(msg *central.MsgFromSensor) error {
 		return err
 	}
 	// Make the action an update so we can dedupe CREATE and UPDATE
+	event = proto.Clone(event).(*central.SensorEvent)
 	event.Action = central.ResourceAction_UPDATE_RESOURCE
-	d.lastSent[key] = proto.Clone(event)
+	d.lastSent[key] = event
 	return nil
 }

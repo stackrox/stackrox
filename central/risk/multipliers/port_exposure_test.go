@@ -14,9 +14,9 @@ func TestPortExposureScore(t *testing.T) {
 	expectedScore := &storage.Risk_Result{
 		Name: ReachabilityHeading,
 		Factors: []*storage.Risk_Result_Factor{
-			{Message: "Port 8082 is exposed to external clients"},
-			{Message: "Port 8083 is exposed in the cluster"},
-			{Message: "Port 8084 is exposed on node interfaces"},
+			{Message: "Port 22 is exposed to external clients"},
+			{Message: "Port 23 is exposed in the cluster"},
+			{Message: "Port 24 is exposed on node interfaces"},
 		},
 		Score: 1.6,
 	}

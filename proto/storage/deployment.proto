@@ -101,17 +101,39 @@ message EmbeddedSecret {
 
 // Next Available Tag: 6
 message PortConfig {
-    string name             = 1;
-    int32 container_port    = 2 [(gogoproto.moretags) = "search:\"Port,store\""];
-    string protocol         = 3 [(gogoproto.moretags) = "search:\"Port Protocol,store\""];
-    enum Exposure {
+    enum ExposureLevel {
         UNSET    = 0;
         EXTERNAL = 1;
         NODE     = 2;
         INTERNAL = 3;
+        HOST     = 4;
     }
-    Exposure exposure       = 4;
-    int32 exposed_port      = 5;
+
+    message ExposureInfo {
+        ExposureLevel level       = 1 [(gogoproto.moretags) = "search:\"Exposure Level,store\""];
+
+        // only set if level is not HOST
+        string service_name       = 2 [(gogoproto.moretags) = "search:\"Exposing Service,store\""];
+        string service_id         = 3;
+        string service_cluster_ip = 4;
+        int32 service_port        = 5 [(gogoproto.moretags) = "search:\"Exposing Service Port,store\""];
+
+        // only set if level is HOST, NODE, or EXTERNAL
+        int32 node_port = 6 [(gogoproto.moretags) = "search:\"Exposed Node Port,store\""];
+
+        // only set if level is EXTERNAL
+        repeated string external_ips       = 7 [(gogoproto.moretags) = "search:\"External IP,store\""];
+        repeated string external_hostnames = 8 [(gogoproto.moretags) = "search:\"External Hostname,store\""];
+    }
+
+    string name             = 1;
+    int32 container_port    = 2 [(gogoproto.moretags) = "search:\"Port,store\""];
+    string protocol         = 3 [(gogoproto.moretags) = "search:\"Port Protocol,store\""];
+
+    ExposureLevel exposure       = 4 [(gogoproto.moretags) = "search:\"Max Exposure Level,store\""];
+    int32 exposed_port           = 5 [deprecated = true];
+
+    repeated ExposureInfo exposure_infos = 6;
 }
 
 message ContainerConfig {

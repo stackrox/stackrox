@@ -2,18 +2,26 @@ package containers
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
-// IncreasedExposureLevel returns whether the new level carries increased exposure.
-func IncreasedExposureLevel(old, new storage.PortConfig_Exposure) bool {
-	switch old {
-	case storage.PortConfig_UNSET:
-		return true
-	case storage.PortConfig_INTERNAL:
-		return new == storage.PortConfig_NODE || new == storage.PortConfig_EXTERNAL
-	case storage.PortConfig_NODE:
-		return new == storage.PortConfig_EXTERNAL
-	default:
-		return false
+var (
+	exposureOrder = []storage.PortConfig_ExposureLevel{storage.PortConfig_UNSET, storage.PortConfig_INTERNAL, storage.PortConfig_HOST, storage.PortConfig_NODE, storage.PortConfig_EXTERNAL}
+	exposureRank  = utils.Invert(exposureOrder).(map[storage.PortConfig_ExposureLevel]int)
+)
+
+// CompareExposureLevel compares two exposure levels.
+func CompareExposureLevel(a, b storage.PortConfig_ExposureLevel) int {
+	aRank, ok := exposureRank[a]
+	if !ok {
+		errorhelpers.PanicOnDevelopmentf("invalid exposure level %v", a)
+		aRank = -1
 	}
+	bRank, ok := exposureRank[b]
+	if !ok {
+		errorhelpers.PanicOnDevelopmentf("invalid exposure level %v", b)
+		bRank = -1
+	}
+	return aRank - bRank
 }

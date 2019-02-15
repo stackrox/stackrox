@@ -1,6 +1,8 @@
 package errorhelpers
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -16,4 +18,11 @@ func PanicOnDevelopment(err error) {
 		panic(err)
 	}
 	log.Error(err)
+}
+
+// PanicOnDevelopmentf will panic if we are in a development build (environment variable will be injected by dev scripts)
+// It will not panic in a release version and instead log the error
+func PanicOnDevelopmentf(format string, args ...interface{}) {
+	err := fmt.Errorf(format, args...)
+	PanicOnDevelopment(err)
 }

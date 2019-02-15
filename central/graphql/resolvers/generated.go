@@ -500,11 +500,22 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	builder.AddType("PortConfig", []string{
 		"containerPort: Int!",
 		"exposedPort: Int!",
-		"exposure: PortConfig_Exposure!",
+		"exposure: PortConfig_ExposureLevel!",
+		"exposureInfos: [PortConfig_ExposureInfo]!",
 		"name: String!",
 		"protocol: String!",
 	})
-	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.PortConfig_Exposure(0)))
+	builder.AddType("PortConfig_ExposureInfo", []string{
+		"externalHostnames: [String!]!",
+		"externalIps: [String!]!",
+		"level: PortConfig_ExposureLevel!",
+		"nodePort: Int!",
+		"serviceClusterIp: String!",
+		"serviceId: String!",
+		"serviceName: String!",
+		"servicePort: Int!",
+	})
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.PortConfig_ExposureLevel(0)))
 	builder.AddType("PortPolicy", []string{
 		"port: Int!",
 		"protocol: String!",
@@ -4388,6 +4399,11 @@ func (resolver *portConfigResolver) Exposure() string {
 	return value.String()
 }
 
+func (resolver *portConfigResolver) ExposureInfos() ([]*portConfig_ExposureInfoResolver, error) {
+	value := resolver.data.GetExposureInfos()
+	return resolver.root.wrapPortConfig_ExposureInfos(value, nil)
+}
+
 func (resolver *portConfigResolver) Name() string {
 	value := resolver.data.GetName()
 	return value
@@ -4398,20 +4414,83 @@ func (resolver *portConfigResolver) Protocol() string {
 	return value
 }
 
-func toPortConfig_Exposure(value *string) storage.PortConfig_Exposure {
-	if value != nil {
-		return storage.PortConfig_Exposure(storage.PortConfig_Exposure_value[*value])
-	}
-	return storage.PortConfig_Exposure(0)
+type portConfig_ExposureInfoResolver struct {
+	root *Resolver
+	data *storage.PortConfig_ExposureInfo
 }
 
-func toPortConfig_Exposures(values *[]string) []storage.PortConfig_Exposure {
+func (resolver *Resolver) wrapPortConfig_ExposureInfo(value *storage.PortConfig_ExposureInfo, ok bool, err error) (*portConfig_ExposureInfoResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &portConfig_ExposureInfoResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapPortConfig_ExposureInfos(values []*storage.PortConfig_ExposureInfo, err error) ([]*portConfig_ExposureInfoResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*portConfig_ExposureInfoResolver, len(values))
+	for i, v := range values {
+		output[i] = &portConfig_ExposureInfoResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *portConfig_ExposureInfoResolver) ExternalHostnames() []string {
+	value := resolver.data.GetExternalHostnames()
+	return value
+}
+
+func (resolver *portConfig_ExposureInfoResolver) ExternalIps() []string {
+	value := resolver.data.GetExternalIps()
+	return value
+}
+
+func (resolver *portConfig_ExposureInfoResolver) Level() string {
+	value := resolver.data.GetLevel()
+	return value.String()
+}
+
+func (resolver *portConfig_ExposureInfoResolver) NodePort() int32 {
+	value := resolver.data.GetNodePort()
+	return value
+}
+
+func (resolver *portConfig_ExposureInfoResolver) ServiceClusterIp() string {
+	value := resolver.data.GetServiceClusterIp()
+	return value
+}
+
+func (resolver *portConfig_ExposureInfoResolver) ServiceId() string {
+	value := resolver.data.GetServiceId()
+	return value
+}
+
+func (resolver *portConfig_ExposureInfoResolver) ServiceName() string {
+	value := resolver.data.GetServiceName()
+	return value
+}
+
+func (resolver *portConfig_ExposureInfoResolver) ServicePort() int32 {
+	value := resolver.data.GetServicePort()
+	return value
+}
+
+func toPortConfig_ExposureLevel(value *string) storage.PortConfig_ExposureLevel {
+	if value != nil {
+		return storage.PortConfig_ExposureLevel(storage.PortConfig_ExposureLevel_value[*value])
+	}
+	return storage.PortConfig_ExposureLevel(0)
+}
+
+func toPortConfig_ExposureLevels(values *[]string) []storage.PortConfig_ExposureLevel {
 	if values == nil {
 		return nil
 	}
-	output := make([]storage.PortConfig_Exposure, len(*values))
+	output := make([]storage.PortConfig_ExposureLevel, len(*values))
 	for i, v := range *values {
-		output[i] = toPortConfig_Exposure(&v)
+		output[i] = toPortConfig_ExposureLevel(&v)
 	}
 	return output
 }

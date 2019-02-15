@@ -207,21 +207,15 @@ func (s *searchWalker) walkRecursive(prefix string, original reflect.Type) v1.Se
 	case reflect.Bool:
 		return v1.SearchDataType_SEARCH_BOOL
 	case reflect.Uint32, reflect.Uint64, reflect.Int32, reflect.Int64, reflect.Float32, reflect.Float64:
-		m, ok := original.MethodByName("EnumDescriptor")
+		enum, ok := reflect.Zero(original).Interface().(protoreflect.ProtoEnum)
 		if !ok {
 			return v1.SearchDataType_SEARCH_NUMERIC
 		}
-		values := m.Func.Call([]reflect.Value{reflect.New(original).Elem()})
-		enumValues := values[0].Interface().([]byte)
-		fileDescriptor, err := protoreflect.ParseFileDescriptor(enumValues)
+		enumDesc, err := protoreflect.GetEnumDescriptor(enum)
 		if err != nil {
 			panic(err)
 		}
-		for _, et := range fileDescriptor.GetEnumType() {
-			if *et.Name == original.Name() {
-				enums.Add(prefix, et)
-			}
-		}
+		enums.Add(prefix, enumDesc)
 		return v1.SearchDataType_SEARCH_ENUM
 	case reflect.Interface:
 	default:

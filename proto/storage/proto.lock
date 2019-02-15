@@ -48,7 +48,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Lifecycle Stage\\"
+                    "value": "search:\\\"Lifecycle Stage,store\\"
                   }
                 ]
               },
@@ -96,7 +96,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Violation State\\"
+                    "value": "search:\\\"Violation State,store\\"
                   }
                 ]
               },
@@ -172,7 +172,7 @@
                     "options": [
                       {
                         "name": "(gogoproto.moretags)",
-                        "value": "search:\\\"Enforcement\\"
+                        "value": "search:\\\"Enforcement,store\\"
                       }
                     ]
                   },
@@ -1360,7 +1360,7 @@
             ]
           },
           {
-            "name": "PortConfig.Exposure",
+            "name": "PortConfig.ExposureLevel",
             "enum_fields": [
               {
                 "name": "UNSET"
@@ -1376,6 +1376,10 @@
               {
                 "name": "INTERNAL",
                 "integer": 3
+              },
+              {
+                "name": "HOST",
+                "integer": 4
               }
             ]
           }
@@ -1857,12 +1861,73 @@
               {
                 "id": 4,
                 "name": "exposure",
-                "type": "Exposure"
+                "type": "ExposureLevel"
               },
               {
                 "id": 5,
                 "name": "exposed_port",
-                "type": "int32"
+                "type": "int32",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
+              },
+              {
+                "id": 6,
+                "name": "exposure_infos",
+                "type": "ExposureInfo",
+                "is_repeated": true
+              }
+            ],
+            "messages": [
+              {
+                "name": "ExposureInfo",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "level",
+                    "type": "ExposureLevel"
+                  },
+                  {
+                    "id": 2,
+                    "name": "service_name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "service_id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 4,
+                    "name": "service_cluster_ip",
+                    "type": "string"
+                  },
+                  {
+                    "id": 5,
+                    "name": "service_port",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 6,
+                    "name": "node_port",
+                    "type": "int32"
+                  },
+                  {
+                    "id": 7,
+                    "name": "external_ips",
+                    "type": "string",
+                    "is_repeated": true
+                  },
+                  {
+                    "id": 8,
+                    "name": "external_hostnames",
+                    "type": "string",
+                    "is_repeated": true
+                  }
+                ]
               }
             ]
           },
@@ -3975,7 +4040,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Lifecycle Stage\\"
+                    "value": "search:\\\"Lifecycle Stage,store\\"
                   }
                 ]
               },
@@ -3998,7 +4063,7 @@
                 "options": [
                   {
                     "name": "(gogoproto.moretags)",
-                    "value": "search:\\\"Severity\\"
+                    "value": "search:\\\"Severity,store\\"
                   }
                 ]
               },
@@ -4274,6 +4339,11 @@
               {
                 "id": 3,
                 "name": "ancestor",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "uid",
                 "type": "string"
               }
             ]
@@ -4577,7 +4647,13 @@
               {
                 "id": 8,
                 "name": "uid",
-                "type": "uint32"
+                "type": "uint32",
+                "options": [
+                  {
+                    "name": "(gogoproto.moretags)",
+                    "value": "search:\\\"Process UID\\"
+                  }
+                ]
               },
               {
                 "id": 9,

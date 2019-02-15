@@ -15,19 +15,16 @@ func getMockDeployment() *storage.Deployment {
 				Name:          "Port1",
 				ContainerPort: 22,
 				Exposure:      storage.PortConfig_EXTERNAL,
-				ExposedPort:   8082,
 			},
 			{
 				Name:          "Port2",
 				ContainerPort: 23,
 				Exposure:      storage.PortConfig_INTERNAL,
-				ExposedPort:   8083,
 			},
 			{
 				Name:          "Port3",
 				ContainerPort: 24,
 				Exposure:      storage.PortConfig_NODE,
-				ExposedPort:   8084,
 			},
 		},
 		Containers: []*storage.Container{

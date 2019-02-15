@@ -60,7 +60,7 @@ func portsExposedAndNotUsed(deployment *storage.Deployment, incomingFlows []*sto
 	// Get all of the ports exposed in the deployment
 	exposedPorts := set.NewUint32Set()
 	for _, portConfig := range deployment.GetPorts() {
-		exposedPorts.Add(uint32(portConfig.GetExposedPort()))
+		exposedPorts.Add(uint32(portConfig.GetContainerPort()))
 	}
 	return exposedPorts.Difference(seenPorts)
 }

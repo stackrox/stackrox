@@ -1,8 +1,10 @@
+
 import static Services.getAlertCounts
 import static Services.getAlertGroups
 import static Services.getPolicies
 import static Services.getViolations
 import static Services.waitForViolation
+
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest.RequestGroup
@@ -20,6 +22,7 @@ import org.junit.experimental.categories.Category
 import spock.lang.Stepwise
 import spock.lang.Unroll
 import objects.Deployment
+import objects.Service
 import java.util.stream.Collectors
 
 @Stepwise // We need to verify all of the expected alerts are present before other tests.
@@ -32,6 +35,12 @@ class DefaultPoliciesTest extends BaseSpecification {
     static final private String NGINX_1_10 = "qadefpolnginx110"
     static final private String K8S_DASHBOARD = "kubernetes-dashboard"
 
+    static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
+            .setName(STRUTS)
+            .setImage("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
+            .addLabel("app", "test")
+            .addPort(80)
+
     static final private List<Deployment> DEPLOYMENTS = [
         new Deployment()
             .setName (NGINX_LATEST)
@@ -39,11 +48,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             .addPort (22)
             .addLabel ("app", "test")
             .setEnv([SECRET: 'true']),
-        new Deployment()
-            .setName(STRUTS)
-            .setImage("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-            .addLabel("app", "test")
-            .addPort(80),
+        STRUTS_DEPLOYMENT,
         new Deployment()
             .setName(SSL_TERMINATOR)
             .setImage("apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest")
@@ -56,6 +61,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
+        orchestrator.createService(new Service(STRUTS_DEPLOYMENT))
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
         }

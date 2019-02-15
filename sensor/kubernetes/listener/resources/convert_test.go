@@ -261,16 +261,12 @@ func TestConvert(t *testing.T) {
 					{
 						Name:          "api",
 						ContainerPort: 9092,
-						ExposedPort:   9092,
 						Protocol:      "TCP",
-						Exposure:      storage.PortConfig_INTERNAL,
 					},
 					{
 						Name:          "status",
 						ContainerPort: 443,
-						ExposedPort:   443,
 						Protocol:      "UCP",
-						Exposure:      storage.PortConfig_INTERNAL,
 					},
 				},
 				Containers: []*storage.Container{
@@ -328,16 +324,12 @@ func TestConvert(t *testing.T) {
 							{
 								Name:          "api",
 								ContainerPort: 9092,
-								ExposedPort:   9092,
 								Protocol:      "TCP",
-								Exposure:      storage.PortConfig_INTERNAL,
 							},
 							{
 								Name:          "status",
 								ContainerPort: 443,
-								ExposedPort:   443,
 								Protocol:      "UCP",
-								Exposure:      storage.PortConfig_INTERNAL,
 							},
 						},
 					},
