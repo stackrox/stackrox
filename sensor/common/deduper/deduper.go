@@ -3,6 +3,7 @@ package deduper
 import (
 	"reflect"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/common/messagestream"
@@ -57,6 +58,6 @@ func (d deduper) Send(msg *central.MsgFromSensor) error {
 	}
 	// Make the action an update so we can dedupe CREATE and UPDATE
 	event.Action = central.ResourceAction_UPDATE_RESOURCE
-	d.lastSent[key] = event
+	d.lastSent[key] = proto.Clone(event)
 	return nil
 }

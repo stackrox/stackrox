@@ -65,6 +65,8 @@ func (sh *serviceDispatcher) ProcessEvent(obj interface{}, action central.Resour
 		} else {
 			sel = newWrap.selector
 		}
+	} else if action == central.ResourceAction_REMOVE_RESOURCE {
+		sh.serviceStore.removeService(svc)
 	}
 	return sh.updateDeploymentsFromStore(svc.Namespace, sel)
 }
