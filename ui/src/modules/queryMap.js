@@ -189,7 +189,7 @@ export default [
                 data.results.results.forEach(({ keys, numPassing, numFailing }) => {
                     const groupKey = groupByKeyIndex === null ? categoryKeyIndex : groupByKeyIndex;
                     const { name, description: groupDescription, metadata } = keys[groupKey];
-                    const groupName = name || metadata.name;
+                    const groupName = name || `${metadata.clusterName}--${metadata.name}`;
                     if (!groups[groupName]) {
                         const groupId = parseInt(groupName, 10) || groupName;
                         groups[groupName] = {

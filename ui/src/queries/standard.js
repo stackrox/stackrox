@@ -30,6 +30,7 @@ export const LIST_STANDARD = gql`
                         metadata {
                             id
                             name
+                            clusterName
                         }
                     }
                 }
