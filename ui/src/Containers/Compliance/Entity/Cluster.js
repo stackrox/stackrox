@@ -111,6 +111,12 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                                         pageEntity={cluster}
                                         className={`sx-2 ${pdfClassName}`}
                                     />
+                                    <ResourceRelatedResourceList
+                                        listEntityType={entityTypes.NODE}
+                                        pageEntityType={entityTypes.CLUSTER}
+                                        pageEntity={cluster}
+                                        className={`sx-2 ${pdfClassName}`}
+                                    />
                                 </>
                             )}
                         </div>

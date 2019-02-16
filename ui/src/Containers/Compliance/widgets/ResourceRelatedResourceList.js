@@ -10,9 +10,11 @@ import contextTypes from 'constants/contextTypes';
 import { resourceLabels } from 'messages/common';
 import { RELATED_SECRETS, RELATED_DEPLOYMENTS, ALL_NAMESPACES } from 'queries/namespace';
 import queryService from 'modules/queryService';
+import { NODES_BY_CLUSTER } from 'queries/node';
 
 const queryMap = {
     [entityTypes.NAMESPACE]: ALL_NAMESPACES,
+    [entityTypes.NODE]: NODES_BY_CLUSTER,
     [entityTypes.SECRET]: RELATED_SECRETS,
     [entityTypes.DEPLOYMENT]: RELATED_DEPLOYMENTS
 };
@@ -47,6 +49,9 @@ const ResourceRelatedEntitiesList = ({
                 .map(item => item.metadata)
                 .filter(item => item.clusterName === pageEntity.name);
         }
+        if (listEntityType === entityTypes.NODE) {
+            items = data.results.nodes;
+        }
 
         return items.map(item => ({
             label: item.name,
@@ -80,9 +85,15 @@ const ResourceRelatedEntitiesList = ({
             return null;
         }
 
-        return {
+        const variables = {
             query: queryService.objectToWhereClause({ [pageEntityType]: pageEntity.name })
         };
+
+        if (listEntityType === entityTypes.NODE) {
+            variables.id = pageEntity.id;
+        }
+
+        return variables;
     }
 
     function getHeadline(list) {
