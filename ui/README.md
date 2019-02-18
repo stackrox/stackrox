@@ -54,15 +54,14 @@ _If your machine goes into sleep mode, you may lose the port forwarding set up d
 
 ### Testing
 
-To run e2e tests locally, bring up `cypress` using the following instructions to get proper authorization:
+#### Unit Tests
+Use `yarn test` to run all unit tests and show test coverage.
+To run tests and continously watch for changes use `yarn test-watch`.
 
-```
-curl -sk -u "admin:<insert_password>" "https://localhost:8000/v1/apitokens/generate" -X POST  -d '{"name": "cypress_tests", "role": "Admin"}' | jq -r '.token // ""'
+#### End-to-end Tests (Cypress)
 
-export CYPRESS_ROX_AUTH_TOKEN=<token_from_above>
-
-cypress open -p 4000
-```
+To bring up [Cypress](https://www.cypress.io/) UI use `yarn cypress-open`.
+To run all end-to-end tests in a headless mode use `yarn test-e2e-local`.
 
 ### IDEs
 
