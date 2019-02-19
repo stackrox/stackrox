@@ -87,7 +87,7 @@ const NamespacePage = ({ sidePanelMode, params }) => (
                                     namespace.labels.length
                                 )}`}
                             >
-                                <Labels list={namespace.labels.map(label => label.value)} />
+                                <Labels labels={namespace.labels} />
                             </Widget>
 
                             <ComplianceByStandard

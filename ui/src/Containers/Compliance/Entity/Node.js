@@ -132,7 +132,7 @@ const NodePage = ({ sidePanelMode, params }) => (
                                     node.labels.length
                                 )}`}
                             >
-                                <Labels list={node.labels.map(label => label.value)} />
+                                <Labels labels={node.labels} />
                             </Widget>
                             <ComplianceByStandard
                                 type={entityTypes.NIST_800_190}
