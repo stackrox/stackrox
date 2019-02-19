@@ -101,7 +101,7 @@ const processSunburstData = (data, type) => {
             }
         });
 
-    const { passing, total } = Object.values(controlStatsMapping).reduce(
+    const { passing, total } = Object.values(groupStatsMapping).reduce(
         (acc, currVal) => ({
             passing: acc.passing + currVal.passing,
             total: acc.total + currVal.total
