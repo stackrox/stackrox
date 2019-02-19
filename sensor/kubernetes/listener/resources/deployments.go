@@ -2,6 +2,7 @@ package resources
 
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/sensor/common/roxmetadata"
 	"k8s.io/api/core/v1"
 	v1listers "k8s.io/client-go/listers/core/v1"
 )
@@ -34,16 +35,18 @@ type deploymentHandler struct {
 	deploymentStore *deploymentStore
 	endpointManager *endpointManager
 	namespaceStore  *namespaceStore
+	roxMetadata     roxmetadata.Metadata
 }
 
 // newDeploymentHandler creates and returns a new deployment handler.
-func newDeploymentHandler(serviceStore *serviceStore, deploymentStore *deploymentStore, endpointManager *endpointManager, namespaceStore *namespaceStore, podLister v1listers.PodLister) *deploymentHandler {
+func newDeploymentHandler(serviceStore *serviceStore, deploymentStore *deploymentStore, endpointManager *endpointManager, namespaceStore *namespaceStore, roxMetadata roxmetadata.Metadata, podLister v1listers.PodLister) *deploymentHandler {
 	return &deploymentHandler{
 		podLister:       podLister,
 		serviceStore:    serviceStore,
 		deploymentStore: deploymentStore,
 		endpointManager: endpointManager,
 		namespaceStore:  namespaceStore,
+		roxMetadata:     roxMetadata,
 	}
 }
 
@@ -56,6 +59,7 @@ func (d *deploymentHandler) processWithType(obj interface{}, action central.Reso
 	if action != central.ResourceAction_REMOVE_RESOURCE {
 		d.deploymentStore.addOrUpdateDeployment(wrap)
 		d.endpointManager.OnDeploymentCreateOrUpdate(wrap)
+		d.roxMetadata.AddDeployment(wrap.GetDeployment())
 	} else {
 		d.deploymentStore.removeDeployment(wrap)
 		d.endpointManager.OnDeploymentRemove(wrap)

@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/roxmetadata"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/tools/cache"
@@ -18,7 +19,7 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
 	podInformer := sif.Core().V1().Pods()
-	dispatchers := resources.NewDispatcherRegistry(podInformer.Lister(), clusterentities.StoreInstance())
+	dispatchers := resources.NewDispatcherRegistry(podInformer.Lister(), clusterentities.StoreInstance(), roxmetadata.Singleton())
 
 	namespaceInformer := sif.Core().V1().Namespaces().Informer()
 

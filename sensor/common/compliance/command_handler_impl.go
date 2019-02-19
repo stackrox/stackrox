@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/sensor/common/roxmetadata"
 )
 
 const (
@@ -39,8 +40,9 @@ var (
 )
 
 type commandHandlerImpl struct {
-	image        string
 	orchestrator orchestrators.Orchestrator
+
+	roxMetadata roxmetadata.Metadata
 
 	commands chan *central.ScrapeCommand
 	updates  chan *central.ScrapeUpdate
@@ -121,6 +123,12 @@ func (c *commandHandlerImpl) runCommand(command *central.ScrapeCommand) *central
 	return nil
 }
 
+func (c *commandHandlerImpl) handleStartScrapeErr(scrapedID string, err error) *central.ScrapeUpdate {
+	errStr := fmt.Sprintf("unable to start scrape: %v", err)
+	log.Error(errStr)
+	return scrapeStarted(scrapedID, errStr)
+}
+
 func (c *commandHandlerImpl) startScrape(scrapeID string, expectedHosts []string) *central.ScrapeUpdate {
 	// Check that the scrape is not already running.
 	if _, running := c.scrapeIDToState[scrapeID]; running {
@@ -129,18 +137,20 @@ func (c *commandHandlerImpl) startScrape(scrapeID string, expectedHosts []string
 
 	// Try to launch the scrape.
 	// If we fail, return a message to central that we failed.
-	var errStr string
-	scrapeName, err := c.orchestrator.Launch(*c.createService(scrapeID))
+	svc, err := c.createService(scrapeID)
 	if err != nil {
-		errStr = fmt.Sprintf("unable to start scrape %s", err)
-		log.Error(errStr)
-		return scrapeStarted(scrapeID, errStr)
+		return c.handleStartScrapeErr(scrapeID, err)
+	}
+
+	scrapeName, err := c.orchestrator.Launch(*svc)
+	if err != nil {
+		return c.handleStartScrapeErr(scrapeID, err)
 	}
 
 	// If we succeeded, start tracking the scrape and send a message to central.
 	c.scrapeIDToState[scrapeID] = newScrapeState(scrapeName, expectedHosts)
-	log.Infof("started scrape")
-	return scrapeStarted(scrapeID, errStr)
+	log.Infof("started scrape %q", scrapeID)
+	return scrapeStarted(scrapeID, "")
 }
 
 func (c *commandHandlerImpl) killScrape(scrapeID string) *central.ScrapeUpdate {
@@ -181,7 +191,11 @@ func (c *commandHandlerImpl) killScrapeWithRetry(name, scrapeID string) error {
 }
 
 // Helper function that converts a scrape command into a SystemService that can be launched.
-func (c *commandHandlerImpl) createService(scrapeID string) *orchestrators.SystemService {
+func (c *commandHandlerImpl) createService(scrapeID string) (*orchestrators.SystemService, error) {
+	image := c.roxMetadata.GetSensorImage()
+	if image == "" {
+		return nil, errors.New("couldn't find sensor image to use")
+	}
 	return &orchestrators.SystemService{
 		GenerateName: scrapeServiceName,
 		ExtraPodLabels: map[string]string{
@@ -198,7 +212,7 @@ func (c *commandHandlerImpl) createService(scrapeID string) *orchestrators.Syste
 		SpecialEnvs: []orchestrators.SpecialEnvVar{
 			orchestrators.NodeName,
 		},
-		Image:          c.image,
+		Image:          image,
 		Global:         true,
 		ServiceAccount: benchmarks.BenchmarkServiceAccount,
 		Secrets: []orchestrators.Secret{
@@ -212,7 +226,7 @@ func (c *commandHandlerImpl) createService(scrapeID string) *orchestrators.Syste
 				TargetPath: "/run/secrets/stackrox.io/certs/",
 			},
 		},
-	}
+	}, nil
 }
 
 func (c *commandHandlerImpl) commitResult(result *compliance.ComplianceReturn) (ret []*central.ScrapeUpdate) {

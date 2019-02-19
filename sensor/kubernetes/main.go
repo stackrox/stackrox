@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
+	"github.com/stackrox/rox/sensor/common/roxmetadata"
 	"github.com/stackrox/rox/sensor/common/sensor"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
@@ -28,6 +29,7 @@ func main() {
 		enforcer.MustCreate(),
 		orchestrator.MustCreate(sensorInstanceID),
 		manager.Singleton(),
+		roxmetadata.Singleton(),
 	)
 	s.Start()
 

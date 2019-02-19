@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/compliance"
 	networkConnManager "github.com/stackrox/rox/sensor/common/networkflow/manager"
 	networkFlowService "github.com/stackrox/rox/sensor/common/networkflow/service"
+	"github.com/stackrox/rox/sensor/common/roxmetadata"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
 	"google.golang.org/grpc"
 )
@@ -72,7 +73,7 @@ type Sensor struct {
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
-func NewSensor(l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orchestrator, n networkConnManager.Manager) *Sensor {
+func NewSensor(l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orchestrator, n networkConnManager.Manager, m roxmetadata.Metadata) *Sensor {
 	return &Sensor{
 		clusterID:          env.ClusterID.Setting(),
 		centralEndpoint:    env.CentralEndpoint.Setting(),
@@ -83,7 +84,7 @@ func NewSensor(l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orche
 		enforcer:           e,
 		orchestrator:       o,
 		networkConnManager: n,
-		commandHandler:     compliance.NewCommandHandler(env.Image.Setting(), o),
+		commandHandler:     compliance.NewCommandHandler(o, m),
 
 		stoppedSig: concurrency.NewErrorSignal(),
 	}
