@@ -56,12 +56,16 @@ class GaugeWithDetail extends Component {
     }
 
     componentDidMount() {
-        this.setState({ data: this.calculateMultiGaugeData() });
+        this.setState({ data: this.calculateMultiGaugeData(this.props.data) });
         this.setDefaultSelectedData();
     }
 
-    componentWillReceiveProps() {
+    componentWillReceiveProps(nextProps) {
         if (this.state.selectedData) return;
+        if (nextProps.data !== this.props.data) {
+            const data = this.calculateMultiGaugeData(nextProps.data);
+            this.setState({ data });
+        }
         this.setDefaultSelectedData();
     }
 
@@ -83,20 +87,20 @@ class GaugeWithDetail extends Component {
     };
 
     getPropsData = () => {
-        const modifiedData = this.calculateMultiGaugeData();
+        const modifiedData = this.calculateMultiGaugeData(this.props.data);
         this.setState({ data: modifiedData });
         return modifiedData;
     };
 
-    calculateMultiGaugeData = () => {
-        if (!this.props.data.length) return null;
+    calculateMultiGaugeData = datum => {
+        if (!datum.length) return null;
         const pi = Math.PI;
         const fullAngle = 2 * pi;
         // TODO: Dynamic technique to assign  radius & font size to the gauges.
-        let radius = this.props.data.length > 1 ? 1 : 1.5;
-        LABEL_STYLE.fontSize = this.props.data.length > 1 ? '24px' : '36px';
+        let radius = datum.length > 1 ? 1 : 1.5;
+        LABEL_STYLE.fontSize = datum.length > 1 ? '24px' : '36px';
         const data = [];
-        [...this.props.data].forEach((d, index) => {
+        [...datum].forEach((d, index) => {
             const { value: passingValue } = d.passing;
             const { value: failingValue } = d.failing;
             const radius0 = radius + 0.1;

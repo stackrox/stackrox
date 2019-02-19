@@ -32,6 +32,12 @@ class ComplianceListPage extends Component {
         };
     }
 
+    componentWillReceiveProps(nextProps) {
+        if (nextProps.location !== this.props.location) {
+            this.setState({ selectedRow: null });
+        }
+    }
+
     updateSelectedRow = selectedRow => this.setState({ selectedRow });
 
     clearSelectedRow = () => {
