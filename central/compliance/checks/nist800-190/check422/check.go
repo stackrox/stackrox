@@ -29,7 +29,9 @@ func checkNIST422(ctx framework.ComplianceContext) {
 }
 
 func checkImageAgePolicyEnforced(ctx framework.ComplianceContext) {
+	policiesEnabledNotEnforced := []string{}
 	policies := ctx.Data().Policies()
+	passed := 0
 	for _, p := range policies {
 		if !policyHasImageAgeDays(p) {
 			continue
@@ -39,21 +41,27 @@ func checkImageAgePolicyEnforced(ctx framework.ComplianceContext) {
 		enforced := common.IsPolicyEnforced(p)
 
 		if enabled && !enforced {
-			framework.Failf(ctx, "Enforcement is not set on the policy that disallows old images to be deployed (%q)", p.GetName())
-			return
+			policiesEnabledNotEnforced = append(policiesEnabledNotEnforced, p.GetName())
+			continue
 		}
 
 		if enabled && enforced {
-			framework.Passf(ctx, "Policy that disallows old images to be deployed (%q) is enabled and enforced", p.GetName())
-			return
+			passed++
 		}
 	}
-
-	framework.Fail(ctx, "Policy that disallows old images to be deployed not found")
+	if passed >= 1 {
+		framework.Passf(ctx, "Policy that disallows old images to be deployed is enabled and enforced")
+	} else if len(policiesEnabledNotEnforced) > 0 {
+		framework.Failf(ctx, "Enforcement is not set on the policies that disallow old images to be deployed (%v)", policiesEnabledNotEnforced)
+	} else {
+		framework.Fail(ctx, "Policy that disallows old images to be deployed not found")
+	}
 }
 
 func checkLatestImageTagPolicyEnforced(ctx framework.ComplianceContext) {
+	policiesEnabledNotEnforced := []string{}
 	policies := ctx.Data().Policies()
+	passed := 0
 	for _, p := range policies {
 		if !policyHasLatestImageTag(p) {
 			continue
@@ -63,17 +71,21 @@ func checkLatestImageTagPolicyEnforced(ctx framework.ComplianceContext) {
 		enforced := common.IsPolicyEnforced(p)
 
 		if enabled && !enforced {
-			framework.Failf(ctx, "Enforcement is not set on the policy that disallows images with tag 'latest' to be deployed (%q)", p.GetName())
-			return
+			policiesEnabledNotEnforced = append(policiesEnabledNotEnforced, p.GetName())
+			continue
 		}
 
 		if enabled && enforced {
-			framework.Passf(ctx, "Policy that disallows images with tag 'latest' to be deployed (%q) is enabled and enforced", p.GetName())
-			return
+			passed++
 		}
 	}
-
-	framework.Fail(ctx, "Policy that disallows images with tag 'latest' to be deployed was not found")
+	if passed >= 1 {
+		framework.Passf(ctx, "Policy that disallows images with tag 'latest' to be deployed is enabled and enforced")
+	} else if len(policiesEnabledNotEnforced) > 0 {
+		framework.Failf(ctx, "Enforcement is not set on the policies that disallow images with tag 'latest' to be deployed (%v)", policiesEnabledNotEnforced)
+	} else {
+		framework.Fail(ctx, "Policy that disallows images with tag 'latest' to be deployed was not found")
+	}
 }
 
 func policyHasLatestImageTag(p *storage.Policy) bool {

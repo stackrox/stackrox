@@ -401,7 +401,9 @@ func CheckSecretFilePerms(ctx framework.ComplianceContext) {
 
 // CheckSecretsInEnv check if any policy is configured to alert on the string secret contained in env vars
 func CheckSecretsInEnv(ctx framework.ComplianceContext) {
+	policiesEnabledNotEnforced := []string{}
 	policies := ctx.Data().Policies()
+	passed := 0
 	for _, policy := range policies {
 		matchSecret, err := regexp.MatchString("(?i)secret", policy.GetFields().GetEnv().GetKey())
 		if err != nil {
@@ -420,16 +422,22 @@ func CheckSecretsInEnv(ctx framework.ComplianceContext) {
 			enforced = true
 		}
 
-		if enabled && enforced {
-			framework.Pass(ctx, "Detecting secrets in env is enabled and enforced")
-			return
-		}
 		if enabled && !enforced {
-			framework.Fail(ctx, "Detecting secrets in env is enabled and not enforced")
-			return
+			policiesEnabledNotEnforced = append(policiesEnabledNotEnforced, policy.GetName())
+			continue
+		}
+
+		if enabled && enforced {
+			passed++
 		}
 	}
-	framework.Fail(ctx, "No policy to detect secrets in env")
+	if passed >= 1 {
+		framework.Pass(ctx, "Policy that detects secrets in env is enabled and enforced")
+	} else if len(policiesEnabledNotEnforced) > 0 {
+		framework.Failf(ctx, "Enforcement is not set on the policies that detects secrets in env (%v)", policiesEnabledNotEnforced)
+	} else {
+		framework.Fail(ctx, "No policy to detect secrets in env")
+	}
 }
 
 // CheckRuntimeSupportInCluster checks if runtime is enabled and collector
