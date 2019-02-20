@@ -49,23 +49,28 @@ const formatComplianceTableData = (data, entityType) => {
         const curStandard = aggregationKeys[standardKeyIndex].id;
         if (!entityMap[curEntity]) {
             const entity = keys[entityKeyIndex];
-            entityMap[curEntity] = {
-                name: entity.name || entity.metadata.name,
-                id: curEntity,
-                overall: {
-                    numPassing: 0,
-                    numFailing: 0,
-                    average: 0
+            // the check below is to address ROX-1420
+            // eslint-disable-next-line no-underscore-dangle
+            if (entity.__typename !== '') {
+                entityMap[curEntity] = {
+                    name: entity.name || entity.metadata.name,
+                    id: curEntity,
+                    overall: {
+                        numPassing: 0,
+                        numFailing: 0,
+                        average: 0
+                    }
+                };
+                if (entityType !== entityTypes.CLUSTER) {
+                    entityMap[curEntity].cluster =
+                        entity.clusterName || entity.metadata.clusterName;
                 }
-            };
-            if (entityType !== entityTypes.CLUSTER) {
-                entityMap[curEntity].cluster = entity.clusterName || entity.metadata.clusterName;
+                if (numPassing + numFailing > 0)
+                    entityMap[curEntity][curStandard] = complianceRate(numPassing, numFailing);
+                entityMap[curEntity].overall.numPassing += numPassing;
+                entityMap[curEntity].overall.numFailing += numFailing;
             }
         }
-        if (numPassing + numFailing > 0)
-            entityMap[curEntity][curStandard] = complianceRate(numPassing, numFailing);
-        entityMap[curEntity].overall.numPassing += numPassing;
-        entityMap[curEntity].overall.numFailing += numFailing;
     });
     Object.keys(entityMap).forEach(cluster => {
         const overallCluster = Object.assign({}, entityMap[cluster]);
@@ -188,25 +193,32 @@ export default [
                 });
                 data.results.results.forEach(({ keys, numPassing, numFailing }) => {
                     const groupKey = groupByKeyIndex === null ? categoryKeyIndex : groupByKeyIndex;
-                    const { name, description: groupDescription, metadata } = keys[groupKey];
-                    const groupName = name || `${metadata.clusterName}--${metadata.name}`;
-                    if (!groups[groupName]) {
-                        const groupId = parseInt(groupName, 10) || groupName;
-                        groups[groupName] = {
-                            groupId,
-                            name: `${groupName} ${groupDescription ? `- ${groupDescription}` : ''}`,
-                            rows: []
-                        };
-                    }
-                    if (controlKeyIndex) {
-                        const { id, name: controlName, description } = keys[controlKeyIndex];
-                        groups[groupName].rows.push({
-                            id,
-                            name: controlName,
-                            control: `${controlName} - ${description}`,
-                            compliance: complianceRate(numPassing, numFailing),
-                            group: groupName
-                        });
+                    const { name, description: groupDescription, metadata, __typename } = keys[
+                        groupKey
+                    ];
+                    // the check below is to address ROX-1420
+                    if (__typename !== '') {
+                        const groupName = name || `${metadata.clusterName}--${metadata.name}`;
+                        if (!groups[groupName]) {
+                            const groupId = parseInt(groupName, 10) || groupName;
+                            groups[groupName] = {
+                                groupId,
+                                name: `${groupName} ${
+                                    groupDescription ? `- ${groupDescription}` : ''
+                                }`,
+                                rows: []
+                            };
+                        }
+                        if (controlKeyIndex) {
+                            const { id, name: controlName, description } = keys[controlKeyIndex];
+                            groups[groupName].rows.push({
+                                id,
+                                name: controlName,
+                                control: `${controlName} - ${description}`,
+                                compliance: complianceRate(numPassing, numFailing),
+                                group: groupName
+                            });
+                        }
                     }
                 });
                 Object.keys(groups).forEach(group => {

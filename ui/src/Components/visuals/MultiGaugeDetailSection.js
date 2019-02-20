@@ -94,8 +94,7 @@ class MultiGaugeDetailSection extends Component {
         const { value: passingValue } = d.passing;
         const { value: failingValue } = d.failing;
         const percentagePassing = Math.round((passingValue / (passingValue + failingValue)) * 100);
-        const percentageFailing =
-            100 - Math.round((passingValue / (passingValue + failingValue)) * 100);
+        const percentageFailing = 100 - percentagePassing;
         return (
             <div
                 key={`${d.title}-${d.arc}`}

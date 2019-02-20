@@ -33,6 +33,7 @@ export const LIST_STANDARD = gql`
                             clusterName
                         }
                     }
+                    __typename
                 }
                 numPassing
                 numFailing

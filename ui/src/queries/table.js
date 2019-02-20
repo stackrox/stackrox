@@ -15,6 +15,7 @@ export const CLUSTERS_LIST_QUERY = gql`
                     ... on ComplianceStandardMetadata {
                         name
                     }
+                    __typename
                 }
                 numPassing
                 numFailing
@@ -42,6 +43,7 @@ export const NAMESPACES_LIST_QUERY = gql`
                     ... on ComplianceStandardMetadata {
                         name
                     }
+                    __typename
                 }
                 numPassing
                 numFailing
@@ -66,6 +68,7 @@ export const NODES_QUERY = gql`
                     ... on ComplianceStandardMetadata {
                         name
                     }
+                    __typename
                 }
                 numPassing
                 numFailing
