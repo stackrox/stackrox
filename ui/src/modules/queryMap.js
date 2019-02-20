@@ -213,8 +213,8 @@ export default [
                             const { id, name: controlName, description } = keys[controlKeyIndex];
                             groups[groupName].rows.push({
                                 id,
-                                name: controlName,
-                                control: `${controlName} - ${description}`,
+                                description,
+                                control: controlName,
                                 compliance: complianceRate(numPassing, numFailing),
                                 group: groupName
                             });

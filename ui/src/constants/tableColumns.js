@@ -1,5 +1,6 @@
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import { standardTypes, resourceTypes } from 'constants/entityTypes';
+import { sortVersion } from 'sorters/sorters';
 
 const getColumnValue = (row, accessor) => (row[accessor] ? row[accessor] : 'N/A');
 
@@ -58,9 +59,11 @@ const getStandardColumns = standard => [
     },
     {
         accessor: 'control',
+        sortMethod: sortVersion,
         Header: `${standard} Controls`,
         headerClassName: `w-5/6 ${defaultHeaderClassName}`,
-        className: `w-5/6 ${defaultColumnClassName}`
+        className: `w-5/6 ${defaultColumnClassName}`,
+        Cell: ({ original }) => `${original.control} - ${original.description}`
     },
     {
         accessor: 'compliance',

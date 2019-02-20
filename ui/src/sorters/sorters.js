@@ -49,6 +49,23 @@ const sortValue = (a, b) => {
 };
 
 /**
+ * Sort Version (Numbers or Strings)
+ * @returns {number}
+ */
+const sortVersion = (a, b) => {
+    if (a === undefined) return -1;
+    if (b === undefined) return 1;
+    const aArray = a.split('.');
+    const bArray = b.split('.');
+    let sortedValue;
+    for (let i = 0; i < aArray.length || i < bArray.length; i += 1) {
+        sortedValue = sortValue(aArray[i], bArray[i]);
+        if (sortedValue !== 0) break;
+    }
+    return sortedValue;
+};
+
+/**
  * Sort Numbers by property name
  * @param key
  * @returns {number}
@@ -83,4 +100,4 @@ const sortDate = (a, b) => {
     if (bDate === undefined) return 1;
     return aDate - bDate;
 };
-export { sortSeverity, sortValue, sortNumberByKey, sortLifecycle, sortDate };
+export { sortSeverity, sortValue, sortVersion, sortNumberByKey, sortLifecycle, sortDate };
