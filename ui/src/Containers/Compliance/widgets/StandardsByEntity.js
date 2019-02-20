@@ -13,6 +13,7 @@ import Query from 'Components/AppQuery';
 import Loader from 'Components/Loader';
 import VerticalBarChart from 'Components/visuals/VerticalClusterBar';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import standardLabels from 'messages/standards';
 
 const componentTypeMapping = {
     [resourceTypes.CLUSTER]: componentTypes.STANDARDS_BY_CLUSTER
@@ -39,7 +40,7 @@ function processData(data, type, params) {
             x: entity.name,
             y: percentagePassing,
             hint: {
-                title: standard.id,
+                title: standardLabels[standard.id],
                 body: `${numFailing} controls failing in this ${labels.resourceLabels[type]}`
             },
             link
