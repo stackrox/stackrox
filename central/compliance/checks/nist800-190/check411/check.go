@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/checks/common"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/storage"
+	pkg "github.com/stackrox/rox/pkg/policies"
 )
 
 const (
@@ -24,32 +25,66 @@ func init() {
 }
 
 func checkNIST411(ctx framework.ComplianceContext) {
-	checkCVSS7PolicyEnforced(ctx)
+	checkCVSS7PolicyEnforcedOnBuild(ctx)
+	checkCVSS7PolicyEnforcedOnDeploy(ctx)
 	common.CheckImageScannerInUseByCluster(ctx)
 	common.CheckBuildTimePolicyEnforced(ctx)
 }
 
-func checkCVSS7PolicyEnforced(ctx framework.ComplianceContext) {
+func checkCVSS7PolicyEnforcedOnBuild(ctx framework.ComplianceContext) {
+	policiesEnabledNotEnforced := []string{}
 	policies := ctx.Data().Policies()
+	passed := 0
 	for _, p := range policies {
-		if !policyHasCVSS(p) {
+		if !policyHasCVSS(p) || !pkg.AppliesAtBuildTime(p) {
+			continue
+		}
+		enabled := common.IsPolicyEnabled(p)
+		enforced := common.IsPolicyEnforced(p)
+		if enabled && !enforced {
+			policiesEnabledNotEnforced = append(policiesEnabledNotEnforced, p.GetName())
 			continue
 		}
 
+		if enabled && enforced {
+			passed++
+		}
+	}
+	if passed >= 1 {
+		framework.Pass(ctx, "Build time policies that disallows images with a critical CVSS score is enabled and enforced")
+	} else if len(policiesEnabledNotEnforced) > 0 {
+		framework.Failf(ctx, "Enforcement is not set on the build time policies that disallows images with a critical CVSS score (%v)", policiesEnabledNotEnforced)
+	} else {
+		framework.Fail(ctx, "No build time policy that disallows images with a critical CVSS score was found")
+	}
+}
+
+func checkCVSS7PolicyEnforcedOnDeploy(ctx framework.ComplianceContext) {
+	policiesEnabledNotEnforced := []string{}
+	policies := ctx.Data().Policies()
+	passed := 0
+	for _, p := range policies {
+		if !policyHasCVSS(p) || !pkg.AppliesAtDeployTime(p) {
+			continue
+		}
 		enabled := common.IsPolicyEnabled(p)
 		enforced := common.IsPolicyEnforced(p)
-
 		if enabled && !enforced {
-			framework.Failf(ctx, "Enforcement is not set on the policy that disallows images with a critical CVSS score (%q)", p.GetName())
-			return
+			policiesEnabledNotEnforced = append(policiesEnabledNotEnforced, p.GetName())
+			continue
 		}
 
 		if enabled && enforced {
-			framework.Passf(ctx, "Policy that disallows images with a critical CVSS score (%q) is enabled and enforced", p.GetName())
-			return
+			passed++
 		}
 	}
-	framework.Fail(ctx, "No policy that disallows images with a critical CVSS score was found")
+	if passed >= 1 {
+		framework.Pass(ctx, "Deploy time policies that disallows images with a critical CVSS score is enabled and enforced")
+	} else if len(policiesEnabledNotEnforced) > 0 {
+		framework.Failf(ctx, "Enforcement is not set on the deploy time policies that disallows images with a critical CVSS score (%v)", policiesEnabledNotEnforced)
+	} else {
+		framework.Fail(ctx, "No deploy time policy that disallows images with a critical CVSS score was found")
+	}
 }
 
 func policyHasCVSS(p *storage.Policy) bool {

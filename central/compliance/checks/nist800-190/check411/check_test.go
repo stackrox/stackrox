@@ -39,8 +39,9 @@ var (
 	domain = framework.NewComplianceDomain(testCluster, testNodes, testDeployments)
 
 	cvssPolicyEnabledAndEnforced = storage.Policy{
-		Id:   uuid.NewV4().String(),
-		Name: "Foo",
+		Id:              uuid.NewV4().String(),
+		Name:            "Foo",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
 		Fields: &storage.PolicyFields{
 			Cvss: &storage.NumericalPolicy{
 				Value: 7,
@@ -51,9 +52,14 @@ var (
 	}
 
 	buildPolicyEnforced = storage.Policy{
-		Id:                 uuid.NewV4().String(),
-		Name:               "Sample Build time",
-		LifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+		Id:              uuid.NewV4().String(),
+		Name:            "Sample Build time",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+		Fields: &storage.PolicyFields{
+			Cvss: &storage.NumericalPolicy{
+				Value: 7,
+			},
+		},
 		Disabled:           false,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT},
 	}
@@ -61,8 +67,22 @@ var (
 	cvssPolicyDisabled = storage.Policy{
 		Id:                 uuid.NewV4().String(),
 		Name:               "Foo",
+		LifecycleStages:    []storage.LifecycleStage{storage.LifecycleStage_DEPLOY},
 		Disabled:           true,
 		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT},
+	}
+
+	buildPolicyDisabled = storage.Policy{
+		Id:              uuid.NewV4().String(),
+		Name:            "Sample Build time",
+		LifecycleStages: []storage.LifecycleStage{storage.LifecycleStage_BUILD},
+		Fields: &storage.PolicyFields{
+			Cvss: &storage.NumericalPolicy{
+				Value: 7,
+			},
+		},
+		Disabled:           true,
+		EnforcementActions: []storage.EnforcementAction{storage.EnforcementAction_FAIL_BUILD_ENFORCEMENT},
 	}
 
 	imageIntegration = storage.ImageIntegration{
@@ -99,9 +119,10 @@ func TestNIST411_Success(t *testing.T) {
 	checkResults := results[standardID]
 	require.NotNil(t, checkResults)
 
-	require.Len(t, checkResults.Evidence(), 3)
+	require.Len(t, checkResults.Evidence(), 4)
 	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[0].Status)
 	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[1].Status)
+	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[2].Status)
 	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[2].Status)
 }
 
@@ -114,7 +135,7 @@ func TestNIST411_Fail(t *testing.T) {
 
 	policies := make(map[string]*storage.Policy)
 	policies[cvssPolicyDisabled.GetName()] = &cvssPolicyDisabled
-	policies[buildPolicyEnforced.GetName()] = &buildPolicyEnforced
+	policies[buildPolicyEnforced.GetName()] = &buildPolicyDisabled
 
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
@@ -133,9 +154,10 @@ func TestNIST411_Fail(t *testing.T) {
 	checkResults := results[standardID]
 	require.NotNil(t, checkResults)
 
-	require.Len(t, checkResults.Evidence(), 3)
+	require.Len(t, checkResults.Evidence(), 4)
 	assert.Equal(t, framework.FailStatus, checkResults.Evidence()[0].Status)
 	assert.Equal(t, framework.FailStatus, checkResults.Evidence()[1].Status)
-	assert.Equal(t, framework.PassStatus, checkResults.Evidence()[2].Status)
+	assert.Equal(t, framework.FailStatus, checkResults.Evidence()[2].Status)
+	assert.Equal(t, framework.FailStatus, checkResults.Evidence()[3].Status)
 
 }
