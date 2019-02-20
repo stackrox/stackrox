@@ -252,6 +252,7 @@ class NetworkPage extends Component {
                     setSearchModifiers={this.props.setSearchModifiers}
                     setSearchSuggestions={this.props.setSearchSuggestions}
                     onSearch={this.onSearch}
+                    autoCompleteCategories={['DEPLOYMENTS']}
                 />
                 <ClusterSelect closeSidePanel={this.closeSidePanel} />
                 {this.renderNetworkPolicySimulatorButton()}
