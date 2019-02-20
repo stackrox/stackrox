@@ -47,7 +47,10 @@ const ResourceRelatedEntitiesList = ({
         let items = data.results;
         if (listEntityType === entityTypes.NAMESPACE) {
             items = items
-                .map(item => item.metadata)
+                .map(item => ({
+                    ...item.metadata,
+                    name: `${item.metadata.clusterName}/${item.metadata.name}`
+                }))
                 .filter(item => item.clusterName === pageEntity.name);
         }
         if (listEntityType === entityTypes.NODE) {

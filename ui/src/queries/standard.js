@@ -25,6 +25,7 @@ export const LIST_STANDARD = gql`
                     ... on Node {
                         id
                         name
+                        clusterName
                     }
                     ... on Namespace {
                         metadata {

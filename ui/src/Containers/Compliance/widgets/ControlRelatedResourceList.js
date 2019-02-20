@@ -27,11 +27,27 @@ const ControlRelatedEntitiesList = ({
         const { clusters } = data;
         let options = clusters;
         if (listEntityType === entityTypes.NAMESPACE) {
-            options = clusters
-                .reduce((acc, cluster) => acc.concat(cluster.namespaces), [])
-                .map(ns => ns.metadata);
+            options = clusters.reduce(
+                (acc, cluster) =>
+                    acc.concat(
+                        cluster.namespaces.map(ns => ({
+                            ...ns.metadata,
+                            name: `${cluster.name}/${ns.metadata.name}`
+                        }))
+                    ),
+                []
+            );
         } else if (listEntityType === entityTypes.NODE) {
-            options = clusters.reduce((acc, cluster) => acc.concat(cluster.nodes), []);
+            options = clusters.reduce(
+                (acc, cluster) =>
+                    acc.concat(
+                        cluster.nodes.map(node => ({
+                            ...node,
+                            name: `${cluster.name}/${node.name}`
+                        }))
+                    ),
+                []
+            );
         }
 
         function getEntityName(id) {
@@ -48,7 +64,7 @@ const ControlRelatedEntitiesList = ({
             if (!filteredIds.includes(id)) filteredIds.push(id);
         });
 
-        return filteredIds.map(id => ({
+        const result = filteredIds.map(id => ({
             label: getEntityName(id),
             link: URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.ENTITY, {
                 entityId: id,
@@ -56,6 +72,8 @@ const ControlRelatedEntitiesList = ({
                 entityType: listEntityType
             }).url
         }));
+
+        return result;
     }
 
     function getHeadline(items) {

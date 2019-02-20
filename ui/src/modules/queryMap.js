@@ -193,12 +193,21 @@ export default [
                 });
                 data.results.results.forEach(({ keys, numPassing, numFailing }) => {
                     const groupKey = groupByKeyIndex === null ? categoryKeyIndex : groupByKeyIndex;
-                    const { name, description: groupDescription, metadata, __typename } = keys[
-                        groupKey
-                    ];
+                    const {
+                        name,
+                        clusterName,
+                        description: groupDescription,
+                        metadata,
+                        __typename
+                    } = keys[groupKey];
                     // the check below is to address ROX-1420
                     if (__typename !== '') {
-                        const groupName = name || `${metadata.clusterName}--${metadata.name}`;
+                        let groupName = name;
+                        if (__typename === 'Node') {
+                            groupName = `${clusterName}/${name}`;
+                        } else if (__typename === 'Namespace') {
+                            groupName = `${metadata.clusterName}/${metadata.name}`;
+                        }
                         if (!groups[groupName]) {
                             const groupId = parseInt(groupName, 10) || groupName;
                             groups[groupName] = {
