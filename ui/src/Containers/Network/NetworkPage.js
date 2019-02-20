@@ -15,6 +15,7 @@ import Panel from 'Components/Panel';
 import Tabs from 'Components/Tabs';
 import Loader from 'Components/Loader';
 import TabContent from 'Components/TabContent';
+import NoResultsMessage from 'Components/NoResultsMessage';
 import DeploymentDetails from '../Risk/DeploymentDetails';
 import NetworkPoliciesDetails from './NetworkPoliciesDetails';
 import NetworkGraphLegend from './NetworkGraphLegend';
@@ -157,6 +158,12 @@ class NetworkPage extends Component {
         const { networkPolicyGraph, networkFlowGraph } = this.props;
         networkGraph.nodes =
             filterState === ACTIVE_STATE ? networkFlowGraph.nodes : networkPolicyGraph.nodes;
+        if (networkGraph.nodes.length > 200) {
+            // hopefully a temporal solution
+            return (
+                <NoResultsMessage message="There are too many deployments to render on the graph. Please refine your search to a set of namespaces or deployments to display." />
+            );
+        }
         return (
             <div className={`${simulatorMode} ${networkGraphState} w-full h-full`}>
                 {this.state.simulatorMode && (
