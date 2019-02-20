@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import componentTypes from 'constants/componentTypes';
-import standardLabels from 'messages/standards';
+import { standardLabels } from 'messages/standards';
 import capitalize from 'lodash/capitalize';
 import URLService from 'modules/URLService';
 import pageTypes from 'constants/pageTypes';

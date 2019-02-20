@@ -7,7 +7,7 @@ import pluralize from 'pluralize';
 import entityTypes, { resourceTypes } from 'constants/entityTypes';
 import contextTypes from 'constants/contextTypes';
 import { resourceLabels } from 'messages/common';
-import standardLabels from 'messages/standards';
+import { standardLabels } from 'messages/standards';
 
 import { AGGREGATED_RESULTS_WITH_CONTROLS as QUERY } from 'queries/controls';
 import queryService from 'modules/queryService';

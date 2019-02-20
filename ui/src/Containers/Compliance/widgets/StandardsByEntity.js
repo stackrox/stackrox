@@ -13,7 +13,7 @@ import Query from 'Components/AppQuery';
 import Loader from 'Components/Loader';
 import VerticalBarChart from 'Components/visuals/VerticalClusterBar';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import standardLabels from 'messages/standards';
+import { standardLabels } from 'messages/standards';
 
 const componentTypeMapping = {
     [resourceTypes.CLUSTER]: componentTypes.STANDARDS_BY_CLUSTER

@@ -1,7 +1,7 @@
 import { connect } from 'react-redux';
 import React from 'react';
 import PropTypes from 'prop-types';
-import standardLabels from 'messages/standards';
+import { standardLabels } from 'messages/standards';
 import entityTypes from 'constants/entityTypes';
 
 import NIST from 'images/nist.svg';

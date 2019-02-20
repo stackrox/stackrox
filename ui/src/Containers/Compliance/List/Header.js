@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 import { standardBaseTypes } from 'constants/entityTypes';
-import standardLabels from 'messages/standards';
+import { standardLabels } from 'messages/standards';
 import lowerCase from 'lodash/lowerCase';
 import startCase from 'lodash/startCase';
 

@@ -1,6 +1,6 @@
 import { standardTypes } from 'constants/entityTypes';
 
-const standardLabels = {
+export const standardLabels = {
     [standardTypes.PCI_DSS_3_2]: 'PCI DSS 3.2',
     [standardTypes.NIST_800_190]: 'NIST 800-190',
     [standardTypes.HIPAA_164]: 'HIPAA 164',

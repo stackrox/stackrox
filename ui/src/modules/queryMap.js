@@ -2,7 +2,7 @@ import orderBy from 'lodash/orderBy';
 
 import componentTypes from 'constants/componentTypes';
 import entityTypes from 'constants/entityTypes';
-import standardLabels from 'messages/standards';
+import { standardLabels } from 'messages/standards';
 import contextTypes from 'constants/contextTypes';
 import pageTypes from 'constants/pageTypes';
 import { CLUSTER_QUERY } from 'queries/cluster';

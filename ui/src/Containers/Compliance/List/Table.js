@@ -108,8 +108,8 @@ class ListTable extends Component {
         const complianceStateKey = SEARCH_OPTIONS.COMPLIANCE.STATE;
         if (!params.query[complianceStateKey]) return data.results;
         const val = params.query[complianceStateKey].toLowerCase();
-        const isPassing = val === 'passing';
-        const isFailing = val === 'failing';
+        const isPassing = val === 'pass';
+        const isFailing = val === 'fail';
         const { results } = data;
         if (isStandard) {
             return results

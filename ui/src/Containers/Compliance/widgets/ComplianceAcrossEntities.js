@@ -12,6 +12,7 @@ import { AGGREGATED_RESULTS } from 'queries/controls';
 import URLService from 'modules/URLService';
 import contextTypes from 'constants/contextTypes';
 import pageTypes from 'constants/pageTypes';
+import { CLIENT_SIDE_SEARCH_OPTIONS } from 'constants/searchOptions';
 
 const isStandard = type => !!standardBaseTypes[type];
 
@@ -33,6 +34,7 @@ function processData({ entityType, query }, { results, complianceStandards }) {
     if (!filteredResults.length)
         return [
             {
+                id: entityType,
                 title: entityType,
                 passing: { value: 0, link: '' },
                 failing: { value: 0, link: '' }
@@ -49,26 +51,28 @@ function processData({ entityType, query }, { results, complianceStandards }) {
                 totalPassing += newMapping[standardId].passing.value;
                 totalFailing += newMapping[standardId].failing.value;
             }
+            const complianceStateKey = CLIENT_SIDE_SEARCH_OPTIONS.COMPLIANCE.STATE;
             const newQuery = { ...query };
-            newQuery['Compliance State'] = 'Passing';
-            newQuery.Standard = standard.name;
+            newQuery[complianceStateKey] = 'Pass';
+            if (!isStandard(entityType)) newQuery.Standard = standard.name;
             const passingLink = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
                 entityType,
                 query: newQuery
             });
-            newQuery['Compliance State'] = 'Failing';
-            newQuery.Standard = standard.name;
+            newQuery[complianceStateKey] = 'Fail';
+            if (!isStandard(entityType)) newQuery.Standard = standard.name;
             const failingLink = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
                 entityType,
                 query: newQuery
             });
-            delete newQuery['Compliance State'];
+            delete newQuery[complianceStateKey];
             delete newQuery.Standard;
             const defaultLink = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
                 entityType,
                 query: newQuery
             });
             newMapping[standardId] = {
+                id: standard.id,
                 title: standardShortLabels[standard.id],
                 passing: {
                     value: totalPassing,

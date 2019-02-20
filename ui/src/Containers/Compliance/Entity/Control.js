@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import isEmpty from 'lodash/isEmpty';
-import standardLabels from 'messages/standards';
+import { standardLabels } from 'messages/standards';
 import entityTypes from 'constants/entityTypes';
 import Widget from 'Components/Widget';
 import Query from 'Components/ThrowingQuery';

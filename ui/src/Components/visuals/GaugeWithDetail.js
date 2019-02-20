@@ -6,6 +6,8 @@ import findIndex from 'lodash/findIndex';
 import URLService from 'modules/URLService';
 import colors from 'constants/visuals/colors';
 import { CLIENT_SIDE_SEARCH_OPTIONS } from 'constants/searchOptions';
+import { standardTypes } from 'constants/entityTypes';
+import { standardLabels } from 'messages/standards';
 
 import { XYPlot, ArcSeries, LabelSeries, Hint } from 'react-vis';
 import MultiGaugeDetailSection from './MultiGaugeDetailSection';
@@ -29,6 +31,7 @@ class GaugeWithDetail extends Component {
     static propTypes = {
         data: PropTypes.arrayOf(
             PropTypes.shape({
+                id: PropTypes.string.isRequired,
                 title: PropTypes.string.isRequired,
                 passing: PropTypes.shape({
                     value: PropTypes.number.isRequired,
@@ -41,9 +44,7 @@ class GaugeWithDetail extends Component {
                 defaultLink: PropTypes.string.isRequired
             })
         ).isRequired,
-        history: ReactRouterPropTypes.history.isRequired,
-        match: ReactRouterPropTypes.match.isRequired,
-        location: ReactRouterPropTypes.location.isRequired
+        history: ReactRouterPropTypes.history.isRequired
     };
 
     constructor(props) {
@@ -57,32 +58,73 @@ class GaugeWithDetail extends Component {
 
     componentDidMount() {
         this.setState({ data: this.calculateMultiGaugeData(this.props.data) });
-        this.setDefaultSelectedData();
+        this.setDefaultSelectedData(this.props);
     }
 
     componentWillReceiveProps(nextProps) {
-        if (this.state.selectedData) return;
-        if (nextProps.data !== this.props.data) {
+        if (!this.state.selectedData && nextProps.data !== this.props.data) {
             const data = this.calculateMultiGaugeData(nextProps.data);
             this.setState({ data });
         }
-        this.setDefaultSelectedData();
+        this.setDefaultSelectedData(nextProps);
     }
 
-    setDefaultSelectedData = () => {
-        const { data, match, location } = this.props;
+    setDefaultSelectedData = props => {
+        const { match, location } = props;
+        const params = URLService.getParams(match, location);
+        const isStandard = Object.values(standardTypes).includes(params.entityType);
+        if (isStandard) {
+            this.setSingleGaugeDefault(props);
+        } else {
+            this.setMultiGaugeDefault(props);
+        }
+    };
+
+    setSingleGaugeDefault = props => {
+        const { data, match, location } = props;
+        const params = URLService.getParams(match, location);
+        const complianceState = params.query[CLIENT_SIDE_SEARCH_OPTIONS.COMPLIANCE.STATE];
+        if (complianceState && data.length) {
+            if (
+                complianceState.toLowerCase() !== 'pass' &&
+                complianceState.toLowerCase() !== 'fail'
+            ) {
+                this.setSelectedData(null);
+            } else {
+                const arc = complianceState.toLowerCase() === 'pass' ? 'inner' : 'outer';
+                const selectedData = { ...data[0] };
+                selectedData.arc = arc;
+                selectedData.index = 0;
+                this.setSelectedData(selectedData);
+            }
+        } else {
+            this.setSelectedData(null);
+        }
+    };
+
+    setMultiGaugeDefault = props => {
+        const { data, match, location } = props;
         const params = URLService.getParams(match, location);
         const complianceState = params.query[CLIENT_SIDE_SEARCH_OPTIONS.COMPLIANCE.STATE];
         const standardName = params.query.Standard;
         if (complianceState && standardName) {
-            const arc = complianceState.toLowerCase() === 'passing' ? 'inner' : 'outer';
-            const index = findIndex(data, datum => datum.title === standardName);
-            if (index !== -1) {
-                const selectedData = { ...data[index] };
-                selectedData.arc = arc;
-                selectedData.index = index;
-                this.setSelectedData(selectedData);
+            if (
+                complianceState.toLowerCase() !== 'pass' &&
+                complianceState.toLowerCase() !== 'fail'
+            ) {
+                this.setSelectedData(null);
+            } else {
+                const arc = complianceState.toLowerCase() === 'pass' ? 'inner' : 'outer';
+                const index = findIndex(data, datum => standardLabels[datum.id] === standardName);
+                if (index !== -1) {
+                    const selectedData = { ...data[index] };
+                    selectedData.arc = arc;
+                    selectedData.index = index;
+                    this.setSelectedData(selectedData);
+                }
             }
+        } else {
+            this.setSelectedData(null);
         }
     };
 
@@ -152,12 +194,7 @@ class GaugeWithDetail extends Component {
     };
 
     setSelectedData = selectedData => {
-        if (
-            selectedData &&
-            this.state.selectedData &&
-            selectedData.arc === this.state.selectedData.arc &&
-            selectedData.title === this.state.selectedData.title
-        ) {
+        if (!selectedData) {
             this.setState({
                 selectedData: null,
                 data: this.getPropsData()
@@ -198,7 +235,7 @@ class GaugeWithDetail extends Component {
 
     onArcClick = data => {
         const { selectedData } = this.state;
-        const newData = selectedData ? null : data;
+        const newData = selectedData && selectedData.arc === data.arc ? null : data;
         this.setSelectedData(newData);
         this.setPathWithLink(newData);
     };
