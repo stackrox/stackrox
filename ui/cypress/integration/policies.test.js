@@ -276,4 +276,21 @@ describe('Policies page', () => {
         cy.get(selectors.sidePanel).should('exist');
         cy.get(selectors.sidePanelHeader).should('not.have.text', policyName);
     });
+
+    it('should allow creating new categories and savnig them (ROX-1409)', () => {
+        const categoryName = 'ROX-1409-test-category';
+        cy.get(selectors.tableFirstRow).click({ force: true });
+        editPolicy();
+        cy.get(selectors.categoriesField.input).type(`${categoryName}{enter}`);
+        savePolicy();
+
+        // now edit same policy, the previous category should exist in the list
+        editPolicy();
+        cy.get(
+            `${
+                selectors.categoriesField.valueContainer
+            } > div:contains(${categoryName}) > div.react-select__multi-value__remove`
+        ).click(); // remove it
+        savePolicy();
+    });
 });

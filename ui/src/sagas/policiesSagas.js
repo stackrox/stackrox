@@ -34,14 +34,26 @@ export function* getPolicies(filters) {
     }
 }
 
+export function* getPolicyCategories() {
+    try {
+        const result = yield call(service.fetchPolicyCategories);
+        yield put(backendActions.fetchPolicyCategories.success(result.response));
+    } catch (error) {
+        yield put(backendActions.fetchPolicyCategories.failure(error));
+    }
+}
+
 export function* getPolicy(policyId) {
     yield put(backendActions.fetchPolicy.request());
     try {
-        const result = yield call(service.fetchPolicy, policyId);
-        yield put(backendActions.fetchPolicy.success(result.response));
+        const [policyResult] = yield all([
+            call(service.fetchPolicy, policyId),
+            call(getPolicyCategories) // make sure we have latest categories for the wizard
+        ]);
+        yield put(backendActions.fetchPolicy.success(policyResult.response));
 
         // When a policy is selected, make sure the wizard is opened for it.
-        const fetchedPolicies = Object.values(result.response.entities.policy);
+        const fetchedPolicies = Object.values(policyResult.response.entities.policy);
         if (fetchedPolicies.length === 1) {
             yield put(tableActions.selectPolicyId(fetchedPolicies[0].id));
             yield put(wizardActions.setWizardPolicy(fetchedPolicies[0]));
@@ -50,15 +62,6 @@ export function* getPolicy(policyId) {
         }
     } catch (error) {
         yield put(backendActions.fetchPolicy.failure(error));
-    }
-}
-
-export function* getPolicyCategories() {
-    try {
-        const result = yield call(service.fetchPolicyCategories);
-        yield put(backendActions.fetchPolicyCategories.success(result.response));
-    } catch (error) {
-        yield put(backendActions.fetchPolicyCategories.failure(error));
     }
 }
 

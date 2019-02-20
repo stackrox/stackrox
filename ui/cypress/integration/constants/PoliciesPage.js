@@ -43,6 +43,10 @@ export const selectors = {
             'div:contains("Days since image was last scanned") + div.flex>div.flex>button',
         value: '[data-test-id="scanAgeDays"] div.flex'
     },
+    categoriesField: {
+        input: 'div:contains("Categories") + div.flex .react-select__input > input',
+        valueContainer: 'div:contains("Categories") + div.flex .react-select__value-container'
+    },
     policyPreview: {
         message: '.warn-message',
         alertPreview: {
