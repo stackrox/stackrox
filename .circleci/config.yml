@@ -861,6 +861,41 @@ jobs:
           name: Audit dependencies
           command: make ossls-audit
 
+  mark-collector-release:
+    <<: *defaults
+    resource_class: small
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints:
+          - "df:30:53:b4:a5:91:49:a8:48:ec:d8:3d:b0:95:8a:db"
+
+      - run:
+          name: Add SSH key of github.com
+          command: |
+            ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+
+      - run:
+          name: Check out collector source code
+          command: |
+            mkdir -p /tmp/collector
+            cd /tmp/collector
+            git clone git@github.com:stackrox/collector.git .
+
+      - run:
+          name: Add current release version to RELEASED_VERSIONS file
+          command: |
+            collector_version="$(cat COLLECTOR_VERSION)"
+            cd /tmp/collector
+            git checkout master && git pull
+            echo "${collector_version}  # Rox release ${CIRCLE_TAG} by ${CIRCLE_USERNAME} at $(date)" \
+              >>RELEASED_VERSIONS
+            git add RELEASED_VERSIONS
+            git config user.email 'mi+robotrox@stackrox.com'
+            git config user.name 'Robot Rox'
+            git commit -m "Automatic update of RELEASED_VERSIONS file for Rox release ${CIRCLE_TAG}"
+            git push
+
   push-release:
     <<: *defaults
     resource_class: small
@@ -947,6 +982,14 @@ workflows:
             tags:
               only: /.*/
       # Push release only on tags.
+      - mark-collector-release:
+          requires:
+            - build
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
       - push-release:
           requires:
             - build
