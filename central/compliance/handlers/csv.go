@@ -103,7 +103,9 @@ func (c *csvResults) write(writer *csv.Writer) {
 		// second has more values, so first is lesser
 		return len(second) > 0
 	})
-	writer.Write(c.header)
+	header := append([]string{}, c.header...)
+	header[0] = "\uFEFF" + header[0]
+	writer.Write(header)
 	for _, v := range c.values {
 		writer.Write(v)
 	}
@@ -123,13 +125,13 @@ func getControlDescription(control *v1.ComplianceControl) string {
 func (c *csvResults) addAll(row complianceRow, controls map[string]*v1.ComplianceControl, values map[string]*storage.ComplianceResultValue) {
 	for controlID, result := range values {
 		controlName := controlID
-		controlDescription := "-"
+		controlDescription := "N/A"
 		if control, ok := controls[controlID]; ok {
 			controlName = control.GetName()
 			controlDescription = getControlDescription(control)
 		}
 		valueRow := row
-		valueRow.controlName = controlName
+		valueRow.controlName = fmt.Sprintf(`=("%s")`, controlName) // avoid excel parsing as a number
 		valueRow.value = result
 		valueRow.controlDescription = controlDescription
 		c.addRow(valueRow)
@@ -141,7 +143,7 @@ var (
 		storage.ComplianceState_COMPLIANCE_STATE_ERROR:   "Error",
 		storage.ComplianceState_COMPLIANCE_STATE_FAILURE: "Fail",
 		storage.ComplianceState_COMPLIANCE_STATE_SUCCESS: "Pass",
-		storage.ComplianceState_COMPLIANCE_STATE_SKIP:    "-",
+		storage.ComplianceState_COMPLIANCE_STATE_SKIP:    "N/A",
 	}
 )
 
@@ -172,13 +174,13 @@ func (c *csvResults) addRow(row complianceRow) {
 
 func fromTS(timestamp *types.Timestamp) string {
 	if timestamp == nil {
-		return "-"
+		return "N/A"
 	}
 	ts, err := types.TimestampFromProto(timestamp)
 	if err != nil {
-		return "!err"
+		return "ERR"
 	}
-	return ts.Format(time.RFC3339)
+	return ts.Format(time.RFC1123)
 }
 
 // CSVHandler is an HTTP handler that outputs CSV exports of compliance data
@@ -197,7 +199,7 @@ func CSVHandler() http.HandlerFunc {
 		}
 		validResults, _ := store.ValidResultsAndSources(data)
 		var output csvResults
-		output.header = []string{"standard", "cluster", "namespace", "type", "object", "control", "description", "state", "evidence", "timestamp"}
+		output.header = []string{"Standard", "Cluster", "Namespace", "Object Type", "Object Name", "Control", "Control Description", "State", "Evidence", "Assessment Time"}
 		standards := standards.RegistrySingleton()
 		for _, d := range validResults {
 			controls := make(map[string]*v1.ComplianceControl)
@@ -207,7 +209,7 @@ func CSVHandler() http.HandlerFunc {
 			if ok {
 				standardName = standard.GetMetadata().GetName()
 				for _, con := range standard.GetControls() {
-					controls[fmt.Sprintf("%s:%s", standard.GetMetadata().GetId(), con.GetId())] = con
+					controls[con.GetId()] = con
 				}
 			}
 			dataRow := complianceRow{
