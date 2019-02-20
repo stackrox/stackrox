@@ -88,15 +88,18 @@ function processData({ entityType, query }, { results, complianceStandards }) {
 const getQueryVariables = params => {
     const groupBy = ['STANDARD'];
     let unit = 'CONTROL';
+
     if (params.query && params.query.groupBy) {
         groupBy.push(params.query.groupBy);
     } else if (!isStandard(params.entityType)) {
         groupBy.push(params.entityType);
         unit = params.entityType;
     }
+    const { query } = params;
     return {
         groupBy,
-        unit
+        unit,
+        query
     };
 };
 
