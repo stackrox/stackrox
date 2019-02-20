@@ -6,7 +6,7 @@ import { actions } from 'reducers/cli';
 import onClickOutside from 'react-onclickoutside';
 
 const downloadBtnClass =
-    'w-48 bg-base-100 px-5 py-3 text-left font-600 uppercase text-sm border-b border-base-300 hover:bg-base-400 hover:text-base-700';
+    'w-48 bg-base-100 px-5 py-3 text-left font-600 uppercase text-sm border-b border-base-300 hover:bg-base-400 hover:text-base-700 pointer-events-auto';
 
 class CLIModal extends Component {
     static propTypes = {
