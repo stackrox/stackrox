@@ -54,6 +54,7 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                                         entityType={entityTypes.CLUSTER}
                                         entityId={params.entityId}
                                         entityName={cluster.name}
+                                        clusterName={cluster.name}
                                     />
                                 </div>
                                 <div className="md:pr-3 pt-3 rounded">
@@ -103,18 +104,21 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                                         listEntityType={entityTypes.NAMESPACE}
                                         pageEntityType={entityTypes.CLUSTER}
                                         pageEntity={cluster}
+                                        clusterName={cluster.name}
                                         className={`sx-2 ${pdfClassName}`}
                                     />
                                     <ResourceRelatedResourceList
                                         listEntityType={entityTypes.DEPLOYMENT}
                                         pageEntityType={entityTypes.CLUSTER}
                                         pageEntity={cluster}
+                                        clusterName={cluster.name}
                                         className={`sx-2 ${pdfClassName}`}
                                     />
                                     <ResourceRelatedResourceList
                                         listEntityType={entityTypes.NODE}
                                         pageEntityType={entityTypes.CLUSTER}
                                         pageEntity={cluster}
+                                        clusterName={cluster.name}
                                         className={`sx-2 ${pdfClassName}`}
                                     />
                                 </>

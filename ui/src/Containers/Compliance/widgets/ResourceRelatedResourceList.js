@@ -34,6 +34,7 @@ const ResourceRelatedEntitiesList = ({
     listEntityType,
     pageEntityType,
     pageEntity,
+    clusterName,
     className,
     limit
 }) => {
@@ -69,7 +70,10 @@ const ResourceRelatedEntitiesList = ({
                 context={linkContext}
                 pageType={pageTypes.LIST}
                 params={{
-                    query: { [pageEntityType]: pageEntity.name },
+                    query: {
+                        [pageEntityType]: pageEntity.name,
+                        [entityTypes.CLUSTER]: clusterName
+                    },
                     entityType: listEntityType
                 }}
                 className="no-underline"
@@ -86,7 +90,10 @@ const ResourceRelatedEntitiesList = ({
         }
 
         const variables = {
-            query: queryService.objectToWhereClause({ [pageEntityType]: pageEntity.name })
+            query: queryService.objectToWhereClause({
+                [pageEntityType]: pageEntity.name,
+                [entityTypes.CLUSTER]: clusterName
+            })
         };
 
         if (listEntityType === entityTypes.NODE) {
@@ -122,6 +129,7 @@ ResourceRelatedEntitiesList.propTypes = {
         id: PropTypes.string,
         name: PropTypes.string
     }),
+    clusterName: PropTypes.string.isRequired,
     limit: PropTypes.number
 };
 

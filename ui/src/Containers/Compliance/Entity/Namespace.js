@@ -62,6 +62,7 @@ const NamespacePage = ({ sidePanelMode, params }) => (
                                         entityType={entityTypes.NAMESPACE}
                                         entityId={params.entityId}
                                         entityName={namespace.name}
+                                        clusterName={namespace.clusterName}
                                     />
                                 </div>
                                 <div className="md:pr-3 pt-3">
@@ -114,12 +115,14 @@ const NamespacePage = ({ sidePanelMode, params }) => (
                                         listEntityType={entityTypes.DEPLOYMENT}
                                         pageEntityType={entityTypes.NAMESPACE}
                                         pageEntity={namespace}
+                                        clusterName={namespace.clusterName}
                                         className={`sx-2 ${pdfClassName}`}
                                     />
                                     <ResourceRelatedResourceList
                                         listEntityType={entityTypes.SECRET}
                                         pageEntityType={entityTypes.NAMESPACE}
                                         pageEntity={namespace}
+                                        clusterName={namespace.clusterName}
                                         className={`sx-2 ${pdfClassName}`}
                                     />
                                 </>

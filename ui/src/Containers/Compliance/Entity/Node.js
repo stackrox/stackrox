@@ -66,6 +66,7 @@ const NodePage = ({ sidePanelMode, params }) => (
                                         entityType={entityTypes.NODE}
                                         entityId={params.entityId}
                                         entityName={node.name}
+                                        clusterName={node.clusterName}
                                     />
                                 </div>
                                 <div className="md:pr-3 pt-3">

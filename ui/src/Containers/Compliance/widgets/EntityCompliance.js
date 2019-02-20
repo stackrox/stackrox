@@ -6,7 +6,7 @@ import ArcSingle from 'Components/visuals/ArcSingle';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import pageTypes from 'constants/pageTypes';
-import { standardBaseTypes } from 'constants/entityTypes';
+import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
 import URLService from 'modules/URLService';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
@@ -16,7 +16,7 @@ import contextTypes from 'constants/contextTypes';
 import queryService from 'modules/queryService';
 import NoResultsMessage from 'Components/NoResultsMessage';
 
-const EntityCompliance = ({ entityType, entityName, history }) => {
+const EntityCompliance = ({ entityType, entityName, clusterName, history }) => {
     const entityTypeLabel = resourceLabels[entityType];
 
     function getBarData(results) {
@@ -41,14 +41,15 @@ const EntityCompliance = ({ entityType, entityName, history }) => {
         const linkParams = {
             entityType: datum.standard,
             query: {
-                [entityType]: entityName
+                [entityType]: entityName,
+                [entityTypes.CLUSTER]: clusterName
             }
         };
         const URL = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, linkParams);
         history.push(URL);
     }
 
-    const whereClause = entityName ? { [entityType]: entityName } : null;
+    const whereClause = { [entityType]: entityName, [entityTypes.CLUSTER]: clusterName };
     return (
         <Query
             query={AGGREGATED_RESULTS}
@@ -99,12 +100,11 @@ const EntityCompliance = ({ entityType, entityName, history }) => {
 };
 EntityCompliance.propTypes = {
     entityType: PropTypes.string.isRequired,
-    entityName: PropTypes.string,
+    entityName: PropTypes.string.isRequired,
+    clusterName: PropTypes.string.isRequired,
     history: ReactRouterPropTypes.history.isRequired
 };
 
-EntityCompliance.defaultProps = {
-    entityName: null
-};
+EntityCompliance.defaultProps = {};
 
 export default withRouter(EntityCompliance);
