@@ -47,31 +47,28 @@ const formatComplianceTableData = (data, entityType) => {
     data.results.results.forEach(({ aggregationKeys, keys, numPassing, numFailing }) => {
         const curEntity = aggregationKeys[entityKeyIndex].id;
         const curStandard = aggregationKeys[standardKeyIndex].id;
-        if (!entityMap[curEntity]) {
-            const entity = keys[entityKeyIndex];
-            // the check below is to address ROX-1420
-            // eslint-disable-next-line no-underscore-dangle
-            if (entity.__typename !== '') {
-                entityMap[curEntity] = {
-                    name: entity.name || entity.metadata.name,
-                    id: curEntity,
-                    overall: {
-                        numPassing: 0,
-                        numFailing: 0,
-                        average: 0
-                    }
-                };
-                if (entityType !== entityTypes.CLUSTER) {
-                    entityMap[curEntity].cluster =
-                        entity.clusterName || entity.metadata.clusterName;
-                }
-                if (numPassing + numFailing > 0)
-                    entityMap[curEntity][curStandard] = complianceRate(numPassing, numFailing);
-                entityMap[curEntity].overall.numPassing += numPassing;
-                entityMap[curEntity].overall.numFailing += numFailing;
+        const entity = keys[entityKeyIndex];
+        // eslint-disable-next-line no-underscore-dangle
+        if (entity.__typename === '') return;
+        const entityMetaData = entity.metadata || {};
+
+        entityMap[curEntity] = entityMap[curEntity] || {
+            name: entity.name || entity.metadata.name,
+            cluster: entity.clusterName || entityMetaData.clusterName || entity.name,
+            id: curEntity,
+            overall: {
+                numPassing: 0,
+                numFailing: 0,
+                average: 0
             }
-        }
+        };
+
+        if (numPassing + numFailing > 0)
+            entityMap[curEntity][curStandard] = complianceRate(numPassing, numFailing);
+        entityMap[curEntity].overall.numPassing += numPassing;
+        entityMap[curEntity].overall.numFailing += numFailing;
     });
+
     Object.keys(entityMap).forEach(cluster => {
         const overallCluster = Object.assign({}, entityMap[cluster]);
         const { numPassing, numFailing } = overallCluster.overall;
