@@ -10,7 +10,7 @@ import AppLink from 'Components/AppLink';
 import { standardBaseTypes } from 'constants/entityTypes';
 
 const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRow }) => {
-    const { name } = selectedRow;
+    const { name, control } = selectedRow;
     const { context, query, entityType } = URLService.getParams(match, location);
     const { groupBy, ...rest } = query;
 
@@ -43,7 +43,7 @@ const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRo
                         data-test-id="panel-header"
                     >
                         {standardBaseTypes[entityType]
-                            ? `${standardBaseTypes[entityType]} ${name}`
+                            ? `${standardBaseTypes[entityType]} ${control}`
                             : name}
                     </div>
                 </AppLink>

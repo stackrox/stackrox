@@ -49,25 +49,25 @@ class ProcessDetails extends Component {
                 id: 'time',
                 accessor: d => dateFns.format(d.signal.time, dateTimeFormat),
                 headerClassName: `${defaultHeaderClassName} w-1/4 pointer-events-none`,
-                className: `${wrapClassName} ${defaultColumnClassName} w-1/4 pointer-events-none`
+                className: `${wrapClassName} ${defaultColumnClassName} w-1/4 cursor-auto`
             },
             {
                 Header: 'Pod ID',
                 accessor: 'podId',
                 headerClassName: `${defaultHeaderClassName} w-1/4 pointer-events-none`,
-                className: `${wrapClassName} ${defaultColumnClassName} w-1/4 pointer-events-none`
+                className: `${wrapClassName} ${defaultColumnClassName} w-1/4 cursor-auto`
             },
             {
                 Header: 'Container Name',
                 accessor: 'containerName',
                 headerClassName: `${defaultHeaderClassName} ${wrapClassName} w-1/4 pointer-events-none`,
-                className: `${wrapClassName} ${defaultColumnClassName} w-1/4 pointer-events-none`
+                className: `${wrapClassName} ${defaultColumnClassName} w-1/4 cursor-auto`
             },
             {
                 Header: 'Container ID',
                 accessor: 'signal.containerId',
                 headerClassName: `${defaultHeaderClassName} ${wrapClassName} w-1/4 pointer-events-none`,
-                className: `${wrapClassName} ${defaultColumnClassName} w-1/4 pointer-events-none`
+                className: `${wrapClassName} ${defaultColumnClassName} w-1/4 cursor-auto`
             }
         ];
         const rows = signals;
@@ -78,10 +78,8 @@ class ProcessDetails extends Component {
                 <Table
                     rows={signals}
                     columns={columns}
-                    onRowClick={this.updateSelectedDeployment}
                     noDataText="No results found. Please refine your search."
                     page={this.state.page}
-                    trClassName="pointer-events-none"
                 />
             </div>
         );
