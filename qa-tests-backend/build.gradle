@@ -75,8 +75,8 @@ dependencies {
     compile group: 'com.google.protobuf', name: 'protobuf-java-util', version: '3.5.1'
 
     // Use the Kubernetes API
-    compile 'io.fabric8:kubernetes-client:4.1.1'
-    compile 'io.fabric8:openshift-client:4.1.1'
+    compile 'io.fabric8:kubernetes-client:4.1.2'
+    compile 'io.fabric8:openshift-client:4.1.2'
 
     compile 'io.kubernetes:client-java:2.0.0-beta1'
 
