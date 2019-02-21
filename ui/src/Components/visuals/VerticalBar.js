@@ -31,7 +31,8 @@ class VerticalBarChart extends Component {
         labelLinks: PropTypes.shape({}),
         onValueMouseOver: PropTypes.func,
         onValueMouseOut: PropTypes.func,
-        onValueClick: PropTypes.func
+        onValueClick: PropTypes.func,
+        legend: PropTypes.bool
     };
 
     static defaultProps = {
@@ -44,7 +45,8 @@ class VerticalBarChart extends Component {
         labelLinks: {},
         onValueMouseOver: null,
         onValueMouseOut: null,
-        onValueClick: null
+        onValueClick: null,
+        legend: true
     };
 
     constructor(props) {
@@ -95,7 +97,7 @@ class VerticalBarChart extends Component {
         };
 
         const defaultContainerProps = {
-            className: 'relative chart-container',
+            className: 'relative chart-container w-full horizontal-bar-responsive',
             onMouseMove: this.setHintPosition
         };
 
@@ -127,6 +129,7 @@ class VerticalBarChart extends Component {
         const containerProps = merge(defaultContainerProps, this.props.containerProps);
         const plotProps = merge(defaultPlotProps, this.props.plotProps);
         const seriesProps = merge(defaultSeriesProps, this.props.seriesProps);
+        const styleProps = this.props.legend ? { top: '-16px' } : {};
 
         // format data with colors:
         const letDataWithColors = data.map((datum, i) =>
@@ -146,7 +149,7 @@ class VerticalBarChart extends Component {
         }
 
         return (
-            <div style={{ top: '-16px' }} {...containerProps}>
+            <div style={styleProps} {...containerProps}>
                 <FlexibleWidthXYPlot {...plotProps}>
                     <VerticalGridLines left={330 / data.length / 2 + 30} />
                     <HorizontalGridLines tickValues={tickValues} />

@@ -83,9 +83,10 @@ const EntityCompliance = ({ entityType, entityName, clusterName, history }) => {
                                         style={{ maxHeight: '129px' }}
                                     >
                                         <VerticalBarChart
-                                            plotProps={{ height: 165, width: 300 }}
+                                            plotProps={{ height: 145 }}
                                             data={barData}
                                             onValueClick={valueClick}
+                                            legend={false}
                                         />
                                     </div>
                                 </div>
