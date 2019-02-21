@@ -46,8 +46,6 @@ spec:
           value: {{.PublicEndpoint}}
         - name: {{.ClusterIDEnv}}
           value: {{.ClusterID}}
-        - name: {{.ImageEnv}}
-          value: {{.Image}}
         - name: {{.AdvertisedEndpointEnv}}
           value: sensor.stackrox:443
           {{if eq .ClusterType "OPENSHIFT_CLUSTER"}}

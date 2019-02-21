@@ -11,7 +11,4 @@ var (
 	// AdvertisedEndpoint is used to provide the Sensor with the endpoint it
 	// should advertise to services that need to contact it, within its own cluster.
 	AdvertisedEndpoint = NewSetting("ROX_ADVERTISED_ENDPOINT", WithDefault("sensor.prevent_net:443"))
-	// Image is the image that should be launched for new benchmarks.
-	// Deprecated: This will go away with the old benchmarks code.
-	Image = NewSetting("ROX_MAIN_IMAGE")
 )

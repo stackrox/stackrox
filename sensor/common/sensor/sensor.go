@@ -53,7 +53,6 @@ type Sensor struct {
 	clusterID          string
 	centralEndpoint    string
 	advertisedEndpoint string
-	image              string
 
 	listener           listeners.Listener
 	enforcer           enforcers.Enforcer
@@ -76,7 +75,6 @@ func NewSensor(l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orche
 		clusterID:          env.ClusterID.Setting(),
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
-		image:              env.Image.Setting(),
 
 		listener:           l,
 		enforcer:           e,

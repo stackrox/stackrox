@@ -18,8 +18,6 @@ const roxPrefix = "github.com/stackrox/rox/"
 
 var (
 	validRoots = []string{
-		"benchmark-bootstrap",
-		"benchmarks",
 		"central",
 		"migrator",
 		"roxctl",
