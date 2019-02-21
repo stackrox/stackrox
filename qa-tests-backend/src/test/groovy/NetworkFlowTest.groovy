@@ -220,6 +220,10 @@ class NetworkFlowTest extends BaseSpecification {
     @Category([NetworkFlowVisualization])
     def "Verify connections from external sources"() {
         given:
+        "Disable test until ROX-1431 is resolved"
+        Assume.assumeTrue(false)
+
+        and:
         "Deployment A, where an external source communicates to A"
         String deploymentUid = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert deploymentUid != null
