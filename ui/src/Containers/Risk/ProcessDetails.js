@@ -52,20 +52,21 @@ class ProcessDetails extends Component {
                 className: `${wrapClassName} ${defaultColumnClassName} w-1/4 cursor-auto`
             },
             {
+                Header: 'UID',
+                id: 'uid',
+                accessor: d => d.signal.uid,
+                headerClassName: `${defaultHeaderClassName} w-1/6 pointer-events-none`,
+                className: `${wrapClassName} ${defaultColumnClassName} w-1/6 cursor-auto`
+            },
+            {
                 Header: 'Pod ID',
                 accessor: 'podId',
-                headerClassName: `${defaultHeaderClassName} w-1/4 pointer-events-none`,
-                className: `${wrapClassName} ${defaultColumnClassName} w-1/4 cursor-auto`
+                headerClassName: `${defaultHeaderClassName} w-1/3 pointer-events-none`,
+                className: `${wrapClassName} ${defaultColumnClassName} w-1/3 cursor-auto`
             },
             {
-                Header: 'Container Name',
+                Header: 'Container',
                 accessor: 'containerName',
-                headerClassName: `${defaultHeaderClassName} ${wrapClassName} w-1/4 pointer-events-none`,
-                className: `${wrapClassName} ${defaultColumnClassName} w-1/4 cursor-auto`
-            },
-            {
-                Header: 'Container ID',
-                accessor: 'signal.containerId',
                 headerClassName: `${defaultHeaderClassName} ${wrapClassName} w-1/4 pointer-events-none`,
                 className: `${wrapClassName} ${defaultColumnClassName} w-1/4 cursor-auto`
             }
