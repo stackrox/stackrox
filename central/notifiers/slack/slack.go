@@ -155,31 +155,6 @@ func (s *slack) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 
 }
 
-// BenchmarkNotify takes in an benchmark schedule and generates the Slack message
-func (s *slack) BenchmarkNotify(schedule *storage.BenchmarkSchedule) error {
-	body, err := notifiers.FormatBenchmark(schedule, notifiers.BenchmarkLink(s.UiEndpoint))
-	attachments := []attachment{
-		{
-			MarkDownFields: []string{"pretext", "text", "fields"},
-			Text:           body,
-		},
-	}
-	notification := notification{
-		Attachments: attachments,
-	}
-	jsonPayload, err := json.Marshal(&notification)
-	if err != nil {
-		return fmt.Errorf("Could not marshal notification for benchmark %v", schedule.GetBenchmarkName())
-	}
-
-	webhook, err := urlfmt.FormatURL(s.GetLabelDefault(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
-	if err != nil {
-		return err
-	}
-
-	return postMessage(webhook, jsonPayload)
-}
-
 func newSlack(notifier *storage.Notifier) (*slack, error) {
 	return &slack{
 		Notifier: notifier,

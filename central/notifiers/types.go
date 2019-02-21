@@ -10,8 +10,6 @@ type Notifier interface {
 	AlertNotify(alert *storage.Alert) error
 	// YamlNotify triggers the plugins to send a notification about a network policy yaml
 	NetworkPolicyYAMLNotify(yaml string, clusterName string) error
-	// BenchmarkNotify triggers the plugins to send a notification about a benchmark
-	BenchmarkNotify(schedule *storage.BenchmarkSchedule) error
 	// ProtoNotifier gets the proto version of the notifier
 	ProtoNotifier() *storage.Notifier
 	// Test sends a test message

@@ -16,11 +16,6 @@ import (
 	"github.com/stackrox/rox/central/auth/userpass"
 	authproviderService "github.com/stackrox/rox/central/authprovider/service"
 	authProviderStore "github.com/stackrox/rox/central/authprovider/store"
-	benchmarkService "github.com/stackrox/rox/central/benchmark/service"
-	brService "github.com/stackrox/rox/central/benchmarkresult/service"
-	bsService "github.com/stackrox/rox/central/benchmarkscan/service"
-	bshService "github.com/stackrox/rox/central/benchmarkschedule/service"
-	btService "github.com/stackrox/rox/central/benchmarktrigger/service"
 	"github.com/stackrox/rox/central/cli"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
@@ -183,11 +178,6 @@ func startGRPCServer() {
 		authService.New(),
 		apiTokenService.Singleton(),
 		authproviderService.New(registry),
-		benchmarkService.Singleton(),
-		bsService.Singleton(),
-		bshService.Singleton(),
-		brService.Singleton(),
-		btService.Singleton(),
 		clusterService.Singleton(),
 		debugService.Singleton(),
 		deploymentService.Singleton(),

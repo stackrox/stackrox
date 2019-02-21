@@ -65,11 +65,3 @@ func TestSplunkTest(t *testing.T) {
 	s := getSplunk(t)
 	assert.NoError(t, s.Test())
 }
-
-func TestSplunkBenchmarkNotify(t *testing.T) {
-	s := getSplunk(t)
-	schedule := &storage.BenchmarkSchedule{
-		BenchmarkName: "CIS Docker Benchmark",
-	}
-	assert.NoError(t, s.BenchmarkNotify(schedule))
-}

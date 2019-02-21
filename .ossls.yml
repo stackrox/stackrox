@@ -925,16 +925,6 @@ dependencies:
     attribution:
       - Copyright (c) 2014 cheekybits
 
-  vendor/github.com/opencontainers/runc:
-    url: https://github.com/opencontainers/runc
-    license: Apache-2.0
-    files:
-      LICENSE: 552a739c3b25792263f731542238b92f6f8d07e9a488eae27e6c4690038a8243
-      NOTICE: 7373acc8c2833ffd46e8d937210689e11efebd74578e532b51fbe08dc1ea6e21
-    attribution:
-      - 2012-2015 Docker, Inc.
-      - 2017 SUSE LLC
-
   vendor/github.com/openshift/api:
     url: https://github.com/openshift/api
     license: Apache-2.0

@@ -55,11 +55,6 @@ func (j *jira) getAlertDescription(alert *storage.Alert) (string, error) {
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 
-func (j *jira) getBenchmarkDescription(schedule *storage.BenchmarkSchedule) (string, error) {
-	benchmarkLink := notifiers.BenchmarkLink(j.notifier.UiEndpoint)
-	return notifiers.FormatBenchmark(schedule, benchmarkLink)
-}
-
 // AlertNotify takes in an alert and generates the notification
 func (j *jira) AlertNotify(alert *storage.Alert) error {
 	description, err := j.getAlertDescription(alert)
@@ -111,31 +106,6 @@ func (j *jira) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 			Description: description,
 			Priority: &jiraLib.Priority{
 				Name: severityToPriority(storage.Severity_MEDIUM_SEVERITY),
-			},
-		},
-	}
-	return j.createIssue(i)
-}
-
-// BenchmarkNotify takes in a benchmark and generates the notification
-func (j *jira) BenchmarkNotify(schedule *storage.BenchmarkSchedule) error {
-	description, err := j.getBenchmarkDescription(schedule)
-	if err != nil {
-		return err
-	}
-
-	i := &jiraLib.Issue{
-		Fields: &jiraLib.IssueFields{
-			Summary: fmt.Sprintf("New Benchmark Results for %v", schedule.GetBenchmarkName()),
-			Type: jiraLib.IssueType{
-				Name: j.conf.GetIssueType(),
-			},
-			Project: jiraLib.Project{
-				Key: j.notifier.GetLabelDefault(),
-			},
-			Description: description,
-			Priority: &jiraLib.Priority{
-				Name: severityToPriority(storage.Severity_LOW_SEVERITY),
 			},
 		},
 	}

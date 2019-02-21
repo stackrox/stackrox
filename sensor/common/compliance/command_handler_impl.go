@@ -8,7 +8,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
-	"github.com/stackrox/rox/pkg/benchmarks"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -22,6 +21,8 @@ const (
 	scrapeServiceAccount = "stackrox-compliance"
 	scrapeCommand        = "stackrox/compliance"
 	scrapeEnvironment    = "ROX_SCRAPE_ID"
+
+	benchmarkServiceAccount = "benchmark"
 )
 
 var (
@@ -214,7 +215,7 @@ func (c *commandHandlerImpl) createService(scrapeID string) (*orchestrators.Syst
 		},
 		Image:          image,
 		Global:         true,
-		ServiceAccount: benchmarks.BenchmarkServiceAccount,
+		ServiceAccount: benchmarkServiceAccount,
 		Secrets: []orchestrators.Secret{
 			{
 				Name: "benchmark-tls",

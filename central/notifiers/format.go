@@ -135,39 +135,6 @@ func FormatPolicy(alert *storage.Alert, alertLink string, funcMap template.FuncM
 	return tpl.String(), nil
 }
 
-type benchmarkFormatStruct struct {
-	*storage.BenchmarkSchedule
-
-	Link string
-}
-
-const benchmarkFormat = `
-New benchmark results for benchmark '{{.BenchmarkSchedule.BenchmarkName }}' have been posted. Go to {{ .Link }} to view the results.
-`
-
-// FormatBenchmark takes in a benchmark, and a link and generates the notification
-func FormatBenchmark(schedule *storage.BenchmarkSchedule, scheduleLink string) (string, error) {
-	funcMap := make(template.FuncMap)
-	funcMap["stringify"] = stringify
-	data := benchmarkFormatStruct{
-		BenchmarkSchedule: schedule,
-		Link:              scheduleLink,
-	}
-	// Remove all the formatting
-	f := strings.Replace(benchmarkFormat, "\t", "", -1)
-	f = strings.Replace(f, "\n", "", -1)
-	tmpl, err := template.New("").Funcs(funcMap).Parse(f)
-	if err != nil {
-		return "", err
-	}
-	var tpl bytes.Buffer
-	err = tmpl.Execute(&tpl, data)
-	if err != nil {
-		return "", err
-	}
-	return tpl.String(), nil
-}
-
 type networkPolicyFormatStruct struct {
 	YAML        string
 	ClusterName string

@@ -176,12 +176,6 @@ func (c *cscc) AlertNotify(alert *storage.Alert) error {
 	return c.client.CreateFinding(finding, findingID)
 }
 
-// BenchmarkNotify does nothing currently, since we do not want to post
-// benchmarks to CSCC.
-func (c *cscc) BenchmarkNotify(schedule *storage.BenchmarkSchedule) error {
-	return nil
-}
-
 func newCSCC(protoNotifier *storage.Notifier, clusters clusterDatastore.DataStore) (*cscc, error) {
 	csccConfig, ok := protoNotifier.GetConfig().(*storage.Notifier_Cscc)
 	if !ok {

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stackrox/rox/pkg/benchmarks"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
@@ -115,14 +113,6 @@ func (k *kubernetesOrchestrator) Launch(service orchestrators.SystemService) (st
 	}
 
 	return actual.Name, nil
-}
-
-func (k *kubernetesOrchestrator) LaunchBenchmark(service orchestrators.SystemService) (string, error) {
-	service.Command = []string{benchmarks.BenchmarkCommand}
-	service.Envs = append(service.Envs, env.Combine(env.BenchmarkCompletion.EnvVar(), "true"))
-	service.Mounts = benchmarks.BenchmarkMounts
-	service.HostPID = true
-	return k.Launch(service)
 }
 
 func (k *kubernetesOrchestrator) newServiceWrap(service orchestrators.SystemService) *serviceWrap {

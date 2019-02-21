@@ -21,7 +21,6 @@ var (
 type Processor interface {
 	Start()
 	ProcessAlert(alert *storage.Alert)
-	ProcessBenchmark(schedule *storage.BenchmarkSchedule)
 
 	UpdateNotifier(notifier notifiers.Notifier)
 	RemoveNotifier(id string)
@@ -35,7 +34,6 @@ type Processor interface {
 func New(s store.Store) (Processor, error) {
 	processor := &processorImpl{
 		alertChan:           make(chan *storage.Alert, alertChanSize),
-		benchmarkChan:       make(chan *storage.BenchmarkSchedule, benchmarkChanSize),
 		notifiers:           make(map[string]notifiers.Notifier),
 		notifiersToPolicies: make(map[string]map[string]*storage.Policy),
 		storage:             s,

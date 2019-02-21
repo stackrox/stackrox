@@ -66,10 +66,6 @@ func (s *splunk) NetworkPolicyYAMLNotify(yaml string, clusterName string) error 
 	return nil
 }
 
-func (s *splunk) BenchmarkNotify(schedule *storage.BenchmarkSchedule) error {
-	return nil
-}
-
 func (s *splunk) ProtoNotifier() *storage.Notifier {
 	return s.Notifier
 }

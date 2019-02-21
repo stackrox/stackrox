@@ -1939,7 +1939,6 @@
     "github.com/mauricelam/genny/generic",
     "github.com/mitchellh/go-wordwrap",
     "github.com/opencontainers/go-digest",
-    "github.com/opencontainers/runc/libcontainer/user",
     "github.com/openshift/api/apps/v1",
     "github.com/openshift/client-go/apps/clientset/versioned",
     "github.com/openshift/client-go/apps/informers/externalversions",

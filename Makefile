@@ -227,8 +227,6 @@ build: gazelle cli
 	@echo "+ $@"
 	bazel build $(BAZEL_FLAGS) \
 		//central \
-		//benchmarks \
-		//benchmark-bootstrap \
 		//migrator \
 		//sensor/kubernetes \
 		//integration-tests/mock-grpc-server \
@@ -256,12 +254,7 @@ bazel-test: gazelle
 	bazel coverage $(PURE) $(RACE) \
 	    --test_output=errors \
 	    -- \
-	    //... -benchmarks/... -proto/... -tests/... -vendor/...
-
-.PHONY: benchmarks-test
-benchmarks-test:
-	@# Benchmark tests don't work in Bazel yet.
-	make -C benchmarks test report
+	    //... -proto/... -tests/... -vendor/...
 
 .PHONY: ui-test
 ui-test:
@@ -269,7 +262,7 @@ ui-test:
 	make -C ui test
 
 .PHONY: test
-test: bazel-test benchmarks-test ui-test collector-tag
+test: bazel-test ui-test collector-tag
 
 .PHONY: integration-unit-tests
 integration-unit-tests: gazelle
@@ -303,8 +296,6 @@ image: build clean-image $(MERGED_API_SWAGGER_SPEC)
 	cp bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl image/bin/roxctl-linux
 	cp bazel-bin/roxctl/darwin_amd64_pure_stripped/roxctl image/bin/roxctl-darwin
 	cp bazel-bin/roxctl/windows_amd64_pure_stripped/roxctl.exe image/bin/roxctl-windows.exe
-	cp bazel-bin/benchmarks/linux_amd64_pure_stripped/benchmarks image/bin/benchmarks
-	cp bazel-bin/benchmark-bootstrap/linux_amd64_pure_stripped/benchmark-bootstrap image/bin/benchmark-bootstrap
 	cp bazel-bin/migrator/linux_amd64_pure_stripped/migrator image/bin/migrator
 	cp bazel-bin/sensor/kubernetes/linux_amd64_pure_stripped/kubernetes image/bin/kubernetes-sensor
 	cp bazel-bin/compliance/collection/linux_amd64_pure_stripped/collection image/bin/compliance

@@ -34,10 +34,6 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
   upstream = "17.09-ce plus additional commits to fix Darwin build"
 
 [[constraint]]
-  name = "github.com/opencontainers/runc"
-  revision = "e6516b3d5dc780cb57a976013c242a9a93052543"
-
-[[constraint]]
   name = "github.com/docker/go-units"
   branch = "master"
 

@@ -13,7 +13,6 @@ import (
 // Processor takes in alerts and sends the notifications tied to that alert
 type processorImpl struct {
 	alertChan     chan *storage.Alert
-	benchmarkChan chan *storage.BenchmarkSchedule
 	notifiers     map[string]notifiers.Notifier
 	notifiersLock sync.RWMutex
 
@@ -53,47 +52,20 @@ func (p *processorImpl) notifyAlert(alert *storage.Alert) {
 	}
 }
 
-func (p *processorImpl) notifyBenchmark(schedule *storage.BenchmarkSchedule) {
-	p.notifiersLock.RLock()
-	defer p.notifiersLock.RUnlock()
-	for _, id := range schedule.Notifiers {
-		notifier, exists := p.notifiers[id]
-		if !exists {
-			log.Errorf("Could not send notification to notifier id %v for benchmark %v because it does not exist", id, schedule.GetBenchmarkName())
-			continue
-		}
-		if err := notifier.BenchmarkNotify(schedule); err != nil {
-			log.Errorf("Unable to send notification to %v (%v) for benchmark %v: %v", id, notifier.ProtoNotifier().GetName(), schedule.GetBenchmarkName(), err)
-		}
-	}
-}
-
 func (p *processorImpl) processAlerts() {
 	for alert := range p.alertChan {
 		p.notifyAlert(alert)
 	}
 }
 
-func (p *processorImpl) processBenchmark() {
-	for schedule := range p.benchmarkChan {
-		p.notifyBenchmark(schedule)
-	}
-}
-
 // Start begins the notification processor and is blocking
 func (p *processorImpl) Start() {
 	go p.processAlerts()
-	go p.processBenchmark()
 }
 
 // ProcessAlert pushes the alert into a channel to be processed
 func (p *processorImpl) ProcessAlert(alert *storage.Alert) {
 	p.alertChan <- alert
-}
-
-// ProcessBenchmark pushes the alert into a channel to be processed
-func (p *processorImpl) ProcessBenchmark(schedule *storage.BenchmarkSchedule) {
-	p.benchmarkChan <- schedule
 }
 
 // RemoveNotifier removes the in memory copy of the specified notifier

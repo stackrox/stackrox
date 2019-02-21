@@ -170,11 +170,6 @@ func (e *email) plainTextAlert(alert *storage.Alert) (string, error) {
 	return notifiers.FormatPolicy(alert, alertLink, funcMap)
 }
 
-func (e *email) plainTextBenchmark(schedule *storage.BenchmarkSchedule) (string, error) {
-	benchmarkLink := notifiers.BenchmarkLink(e.notifier.UiEndpoint)
-	return notifiers.FormatBenchmark(schedule, benchmarkLink)
-}
-
 // AlertNotify takes in an alert and generates the email
 func (e *email) AlertNotify(alert *storage.Alert) error {
 	subject := fmt.Sprintf("Deployment %v (%v) violates '%v' Policy", alert.GetDeployment().GetName(),
@@ -197,16 +192,6 @@ func (e *email) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 			return s
 		},
 	})
-	if err != nil {
-		return err
-	}
-	return e.sendEmail(e.notifier.GetLabelDefault(), subject, body)
-}
-
-// BenchmarkNotify takes in an benchmark and generates the email
-func (e *email) BenchmarkNotify(schedule *storage.BenchmarkSchedule) error {
-	subject := fmt.Sprintf("New Benchmark Results for %v", schedule.GetBenchmarkName())
-	body, err := e.plainTextBenchmark(schedule)
 	if err != nil {
 		return err
 	}

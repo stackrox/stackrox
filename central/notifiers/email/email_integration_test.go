@@ -64,11 +64,3 @@ func TestEmailTest(t *testing.T) {
 	e := getEmail(t)
 	assert.NoError(t, e.Test())
 }
-
-func TestEmailBenchmarkNotify(t *testing.T) {
-	e := getEmail(t)
-	schedule := &storage.BenchmarkSchedule{
-		BenchmarkName: "CIS Docker Benchmark",
-	}
-	assert.NoError(t, e.BenchmarkNotify(schedule))
-}

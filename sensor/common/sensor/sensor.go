@@ -7,7 +7,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/benchmarks"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
@@ -64,7 +63,6 @@ type Sensor struct {
 
 	server          pkgGRPC.API
 	profilingServer *http.Server
-	benchScheduler  *benchmarks.SchedulerClient
 
 	centralConnection    *grpc.ClientConn
 	centralCommunication CentralCommunication
@@ -115,11 +113,6 @@ func (s *Sensor) Start() {
 		log.Fatalf("Error connecting to central: %s", err)
 	}
 
-	s.benchScheduler, err = benchmarks.NewSchedulerClient(s.orchestrator, s.advertisedEndpoint, s.image, s.centralConnection, s.clusterID)
-	if err != nil {
-		panic(err)
-	}
-
 	s.profilingServer = s.startProfilingServer()
 
 	customRoutes = append(customRoutes, routes.CustomRoute{
@@ -146,9 +139,6 @@ func (s *Sensor) Start() {
 	}
 	if s.enforcer != nil {
 		go s.enforcer.Start()
-	}
-	if s.benchScheduler != nil {
-		go s.benchScheduler.Start()
 	}
 	if s.networkConnManager != nil {
 		go s.networkConnManager.Start()
@@ -186,9 +176,6 @@ func (s *Sensor) Stop() {
 	if s.enforcer != nil {
 		s.enforcer.Stop()
 	}
-	if s.benchScheduler != nil {
-		s.benchScheduler.Stop()
-	}
 	if s.networkConnManager != nil {
 		s.networkConnManager.Stop()
 	}
@@ -210,7 +197,6 @@ func (s *Sensor) Stop() {
 
 func (s *Sensor) registerAPIServices() {
 	s.server.Register(
-		benchmarks.NewBenchmarkResultsService(benchmarks.NewLRURelayer(s.centralConnection)),
 		signalService.Singleton(),
 		networkFlowService.Singleton(),
 		compliance.Singleton(),

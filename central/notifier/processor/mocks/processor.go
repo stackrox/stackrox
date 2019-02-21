@@ -56,16 +56,6 @@ func (mr *MockProcessorMockRecorder) ProcessAlert(arg0 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessAlert", reflect.TypeOf((*MockProcessor)(nil).ProcessAlert), arg0)
 }
 
-// ProcessBenchmark mocks base method
-func (m *MockProcessor) ProcessBenchmark(arg0 *storage.BenchmarkSchedule) {
-	m.ctrl.Call(m, "ProcessBenchmark", arg0)
-}
-
-// ProcessBenchmark indicates an expected call of ProcessBenchmark
-func (mr *MockProcessorMockRecorder) ProcessBenchmark(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessBenchmark", reflect.TypeOf((*MockProcessor)(nil).ProcessBenchmark), arg0)
-}
-
 // RemoveNotifier mocks base method
 func (m *MockProcessor) RemoveNotifier(arg0 string) {
 	m.ctrl.Call(m, "RemoveNotifier", arg0)

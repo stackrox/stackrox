@@ -71,19 +71,6 @@ func (mr *MockOrchestratorMockRecorder) Launch(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Launch", reflect.TypeOf((*MockOrchestrator)(nil).Launch), arg0)
 }
 
-// LaunchBenchmark mocks base method
-func (m *MockOrchestrator) LaunchBenchmark(arg0 orchestrators.SystemService) (string, error) {
-	ret := m.ctrl.Call(m, "LaunchBenchmark", arg0)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// LaunchBenchmark indicates an expected call of LaunchBenchmark
-func (mr *MockOrchestratorMockRecorder) LaunchBenchmark(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LaunchBenchmark", reflect.TypeOf((*MockOrchestrator)(nil).LaunchBenchmark), arg0)
-}
-
 // WaitForCompletion mocks base method
 func (m *MockOrchestrator) WaitForCompletion(arg0 string, arg1 time.Duration) error {
 	ret := m.ctrl.Call(m, "WaitForCompletion", arg0, arg1)

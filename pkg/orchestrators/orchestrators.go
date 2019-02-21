@@ -34,7 +34,6 @@ type SystemService struct {
 type Orchestrator interface {
 	Launch(service SystemService) (string, error)
 	Kill(id string) error
-	LaunchBenchmark(service SystemService) (string, error)
 	WaitForCompletion(service string, timeout time.Duration) error
 	CleanUp(ownedByThisInstance bool) error
 }

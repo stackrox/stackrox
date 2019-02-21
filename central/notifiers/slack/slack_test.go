@@ -54,17 +54,3 @@ func TestSlackTest(t *testing.T) {
 	}
 	assert.NoError(t, s.Test())
 }
-
-func TestSlackBenchmarkNotify(t *testing.T) {
-	webhook := skip(t)
-	s := slack{
-		Notifier: &storage.Notifier{
-			UiEndpoint:   "http://google.com",
-			LabelDefault: webhook,
-		},
-	}
-	schedule := &storage.BenchmarkSchedule{
-		BenchmarkName: "CIS Docker Benchmark",
-	}
-	assert.NoError(t, s.BenchmarkNotify(schedule))
-}
