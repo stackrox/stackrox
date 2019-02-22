@@ -5,23 +5,15 @@ import { withRouter } from 'react-router-dom';
 import PageHeader from 'Components/PageHeader';
 import ScanButton from 'Containers/Compliance/ScanButton';
 import ExportButton from 'Components/ExportButton';
-import entityTypes from 'constants/entityTypes';
 
-const EntityHeader = ({
-    header,
-    subHeader,
-    searchComponent,
-    scanCluster,
-    scanStandard,
-    params
-}) => (
+const EntityHeader = ({ header, subHeader, searchComponent, scanCluster, scanStandard }) => (
     <PageHeader header={header} subHeader={subHeader}>
         {searchComponent}
         <div className="flex flex-1 justify-end">
             <div className="flex">
                 <div className="flex items-center">
                     <>
-                        {params.entityType === entityTypes.CLUSTER && (
+                        {scanCluster && (
                             <ScanButton
                                 text="Scan"
                                 clusterId={scanCluster}
@@ -30,7 +22,7 @@ const EntityHeader = ({
                         )}
                         <ExportButton
                             fileName={`${subHeader} "${header}" Compliance`}
-                            type={params.entityType === entityTypes.CLUSTER ? 'CLUSTER' : ''}
+                            type={scanCluster ? 'CLUSTER' : ''}
                             id={scanCluster}
                             pdfId="capture-dashboard"
                         />
@@ -46,8 +38,7 @@ EntityHeader.propTypes = {
     subHeader: PropTypes.string,
     searchComponent: PropTypes.node,
     scanCluster: PropTypes.string,
-    scanStandard: PropTypes.string,
-    params: PropTypes.shape({})
+    scanStandard: PropTypes.string
 };
 
 EntityHeader.defaultProps = {
@@ -55,8 +46,7 @@ EntityHeader.defaultProps = {
     subHeader: '',
     scanCluster: '*',
     scanStandard: '*',
-    searchComponent: null,
-    params: null
+    searchComponent: null
 };
 
 export default withRouter(EntityHeader);

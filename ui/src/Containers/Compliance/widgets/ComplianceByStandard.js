@@ -88,8 +88,8 @@ const processSunburstData = (data, type) => {
             const group = groupMapping[datum.groupId];
             const controlStat = controlStatsMapping[datum.id];
             const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.ENTITY, {
-                entityType: datum.standardId,
-                entityId: datum.id
+                standardId: datum.standardId,
+                controlId: datum.id
             });
             if (group !== undefined && controlStat !== undefined) {
                 const value = Math.round((controlStat.passing / controlStat.total) * 100);

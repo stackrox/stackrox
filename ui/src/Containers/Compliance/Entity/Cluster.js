@@ -87,13 +87,13 @@ const ClusterPage = ({ sidePanelMode, params }) => (
                                 className={pdfClassName}
                             />
                             <ComplianceByStandard
-                                type={entityTypes.CIS_KUBERENETES_V1_2_0}
+                                type={entityTypes.CIS_Kubernetes_v1_2_0}
                                 entityName={cluster.name}
                                 params={params}
                                 className={pdfClassName}
                             />
                             <ComplianceByStandard
-                                type={entityTypes.CIS_DOCKER_V1_1_0}
+                                type={entityTypes.CIS_Docker_v1_1_0}
                                 entityName={cluster.name}
                                 params={params}
                                 className={pdfClassName}

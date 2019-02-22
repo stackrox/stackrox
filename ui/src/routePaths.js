@@ -38,6 +38,6 @@ const resourcesMatcher = `(${resourceURLs.join('|')})`;
 export const nestedCompliancePaths = {
     DASHBOARD: `${compliancePath}/`,
     LIST: `${compliancePath}/:entityType`,
-    CONTROL: `${compliancePath}/:entityType${standardsMatcher}/:entityId`,
+    CONTROL: `${compliancePath}/:standardId${standardsMatcher}/:controlId`,
     RESOURCE: `${compliancePath}/:entityType${resourcesMatcher}/:entityId`
 };

@@ -77,8 +77,8 @@ const ControlsMostFailed = ({ params, limit, showEmpty }) => {
                 const control = controls.find(ctrl => ctrl.id === entry[0]);
                 const label = control ? control.label : '';
                 const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.ENTITY, {
-                    entityId: entry[0],
-                    entityType: entry[1].standardId
+                    controlId: entry[0],
+                    standardId: entry[1].standardId
                 }).url;
                 return { label, link };
             });

@@ -71,12 +71,12 @@ const ComplianceDashboardPage = ({ match, location }) => {
                         className="pdf-page"
                     />
                     <ComplianceByStandard
-                        type={standardTypes.CIS_DOCKER_V1_1_0}
+                        type={standardTypes.CIS_Docker_v1_1_0}
                         params={params}
                         className="pdf-page"
                     />
                     <ComplianceByStandard
-                        type={standardTypes.CIS_KUBERENETES_V1_2_0}
+                        type={standardTypes.CIS_Kubernetes_v1_2_0}
                         params={params}
                         className="pdf-page"
                     />

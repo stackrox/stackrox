@@ -12,8 +12,8 @@ import CIS from 'images/cis.svg';
 import Widget from 'Components/Widget';
 
 const svgMapping = {
-    [entityTypes.CIS_DOCKER_V1_1_0]: CIS,
-    [entityTypes.CIS_KUBERENETES_V1_2_0]: CIS,
+    [entityTypes.CIS_Docker_v1_1_0]: CIS,
+    [entityTypes.CIS_Kubernetes_v1_2_0]: CIS,
     [entityTypes.PCI_DSS_3_2]: PCI,
     [entityTypes.HIPAA_164]: HIPAA,
     [entityTypes.NIST_800_190]: NIST

@@ -39,9 +39,7 @@ const NamespacePage = ({ sidePanelMode, params }) => (
             const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
             return (
                 <section className="flex flex-col h-full w-full">
-                    {!sidePanelMode && (
-                        <Header header={header} subHeader="Namespace" params={params} />
-                    )}
+                    {!sidePanelMode && <Header header={header} subHeader="Namespace" />}
                     <div
                         className={`flex-1 relative bg-base-200 overflow-auto ${
                             !sidePanelMode ? `p-6` : `p-4`

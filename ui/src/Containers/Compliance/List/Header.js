@@ -3,11 +3,10 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
-import { standardBaseTypes } from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
 import lowerCase from 'lodash/lowerCase';
 import startCase from 'lodash/startCase';
-
+import { standardTypes } from 'constants/entityTypes';
 import PageHeader from 'Components/PageHeader';
 import ScanButton from 'Containers/Compliance/ScanButton';
 import ExportButton from 'Components/ExportButton';
@@ -15,13 +14,14 @@ import ExportButton from 'Components/ExportButton';
 const ListHeader = ({ match, location, searchComponent }) => {
     const params = URLService.getParams(match, location);
     const { entityType } = params;
-    const headerText = standardBaseTypes[entityType]
-        ? standardLabels[entityType]
+    const standardId = standardTypes[entityType];
+    const headerText = standardId
+        ? standardLabels[standardId]
         : `${startCase(lowerCase(entityType))}s`;
 
-    const subHeaderText = standardBaseTypes[entityType] ? 'Standard' : 'Resource list';
+    const subHeaderText = standardId ? 'Standard' : 'Resource list';
     let tableOptions = null;
-    if (standardBaseTypes[entityType]) {
+    if (standardId) {
         tableOptions = {
             columnStyles: {
                 0: { columnWidth: 80 },
@@ -39,13 +39,11 @@ const ListHeader = ({ match, location, searchComponent }) => {
                 <div className="flex">
                     <div className="flex items-center">
                         <div className="flex">
-                            {standardBaseTypes[entityType] && (
-                                <ScanButton text="Scan" standardId={entityType} />
-                            )}
+                            {standardId && <ScanButton text="Scan" standardId={standardId} />}
                             <ExportButton
                                 fileName={`${headerText} Compliance`}
-                                id={entityType}
-                                type={standardBaseTypes[entityType] ? 'STANDARD' : ''}
+                                id={entityType || standardId}
+                                type={standardId ? 'STANDARD' : ''}
                                 pdfId="capture-list"
                                 tableOptions={tableOptions}
                             />

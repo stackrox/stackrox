@@ -6,13 +6,16 @@ import pageTypes from 'constants/pageTypes';
 
 import Panel from 'Components/Panel';
 import ComplianceEntityPage from 'Containers/Compliance/Entity/Page';
+import ControlPage from 'Containers/Compliance/Entity/Control';
+
 import AppLink from 'Components/AppLink';
-import { standardBaseTypes } from 'constants/entityTypes';
+import { standardBaseTypes, standardTypes } from 'constants/entityTypes';
 
 const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRow }) => {
     const { name, control } = selectedRow;
     const { context, query, entityType } = URLService.getParams(match, location);
     const { groupBy, ...rest } = query;
+    const isControl = !!standardTypes[entityType];
 
     const pageParams = {
         context,
@@ -26,6 +29,11 @@ const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRo
         entityId: selectedRow.id,
         entityType
     };
+
+    if (isControl) {
+        linkParams.standardId = entityType;
+        linkParams.controlId = selectedRow.id;
+    }
 
     const headerTextComponent = (
         <div className="w-full flex items-center">
@@ -51,13 +59,19 @@ const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRo
         </div>
     );
 
+    const entityPage = isControl ? (
+        <ControlPage controlId={selectedRow.id} sidePanelMode />
+    ) : (
+        <ComplianceEntityPage params={pageParams} sidePanelMode />
+    );
+
     return (
         <Panel
             className="bg-primary-200 z-40 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-108 md:relative"
             headerTextComponent={headerTextComponent}
             onClose={clearSelectedRow}
         >
-            <ComplianceEntityPage params={pageParams} sidePanelMode />
+            {entityPage}
         </Panel>
     );
 };

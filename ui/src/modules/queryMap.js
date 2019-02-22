@@ -1,7 +1,7 @@
 import orderBy from 'lodash/orderBy';
 
 import componentTypes from 'constants/componentTypes';
-import entityTypes from 'constants/entityTypes';
+import entityTypes, { standardTypes } from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
 import contextTypes from 'constants/contextTypes';
 import pageTypes from 'constants/pageTypes';
@@ -152,11 +152,11 @@ export default [
         context: [contextTypes.COMPLIANCE],
         pageType: [pageTypes.LIST],
         entityType: [
-            entityTypes.PCI_DSS_3_2,
-            entityTypes.NIST_800_190,
-            entityTypes.HIPAA_164,
-            entityTypes.CIS_DOCKER_V1_1_0,
-            entityTypes.CIS_KUBERENETES_V1_2_0
+            standardTypes.PCI_DSS_3_2,
+            standardTypes.NIST_800_190,
+            standardTypes.HIPAA_164,
+            standardTypes.CIS_Docker_v1_1_0,
+            standardTypes.CIS_Kubernetes_v1_2_0
         ],
         component: [componentTypes.LIST_TABLE],
         config: {

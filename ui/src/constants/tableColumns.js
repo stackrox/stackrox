@@ -6,14 +6,14 @@ const getColumnValue = (row, accessor) => (row[accessor] ? row[accessor] : 'N/A'
 
 const complianceColumns = [
     {
-        accessor: standardTypes.CIS_DOCKER_V1_1_0,
+        accessor: standardTypes.CIS_Docker_v1_1_0,
         Header: 'CIS Docker',
-        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_DOCKER_V1_1_0)
+        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_Docker_v1_1_0)
     },
     {
-        accessor: standardTypes.CIS_KUBERENETES_V1_2_0,
+        accessor: standardTypes.CIS_Kubernetes_v1_2_0,
         Header: 'CIS K8s',
-        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_KUBERENETES_V1_2_0)
+        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_Kubernetes_v1_2_0)
     },
     {
         accessor: standardTypes.HIPAA_164,
@@ -89,14 +89,14 @@ const nodeColumns = [
         Header: 'Cluster'
     },
     {
-        accessor: standardTypes.CIS_DOCKER_V1_1_0,
+        accessor: standardTypes.CIS_Docker_v1_1_0,
         Header: 'CIS Docker',
-        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_DOCKER_V1_1_0)
+        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_Docker_v1_1_0)
     },
     {
-        accessor: standardTypes.CIS_KUBERENETES_V1_2_0,
+        accessor: standardTypes.CIS_Kubernetes_v1_2_0,
         Header: 'CIS K8s',
-        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_KUBERENETES_V1_2_0)
+        Cell: ({ original }) => getColumnValue(original, standardTypes.CIS_Kubernetes_v1_2_0)
     },
     {
         accessor: standardTypes.NIST_800_190,
@@ -150,8 +150,8 @@ const entityToColumns = {
     [standardTypes.PCI_DSS_3_2]: getStandardColumns('PCI'),
     [standardTypes.NIST_800_190]: getStandardColumns('NIST'),
     [standardTypes.HIPAA_164]: getStandardColumns('HIPAA'),
-    [standardTypes.CIS_KUBERENETES_V1_2_0]: getStandardColumns('CIS Kubernetes'),
-    [standardTypes.CIS_DOCKER_V1_1_0]: getStandardColumns('CIS Docker'),
+    [standardTypes.CIS_Kubernetes_v1_2_0]: getStandardColumns('CIS Kubernetes'),
+    [standardTypes.CIS_Docker_v1_1_0]: getStandardColumns('CIS Docker'),
     [resourceTypes.NODE]: nodeColumns,
     [resourceTypes.NAMESPACE]: namespaceColumns
 };

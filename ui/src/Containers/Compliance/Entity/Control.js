@@ -8,92 +8,104 @@ import Query from 'Components/ThrowingQuery';
 import { CONTROL_QUERY as QUERY } from 'queries/controls';
 import ControlDetails from 'Containers/Compliance/widgets/ControlDetails';
 import ControlRelatedResourceList from 'Containers/Compliance/widgets/ControlRelatedResourceList';
+import URLService from 'modules/URLService';
+import ReactRouterPropTypes from 'react-router-prop-types';
+import { withRouter } from 'react-router-dom';
 import Header from './Header';
 
-const ControlPage = ({ sidePanelMode, params }) => (
-    <Query query={QUERY} variables={{ id: params.entityId }}>
-        {({ data }) => {
-            const { results: control, complianceStandards: standards } = data;
-            if (isEmpty(control)) return null;
-            const standard = standards.find(item => item.id === control.standardId);
-            const { name, standardId, interpretationText, description } = control;
-            const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
-            return (
-                <section className="flex flex-col h-full w-full">
-                    {!sidePanelMode && (
-                        <Header
-                            header={`${standardLabels[standardId]} ${name}`}
-                            subHeader="Control"
-                            params={params}
-                        />
-                    )}
-                    <div
-                        className={`flex-1 relative bg-base-200 overflow-auto ${
-                            !sidePanelMode ? `p-6` : `p-4`
-                        } `}
-                        id="capture-dashboard"
-                    >
-                        <div
-                            className={`grid ${
-                                !sidePanelMode
-                                    ? `grid grid-gap-6 xxxl:grid-gap-8 md:grid-auto-fit xxl:grid-auto-fit-wide md:grid-dense`
-                                    : ``
-                            }sm:grid-columns-1 grid-gap-5`}
-                        >
-                            <ControlDetails
-                                standardId={standardId}
-                                control={name}
-                                description={description}
-                                className={`sx-2 ${pdfClassName}`}
+const ControlPage = ({ match, location, controlId, sidePanelMode }) => {
+    const params = URLService.getParams(match, location);
+    const pageControlId = controlId || params.controlId;
+    return (
+        <Query query={QUERY} variables={{ id: pageControlId }}>
+            {({ data }) => {
+                const { results: control, complianceStandards: standards } = data;
+                if (isEmpty(control)) return null;
+                const standard = standards.find(item => item.id === control.standardId);
+                const { name, standardId, interpretationText, description } = control;
+                const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
+                const standardName = standard ? standard.name : '';
+                return (
+                    <section className="flex flex-col h-full w-full">
+                        {!sidePanelMode && (
+                            <Header
+                                header={`${standardLabels[standardId]} ${name}`}
+                                subHeader="Control"
                             />
-                            {!!interpretationText.length && (
-                                <Widget
+                        )}
+                        <div
+                            className={`flex-1 relative bg-base-200 overflow-auto ${
+                                !sidePanelMode ? `p-6` : `p-4`
+                            } `}
+                            id="capture-dashboard"
+                        >
+                            <div
+                                className={`grid ${
+                                    !sidePanelMode
+                                        ? `grid grid-gap-6 xxxl:grid-gap-8 md:grid-auto-fit xxl:grid-auto-fit-wide md:grid-dense`
+                                        : ``
+                                }sm:grid-columns-1 grid-gap-5`}
+                            >
+                                <ControlDetails
+                                    standardId={standardId}
+                                    control={name}
+                                    description={description}
                                     className={`sx-2 ${pdfClassName}`}
-                                    header="Control guidance"
-                                >
-                                    <div className="p-4 leading-loose">{interpretationText}</div>
-                                </Widget>
-                            )}
-                            {!sidePanelMode && (
-                                <>
-                                    <ControlRelatedResourceList
-                                        listEntityType={entityTypes.CLUSTER}
-                                        pageEntityType={entityTypes.CONTROL}
-                                        pageEntity={control}
-                                        standard={standard ? standard.name : ''}
-                                        className={pdfClassName}
-                                    />
-                                    <ControlRelatedResourceList
-                                        listEntityType={entityTypes.NAMESPACE}
-                                        pageEntityType={entityTypes.CONTROL}
-                                        pageEntity={control}
-                                        standard={standard ? standard.name : ''}
-                                        className={pdfClassName}
-                                    />
-                                    <ControlRelatedResourceList
-                                        listEntityType={entityTypes.NODE}
-                                        pageEntityType={entityTypes.CONTROL}
-                                        pageEntity={control}
-                                        standard={standard ? standard.name : ''}
-                                        className={pdfClassName}
-                                    />
-                                </>
-                            )}
+                                />
+                                {!!interpretationText.length && (
+                                    <Widget
+                                        className={`sx-2 ${pdfClassName}`}
+                                        header="Control guidance"
+                                    >
+                                        <div className="p-4 leading-loose">
+                                            {interpretationText}
+                                        </div>
+                                    </Widget>
+                                )}
+                                {!sidePanelMode && (
+                                    <>
+                                        <ControlRelatedResourceList
+                                            listEntityType={entityTypes.CLUSTER}
+                                            pageEntityType={entityTypes.CONTROL}
+                                            pageEntity={control}
+                                            standard={standardName}
+                                            className={pdfClassName}
+                                        />
+                                        <ControlRelatedResourceList
+                                            listEntityType={entityTypes.NAMESPACE}
+                                            pageEntityType={entityTypes.CONTROL}
+                                            pageEntity={control}
+                                            standard={standardName}
+                                            className={pdfClassName}
+                                        />
+                                        <ControlRelatedResourceList
+                                            listEntityType={entityTypes.NODE}
+                                            pageEntityType={entityTypes.CONTROL}
+                                            pageEntity={control}
+                                            standard={standardName}
+                                            className={pdfClassName}
+                                        />
+                                    </>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                </section>
-            );
-        }}
-    </Query>
-);
+                    </section>
+                );
+            }}
+        </Query>
+    );
+};
 
 ControlPage.propTypes = {
     sidePanelMode: PropTypes.bool,
-    params: PropTypes.shape({}).isRequired
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
+    controlId: PropTypes.string
 };
 
 ControlPage.defaultProps = {
-    sidePanelMode: false
+    sidePanelMode: false,
+    controlId: null
 };
 
-export default ControlPage;
+export default withRouter(ControlPage);
