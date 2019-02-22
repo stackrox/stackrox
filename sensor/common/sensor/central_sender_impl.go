@@ -10,15 +10,17 @@ import (
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	networkConnManager "github.com/stackrox/rox/sensor/common/networkflow/manager"
+	"github.com/stackrox/rox/sensor/common/networkpolicies"
 	"github.com/stackrox/rox/sensor/common/signal"
 )
 
 type centralSenderImpl struct {
 	// Generate messages to be sent to central.
-	listener             listeners.Listener
-	signalService        signal.Service
-	networkConnManager   networkConnManager.Manager
-	scrapeCommandHandler compliance.CommandHandler
+	listener                      listeners.Listener
+	signalService                 signal.Service
+	networkConnManager            networkConnManager.Manager
+	scrapeCommandHandler          compliance.CommandHandler
+	networkPoliciesCommandHandler networkpolicies.CommandHandler
 
 	stopC    concurrency.ErrorSignal
 	stoppedC concurrency.ErrorSignal
@@ -88,6 +90,16 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 			msg = &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_ScrapeUpdate{
 					ScrapeUpdate: scrapeUpdate,
+				},
+			}
+		case networkPolicyCommandResponse, ok := <-s.networkPoliciesCommandHandler.Responses():
+			if !ok {
+				s.stopC.SignalWithError(errors.New("network policies command handler channel closed"))
+				return
+			}
+			msg = &central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_NetworkPoliciesResponse{
+					NetworkPoliciesResponse: networkPolicyCommandResponse,
 				},
 			}
 		case <-s.stopC.Done():

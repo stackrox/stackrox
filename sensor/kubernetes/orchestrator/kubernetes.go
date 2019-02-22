@@ -9,6 +9,7 @@ import (
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/orchestrators"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	v1beta12 "k8s.io/api/extensions/v1beta1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/typed/extensions/v1beta1"
-	"k8s.io/client-go/rest"
 )
 
 const (
@@ -48,26 +48,12 @@ func MustCreate(sensorInstanceID string) orchestrators.Orchestrator {
 
 // New returns a new kubernetes orchestrator client.
 func New(sensorInstanceID string) (orchestrators.Orchestrator, error) {
-	c, err := setupClient()
-	if err != nil {
-		log.Errorf("unable to create kubernetes client: %s", err)
-		return nil, err
-	}
 	return &kubernetesOrchestrator{
-		client:           c,
+		client:           client.MustCreateClientSet(),
 		converter:        newConverter(),
 		namespace:        namespace,
 		sensorInstanceID: sensorInstanceID,
 	}, nil
-}
-
-func setupClient() (client *kubernetes.Clientset, err error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return
-	}
-
-	return kubernetes.NewForConfig(config)
 }
 
 func (k *kubernetesOrchestrator) launch(setInterface v1beta1.DaemonSetInterface, ds *v1beta12.DaemonSet) (string, error) {

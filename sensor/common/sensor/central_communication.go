@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/listeners"
 	complianceLogic "github.com/stackrox/rox/sensor/common/compliance"
 	networkConnManager "github.com/stackrox/rox/sensor/common/networkflow/manager"
+	"github.com/stackrox/rox/sensor/common/networkpolicies"
 	"github.com/stackrox/rox/sensor/common/signal"
 	"google.golang.org/grpc"
 )
@@ -24,10 +25,11 @@ func NewCentralCommunication(
 	enforcer enforcers.Enforcer,
 	listener listeners.Listener,
 	signalService signal.Service,
-	networkConnManager networkConnManager.Manager) CentralCommunication {
+	networkConnManager networkConnManager.Manager,
+	networkPoliciesCommandHandler networkpolicies.CommandHandler) CentralCommunication {
 	return &centralCommunicationImpl{
-		receiver: NewCentralReceiver(scrapeCommandHandler, enforcer),
-		sender:   NewCentralSender(listener, signalService, networkConnManager, scrapeCommandHandler),
+		receiver: NewCentralReceiver(scrapeCommandHandler, enforcer, networkPoliciesCommandHandler),
+		sender:   NewCentralSender(listener, signalService, networkConnManager, scrapeCommandHandler, networkPoliciesCommandHandler),
 
 		stopC:    concurrency.NewErrorSignal(),
 		stoppedC: concurrency.NewErrorSignal(),

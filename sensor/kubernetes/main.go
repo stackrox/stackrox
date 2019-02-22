@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/sensor"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
+	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestrator"
 )
 
@@ -30,6 +31,7 @@ func main() {
 		orchestrator.MustCreate(sensorInstanceID),
 		manager.Singleton(),
 		roxmetadata.Singleton(),
+		networkpolicies.NewCommandHandler(),
 	)
 	s.Start()
 

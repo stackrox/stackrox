@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -334,17 +335,6 @@ func (s *serviceImpl) getNetworkPoliciesInSimulation(clusterID string, modificat
 	})
 }
 
-type networkPolicyRef struct {
-	Name, Namespace string
-}
-
-func getRef(policy *storage.NetworkPolicy) networkPolicyRef {
-	return networkPolicyRef{
-		Name:      policy.GetName(),
-		Namespace: policy.GetNamespace(),
-	}
-}
-
 type policyModification struct {
 	ExistingPolicies []*storage.NetworkPolicy
 	ToDelete         []*v1.NetworkPolicyReference
@@ -358,22 +348,19 @@ type policyModification struct {
 // policy.
 func applyPolicyModification(policies policyModification) (outputPolicies []*v1.NetworkPolicyInSimulation, err error) {
 	outputPolicies = make([]*v1.NetworkPolicyInSimulation, 0, len(policies.NewPolicies)+len(policies.ExistingPolicies))
-	policiesByRef := make(map[networkPolicyRef]*v1.NetworkPolicyInSimulation, len(policies.ExistingPolicies))
+	policiesByRef := make(map[k8sutil.NSObjRef]*v1.NetworkPolicyInSimulation, len(policies.ExistingPolicies))
 	for _, oldPolicy := range policies.ExistingPolicies {
 		simPolicy := &v1.NetworkPolicyInSimulation{
 			Policy: oldPolicy,
 			Status: v1.NetworkPolicyInSimulation_UNCHANGED,
 		}
 		outputPolicies = append(outputPolicies, simPolicy)
-		policiesByRef[getRef(oldPolicy)] = simPolicy
+		policiesByRef[k8sutil.RefOf(oldPolicy)] = simPolicy
 	}
 
 	// Delete policies that should be deleted
 	for _, toDeleteRef := range policies.ToDelete {
-		ref := networkPolicyRef{
-			Namespace: toDeleteRef.GetNamespace(),
-			Name:      toDeleteRef.GetName(),
-		}
+		ref := k8sutil.RefOf(toDeleteRef)
 		simPolicy := policiesByRef[ref]
 		if simPolicy == nil {
 			return nil, fmt.Errorf("policy %s in namespace %s marked for deletion does not exist", toDeleteRef.GetName(), toDeleteRef.GetNamespace())
@@ -388,7 +375,7 @@ func applyPolicyModification(policies policyModification) (outputPolicies []*v1.
 
 	// Add new policies that have no matching old policies.
 	for _, newPolicy := range policies.NewPolicies {
-		oldPolicySim := policiesByRef[getRef(newPolicy)]
+		oldPolicySim := policiesByRef[k8sutil.RefOf(newPolicy)]
 		if oldPolicySim != nil {
 			oldPolicySim.Status = v1.NetworkPolicyInSimulation_MODIFIED
 			if oldPolicySim.OldPolicy == nil {

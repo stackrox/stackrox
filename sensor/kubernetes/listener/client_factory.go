@@ -3,6 +3,7 @@ package listener
 import (
 	openshift "github.com/openshift/client-go/apps/clientset/versioned"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	kubernetesClient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -19,10 +20,7 @@ func createClient() *clientSet {
 	}
 
 	cs := &clientSet{}
-	cs.k8s, err = kubernetesClient.NewForConfig(config)
-	if err != nil {
-		log.Fatalf("Unable to get k8s client: %s", err)
-	}
+	cs.k8s = client.MustCreateClientSet()
 	if env.OpenshiftAPI.Setting() == "true" {
 		cs.openshift, err = openshift.NewForConfig(config)
 		if err != nil {

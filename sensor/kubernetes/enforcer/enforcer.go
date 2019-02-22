@@ -4,8 +4,8 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 var (
@@ -27,13 +27,8 @@ func MustCreate() enforcers.Enforcer {
 
 // New returns a new Kubernetes Enforcer.
 func New() (enforcers.Enforcer, error) {
-	c, err := setupClient()
-	if err != nil {
-		return nil, err
-	}
-
 	e := &enforcerImpl{
-		client: c,
+		client: client.MustCreateClientSet(),
 	}
 
 	enforcementMap := map[storage.EnforcementAction]enforcers.EnforceFunc{
@@ -43,13 +38,4 @@ func New() (enforcers.Enforcer, error) {
 	}
 
 	return enforcers.CreateEnforcer(enforcementMap), nil
-}
-
-func setupClient() (client *kubernetes.Clientset, err error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return
-	}
-
-	return kubernetes.NewForConfig(config)
 }

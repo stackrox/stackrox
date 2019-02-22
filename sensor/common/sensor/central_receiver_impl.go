@@ -9,11 +9,13 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
 	complianceLogic "github.com/stackrox/rox/sensor/common/compliance"
+	"github.com/stackrox/rox/sensor/common/networkpolicies"
 )
 
 type centralReceiverImpl struct {
-	scrapeCommandHandler complianceLogic.CommandHandler
-	enforcer             enforcers.Enforcer
+	scrapeCommandHandler          complianceLogic.CommandHandler
+	networkPoliciesCommandHandler networkpolicies.CommandHandler
+	enforcer                      enforcers.Enforcer
 
 	stopC    concurrency.ErrorSignal
 	stoppedC concurrency.ErrorSignal
@@ -63,19 +65,25 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 }
 
 func (s *centralReceiverImpl) processMsg(msg *central.MsgToSensor) {
-	switch msg.Msg.(type) {
+	switch m := msg.Msg.(type) {
 	case *central.MsgToSensor_Enforcement:
-		enforcementMsg := msg.Msg.(*central.MsgToSensor_Enforcement)
-		s.processEnforcement(enforcementMsg.Enforcement)
+		s.processEnforcement(m.Enforcement)
 	case *central.MsgToSensor_ScrapeCommand:
-		commandMsg := msg.Msg.(*central.MsgToSensor_ScrapeCommand)
-		s.processCommand(commandMsg.ScrapeCommand)
+		s.processScrapeCommand(m.ScrapeCommand)
+	case *central.MsgToSensor_NetworkPoliciesCommand:
+		s.processNetworkPoliciesCommand(m.NetworkPoliciesCommand)
 	default:
-		log.Errorf("Unsupported message from central of type %T: %+v", msg.Msg, msg.Msg)
+		log.Errorf("Unsupported message from central of type %T: %+v", m, m)
 	}
 }
 
-func (s *centralReceiverImpl) processCommand(command *central.ScrapeCommand) {
+func (s *centralReceiverImpl) processNetworkPoliciesCommand(command *central.NetworkPoliciesCommand) {
+	if !s.networkPoliciesCommandHandler.SendCommand(command) {
+		log.Errorf("Unable to apply network policies: %s", proto.MarshalTextString(command))
+	}
+}
+
+func (s *centralReceiverImpl) processScrapeCommand(command *central.ScrapeCommand) {
 	if !s.scrapeCommandHandler.SendCommand(command) {
 		log.Errorf("unable to send command: %s", proto.MarshalTextString(command))
 	}

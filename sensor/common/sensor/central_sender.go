@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/listeners"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	networkConnManager "github.com/stackrox/rox/sensor/common/networkflow/manager"
+	"github.com/stackrox/rox/sensor/common/networkpolicies"
 	"github.com/stackrox/rox/sensor/common/signal"
 )
 
@@ -21,12 +22,14 @@ type CentralSender interface {
 func NewCentralSender(listener listeners.Listener,
 	signalService signal.Service,
 	networkConnManager networkConnManager.Manager,
-	scrapeCommandHandler compliance.CommandHandler) CentralSender {
+	scrapeCommandHandler compliance.CommandHandler,
+	networkPoliciesCommandHandler networkpolicies.CommandHandler) CentralSender {
 	return &centralSenderImpl{
-		listener:             listener,
-		signalService:        signalService,
-		networkConnManager:   networkConnManager,
-		scrapeCommandHandler: scrapeCommandHandler,
+		listener:                      listener,
+		signalService:                 signalService,
+		networkConnManager:            networkConnManager,
+		scrapeCommandHandler:          scrapeCommandHandler,
+		networkPoliciesCommandHandler: networkPoliciesCommandHandler,
 
 		stopC:    concurrency.NewErrorSignal(),
 		stoppedC: concurrency.NewErrorSignal(),

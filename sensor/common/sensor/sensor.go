@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/compliance"
 	networkConnManager "github.com/stackrox/rox/sensor/common/networkflow/manager"
 	networkFlowService "github.com/stackrox/rox/sensor/common/networkflow/service"
+	"github.com/stackrox/rox/sensor/common/networkpolicies"
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
 	"google.golang.org/grpc"
@@ -54,11 +55,12 @@ type Sensor struct {
 	centralEndpoint    string
 	advertisedEndpoint string
 
-	listener           listeners.Listener
-	enforcer           enforcers.Enforcer
-	orchestrator       orchestrators.Orchestrator
-	networkConnManager networkConnManager.Manager
-	commandHandler     compliance.CommandHandler
+	listener                      listeners.Listener
+	enforcer                      enforcers.Enforcer
+	orchestrator                  orchestrators.Orchestrator
+	networkConnManager            networkConnManager.Manager
+	commandHandler                compliance.CommandHandler
+	networkPoliciesCommandHandler networkpolicies.CommandHandler
 
 	server          pkgGRPC.API
 	profilingServer *http.Server
@@ -70,17 +72,18 @@ type Sensor struct {
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
-func NewSensor(l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orchestrator, n networkConnManager.Manager, m roxmetadata.Metadata) *Sensor {
+func NewSensor(l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orchestrator, n networkConnManager.Manager, m roxmetadata.Metadata, networkPoliciesCommandHandler networkpolicies.CommandHandler) *Sensor {
 	return &Sensor{
 		clusterID:          env.ClusterID.Setting(),
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 
-		listener:           l,
-		enforcer:           e,
-		orchestrator:       o,
-		networkConnManager: n,
-		commandHandler:     compliance.NewCommandHandler(o, m),
+		listener:                      l,
+		enforcer:                      e,
+		orchestrator:                  o,
+		networkConnManager:            n,
+		commandHandler:                compliance.NewCommandHandler(o, m),
+		networkPoliciesCommandHandler: networkPoliciesCommandHandler,
 
 		stoppedSig: concurrency.NewErrorSignal(),
 	}
@@ -144,6 +147,9 @@ func (s *Sensor) Start() {
 	if s.commandHandler != nil {
 		s.commandHandler.Start(compliance.Singleton().Output())
 	}
+	if s.networkPoliciesCommandHandler != nil {
+		s.networkPoliciesCommandHandler.Start()
+	}
 
 	// Wait for central so we can initiate our GRPC connection to send sensor events.
 	s.waitUntilCentralIsReady(s.centralConnection)
@@ -182,6 +188,9 @@ func (s *Sensor) Stop() {
 	}
 	if s.commandHandler != nil {
 		s.commandHandler.Stop(nil)
+	}
+	if s.networkPoliciesCommandHandler != nil {
+		s.networkPoliciesCommandHandler.Stop()
 	}
 
 	if s.orchestrator != nil {
@@ -222,7 +231,7 @@ func pingWithTimeout(svc v1.PingServiceClient) (err error) {
 }
 
 func (s *Sensor) communicationWithCentral() {
-	s.centralCommunication = NewCentralCommunication(s.commandHandler, s.enforcer, s.listener, signalService.Singleton(), s.networkConnManager)
+	s.centralCommunication = NewCentralCommunication(s.commandHandler, s.enforcer, s.listener, signalService.Singleton(), s.networkConnManager, s.networkPoliciesCommandHandler)
 	s.centralCommunication.Start(s.centralConnection)
 
 	if err := s.centralCommunication.Stopped().Wait(); err != nil {

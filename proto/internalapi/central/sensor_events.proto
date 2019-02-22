@@ -119,24 +119,39 @@ message ScrapeKilled {
 // Network policy application.
 ////////////////////////////////////////
 
-message ApplyNetworkPoliciesCommand {
-    string command_id = 1;
+message NetworkPoliciesCommand {
+    message Apply {
+        string apply_id                           = 1;
+        v1.NetworkPolicyModification modification = 2;
+    }
 
-    v1.NetworkPolicyModification modification = 2;
+    message Payload {
+        oneof cmd {
+            Apply apply = 1;
+        }
+    }
+
+    int64 seq_id    = 1;
+    Payload payload = 2;
 }
 
-message ApplyNetworkPoliciesResponse {
-    string command_id = 1;
-
-    message Success {
-        v1.NetworkPolicyModification undo_modification = 1;
-    }
-    message Failure {
-        string error_message = 1;
+message NetworkPoliciesResponse {
+    message Apply {
+        string apply_id = 1;
     }
 
-    oneof response {
-        Success success = 2;
-        Failure failure = 3;
+    message Error {
+        string message = 1;
     }
+
+    message Payload {
+        oneof cmd {
+            Error error = 1;
+
+            Apply apply = 2;
+        }
+    }
+
+    int64 seq_id    = 1;
+    Payload payload = 2;
 }
