@@ -16,7 +16,9 @@ import Header from './Header';
 
 function processData(data) {
     const defaultValue = {
-        labels: []
+        labels: [],
+        name: '',
+        clusterName: ''
     };
 
     if (!data || !data.results || !data.results.metadata) return defaultValue;

@@ -35,7 +35,7 @@ const Labels = ({ labels }) => (
 );
 
 Labels.propTypes = {
-    labels: PropTypes.arrayOf({}).isRequired
+    labels: PropTypes.arrayOf(PropTypes.object).isRequired
 };
 
 export default Labels;

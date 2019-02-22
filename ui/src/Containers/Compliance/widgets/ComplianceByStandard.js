@@ -6,11 +6,12 @@ import capitalize from 'lodash/capitalize';
 import URLService from 'modules/URLService';
 import pageTypes from 'constants/pageTypes';
 import contextTypes from 'constants/contextTypes';
-
+import cloneDeep from 'lodash/cloneDeep';
 import Widget from 'Components/Widget';
 import Sunburst from 'Components/visuals/Sunburst';
 import Query from 'Components/AppQuery';
 import Loader from 'Components/Loader';
+import networkStatuses from 'constants/networkStatuses';
 
 const colors = [
     'var(--tertiary-400)',
@@ -121,7 +122,7 @@ const getNumControls = sunburstData =>
     sunburstData.reduce((acc, curr) => acc + curr.children.length, 0);
 
 const constructURLWithQuery = (params, type, id) => {
-    const newParams = { ...params };
+    const newParams = cloneDeep(params);
     if (type) {
         newParams.query.Standard = standardLabels[type];
     }
@@ -151,10 +152,10 @@ const ComplianceByStandard = ({ type, entityName, params, className }) => {
     const newParams = constructURLWithQuery(params, type, params.entityId);
     return (
         <Query params={newParams} componentType={componentTypes.COMPLIANCE_BY_STANDARD}>
-            {({ loading, data }) => {
+            {({ loading, data, networkStatus }) => {
                 let contents = <Loader />;
                 const headerText = `${standardLabels[type]} Compliance`;
-                if (!loading || data) {
+                if (!loading && data && networkStatus === networkStatuses.READY) {
                     const { sunburstData, totalPassing } = processSunburstData(data, type);
                     const link = createURLLink(params, type, entityName);
                     const sunburstRootData = [
@@ -182,6 +183,7 @@ const ComplianceByStandard = ({ type, entityName, params, className }) => {
                                 rootData={sunburstRootData}
                                 legendData={sunburstLegendData}
                                 totalValue={totalPassing}
+                                key={params.entityId}
                             />
                         );
                     }

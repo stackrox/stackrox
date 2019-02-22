@@ -20,11 +20,13 @@ const EntityCompliance = ({ entityType, entityName, clusterName, history }) => {
     const entityTypeLabel = resourceLabels[entityType];
 
     function getBarData(results) {
-        return results.map(item => ({
-            x: standardBaseTypes[item.aggregationKeys[0].id],
-            y: (item.numPassing / (item.numPassing + item.numFailing)) * 100,
-            standard: item.aggregationKeys[0].id
-        }));
+        return results
+            .filter(item => item.numPassing + item.numFailing)
+            .map(item => ({
+                x: standardBaseTypes[item.aggregationKeys[0].id],
+                y: (item.numPassing / (item.numPassing + item.numFailing)) * 100,
+                standard: item.aggregationKeys[0].id
+            }));
     }
 
     function getTotals(results) {
