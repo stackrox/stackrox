@@ -3,6 +3,7 @@ package services
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.PolicyServiceGrpc
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
+import io.stackrox.proto.api.v1.PolicyServiceOuterClass.PatchPolicyRequest
 
 class CreatePolicyService extends BaseService {
 
@@ -30,6 +31,15 @@ class CreatePolicyService extends BaseService {
                             .build()
             )
         } catch (Exception e) {
+            println e.toString()
+        }
+    }
+
+    static patchPolicy(PatchPolicyRequest pr) {
+        try {
+            getPolicyClient().patchPolicy(pr).newBuilder().build()
+        }
+        catch (Exception e) {
             println e.toString()
         }
     }

@@ -9,6 +9,7 @@ import io.stackrox.proto.storage.Compliance.ComplianceResultValue
 import io.stackrox.proto.storage.Compliance.ComplianceRunResults
 import io.stackrox.proto.storage.Compliance.ComplianceState
 import io.stackrox.proto.storage.ImageOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass
 import objects.Control
 import objects.CsvRow
 import objects.Deployment
@@ -20,6 +21,7 @@ import org.junit.experimental.categories.Category
 import services.ClusterService
 import services.ComplianceManagementService
 import services.ComplianceService
+import services.CreatePolicyService
 import services.NetworkPolicyService
 import services.ImageService
 import services.ProcessService
@@ -661,6 +663,110 @@ class ComplianceTest extends BaseSpecification {
         }
         if (policyId) {
             orchestrator.deleteNetworkPolicy(policy)
+        }
+    }
+
+    @Category([BAT])
+    def "Verify checks based on Policies"() {
+        def controls = [
+                new Control(
+                        "NIST_800_190:4_1_1",
+                        ["Build time policies that disallows images with a critical CVSS score is enabled and enforced",
+                         "At least one build time policy is enabled and enforced",
+                         "Cluster has an image scanner in use"],
+                        ComplianceState.COMPLIANCE_STATE_SUCCESS),
+                new Control(
+                        "NIST_800_190:4_1_2",
+                        ["Policies are in place to detect and enforce \"Privileges\" category issues.",
+                         "At least one build time policy is enabled and enforced",
+                         "Cluster has an image scanner in use"],
+                        ComplianceState.COMPLIANCE_STATE_SUCCESS),
+                new Control(
+                        "NIST_800_190:4_1_4",
+                        ["Policy that detects secrets in env is enabled and enforced"],
+                        ComplianceState.COMPLIANCE_STATE_SUCCESS),
+                new Control(
+                        "NIST_800_190:4_2_2",
+                        ["Policy that disallows old images to be deployed is enabled and enforced",
+                         "Policy that disallows images with tag 'latest' to be deployed is enabled and enforced"],
+                        ComplianceState.COMPLIANCE_STATE_SUCCESS),
+        ]
+        def enforcementPolicies = [
+                "CVSS >= 7",
+                "Privileged Container",
+                "90-Day Image Age",
+                "Latest tag",
+        ]
+
+        given:
+        "update policies"
+        Services.updatePolicyLifecycleStage(
+                "CVSS >= 7",
+                [PolicyOuterClass.LifecycleStage.BUILD, PolicyOuterClass.LifecycleStage.DEPLOY])
+        for (String policyName : enforcementPolicies) {
+            def enforcements = []
+            PolicyOuterClass.Policy policy = Services.getPolicyByName(policyName)
+            if (policy.lifecycleStagesList.contains(PolicyOuterClass.LifecycleStage.BUILD)) {
+                enforcements.add(PolicyOuterClass.EnforcementAction.FAIL_BUILD_ENFORCEMENT)
+            }
+            if (policy.lifecycleStagesList.contains(PolicyOuterClass.LifecycleStage.DEPLOY)) {
+                enforcements.add(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
+            }
+            if (policy.lifecycleStagesList.contains(PolicyOuterClass.LifecycleStage.RUNTIME)) {
+                enforcements.add(PolicyOuterClass.EnforcementAction.KILL_POD_ENFORCEMENT)
+            }
+            Services.updatePolicyEnforcement(policyName, enforcements)
+        }
+        def policyId = CreatePolicyService.createNewPolicy(PolicyOuterClass.Policy.newBuilder()
+                .setName("XYZ Compliance Secrets")
+                .setDescription("Test Secrets in Compliance")
+                .setRationale("Test Secrets in Compliance")
+                .addLifecycleStages(PolicyOuterClass.LifecycleStage.DEPLOY)
+                .addEnforcementActions(PolicyOuterClass.EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT)
+                .addCategories("Image Assurance")
+                .setDisabled(false)
+                .setSeverityValue(2)
+                .setFields(PolicyOuterClass.PolicyFields.newBuilder()
+                        .setEnv(PolicyOuterClass.KeyValuePolicy.newBuilder()
+                                .setKey(".*SECRET.*")
+                                .setValue(".*"))
+                        .build())
+                .build())
+
+        when:
+        "trigger compliance runs"
+        def nistRunId = ComplianceManagementService.triggerComplianceRunAndWait(NIST_ID, clusterId)
+        ComplianceRunResults nistResults = ComplianceService.getComplianceRunResult(NIST_ID, clusterId).results
+        assert nistResults.getRunMetadata().runId == nistRunId
+
+        then:
+        "confirm state and evidence of expected controls"
+        Map<String, ComplianceResultValue> clusterResults = [:]
+        clusterResults << nistResults.clusterResults.controlResultsMap
+        assert clusterResults
+        def missingControls = []
+        for (Control control : controls) {
+            if (clusterResults.keySet().contains(control.id)) {
+                println "Validating deployment control ${control.id}"
+                ComplianceResultValue value = clusterResults.get(control.id)
+                assert value.overallState == control.state
+                assert value.evidenceList*.message.containsAll(control.evidenceMessages)
+            } else {
+                missingControls.add(control)
+            }
+        }
+        assert missingControls*.id.size() == 0
+
+        cleanup:
+        "undo policy changes"
+        for (String policyName : enforcementPolicies) {
+            Services.updatePolicyEnforcement(policyName, [PolicyOuterClass.EnforcementAction.UNSET_ENFORCEMENT])
+        }
+        Services.updatePolicyLifecycleStage(
+                "CVSS >= 7",
+                [PolicyOuterClass.LifecycleStage.DEPLOY])
+        if (policyId) {
+            CreatePolicyService.deletePolicy(policyId)
         }
     }
 

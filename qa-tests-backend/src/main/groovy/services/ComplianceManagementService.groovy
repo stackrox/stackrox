@@ -3,7 +3,6 @@ package services
 import com.google.protobuf.Timestamp
 import io.stackrox.proto.api.v1.ComplianceManagementServiceGrpc
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.AddComplianceRunScheduleRequest
-import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRun
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRunSelection
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.DeleteComplianceRunScheduleRequest
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.GetComplianceRunSchedulesRequest
@@ -12,6 +11,7 @@ import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.GetRecentC
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.TriggerComplianceRunRequest
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.TriggerComplianceRunsRequest
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.UpdateComplianceRunScheduleRequest
+import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRun
 import io.stackrox.proto.storage.ComplianceManagement.ComplianceRunSchedule
 
 class ComplianceManagementService extends BaseService {
