@@ -220,10 +220,6 @@ class NetworkFlowTest extends BaseSpecification {
     @Category([NetworkFlowVisualization])
     def "Verify connections from external sources"() {
         given:
-        "Disable test until ROX-1431 is resolved"
-        Assume.assumeTrue(false)
-
-        and:
         "Deployment A, where an external source communicates to A"
         String deploymentUid = DEPLOYMENTS.find { it.name == NGINXCONNECTIONTARGET }?.deploymentUid
         assert deploymentUid != null
@@ -238,7 +234,7 @@ class NetworkFlowTest extends BaseSpecification {
         then:
         "Check for edge in network graph"
         println "Checking for edge from external target to ${EXTERNALDESTINATION}"
-        List<Edge> edges = checkForEdge("", deploymentUid)
+        List<Edge> edges = checkForEdge("", deploymentUid, null, 180)
         assert edges
     }
 
