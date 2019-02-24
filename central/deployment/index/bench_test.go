@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stretchr/testify/require"
 )
 
 func getDeploymentIndex(b *testing.B) Indexer {
@@ -21,18 +22,18 @@ func getDeploymentIndex(b *testing.B) Indexer {
 func benchmarkAddDeploymentNumThen1(b *testing.B, numDeployments int) {
 	indexer := getDeploymentIndex(b)
 	deployment := fixtures.GetDeployment()
-	addDeployments(indexer, deployment, numDeployments)
+	addDeployments(b, indexer, deployment, numDeployments)
 	deployment.Id = fmt.Sprintf("%d", numDeployments+1)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		indexer.AddDeployment(deployment)
+		require.NoError(b, indexer.AddDeployment(deployment))
 	}
 }
 
-func addDeployments(indexer Indexer, deployment *storage.Deployment, numDeployments int) {
+func addDeployments(b *testing.B, indexer Indexer, deployment *storage.Deployment, numDeployments int) {
 	for i := 0; i < numDeployments; i++ {
 		deployment.Id = fmt.Sprintf("%d", i)
-		indexer.AddDeployment(deployment)
+		require.NoError(b, indexer.AddDeployment(deployment))
 	}
 }
 
@@ -40,7 +41,7 @@ func benchmarkAddDeployment(b *testing.B, numDeployments int) {
 	indexer := getDeploymentIndex(b)
 	deployment := fixtures.GetDeployment()
 	for i := 0; i < b.N; i++ {
-		addDeployments(indexer, deployment, numDeployments)
+		addDeployments(b, indexer, deployment, numDeployments)
 	}
 }
 
@@ -64,6 +65,7 @@ func BenchmarkSearchDeployment(b *testing.B) {
 	indexer := getDeploymentIndex(b)
 	qb := search.NewQueryBuilder().AddStrings(search.Cluster, "prod cluster")
 	for i := 0; i < b.N; i++ {
-		indexer.Search(qb.ProtoQuery())
+		_, err := indexer.Search(qb.ProtoQuery())
+		require.NoError(b, err)
 	}
 }

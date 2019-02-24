@@ -156,7 +156,7 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 	request.Id = id
 
 	if err := s.toNotify.NotifyUpdated(request); err != nil {
-		s.datastore.RemoveImageIntegration(request.Id)
+		_ = s.datastore.RemoveImageIntegration(request.Id)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

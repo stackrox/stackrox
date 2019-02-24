@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -94,7 +95,7 @@ func (q *Quay) Test() error {
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		body, err := ioutil.ReadAll(resp.Body)
-		defer resp.Body.Close()
+		defer utils.IgnoreError(resp.Body.Close)
 		if err != nil {
 			return fmt.Errorf("Error reaching quay.io with HTTP code %d", resp.StatusCode)
 		}

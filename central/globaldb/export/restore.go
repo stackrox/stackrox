@@ -30,7 +30,7 @@ func tryRestoreBolt(r io.Reader, outDir string) error {
 		return fmt.Errorf("could not create bolt file: %v", err)
 	}
 	_, err = io.Copy(boltFile, r)
-	boltFile.Close()
+	_ = boltFile.Close()
 
 	if err != nil {
 		return fmt.Errorf("could not write bolt file: %v", err)
@@ -90,7 +90,7 @@ func tryRestoreZip(backupFile *os.File, outPath string) error {
 				return fmt.Errorf("could not open %s in ZIP archive: %v", boltFileName, err)
 			}
 			err = tryRestoreBolt(r, outPath)
-			r.Close()
+			_ = r.Close()
 			if err != nil {
 				return fmt.Errorf("could not restore bolt DB from file %s in ZIP archive: %v", boltFileName, err)
 			}
@@ -101,7 +101,7 @@ func tryRestoreZip(backupFile *os.File, outPath string) error {
 				return fmt.Errorf("could not open %s in ZIP archive: %v", badgerFileName, err)
 			}
 			err = tryRestoreBadger(r, outPath)
-			r.Close()
+			_ = r.Close()
 			if err != nil {
 				return fmt.Errorf("could not restore badger DB from file %s in ZIP archive: %v", badgerFileName, err)
 			}
@@ -158,12 +158,12 @@ func Restore(backupFile *os.File) error {
 	}
 
 	if err := tryRestore(backupFile, tempRestoreDir); err != nil {
-		os.RemoveAll(tempRestoreDir)
+		_ = os.RemoveAll(tempRestoreDir)
 		return fmt.Errorf("could not restore database backup: %v", err)
 	}
 
 	if err := os.Rename(tempRestoreDir, restoreDir); err != nil {
-		os.RemoveAll(tempRestoreDir)
+		_ = os.RemoveAll(tempRestoreDir)
 		return fmt.Errorf("could not rename temporary restore directory to canonical location: %v", err)
 	}
 

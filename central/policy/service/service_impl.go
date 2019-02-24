@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -35,6 +36,8 @@ import (
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Policy)): {
 			"/v1.PolicyService/GetPolicy",
@@ -347,7 +350,9 @@ func (s *serviceImpl) getPolicyCategorySet() (categorySet set.StringSet, err err
 
 func (s *serviceImpl) reprocessDeployments(deployments []*storage.Deployment) {
 	for _, deployment := range deployments {
-		s.enricherAndDetector.EnrichAndDetect(deployment)
+		if err := s.enricherAndDetector.EnrichAndDetect(deployment); err != nil {
+			log.Errorf("Failed to enrich deployment %s/%s/%s/: %v", deployment.GetClusterName(), deployment.GetNamespace(), deployment.GetName(), err)
+		}
 	}
 }
 

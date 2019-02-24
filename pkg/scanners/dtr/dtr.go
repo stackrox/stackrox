@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -111,7 +112,7 @@ func (d *dtr) sendRequest(client *http.Client, method, urlPrefix string) ([]byte
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer utils.IgnoreError(resp.Body.Close)
 	return body, nil
 }
 

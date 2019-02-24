@@ -8,14 +8,11 @@ import (
 	"github.com/stackrox/rox/central/networkflow/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/networkentity"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
 )
-
-var log = logging.LoggerForModule()
 
 func getFlows(maxNetworkFlows int) []*storage.NetworkFlow {
 	numDeployments := int(math.Sqrt(float64(maxNetworkFlows)))
@@ -42,7 +39,8 @@ func preloadDB(t require.TestingT, preload int) (int, store.FlowStore) {
 	require.NoError(t, err)
 
 	clusterStore := NewClusterStore(boltdb)
-	clusterStore.CreateFlowStore("cluster1")
+	_, err = clusterStore.CreateFlowStore("cluster1")
+	require.NoError(t, err)
 	flowStore := clusterStore.GetFlowStore("cluster1")
 
 	preloadFlows := getFlows(preload)
@@ -55,7 +53,8 @@ func benchmarkUpdate(b *testing.B, preload, postload int) {
 	_, flowStore := preloadDB(b, preload)
 	postloadFlows := getFlows(postload)
 	for i := 0; i < b.N; i++ {
-		flowStore.UpsertFlows(postloadFlows, timestamp.Now())
+		err := flowStore.UpsertFlows(postloadFlows, timestamp.Now())
+		require.NoError(b, err)
 	}
 }
 

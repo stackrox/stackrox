@@ -34,7 +34,7 @@ func (suite *alertIndexTestSuite) SetupTest() {
 }
 
 func (suite *alertIndexTestSuite) TearDownTest() {
-	suite.bleveIndex.Close()
+	suite.NoError(suite.bleveIndex.Close())
 }
 
 func (suite *alertIndexTestSuite) TestDefaultStaleness() {

@@ -222,6 +222,5 @@ func writeSecret(tx *bolt.Tx, secret *storage.Secret) (err error) {
 	if err != nil {
 		return
 	}
-	bucket.Put([]byte(secret.GetId()), bytes)
-	return
+	return bucket.Put([]byte(secret.GetId()), bytes)
 }

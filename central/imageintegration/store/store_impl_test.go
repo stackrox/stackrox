@@ -1,7 +1,6 @@
 package store
 
 import (
-	"os"
 	"strings"
 	"testing"
 
@@ -35,8 +34,7 @@ func (suite *ImageIntegrationStoreTestSuite) SetupTest() {
 }
 
 func (suite *ImageIntegrationStoreTestSuite) TearDownTest() {
-	suite.db.Close()
-	os.Remove(suite.db.Path())
+	testutils.TearDownDB(suite.db)
 }
 
 func (suite *ImageIntegrationStoreTestSuite) TestIntegrations() {

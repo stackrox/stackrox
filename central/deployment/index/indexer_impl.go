@@ -34,7 +34,9 @@ func (b *indexerImpl) AddDeployment(deployment *storage.Deployment) error {
 func (b *indexerImpl) processBatch(deployments []*storage.Deployment) error {
 	batch := b.index.NewBatch()
 	for _, deployment := range deployments {
-		batch.Index(deployment.GetId(), &deploymentWrapper{Type: v1.SearchCategory_DEPLOYMENTS.String(), Deployment: deployment})
+		if err := batch.Index(deployment.GetId(), &deploymentWrapper{Type: v1.SearchCategory_DEPLOYMENTS.String(), Deployment: deployment}); err != nil {
+			return err
+		}
 	}
 	return b.index.Batch(batch)
 }

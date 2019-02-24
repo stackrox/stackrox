@@ -10,10 +10,13 @@ import (
 	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func scrubSecretsAndCompact(dbDumpFile string) (string, error) {
-	defer os.Remove(dbDumpFile)
+	defer func() {
+		_ = os.Remove(dbDumpFile)
+	}()
 
 	oldDB, err := bolt.Open(dbDumpFile, 0600, bolt.DefaultOptions)
 	oldDB.NoSync = true
@@ -33,7 +36,9 @@ func scrubSecretsAndCompact(dbDumpFile string) (string, error) {
 	if err := compactedDBFile.Close(); err != nil {
 		return "", fmt.Errorf("could not close compacted database file: %v", err)
 	}
-	os.Remove(compactedDBFileName)
+	if err := os.Remove(compactedDBFileName); err != nil {
+		return "", fmt.Errorf("could not remove compacted file %s: %v", compactedDBFileName, err)
+	}
 
 	db, err := bolt.Open(compactedDBFileName, 0600, bolt.DefaultOptions)
 	if err != nil {
@@ -50,7 +55,7 @@ func scrubSecretsAndCompact(dbDumpFile string) (string, error) {
 	}
 	if err := db.Close(); err != nil {
 		// Try remove in a best-effort fashion
-		os.Remove(compactedDBFileName)
+		_ = os.Remove(compactedDBFileName)
 		return "", fmt.Errorf("could not close compacted database: %v", err)
 	}
 
@@ -62,8 +67,10 @@ func backupBolt(db *bolt.DB, out io.Writer, scrubSecrets bool) error {
 	if err != nil {
 		return fmt.Errorf("could not create temporary file for bolt backup: %v", err)
 	}
-	defer os.Remove(tempFile.Name())
-	defer tempFile.Close()
+	defer func() {
+		_ = os.Remove(tempFile.Name())
+	}()
+	defer utils.IgnoreError(tempFile.Close)
 
 	err = db.View(func(tx *bolt.Tx) error {
 		_, err := tx.WriteTo(out)
@@ -98,7 +105,7 @@ func backupBolt(db *bolt.DB, out io.Writer, scrubSecrets bool) error {
 		dbFileReader = compactedTempFile
 	}
 
-	defer dbFileReader.Close()
+	defer utils.IgnoreError(dbFileReader.Close)
 
 	_, err = io.Copy(out, dbFileReader)
 	return err
@@ -109,8 +116,10 @@ func backupBadger(db *badger.DB, out io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("could not create temporary file for badger backup: %v", err)
 	}
-	defer os.Remove(tempFile.Name())
-	defer tempFile.Close()
+	defer func() {
+		_ = os.Remove(tempFile.Name())
+	}()
+	defer utils.IgnoreError(tempFile.Close)
 
 	_, err = db.Backup(tempFile, 0)
 	if err != nil {

@@ -194,7 +194,9 @@ func postMessage(url string, jsonPayload []byte) (err error) {
 		log.Errorf("Error posting to slack: %v", err)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		var bytes []byte
 		bytes, err = ioutil.ReadAll(resp.Body)

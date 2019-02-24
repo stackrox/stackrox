@@ -19,7 +19,10 @@ func EnforceNodeConstraint(client *kubernetes.Clientset, deploymentInfo *central
 	}
 
 	// Apply the constraint modification.
-	common.ApplyNodeConstraintToObj(ds, deploymentInfo.GetAlertId())
+	err = common.ApplyNodeConstraintToObj(ds, deploymentInfo.GetAlertId())
+	if err != nil {
+		return
+	}
 
 	// Post the new StatefulSet data.
 	_, err = client.AppsV1beta1().StatefulSets(deploymentInfo.GetNamespace()).Update(ds)

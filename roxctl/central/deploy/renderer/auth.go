@@ -25,7 +25,9 @@ func GenerateHtpasswd(c *Config) ([]byte, error) {
 	}
 
 	hf := htpasswd.New()
-	hf.Set(adminUsername, c.Password)
+	if err := hf.Set(adminUsername, c.Password); err != nil {
+		return nil, err
+	}
 	buf := new(bytes.Buffer)
 	err := hf.Write(buf)
 	return buf.Bytes(), err

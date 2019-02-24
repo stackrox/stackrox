@@ -95,5 +95,5 @@ func (suite *PolicyIndexTestSuite) TestPolicySearch() {
 }
 
 func (suite *PolicyIndexTestSuite) TearDownSuite() {
-	suite.bleveIndex.Close()
+	suite.NoError(suite.bleveIndex.Close())
 }

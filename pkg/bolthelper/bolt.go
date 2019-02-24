@@ -13,6 +13,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/secondarykey"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -88,7 +89,7 @@ func Compact(dst, src *bolt.DB) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer utils.IgnoreError(tx.Rollback)
 
 	if err := walk(src, func(keys [][]byte, k, v []byte, seq uint64) error {
 		// On each key/value, check if we have exceeded tx size.

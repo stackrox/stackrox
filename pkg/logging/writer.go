@@ -28,10 +28,10 @@ func (w *Writer) WithFields(newFields Fields) *Writer {
 
 // Write prints the arguments without the log prefixes - if and only if - SetOutput has been previously called
 func (w *Writer) Write(args ...interface{}) {
-	w.writer.Write([]byte(fmt.Sprint(args...) + w.fields.String()))
+	_, _ = w.writer.Write([]byte(fmt.Sprint(args...) + w.fields.String()))
 }
 
 // Writef prints the formatted arguments without the log prefixes - if and only if - SetOutput has been previously called
 func (w *Writer) Writef(format string, args ...interface{}) {
-	w.writer.Write([]byte(fmt.Sprintf(format, args...) + w.fields.String()))
+	_, _ = w.writer.Write([]byte(fmt.Sprintf(format, args...) + w.fields.String()))
 }

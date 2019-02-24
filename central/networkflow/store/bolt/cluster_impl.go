@@ -4,9 +4,14 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/networkflow/store"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
-var clusterFlowBucket = []byte("clustersWithFlowsBucket")
+var (
+	log = logging.LoggerForModule()
+
+	clusterFlowBucket = []byte("clustersWithFlowsBucket")
+)
 
 // NewClusterStore returns a new ClusterStore instance using the provided bolt DB instance.
 func NewClusterStore(db *bolt.DB) store.ClusterStore {
@@ -20,29 +25,22 @@ type clusterStoreImpl struct {
 	clusterFlowsBucket bolthelper.BucketRef
 }
 
-// GetAllFlowStores returns all of the FlowStores that exists for all clusters.
-func (s *clusterStoreImpl) GetAllFlowStores() (flowStores []store.FlowStore) {
-	s.clusterFlowsBucket.View(func(b *bolt.Bucket) error {
-		return b.ForEach(func(k, v []byte) error {
-			flowStores = append(flowStores, s.wrapFlowStore(k))
-			return nil
-		})
-	})
-	return
-}
-
 // GetFlowStore returns the FlowStore for the cluster ID, or nil if none exists.
 func (s *clusterStoreImpl) GetFlowStore(clusterID string) store.FlowStore {
 	return s.getFlowStore([]byte(clusterID))
 }
 
 func (s *clusterStoreImpl) getFlowStore(key []byte) (flowStore store.FlowStore) {
-	s.clusterFlowsBucket.View(func(b *bolt.Bucket) error {
+	err := s.clusterFlowsBucket.View(func(b *bolt.Bucket) error {
 		if flowBucket := b.Bucket(key); flowBucket != nil {
 			flowStore = s.wrapFlowStore(key)
 		}
 		return nil
 	})
+	if err != nil {
+		log.Errorf("Failed to get flow store: %v", err)
+		return nil
+	}
 	return
 }
 

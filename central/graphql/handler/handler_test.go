@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	processMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -57,7 +58,7 @@ func mockResolver(t *testing.T) mocks {
 func assertJSONMatches(t *testing.T, buffer *bytes.Buffer, path string, expected string) (ok bool) {
 	ok = false
 	msg := &json.RawMessage{}
-	json.Unmarshal(buffer.Bytes(), msg)
+	assert.NoError(t, json.Unmarshal(buffer.Bytes(), msg))
 	for path != "" {
 		if msg == nil {
 			t.Errorf("No message found (remaining path %q)", path)

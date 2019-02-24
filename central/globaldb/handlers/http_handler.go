@@ -13,6 +13,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/globaldb/export"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -55,15 +56,17 @@ func RestoreDB(boltDB *bolt.DB, badgerDB *badger.DB) http.Handler {
 			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not create temporary file for DB upload: %v", err)
 			return
 		}
-		defer os.Remove(tempFile.Name())
-		defer tempFile.Close()
+		defer func() {
+			_ = os.Remove(tempFile.Name())
+		}()
+		defer utils.IgnoreError(tempFile.Close)
 
 		if _, err := io.Copy(tempFile, req.Body); err != nil {
-			req.Body.Close()
+			_ = req.Body.Close()
 			logAndWriteErrorMsg(w, http.StatusInternalServerError, "error storing upload in temporary location: %v", err)
 			return
 		}
-		req.Body.Close()
+		_ = req.Body.Close()
 
 		if _, err := tempFile.Seek(0, 0); err != nil {
 			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not rewind to beginning of temporary file: %v", err)
@@ -99,8 +102,10 @@ func serializeDB(boltDB *bolt.DB, badgerDB *badger.DB, scrubSecrets bool) http.H
 		if err != nil {
 			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not create temporary ZIP file for database export: %v", err)
 		}
-		defer os.Remove(tempFile.Name())
-		defer tempFile.Close()
+		defer func() {
+			_ = os.Remove(tempFile.Name())
+		}()
+		defer utils.IgnoreError(tempFile.Close)
 
 		if err := export.Backup(boltDB, badgerDB, tempFile, scrubSecrets); err != nil {
 			logAndWriteErrorMsg(w, http.StatusInternalServerError, "could not create database backup: %v", err)

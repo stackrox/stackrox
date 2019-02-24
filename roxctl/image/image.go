@@ -12,7 +12,7 @@ func Command() *cobra.Command {
 		Short: "Image defines the actions that you can take against a specific image.",
 		Long:  "Image defines the actions that you can take against a specific image.",
 		Run: func(c *cobra.Command, _ []string) {
-			c.Help()
+			_ = c.Help()
 		},
 	}
 

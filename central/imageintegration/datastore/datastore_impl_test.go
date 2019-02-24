@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"os"
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
@@ -39,8 +38,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) SetupTest() {
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TearDownTest() {
-	suite.db.Close()
-	os.Remove(suite.db.Path())
+	testutils.TearDownDB(suite.db)
 }
 
 func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsPersistence() {

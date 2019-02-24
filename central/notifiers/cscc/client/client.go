@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/notifiers/cscc/findings"
+	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/oauth2/google"
 )
 
@@ -68,7 +69,7 @@ func (c *Config) CreateFinding(finding *findings.Finding, id string) error {
 	if err != nil {
 		return fmt.Errorf("request: %s", err)
 	}
-	defer resp.Body.Close()
+	defer utils.IgnoreError(resp.Body.Close)
 	return c.handleResponse(resp)
 }
 

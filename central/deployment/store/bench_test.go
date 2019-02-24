@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/require"
 )
 
 const maxGRPCSize = 4194304
@@ -30,7 +31,7 @@ func BenchmarkAddDeployment(b *testing.B) {
 	store := getDeploymentStore(b)
 	deployment := fixtures.GetAlert().GetDeployment()
 	for i := 0; i < b.N; i++ {
-		store.UpsertDeployment(deployment)
+		require.NoError(b, store.UpsertDeployment(deployment))
 	}
 }
 
@@ -38,25 +39,29 @@ func BenchmarkUpdateDeployment(b *testing.B) {
 	store := getDeploymentStore(b)
 	deployment := fixtures.GetAlert().GetDeployment()
 	for i := 0; i < b.N; i++ {
-		store.UpdateDeployment(deployment)
+		require.NoError(b, store.UpdateDeployment(deployment))
 	}
 }
 
 func BenchmarkGetDeployment(b *testing.B) {
 	store := getDeploymentStore(b)
 	deployment := fixtures.GetAlert().GetDeployment()
-	store.UpsertDeployment(deployment)
+	require.NoError(b, store.UpsertDeployment(deployment))
 	for i := 0; i < b.N; i++ {
-		store.GetDeployment(deployment.GetId())
+		_, exists, err := store.GetDeployment(deployment.GetId())
+		require.True(b, exists)
+		require.NoError(b, err)
 	}
 }
 
 func BenchmarkListDeployment(b *testing.B) {
 	store := getDeploymentStore(b)
 	deployment := fixtures.GetAlert().GetDeployment()
-	store.UpsertDeployment(deployment)
+	require.NoError(b, store.UpsertDeployment(deployment))
 	for i := 0; i < b.N; i++ {
-		store.ListDeployment(deployment.GetId())
+		_, exists, err := store.ListDeployment(deployment.GetId())
+		require.True(b, exists)
+		require.NoError(b, err)
 	}
 }
 

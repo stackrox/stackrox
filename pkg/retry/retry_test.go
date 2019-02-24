@@ -21,7 +21,7 @@ func (suite *RetryTestSuite) TestWithRetryable() {
 	inBetweenCount := 0
 
 	// We should retry once, with fail and inbetween called once each.
-	WithRetry(func() error {
+	suite.NoError(WithRetry(func() error {
 		runCount = runCount + 1
 		if runCount < 2 {
 			return MakeRetryable(fmt.Errorf("some error"))
@@ -35,7 +35,8 @@ func (suite *RetryTestSuite) TestWithRetryable() {
 		}),
 		BetweenAttempts(func() {
 			inBetweenCount = inBetweenCount + 1
-		}))
+		})),
+	)
 
 	suite.Equal(2, runCount)
 	suite.Equal(1, failCount)
@@ -48,7 +49,7 @@ func (suite *RetryTestSuite) TestWithoutRetryable() {
 	inBetweenCount := 0
 
 	// We should not retry, since the error is not wrapped with MakeRetryable.
-	WithRetry(func() error {
+	suite.Error(WithRetry(func() error {
 		runCount = runCount + 1
 		return fmt.Errorf("some error")
 	},
@@ -59,7 +60,8 @@ func (suite *RetryTestSuite) TestWithoutRetryable() {
 		}),
 		BetweenAttempts(func() {
 			inBetweenCount = inBetweenCount + 1
-		}))
+		})),
+	)
 
 	suite.Equal(1, runCount)
 	suite.Equal(0, failCount)
@@ -72,7 +74,7 @@ func (suite *RetryTestSuite) TestAlwaysRetryable() {
 	inBetweenCount := 0
 
 	// We should retry, since the OnlyRetryableErrors option is not passed, so all errors get retried.
-	WithRetry(func() error {
+	suite.NoError(WithRetry(func() error {
 		runCount = runCount + 1
 		if runCount < 2 {
 			return fmt.Errorf("some error")
@@ -85,7 +87,8 @@ func (suite *RetryTestSuite) TestAlwaysRetryable() {
 		}),
 		BetweenAttempts(func() {
 			inBetweenCount = inBetweenCount + 1
-		}))
+		})),
+	)
 
 	suite.Equal(2, runCount)
 	suite.Equal(1, failCount)
@@ -98,7 +101,7 @@ func (suite *RetryTestSuite) TestLimitsTries() {
 	inBetweenCount := 0
 
 	// We should retry the maximum number of times.
-	WithRetry(func() error {
+	suite.Error(WithRetry(func() error {
 		runCount = runCount + 1
 		return fmt.Errorf("some error")
 	},
@@ -108,7 +111,8 @@ func (suite *RetryTestSuite) TestLimitsTries() {
 		}),
 		BetweenAttempts(func() {
 			inBetweenCount = inBetweenCount + 1
-		}))
+		})),
+	)
 
 	suite.Equal(3, runCount)
 	suite.Equal(2, failCount)
@@ -121,7 +125,7 @@ func (suite *RetryTestSuite) TestAlwaysRetryableNoTries() {
 	inBetweenCount := 0
 
 	// We should only try once. No retries, no onFailure or between, since Tries == 1.
-	WithRetry(func() error {
+	suite.Error(WithRetry(func() error {
 		runCount = runCount + 1
 		if runCount < 2 {
 			return fmt.Errorf("some error")
@@ -134,7 +138,8 @@ func (suite *RetryTestSuite) TestAlwaysRetryableNoTries() {
 		}),
 		BetweenAttempts(func() {
 			inBetweenCount = inBetweenCount + 1
-		}))
+		})),
+	)
 
 	suite.Equal(1, runCount)
 	suite.Equal(0, failCount)

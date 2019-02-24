@@ -14,7 +14,7 @@ func Command() *cobra.Command {
 		Short: "Central is the list of commands that pertain to the Central service",
 		Long:  "Central is the list of commands that pertain to the Central service",
 		Run: func(c *cobra.Command, _ []string) {
-			c.Help()
+			_ = c.Help()
 		},
 	}
 

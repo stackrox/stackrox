@@ -43,7 +43,8 @@ func preloadDB(t require.TestingT, preload int) (int, store.FlowStore) {
 	require.NoError(t, err)
 
 	clusterStore := NewClusterStore(db)
-	clusterStore.CreateFlowStore("cluster1")
+	_, err = clusterStore.CreateFlowStore("cluster1")
+	require.NoError(t, err)
 	flowStore := clusterStore.GetFlowStore("cluster1")
 
 	preloadFlows := getFlows(preload)
@@ -64,7 +65,7 @@ func benchmarkUpdate(b *testing.B, preload, postload int) {
 	_, flowStore := preloadDB(b, preload)
 	postloadFlows := getFlows(postload)
 	for i := 0; i < b.N; i++ {
-		flowStore.UpsertFlows(postloadFlows, timestamp.Now())
+		require.NoError(b, flowStore.UpsertFlows(postloadFlows, timestamp.Now()))
 	}
 }
 

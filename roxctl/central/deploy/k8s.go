@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
 	"github.com/stackrox/rox/roxctl/defaults"
 )
@@ -17,18 +18,18 @@ type persistentFlagsWrapper struct {
 
 func (w *persistentFlagsWrapper) StringVarP(p *string, name, shorthand, value, usage, group string) {
 	w.FlagSet.StringVarP(p, name, shorthand, value, usage)
-	w.SetAnnotation(name, groupAnnotation, []string{group})
+	utils.Must(w.SetAnnotation(name, groupAnnotation, []string{group}))
 }
 
 func (w *persistentFlagsWrapper) StringVarPWithSubGroup(p *string, name, shorthand, value, usage, group, subgroup string) {
 	w.FlagSet.StringVarP(p, name, shorthand, value, usage)
-	w.SetAnnotation(name, groupAnnotation, []string{group})
-	w.SetAnnotation(name, subgroupAnnotation, []string{subgroup})
+	utils.Must(w.SetAnnotation(name, groupAnnotation, []string{group}))
+	utils.Must(w.SetAnnotation(name, subgroupAnnotation, []string{subgroup}))
 }
 
 func (w *persistentFlagsWrapper) Var(value pflag.Value, name, usage, group string) {
 	w.FlagSet.Var(value, name, usage)
-	w.SetAnnotation(name, groupAnnotation, []string{group})
+	utils.Must(w.SetAnnotation(name, groupAnnotation, []string{group}))
 }
 
 func orchestratorCommand(shortName, longName string) *cobra.Command {

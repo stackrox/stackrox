@@ -184,7 +184,9 @@ func (s *Sensor) Stop() {
 		s.networkConnManager.Stop()
 	}
 	if s.profilingServer != nil {
-		s.profilingServer.Close()
+		if err := s.profilingServer.Close(); err != nil {
+			log.Errorf("Error closing profiling server: %v", err)
+		}
 	}
 	if s.commandHandler != nil {
 		s.commandHandler.Stop(nil)

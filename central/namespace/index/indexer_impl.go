@@ -34,7 +34,9 @@ func (b *indexerImpl) AddNamespace(namespace *storage.NamespaceMetadata) error {
 func (b *indexerImpl) processBatch(namespaces []*storage.NamespaceMetadata) error {
 	batch := b.index.NewBatch()
 	for _, namespace := range namespaces {
-		batch.Index(namespace.GetId(), &namespaceWrapper{Type: v1.SearchCategory_NAMESPACES.String(), NamespaceMetadata: namespace})
+		if err := batch.Index(namespace.GetId(), &namespaceWrapper{Type: v1.SearchCategory_NAMESPACES.String(), NamespaceMetadata: namespace}); err != nil {
+			return err
+		}
 	}
 	return b.index.Batch(batch)
 }

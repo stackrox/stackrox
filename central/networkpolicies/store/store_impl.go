@@ -105,10 +105,8 @@ func (b *storeImpl) UpdateNetworkPolicy(np *storage.NetworkPolicy) error {
 // RemoveNetworkPolicy removes a network policy
 func (b *storeImpl) RemoveNetworkPolicy(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "NetworkPolicy")
-	var err error
-	b.Update(func(tx *bolt.Tx) error {
+	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(networkPolicyBucket)
 		return bucket.Delete([]byte(id))
 	})
-	return err
 }

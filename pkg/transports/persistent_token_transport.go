@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -58,7 +60,7 @@ func (t *PersistentTokenTransport) refreshToken() error {
 		return fmt.Errorf(resp.Status)
 	}
 
-	defer resp.Body.Close()
+	defer utils.IgnoreError(resp.Body.Close)
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

@@ -37,7 +37,9 @@ func (i *indexerImpl) processBatch(images []*storage.Image) error {
 	batch := i.index.NewBatch()
 	for _, image := range images {
 		digest := types.NewDigest(image.GetId()).Digest()
-		batch.Index(digest, &imageWrapper{Type: v1.SearchCategory_IMAGES.String(), Image: image})
+		if err := batch.Index(digest, &imageWrapper{Type: v1.SearchCategory_IMAGES.String(), Image: image}); err != nil {
+			return err
+		}
 	}
 	return i.index.Batch(batch)
 }

@@ -230,16 +230,14 @@ func writeImage(tx *bolt.Tx, image *storage.Image) (err error) {
 	if err != nil {
 		return
 	}
-	bucket.Put(id, bytes)
-	return
+	return bucket.Put(id, bytes)
 }
 
 // deleteImage deletes an image within a transaction.
 func deleteImage(tx *bolt.Tx, id []byte) (err error) {
 	bucket := tx.Bucket(imageBucket)
 
-	bucket.Delete(id)
-	return
+	return bucket.Delete(id)
 }
 
 func upsertListImage(tx *bolt.Tx, image *storage.Image) error {
@@ -256,6 +254,5 @@ func upsertListImage(tx *bolt.Tx, image *storage.Image) error {
 func deleteListImage(tx *bolt.Tx, id []byte) (err error) {
 	bucket := tx.Bucket(listImageBucket)
 
-	bucket.Delete(id)
-	return
+	return bucket.Delete(id)
 }

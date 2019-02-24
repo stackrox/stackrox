@@ -88,5 +88,5 @@ func (suite *IndicatorIndexTestSuite) TestProcessIndicatorSearch() {
 }
 
 func (suite *IndicatorIndexTestSuite) TearDownSuite() {
-	suite.bleveIndex.Close()
+	suite.NoError(suite.bleveIndex.Close())
 }

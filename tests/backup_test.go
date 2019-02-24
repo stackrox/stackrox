@@ -13,6 +13,7 @@ import (
 	deploymentStore "github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -47,7 +48,9 @@ func TestBackup(t *testing.T) {
 
 	out, err := os.Create("backup.zip")
 	require.NoError(t, err)
-	defer os.Remove("backup.zip")
+	defer func() {
+		_ = os.Remove("backup.zip")
+	}()
 
 	client := &http.Client{
 		Timeout: 10 * time.Second,
@@ -64,15 +67,15 @@ func TestBackup(t *testing.T) {
 	}
 	resp, err := client.Do(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer utils.IgnoreError(resp.Body.Close)
 	_, err = io.Copy(out, resp.Body)
 	require.NoError(t, err)
 
-	out.Close()
+	defer utils.IgnoreError(out.Close)
 
 	zipFile, err := zip.OpenReader("backup.zip")
 	require.NoError(t, err)
-	defer zipFile.Close()
+	defer utils.IgnoreError(zipFile.Close)
 
 	var boltFileEntry *zip.File
 	for _, f := range zipFile.File {
@@ -88,7 +91,9 @@ func TestBackup(t *testing.T) {
 
 	boltOut, err := os.Create("backup.db")
 	require.NoError(t, err)
-	defer os.Remove("backup.db")
+	defer func() {
+		_ = os.Remove("backup.db")
+	}()
 
 	_, err = io.Copy(boltOut, boltFile)
 	require.NoError(t, err)

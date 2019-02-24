@@ -17,12 +17,12 @@ func Swagger() http.Handler {
 		if err != nil {
 			w.WriteHeader(500)
 			msg := err.Error()
-			w.Write([]byte(msg))
+			_, _ = w.Write([]byte(msg))
 			return
 		}
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(200)
-		w.Write(b)
+		_, _ = w.Write(b)
 	})
 }
 

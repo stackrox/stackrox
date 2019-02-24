@@ -57,7 +57,7 @@ func (suite *ImageIndexTestSuite) SetupSuite() {
 }
 
 func (suite *ImageIndexTestSuite) TearDownSuite() {
-	suite.bleveIndex.Close()
+	suite.NoError(suite.bleveIndex.Close())
 }
 
 func (suite *ImageIndexTestSuite) TestSearchImages() {

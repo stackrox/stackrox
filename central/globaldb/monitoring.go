@@ -64,7 +64,7 @@ func gather(db *bolt.DB) {
 	metrics.SetGaugeDuration(metrics.TxStatsWriteTime, txStats.WriteTime)
 
 	// gather bucket stats
-	db.View(func(tx *bolt.Tx) error {
+	_ = db.View(func(tx *bolt.Tx) error {
 		return tx.ForEach(func(name []byte, b *bolt.Bucket) error {
 			gatherBucketStats(string(name), b.Stats())
 			return nil

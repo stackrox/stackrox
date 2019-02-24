@@ -64,7 +64,8 @@ func (suite *TenableSuite) SetupSuite() {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, scanPayload)
+		_, err := fmt.Fprintf(w, scanPayload)
+		suite.NoError(err)
 	})
 	masterRouter.HandleFunc("/container-security/api/v1/container/list", func(w http.ResponseWriter, r *http.Request) {
 		if err := handleAuth(r); err != nil {
@@ -72,17 +73,20 @@ func (suite *TenableSuite) SetupSuite() {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "{}")
+		_, err := fmt.Fprintf(w, "{}")
+		suite.NoError(err)
 	})
 	// Handle Registry ping
 	masterRouter.HandleFunc("/v2/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "{}")
+		_, err := fmt.Fprint(w, "{}")
+		suite.NoError(err)
 	})
 	// Handle
 	masterRouter.HandleFunc("/v2/library/nginx/manifests/1.10", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, manifestPayload)
+		_, err := fmt.Fprint(w, manifestPayload)
+		suite.NoError(err)
 	})
 
 	masterServer := httptest.NewServer(masterRouter)

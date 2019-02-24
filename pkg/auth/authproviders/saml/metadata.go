@@ -33,7 +33,9 @@ func fetchIDPMetadata(ctx context.Context, url string) (string, *types.IDPSSODes
 	if err != nil {
 		return "", nil, fmt.Errorf("fetching metadata: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	var desc types.EntityDescriptor
 	if err := xml.NewDecoder(resp.Body).Decode(&desc); err != nil {
 		return "", nil, fmt.Errorf("parsing metadata XML: %v", err)

@@ -1,7 +1,6 @@
 package bolt
 
 import (
-	"os"
 	"testing"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/suite"
 )
@@ -36,8 +36,7 @@ func (suite *FlowStoreTestSuite) SetupSuite() {
 }
 
 func (suite *FlowStoreTestSuite) TearDownSuite() {
-	suite.db.Close()
-	os.Remove(suite.db.Path())
+	testutils.TearDownDB(suite.db)
 }
 
 func (suite *FlowStoreTestSuite) TestStore() {

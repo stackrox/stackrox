@@ -37,8 +37,8 @@ func TestNIST414_Success(t *testing.T) {
 	assert.NoError(t, err)
 
 	defer func() {
-		os.Remove(f1.Name())
-		os.Remove(f2.Name())
+		_ = os.Remove(f1.Name())
+		_ = os.Remove(f2.Name())
 	}()
 
 	registry := framework.RegistrySingleton()
@@ -139,8 +139,8 @@ func TestNIST414_FAIL(t *testing.T) {
 	assert.NoError(t, err)
 
 	defer func() {
-		os.Remove(f1.Name())
-		os.Remove(f2.Name())
+		_ = os.Remove(f1.Name())
+		_ = os.Remove(f2.Name())
 	}()
 
 	testDeployments := []*storage.Deployment{

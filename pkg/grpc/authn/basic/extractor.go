@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 type extractor struct {
@@ -66,7 +67,7 @@ func NewExtractor(htpasswdFile string, userRole *storage.Role) (authn.IdentityEx
 	if err != nil {
 		return nil, fmt.Errorf("could not open htpasswd file %q: %v", htpasswdFile, err)
 	}
-	defer f.Close()
+	defer utils.IgnoreError(f.Close)
 
 	hashFile, err := htpasswd.ReadHashFile(f)
 

@@ -108,7 +108,9 @@ func TestRunWithContextError(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	go run.Run(ctx, testDomain, nil)
+	go func() {
+		assert.Error(t, run.Run(ctx, testDomain, nil))
+	}()
 
 	cancel()
 	time.Sleep(100 * time.Millisecond)
@@ -131,7 +133,9 @@ func TestRunWithTerminate(t *testing.T) {
 	run, err := newComplianceRun(clusterCheck)
 	require.NoError(t, err)
 
-	go run.Run(context.Background(), testDomain, nil)
+	go func() {
+		assert.Error(t, run.Run(context.Background(), testDomain, nil))
+	}()
 
 	run.Terminate(errors.New("terminating run"))
 	syncSig.Signal()

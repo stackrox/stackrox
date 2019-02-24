@@ -34,7 +34,9 @@ func (b *indexerImpl) AddPolicies(policies []*storage.Policy) error {
 	defer metrics.SetIndexOperationDurationTime(time.Now(), ops.AddMany, "Policy")
 	batch := b.index.NewBatch()
 	for _, policy := range policies {
-		batch.Index(policy.GetId(), &policyWrapper{Type: v1.SearchCategory_POLICIES.String(), Policy: policy})
+		if err := batch.Index(policy.GetId(), &policyWrapper{Type: v1.SearchCategory_POLICIES.String(), Policy: policy}); err != nil {
+			return err
+		}
 	}
 	return b.index.Batch(batch)
 }

@@ -15,15 +15,16 @@ type storeImpl struct {
 
 // Get returns a group matching the given properties if it exists from the store.
 func (s *storeImpl) Get(props *storage.GroupProperties) (grp *storage.Group, err error) {
-	s.db.View(func(tx *bolt.Tx) error {
+	err = s.db.View(func(tx *bolt.Tx) error {
 		buc := tx.Bucket(groupsBucket)
 		k := serializeKey(props)
 		v := buc.Get(k)
 		if v == nil {
 			return nil
 		}
+		var err error
 		grp, err = deserialize(k, v)
-		return nil
+		return err
 	})
 	return
 }
@@ -32,7 +33,7 @@ func (s *storeImpl) Get(props *storage.GroupProperties) (grp *storage.Group, err
 func (s *storeImpl) GetAll() (grps []*storage.Group, err error) {
 	err = s.db.View(func(tx *bolt.Tx) error {
 		buc := tx.Bucket(groupsBucket)
-		buc.ForEach(func(k, v []byte) error {
+		return buc.ForEach(func(k, v []byte) error {
 			grp, err := deserialize(k, v)
 			if err != nil {
 				return err
@@ -40,7 +41,6 @@ func (s *storeImpl) GetAll() (grps []*storage.Group, err error) {
 			grps = append(grps, grp)
 			return nil
 		})
-		return nil
 	})
 	return
 }

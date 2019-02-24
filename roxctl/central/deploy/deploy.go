@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/zip"
 	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
 )
@@ -130,7 +131,9 @@ func outputZip(config renderer.Config) error {
 	}
 
 	if config.K8sConfig != nil && config.K8sConfig.Monitoring.Type.OnPrem() {
-		generateMonitoringFiles(config.SecretsByteMap, cert, key)
+		if err := generateMonitoringFiles(config.SecretsByteMap, cert, key); err != nil {
+			return err
+		}
 
 		if config.K8sConfig.Monitoring.Password == "" {
 			config.K8sConfig.Monitoring.Password = renderer.CreatePassword()
@@ -203,7 +206,7 @@ func Command() *cobra.Command {
 		Long:  "Generate creates the required YAML files to deploy StackRox Central.",
 		Run: func(c *cobra.Command, _ []string) {
 			if !isInteractive {
-				c.Help()
+				_ = c.Help()
 			}
 		},
 	}
@@ -212,7 +215,7 @@ func Command() *cobra.Command {
 	}
 
 	c.PersistentFlags().Var(&featureValue{&cfg.Features}, "flags", "Feature flags to enable")
-	c.PersistentFlags().MarkHidden("flags")
+	utils.Must(c.PersistentFlags().MarkHidden("flags"))
 	c.AddCommand(interactive())
 
 	c.AddCommand(k8s())

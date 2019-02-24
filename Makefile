@@ -12,7 +12,7 @@ all: deps style test image
 ## Style ##
 ###########
 .PHONY: style
-style: fmt imports lint vet blanks crosspkgimports no-large-files only-store-storage-protos storage-protos-compatible ui-lint qa-tests-style
+style: fmt imports lint vet blanks crosspkgimports no-large-files only-store-storage-protos storage-protos-compatible no-unchecked-errors ui-lint qa-tests-style
 
 .PHONY: qa-tests-style
 qa-tests-style:
@@ -53,7 +53,7 @@ endif
 .PHONY: crosspkgimports
 crosspkgimports:
 	@echo "+ $@"
-	@go run $(BASE_DIR)/tools/crosspkgimports/verify.go $(shell go list -e ./... | grep -v generated | grep -v vendor)
+	@go run $(BASE_DIR)/tools/crosspkgimports/verify.go $(shell go list -e ./...)
 
 .PHONY: no-large-files
 no-large-files:
@@ -64,6 +64,13 @@ no-large-files:
 only-store-storage-protos:
 	@echo "+ $@"
 	@go run $(BASE_DIR)/tools/storedprotos/verify.go $(shell go list github.com/stackrox/rox/central/...)
+
+
+.PHONY: no-unchecked-errors
+no-unchecked-errors:
+	@echo "+ $@"
+	@go run $(BASE_DIR)/tools/uncheckederrors/cmd/main.go $(shell go list -e ./... | grep -v -e 'stackrox/rox/image')
+
 
 PROTOLOCK_BIN := $(GOPATH)/bin/protolock
 $(PROTOLOCK_BIN):

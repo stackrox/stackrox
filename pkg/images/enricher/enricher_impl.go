@@ -53,7 +53,7 @@ func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry re
 	}
 
 	// Wait until limiter allows entrance
-	e.metadataLimiter.Wait(context.Background())
+	_ = e.metadataLimiter.Wait(context.Background())
 	metadata, err := registry.Metadata(image)
 	if err != nil {
 		logger.Error(err)
@@ -85,7 +85,7 @@ func (e *enricherImpl) enrichImageWithScanner(image *storage.Image, scanner scan
 		return true
 	}
 	// Wait until limiter allows entrance
-	e.scanLimiter.Wait(context.Background())
+	_ = e.scanLimiter.Wait(context.Background())
 	scan, err := scanner.GetLastScan(image)
 	if err != nil {
 		logger.Errorf("Error getting last scan for %s: %s", image.GetName().GetFullName(), err)

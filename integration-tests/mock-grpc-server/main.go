@@ -66,8 +66,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
+	defer func() {
+		_ = db.Close()
+	}()
 	grpcServer := grpc.NewServer()
 	sensorAPI.RegisterSignalServiceServer(grpcServer, newServer(db))
-	grpcServer.Serve(lis)
+	if err := grpcServer.Serve(lis); err != nil {
+		log.Fatalf("Failed to serve: %v", err)
+	}
 }

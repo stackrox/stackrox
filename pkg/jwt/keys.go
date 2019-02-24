@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/stackrox/rox/pkg/utils"
 	"gopkg.in/square/go-jose.v2"
 )
 
@@ -60,7 +61,7 @@ func (j *JWKSGetter) fetch() {
 		logger.Warnf("Couldn't get JWKS URL '%s': %s", j.url, err)
 		return
 	}
-	defer resp.Body.Close()
+	defer utils.IgnoreError(resp.Body.Close)
 	dec := json.NewDecoder(resp.Body)
 	var jwks jose.JSONWebKeySet
 	if err := dec.Decode(&jwks); err != nil {

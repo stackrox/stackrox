@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stretchr/testify/require"
 )
 
 func getAlertIndex() Indexer {
@@ -21,18 +22,18 @@ func getAlertIndex() Indexer {
 func benchmarkAddAlertNumThen1(b *testing.B, numAlerts int) {
 	indexer := getAlertIndex()
 	alert := fixtures.GetAlert()
-	addAlerts(indexer, alert, numAlerts)
+	addAlerts(b, indexer, alert, numAlerts)
 	alert.Id = fmt.Sprintf("%d", numAlerts+1)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		indexer.AddAlert(alert)
+		require.NoError(b, indexer.AddAlert(alert))
 	}
 }
 
-func addAlerts(indexer Indexer, alert *storage.Alert, numAlerts int) {
+func addAlerts(b *testing.B, indexer Indexer, alert *storage.Alert, numAlerts int) {
 	for i := 0; i < numAlerts; i++ {
 		alert.Id = fmt.Sprintf("%d", i)
-		indexer.AddAlert(alert)
+		require.NoError(b, indexer.AddAlert(alert))
 	}
 }
 
@@ -40,7 +41,7 @@ func benchmarkAddAlert(b *testing.B, numAlerts int) {
 	indexer := getAlertIndex()
 	alert := fixtures.GetAlert()
 	for i := 0; i < b.N; i++ {
-		addAlerts(indexer, alert, numAlerts)
+		addAlerts(b, indexer, alert, numAlerts)
 	}
 }
 
@@ -64,6 +65,7 @@ func BenchmarkSearchAlert(b *testing.B) {
 	indexer := getAlertIndex()
 	qb := search.NewQueryBuilder().AddStrings(search.Cluster, "prod cluster")
 	for i := 0; i < b.N; i++ {
-		indexer.Search(qb.ProtoQuery())
+		_, err := indexer.Search(qb.ProtoQuery())
+		require.NoError(b, err)
 	}
 }

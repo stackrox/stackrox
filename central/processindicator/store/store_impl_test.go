@@ -2,12 +2,12 @@ package store
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -34,8 +34,7 @@ func (suite *IndicatorStoreTestSuite) SetupSuite() {
 }
 
 func (suite *IndicatorStoreTestSuite) TearDownSuite() {
-	suite.db.Close()
-	os.Remove(suite.db.Path())
+	testutils.TearDownDB(suite.db)
 }
 
 func (suite *IndicatorStoreTestSuite) verifyIndicatorsAre(indicators ...*storage.ProcessIndicator) {

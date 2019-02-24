@@ -72,10 +72,10 @@ func (s *managerTestSuite) TestExpandSelection_AllOne_GetClustersError() {
 }
 
 func (s *managerTestSuite) TestExpandSelection_OneAll_OK() {
-	s.standardRegistry.RegisterStandards(
+	s.NoError(s.standardRegistry.RegisterStandards(
 		metadata.Standard{ID: "standard1"},
 		metadata.Standard{ID: "standard2"},
-	)
+	))
 	pairs, err := s.manager.ExpandSelection("cluster1", manager.Wildcard)
 	s.NoError(err)
 	s.ElementsMatch(pairs, []compliance.ClusterStandardPair{
@@ -89,10 +89,10 @@ func (s *managerTestSuite) TestExpandSelection_AllAll_OK() {
 		{Id: "cluster1"},
 		{Id: "cluster2"},
 	}, nil)
-	s.standardRegistry.RegisterStandards(
+	s.NoError(s.standardRegistry.RegisterStandards(
 		metadata.Standard{ID: "standard1"},
 		metadata.Standard{ID: "standard2"},
-	)
+	))
 	pairs, err := s.manager.ExpandSelection(manager.Wildcard, manager.Wildcard)
 	s.NoError(err)
 	s.ElementsMatch(pairs, []compliance.ClusterStandardPair{

@@ -64,17 +64,20 @@ func (suite *QuaySuite) SetupSuite() {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, scanPayload)
+		_, err := fmt.Fprintf(w, scanPayload)
+		suite.NoError(err)
 	})
 	// Handle Registry ping
 	masterRouter.HandleFunc("/v2/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "{}")
+		_, err := fmt.Fprint(w, "{}")
+		suite.NoError(err)
 	})
 	// Handle
 	masterRouter.HandleFunc("/v2/integration/nginx/manifests/1.10", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, manifestPayload)
+		_, err := fmt.Fprint(w, manifestPayload)
+		suite.NoError(err)
 	})
 
 	masterServer := httptest.NewServer(masterRouter)

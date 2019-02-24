@@ -105,9 +105,9 @@ func (c *csvResults) write(writer *csv.Writer) {
 	})
 	header := append([]string{}, c.header...)
 	header[0] = "\uFEFF" + header[0]
-	writer.Write(header)
+	_ = writer.Write(header)
 	for _, v := range c.values {
-		writer.Write(v)
+		_ = writer.Write(v)
 	}
 }
 

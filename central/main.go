@@ -106,7 +106,9 @@ func main() {
 	ensureDB()
 
 	// Now that we verified that the DB can be loaded, remove the .backup directory
-	os.RemoveAll(filepath.Join(migrations.DBMountPath, ".backup"))
+	if err := os.RemoveAll(filepath.Join(migrations.DBMountPath, ".backup")); err != nil {
+		log.Errorf("Failed to remove backup DB: %v", err)
+	}
 
 	go startGRPCServer()
 

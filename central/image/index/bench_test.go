@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stretchr/testify/require"
 )
 
 func getImageIndex(b *testing.B) Indexer {
@@ -21,18 +22,18 @@ func getImageIndex(b *testing.B) Indexer {
 func benchmarkAddImageNumThen1(b *testing.B, numImages int) {
 	indexer := getImageIndex(b)
 	image := fixtures.GetImage()
-	addImages(indexer, image, numImages)
+	addImages(b, indexer, image, numImages)
 	image.Id = fmt.Sprintf("%d", numImages+1)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		indexer.AddImage(image)
+		require.NoError(b, indexer.AddImage(image))
 	}
 }
 
-func addImages(indexer Indexer, image *storage.Image, numImages int) {
+func addImages(b *testing.B, indexer Indexer, image *storage.Image, numImages int) {
 	for i := 0; i < numImages; i++ {
 		image.Id = fmt.Sprintf("%d", i)
-		indexer.AddImage(image)
+		require.NoError(b, indexer.AddImage(image))
 	}
 }
 
@@ -40,7 +41,7 @@ func benchmarkAddImages(b *testing.B, numImages int) {
 	indexer := getImageIndex(b)
 	image := fixtures.GetImage()
 	for i := 0; i < b.N; i++ {
-		addImages(indexer, image, numImages)
+		addImages(b, indexer, image, numImages)
 	}
 }
 
@@ -64,6 +65,7 @@ func BenchmarkSearchImage(b *testing.B) {
 	indexer := getImageIndex(b)
 	qb := search.NewQueryBuilder().AddStrings(search.ImageTag, "latest")
 	for i := 0; i < b.N; i++ {
-		indexer.Search(qb.ProtoQuery())
+		_, err := indexer.Search(qb.ProtoQuery())
+		require.NoError(b, err)
 	}
 }

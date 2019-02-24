@@ -1,7 +1,6 @@
 package m1to2
 
 import (
-	"os"
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
@@ -36,8 +35,7 @@ func (suite *Migration1To2TestSuite) SetupTest() {
 }
 
 func (suite *Migration1To2TestSuite) TearDownTest() {
-	suite.db.Close()
-	os.Remove(suite.db.Path())
+	testutils.TearDownDB(suite.db)
 }
 
 func getNormalAlert(id string) *storage.Alert {

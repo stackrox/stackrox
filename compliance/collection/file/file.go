@@ -55,7 +55,7 @@ func dbusConn() (*dbus.Conn, error) {
 
 	err = conn.Auth(methods)
 	if err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, err
 	}
 

@@ -1,7 +1,6 @@
 package store
 
 import (
-	"os"
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
@@ -9,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/dberrors"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -36,8 +36,7 @@ func (suite *DeploymentStoreTestSuite) SetupSuite() {
 }
 
 func (suite *DeploymentStoreTestSuite) TearDownSuite() {
-	suite.db.Close()
-	os.Remove(suite.db.Path())
+	testutils.TearDownDB(suite.db)
 }
 
 func (suite *DeploymentStoreTestSuite) verifyDeploymentsAre(store Store, deployments ...*storage.Deployment) {

@@ -112,7 +112,9 @@ func (b *storeImpl) addProcessIndicator(tx *bolt.Tx, indicator *storage.ProcessI
 	var oldIDString string
 	if oldID != nil {
 		// Remove the old indicator.
-		removeProcessIndicator(tx, oldID)
+		if err := removeProcessIndicator(tx, oldID); err != nil {
+			return "", fmt.Errorf("Removing old indicator: %v", err)
+		}
 		oldIDString = string(oldID)
 	}
 	if err := indicatorBucket.Put(indicatorIDBytes, data); err != nil {

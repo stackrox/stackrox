@@ -70,13 +70,13 @@ func violationPrinterForField(fieldPath string, matchToMessage func(match string
 func printKeyValuePolicy(kvp *storage.KeyValuePolicy) string {
 	sb := strings.Builder{}
 	if kvp.GetKey() != "" {
-		sb.WriteString(fmt.Sprintf("key = '%s'", kvp.GetKey()))
+		_, _ = sb.WriteString(fmt.Sprintf("key = '%s'", kvp.GetKey()))
 		if kvp.GetValue() != "" {
-			sb.WriteString(", ")
+			_, _ = sb.WriteString(", ")
 		}
 	}
 	if kvp.GetValue() != "" {
-		sb.WriteString(fmt.Sprintf("value = '%s'", kvp.GetValue()))
+		_, _ = sb.WriteString(fmt.Sprintf("value = '%s'", kvp.GetValue()))
 	}
 	return sb.String()
 }

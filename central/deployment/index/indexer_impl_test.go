@@ -40,7 +40,7 @@ func (suite *DeploymentIndexTestSuite) SetupTest() {
 }
 
 func (suite *DeploymentIndexTestSuite) TearDownTest() {
-	suite.bleveIndex.Close()
+	suite.NoError(suite.bleveIndex.Close())
 }
 
 // This test makes sure that, when we search deployments by images,

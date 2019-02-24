@@ -1,10 +1,10 @@
 package bolthelper
 
 import (
-	"os"
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -83,6 +83,5 @@ func (s *countTestSuite) TestWithDepthInf() {
 }
 
 func (s *countTestSuite) TearDownSuite() {
-	s.db.Close()
-	os.Remove(s.db.Path())
+	testutils.TearDownDB(s.db)
 }

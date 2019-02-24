@@ -34,7 +34,9 @@ func (b *indexerImpl) AddNode(node *storage.Node) error {
 func (b *indexerImpl) processBatch(nodes []*storage.Node) error {
 	batch := b.index.NewBatch()
 	for _, node := range nodes {
-		batch.Index(node.GetId(), &nodeWrapper{Type: v1.SearchCategory_NODES.String(), Node: node})
+		if err := batch.Index(node.GetId(), &nodeWrapper{Type: v1.SearchCategory_NODES.String(), Node: node}); err != nil {
+			return err
+		}
 	}
 	return b.index.Batch(batch)
 }

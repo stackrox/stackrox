@@ -14,6 +14,7 @@ import (
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -89,7 +90,7 @@ func (q *quay) sendRequest(method string, values url.Values, pathSegments ...str
 	if err != nil {
 		return nil, -1, err
 	}
-	defer resp.Body.Close()
+	defer utils.IgnoreError(resp.Body.Close)
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, resp.StatusCode, err

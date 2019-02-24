@@ -2,7 +2,6 @@ package matcher
 
 import (
 	"fmt"
-	"os"
 	"regexp"
 	"testing"
 	"time"
@@ -32,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/readable"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -83,9 +83,8 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 }
 
 func (suite *DefaultPoliciesTestSuite) TearDownTest() {
-	suite.bleveIndex.Close()
-	suite.db.Close()
-	os.Remove(suite.db.Path())
+	suite.NoError(suite.bleveIndex.Close())
+	testutils.TearDownDB(suite.db)
 }
 
 func (suite *DefaultPoliciesTestSuite) TestNoDuplicatePolicyIDs() {

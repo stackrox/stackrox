@@ -84,7 +84,9 @@ func getAlerts(imageStr string) ([]*storage.Alert, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 	service := v1.NewDetectionServiceClient(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)

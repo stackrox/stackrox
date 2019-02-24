@@ -43,7 +43,9 @@ func InsertUniqueKey(tx *bolt.Tx, bucket []byte, id, k string) error {
 // UpdateUniqueKey changes a current key to a new value.
 func UpdateUniqueKey(tx *bolt.Tx, bucket []byte, id, k string) error {
 	if _, exists := GetCurrentUniqueKey(tx, bucket, id); exists {
-		RemoveUniqueKey(tx, bucket, id)
+		if err := RemoveUniqueKey(tx, bucket, id); err != nil {
+			return err
+		}
 	}
 	return CheckUniqueKeyExistsAndInsert(tx, bucket, id, k)
 }

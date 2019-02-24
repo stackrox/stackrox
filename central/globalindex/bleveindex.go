@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -118,7 +119,7 @@ func initializeIndices(mossPath string) (bleve.Index, error) {
 
 func getIndexMapping() mapping.IndexMapping {
 	indexMapping := bleve.NewIndexMapping()
-	indexMapping.AddCustomAnalyzer("single_term", singleTermAnalyzer())
+	utils.Must(indexMapping.AddCustomAnalyzer("single_term", singleTermAnalyzer()))
 	indexMapping.DefaultAnalyzer = "single_term" // Default to our analyzer
 
 	indexMapping.IndexDynamic = false

@@ -28,7 +28,6 @@ func TestFormatPolicy(t *testing.T) {
 		},
 	}
 	alertLink := AlertLink("https://localhost:8080", "alert-id")
-	body, err := FormatPolicy(fixtures.GetAlert(), alertLink, funcMap)
+	_, err := FormatPolicy(fixtures.GetAlert(), alertLink, funcMap)
 	assert.NoError(t, err)
-	fmt.Println(body)
 }

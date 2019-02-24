@@ -1,12 +1,12 @@
 package store
 
 import (
-	"os"
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -33,8 +33,7 @@ func (s *GroupStoreTestSuite) SetupSuite() {
 
 func (s *GroupStoreTestSuite) TearDownSuite() {
 	if s.db != nil {
-		s.db.Close()
-		os.Remove(s.db.Path())
+		testutils.TearDownDB(s.db)
 	}
 }
 

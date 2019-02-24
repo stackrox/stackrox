@@ -155,7 +155,11 @@ func (r *registryImpl) RegisterBackendFactory(typ string, factoryCreator Backend
 		if provider.Type() != typ || provider.Backend() != nil {
 			continue
 		}
-		go provider.applyOptions(WithBackendFromFactory(factory))
+		go func(p Provider) {
+			if err := p.applyOptions(WithBackendFromFactory(factory)); err != nil {
+				log.Errorf("Failed to apply options: %v", err)
+			}
+		}(provider)
 	}
 
 	return nil

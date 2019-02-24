@@ -1,13 +1,13 @@
 package store
 
 import (
-	"os"
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
 	timestamp "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -35,8 +35,7 @@ func (suite *ImageStoreTestSuite) SetupSuite() {
 }
 
 func (suite *ImageStoreTestSuite) TearDownSuite() {
-	suite.db.Close()
-	os.Remove(suite.db.Path())
+	testutils.TearDownDB(suite.db)
 }
 
 func (suite *ImageStoreTestSuite) TestImages() {

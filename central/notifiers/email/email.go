@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -232,7 +233,11 @@ func (e *email) sendEmail(recipient, subject, body string) error {
 		log.Errorf("SMTP client creation failed: %v", err)
 		return err
 	}
-	defer client.Quit()
+	defer func() {
+		if err := client.Quit(); err != nil {
+			log.Errorf("Failed to quit client cleanly: %v", err)
+		}
+	}()
 
 	if e.config.GetUseSTARTTLS() {
 		if err = client.StartTLS(e.tlsConfig()); err != nil {
@@ -260,7 +265,7 @@ func (e *email) sendEmail(recipient, subject, body string) error {
 		log.Errorf("SMTP DATA command failed: %v", err)
 		return err
 	}
-	defer w.Close()
+	defer utils.IgnoreError(w.Close)
 
 	_, err = w.Write(msg.Bytes())
 	if err != nil {
@@ -290,7 +295,7 @@ func (e *email) createClient(conn net.Conn) (c *smtp.Client, err error) {
 	// on it at the same time, including Close().
 	t := time.AfterFunc(connectTimeout, func() {
 		timedOut.Toggle()
-		conn.Close()
+		defer utils.IgnoreError(conn.Close)
 	})
 	defer func() {
 		t.Stop()

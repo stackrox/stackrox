@@ -19,7 +19,10 @@ func EnforceNodeConstraint(client *kubernetes.Clientset, deploymentInfo *central
 	}
 
 	// Apply the constraint modification.
-	common.ApplyNodeConstraintToObj(rs, deploymentInfo.GetAlertId())
+	err = common.ApplyNodeConstraintToObj(rs, deploymentInfo.GetAlertId())
+	if err != nil {
+		return
+	}
 
 	// Post the new ReplicaSet data.
 	_, err = client.ExtensionsV1beta1().ReplicaSets(deploymentInfo.GetNamespace()).Update(rs)

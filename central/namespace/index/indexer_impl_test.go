@@ -30,7 +30,7 @@ func (suite *NamespaceIndexTestSuite) SetupTest() {
 }
 
 func (suite *NamespaceIndexTestSuite) TearDownTest() {
-	suite.bleveIndex.Close()
+	suite.NoError(suite.bleveIndex.Close())
 }
 
 func (suite *NamespaceIndexTestSuite) TestIndexing() {

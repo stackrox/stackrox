@@ -93,8 +93,8 @@ func BenchmarkPolicies(b *testing.B) {
 	for _, dNum := range numDeployments {
 		for _, pNum := range numProcessIndicators {
 			processDatastore, _, indexer := setup(b)
-			indexer.AddDeployments(getDeployments(dNum))
-			processDatastore.AddProcessIndicators(getProcesses(dNum, pNum)...)
+			require.NoError(b, indexer.AddDeployments(getDeployments(dNum)))
+			require.NoError(b, processDatastore.AddProcessIndicators(getProcesses(dNum, pNum)...))
 			for _, p := range policies {
 				b.Run(fmt.Sprintf("%s %dd %dp", p.GetName(), dNum, pNum), func(b *testing.B) {
 					mr, err := matcher.ForPolicy(p, mappings.OptionsMap, processDatastore)

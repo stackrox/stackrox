@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/require"
 )
 
 const maxGRPCSize = 4194304
@@ -26,7 +27,7 @@ func BenchmarkAddAlert(b *testing.B) {
 	store := getAlertStore(b)
 	alert := fixtures.GetAlert()
 	for i := 0; i < b.N; i++ {
-		store.AddAlert(alert)
+		require.NoError(b, store.AddAlert(alert))
 	}
 }
 
@@ -34,16 +35,18 @@ func BenchmarkUpdateAlert(b *testing.B) {
 	store := getAlertStore(b)
 	alert := fixtures.GetAlert()
 	for i := 0; i < b.N; i++ {
-		store.UpdateAlert(alert)
+		require.NoError(b, store.UpdateAlert(alert))
 	}
 }
 
 func BenchmarkGetAlert(b *testing.B) {
 	store := getAlertStore(b)
 	alert := fixtures.GetAlert()
-	store.AddAlert(alert)
+	require.NoError(b, store.AddAlert(alert))
 	for i := 0; i < b.N; i++ {
-		store.GetAlert(alert.GetId())
+		_, exists, err := store.GetAlert(alert.GetId())
+		require.True(b, exists)
+		require.NoError(b, err)
 	}
 }
 

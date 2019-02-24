@@ -56,7 +56,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer communicateStream.CloseSend()
+	defer func() {
+		if err := communicateStream.CloseSend(); err != nil {
+			logger.Errorf("Failed to close communication stream: %v", err)
+		}
+	}()
 
 	stream := &threadSafeStream{
 		stream: communicateStream,

@@ -245,7 +245,7 @@ func GetAllLoggers() []*Logger {
 }
 
 // SetGlobalLogLevel sets the log level on all loggers for all modules.
-func SetGlobalLogLevel(level int32) error {
+func SetGlobalLogLevel(level int32) {
 	atomic.StoreInt32(&defaultLevel, level)
 
 	if thisModuleLogger != nil {
@@ -255,8 +255,6 @@ func SetGlobalLogLevel(level int32) error {
 	ForEachLogger(func(l *Logger) {
 		l.SetLogLevel(level)
 	})
-
-	return nil
 }
 
 // GetGlobalLogLevel returns the global log level (it is still possible that module loggers log at a different level).
@@ -556,13 +554,13 @@ func (l *Logger) GetLogLevel() string {
 
 func (l *Logger) log(level int32, args ...interface{}) {
 	if l.LogLevel() <= level {
-		l.internal.Output(l.stackTraceLevel, levelPrefixes[level]+fmt.Sprint(args...)+l.fields.String())
+		_ = l.internal.Output(l.stackTraceLevel, levelPrefixes[level]+fmt.Sprint(args...)+l.fields.String())
 	}
 }
 
 func (l *Logger) logf(level int32, format string, args ...interface{}) {
 	if l.LogLevel() <= level {
-		l.internal.Output(l.stackTraceLevel, levelPrefixes[level]+fmt.Sprintf(format, args...)+l.fields.String())
+		_ = l.internal.Output(l.stackTraceLevel, levelPrefixes[level]+fmt.Sprintf(format, args...)+l.fields.String())
 	}
 }
 
@@ -652,12 +650,12 @@ func (l *Logger) Panicf(format string, args ...interface{}) {
 
 //Log logs the message regardless of loglevel
 func (l *Logger) Log(args ...interface{}) {
-	l.internal.Output(l.stackTraceLevel, fmt.Sprint(args...)+l.fields.String())
+	_ = l.internal.Output(l.stackTraceLevel, fmt.Sprint(args...)+l.fields.String())
 }
 
 //Logf logs the message regardless of loglevel
 func (l *Logger) Logf(format string, args ...interface{}) {
-	l.internal.Output(l.stackTraceLevel, fmt.Sprintf(format, args...)+l.fields.String())
+	_ = l.internal.Output(l.stackTraceLevel, fmt.Sprintf(format, args...)+l.fields.String())
 }
 
 //WithFields provides custom formatted output

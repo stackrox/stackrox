@@ -53,7 +53,9 @@ func JSON(output io.Writer, alerts []*storage.Alert) error {
 	if err := marshaler.Marshal(output, bdr); err != nil {
 		return err
 	}
-	output.Write([]byte{'\n'})
+	if _, err := output.Write([]byte{'\n'}); err != nil {
+		return err
+	}
 	return nil
 }
 

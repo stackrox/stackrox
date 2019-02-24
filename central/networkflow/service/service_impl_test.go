@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
@@ -12,6 +11,7 @@ import (
 	npGraphMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -44,8 +44,7 @@ func (suite *NetworkGraphServiceTestSuite) SetupTest() {
 }
 
 func (suite *NetworkGraphServiceTestSuite) TearDownTest() {
-	suite.db.Close()
-	os.Remove(suite.db.Path())
+	testutils.TearDownDB(suite.db)
 
 	suite.mockCtrl.Finish()
 }

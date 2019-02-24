@@ -46,8 +46,8 @@ func (s *MessageCrudTestSuite) SetupSuite() {
 
 func (s *MessageCrudTestSuite) TearDownSuite() {
 	if s.db != nil {
-		s.db.Close()
-		os.Remove(s.db.Path())
+		_ = s.db.Close()
+		_ = os.Remove(s.db.Path())
 	}
 }
 

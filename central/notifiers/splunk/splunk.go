@@ -95,7 +95,9 @@ func (s *splunk) postData(body string) error {
 		return err
 	}
 	if resp != nil {
-		defer resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 	}
 
 	if resp.StatusCode != http.StatusOK {

@@ -132,7 +132,9 @@ func getContainers(c *client.Client, whiteListContainersWithLabels map[string]st
 	ctx, cancel := getContext()
 	defer cancel()
 
-	dockerRateLimiter.Wait(context.Background())
+	if err := dockerRateLimiter.Wait(context.Background()); err != nil {
+		return nil, err
+	}
 	filterArgs := filters.NewArgs()
 	for key, val := range whiteListContainersWithLabels {
 		keyVal := fmt.Sprintf("%s=%s", key, val)
@@ -187,7 +189,9 @@ func getImages(c *client.Client) ([]docker.ImageWrap, error) {
 
 	images := make([]docker.ImageWrap, 0, len(imageList))
 	for _, i := range imageList {
-		dockerRateLimiter.Wait(context.Background())
+		if err := dockerRateLimiter.Wait(context.Background()); err != nil {
+			return nil, err
+		}
 		image, err := inspectImage(c, i.ID)
 		if client.IsErrImageNotFound(err) {
 			continue

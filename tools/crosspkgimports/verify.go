@@ -32,6 +32,7 @@ var (
 
 	ignoredRoots = []string{
 		"image",
+		"generated",
 		"tests",
 	}
 )

@@ -35,7 +35,9 @@ func (b *indexerImpl) AddProcessIndicator(indicator *storage.ProcessIndicator) e
 func (b *indexerImpl) processBatch(indicators []*storage.ProcessIndicator) error {
 	batch := b.index.NewBatch()
 	for _, indicator := range indicators {
-		batch.Index(indicator.GetId(), &indicatorWrapper{Type: v1.SearchCategory_PROCESS_INDICATORS.String(), ProcessIndicator: indicator})
+		if err := batch.Index(indicator.GetId(), &indicatorWrapper{Type: v1.SearchCategory_PROCESS_INDICATORS.String(), ProcessIndicator: indicator}); err != nil {
+			return err
+		}
 	}
 	return b.index.Batch(batch)
 }

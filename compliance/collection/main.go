@@ -69,11 +69,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Errorf("Failed to close connection: %v", err)
+		}
+	}()
 	cli := sensor.NewComplianceServiceClient(conn)
 
 	// Communicate with sensor, pushing the scraped data.
-	retry.WithRetry(
+	if err := retry.WithRetry(
 		func() error { // Try to push the data to sensor, time out after 5 seconds.
 			ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 			_, err := cli.PushComplianceReturn(ctx, &msgReturn)
@@ -88,7 +92,9 @@ func main() {
 		retry.OnFailedAttempts(func(err error) { // Log encountered errors.
 			log.Errorf("Error posting compliance data to %v: %+v", env.AdvertisedEndpoint.Setting(), err)
 		}),
-	)
+	); err != nil {
+		log.Fatalf("Couldn't post data to sensor despite retries: %v", err)
+	}
 
 	signalsC := make(chan os.Signal)
 	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)

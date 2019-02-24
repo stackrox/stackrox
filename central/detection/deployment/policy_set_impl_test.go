@@ -27,12 +27,12 @@ func (suite *PolicyTestSuite) TestAddsCompilable() {
 	suite.NoError(err, "insertion should succeed")
 
 	hasMatch := false
-	policySet.ForEach(func(p *storage.Policy, matcher searchbasedpolicies.Matcher, pred predicate.Predicate) error {
+	suite.NoError(policySet.ForEach(func(p *storage.Policy, matcher searchbasedpolicies.Matcher, pred predicate.Predicate) error {
 		if p.GetId() == "1" {
 			hasMatch = true
 		}
 		return nil
-	})
+	}))
 	suite.True(hasMatch, "policy set should contain a matching policy")
 }
 
@@ -67,12 +67,12 @@ func (suite *PolicyTestSuite) TestThrowsErrorForNotCompilable() {
 	suite.Error(err, "insertion should not succeed since the regex in the policy is bad")
 
 	hasMatch := false
-	policySet.ForEach(func(p *storage.Policy, m searchbasedpolicies.Matcher, pred predicate.Predicate) error {
+	suite.NoError(policySet.ForEach(func(p *storage.Policy, m searchbasedpolicies.Matcher, pred predicate.Predicate) error {
 		if p.GetId() == "1" {
 			hasMatch = true
 		}
 		return nil
-	})
+	}))
 	suite.False(hasMatch, "policy set should not contain a matching policy")
 }
 

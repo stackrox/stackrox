@@ -44,7 +44,11 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		s.stopC.SignalWithError(fmt.Errorf("opening stream: %v", err))
 		return
 	}
-	defer stream.CloseSend()
+	defer func() {
+		if err := stream.CloseSend(); err != nil {
+			log.Errorf("Failed to close stream cleanly: %v", err)
+		}
+	}()
 	log.Infof("Established connection to Central.")
 
 	// Start receiving and sending with central.
@@ -55,7 +59,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 
 	// Wait for stop.
 	/////////////////
-	s.stopC.Wait()
+	_ = s.stopC.Wait()
 	log.Infof("Communication with central ended.")
 }
 

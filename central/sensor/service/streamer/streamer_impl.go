@@ -27,7 +27,7 @@ func (s *streamerImpl) Start(server central.SensorService_CommunicateServer) {
 func (s *streamerImpl) Terminate(err error) bool {
 	// We consider stopping the pipeline termination since nothing will get processed/updated after that stops.
 	stopped := s.pipeline.Stop(err)
-	s.pipeline.Stopped().Wait()
+	_ = s.pipeline.Stopped().Wait()
 	return stopped
 }
 

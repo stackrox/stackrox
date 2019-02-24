@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/require"
 )
 
 const maxGRPCSize = 4194304
@@ -26,25 +27,29 @@ func BenchmarkAddImage(b *testing.B) {
 	store := getImageStore(b)
 	image := fixtures.GetImage()
 	for i := 0; i < b.N; i++ {
-		store.UpsertImage(image)
+		require.NoError(b, store.UpsertImage(image))
 	}
 }
 
 func BenchmarkGetImage(b *testing.B) {
 	store := getImageStore(b)
 	image := fixtures.GetImage()
-	store.UpsertImage(image)
+	require.NoError(b, store.UpsertImage(image))
 	for i := 0; i < b.N; i++ {
-		store.GetImage(image.GetId())
+		_, exists, err := store.GetImage(image.GetId())
+		require.True(b, exists)
+		require.NoError(b, err)
 	}
 }
 
 func BenchmarkListImage(b *testing.B) {
 	store := getImageStore(b)
 	image := fixtures.GetImage()
-	store.UpsertImage(image)
+	require.NoError(b, store.UpsertImage(image))
 	for i := 0; i < b.N; i++ {
-		store.ListImage(image.GetId())
+		_, exists, err := store.ListImage(image.GetId())
+		require.True(b, exists)
+		require.NoError(b, err)
 	}
 }
 

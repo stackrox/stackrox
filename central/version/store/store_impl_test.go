@@ -65,13 +65,13 @@ func (suite *VersionStoreTestSuite) TestVersionMismatch() {
 	badgerVersionBytes, err := badgerVersion.Marshal()
 	suite.Require().NoError(err)
 
-	suite.badgerDB.Update(func(txn *badger.Txn) error {
+	suite.NoError(suite.badgerDB.Update(func(txn *badger.Txn) error {
 		return txn.Set(versionBucket, badgerVersionBytes)
-	})
-	suite.boltDB.Update(func(tx *bolt.Tx) error {
+	}))
+	suite.NoError(suite.boltDB.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(versionBucket)
 		return bucket.Put(key, boltVersionBytes)
-	})
+	}))
 
 	_, err = suite.store.GetVersion()
 	suite.Error(err)

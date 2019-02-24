@@ -102,7 +102,7 @@ func collector(sensorEndpoint string, maxProcesses int, processInterval time.Dur
 		streamMsg := generateSignals(containerID)
 		if err := stream.Send(streamMsg); err != nil {
 			log.Errorf("Error: %v", err)
-			stream.CloseSend()
+			_ = stream.CloseSend()
 			time.Sleep(time.Second * 2)
 			stream, cancel, err = getStream(sensorEndpoint)
 			if err != nil {

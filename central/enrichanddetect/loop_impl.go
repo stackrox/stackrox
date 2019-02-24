@@ -63,6 +63,8 @@ func (l *loopImpl) enrichAndDetectAllDeployments() {
 		return
 	}
 	for _, deployment := range deployments {
-		l.enricherAndDetector.EnrichAndDetect(deployment)
+		if err := l.enricherAndDetector.EnrichAndDetect(deployment); err != nil {
+			log.Errorf("Failed to enrich deployment %s: %v", deployment.GetId(), err)
+		}
 	}
 }

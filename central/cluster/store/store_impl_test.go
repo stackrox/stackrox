@@ -1,7 +1,6 @@
 package store
 
 import (
-	"os"
 	"testing"
 	"time"
 
@@ -9,6 +8,7 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -35,8 +35,7 @@ func (suite *ClusterStoreTestSuite) SetupSuite() {
 }
 
 func (suite *ClusterStoreTestSuite) TearDownSuite() {
-	suite.db.Close()
-	os.Remove(suite.db.Path())
+	testutils.TearDownDB(suite.db)
 }
 
 func (suite *ClusterStoreTestSuite) TestClusters() {

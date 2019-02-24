@@ -140,7 +140,7 @@ func (ds *datastoreImpl) postRemoveCluster(cluster *storage.Cluster) {
 	}
 	for _, s := range secrets {
 		// Best effort to remove. If the object doesn't exist, then that is okay
-		ds.ss.RemoveSecret(s.GetId())
+		_ = ds.ss.RemoveSecret(s.GetId())
 	}
 }
 

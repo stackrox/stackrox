@@ -9,12 +9,13 @@ import (
 	"github.com/stackrox/rox/central/graphql/generator"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage" // end range imports
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func registerGeneratedTypes(builder generator.SchemaBuilder) {
-	builder.AddType("Label", []string{"key: String!", "value: String!"})
+	utils.Must(builder.AddType("Label", []string{"key: String!", "value: String!"}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Access(0)))
-	builder.AddType("Alert", []string{
+	utils.Must(builder.AddType("Alert", []string{
 		"deployment: Deployment",
 		"enforcement: Alert_Enforcement",
 		"firstOccurred: Time",
@@ -26,24 +27,24 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"state: ViolationState!",
 		"time: Time",
 		"violations: [Alert_Violation]!",
-	})
-	builder.AddType("Alert_Enforcement", []string{
+	}))
+	utils.Must(builder.AddType("Alert_Enforcement", []string{
 		"action: EnforcementAction!",
 		"message: String!",
-	})
-	builder.AddType("Alert_ProcessViolation", []string{
+	}))
+	utils.Must(builder.AddType("Alert_ProcessViolation", []string{
 		"message: String!",
 		"processes: [ProcessIndicator]!",
-	})
-	builder.AddType("Alert_Violation", []string{
+	}))
+	utils.Must(builder.AddType("Alert_Violation", []string{
 		"link: String!",
 		"message: String!",
-	})
-	builder.AddType("CSCC", []string{
+	}))
+	utils.Must(builder.AddType("CSCC", []string{
 		"serviceAccount: String!",
 		"sourceId: String!",
-	})
-	builder.AddType("CVSSV2", []string{
+	}))
+	utils.Must(builder.AddType("CVSSV2", []string{
 		"accessComplexity: CVSSV2_AccessComplexity!",
 		"attackVector: CVSSV2_AttackVector!",
 		"authentication: CVSSV2_Authentication!",
@@ -51,20 +52,20 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"confidentiality: CVSSV2_Impact!",
 		"integrity: CVSSV2_Impact!",
 		"vector: String!",
-	})
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_AccessComplexity(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_AttackVector(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_Authentication(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CVSSV2_Impact(0)))
-	builder.AddType("Cert", []string{
+	utils.Must(builder.AddType("Cert", []string{
 		"algorithm: String!",
 		"endDate: Time",
 		"issuer: CertName",
 		"sans: [String!]!",
 		"startDate: Time",
 		"subject: CertName",
-	})
-	builder.AddType("CertName", []string{
+	}))
+	utils.Must(builder.AddType("CertName", []string{
 		"commonName: String!",
 		"country: String!",
 		"locality: String!",
@@ -74,8 +75,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"postalCode: String!",
 		"province: String!",
 		"streetAddress: String!",
-	})
-	builder.AddType("Cluster", []string{
+	}))
+	utils.Must(builder.AddType("Cluster", []string{
 		"admissionController: Boolean!",
 		"centralApiEndpoint: String!",
 		"id: ID!",
@@ -87,31 +88,31 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"providerMetadata: ProviderMetadata",
 		"runtimeSupport: Boolean!",
 		"type: ClusterType!",
-	})
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterType(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Comparator(0)))
-	builder.AddType("ComplianceAggregation_AggregationKey", []string{
+	utils.Must(builder.AddType("ComplianceAggregation_AggregationKey", []string{
 		"id: ID!",
 		"scope: ComplianceAggregation_Scope!",
-	})
-	builder.AddType("ComplianceAggregation_Response", []string{
+	}))
+	utils.Must(builder.AddType("ComplianceAggregation_Response", []string{
 		"results: [ComplianceAggregation_Result]!",
 		"sources: [ComplianceAggregation_Source]!",
-	})
-	builder.AddType("ComplianceAggregation_Result", []string{
+	}))
+	utils.Must(builder.AddType("ComplianceAggregation_Result", []string{
 		"aggregationKeys: [ComplianceAggregation_AggregationKey]!",
 		"numFailing: Int!",
 		"numPassing: Int!",
 		"unit: ComplianceAggregation_Scope!",
-	})
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.ComplianceAggregation_Scope(0)))
-	builder.AddType("ComplianceAggregation_Source", []string{
+	utils.Must(builder.AddType("ComplianceAggregation_Source", []string{
 		"clusterId: String!",
 		"failedRuns: [ComplianceRunMetadata]!",
 		"standardId: String!",
 		"successfulRun: ComplianceRunMetadata",
-	})
-	builder.AddType("ComplianceControl", []string{
+	}))
+	utils.Must(builder.AddType("ComplianceControl", []string{
 		"description: String!",
 		"groupId: String!",
 		"id: ID!",
@@ -119,53 +120,53 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"interpretationText: String!",
 		"name: String!",
 		"standardId: String!",
-	})
-	builder.AddType("ComplianceControlGroup", []string{
+	}))
+	utils.Must(builder.AddType("ComplianceControlGroup", []string{
 		"description: String!",
 		"id: ID!",
 		"name: String!",
 		"numImplementedChecks: Int!",
 		"standardId: String!",
-	})
-	builder.AddType("ComplianceControlResult", []string{
+	}))
+	utils.Must(builder.AddType("ComplianceControlResult", []string{
 		"controlId: String!",
 		"resource: ComplianceResource",
 		"value: ComplianceResultValue",
-	})
-	builder.AddType("ComplianceResource", []string{
+	}))
+	utils.Must(builder.AddType("ComplianceResource", []string{
 		"resource: ComplianceResourceResource",
-	})
-	builder.AddUnionType("ComplianceResourceResource", []string{
+	}))
+	utils.Must(builder.AddUnionType("ComplianceResourceResource", []string{
 		"ComplianceResource_ClusterName",
 		"ComplianceResource_DeploymentName",
 		"ComplianceResource_NodeName",
 		"ImageName",
-	})
-	builder.AddType("ComplianceResource_ClusterName", []string{
+	}))
+	utils.Must(builder.AddType("ComplianceResource_ClusterName", []string{
 		"id: ID!",
 		"name: String!",
-	})
-	builder.AddType("ComplianceResource_DeploymentName", []string{
+	}))
+	utils.Must(builder.AddType("ComplianceResource_DeploymentName", []string{
 		"cluster: ComplianceResource_ClusterName",
 		"id: ID!",
 		"name: String!",
 		"namespace: String!",
-	})
-	builder.AddType("ComplianceResource_NodeName", []string{
+	}))
+	utils.Must(builder.AddType("ComplianceResource_NodeName", []string{
 		"cluster: ComplianceResource_ClusterName",
 		"id: ID!",
 		"name: String!",
-	})
-	builder.AddType("ComplianceResultValue", []string{
+	}))
+	utils.Must(builder.AddType("ComplianceResultValue", []string{
 		"evidence: [ComplianceResultValue_Evidence]!",
 		"overallState: ComplianceState!",
-	})
-	builder.AddType("ComplianceResultValue_Evidence", []string{
+	}))
+	utils.Must(builder.AddType("ComplianceResultValue_Evidence", []string{
 		"message: String!",
 		"messageId: Int!",
 		"state: ComplianceState!",
-	})
-	builder.AddType("ComplianceRun", []string{
+	}))
+	utils.Must(builder.AddType("ComplianceRun", []string{
 		"clusterId: String!",
 		"errorMessage: String!",
 		"finishTime: Time",
@@ -174,8 +175,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"standardId: String!",
 		"startTime: Time",
 		"state: ComplianceRun_State!",
-	})
-	builder.AddType("ComplianceRunMetadata", []string{
+	}))
+	utils.Must(builder.AddType("ComplianceRunMetadata", []string{
 		"clusterId: String!",
 		"errorMessage: String!",
 		"finishTimestamp: Time",
@@ -183,38 +184,38 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"standardId: String!",
 		"startTimestamp: Time",
 		"success: Boolean!",
-	})
-	builder.AddType("ComplianceRunSchedule", []string{
+	}))
+	utils.Must(builder.AddType("ComplianceRunSchedule", []string{
 		"clusterId: String!",
 		"crontabSpec: String!",
 		"id: ID!",
 		"standardId: String!",
 		"suspended: Boolean!",
-	})
-	builder.AddType("ComplianceRunScheduleInfo", []string{
+	}))
+	utils.Must(builder.AddType("ComplianceRunScheduleInfo", []string{
 		"lastCompletedRun: ComplianceRun",
 		"lastRun: ComplianceRun",
 		"nextRunTime: Time",
 		"schedule: ComplianceRunSchedule",
-	})
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.ComplianceRun_State(0)))
-	builder.AddType("ComplianceStandard", []string{
+	utils.Must(builder.AddType("ComplianceStandard", []string{
 		"controls: [ComplianceControl]!",
 		"groups: [ComplianceControlGroup]!",
 		"metadata: ComplianceStandardMetadata",
-	})
-	builder.AddType("ComplianceStandardMetadata", []string{
+	}))
+	utils.Must(builder.AddType("ComplianceStandardMetadata", []string{
 		"description: String!",
 		"id: ID!",
 		"name: String!",
 		"numImplementedChecks: Int!",
-	})
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ComplianceState(0)))
-	builder.AddType("Component", []string{
+	utils.Must(builder.AddType("Component", []string{
 		"name: String!",
 		"version: String!",
-	})
-	builder.AddType("Container", []string{
+	}))
+	utils.Must(builder.AddType("Container", []string{
 		"config: ContainerConfig",
 		"id: ID!",
 		"image: Image",
@@ -225,31 +226,31 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"secrets: [EmbeddedSecret]!",
 		"securityContext: SecurityContext",
 		"volumes: [Volume]!",
-	})
-	builder.AddType("ContainerConfig", []string{
+	}))
+	utils.Must(builder.AddType("ContainerConfig", []string{
 		"args: [String!]!",
 		"command: [String!]!",
 		"directory: String!",
 		"env: [ContainerConfig_EnvironmentConfig]!",
 		"uid: Int!",
 		"user: String!",
-	})
-	builder.AddType("ContainerConfig_EnvironmentConfig", []string{
+	}))
+	utils.Must(builder.AddType("ContainerConfig_EnvironmentConfig", []string{
 		"key: String!",
 		"value: String!",
-	})
-	builder.AddType("ContainerInstance", []string{
+	}))
+	utils.Must(builder.AddType("ContainerInstance", []string{
 		"containerIps: [String!]!",
 		"containingPodId: String!",
 		"instanceId: ContainerInstanceID",
-	})
-	builder.AddType("ContainerInstanceID", []string{
+	}))
+	utils.Must(builder.AddType("ContainerInstanceID", []string{
 		"containerRuntime: ContainerRuntime!",
 		"id: ID!",
 		"node: String!",
-	})
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ContainerRuntime(0)))
-	builder.AddType("Deployment", []string{
+	utils.Must(builder.AddType("Deployment", []string{
 		"annotations: [Label!]!",
 		"clusterId: String!",
 		"clusterName: String!",
@@ -273,12 +274,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: String!",
 		"updatedAt: Time",
 		"version: String!",
-	})
-	builder.AddType("DockerfileLineRuleField", []string{
+	}))
+	utils.Must(builder.AddType("DockerfileLineRuleField", []string{
 		"instruction: String!",
 		"value: String!",
-	})
-	builder.AddType("Email", []string{
+	}))
+	utils.Must(builder.AddType("Email", []string{
 		"disableTLS: Boolean!",
 		"from: String!",
 		"password: String!",
@@ -286,142 +287,142 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"server: String!",
 		"useSTARTTLS: Boolean!",
 		"username: String!",
-	})
-	builder.AddType("EmbeddedSecret", []string{
+	}))
+	utils.Must(builder.AddType("EmbeddedSecret", []string{
 		"name: String!",
 		"path: String!",
-	})
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.EnforcementAction(0)))
-	builder.AddType("GenerateTokenResponse", []string{
+	utils.Must(builder.AddType("GenerateTokenResponse", []string{
 		"metadata: TokenMetadata",
 		"token: String!",
-	})
-	builder.AddType("GetComplianceRunStatusesResponse", []string{
+	}))
+	utils.Must(builder.AddType("GetComplianceRunStatusesResponse", []string{
 		"invalidRunIds: [String!]!",
 		"runs: [ComplianceRun]!",
-	})
-	builder.AddType("GoogleProviderMetadata", []string{
+	}))
+	utils.Must(builder.AddType("GoogleProviderMetadata", []string{
 		"clusterName: String!",
 		"project: String!",
-	})
-	builder.AddType("Group", []string{
+	}))
+	utils.Must(builder.AddType("Group", []string{
 		"props: GroupProperties",
 		"roleName: String!",
-	})
-	builder.AddType("GroupProperties", []string{
+	}))
+	utils.Must(builder.AddType("GroupProperties", []string{
 		"authProviderId: String!",
 		"key: String!",
 		"value: String!",
-	})
-	builder.AddType("Image", []string{
+	}))
+	utils.Must(builder.AddType("Image", []string{
 		"id: ID!",
 		"metadata: ImageMetadata",
 		"name: ImageName",
 		"scan: ImageScan",
-	})
-	builder.AddType("ImageLayer", []string{
+	}))
+	utils.Must(builder.AddType("ImageLayer", []string{
 		"author: String!",
 		"components: [ImageScanComponent]!",
 		"created: Time",
 		"empty: Boolean!",
 		"instruction: String!",
 		"value: String!",
-	})
-	builder.AddType("ImageMetadata", []string{
+	}))
+	utils.Must(builder.AddType("ImageMetadata", []string{
 		"layerShas: [String!]!",
 		"v1: V1Metadata",
 		"v2: V2Metadata",
-	})
-	builder.AddType("ImageName", []string{
+	}))
+	utils.Must(builder.AddType("ImageName", []string{
 		"fullName: String!",
 		"registry: String!",
 		"remote: String!",
 		"tag: String!",
-	})
-	builder.AddType("ImageNamePolicy", []string{
+	}))
+	utils.Must(builder.AddType("ImageNamePolicy", []string{
 		"registry: String!",
 		"remote: String!",
 		"tag: String!",
-	})
-	builder.AddType("ImageScan", []string{
+	}))
+	utils.Must(builder.AddType("ImageScan", []string{
 		"components: [ImageScanComponent]!",
 		"scanTime: Time",
-	})
-	builder.AddType("ImageScanComponent", []string{
+	}))
+	utils.Must(builder.AddType("ImageScanComponent", []string{
 		"license: License",
 		"name: String!",
 		"version: String!",
 		"vulns: [Vulnerability]!",
-	})
-	builder.AddType("Jira", []string{
+	}))
+	utils.Must(builder.AddType("Jira", []string{
 		"issueType: String!",
 		"password: String!",
 		"url: String!",
 		"username: String!",
-	})
-	builder.AddType("KeyValuePolicy", []string{
+	}))
+	utils.Must(builder.AddType("KeyValuePolicy", []string{
 		"key: String!",
 		"value: String!",
-	})
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.L4Protocol(0)))
-	builder.AddType("LabelSelector", []string{
+	utils.Must(builder.AddType("LabelSelector", []string{
 		"matchLabels: [Label!]!",
 		"requirements: [LabelSelector_Requirement]!",
-	})
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.LabelSelector_Operator(0)))
-	builder.AddType("LabelSelector_Requirement", []string{
+	utils.Must(builder.AddType("LabelSelector_Requirement", []string{
 		"key: String!",
 		"op: LabelSelector_Operator!",
 		"values: [String!]!",
-	})
-	builder.AddType("License", []string{
+	}))
+	utils.Must(builder.AddType("License", []string{
 		"name: String!",
 		"type: String!",
 		"url: String!",
-	})
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.LifecycleStage(0)))
-	builder.AddType("Metadata", []string{
+	utils.Must(builder.AddType("Metadata", []string{
 		"version: String!",
-	})
-	builder.AddType("Namespace", []string{
+	}))
+	utils.Must(builder.AddType("Namespace", []string{
 		"metadata: NamespaceMetadata",
 		"numDeployments: Int!",
 		"numNetworkPolicies: Int!",
 		"numSecrets: Int!",
-	})
-	builder.AddType("NamespaceMetadata", []string{
+	}))
+	utils.Must(builder.AddType("NamespaceMetadata", []string{
 		"clusterId: String!",
 		"clusterName: String!",
 		"creationTime: Time",
 		"id: ID!",
 		"labels: [Label!]!",
 		"name: String!",
-	})
-	builder.AddType("NetworkEntityInfo", []string{
+	}))
+	utils.Must(builder.AddType("NetworkEntityInfo", []string{
 		"id: ID!",
 		"type: NetworkEntityInfo_Type!",
 		"desc: NetworkEntityInfoDesc",
-	})
-	builder.AddUnionType("NetworkEntityInfoDesc", []string{
+	}))
+	utils.Must(builder.AddUnionType("NetworkEntityInfoDesc", []string{
 		"NetworkEntityInfo_Deployment",
-	})
-	builder.AddType("NetworkEntityInfo_Deployment", []string{
+	}))
+	utils.Must(builder.AddType("NetworkEntityInfo_Deployment", []string{
 		"cluster: String!",
 		"name: String!",
 		"namespace: String!",
-	})
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.NetworkEntityInfo_Type(0)))
-	builder.AddType("NetworkFlow", []string{
+	utils.Must(builder.AddType("NetworkFlow", []string{
 		"lastSeenTimestamp: Time",
 		"props: NetworkFlowProperties",
-	})
-	builder.AddType("NetworkFlowProperties", []string{
+	}))
+	utils.Must(builder.AddType("NetworkFlowProperties", []string{
 		"dstEntity: NetworkEntityInfo",
 		"dstPort: Int!",
 		"l4Protocol: L4Protocol!",
 		"srcEntity: NetworkEntityInfo",
-	})
-	builder.AddType("Node", []string{
+	}))
+	utils.Must(builder.AddType("Node", []string{
 		"annotations: [Label!]!",
 		"clusterId: String!",
 		"clusterName: String!",
@@ -435,8 +436,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 		"osImage: String!",
 		"taints: [Taint]!",
-	})
-	builder.AddType("Notifier", []string{
+	}))
+	utils.Must(builder.AddType("Notifier", []string{
 		"enabled: Boolean!",
 		"id: ID!",
 		"labelDefault: String!",
@@ -445,22 +446,22 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: String!",
 		"uiEndpoint: String!",
 		"config: NotifierConfig",
-	})
-	builder.AddUnionType("NotifierConfig", []string{
+	}))
+	utils.Must(builder.AddUnionType("NotifierConfig", []string{
 		"Jira",
 		"Email",
 		"CSCC",
 		"Splunk",
-	})
-	builder.AddType("NumericalPolicy", []string{
+	}))
+	utils.Must(builder.AddType("NumericalPolicy", []string{
 		"op: Comparator!",
 		"value: Float!",
-	})
-	builder.AddType("OrchestratorMetadata", []string{
+	}))
+	utils.Must(builder.AddType("OrchestratorMetadata", []string{
 		"buildDate: Time",
 		"version: String!",
-	})
-	builder.AddType("Policy", []string{
+	}))
+	utils.Must(builder.AddType("Policy", []string{
 		"categories: [String!]!",
 		"description: String!",
 		"disabled: Boolean!",
@@ -475,8 +476,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"scope: [Scope]!",
 		"severity: Severity!",
 		"whitelists: [Whitelist]!",
-	})
-	builder.AddType("PolicyFields", []string{
+	}))
+	utils.Must(builder.AddType("PolicyFields", []string{
 		"addCapabilities: [String!]!",
 		"args: String!",
 		"command: String!",
@@ -496,16 +497,16 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"requiredLabel: KeyValuePolicy",
 		"user: String!",
 		"volumePolicy: VolumePolicy",
-	})
-	builder.AddType("PortConfig", []string{
+	}))
+	utils.Must(builder.AddType("PortConfig", []string{
 		"containerPort: Int!",
 		"exposedPort: Int!",
 		"exposure: PortConfig_ExposureLevel!",
 		"exposureInfos: [PortConfig_ExposureInfo]!",
 		"name: String!",
 		"protocol: String!",
-	})
-	builder.AddType("PortConfig_ExposureInfo", []string{
+	}))
+	utils.Must(builder.AddType("PortConfig_ExposureInfo", []string{
 		"externalHostnames: [String!]!",
 		"externalIps: [String!]!",
 		"level: PortConfig_ExposureLevel!",
@@ -514,36 +515,36 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"serviceId: String!",
 		"serviceName: String!",
 		"servicePort: Int!",
-	})
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.PortConfig_ExposureLevel(0)))
-	builder.AddType("PortPolicy", []string{
+	utils.Must(builder.AddType("PortPolicy", []string{
 		"port: Int!",
 		"protocol: String!",
-	})
-	builder.AddType("ProcessGroup", []string{
+	}))
+	utils.Must(builder.AddType("ProcessGroup", []string{
 		"args: String!",
 		"signals: [ProcessIndicator]!",
-	})
-	builder.AddType("ProcessIndicator", []string{
+	}))
+	utils.Must(builder.AddType("ProcessIndicator", []string{
 		"containerName: String!",
 		"deploymentId: String!",
 		"emitTimestamp: Time",
 		"id: ID!",
 		"podId: String!",
 		"signal: ProcessSignal",
-	})
-	builder.AddType("ProcessNameGroup", []string{
+	}))
+	utils.Must(builder.AddType("ProcessNameGroup", []string{
 		"groups: [ProcessGroup]!",
 		"name: String!",
 		"timesExecuted: Int!",
-	})
-	builder.AddType("ProcessPolicy", []string{
+	}))
+	utils.Must(builder.AddType("ProcessPolicy", []string{
 		"ancestor: String!",
 		"args: String!",
 		"name: String!",
 		"uid: String!",
-	})
-	builder.AddType("ProcessSignal", []string{
+	}))
+	utils.Must(builder.AddType("ProcessSignal", []string{
 		"args: String!",
 		"containerId: String!",
 		"execFilePath: String!",
@@ -554,62 +555,62 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"pid: Int!",
 		"time: Time",
 		"uid: Int!",
-	})
-	builder.AddType("ProviderMetadata", []string{
+	}))
+	utils.Must(builder.AddType("ProviderMetadata", []string{
 		"region: String!",
 		"zone: String!",
 		"provider: ProviderMetadataProvider",
-	})
-	builder.AddUnionType("ProviderMetadataProvider", []string{
+	}))
+	utils.Must(builder.AddUnionType("ProviderMetadataProvider", []string{
 		"GoogleProviderMetadata",
-	})
-	builder.AddType("ResourcePolicy", []string{
+	}))
+	utils.Must(builder.AddType("ResourcePolicy", []string{
 		"cpuResourceLimit: NumericalPolicy",
 		"cpuResourceRequest: NumericalPolicy",
 		"memoryResourceLimit: NumericalPolicy",
 		"memoryResourceRequest: NumericalPolicy",
-	})
-	builder.AddType("Resources", []string{
+	}))
+	utils.Must(builder.AddType("Resources", []string{
 		"cpuCoresLimit: Float!",
 		"cpuCoresRequest: Float!",
 		"memoryMbLimit: Float!",
 		"memoryMbRequest: Float!",
-	})
-	builder.AddType("Risk", []string{
+	}))
+	utils.Must(builder.AddType("Risk", []string{
 		"results: [Risk_Result]!",
 		"score: Float!",
-	})
-	builder.AddType("Risk_Result", []string{
+	}))
+	utils.Must(builder.AddType("Risk_Result", []string{
 		"factors: [Risk_Result_Factor]!",
 		"name: String!",
 		"score: Float!",
-	})
-	builder.AddType("Risk_Result_Factor", []string{
+	}))
+	utils.Must(builder.AddType("Risk_Result_Factor", []string{
 		"message: String!",
 		"url: String!",
-	})
-	builder.AddType("Role", []string{
+	}))
+	utils.Must(builder.AddType("Role", []string{
 		"globalAccess: Access!",
 		"name: String!",
-	})
-	builder.AddType("Scope", []string{
+	}))
+	utils.Must(builder.AddType("Scope", []string{
 		"cluster: String!",
 		"label: Scope_Label",
 		"namespace: String!",
-	})
-	builder.AddType("Scope_Label", []string{
+	}))
+	utils.Must(builder.AddType("Scope_Label", []string{
 		"key: String!",
 		"value: String!",
-	})
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.SearchCategory(0)))
-	builder.AddType("SearchResult", []string{
+	utils.Must(builder.AddType("SearchResult", []string{
 		"category: SearchCategory!",
 		"id: ID!",
 		"location: String!",
 		"name: String!",
 		"score: Float!",
-	})
-	builder.AddType("Secret", []string{
+	}))
+	utils.Must(builder.AddType("Secret", []string{
 		"annotations: [Label!]!",
 		"clusterId: String!",
 		"clusterName: String!",
@@ -621,112 +622,112 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"namespace: String!",
 		"relationship: SecretRelationship",
 		"type: String!",
-	})
-	builder.AddType("SecretContainerRelationship", []string{
+	}))
+	utils.Must(builder.AddType("SecretContainerRelationship", []string{
 		"id: ID!",
 		"path: String!",
-	})
-	builder.AddType("SecretDataFile", []string{
+	}))
+	utils.Must(builder.AddType("SecretDataFile", []string{
 		"name: String!",
 		"type: SecretType!",
 		"metadata: SecretDataFileMetadata",
-	})
-	builder.AddUnionType("SecretDataFileMetadata", []string{
+	}))
+	utils.Must(builder.AddUnionType("SecretDataFileMetadata", []string{
 		"Cert",
-	})
-	builder.AddType("SecretDeploymentRelationship", []string{
+	}))
+	utils.Must(builder.AddType("SecretDeploymentRelationship", []string{
 		"id: ID!",
 		"name: String!",
-	})
-	builder.AddType("SecretRelationship", []string{
+	}))
+	utils.Must(builder.AddType("SecretRelationship", []string{
 		"containerRelationships: [SecretContainerRelationship]!",
 		"deploymentRelationships: [SecretDeploymentRelationship]!",
 		"id: ID!",
-	})
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SecretType(0)))
-	builder.AddType("SecurityContext", []string{
+	utils.Must(builder.AddType("SecurityContext", []string{
 		"addCapabilities: [String!]!",
 		"dropCapabilities: [String!]!",
 		"privileged: Boolean!",
 		"readOnlyRootFilesystem: Boolean!",
 		"selinux: SecurityContext_SELinux",
-	})
-	builder.AddType("SecurityContext_SELinux", []string{
+	}))
+	utils.Must(builder.AddType("SecurityContext_SELinux", []string{
 		"level: String!",
 		"role: String!",
 		"type: String!",
 		"user: String!",
-	})
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Severity(0)))
-	builder.AddType("Splunk", []string{
+	utils.Must(builder.AddType("Splunk", []string{
 		"httpEndpoint: String!",
 		"httpToken: String!",
 		"insecure: Boolean!",
-	})
-	builder.AddType("Taint", []string{
+	}))
+	utils.Must(builder.AddType("Taint", []string{
 		"key: String!",
 		"taintEffect: TaintEffect!",
 		"value: String!",
-	})
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.TaintEffect(0)))
-	builder.AddType("TokenMetadata", []string{
+	utils.Must(builder.AddType("TokenMetadata", []string{
 		"expiration: Time",
 		"id: ID!",
 		"issuedAt: Time",
 		"name: String!",
 		"revoked: Boolean!",
 		"role: String!",
-	})
-	builder.AddType("Toleration", []string{
+	}))
+	utils.Must(builder.AddType("Toleration", []string{
 		"key: String!",
 		"operator: Toleration_Operator!",
 		"taintEffect: TaintEffect!",
 		"value: String!",
-	})
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Toleration_Operator(0)))
-	builder.AddType("V1Metadata", []string{
+	utils.Must(builder.AddType("V1Metadata", []string{
 		"author: String!",
 		"created: Time",
 		"digest: String!",
 		"layers: [ImageLayer]!",
-	})
-	builder.AddType("V2Metadata", []string{
+	}))
+	utils.Must(builder.AddType("V2Metadata", []string{
 		"digest: String!",
-	})
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ViolationState(0)))
-	builder.AddType("Volume", []string{
+	utils.Must(builder.AddType("Volume", []string{
 		"destination: String!",
 		"name: String!",
 		"readOnly: Boolean!",
 		"source: String!",
 		"type: String!",
-	})
-	builder.AddType("VolumePolicy", []string{
+	}))
+	utils.Must(builder.AddType("VolumePolicy", []string{
 		"destination: String!",
 		"name: String!",
 		"source: String!",
 		"type: String!",
-	})
-	builder.AddType("Vulnerability", []string{
+	}))
+	utils.Must(builder.AddType("Vulnerability", []string{
 		"cve: String!",
 		"cvss: Float!",
 		"cvssV2: CVSSV2",
 		"link: String!",
 		"summary: String!",
-	})
-	builder.AddType("Whitelist", []string{
+	}))
+	utils.Must(builder.AddType("Whitelist", []string{
 		"container: Whitelist_Container",
 		"deployment: Whitelist_Deployment",
 		"expiration: Time",
 		"name: String!",
-	})
-	builder.AddType("Whitelist_Container", []string{
+	}))
+	utils.Must(builder.AddType("Whitelist_Container", []string{
 		"imageName: ImageName",
-	})
-	builder.AddType("Whitelist_Deployment", []string{
+	}))
+	utils.Must(builder.AddType("Whitelist_Deployment", []string{
 		"name: String!",
 		"scope: Scope",
-	})
+	}))
 }
 
 func toAccess(value *string) storage.Access {

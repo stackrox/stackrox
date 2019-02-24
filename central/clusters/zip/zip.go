@@ -159,7 +159,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Tell the browser this is a download.
 	w.Header().Add("Content-Disposition", zipAttachment)
-	w.Write(bytes)
+	_, _ = w.Write(bytes)
 }
 
 func writeGRPCStyleError(w http.ResponseWriter, c codes.Code, err error) {
@@ -167,5 +167,5 @@ func writeGRPCStyleError(w http.ResponseWriter, c codes.Code, err error) {
 	m := jsonpb.Marshaler{}
 
 	w.WriteHeader(runtime.HTTPStatusFromCode(c))
-	m.Marshal(w, userErr)
+	_ = m.Marshal(w, userErr)
 }

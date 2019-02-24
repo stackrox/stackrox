@@ -18,7 +18,7 @@ func TestWriteAndRead(t *testing.T) {
 
 	hf := New()
 	for u, p := range users {
-		hf.Set(u, p)
+		require.NoError(t, hf.Set(u, p))
 	}
 
 	buf := bytes.NewBuffer([]byte{})

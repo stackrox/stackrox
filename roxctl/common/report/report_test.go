@@ -165,6 +165,7 @@ func TestReport(t *testing.T) {
 	for index, test := range tests {
 		name := fmt.Sprintf("#%d - %s", index+1, test.name)
 		t.Run(name, func(t *testing.T) {
+			a := assert.New(t)
 			buf := bytes.NewBuffer(nil)
 			var enforcementAction storage.EnforcementAction
 			switch test.resourceType {
@@ -175,12 +176,12 @@ func TestReport(t *testing.T) {
 			default:
 				t.Fatalf("Resource type %q is not recognized", test.resourceType)
 			}
-			PrettyWithResourceName(buf, test.alerts, enforcementAction, test.resourceType, test.resourceName)
+			a.NoError(PrettyWithResourceName(buf, test.alerts, enforcementAction, test.resourceType, test.resourceName))
 
 			// If the -update flag was passed to go test, update the contents
 			// of all golden files.
 			if *updateFlag {
-				ioutil.WriteFile(test.goldenFile, buf.Bytes(), 0644)
+				a.NoError(ioutil.WriteFile(test.goldenFile, buf.Bytes(), 0644))
 				return
 			}
 

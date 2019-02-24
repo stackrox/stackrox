@@ -27,7 +27,7 @@ func Command() *cobra.Command {
 		Short: "Debug handles commands that you can run for debugging purposes.",
 		Long:  "Debug handles commands that you can run for debugging purposes.",
 		Run: func(c *cobra.Command, _ []string) {
-			c.Help()
+			_ = c.Help()
 		},
 	}
 	c.AddCommand(LogLevelCommand())
@@ -63,7 +63,9 @@ func getLogLevel(modules []string) error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -101,7 +103,10 @@ func setLogLevel(level string, modules []string) error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
+
 	client := v1.NewDebugServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

@@ -47,7 +47,7 @@ func (suite *SecretDataStoreTestSuite) SetupSuite() {
 }
 
 func (suite *SecretDataStoreTestSuite) TearDownSuite() {
-	suite.bleveIndex.Close()
+	suite.NoError(suite.bleveIndex.Close())
 }
 
 func (suite *SecretDataStoreTestSuite) assertSearchResults(q *v1.Query, s *storage.Secret) {

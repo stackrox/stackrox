@@ -1,7 +1,6 @@
 package store
 
 import (
-	"os"
 	"testing"
 	"time"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -35,13 +35,12 @@ func (s *boltStoreTestSuite) SetupSuite() {
 
 func (s *boltStoreTestSuite) TearDownSuite() {
 	if s.db != nil {
-		s.db.Close()
-		os.Remove(s.db.Path())
+		testutils.TearDownDB(s.db)
 	}
 }
 
 func (s *boltStoreTestSuite) SetupTest() {
-	s.store.clear()
+	s.NoError(s.store.clear())
 }
 
 func (s *boltStoreTestSuite) TestGetOnEmpty() {

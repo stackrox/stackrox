@@ -17,12 +17,12 @@ type ErrNotFound struct {
 func (e ErrNotFound) Error() string {
 	sb := strings.Builder{}
 	if e.Type != "" {
-		sb.WriteString(fmt.Sprintf("%s ", e.Type))
+		_, _ = sb.WriteString(fmt.Sprintf("%s ", e.Type))
 	}
 	if e.ID != "" {
-		sb.WriteString(fmt.Sprintf("'%s' ", e.ID))
+		_, _ = sb.WriteString(fmt.Sprintf("'%s' ", e.ID))
 	}
-	sb.WriteString("not found")
+	_, _ = sb.WriteString("not found")
 	return sb.String()
 }
 

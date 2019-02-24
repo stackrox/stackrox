@@ -34,7 +34,9 @@ func (b *indexerImpl) AddAlert(alert *storage.Alert) error {
 func (b *indexerImpl) processBatch(alerts []*storage.Alert) error {
 	batch := b.index.NewBatch()
 	for _, alert := range alerts {
-		batch.Index(alert.GetId(), &alertWrapper{Type: v1.SearchCategory_ALERTS.String(), Alert: alert})
+		if err := batch.Index(alert.GetId(), &alertWrapper{Type: v1.SearchCategory_ALERTS.String(), Alert: alert}); err != nil {
+			return err
+		}
 	}
 	return b.index.Batch(batch)
 }

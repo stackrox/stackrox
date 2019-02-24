@@ -91,7 +91,7 @@ func Command() *cobra.Command {
 		Short: "Generate creates the required YAML files to deploy StackRox Central.",
 		Long:  "Generate creates the required YAML files to deploy StackRox Central.",
 		Run: func(c *cobra.Command, _ []string) {
-			c.Help()
+			_ = c.Help()
 		},
 	}
 
@@ -167,7 +167,9 @@ func getBundle(id string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 	if resp.StatusCode != 200 {
 		data, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
@@ -193,7 +195,7 @@ func getBundle(id string) error {
 			return fmt.Errorf("Could not create file %q: %v", outputFilename, err)
 		}
 		if _, err := io.Copy(file, resp.Body); err != nil {
-			file.Close()
+			_ = file.Close()
 			return fmt.Errorf("Error writing out zip file: %v", err)
 		}
 		if err := file.Close(); err != nil {

@@ -26,28 +26,29 @@ import (
 {{- range $i, $_ := .Imports }}{{if $i}}
 	"{{$i}}"
 {{- end}}{{end}} // end range imports
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 func registerGeneratedTypes(builder generator.SchemaBuilder) {
-	builder.AddType("Label", []string{"key: String!", "value: String!"})
+	utils.Must(builder.AddType("Label", []string{"key: String!", "value: String!"}))
 {{- range $td := .Entries }}
 {{- if isEnum $td.Data.Type }}
 	generator.RegisterProtoEnum(builder, reflect.TypeOf({{ importedName $td.Data.Type }}(0)))
 {{- else }}
-	builder.AddType("{{ $td.Data.Name }}", []string{
+	utils.Must(builder.AddType("{{ $td.Data.Name }}", []string{
 {{- range $td.Data.FieldData }}{{ if schemaType . }}
 		"{{ lower .Name}}: {{ schemaType .}}",
 {{- end }}{{ end }}
 {{- range $td.Data.UnionData }}
 		"{{lower .Name }}: {{ $td.Data.Name }}{{.Name}}",
 {{- end }}
-	})
+	}))
 {{- range $ud := $td.Data.UnionData }}
-	builder.AddUnionType("{{ $td.Data.Name }}{{ $ud.Name }}", []string{
+	utils.Must(builder.AddUnionType("{{ $td.Data.Name }}{{ $ud.Name }}", []string{
 {{- range $ud.Entries }}
 		"{{ schemaType . }}",
 {{- end }}
-	})
+	}))
 {{- end }}
 {{- end }}
 {{- end }}

@@ -30,7 +30,7 @@ func (suite *ClusterIndexTestSuite) SetupTest() {
 }
 
 func (suite *ClusterIndexTestSuite) TearDownTest() {
-	suite.bleveIndex.Close()
+	suite.NoError(suite.bleveIndex.Close())
 }
 
 func (suite *ClusterIndexTestSuite) TestIndexing() {

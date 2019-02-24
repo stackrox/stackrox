@@ -38,8 +38,8 @@ func (suite *FlowStoreTestSuite) SetupSuite() {
 }
 
 func (suite *FlowStoreTestSuite) TearDownSuite() {
-	suite.db.Close()
-	os.RemoveAll(suite.path)
+	_ = suite.db.Close()
+	_ = os.RemoveAll(suite.path)
 }
 
 func (suite *FlowStoreTestSuite) TestStore() {

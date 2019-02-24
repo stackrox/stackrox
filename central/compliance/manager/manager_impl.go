@@ -242,7 +242,9 @@ func (m *manager) runLoopSingle() {
 
 	schedulesToRun := m.schedulesToRun()
 	if len(schedulesToRun) > 0 {
-		m.runSchedules(schedulesToRun)
+		if err := m.runSchedules(schedulesToRun); err != nil {
+			log.Errorf("Failed to run schedules: %v", err)
+		}
 	}
 
 	nextRunTime := m.nearestRunTime()

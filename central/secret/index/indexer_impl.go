@@ -35,7 +35,9 @@ func (i *indexerImpl) UpsertSecret(secret *storage.Secret) error {
 func (i *indexerImpl) processBatch(secrets []*storage.Secret) error {
 	batch := i.index.NewBatch()
 	for _, secret := range secrets {
-		batch.Index(secret.GetId(), wrap(secret))
+		if err := batch.Index(secret.GetId(), wrap(secret)); err != nil {
+			return err
+		}
 	}
 	return i.index.Batch(batch)
 }

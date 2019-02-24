@@ -80,13 +80,13 @@ func (l handlerImpl) get(resp http.ResponseWriter, req *http.Request) {
 	for i, alog := range logs {
 		sb := strings.Builder{}
 		if i == 0 {
-			sb.WriteString("[")
+			_, _ = sb.WriteString("[")
 		}
-		sb.WriteString(alog)
+		_, _ = sb.WriteString(alog)
 		if i == len(logs)-1 {
-			sb.WriteString("]")
+			_, _ = sb.WriteString("]")
 		} else {
-			sb.WriteString(",\n")
+			_, _ = sb.WriteString(",\n")
 		}
 		if _, err = compressor.Write([]byte(sb.String())); err != nil {
 			log.Error(err)
@@ -126,7 +126,7 @@ func (l handlerImpl) get(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	resp.Header().Add("Content-Disposition", `attachment; filename="logs.zip"`)
-	resp.Write(compressor.Bytes())
+	_, _ = resp.Write(compressor.Bytes())
 }
 
 func recoverFromBuffPanic(w http.ResponseWriter) {
