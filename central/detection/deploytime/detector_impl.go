@@ -101,7 +101,8 @@ func (d *detectorImpl) evaluateAlertsForDeployment(searcher searchbasedpolicies.
 			violations, err = d.matchWithEmptyImageIDs(p, matcher, deployment)
 		} else {
 			var violationsWrapper searchbasedpolicies.Violations
-			violationsWrapper, err = matcher.MatchOne(d.deployments, deployment.GetId())
+			// Purposefully, use searcher for deployment check
+			violationsWrapper, err = matcher.MatchOne(searcher, deployment.GetId())
 			violations = violationsWrapper.AlertViolations
 		}
 		if err != nil {
