@@ -78,6 +78,7 @@ func TestAutocomplete(t *testing.T) {
 	deploymentName2 := fixtures.GetDeployment()
 	deploymentName2.Id = "name12"
 	deploymentName2.Name = "name12"
+	deploymentName2.Labels = map[string]string{"hello": "hi", "hey": "ho"}
 	require.NoError(t, deploymentIndexer.AddDeployment(deploymentName2))
 
 	ds := deploymentDatastore.New(nil, deploymentIndexer, nil, nil)
@@ -106,6 +107,21 @@ func TestAutocomplete(t *testing.T) {
 	results, err = service.autocomplete(q, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
 	require.NoError(t, err)
 	assert.Equal(t, []string{"name12", "nginx_server", "name1"}, results)
+
+	q = fmt.Sprintf("%s:he=h", search.Label)
+	results, err = service.autocomplete(q, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"hello=hi", "hey=ho"}, results)
+
+	q = fmt.Sprintf("%s:hey=", search.Label)
+	results, err = service.autocomplete(q, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"hey=ho"}, results)
+
+	q = fmt.Sprintf("%s:%s+%s:", search.DeploymentName, deploymentName2.Name, search.Label)
+	results, err = service.autocomplete(q, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"hey=ho", "hello=hi"}, results)
 }
 
 func TestAutocompleteForEnums(t *testing.T) {

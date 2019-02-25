@@ -39,7 +39,16 @@ func (r RequiredMapValueQueryBuilder) Query(fields *storage.PolicyFields, option
 	} else {
 		valueQuery = search.NegateQueryString(search.RegexQueryString(keyValuePolicy.GetValue()))
 	}
-	q = search.NewQueryBuilder().AddMapQuery(r.FieldLabel, keyValuePolicy.GetKey(), valueQuery).ProtoQuery()
+	queryIfKeyExist := search.NewQueryBuilder().AddMapQuery(r.FieldLabel, search.ExactMatchString(keyValuePolicy.GetKey()), valueQuery).ProtoQuery()
+	queryIfKeyDoesNotExist := search.NewQueryBuilder().AddMapQuery(r.FieldLabel, search.NegateQueryString(search.ExactMatchString(keyValuePolicy.GetKey())), "").ProtoQuery()
+
+	q = &v1.Query{
+		Query: &v1.Query_Disjunction{
+			Disjunction: &v1.DisjunctionQuery{
+				Queries: []*v1.Query{queryIfKeyExist, queryIfKeyDoesNotExist},
+			},
+		},
+	}
 
 	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) searchbasedpolicies.Violations {
 		return searchbasedpolicies.Violations{

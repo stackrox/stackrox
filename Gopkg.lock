@@ -180,7 +180,7 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
-  digest = "1:de88d6472b4fcb8743db861c1ea09d581d3077496d26d3f0e00807da493c283b"
+  digest = "1:03549ed503f703403a28471fde114d5db3f0d1a9a4f3656594401e0a6c43f8d3"
   name = "github.com/blevesearch/bleve"
   packages = [
     ".",
@@ -224,7 +224,7 @@
     "size",
   ]
   pruneopts = "NUT"
-  revision = "a5bc3f469a24602c9af6e3d1d80258f2a42580c0"
+  revision = "60afb9a57409d8d3f5dfda9a3415d4a0aab9de79"
   source = "https://github.com/connorgorman/bleve.git"
 
 [[projects]]
@@ -242,14 +242,6 @@
   packages = ["."]
   pruneopts = "NUT"
   revision = "762005e7a34fd909a84586299f1dd457371d36ee"
-
-[[projects]]
-  digest = "1:a12d94258c5298ead75e142e8001224bf029f302fed9e96cd39c0eaf90f3954d"
-  name = "github.com/boltdb/bolt"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8"
-  version = "v1.3.1"
 
 [[projects]]
   branch = "master"

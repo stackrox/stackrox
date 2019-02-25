@@ -61,7 +61,6 @@ func parseRawQuery(query string, isAutocompleteQuery bool) (*v1.Query, error) {
 		}
 		if i == len(pairs)-1 && isAutocompleteQuery {
 			queries = append(queries, queryFromFieldValues(key, strings.Split(commaSeparatedValues, ","), true))
-
 		} else {
 			queries = append(queries, queryFromKeyValue(key, commaSeparatedValues))
 		}

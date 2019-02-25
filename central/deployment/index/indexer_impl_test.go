@@ -184,7 +184,8 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 	}
 
 	containerPort22Dep := &storage.Deployment{
-		Id: "CONTAINERPORT22DEP",
+		Id:   "CONTAINERPORT22DEP",
+		Name: "containerport",
 		Ports: []*storage.PortConfig{
 			{Protocol: "tcp", ContainerPort: 22},
 			{Protocol: "udp", ContainerPort: 4125},
@@ -215,6 +216,7 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 
 	badEmailDep := &storage.Deployment{
 		Id:     "BADEMAILID",
+		Name:   "bademail",
 		Labels: map[string]string{"email": "INVALIDEMAIL"},
 	}
 	suite.NoError(suite.indexer.AddDeployment(badEmailDep))
@@ -284,7 +286,11 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 		},
 		{
 			fieldValues: map[search.FieldLabel]string{search.Label: "email=!r/^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$"},
-			expectedIDs: []string{notNginx110Dep.GetId(), nginx110Dep.GetId(), containerPort22Dep.GetId(), badEmailDep.GetId()},
+			expectedIDs: []string{badEmailDep.GetId()},
+		},
+		{
+			fieldValues: map[search.FieldLabel]string{search.Label: "!email"},
+			expectedIDs: []string{notNginx110Dep.GetId(), nginx110Dep.GetId(), containerPort22Dep.GetId()},
 		},
 		{
 			fieldValues: map[search.FieldLabel]string{search.Label: "app=nginx"},
@@ -373,11 +379,11 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentsQuery() {
 			expectedMatches:   map[string][]string{"image.name.tag": {"latest"}},
 		},
 		{
-			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "=lat"},
+			fieldValues:       map[search.FieldLabel]string{search.ImageTag: search.ExactMatchString("lat")},
 			highlightedFields: []search.FieldLabel{search.ImageTag},
 		},
 		{
-			fieldValues:       map[search.FieldLabel]string{search.ImageTag: "=latest"},
+			fieldValues:       map[search.FieldLabel]string{search.ImageTag: search.ExactMatchString("latest")},
 			highlightedFields: []search.FieldLabel{search.ImageTag},
 			expectedIDs:       []string{deployment.GetId()},
 			expectedMatches:   map[string][]string{"image.name.tag": {"latest"}},

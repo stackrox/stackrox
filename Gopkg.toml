@@ -136,7 +136,7 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
 [[constraint]]
   name = "github.com/blevesearch/bleve"
   source = "https://github.com/connorgorman/bleve.git"
-  revision = "a5bc3f469a24602c9af6e3d1d80258f2a42580c0"
+  revision = "60afb9a57409d8d3f5dfda9a3415d4a0aab9de79"
 
 [[constraint]]
   name = "github.com/prometheus/client_golang"
@@ -144,8 +144,8 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
 
 [[constraint]]
   name = "github.com/grpc-ecosystem/go-grpc-prometheus"
-  version = "v1.1"
 
+  version = "v1.1"
 [[constraint]]
   name = "github.com/openshift/api"
   version = "v3.9.0"

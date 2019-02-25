@@ -17,7 +17,7 @@ var (
 	ClusterID = newFieldLabel("Cluster ID")
 	Namespace = newFieldLabel("Namespace")
 	Label     = newFieldLabel("Label")
-	PodLabel  = newFieldLabel("PodLabel")
+	PodLabel  = newFieldLabel("Pod Label")
 
 	PolicyID       = newFieldLabel("Policy ID")
 	Enforcement    = newFieldLabel("Enforcement")

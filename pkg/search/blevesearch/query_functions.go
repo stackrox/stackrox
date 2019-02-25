@@ -20,22 +20,21 @@ var datatypeToQueryFunc = map[v1.SearchDataType]func(v1.SearchCategory, string, 
 	// Map type is handled specially.
 }
 
-func matchFieldQuery(category v1.SearchCategory, searchFieldPath string, searchFieldType v1.SearchDataType, value string) (query.Query, error) {
-	// Map queries are handled separately since they have a dynamic search field path.
-	if searchFieldType == v1.SearchDataType_SEARCH_MAP {
-		return newMapQuery(category, searchFieldPath, value)
-	}
+func nullQuery(category v1.SearchCategory, path string) query.Query {
+	bq := bleve.NewBooleanQuery()
+	bq.AddMustNot(getWildcardQuery(path))
+	bq.AddMust(typeQuery(category))
+	return bq
+}
 
+func matchFieldQuery(category v1.SearchCategory, searchFieldPath string, searchFieldType v1.SearchDataType, value string) (query.Query, error) {
 	// Special case: wildcard
 	if value == pkgSearch.WildcardString {
 		return getWildcardQuery(searchFieldPath), nil
 	}
 	// Special case: null
 	if value == pkgSearch.NullString {
-		bq := bleve.NewBooleanQuery()
-		bq.AddMustNot(getWildcardQuery(searchFieldPath))
-		bq.AddMust(typeQuery(category))
-		return bq, nil
+		return nullQuery(category, searchFieldPath), nil
 	}
 
 	return datatypeToQueryFunc[searchFieldType](category, searchFieldPath, value)
@@ -47,28 +46,33 @@ func getWildcardQuery(field string) *query.WildcardQuery {
 	return wq
 }
 
+func newBooleanQuery(category v1.SearchCategory) *query.BooleanQuery {
+	bq := bleve.NewBooleanQuery()
+	// This is where things are interesting. BooleanQuery basically generates a true or false that can be used
+	// however we must pipe in the search category because the boolean query returns a true/false designation
+	bq.AddMust(typeQuery(category))
+	return bq
+}
+
 func newStringQuery(category v1.SearchCategory, field string, value string) (query.Query, error) {
 	if len(value) == 0 {
 		return nil, fmt.Errorf("value in search query cannot be empty")
 	}
 	switch {
 	case strings.HasPrefix(value, pkgSearch.NegationPrefix) && len(value) > 1:
-		boolQuery := bleve.NewBooleanQuery()
+		boolQuery := newBooleanQuery(category)
 		subQuery, err := newStringQuery(category, field, value[len(pkgSearch.NegationPrefix):])
 		if err != nil {
 			return nil, fmt.Errorf("error computing sub query under negation: %s %s: %s", field, value, err)
 		}
 		boolQuery.AddMustNot(subQuery)
-		// This is where things are interesting. BooleanQuery basically generates a true or false that can be used
-		// however we must pipe in the search category because the boolean query returns a true/false designation
-		boolQuery.AddMust(typeQuery(category))
 		return boolQuery, nil
 	case strings.HasPrefix(value, pkgSearch.RegexPrefix) && len(value) > len(pkgSearch.RegexPrefix):
 		q := bleve.NewRegexpQuery(value[len(pkgSearch.RegexPrefix):])
 		q.SetField(field)
 		return q, nil
-	case strings.HasPrefix(value, pkgSearch.EqualityPrefix) && len(value) > len(pkgSearch.EqualityPrefix):
-		q := bleve.NewMatchQuery(value[len(pkgSearch.EqualityPrefix):])
+	case strings.HasPrefix(value, pkgSearch.EqualityPrefixSuffix) && strings.HasSuffix(value, pkgSearch.EqualityPrefixSuffix) && len(value) > 2*len(pkgSearch.EqualityPrefixSuffix):
+		q := bleve.NewMatchQuery(value[len(pkgSearch.EqualityPrefixSuffix) : len(value)-len(pkgSearch.EqualityPrefixSuffix)])
 		q.SetField(field)
 		return q, nil
 	default:
@@ -76,20 +80,12 @@ func newStringQuery(category v1.SearchCategory, field string, value string) (que
 	}
 }
 
-func parseLabel(label string) (string, string, error) {
+func parseLabel(label string) (string, string) {
 	spl := strings.SplitN(label, "=", 2)
 	if len(spl) < 2 {
-		return "", "", fmt.Errorf("Malformed label '%s'. Must be in the form key=value", label)
+		return spl[0], ""
 	}
-	return spl[0], spl[1], nil
-}
-
-func newMapQuery(category v1.SearchCategory, field string, value string) (query.Query, error) {
-	mapKey, mapValue, err := parseLabel(value)
-	if err != nil {
-		return nil, err
-	}
-	return matchFieldQuery(category, field+"."+mapKey, v1.SearchDataType_SEARCH_STRING, mapValue)
+	return spl[0], spl[1]
 }
 
 func newBoolQuery(_ v1.SearchCategory, field string, value string) (query.Query, error) {

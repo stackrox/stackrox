@@ -23,8 +23,8 @@ const (
 	// NegationPrefix is the prefix to negate a query.
 	NegationPrefix = "!"
 
-	// EqualityPrefix is the prefix for an exact match
-	EqualityPrefix = "="
+	// EqualityPrefixSuffix is the prefix for an exact match
+	EqualityPrefixSuffix = `"`
 )
 
 var (
@@ -39,7 +39,7 @@ var (
 
 // ExactMatchString returns the "exact match" form of the query.
 func ExactMatchString(query string) string {
-	return fmt.Sprintf("%s%s", EqualityPrefix, query)
+	return fmt.Sprintf(`"%s"`, query)
 }
 
 // RegexQueryString returns the "regex" form of the query.
@@ -50,6 +50,11 @@ func RegexQueryString(query string) string {
 // NegateQueryString negates the given query.
 func NegateQueryString(query string) string {
 	return fmt.Sprintf("%s%s", NegationPrefix, query)
+}
+
+// IsNegationQuery returns whether or not this would turn into a negation query
+func IsNegationQuery(value string) bool {
+	return strings.HasPrefix(value, NegationPrefix)
 }
 
 // NullQueryString returns a null query

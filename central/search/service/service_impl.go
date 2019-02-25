@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/deckarep/golang-set"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -109,6 +110,32 @@ func (s *serviceImpl) handleMatch(fieldPath, value string, isEnum bool) string {
 	return value
 }
 
+func handleMapResults(matches map[string][]string, score float64) []autocompleteResult {
+	var keys []string
+	var values []string
+	for k, match := range matches {
+		if strings.HasSuffix(k, "key") {
+			keys = match
+		} else {
+			values = match
+		}
+	}
+	results := make([]autocompleteResult, 0, len(keys))
+	for i := 0; i < len(keys); i++ {
+		results = append(results, autocompleteResult{value: fmt.Sprintf("%s=%s", keys[i], values[i]), score: score})
+	}
+	return results
+}
+
+func isMapMatch(matches map[string][]string) bool {
+	for k := range matches {
+		if !strings.HasSuffix(k, ".keypair.key") && !strings.HasSuffix(k, ".keypair.value") {
+			return false
+		}
+	}
+	return true
+}
+
 func (s *serviceImpl) autocomplete(queryString string, categories []v1.SearchCategory) ([]string, error) {
 	query, err := search.ParseAutocompleteRawQuery(queryString)
 	if err != nil {
@@ -136,6 +163,11 @@ func (s *serviceImpl) autocomplete(queryString string, categories []v1.SearchCat
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 		for _, r := range results {
+			// This implies that the object is a map because it has multiple values
+			if isMapMatch(r.Matches) {
+				autocompleteResults = append(autocompleteResults, handleMapResults(r.Matches, r.Score)...)
+				continue
+			}
 			for fieldPath, match := range r.Matches {
 				isEnum := s.enumRegistry.IsEnum(fieldPath)
 				for _, v := range match {

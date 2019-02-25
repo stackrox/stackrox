@@ -50,7 +50,7 @@ func TestNewStringQuery(t *testing.T) {
 				case *query.RegexpQuery:
 					assert.Equal(t, c.expectedString, q.(*query.RegexpQuery).Regexp)
 				default:
-					t.Fatalf("Type '%s' not handled", reflect.TypeOf(q))
+					t.Fatalf("Type '%s' not handled for query %q", reflect.TypeOf(q), c.query)
 				}
 			}
 		})

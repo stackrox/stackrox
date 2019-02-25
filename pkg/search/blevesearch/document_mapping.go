@@ -32,8 +32,14 @@ func addToDocumentMapping(path []string, searchField *v1.SearchField, docMap *ma
 	if len(path) == 1 {
 		switch searchField.GetType() {
 		case v1.SearchDataType_SEARCH_MAP:
-			childDocMapping := newDocumentMapping(true)
-			docMap.AddSubDocumentMapping(path[0], childDocMapping)
+			keypairDocMapping := newDocumentMapping(false)
+			keypairDocMapping.AddFieldMappingsAt("key", setFieldMappingDefaults(mapping.NewTextFieldMapping(), searchField.GetStore()))
+			keypairDocMapping.AddFieldMappingsAt("value", setFieldMappingDefaults(mapping.NewTextFieldMapping(), searchField.GetStore()))
+
+			labelDocMap := newDocumentMapping(false)
+			labelDocMap.AddSubDocumentMapping("keypair", keypairDocMapping)
+
+			docMap.AddSubDocumentMapping(path[0], labelDocMap)
 		default:
 			docMap.AddFieldMappingsAt(path[0], searchFieldToMapping(searchField))
 		}

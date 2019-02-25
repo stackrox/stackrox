@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	grpcTestutils "github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -428,7 +429,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 func deploymentSearchIsForCluster(clusterID string) gomock.Matcher {
 	return testutils.PredMatcher("deployment search is for cluster", func(query *v1.Query) bool {
 		// Should be a single conjunction with a base string query inside.
-		return query.GetBaseQuery().GetMatchFieldQuery().GetValue() == "="+clusterID
+		return query.GetBaseQuery().GetMatchFieldQuery().GetValue() == search.ExactMatchString(clusterID)
 	})
 }
 

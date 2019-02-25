@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/logging"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/readable"
@@ -36,6 +37,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 func TestDefaultPolicies(t *testing.T) {
@@ -1301,8 +1306,8 @@ func validateDeploymentMatches(matches map[string]searchbasedpolicies.Violations
 				continue
 			}
 			match, exists := matches[id]
-			require.True(t, exists, "Should have matched %s", id)
-			if c.sampleViolationForMatched != "" {
+			assert.True(t, exists, "Should have matched %s", id)
+			if exists && c.sampleViolationForMatched != "" {
 				assert.Equal(t, c.sampleViolationForMatched, match.AlertViolations[0].GetMessage())
 			}
 		}
@@ -1319,7 +1324,6 @@ func validateDeploymentMatches(matches map[string]searchbasedpolicies.Violations
 
 	}
 	assert.Len(t, matches, len(c.expectedViolations))
-
 }
 
 func (suite *DefaultPoliciesTestSuite) TestRuntimePolicyFieldsCompile() {

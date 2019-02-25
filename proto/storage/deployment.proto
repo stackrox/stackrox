@@ -25,8 +25,8 @@ message Deployment {
     string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
     string namespace_id                        = 23;
     int64 replicas                             = 6;
-    map<string, string> labels                 = 7 [(gogoproto.moretags) = "search:\"Label\""];
-    map<string, string> pod_labels             = 19 [(gogoproto.moretags) = "search:\"PodLabel\""];
+    map<string, string> labels                 = 7 [(gogoproto.moretags) = "search:\"Label,store\""];
+    map<string, string> pod_labels             = 19 [(gogoproto.moretags) = "search:\"Pod Label,store\""];
     LabelSelector label_selector               = 20;
     google.protobuf.Timestamp updated_at       = 8;
     string cluster_id                          = 9 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
