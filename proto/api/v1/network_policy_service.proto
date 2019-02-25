@@ -41,6 +41,11 @@ message SimulateNetworkGraphRequest {
     NetworkPolicyModification modification = 3;
 }
 
+message ApplyNetworkPolicyYamlRequest {
+    string  cluster_id                     = 1;
+    NetworkPolicyModification modification = 2;
+}
+
 message NetworkPolicyInSimulation {
     enum Status {
         INVALID = 0;
@@ -132,6 +137,13 @@ service NetworkPolicyService {
     rpc GetNetworkGraphEpoch (Empty) returns (NetworkGraphEpoch) {
         option (google.api.http) = {
             get: "/v1/networkpolicies/graph/epoch"
+        };
+    }
+
+    rpc ApplyNetworkPolicy (ApplyNetworkPolicyYamlRequest) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v1/networkpolicies/apply/{cluster_id}"
+            body: "modification"
         };
     }
 

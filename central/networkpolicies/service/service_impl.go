@@ -40,6 +40,9 @@ var (
 			"/v1.NetworkPolicyService/GetNetworkGraph",
 			"/v1.NetworkPolicyService/GetNetworkGraphEpoch",
 		},
+		user.With(permissions.Modify(resources.NetworkPolicy)): {
+			"/v1.NetworkPolicyService/ApplyNetworkPolicy",
+		},
 		user.With(permissions.Modify(resources.Notifier)): {
 			"/v1.NetworkPolicyService/SendNetworkPolicyYAML",
 		},
@@ -153,6 +156,10 @@ func (s *serviceImpl) GetNetworkGraphEpoch(context.Context, *v1.Empty) (*v1.Netw
 	return &v1.NetworkGraphEpoch{
 		Epoch: s.graphEvaluator.Epoch(),
 	}, nil
+}
+
+func (s *serviceImpl) ApplyNetworkPolicy(ctx context.Context, request *v1.ApplyNetworkPolicyYamlRequest) (*v1.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "Cannot yet apply network policies")
 }
 
 func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.SimulateNetworkGraphRequest) (*v1.SimulateNetworkGraphResponse, error) {
