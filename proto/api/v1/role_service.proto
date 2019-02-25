@@ -40,6 +40,12 @@ service RoleService {
         };
     }
 
+    rpc GetMyPermissions (Empty) returns (storage.Role) {
+        option (google.api.http) = {
+            get: "/v1/roles/mypermissions"
+        };
+    }
+
     rpc CreateRole (storage.Role) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/roles/{name}"

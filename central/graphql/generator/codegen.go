@@ -201,7 +201,7 @@ func getFieldTransform(fd fieldData) (templateName string, returnType string) {
 	case reflect.Bool:
 		return "raw", "bool"
 	case reflect.Map:
-		if fd.Type.Elem().Kind() == reflect.String && fd.Type.Elem().Kind() == reflect.String {
+		if fd.Type.Key().Kind() == reflect.String && fd.Type.Elem().Kind() == reflect.String {
 			return "label", "labels"
 		}
 	case reflect.Ptr:

@@ -28,6 +28,7 @@ import (
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/role/resources"
+	roleStore "github.com/stackrox/rox/central/role/store"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -56,6 +57,7 @@ type Resolver struct {
 	NotifierStore               notifierStore.Store
 	PolicyDataStore             policyDatastore.DataStore
 	ProcessIndicatorStore       processIndicatorStore.DataStore
+	RoleStore                   roleStore.Store
 	SecretsDataStore            secretDataStore.DataStore
 	ViolationsDataStore         violationsDatastore.DataStore
 }
@@ -76,6 +78,7 @@ func New() *Resolver {
 		NotifierStore:         notifierStore.Singleton(),
 		PolicyDataStore:       policyDatastore.Singleton(),
 		ProcessIndicatorStore: processIndicatorStore.Singleton(),
+		RoleStore:             roleStore.Singleton(),
 		SecretsDataStore:      secretDataStore.Singleton(),
 		ViolationsDataStore:   violationsDatastore.Singleton(),
 	}
@@ -104,6 +107,7 @@ var (
 	readNodes                 = readAuth(resources.Node)
 	readNotifiers             = readAuth(resources.Notifier)
 	readPolicies              = readAuth(resources.Policy)
+	readRoles                 = readAuth(resources.Role)
 	readSecrets               = readAuth(resources.Secret)
 
 	writeCompliance            = writeAuth(resources.Compliance)
