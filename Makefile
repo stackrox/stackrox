@@ -190,7 +190,7 @@ deps: Gopkg.toml Gopkg.lock proto-generated-srcs
 	@# `dep check` exits with a nonzero code if there is a toml->lock mismatch.
 	dep check -skip-vendor
 	@# `dep ensure` can be flaky sometimes, so try rerunning it if it fails.
-	dep ensure || (rm -rf .vendor-new && dep ensure)
+	dep ensure || (rm -rf vendor .vendor-new && dep ensure)
 	@touch deps
 
 .PHONY: clean-deps
