@@ -29,7 +29,7 @@ func (resolver *Resolver) Roles(ctx context.Context) ([]*roleResolver, error) {
 	}
 	roles, err := resolver.RoleStore.GetAllRoles()
 	if err != nil {
-		resolver.wrapRoles(nil, status.Error(codes.Internal, "unable to retrieve roles"))
+		return nil, status.Error(codes.Internal, "unable to retrieve roles")
 	}
 	for _, role := range roles {
 		roleUtils.FillAccessList(role)
