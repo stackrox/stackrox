@@ -30,21 +30,6 @@ func ParseRawQuery(query string) (*v1.Query, error) {
 	return parseRawQuery(query, false)
 }
 
-// ParseRawQueryIntoMap returns a map[search key] []values from a string query
-func ParseRawQueryIntoMap(query string) map[string][]string {
-	pairs := strings.Split(query, "+")
-	resultMap := make(map[string][]string)
-
-	for _, pair := range pairs {
-		key, commaSeparatedValues, valid := parsePair(pair, false)
-		if !valid {
-			continue
-		}
-		resultMap[key] = strings.Split(commaSeparatedValues, ",")
-	}
-	return resultMap
-}
-
 // ParseAutocompleteRawQuery parses the query, but extends the last value with .* and highlights
 func ParseAutocompleteRawQuery(query string) (*v1.Query, error) {
 	return parseRawQuery(query, true)
@@ -93,8 +78,12 @@ func parsePair(pair string, allowEmpty bool) (key string, values string, valid b
 		return
 	}
 	// If empty strings are allowed, it means we're treating them as wildcards.
-	if spl[1] == "" {
-		spl[1] = WildcardString
+	if allowEmpty {
+		if spl[1] == "" {
+			spl[1] = WildcardString
+		} else if string(spl[1][len(spl[1])-1]) == "," {
+			spl[1] = spl[1] + WildcardString
+		}
 	}
 	return spl[0], spl[1], true
 }

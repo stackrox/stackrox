@@ -18,6 +18,7 @@ import (
 //go:generate genny -in=$GOFILE -out=gen-string-$GOFILE gen "KeyType=string"
 //go:generate genny -in=$GOFILE -out=gen-int-$GOFILE gen "KeyType=int"
 //go:generate genny -in=$GOFILE -out=gen-uint32-$GOFILE gen "KeyType=uint32"
+//go:generate genny -in=$GOFILE -out=gen-v1-search-cats-$GOFILE -imp=github.com/stackrox/rox/generated/api/v1 gen "KeyType=v1.SearchCategory"
 //go:generate genny -in=$GOFILE -out=$GOPATH/src/github.com/stackrox/rox/pkg/auth/permissions/set.go -pkg permissions gen "KeyType=Resource"
 type KeyType generic.Type
 

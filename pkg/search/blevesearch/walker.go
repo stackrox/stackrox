@@ -21,8 +21,6 @@ const (
 var (
 	log = logging.LoggerForModule()
 
-	enums = enumregistry.Singleton()
-
 	typeToSearchCategory = map[string]v1.SearchCategory{
 		"Image":            v1.SearchCategory_IMAGES,
 		"Deployment":       v1.SearchCategory_DEPLOYMENTS,
@@ -215,7 +213,7 @@ func (s *searchWalker) walkRecursive(prefix string, original reflect.Type) v1.Se
 		if err != nil {
 			panic(err)
 		}
-		enums.Add(prefix, enumDesc)
+		enumregistry.Add(prefix, enumDesc)
 		return v1.SearchDataType_SEARCH_ENUM
 	case reflect.Interface:
 	default:

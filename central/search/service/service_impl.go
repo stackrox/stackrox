@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/deckarep/golang-set"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/alert/index/mappings"
+	"github.com/stackrox/rox/central/compliance/aggregation"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -37,10 +37,11 @@ type autocompleteResult struct {
 	score float64
 }
 
-type searchFunc func(q *v1.Query) ([]*v1.SearchResult, error)
+// SearchFunc represents a function that goes from a query to a proto search result.
+type SearchFunc func(q *v1.Query) ([]*v1.SearchResult, error)
 
-func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]searchFunc {
-	return map[v1.SearchCategory]searchFunc{
+func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
+	return map[v1.SearchCategory]SearchFunc{
 		v1.SearchCategory_ALERTS:      s.alerts.SearchAlerts,
 		v1.SearchCategory_DEPLOYMENTS: s.deployments.SearchDeployments,
 		v1.SearchCategory_IMAGES:      s.images.SearchImages,
@@ -49,21 +50,20 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]searchFunc {
 	}
 }
 
-type autocompleteFunc func(q *v1.Query) ([]search.Result, error)
-
-func (s *serviceImpl) getAutocompleteFuncs() map[v1.SearchCategory]autocompleteFunc {
-	return map[v1.SearchCategory]autocompleteFunc{
-		v1.SearchCategory_ALERTS:      s.alerts.Search,
-		v1.SearchCategory_DEPLOYMENTS: s.deployments.Search,
-		v1.SearchCategory_IMAGES:      s.images.Search,
-		v1.SearchCategory_POLICIES:    s.policies.Search,
-		v1.SearchCategory_SECRETS:     s.secrets.Search,
+func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Searcher {
+	return map[v1.SearchCategory]search.Searcher{
+		v1.SearchCategory_ALERTS:      s.alerts,
+		v1.SearchCategory_DEPLOYMENTS: s.deployments,
+		v1.SearchCategory_IMAGES:      s.images,
+		v1.SearchCategory_POLICIES:    s.policies,
+		v1.SearchCategory_SECRETS:     s.secrets,
+		v1.SearchCategory_COMPLIANCE:  s.aggregator,
 	}
 }
 
 var (
 	// GlobalSearchCategories is exposed for e2e options test
-	GlobalSearchCategories = mapset.NewSet(
+	GlobalSearchCategories = set.NewV1SearchCategorySet(
 		v1.SearchCategory_ALERTS,
 		v1.SearchCategory_DEPLOYMENTS,
 		v1.SearchCategory_IMAGES,
@@ -71,39 +71,47 @@ var (
 		v1.SearchCategory_SECRETS,
 	)
 
+	autocompleteCategories = func() set.V1SearchCategorySet {
+		s := set.NewV1SearchCategorySet(GlobalSearchCategories.AsSlice()...)
+		s.Add(v1.SearchCategory_COMPLIANCE)
+		return s
+	}()
+
+	// SearchCategoryToResource maps search categories to resources.
 	// To access search, we require users to have view access to every searchable resource.
 	// We could consider allowing people to search across just the things they have access to,
 	// but that requires non-trivial refactoring, so we'll do it if we feel the need later.
 	// This variable is package-level to facilitate the unit test that asserts
 	// that it covers all the searchable categories.
-	searchCategoryToResource = map[v1.SearchCategory]permissions.Resource{
+	SearchCategoryToResource = map[v1.SearchCategory]permissions.Resource{
 		v1.SearchCategory_ALERTS:      resources.Alert,
 		v1.SearchCategory_DEPLOYMENTS: resources.Deployment,
 		v1.SearchCategory_IMAGES:      resources.Image,
 		v1.SearchCategory_POLICIES:    resources.Policy,
 		v1.SearchCategory_SECRETS:     resources.Secret,
+		v1.SearchCategory_COMPLIANCE:  resources.Compliance,
 	}
 )
 
 // SearchService provides APIs for search.
 type serviceImpl struct {
-	alerts       alertDataStore.DataStore
-	deployments  deploymentDataStore.DataStore
-	images       imageDataStore.DataStore
-	policies     policyDataStore.DataStore
-	secrets      secretDataStore.DataStore
-	enumRegistry enumregistry.Registry
+	alerts      alertDataStore.DataStore
+	deployments deploymentDataStore.DataStore
+	images      imageDataStore.DataStore
+	policies    policyDataStore.DataStore
+	secrets     secretDataStore.DataStore
+	aggregator  aggregation.Aggregator
 
 	authorizer authz.Authorizer
 }
 
-func (s *serviceImpl) handleMatch(fieldPath, value string, isEnum bool) string {
-	if !isEnum {
+func handleMatch(fieldPath, value string) string {
+	if !enumregistry.IsEnum(fieldPath) {
 		return value
 	}
 	if val, err := strconv.ParseInt(value, 10, 32); err == nil {
 		// Lookup if the field path is an enum and if so, take the string representation
-		if enumString := s.enumRegistry.Lookup(fieldPath, int32(val)); enumString != "" {
+		if enumString := enumregistry.Lookup(fieldPath, int32(val)); enumString != "" {
 			return enumString
 		}
 	}
@@ -136,7 +144,8 @@ func isMapMatch(matches map[string][]string) bool {
 	return true
 }
 
-func (s *serviceImpl) autocomplete(queryString string, categories []v1.SearchCategory) ([]string, error) {
+// RunAutoComplete runs an autocomplete request. It's a free function used by both regular search and by GraphQL.
+func RunAutoComplete(queryString string, categories []v1.SearchCategory, searchers map[v1.SearchCategory]search.Searcher) ([]string, error) {
 	query, err := search.ParseAutocompleteRawQuery(queryString)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "unable to parse query %q: %v", queryString, err)
@@ -144,20 +153,19 @@ func (s *serviceImpl) autocomplete(queryString string, categories []v1.SearchCat
 	// Set the max return size for the query
 	query.MaxResultSize = maxAutocompleteResults
 
-	searchFuncMap := s.getAutocompleteFuncs()
 	if len(categories) == 0 {
-		categories = GetAllSearchableCategories()
+		categories = autocompleteCategories.AsSlice()
 	}
 	var autocompleteResults []autocompleteResult
 	for _, category := range categories {
 		if category == v1.SearchCategory_ALERTS && !shouldProcessAlerts(query) {
 			continue
 		}
-		searchFunc, ok := searchFuncMap[category]
+		searcher, ok := searchers[category]
 		if !ok {
-			return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("Search category '%s' is not implemented", category.String()))
+			return nil, status.Errorf(codes.InvalidArgument, "Search category '%s' is not implemented", category.String())
 		}
-		results, err := searchFunc(query)
+		results, err := searcher.Search(query)
 		if err != nil {
 			log.Error(err)
 			return nil, status.Error(codes.Internal, err.Error())
@@ -169,9 +177,8 @@ func (s *serviceImpl) autocomplete(queryString string, categories []v1.SearchCat
 				continue
 			}
 			for fieldPath, match := range r.Matches {
-				isEnum := s.enumRegistry.IsEnum(fieldPath)
 				for _, v := range match {
-					value := s.handleMatch(fieldPath, v, isEnum)
+					value := handleMatch(fieldPath, v)
 					autocompleteResults = append(autocompleteResults, autocompleteResult{value: value, score: r.Score})
 				}
 			}
@@ -191,6 +198,10 @@ func (s *serviceImpl) autocomplete(queryString string, categories []v1.SearchCat
 		}
 	}
 	return stringResults, nil
+}
+
+func (s *serviceImpl) autocomplete(queryString string, categories []v1.SearchCategory) ([]string, error) {
+	return RunAutoComplete(queryString, categories, s.getAutocompleteSearchers())
 }
 
 func (s *serviceImpl) Autocomplete(ctx context.Context, req *v1.RawSearchRequest) (*v1.AutocompleteResponse, error) {
@@ -215,8 +226,8 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 }
 
 func (s *serviceImpl) initializeAuthorizer() {
-	requiredPermissions := make([]*v1.Permission, 0, len(searchCategoryToResource))
-	for _, resource := range searchCategoryToResource {
+	requiredPermissions := make([]*v1.Permission, 0, len(SearchCategoryToResource))
+	for _, resource := range SearchCategoryToResource {
 		requiredPermissions = append(requiredPermissions, permissions.View(resource))
 	}
 
@@ -250,61 +261,72 @@ func shouldProcessAlerts(q *v1.Query) (shouldProcess bool) {
 	return
 }
 
-// Search implements the ability to search through indexes for data
-func (s *serviceImpl) Search(ctx context.Context, request *v1.RawSearchRequest) (*v1.SearchResponse, error) {
-	parsedRequest, err := search.ParseRawQuery(request.GetQuery())
+// GlobalSearch runs a global search request with the given arguments. It's a shared function between gRPC and GraphQL.
+func GlobalSearch(query string, categories []v1.SearchCategory, searchFuncMap map[v1.SearchCategory]SearchFunc) (results []*v1.SearchResult,
+	counts []*v1.SearchResponse_Count, err error) {
+
+	parsedRequest, err := search.ParseRawQuery(query)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		err = status.Error(codes.InvalidArgument, err.Error())
+		return
 	}
-	response := new(v1.SearchResponse)
-	searchFuncMap := s.getSearchFuncs()
-	categories := request.GetCategories()
 	if len(categories) == 0 {
 		categories = GetAllSearchableCategories()
 	}
 	for _, category := range categories {
 		if category == v1.SearchCategory_ALERTS && !shouldProcessAlerts(parsedRequest) {
-			response.Counts = append(response.Counts, &v1.SearchResponse_Count{Category: category, Count: 0})
+			counts = append(counts, &v1.SearchResponse_Count{Category: category, Count: 0})
 			continue
 		}
 		searchFunc, ok := searchFuncMap[category]
 		if !ok {
-			return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("Search category '%s' is not implemented", category.String()))
+			err = status.Error(codes.InvalidArgument, fmt.Sprintf("Search category '%s' is not implemented", category.String()))
+			return
 		}
-		results, err := searchFunc(parsedRequest)
+		var resultsFromCategory []*v1.SearchResult
+		resultsFromCategory, err = searchFunc(parsedRequest)
 		if err != nil {
 			log.Error(err)
-			return nil, status.Error(codes.Internal, err.Error())
+			err = status.Error(codes.Internal, err.Error())
+			return
 		}
-		response.Counts = append(response.Counts, &v1.SearchResponse_Count{Category: category, Count: int64(len(results))})
-		response.Results = append(response.Results, results...)
+		counts = append(counts, &v1.SearchResponse_Count{Category: category, Count: int64(len(resultsFromCategory))})
+		results = append(results, resultsFromCategory...)
 	}
 	// Sort from highest score to lowest
-	sort.SliceStable(response.Results, func(i, j int) bool { return response.Results[i].Score > response.Results[j].Score })
-	return response, nil
+	sort.SliceStable(results, func(i, j int) bool { return results[i].Score > results[j].Score })
+	return
+}
+
+// Search implements the ability to search through indexes for data
+func (s *serviceImpl) Search(ctx context.Context, request *v1.RawSearchRequest) (*v1.SearchResponse, error) {
+	results, counts, err := GlobalSearch(request.GetQuery(), request.GetCategories(), s.getSearchFuncs())
+	if err != nil {
+		return nil, err
+	}
+	return &v1.SearchResponse{
+		Results: results,
+		Counts:  counts,
+	}, nil
+}
+
+// Options returns the list of options for the given categories, defaulting to all searchable categories
+// if not specified. It is shared between gRPC and GraphQL.
+func Options(categories []v1.SearchCategory) []string {
+	if len(categories) == 0 {
+		categories = GetAllSearchableCategories()
+	}
+	return options.GetOptions(categories)
 }
 
 // Options returns the options available for the categories specified in the request
 func (s *serviceImpl) Options(ctx context.Context, request *v1.SearchOptionsRequest) (*v1.SearchOptionsResponse, error) {
-	categories := request.GetCategories()
-	if len(categories) == 0 {
-		categories = GetAllSearchableCategories()
-	}
-	return &v1.SearchOptionsResponse{
-		Options: options.GetOptions(categories),
-	}, nil
+	return &v1.SearchOptionsResponse{Options: Options(request.GetCategories())}, nil
 }
 
 // GetAllSearchableCategories returns a list of categories that are currently valid for global search
 func GetAllSearchableCategories() (categories []v1.SearchCategory) {
-	categories = make([]v1.SearchCategory, 0, len(v1.SearchCategory_name)-1)
-	for i := 1; i < len(v1.SearchCategory_name); i++ {
-		category := v1.SearchCategory(i)
-		// For now, process indicators are not covered in global search.
-		if !GlobalSearchCategories.Contains(category) {
-			continue
-		}
-		categories = append(categories, category)
-	}
-	return
+	return GlobalSearchCategories.AsSortedSlice(func(catI, catJ v1.SearchCategory) bool {
+		return catI < catJ
+	})
 }

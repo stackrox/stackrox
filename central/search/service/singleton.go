@@ -4,11 +4,11 @@ import (
 	"sync"
 
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/compliance/aggregation"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
-	"github.com/stackrox/rox/pkg/search/enumregistry"
 )
 
 var (
@@ -24,7 +24,7 @@ func initialize() {
 		imageDataStore.Singleton(),
 		policyDataStore.Singleton(),
 		secretDataStore.Singleton(),
-		enumregistry.Singleton(),
+		aggregation.Singleton(),
 	)
 }
 

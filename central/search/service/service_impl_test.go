@@ -18,18 +18,18 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/enumregistry"
-	"github.com/stackrox/rox/pkg/search/enumregistry/mocks"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSearchCategoryToResourceMap(t *testing.T) {
-	for _, searchCategory := range GetAllSearchableCategories() {
-		_, ok := searchCategoryToResource[searchCategory]
+	allCategories := set.NewV1SearchCategorySet(GetAllSearchableCategories()...).Union(autocompleteCategories)
+	for _, searchCategory := range allCategories.AsSlice() {
+		_, ok := SearchCategoryToResource[searchCategory]
 		// This is a programming error. If you see this, add the new category you've added to the
-		// searchCategoryToResource map!
-		assert.True(t, ok, "Please add category %s to the searchCategoryToResource map used by the authorizer", searchCategory.String())
+		// SearchCategoryToResource map!
+		assert.True(t, ok, "Please add category %s to the SearchCategoryToResource map used by the authorizer", searchCategory.String())
 	}
 }
 
@@ -42,13 +42,13 @@ func TestSearchFuncs(t *testing.T) {
 		imageMocks.NewMockDataStore(mockCtrl),
 		policyMocks.NewMockDataStore(mockCtrl),
 		secretMocks.NewMockDataStore(mockCtrl),
-		mocks.NewMockRegistry(mockCtrl),
+		nil,
 	)
 	searchFuncMap := s.(*serviceImpl).getSearchFuncs()
 	for _, searchCategory := range GetAllSearchableCategories() {
 		_, ok := searchFuncMap[searchCategory]
 		// This is a programming error. If you see this, add the new category you've added to the
-		// searchCategoryToResource map!
+		// SearchCategoryToResource map!
 		assert.True(t, ok, "Please add category %s to the map in getSearchFuncs()", searchCategory.String())
 	}
 }
@@ -89,39 +89,57 @@ func TestAutocomplete(t *testing.T) {
 		imageMocks.NewMockDataStore(mockCtrl),
 		policyMocks.NewMockDataStore(mockCtrl),
 		secretMocks.NewMockDataStore(mockCtrl),
-		enumregistry.Singleton(),
+		nil,
 	).(*serviceImpl)
 
-	q := search.NewQueryBuilder().AddStrings(search.DeploymentName, deploymentNameOneOff.Name).Query()
-	results, err := service.autocomplete(q, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
-	require.NoError(t, err)
-	assert.Equal(t, []string{deploymentNameOneOff.Name}, results)
-
-	q = search.NewQueryBuilder().AddStrings(search.DeploymentName, "name").Query()
-	results, err = service.autocomplete(q, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
-	require.NoError(t, err)
-	// This is odd, but this is correct. Bleve scores name12 higher than name1
-	assert.Equal(t, []string{"name12", "name1"}, results)
-
-	q = fmt.Sprintf("%s:", search.DeploymentName)
-	results, err = service.autocomplete(q, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
-	require.NoError(t, err)
-	assert.Equal(t, []string{"name12", "nginx_server", "name1"}, results)
-
-	q = fmt.Sprintf("%s:he=h", search.Label)
-	results, err = service.autocomplete(q, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
-	require.NoError(t, err)
-	assert.ElementsMatch(t, []string{"hello=hi", "hey=ho"}, results)
-
-	q = fmt.Sprintf("%s:hey=", search.Label)
-	results, err = service.autocomplete(q, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
-	require.NoError(t, err)
-	assert.ElementsMatch(t, []string{"hey=ho"}, results)
-
-	q = fmt.Sprintf("%s:%s+%s:", search.DeploymentName, deploymentName2.Name, search.Label)
-	results, err = service.autocomplete(q, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
-	require.NoError(t, err)
-	assert.ElementsMatch(t, []string{"hey=ho", "hello=hi"}, results)
+	for _, testCase := range []struct {
+		query           string
+		expectedResults []string
+		ignoreOrder     bool
+	}{
+		{
+			query:           search.NewQueryBuilder().AddStrings(search.DeploymentName, deploymentNameOneOff.Name).Query(),
+			expectedResults: []string{deploymentNameOneOff.GetName()},
+		},
+		{
+			query: search.NewQueryBuilder().AddStrings(search.DeploymentName, "name").Query(),
+			// This is odd, but this is correct. Bleve scores name12 higher than name1
+			expectedResults: []string{"name12", "name1"},
+		},
+		{
+			query:           fmt.Sprintf("%s:", search.DeploymentName),
+			expectedResults: []string{"name12", "nginx_server", "name1"},
+		},
+		{
+			query:           fmt.Sprintf("%s:name12,", search.DeploymentName),
+			expectedResults: []string{"name12", "nginx_server", "name1"},
+		},
+		{
+			query:           fmt.Sprintf("%s:he=h", search.Label),
+			expectedResults: []string{"hello=hi", "hey=ho"},
+			ignoreOrder:     true,
+		},
+		{
+			query:           fmt.Sprintf("%s:hey=", search.Label),
+			expectedResults: []string{"hey=ho"},
+			ignoreOrder:     true,
+		},
+		{
+			query:           fmt.Sprintf("%s:%s+%s:", search.DeploymentName, deploymentName2.Name, search.Label),
+			expectedResults: []string{"hello=hi", "hey=ho"},
+			ignoreOrder:     true,
+		},
+	} {
+		t.Run(fmt.Sprintf("Test case %q", testCase.query), func(t *testing.T) {
+			results, err := service.autocomplete(testCase.query, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
+			require.NoError(t, err)
+			if testCase.ignoreOrder {
+				assert.ElementsMatch(t, testCase.expectedResults, results)
+			} else {
+				assert.Equal(t, testCase.expectedResults, results)
+			}
+		})
+	}
 }
 
 func TestAutocompleteForEnums(t *testing.T) {
@@ -141,7 +159,7 @@ func TestAutocompleteForEnums(t *testing.T) {
 		imageMocks.NewMockDataStore(mockCtrl),
 		ds,
 		secretMocks.NewMockDataStore(mockCtrl),
-		enumregistry.Singleton(),
+		nil,
 	).(*serviceImpl)
 
 	results, err := service.autocomplete(fmt.Sprintf("%s:", search.Severity), []v1.SearchCategory{v1.SearchCategory_POLICIES})

@@ -8,8 +8,8 @@ import (
 )
 
 // HasApplicableOptions determines if a parsed user map has any applicable options to this particular options map
-func HasApplicableOptions(userQuery map[string][]string, optionsMap OptionsMap) bool {
-	for k := range userQuery {
+func HasApplicableOptions(specifiedFields []string, optionsMap OptionsMap) bool {
+	for _, k := range specifiedFields {
 		if _, ok := optionsMap.Get(k); ok {
 			return true
 		}

@@ -15,7 +15,7 @@ type matcherImpl struct {
 	processGetter    searchbasedpolicies.ProcessIndicatorGetter
 }
 
-func (m *matcherImpl) MatchMany(searcher searchbasedpolicies.Searcher, ids ...string) (map[string]searchbasedpolicies.Violations, error) {
+func (m *matcherImpl) MatchMany(searcher search.Searcher, ids ...string) (map[string]searchbasedpolicies.Violations, error) {
 	return m.violationsMapFromQuery(searcher, search.ConjunctionQuery(search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(), m.q))
 }
 
@@ -23,7 +23,7 @@ func (m *matcherImpl) errorPrefixForMatchOne(id string) string {
 	return fmt.Sprintf("matching policy %s against %s", m.policyName, id)
 }
 
-func (m *matcherImpl) MatchOne(searcher searchbasedpolicies.Searcher, id string) (violations searchbasedpolicies.Violations, err error) {
+func (m *matcherImpl) MatchOne(searcher search.Searcher, id string) (violations searchbasedpolicies.Violations, err error) {
 	q := search.ConjunctionQuery(search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(), m.q)
 	results, err := searcher.Search(q)
 	if err != nil {
@@ -50,11 +50,11 @@ func (m *matcherImpl) MatchOne(searcher searchbasedpolicies.Searcher, id string)
 	return violations, nil
 }
 
-func (m *matcherImpl) Match(searcher searchbasedpolicies.Searcher) (map[string]searchbasedpolicies.Violations, error) {
+func (m *matcherImpl) Match(searcher search.Searcher) (map[string]searchbasedpolicies.Violations, error) {
 	return m.violationsMapFromQuery(searcher, m.q)
 }
 
-func (m *matcherImpl) violationsMapFromQuery(searcher searchbasedpolicies.Searcher, q *v1.Query) (map[string]searchbasedpolicies.Violations, error) {
+func (m *matcherImpl) violationsMapFromQuery(searcher search.Searcher, q *v1.Query) (map[string]searchbasedpolicies.Violations, error) {
 	results, err := searcher.Search(q)
 	if err != nil {
 		return nil, err

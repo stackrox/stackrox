@@ -65,15 +65,15 @@ message ComplianceAggregation {
 
 message ComplianceStandardMetadata {
     string id                     = 1 [(gogoproto.moretags) = "search:\"Standard ID,hidden\""];
-    string name                   = 2 [(gogoproto.moretags) = "search:\"Standard,hidden\""];
+    string name                   = 2 [(gogoproto.moretags) = "search:\"Standard,store,hidden\""];
     string description            = 3;
     int32  num_implemented_checks = 4;
 }
 
 message ComplianceControlGroup {
     string id                     = 1 [(gogoproto.moretags) = "search:\"Control Group ID\""];
-    string standard_id            = 2 [(gogoproto.moretags) = "search:\"Standard ID\""];
-    string name                   = 3 [(gogoproto.moretags) = "search:\"Control Group\""];
+    string standard_id            = 2 [(gogoproto.moretags) = "search:\"Standard ID,store\""];
+    string name                   = 3 [(gogoproto.moretags) = "search:\"Control Group,store\""];
     string description            = 4;
     int32  num_implemented_checks = 5;
 }
@@ -82,7 +82,7 @@ message ComplianceControl {
     string id          = 1 [(gogoproto.moretags) = "search:\"Control ID,hidden\""];
     string standard_id = 2 [(gogoproto.moretags) = "search:\"Standard ID,hidden\""];
     string group_id    = 3 [(gogoproto.moretags) = "search:\"Control Group ID,hidden\""];
-    string name        = 4 [(gogoproto.moretags) = "search:\"Control\""];
+    string name        = 4 [(gogoproto.moretags) = "search:\"Control,store\""];
     string description = 5;
 
     bool implemented           = 6;

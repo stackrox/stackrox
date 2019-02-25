@@ -21,7 +21,13 @@ const ComplianceListSearchInput = ({ categories }) => (
         {({ data }) => {
             let { searchOptions } = data;
             searchOptions = addComplianceStateOption(searchOptions);
-            return <URLSearchInput className="w-full" categoryOptions={searchOptions} />;
+            return (
+                <URLSearchInput
+                    className="w-full"
+                    categoryOptions={searchOptions}
+                    categories={categories}
+                />
+            );
         }}
     </Query>
 );

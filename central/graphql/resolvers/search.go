@@ -2,14 +2,9 @@ package resolvers
 
 import (
 	"context"
-	"sort"
 
-	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/search/options"
 	searchService "github.com/stackrox/rox/central/search/service"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -19,6 +14,7 @@ func init() {
 	utils.Must(
 		schema.AddQuery("searchOptions(categories: [SearchCategory!]): [String!]!"),
 		schema.AddQuery("globalSearch(categories: [SearchCategory!], query: String!): [SearchResult!]!"),
+		schema.AddQuery("searchAutocomplete(categories: [SearchCategory!], query: String!): [String!]!"),
 	)
 }
 
@@ -33,45 +29,34 @@ func (r rawQuery) AsV1Query() (*v1.Query, error) {
 	return search.ParseRawQuery(*r.Query)
 }
 
-type categoryData struct {
-	searchFunc func(query *v1.Query) ([]*v1.SearchResult, error)
-	resource   permissions.Resource
-}
-
-func (resolver *Resolver) getCategoryData() map[v1.SearchCategory]categoryData {
-	return map[v1.SearchCategory]categoryData{
-		v1.SearchCategory_ALERTS: {
-			searchFunc: resolver.ViolationsDataStore.SearchAlerts,
-			resource:   resources.Alert,
-		},
-		v1.SearchCategory_IMAGES: {
-			searchFunc: resolver.ImageDataStore.SearchImages,
-			resource:   resources.Image,
-		},
-		v1.SearchCategory_POLICIES: {
-			searchFunc: resolver.PolicyDataStore.SearchPolicies,
-			resource:   resources.Policy,
-		},
-		v1.SearchCategory_DEPLOYMENTS: {
-			searchFunc: resolver.DeploymentDataStore.SearchDeployments,
-			resource:   resources.Deployment,
-		},
-		v1.SearchCategory_SECRETS: {
-			searchFunc: resolver.SecretsDataStore.SearchSecrets,
-			resource:   resources.Secret,
-		},
+func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]search.Searcher {
+	return map[v1.SearchCategory]search.Searcher{
+		v1.SearchCategory_ALERTS:      resolver.ViolationsDataStore,
+		v1.SearchCategory_IMAGES:      resolver.ImageDataStore,
+		v1.SearchCategory_POLICIES:    resolver.PolicyDataStore,
+		v1.SearchCategory_DEPLOYMENTS: resolver.DeploymentDataStore,
+		v1.SearchCategory_SECRETS:     resolver.SecretsDataStore,
+		v1.SearchCategory_COMPLIANCE:  resolver.ComplianceAggregator,
 	}
 }
 
-// SearchOptions gets all search options available for the listed categories
-func (resolver *Resolver) SearchOptions(args struct{ Categories *[]string }) ([]string, error) {
-	var categories []v1.SearchCategory
-	if args.Categories == nil {
-		categories = searchService.GetAllSearchableCategories()
-	} else {
-		categories = toSearchCategories(args.Categories)
+func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.SearchFunc {
+	return map[v1.SearchCategory]searchService.SearchFunc{
+		v1.SearchCategory_ALERTS:      resolver.ViolationsDataStore.SearchAlerts,
+		v1.SearchCategory_IMAGES:      resolver.ImageDataStore.SearchImages,
+		v1.SearchCategory_POLICIES:    resolver.PolicyDataStore.SearchPolicies,
+		v1.SearchCategory_DEPLOYMENTS: resolver.DeploymentDataStore.SearchDeployments,
+		v1.SearchCategory_SECRETS:     resolver.SecretsDataStore.SearchSecrets,
 	}
-	return options.GetOptions(categories), nil
+}
+
+func checkSearchAuth(ctx context.Context) error {
+	for _, resource := range searchService.SearchCategoryToResource {
+		if err := readAuth(resource)(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type searchRequest struct {
@@ -79,35 +64,29 @@ type searchRequest struct {
 	Categories *[]string
 }
 
+// SearchAutocomplete returns autocomplete responses for the given partial query.
+func (resolver *Resolver) SearchAutocomplete(ctx context.Context, args searchRequest) ([]string, error) {
+	if err := checkSearchAuth(ctx); err != nil {
+		return nil, err
+	}
+	return searchService.RunAutoComplete(args.Query, toSearchCategories(args.Categories), resolver.getAutoCompleteSearchers())
+}
+
+// SearchOptions gets all search options available for the listed categories
+func (resolver *Resolver) SearchOptions(ctx context.Context, args struct{ Categories *[]string }) ([]string, error) {
+	if err := checkSearchAuth(ctx); err != nil {
+		return nil, err
+	}
+	return searchService.Options(toSearchCategories(args.Categories)), nil
+}
+
 // GlobalSearch returns search results for the given categories and query.
 // Note: there is not currently a way to request the underlying object from SearchResult; it might be nice to have
 // this in the future.
 func (resolver *Resolver) GlobalSearch(ctx context.Context, args searchRequest) ([]*searchResultResolver, error) {
-	q, err := search.ParseRawQuery(args.Query)
-	if err != nil {
+	if err := checkSearchAuth(ctx); err != nil {
 		return nil, err
 	}
-	data := resolver.getCategoryData()
-	categories := searchService.GetAllSearchableCategories()
-	if args.Categories != nil {
-		categories = toSearchCategories(args.Categories)
-	}
-	var allResults []*searchResultResolver
-	for _, c := range categories {
-		cdata, ok := data[c]
-		if !ok {
-			continue
-		}
-		if user.With(permissions.View(cdata.resource)).Authorized(ctx, "graphql") == nil {
-			result, err := resolver.wrapSearchResults(cdata.searchFunc(q))
-			if err != nil {
-				return nil, err
-			}
-			allResults = append(allResults, result...)
-		}
-	}
-	sort.Slice(allResults, func(i, j int) bool {
-		return allResults[i].Score() > allResults[j].Score()
-	})
-	return allResults, nil
+	results, _, err := searchService.GlobalSearch(args.Query, toSearchCategories(args.Categories), resolver.getSearchFuncs())
+	return resolver.wrapSearchResults(results, err)
 }

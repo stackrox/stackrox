@@ -21,6 +21,16 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
+var (
+	log = logging.LoggerForModule()
+
+	passFailCountsByState = map[storage.ComplianceState]passFailCounts{
+		storage.ComplianceState_COMPLIANCE_STATE_SUCCESS: {pass: 1},
+		storage.ComplianceState_COMPLIANCE_STATE_FAILURE: {fail: 1},
+		storage.ComplianceState_COMPLIANCE_STATE_ERROR:   {fail: 1},
+	}
+)
+
 const (
 	minScope  = v1.ComplianceAggregation_STANDARD
 	maxScope  = v1.ComplianceAggregation_DEPLOYMENT
@@ -30,6 +40,9 @@ const (
 // Aggregator does compliance aggregation
 type Aggregator interface {
 	Aggregate(query string, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) ([]*v1.ComplianceAggregation_Result, []*v1.ComplianceAggregation_Source, map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain, error)
+
+	// Search runs search requests in the context of the aggregator.
+	Search(q *v1.Query) ([]search.Result, error)
 }
 
 // New returns a new aggregator
@@ -55,6 +68,22 @@ type aggregatorImpl struct {
 	nodes      nodeStore.GlobalStore
 }
 
+func (a *aggregatorImpl) Search(q *v1.Query) ([]search.Result, error) {
+	var allResults []search.Result
+	specifiedFields := getSpecifiedFieldsFromQuery(q)
+	for category, searchFuncAndMap := range a.getSearchFuncs() {
+		if !search.HasApplicableOptions(specifiedFields, searchFuncAndMap.optionsMap) {
+			continue
+		}
+		results, err := searchFuncAndMap.searchFunc(q)
+		if err != nil {
+			return nil, fmt.Errorf("searching category %s: %v", category, err)
+		}
+		allResults = append(allResults, results...)
+	}
+	return allResults, nil
+}
+
 type passFailCounts struct {
 	pass int
 	fail int
@@ -76,16 +105,6 @@ func (c passFailCounts) Reduce() passFailCounts {
 	}
 	return passFailCounts{}
 }
-
-var (
-	log = logging.LoggerForModule()
-
-	passFailCountsByState = map[storage.ComplianceState]passFailCounts{
-		storage.ComplianceState_COMPLIANCE_STATE_SUCCESS: {pass: 1},
-		storage.ComplianceState_COMPLIANCE_STATE_FAILURE: {fail: 1},
-		storage.ComplianceState_COMPLIANCE_STATE_ERROR:   {fail: 1},
-	}
-)
 
 type groupByKey [numScopes]string
 
@@ -115,14 +134,30 @@ func (c flatCheck) passFailCounts() passFailCounts {
 	return passFailCountsByState[c.state]
 }
 
+func getSpecifiedFieldsFromQuery(q *v1.Query) []string {
+	var querySpecifiedFields []string
+	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		if bq == nil {
+			return
+		}
+		asMFQ, ok := bq.Query.(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+		querySpecifiedFields = append(querySpecifiedFields, asMFQ.MatchFieldQuery.GetField())
+	})
+	return querySpecifiedFields
+}
+
 // Aggregate takes in a search query, groupby scopes and unit scope and returns the results of the aggregation
 func (a *aggregatorImpl) Aggregate(queryString string, groupBy []v1.ComplianceAggregation_Scope, unit v1.ComplianceAggregation_Scope) ([]*v1.ComplianceAggregation_Result, []*v1.ComplianceAggregation_Source, map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain, error) {
-	queryMap := search.ParseRawQueryIntoMap(queryString)
 	query, err := search.ParseRawQueryOrEmpty(queryString)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	standardIDs, clusterIDs, err := a.getRunParameters(query, queryMap)
+	querySpecifiedFields := getSpecifiedFieldsFromQuery(query)
+
+	standardIDs, clusterIDs, err := a.getRunParameters(query, querySpecifiedFields)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -134,7 +169,7 @@ func (a *aggregatorImpl) Aggregate(queryString string, groupBy []v1.ComplianceAg
 
 	validResults, sources := complianceStore.ValidResultsAndSources(runResults)
 
-	mask, err := a.getCheckMask(query, queryMap, standardIDs, clusterIDs)
+	mask, err := a.getCheckMask(query, querySpecifiedFields)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -308,77 +343,134 @@ func (a *aggregatorImpl) getAggregatedResults(groupBy []v1.ComplianceAggregation
 	return results, domainMap
 }
 
+type searchFuncAndOptionsMap struct {
+	searchFunc func(*v1.Query) ([]search.Result, error)
+	optionsMap search.OptionsMap
+}
+
+func (a *aggregatorImpl) getSearchFuncs() map[v1.ComplianceAggregation_Scope]searchFuncAndOptionsMap {
+	return map[v1.ComplianceAggregation_Scope]searchFuncAndOptionsMap{
+		v1.ComplianceAggregation_STANDARD: {
+			searchFunc: a.standards.SearchStandards,
+			optionsMap: standardsIndex.StandardOptions,
+		},
+		v1.ComplianceAggregation_CLUSTER: {
+			searchFunc: a.clusters.Search,
+			optionsMap: clusterMappings.OptionsMap,
+		},
+		v1.ComplianceAggregation_NODE: {
+			searchFunc: a.nodes.Search,
+			optionsMap: nodeMappings.OptionsMap,
+		},
+		v1.ComplianceAggregation_NAMESPACE: {
+			searchFunc: a.namespaces.Search,
+			optionsMap: namespaceMappings.OptionsMap,
+		},
+		v1.ComplianceAggregation_CONTROL: {
+			searchFunc: a.standards.SearchControls,
+			optionsMap: standardsIndex.ControlOptions,
+		},
+	}
+}
+
+func (a *aggregatorImpl) getResultsFromScope(scope v1.ComplianceAggregation_Scope, query *v1.Query, querySpecifiedFields []string) (results []search.Result, wasApplicable bool, err error) {
+	funcAndMap, ok := a.getSearchFuncs()[scope]
+	// Programming error.
+	if !ok {
+		errorhelpers.PanicOnDevelopmentf("No search func registered for scope: %s", scope)
+		return
+	}
+	wasApplicable = search.HasApplicableOptions(querySpecifiedFields, funcAndMap.optionsMap)
+	if !wasApplicable {
+		return
+	}
+	results, err = funcAndMap.searchFunc(query)
+	return
+}
+
+func (a *aggregatorImpl) addSetToMaskIfOptionsApplicable(scope v1.ComplianceAggregation_Scope, mask *[numScopes]set.StringSet,
+	query *v1.Query, querySpecifiedFields []string) (wasApplicable bool, err error) {
+
+	results, wasApplicable, err := a.getResultsFromScope(scope, query, querySpecifiedFields)
+	if err != nil {
+		return
+	}
+	if !wasApplicable {
+		return
+	}
+
+	mask[getMaskIndex(scope)] = search.ResultsToIDSet(results)
+	return
+}
+
 // getCheckMask returns an array of ComplianceAggregation scopes that contains a set of IDs that are allowed
 // if the set is nil, then it means all are allowed
-func (a *aggregatorImpl) getCheckMask(query *v1.Query, queryMap map[string][]string, standardIDs, clusterIDs []string) ([numScopes]set.StringSet, error) {
+func (a *aggregatorImpl) getCheckMask(query *v1.Query, querySpecifiedFields []string) ([numScopes]set.StringSet, error) {
 	var mask [numScopes]set.StringSet
 
-	nodeOptions := search.HasApplicableOptions(queryMap, nodeMappings.OptionsMap)
-	namespaceOptions := search.HasApplicableOptions(queryMap, namespaceMappings.OptionsMap)
+	nodeWasApplicable, err := a.addSetToMaskIfOptionsApplicable(v1.ComplianceAggregation_NODE, &mask, query, querySpecifiedFields)
+	if err != nil {
+		return mask, err
+	}
 
-	if nodeOptions {
-		results, err := a.nodes.Search(query)
-		if err != nil {
-			return mask, err
-		}
-		mask[getMaskIndex(v1.ComplianceAggregation_NODE)] = set.NewStringSet(search.ResultsToIDs(results)...)
-	} else if namespaceOptions {
+	namespaceWasApplicable, err := a.addSetToMaskIfOptionsApplicable(v1.ComplianceAggregation_NAMESPACE, &mask, query, querySpecifiedFields)
+	if err != nil {
+		return mask, err
+	}
+
+	// This makes node and namespace options mutually exclusive. Otherwise, we will get all node results
+	// if users query for namespace and vice-versa. By explicitly setting the mask to an empty set,
+	// we make sure no ids are returned.
+	if !nodeWasApplicable && namespaceWasApplicable {
 		mask[getMaskIndex(v1.ComplianceAggregation_NODE)] = set.NewStringSet()
 	}
 
-	if namespaceOptions {
-		results, err := a.namespaces.Search(query)
-		if err != nil {
-			return mask, err
-		}
-		mask[getMaskIndex(v1.ComplianceAggregation_NAMESPACE)] = set.NewStringSet(search.ResultsToIDs(results)...)
-	} else if nodeOptions {
+	if !namespaceWasApplicable && nodeWasApplicable {
 		mask[getMaskIndex(v1.ComplianceAggregation_NAMESPACE)] = set.NewStringSet()
 	}
 
-	if search.HasApplicableOptions(queryMap, standardsIndex.ControlOptions) {
-		results, err := a.standards.SearchControls(query)
-		if err != nil {
-			return mask, err
-		}
-		mask[getMaskIndex(v1.ComplianceAggregation_CONTROL)] = set.NewStringSet(search.ResultsToIDs(results)...)
+	_, err = a.addSetToMaskIfOptionsApplicable(v1.ComplianceAggregation_CONTROL, &mask, query, querySpecifiedFields)
+	if err != nil {
+		return mask, err
 	}
+
 	return mask, nil
 }
 
 // getRunParameters returns the standard IDs and the cluster IDs for the query
-func (a *aggregatorImpl) getRunParameters(query *v1.Query, queryMap map[string][]string) (standardIDs, clusterIDs []string, err error) {
-	if search.HasApplicableOptions(queryMap, standardsIndex.StandardOptions) {
-		results, err := a.standards.SearchStandards(query)
-		if err != nil {
-			return nil, nil, err
-		}
+func (a *aggregatorImpl) getRunParameters(query *v1.Query, querySpecifiedFields []string) (standardIDs, clusterIDs []string, err error) {
+	results, wasApplicable, err := a.getResultsFromScope(v1.ComplianceAggregation_STANDARD, query, querySpecifiedFields)
+	if err != nil {
+		return
+	}
+	if wasApplicable {
 		standardIDs = search.ResultsToIDs(results)
 	} else {
-		standards, err := a.standards.Standards()
+		var stds []*v1.ComplianceStandardMetadata
+		stds, err = a.standards.Standards()
 		if err != nil {
-			return nil, nil, err
+			return
 		}
-		for _, s := range standards {
+		for _, s := range stds {
 			standardIDs = append(standardIDs, s.GetId())
 		}
 	}
 
-	if search.HasApplicableOptions(queryMap, clusterMappings.OptionsMap) {
-		results, err := a.clusters.Search(query)
-		if err != nil {
-			return nil, nil, err
-		}
+	results, wasApplicable, err = a.getResultsFromScope(v1.ComplianceAggregation_CLUSTER, query, querySpecifiedFields)
+	if err != nil {
+		return
+	}
+	if wasApplicable {
 		clusterIDs = search.ResultsToIDs(results)
 	} else {
-		clusters, err := a.clusters.GetClusters()
+		var clusters []*storage.Cluster
+		clusters, err = a.clusters.GetClusters()
 		if err != nil {
-			return nil, nil, err
+			return
 		}
 		for _, c := range clusters {
 			clusterIDs = append(clusterIDs, c.GetId())
 		}
 	}
-
 	return
 }

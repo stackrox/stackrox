@@ -2,6 +2,7 @@ package service
 
 import (
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
+	"github.com/stackrox/rox/central/compliance/aggregation"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -9,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/search/enumregistry"
 	"golang.org/x/net/context"
 )
 
@@ -27,14 +27,15 @@ type Service interface {
 }
 
 // New returns a search service
-func New(alerts alertDataStore.DataStore, deployments deploymentDataStore.DataStore, images imageDataStore.DataStore, policies policyDataStore.DataStore, secrets secretDataStore.DataStore, enumRegistry enumregistry.Registry) Service {
+func New(alerts alertDataStore.DataStore, deployments deploymentDataStore.DataStore, images imageDataStore.DataStore, policies policyDataStore.DataStore,
+	secrets secretDataStore.DataStore, aggregator aggregation.Aggregator) Service {
 	s := &serviceImpl{
-		alerts:       alerts,
-		deployments:  deployments,
-		images:       images,
-		policies:     policies,
-		secrets:      secrets,
-		enumRegistry: enumRegistry,
+		alerts:      alerts,
+		deployments: deployments,
+		images:      images,
+		policies:    policies,
+		secrets:     secrets,
+		aggregator:  aggregator,
 	}
 	s.initializeAuthorizer()
 	return s

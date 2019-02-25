@@ -50,8 +50,8 @@ func TestOptions(t *testing.T) {
 	// All category
 
 	categories = categories[:0]
-	for _, v := range searchService.GlobalSearchCategories.ToSlice() {
-		categories = append(categories, v.(v1.SearchCategory))
+	for _, v := range searchService.GlobalSearchCategories.AsSlice() {
+		categories = append(categories, v)
 	}
 
 	resp, err = service.Options(ctx, &v1.SearchOptionsRequest{Categories: categories})

@@ -1,8 +1,6 @@
 package options
 
 import (
-	"sort"
-
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/generated/api/v1"
 	searchCommon "github.com/stackrox/rox/pkg/search"
@@ -26,9 +24,9 @@ func GetOptions(categories []v1.SearchCategory) []string {
 	for _, category := range categories {
 		optionsSet = optionsSet.Union(CategoryToOptionsSet[category])
 	}
-	slice := optionsSet.AsSlice()
-	sort.Strings(slice)
-	return slice
+	return optionsSet.AsSortedSlice(func(optI, optJ string) bool {
+		return optI < optJ
+	})
 }
 
 func init() {

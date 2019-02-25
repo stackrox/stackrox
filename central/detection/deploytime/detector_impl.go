@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -88,7 +89,7 @@ func (d *detectorImpl) matchWithEmptyImageIDs(p *storage.Policy, matcher searchb
 	return violations.AlertViolations, nil
 }
 
-func (d *detectorImpl) evaluateAlertsForDeployment(searcher searchbasedpolicies.Searcher, deployment *storage.Deployment) ([]*storage.Alert, error) {
+func (d *detectorImpl) evaluateAlertsForDeployment(searcher search.Searcher, deployment *storage.Deployment) ([]*storage.Alert, error) {
 	var newAlerts []*storage.Alert
 	err := d.policySet.ForEach(func(p *storage.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
 		if shouldProcess != nil && !shouldProcess(deployment) {

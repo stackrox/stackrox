@@ -30,17 +30,12 @@ type ProcessIndicatorGetter interface {
 	GetProcessIndicator(id string) (*storage.ProcessIndicator, bool, error)
 }
 
-// Searcher allows you to search objects.
-type Searcher interface {
-	Search(q *v1.Query) ([]search.Result, error)
-}
-
 // Matcher matches objects against a policy.
 type Matcher interface {
 	// Match matches the policy against all objects, returning a map from object ID to violations.
-	Match(searcher Searcher) (map[string]Violations, error)
+	Match(searcher search.Searcher) (map[string]Violations, error)
 	// MatchOne matches the policy against the object with the given id.
-	MatchOne(searcher Searcher, id string) (Violations, error)
+	MatchOne(searcher search.Searcher, id string) (Violations, error)
 	// MatchMany mathes the policy against just the objects with the given ids.
-	MatchMany(searcher Searcher, ids ...string) (map[string]Violations, error)
+	MatchMany(searcher search.Searcher, ids ...string) (map[string]Violations, error)
 }

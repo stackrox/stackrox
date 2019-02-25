@@ -9,6 +9,7 @@ import (
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/stackrox/rox/generated/api/v1"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/enumregistry"
 )
 
 var datatypeToQueryFunc = map[v1.SearchDataType]func(v1.SearchCategory, string, string) (query.Query, error){
@@ -99,7 +100,7 @@ func newBoolQuery(_ v1.SearchCategory, field string, value string) (query.Query,
 }
 
 func newEnumQuery(_ v1.SearchCategory, field, value string) (query.Query, error) {
-	enumValues := enums.Get(field, value)
+	enumValues := enumregistry.Get(field, value)
 	if len(enumValues) == 0 {
 		return nil, fmt.Errorf("could not find corresponding enum at field %q with value %q", field, value)
 	}
