@@ -40,10 +40,10 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 	{
 		Id:         "e50087f1-6840-4d15-aeca-21ba636f0878",
 		Name:       "Public Quay.io",
-		Type:       "docker",
+		Type:       "quay",
 		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
-		IntegrationConfig: &storage.ImageIntegration_Docker{
-			Docker: &storage.DockerConfig{
+		IntegrationConfig: &storage.ImageIntegration_Quay{
+			Quay: &storage.QuayConfig{
 				Endpoint: "quay.io",
 			},
 		},

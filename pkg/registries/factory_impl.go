@@ -20,8 +20,5 @@ func (e *factoryImpl) CreateRegistry(source *storage.ImageIntegration) (types.Im
 	if err != nil {
 		return nil, err
 	}
-	if err := integration.Test(); err != nil {
-		return nil, fmt.Errorf("Test on integration failed: %s", err)
-	}
 	return integration, nil
 }

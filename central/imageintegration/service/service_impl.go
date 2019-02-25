@@ -123,6 +123,9 @@ func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *storage.
 	if err != nil {
 		return nil, err
 	}
+	if err := s.testImageIntegration(request); err != nil {
+		return nil, err
+	}
 	sortCategories(request.Categories)
 
 	if err := s.toNotify.NotifyUpdated(request); err != nil {
@@ -147,6 +150,11 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 	if err != nil {
 		return nil, err
 	}
+
+	if err := s.testImageIntegration(request); err != nil {
+		return nil, err
+	}
+
 	sortCategories(request.Categories)
 
 	id, err := s.datastore.AddImageIntegration(request)
@@ -184,22 +192,26 @@ func (s *serviceImpl) TestImageIntegration(ctx context.Context, request *storage
 	if err != nil {
 		return nil, err
 	}
+	if err := s.testImageIntegration(request); err != nil {
+		return nil, err
+	}
+	return &v1.Empty{}, nil
+}
 
+func (s *serviceImpl) testImageIntegration(request *storage.ImageIntegration) error {
 	for _, category := range request.GetCategories() {
 		if category == storage.ImageIntegrationCategory_REGISTRY {
-			err = s.testRegistryIntegration(request)
-			if err != nil {
-				return nil, status.Error(codes.InvalidArgument, err.Error())
+			if err := s.testRegistryIntegration(request); err != nil {
+				return status.Error(codes.InvalidArgument, err.Error())
 			}
 		}
 		if category == storage.ImageIntegrationCategory_SCANNER {
-			err = s.testScannerIntegration(request)
-			if err != nil {
-				return nil, status.Error(codes.InvalidArgument, err.Error())
+			if err := s.testScannerIntegration(request); err != nil {
+				return status.Error(codes.InvalidArgument, err.Error())
 			}
 		}
 	}
-	return &v1.Empty{}, nil
+	return nil
 }
 
 func (s *serviceImpl) testRegistryIntegration(integration *storage.ImageIntegration) error {
