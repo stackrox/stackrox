@@ -1178,14 +1178,14 @@
   version = "v1.0.3"
 
 [[projects]]
-  digest = "1:8f04ab63534bb5c63a460d5a101032e29985cfae09b5b3e5634a45895cefce59"
+  digest = "1:ac6ff75a94f98c4503dd379159771f8999285b1f38f0d9477659eda21650b0b9"
   name = "github.com/stackrox/clairify"
   packages = [
     "client",
     "types",
   ]
   pruneopts = "NUT"
-  revision = "22124b9db62818d3e2cf2a5b04633f46a07eab42"
+  revision = "52856608eab5d2703730450e3440d2765766e200"
 
 [[projects]]
   branch = "master"

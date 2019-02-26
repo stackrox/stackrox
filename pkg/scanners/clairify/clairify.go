@@ -2,6 +2,9 @@ package clairify
 
 import (
 	"fmt"
+	"net"
+	"net/http"
+	"time"
 
 	clairV1 "github.com/coreos/clair/api/v1"
 	"github.com/stackrox/clairify/client"
@@ -15,7 +18,11 @@ import (
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
-const typeString = "clairify"
+const (
+	typeString = "clairify"
+
+	clientTimeout = 2 * time.Minute
+)
 
 var (
 	log = logging.LoggerForModule()
@@ -50,7 +57,18 @@ func newScanner(protoImageIntegration *storage.ImageIntegration, activeRegistrie
 		return nil, err
 	}
 
-	client := client.New(endpoint, true)
+	dialer := &net.Dialer{
+		Timeout: 2 * time.Second,
+	}
+	var transport = &http.Transport{
+		Dial: dialer.Dial,
+	}
+	var httpClient = &http.Client{
+		Timeout:   clientTimeout,
+		Transport: transport,
+	}
+
+	client := client.NewWithClient(endpoint, true, httpClient)
 	if err := client.Ping(); err != nil {
 		return nil, err
 	}

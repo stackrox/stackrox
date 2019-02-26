@@ -164,7 +164,7 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
 
 [[constraint]]
   name = "github.com/stackrox/clairify"
-  revision = "22124b9db62818d3e2cf2a5b04633f46a07eab42"
+  revision = "52856608eab5d2703730450e3440d2765766e200"
 
 [[constraint]]
   name = "github.com/aws/aws-sdk-go"
