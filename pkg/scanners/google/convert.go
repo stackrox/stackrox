@@ -8,6 +8,10 @@ import (
 	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/grafeas"
 )
 
+const (
+	noteNamePrefix = "projects/goog-vulnz/notes/"
+)
+
 func (c *googleScanner) convertComponentFromPackageAndVersion(pv packageAndVersion) *storage.ImageScanComponent {
 	component := &storage.ImageScanComponent{
 		Name:    pv.name,
@@ -28,7 +32,9 @@ func (c *googleScanner) convertVulnsFromOccurrences(occurrences []*grafeas.Occur
 		go c.processOccurrences(o, convertChan)
 	}
 	for range occurrences {
-		vulns = append(vulns, <-convertChan)
+		if vuln := <-convertChan; vuln != nil {
+			vulns = append(vulns, vuln)
+		}
 	}
 	return vulns
 }
@@ -48,6 +54,10 @@ func (c *googleScanner) getSummary(occurrence *grafeas.Occurrence) string {
 	return "Unknown CVE description"
 }
 
+func getCVEName(occ *grafeas.Occurrence) string {
+	return strings.TrimPrefix(occ.GetNoteName(), noteNamePrefix)
+}
+
 func (c *googleScanner) convertVulnsFromOccurrence(occurrence *grafeas.Occurrence) *storage.Vulnerability {
 	vulnerability := occurrence.GetVulnerability()
 
@@ -62,8 +72,13 @@ func (c *googleScanner) convertVulnsFromOccurrence(occurrence *grafeas.Occurrenc
 		link = vulnerability.GetRelatedUrls()[0].GetUrl()
 	}
 
+	cveName := getCVEName(occurrence)
+	if cveName == "" {
+		return nil
+	}
+
 	vuln := &storage.Vulnerability{
-		Cve:     vulnerability.GetShortDescription(),
+		Cve:     cveName,
 		Link:    link,
 		Cvss:    vulnerability.GetCvssScore(),
 		Summary: c.getSummary(occurrence),

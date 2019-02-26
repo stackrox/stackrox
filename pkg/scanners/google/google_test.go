@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/registries/google"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,20 +31,34 @@ func TestGoogle(t *testing.T) {
 		},
 	}
 
+	_, creator := google.Creator()
+
+	registry, err := creator(integration)
+	require.NoError(t, err)
+
 	scanner, err := newScanner(integration)
-	if err != nil {
+	require.NoError(t, err)
+
+	var images = []string{
+		"us.gcr.io/ultra-current-825/music-nginx:latest",
+		"us.gcr.io/ultra-current-825/nginx:slim",
+		"us.gcr.io/ultra-current-825/ubuntu:latest",
+	}
+
+	for _, i := range images {
+		img := utils.GenerateImageFromString(i)
+		metadata, err := registry.Metadata(img)
 		require.NoError(t, err)
-	}
-	image := &storage.Image{
-		Id: "158d3d219e6efd9c6e25e8b25b5ad04b726880bff6c102973c07bbf5156c7181",
-		Name: &storage.ImageName{
-			Registry: "us.gcr.io",
-			Remote:   project + "/music-nginx",
-		},
-	}
-	scan, err := scanner.GetLastScan(image)
-	if err != nil {
+		img.Metadata = metadata
+		img.Id = utils.GetSHA(img)
+
+		scan, err := scanner.GetLastScan(img)
 		require.NoError(t, err)
+		require.NotEmpty(t, scan.GetComponents())
+		for _, c := range scan.GetComponents() {
+			for _, v := range c.Vulns {
+				require.NotEmpty(t, v.Cve)
+			}
+		}
 	}
-	require.NotEmpty(t, scan.GetComponents())
 }
