@@ -31,7 +31,6 @@ var (
 
 type kubernetesOrchestrator struct {
 	client    *kubernetes.Clientset
-	converter converter
 	namespace string
 
 	sensorInstanceID string
@@ -50,7 +49,6 @@ func MustCreate(sensorInstanceID string) orchestrators.Orchestrator {
 func New(sensorInstanceID string) (orchestrators.Orchestrator, error) {
 	return &kubernetesOrchestrator{
 		client:           client.MustCreateClientSet(),
-		converter:        newConverter(),
 		namespace:        namespace,
 		sensorInstanceID: sensorInstanceID,
 	}, nil
@@ -80,7 +78,7 @@ func (k *kubernetesOrchestrator) patchLabels(labels *map[string]string) {
 
 func (k *kubernetesOrchestrator) Launch(service orchestrators.SystemService) (string, error) {
 	if service.Global {
-		ds := k.converter.asDaemonSet(k.newServiceWrap(service))
+		ds := asDaemonSet(k.newServiceWrap(service))
 		k.patchLabels(&ds.Labels)
 		launchedName, err := k.launch(k.client.ExtensionsV1beta1().DaemonSets(k.namespace), ds)
 		if err != nil {
@@ -90,7 +88,7 @@ func (k *kubernetesOrchestrator) Launch(service orchestrators.SystemService) (st
 		return launchedName, nil
 	}
 
-	deploy := k.converter.asDeployment(k.newServiceWrap(service))
+	deploy := asDeployment(k.newServiceWrap(service))
 	k.patchLabels(&deploy.Labels)
 	actual, err := k.client.ExtensionsV1beta1().Deployments(k.namespace).Create(deploy)
 	if err != nil {

@@ -11,9 +11,7 @@ import (
 )
 
 const (
-	namespaceLabel    = `com.docker.stack.namespace`
-	preventLabelValue = `prevent`
-	serviceLabel      = `com.prevent.service-name`
+	appLabel = `app`
 )
 
 var (
@@ -26,13 +24,7 @@ type serviceWrap struct {
 	tolerations []v1.Toleration
 }
 
-type converter struct{}
-
-func newConverter() converter {
-	return converter{}
-}
-
-func (c converter) asDaemonSet(service *serviceWrap) *v1beta1.DaemonSet {
+func asDaemonSet(service *serviceWrap) *v1beta1.DaemonSet {
 	service.tolerations = []v1.Toleration{
 		{
 			Effect:   v1.TaintEffectNoSchedule,
@@ -44,76 +36,81 @@ func (c converter) asDaemonSet(service *serviceWrap) *v1beta1.DaemonSet {
 			Kind:       "DaemonSet",
 			APIVersion: "extensions/v1beta1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:         service.Name,
-			Namespace:    service.namespace,
-			GenerateName: service.GenerateName,
-		},
+		ObjectMeta: objectMeta(service),
 		Spec: v1beta1.DaemonSetSpec{
-			Template: c.asKubernetesPod(service),
+			Template: asKubernetesPod(service),
 		},
 	}
 }
 
-func (c converter) asDeployment(service *serviceWrap) *v1beta1.Deployment {
+func asDeployment(service *serviceWrap) *v1beta1.Deployment {
+	replicas := int32(1)
 	return &v1beta1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
 			APIVersion: "extensions/v1beta1",
 		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:         service.Name,
-			Namespace:    service.namespace,
-			GenerateName: service.GenerateName,
-		},
+		ObjectMeta: objectMeta(service),
 		Spec: v1beta1.DeploymentSpec{
-			Replicas: &[]int32{1}[0],
-			Template: c.asKubernetesPod(service),
+			Replicas: &replicas,
+			Template: asKubernetesPod(service),
 		},
 	}
 }
 
-func (c converter) asKubernetesPod(service *serviceWrap) v1.PodTemplateSpec {
+func objectMeta(service *serviceWrap) metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		Name:         service.Name,
+		Namespace:    service.namespace,
+		GenerateName: service.GenerateName,
+		Labels:       deploymentLabels(service),
+	}
+}
+
+func asKubernetesPod(service *serviceWrap) v1.PodTemplateSpec {
 	return v1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: service.namespace,
-			Labels:    c.asKubernetesLabels(service),
+			Labels:    podLabels(service),
 		},
 		Spec: v1.PodSpec{
-			Containers:         c.asContainers(service),
+			Containers:         asContainers(service),
 			ServiceAccountName: service.ServiceAccount,
 			RestartPolicy:      v1.RestartPolicyAlways,
-			Volumes:            c.asVolumes(service),
+			Volumes:            asVolumes(service),
 			HostPID:            service.HostPID,
 			Tolerations:        service.tolerations,
 		},
 	}
 }
 
-func (converter) asKubernetesLabels(service *serviceWrap) (labels map[string]string) {
+func deploymentLabels(service *serviceWrap) (labels map[string]string) {
 	labels = make(map[string]string)
 
 	name := service.Name
 	if name == "" {
 		name = service.GenerateName
 	}
+	labels[appLabel] = name
+	return
+}
 
-	labels[namespaceLabel] = preventLabelValue
-	labels[serviceLabel] = name
+func podLabels(service *serviceWrap) (labels map[string]string) {
+	labels = deploymentLabels(service)
 	for k, v := range service.ExtraPodLabels {
 		labels[k] = v
 	}
 	return
 }
 
-func (c converter) allEnvs(service *serviceWrap) []v1.EnvVar {
+func allEnvs(service *serviceWrap) []v1.EnvVar {
 	allEnvs := make([]v1.EnvVar, 0, len(service.Envs)+len(service.SpecialEnvs))
 	allEnvs = append(allEnvs, convertSpecialEnvs(service.SpecialEnvs)...)
-	allEnvs = append(allEnvs, c.asEnv(service.Envs)...)
+	allEnvs = append(allEnvs, asEnv(service.Envs)...)
 	return allEnvs
 }
 
-func (c converter) asContainers(service *serviceWrap) []v1.Container {
+func asContainers(service *serviceWrap) []v1.Container {
 	containerName := service.Name
 	if containerName == "" {
 		containerName = service.GenerateName
@@ -121,15 +118,15 @@ func (c converter) asContainers(service *serviceWrap) []v1.Container {
 	return []v1.Container{
 		{
 			Name:         containerName,
-			Env:          c.allEnvs(service),
+			Env:          allEnvs(service),
 			Image:        service.Image,
 			Command:      service.Command,
-			VolumeMounts: c.asVolumeMounts(service),
+			VolumeMounts: asVolumeMounts(service),
 		},
 	}
 }
 
-func (c converter) asEnv(envs []string) (vars []v1.EnvVar) {
+func asEnv(envs []string) (vars []v1.EnvVar) {
 	for _, env := range envs {
 		split := strings.SplitN(env, "=", 2)
 		if len(split) == 2 {

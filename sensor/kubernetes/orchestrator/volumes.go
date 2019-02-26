@@ -9,7 +9,7 @@ import (
 )
 
 // only hostmounts are currently supported.
-func (c converter) asVolumes(service *serviceWrap) (output []v1.Volume) {
+func asVolumes(service *serviceWrap) (output []v1.Volume) {
 	output = make([]v1.Volume, 0, len(service.Mounts)+len(service.Secrets))
 
 	for _, m := range service.Mounts {
@@ -21,7 +21,7 @@ func (c converter) asVolumes(service *serviceWrap) (output []v1.Volume) {
 	return
 }
 
-func (c converter) asVolumeMounts(service *serviceWrap) (output []v1.VolumeMount) {
+func asVolumeMounts(service *serviceWrap) (output []v1.VolumeMount) {
 	output = make([]v1.VolumeMount, 0, len(service.Mounts)+len(service.Secrets))
 
 	for _, m := range service.Mounts {

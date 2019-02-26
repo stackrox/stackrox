@@ -12,17 +12,6 @@
   "remediation": "Verify that privileged capabilities are required and cannot be provided with a subset of other controls.",
   "whitelists": [
     {
-      "name": "Don't alert on StackRox Prevent",
-      "deployment": {
-        "scope": {
-          "label": {
-            "key": "com.docker.stack.namespace",
-            "value": "prevent"
-          }
-        }
-      }
-    },
-    {
       "name": "Don't alert on the stackrox namespace",
       "deployment": {
         "scope": {

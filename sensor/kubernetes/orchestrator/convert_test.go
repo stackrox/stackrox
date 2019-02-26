@@ -24,8 +24,11 @@ func TestConvertDeployment(t *testing.T) {
 					Command: []string{"start", "--flag"},
 					Mounts:  []string{"/var/run/docker.sock:/var/run/docker.sock"},
 					Envs:    []string{"hello=world", "foo=bar"},
-					Name:    `test`,
-					Image:   `stackrox/test:latest`,
+					ExtraPodLabels: map[string]string{
+						"extra-pod-label": "blah",
+					},
+					Name:  `test`,
+					Image: `stackrox/test:latest`,
 				},
 				namespace: "stackrox",
 			},
@@ -37,6 +40,9 @@ func TestConvertDeployment(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      `test`,
 					Namespace: `stackrox`,
+					Labels: map[string]string{
+						"app": "test",
+					},
 				},
 				Spec: v1beta1.DeploymentSpec{
 					Replicas: &[]int32{1}[0],
@@ -44,8 +50,8 @@ func TestConvertDeployment(t *testing.T) {
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace: `stackrox`,
 							Labels: map[string]string{
-								`com.docker.stack.namespace`: `prevent`,
-								`com.prevent.service-name`:   `test`,
+								"app":             "test",
+								"extra-pod-label": "blah",
 							},
 						},
 						Spec: v1.PodSpec{
@@ -90,10 +96,8 @@ func TestConvertDeployment(t *testing.T) {
 		},
 	}
 
-	convert := &converter{}
-
 	for _, c := range cases {
-		actual := convert.asDeployment(c.input)
+		actual := asDeployment(c.input)
 
 		assert.Equal(t, c.expected, actual)
 	}
@@ -111,9 +115,12 @@ func TestCovertDaemonSet(t *testing.T) {
 				SystemService: orchestrators.SystemService{
 					Global: true,
 					Mounts: []string{"/var/run/docker.sock:/var/run/docker.sock", "/tmp:/var/lib"},
-					Envs:   []string{"hello=world", "foo=bar"},
-					Name:   `daemon`,
-					Image:  `stackrox/daemon:1.0`,
+					ExtraPodLabels: map[string]string{
+						"extra-pod-label": "blah-daemon",
+					},
+					Envs:  []string{"hello=world", "foo=bar"},
+					Name:  `daemon`,
+					Image: `stackrox/daemon:1.0`,
 				},
 				namespace: "prevent",
 			},
@@ -125,14 +132,17 @@ func TestCovertDaemonSet(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      `daemon`,
 					Namespace: `prevent`,
+					Labels: map[string]string{
+						"app": "daemon",
+					},
 				},
 				Spec: v1beta1.DaemonSetSpec{
 					Template: v1.PodTemplateSpec{
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace: `prevent`,
 							Labels: map[string]string{
-								`com.docker.stack.namespace`: `prevent`,
-								`com.prevent.service-name`:   `daemon`,
+								"app":             "daemon",
+								"extra-pod-label": "blah-daemon",
 							},
 						},
 						Spec: v1.PodSpec{
@@ -194,10 +204,8 @@ func TestCovertDaemonSet(t *testing.T) {
 		},
 	}
 
-	convert := &converter{}
-
 	for _, c := range cases {
-		actual := convert.asDaemonSet(c.input)
+		actual := asDaemonSet(c.input)
 
 		assert.Equal(t, c.expected, actual)
 	}
