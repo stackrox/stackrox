@@ -39,6 +39,13 @@ func (e *enricherImpl) enrichWithMetadata(image *storage.Image) bool {
 	return false
 }
 
+func getRef(image *storage.Image) string {
+	if image.GetId() != "" {
+		return image.GetId()
+	}
+	return image.GetName().GetFullName()
+}
+
 func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry registryTypes.ImageRegistry) bool {
 	if !registry.Global() {
 		return false
@@ -47,10 +54,13 @@ func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry re
 		return false
 	}
 
-	if metadataValue := e.metadataCache.Get(image.GetId()); metadataValue != nil {
+	ref := getRef(image)
+	if metadataValue := e.metadataCache.Get(ref); metadataValue != nil {
+		e.metrics.IncrementMetadataCacheHit()
 		image.Metadata = metadataValue.(*storage.ImageMetadata)
 		return true
 	}
+	e.metrics.IncrementMetadataCacheMiss()
 
 	// Wait until limiter allows entrance
 	_ = e.metadataLimiter.Wait(context.Background())
@@ -60,7 +70,9 @@ func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry re
 		return false
 	}
 	image.Metadata = metadata
-	e.metadataCache.Add(image.GetId(), metadata)
+
+	e.metadataCache.Add(ref, metadata)
+
 	return true
 }
 
@@ -80,10 +92,14 @@ func (e *enricherImpl) enrichImageWithScanner(image *storage.Image, scanner scan
 	if !scanner.Match(image) {
 		return false
 	}
-	if scanValue := e.scanCache.Get(image.GetId()); scanValue != nil {
+	ref := getRef(image)
+	if scanValue := e.scanCache.Get(ref); scanValue != nil {
+		e.metrics.IncrementScanCacheHit()
 		image.Scan = scanValue.(*storage.ImageScan)
 		return true
 	}
+	e.metrics.IncrementScanCacheMiss()
+
 	// Wait until limiter allows entrance
 	_ = e.scanLimiter.Wait(context.Background())
 	scan, err := scanner.GetLastScan(image)
@@ -92,6 +108,6 @@ func (e *enricherImpl) enrichImageWithScanner(image *storage.Image, scanner scan
 		return false
 	}
 	image.Scan = scan
-	e.scanCache.Add(image.GetId(), scan)
+	e.scanCache.Add(ref, scan)
 	return true
 }
