@@ -7,6 +7,8 @@ import URLService from 'modules/URLService';
 import pageTypes from 'constants/pageTypes';
 import contextTypes from 'constants/contextTypes';
 import cloneDeep from 'lodash/cloneDeep';
+
+import AppLink from 'Components/AppLink';
 import Widget from 'Components/Widget';
 import Sunburst from 'Components/visuals/Sunburst';
 import Query from 'Components/AppQuery';
@@ -155,6 +157,7 @@ const ComplianceByStandard = ({ type, entityName, params, className }) => {
             {({ loading, data, networkStatus }) => {
                 let contents = <Loader />;
                 const headerText = `${standardLabels[type]} Compliance`;
+                let viewStandardLink = null;
                 if (!loading && data && networkStatus === networkStatuses.READY) {
                     const { sunburstData, totalPassing } = processSunburstData(data, type);
                     const link = createURLLink(params, type, entityName);
@@ -167,6 +170,24 @@ const ComplianceByStandard = ({ type, entityName, params, className }) => {
                             link: link.url
                         }
                     ];
+
+                    viewStandardLink = (
+                        <AppLink
+                            context={contextTypes.COMPLIANCE}
+                            pageType={pageTypes.LIST}
+                            params={{
+                                entityType: type,
+                                query: {
+                                    groupBy: 'CATEGORY'
+                                }
+                            }}
+                            className="no-underline"
+                        >
+                            <button className="btn-sm btn-base" type="button">
+                                View Standard
+                            </button>
+                        </AppLink>
+                    );
 
                     if (!sunburstData.length) {
                         contents = (
@@ -189,7 +210,11 @@ const ComplianceByStandard = ({ type, entityName, params, className }) => {
                     }
                 }
                 return (
-                    <Widget className={`s-2 ${className}`} header={headerText}>
+                    <Widget
+                        className={`s-2 ${className}`}
+                        header={headerText}
+                        headerComponents={viewStandardLink}
+                    >
                         {contents}
                     </Widget>
                 );
