@@ -132,12 +132,6 @@ func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error
 		return nil, fmt.Errorf("Failed to get the manifest digest : %s", err)
 	}
 
-	// If the image ID is empty, then populate with the digest from the manifest
-	// This only applies in a situation with CI Client
-	if image.GetId() == "" {
-		image.Id = digest.String()
-	}
-
 	switch manifestType {
 	case manifestV1.MediaTypeManifest:
 		return r.HandleV1Manifest(remote, digest.String())

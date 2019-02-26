@@ -9,6 +9,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	quayRegistry "github.com/stackrox/rox/pkg/registries/quay"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
@@ -112,7 +113,7 @@ func (q *quay) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
 	values := url.Values{}
 	values.Add("features", "true")
 	values.Add("vulnerabilities", "true")
-	digest := imageTypes.NewDigest(image.GetId()).Digest()
+	digest := imageTypes.NewDigest(utils.GetSHA(image)).Digest()
 	body, status, err := q.sendRequest("GET", values, "api", "v1", "repository", image.GetName().GetRemote(), "manifest", digest, "security")
 	if err != nil {
 		return nil, err

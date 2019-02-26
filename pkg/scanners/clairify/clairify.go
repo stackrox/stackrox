@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/clairify/types"
 	"github.com/stackrox/rox/generated/storage"
 	clairConv "github.com/stackrox/rox/pkg/clair"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/registries"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
@@ -90,24 +91,12 @@ func v1ImageToClairifyImage(i *storage.Image) *types.Image {
 	}
 }
 
-func (c *clairify) getScanBySHA(sha string) (*clairV1.LayerEnvelope, error) {
-	return c.client.RetrieveImageDataBySHA(sha, true, true)
-}
-
 // Try many ways to retrieve a sha
 func (c *clairify) getScan(image *storage.Image) (*clairV1.LayerEnvelope, error) {
-	if env, err := c.getScanBySHA(image.GetId()); err == nil {
+	if env, err := c.client.RetrieveImageDataBySHA(utils.GetSHA(image), true, true); err == nil {
 		return env, nil
 	}
-	switch {
-	case image.GetMetadata().GetV2().GetDigest() != "":
-		if env, err := c.getScanBySHA(image.GetMetadata().GetV2().GetDigest()); err == nil {
-			return env, nil
-		}
-		fallthrough
-	default:
-		return c.client.RetrieveImageDataByName(v1ImageToClairifyImage(image), true, true)
-	}
+	return c.client.RetrieveImageDataByName(v1ImageToClairifyImage(image), true, true)
 }
 
 // GetLastScan retrieves the most recent scan

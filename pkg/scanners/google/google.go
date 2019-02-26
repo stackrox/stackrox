@@ -10,6 +10,7 @@ import (
 	"cloud.google.com/go/containeranalysis/apiv1beta1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -143,7 +144,7 @@ func (c *googleScanner) getOccurrencesForImage(image *storage.Image) ([]*grafeas
 }
 
 func getResourceURL(image *storage.Image) string {
-	return fmt.Sprintf("https://%s/%s@%s", image.GetName().GetRegistry(), image.GetName().GetRemote(), image.GetId())
+	return fmt.Sprintf("https://%s/%s@%s", image.GetName().GetRegistry(), image.GetName().GetRemote(), utils.GetSHA(image))
 }
 
 func trimDigits(r rune) bool {

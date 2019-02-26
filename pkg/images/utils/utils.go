@@ -54,6 +54,20 @@ func GenerateImageFromStringWithError(imageStr string) (*storage.Image, error) {
 	return image, nil
 }
 
+// GetSHA returns the SHA of the image if it exists
+func GetSHA(img *storage.Image) string {
+	if img.GetId() != "" {
+		return img.GetId()
+	}
+	if d := img.GetMetadata().GetV2().GetDigest(); d != "" {
+		return d
+	}
+	if d := img.GetMetadata().GetV1().GetDigest(); d != "" {
+		return d
+	}
+	return ""
+}
+
 // Reference returns what to use as the reference when talking to registries
 func Reference(img *storage.Image) string {
 	// If the image id is empty, then use the tag as the reference
