@@ -116,10 +116,11 @@ func (s *Sensor) Start() {
 
 	s.profilingServer = s.startProfilingServer()
 
+	var centralReachable concurrency.Flag
 	customRoutes = append(customRoutes, routes.CustomRoute{
 		Route:         "/admissioncontroller",
 		Authorizer:    allow.Anonymous(),
-		ServerHandler: admissioncontroller.NewHandler(s.centralConnection),
+		ServerHandler: admissioncontroller.NewHandler(s.centralConnection, &centralReachable),
 		Compression:   false,
 	})
 
@@ -153,6 +154,7 @@ func (s *Sensor) Start() {
 
 	// Wait for central so we can initiate our GRPC connection to send sensor events.
 	s.waitUntilCentralIsReady(s.centralConnection)
+	centralReachable.Set(true)
 
 	// If everything is brought up correctly, start the sensor.
 	if s.listener != nil && s.enforcer != nil {

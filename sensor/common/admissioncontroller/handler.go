@@ -10,6 +10,7 @@ import (
 
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
@@ -25,7 +26,9 @@ import (
 )
 
 const (
-	timeout = 30 * time.Second
+	// EKS uses a 30s timeout for all API requests, so make sure we return before that expires, as otherwise the entire
+	// request will be canceled.
+	timeout = 27 * time.Second
 
 	// This purposefully leaves a newline at the top for formatting when using kubectl
 	kubectlTemplate = `
@@ -57,14 +60,16 @@ var (
 )
 
 // NewHandler returns a handler that proxies admission controllers to Central
-func NewHandler(conn *grpc.ClientConn) http.Handler {
+func NewHandler(conn *grpc.ClientConn, centralReachable *concurrency.Flag) http.Handler {
 	return &handlerImpl{
-		client: v1.NewDetectionServiceClient(conn),
+		client:           v1.NewDetectionServiceClient(conn),
+		centralReachable: centralReachable,
 	}
 }
 
 type handlerImpl struct {
-	client v1.DetectionServiceClient
+	client           v1.DetectionServiceClient
+	centralReachable *concurrency.Flag
 }
 
 func admissionPass(w http.ResponseWriter, id types.UID) {
@@ -142,6 +147,11 @@ func (s *handlerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !s.centralReachable.Get() {
+		http.Error(w, "Connection to central has not yet been established. Cannot handle admission controller requests", http.StatusServiceUnavailable)
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	var admissionReview admission.AdmissionReview
 	if err := decoder.Decode(&admissionReview); err != nil {
@@ -168,7 +178,7 @@ func (s *handlerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
 	resp, err := s.client.DetectDeployTime(ctx, &v1.DeployDetectionRequest{Resource: &v1.DeployDetectionRequest_Deployment{Deployment: deployment}})
