@@ -35,7 +35,7 @@ type Store struct {
 	// callbackContainerIDSet is a set of container ID's to be resolved
 	callbackContainerIDSet set.StringSet
 	// callbackChannel is a channel to send container metadata upon resolution
-	callbackChannel chan ContainerMetadata
+	callbackChannel chan<- ContainerMetadata
 
 	mutex sync.RWMutex
 }
@@ -181,6 +181,8 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 		ipMap[deploymentID] = struct{}{}
 	}
 
+	var mdsForCallback []ContainerMetadata
+
 	for containerID, metadata := range data.containerIDs {
 		if reverseContainerIDs == nil {
 			reverseContainerIDs = make(map[string]struct{})
@@ -189,21 +191,40 @@ func (e *Store) applySingleNoLock(deploymentID string, data EntityData) {
 		reverseContainerIDs[containerID] = struct{}{}
 		e.containerIDMap[containerID] = metadata
 		if found := e.callbackContainerIDSet.Contains(containerID); found {
-			e.callbackChannel <- metadata
+			mdsForCallback = append(mdsForCallback, metadata)
 			e.callbackContainerIDSet.Remove(containerID)
 		}
 	}
+
+	if e.callbackChannel != nil && len(mdsForCallback) > 0 {
+		go sendMetadataCallbacks(e.callbackChannel, mdsForCallback)
+	}
+}
+
+func sendMetadataCallbacks(callbackC chan<- ContainerMetadata, mds []ContainerMetadata) {
+	for _, md := range mds {
+		callbackC <- md
+	}
+}
+
+// RegisterContainerMetadataCallbackChannel registers the given channel as the callback channel for container metadata.
+// Any previously registered callback channel will get overwritten by repeatedly calling this method. The previous
+// callback channel (if any) is returned by this function.
+func (e *Store) RegisterContainerMetadataCallbackChannel(callbackChan chan<- ContainerMetadata) chan<- ContainerMetadata {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+
+	oldChan := e.callbackChannel
+	e.callbackChannel = callbackChan
+	return oldChan
 }
 
 // AddCallbackForContainerMetadata adds a channel to send the container metadata when available.
-func (e *Store) AddCallbackForContainerMetadata(containerID string, sendChan chan ContainerMetadata) {
+func (e *Store) AddCallbackForContainerMetadata(containerID string) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
 	e.callbackContainerIDSet.Add(containerID)
-	if e.callbackChannel == nil {
-		e.callbackChannel = sendChan
-	}
 }
 
 // LookupResult contains the result of a lookup operation.

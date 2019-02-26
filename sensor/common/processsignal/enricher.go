@@ -3,7 +3,7 @@ package processsignal
 import (
 	"time"
 
-	"github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/metrics"
@@ -15,10 +15,10 @@ const (
 )
 
 type enricher struct {
-	lru             *lru.Cache
-	clusterEntities *clusterentities.Store
-	indicators      chan *storage.ProcessIndicator
-	sendChan        chan clusterentities.ContainerMetadata
+	lru                  *lru.Cache
+	clusterEntities      *clusterentities.Store
+	indicators           chan *storage.ProcessIndicator
+	metadataCallbackChan <-chan clusterentities.ContainerMetadata
 }
 
 func newEnricher(clusterEntities *clusterentities.Store, indicators chan *storage.ProcessIndicator) *enricher {
@@ -29,11 +29,16 @@ func newEnricher(clusterEntities *clusterentities.Store, indicators chan *storag
 	if err != nil {
 		panic(err)
 	}
+
+	callbackChan := make(chan clusterentities.ContainerMetadata)
+	if oldC := clusterEntities.RegisterContainerMetadataCallbackChannel(callbackChan); oldC != nil {
+		logger.Panicf("Multiple container metadata callback channels registered on cluster entities store!")
+	}
 	e := &enricher{
-		lru:             lru,
-		clusterEntities: clusterEntities,
-		indicators:      indicators,
-		sendChan:        make(chan clusterentities.ContainerMetadata),
+		lru:                  lru,
+		clusterEntities:      clusterEntities,
+		indicators:           indicators,
+		metadataCallbackChan: callbackChan,
 	}
 	go e.processLoop()
 	return e
@@ -50,7 +55,7 @@ func (e *enricher) Add(indicator *storage.ProcessIndicator) {
 	}
 	indicatorSlice = append(indicatorSlice, indicator)
 	e.lru.Add(indicator.GetSignal().GetContainerId(), indicatorSlice)
-	e.clusterEntities.AddCallbackForContainerMetadata(indicator.GetSignal().GetContainerId(), e.sendChan)
+	e.clusterEntities.AddCallbackForContainerMetadata(indicator.GetSignal().GetContainerId())
 	metrics.SetProcessEnrichmentCacheSize(float64(e.lru.Len()))
 }
 
@@ -66,7 +71,7 @@ func (e *enricher) processLoop() {
 				}
 			}
 		// call backs
-		case metadata := <-e.sendChan:
+		case metadata := <-e.metadataCallbackChan:
 			e.scanAndEnrich(metadata)
 		}
 	}
