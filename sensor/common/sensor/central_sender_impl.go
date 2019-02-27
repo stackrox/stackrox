@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/listeners"
+	"github.com/stackrox/rox/sensor/common/clusterstatus"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	"github.com/stackrox/rox/sensor/common/deduper"
 	"github.com/stackrox/rox/sensor/common/metrics"
@@ -21,6 +22,7 @@ type centralSenderImpl struct {
 	networkConnManager            networkConnManager.Manager
 	scrapeCommandHandler          compliance.CommandHandler
 	networkPoliciesCommandHandler networkpolicies.CommandHandler
+	clusterStatusUpdater          clusterstatus.Updater
 
 	stopC    concurrency.ErrorSignal
 	stoppedC concurrency.ErrorSignal
@@ -100,6 +102,16 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 			msg = &central.MsgFromSensor{
 				Msg: &central.MsgFromSensor_NetworkPoliciesResponse{
 					NetworkPoliciesResponse: networkPolicyCommandResponse,
+				},
+			}
+		case clusterStatusUpdate, ok := <-s.clusterStatusUpdater.Updates():
+			if !ok {
+				s.stopC.SignalWithError(errors.New("cluster status update handler closed"))
+				return
+			}
+			msg = &central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_ClusterStatusUpdate{
+					ClusterStatusUpdate: clusterStatusUpdate,
 				},
 			}
 		case <-s.stopC.Done():

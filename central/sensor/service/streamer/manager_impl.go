@@ -20,7 +20,7 @@ func (m *managerImpl) CreateStreamer(clusterID string, pf pipeline.Factory) (Str
 		return nil, fmt.Errorf("there already is an active connection for cluster %s", clusterID)
 	}
 
-	pl, err := pf.GetPipeline(clusterID)
+	pl, err := pf.PipelineForCluster(clusterID)
 	if err != nil {
 		return nil, err
 	}

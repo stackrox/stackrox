@@ -50,4 +50,10 @@ message Cluster {
     ProviderMetadata          provider_metadata           = 12;
     bool                      admission_controller        = 13;
     OrchestratorMetadata      orchestrator_metadata       = 14;
+
+    ClusterStatus             status                      = 15;
+}
+
+message ClusterStatus {
+    string sensor_version = 1;
 }

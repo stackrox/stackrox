@@ -29,6 +29,10 @@ type datastoreImpl struct {
 	sm  streamer.Manager
 }
 
+func (ds *datastoreImpl) UpdateClusterStatus(id string, status *storage.ClusterStatus) error {
+	return ds.storage.UpdateClusterStatus(id, status)
+}
+
 func (ds *datastoreImpl) buildIndex() error {
 	clusters, err := ds.storage.GetClusters()
 	if err != nil {

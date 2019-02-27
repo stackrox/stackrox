@@ -42,11 +42,11 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(msg *central.MsgFromSensor, _ pipeline.MsgInjector) error {
+func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ pipeline.MsgInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ProviderMetadata)
 
 	event := msg.GetEvent()
-	return s.clusters.UpdateOrchestratorMetadata(event.GetClusterId(), event.GetOrchestratorMetadata())
+	return s.clusters.UpdateOrchestratorMetadata(clusterID, event.GetOrchestratorMetadata())
 }
 
 func (s *pipelineImpl) OnFinish() {}

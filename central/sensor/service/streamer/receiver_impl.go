@@ -46,9 +46,6 @@ func (s *receiverImpl) receiveToChan(server central.SensorService_CommunicateSer
 			s.stoppedC.SignalWithError(err)
 			return
 		}
-		if msg.GetEvent() != nil {
-			msg.GetEvent().ClusterId = s.clusterID
-		}
 		if !s.writeToOutput(msg) {
 			log.Debugf("message received from sensor dropped: %s", proto.MarshalTextString(msg))
 		}

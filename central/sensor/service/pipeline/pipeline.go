@@ -4,23 +4,31 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 )
 
-// Pipeline represents the processing applied to a SensorEvent to produce a response.
-//go:generate mockgen-wrapper Pipeline
-type Pipeline interface {
-	Run(msg *central.MsgFromSensor, injector MsgInjector) error
+// BasePipeline represents methods that are shared between Pipelines and fragments of pipelines.
+type BasePipeline interface {
 	OnFinish()
 }
 
-// Factory returns a Pipeline for the given cluster.
+// ClusterPipeline processes a message received from a given cluster.
+//go:generate mockgen-wrapper ClusterPipeline
+type ClusterPipeline interface {
+	Run(msg *central.MsgFromSensor, injector MsgInjector) error
+	BasePipeline
+}
+
+// Factory returns a ClusterPipeline for the given cluster.
 type Factory interface {
-	GetPipeline(clusterID string) (Pipeline, error)
+	PipelineForCluster(clusterID string) (ClusterPipeline, error)
 }
 
 // Fragment is a component of a Pipeline that only processes specific messages.
+// Fragments can be either local or global across clusters;
+// they are passed clusterIDs along with every event, which they are free to use.
 //go:generate mockgen-wrapper Fragment
 type Fragment interface {
-	Pipeline
+	BasePipeline
 	Match(msg *central.MsgFromSensor) bool
+	Run(clusterID string, msg *central.MsgFromSensor, injector MsgInjector) error
 	Reconcile(clusterID string) error
 }
 

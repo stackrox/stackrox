@@ -79,11 +79,10 @@ func (p *pipelineImpl) processRemove(store store.Store, n *storage.Node) error {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (p *pipelineImpl) Run(msg *central.MsgFromSensor, _ pipeline.MsgInjector) error {
+func (p *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ pipeline.MsgInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.Node)
 
 	event := msg.GetEvent()
-	clusterID := event.GetClusterId()
 
 	store, err := p.nodeStore.GetClusterNodeStore(clusterID)
 	if err != nil {

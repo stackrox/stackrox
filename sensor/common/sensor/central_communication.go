@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
 	"github.com/stackrox/rox/pkg/listeners"
+	"github.com/stackrox/rox/sensor/common/clusterstatus"
 	complianceLogic "github.com/stackrox/rox/sensor/common/compliance"
 	networkConnManager "github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/networkpolicies"
@@ -26,10 +27,11 @@ func NewCentralCommunication(
 	listener listeners.Listener,
 	signalService signal.Service,
 	networkConnManager networkConnManager.Manager,
-	networkPoliciesCommandHandler networkpolicies.CommandHandler) CentralCommunication {
+	networkPoliciesCommandHandler networkpolicies.CommandHandler,
+	clusterStatusUpdater clusterstatus.Updater) CentralCommunication {
 	return &centralCommunicationImpl{
 		receiver: NewCentralReceiver(scrapeCommandHandler, enforcer, networkPoliciesCommandHandler),
-		sender:   NewCentralSender(listener, signalService, networkConnManager, scrapeCommandHandler, networkPoliciesCommandHandler),
+		sender:   NewCentralSender(listener, signalService, networkConnManager, scrapeCommandHandler, networkPoliciesCommandHandler, clusterStatusUpdater),
 
 		stopC:    concurrency.NewErrorSignal(),
 		stoppedC: concurrency.NewErrorSignal(),

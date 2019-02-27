@@ -12,7 +12,7 @@ import (
 var log = logging.LoggerForModule()
 
 type channeledImpl struct {
-	pl pipeline.Pipeline
+	pl pipeline.ClusterPipeline
 
 	stopC    concurrency.ErrorSignal
 	stoppedC concurrency.ErrorSignal

@@ -48,7 +48,7 @@ func (b *storeImpl) GetClusters() ([]*storage.Cluster, error) {
 			if err := proto.Unmarshal(v, &cluster); err != nil {
 				return err
 			}
-			b.populateProtoContactTime(tx, &cluster)
+			b.populateStatusFields(tx, &cluster)
 			clusters = append(clusters, &cluster)
 			return nil
 		})
@@ -166,17 +166,30 @@ func (b *storeImpl) getCluster(tx *bolt.Tx, id string, bucket *bolt.Bucket) (clu
 	if err != nil {
 		return
 	}
-	b.populateProtoContactTime(tx, cluster)
+	b.populateStatusFields(tx, cluster)
 	return
 }
 
-func (b *storeImpl) populateProtoContactTime(tx *bolt.Tx, cluster *storage.Cluster) {
+func (b *storeImpl) populateStatusFields(tx *bolt.Tx, cluster *storage.Cluster) {
+	b.populateClusterContactTime(tx, cluster)
+	b.populateClusterStatus(tx, cluster)
+}
+
+func (b *storeImpl) populateClusterContactTime(tx *bolt.Tx, cluster *storage.Cluster) {
 	t, err := b.getClusterContactTime(tx, cluster.GetId())
 	if err != nil {
 		log.Warnf("Could not get cluster last-contact time for '%s': %s", cluster.GetId(), err)
 		return
 	}
 	cluster.LastContact = t
+}
+
+func (b *storeImpl) populateClusterStatus(tx *bolt.Tx, cluster *storage.Cluster) {
+	status, err := b.getClusterStatus(tx, cluster.GetId())
+	if err != nil {
+		log.Warnf("Could not get cluster status for %q: %v", cluster.GetId(), err)
+	}
+	cluster.Status = status
 }
 
 func (b *storeImpl) getClusterContactTime(tx *bolt.Tx, id string) (*timestamp.Timestamp, error) {
@@ -191,6 +204,20 @@ func (b *storeImpl) getClusterContactTime(tx *bolt.Tx, id string) (*timestamp.Ti
 		return nil, err
 	}
 	return t, nil
+}
+
+func (b *storeImpl) getClusterStatus(tx *bolt.Tx, id string) (*storage.ClusterStatus, error) {
+	bucket := tx.Bucket(clusterStatusBucket)
+	val := bucket.Get([]byte(id))
+	if val == nil {
+		return nil, nil
+	}
+	status := new(storage.ClusterStatus)
+	err := proto.Unmarshal(val, status)
+	if err != nil {
+		return nil, err
+	}
+	return status, nil
 }
 
 // UpdateProviderMetadata updates the cluster with cloud provider metadata
@@ -224,5 +251,17 @@ func (b *storeImpl) UpdateOrchestratorMetadata(id string, metadata *storage.Orch
 		}
 		cluster.OrchestratorMetadata = metadata
 		return b.updateCluster(tx, cluster)
+	})
+}
+
+func (b *storeImpl) UpdateClusterStatus(id string, status *storage.ClusterStatus) error {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "ClusterStatus")
+	bytes, err := proto.Marshal(status)
+	if err != nil {
+		return fmt.Errorf("marshaling cluster status: %v", err)
+	}
+	return b.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(clusterStatusBucket)
+		return bucket.Put([]byte(id), bytes)
 	})
 }

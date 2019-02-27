@@ -138,6 +138,18 @@ func (mr *MockDataStoreMockRecorder) UpdateClusterContactTime(arg0, arg1 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterContactTime", reflect.TypeOf((*MockDataStore)(nil).UpdateClusterContactTime), arg0, arg1)
 }
 
+// UpdateClusterStatus mocks base method
+func (m *MockDataStore) UpdateClusterStatus(arg0 string, arg1 *storage.ClusterStatus) error {
+	ret := m.ctrl.Call(m, "UpdateClusterStatus", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateClusterStatus indicates an expected call of UpdateClusterStatus
+func (mr *MockDataStoreMockRecorder) UpdateClusterStatus(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterStatus", reflect.TypeOf((*MockDataStore)(nil).UpdateClusterStatus), arg0, arg1)
+}
+
 // UpdateOrchestratorMetadata mocks base method
 func (m *MockDataStore) UpdateOrchestratorMetadata(arg0 string, arg1 *storage.OrchestratorMetadata) error {
 	ret := m.ctrl.Call(m, "UpdateOrchestratorMetadata", arg0, arg1)

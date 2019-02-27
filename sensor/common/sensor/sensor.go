@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
+	"github.com/stackrox/rox/sensor/common/clusterstatus"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	networkConnManager "github.com/stackrox/rox/sensor/common/networkflow/manager"
 	networkFlowService "github.com/stackrox/rox/sensor/common/networkflow/service"
@@ -61,6 +62,7 @@ type Sensor struct {
 	networkConnManager            networkConnManager.Manager
 	commandHandler                compliance.CommandHandler
 	networkPoliciesCommandHandler networkpolicies.CommandHandler
+	clusterStatusUpdater          clusterstatus.Updater
 
 	server          pkgGRPC.API
 	profilingServer *http.Server
@@ -72,7 +74,8 @@ type Sensor struct {
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
-func NewSensor(l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orchestrator, n networkConnManager.Manager, m roxmetadata.Metadata, networkPoliciesCommandHandler networkpolicies.CommandHandler) *Sensor {
+func NewSensor(l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orchestrator, n networkConnManager.Manager,
+	m roxmetadata.Metadata, networkPoliciesCommandHandler networkpolicies.CommandHandler, clusterStatusUpdater clusterstatus.Updater) *Sensor {
 	return &Sensor{
 		clusterID:          env.ClusterID.Setting(),
 		centralEndpoint:    env.CentralEndpoint.Setting(),
@@ -84,6 +87,7 @@ func NewSensor(l listeners.Listener, e enforcers.Enforcer, o orchestrators.Orche
 		networkConnManager:            n,
 		commandHandler:                compliance.NewCommandHandler(o, m),
 		networkPoliciesCommandHandler: networkPoliciesCommandHandler,
+		clusterStatusUpdater:          clusterStatusUpdater,
 
 		stoppedSig: concurrency.NewErrorSignal(),
 	}
@@ -101,6 +105,10 @@ func (s *Sensor) startProfilingServer() *http.Server {
 		}
 	}()
 	return srv
+}
+
+type startable interface {
+	Start()
 }
 
 // Start registers APIs and starts background tasks.
@@ -148,8 +156,11 @@ func (s *Sensor) Start() {
 	if s.commandHandler != nil {
 		s.commandHandler.Start(compliance.Singleton().Output())
 	}
-	if s.networkPoliciesCommandHandler != nil {
-		s.networkPoliciesCommandHandler.Start()
+
+	for _, toStart := range []startable{s.networkPoliciesCommandHandler, s.clusterStatusUpdater} {
+		if toStart != nil {
+			toStart.Start()
+		}
 	}
 
 	// Wait for central so we can initiate our GRPC connection to send sensor events.
@@ -168,6 +179,10 @@ func (s *Sensor) Start() {
 	}
 }
 
+type stoppable interface {
+	Stop()
+}
+
 // Stop shuts down background tasks.
 func (s *Sensor) Stop() {
 	// Stop communication with central.
@@ -175,16 +190,13 @@ func (s *Sensor) Stop() {
 		s.centralCommunication.Stop(nil)
 	}
 
-	// Stop all of our listeners.
-	if s.listener != nil {
-		s.listener.Stop()
+	for _, toStop := range []stoppable{s.listener, s.enforcer, s.networkConnManager,
+		s.networkPoliciesCommandHandler, s.clusterStatusUpdater} {
+		if toStop != nil {
+			toStop.Stop()
+		}
 	}
-	if s.enforcer != nil {
-		s.enforcer.Stop()
-	}
-	if s.networkConnManager != nil {
-		s.networkConnManager.Stop()
-	}
+
 	if s.profilingServer != nil {
 		if err := s.profilingServer.Close(); err != nil {
 			log.Errorf("Error closing profiling server: %v", err)
@@ -192,9 +204,6 @@ func (s *Sensor) Stop() {
 	}
 	if s.commandHandler != nil {
 		s.commandHandler.Stop(nil)
-	}
-	if s.networkPoliciesCommandHandler != nil {
-		s.networkPoliciesCommandHandler.Stop()
 	}
 
 	if s.orchestrator != nil {
@@ -235,7 +244,8 @@ func pingWithTimeout(svc v1.PingServiceClient) (err error) {
 }
 
 func (s *Sensor) communicationWithCentral() {
-	s.centralCommunication = NewCentralCommunication(s.commandHandler, s.enforcer, s.listener, signalService.Singleton(), s.networkConnManager, s.networkPoliciesCommandHandler)
+	s.centralCommunication = NewCentralCommunication(s.commandHandler, s.enforcer, s.listener, signalService.Singleton(),
+		s.networkConnManager, s.networkPoliciesCommandHandler, s.clusterStatusUpdater)
 	s.centralCommunication.Start(s.centralConnection)
 
 	if err := s.centralCommunication.Stopped().Wait(); err != nil {

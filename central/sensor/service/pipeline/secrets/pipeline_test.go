@@ -47,15 +47,14 @@ func (suite *PipelineTestSuite) TestRun() {
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
-				Id:        "secretid",
-				ClusterId: "clusterid",
-				Action:    central.ResourceAction_CREATE_RESOURCE,
+				Id:     "secretid",
+				Action: central.ResourceAction_CREATE_RESOURCE,
 				Resource: &central.SensorEvent_Secret{
 					Secret: secret,
 				},
 			},
 		},
 	}
-	err := pipeline.Run(msg, nil)
+	err := pipeline.Run("clusterid", msg, nil)
 	suite.NoError(err)
 }

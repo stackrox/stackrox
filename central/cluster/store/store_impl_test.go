@@ -100,6 +100,23 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 	suite.NoError(err)
 	suite.Equal(len(clusters), count)
 
+	status := storage.ClusterStatus{SensorVersion: "2.4.16"}
+	suite.NoError(suite.store.UpdateClusterStatus(clusters[0].GetId(), &status))
+	cluster, exists, err := suite.store.GetCluster(clusters[0].GetId())
+	suite.True(exists)
+	suite.Equal(&status, cluster.GetStatus())
+
+	gotClusters, err := suite.store.GetClusters()
+	suite.NoError(err)
+	var found bool
+	for _, gotCluster := range gotClusters {
+		if gotCluster.GetId() == clusters[0].GetId() {
+			suite.Equal(&status, gotCluster.GetStatus())
+			found = true
+		}
+	}
+	suite.True(found)
+
 	// Test Remove
 	for _, b := range clusters {
 		suite.NoError(suite.store.RemoveCluster(b.GetId()))

@@ -15,8 +15,8 @@ import (
 
 var log = logging.LoggerForModule()
 
-// NewPipeline returns a new instance of a Pipeline that handles all event types.
-func NewPipeline(clusterID string, fragments ...pipeline.Fragment) pipeline.Pipeline {
+// NewClusterPipeline returns a new instance of a ClusterPipeline that handles all event types.
+func NewClusterPipeline(clusterID string, fragments ...pipeline.Fragment) pipeline.ClusterPipeline {
 	return &pipelineImpl{
 		fragments: fragments,
 		clusterID: clusterID,
@@ -54,7 +54,7 @@ func (s *pipelineImpl) Run(msg *central.MsgFromSensor, injector pipeline.MsgInje
 		return fmt.Errorf("no pipeline present to process message: %s", proto.MarshalTextString(msg))
 	}
 	defer metrics.SetSensorEventRunDuration(time.Now(), common.GetMessageType(msg))
-	return matchingFragment.Run(msg, injector)
+	return matchingFragment.Run(s.clusterID, msg, injector)
 }
 
 func (s *pipelineImpl) OnFinish() {

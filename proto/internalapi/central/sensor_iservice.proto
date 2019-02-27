@@ -2,6 +2,7 @@ syntax = "proto3";
 
 option go_package = "central";
 
+import "internalapi/central/cluster_status.proto";
 import "internalapi/central/network_flow.proto";
 import "internalapi/central/sensor_events.proto";
 
@@ -13,6 +14,7 @@ message MsgFromSensor {
         NetworkFlowUpdate            network_flow_update             = 2;
         ScrapeUpdate                 scrape_update                   = 3;
         NetworkPoliciesResponse      network_policies_response       = 4;
+        ClusterStatusUpdate          cluster_status_update           = 5;
     }
 }
 

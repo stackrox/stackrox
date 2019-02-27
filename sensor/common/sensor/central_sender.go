@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/listeners"
+	"github.com/stackrox/rox/sensor/common/clusterstatus"
 	"github.com/stackrox/rox/sensor/common/compliance"
 	networkConnManager "github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/networkpolicies"
@@ -23,13 +24,15 @@ func NewCentralSender(listener listeners.Listener,
 	signalService signal.Service,
 	networkConnManager networkConnManager.Manager,
 	scrapeCommandHandler compliance.CommandHandler,
-	networkPoliciesCommandHandler networkpolicies.CommandHandler) CentralSender {
+	networkPoliciesCommandHandler networkpolicies.CommandHandler,
+	clusterStatusUpdater clusterstatus.Updater) CentralSender {
 	return &centralSenderImpl{
 		listener:                      listener,
 		signalService:                 signalService,
 		networkConnManager:            networkConnManager,
 		scrapeCommandHandler:          scrapeCommandHandler,
 		networkPoliciesCommandHandler: networkPoliciesCommandHandler,
+		clusterStatusUpdater:          clusterStatusUpdater,
 
 		stopC:    concurrency.NewErrorSignal(),
 		stoppedC: concurrency.NewErrorSignal(),

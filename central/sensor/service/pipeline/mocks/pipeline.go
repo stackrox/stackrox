@@ -69,13 +69,13 @@ func (mr *MockFragmentMockRecorder) Reconcile(arg0 interface{}) *gomock.Call {
 }
 
 // Run mocks base method
-func (m *MockFragment) Run(arg0 *central.MsgFromSensor, arg1 pipeline.MsgInjector) error {
-	ret := m.ctrl.Call(m, "Run", arg0, arg1)
+func (m *MockFragment) Run(arg0 string, arg1 *central.MsgFromSensor, arg2 pipeline.MsgInjector) error {
+	ret := m.ctrl.Call(m, "Run", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Run indicates an expected call of Run
-func (mr *MockFragmentMockRecorder) Run(arg0, arg1 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Run", reflect.TypeOf((*MockFragment)(nil).Run), arg0, arg1)
+func (mr *MockFragmentMockRecorder) Run(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Run", reflect.TypeOf((*MockFragment)(nil).Run), arg0, arg1, arg2)
 }

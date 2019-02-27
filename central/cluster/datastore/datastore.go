@@ -33,6 +33,7 @@ type DataStore interface {
 	UpdateClusterContactTime(id string, t time.Time) error
 	UpdateProviderMetadata(id string, metadata *storage.ProviderMetadata) error
 	UpdateOrchestratorMetadata(id string, metadata *storage.OrchestratorMetadata) error
+	UpdateClusterStatus(id string, status *storage.ClusterStatus) error
 
 	Search(q *v1.Query) ([]search.Result, error)
 }

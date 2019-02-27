@@ -11,6 +11,7 @@ import (
 var (
 	clusterBucket                = []byte("clusters")
 	clusterLastContactTimeBucket = []byte("clusters_last_contact")
+	clusterStatusBucket          = []byte("cluster_status")
 )
 
 // Store provides storage functionality for alerts.
@@ -25,12 +26,14 @@ type Store interface {
 	UpdateClusterContactTime(id string, t time.Time) error
 	UpdateProviderMetadata(id string, metadata *storage.ProviderMetadata) error
 	UpdateOrchestratorMetadata(id string, metadata *storage.OrchestratorMetadata) error
+	UpdateClusterStatus(id string, status *storage.ClusterStatus) error
 }
 
 // New returns a new Store instance using the provided bolt DB instance.
 func New(db *bolt.DB) Store {
 	bolthelper.RegisterBucketOrPanic(db, clusterBucket)
 	bolthelper.RegisterBucketOrPanic(db, clusterLastContactTimeBucket)
+	bolthelper.RegisterBucketOrPanic(db, clusterStatusBucket)
 	return &storeImpl{
 		DB: db,
 	}

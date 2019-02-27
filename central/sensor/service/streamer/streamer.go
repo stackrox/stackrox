@@ -14,7 +14,7 @@ type Streamer interface {
 }
 
 // NewStreamer creates a new instance of a Stream for the given data.
-func NewStreamer(clusterID string, pl pipeline.Pipeline) Streamer {
+func NewStreamer(clusterID string, pl pipeline.ClusterPipeline) Streamer {
 	s := &streamerImpl{
 		receiver:       NewReceiver(clusterID),
 		enqueueDequeue: NewEnqueueDequeue(),

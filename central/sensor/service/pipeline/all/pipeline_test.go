@@ -21,14 +21,14 @@ type PipelineTestSuite struct {
 	mockCtrl *gomock.Controller
 
 	depMock *mocks.MockFragment
-	tested  pipeline.Pipeline
+	tested  pipeline.ClusterPipeline
 }
 
 func (suite *PipelineTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.depMock = mocks.NewMockFragment(suite.mockCtrl)
 
-	suite.tested = NewPipeline("clusterID", suite.depMock)
+	suite.tested = NewClusterPipeline("clusterID", suite.depMock)
 }
 
 func (suite *PipelineTestSuite) TearDownTest() {
@@ -40,7 +40,7 @@ func (suite *PipelineTestSuite) TestCallsMatchingPipeline() {
 	msg := &central.MsgFromSensor{}
 
 	suite.depMock.EXPECT().Match(msg).Return(true)
-	suite.depMock.EXPECT().Run(msg, nil).Return(expectedError)
+	suite.depMock.EXPECT().Run("clusterID", msg, nil).Return(expectedError)
 
 	err := suite.tested.Run(msg, nil)
 	suite.Equal(expectedError, err, "expected the error")

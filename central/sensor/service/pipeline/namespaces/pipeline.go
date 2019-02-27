@@ -70,12 +70,12 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(msg *central.MsgFromSensor, _ pipeline.MsgInjector) error {
+func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ pipeline.MsgInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.Namespace)
 
 	event := msg.GetEvent()
 	namespace := event.GetNamespace()
-	namespace.ClusterId = event.GetClusterId()
+	namespace.ClusterId = clusterID
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:

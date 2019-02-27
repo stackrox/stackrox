@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -24,8 +25,10 @@ func GetMessageType(msg *central.MsgFromSensor) string {
 			return "Unknown"
 		}
 		return strings.TrimPrefix(reflect.TypeOf(msg.GetEvent().GetResource()).Elem().Name(), "SensorEvent_")
+	case *central.MsgFromSensor_ClusterStatusUpdate:
+		return "ClusterStatusUpdate"
 	default:
-		log.Errorf("Unknown message type: %T", t)
+		errorhelpers.PanicOnDevelopmentf("Unknown message type: %T", t)
 		return "Unknown"
 	}
 }

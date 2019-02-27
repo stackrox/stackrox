@@ -87,7 +87,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"orchestratorMetadata: OrchestratorMetadata",
 		"providerMetadata: ProviderMetadata",
 		"runtimeSupport: Boolean!",
+		"status: ClusterStatus",
 		"type: ClusterType!",
+	}))
+	utils.Must(builder.AddType("ClusterStatus", []string{
+		"sensorVersion: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterType(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Comparator(0)))
@@ -1319,9 +1323,42 @@ func (resolver *clusterResolver) RuntimeSupport() bool {
 	return value
 }
 
+func (resolver *clusterResolver) Status() (*clusterStatusResolver, error) {
+	value := resolver.data.GetStatus()
+	return resolver.root.wrapClusterStatus(value, true, nil)
+}
+
 func (resolver *clusterResolver) Type() string {
 	value := resolver.data.GetType()
 	return value.String()
+}
+
+type clusterStatusResolver struct {
+	root *Resolver
+	data *storage.ClusterStatus
+}
+
+func (resolver *Resolver) wrapClusterStatus(value *storage.ClusterStatus, ok bool, err error) (*clusterStatusResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &clusterStatusResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapClusterStatuses(values []*storage.ClusterStatus, err error) ([]*clusterStatusResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*clusterStatusResolver, len(values))
+	for i, v := range values {
+		output[i] = &clusterStatusResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *clusterStatusResolver) SensorVersion() string {
+	value := resolver.data.GetSensorVersion()
+	return value
 }
 
 func toClusterType(value *string) storage.ClusterType {

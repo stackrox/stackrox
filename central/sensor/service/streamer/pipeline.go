@@ -14,7 +14,7 @@ type Pipeline interface {
 }
 
 // NewPipeline returns a new instance of a Pipeline using the given processing pipeline.
-func NewPipeline(pl pipeline.Pipeline) Pipeline {
+func NewPipeline(pl pipeline.ClusterPipeline) Pipeline {
 	return &channeledImpl{
 		pl: pl,
 

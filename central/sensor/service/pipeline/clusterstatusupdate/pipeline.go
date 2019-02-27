@@ -1,12 +1,10 @@
-package providermetadata
+package clusterstatusupdate
 
 import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/metrics"
 )
 
 var (
@@ -38,15 +36,15 @@ func (s *pipelineImpl) Reconcile(clusterID string) error {
 }
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
-	return msg.GetEvent().GetProviderMetadata() != nil
+	return msg.GetClusterStatusUpdate() != nil
 }
 
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ pipeline.MsgInjector) error {
-	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ProviderMetadata)
-
-	event := msg.GetEvent()
-	return s.clusters.UpdateProviderMetadata(clusterID, event.GetProviderMetadata())
+	if status := msg.GetClusterStatusUpdate().GetStatus(); status != nil {
+		return s.clusters.UpdateClusterStatus(clusterID, status)
+	}
+	return nil
 }
 
 func (s *pipelineImpl) OnFinish() {}

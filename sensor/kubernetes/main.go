@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
 	"github.com/stackrox/rox/sensor/common/sensor"
+	"github.com/stackrox/rox/sensor/kubernetes/clusterstatus"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer"
 	"github.com/stackrox/rox/sensor/kubernetes/listener"
 	"github.com/stackrox/rox/sensor/kubernetes/networkpolicies"
@@ -32,6 +33,7 @@ func main() {
 		manager.Singleton(),
 		roxmetadata.Singleton(),
 		networkpolicies.NewCommandHandler(),
+		clusterstatus.NewUpdater(),
 	)
 	s.Start()
 

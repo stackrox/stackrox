@@ -39,7 +39,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(msg *central.MsgFromSensor, _ pipeline.MsgInjector) (err error) {
+func (s *pipelineImpl) Run(_ string, msg *central.MsgFromSensor, _ pipeline.MsgInjector) (err error) {
 	update := msg.GetNetworkFlowUpdate()
 
 	if len(update.Updated) == 0 {
