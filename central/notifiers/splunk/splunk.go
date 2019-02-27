@@ -3,18 +3,19 @@ package splunk
 import (
 	"bytes"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"text/template"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/generated/internalapi/wrapper"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 const (
-	source = "stackrox"
+	source     = "stackrox"
+	sourceType = "_json"
 )
 
 type splunk struct {
@@ -24,42 +25,8 @@ type splunk struct {
 	*storage.Notifier
 }
 
-type notification struct {
-	Event  string `json:"event"`
-	Source string `json:"source"`
-}
-
-func (s *splunk) alertStringFormat(alert *storage.Alert) (string, error) {
-	funcMap := template.FuncMap{
-		"header": func(s string) string {
-			return fmt.Sprintf("%s\r\n", s)
-		},
-		"subheader": func(s string) string {
-			return fmt.Sprintf("%s\r\n", s)
-		},
-		"line": func(s string) string {
-			return fmt.Sprintf("%s\r\n", s)
-		},
-		"list": func(s string) string {
-			return fmt.Sprintf("- %s\r\n", s)
-		},
-		"nestedList": func(s string) string {
-			return fmt.Sprintf("\t - %s\r\n", s)
-		},
-		"codeBlock": func(s string) string {
-			return fmt.Sprintf("\n %s \n", s)
-		},
-	}
-	alertLink := notifiers.AlertLink(s.endpoint, alert.GetId())
-	return notifiers.FormatPolicy(alert, alertLink, funcMap)
-}
-
 func (s *splunk) AlertNotify(alert *storage.Alert) error {
-	alertString, err := s.alertStringFormat(alert)
-	if err != nil {
-		return err
-	}
-	return s.postData(alertString)
+	return s.postAlert(alert)
 }
 
 func (s *splunk) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
@@ -71,21 +38,30 @@ func (s *splunk) ProtoNotifier() *storage.Notifier {
 }
 
 func (s *splunk) Test() error {
-	alert := "This is a sample splunk alert message created to test integration with StackRox."
-	return s.postData(alert)
+	alert := &storage.Alert{
+		Policy:     &storage.Policy{Name: "Test Policy"},
+		Deployment: &storage.Deployment{Name: "Test Deployment"},
+		Violations: []*storage.Alert_Violation{
+			{Message: "This is a sample Splunk alert message created to test integration with StackRox."},
+		},
+	}
+	return s.postAlert(alert)
 }
 
-func (s *splunk) postData(body string) error {
-	splunkEvent := notification{
-		Event:  body,
-		Source: source,
+func (s *splunk) postAlert(alert *storage.Alert) error {
+	splunkEvent := &wrapper.SplunkEvent{
+		Event:      alert,
+		Source:     source,
+		Sourcetype: sourceType,
 	}
-	jsonPayload, err := json.Marshal(&splunkEvent)
+
+	var jsonPayload bytes.Buffer
+	err := new(jsonpb.Marshaler).Marshal(&jsonPayload, splunkEvent)
 	if err != nil {
 		return err
 	}
 
-	req, err := s.createSplunkHTTPRequest(jsonPayload)
+	req, err := s.createSplunkHTTPRequest(&jsonPayload)
 	if err != nil {
 		return err
 	}
@@ -106,8 +82,8 @@ func (s *splunk) postData(body string) error {
 	return nil
 }
 
-func (s *splunk) createSplunkHTTPRequest(jsonPayload []byte) (*http.Request, error) {
-	req, err := http.NewRequest("POST", s.endpoint, bytes.NewBuffer(jsonPayload))
+func (s *splunk) createSplunkHTTPRequest(jsonPayload *bytes.Buffer) (*http.Request, error) {
+	req, err := http.NewRequest("POST", s.endpoint, jsonPayload)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Splunk %s", s.token))
 	return req, err

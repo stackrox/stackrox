@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "wrapper";
+
+import "storage/alert.proto";
+
+package wrapper;
+
+// Splunk notification needs the source of data
+// and the type of data.
+message SplunkEvent {
+    storage.Alert event = 1;
+    string source       = 2;
+    string sourcetype   = 3;
+}
