@@ -33,8 +33,8 @@ func addToDocumentMapping(path []string, searchField *v1.SearchField, docMap *ma
 		switch searchField.GetType() {
 		case v1.SearchDataType_SEARCH_MAP:
 			keypairDocMapping := newDocumentMapping(false)
-			keypairDocMapping.AddFieldMappingsAt("key", setFieldMappingDefaults(mapping.NewTextFieldMapping(), searchField.GetStore()))
-			keypairDocMapping.AddFieldMappingsAt("value", setFieldMappingDefaults(mapping.NewTextFieldMapping(), searchField.GetStore()))
+			keypairDocMapping.AddFieldMappingsAt("key", setFieldMappingDefaults(mapping.NewTextFieldMapping(), searchField))
+			keypairDocMapping.AddFieldMappingsAt("value", setFieldMappingDefaults(mapping.NewTextFieldMapping(), searchField))
 
 			labelDocMap := newDocumentMapping(false)
 			labelDocMap.AddSubDocumentMapping("keypair", keypairDocMapping)
@@ -64,23 +64,24 @@ func newDocumentMapping(dynamic bool) *mapping.DocumentMapping {
 func searchFieldToMapping(sf *v1.SearchField) *mapping.FieldMapping {
 	switch sf.Type {
 	case v1.SearchDataType_SEARCH_STRING:
-		return setFieldMappingDefaults(mapping.NewTextFieldMapping(), sf.GetStore())
+		return setFieldMappingDefaults(mapping.NewTextFieldMapping(), sf)
 	case v1.SearchDataType_SEARCH_BOOL:
-		return setFieldMappingDefaults(mapping.NewBooleanFieldMapping(), sf.GetStore())
+		return setFieldMappingDefaults(mapping.NewBooleanFieldMapping(), sf)
 	case v1.SearchDataType_SEARCH_NUMERIC, v1.SearchDataType_SEARCH_ENUM, v1.SearchDataType_SEARCH_DATETIME:
-		return setFieldMappingDefaults(mapping.NewNumericFieldMapping(), sf.GetStore())
+		return setFieldMappingDefaults(mapping.NewNumericFieldMapping(), sf)
 	default:
 		panic(fmt.Errorf("Search Field '%s' is not handled in the mapping", sf.Type))
 	}
 }
 
-func setFieldMappingDefaults(m *mapping.FieldMapping, store bool) *mapping.FieldMapping {
+func setFieldMappingDefaults(m *mapping.FieldMapping, searchField *v1.SearchField) *mapping.FieldMapping {
 	// Allows for string query
 	m.IncludeInAll = false
 	m.IncludeTermVectors = true
 	// This allows us to retrieve the value out of the index (e.g. filtering images by cluster using image shas retrieved from a deployments query)
-	m.Store = store
+	m.Store = searchField.GetStore()
 	// DocValues are used for sorting the values, which we don't do
 	m.DocValues = false
+	m.Analyzer = searchField.GetAnalyzer()
 	return m
 }

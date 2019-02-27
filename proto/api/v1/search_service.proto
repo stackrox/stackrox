@@ -50,6 +50,7 @@ message SearchField {
     bool store              = 3;
     bool hidden             = 4;
     SearchCategory category = 5;
+    string analyzer         = 6;
 }
 
 message Query {

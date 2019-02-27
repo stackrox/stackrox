@@ -58,6 +58,7 @@ func (s *searchWalker) getSearchField(path, tag string) (string, *v1.SearchField
 
 	fieldName := fields[0]
 	var hidden, store bool
+	var analyzer string
 	if len(fields) > 1 {
 		for _, f := range fields[1:] {
 			switch f {
@@ -66,7 +67,15 @@ func (s *searchWalker) getSearchField(path, tag string) (string, *v1.SearchField
 			case "store":
 				store = true
 			default:
-				log.Fatalf("Field %s in search annotation is invalid", f)
+				if strings.HasPrefix(f, "analyzer=") {
+					spl := strings.Split(f, "=")
+					if len(spl) != 2 {
+						log.Fatalf("Invalid analyzer struct annotation %q on field %q", f, fieldName)
+					}
+					analyzer = spl[1]
+				} else {
+					log.Fatalf("Field %s in search annotation is invalid", f)
+				}
 			}
 		}
 	}
@@ -76,6 +85,7 @@ func (s *searchWalker) getSearchField(path, tag string) (string, *v1.SearchField
 		Store:     store,
 		Hidden:    hidden,
 		Category:  s.category,
+		Analyzer:  analyzer,
 	}
 }
 
