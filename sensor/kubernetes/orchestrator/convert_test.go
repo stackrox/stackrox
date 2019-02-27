@@ -3,10 +3,12 @@ package orchestrator
 import (
 	"testing"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/orchestrators"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,6 +31,12 @@ func TestConvertDeployment(t *testing.T) {
 					},
 					Name:  `test`,
 					Image: `stackrox/test:latest`,
+					Resources: &storage.Resources{
+						CpuCoresRequest: 0.1,
+						CpuCoresLimit:   1.4,
+						MemoryMbRequest: 50,
+						MemoryMbLimit:   100,
+					},
 				},
 				namespace: "stackrox",
 			},
@@ -76,6 +84,16 @@ func TestConvertDeployment(t *testing.T) {
 											MountPath: `/var/run/docker.sock`,
 										},
 									},
+									Resources: v1.ResourceRequirements{
+										Requests: v1.ResourceList{
+											v1.ResourceCPU:    *resource.NewMilliQuantity(int64(100), resource.DecimalSI),
+											v1.ResourceMemory: *resource.NewQuantity(int64(50*1024*1024), resource.BinarySI),
+										},
+										Limits: v1.ResourceList{
+											v1.ResourceCPU:    *resource.NewMilliQuantity(int64(1400), resource.DecimalSI),
+											v1.ResourceMemory: *resource.NewQuantity(int64(100*1024*1024), resource.BinarySI),
+										},
+									},
 								},
 							},
 							RestartPolicy: v1.RestartPolicyAlways,
@@ -98,7 +116,6 @@ func TestConvertDeployment(t *testing.T) {
 
 	for _, c := range cases {
 		actual := asDeployment(c.input)
-
 		assert.Equal(t, c.expected, actual)
 	}
 }

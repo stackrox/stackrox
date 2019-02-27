@@ -23,6 +23,18 @@
       }
     },
     {
+      "name": "Don't alert on StackRox compliance",
+      "deployment": {
+        "scope": {
+          "namespace": "stackrox",
+          "label": {
+            "key": "app",
+            "value": "stackrox-compliance"
+          }
+        }
+      }
+    },
+    {
       "name": "Don't alert on kube namespace",
       "deployment": {
         "scope": {

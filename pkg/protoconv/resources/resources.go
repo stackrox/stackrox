@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
-	"strconv"
-	"strings"
 
 	ptypes "github.com/gogo/protobuf/types"
 	openshift_appsv1 "github.com/openshift/api/apps/v1"
@@ -21,7 +19,6 @@ import (
 	"k8s.io/api/batch/v1beta1"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -205,33 +202,6 @@ func (w *DeploymentWrap) populateReplicas(spec reflect.Value) {
 	}
 }
 
-func matchesOwnerName(name string, p *v1.Pod) bool {
-	// Edge case that happens for Standalone Pods
-	if len(p.GetOwnerReferences()) == 0 {
-		return true
-	}
-	kind := p.GetOwnerReferences()[0].Kind
-	var numExpectedDashes int
-	switch kind {
-	case kubernetes.ReplicaSet, kubernetes.CronJob, kubernetes.Job, kubernetes.Deployment, kubernetes.DeploymentConfig: // 2 dash in pod
-		// nginx-deployment-86d59dd769-7gmsk we want nginx-deployment
-		numExpectedDashes = 2
-	case kubernetes.DaemonSet, kubernetes.StatefulSet, kubernetes.ReplicationController: // 1 dash in pod
-		// nginx-deployment-7gmsk we want nginx-deployment
-		numExpectedDashes = 1
-	default:
-		logger.Warnf("Currently do not handle owner kind %q. Attributing the pod", kind)
-		// By default if we can't parse, then we'll hit the mis-attribution edge case, but I'd rather do that
-		// then miss the pods altogether
-		return true
-	}
-	if spl := strings.Split(p.GetName(), "-"); len(spl) > numExpectedDashes {
-		return name == strings.Join(spl[:len(spl)-numExpectedDashes], "-")
-	}
-	logger.Warnf("Could not parse pod %q with owner type %q", p.GetName(), kind)
-	return false
-}
-
 func (w *DeploymentWrap) populateDataFromPods(pods ...*v1.Pod) {
 	w.populateImageShas(pods...)
 }
@@ -364,26 +334,13 @@ func (w *DeploymentWrap) getVolumeSourceMap(podSpec v1.PodSpec) map[string]volum
 	return volumeSourceMap
 }
 
-func convertQuantityToCores(q *resource.Quantity) float32 {
-	// kubernetes does not like floating point values so they make you jump through hoops
-	f, err := strconv.ParseFloat(q.AsDec().String(), 32)
-	if err != nil {
-		logger.Error(err)
-	}
-	return float32(f)
-}
-
-func convertQuantityToMb(q *resource.Quantity) float32 {
-	return float32(float64(q.Value()) / megabyte)
-}
-
 func (w *DeploymentWrap) populateResources(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
 		w.Deployment.Containers[i].Resources = &storage.Resources{
-			CpuCoresRequest: convertQuantityToCores(c.Resources.Requests.Cpu()),
-			CpuCoresLimit:   convertQuantityToCores(c.Resources.Limits.Cpu()),
-			MemoryMbRequest: convertQuantityToMb(c.Resources.Requests.Memory()),
-			MemoryMbLimit:   convertQuantityToMb(c.Resources.Limits.Memory()),
+			CpuCoresRequest: k8s.ConvertQuantityToCores(c.Resources.Requests.Cpu()),
+			CpuCoresLimit:   k8s.ConvertQuantityToCores(c.Resources.Limits.Cpu()),
+			MemoryMbRequest: k8s.ConvertQuantityToMB(c.Resources.Requests.Memory()),
+			MemoryMbLimit:   k8s.ConvertQuantityToMB(c.Resources.Limits.Memory()),
 		}
 	}
 }

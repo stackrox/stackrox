@@ -4,9 +4,12 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/orchestrators"
+	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -110,11 +113,34 @@ func allEnvs(service *serviceWrap) []v1.EnvVar {
 	return allEnvs
 }
 
+func addToList(list *v1.ResourceList, resource v1.ResourceName, quantity resource.Quantity) {
+	if *list == nil {
+		*list = make(v1.ResourceList)
+	}
+	(*list)[resource] = quantity
+}
+
+func addRequirements(list *v1.ResourceList, cpu, mb float32) {
+	if cpu > 0 {
+		addToList(list, v1.ResourceCPU, *k8s.ConvertCoresToQuantity(cpu))
+	}
+	if mb > 0 {
+		addToList(list, v1.ResourceMemory, *k8s.ConvertMBToQuantity(mb))
+	}
+}
+
+func convertResourceRequirements(resources *storage.Resources) (requirements v1.ResourceRequirements) {
+	addRequirements(&requirements.Limits, resources.GetCpuCoresLimit(), resources.GetMemoryMbLimit())
+	addRequirements(&requirements.Requests, resources.GetCpuCoresRequest(), resources.GetMemoryMbRequest())
+	return
+}
+
 func asContainers(service *serviceWrap) []v1.Container {
 	containerName := service.Name
 	if containerName == "" {
 		containerName = service.GenerateName
 	}
+
 	return []v1.Container{
 		{
 			Name:         containerName,
@@ -122,6 +148,7 @@ func asContainers(service *serviceWrap) []v1.Container {
 			Image:        service.Image,
 			Command:      service.Command,
 			VolumeMounts: asVolumeMounts(service),
+			Resources:    convertResourceRequirements(service.Resources),
 		},
 	}
 }

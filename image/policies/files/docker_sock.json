@@ -35,9 +35,15 @@
       }
     },
     {
-      "name": "Don't alert on benchmark",
+      "name": "Don't alert on StackRox compliance",
       "deployment": {
-        "name": "benchmark"
+        "scope": {
+          "namespace": "stackrox",
+          "label": {
+            "key": "app",
+            "value": "stackrox-compliance"
+          }
+        }
       }
     }
   ]

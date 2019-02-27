@@ -1,6 +1,10 @@
 package orchestrators
 
-import "time"
+import (
+	"time"
+
+	"github.com/stackrox/rox/generated/storage"
+)
 
 // Creator is a function stub that defined how to create a Orchestrator
 type Creator func() (Orchestrator, error)
@@ -23,6 +27,7 @@ type SystemService struct {
 	Image          string
 	Mounts         []string
 	Global         bool
+	Resources      *storage.Resources
 	Command        []string
 	HostPID        bool
 	ServiceAccount string

@@ -135,7 +135,8 @@ class DefaultPoliciesTest extends BaseSpecification {
         expect:
         "Verify policies are not violated within the stackrox namespace"
         def violations = getViolations(
-                AlertServiceOuterClass.ListAlertsRequest.newBuilder().setQuery("Namespace:stackrox").build()
+                AlertServiceOuterClass.ListAlertsRequest.newBuilder().
+                    setQuery("Namespace:stackrox,Violation State:*").build()
         )
         violations.size() <= 1
         if (violations.size() == 1) {

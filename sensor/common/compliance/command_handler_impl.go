@@ -8,6 +8,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
@@ -17,10 +18,9 @@ import (
 )
 
 const (
-	scrapeServiceName    = "stackrox-compliance"
-	scrapeServiceAccount = "stackrox-compliance"
-	scrapeCommand        = "stackrox/compliance"
-	scrapeEnvironment    = "ROX_SCRAPE_ID"
+	scrapeServiceName = "stackrox-compliance"
+	scrapeCommand     = "stackrox/compliance"
+	scrapeEnvironment = "ROX_SCRAPE_ID"
 
 	benchmarkServiceAccount = "benchmark"
 )
@@ -216,6 +216,14 @@ func (c *commandHandlerImpl) createService(scrapeID string) (*orchestrators.Syst
 		Image:          image,
 		Global:         true,
 		ServiceAccount: benchmarkServiceAccount,
+		Resources: &storage.Resources{
+			// We want to request very little because this is a daemonset and we want it to be scheduled
+			// on every node unless the node is literally full.
+			CpuCoresRequest: 0.01,
+			CpuCoresLimit:   1,
+			MemoryMbRequest: 10,
+			MemoryMbLimit:   2048,
+		},
 		Secrets: []orchestrators.Secret{
 			{
 				Name: "benchmark-tls",
