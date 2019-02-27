@@ -15,7 +15,7 @@ const borderClass = 'border border-primary-300';
 const categoryOptionClass = `bg-primary-200 text-primary-700 ${borderClass}`;
 const valueOptionClass = `bg-base-200 text-base-600 ${borderClass}`;
 
-const placeholderCreator = placeholderText => () => (
+export const placeholderCreator = placeholderText => () => (
     <span className="text-base-500 flex h-full items-center pointer-events-none">
         <span className="font-600 absolute text-lg">{placeholderText}</span>
     </span>
@@ -23,7 +23,7 @@ const placeholderCreator = placeholderText => () => (
 
 const isCategoryChip = value => value.endsWith(':');
 
-const Option = ({ children, ...rest }) => {
+export const Option = ({ children, ...rest }) => {
     let className;
     if (isCategoryChip(children)) {
         className = 'bg-primary-200 text-primary-700';
@@ -43,7 +43,7 @@ const Option = ({ children, ...rest }) => {
     );
 };
 
-const ValueContainer = ({ ...props }) => (
+export const ValueContainer = ({ ...props }) => (
     <React.Fragment>
         <span className="text-base-500 flex h-full items-center pl-2 pr-1 pointer-events-none">
             <Icon.Search color="currentColor" size={18} />
@@ -52,7 +52,7 @@ const ValueContainer = ({ ...props }) => (
     </React.Fragment>
 );
 
-const MultiValue = props => (
+export const MultiValue = props => (
     <components.MultiValue
         {...props}
         className={`${
@@ -61,7 +61,9 @@ const MultiValue = props => (
     />
 );
 
-const noOptionsMessage = () => null;
+export const noOptionsMessage = () => null;
+
+export const createOptionPosition = 'first';
 
 class URLSearchInputWithAutocomplete extends Component {
     static propTypes = {
@@ -214,6 +216,7 @@ class URLSearchInputWithAutocomplete extends Component {
             defaultMenuIsOpen: searchOptions.length > 0,
             isValidNewOption: input => input && searchOptions.length > 0,
             formatCreateLabel: inputValue => inputValue,
+            createOptionPosition,
             ...rest
         };
         return <Creatable {...props} components={{ ...props.components }} autoFocus />;

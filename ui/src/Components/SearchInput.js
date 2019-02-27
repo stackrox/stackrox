@@ -1,51 +1,25 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { components } from 'react-select';
-import * as Icon from 'react-feather';
 import { createStructuredSelector } from 'reselect';
 
 import { Creatable } from 'Components/ReactSelect';
+import {
+    placeholderCreator,
+    Option,
+    ValueContainer,
+    MultiValue,
+    noOptionsMessage,
+    createOptionPosition
+} from 'Components/URLSearchInput';
 
 import { actions as searchAutoCompleteActions } from 'reducers/searchAutocomplete';
 import { selectors } from 'reducers';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
 
-const placeholderCreator = placeholderText => () => (
-    <span className="text-base-500 flex h-full items-center pointer-events-none text-lg">
-        <span className="font-600 absolute">{placeholderText}</span>
-    </span>
-);
-
-const Option = ({ children, ...rest }) => (
-    <components.Option {...rest}>
-        <div className="flex">
-            <span className="search-option-categories px-2 text-sm">{children}</span>
-        </div>
-    </components.Option>
-);
-
-const ValueContainer = ({ ...props }) => (
-    <React.Fragment>
-        <span className="text-base-500 flex h-full items-center pl-2 pr-1 pointer-events-none">
-            <Icon.Search color="currentColor" size={18} />
-        </span>
-        <components.ValueContainer {...props} />
-    </React.Fragment>
-);
-
-const MultiValue = props => (
-    <components.MultiValue
-        {...props}
-        className={
-            props.data.type === 'categoryOption'
-                ? 'bg-primary-200 border border-primary-300 text-primary-700'
-                : 'bg-base-200 border border-base-300 text-base-600'
-        }
-    />
-);
-
-const noOptionsMessage = () => null;
+// This is a legacy search component, that will be removed soon as we move everything to URLSearchInput.
+// For now, some of the code is duplicated, and some of the components are referenced from URLSearchInput
+// in order to avoid unnecessarily excessive code duplication.
 
 class SearchInput extends Component {
     static propTypes = {
@@ -212,13 +186,16 @@ class SearchInput extends Component {
                 // We only allow them to add new options if none of the chips match.
                 // Otherwise it might be confusing.
                 if (
-                    selectOptions.find(option =>
-                        option.label.toLowerCase().startsWith(inputValue.toLowerCase())
+                    selectOptions.find(
+                        option =>
+                            option.type === 'categoryOption' &&
+                            option.label.toLowerCase().startsWith(inputValue.toLowerCase())
                     )
                 )
                     return false;
                 return true;
-            }
+            },
+            createOptionPosition
         };
         return <Creatable {...props} components={{ ...props.components }} autoFocus />;
     }

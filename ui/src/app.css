@@ -457,10 +457,6 @@ h6 {
   @apply .p-0 !important;
 }
 
-.search-option-categories {
-  @apply .bg-primary-100 .text-base-600 .border-2 .border-primary-300 .rounded-sm .p-1;
-}
-
 .severity-tile {
   background: hsla(0, 0%, 100%, 0.19);
 }
