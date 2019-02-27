@@ -17,4 +17,8 @@ class Constants {
             "Evidence" : "evidence",
             "Assessment Time" : "timestamp",
     ]
+    static final VIOLATIONS_WHITELIST = [
+            "Monitoring" : ["CVSS >= 7"],
+            "clairify" : ["Red Hat Package Manager Execution"],
+    ]
 }

@@ -132,22 +132,18 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     @Category(BAT)
     def "Verify that StackRox services don't trigger alerts"() {
-        given:
-        "Skip test for now, until we can stabilize the test"
-        Assume.assumeTrue(Constants.RUN_FLAKEY_TESTS)
-
         expect:
         "Verify policies are not violated within the stackrox namespace"
         def violations = getViolations(
-                AlertServiceOuterClass.ListAlertsRequest.newBuilder().
-                    setQuery("Namespace:stackrox,Violation State:*").build()
+                ListAlertsRequest.newBuilder().setQuery("Namespace:stackrox,Violation State:*").build()
         )
-        violations.size() <= 1
-        if (violations.size() == 1) {
-            // Assert that it's the CVSS >=7 violation on monitoring, which we're aware of.
-            def violation = violations.get(0)
-            violation.getDeployment().getName() == "monitoring" && violation.getPolicy().getName() == "CVSS >= 7"
+        def unexpectedViolations = violations.findAll {
+            def deploymentName = it.deployment.name
+            def policyName = it.policy.name
+            !Constants.VIOLATIONS_WHITELIST.containsKey(deploymentName) ||
+                    !Constants.VIOLATIONS_WHITELIST.get(deploymentName).contains(policyName)
         }
+        unexpectedViolations == []
     }
 
     @Unroll
