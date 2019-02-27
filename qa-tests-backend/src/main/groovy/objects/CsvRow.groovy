@@ -4,10 +4,10 @@ class CsvRow {
     String standard
     String cluster
     String namespace
-    String type
-    String object
+    String objectType
+    String objectName
     String control
-    String description
+    String controlDescription
     String state
     String evidence
     String timestamp

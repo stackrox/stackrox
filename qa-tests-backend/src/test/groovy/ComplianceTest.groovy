@@ -1,5 +1,6 @@
 import com.opencsv.bean.CsvToBean
 import com.opencsv.bean.CsvToBeanBuilder
+import com.opencsv.bean.HeaderColumnNameTranslateMappingStrategy
 import common.Constants
 import groups.BAT
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass
@@ -32,6 +33,7 @@ import v1.ComplianceServiceOuterClass.ComplianceAggregation.Result
 import v1.ComplianceServiceOuterClass.ComplianceAggregation.Scope
 import v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
 
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -316,7 +318,7 @@ class ComplianceTest extends BaseSpecification {
                 return ComplianceState.COMPLIANCE_STATE_SUCCESS
             case "Error":
                 return ComplianceState.COMPLIANCE_STATE_ERROR
-            case "-":
+            case "N/A":
                 return ComplianceState.COMPLIANCE_STATE_SKIP
         }
     }
@@ -337,10 +339,22 @@ class ComplianceTest extends BaseSpecification {
         then:
         "parse and verify export file"
         try {
-            Reader reader = Files.newBufferedReader(Paths.get(exportFile))
+            HeaderColumnNameTranslateMappingStrategy<CsvRow> strategy =
+                    new HeaderColumnNameTranslateMappingStrategy<CsvRow>()
+            strategy.setType(CsvRow)
+            strategy.setColumnMapping(Constants.CSV_COLUMN_MAPPING)
+
+            Reader reader = Files.newBufferedReader(Paths.get(exportFile), StandardCharsets.UTF_8)
+            reader.mark(1)
+            def index = reader.readLine().indexOf("Standard")
+            reader.reset()
+            for (int i = 0; i < index; i++) {
+                reader.read()
+            }
             CsvToBean<CsvRow> csvToBean = new CsvToBeanBuilder(reader)
                     .withType(CsvRow)
                     .withIgnoreLeadingWhiteSpace(true)
+                    .withMappingStrategy(strategy)
                     .build()
 
             Iterator<CsvRow> csvUserIterator = csvToBean.iterator()
@@ -353,45 +367,52 @@ class ComplianceTest extends BaseSpecification {
 
             while (csvUserIterator.hasNext()) {
                 CsvRow row = csvUserIterator.next()
+                def controlId = row.standard ?
+                        convertStandardToId(row.control.replaceAll("\"*=*\\(*\\)*", "")) :
+                        null
+                def standardId = row.standard ?
+                        convertStandardToId(row.standard) :
+                        null
                 rowNumber++
-                ComplianceRunResults result = BASE_RESULTS.get(convertStandardToId(row.standard))
-                ComplianceControl control = sDetails.get(convertStandardToId(row.standard)).controlsList.find {
-                    it.id == row.control
+                ComplianceRunResults result = BASE_RESULTS.get(standardId)
+                assert result
+                ComplianceControl control = sDetails.get(standardId).controlsList.find {
+                    it.id == "${standardId}:${controlId}"
                 }
                 ComplianceResultValue value
-                switch (row.type.toLowerCase()) {
+                switch (row.objectType.toLowerCase()) {
                     case "cluster":
                         value = result.clusterResults.controlResultsMap.find {
-                            it.key == convertStandardToId(row.control)
-                        }.value
+                            it.key == "${standardId}:${controlId}"
+                        }?.value
                         break
                     case "node":
                         value = result.nodeResultsMap.get(
-                            result.domain.nodesMap.find { it.value.name == row.object }.key
-                        ).controlResultsMap.find {
-                            it.key == convertStandardToId(row.control)
-                        }.value
+                            result.domain.nodesMap.find { it.value.name == row.objectName }?.key
+                        )?.controlResultsMap?.find {
+                            it.key == "${standardId}:${controlId}"
+                        }?.value
                         break
                     default:
                         value = result.deploymentResultsMap.get(
                             result.domain.deploymentsMap.find {
-                            it.value.name == row.object && it.value.namespace == row.namespace
-                            }.key
-                        ).controlResultsMap.find {
-                            it.key == convertStandardToId(row.control)
-                        }.value
+                            it.value.name == row.objectName && it.value.namespace == row.namespace
+                            }?.key
+                        )?.controlResultsMap?.find {
+                            it.key == "${standardId}:${controlId}"
+                        }?.value
                         break
                 }
+                assert value
+                assert control
                 if (value.evidenceCount == 1) {
-                    println "Verifying CSV row ${rowNumber} : ${row.control}"
                     assert convertStringState(row.state) ?
                             convertStringState(row.state) == value.overallState :
                             row.state == "Unknown"
                     verifiedRows++
                 }
-                // disable description assert until ROX-1358 is resolved
-                //assert row.description == control.description
-                println "Description assert would = ${row.description == control.description}"
+                //assert row.controlDescription == control.description
+                assert control.description.startsWith(row.controlDescription[0..row.controlDescription.length() - 5])
             }
             println "Verified ${verifiedRows} out of ${rowNumber} total rows"
         } catch (Exception e) {
@@ -937,5 +958,4 @@ class ComplianceTest extends BaseSpecification {
         orchestrator.waitForSensor()
         println "waited ${System.currentTimeMillis() - start}ms for sensor to come back online"
     }
-
 }

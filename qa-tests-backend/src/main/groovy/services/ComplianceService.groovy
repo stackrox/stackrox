@@ -21,6 +21,7 @@ import v1.ComplianceServiceOuterClass.ComplianceStandardMetadata
 
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.SSLContext
+import java.nio.charset.StandardCharsets
 
 class ComplianceService extends BaseService {
 
@@ -121,8 +122,8 @@ class ComplianceService extends BaseService {
 
         try {
             CloseableHttpResponse response = client.execute(httpPost)
-            def conn = new InputStreamReader(response.getEntity().getContent())
-            new File(filename).withOutputStream { out ->
+            def conn = new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8)
+            new File(filename).withWriter("utf-8") { out ->
                 conn.with { inp ->
                     out << inp
                     inp.close()
