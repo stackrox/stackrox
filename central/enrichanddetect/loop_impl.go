@@ -59,7 +59,7 @@ func (l *loopImpl) loop() {
 func (l *loopImpl) enrichAndDetectAllDeployments() {
 	deployments, err := l.deployments.GetDeployments()
 	if err != nil {
-		log.Error("unable to load deployments for reprocess loop: ", err)
+		log.Errorf("unable to load deployments for reprocess loop: %v", err)
 		return
 	}
 	for _, deployment := range deployments {

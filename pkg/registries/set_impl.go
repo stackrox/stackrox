@@ -15,11 +15,7 @@ type setImpl struct {
 	integrations map[string]types.ImageRegistry
 }
 
-// GetAll returns the set of integrations that are active.
-func (e *setImpl) GetAll() []types.ImageRegistry {
-	e.lock.RLock()
-	defer e.lock.RUnlock()
-
+func (e *setImpl) getSortedRegistriesNoLock() []types.ImageRegistry {
 	integrations := make([]types.ImageRegistry, 0, len(e.integrations))
 	for _, i := range e.integrations {
 		integrations = append(integrations, i)
@@ -29,6 +25,13 @@ func (e *setImpl) GetAll() []types.ImageRegistry {
 		return integrations[i].Config().Username != "" && integrations[j].Config().Username == ""
 	})
 	return integrations
+}
+
+// GetAll returns the set of integrations that are active.
+func (e *setImpl) GetAll() []types.ImageRegistry {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+	return e.getSortedRegistriesNoLock()
 }
 
 // GetRegistryMetadataByImage returns the config for a registry that contains the input image.
@@ -49,7 +52,8 @@ func (e *setImpl) Match(image *storage.Image) bool {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 
-	for _, i := range e.integrations {
+	integrations := e.getSortedRegistriesNoLock()
+	for _, i := range integrations {
 		if i.Match(image) {
 			return true
 		}

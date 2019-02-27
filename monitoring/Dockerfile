@@ -1,6 +1,6 @@
 FROM alpine:3.9
 
-ENV INFLUXDB_VERSION=1.6.2
+ENV INFLUXDB_VERSION=1.7.3
 
 RUN wget https://dl.influxdata.com/influxdb/releases/influxdb-${INFLUXDB_VERSION}-static_linux_amd64.tar.gz && \
     tar xvfz influxdb-${INFLUXDB_VERSION}-static_linux_amd64.tar.gz && mv /influxdb-${INFLUXDB_VERSION}-1/influxd /influxd && \
@@ -8,7 +8,7 @@ RUN wget https://dl.influxdata.com/influxdb/releases/influxdb-${INFLUXDB_VERSION
 
 RUN wget https://github.com/connorgorman/telegraf/releases/download/1.8.3%2B179-slim/telegraf -O /telegraf && chmod +x /telegraf
 
-FROM grafana/grafana:5.3.0
+FROM grafana/grafana:6.0.0
 
 COPY --from=0 /influx /influx
 COPY --from=0 /influxd /influxd

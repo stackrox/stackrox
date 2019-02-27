@@ -22,12 +22,13 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 	dispatchers := resources.NewDispatcherRegistry(podInformer.Lister(), clusterentities.StoreInstance(), roxmetadata.Singleton())
 
 	namespaceInformer := sif.Core().V1().Namespaces().Informer()
+	secretInformer := sif.Core().V1().Secrets().Informer()
 
 	// Non-deployment types.
 	handle(namespaceInformer, dispatchers.ForNamespaces(), output, nil)
 	handle(sif.Networking().V1().NetworkPolicies().Informer(), dispatchers.ForNetworkPolicies(), output, nil)
 	handle(sif.Core().V1().Nodes().Informer(), dispatchers.ForNodes(), output, nil)
-	handle(sif.Core().V1().Secrets().Informer(), dispatchers.ForSecrets(), output, nil)
+	handle(secretInformer, dispatchers.ForSecrets(), output, nil)
 	handle(sif.Core().V1().Services().Informer(), dispatchers.ForServices(), output, nil)
 
 	// Deployment types.
@@ -45,7 +46,7 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 	}
 
 	// Run the pod and namespace informers first since other handlers rely on their outputs.
-	informersToSync := []cache.SharedInformer{podInformer.Informer(), namespaceInformer}
+	informersToSync := []cache.SharedInformer{podInformer.Informer(), namespaceInformer, secretInformer}
 	syncFuncs := make([]cache.InformerSynced, len(informersToSync))
 	for i, informer := range informersToSync {
 		go informer.Run(stopSignal.Done())
