@@ -1,10 +1,10 @@
-
 import static Services.getAlertCounts
 import static Services.getAlertGroups
 import static Services.getPolicies
 import static Services.getViolations
 import static Services.waitForViolation
 
+import common.Constants
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest.RequestGroup
@@ -132,6 +132,10 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     @Category(BAT)
     def "Verify that StackRox services don't trigger alerts"() {
+        given:
+        "Skip test for now, until we can stabilize the test"
+        Assume.assumeTrue(Constants.RUN_FLAKEY_TESTS)
+
         expect:
         "Verify policies are not violated within the stackrox namespace"
         def violations = getViolations(

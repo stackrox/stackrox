@@ -587,6 +587,10 @@ class ComplianceTest extends BaseSpecification {
         ]
 
         given:
+        "Skip test for now, until we can stabilize the test"
+        Assume.assumeTrue(Constants.RUN_FLAKEY_TESTS)
+
+        and:
         "create Deployment that forces checks to fail"
         Deployment deployment = new Deployment()
                 .setName("compliance-deployment")
@@ -657,7 +661,7 @@ class ComplianceTest extends BaseSpecification {
 
         cleanup:
         "remove deployment"
-        if (deployment.deploymentUid) {
+        if (deployment?.deploymentUid) {
             orchestrator.deleteDeployment(deployment)
             orchestrator.deleteService(service.name, service.namespace)
         }
