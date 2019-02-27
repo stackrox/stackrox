@@ -2,6 +2,11 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Tooltip from 'rc-tooltip';
 
+const truncate = key => {
+    const index = key.indexOf('/');
+    return index > 0 ? key.substr(index + 1) : key;
+};
+
 const Labels = ({ labels }) => (
     <ul className={` ${labels.length > 4 ? `columns-2` : ``} list-reset p-3 w-full leading-normal`}>
         {labels.map(label => (
@@ -26,7 +31,7 @@ const Labels = ({ labels }) => (
                 >
                     <h1 className="text-base font-600 word-break truncate">
                         {' '}
-                        {label.key} : {label.value || '""'}
+                        {truncate(label.key)} : {label.value || '""'}
                     </h1>
                 </Tooltip>
             </li>
