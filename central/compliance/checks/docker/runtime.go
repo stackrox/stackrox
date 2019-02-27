@@ -58,6 +58,7 @@ func runningContainerCheck(name string, f func(ctx framework.ComplianceContext, 
 		ID:                 name,
 		Scope:              framework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that every running container on each node %s", desc),
+		DataDependencies:   []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, containerCheckWrapper(f, true))
 }

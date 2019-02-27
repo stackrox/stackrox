@@ -32,5 +32,5 @@ type ComplianceDataRepository interface {
 	CISKubernetesTriggered() bool
 
 	// Per-host data
-	HostScraped() map[string]*compliance.ComplianceReturn
+	HostScraped(node *storage.Node) *compliance.ComplianceReturn
 }

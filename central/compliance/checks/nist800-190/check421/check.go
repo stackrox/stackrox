@@ -14,7 +14,7 @@ func init() {
 		framework.CheckMetadata{
 			ID:                 checkID,
 			Scope:              framework.NodeKind,
-			DataDependencies:   []string{"DockerData"},
+			DataDependencies:   []string{"HostScraped"},
 			InterpretationText: interpretationText,
 		},
 		common.CheckNoInsecureRegistries)

@@ -756,13 +756,11 @@ func TestDockerRuntimeChecks(t *testing.T) {
 			require.NoError(t, err)
 			require.NoError(t, gzWriter.Close())
 
-			data.EXPECT().HostScraped().AnyTimes().Return(map[string]*compliance.ComplianceReturn{
-				"A": {
-					DockerData: &compliance.GZIPDataChunk{Gzip: jsonDataGZ.Bytes()},
-				},
-				"B": {
-					DockerData: &compliance.GZIPDataChunk{Gzip: jsonDataGZ.Bytes()},
-				},
+			data.EXPECT().HostScraped(nodeNameMatcher("A")).AnyTimes().Return(&compliance.ComplianceReturn{
+				DockerData: &compliance.GZIPDataChunk{Gzip: jsonDataGZ.Bytes()},
+			})
+			data.EXPECT().HostScraped(nodeNameMatcher("B")).AnyTimes().Return(&compliance.ComplianceReturn{
+				DockerData: &compliance.GZIPDataChunk{Gzip: jsonDataGZ.Bytes()},
 			})
 
 			run, err := framework.NewComplianceRun(check)

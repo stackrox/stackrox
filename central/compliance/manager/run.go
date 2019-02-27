@@ -27,9 +27,8 @@ type runInstance struct {
 
 	id string
 
-	domain        framework.ComplianceDomain
-	standard      *standards.Standard
-	scrapePromise *scrapePromise
+	domain   framework.ComplianceDomain
+	standard *standards.Standard
 
 	schedule *scheduleInstance
 
@@ -61,11 +60,11 @@ func (r *runInstance) updateStatus(s v1.ComplianceRun_State) {
 	r.status = s
 }
 
-func (r *runInstance) Start(scrapePromise *scrapePromise, resultsStore store.Store) {
-	go r.Run(scrapePromise, resultsStore)
+func (r *runInstance) Start(dataPromise dataPromise, resultsStore store.Store) {
+	go r.Run(dataPromise, resultsStore)
 }
 
-func (r *runInstance) Run(scrapePromise *scrapePromise, resultsStore store.Store) {
+func (r *runInstance) Run(dataPromise dataPromise, resultsStore store.Store) {
 	defer r.cancel()
 
 	if r.schedule != nil {
@@ -77,7 +76,7 @@ func (r *runInstance) Run(scrapePromise *scrapePromise, resultsStore store.Store
 		})
 	}
 
-	run, err := r.doRun(scrapePromise)
+	run, err := r.doRun(dataPromise)
 
 	if err == nil {
 		results := r.collectResults(run)
@@ -96,7 +95,7 @@ func (r *runInstance) Run(scrapePromise *scrapePromise, resultsStore store.Store
 	}
 }
 
-func (r *runInstance) doRun(scrapePromise *scrapePromise) (framework.ComplianceRun, error) {
+func (r *runInstance) doRun(dataPromise dataPromise) (framework.ComplianceRun, error) {
 	concurrency.WithLock(&r.mutex, func() {
 		r.startTime = time.Now()
 		r.status = v1.ComplianceRun_STARTED
@@ -109,7 +108,7 @@ func (r *runInstance) doRun(scrapePromise *scrapePromise) (framework.ComplianceR
 	log.Infof("Starting compliance run %s for cluster %q and standard %q", r.id, r.domain.Cluster().Cluster().Name, r.standard.Standard.Name)
 
 	r.updateStatus(v1.ComplianceRun_WAIT_FOR_DATA)
-	data, err := scrapePromise.WaitForResult(r.ctx)
+	data, err := dataPromise.WaitForResult(r.ctx)
 	if err != nil {
 		return nil, fmt.Errorf("waiting for compliance data: %v", err)
 	}

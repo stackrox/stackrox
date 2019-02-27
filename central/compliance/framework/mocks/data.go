@@ -97,15 +97,15 @@ func (mr *MockComplianceDataRepositoryMockRecorder) Deployments() *gomock.Call {
 }
 
 // HostScraped mocks base method
-func (m *MockComplianceDataRepository) HostScraped() map[string]*compliance.ComplianceReturn {
-	ret := m.ctrl.Call(m, "HostScraped")
-	ret0, _ := ret[0].(map[string]*compliance.ComplianceReturn)
+func (m *MockComplianceDataRepository) HostScraped(arg0 *storage.Node) *compliance.ComplianceReturn {
+	ret := m.ctrl.Call(m, "HostScraped", arg0)
+	ret0, _ := ret[0].(*compliance.ComplianceReturn)
 	return ret0
 }
 
 // HostScraped indicates an expected call of HostScraped
-func (mr *MockComplianceDataRepositoryMockRecorder) HostScraped() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HostScraped", reflect.TypeOf((*MockComplianceDataRepository)(nil).HostScraped))
+func (mr *MockComplianceDataRepositoryMockRecorder) HostScraped(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HostScraped", reflect.TypeOf((*MockComplianceDataRepository)(nil).HostScraped), arg0)
 }
 
 // ImageIntegrations mocks base method

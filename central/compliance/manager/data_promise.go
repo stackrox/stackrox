@@ -12,6 +12,28 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 )
 
+type dataPromise interface {
+	WaitForResult(cancel concurrency.Waitable) (framework.ComplianceDataRepository, error)
+}
+
+type fixedDataPromise struct {
+	dataRepo framework.ComplianceDataRepository
+	err      error
+}
+
+func newFixedDataPromise(dataRepoFactory data.RepositoryFactory, domain framework.ComplianceDomain) dataPromise {
+	dataRepo, err := dataRepoFactory.CreateDataRepository(domain, nil)
+
+	return &fixedDataPromise{
+		dataRepo: dataRepo,
+		err:      err,
+	}
+}
+
+func (p *fixedDataPromise) WaitForResult(cancel concurrency.Waitable) (framework.ComplianceDataRepository, error) {
+	return p.dataRepo, p.err
+}
+
 // scrapePromise allows access to compliance data in an asynchronous way, allowing multiple runs to wait on the same
 // scrape process.
 type scrapePromise struct {

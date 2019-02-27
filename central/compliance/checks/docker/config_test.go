@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -10,10 +11,17 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func nodeNameMatcher(nodeName string) gomock.Matcher {
+	return testutils.PredMatcher(fmt.Sprintf("node %s", nodeName), func(node *storage.Node) bool {
+		return node.GetName() == nodeName
+	})
+}
 
 func TestOwnershipAndPermissionChecks(t *testing.T) {
 	cases := []struct {
@@ -103,16 +111,15 @@ func TestOwnershipAndPermissionChecks(t *testing.T) {
 			domain := framework.NewComplianceDomain(testCluster, testNodes, nil)
 			data := mocks.NewMockComplianceDataRepository(mockCtrl)
 
-			data.EXPECT().HostScraped().AnyTimes().Return(map[string]*compliance.ComplianceReturn{
-				"A": {
-					SystemdFiles: map[string]*compliance.File{
-						c.file.Path: c.file,
-					},
+			data.EXPECT().HostScraped(nodeNameMatcher("A")).AnyTimes().Return(&compliance.ComplianceReturn{
+				SystemdFiles: map[string]*compliance.File{
+					c.file.Path: c.file,
 				},
-				"B": {
-					SystemdFiles: map[string]*compliance.File{
-						c.file.Path: c.file,
-					},
+			})
+
+			data.EXPECT().HostScraped(nodeNameMatcher("B")).AnyTimes().Return(&compliance.ComplianceReturn{
+				SystemdFiles: map[string]*compliance.File{
+					c.file.Path: c.file,
 				},
 			})
 

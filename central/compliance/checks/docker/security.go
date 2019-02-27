@@ -14,12 +14,14 @@ func init() {
 				ID:                 "CIS_Docker_v1_1_0:6_1",
 				Scope:              framework.NodeKind,
 				InterpretationText: "StackRox checks how many of the images present on each node are actually in use",
+				DataDependencies:   []string{"HostScraped"},
 			}, imageSprawl),
 		framework.NewCheckFromFunc(
 			framework.CheckMetadata{
 				ID:                 "CIS_Docker_v1_1_0:6_2",
 				Scope:              framework.NodeKind,
 				InterpretationText: "StackRox checks how many of the containers present on each node are actually running",
+				DataDependencies:   []string{"HostScraped"},
 			}, containerSprawl),
 	)
 }

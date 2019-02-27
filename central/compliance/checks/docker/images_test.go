@@ -135,13 +135,11 @@ func TestDockerImagesChecks(t *testing.T) {
 			require.NoError(t, err)
 			require.NoError(t, gz.Close())
 
-			data.EXPECT().HostScraped().AnyTimes().Return(map[string]*compliance.ComplianceReturn{
-				"A": {
-					DockerData: &compliance.GZIPDataChunk{Gzip: buf.Bytes()},
-				},
-				"B": {
-					DockerData: &compliance.GZIPDataChunk{Gzip: buf.Bytes()},
-				},
+			data.EXPECT().HostScraped(nodeNameMatcher("A")).AnyTimes().Return(&compliance.ComplianceReturn{
+				DockerData: &compliance.GZIPDataChunk{Gzip: buf.Bytes()},
+			})
+			data.EXPECT().HostScraped(nodeNameMatcher("B")).AnyTimes().Return(&compliance.ComplianceReturn{
+				DockerData: &compliance.GZIPDataChunk{Gzip: buf.Bytes()},
 			})
 
 			run, err := framework.NewComplianceRun(check)

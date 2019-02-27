@@ -31,6 +31,7 @@ func imageCheck(name string, f func(ctx framework.ComplianceContext, wrap docker
 		ID:                 name,
 		Scope:              framework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that each image on every node %s", desc),
+		DataDependencies:   []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, imageCheckWrapper(f))
 }

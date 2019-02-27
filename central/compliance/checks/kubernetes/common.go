@@ -9,8 +9,9 @@ import (
 
 func genericKubernetesCommandlineCheck(name string, processName string, key, target, defaultVal string, evalFunc common.CommandEvaluationFunc) framework.Check {
 	md := framework.CheckMetadata{
-		ID:    name,
-		Scope: framework.NodeKind,
+		ID:               name,
+		Scope:            framework.NodeKind,
+		DataDependencies: []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, common.PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {
@@ -25,8 +26,9 @@ func genericKubernetesCommandlineCheck(name string, processName string, key, tar
 
 func multipleFlagsSetCheck(name string, processName string, keys ...string) framework.Check {
 	md := framework.CheckMetadata{
-		ID:    name,
-		Scope: framework.NodeKind,
+		ID:               name,
+		Scope:            framework.NodeKind,
+		DataDependencies: []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, common.PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {

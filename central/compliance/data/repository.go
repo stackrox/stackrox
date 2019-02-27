@@ -1,6 +1,8 @@
 package data
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
@@ -86,8 +88,12 @@ func (r *repository) Alerts() []*storage.ListAlert {
 	return r.alerts
 }
 
-func (r *repository) HostScraped() map[string]*compliance.ComplianceReturn {
-	return r.hostScrape
+func (r *repository) HostScraped(node *storage.Node) *compliance.ComplianceReturn {
+	ret := r.hostScrape[node.GetName()]
+	if ret == nil {
+		panic(fmt.Errorf("no host scrape data available for node %q", node.GetName()))
+	}
+	return ret
 }
 
 func (r *repository) CISDockerTriggered() bool {

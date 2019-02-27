@@ -1,8 +1,6 @@
 package common
 
 import (
-	"fmt"
-
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/storage"
@@ -12,11 +10,7 @@ import (
 func PerNodeCheck(f func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn)) framework.CheckFunc {
 	return func(ctx framework.ComplianceContext) {
 		framework.ForEachNode(ctx, func(ctx framework.ComplianceContext, node *storage.Node) {
-			returnData, ok := ctx.Data().HostScraped()[node.GetName()]
-			if !ok {
-				framework.Abort(ctx, fmt.Errorf("could not find scraped data for node %s", node.GetName()))
-			}
-			f(ctx, returnData)
+			f(ctx, ctx.Data().HostScraped(node))
 		})
 	}
 }
@@ -24,8 +18,9 @@ func PerNodeCheck(f func(ctx framework.ComplianceContext, ret *compliance.Compli
 // CommandLineFileOwnership returns a check that checks the ownership of a file that is specified by the command line
 func CommandLineFileOwnership(name string, processName, flag, user, group string) framework.Check {
 	md := framework.CheckMetadata{
-		ID:    name,
-		Scope: framework.NodeKind,
+		ID:               name,
+		Scope:            framework.NodeKind,
+		DataDependencies: []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {
@@ -46,8 +41,9 @@ func CommandLineFileOwnership(name string, processName, flag, user, group string
 // CommandLineFilePermissions returns a check that checks the permissions of a file that is specified by the command line
 func CommandLineFilePermissions(name string, processName, flag string, perms uint32) framework.Check {
 	md := framework.CheckMetadata{
-		ID:    name,
-		Scope: framework.NodeKind,
+		ID:               name,
+		Scope:            framework.NodeKind,
+		DataDependencies: []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {

@@ -61,6 +61,7 @@ func encryptionProvider() framework.Check {
 		ID:                 "CIS_Kubernetes_v1_2_0:1_1_34",
 		Scope:              framework.NodeKind,
 		InterpretationText: "StackRox checks that the Kubernetes API server uses the `aescbc` encryption provider",
+		DataDependencies:   []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, common.PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {

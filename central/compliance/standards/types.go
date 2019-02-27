@@ -6,12 +6,14 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // Standard contains information about a compliance standard.
 type Standard struct {
 	metadata.Standard
-	allChecks []framework.Check
+	allChecks   []framework.Check
+	allDataDeps set.StringSet
 
 	categories map[string]*Category
 	controls   map[string]*Control
@@ -81,6 +83,21 @@ func (s *Standard) ToProto() *v1.ComplianceStandard {
 		Groups:   groups,
 		Controls: controls,
 	}
+}
+
+// HasAnyDataDependency checks if the given standard requires at least one of the given data dependencies.
+func (s *Standard) HasAnyDataDependency(deps ...string) bool {
+	for _, dep := range deps {
+		if s.allDataDeps.Contains(dep) {
+			return true
+		}
+	}
+	return true
+}
+
+// AllDataDependencies returns all data dependencies of all checks in this standard in sorted order.
+func (s *Standard) AllDataDependencies() []string {
+	return s.allDataDeps.AsSortedSlice(func(i, j string) bool { return i < j })
 }
 
 // Category contains information about a compliance control category.
@@ -198,6 +215,7 @@ func newStandard(standardMD metadata.Standard, checkRegistry framework.CheckRegi
 
 		s.categories[categoryMD.ID] = cat
 	}
+	s.allDataDeps = gatherDataDependencies(s.allChecks)
 	sortChecks(s.allChecks)
 
 	return s

@@ -62,6 +62,7 @@ func cniFilePermissions() framework.Check {
 		ID:                 "CIS_Kubernetes_v1_2_0:1_4_9",
 		Scope:              framework.NodeKind,
 		InterpretationText: "StackRox checks that the permissions of files in the CNI configuration and binary directories are set to at most '0644'",
+		DataDependencies:   []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, common.PerNodeCheck(
 		func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {

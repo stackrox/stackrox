@@ -28,6 +28,7 @@ func SystemdOwnershipCheck(name, file, user, group string) framework.Check {
 		ID:                 name,
 		Scope:              framework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that the systemd file %s on each node is owned by user %q and group %q", file, user, group),
+		DataDependencies:   []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, systemdOwnershipCheckFunc(file, user, group))
 }
@@ -38,6 +39,7 @@ func OwnershipCheck(name, file, user, group string) framework.Check {
 		ID:                 name,
 		Scope:              framework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that the file %s on each node is owned by user %q and group %q", file, user, group),
+		DataDependencies:   []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, ownershipCheckFunc(file, user, group, false))
 }
@@ -48,6 +50,7 @@ func OptionalOwnershipCheck(name, file, user, group string) framework.Check {
 		ID:                 name,
 		Scope:              framework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that the file %s on each node (if existing) is owned by user %q and group %q", file, user, group),
+		DataDependencies:   []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, ownershipCheckFunc(file, user, group, true))
 }
@@ -58,6 +61,7 @@ func RecursiveOwnershipCheck(name, dir, user, group string) framework.Check {
 		ID:                 name,
 		Scope:              framework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that all files under the path %s are owned by user %q and group %q", dir, user, group),
+		DataDependencies:   []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, recursiveOwnershipCheckFunc(dir, user, group))
 }
@@ -123,6 +127,7 @@ func PermissionCheck(name, file string, permissions uint32) framework.Check {
 		ID:                 name,
 		Scope:              framework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that the permissions on file %s on each node are set to '%#o'", file, permissions),
+		DataDependencies:   []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, permissionCheckFunc(file, permissions, false))
 }
@@ -133,6 +138,7 @@ func OptionalPermissionCheck(name, file string, permissions uint32) framework.Ch
 		ID:                 name,
 		Scope:              framework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that the permissions on file %s on each node (if existing) are set to '%#o'", file, permissions),
+		DataDependencies:   []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, permissionCheckFunc(file, permissions, true))
 }
@@ -143,6 +149,7 @@ func SystemdPermissionCheck(name, file string, permissions uint32) framework.Che
 		ID:                 name,
 		Scope:              framework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that the permissions on the systemd file %s on each node are set to '%#o'", file, permissions),
+		DataDependencies:   []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, systemdPermissionCheckFunc(file, permissions))
 }
@@ -153,6 +160,7 @@ func RecursivePermissionCheck(name, file string, permissions uint32) framework.C
 		ID:                 name,
 		Scope:              framework.NodeKind,
 		InterpretationText: fmt.Sprintf("StackRox checks that the permissions of all files under the path %s on each node are set to '%#o'", file, permissions),
+		DataDependencies:   []string{"HostScraped"},
 	}
 	return framework.NewCheckFromFunc(md, recursivePermissionCheckFunc(file, permissions))
 }

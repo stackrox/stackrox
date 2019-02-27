@@ -74,13 +74,11 @@ func TestAuditCheck(t *testing.T) {
 				c.file.Path:               c.file,
 			}
 
-			data.EXPECT().HostScraped().AnyTimes().Return(map[string]*compliance.ComplianceReturn{
-				"A": {
-					Files: allFiles,
-				},
-				"B": {
-					Files: allFiles,
-				},
+			data.EXPECT().HostScraped(nodeNameMatcher("A")).AnyTimes().Return(&compliance.ComplianceReturn{
+				Files: allFiles,
+			})
+			data.EXPECT().HostScraped(nodeNameMatcher("B")).AnyTimes().Return(&compliance.ComplianceReturn{
+				Files: allFiles,
 			})
 
 			run, err := framework.NewComplianceRun(check)

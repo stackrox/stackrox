@@ -34,6 +34,8 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	scrapeDataDeps = []string{"HostScraped"}
 )
 
 type manager struct {
@@ -519,11 +521,24 @@ func (m *manager) createAndLaunchRuns(clusterStandardPairs []compliance.ClusterS
 			return nil, fmt.Errorf("could not create domain for cluster ID %q: %v", clusterID, err)
 		}
 
-		scrapePromise := createAndRunScrape(m.scrapeFactory, m.dataRepoFactory, domain, scrapeTimeout)
+		var scrapeBasedPromise, scrapeLessPromise dataPromise
 
 		for _, standard := range standardImpls {
 			run := m.createRun(domain, standard, schedule)
-			run.Start(scrapePromise, m.resultsStore)
+			var dataPromise dataPromise
+			if standard.HasAnyDataDependency(scrapeDataDeps...) {
+				if scrapeBasedPromise == nil {
+					scrapeBasedPromise = createAndRunScrape(m.scrapeFactory, m.dataRepoFactory, domain, scrapeTimeout)
+				}
+				dataPromise = scrapeBasedPromise
+			} else {
+				if scrapeLessPromise == nil {
+					scrapeLessPromise = newFixedDataPromise(m.dataRepoFactory, domain)
+				}
+				dataPromise = scrapeLessPromise
+			}
+
+			run.Start(dataPromise, m.resultsStore)
 			runs = append(runs, run)
 		}
 	}
