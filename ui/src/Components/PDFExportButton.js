@@ -241,6 +241,7 @@ class PDFExportButton extends Component {
     render() {
         return (
             <Button
+                data-test-id="download-pdf-button"
                 className={this.props.className}
                 text="DOWNLOAD PAGE AS PDF"
                 onClick={this.saveFn}

@@ -54,30 +54,36 @@ class MultiGaugeDetailSection extends Component {
         return (
             <div key={`${d.title}-${d.arc}`}>
                 <div
+                    data-test-id="gauge-detail-bullet"
                     className={`widget-detail-bullet ${
                         selectedGauge && selectedGauge.arc === 'inner' ? '' : 'text-base-500'
                     }`}
                 >
                     <button
+                        data-test-id="passing-controls"
                         type="button"
                         className={`text-base-600 font-600 hover:text-success-700 underline cursor-pointer ${passingClassName}`}
                         onClick={this.onClick(d, 'inner', idx)}
                     >
-                        {passingValue} passing controls
+                        <span data-test-id="passing-controls-value">{passingValue} </span>
+                        passing controls
                     </button>
                 </div>
                 <div
                     key={d.title}
+                    data-test-id="gauge-detail-bullet"
                     className={`widget-detail-bullet ${
                         selectedGauge && selectedGauge.arc === 'outer' ? '' : 'text-base-500'
                     }`}
                 >
                     <button
+                        data-test-id="failing-controls"
                         type="button"
                         className={`text-base-600 font-600 hover:text-alert-700 underline cursor-pointer ${failingClassName}`}
                         onClick={this.onClick(d, 'outer', idx)}
                     >
-                        {failingValue} failing controls
+                        <span data-test-id="failing-controls-value">{failingValue} </span>
+                        failing controls
                     </button>
                 </div>
             </div>

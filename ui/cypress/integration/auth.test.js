@@ -1,5 +1,5 @@
 import { url as loginUrl, selectors } from './constants/LoginPage';
-import { url as complianceURL } from './constants/CompliancePage';
+import { baseURL as complianceURL } from './constants/CompliancePage';
 
 import * as api from './constants/apiEndpoints';
 

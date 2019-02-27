@@ -51,4 +51,8 @@ export const summary = {
     counts: '/v1/summary/counts'
 };
 
-export const compliance = {};
+export const compliance = {
+    export: {
+        csv: '/api/compliance/export/csv'
+    }
+};

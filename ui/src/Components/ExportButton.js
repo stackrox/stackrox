@@ -86,6 +86,7 @@ class ExportButton extends Component {
                             />
                             {this.isTypeSupported() && (
                                 <button
+                                    data-test-id="download-csv-button"
                                     className={btnClassName}
                                     type="button"
                                     onClick={this.downloadCsv}
