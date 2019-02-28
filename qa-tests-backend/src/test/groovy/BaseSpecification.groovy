@@ -4,7 +4,6 @@ import common.Constants
 import groovy.util.logging.Slf4j
 import orchestratormanager.OrchestratorMain
 import orchestratormanager.OrchestratorType
-import orchestratormanager.OrchestratorTypes
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.rules.Timeout
@@ -12,6 +11,8 @@ import services.BaseService
 import spock.lang.Shared
 import spock.lang.Specification
 import testrailintegration.TestRailconfig
+import util.Env
+
 import java.util.concurrent.TimeUnit
 
 @Slf4j
@@ -29,7 +30,7 @@ class BaseSpecification extends Specification {
     def resultMap = [:]
     @Shared
     OrchestratorMain orchestrator = OrchestratorType.create(
-            OrchestratorTypes.valueOf(System.getenv("CLUSTER")),
+            Env.mustGetOrchestratorType(),
             Constants.ORCHESTRATOR_NAMESPACE
     )
     @Shared

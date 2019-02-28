@@ -14,6 +14,7 @@ import io.grpc.netty.NegotiationType
 import io.grpc.netty.NettyChannelBuilder
 import io.netty.handler.ssl.SslContext
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
+import util.Env
 
 import java.util.concurrent.TimeUnit
 
@@ -92,10 +93,8 @@ class BaseService {
                 .trustManager(InsecureTrustManagerFactory.INSTANCE)
                 .build()
 
-        int port = Integer.parseInt(System.getenv("PORT"))
-
         channelInstance = NettyChannelBuilder
-                        .forAddress(System.getenv("HOSTNAME"), port)
+                        .forAddress(Env.mustGetHostname(), Env.mustGetPort())
                         .negotiationType(NegotiationType.TLS)
                         .sslContext(sslContext)
                         .intercept(interceptors())

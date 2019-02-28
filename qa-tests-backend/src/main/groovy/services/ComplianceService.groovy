@@ -12,6 +12,7 @@ import org.apache.http.conn.ssl.TrustAllStrategy
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.ssl.SSLContextBuilder
+import util.Env
 import v1.ComplianceServiceGrpc
 import v1.ComplianceServiceOuterClass
 import v1.ComplianceServiceOuterClass.GetComplianceRunResultsResponse
@@ -103,7 +104,7 @@ class ComplianceService extends BaseService {
                 .build()
 
         HttpPost httpPost = new HttpPost(
-                "https://${System.getenv("HOSTNAME")}:${System.getenv("PORT")}" +
+                "https://${Env.mustGetHostname()}:${Env.mustGetPort()}" +
                         "/api/compliance/export/csv")
         String username = System.getenv("ROX_USERNAME") ?: ""
         String password = System.getenv("ROX_PASSWORD") ?: ""

@@ -160,7 +160,7 @@ ruleset {
     ThrowError 
     ThrowException 
     ThrowNullPointerException 
-    ThrowRuntimeException 
+    // ThrowRuntimeException
     ThrowThrowable 
     
     // rulesets/formatting.xml

@@ -64,7 +64,7 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     testCompile group: 'org.yaml', name: 'snakeyaml', version: '1.16'
     testCompile group: 'com.jayway.restassured', name: 'rest-assured', version: '2.4.1'
-    testCompile group: 'ch.qos.logback', name: 'logback-classic', version: '0.9.26'
+    testCompile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
     testCompile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.6.1'
     testCompile group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.5.3'
     testCompile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.6.1'

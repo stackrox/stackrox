@@ -32,6 +32,7 @@ import io.stackrox.proto.storage.PolicyOuterClass.ListPolicy
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.PolicyOuterClass.Whitelist
 import io.stackrox.proto.storage.ScopeOuterClass
+import util.Env
 
 class Services extends BaseService {
 
@@ -385,8 +386,8 @@ class Services extends BaseService {
                             )
                             .setEnabled(true)
                             .setUiEndpoint("https://" +
-                                    System.getenv("HOSTNAME") +
-                                    ":" + System.getenv("PORT"))
+                                    Env.mustGetHostname() + ":" +
+                                    Env.mustGetPort())
                     .build()
             )
         } catch (Exception e) {
@@ -404,8 +405,8 @@ class Services extends BaseService {
                             .setLabelDefault("AJIT")
                             .setEnabled(true)
                             .setUiEndpoint("https://" +
-                                    System.getenv("HOSTNAME") +
-                                    ":" + System.getenv("PORT"))
+                                    Env.mustGetHostname() + ":" +
+                                    Env.mustGetPort())
                             .setJira(NotifierOuterClass.Jira.newBuilder()
                                     .setUsername("k+automation@stackrox.com")
                                     .setPassword("D7wU97n9CFYuesHt")
@@ -431,8 +432,8 @@ class Services extends BaseService {
                     .setLabelDefault("to@example.com")
                     .setEnabled(true)
                     .setUiEndpoint("https://" +
-                            System.getenv("HOSTNAME") +
-                            ":" + System.getenv("PORT"))
+                            Env.mustGetHostname() + ":" +
+                            Env.mustGetPort())
                     .setEmail(builder.getEmailBuilder()
                             .setUsername("postmaster@sandboxa91803d176f944229a601fc109e20250.mailgun.org")
                             .setPassword("5da76fea807449ea105a77d4fa05420f-7bbbcb78-b8136e8b")
