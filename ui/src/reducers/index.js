@@ -20,7 +20,7 @@ import metadata, { selectors as metadataSelectors } from './metadata';
 import dashboard, { selectors as dashboardSelectors } from './dashboard';
 import loading, { selectors as loadingSelectors } from './loading';
 import route, { selectors as routeSelectors } from './routes';
-import network, { selectors as networkSelectors } from './network';
+import network, { selectors as networkSelectors } from './network/reducer';
 import processes, { selectors as processSelectors } from './processes';
 import groups, { selectors as groupsSelectors } from './groups';
 import attributes, { selectors as attributesSelectors } from './attributes';

@@ -3,8 +3,9 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
-import { actions as networkActions, networkGraphClusters } from 'reducers/network';
+import { actions as graphActions, networkGraphClusters } from 'reducers/network/graph';
 import { actions as clusterActions } from 'reducers/clusters';
+import { actions as pageActions } from 'reducers/network/page';
 
 import Select from 'Components/ReactSelect';
 
@@ -54,7 +55,8 @@ const mapStateToProps = createStructuredSelector({
 
 const mapDispatchToProps = {
     fetchClusters: clusterActions.fetchClusters.request,
-    selectClusterId: networkActions.selectNetworkClusterId
+    selectClusterId: graphActions.selectNetworkClusterId,
+    closeSidePanel: pageActions.closeNetworkWizard
 };
 
 export default connect(

@@ -3,7 +3,7 @@ import * as Icon from 'react-feather';
 
 import LegendTile from 'Components/LegendTile';
 
-class NetworkGraphLegend extends Component {
+class Legend extends Component {
     state = {
         isOpen: true
     };
@@ -99,4 +99,4 @@ class NetworkGraphLegend extends Component {
     }
 }
 
-export default NetworkGraphLegend;
+export default Legend;

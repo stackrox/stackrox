@@ -37,7 +37,7 @@ import Loader from 'Components/Loader';
 
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
 const AsyncDashboardPage = asyncComponent(() => import('Containers/Dashboard/DashboardPage'));
-const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/NetworkPage'));
+const AsyncNetworkPage = asyncComponent(() => import('Containers/Network/Page'));
 const AsyncIntegrationsPage = asyncComponent(() =>
     import('Containers/Integrations/IntegrationsPage')
 );

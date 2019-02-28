@@ -3,7 +3,13 @@ import { delay } from 'redux-saga';
 import { networkPath } from 'routePaths';
 import * as service from 'services/NetworkService';
 import { fetchClusters } from 'services/ClustersService';
-import { actions, types } from 'reducers/network';
+import {
+    actions as backendNetworkActions,
+    types as backendNetworkTypes
+} from 'reducers/network/backend';
+import { actions as graphNetworkActions, types as graphNetworkTypes } from 'reducers/network/graph';
+import { types as searchNetworkTypes } from 'reducers/network/search';
+import { types as wizardNetworkTypes } from 'reducers/network/wizard';
 import { actions as clusterActions } from 'reducers/clusters';
 import { actions as notificationActions } from 'reducers/notifications';
 import { selectors } from 'reducers';
@@ -14,26 +20,26 @@ import { types as locationActionTypes } from 'reducers/routes';
 import { getDeployment } from './deploymentSagas';
 
 function* getNetworkFlowGraph(filters, clusterId) {
-    yield put(actions.fetchNetworkFlowGraph.request());
+    yield put(backendNetworkActions.fetchNetworkFlowGraph.request());
     try {
         const flowResult = yield call(service.fetchNetworkFlowGraph, filters, clusterId);
-        yield put(actions.fetchNetworkFlowGraph.success(flowResult.response));
-        yield put(actions.setNetworkFlowMapping(flowResult.response));
-        yield put(actions.updateNetworkGraphTimestamp(new Date()));
+        yield put(backendNetworkActions.fetchNetworkFlowGraph.success(flowResult.response));
+        yield put(graphNetworkActions.setNetworkFlowMapping(flowResult.response));
+        yield put(graphNetworkActions.updateNetworkGraphTimestamp(new Date()));
     } catch (error) {
-        yield put(actions.fetchNetworkFlowGraph.failure(error));
+        yield put(backendNetworkActions.fetchNetworkFlowGraph.failure(error));
     }
 }
 
 function* getNetworkGraph(filters, clusterId) {
-    yield put(actions.fetchNetworkPolicyGraph.request());
+    yield put(backendNetworkActions.fetchNetworkPolicyGraph.request());
     try {
         const policyResult = yield call(service.fetchNetworkPolicyGraph, filters, clusterId);
-        yield put(actions.fetchNetworkPolicyGraph.success(policyResult.response));
-        yield put(actions.updateNetworkGraphTimestamp(new Date()));
+        yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyResult.response));
+        yield put(graphNetworkActions.updateNetworkGraphTimestamp(new Date()));
         yield fork(getNetworkFlowGraph, filters, clusterId);
     } catch (error) {
-        yield put(actions.fetchNetworkPolicyGraph.failure(error));
+        yield put(backendNetworkActions.fetchNetworkPolicyGraph.failure(error));
     }
 }
 
@@ -44,9 +50,9 @@ function* getSelectedDeployment({ params }) {
 export function* getNetworkPolicies({ params }) {
     try {
         const result = yield call(service.fetchNetworkPolicies, params);
-        yield put(actions.fetchNetworkPolicies.success(result.response, { params }));
+        yield put(backendNetworkActions.fetchNetworkPolicies.success(result.response, { params }));
     } catch (error) {
-        yield put(actions.fetchNetworkPolicies.failure(error));
+        yield put(backendNetworkActions.fetchNetworkPolicies.failure(error));
     }
 }
 
@@ -54,9 +60,9 @@ export function* pollNodeUpdates() {
     while (true) {
         try {
             const result = yield call(service.fetchNodeUpdates);
-            yield put(actions.fetchNodeUpdates.success(result.response));
+            yield put(backendNetworkActions.fetchNodeUpdates.success(result.response));
         } catch (error) {
-            yield put(actions.fetchNodeUpdates.failure(error));
+            yield put(backendNetworkActions.fetchNodeUpdates.failure(error));
         }
         yield call(delay, 5000); // poll every 5 sec
     }
@@ -65,7 +71,7 @@ export function* pollNodeUpdates() {
 function* sendYAMLNotification({ notifierId }) {
     try {
         const clusterId = yield select(selectors.getSelectedNetworkClusterId);
-        const { content } = yield select(selectors.getYamlFile);
+        const { content } = yield select(selectors.getNetworkYamlFile);
         yield call(service.sendYAMLNotification, clusterId, notifierId, content);
         yield put(notificationActions.addNotification('Successfully sent notification.'));
         yield put(notificationActions.removeOldestNotification());
@@ -92,8 +98,8 @@ function* watchLocation() {
         } else if (pollTask) {
             yield cancel(pollTask);
             pollTask = null;
-            yield put(actions.setSelectedNodeId(null));
-            yield put(actions.setNetworkGraphState(null));
+            yield put(graphNetworkActions.setSelectedNodeId(null));
+            yield put(backendNetworkActions.resetNetworkGraphState());
         }
     }
 }
@@ -101,7 +107,7 @@ function* watchLocation() {
 function* filterNetworkPageBySearch() {
     const clusterId = yield select(selectors.getSelectedNetworkClusterId);
     const searchOptions = yield select(selectors.getNetworkSearchOptions);
-    const yamlFile = yield select(selectors.getYamlFile);
+    const yamlFile = yield select(selectors.getNetworkYamlFile);
     if (searchOptions.length && searchOptions[searchOptions.length - 1].type) {
         return;
     }
@@ -120,7 +126,7 @@ function* loadNetworkPage() {
     try {
         const result = yield call(fetchClusters);
         yield put(clusterActions.fetchClusters.success(result.response));
-        yield put(actions.selectDefaultNetworkClusterId(result.response));
+        yield put(graphNetworkActions.selectDefaultNetworkClusterId(result.response));
         yield fork(filterNetworkPageBySearch);
     } catch (error) {
         yield put(clusterActions.fetchClusters.failure(error));
@@ -128,7 +134,7 @@ function* loadNetworkPage() {
 }
 
 function* watchNetworkSearchOptions() {
-    yield takeLatest(types.SET_SEARCH_OPTIONS, filterNetworkPageBySearch);
+    yield takeLatest(searchNetworkTypes.SET_SEARCH_OPTIONS, filterNetworkPageBySearch);
 }
 
 function* watchFetchDeploymentRequest() {
@@ -136,23 +142,23 @@ function* watchFetchDeploymentRequest() {
 }
 
 function* watchNetworkPoliciesRequest() {
-    yield takeLatest(types.FETCH_NETWORK_POLICIES.REQUEST, getNetworkPolicies);
+    yield takeLatest(backendNetworkTypes.FETCH_NETWORK_POLICIES.REQUEST, getNetworkPolicies);
 }
 
 function* watchSelectNetworkCluster() {
-    yield takeLatest(types.SELECT_NETWORK_CLUSTER_ID, filterNetworkPageBySearch);
+    yield takeLatest(graphNetworkTypes.SELECT_NETWORK_CLUSTER_ID, filterNetworkPageBySearch);
 }
 
 function* watchSendYAMLNotification() {
-    yield takeLatest(types.SEND_YAML_NOTIFICATION, sendYAMLNotification);
+    yield takeLatest(wizardNetworkTypes.SEND_YAML_NOTIFICATION, sendYAMLNotification);
 }
 
 function* watchSetYamlFile() {
-    yield takeLatest(types.SET_YAML_FILE, filterNetworkPageBySearch);
+    yield takeLatest(wizardNetworkTypes.SET_YAML_FILE, filterNetworkPageBySearch);
 }
 
 function* watchNetworkNodesUpdate() {
-    yield takeLatest(types.NETWORK_NODES_UPDATE, filterNetworkPageBySearch);
+    yield takeLatest(graphNetworkTypes.NETWORK_NODES_UPDATE, filterNetworkPageBySearch);
 }
 
 export default function* network() {

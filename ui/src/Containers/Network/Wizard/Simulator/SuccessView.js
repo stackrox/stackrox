@@ -1,12 +1,17 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
 import PropTypes from 'prop-types';
+import * as Icon from 'react-feather';
+import { selectors } from 'reducers';
+
 import Message from 'Components/Message';
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
-import * as Icon from 'react-feather';
 
 const successMessage = 'YAML file uploaded successfully';
-class NetworkPolicySimulatorSuccessView extends Component {
+
+class SuccessView extends Component {
     static propTypes = {
         yamlFile: PropTypes.shape({
             name: PropTypes.string.isRequired,
@@ -70,4 +75,8 @@ class NetworkPolicySimulatorSuccessView extends Component {
     }
 }
 
-export default NetworkPolicySimulatorSuccessView;
+const mapStateToProps = createStructuredSelector({
+    yamlFile: selectors.getNetworkYamlFile
+});
+
+export default connect(mapStateToProps)(SuccessView);

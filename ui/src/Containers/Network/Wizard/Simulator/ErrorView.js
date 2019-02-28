@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import Message from 'Components/Message';
 import * as Icon from 'react-feather';
 
-class NetworkPolicySimulatorErrorView extends Component {
+class ErrorView extends Component {
     static propTypes = {
         yamlFile: PropTypes.shape({
             name: PropTypes.string.isRequired,
@@ -62,4 +62,4 @@ class NetworkPolicySimulatorErrorView extends Component {
     }
 }
 
-export default NetworkPolicySimulatorErrorView;
+export default ErrorView;

@@ -4,7 +4,7 @@ import { actions, types } from 'reducers/globalSearch';
 import { actions as alertsActions } from 'reducers/alerts';
 import { actions as imagesActions } from 'reducers/images';
 import { actions as deploymentsActions } from 'reducers/deployments';
-import { actions as networkActions } from 'reducers/network';
+import { actions as networkActions } from 'reducers/network/search';
 import { actions as secretsActions } from 'reducers/secrets';
 import { actions as policiesActions } from 'reducers/policies/search';
 import { selectors } from 'reducers';

@@ -1,5 +1,9 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
+import { selectors } from 'reducers';
+
 import CollapsibleCard from 'Components/CollapsibleCard';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import download from 'utils/download';
@@ -57,4 +61,8 @@ class NetworkPoliciesDetails extends Component {
     }
 }
 
-export default NetworkPoliciesDetails;
+const mapStateToProps = createStructuredSelector({
+    networkPolicies: selectors.getNetworkPolicies
+});
+
+export default connect(mapStateToProps)(NetworkPoliciesDetails);

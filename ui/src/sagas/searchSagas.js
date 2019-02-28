@@ -17,7 +17,7 @@ import { actions as policiesActions } from 'reducers/policies/search';
 import { actions as imagesActions } from 'reducers/images';
 import { actions as secretsActions } from 'reducers/secrets';
 import { actions as dashboardActions } from 'reducers/dashboard';
-import { actions as networkActions } from 'reducers/network';
+import { actions as networkActions } from 'reducers/network/search';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
 import { fetchOptions } from 'services/SearchService';
 import capitalize from 'lodash/capitalize';

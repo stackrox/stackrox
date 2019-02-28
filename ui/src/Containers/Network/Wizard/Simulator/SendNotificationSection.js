@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { actions } from 'reducers/network';
-import { selectors } from 'reducers';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { Link } from 'react-router-dom';
+import { selectors } from 'reducers';
+import { actions as wizardActions } from 'reducers/network/wizard';
 
 import Select, { selectMenuOnTopStyles } from 'Components/ReactSelect';
 
@@ -96,7 +96,7 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = {
-    sendYAMLNotification: actions.sendYAMLNotification
+    sendYAMLNotification: wizardActions.sendYAMLNotification
 };
 
 export default connect(
