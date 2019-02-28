@@ -65,6 +65,11 @@ export const noOptionsMessage = () => null;
 
 export const createOptionPosition = 'first';
 
+// This function checks whether the input value is the same as that of the top option.
+// We don't want to display the user-typed suggestion in this case as it would be a duplicate.
+export const inputMatchesTopOption = (input, selectOptions) =>
+    selectOptions.length && selectOptions[0].label === input;
+
 class URLSearchInputWithAutocomplete extends Component {
     static propTypes = {
         className: PropTypes.string,
@@ -214,7 +219,10 @@ class URLSearchInputWithAutocomplete extends Component {
             noOptionsMessage,
             onInputChange: this.updateAutocompleteState(searchOptions),
             defaultMenuIsOpen: searchOptions.length > 0,
-            isValidNewOption: input => input && searchOptions.length > 0,
+            isValidNewOption: (input, _, availableOptions) =>
+                input &&
+                searchOptions.length > 0 &&
+                !inputMatchesTopOption(input, availableOptions),
             formatCreateLabel: inputValue => inputValue,
             createOptionPosition,
             ...rest

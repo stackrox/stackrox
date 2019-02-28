@@ -10,7 +10,8 @@ import {
     ValueContainer,
     MultiValue,
     noOptionsMessage,
-    createOptionPosition
+    createOptionPosition,
+    inputMatchesTopOption
 } from 'Components/URLSearchInput';
 
 import { actions as searchAutoCompleteActions } from 'reducers/searchAutocomplete';
@@ -182,6 +183,9 @@ class SearchInput extends Component {
             isValidNewOption: (inputValue, _, selectOptions) => {
                 if (!inputValue) return false;
                 if (!this.queryIsPossiblyBeingTyped()) return false;
+
+                // Don't show the new option if it's the same as the top suggestion.
+                if (inputMatchesTopOption(inputValue, selectOptions)) return false;
 
                 // We only allow them to add new options if none of the chips match.
                 // Otherwise it might be confusing.
