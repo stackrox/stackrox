@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+
+package v1;
+
+message SortOption {
+    string field  = 1;
+    bool reversed = 2;
+}
+
+message Pagination {
+    int32               limit        = 1;
+    int32               offset       = 2;
+    SortOption          sort_option  = 3;
+}

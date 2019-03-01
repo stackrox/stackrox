@@ -84,6 +84,7 @@ var (
 
 	Violation      = newFieldLabel("Violation")
 	ViolationState = newFieldLabel("Violation State")
+	ViolationTime  = newFieldLabel("Violation Time")
 
 	// ProcessIndicator Search fields
 	ProcessID        = newFieldLabel("Process ID")

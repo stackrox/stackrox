@@ -8,6 +8,7 @@ import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
+import "api/v1/pagination.proto";
 import "storage/policy.proto";
 import "storage/alert.proto";
 
@@ -15,7 +16,8 @@ package v1;
 
 message ListAlertsRequest {
     reserved 1 to 9; // Removed individual filtered fields and moved towards querying
-    string query = 10;
+    string     query      = 10;
+    Pagination pagination = 11;
 }
 
 message ResolveAlertRequest {

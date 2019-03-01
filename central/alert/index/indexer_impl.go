@@ -80,7 +80,9 @@ func (b *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
 
 	// By default, set stale to false.
 	if !querySpecifiesStateField {
-		q = search.ConjunctionQuery(q, search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
+		cq := search.ConjunctionQuery(q, search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery())
+		cq.Pagination = q.GetPagination()
+		q = cq
 	}
 
 	return blevesearch.RunSearchRequest(v1.SearchCategory_ALERTS, q, b.index, mappings.OptionsMap)

@@ -15,6 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -618,4 +620,133 @@ func (suite *DeploymentIndexTestSuite) TestDeploymentDelete() {
 	results, err = suite.indexer.Search(upperCaseQ)
 	suite.NoError(err)
 	suite.Len(results, 0)
+}
+
+func newPagination(field search.FieldLabel, from, size int32, reversed bool) *v1.Pagination {
+	return &v1.Pagination{
+		Limit:  size,
+		Offset: from,
+		SortOption: &v1.SortOption{
+			Field:    field.String(),
+			Reversed: reversed,
+		},
+	}
+}
+
+func (suite *DeploymentIndexTestSuite) TestSearchSorting() {
+	var ids []string
+	d := fixtures.GetDeployment()
+	for i := 0; i < 10; i++ {
+		id := fmt.Sprintf("id%d", i)
+		d.Id = id
+		ids = append(ids, id)
+		d.Containers = []*storage.Container{
+			{
+				Resources: &storage.Resources{
+					MemoryMbLimit: float32(i),
+				},
+			},
+		}
+		suite.NoError(suite.indexer.AddDeployment(d))
+	}
+
+	reversedIds := make([]string, len(ids))
+	copy(reversedIds, ids)
+	sort.Sort(sort.Reverse(sort.StringSlice(reversedIds)))
+
+	var cases = []struct {
+		field      search.FieldLabel
+		from, size int
+		reversed   bool
+	}{
+		// String search
+		{
+			field:    search.DeploymentID,
+			from:     0,
+			size:     5,
+			reversed: false,
+		},
+		{
+			field:    search.DeploymentID,
+			from:     2,
+			size:     5,
+			reversed: false,
+		},
+		{
+			field:    search.DeploymentID,
+			from:     5,
+			size:     5,
+			reversed: false,
+		},
+		{
+			field:    search.DeploymentID,
+			from:     0,
+			size:     5,
+			reversed: true,
+		},
+		{
+			field:    search.DeploymentID,
+			from:     2,
+			size:     5,
+			reversed: true,
+		},
+		{
+			field:    search.DeploymentID,
+			from:     5,
+			size:     5,
+			reversed: true,
+		},
+		// Numeric Search
+		{
+			field:    search.MemoryLimit,
+			from:     0,
+			size:     5,
+			reversed: false,
+		},
+		{
+			field:    search.MemoryLimit,
+			from:     2,
+			size:     5,
+			reversed: false,
+		},
+		{
+			field:    search.MemoryLimit,
+			from:     5,
+			size:     5,
+			reversed: false,
+		},
+		{
+			field:    search.MemoryLimit,
+			from:     0,
+			size:     5,
+			reversed: true,
+		},
+		{
+			field:    search.MemoryLimit,
+			from:     2,
+			size:     5,
+			reversed: true,
+		},
+		{
+			field:    search.MemoryLimit,
+			from:     5,
+			size:     5,
+			reversed: true,
+		},
+	}
+	qb := search.NewQueryBuilder().AddStrings(search.DeploymentID, "id").ProtoQuery()
+	for _, c := range cases {
+		suite.T().Run(fmt.Sprintf("%s-%d-%d-%t", c.field, c.from, c.size, c.reversed), func(t *testing.T) {
+			qb.Pagination = newPagination(search.DeploymentID, int32(c.from), int32(c.size), c.reversed)
+			results, err := suite.indexer.Search(qb)
+			require.NoError(t, err)
+
+			resultIDs := search.ResultsToIDs(results)
+			if !c.reversed {
+				assert.Equal(t, ids[c.from:c.from+c.size], resultIDs)
+			} else {
+				assert.Equal(t, reversedIds[c.from:c.from+c.size], resultIDs)
+			}
+		})
+	}
 }

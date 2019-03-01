@@ -42,6 +42,21 @@ func TestAlertService(t *testing.T) {
 	suite.Run(t, new(patchAlertTests))
 }
 
+func newEmptyQuery() *v1.Query {
+	return &v1.Query{
+		Pagination: newListAlertPagination(),
+	}
+}
+
+func newListAlertPagination() *v1.Pagination {
+	return &v1.Pagination{
+		SortOption: &v1.SortOption{
+			Field:    search.ViolationTime.String(),
+			Reversed: true,
+		},
+	}
+}
+
 type baseSuite struct {
 	suite.Suite
 
@@ -127,7 +142,6 @@ func (s *listAlertsTests) SetupTest() {
 			Id: "id1",
 			Time: &types.Timestamp{
 				Seconds: 1,
-				Nanos:   2,
 			},
 			Policy: &storage.ListAlertPolicy{
 				Id: alerttest.FakePolicyID,
@@ -136,8 +150,7 @@ func (s *listAlertsTests) SetupTest() {
 		{
 			Id: "id2",
 			Time: &types.Timestamp{
-				Seconds: 1,
-				Nanos:   1,
+				Seconds: 2,
 			},
 			Policy: &storage.ListAlertPolicy{
 				Id: alerttest.FakePolicyID,
@@ -146,8 +159,7 @@ func (s *listAlertsTests) SetupTest() {
 		{
 			Id: "id3",
 			Time: &types.Timestamp{
-				Seconds: 2,
-				Nanos:   0,
+				Seconds: 3,
 			},
 			Policy: &storage.ListAlertPolicy{
 				Id: alerttest.FakePolicyID,
@@ -156,8 +168,7 @@ func (s *listAlertsTests) SetupTest() {
 		{
 			Id: "id4",
 			Time: &types.Timestamp{
-				Seconds: 2,
-				Nanos:   0,
+				Seconds: 4,
 			},
 			Policy: &storage.ListAlertPolicy{
 				Id: alerttest.FakePolicyID,
@@ -167,55 +178,17 @@ func (s *listAlertsTests) SetupTest() {
 
 	// expectedListAlertsResponse includes the slice of ListAlert objects sorted stably by descending timestamp
 	s.expectedListAlertsResponse = &v1.ListAlertsResponse{
-		Alerts: []*storage.ListAlert{
-			{
-				Id: "id3",
-				Time: &types.Timestamp{
-					Seconds: 2,
-					Nanos:   0,
-				},
-				Policy: &storage.ListAlertPolicy{
-					Id: alerttest.FakePolicyID,
-				},
-			},
-			{
-				Id: "id4",
-				Time: &types.Timestamp{
-					Seconds: 2,
-					Nanos:   0,
-				},
-				Policy: &storage.ListAlertPolicy{
-					Id: alerttest.FakePolicyID,
-				},
-			},
-			{
-				Id: "id1",
-				Time: &types.Timestamp{
-					Seconds: 1,
-					Nanos:   2,
-				},
-				Policy: &storage.ListAlertPolicy{
-					Id: alerttest.FakePolicyID,
-				},
-			},
-			{
-				Id: "id2",
-				Time: &types.Timestamp{
-					Seconds: 1,
-					Nanos:   1,
-				},
-				Policy: &storage.ListAlertPolicy{
-					Id: alerttest.FakePolicyID,
-				},
-			},
-		},
+		Alerts: s.fakeListAlertSlice,
 	}
 }
 
 func (s *listAlertsTests) TestListAlerts() {
 	fakeQuery := search.NewQueryBuilder().AddStrings(search.DeploymentName, "field1", "field12").AddStrings(search.Category, "field2")
 
-	s.searcher.EXPECT().SearchListAlerts(fakeQuery.ProtoQuery()).Return(s.fakeListAlertSlice, nil)
+	fakeQueryProto := fakeQuery.ProtoQuery()
+	fakeQueryProto.Pagination = newListAlertPagination()
+
+	s.searcher.EXPECT().SearchListAlerts(fakeQueryProto).Return(s.fakeListAlertSlice, nil)
 
 	result, err := s.service.ListAlerts(context.Background(), &v1.ListAlertsRequest{
 		Query: fakeQuery.Query(),
@@ -226,7 +199,9 @@ func (s *listAlertsTests) TestListAlerts() {
 }
 
 func (s *listAlertsTests) TestListAlertsWhenTheQueryIsEmpty() {
-	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(s.fakeListAlertSlice, nil)
+	var q v1.Query
+	q.Pagination = newListAlertPagination()
+	s.searcher.EXPECT().SearchListAlerts(&q).Return(s.fakeListAlertSlice, nil)
 
 	result, err := s.service.ListAlerts(context.Background(), &v1.ListAlertsRequest{
 		Query: "",
@@ -246,7 +221,7 @@ func (s *listAlertsTests) TestListAlertsWhenTheQueryIsInvalid() {
 }
 
 func (s *listAlertsTests) TestListAlertsWhenTheDataLayerFails() {
-	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(nil, errFake)
+	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery()).Return(nil, errFake)
 
 	result, err := s.service.ListAlerts(context.Background(), &v1.ListAlertsRequest{
 		Query: "",
@@ -400,7 +375,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupForMultipleCategories() {
 }
 
 func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeListAlertSlice []*storage.ListAlert, expected *v1.GetAlertsGroupResponse) {
-	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(fakeListAlertSlice, nil)
+	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery()).Return(fakeListAlertSlice, nil)
 
 	result, err := s.service.GetAlertsGroup(context.Background(), &v1.ListAlertsRequest{
 		Query: "",
@@ -411,7 +386,7 @@ func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeListAlertSlice []*stora
 }
 
 func (s *getAlertsGroupsTests) TestGetAlertsGroupWhenTheDataAccessLayerFails() {
-	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(nil, errFake)
+	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery()).Return(nil, errFake)
 
 	result, err := s.service.GetAlertsGroup(context.Background(), &v1.ListAlertsRequest{
 		Query: "",
@@ -732,7 +707,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 }
 
 func (s *getAlertsCountsTests) testGetAlertCounts(fakeListAlertSlice []*storage.ListAlert, groupBy v1.GetAlertsCountsRequest_RequestGroup, expected *v1.GetAlertsCountsResponse) {
-	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(fakeListAlertSlice, nil)
+	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery()).Return(fakeListAlertSlice, nil)
 
 	result, err := s.service.GetAlertsCounts(context.Background(), &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
 		Query: "",
@@ -820,7 +795,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 		},
 	}
 
-	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(fakeListAlertSlice, nil)
+	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery()).Return(fakeListAlertSlice, nil)
 
 	result, err := s.service.GetAlertsCounts(context.Background(), &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
 		Query: "",
@@ -831,7 +806,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 }
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheDataAccessLayerFails() {
-	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(nil, errFake)
+	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery()).Return(nil, errFake)
 
 	result, err := s.service.GetAlertsCounts(context.Background(), &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
 		Query: "",
@@ -948,7 +923,9 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 		},
 	}
 
-	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(alerts, nil)
+	var q v1.Query
+	q.Pagination = newListAlertPagination()
+	s.searcher.EXPECT().SearchListAlerts(&q).Return(alerts, nil)
 
 	result, err := s.service.GetAlertTimeseries(context.Background(), &v1.ListAlertsRequest{
 		Query: "",
@@ -959,7 +936,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 }
 
 func (s *getAlertTimeseriesTests) TestGetAlertTimeseriesWhenTheDataAccessLayerFails() {
-	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(nil, errFake)
+	s.searcher.EXPECT().SearchListAlerts(newEmptyQuery()).Return(nil, errFake)
 
 	result, err := s.service.GetAlertTimeseries(context.Background(), &v1.ListAlertsRequest{
 		Query: "",

@@ -151,7 +151,9 @@ func RunAutoComplete(queryString string, categories []v1.SearchCategory, searche
 		return nil, status.Errorf(codes.InvalidArgument, "unable to parse query %q: %v", queryString, err)
 	}
 	// Set the max return size for the query
-	query.MaxResultSize = maxAutocompleteResults
+	query.Pagination = &v1.Pagination{
+		Limit: maxAutocompleteResults,
+	}
 
 	if len(categories) == 0 {
 		categories = autocompleteCategories.AsSlice()

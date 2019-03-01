@@ -19,7 +19,11 @@ const maxSearchResponses = 20000
 var (
 	logger = logging.LoggerForModule()
 
-	subQueryContext = context{maxResultSize: maxSearchResponses}
+	subQueryContext = context{
+		pagination: &v1.Pagination{
+			Limit: maxSearchResponses,
+		},
+	}
 )
 
 type relationship struct {
@@ -28,7 +32,8 @@ type relationship struct {
 }
 
 type context struct {
-	maxResultSize int
+	pagination        *v1.Pagination
+	renderedSortOrder search.SortOrder
 }
 
 func newRelationship(src v1.SearchCategory, dst v1.SearchCategory) relationship {
@@ -242,8 +247,13 @@ func resolveMatchFieldQuery(ctx context, index bleve.Index, category v1.SearchCa
 
 // RunSearchRequest builds a query and runs it against the index.
 func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index, optionsMap searchPkg.OptionsMap) ([]searchPkg.Result, error) {
+	sortOrder, err := getSortOrder(q.GetPagination(), optionsMap)
+	if err != nil {
+		return nil, err
+	}
 	ctx := context{
-		maxResultSize: int(q.GetMaxResultSize()),
+		pagination:        q.GetPagination(),
+		renderedSortOrder: sortOrder,
 	}
 
 	bleveQuery, highlightContext, err := buildQuery(ctx, index, category, q, optionsMap)
@@ -253,13 +263,47 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index
 	return runQuery(ctx, bleveQuery, index, highlightContext)
 }
 
+func getSearchSort(sf *v1.SearchField, reversed bool) search.SearchSort {
+	return &search.SortField{
+		Field:   sf.GetFieldPath(),
+		Desc:    reversed,
+		Type:    search.SortFieldAsString,
+		Missing: search.SortFieldMissingLast,
+	}
+}
+
+func getSortOrder(pagination *v1.Pagination, optionsMap searchPkg.OptionsMap) ([]search.SearchSort, error) {
+	so := pagination.GetSortOption()
+	if so == nil {
+		return nil, nil
+	}
+	sf, ok := optionsMap.Get(so.GetField())
+	if !ok {
+		return nil, fmt.Errorf("option %q is not a valid search option", so.GetField())
+	}
+	return []search.SearchSort{
+		&search.SortField{
+			Field:   sf.GetFieldPath(),
+			Desc:    so.GetReversed(),
+			Type:    search.SortFieldAuto,
+			Missing: search.SortFieldMissingLast,
+		},
+	}, nil
+}
+
 func runBleveQuery(ctx context, query query.Query, index bleve.Index, highlightCtx highlightContext, includeLocations bool, fields ...string) (*bleve.SearchResult, error) {
 	searchRequest := bleve.NewSearchRequest(query)
 	// Initial size is 10 which seems small
-	if ctx.maxResultSize > 0 {
-		searchRequest.Size = ctx.maxResultSize
-	}
 	searchRequest.Size = maxSearchResponses
+	if ctx.pagination != nil {
+		searchRequest.From = int(ctx.pagination.GetOffset())
+		searchRequest.Sort = ctx.renderedSortOrder
+
+		if ctx.pagination.GetLimit() != 0 {
+			searchRequest.Size = int(ctx.pagination.GetLimit())
+		}
+	}
+
 	searchRequest.IncludeLocations = includeLocations
 
 	if len(fields) > 0 {

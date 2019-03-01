@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"fmt"
-	"sort"
 
 	"github.com/stackrox/rox/central/alert/index"
 	"github.com/stackrox/rox/central/alert/search"
@@ -10,7 +9,17 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	searchCommon "github.com/stackrox/rox/pkg/search"
+)
+
+var (
+	log = logging.LoggerForModule()
+
+	defaultSortOption = &v1.SortOption{
+		Field:    searchCommon.ViolationTime.String(),
+		Reversed: true,
+	}
 )
 
 // datastoreImpl is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert
@@ -41,18 +50,19 @@ func (ds *datastoreImpl) ListAlerts(request *v1.ListAlertsRequest) ([]*storage.L
 			return nil, err
 		}
 	}
+	if request.GetPagination() != nil {
+		q.Pagination = request.GetPagination()
+	} else {
+		q.Pagination = new(v1.Pagination)
+	}
+	if q.Pagination.GetSortOption() == nil {
+		q.Pagination.SortOption = defaultSortOption
+	}
+
 	alerts, err := ds.SearchListAlerts(q)
 	if err != nil {
 		return nil, err
 	}
-
-	// Sort by descending timestamp.
-	sort.SliceStable(alerts, func(i, j int) bool {
-		if sI, sJ := alerts[i].GetTime().GetSeconds(), alerts[j].GetTime().GetSeconds(); sI != sJ {
-			return sI > sJ
-		}
-		return alerts[i].GetTime().GetNanos() > alerts[j].GetTime().GetNanos()
-	})
 	return alerts, nil
 }
 
