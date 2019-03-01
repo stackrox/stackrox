@@ -1,6 +1,5 @@
 import React from 'react';
-import componentTypes from 'constants/componentTypes';
-import { standardBaseTypes, resourceTypes } from 'constants/entityTypes';
+import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
 import { resourceLabels } from 'messages/common';
 import URLService from 'modules/URLService';
 import contextTypes from 'constants/contextTypes';
@@ -8,17 +7,12 @@ import pageTypes from 'constants/pageTypes';
 import pluralize from 'pluralize';
 
 import Widget from 'Components/Widget';
-import Query from 'Components/AppQuery';
+import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import PropTypes from 'prop-types';
 import HorizontalBarChart from 'Components/visuals/HorizontalBar';
 import NoResultsMessage from 'Components/NoResultsMessage';
-
-const componentTypeMapping = {
-    [resourceTypes.CLUSTER]: componentTypes.STANDARDS_ACROSS_CLUSTERS,
-    [resourceTypes.NAMESPACE]: componentTypes.STANDARDS_ACROSS_NAMESPACES,
-    [resourceTypes.NODE]: componentTypes.STANDARDS_ACROSS_NODES
-};
+import { AGGREGATED_RESULTS as QUERY } from 'queries/controls';
 
 function formatAsPercent(x) {
     return `${x}%`;
@@ -72,37 +66,46 @@ function processData(data, type) {
     return barData;
 }
 
-const StandardsAcrossEntity = ({ type, params, bodyClassName, className }) => (
-    <Query params={params} componentType={componentTypeMapping[type]}>
-        {({ loading, data }) => {
-            let contents;
-            const headerText = `Passing standards across ${type}s`;
-            if (!loading || data.complianceStandards) {
-                const results = processData(data, type);
-                if (!results.length) {
-                    contents = <NoResultsMessage message="No data available. Please run a scan." />;
+const StandardsAcrossEntity = ({ entityType, bodyClassName, className }) => {
+    const variables = {
+        groupBy: [entityTypes.STANDARD, entityType],
+        unit: entityTypes.CONTROL
+    };
+    return (
+        <Query query={QUERY} variables={variables}>
+            {({ loading, data }) => {
+                let contents;
+                const headerText = `Passing standards across ${entityType}s`;
+                if (!loading || data.complianceStandards) {
+                    const results = processData(data, entityType);
+                    if (!results.length) {
+                        contents = (
+                            <NoResultsMessage message="No data available. Please run a scan." />
+                        );
+                    } else {
+                        contents = (
+                            <HorizontalBarChart data={results} valueFormat={formatAsPercent} />
+                        );
+                    }
                 } else {
-                    contents = <HorizontalBarChart data={results} valueFormat={formatAsPercent} />;
+                    contents = <Loader />;
                 }
-            } else {
-                contents = <Loader />;
-            }
-            return (
-                <Widget
-                    className={`s-2 ${className}`}
-                    header={headerText}
-                    bodyClassName={`graph-bottom-border ${bodyClassName}`}
-                >
-                    {contents}
-                </Widget>
-            );
-        }}
-    </Query>
-);
+                return (
+                    <Widget
+                        className={`s-2 ${className}`}
+                        header={headerText}
+                        bodyClassName={`graph-bottom-border ${bodyClassName}`}
+                    >
+                        {contents}
+                    </Widget>
+                );
+            }}
+        </Query>
+    );
+};
 
 StandardsAcrossEntity.propTypes = {
-    type: PropTypes.string.isRequired,
-    params: PropTypes.shape({}).isRequired,
+    entityType: PropTypes.string.isRequired,
     bodyClassName: PropTypes.string,
     className: PropTypes.string
 };

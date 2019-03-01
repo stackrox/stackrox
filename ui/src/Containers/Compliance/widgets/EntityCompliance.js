@@ -103,11 +103,14 @@ const EntityCompliance = ({ entityType, entityName, clusterName, history }) => {
 };
 EntityCompliance.propTypes = {
     entityType: PropTypes.string.isRequired,
-    entityName: PropTypes.string.isRequired,
-    clusterName: PropTypes.string.isRequired,
+    entityName: PropTypes.string,
+    clusterName: PropTypes.string,
     history: ReactRouterPropTypes.history.isRequired
 };
 
-EntityCompliance.defaultProps = {};
+EntityCompliance.defaultProps = {
+    entityName: null,
+    clusterName: null
+};
 
 export default withRouter(EntityCompliance);

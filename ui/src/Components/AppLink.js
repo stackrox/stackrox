@@ -7,7 +7,6 @@ import * as Icon from 'react-feather';
 const AppLink = ({ context, pageType, params, children, externalLink, ...rest }) => {
     const { staticContext, entityType, ...linkParams } = rest;
     const to = URLService.getLinkTo(context, pageType, params);
-
     return (
         <div className="flex items-center">
             <Link to={to} {...linkParams}>

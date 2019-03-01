@@ -5,7 +5,7 @@ import Loader from 'Components/Loader';
 import PropTypes from 'prop-types';
 import Gauge from 'Components/visuals/GaugeWithDetail';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import { standardBaseTypes } from 'constants/entityTypes';
+import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
 import { standardShortLabels } from 'messages/standards';
 import { resourceLabels } from 'messages/common';
 import { AGGREGATED_RESULTS } from 'queries/controls';
@@ -13,6 +13,7 @@ import URLService from 'modules/URLService';
 import contextTypes from 'constants/contextTypes';
 import pageTypes from 'constants/pageTypes';
 import { CLIENT_SIDE_SEARCH_OPTIONS } from 'constants/searchOptions';
+import queryService from 'modules/queryService';
 
 const isStandard = type => !!standardBaseTypes[type];
 
@@ -22,7 +23,7 @@ const sortByTitle = (a, b) => {
     return 0;
 };
 
-function processData({ entityType, query }, { results, complianceStandards }) {
+function processData(entityType, query, { results, complianceStandards }) {
     let filteredResults;
     if (standardBaseTypes[entityType]) {
         filteredResults = results.results.filter(result =>
@@ -89,35 +90,34 @@ function processData({ entityType, query }, { results, complianceStandards }) {
     return Object.values(standardDataMapping).sort(sortByTitle);
 }
 
-const getQueryVariables = params => {
-    const groupBy = ['STANDARD'];
-    let unit = 'CONTROL';
-
-    if (params.query && params.query.groupBy) {
-        groupBy.push(params.query.groupBy);
-    } else if (!isStandard(params.entityType)) {
-        groupBy.push(params.entityType);
-        unit = params.entityType;
+const getQueryVariables = (entityType, groupBy, query) => {
+    const where = queryService.objectToWhereClause(query);
+    if (!isStandard(entityType)) {
+        return {
+            groupBy: [entityTypes.STANDARD, entityType],
+            unit: entityType,
+            where
+        };
     }
-    const { query } = params;
+
     return {
-        groupBy,
-        unit,
-        query
+        groupBy: [entityTypes.STANDARD, ...(groupBy ? [groupBy] : [])],
+        unit: entityTypes.CONTROL,
+        where
     };
 };
 
-const ComplianceAcrossEntities = ({ params }) => {
-    const variables = getQueryVariables(params);
+const ComplianceAcrossEntities = ({ entityType, groupBy, query }) => {
+    const variables = getQueryVariables(entityType, groupBy, query);
     return (
         <Query query={AGGREGATED_RESULTS} variables={variables}>
             {({ loading, data }) => {
                 let contents = <Loader />;
-                const headerText = standardBaseTypes[params.entityType]
+                const headerText = standardBaseTypes[entityType]
                     ? `Controls in Compliance`
-                    : `${resourceLabels[params.entityType]}s in Compliance`;
+                    : `${resourceLabels[entityType]}s in Compliance`;
                 if (!loading && data) {
-                    const results = processData(params, data);
+                    const results = processData(entityType, query, data);
                     if (!results.length) {
                         contents = (
                             <NoResultsMessage message="No data available. Please run a scan." />
@@ -137,7 +137,15 @@ const ComplianceAcrossEntities = ({ params }) => {
 };
 
 ComplianceAcrossEntities.propTypes = {
-    params: PropTypes.shape({}).isRequired
+    entityType: PropTypes.string,
+    groupBy: PropTypes.string,
+    query: PropTypes.shape({})
+};
+
+ComplianceAcrossEntities.defaultProps = {
+    entityType: null,
+    groupBy: null,
+    query: null
 };
 
 export default ComplianceAcrossEntities;

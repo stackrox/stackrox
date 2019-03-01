@@ -14,10 +14,10 @@ import { withRouter } from 'react-router-dom';
 import Header from './Header';
 
 const ControlPage = ({ match, location, controlId, sidePanelMode }) => {
-    const params = URLService.getParams(match, location);
-    const pageControlId = controlId || params.controlId;
+    const urlParams = URLService.getParams(match, location);
+
     return (
-        <Query query={QUERY} variables={{ id: pageControlId }}>
+        <Query query={QUERY} variables={{ id: controlId || urlParams.controlId }}>
             {({ data }) => {
                 const { results: control, complianceStandards: standards } = data;
                 if (isEmpty(control)) return null;

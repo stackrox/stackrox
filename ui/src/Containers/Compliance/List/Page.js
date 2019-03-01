@@ -48,17 +48,25 @@ class ComplianceListPage extends Component {
         const { match, location } = this.props;
         const { selectedRow } = this.state;
         const params = URLService.getParams(match, location);
+        const groupBy = params.query && params.query.groupBy ? params.query.groupBy : null;
+        const { entityType, entityId, query } = params;
         return (
             <section className="flex flex-col h-full relative" id="capture-list">
                 <Header searchComponent={<SearchInput categories={['COMPLIANCE']} />} />
                 <CollapsibleBanner className="pdf-page">
-                    <ComplianceAcrossEntities params={params} />
-                    <ControlsMostFailed params={params} showEmpty />
+                    <ComplianceAcrossEntities
+                        entityType={entityType}
+                        query={query}
+                        groupBy={groupBy}
+                    />
+                    <ControlsMostFailed entityType={entityType} query={query} showEmpty />
                 </CollapsibleBanner>
                 <div className="flex flex-1 overflow-y-auto">
                     <ListTable
                         selectedRow={selectedRow}
-                        params={params}
+                        entityType={entityType}
+                        entityId={entityId}
+                        query={query}
                         updateSelectedRow={this.updateSelectedRow}
                         pdfId="capture-list"
                     />

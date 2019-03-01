@@ -24,12 +24,11 @@ function getEntityTypeFromMatch(match) {
 
 function getPath(context, pageType, urlParams) {
     const isResourceType = urlParams.entityType ? isResource(urlParams.entityType) : false;
+    const { entityType } = urlParams;
     const pathMap = {
         [contextTypes.COMPLIANCE]: {
             [pageTypes.DASHBOARD]: nestedCompliancePaths.DASHBOARD,
-            [pageTypes.ENTITY]: isResourceType
-                ? nestedCompliancePaths.RESOURCE
-                : nestedCompliancePaths.CONTROL,
+            [pageTypes.ENTITY]: nestedCompliancePaths[entityType],
             [pageTypes.LIST]: nestedCompliancePaths.LIST
         },
         [contextTypes.RISK]: {

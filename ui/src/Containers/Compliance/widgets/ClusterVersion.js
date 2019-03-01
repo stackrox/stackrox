@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { resourceTypes } from 'constants/entityTypes';
-import { CLUSTER_VERSION_QUERY } from 'queries/cluster';
+import { CLUSTER_VERSION_QUERY as QUERY } from 'queries/cluster';
 import { clusterVersionLabels } from 'messages/common';
 import { format as dateFormat } from 'date-fns';
 
@@ -9,16 +8,10 @@ import Widget from 'Components/Widget';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 
-const queryMap = {
-    [resourceTypes.CLUSTER]: CLUSTER_VERSION_QUERY
-};
-
-const ClusterVersion = ({ entityType, params }) => {
-    const query = queryMap[entityType];
-    const variables = { id: params.entityId };
-
+const ClusterVersion = ({ clusterId }) => {
+    const variables = { id: clusterId };
     return (
-        <Query query={query} variables={variables}>
+        <Query query={QUERY} variables={variables}>
             {({ loading, data }) => {
                 let contents = <Loader />;
                 let headerText = '';
@@ -48,8 +41,11 @@ const ClusterVersion = ({ entityType, params }) => {
 };
 
 ClusterVersion.propTypes = {
-    entityType: PropTypes.string.isRequired,
-    params: PropTypes.shape({}).isRequired
+    clusterId: PropTypes.string
+};
+
+ClusterVersion.defaultProps = {
+    clusterId: null
 };
 
 export default ClusterVersion;

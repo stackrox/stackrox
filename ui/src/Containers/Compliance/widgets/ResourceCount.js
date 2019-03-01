@@ -11,43 +11,44 @@ import Widget from 'Components/Widget';
 import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import CountWidget from 'Components/CountWidget';
+import contextTypes from 'constants/contextTypes';
 
 const queryMap = {
     [resourceTypes.NODE]: NODES_BY_CLUSTER
     // TODO: [resourceTypes.NAMESPACE] : NETWORK_POLICIES_BY_NAMESPACE
 };
 
-const ResourceCount = ({ entityType, params }) => {
+const ResourceCount = ({ resourceType, relatedToResourceType, relatedToResourceId }) => {
     function getUrl(name) {
         const linkParams = {
-            entityType
+            entityType: resourceType
         };
-        if (params.entityId && params.entityType) {
+        if (relatedToResourceId && relatedToResourceType) {
             linkParams.query = {
-                [capitalize(params.entityType)]: name
+                [capitalize(relatedToResourceType)]: name
             };
         }
-        return URLService.getLinkTo(params.context, pageTypes.LIST, linkParams).url;
+        return URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, linkParams).url;
     }
 
     function processData(data) {
-        if (entityType === resourceTypes.NODE) {
+        if (resourceType === resourceTypes.NODE) {
             return data.nodes.length;
         }
-        if (entityType === resourceTypes.NAMESPACE) {
+        if (resourceType === resourceTypes.NAMESPACE) {
             return data.namespaces.length;
         }
         return 0;
     }
 
-    const query = queryMap[entityType];
-    const variables = { id: params.entityId };
+    const query = queryMap[resourceType];
+    const variables = { id: relatedToResourceId };
 
     return (
         <Query query={query} variables={variables}>
             {({ loading, data }) => {
                 const contents = <Loader />;
-                const headerText = `${resourceLabels[entityType]} Count`;
+                const headerText = `${resourceLabels[resourceType]} Count`;
                 if (!loading && data && data.results) {
                     const url = getUrl(data.results.name);
                     const count = processData(data.results);
@@ -64,8 +65,14 @@ const ResourceCount = ({ entityType, params }) => {
 };
 
 ResourceCount.propTypes = {
-    entityType: PropTypes.string.isRequired,
-    params: PropTypes.shape({}).isRequired
+    resourceType: PropTypes.string,
+    relatedToResourceType: PropTypes.string.isRequired,
+    relatedToResourceId: PropTypes.string
+};
+
+ResourceCount.defaultProps = {
+    resourceType: null,
+    relatedToResourceId: null
 };
 
 export default ResourceCount;

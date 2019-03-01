@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { standardBaseTypes } from 'constants/entityTypes';
+import entityTypes, { standardBaseTypes, standardTypes } from 'constants/entityTypes';
 import pluralize from 'pluralize';
 import toLower from 'lodash/toLower';
 import startCase from 'lodash/startCase';
@@ -13,21 +13,154 @@ import Loader from 'Components/Loader';
 import TablePagination from 'Components/TablePagination';
 import TableGroup from 'Components/TableGroup';
 import entityToColumns from 'constants/tableColumns';
-import componentTypes from 'constants/componentTypes';
-import AppQuery from 'Components/AppQuery';
+import Query from 'Components/ThrowingQuery';
 import NoResultsMessage from 'Components/NoResultsMessage';
+import { CLUSTERS_LIST_QUERY, NAMESPACES_LIST_QUERY, NODES_QUERY } from 'queries/table';
+import { LIST_STANDARD } from 'queries/standard';
+import { standardLabels } from 'messages/standards';
+import queryService from 'modules/queryService';
+import orderBy from 'lodash/orderBy';
 
-const createPDFTable = (tableData, params, pdfId) => {
-    const { entityType } = params;
+function getQuery(entityType) {
+    if (standardTypes[entityType]) {
+        return LIST_STANDARD;
+    }
+    switch (entityType) {
+        case entityTypes.CLUSTER:
+            return CLUSTERS_LIST_QUERY;
+        case entityTypes.NAMESPACE:
+            return NAMESPACES_LIST_QUERY;
+        case entityTypes.NODE:
+            return NODES_QUERY;
+        default:
+            return null;
+    }
+}
+
+function getVariables(entityType, entityId, query) {
+    if (!standardTypes[entityType]) {
+        return { where: queryService.objectToWhereClause(query) };
+    }
+    const groupBy = ['CONTROL', 'CATEGORY', ...(query.groupBy ? [query.groupBy] : [])];
+    return {
+        where: queryService.objectToWhereClause({ Standard: standardLabels[entityType] }),
+        groupBy
+    };
+}
+
+function complianceRate(numPassing, numFailing) {
+    return numPassing + numFailing > 0
+        ? `${Math.round((numPassing / (numPassing + numFailing)) * 100)}%`
+        : 'N/A';
+}
+
+function formatResourceData(data, resourceType) {
+    if (!data.results || data.results.results.length === 0) return null;
+    const formattedData = { results: [] };
+    const entityMap = {};
+    let standardKeyIndex = 0;
+    let entityKeyIndex = 0;
+    data.results.results[0].aggregationKeys.forEach(({ scope }, idx) => {
+        if (scope === 'STANDARD') standardKeyIndex = idx;
+        if (scope === resourceType) entityKeyIndex = idx;
+    });
+    data.results.results.forEach(({ aggregationKeys, keys, numPassing, numFailing }) => {
+        const curEntity = aggregationKeys[entityKeyIndex].id;
+        const curStandard = aggregationKeys[standardKeyIndex].id;
+        const entity = keys[entityKeyIndex];
+        // eslint-disable-next-line no-underscore-dangle
+        if (entity.__typename === '') return;
+        const entityMetaData = entity.metadata || {};
+
+        entityMap[curEntity] = entityMap[curEntity] || {
+            name: entity.name || entity.metadata.name,
+            cluster: entity.clusterName || entityMetaData.clusterName || entity.name,
+            id: curEntity,
+            overall: {
+                numPassing: 0,
+                numFailing: 0,
+                average: 0
+            }
+        };
+
+        if (numPassing + numFailing > 0)
+            entityMap[curEntity][curStandard] = complianceRate(numPassing, numFailing);
+        entityMap[curEntity].overall.numPassing += numPassing;
+        entityMap[curEntity].overall.numFailing += numFailing;
+    });
+
+    Object.keys(entityMap).forEach(cluster => {
+        const overallCluster = Object.assign({}, entityMap[cluster]);
+        const { numPassing, numFailing } = overallCluster.overall;
+        overallCluster.overall.average = complianceRate(numPassing, numFailing);
+        formattedData.results.push(overallCluster);
+    });
+    return formattedData;
+}
+
+function formatStandardData(data) {
+    if (!data.results || data.results.results.length === 0) return null;
+    const formattedData = { results: [], totalRows: 0 };
+    const groups = {};
+    let controlKeyIndex = null;
+    let categoryKeyIndex = null;
+    let groupByKeyIndex = null;
+    data.results.results[0].aggregationKeys.forEach(({ scope }, idx) => {
+        if (scope === 'CONTROL') controlKeyIndex = idx;
+        if (scope === 'CATEGORY') categoryKeyIndex = idx;
+        if (scope !== 'CATEGORY' && scope !== 'CONTROL') groupByKeyIndex = idx;
+    });
+    data.results.results.forEach(({ keys, numPassing, numFailing }) => {
+        const groupKey = groupByKeyIndex === null ? categoryKeyIndex : groupByKeyIndex;
+        const { name, clusterName, description: groupDescription, metadata, __typename } = keys[
+            groupKey
+        ];
+        // the check below is to address ROX-1420
+        if (__typename !== '') {
+            let groupName = name;
+            if (__typename === 'Node') {
+                groupName = `${clusterName}/${name}`;
+            } else if (__typename === 'Namespace') {
+                groupName = `${metadata.clusterName}/${metadata.name}`;
+            }
+            if (!groups[groupName]) {
+                const groupId = parseInt(groupName, 10) || groupName;
+                groups[groupName] = {
+                    groupId,
+                    name: `${groupName} ${groupDescription ? `- ${groupDescription}` : ''}`,
+                    rows: []
+                };
+            }
+            if (controlKeyIndex) {
+                const { id, name: controlName, description } = keys[controlKeyIndex];
+                groups[groupName].rows.push({
+                    id,
+                    description,
+                    control: controlName,
+                    compliance: complianceRate(numPassing, numFailing),
+                    group: groupName
+                });
+            }
+        }
+    });
+    Object.keys(groups).forEach(group => {
+        formattedData.results.push(groups[group]);
+        formattedData.totalRows += groups[group].rows.length;
+    });
+    formattedData.results = orderBy(formattedData.results, ['groupId', 'name'], ['asc', 'asc']);
+    return formattedData;
+}
+
+const createPDFTable = (tableData, entityType, query, pdfId) => {
     const table = document.getElementById('pdf-table');
     const parent = document.getElementById(pdfId);
     if (table) {
         parent.removeChild(table);
     }
     let type = null;
-    if (params.query.groupBy) {
-        type = startCase(toLower(params.query.groupBy));
-    } else if (standardBaseTypes[params.entityType]) {
+    if (query.groupBy) {
+        type = startCase(toLower(query.groupBy));
+    } else if (standardBaseTypes[entityType]) {
         type = 'Standard';
     }
     if (tableData.length) {
@@ -83,7 +216,9 @@ const createPDFTable = (tableData, params, pdfId) => {
 
 class ListTable extends Component {
     static propTypes = {
-        params: PropTypes.shape({}).isRequired,
+        entityType: PropTypes.string,
+        entityId: PropTypes.string,
+        query: PropTypes.shape({}),
         selectedRow: PropTypes.shape({}),
         updateSelectedRow: PropTypes.func.isRequired,
         pdfId: PropTypes.string
@@ -91,7 +226,10 @@ class ListTable extends Component {
 
     static defaultProps = {
         selectedRow: null,
-        pdfId: null
+        pdfId: null,
+        entityType: null,
+        entityId: null,
+        query: null
     };
 
     constructor(props) {
@@ -104,10 +242,10 @@ class ListTable extends Component {
     setTablePage = page => this.setState({ page });
 
     // This is a client-side implementation of filtering by the "Compliance State" Search Option
-    filterByComplianceState = (data, params, isStandard) => {
+    filterByComplianceState = (data, query, isStandard) => {
         const complianceStateKey = SEARCH_OPTIONS.COMPLIANCE.STATE;
-        if (!params.query[complianceStateKey]) return data.results;
-        const val = params.query[complianceStateKey].toLowerCase();
+        if (!query[complianceStateKey]) return data.results;
+        const val = query[complianceStateKey].toLowerCase();
         const isPassing = val === 'pass';
         const isFailing = val === 'fail';
         const { results } = data;
@@ -155,49 +293,55 @@ class ListTable extends Component {
     };
 
     render() {
-        const { params, selectedRow, updateSelectedRow, pdfId } = this.props;
+        const { entityType, entityId, query, selectedRow, updateSelectedRow, pdfId } = this.props;
         const { page } = this.state;
+        const gqlQuery = getQuery(entityType);
+        const variables = getVariables(entityType, entityId, query);
+        const formatData = standardTypes[entityType] ? formatStandardData : formatResourceData;
         return (
-            <AppQuery params={params} componentType={componentTypes.LIST_TABLE}>
+            <Query query={gqlQuery} variables={variables}>
                 {({ loading, data }) => {
-                    const isStandard = standardBaseTypes[params.entityType];
+                    const isStandard = !!standardTypes[entityType];
                     let tableData;
                     let contents = <Loader />;
                     let paginationComponent;
                     let headerText;
                     if (!loading || (data && data.results)) {
-                        if (!data)
+                        const formattedData = formatData(data, entityType);
+                        if (!formattedData)
                             return (
                                 <NoResultsMessage message="No compliance data available. Please run a scan." />
                             );
-                        tableData = this.filterByComplianceState(data, params, isStandard);
+
+                        tableData = this.filterByComplianceState(formattedData, query, isStandard);
+
                         if (tableData.length) {
-                            createPDFTable(tableData, params, pdfId);
+                            createPDFTable(tableData, entityType, query, pdfId);
                         }
                         const totalRows = this.getTotalRows(tableData, isStandard);
-                        const { groupBy } = params.query;
+                        const { groupBy } = query;
                         const groupedByText = groupBy
                             ? `across ${tableData.length} ${pluralize(groupBy, tableData.length)}`
                             : '';
-                        const entityType = isStandard ? 'control' : params.entityType;
+                        const listEntityType = isStandard ? 'control' : entityType;
                         headerText = `${totalRows} ${pluralize(
-                            entityType,
+                            listEntityType,
                             totalRows
                         )} ${groupedByText}`;
                         contents = isStandard ? (
                             <TableGroup
                                 groups={tableData}
                                 totalRows={totalRows}
-                                tableColumns={entityToColumns[params.entityType]}
+                                tableColumns={entityToColumns[entityType]}
                                 onRowClick={updateSelectedRow}
-                                entityType={entityType}
+                                entityType={listEntityType}
                                 idAttribute="id"
                                 selectedRowId={selectedRow ? selectedRow.id : null}
                             />
                         ) : (
                             <Table
                                 rows={tableData}
-                                columns={entityToColumns[params.entityType]}
+                                columns={entityToColumns[entityType]}
                                 onRowClick={updateSelectedRow}
                                 idAttribute="id"
                                 selectedRowId={selectedRow ? selectedRow.id : null}
@@ -225,7 +369,7 @@ class ListTable extends Component {
                         </Panel>
                     );
                 }}
-            </AppQuery>
+            </Query>
         );
     }
 }

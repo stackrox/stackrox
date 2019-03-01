@@ -132,14 +132,15 @@ ResourceRelatedEntitiesList.propTypes = {
         id: PropTypes.string,
         name: PropTypes.string
     }),
-    clusterName: PropTypes.string.isRequired,
+    clusterName: PropTypes.string,
     limit: PropTypes.number
 };
 
 ResourceRelatedEntitiesList.defaultProps = {
     pageEntity: null,
     className: null,
-    limit: 20
+    limit: 20,
+    clusterName: null
 };
 
 export default ResourceRelatedEntitiesList;

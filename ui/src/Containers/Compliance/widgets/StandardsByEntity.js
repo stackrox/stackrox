@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import componentTypes from 'constants/componentTypes';
-import { resourceTypes } from 'constants/entityTypes';
+import entityTypes from 'constants/entityTypes';
 import URLService from 'modules/URLService';
 import pageTypes from 'constants/pageTypes';
 import labels from 'messages/common';
@@ -9,17 +8,15 @@ import capitalize from 'lodash/capitalize';
 import sortBy from 'lodash/sortBy';
 import chunk from 'lodash/chunk';
 import Widget from 'Components/Widget';
-import Query from 'Components/AppQuery';
+import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import VerticalBarChart from 'Components/visuals/VerticalClusterBar';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { standardLabels } from 'messages/standards';
+import { AGGREGATED_RESULTS as QUERY } from 'queries/controls';
+import contextTypes from 'constants/contextTypes';
 
-const componentTypeMapping = {
-    [resourceTypes.CLUSTER]: componentTypes.STANDARDS_BY_CLUSTER
-};
-
-function processData(data, type, params) {
+function processData(data, entityType) {
     if (!data.results.results.length || !data.entityList) return [];
     const standardsGrouping = {};
     const { results, entityList, complianceStandards } = data;
@@ -30,10 +27,10 @@ function processData(data, type, params) {
         const standard = complianceStandards.find(c => c.id === result.aggregationKeys[0].id);
         const { numPassing, numFailing } = result;
         const percentagePassing = Math.round((numPassing / (numPassing + numFailing)) * 100);
-        const link = URLService.getLinkTo(params.context, pageTypes.LIST, {
+        const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
             entityType: standard.id,
             query: {
-                [`${capitalize(type)}`]: entity.name
+                [`${capitalize(entityType)}`]: entity.name
             }
         });
         const dataPoint = {
@@ -41,7 +38,7 @@ function processData(data, type, params) {
             y: percentagePassing,
             hint: {
                 title: standardLabels[standard.id],
-                body: `${numFailing} controls failing in this ${labels.resourceLabels[type]}`
+                body: `${numFailing} controls failing in this ${labels.resourceLabels[entityType]}`
             },
             link
         };
@@ -69,12 +66,12 @@ function processData(data, type, params) {
     return pagedStandardsGrouping;
 }
 
-function getLabelLinks(data, type, params) {
+function getLabelLinks(data, entityType) {
     const { entityList } = data;
     const labelLinks = {};
     entityList.forEach(entity => {
-        const link = URLService.getLinkTo(params.context, pageTypes.ENTITY, {
-            entityType: type,
+        const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.ENTITY, {
+            entityType,
             entityId: entity.id
         });
         labelLinks[entity.name] = link;
@@ -82,47 +79,58 @@ function getLabelLinks(data, type, params) {
     return labelLinks;
 }
 
-const StandardsByEntity = ({ type, params, bodyClassName, className }) => (
-    <Query params={params} componentType={componentTypeMapping[type]}>
-        {({ loading, data }) => {
-            let contents = <Loader />;
-            const headerText = `Passing standards by ${type}`;
-            let pages;
-            if (!loading || data.results) {
-                const results = processData(data, type, params);
-                const labelLinks = getLabelLinks(data, type, params);
-                pages = results.length;
+const StandardsByEntity = ({ entityType, bodyClassName, className }) => {
+    const variables = {
+        groupBy: [entityTypes.STANDARD, entityTypes.CLUSTER],
+        unit: entityTypes.CONTROL
+    };
+    return (
+        <Query query={QUERY} variables={variables}>
+            {({ loading, data }) => {
+                let contents = <Loader />;
+                const headerText = `Passing standards by ${entityType}`;
+                let pages;
+                if (!loading || data.results) {
+                    const formattedData = {
+                        results: data.results,
+                        complianceStandards: data.complianceStandards,
+                        entityList: data.clusters
+                    };
+                    const results = processData(formattedData, entityType);
+                    const labelLinks = getLabelLinks(formattedData, entityType);
+                    pages = results.length;
 
-                if (pages) {
-                    const VerticalBarChartPaged = ({ currentPage }) => (
-                        <VerticalBarChart data={results[currentPage]} labelLinks={labelLinks} />
-                    );
-                    VerticalBarChartPaged.propTypes = { currentPage: PropTypes.number };
-                    VerticalBarChartPaged.defaultProps = { currentPage: 0 };
-                    contents = <VerticalBarChartPaged />;
-                } else {
-                    contents = <NoResultsMessage message="No data available. Please run a scan." />;
+                    if (pages) {
+                        const VerticalBarChartPaged = ({ currentPage }) => (
+                            <VerticalBarChart data={results[currentPage]} labelLinks={labelLinks} />
+                        );
+                        VerticalBarChartPaged.propTypes = { currentPage: PropTypes.number };
+                        VerticalBarChartPaged.defaultProps = { currentPage: 0 };
+                        contents = <VerticalBarChartPaged />;
+                    } else {
+                        contents = (
+                            <NoResultsMessage message="No data available. Please run a scan." />
+                        );
+                    }
                 }
-            }
 
-            return (
-                <Widget
-                    className={`s-2 ${className}`}
-                    pages={pages}
-                    header={headerText}
-                    bodyClassName={`graph-bottom-border ${bodyClassName}`}
-                >
-                    {contents}
-                </Widget>
-            );
-        }}
-    </Query>
-);
-
+                return (
+                    <Widget
+                        className={`s-2 ${className}`}
+                        pages={pages}
+                        header={headerText}
+                        bodyClassName={`graph-bottom-border ${bodyClassName}`}
+                    >
+                        {contents}
+                    </Widget>
+                );
+            }}
+        </Query>
+    );
+};
 StandardsByEntity.propTypes = {
-    type: PropTypes.string.isRequired,
+    entityType: PropTypes.string.isRequired,
     bodyClassName: PropTypes.string,
-    params: PropTypes.shape({}).isRequired,
     className: PropTypes.string
 };
 

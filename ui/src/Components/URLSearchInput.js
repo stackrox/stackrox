@@ -278,7 +278,7 @@ class URLSearchInput extends Component {
                 }}
             >
                 {({ data }) => {
-                    const autoCompleteResults = data.searchAutocomplete || [];
+                    const autoCompleteResults = data ? data.searchAutocomplete : [];
                     return (
                         <URLSearchInputWithAutocomplete
                             autoCompleteResults={autoCompleteResults}

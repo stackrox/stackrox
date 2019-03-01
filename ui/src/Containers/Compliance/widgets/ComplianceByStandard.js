@@ -1,19 +1,19 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import componentTypes from 'constants/componentTypes';
 import { standardLabels } from 'messages/standards';
 import capitalize from 'lodash/capitalize';
 import URLService from 'modules/URLService';
 import pageTypes from 'constants/pageTypes';
 import contextTypes from 'constants/contextTypes';
-import cloneDeep from 'lodash/cloneDeep';
-
-import AppLink from 'Components/AppLink';
 import Widget from 'Components/Widget';
 import Sunburst from 'Components/visuals/Sunburst';
-import Query from 'Components/AppQuery';
+import Query from 'Components/ThrowingQuery';
 import Loader from 'Components/Loader';
 import networkStatuses from 'constants/networkStatuses';
+import { COMPLIANCE_STANDARDS as QUERY } from 'queries/standard';
+import queryService from 'modules/queryService';
+import entityTypes from 'constants/entityTypes';
+import { Link } from 'react-router-dom';
 
 const colors = [
     'var(--tertiary-400)',
@@ -90,6 +90,7 @@ const processSunburstData = (data, type) => {
             const group = groupMapping[datum.groupId];
             const controlStat = controlStatsMapping[datum.id];
             const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.ENTITY, {
+                entityType: entityTypes.CONTROL,
                 standardId: datum.standardId,
                 controlId: datum.id
             });
@@ -123,44 +124,43 @@ const processSunburstData = (data, type) => {
 const getNumControls = sunburstData =>
     sunburstData.reduce((acc, curr) => acc + curr.children.length, 0);
 
-const constructURLWithQuery = (params, type, id) => {
-    const newParams = cloneDeep(params);
-    if (type) {
-        newParams.query.Standard = standardLabels[type];
-    }
-    if (id) {
-        const entityKey = `${capitalize(newParams.entityType)} ID`;
-        newParams.query[entityKey] = id;
-    }
-    return newParams;
-};
-
-const createURLLink = (params, type, entityName) => {
+const createURLLink = (entityType, standardType, entityName) => {
     const linkParams = {
-        entityType: type,
+        entityType: standardType,
         query: {
             groupBy: 'CATEGORY'
         }
     };
     if (entityName) {
-        const entityKey = capitalize(params.entityType);
+        const entityKey = capitalize(entityType);
         linkParams.query[entityKey] = entityName;
     }
-    const link = URLService.getLinkTo(params.context, pageTypes.LIST, linkParams);
+    const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, linkParams);
+
     return link;
 };
 
-const ComplianceByStandard = ({ type, entityName, params, className }) => {
-    const newParams = constructURLWithQuery(params, type, params.entityId);
+const ComplianceByStandard = ({ standardType, entityName, entityType, entityId, className }) => {
+    const groupBy = ['STANDARD', 'CATEGORY', 'CONTROL', ...(entityType ? [entityType] : [])];
+    const where = queryService.objectToWhereClause({
+        Standard: standardLabels[standardType]
+    });
     return (
-        <Query params={newParams} componentType={componentTypes.COMPLIANCE_BY_STANDARD}>
+        <Query
+            query={QUERY}
+            variables={{
+                groupBy,
+                where
+            }}
+        >
             {({ loading, data, networkStatus }) => {
                 let contents = <Loader />;
-                const headerText = `${standardLabels[type]} Compliance`;
+                const headerText = `${standardLabels[standardType]} Compliance`;
                 let viewStandardLink = null;
+
                 if (!loading && data && networkStatus === networkStatuses.READY) {
-                    const { sunburstData, totalPassing } = processSunburstData(data, type);
-                    const link = createURLLink(params, type, entityName);
+                    const { sunburstData, totalPassing } = processSunburstData(data, standardType);
+                    const link = createURLLink(entityType, standardType, entityName);
                     const sunburstRootData = [
                         {
                             text: `${sunburstData.length} Categories`
@@ -171,22 +171,19 @@ const ComplianceByStandard = ({ type, entityName, params, className }) => {
                         }
                     ];
 
+                    const linkTo = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
+                        entityType: standardType,
+                        query: {
+                            groupBy: 'CATEGORY'
+                        }
+                    }).url;
+
                     viewStandardLink = (
-                        <AppLink
-                            context={contextTypes.COMPLIANCE}
-                            pageType={pageTypes.LIST}
-                            params={{
-                                entityType: type,
-                                query: {
-                                    groupBy: 'CATEGORY'
-                                }
-                            }}
-                            className="no-underline"
-                        >
+                        <Link to={linkTo} className="no-underline">
                             <button className="btn-sm btn-base" type="button">
                                 View Standard
                             </button>
-                        </AppLink>
+                        </Link>
                     );
 
                     if (!sunburstData.length) {
@@ -204,7 +201,7 @@ const ComplianceByStandard = ({ type, entityName, params, className }) => {
                                 rootData={sunburstRootData}
                                 legendData={sunburstLegendData}
                                 totalValue={totalPassing}
-                                key={params.entityId}
+                                key={entityId}
                             />
                         );
                     }
@@ -224,14 +221,16 @@ const ComplianceByStandard = ({ type, entityName, params, className }) => {
 };
 
 ComplianceByStandard.propTypes = {
-    type: PropTypes.string.isRequired,
+    standardType: PropTypes.string.isRequired,
     entityName: PropTypes.string,
-    params: PropTypes.shape({}),
+    entityType: PropTypes.string,
+    entityId: PropTypes.string,
     className: PropTypes.string
 };
 
 ComplianceByStandard.defaultProps = {
-    params: null,
+    entityId: null,
+    entityType: null,
     entityName: null,
     className: ''
 };

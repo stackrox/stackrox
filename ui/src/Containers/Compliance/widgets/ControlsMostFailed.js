@@ -12,8 +12,7 @@ import { standardLabels } from 'messages/standards';
 import { AGGREGATED_RESULTS_WITH_CONTROLS as QUERY } from 'queries/controls';
 import queryService from 'modules/queryService';
 
-const ControlsMostFailed = ({ params, limit, showEmpty }) => {
-    const { entityType, query } = params;
+const ControlsMostFailed = ({ entityType, query, limit, showEmpty }) => {
     const whereClauseValues = { ...query };
     const isResource = !!resourceTypes[entityType];
     const groupBy = [entityTypes.CONTROL, entityTypes.STANDARD];
@@ -77,6 +76,7 @@ const ControlsMostFailed = ({ params, limit, showEmpty }) => {
                 const control = controls.find(ctrl => ctrl.id === entry[0]);
                 const label = control ? control.label : '';
                 const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.ENTITY, {
+                    entityType: entityTypes.CONTROL,
                     controlId: entry[0],
                     standardId: entry[1].standardId
                 }).url;
@@ -104,18 +104,17 @@ const ControlsMostFailed = ({ params, limit, showEmpty }) => {
 };
 
 ControlsMostFailed.propTypes = {
-    params: PropTypes.shape({
-        entityType: PropTypes.string,
-        context: PropTypes.string,
-        query: PropTypes.shape({})
-    }).isRequired,
+    entityType: PropTypes.string,
+    query: PropTypes.shape({}),
     limit: PropTypes.number,
     showEmpty: PropTypes.bool
 };
 
 ControlsMostFailed.defaultProps = {
     limit: 10,
-    showEmpty: false
+    showEmpty: false,
+    entityType: null,
+    query: null
 };
 
 export default ControlsMostFailed;
