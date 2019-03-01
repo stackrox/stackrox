@@ -92,10 +92,14 @@ message V2Metadata {
 }
 
 message V1Metadata {
-    string                    digest    = 1;
-    google.protobuf.Timestamp created   = 2 [(gogoproto.moretags) = "search:\"Image Created Time,store\""];
-    string                    author    = 3;
-    repeated ImageLayer       layers    = 4;
+    string                    digest     = 1;
+    google.protobuf.Timestamp created    = 2 [(gogoproto.moretags) = "search:\"Image Created Time,store\""];
+    string                    author     = 3;
+    repeated ImageLayer       layers     = 4;
+    string                    user       = 5 [(gogoproto.moretags) = "search:\"Image User\""];
+    repeated string           command    = 6 [(gogoproto.moretags) = "search:\"Image Command\""];
+    repeated string           entrypoint = 7 [(gogoproto.moretags) = "search:\"Image Entrypoint\""];
+    repeated string           volumes    = 8 [(gogoproto.moretags) = "search:\"Image Volumes\""];
 }
 
 message ImageLayer {

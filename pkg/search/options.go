@@ -41,6 +41,10 @@ var (
 	ImageRemote                  = newFieldLabel("Image Remote")
 	ImageScanTime                = newFieldLabel("Image Scan Time")
 	ImageTag                     = newFieldLabel("Image Tag")
+	ImageUser                    = newFieldLabel("Image User")
+	ImageCommand                 = newFieldLabel("Image Command")
+	ImageEntrypoint              = newFieldLabel("Image Entrypoint")
+	ImageVolumes                 = newFieldLabel("Image Volumes")
 
 	AddCapabilities        = newFieldLabel("Add Capabilities")
 	Annotation             = newFieldLabel("Annotation")

@@ -131,13 +131,28 @@ func (r *Registry) handleV1ManifestLayer(remote string, ref digest.Digest) (*sto
 			Empty:       h.EmptyLayer,
 		})
 	}
-	var metadata = &storage.V1Metadata{}
+
+	var metadata = &storage.V1Metadata{
+		Created: protoconv.ConvertTimeToTimestamp(img.Created),
+	}
+
+	if img.Config != nil {
+		metadata.Volumes = make([]string, 0, len(img.Config.Volumes))
+		for k := range img.Config.Volumes {
+			metadata.Volumes = append(metadata.Volumes, k)
+		}
+
+		metadata.User = "root"
+		if img.Config.User != "" {
+			metadata.User = img.Config.User
+		}
+		metadata.Command = img.Config.Cmd
+		metadata.Entrypoint = img.Config.Entrypoint
+	}
 	if len(layers) != 0 {
 		lastLayer := layers[len(layers)-1]
 		metadata.Author = lastLayer.Author
-		metadata.Created = lastLayer.Created
 	}
 	metadata.Layers = layers
-
 	return metadata, nil
 }

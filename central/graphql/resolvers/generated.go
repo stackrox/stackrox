@@ -691,9 +691,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Toleration_Operator(0)))
 	utils.Must(builder.AddType("V1Metadata", []string{
 		"author: String!",
+		"command: [String!]!",
 		"created: Time",
 		"digest: String!",
+		"entrypoint: [String!]!",
 		"layers: [ImageLayer]!",
+		"user: String!",
+		"volumes: [String!]!",
 	}))
 	utils.Must(builder.AddType("V2Metadata", []string{
 		"digest: String!",
@@ -5848,6 +5852,11 @@ func (resolver *v1MetadataResolver) Author() string {
 	return value
 }
 
+func (resolver *v1MetadataResolver) Command() []string {
+	value := resolver.data.GetCommand()
+	return value
+}
+
 func (resolver *v1MetadataResolver) Created() (*graphql.Time, error) {
 	value := resolver.data.GetCreated()
 	return timestamp(value)
@@ -5858,9 +5867,24 @@ func (resolver *v1MetadataResolver) Digest() string {
 	return value
 }
 
+func (resolver *v1MetadataResolver) Entrypoint() []string {
+	value := resolver.data.GetEntrypoint()
+	return value
+}
+
 func (resolver *v1MetadataResolver) Layers() ([]*imageLayerResolver, error) {
 	value := resolver.data.GetLayers()
 	return resolver.root.wrapImageLayers(value, nil)
+}
+
+func (resolver *v1MetadataResolver) User() string {
+	value := resolver.data.GetUser()
+	return value
+}
+
+func (resolver *v1MetadataResolver) Volumes() []string {
+	value := resolver.data.GetVolumes()
+	return value
 }
 
 type v2MetadataResolver struct {
