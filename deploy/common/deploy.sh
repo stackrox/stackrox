@@ -166,8 +166,9 @@ function setup_auth0() {
 	    -s \
         -o $TMP \
         "https://${LOCAL_API_ENDPOINT}/v1/authProviders" \
+        -w "%{http_code}\n" \
         -X POST \
-        -d @- >/dev/null <<-EOF
+        -d @- <<-EOF
 {
 	"name": "StackRox Dev (Auth0)",
 	"type": "oidc",
