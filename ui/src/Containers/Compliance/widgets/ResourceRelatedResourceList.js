@@ -119,6 +119,7 @@ const ResourceRelatedEntitiesList = ({
             getHeadline={getHeadline}
             headerComponents={viewAllLink}
             className={className}
+            id="related-resource-list"
             limit={limit}
         />
     );

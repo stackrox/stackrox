@@ -60,6 +60,7 @@ class CollapsibleBanner extends Component {
                 <div
                     className="bg-base-100 border-2 border-primary-400 px-3 rounded-full z-50 relative cursor-pointer flex hover:bg-primary-200 hover:border-primary-500"
                     style={triggerElementStyle}
+                    data-test-id="banner-collapse-button"
                 >
                     {icon}
                 </div>
@@ -97,14 +98,16 @@ class CollapsibleBanner extends Component {
                 triggerClassName={triggerClassName}
                 triggerOpenedClassName={triggerClassName}
             >
-                <Slider
-                    {...sliderSettings}
-                    className={`banner-background px-3 py-1 bg-primary-200 h-64 ${
-                        this.props.className
-                    }`}
-                >
-                    {content}
-                </Slider>
+                <div data-test-id="collapsible-banner">
+                    <Slider
+                        {...sliderSettings}
+                        className={`banner-background px-3 py-1 bg-primary-200 h-64 ${
+                            this.props.className
+                        }`}
+                    >
+                        {content}
+                    </Slider>
+                </div>
             </Collapsible>
         );
     }

@@ -127,7 +127,7 @@ const ComplianceAcrossEntities = ({ entityType, groupBy, query }) => {
                     }
                 }
                 return (
-                    <Widget header={headerText} bodyClassName="p-2">
+                    <Widget header={headerText} bodyClassName="p-2" id="compliance-across-entities">
                         {contents}
                     </Widget>
                 );

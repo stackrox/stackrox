@@ -1,10 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { standardLabels } from 'messages/standards';
-import capitalize from 'lodash/capitalize';
 import URLService from 'modules/URLService';
 import pageTypes from 'constants/pageTypes';
 import contextTypes from 'constants/contextTypes';
+import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
+import capitalize from 'lodash/capitalize';
+
 import Widget from 'Components/Widget';
 import Sunburst from 'Components/visuals/Sunburst';
 import Query from 'Components/ThrowingQuery';
@@ -12,7 +14,6 @@ import Loader from 'Components/Loader';
 import networkStatuses from 'constants/networkStatuses';
 import { COMPLIANCE_STANDARDS as QUERY } from 'queries/standard';
 import queryService from 'modules/queryService';
-import entityTypes from 'constants/entityTypes';
 import { Link } from 'react-router-dom';
 
 const colors = [
@@ -211,6 +212,7 @@ const ComplianceByStandard = ({ standardType, entityName, entityType, entityId, 
                         className={`s-2 ${className}`}
                         header={headerText}
                         headerComponents={viewStandardLink}
+                        id={`${standardBaseTypes[standardType]}-compliance`}
                     >
                         {contents}
                     </Widget>

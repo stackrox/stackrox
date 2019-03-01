@@ -43,6 +43,7 @@ const LinkListWidget = ({
     className,
     headerComponents,
     limit,
+    id,
     showEmpty
 }) => (
     <Query query={query} variables={variables}>
@@ -81,6 +82,7 @@ const LinkListWidget = ({
                     className={`${className}`}
                     header={headline}
                     headerComponents={headerComponents}
+                    id={id}
                 >
                     {contents}
                 </Widget>
@@ -97,7 +99,8 @@ LinkListWidget.propTypes = {
     className: PropTypes.string,
     headerComponents: PropTypes.node,
     limit: PropTypes.number,
-    showEmpty: PropTypes.bool
+    showEmpty: PropTypes.bool,
+    id: PropTypes.string
 };
 
 LinkListWidget.defaultProps = {
@@ -111,7 +114,8 @@ LinkListWidget.defaultProps = {
     className: null,
     headerComponents: null,
     limit: 10,
-    showEmpty: false
+    showEmpty: false,
+    id: 'link-list-widget'
 };
 
 export default LinkListWidget;

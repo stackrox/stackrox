@@ -1,8 +1,10 @@
+import React from 'react';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
 import { standardTypes, resourceTypes } from 'constants/entityTypes';
 import { sortVersion } from 'sorters/sorters';
 
 const getColumnValue = (row, accessor) => (row[accessor] ? row[accessor] : 'N/A');
+const getNameCell = name => <div data-test-id="table-row-name">{name}</div>;
 
 const complianceColumns = [
     {
@@ -41,7 +43,8 @@ const clusterColumns = [
     },
     {
         accessor: 'name',
-        Header: 'Cluster'
+        Header: 'Cluster',
+        Cell: ({ original }) => getNameCell(original.name)
     },
     ...complianceColumns,
     {
@@ -63,7 +66,7 @@ const getStandardColumns = standard => [
         Header: `${standard} Controls`,
         headerClassName: `w-5/6 ${defaultHeaderClassName}`,
         className: `w-5/6 ${defaultColumnClassName}`,
-        Cell: ({ original }) => `${original.control} - ${original.description}`
+        Cell: ({ original }) => getNameCell(`${original.control} - ${original.description}`)
     },
     {
         accessor: 'compliance',
@@ -82,7 +85,8 @@ const nodeColumns = [
     },
     {
         accessor: 'name',
-        Header: 'Node'
+        Header: 'Node',
+        Cell: ({ original }) => getNameCell(original.name)
     },
     {
         accessor: 'cluster',
@@ -118,7 +122,8 @@ const namespaceColumns = [
     },
     {
         accessor: 'name',
-        Header: 'Namespace'
+        Header: 'Namespace',
+        Cell: ({ original }) => getNameCell(original.name)
     },
     {
         accessor: 'cluster',

@@ -5,6 +5,7 @@ import URLService from 'modules/URLService';
 import contextTypes from 'constants/contextTypes';
 import pageTypes from 'constants/pageTypes';
 import pluralize from 'pluralize';
+import toLower from 'lodash/toLower';
 
 import Widget from 'Components/Widget';
 import Query from 'Components/ThrowingQuery';
@@ -94,6 +95,7 @@ const StandardsAcrossEntity = ({ entityType, bodyClassName, className }) => {
                     <Widget
                         className={`s-2 ${className}`}
                         header={headerText}
+                        id={`standards-across-${toLower(entityType)}`}
                         bodyClassName={`graph-bottom-border ${bodyClassName}`}
                     >
                         {contents}

@@ -16,13 +16,6 @@ export const url = {
     }
 };
 
-const getWidget = text =>
-    `[data-test-id='widget']:has([data-test-id='widget-header']:contains("${text}"))`;
-const getControlsInCompliance = getWidget('Controls in Compliance');
-const getPassingStandardsAcrossClusters = getWidget('Passing standards across CLUSTERs');
-const getControlsMostFailed = getWidget('Controls most failed');
-const getControlDetails = getWidget('Control details');
-
 export const selectors = {
     scanButton: "button:contains('Scan environment')",
     export: {
@@ -50,30 +43,60 @@ export const selectors = {
         }
     },
     list: {
-        tableRows: "table tr:has('td')"
+        panels: '[data-test-id="panel"]',
+        sidePanelHeader: '[data-test-id="panel-header"]:last',
+        sidePanelCloseBtn: '[data-test-id="panel"] .close-button',
+        banner: {
+            content: '[data-test-id="collapsible-banner"]',
+            collapseButton: '[data-test-id="banner-collapse-button"]'
+        },
+        table: {
+            header: '[data-test-id="panel-header"]',
+            firstGroup: '.table-group-active:first',
+            firstTableGroup: '.rt-table:first',
+            firstRow: 'div.rt-tr-group > .rt-tr.-odd:first',
+            firstRowName: 'div.rt-tr-group > .rt-tr.-odd:first [data-test-id="table-row-name"]',
+            secondRow: 'div.rt-tr-group > .rt-tr.-even:first',
+            secondRowName: 'div.rt-tr-group > .rt-tr.-even:first [data-test-id="table-row-name"]',
+            rows: "table tr:has('td')"
+        }
     },
     widgets: "[data-test-id='widget']",
     widget: {
         controlsInCompliance: {
-            widget: getControlsInCompliance,
-            centerLabel: `${getControlsInCompliance} svg .rv-xy-plot__series--label text`,
-            passingControls: `${getControlsInCompliance} [data-test-id='passing-controls-value']`,
-            failingControls: `${getControlsInCompliance} [data-test-id='failing-controls-value']`,
-            arcs: `${getControlsInCompliance} svg path`
+            widget: '[data-test-id="compliance-across-entities"]',
+            centerLabel:
+                '[data-test-id="compliance-across-entities"] svg .rv-xy-plot__series--label text',
+            passingControls:
+                '[data-test-id="compliance-across-entities"] [data-test-id="passing-controls-value"]',
+            failingControls:
+                '[data-test-id="compliance-across-entities"] [data-test-id="failing-controls-value"]',
+            arcs: '[data-test-id="compliance-across-entities"] svg path'
         },
         passingStandardsAcrossClusters: {
-            widget: getPassingStandardsAcrossClusters,
-            axisLinks: `${getPassingStandardsAcrossClusters} a`,
-            barLabels: `${getPassingStandardsAcrossClusters} svg .rv-xy-plot__series text`
+            widget: '[data-test-id="standards-across-cluster"]',
+            axisLinks: '[data-test-id="standards-across-cluster"] a',
+            barLabels: '[data-test-id="standards-across-cluster"] svg .rv-xy-plot__series text'
+        },
+        passingStandardsAcrossNamespaces: {
+            axisLinks: '[data-test-id="standards-across-namespace"] a'
+        },
+        passingStandardsAcrossNodes: {
+            axisLinks: '[data-test-id="standards-across-node"] a'
         },
         controlsMostFailed: {
-            widget: getControlsMostFailed,
-            listItems: `${getControlsMostFailed} a`
+            widget: '[data-test-id="link-list-widget"]:contains("failed")',
+            listItems: '[data-test-id="link-list-widget"]:contains("failed") a'
         },
         controlDetails: {
-            widget: getControlDetails,
-            standardName: `${getControlDetails} [data-test-id='standard-name']`,
-            controlname: `${getControlDetails} [data-test-id='control-name']`
-        }
+            widget: '[data-test-id="control-details"]',
+            standardName: '[data-test-id="control-details"] [data-test-id="standard-name"]',
+            controlname: '[data-test-id="control-details"] [data-test-id="control-name"]'
+        },
+        PCICompliance: {
+            controls:
+                '[data-test-id="PCI-compliance"] .widget-detail-bullet span:contains("Controls")'
+        },
+        relatedEntities: '[data-test-id="related-resource-list"]'
     }
 };

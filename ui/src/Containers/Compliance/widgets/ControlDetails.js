@@ -20,7 +20,12 @@ const svgMapping = {
 };
 
 const ControlDetails = ({ standardId, control, description, className }) => (
-    <Widget header="Control details" bodyClassName="flex-col" className={className}>
+    <Widget
+        header="Control details"
+        bodyClassName="flex-col"
+        className={className}
+        id="control-details"
+    >
         <div className="flex bg-tertiary-200 m-1">
             <img src={svgMapping[standardId]} alt={standardId} className="h-18" />
             <div className="flex flex-col justify-center pl-3">

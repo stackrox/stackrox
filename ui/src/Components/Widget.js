@@ -11,7 +11,8 @@ class Widget extends Component {
         children: PropTypes.node.isRequired,
         headerComponents: PropTypes.element,
         pages: PropTypes.number,
-        onPageChange: PropTypes.func
+        onPageChange: PropTypes.func,
+        id: PropTypes.string
     };
 
     static defaultProps = {
@@ -20,7 +21,8 @@ class Widget extends Component {
         className: 'w-full bg-base-100',
         headerComponents: null,
         pages: 0,
-        onPageChange: null
+        onPageChange: null,
+        id: 'widget'
     };
 
     constructor(props) {
@@ -97,7 +99,7 @@ class Widget extends Component {
         return (
             <div
                 className={`flex flex-col shadow rounded relative rounded bg-base-100 h-full ${className}`}
-                data-test-id="widget"
+                data-test-id={this.props.id}
             >
                 <div className="border-b border-base-300">
                     <div className="flex w-full h-10 word-break">

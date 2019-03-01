@@ -115,6 +115,7 @@ const ControlRelatedEntitiesList = ({
             getHeadline={getHeadline}
             headerComponents={viewAllLink}
             limit={limit}
+            id="related-resource-list"
         />
     );
 };
