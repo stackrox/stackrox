@@ -1150,3 +1150,11 @@ dependencies:
     attribution:
     - Dgraph Labs, Inc. and Contributors
 
+  vendor/github.com/PagerDuty/go-pagerduty:
+    url: "https://github.com/PagerDuty/go-pagerduty"
+    license: Apache-2.0
+    files:
+      LICENSE.txt: 3866cae0b2eec3a6a12b2c8b2bccc71313eb3c43f9344895d249ad503f69f041
+    attribution:
+    - PagerDuty 
+

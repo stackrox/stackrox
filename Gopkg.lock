@@ -80,6 +80,13 @@
   revision = "cd527374f1e5bff4938207604a14f2e38a9cf512"
 
 [[projects]]
+  digest = "1:a72e5ee26acacbdea2566276c3a320ae621fb84e8d3cdbb5665dc62898461c2c"
+  name = "github.com/PagerDuty/go-pagerduty"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "fe8f9c4593d05f029afeb2c08c3e220120306506"
+
+[[projects]]
   digest = "1:869f3310421ff52dcddadda7541375eadc628be29aa6018e001cdd59dcb868da"
   name = "github.com/RoaringBitmap/roaring"
   packages = ["."]
@@ -1851,6 +1858,7 @@
     "cloud.google.com/go/compute/metadata",
     "cloud.google.com/go/containeranalysis/apiv1beta1",
     "github.com/NYTimes/gziphandler",
+    "github.com/PagerDuty/go-pagerduty",
     "github.com/andygrunwald/go-jira",
     "github.com/aws/aws-sdk-go/aws",
     "github.com/aws/aws-sdk-go/aws/credentials",

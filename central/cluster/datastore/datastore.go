@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	nodeStore "github.com/stackrox/rox/central/node/globalstore"
+	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/streamer"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -46,15 +47,17 @@ func New(
 	dds deploymentDataStore.DataStore,
 	ns nodeStore.GlobalStore,
 	ss secretDataStore.DataStore,
-	sm streamer.Manager) (DataStore, error) {
+	sm streamer.Manager,
+	notifier notifierProcessor.Processor) (DataStore, error) {
 	ds := &datastoreImpl{
-		storage: storage,
-		indexer: indexer,
-		ads:     ads,
-		dds:     dds,
-		ns:      ns,
-		ss:      ss,
-		sm:      sm,
+		storage:  storage,
+		indexer:  indexer,
+		ads:      ads,
+		dds:      dds,
+		ns:       ns,
+		ss:       ss,
+		sm:       sm,
+		notifier: notifier,
 	}
 	if err := ds.buildIndex(); err != nil {
 		return ds, err

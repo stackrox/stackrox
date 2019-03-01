@@ -137,6 +137,8 @@ func (suite *AlertManagerTestSuite) TestMarksOldAlertsStale() {
 	suite.alertsMock.EXPECT().UpdateAlert(alerts[2]).Return(nil)
 
 	suite.alertsMock.EXPECT().SearchRawAlerts(gomock.Any()).Return(alerts, nil)
+	// We should get a notification for the new alert.
+	suite.notifierMock.EXPECT().ProcessAlert(alerts[0]).Return()
 
 	// Make one of the alerts not appear in the current alerts.
 	modified, err := suite.alertManager.AlertAndNotify(alerts[1:])

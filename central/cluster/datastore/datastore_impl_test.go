@@ -10,6 +10,7 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/store/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/globalstore/mocks"
+	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
@@ -28,7 +29,8 @@ type ClusterDataStoreTestSuite struct {
 	indexer          *clusterIndexMocks.MockIndexer
 	clusterDataStore DataStore
 
-	mockCtrl *gomock.Controller
+	mockCtrl     *gomock.Controller
+	notifierMock *notifierMocks.MockProcessor
 }
 
 func (suite *ClusterDataStoreTestSuite) SetupTest() {
@@ -45,7 +47,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	suite.indexer.EXPECT().AddClusters(nil).Return(nil)
 
 	var err error
-	suite.clusterDataStore, err = New(suite.clusters, suite.indexer, alerts, deployments, nodes, secrets, nil)
+	suite.clusterDataStore, err = New(suite.clusters, suite.indexer, alerts, deployments, nodes, secrets, nil, suite.notifierMock)
 	suite.NoError(err)
 }
 

@@ -14,4 +14,8 @@ type Notifier interface {
 	ProtoNotifier() *storage.Notifier
 	// Test sends a test message
 	Test() error
+	// AckAlert sends an acknowledges an alert
+	AckAlert(alert *storage.Alert) error
+	// ResolveAlert resolves an alert
+	ResolveAlert(alert *storage.Alert) error
 }

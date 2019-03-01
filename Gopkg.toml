@@ -210,3 +210,7 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
 [[constraint]]
   name = "github.com/dgraph-io/badger"
   revision = "28ef9bfd243809d6f4abc7dfa1ad92984eac9b66"
+
+[[constraint]]
+  name = "github.com/PagerDuty/go-pagerduty"
+  revision = "fe8f9c4593d05f029afeb2c08c3e220120306506"

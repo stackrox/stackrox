@@ -456,6 +456,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"Email",
 		"CSCC",
 		"Splunk",
+		"PagerDuty",
 	}))
 	utils.Must(builder.AddType("NumericalPolicy", []string{
 		"op: Comparator!",
@@ -464,6 +465,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("OrchestratorMetadata", []string{
 		"buildDate: Time",
 		"version: String!",
+	}))
+	utils.Must(builder.AddType("PagerDuty", []string{
+		"apiKey: String!",
 	}))
 	utils.Must(builder.AddType("Policy", []string{
 		"categories: [String!]!",
@@ -4126,6 +4130,14 @@ func (resolver *notifierConfigResolver) ToSplunk() (*splunkResolver, bool) {
 	return nil, false
 }
 
+func (resolver *notifierConfigResolver) ToPagerDuty() (*pagerDutyResolver, bool) {
+	value := resolver.resolver.data.GetPagerduty()
+	if value != nil {
+		return &pagerDutyResolver{resolver.resolver.root, value}, true
+	}
+	return nil, false
+}
+
 type numericalPolicyResolver struct {
 	root *Resolver
 	data *storage.NumericalPolicy
@@ -4189,6 +4201,34 @@ func (resolver *orchestratorMetadataResolver) BuildDate() (*graphql.Time, error)
 
 func (resolver *orchestratorMetadataResolver) Version() string {
 	value := resolver.data.GetVersion()
+	return value
+}
+
+type pagerDutyResolver struct {
+	root *Resolver
+	data *storage.PagerDuty
+}
+
+func (resolver *Resolver) wrapPagerDuty(value *storage.PagerDuty, ok bool, err error) (*pagerDutyResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &pagerDutyResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapPagerDuties(values []*storage.PagerDuty, err error) ([]*pagerDutyResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*pagerDutyResolver, len(values))
+	for i, v := range values {
+		output[i] = &pagerDutyResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *pagerDutyResolver) ApiKey() string {
+	value := resolver.data.GetApiKey()
 	return value
 }
 

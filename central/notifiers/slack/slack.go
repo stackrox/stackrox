@@ -182,6 +182,14 @@ func (s *slack) Test() error {
 	return postMessage(webhook, jsonPayload)
 }
 
+func (s *slack) AckAlert(alert *storage.Alert) error {
+	return nil
+}
+
+func (s *slack) ResolveAlert(alert *storage.Alert) error {
+	return nil
+}
+
 func postMessage(url string, jsonPayload []byte) (err error) {
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonPayload))
 	req.Header.Set("Content-Type", "application/json")

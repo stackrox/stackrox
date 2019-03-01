@@ -63,6 +63,10 @@ func (d *alertManagerImpl) markAlertsStale(alertsToMark []*storage.Alert) error 
 	errList := errorhelpers.NewErrorList("Error marking alerts as stale: ")
 	for _, existingAlert := range alertsToMark {
 		errList.AddError(d.alerts.MarkAlertStale(existingAlert.GetId()))
+		if errList.ToError() == nil {
+			// run notifier for all the resolved alerts
+			d.notifier.ProcessAlert(existingAlert)
+		}
 	}
 	return errList.ToError()
 }

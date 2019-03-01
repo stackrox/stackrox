@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/stackrox/rox/central/alert/datastore"
+	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 )
 
 var (
@@ -12,7 +13,7 @@ var (
 )
 
 func initialize() {
-	soleInstance = New(datastore.Singleton())
+	soleInstance = New(datastore.Singleton(), notifierProcessor.Singleton())
 }
 
 // Singleton returns the sole instance of the gRPC Server Service for handling CRUD use cases for Alert objects.

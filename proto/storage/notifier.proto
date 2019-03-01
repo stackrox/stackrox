@@ -18,6 +18,7 @@ message Notifier {
         Email email            = 11;
         CSCC  cscc             = 12;
         Splunk splunk          = 13;
+        PagerDuty pagerduty    = 14;
     }
 }
 
@@ -49,4 +50,8 @@ message Splunk {
     string http_token    = 1;
     string http_endpoint = 2;
     bool insecure        = 3;
+}
+
+message PagerDuty {
+    string api_key = 1;
 }

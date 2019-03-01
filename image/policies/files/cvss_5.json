@@ -16,6 +16,7 @@
   "lifecycle_stages": [
     "BUILD"
   ],
+  "disabled": true,
   "name": "CI CVSS >= 5",
   "rationale": "If an image has a vulnerability with a CVSS greater than 5, the container may pose an unnecessarily high risk of exploitation.",
   "remediation": "Speak with your security team to identify and mitigate the vulnerabilities.",

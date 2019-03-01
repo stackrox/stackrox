@@ -48,6 +48,14 @@ func (s *splunk) Test() error {
 	return s.postAlert(alert)
 }
 
+func (s *splunk) AckAlert(alert *storage.Alert) error {
+	return nil
+}
+
+func (s *splunk) ResolveAlert(alert *storage.Alert) error {
+	return nil
+}
+
 func (s *splunk) postAlert(alert *storage.Alert) error {
 	splunkEvent := &wrapper.SplunkEvent{
 		Event:      alert,

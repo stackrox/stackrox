@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	nodeStore "github.com/stackrox/rox/central/node/globalstore"
+	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/streamer"
 	"github.com/stackrox/rox/generated/api/v1"
@@ -19,8 +20,9 @@ import (
 )
 
 type datastoreImpl struct {
-	indexer index.Indexer
-	storage store.Store
+	indexer  index.Indexer
+	storage  store.Store
+	notifier notifierProcessor.Processor
 
 	ads alertDataStore.DataStore
 	dds deploymentDataStore.DataStore
@@ -171,12 +173,10 @@ func (ds *datastoreImpl) getDeployments(cluster *storage.Cluster) ([]*storage.Li
 }
 
 // TODO(cgorman) Make this a search once the document mapping goes in
-func (ds *datastoreImpl) getAlerts(deployment *storage.ListDeployment) ([]*storage.ListAlert, error) {
+func (ds *datastoreImpl) getAlerts(deployment *storage.ListDeployment) ([]*storage.Alert, error) {
 	qb := search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).AddExactMatches(search.DeploymentID, deployment.GetId())
 
-	existingAlerts, err := ds.ads.ListAlerts(&v1.ListAlertsRequest{
-		Query: qb.Query(),
-	})
+	existingAlerts, err := ds.ads.SearchRawAlerts(qb.ProtoQuery())
 	if err != nil {
 		log.Errorf("unable to get alert: %s", err)
 		return nil, err
@@ -184,10 +184,14 @@ func (ds *datastoreImpl) getAlerts(deployment *storage.ListDeployment) ([]*stora
 	return existingAlerts, nil
 }
 
-func (ds *datastoreImpl) markAlertsStale(alerts []*storage.ListAlert) error {
+func (ds *datastoreImpl) markAlertsStale(alerts []*storage.Alert) error {
 	errorList := errorhelpers.NewErrorList("unable to mark some alerts stale")
 	for _, alert := range alerts {
 		errorList.AddError(ds.ads.MarkAlertStale(alert.GetId()))
+		if errorList.ToError() == nil {
+			// run notifier for all the resolved alerts
+			ds.notifier.ProcessAlert(alert)
+		}
 	}
 	return errorList.ToError()
 }

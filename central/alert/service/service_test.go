@@ -16,6 +16,7 @@ import (
 	searchMocks "github.com/stackrox/rox/central/alert/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/alert/store/mocks"
 	"github.com/stackrox/rox/central/alerttest"
+	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -66,7 +67,8 @@ type baseSuite struct {
 
 	service Service
 
-	mockCtrl *gomock.Controller
+	mockCtrl     *gomock.Controller
+	notifierMock *notifierMocks.MockProcessor
 }
 
 func (s *baseSuite) SetupTest() {
@@ -74,10 +76,10 @@ func (s *baseSuite) SetupTest() {
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.indexer = indexMocks.NewMockIndexer(s.mockCtrl)
 	s.searcher = searchMocks.NewMockSearcher(s.mockCtrl)
-
+	s.notifierMock = notifierMocks.NewMockProcessor(s.mockCtrl)
 	dataStore := datastore.New(s.storage, s.indexer, s.searcher)
 
-	s.service = New(dataStore)
+	s.service = New(dataStore, s.notifierMock)
 }
 
 func (s *baseSuite) TearDownTest() {
@@ -952,7 +954,8 @@ type patchAlertTests struct {
 	storage *dataStoreMocks.MockDataStore
 	service Service
 
-	mockCtrl *gomock.Controller
+	mockCtrl     *gomock.Controller
+	notifierMock *notifierMocks.MockProcessor
 
 	fakeResourceByIDRequest *v1.ResourceByID
 }
@@ -960,8 +963,9 @@ type patchAlertTests struct {
 func (s *patchAlertTests) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = dataStoreMocks.NewMockDataStore(s.mockCtrl)
+	s.notifierMock = notifierMocks.NewMockProcessor(s.mockCtrl)
 
-	s.service = New(s.storage)
+	s.service = New(s.storage, s.notifierMock)
 }
 
 func (s *patchAlertTests) TearDownTest() {
@@ -975,6 +979,8 @@ func (s *patchAlertTests) TestSnoozeAlert() {
 	s.NoError(err)
 	fakeAlert.SnoozeTill = snoozeTill
 	s.storage.EXPECT().UpdateAlert(fakeAlert).Return(nil)
+	// We should get a notification for the snoozed alert.
+	s.notifierMock.EXPECT().ProcessAlert(fakeAlert).Return()
 	_, err = s.service.SnoozeAlert(context.Background(), &v1.SnoozeAlertRequest{Id: alerttest.FakeAlertID, SnoozeTill: snoozeTill})
 	s.NoError(err)
 
@@ -985,10 +991,10 @@ func (s *patchAlertTests) TestSnoozeAlert() {
 func (s *patchAlertTests) TestSnoozeAlertWithSnoozeTillInThePast() {
 	fakeAlert := alerttest.NewFakeAlert()
 	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).AnyTimes().Return(fakeAlert, true, nil)
+
 	snoozeTill, err := timestamp.TimestampProto(time.Now().Add(-1 * time.Hour))
 	s.NoError(err)
 	_, err = s.service.SnoozeAlert(context.Background(), &v1.SnoozeAlertRequest{Id: alerttest.FakeAlertID, SnoozeTill: snoozeTill})
-
 	s.Equal(status.Error(codes.InvalidArgument, badSnoozeErrorMsg), err)
 }
 
@@ -997,8 +1003,10 @@ func (s *patchAlertTests) TestResolveAlert() {
 	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	fakeAlert.State = storage.ViolationState_RESOLVED
 	s.storage.EXPECT().UpdateAlert(fakeAlert).Return(nil)
+	// We should get a notification for the resolved alert.
+	s.notifierMock.EXPECT().ProcessAlert(fakeAlert).Return()
+
 	_, err := s.service.ResolveAlert(context.Background(), &v1.ResolveAlertRequest{Id: alerttest.FakeAlertID})
 	s.NoError(err)
-
 	s.Equal(fakeAlert.State, storage.ViolationState_RESOLVED)
 }

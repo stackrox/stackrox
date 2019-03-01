@@ -56,6 +56,10 @@ const tableColumnDescriptor = Object.freeze({
                 ),
                 Header: 'URL'
             }
+        ],
+        pagerduty: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'pagerduty.apiKey', Header: 'API Key' }
         ]
     },
     imageIntegrations: {

@@ -297,6 +297,20 @@ const formDescriptors = {
                 type: 'checkbox',
                 placeholder: ''
             }
+        ],
+        pagerduty: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: 'PagerDuty Integration'
+            },
+            {
+                label: 'API Key',
+                jsonpath: 'pagerduty.apiKey',
+                type: 'password',
+                placeholder: ''
+            }
         ]
     },
     imageIntegrations: {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/alert/datastore"
+	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -56,6 +57,7 @@ var (
 // serviceImpl is a thin facade over a domain layer that handles CRUD use cases on Alert objects from API clients.
 type serviceImpl struct {
 	dataStore datastore.DataStore
+	notifier  notifierProcessor.Processor
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -150,6 +152,7 @@ func (s *serviceImpl) ResolveAlert(_ context.Context, req *v1.ResolveAlertReques
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	s.notifier.ProcessAlert(alert)
 	return &v1.Empty{}, nil
 }
 
@@ -175,6 +178,7 @@ func (s *serviceImpl) SnoozeAlert(_ context.Context, req *v1.SnoozeAlertRequest)
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	s.notifier.ProcessAlert(alert)
 	return &v1.Empty{}, nil
 }
 

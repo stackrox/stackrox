@@ -46,8 +46,19 @@ func (p *processorImpl) notifyAlert(alert *storage.Alert) {
 			log.Errorf("Could not send notification to notifier id %v for alert %v because it does not exist", id, alert.GetId())
 			continue
 		}
-		if err := notifier.AlertNotify(alert); err != nil {
-			log.Errorf("Unable to send notification to %v (%v) for alert %v: %v", id, notifier.ProtoNotifier().GetName(), alert.GetId(), err)
+		switch alert.GetState() {
+		case storage.ViolationState_ACTIVE:
+			if err := notifier.AlertNotify(alert); err != nil {
+				log.Errorf("Unable to send notification to %v (%v) for alert %v: %v", id, notifier.ProtoNotifier().GetName(), alert.GetId(), err)
+			}
+		case storage.ViolationState_SNOOZED:
+			if err := notifier.AckAlert(alert); err != nil {
+				log.Errorf("Unable to send acknowledge notification to %v (%v) for alert %v: %v", id, notifier.ProtoNotifier().GetName(), alert.GetId(), err)
+			}
+		case storage.ViolationState_RESOLVED:
+			if err := notifier.ResolveAlert(alert); err != nil {
+				log.Errorf("Unable to send resolve notification to %v (%v) for alert %v: %v", id, notifier.ProtoNotifier().GetName(), alert.GetId(), err)
+			}
 		}
 	}
 }

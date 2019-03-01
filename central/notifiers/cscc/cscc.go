@@ -214,6 +214,14 @@ func (c *cscc) Test() error {
 	return errors.New("Test is not yet implemented for Cloud SCC")
 }
 
+func (c *cscc) AckAlert(alert *storage.Alert) error {
+	return nil
+}
+
+func (c *cscc) ResolveAlert(alert *storage.Alert) error {
+	return nil
+}
+
 func init() {
 	notifiers.Add("cscc", func(notifier *storage.Notifier) (notifiers.Notifier, error) {
 		j, err := newCSCC(notifier, clusterDatastore.Singleton())

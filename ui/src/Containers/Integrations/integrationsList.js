@@ -12,6 +12,7 @@ import openshift from 'images/openshift.svg';
 import quay from 'images/quay.svg';
 import slack from 'images/slack.svg';
 import splunk from 'images/splunk.svg';
+import pagerduty from 'images/pagerduty.svg';
 
 const integrationsList = {
     authProviders: [
@@ -141,6 +142,12 @@ const integrationsList = {
             type: 'splunk',
             source: 'notifiers',
             image: splunk
+        },
+        {
+            label: 'PagerDuty',
+            type: 'pagerduty',
+            source: 'notifiers',
+            image: pagerduty
         }
     ]
 };
