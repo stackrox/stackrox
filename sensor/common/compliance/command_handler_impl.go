@@ -262,6 +262,7 @@ func (c *commandHandlerImpl) commitResult(result *compliance.ComplianceReturn) (
 			ret = append(ret, update)
 		}
 	}
+
 	return
 }
 

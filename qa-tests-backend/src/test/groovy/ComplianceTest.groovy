@@ -927,7 +927,7 @@ class ComplianceTest extends BaseSpecification {
         when:
         "trigger compliance run"
         ComplianceManagementServiceOuterClass.ComplianceRun complianceRun =
-                ComplianceManagementService.triggerComplianceRun(PCI_ID, clusterId)
+                ComplianceManagementService.triggerComplianceRun(NIST_ID, clusterId)
         Long startTime = System.currentTimeMillis()
 
         and:
@@ -936,21 +936,40 @@ class ComplianceTest extends BaseSpecification {
         while (complianceRun.state != ComplianceManagementServiceOuterClass.ComplianceRun.State.FINISHED &&
                 (System.currentTimeMillis() - startTime) < 30000) {
             sleep 1000
-            complianceRun = ComplianceManagementService.getRecentRuns(PCI_ID).find { it.id == complianceRun.id }
+            complianceRun = ComplianceManagementService.getRecentRuns(NIST_ID).find { it.id == complianceRun.id }
         }
 
         then:
-        "validate failed run result"
-        List<Compliance.ComplianceRunMetadata> results =
-                ComplianceService.getComplianceRunResult(PCI_ID, clusterId).failedRunsList
-        assert results.size() > 0
-        Compliance.ComplianceRunMetadata last = results.get(0)
-        assert last.clusterId == clusterId
-        assert last.runId == complianceRun.id
-        assert last.standardId == PCI_ID
-        assert !last.success
-        assert last.errorMessage == "waiting for compliance data: scrape failed: connection to sensor was " +
-                "interrupted while scrape was ongoing"
+        "validate result contains errors"
+        ComplianceRunResults results =
+                ComplianceService.getComplianceRunResult(NIST_ID, clusterId).results
+        assert results != null
+        Compliance.ComplianceRunMetadata metadata = results.runMetadata
+        assert metadata.clusterId == clusterId
+        assert metadata.runId == complianceRun.id
+        assert metadata.standardId == NIST_ID
+
+        def numErrors = 0
+        for (def ctrlResults : results.clusterResults.controlResultsMap.values()) {
+            if (ctrlResults.overallState == Compliance.ComplianceState.COMPLIANCE_STATE_ERROR) {
+                numErrors++
+            }
+        }
+        for (def deploymentResults : results.deploymentResultsMap.values()) {
+            for (def ctrlResults : deploymentResults.controlResultsMap.values()) {
+                if (ctrlResults.overallState == Compliance.ComplianceState.COMPLIANCE_STATE_ERROR) {
+                    numErrors++
+                }
+            }
+        }
+        for (def nodeResults : results.nodeResultsMap.values()) {
+            for (def ctrlResults : nodeResults.controlResultsMap.values()) {
+                if (ctrlResults.overallState == Compliance.ComplianceState.COMPLIANCE_STATE_ERROR) {
+                    numErrors++
+                }
+            }
+        }
+        assert numErrors > 0
 
         cleanup:
         "wait for sensor to come back up"

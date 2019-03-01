@@ -58,8 +58,7 @@ func createAndRunScrape(scrapeFactory scrape.Factory, dataRepoFactory data.Repos
 
 func (p *scrapePromise) finish(scrapeResult map[string]*compliance.ComplianceReturn, err error) {
 	if err != nil {
-		p.finishedSig.SignalWithError(err)
-		return
+		log.Errorf("Scrape failed: %v. Using partial data from %d/%d nodes", err, len(scrapeResult), len(p.domain.Nodes()))
 	}
 
 	p.result, err = p.dataRepoFactory.CreateDataRepository(p.domain, scrapeResult)
