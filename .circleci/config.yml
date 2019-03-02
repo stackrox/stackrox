@@ -949,7 +949,7 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints:
-          - "df:30:53:b4:a5:91:49:a8:48:ec:d8:3d:b0:95:8a:db"
+          - "7f:08:58:1e:80:80:6e:66:99:9a:37:cb:e9:96:0b:40"
 
       - run:
           name: Add SSH key of github.com
@@ -969,12 +969,15 @@ jobs:
             collector_version="$(cat COLLECTOR_VERSION)"
             cd /tmp/collector
             git checkout master && git pull
+
+            # We need to make sure the file ends with a newline so as not to corrupt it when appending.
+            [[ ! -f RELEASED_VERSIONS ]] || sed -i'' -e '$a\' RELEASED_VERSIONS
+
             echo "${collector_version}  # Rox release ${CIRCLE_TAG} by ${CIRCLE_USERNAME} at $(date)" \
               >>RELEASED_VERSIONS
             git add RELEASED_VERSIONS
-            git config user.email 'mi+robotrox@stackrox.com'
-            git config user.name 'Robot Rox'
-            git commit -m "Automatic update of RELEASED_VERSIONS file for Rox release ${CIRCLE_TAG}"
+            git -c "user.name=roxbot" -c "user.email=roxbot@stackrox.com" commit \
+                -m "Automatic update of RELEASED_VERSIONS file for Rox release ${CIRCLE_TAG}"
             git push
 
   push-release:
