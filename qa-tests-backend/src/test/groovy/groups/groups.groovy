@@ -6,3 +6,4 @@ package groups
 @interface NetworkPolicySimulation { }
 @interface PolicyEnforcement { }
 @interface NetworkFlowVisualization { }
+@interface Upgrade { }

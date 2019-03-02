@@ -34,34 +34,39 @@ clean-generated-srcs:
 .PHONY: test
 test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test
+	gradle test -Dgroups=-Upgrade
 
 .PHONY: bat-test
 bat-test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=bat
+	gradle test -Dgroups=BAT
 
 .PHONY: smoke-test
 smoke-test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=smoke
+	gradle test -Dgroups=SMOKE
 
 .PHONY: enforcement-test
 enforcement-test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=enforcement
+	gradle test -Dgroups=PolicyEnforcement
 
 .PHONY: integration-test
 integration-test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=it
+	gradle test -Dgroups=Integration
 
 .PHONY: networkpolicy-simulator-test
 networkpolicy-simulator-test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=networkpolicysimulation
+	gradle test -Dgroups=NetworkPolicySimulation
 
 .PHONY: non-bat-test
 non-bat-test: proto-generated-srcs
 	@echo "+ $@"
-	gradle test -Dgroups=-bat
+	gradle test -Dgroups=-BAT,-Upgrade
+
+.PHONY: upgrade-test
+upgrade-test: proto-generated-srcs
+	@echo "+ $@"
+	gradle test -Dgroups=Upgrade

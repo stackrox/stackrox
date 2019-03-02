@@ -7,6 +7,7 @@
 # See https://cloud.google.com/kubernetes-engine/docs/how-to/alias-ips#cluster_sizing.
 
 REGION=us-central1
+NUM_NODES="${NUM_NODES:-4}"
 
 zones=$(gcloud compute zones list --filter="region=$REGION" | grep UP | cut -f1 -d' ')
 for zone in $zones; do
@@ -14,7 +15,7 @@ for zone in $zones; do
     gcloud config set compute/zone "${zone}"
     if gcloud container clusters create \
         --machine-type n1-standard-2 \
-        --num-nodes 4 \
+        --num-nodes "${NUM_NODES}" \
         --create-subnetwork range=/28 \
         --cluster-ipv4-cidr=/20 \
         --services-ipv4-cidr=/24 \

@@ -9,6 +9,10 @@ class ClusterService extends BaseService {
         return ClustersServiceGrpc.newBlockingStub(getChannel())
     }
 
+    static List<Cluster> getClusters() {
+        return getClusterServiceClient().getClusters().clustersList
+    }
+
     static getClusterId(String name = "remote") {
         return getClusterServiceClient().getClusters().clustersList.find { it.name == name }?.id
     }

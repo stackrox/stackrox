@@ -67,7 +67,7 @@ class Kubernetes implements OrchestratorMain {
         Namespace namespace = new Namespace("v1", null, new ObjectMeta(name: ns), null, null)
         try {
             client.namespaces().createOrReplace(namespace)
-            println "Created namespace ${namespace}"
+            println "Created namespace ${ns}"
         } catch (KubernetesClientException kce) {
             // 409 is already exists
             if (kce.code != 409) {

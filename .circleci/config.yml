@@ -130,7 +130,7 @@ waitForAPI: &waitForAPI
       echo "PING_URL is set to ${PING_URL}"
       set +e
       SUCCESS=0
-      for i in $(seq 1 10); do
+      for i in $(seq 1 25); do
         if [[ "$(curl -sk --connect-timeout 5 --max-time 10 "${PING_URL}" | jq '.status' -r)" == "ok" ]]; then
           SUCCESS=1
           break
@@ -275,6 +275,16 @@ storeCypressScreenshots: &storeCypressScreenshots
     path: ui/cypress/screenshots
     destination: ui-e2e-screenshots
 
+storeQATestResults: &storeQATestResults
+  store_test_results:
+    path: qa-tests-backend/build/test-results/test
+
+storeQASpockReports: &storeQASpockReports
+  store_artifacts:
+    path: ./qa-tests-backend/build/spock-reports
+    destination: qa-test-report
+
+
 
 checkOpenshiftLabel: &checkOpenshiftLabel
   run:
@@ -333,10 +343,9 @@ jobs:
 
             TAG=$(make tag)
 
-            docker push stackrox/main:$TAG | cat
-            docker push stackrox/monitoring:$TAG | cat
-            docker push stackrox/grpc-server:$TAG | cat
-            docker push stackrox/scale:$TAG | cat
+            for img in main monitoring grpc-server scale; do
+              docker push "stackrox/${img}:${TAG}" | cat
+            done
 
       - save-cache:
           key: *depCacheKey
@@ -544,12 +553,88 @@ jobs:
           paths:
           - ~/.gradle/caches/
 
-      - store_test_results:
-          path: qa-tests-backend/build/test-results/test
+      - *storeQATestResults
+      - *storeQASpockReports
 
-      - store_artifacts:
-          path: ./qa-tests-backend/build/spock-reports
-          destination: qa-test-report
+      - *collectK8sLogs
+      - *storeK8sLogs
+
+      - *teardownGKE
+
+  upgrade-test:
+    <<: *defaults
+    environment:
+      - STORAGE: pvc
+      - LOAD_BALANCER: lb
+      - NUM_NODES: 2
+
+    steps:
+      - checkout
+      - setup_remote_docker
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - *setupRoxctl
+      - *setupGCP
+      - *createGKE
+      - run:
+          name: Checkout 2.4.16.4
+          command: git checkout 2.4.16.4
+      - run:
+          name: Launch Central only
+          command: |
+            cat >>"$BASH_ENV" <<EOF
+              export MAIN_IMAGE_TAG="$(make tag)"
+            EOF
+            ./deploy/k8s/central.sh
+
+            central_image="$(kubectl -n stackrox get deploy/central -o jsonpath='{.spec.template.spec.containers[?(@.name=="central")].image}')"
+            if [ "${central_image}" != "stackrox/main:2.4.16.4" ]; then
+              echo "Unexpected central image!"
+              kubectl -n stackrox describe deploy/central
+              exit 1
+            fi
+
+            source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
+            cat >>"$BASH_ENV" <<EOF
+              export ROX_USERNAME="$ROX_USERNAME"
+              export ROX_PASSWORD="$ROX_PASSWORD"
+            EOF
+      - run:
+          name: Checkout current commit again
+          command: git reset --hard "${CIRCLE_SHA1}"
+
+      - *waitForAPI
+      - run:
+          name: Restore DB
+          command: |
+            roxctl -e "${API_HOSTNAME}:${API_PORT}" -p "${ROX_PASSWORD}" central db restore \
+              --file ./qa-tests-backend/artifacts/upgrade-tests/v2.4.16.4/stackrox_db_2019_03_01_03_48_45.zip
+      - run:
+          name: Do the upgrade
+          command: |
+            new_image="stackrox/main:$(make tag)"
+            kubectl -n stackrox set image deploy/central central="${new_image}"
+            kubectl -n stackrox describe deploy/central
+
+            central_image="$(kubectl -n stackrox get deploy/central -o jsonpath='{.spec.template.spec.containers[?(@.name=="central")].image}')"
+            if [ "${central_image}" != "${new_image}" ]; then
+              echo "Unexpected central image!"
+              exit 1
+            fi
+      - *restoreGradle
+
+      - *waitForAPI
+      - run:
+          name: Run upgrade tests
+          command: |
+            export CLUSTER=K8S
+            export HOSTNAME="${API_HOSTNAME}"
+            export PORT="${API_PORT}"
+            make -C qa-tests-backend upgrade-test
+
+      - *storeQATestResults
+      - *storeQASpockReports
 
       - *collectK8sLogs
       - *storeK8sLogs
@@ -789,12 +874,8 @@ jobs:
               fi
             fi
 
-      - store_test_results:
-          path: qa-tests-backend/build/test-results/test
-
-      - store_artifacts:
-          path: ./qa-tests-backend/build/spock-reports
-          destination: qa-test-report
+      - *storeQATestResults
+      - *storeQASpockReports
 
       - *restoreUI
       - *determineWhetherToRunUIDevServer
@@ -953,6 +1034,12 @@ workflows:
             tags:
               only: /.*/
       - qa-tests:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /.*/
+      - upgrade-test:
           requires:
             - build
           filters:

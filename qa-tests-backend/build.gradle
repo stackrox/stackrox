@@ -101,8 +101,8 @@ tasks.withType(Test) {
     def testGroups = new TestGroups(System.getProperty("groups"))
 
     useJUnit {
-        includeCategories testGroups.includedGroups()
-        excludeCategories testGroups.excludedGroups()
+        includeCategories testGroups.getIncludedGroups()
+        excludeCategories testGroups.getExcludedGroups()
     }
 
     testLogging {
