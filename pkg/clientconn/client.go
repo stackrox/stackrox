@@ -55,17 +55,6 @@ func AuthenticatedGRPCConnection(endpoint string, service Service) (conn *grpc.C
 	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds), keepAliveDialOption())
 }
 
-// UnauthenticatedGRPCConnection returns a grpc.ClientConn object that does not use credentials.
-// Deprecated: This is only to be used temporarily until all clients have certificates.
-func UnauthenticatedGRPCConnection(endpoint string) (conn *grpc.ClientConn, err error) {
-	tlsConfig := &tls.Config{
-		// TODO(ROX-61): Issue credentials and remove this.
-		InsecureSkipVerify: true,
-	}
-	creds := credentials.NewTLS(tlsConfig)
-	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds))
-}
-
 // GRPCConnectionWithBasicAuth returns a grpc.ClientConn using the given username/password to authenticate
 // via basic auth.
 func GRPCConnectionWithBasicAuth(endpoint string, username, password string) (*grpc.ClientConn, error) {

@@ -8,13 +8,13 @@ import (
 	"github.com/stackrox/rox/central/search/options"
 	searchService "github.com/stackrox/rox/central/search/service"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestOptions(t *testing.T) {
-	conn, err := grpcConnection()
-	require.NoError(t, err)
+	conn := testutils.GRPCConnectionToCentral(t)
 
 	service := v1.NewSearchServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)

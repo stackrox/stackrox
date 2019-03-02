@@ -13,6 +13,7 @@ import (
 	deploymentStore "github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,8 +21,7 @@ import (
 
 // This doesn't actually check for the existence of a specific deployment, but any deployment
 func checkDeploymentExists(t *testing.T) {
-	conn, err := grpcConnection()
-	require.NoError(t, err)
+	conn := testutils.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
 
@@ -60,11 +60,9 @@ func TestBackup(t *testing.T) {
 			},
 		},
 	}
-	req, err := http.NewRequest(http.MethodGet, "https://"+apiEndpoint+"/db/backup", nil)
+	req, err := http.NewRequest(http.MethodGet, "https://"+testutils.RoxAPIEndpoint(t)+"/db/backup", nil)
 	require.NoError(t, err)
-	if username != "" && password != "" {
-		req.SetBasicAuth(username, password)
-	}
+	req.SetBasicAuth(testutils.RoxUsername(t), testutils.RoxPassword(t))
 	resp, err := client.Do(req)
 	require.NoError(t, err)
 	defer utils.IgnoreError(resp.Body.Close)

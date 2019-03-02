@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,9 +23,7 @@ const (
 )
 
 func TestClusters(t *testing.T) {
-
-	conn, err := grpcConnection()
-	require.NoError(t, err)
+	conn := testutils.GRPCConnectionToCentral(t)
 
 	service := v1.NewClustersServiceClient(conn)
 
@@ -57,8 +56,7 @@ func TestDeployments(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	conn, err := grpcConnection()
-	require.NoError(t, err)
+	conn := testutils.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
 
@@ -167,8 +165,7 @@ func TestImages(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	conn, err := grpcConnection()
-	require.NoError(t, err)
+	conn := testutils.GRPCConnectionToCentral(t)
 
 	service := v1.NewImageServiceClient(conn)
 

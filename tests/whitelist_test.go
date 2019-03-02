@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,8 +34,7 @@ func waitForAlert(t *testing.T, service v1.AlertServiceClient, req *v1.ListAlert
 }
 
 func verifyNoAlertForWhitelist(t *testing.T) {
-	conn, err := grpcConnection()
-	require.NoError(t, err)
+	conn := testutils.GRPCConnectionToCentral(t)
 
 	service := v1.NewPolicyServiceClient(conn)
 
@@ -71,8 +71,7 @@ func verifyNoAlertForWhitelist(t *testing.T) {
 }
 
 func verifyAlertForWhitelistRemoval(t *testing.T) {
-	conn, err := grpcConnection()
-	require.NoError(t, err)
+	conn := testutils.GRPCConnectionToCentral(t)
 
 	service := v1.NewPolicyServiceClient(conn)
 

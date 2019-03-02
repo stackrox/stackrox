@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -47,8 +48,7 @@ func retrieveDeployments(service v1.DeploymentServiceClient, deps []*storage.Lis
 }
 
 func waitForDeployment(t *testing.T, deploymentName string) {
-	conn, err := grpcConnection()
-	require.NoError(t, err)
+	conn := testutils.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
 
@@ -94,8 +94,7 @@ func waitForDeployment(t *testing.T, deploymentName string) {
 }
 
 func waitForTermination(t *testing.T, deploymentName string) {
-	conn, err := grpcConnection()
-	require.NoError(t, err)
+	conn := testutils.GRPCConnectionToCentral(t)
 
 	service := v1.NewDeploymentServiceClient(conn)
 
