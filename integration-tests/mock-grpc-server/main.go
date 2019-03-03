@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 
 	bolt "github.com/etcd-io/bbolt"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
@@ -108,17 +111,32 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
+
 	db, err := boltDB(dbPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer func() {
-		_ = db.Close()
-	}()
+
 	grpcServer := grpc.NewServer()
 	sensorAPI.RegisterSignalServiceServer(grpcServer, newServer(db))
 	sensorAPI.RegisterNetworkConnectionInfoServiceServer(grpcServer, newServer(db))
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatalf("Failed to serve: %v", err)
+
+	go func() {
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatalf("Failed to serve: %v", err)
+		}
+	}()
+
+	// listening OS shutdown singal
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+	<-signalChan
+
+	fmt.Println("Got OS shutdown signal, shutting down grpc server gracefully...")
+	grpcServer.Stop()
+	err = db.Close()
+	// Db not being closed properly affects test
+	if err != nil {
+		fmt.Println(err)
 	}
 }
