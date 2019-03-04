@@ -22,7 +22,7 @@ function* fetchVersion() {
 
 function* pollVersion() {
     while (true) {
-        yield call(delay, 60000);
+        yield call(delay, 10000);
         yield call(fetchVersionAndSendTo, actions.pollMetadata);
     }
 }

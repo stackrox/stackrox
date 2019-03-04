@@ -1,6 +1,6 @@
-import axios from 'axios';
 import { normalize } from 'normalizr';
 import queryString from 'qs';
+import axios from './instance';
 
 import { policy as policySchema } from './schemas';
 

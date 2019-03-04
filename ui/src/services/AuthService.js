@@ -1,5 +1,5 @@
 import store from 'store';
-import axios from 'axios';
+import axios from './instance';
 
 const authProvidersUrl = '/v1/authProviders';
 const accessTokenKey = 'access_token';

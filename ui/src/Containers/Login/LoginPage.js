@@ -6,6 +6,7 @@ import { createStructuredSelector } from 'reselect';
 import { ClipLoader } from 'react-spinners';
 
 import Select from 'Components/ReactSelect';
+import UnreachableWarning from 'Containers/UnreachableWarning';
 
 import logoPlatform from 'images/logo-platform.svg';
 
@@ -47,6 +48,7 @@ class LoginPage extends Component {
     login = () => {
         const { selectedAuthProviderId } = this.state;
         const authProvider = this.props.authProviders.find(ap => ap.id === selectedAuthProviderId);
+        if (!authProvider) return;
         window.location = authProvider.loginUrl; // redirect to external URL, so no react-router
     };
 
@@ -171,6 +173,7 @@ class LoginPage extends Component {
                     {this.renderAuthError()}
                 </div>
                 <div className="flex flex-col items-center justify-center bg-base-100 w-2/5 md:w-3/5 xl:w-2/5 relative login-bg">
+                    <UnreachableWarning />
                     <div className="login-border-t h-1 w-full" />
                     <div className="flex flex-col items-center justify-center w-full">
                         <img className="h-40 h-40 py-6" src={logoPlatform} alt="StackRox" />

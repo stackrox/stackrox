@@ -1,7 +1,7 @@
-import axios from 'axios';
 import { normalize } from 'normalizr';
 
 import { saveFile } from 'services/DownloadService';
+import axios from './instance';
 import { cluster as clusterSchema } from './schemas';
 
 const clustersUrl = '/v1/clusters';

@@ -1,5 +1,5 @@
-import axios from 'axios';
 import queryString from 'qs';
+import axios from './instance';
 
 const networkPoliciesBaseUrl = '/v1/networkpolicies';
 const networkFlowBaseUrl = '/v1/networkgraph';

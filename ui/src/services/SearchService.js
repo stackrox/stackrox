@@ -1,5 +1,5 @@
-import axios from 'axios';
 import queryString from 'qs';
+import axios from './instance';
 
 const baseUrl = '/v1/search';
 const autoCompleteURL = `${baseUrl}/autocomplete`;

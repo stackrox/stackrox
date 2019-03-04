@@ -1,5 +1,5 @@
-import axios from 'axios';
 import FileSaver from 'file-saver';
+import axios from './instance';
 
 // for now only one function exported from this file
 /* eslint-disable import/prefer-default-export */

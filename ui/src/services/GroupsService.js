@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from './instance';
 
 const url = '/v1/groups';
 const updateUrl = '/v1/groupsbatch';

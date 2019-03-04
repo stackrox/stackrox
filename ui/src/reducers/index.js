@@ -14,6 +14,7 @@ import globalSearch, { selectors as globalSearchSelectors } from './globalSearch
 import policies, { selectors as policySelectors } from './policies/reducer';
 import roles, { selectors as roleSelectors } from './roles';
 import searchAutoComplete, { selectors as searchAutoCompleteSelectors } from './searchAutocomplete';
+import serverError, { selectors as serverErrorSelectors } from './serverError';
 import summaries, { selectors as summarySelectors } from './summaries';
 import secrets, { selectors as secretSelectors } from './secrets';
 import metadata, { selectors as metadataSelectors } from './metadata';
@@ -43,6 +44,7 @@ const appReducer = combineReducers({
     policies,
     roles,
     searchAutoComplete,
+    serverError,
     summaries,
     secrets,
     dashboard,
@@ -79,6 +81,7 @@ const getGlobalSearches = state => getApp(state).globalSearch;
 const getPolicies = state => getApp(state).policies;
 const getRoles = state => getApp(state).roles;
 const getSearchAutocomplete = state => getApp(state).searchAutoComplete;
+const getServerError = state => getApp(state).serverError;
 const getSummaries = state => getApp(state).summaries;
 const getSecrets = state => getApp(state).secrets;
 const getDashboard = state => getApp(state).dashboard;
@@ -105,6 +108,7 @@ const boundSelectors = {
     ...bindSelectors(getRoles, roleSelectors),
     ...bindSelectors(getRoute, routeSelectors),
     ...bindSelectors(getSearchAutocomplete, searchAutoCompleteSelectors),
+    ...bindSelectors(getServerError, serverErrorSelectors),
     ...bindSelectors(getSummaries, summarySelectors),
     ...bindSelectors(getSecrets, secretSelectors),
     ...bindSelectors(getDashboard, dashboardSelectors),

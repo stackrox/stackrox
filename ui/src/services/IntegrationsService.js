@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from './instance';
 
 const sourceMap = {
     imageIntegrations: '/v1/imageintegrations',

@@ -1,7 +1,7 @@
 import { normalize } from 'normalizr';
-import axios from 'axios';
 import queryString from 'qs';
 
+import axios from './instance';
 import { alert as alertSchema, alerts as alertsSchema } from './schemas';
 
 const baseUrl = '/v1/alerts';

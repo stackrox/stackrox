@@ -1,7 +1,7 @@
-import axios from 'axios';
 import { normalize } from 'normalizr';
 import queryString from 'qs';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import axios from './instance';
 
 import { secret as secretSchema } from './schemas';
 

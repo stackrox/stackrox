@@ -1,7 +1,7 @@
-import axios from 'axios';
 import queryString from 'qs';
 import { normalize } from 'normalizr';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import axios from './instance';
 
 import { image as imageSchema } from './schemas';
 

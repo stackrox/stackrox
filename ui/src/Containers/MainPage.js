@@ -33,6 +33,7 @@ import SearchModal from 'Containers/Search/SearchModal';
 import CLIModal from 'Containers/CLI/CLIModal';
 
 import ErrorBoundary from 'Containers/ErrorBoundary';
+import UnreachableWarning from 'Containers/UnreachableWarning';
 import Loader from 'Components/Loader';
 
 const AsyncApiDocsPage = asyncComponent(() => import('Containers/Docs/ApiPage'));
@@ -146,6 +147,7 @@ class MainPage extends Component {
                 <Notifications />
                 <div className="navigation-gradient" />
                 {this.renderVersionOutOfDate()}
+                <UnreachableWarning />
                 <header className="flex z-1">
                     <TopNavigation />
                 </header>

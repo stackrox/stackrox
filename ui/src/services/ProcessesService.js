@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from './instance';
 
 const baseUrl = '/v1/processes';
 
