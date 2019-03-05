@@ -72,7 +72,8 @@ function* sendYAMLNotification({ notifierId }) {
     try {
         const clusterId = yield select(selectors.getSelectedNetworkClusterId);
         const { content } = yield select(selectors.getNetworkYamlFile);
-        yield call(service.sendYAMLNotification, clusterId, notifierId, content);
+        const modification = { applyYaml: JSON.stringify(content) };
+        yield call(service.sendYAMLNotification, clusterId, [notifierId], modification);
         yield put(notificationActions.addNotification('Successfully sent notification.'));
         yield put(notificationActions.removeOldestNotification());
     } catch (error) {

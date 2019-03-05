@@ -25,9 +25,9 @@ message NetworkPoliciesResponse {
 }
 
 message SendNetworkPolicyYamlRequest {
-    string  notifier_id = 1;
-    string  yaml        = 2;
-    string  cluster_id  = 3;
+    string                     cluster_id   = 1;
+    repeated string            notifier_ids = 2;
+    NetworkPolicyModification  modification = 3;
 }
 
 message GetNetworkGraphRequest {
@@ -157,7 +157,7 @@ service NetworkPolicyService {
     rpc SendNetworkPolicyYAML (SendNetworkPolicyYamlRequest) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/networkpolicies/simulate/{cluster_id}/notify"
-            body: "yaml"
+            body: "modification"
         };
     }
 

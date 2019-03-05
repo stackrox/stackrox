@@ -85,15 +85,16 @@ export function fetchNodeUpdates() {
  * Sends a notification of the simulated yaml
  *
  * @param {!String} clusterId
- * @param {!String} notifierId
- * @param {!String} simulationYaml
+ * @param {!array} notifierIds
+ * @param {!Object} modification
  * @returns {Promise<Object, Error>}
  */
-export function sendYAMLNotification(clusterId, notifierId, simulationYaml) {
+export function sendYAMLNotification(clusterId, notifierIds, modification) {
+    const notifiers = queryString.stringify({ notifierIds });
     const options = {
         method: 'POST',
-        data: simulationYaml && `"${simulationYaml.split('\n').join('\\n')}"`,
-        url: `${networkPoliciesBaseUrl}/simulate/${clusterId}/notify?cluster_id=${clusterId}&notifier_id=${notifierId}`
+        data: { modification },
+        url: `${networkPoliciesBaseUrl}/simulate/${clusterId}/notify?${notifiers}`
     };
     return axios(options).then(response => ({
         response: response.data

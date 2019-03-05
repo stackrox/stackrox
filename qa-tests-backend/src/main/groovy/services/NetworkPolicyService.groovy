@@ -42,15 +42,15 @@ class NetworkPolicyService extends BaseService {
     }
 
     static sendSimulationNotification(
-            String notifierId,
+            List<String> notifierIds,
             String yaml,
             String clusterId = ClusterService.getClusterId()) {
         try {
             SendNetworkPolicyYamlRequest.Builder request =
                     SendNetworkPolicyYamlRequest.newBuilder()
-            notifierId == null ?: request.setNotifierId(notifierId)
+            notifierIds == null || notifierIds == [] ?: request.setNotifierIds(notifierIds)
             clusterId == null ?: request.setClusterId(clusterId)
-            yaml == null ?: request.setYaml(yaml)
+            yaml == null ?: request.setModification(NetworkPolicyModification.newBuilder().setApplyYaml(yaml))
             return getNetworkPolicyClient().sendNetworkPolicyYAML(request.build())
         } catch (Exception e) {
             println e.toString()

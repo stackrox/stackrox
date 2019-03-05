@@ -490,21 +490,25 @@ class NetworkSimulator extends BaseSpecification {
     def "Verify Network Simulator Notifications"() {
         when:
         "create notifier"
-        NotifierOuterClass.Notifier notifier
-        switch (notifierType) {
-            case "SLACK":
-                notifier = Services.addSlackNotifier("Slack Test")
-                break
+        notifiers = []
+        for (String notifierType : notifierTypes) {
+            NotifierOuterClass.Notifier notifier
+            switch (notifierType) {
+                case "SLACK":
+                    notifier = Services.addSlackNotifier("Slack Test")
+                    break
 
-            case "JIRA":
-                notifier = Services.addJiraNotifier("Jira Test")
-                break
+                case "JIRA":
+                    notifier = Services.addJiraNotifier("Jira Test")
+                    break
 
-            case "EMAIL":
-                notifier = Services.addEmailNotifier("Email Test")
-                break
+                case "EMAIL":
+                    notifier = Services.addEmailNotifier("Email Test")
+                    break
+            }
+            notifiers.add(notifier)
         }
-        assert notifier != null
+        assert notifiers.size() > 0
 
         and:
         "generate a network policy yaml"
@@ -516,23 +520,26 @@ class NetworkSimulator extends BaseSpecification {
         then:
         "send simulation notification"
         NetworkPolicyService.sendSimulationNotification(
-                notifier.id,
+                notifiers.collect { notifier.id },
                 orchestrator.generateYaml(policy)
         )
 
         cleanup:
-        "delete notifier"
-        if (notifier != null) {
-            Services.deleteNotifier(notifier.id)
+        "delete notifiers"
+        for (NotifierOuterClass.Notifier notifier : notifiers) {
+            if (notifier != null) {
+                Services.deleteNotifier(notifier.id)
+            }
         }
 
         where:
         "notifier types"
 
-        notifierType | _
-        "SLACK"      | _
-        "EMAIL"      | _
-        "JIRA"       | _
+        notifierTypes     | _
+        ["SLACK"]         | _
+        ["EMAIL"]         | _
+        ["JIRA"]          | _
+        ["JIRA", "EMAIL"] | _
     }
 
     @Category([NetworkPolicySimulation])

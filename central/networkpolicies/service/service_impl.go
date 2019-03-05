@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -232,12 +233,11 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 }
 
 func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.SendNetworkPolicyYamlRequest) (*v1.Empty, error) {
-
 	if request.GetClusterId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "Cluster ID must be specified")
 	}
-	if request.GetNotifierId() == "" {
-		return nil, status.Errorf(codes.InvalidArgument, "Notifier ID must be specified")
+	if len(request.GetNotifierIds()) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "Notifier IDs must be specified")
 	}
 
 	cluster, exists, err := s.clusterStore.GetCluster(request.GetClusterId())
@@ -248,24 +248,34 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 		return nil, status.Errorf(codes.NotFound, "Cluster '%s' not found", request.GetClusterId())
 	}
 
-	notifierProto, exists, err := s.notifierStore.GetNotifier(request.GetNotifierId())
+	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
+	for _, notifierID := range request.GetNotifierIds() {
+		notifierProto, exists, err := s.notifierStore.GetNotifier(notifierID)
+		if err != nil {
+			errorList.AddError(err)
+			continue
+		}
+		if !exists {
+			errorList.AddStringf("notifier with id:%s not found", notifierID)
+			continue
+		}
+
+		notifier, err := notifiers.CreateNotifier(notifierProto)
+		if err != nil {
+			errorList.AddStringf("error creating notifier with id:%s (%s) and type %s: %v", notifierProto.GetId(), notifierProto.GetName(), notifierProto.GetType(), err)
+			continue
+		}
+
+		err = notifier.NetworkPolicyYAMLNotify(request.GetModification().GetApplyYaml(), cluster.GetName())
+		if err != nil {
+			errorList.AddStringf("error sending yaml notification to %s: %v", notifierProto.GetName(), err)
+		}
+	}
+
+	err = errorList.ToError()
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	if !exists {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("Notifier %s not found", request.GetNotifierId()))
-	}
-
-	notifier, err := notifiers.CreateNotifier(notifierProto)
-	if err != nil {
-		return &v1.Empty{}, fmt.Errorf("Error creating notifier with %s (%s) and type %s: %v", notifierProto.GetId(), notifierProto.GetName(), notifierProto.GetType(), err)
-	}
-
-	err = notifier.NetworkPolicyYAMLNotify(request.GetYaml(), cluster.GetName())
-	if err != nil {
-		return &v1.Empty{}, status.Errorf(codes.Internal, fmt.Sprintf("Error sending yaml notification to %s: %v", notifierProto.GetName(), err))
-	}
-
 	return &v1.Empty{}, nil
 }
 
