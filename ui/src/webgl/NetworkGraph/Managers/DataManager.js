@@ -45,8 +45,7 @@ const DataManager = canvas => {
 
         // create static force layout by calculating ticks beforehand
         let i = 0;
-        const x = deploymentNodes.length * 5;
-        while (i < x) {
+        while (i < deploymentNodes.length) {
             forceSimulation.tick();
             i += 1;
         }
