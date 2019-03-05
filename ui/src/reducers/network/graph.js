@@ -59,7 +59,7 @@ export const actions = {
 
 // Reducers
 
-const networkGraphFilterMode = (state = filterModes.all, action) => {
+const networkGraphFilterMode = (state = filterModes.active, action) => {
     if (action.type === types.SET_NETWORK_GRAPH_FILTER_MODE) {
         return action.mode;
     }
