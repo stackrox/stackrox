@@ -16,7 +16,8 @@ const ClusterVersion = ({ clusterId }) => {
                 let contents = <Loader />;
                 let headerText = '';
                 if (!loading && data && data.cluster) {
-                    const { orchestratorMetadata, type } = data.cluster;
+                    const { type } = data.cluster;
+                    const { orchestratorMetadata } = data.cluster.status;
                     headerText = clusterVersionLabels[type];
                     contents = (
                         <div className="py-8 w-full flex flex-col items-center justify-between">

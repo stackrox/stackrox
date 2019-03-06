@@ -8,6 +8,7 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -38,6 +39,12 @@ func (suite *ClusterStoreTestSuite) TearDownSuite() {
 	testutils.TearDownDB(suite.db)
 }
 
+func hydratedCluster(cluster *storage.Cluster, status *storage.ClusterStatus) *storage.Cluster {
+	cloned := protoutils.CloneStorageCluster(cluster)
+	cloned.Status = status
+	return cloned
+}
+
 func (suite *ClusterStoreTestSuite) TestClusters() {
 	checkin1 := time.Now()
 	checkin2 := time.Now().Add(-1 * time.Hour)
@@ -48,13 +55,22 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 
 	clusters := []*storage.Cluster{
 		{
-			Name:        "cluster1",
-			MainImage:   "test-dtr.example.com/main",
-			LastContact: ts1,
+			Name:      "cluster1",
+			MainImage: "test-dtr.example.com/main",
 		},
 		{
-			Name:        "cluster2",
-			MainImage:   "docker.io/stackrox/main",
+			Name:      "cluster2",
+			MainImage: "docker.io/stackrox/main",
+		},
+	}
+	statuses := []*storage.ClusterStatus{
+		{
+			LastContact: ts1,
+			ProviderMetadata: &storage.ProviderMetadata{
+				Region: "BLAH",
+			},
+		},
+		{
 			LastContact: ts2,
 		},
 	}
@@ -64,12 +80,6 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 		id, err := suite.store.AddCluster(b)
 		suite.NoError(err)
 		suite.NotEmpty(id)
-
-		// Add the timestamp in the second list.
-		t, err := ptypes.TimestampFromProto(b.GetLastContact())
-		suite.NoError(err)
-		err = suite.store.UpdateClusterContactTime(b.GetId(), t)
-		suite.NoError(err)
 	}
 
 	for _, b := range clusters {
@@ -77,6 +87,35 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 		suite.NoError(err)
 		suite.True(exists)
 		suite.Equal(got, b)
+	}
+
+	for i, b := range clusters {
+		suite.NoError(suite.store.UpdateClusterStatus(b.GetId(), statuses[i]))
+		t, err := ptypes.TimestampFromProto(statuses[i].GetLastContact())
+		suite.NoError(err)
+		err = suite.store.UpdateClusterContactTime(b.GetId(), t)
+		suite.NoError(err)
+	}
+
+	for i, b := range clusters {
+		got, exists, err := suite.store.GetCluster(b.GetId())
+		suite.NoError(err)
+		suite.True(exists)
+		suite.Equal(got, hydratedCluster(b, statuses[i]))
+	}
+
+	gotClusters, err := suite.store.GetClusters()
+	suite.NoError(err)
+	for _, gotCluster := range gotClusters {
+		found := false
+		for i, actualCluster := range clusters {
+			if actualCluster.GetId() != gotCluster.GetId() {
+				continue
+			}
+			found = true
+			suite.Equal(gotCluster, hydratedCluster(actualCluster, statuses[i]))
+		}
+		suite.True(found)
 	}
 
 	// Test Update
@@ -88,34 +127,17 @@ func (suite *ClusterStoreTestSuite) TestClusters() {
 		suite.NoError(suite.store.UpdateCluster(b))
 	}
 
-	for _, b := range clusters {
+	for i, b := range clusters {
 		got, exists, err := suite.store.GetCluster(b.GetId())
 		suite.NoError(err)
 		suite.True(exists)
-		suite.Equal(got, b)
+		suite.Equal(got, hydratedCluster(b, statuses[i]))
 	}
 
 	// Test Count
 	count, err := suite.store.CountClusters()
 	suite.NoError(err)
 	suite.Equal(len(clusters), count)
-
-	status := storage.ClusterStatus{SensorVersion: "2.4.16"}
-	suite.NoError(suite.store.UpdateClusterStatus(clusters[0].GetId(), &status))
-	cluster, exists, err := suite.store.GetCluster(clusters[0].GetId())
-	suite.True(exists)
-	suite.Equal(&status, cluster.GetStatus())
-
-	gotClusters, err := suite.store.GetClusters()
-	suite.NoError(err)
-	var found bool
-	for _, gotCluster := range gotClusters {
-		if gotCluster.GetId() == clusters[0].GetId() {
-			suite.Equal(&status, gotCluster.GetStatus())
-			found = true
-		}
-	}
-	suite.True(found)
 
 	// Test Remove
 	for _, b := range clusters {

@@ -41,7 +41,6 @@ message SensorEvent {
         storage.Secret            secret            = 7;
         storage.Node              node              = 9;
 
-        // Indicators
         storage.ProcessIndicator process_indicator = 8;
         storage.ProviderMetadata provider_metadata = 10;
         ResourcesSynced          synced            = 11;

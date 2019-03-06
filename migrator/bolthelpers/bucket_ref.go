@@ -22,6 +22,19 @@ func TopLevelRef(db *bolt.DB, key []byte) BucketRef {
 	}
 }
 
+// TopLevelRefWithCreateIfNotExists returns a top-level bucket in the DB,
+// creating it if it doesn't exist.
+func TopLevelRefWithCreateIfNotExists(db *bolt.DB, key []byte) (BucketRef, error) {
+	err := db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists(key)
+		return err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("creating bucket %v: %v", key, err)
+	}
+	return TopLevelRef(db, key), nil
+}
+
 // NestedRef obtains a BucketRef for a nested bucket inside a parent bucket.
 func NestedRef(parent BucketRef, key []byte) BucketRef {
 	return &nestedBucketRef{

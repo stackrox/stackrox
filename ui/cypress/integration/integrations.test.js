@@ -188,7 +188,9 @@ describe('Cluster Creation Flow', () => {
                 cy.route('GET', `${api.clusters.list}/${clusterId}`, {
                     cluster: {
                         id: clusterId,
-                        lastContact: '2018-06-25T19:12:44.955289Z'
+                        status: {
+                            lastContact: '2018-06-25T19:12:44.955289Z'
+                        }
                     }
                 }).as('getCluster');
                 cy.wait('@getCluster');

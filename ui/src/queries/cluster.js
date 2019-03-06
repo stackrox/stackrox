@@ -52,9 +52,11 @@ export const CLUSTER_VERSION_QUERY = gql`
             id
             name
             type
-            orchestratorMetadata {
-                version
-                buildDate
+            status {
+                orchestratorMetadata {
+                    version
+                    buildDate
+                }
             }
         }
     }

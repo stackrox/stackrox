@@ -1,6 +1,7 @@
 package store
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -48,7 +49,7 @@ func (b *storeImpl) GetClusters() ([]*storage.Cluster, error) {
 			if err := proto.Unmarshal(v, &cluster); err != nil {
 				return err
 			}
-			b.populateStatusFields(tx, &cluster)
+			b.populateClusterStatus(tx, &cluster)
 			clusters = append(clusters, &cluster)
 			return nil
 		})
@@ -70,6 +71,12 @@ func (b *storeImpl) CountClusters() (count int, err error) {
 // AddCluster adds a cluster to bolt
 func (b *storeImpl) AddCluster(cluster *storage.Cluster) (string, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Add, "Cluster")
+	if cluster.GetId() != "" {
+		return "", fmt.Errorf("cannot add a cluster that has already been assigned an id: %q", cluster.GetId())
+	}
+	if cluster == nil {
+		return "", errors.New("cannot add a nil cluster")
+	}
 	cluster.Id = uuid.NewV4().String()
 	err := b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(clusterBucket)
@@ -118,6 +125,7 @@ func (b *storeImpl) UpdateCluster(cluster *storage.Cluster) error {
 }
 
 // RemoveCluster removes a cluster.
+// TODO(viswa): Remove from all buckets.
 func (b *storeImpl) RemoveCluster(id string) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "Cluster")
 	return b.Update(func(tx *bolt.Tx) error {
@@ -129,7 +137,22 @@ func (b *storeImpl) RemoveCluster(id string) error {
 		if exists := b.Get(key) != nil; !exists {
 			return dberrors.ErrNotFound{Type: "Cluster", ID: string(key)}
 		}
-		return b.Delete(key)
+		if err := b.Delete(key); err != nil {
+			return err
+		}
+		clusterStatusB := tx.Bucket(clusterStatusBucket)
+		if clusterStatusBucket != nil {
+			if err := clusterStatusB.Delete(key); err != nil {
+				return err
+			}
+		}
+		clusterLastContactTimeB := tx.Bucket(clusterLastContactTimeBucket)
+		if clusterLastContactTimeB != nil {
+			if err := clusterLastContactTimeB.Delete(key); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 }
 
@@ -166,28 +189,26 @@ func (b *storeImpl) getCluster(tx *bolt.Tx, id string, bucket *bolt.Bucket) (clu
 	if err != nil {
 		return
 	}
-	b.populateStatusFields(tx, cluster)
-	return
-}
-
-func (b *storeImpl) populateStatusFields(tx *bolt.Tx, cluster *storage.Cluster) {
-	b.populateClusterContactTime(tx, cluster)
 	b.populateClusterStatus(tx, cluster)
-}
-
-func (b *storeImpl) populateClusterContactTime(tx *bolt.Tx, cluster *storage.Cluster) {
-	t, err := b.getClusterContactTime(tx, cluster.GetId())
-	if err != nil {
-		log.Warnf("Could not get cluster last-contact time for '%s': %s", cluster.GetId(), err)
-		return
-	}
-	cluster.LastContact = t
+	return
 }
 
 func (b *storeImpl) populateClusterStatus(tx *bolt.Tx, cluster *storage.Cluster) {
 	status, err := b.getClusterStatus(tx, cluster.GetId())
 	if err != nil {
 		log.Warnf("Could not get cluster status for %q: %v", cluster.GetId(), err)
+		return
+	}
+	t, err := b.getClusterContactTime(tx, cluster.GetId())
+	if err != nil {
+		log.Warnf("Could not get cluster last-contact time for '%s': %s", cluster.GetId(), err)
+		return
+	}
+	if t != nil {
+		if status == nil {
+			status = &storage.ClusterStatus{}
+		}
+		status.LastContact = t
 	}
 	cluster.Status = status
 }
@@ -218,40 +239,6 @@ func (b *storeImpl) getClusterStatus(tx *bolt.Tx, id string) (*storage.ClusterSt
 		return nil, err
 	}
 	return status, nil
-}
-
-// UpdateProviderMetadata updates the cluster with cloud provider metadata
-func (b *storeImpl) UpdateProviderMetadata(id string, metadata *storage.ProviderMetadata) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Cluster")
-
-	return b.Update(func(tx *bolt.Tx) error {
-		cluster, exists, err := b.getCluster(tx, id, tx.Bucket(clusterBucket))
-		if err != nil {
-			return err
-		}
-		if !exists {
-			return fmt.Errorf("could not enrich cluster with metadata. Cluster %q does not exist", id)
-		}
-		cluster.ProviderMetadata = metadata
-		return b.updateCluster(tx, cluster)
-	})
-}
-
-// UpdateOrchestratorMetadata updates the orchestrator metadata of the cluster
-func (b *storeImpl) UpdateOrchestratorMetadata(id string, metadata *storage.OrchestratorMetadata) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "Cluster")
-
-	return b.Update(func(tx *bolt.Tx) error {
-		cluster, exists, err := b.getCluster(tx, id, tx.Bucket(clusterBucket))
-		if err != nil {
-			return err
-		}
-		if !exists {
-			return fmt.Errorf("could not enrich cluster with metadata. Cluster %q does not exist", id)
-		}
-		cluster.OrchestratorMetadata = metadata
-		return b.updateCluster(tx, cluster)
-	})
 }
 
 func (b *storeImpl) UpdateClusterStatus(id string, status *storage.ClusterStatus) error {

@@ -123,13 +123,14 @@ func (c *cscc) getCluster(id string) (*storage.Cluster, error) {
 	if !exists {
 		return nil, fmt.Errorf("Could not retrieve cluster %q because it does not exist", id)
 	}
-	if cluster.GetProviderMetadata().GetGoogle().GetProject() == "" {
+	providerMetadata := cluster.GetStatus().GetProviderMetadata()
+	if providerMetadata.GetGoogle().GetProject() == "" {
 		return nil, fmt.Errorf("Could not find Google project for cluster %q", id)
 	}
-	if cluster.GetProviderMetadata().GetGoogle().GetClusterName() == "" {
+	if providerMetadata.GetGoogle().GetClusterName() == "" {
 		return nil, fmt.Errorf("Could not find Google cluster name for cluster %q", id)
 	}
-	if cluster.GetProviderMetadata().GetZone() == "" {
+	if providerMetadata.GetZone() == "" {
 		return nil, fmt.Errorf("Could not find Google zone for cluster %q", id)
 	}
 	return cluster, nil
@@ -146,6 +147,7 @@ func (c *cscc) AlertNotify(alert *storage.Alert) error {
 	if err != nil {
 		return err
 	}
+	providerMetadata := cluster.GetStatus().GetProviderMetadata()
 
 	category := alert.GetPolicy().GetName()
 	severity := transformSeverity(alert.GetPolicy().GetSeverity())
@@ -153,9 +155,9 @@ func (c *cscc) AlertNotify(alert *storage.Alert) error {
 		ID:     fmt.Sprintf("%s/findings/%s", c.config.SourceID, findingID),
 		Parent: c.config.SourceID,
 		ResourceName: findings.ClusterID{
-			Project: cluster.GetProviderMetadata().GetGoogle().GetProject(),
-			Zone:    cluster.GetProviderMetadata().GetZone(),
-			Name:    cluster.GetProviderMetadata().GetGoogle().GetClusterName(),
+			Project: providerMetadata.GetGoogle().GetProject(),
+			Zone:    providerMetadata.GetZone(),
+			Name:    providerMetadata.GetGoogle().GetClusterName(),
 		}.ResourceName(),
 		State:     findings.StateActive,
 		Category:  category,

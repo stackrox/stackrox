@@ -35,3 +35,10 @@ func CloneStorageAlert(val *storage.Alert) *storage.Alert {
 func CloneV1Query(val *v1.Query) *v1.Query {
 	return protoCloneWrapper(val).(*v1.Query)
 }
+
+// *storage.Cluster represents a generic proto type that we clone.
+
+// CloneStorageCluster is a (generic) wrapper around proto.Clone that is strongly typed.
+func CloneStorageCluster(val *storage.Cluster) *storage.Cluster {
+	return protoCloneWrapper(val).(*storage.Cluster)
+}

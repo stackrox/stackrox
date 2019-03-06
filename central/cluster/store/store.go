@@ -24,8 +24,6 @@ type Store interface {
 	UpdateCluster(cluster *storage.Cluster) error
 	RemoveCluster(id string) error
 	UpdateClusterContactTime(id string, t time.Time) error
-	UpdateProviderMetadata(id string, metadata *storage.ProviderMetadata) error
-	UpdateOrchestratorMetadata(id string, metadata *storage.OrchestratorMetadata) error
 	UpdateClusterStatus(id string, status *storage.ClusterStatus) error
 }
 

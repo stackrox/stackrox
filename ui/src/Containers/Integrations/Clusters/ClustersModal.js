@@ -107,11 +107,11 @@ class ClustersModal extends Component {
                 className: `${wrapClassName} ${defaultColumnClassName} word-break`
             },
             {
-                accessor: 'lastContact',
+                accessor: 'status.lastContact',
                 Header: 'Last Check-In',
                 Cell: ({ original }) => {
-                    if (original.lastContact)
-                        return dateFns.format(original.lastContact, dateTimeFormat);
+                    if (original.status && original.status.lastContact)
+                        return dateFns.format(original.status.lastContact, dateTimeFormat);
                     return 'N/A';
                 }
             },

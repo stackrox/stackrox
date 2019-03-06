@@ -80,17 +80,17 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"admissionController: Boolean!",
 		"centralApiEndpoint: String!",
 		"id: ID!",
-		"lastContact: Time",
 		"mainImage: String!",
 		"monitoringEndpoint: String!",
 		"name: String!",
-		"orchestratorMetadata: OrchestratorMetadata",
-		"providerMetadata: ProviderMetadata",
 		"runtimeSupport: Boolean!",
 		"status: ClusterStatus",
 		"type: ClusterType!",
 	}))
 	utils.Must(builder.AddType("ClusterStatus", []string{
+		"lastContact: Time",
+		"orchestratorMetadata: OrchestratorMetadata",
+		"providerMetadata: ProviderMetadata",
 		"sensorVersion: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterType(0)))
@@ -1296,11 +1296,6 @@ func (resolver *clusterResolver) Id() graphql.ID {
 	return graphql.ID(value)
 }
 
-func (resolver *clusterResolver) LastContact() (*graphql.Time, error) {
-	value := resolver.data.GetLastContact()
-	return timestamp(value)
-}
-
 func (resolver *clusterResolver) MainImage() string {
 	value := resolver.data.GetMainImage()
 	return value
@@ -1314,16 +1309,6 @@ func (resolver *clusterResolver) MonitoringEndpoint() string {
 func (resolver *clusterResolver) Name() string {
 	value := resolver.data.GetName()
 	return value
-}
-
-func (resolver *clusterResolver) OrchestratorMetadata() (*orchestratorMetadataResolver, error) {
-	value := resolver.data.GetOrchestratorMetadata()
-	return resolver.root.wrapOrchestratorMetadata(value, true, nil)
-}
-
-func (resolver *clusterResolver) ProviderMetadata() (*providerMetadataResolver, error) {
-	value := resolver.data.GetProviderMetadata()
-	return resolver.root.wrapProviderMetadata(value, true, nil)
 }
 
 func (resolver *clusterResolver) RuntimeSupport() bool {
@@ -1362,6 +1347,21 @@ func (resolver *Resolver) wrapClusterStatuses(values []*storage.ClusterStatus, e
 		output[i] = &clusterStatusResolver{resolver, v}
 	}
 	return output, nil
+}
+
+func (resolver *clusterStatusResolver) LastContact() (*graphql.Time, error) {
+	value := resolver.data.GetLastContact()
+	return timestamp(value)
+}
+
+func (resolver *clusterStatusResolver) OrchestratorMetadata() (*orchestratorMetadataResolver, error) {
+	value := resolver.data.GetOrchestratorMetadata()
+	return resolver.root.wrapOrchestratorMetadata(value, true, nil)
+}
+
+func (resolver *clusterStatusResolver) ProviderMetadata() (*providerMetadataResolver, error) {
+	value := resolver.data.GetProviderMetadata()
+	return resolver.root.wrapProviderMetadata(value, true, nil)
 }
 
 func (resolver *clusterStatusResolver) SensorVersion() string {

@@ -18,7 +18,9 @@ class ClusterWizardPanel extends Component {
         cluster: PropTypes.shape({
             id: PropTypes.string,
             name: PropTypes.string,
-            lastContact: PropTypes.string
+            status: PropTypes.shape({
+                lastContact: PropTypes.string
+            })
         }),
         currentPage: PropTypes.oneOf(Object.values(wizardPages)).isRequired,
         onFinish: PropTypes.func.isRequired,
@@ -79,7 +81,9 @@ class ClusterWizardPanel extends Component {
                 return (
                     <ClusterDeploymentPage
                         onFileDownload={onDownload}
-                        clusterCheckedIn={!!(cluster && cluster.lastContact)}
+                        clusterCheckedIn={
+                            !!(cluster && cluster.status && cluster.status.lastContact)
+                        }
                     />
                 );
             default:

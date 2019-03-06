@@ -48,7 +48,7 @@ func TestClusters(t *testing.T) {
 	cancel()
 	require.NoError(t, err)
 
-	cByID.GetCluster().LastContact = c.GetLastContact()
+	cByID.Cluster.Status.LastContact = c.GetStatus().GetLastContact()
 	assert.Equal(t, c, cByID.GetCluster())
 }
 

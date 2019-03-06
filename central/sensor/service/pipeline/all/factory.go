@@ -2,7 +2,6 @@ package all
 
 import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
-	"github.com/stackrox/rox/central/sensor/service/pipeline/clustermetadata"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/clusterstatusupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/deploymentevents"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/imageintegrations"
@@ -11,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/nodes"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/processindicators"
-	"github.com/stackrox/rox/central/sensor/service/pipeline/providermetadata"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/scrapeupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/secrets"
 )
@@ -36,10 +34,8 @@ func (s *factoryImpl) PipelineForCluster(clusterID string) (pipeline.ClusterPipe
 		namespaces.GetPipeline(),
 		secrets.GetPipeline(),
 		nodes.GetPipeline(),
-		providermetadata.GetPipeline(),
 		scrapeupdate.GetPipeline(),
 		flowUpdateFragment,
-		clustermetadata.GetPipeline(),
 		imageintegrations.GetPipeline(),
 		clusterstatusupdate.GetPipeline(),
 	), nil

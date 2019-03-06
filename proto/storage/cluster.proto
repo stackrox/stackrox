@@ -41,19 +41,22 @@ message Cluster {
     ClusterType               type                        = 3;
     string                    main_image                  = 4;
     string                    central_api_endpoint        = 5;
-    google.protobuf.Timestamp last_contact                = 6;
+    reserved                                                6;
     bool                      runtime_support             = 7;
     string                    monitoring_endpoint         = 8;
 
     reserved 9,10,11;
 
-    ProviderMetadata          provider_metadata           = 12;
-    bool                      admission_controller        = 13;
-    OrchestratorMetadata      orchestrator_metadata       = 14;
+    ProviderMetadata          DEPRECATED_provider_metadata     = 12;
+    bool                      admission_controller             = 13;
+    OrchestratorMetadata      DEPRECATED_orchestrator_metadata = 14;
 
     ClusterStatus             status                      = 15;
 }
 
 message ClusterStatus {
-    string sensor_version = 1;
+    string                    sensor_version        = 1;
+    google.protobuf.Timestamp last_contact          = 2;
+    ProviderMetadata          provider_metadata     = 3;
+    OrchestratorMetadata      orchestrator_metadata = 4;
 }
