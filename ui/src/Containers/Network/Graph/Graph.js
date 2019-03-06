@@ -60,7 +60,7 @@ class Graph extends Component {
             filterState === filterModes.active ? networkFlowGraph.nodes : networkPolicyGraph.nodes;
 
         // If we have more than 200 nodes, display a message instead of the graph.
-        if (nodes.length > 200) {
+        if (nodes.length > 600) {
             // hopefully a temporal solution
             return (
                 <NoResultsMessage message="There are too many deployments to render on the graph. Please refine your search to a set of namespaces or deployments to display." />

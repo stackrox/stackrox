@@ -730,6 +730,17 @@ dependencies:
     attribution:
       - 2016 Jaume Sanchez
 
+  ui/node_modules/react-webworker:
+    url: "https://github.com/ghengeveld/react-webworker"
+    license: ISC
+    files:
+      LICENSE: adc19d88c7fdfb33d7b2ebc7357e0b859a1ec3da7743dc94b580a8cc5ed2a695
+      package.json:
+        author: 3bcfdfc0cc7a3dd0e759322120c2ac487218c9b148ba085825f3b1e4a8ab531e
+        license: 05a3ffb33805b18c1a710242660f909157e075f61f57177ece116101b44d0391
+    attribution:
+      - 2018 Gert Hengeveld
+
   vendor/cloud.google.com/go:
     url: https://github.com/googleapis/google-cloud-go
     license: Apache-2.0

@@ -39,12 +39,12 @@ const Namespace = (scene, data) => {
     let icon = null;
 
     let geometry = new THREE.PlaneGeometry(1, 1);
-    let canvas = null;
+    let canvasTexture = null;
     let texture = null;
     if (namespace.internetAccess) {
-        canvas = getBorderCanvas(namespace);
+        const borderCanvas = getBorderCanvas(namespace);
         // adds texture to the border for the namespace
-        texture = new THREE.CanvasTexture(canvas);
+        texture = new THREE.CanvasTexture(borderCanvas);
         texture.needsUpdate = true;
         texture.magFilter = THREE.NearestFilter;
         texture.minFilter = THREE.LinearMipMapLinearFilter;
@@ -59,12 +59,13 @@ const Namespace = (scene, data) => {
     });
     // creates border for the namespace
     border = new THREE.Mesh(geometry, material);
-    canvas = getPlaneCanvas(constants.CANVAS_BG_COLOR);
-    texture = new THREE.CanvasTexture(canvas);
+    canvasTexture = getPlaneCanvas(constants.CANVAS_BG_COLOR);
+    texture = new THREE.CanvasTexture(canvasTexture);
     geometry = new THREE.PlaneGeometry(1, 1);
     material = new THREE.MeshBasicMaterial({
         color: 0xffffff,
-        side: THREE.DoubleSide
+        side: THREE.DoubleSide,
+        map: texture
     });
     plane = new THREE.Mesh(geometry, material);
 
@@ -81,8 +82,8 @@ const Namespace = (scene, data) => {
     scene.add(label);
 
     if (namespace.internetAccess) {
-        canvas = getIconCanvas();
-        texture = new THREE.Texture(canvas);
+        const iconCanvas = getIconCanvas();
+        texture = new THREE.Texture(iconCanvas);
         texture.needsUpdate = true;
         geometry = new THREE.PlaneBufferGeometry(1, 1);
         material = new THREE.MeshBasicMaterial({

@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import NetworkGraphManager from 'webgl/NetworkGraph/Managers/NetworkGraphManager';
 import { ALLOWED_STATE } from 'constants/networkGraph';
+import WebWorker from 'react-webworker';
 
 class NetworkGraph extends Component {
     static propTypes = {
@@ -46,7 +47,8 @@ class NetworkGraph extends Component {
                     filterState === ALLOWED_STATE ? {} : networkFlowMapping;
                 this.manager.setUpNetworkData({
                     nodes,
-                    networkFlowMapping: filteredNetworkFlowMapping
+                    networkFlowMapping: filteredNetworkFlowMapping,
+                    postMessageCallback: this.postMessage
                 });
                 this.manager.setOnNodeClick(nextProps.onNodeClick);
             }
@@ -84,6 +86,25 @@ class NetworkGraph extends Component {
                         this.networkGraph = ref;
                     }}
                 />
+                <WebWorker url="/forceLayoutWorker.worker.js">
+                    {({ data, error, postMessage }) => {
+                        this.postMessage = postMessage;
+                        if (error) return `Something went wrong: ${error.message}`;
+                        if (data) {
+                            switch (data.type) {
+                                case 'end':
+                                    this.manager.setNetworkNodes(data.nodes);
+                                    this.manager.setNetworkLinks(data.links);
+                                    this.manager.setNetworkNamespaces(data.namespaces);
+                                    this.manager.renderNetworkGraph();
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                        return <div>Webworker</div>;
+                    }}
+                </WebWorker>
             </div>
         );
     }
