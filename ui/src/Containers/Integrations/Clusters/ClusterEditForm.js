@@ -131,7 +131,7 @@ const initialValuesFactories = {
         centralApiEndpoint: 'central.stackrox:443',
         monitoringEndpoint: 'monitoring.stackrox:443',
         runtimeSupport: true,
-        admissionController: true
+        admissionController: false
     })
 };
 
