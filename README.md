@@ -21,7 +21,7 @@ The following tools are necessary to build image(s):
  * [Make](https://www.gnu.org/software/make/)
  * [Bazel](https://docs.bazel.build/versions/master/install.html) 0.17.2 or higher.
  Install XCode before Bazel if you are building on a Mac.
- * [Go](https://golang.org/dl/) 1.11.
+ * [Go](https://golang.org/dl/) 1.12.
  * Various Go linters that can be installed using `make dev`.
  * [Node.js](https://nodejs.org/en/) `8.12.0` or higher (it's highly recommended to use an LTS version)
  If you're managing multiple versions of Node.js on your machine, consider using [nvm](https://github.com/creationix/nvm))
