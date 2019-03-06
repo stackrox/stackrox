@@ -165,7 +165,7 @@ spec:
         imagePullPolicy: Always
         env:
         - name: COLLECTOR_CONFIG
-          value: '{"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"},"syscalls":["accept","connect","execve","fork","clone","close","shutdown","socket"]}'
+          value: '{"useEbpf":{{.CollectorEbpf}},"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"},"syscalls":["accept","connect","execve","fork","clone","close","shutdown","socket"]}'
         - name: GRPC_SERVER
           value: sensor.stackrox:443
         - name: MODULE_DOWNLOAD_BASE_URL
@@ -186,19 +186,28 @@ spec:
         volumeMounts:
         - mountPath: /host/var/run/docker.sock
           name: var-run-docker-sock
-        - mountPath: /module
-          name: tmpfs-module
-        - mountPath: /host/dev
-          name: dev-ro
-          readOnly: true
         - mountPath: /host/proc
           name: proc-ro
+          readOnly: true
+        - mountPath: /module
+          name: tmpfs-module
+        {{if .CollectorEbpf}}
+        - mountPath: /host/sys/kernel/debug/tracing/events
+          name: sys-kernel-debug-tracing-events-ro
+          readOnly: true
+        - mountPath: /host/sys/devices/system/cpu
+          name: sys-devices-system-cpu-ro
+          readOnly: true
+        {{- else}}
+        - mountPath: /host/dev
+          name: dev-ro
           readOnly: true
         - mountPath: /host/sys/module
           name: sys-module-ro
           readOnly: true
-        - name: certs
-          mountPath: /run/secrets/stackrox.io/certs/
+        {{- end}}
+        - mountPath: /run/secrets/stackrox.io/certs/
+          name: certs
           readOnly: true
       {{if .MonitoringEndpoint}}
       - name: telegraf
@@ -237,18 +246,27 @@ spec:
       - hostPath:
           path: /var/run/docker.sock
         name: var-run-docker-sock
+      - hostPath:
+          path: /proc
+        name: proc-ro
       - emptyDir:
           medium: Memory
         name: tmpfs-module
+      {{if .CollectorEbpf}}
+      - hostPath: 
+          path: /sys/kernel/debug/tracing/events
+        name: sys-kernel-debug-tracing-events-ro
+      - hostPath: 
+          path: /sys/devices/system/cpu
+        name: sys-devices-system-cpu-ro
+      {{- else}}
       - hostPath:
           path: /dev
         name: dev-ro
       - hostPath:
-          path: /proc
-        name: proc-ro
-      - hostPath:
           path: /sys/module
         name: sys-module-ro
+      {{- end}}
       - name: certs
         secret:
           secretName: collector-tls

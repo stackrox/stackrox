@@ -1,5 +1,9 @@
 package version
 
+import (
+	"github.com/stackrox/rox/pkg/env"
+)
+
 var (
 	mainVersion      string
 	collectorVersion string
@@ -13,6 +17,9 @@ func GetMainVersion() string {
 
 // GetCollectorVersion returns the current collector tag
 func GetCollectorVersion() string {
+	if env.CollectorVersion.Setting() != "" {
+		return env.CollectorVersion.Setting()
+	}
 	return collectorVersion
 }
 

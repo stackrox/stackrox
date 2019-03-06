@@ -17,7 +17,7 @@ func TestWithoutDefault(t *testing.T) {
 	a := assert.New(t)
 
 	name := newRandomName()
-	s := NewSetting(name)
+	s := RegisterSetting(name)
 
 	a.Equal(name, s.EnvVar())
 	a.Empty(s.Setting())
@@ -30,7 +30,7 @@ func TestWithDefault(t *testing.T) {
 	a := assert.New(t)
 
 	name := newRandomName()
-	s := NewSetting(name, WithDefault("baz"))
+	s := RegisterSetting(name, WithDefault("baz"))
 
 	a.Equal("baz", s.Setting())
 
@@ -45,7 +45,7 @@ func TestWithDefaultAndAllowEmpty(t *testing.T) {
 	a := assert.New(t)
 
 	name := newRandomName()
-	s := NewSetting(name, WithDefault("baz"), AllowEmpty())
+	s := RegisterSetting(name, WithDefault("baz"), AllowEmpty())
 
 	a.Equal("baz", s.Setting())
 

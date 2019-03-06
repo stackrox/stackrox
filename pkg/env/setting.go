@@ -28,6 +28,11 @@ type SettingOption interface {
 
 type settingOptionFn func(*settingOptions)
 
+var (
+	// Settings contains a map of all settings defined by environment variable
+	Settings = make(map[string]Setting)
+)
+
 func (f settingOptionFn) apply(so *settingOptions) {
 	f(so)
 }
@@ -47,14 +52,15 @@ func AllowEmpty() SettingOption {
 	})
 }
 
-// NewSetting creates a new setting for the given environment variable with the given options
-func NewSetting(envVar string, opts ...SettingOption) Setting {
+// RegisterSetting registers a new setting for the given environment variable with the given options
+func RegisterSetting(envVar string, opts ...SettingOption) Setting {
 	s := &setting{
 		envVar: envVar,
 	}
 	for _, opt := range opts {
 		opt.apply(&s.settingOptions)
 	}
+	Settings[s.EnvVar()] = s
 	return s
 }
 

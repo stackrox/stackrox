@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/utils"
@@ -116,6 +117,12 @@ func outputZip(config renderer.Config) error {
 	htpasswd, err := renderer.GenerateHtpasswd(&config)
 	if err != nil {
 		return err
+	}
+
+	for _, setting := range env.Settings {
+		if _, ok := os.LookupEnv(setting.EnvVar()); ok {
+			config.Environment[setting.EnvVar()] = setting.Setting()
+		}
 	}
 
 	config.SecretsByteMap["htpasswd"] = htpasswd

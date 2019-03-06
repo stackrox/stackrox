@@ -10,4 +10,5 @@ go_library(
         "collectorVersion": "{STABLE_COLLECTOR_VERSION}",
         "scannerVersion": "{STABLE_SCANNER_VERSION}",
     },
+    deps = ["//pkg/env:go_default_library"],
 )
