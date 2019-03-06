@@ -112,13 +112,26 @@ function withAdjustedBehavior(SelectComponent) {
             onChange(onlyValues, newValue, changeAction, ...rest);
         };
 
+        // tranforms value from a single value to a format that react-select expects
         transformValue = (getOptionValue, options, value, optionValue) => {
             if (optionValue) return optionValue;
+            if (!value) return null;
 
             const allOptions = options.concat(this.state.createdOptions);
+
+            // "value" may contain something that isn't in "options", in this case
+            // we need to convert this value to a format that react-select accepts,
+            // in this case we assume that label will be the same as value
+            // it should be happening only with Creatable, common example when options
+            // are some list of entities, but we allow user to enter an arbitrary value
+            const transformSingleValue = v =>
+                allOptions.find(option => v === getOptionValue(option)) || {
+                    label: v,
+                    value: v
+                };
             return Array.isArray(value)
-                ? allOptions.filter(option => value.includes(getOptionValue(option)))
-                : allOptions.find(option => getOptionValue(option) === value);
+                ? value.map(transformSingleValue)
+                : transformSingleValue(value);
         };
 
         render() {

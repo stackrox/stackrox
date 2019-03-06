@@ -195,7 +195,7 @@ const policyDetailsFormDescriptor = [
     {
         label: 'Deployments Whitelist',
         jsonpath: 'deployments',
-        type: 'multiselect',
+        type: 'multiselect-creatable',
         options: [],
         required: false,
         default: true
