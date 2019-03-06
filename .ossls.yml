@@ -442,18 +442,6 @@ dependencies:
     attribution:
       - 2015-present Dan Abramov
 
-  ui/node_modules/react-router:
-    url: https://github.com/ReactTraining/react-router
-    license: MIT
-    files:
-      package.json:
-        authors: a3c1f8b53c7146d70d563424f389bc8fadf85ea92d5c80376fa1cead827cd787
-        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
-    attribution:
-      - React Training 2016-2018
-      - Michael Jackson
-      - Ryan Florence
-
   ui/node_modules/react-router-dom:
     url: https://github.com/ReactTraining/react-router/tree/master/packages/react-router-dom
     license: MIT

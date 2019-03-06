@@ -6,13 +6,16 @@
   ],
   "plugins": [
     "prettier",
-    "mocha"
+    "mocha",
+    "react-hooks"
   ],  
   "rules": {
     "prettier/prettier": ["error", {
       "printWidth": 100,
       "singleQuote": true,
-      "tabWidth": 4
+      "tabWidth": 4,
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn"
     }],
 
     "jsx-a11y/label-has-for": [ "error", {

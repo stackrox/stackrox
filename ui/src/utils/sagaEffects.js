@@ -1,6 +1,6 @@
 import { take, fork } from 'redux-saga/effects';
 import { LOCATION_CHANGE } from 'react-router-redux';
-import { matchPath } from 'react-router';
+import { matchPath } from 'react-router-dom';
 
 /**
  * The location match object.
