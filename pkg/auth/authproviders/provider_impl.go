@@ -19,6 +19,8 @@ type providerImpl struct {
 	roleMapper permissions.RoleMapper
 	issuer     tokens.Issuer
 	onSuccess  ProviderOption
+
+	doNotStore bool
 }
 
 // Accessor functions.

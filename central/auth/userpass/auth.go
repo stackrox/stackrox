@@ -30,6 +30,8 @@ func RegisterAuthProviderOrPanic(registry authproviders.Registry) {
 
 	// Delete all existing basic auth providers (alternatively, we could not try to register one if there is
 	// already an existing one, but that would get us into trouble when we change anything about the logic/config).
+	// We have now stopped storing basic auth providers, but we might still hit this if we're upgrading from an
+	// older version.
 	typ := basicAuthProvider.TypeName
 	existingBasicAuthProviders := registry.GetProviders(nil, &typ)
 	for _, provider := range existingBasicAuthProviders {
@@ -48,6 +50,7 @@ func RegisterAuthProviderOrPanic(registry authproviders.Registry) {
 		authproviders.WithValidated(true),
 		authproviders.WithConfig(config),
 		authproviders.WithRoleMapper(mapper.AlwaysAdminRoleMapper()),
+		authproviders.DoNotStore(),
 	}
 	_, err = registry.CreateProvider(context.Background(), options...)
 	if err != nil {

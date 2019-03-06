@@ -154,14 +154,12 @@ func startGRPCServer() {
 		log.Panicf("Could not initialize auth provider registry: %v", err)
 	}
 
+	userpass.RegisterAuthProviderOrPanic(registry)
+
 	idExtractors := []authn.IdentityExtractor{
 		service.NewExtractor(), // internal services
 		tokenbased.NewExtractor(roleStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens
-	}
-
-	if features.HtpasswdAuth.Enabled() {
-		idExtractors = append(idExtractors, userpass.IdentityExtractorOrPanic())
-		userpass.RegisterAuthProviderOrPanic(registry)
+		userpass.IdentityExtractorOrPanic(),
 	}
 
 	config := pkgGRPC.Config{

@@ -64,7 +64,7 @@ func (r *registryImpl) Init() error {
 
 	r.providers = make(map[string]Provider, len(providerDefs))
 	for _, storedValue := range providerDefs {
-		// Construct the options for the provider, using the stored defintion, and the defaults for previously stored objects.
+		// Construct the options for the provider, using the stored definition, and the defaults for previously stored objects.
 		options := []ProviderOption{
 			WithStorageView(storedValue),
 		}

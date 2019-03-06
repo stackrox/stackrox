@@ -111,7 +111,7 @@ func DefaultOptionsForNewProvider(ctx context.Context, store Store, backendFacto
 		DefaultBackend(ctx, backendFactoryPool),                      // Not ok to fail to load a backend for newly created providers
 		LogOptionError(DefaultTokenIssuerFromFactory(issuerFactory)), // Its ok to not have a token issuer.
 		DefaultRoleMapperOption(roleMapperFactory.GetRoleMapper),
-		AddToStore(store),
+		DefaultAddToStore(store),
 		WithSuccessCallback(RecordSuccess(store)),
 	}
 }
@@ -121,12 +121,11 @@ func DefaultOptionsForNewProvider(ctx context.Context, store Store, backendFacto
 
 // LogOptionError eats any error from the input option and logs it.
 func LogOptionError(po ProviderOption) ProviderOption {
-	error := func(pr *providerImpl) error {
+	return func(pr *providerImpl) error {
 		err := po(pr)
 		if err != nil {
 			log.Errorf("error adding option to provider: %s", err)
 		}
 		return nil
 	}
-	return error
 }

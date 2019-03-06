@@ -31,3 +31,9 @@ func (e ErrNotFound) Error() string {
 func (e ErrNotFound) GRPCStatus() *status.Status {
 	return status.New(codes.NotFound, e.Error())
 }
+
+// IsNotFound returns whether a given error is an instance of ErrNotFound.
+func IsNotFound(err error) bool {
+	_, ok := err.(ErrNotFound)
+	return ok
+}

@@ -30,6 +30,14 @@ func WithBackendFromFactory(factory BackendFactory) ProviderOption {
 	}
 }
 
+// DoNotStore indicates that this provider should not be stored.
+func DoNotStore() ProviderOption {
+	return func(pr *providerImpl) error {
+		pr.doNotStore = true
+		return nil
+	}
+}
+
 // WithRoleMapper adds a role mapper to the provider.
 func WithRoleMapper(roleMapper permissions.RoleMapper) ProviderOption {
 	return func(pr *providerImpl) error {

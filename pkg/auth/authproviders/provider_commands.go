@@ -2,6 +2,8 @@ package authproviders
 
 import (
 	"fmt"
+
+	"github.com/stackrox/rox/pkg/dberrors"
 )
 
 // Commands that providers can execute.
@@ -9,9 +11,12 @@ import (
 // These commands are temporarily applied as options.
 /////////////////////////////////////////////////////
 
-// AddToStore adds the providers stored data to the input store.
-func AddToStore(store Store) ProviderOption {
+// DefaultAddToStore adds the providers stored data to the input store.
+func DefaultAddToStore(store Store) ProviderOption {
 	return func(pr *providerImpl) error {
+		if pr.doNotStore {
+			return nil
+		}
 		return store.AddAuthProvider(&pr.storedInfo)
 	}
 }
@@ -19,6 +24,9 @@ func AddToStore(store Store) ProviderOption {
 // UpdateStore updates the stored value for the provider in the input store.
 func UpdateStore(store Store) ProviderOption {
 	return func(pr *providerImpl) error {
+		if pr.doNotStore {
+			return nil
+		}
 		return store.UpdateAuthProvider(&pr.storedInfo)
 	}
 }
@@ -26,6 +34,9 @@ func UpdateStore(store Store) ProviderOption {
 // RecordSuccess sets the 'validated' flag both for the provider and in the store.
 func RecordSuccess(store Store) ProviderOption {
 	return func(pr *providerImpl) error {
+		if pr.doNotStore {
+			return fmt.Errorf("provider '%s' is not stored, cannot record success", pr.storedInfo.Name)
+		}
 		if !pr.storedInfo.Enabled {
 			return fmt.Errorf("cannot record success for disabled auth provider: %s", pr.storedInfo.Id)
 		}
@@ -42,6 +53,15 @@ func RecordSuccess(store Store) ProviderOption {
 // DeleteFromStore removes the providers stored data from the input store.
 func DeleteFromStore(store Store) ProviderOption {
 	return func(pr *providerImpl) error {
-		return store.RemoveAuthProvider(pr.storedInfo.Id)
+		err := store.RemoveAuthProvider(pr.storedInfo.Id)
+		if err != nil {
+			// If it's a type we don't want to store, then we're okay with it not existing.
+			// We do this in case it was stored in the DB in a previous version.
+			if pr.doNotStore && dberrors.IsNotFound(err) {
+				return nil
+			}
+			return err
+		}
+		return nil
 	}
 }
