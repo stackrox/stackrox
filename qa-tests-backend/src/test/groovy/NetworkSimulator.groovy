@@ -490,7 +490,7 @@ class NetworkSimulator extends BaseSpecification {
     def "Verify Network Simulator Notifications"() {
         when:
         "create notifier"
-        notifiers = []
+        def notifiers = []
         for (String notifierType : notifierTypes) {
             NotifierOuterClass.Notifier notifier
             switch (notifierType) {
@@ -520,7 +520,7 @@ class NetworkSimulator extends BaseSpecification {
         then:
         "send simulation notification"
         NetworkPolicyService.sendSimulationNotification(
-                notifiers.collect { notifier.id },
+                notifiers*.id,
                 orchestrator.generateYaml(policy)
         )
 
@@ -558,15 +558,15 @@ class NetworkSimulator extends BaseSpecification {
         then:
         "notify against invalid clusterId"
         assert NetworkPolicyService.sendSimulationNotification(
-                notifier.id,
+                [notifier.id],
                 orchestrator.generateYaml(policy),
                 "11111111-bbbb-0000-aaaa-111111111111") == null
         assert NetworkPolicyService.sendSimulationNotification(
-                notifier.id,
+                [notifier.id],
                 orchestrator.generateYaml(policy),
                 null) == null
         assert NetworkPolicyService.sendSimulationNotification(
-                notifier.id,
+                [notifier.id],
                 orchestrator.generateYaml(policy),
                 "") == null
 
@@ -589,13 +589,13 @@ class NetworkSimulator extends BaseSpecification {
         then:
         "notify against invalid clusterId"
         assert NetworkPolicyService.sendSimulationNotification(
-                "11111111-bbbb-0000-aaaa-111111111111",
+                ["11111111-bbbb-0000-aaaa-111111111111"],
                 orchestrator.generateYaml(policy)) == null
         assert NetworkPolicyService.sendSimulationNotification(
                 null,
                 orchestrator.generateYaml(policy)) == null
         assert NetworkPolicyService.sendSimulationNotification(
-                "",
+                [""],
                 orchestrator.generateYaml(policy)) == null
     }
 }

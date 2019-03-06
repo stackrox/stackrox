@@ -90,10 +90,10 @@ export function fetchNodeUpdates() {
  * @returns {Promise<Object, Error>}
  */
 export function sendYAMLNotification(clusterId, notifierIds, modification) {
-    const notifiers = queryString.stringify({ notifierIds });
+    const notifiers = queryString.stringify({ notifierIds }, { arrayFormat: 'repeat' });
     const options = {
         method: 'POST',
-        data: { modification },
+        data: modification,
         url: `${networkPoliciesBaseUrl}/simulate/${clusterId}/notify?${notifiers}`
     };
     return axios(options).then(response => ({

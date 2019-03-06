@@ -48,7 +48,11 @@ class NetworkPolicyService extends BaseService {
         try {
             SendNetworkPolicyYamlRequest.Builder request =
                     SendNetworkPolicyYamlRequest.newBuilder()
-            notifierIds == null || notifierIds == [] ?: request.setNotifierIds(notifierIds)
+            if (notifierIds != null) {
+                for (String notifierId : notifierIds) {
+                    request.addNotifierIds(notifierId)
+                }
+            }
             clusterId == null ?: request.setClusterId(clusterId)
             yaml == null ?: request.setModification(NetworkPolicyModification.newBuilder().setApplyYaml(yaml))
             return getNetworkPolicyClient().sendNetworkPolicyYAML(request.build())
