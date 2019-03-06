@@ -36,6 +36,13 @@
         // disallow use of console in favor of raven-js for error capturing
         "no-console": "error",
 
+        "no-restricted-imports": ["error", {
+            "paths": [{
+                "name": "axios",
+                "message": "Please use the axios exported from 'src/services/instance.js' since we've made modifications to it there."
+            }]
+        }],
+
         // stepping away from Airbnb and into more inconsistent world to avoid huge refactoring
         "react/destructuring-assignment": ["off"],
         

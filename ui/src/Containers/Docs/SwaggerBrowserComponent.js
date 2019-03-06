@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import { RedocStandalone } from 'redoc';
 import LoadingSection from 'Components/LoadingSection';
-import axios from 'axios';
 import PropTypes from 'prop-types';
+
+import axios from 'services/instance';
 
 class SwaggerBrowserComponent extends Component {
     static propTypes = {
