@@ -10545,11 +10545,6 @@ react-vis@^1.11.5:
     prop-types "^15.5.8"
     react-motion "^0.5.2"
 
-react-webworker@2.1.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/react-webworker/-/react-webworker-2.1.0.tgz#6bfe5d74d3f3e5bae89f316b8760b3e8cc551420"
-  integrity sha512-Rl0LeJa7zAQHAZ5KpyWQ/7aHcdy6AKJcJI7UIGlFo2e2sJw7u87hg4ck1cWb70DO0PrW0NwNZrMCgTi23g09JQ==
-
 react@^16.8.3:
   version "16.8.3"
   resolved "https://registry.yarnpkg.com/react/-/react-16.8.3.tgz#c6f988a2ce895375de216edcfaedd6b9a76451d9"

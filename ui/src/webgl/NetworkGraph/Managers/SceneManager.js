@@ -210,7 +210,6 @@ const SceneManager = canvas => {
         const hoveredOverNamespaces = intersectingObjects.filter(intersectsNamespaces);
 
         const isHovering = canvas.classList.contains('cursor-pointer');
-
         if (hoveredOverNodes.length) {
             if (!isHovering) {
                 canvas.classList.add('cursor-pointer');
@@ -228,6 +227,7 @@ const SceneManager = canvas => {
             highlightNode(selectedNodeId);
             update();
         }
+
         if (hoveredOverNamespaces.length) {
             const hoveredOverNamespace = hoveredOverNamespaces[0];
             showLinksForConnectedNamespaces(hoveredOverNamespace);

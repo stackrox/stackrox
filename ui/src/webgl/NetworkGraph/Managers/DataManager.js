@@ -1,5 +1,8 @@
+import * as d3 from 'd3';
 import * as constants from 'constants/networkGraph';
 import {
+    forceCollide,
+    forceCluster,
     getLinks,
     getLinksBetweenNamespaces,
     getBidirectionalLinks
@@ -9,37 +12,47 @@ const DataManager = canvas => {
     const { clientWidth, clientHeight } = canvas;
 
     let simulation;
+    let simulationRunning = true;
 
     let nodes = [];
     let links = [];
     let namespaces = [];
     let namespaceLinks = [];
 
-    function setUpForceLayout(callback) {
+    function setUpForceLayout() {
+        simulationRunning = true;
+
         const deploymentNodes = nodes.filter(n => n.deploymentId);
+        const forceSimulation = d3
+            .forceSimulation()
+            .nodes(deploymentNodes, d => d.deploymentId)
+            .force(
+                'link',
+                d3
+                    .forceLink(links)
+                    .id(d => d.deploymentId)
+                    .strength(0)
+            )
+            .force('charge', d3.forceManyBody())
+            .force('center', d3.forceCenter(clientWidth / 2, clientHeight / 2))
+            .force('collide', forceCollide(nodes))
+            .force(
+                'cluster',
+                forceCluster().strength(constants.FORCE_CONFIG.FORCE_CLUSTER_STRENGTH)
+            )
+            .alpha(1)
+            .stop();
 
-        if (callback) {
-            callback({
-                nodes: deploymentNodes,
-                links,
-                namespaces,
-                clientWidth,
-                clientHeight,
-                constants
-            });
+        // create static force layout by calculating ticks beforehand
+        let i = 0;
+        while (i < deploymentNodes.length) {
+            forceSimulation.tick();
+            i += 1;
         }
-    }
 
-    function setNodes(_nodes) {
-        nodes = _nodes;
-    }
+        simulationRunning = false;
 
-    function setLinks(_links) {
-        links = _links;
-    }
-
-    function setNamespaces(_namespaces) {
-        namespaces = _namespaces;
+        return forceSimulation;
     }
 
     function getNamespaces(dataNodes) {
@@ -123,17 +136,18 @@ const DataManager = canvas => {
         links = getLinks(nodes, data.networkFlowMapping);
         namespaces = getNamespaces(nodes);
         namespaceLinks = getNamespaceLinks(nodes, data.networkFlowMapping);
-        simulation = setUpForceLayout(data.postMessageCallback);
+        simulation = setUpForceLayout();
+    }
+
+    function isSimulationRunning() {
+        return simulationRunning;
     }
 
     return {
-        setUpForceLayout,
         simulation,
         getData,
         setData,
-        setNodes,
-        setLinks,
-        setNamespaces
+        isSimulationRunning
     };
 };
 
