@@ -27,19 +27,21 @@ class Graph extends Component {
         networkPolicyGraph: PropTypes.shape({
             nodes: PropTypes.arrayOf(PropTypes.shape({}))
         }).isRequired,
+        networkPolicyGraphState: PropTypes.string.isRequired,
+
         networkFlowGraph: PropTypes.shape({
             nodes: PropTypes.arrayOf(PropTypes.shape({}))
         }),
+        networkFlowMapping: PropTypes.shape({}).isRequired,
+        networkFlowGraphUpdateKey: PropTypes.number.isRequired,
+        networkFlowGraphState: PropTypes.string.isRequired,
 
         setSelectedNodeId: PropTypes.func.isRequired,
         fetchDeployment: PropTypes.func.isRequired,
         fetchNetworkPolicies: PropTypes.func.isRequired,
-        setWizardStage: PropTypes.func.isRequired,
-        openWizard: PropTypes.func.isRequired,
 
-        networkFlowMapping: PropTypes.shape({}).isRequired,
-        networkGraphUpdateKey: PropTypes.number.isRequired,
-        networkGraphState: PropTypes.string.isRequired
+        setWizardStage: PropTypes.func.isRequired,
+        openWizard: PropTypes.func.isRequired
     };
 
     static defaultProps = {
@@ -54,11 +56,7 @@ class Graph extends Component {
         this.props.openWizard();
     };
 
-    renderGraph = () => {
-        const { filterState, networkPolicyGraph, networkFlowGraph } = this.props;
-        const nodes =
-            filterState === filterModes.active ? networkFlowGraph.nodes : networkPolicyGraph.nodes;
-
+    renderGraph = (nodes, filterState) => {
         // If we have more than 200 nodes, display a message instead of the graph.
         if (nodes.length > 600) {
             // hopefully a temporal solution
@@ -69,7 +67,7 @@ class Graph extends Component {
         return (
             <NetworkGraph
                 ref={this.props.setGraphRef}
-                updateKey={this.props.networkGraphUpdateKey}
+                updateKey={this.props.networkFlowGraphUpdateKey}
                 nodes={nodes}
                 networkFlowMapping={this.props.networkFlowMapping}
                 onNodeClick={this.onNodeClick}
@@ -79,15 +77,31 @@ class Graph extends Component {
     };
 
     render() {
+        // Simulator styling.
         const simulatorOn =
             this.props.wizardOpen && this.props.wizardStage === wizardStages.simulator;
-
         const simulatorMode = simulatorOn ? 'simulator-mode' : '';
-        const networkGraphState = this.props.networkGraphState === 'ERROR' ? 'error' : 'success';
+
+        // Graph nodes and styling.
+        const { filterState } = this.props;
+        let nodes;
+        let networkGraphState;
+        if (filterState === filterModes.active) {
+            const { networkFlowGraphState, networkFlowGraph } = this.props;
+            ({ nodes } = networkFlowGraph);
+            networkGraphState = networkFlowGraphState;
+        } else {
+            const { networkPolicyGraphState, networkPolicyGraph } = this.props;
+            ({ nodes } = networkPolicyGraph);
+            networkGraphState = networkPolicyGraphState;
+        }
+        const networkGraphStateClass = networkGraphState === 'ERROR' ? 'error' : 'success';
+
+        // Rendering.
         const width = this.props.wizardOpen ? 'w-2/3' : 'w-full';
         return (
-            <div className={`${simulatorMode} ${networkGraphState} ${width} h-full`}>
-                {this.renderGraph()}
+            <div className={`${simulatorMode} ${networkGraphStateClass} ${width} h-full`}>
+                {this.renderGraph(nodes, filterState)}
                 <Filters />
                 <Legend />
             </div>
@@ -98,14 +112,15 @@ class Graph extends Component {
 const mapStateToProps = createStructuredSelector({
     wizardOpen: selectors.getNetworkWizardOpen,
     wizardStage: selectors.getNetworkWizardStage,
-
     filterState: selectors.getNetworkGraphFilterMode,
-    networkPolicyGraph: selectors.getNetworkPolicyGraph,
-    networkFlowGraph: selectors.getNetworkFlowGraph,
 
+    networkPolicyGraph: selectors.getNetworkPolicyGraph,
+    networkPolicyGraphState: selectors.getNetworkPolicyGraphState,
+
+    networkFlowGraph: selectors.getNetworkFlowGraph,
     networkFlowMapping: selectors.getNetworkFlowMapping,
-    networkGraphUpdateKey: selectors.getNetworkGraphUpdateKey,
-    networkGraphState: selectors.getNetworkGraphState
+    networkFlowGraphUpdateKey: selectors.getNetworkFlowGraphUpdateKey,
+    networkFlowGraphState: selectors.getNetworkFlowGraphState
 });
 
 const mapDispatchToProps = {

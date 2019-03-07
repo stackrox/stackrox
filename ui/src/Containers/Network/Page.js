@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+import { actions as backendActions } from 'reducers/network/backend';
 import { actions as pageActions } from 'reducers/network/page';
-import { actions as wizardActions } from 'reducers/network/wizard';
 
 import Graph from './Graph/Graph';
 import Header from './Header/Header';
@@ -12,12 +12,12 @@ import Wizard from './Wizard/Wizard';
 class Page extends Component {
     static propTypes = {
         closeWizard: PropTypes.func.isRequired,
-        setNetworkYamlFile: PropTypes.func.isRequired
+        setNetworkModification: PropTypes.func.isRequired
     };
 
     componentWillUnmount() {
         this.props.closeWizard();
-        this.props.setNetworkYamlFile(null);
+        this.props.setNetworkModification(null);
     }
 
     setGraphRef = instance => {
@@ -46,7 +46,7 @@ class Page extends Component {
 
 const mapDispatchToProps = {
     closeWizard: pageActions.closeNetworkWizard,
-    setNetworkYamlFile: wizardActions.setNetworkYamlFile
+    setNetworkModification: backendActions.fetchNetworkPolicyModification.success
 };
 
 export default connect(

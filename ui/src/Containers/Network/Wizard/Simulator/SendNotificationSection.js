@@ -4,30 +4,40 @@ import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { Link } from 'react-router-dom';
 import { selectors } from 'reducers';
-import { actions as wizardActions } from 'reducers/network/wizard';
+import { actions as dialogueActions } from 'reducers/network/dialogue';
 
 import Select, { selectMenuOnTopStyles } from 'Components/ReactSelect';
 
 class SendNotificationSection extends Component {
     static propTypes = {
         notifiers: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-        sendYAMLNotification: PropTypes.func.isRequired
+        selectedNetworkNotifiers: PropTypes.arrayOf(PropTypes.string),
+        setNetworkNotifierIds: PropTypes.func.isRequired,
+        notifyNetworkPolicyModification: PropTypes.func.isRequired
     };
 
-    state = {
-        selectedNotifierId: null
+    static defaultProps = {
+        selectedNetworkNotifiers: null
     };
 
     onClick = () => {
-        this.props.sendYAMLNotification(this.state.selectedNotifierId);
+        this.props.notifyNetworkPolicyModification();
     };
 
-    selectNotifier = selectedNotifierId => this.setState({ selectedNotifierId });
+    selectNotifier = selectedNotifierId => this.props.setNetworkNotifierIds([selectedNotifierId]);
 
     renderDropdown() {
         const { notifiers } = this.props;
-        const { selectedNotifierId } = this.state;
         if (!notifiers.length) return null;
+
+        // Selected notifiers is now an array so we can send multiple at once with the dialogue.
+        // Until we use the dialogue, adapt the array to a single value.
+        const { selectedNetworkNotifiers } = this.props;
+        const selectedNotifier =
+            selectedNetworkNotifiers && selectedNetworkNotifiers.length === 1
+                ? selectedNetworkNotifiers[0]
+                : null;
+
         return (
             <div>
                 <span className="uppercase text-primary-500">Send network policy yaml to team</span>
@@ -35,7 +45,7 @@ class SendNotificationSection extends Component {
                     <Select
                         options={notifiers}
                         placeholder="Select a notifier"
-                        value={selectedNotifierId}
+                        value={selectedNotifier}
                         onChange={this.selectNotifier}
                         className="w-3/4"
                         styles={selectMenuOnTopStyles}
@@ -44,7 +54,7 @@ class SendNotificationSection extends Component {
                         type="button"
                         className="p-3 ml-2 bg-primary-600 font-700 rounded-sm text-center text-base-100 w-1/4 h-9 hover:bg-primary-700"
                         onClick={this.onClick}
-                        disabled={!selectedNotifierId}
+                        disabled={!selectedNotifier}
                     >
                         Send
                     </button>
@@ -92,11 +102,13 @@ const getFormattedNotifiers = createSelector(
 );
 
 const mapStateToProps = createStructuredSelector({
-    notifiers: getFormattedNotifiers
+    notifiers: getFormattedNotifiers,
+    selectedNetworkNotifiers: selectors.getNetworkNotifiers
 });
 
 const mapDispatchToProps = {
-    sendYAMLNotification: wizardActions.sendYAMLNotification
+    setNetworkNotifierIds: dialogueActions.setNetworkNotifiers,
+    notifyNetworkPolicyModification: dialogueActions.notifyNetworkPolicyModification
 };
 
 export default connect(

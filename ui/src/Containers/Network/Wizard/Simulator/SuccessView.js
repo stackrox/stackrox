@@ -13,9 +13,9 @@ const successMessage = 'YAML file uploaded successfully';
 
 class SuccessView extends Component {
     static propTypes = {
-        yamlFile: PropTypes.shape({
-            name: PropTypes.string.isRequired,
-            content: PropTypes.string.isRequired
+        modificationName: PropTypes.string.isRequired,
+        modification: PropTypes.shape({
+            applyYaml: PropTypes.string.isRequired
         }).isRequired,
         onCollapse: PropTypes.func.isRequired
     };
@@ -47,14 +47,14 @@ class SuccessView extends Component {
     };
 
     renderTabs = () => {
-        const { yamlFile } = this.props;
-        const tabs = [{ text: yamlFile.name }];
+        const { applyYaml } = this.props.modification;
+        const tabs = [{ text: this.props.modificationName }];
         return (
             <Tabs headers={tabs}>
                 <TabContent>
                     <div className="flex flex-col bg-base-100 overflow-auto h-full">
                         <pre className="p-3 pt-4 leading-tight whitespace-pre-wrap word-break">
-                            {yamlFile.content}
+                            {applyYaml}
                         </pre>
                     </div>
                 </TabContent>
@@ -76,7 +76,8 @@ class SuccessView extends Component {
 }
 
 const mapStateToProps = createStructuredSelector({
-    yamlFile: selectors.getNetworkYamlFile
+    modificationName: selectors.getNetworkPolicyModificationName,
+    modification: selectors.getNetworkPolicyModification
 });
 
 export default connect(mapStateToProps)(SuccessView);

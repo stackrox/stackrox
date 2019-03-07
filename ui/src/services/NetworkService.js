@@ -10,17 +10,14 @@ const networkFlowBaseUrl = '/v1/networkgraph';
  *
  * @returns {Promise<Object, Error>}
  */
-export function fetchNetworkPolicyGraph(filters, clusterId) {
-    const { query, simulationYaml } = filters;
+export function fetchNetworkPolicyGraph(clusterId, query, modification) {
     const params = queryString.stringify({ query }, { arrayFormat: 'repeat' });
     let options;
     let getGraph = data => data;
-    if (simulationYaml) {
+    if (modification) {
         options = {
             method: 'POST',
-            data: {
-                applyYaml: simulationYaml
-            },
+            data: modification,
             url: `${networkPoliciesBaseUrl}/simulate/${clusterId}?${params}`
         };
         getGraph = ({ simulatedGraph }) => simulatedGraph;
@@ -30,7 +27,6 @@ export function fetchNetworkPolicyGraph(filters, clusterId) {
             url: `${networkPoliciesBaseUrl}/cluster/${clusterId}?${params}`
         };
     }
-
     return axios(options).then(response => ({
         response: getGraph(response.data)
     }));
@@ -42,14 +38,18 @@ export function fetchNetworkPolicyGraph(filters, clusterId) {
  *
  * @returns {Promise<Object, Error>}
  */
-export function fetchNetworkFlowGraph(filters, clusterId) {
-    const { query } = filters;
-    const params = queryString.stringify({ query }, { arrayFormat: 'repeat' });
+export function fetchNetworkFlowGraph(clusterId, query, date) {
+    let params;
+    if (date) {
+        const since = date.toISOString();
+        params = queryString.stringify({ query, since }, { arrayFormat: 'repeat' });
+    } else {
+        params = queryString.stringify({ query }, { arrayFormat: 'repeat' });
+    }
     const options = {
         method: 'GET',
         url: `${networkFlowBaseUrl}/cluster/${clusterId}?${params}`
     };
-
     return axios(options).then(response => ({
         response: response.data
     }));
@@ -89,7 +89,7 @@ export function fetchNodeUpdates() {
  * @param {!Object} modification
  * @returns {Promise<Object, Error>}
  */
-export function sendYAMLNotification(clusterId, notifierIds, modification) {
+export function notifyNetworkPolicyModification(clusterId, notifierIds, modification) {
     const notifiers = queryString.stringify({ notifierIds }, { arrayFormat: 'repeat' });
     const options = {
         method: 'POST',

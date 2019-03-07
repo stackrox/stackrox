@@ -21,7 +21,7 @@ export const types = {
     SELECT_DEFAULT_NETWORK_CLUSTER_ID: 'network/SELECT_DEFAULT_NETWORK_CLUSTER_ID',
     SELECT_NETWORK_CLUSTER_ID: 'network/SELECT_NETWORK_CLUSTER_ID',
     INCREMENT_NETWORK_GRAPH_UPDATE_KEY: 'network/INCREMENT_NETWORK_GRAPH_UPDATE_KEY',
-    UPDATE_NETWORKGRAPH_TIMESTAMP: 'network/UPDATE_NETWORKGRAPH_TIMESTAMP',
+    UPDATE_NETWORK_GRAPH_TIMESTAMP: 'network/UPDATE_NETWORK_GRAPH_TIMESTAMP',
     NETWORK_NODES_UPDATE: 'network/NETWORK_NODES_UPDATE'
 };
 
@@ -49,7 +49,7 @@ export const actions = {
         type: types.INCREMENT_NETWORK_GRAPH_UPDATE_KEY
     }),
     updateNetworkGraphTimestamp: lastUpdatedTimestamp => ({
-        type: types.UPDATE_NETWORKGRAPH_TIMESTAMP,
+        type: types.UPDATE_NETWORK_GRAPH_TIMESTAMP,
         lastUpdatedTimestamp
     }),
     networkNodesUpdate: () => ({
@@ -116,7 +116,7 @@ const selectedNetworkClusterId = (state = null, action) => {
     return state;
 };
 
-const networkGraphUpdateKey = (state = { shouldUpdate: true, key: 0 }, action) => {
+const networkFlowGraphUpdateKey = (state = { shouldUpdate: true, key: 0 }, action) => {
     const { type, payload, options } = action;
 
     if (type === LOCATION_CHANGE && payload.pathname.startsWith('/main/network')) {
@@ -147,7 +147,7 @@ const networkGraphUpdateKey = (state = { shouldUpdate: true, key: 0 }, action) =
 };
 
 const lastUpdatedTimestamp = (state = null, action) => {
-    if (action.type === types.UPDATE_NETWORKGRAPH_TIMESTAMP) {
+    if (action.type === types.UPDATE_NETWORK_GRAPH_TIMESTAMP) {
         return action.lastUpdatedTimestamp;
     }
     return state;
@@ -158,7 +158,7 @@ const reducer = combineReducers({
     networkFlowMapping,
     selectedNodeId,
     selectedNetworkClusterId,
-    networkGraphUpdateKey,
+    networkFlowGraphUpdateKey,
     lastUpdatedTimestamp
 });
 
@@ -168,7 +168,7 @@ const getNetworkGraphFilterMode = state => state.networkGraphFilterMode;
 const getNetworkFlowMapping = state => state.networkFlowMapping;
 const getSelectedNodeId = state => state.selectedNodeId;
 const getSelectedNetworkClusterId = state => state.selectedNetworkClusterId;
-const getNetworkGraphUpdateKey = state => state.networkGraphUpdateKey.key;
+const getNetworkFlowGraphUpdateKey = state => state.networkFlowGraphUpdateKey.key;
 const getLastUpdatedTimestamp = state => state.lastUpdatedTimestamp;
 
 export const selectors = {
@@ -176,7 +176,7 @@ export const selectors = {
     getNetworkFlowMapping,
     getSelectedNodeId,
     getSelectedNetworkClusterId,
-    getNetworkGraphUpdateKey,
+    getNetworkFlowGraphUpdateKey,
     getLastUpdatedTimestamp
 };
 

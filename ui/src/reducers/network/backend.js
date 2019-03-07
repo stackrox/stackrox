@@ -9,7 +9,9 @@ export const types = {
     FETCH_NETWORK_FLOW_GRAPH: createFetchingActionTypes('network/FETCH_NETWORK_FLOW_GRAPH'),
     FETCH_NETWORK_POLICIES: createFetchingActionTypes('network/FETCH_NETWORK_POLICIES'),
     FETCH_NODE_UPDATES: createFetchingActionTypes('network/FETCH_NODE_UPDATES'),
-    RESET_NETWORK_GRAPH_STATE: 'network/NETWORK_GRAPH_STATE'
+    FETCH_NETWORK_POLICY_MODIFICATION: createFetchingActionTypes(
+        'network/FETCH_NETWORK_POLICY_MODIFICATION'
+    )
 };
 
 // Actions
@@ -19,13 +21,20 @@ export const actions = {
     fetchNetworkFlowGraph: createFetchingActions(types.FETCH_NETWORK_FLOW_GRAPH),
     fetchNetworkPolicies: createFetchingActions(types.FETCH_NETWORK_POLICIES),
     fetchNodeUpdates: createFetchingActions(types.FETCH_NODE_UPDATES),
-    resetNetworkGraphState: () => ({ type: types.RESET_NETWORK_GRAPH_STATE })
+    fetchNetworkPolicyModification: createFetchingActions(types.FETCH_NETWORK_POLICY_MODIFICATION)
 };
 
 // Reducers
 
 const networkPolicyGraph = (state = { nodes: [] }, action) => {
     if (action.type === types.FETCH_NETWORK_POLICY_GRAPH.SUCCESS) {
+        return isEqual(action.response, state) ? state : action.response;
+    }
+    return state;
+};
+
+const networkPolicyModification = (state = null, action) => {
+    if (action.type === types.FETCH_NETWORK_POLICY_MODIFICATION.SUCCESS) {
         return isEqual(action.response, state) ? state : action.response;
     }
     return state;
@@ -60,11 +69,8 @@ const networkErrorMessage = (state = '', action) => {
     return state;
 };
 
-const networkGraphState = (state = 'INITIAL', action) => {
+const networkPolicyGraphState = (state = 'INITIAL', action) => {
     const { type } = action;
-    if (type === types.RESET_NETWORK_GRAPH_STATE) {
-        return 'INITIAL';
-    }
     if (type === types.FETCH_NETWORK_POLICY_GRAPH.REQUEST) {
         return 'REQUEST';
     }
@@ -77,31 +83,68 @@ const networkGraphState = (state = 'INITIAL', action) => {
     return state;
 };
 
+const networkPolicyModificationState = (state = 'INITIAL', action) => {
+    const { type } = action;
+    if (type === types.FETCH_NETWORK_POLICY_MODIFICATION.REQUEST) {
+        return 'REQUEST';
+    }
+    if (type === types.FETCH_NETWORK_POLICY_MODIFICATION.FAILURE) {
+        return 'ERROR';
+    }
+    if (type === types.FETCH_NETWORK_POLICY_MODIFICATION.SUCCESS) {
+        return 'SUCCESS';
+    }
+    return state;
+};
+
+const networkFlowGraphState = (state = 'INITIAL', action) => {
+    const { type } = action;
+    if (type === types.FETCH_NETWORK_FLOW_GRAPH.REQUEST) {
+        return 'REQUEST';
+    }
+    if (type === types.FETCH_NETWORK_FLOW_GRAPH.FAILURE) {
+        return 'ERROR';
+    }
+    if (type === types.FETCH_NETWORK_FLOW_GRAPH.SUCCESS) {
+        return 'SUCCESS';
+    }
+    return state;
+};
+
 const reducer = combineReducers({
     networkPolicyGraph,
+    networkPolicyModification,
     networkFlowGraph,
     networkPolicies,
     nodeUpdatesEpoch,
     networkErrorMessage,
-    networkGraphState
+    networkPolicyGraphState,
+    networkPolicyModificationState,
+    networkFlowGraphState
 });
 
 // Selectors
 
 const getNetworkPolicyGraph = state => state.networkPolicyGraph;
+const getNetworkPolicyModification = state => state.networkPolicyModification;
 const getNetworkFlowGraph = state => state.networkFlowGraph;
 const getNetworkPolicies = state => state.networkPolicies;
 const getNodeUpdatesEpoch = state => state.nodeUpdatesEpoch;
 const getNetworkErrorMessage = state => state.networkErrorMessage;
-const getNetworkGraphState = state => state.networkGraphState;
+const getNetworkPolicyGraphState = state => state.networkPolicyGraphState;
+const getNetworkPolicyModificationState = state => state.networkPolicyModificationState;
+const getNetworkFlowGraphState = state => state.networkFlowGraphState;
 
 export const selectors = {
     getNetworkPolicyGraph,
+    getNetworkPolicyModification,
     getNetworkFlowGraph,
     getNetworkPolicies,
     getNodeUpdatesEpoch,
     getNetworkErrorMessage,
-    getNetworkGraphState
+    getNetworkPolicyGraphState,
+    getNetworkPolicyModificationState,
+    getNetworkFlowGraphState
 };
 
 export default reducer;

@@ -10,7 +10,7 @@ function SimulationBorder(props) {
         return null;
     }
 
-    const colorType = props.networkGraphState === 'ERROR' ? 'alert' : 'success';
+    const colorType = props.modificationState === 'ERROR' ? 'alert' : 'success';
     return (
         <div
             className={`absolute pin-t pin-l bg-${colorType}-600 text-base-100 font-600 uppercase p-2 z-1`}
@@ -23,23 +23,23 @@ function SimulationBorder(props) {
 SimulationBorder.propTypes = {
     wizardOpen: PropTypes.bool.isRequired,
     wizardStage: PropTypes.string.isRequired,
-    networkGraphState: PropTypes.string.isRequired
+    modificationState: PropTypes.string.isRequired
 };
 
-const getNetworkGraphState = createSelector(
-    [selectors.getNetworkYamlFile, selectors.getNetworkGraphState],
-    (yamlFile, networkGraphState) => {
-        if (!yamlFile) {
+const getModificationState = createSelector(
+    [selectors.getNetworkPolicyModification, selectors.getNetworkPolicyModificationState],
+    (modification, modificationState) => {
+        if (!modification) {
             return 'INITIAL';
         }
-        return networkGraphState;
+        return modificationState;
     }
 );
 
 const mapStateToProps = createStructuredSelector({
     wizardOpen: selectors.getNetworkWizardOpen,
     wizardStage: selectors.getNetworkWizardStage,
-    networkGraphState: getNetworkGraphState
+    modificationState: getModificationState
 });
 
 export default connect(mapStateToProps)(SimulationBorder);

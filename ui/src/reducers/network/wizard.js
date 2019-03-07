@@ -8,8 +8,7 @@ import { types as deploymentTypes } from 'reducers/deployments';
 
 export const types = {
     SET_WIZARD_STAGE: 'network/SET_WIZARD_STAGE',
-    SET_YAML_FILE: 'network/SET_YAML_FILE',
-    SEND_YAML_NOTIFICATION: 'network/SEND_YAML_NOTIFICATION'
+    SET_POLICY_MODIFICATION_NAME: 'network/SET_POLICY_MODIFICATION_NAME'
 };
 
 // Actions
@@ -17,10 +16,9 @@ export const types = {
 
 export const actions = {
     setNetworkWizardStage: stage => ({ type: types.SET_WIZARD_STAGE, stage }),
-    setNetworkYamlFile: file => ({ type: types.SET_YAML_FILE, file }),
-    sendYAMLNotification: notifierId => ({
-        type: types.SEND_YAML_NOTIFICATION,
-        notifierId
+    setNetworkPolicyModificationName: name => ({
+        type: types.SET_POLICY_MODIFICATION_NAME,
+        name
     })
 };
 
@@ -35,9 +33,9 @@ const networkWizardStage = (state = wizardStages.details, action) => {
     return state;
 };
 
-const selectedNetworkYamlFile = (state = null, action) => {
-    if (action.type === types.SET_YAML_FILE) {
-        return action.file;
+const networkPolicyModificationName = (state = null, action) => {
+    if (action.type === types.SET_POLICY_MODIFICATION_NAME) {
+        return action.name;
     }
     return state;
 };
@@ -57,7 +55,7 @@ const selectedNodeDeployment = (state = {}, action) => {
 
 const reducer = combineReducers({
     networkWizardStage,
-    selectedNetworkYamlFile,
+    networkPolicyModificationName,
     selectedNodeDeployment
 });
 
@@ -68,11 +66,11 @@ export default reducer;
 //---------------------------------------------------------------------------------
 
 const getNetworkWizardStage = state => state.networkWizardStage;
-const getNetworkYamlFile = state => state.selectedNetworkYamlFile;
+const getNetworkPolicyModificationName = state => state.networkPolicyModificationName;
 const getNodeDeployment = state => state.selectedNodeDeployment;
 
 export const selectors = {
     getNetworkWizardStage,
-    getNetworkYamlFile,
+    getNetworkPolicyModificationName,
     getNodeDeployment
 };

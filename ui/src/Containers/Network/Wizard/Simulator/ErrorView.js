@@ -1,16 +1,24 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
 import PropTypes from 'prop-types';
 import Message from 'Components/Message';
 import * as Icon from 'react-feather';
 
+import { selectors } from 'reducers';
+
 class ErrorView extends Component {
     static propTypes = {
-        yamlFile: PropTypes.shape({
-            name: PropTypes.string.isRequired,
-            content: PropTypes.string.isRequired
+        modification: PropTypes.shape({
+            applyYaml: PropTypes.string.isRequired
         }).isRequired,
+        modificationName: PropTypes.string,
         errorMessage: PropTypes.string.isRequired,
         onCollapse: PropTypes.func.isRequired
+    };
+
+    static defaultProps = {
+        modificationName: 'YAML'
     };
 
     state = {
@@ -40,13 +48,18 @@ class ErrorView extends Component {
     };
 
     renderYamlFile = () => {
-        const { name, content } = this.props.yamlFile;
+        const { applyYaml } = this.props.modification;
+        if (!applyYaml) {
+            return null;
+        }
         return (
             <div className="flex flex-1 flex-col bg-base-100 relative h-full">
-                <div className="border-b border-base-300 p-3 text-base-600 font-700">{name}</div>
+                <div className="border-b border-base-300 p-3 text-base-600 font-700">
+                    {this.props.modificationName}
+                </div>
                 {this.renderCollapseButton()}
                 <div className="overflow-auto p-3">
-                    <pre className="leading-tight whitespace-pre-wrap word-break">{content}</pre>
+                    <pre className="leading-tight whitespace-pre-wrap word-break">{applyYaml}</pre>
                 </div>
             </div>
         );
@@ -62,4 +75,9 @@ class ErrorView extends Component {
     }
 }
 
-export default ErrorView;
+const mapStateToProps = createStructuredSelector({
+    modification: selectors.getNetworkPolicyModification,
+    modificationName: selectors.getNetworkPolicyModificationName
+});
+
+export default connect(mapStateToProps)(ErrorView);
