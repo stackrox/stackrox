@@ -6,13 +6,12 @@ import (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 func init() {
 	// general
 	prometheus.MustRegister(
-		panicCounter,
 		boltOperationHistogramVec,
 		indexOperationHistogramVec,
 		sensorEventQueueCounterVec,

@@ -8,14 +8,6 @@ import (
 )
 
 var (
-	// Panics encountered
-	panicCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.CentralSubsystem.String(),
-		Name:      "panic_counter",
-		Help:      "Number of panic calls within Central.",
-	}, []string{"FunctionName"})
-
 	indexOperationHistogramVec = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
@@ -80,11 +72,6 @@ var (
 		Buckets:   prometheus.ExponentialBuckets(4, 2, 8),
 	})
 )
-
-// IncrementPanicCounter increments the number of panic calls seen in a function
-func IncrementPanicCounter(functionName string) {
-	panicCounter.With(prometheus.Labels{"FunctionName": functionName}).Inc()
-}
 
 func startTimeToMS(t time.Time) float64 {
 	return float64(time.Since(t).Nanoseconds()) / float64(time.Millisecond)

@@ -5,7 +5,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"runtime/debug"
 	"syscall"
 	"time"
 
@@ -39,7 +38,6 @@ import (
 	"github.com/stackrox/rox/central/jwt"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
-	"github.com/stackrox/rox/central/metrics"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
 	networkFlowService "github.com/stackrox/rox/central/networkflow/service"
 	networkPolicyService "github.com/stackrox/rox/central/networkpolicies/service"
@@ -113,7 +111,7 @@ func main() {
 
 	signalsC := make(chan os.Signal, 1)
 	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
-	processForever(signalsC)
+	waitForTerminationSignal(signalsC)
 }
 
 func ensureDB() {
@@ -333,23 +331,11 @@ func debugRoutes() []routes.CustomRoute {
 	return customRoutes
 }
 
-func processForever(signalsC <-chan os.Signal) {
-	defer func() {
-		if r := recover(); r != nil {
-			metrics.IncrementPanicCounter(getPanicFunc())
-			log.Errorf("Caught panic in process loop; restarting. Stack: %s", string(debug.Stack()))
-			processForever(signalsC)
-		}
-	}()
-
-	for {
-		select {
-		case sig := <-signalsC:
-			log.Infof("Caught %s signal", sig)
-			enrichanddetect.GetLoop().Stop()
-			globaldb.Close()
-			log.Infof("Central terminated")
-			return
-		}
-	}
+func waitForTerminationSignal(signalsC <-chan os.Signal) {
+	sig := <-signalsC
+	log.Infof("Caught %s signal", sig)
+	enrichanddetect.GetLoop().Stop()
+	globaldb.Close()
+	log.Infof("Central terminated")
+	return
 }
