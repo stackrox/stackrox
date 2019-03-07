@@ -172,7 +172,8 @@ describe('Policies page', () => {
         savePolicy();
     });
 
-    it('should de-highlight a row on panel close', () => {
+    // TODO(ROX-1580): Re-enable this test.
+    xit('should de-highlight a row on panel close', () => {
         // Select a row.
         cy.route('GET', api.policies.policy).as('getPolicy');
         cy.get(selectors.policies.scanImage).click({ force: true });
