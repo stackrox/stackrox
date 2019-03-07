@@ -19,7 +19,7 @@ func generateIngressRule(node *node) *storage.NetworkPolicyIngressRule {
 
 	var peers []*storage.NetworkPolicyPeer
 
-	for _, srcNode := range node.incoming {
+	for srcNode := range node.incoming {
 		if srcNode.deployment == nil || isSystemDeployment(srcNode.deployment) {
 			continue
 		}

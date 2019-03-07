@@ -8,18 +8,20 @@ import (
 type node struct {
 	entity     networkentity.Entity
 	deployment *storage.Deployment
-	incoming   []*node
-	outgoing   []*node
+	incoming   map[*node]struct{}
+	outgoing   map[*node]struct{}
 }
 
 func createNode(entity networkentity.Entity) *node {
 	return &node{
-		entity: entity,
+		entity:   entity,
+		incoming: make(map[*node]struct{}),
+		outgoing: make(map[*node]struct{}),
 	}
 }
 
 func (n *node) hasInternetIngress() bool {
-	for _, srcNode := range n.incoming {
+	for srcNode := range n.incoming {
 		if srcNode.entity.Type == storage.NetworkEntityInfo_INTERNET {
 			return true
 		}
@@ -53,8 +55,8 @@ func buildGraph(deployments []*storage.Deployment, allFlows []*storage.NetworkFl
 			nodesByKey[dstKey] = dstNode
 		}
 
-		srcNode.outgoing = append(srcNode.outgoing, dstNode)
-		dstNode.incoming = append(dstNode.incoming, srcNode)
+		srcNode.outgoing[dstNode] = struct{}{}
+		dstNode.incoming[srcNode] = struct{}{}
 	}
 
 	for _, deployment := range deployments {
