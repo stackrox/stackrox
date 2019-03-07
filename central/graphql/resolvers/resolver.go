@@ -32,7 +32,6 @@ import (
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 )
@@ -65,29 +64,27 @@ type Resolver struct {
 // New returns a Resolver wired into the relevant data stores
 func New() *Resolver {
 	resolver := &Resolver{
-		ComplianceAggregator:  aggregation.Singleton(),
-		APITokenBackend:       apitoken.BackendSingleton(),
-		ClusterDataStore:      clusterDatastore.Singleton(),
-		DeploymentDataStore:   deploymentDatastore.Singleton(),
-		ImageDataStore:        imageDatastore.Singleton(),
-		GroupDataStore:        groupDataStore.Singleton(),
-		NamespaceDataStore:    namespaceDataStore.Singleton(),
-		NetworkPoliciesStore:  networkPoliciesStore.Singleton(),
-		NetworkFlowStore:      networkFlowStoreSingleton.Singleton(),
-		NodeGlobalStore:       nodeStore.Singleton(),
-		NotifierStore:         notifierStore.Singleton(),
-		PolicyDataStore:       policyDatastore.Singleton(),
-		ProcessIndicatorStore: processIndicatorStore.Singleton(),
-		RoleStore:             roleStore.Singleton(),
-		SecretsDataStore:      secretDataStore.Singleton(),
-		ViolationsDataStore:   violationsDatastore.Singleton(),
-	}
-	if features.Compliance.Enabled() {
-		resolver.ComplianceStandardStore = complianceStandards.RegistrySingleton()
-		resolver.ComplianceDataStore = complianceStore.Singleton()
-		resolver.ComplianceManagementService = service.Singleton()
-		resolver.ComplianceManager = complianceManager.Singleton()
-		resolver.ComplianceService = complianceService.Singleton()
+		ComplianceAggregator:        aggregation.Singleton(),
+		APITokenBackend:             apitoken.BackendSingleton(),
+		ComplianceDataStore:         complianceStore.Singleton(),
+		ComplianceStandardStore:     complianceStandards.RegistrySingleton(),
+		ComplianceManagementService: service.Singleton(),
+		ComplianceManager:           complianceManager.Singleton(),
+		ComplianceService:           complianceService.Singleton(),
+		ClusterDataStore:            clusterDatastore.Singleton(),
+		DeploymentDataStore:         deploymentDatastore.Singleton(),
+		ImageDataStore:              imageDatastore.Singleton(),
+		GroupDataStore:              groupDataStore.Singleton(),
+		NamespaceDataStore:          namespaceDataStore.Singleton(),
+		NetworkPoliciesStore:        networkPoliciesStore.Singleton(),
+		NetworkFlowStore:            networkFlowStoreSingleton.Singleton(),
+		NodeGlobalStore:             nodeStore.Singleton(),
+		NotifierStore:               notifierStore.Singleton(),
+		PolicyDataStore:             policyDatastore.Singleton(),
+		ProcessIndicatorStore:       processIndicatorStore.Singleton(),
+		RoleStore:                   roleStore.Singleton(),
+		SecretsDataStore:            secretDataStore.Singleton(),
+		ViolationsDataStore:         violationsDatastore.Singleton(),
 	}
 	return resolver
 }

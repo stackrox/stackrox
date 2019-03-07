@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/namespace"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -26,9 +25,6 @@ func init() {
 // InitCompliance is a function that registers compliance graphql resolvers with the static schema. It's exposed for
 // feature flag / unit test reasons. Once the flag is gone, this can be folded into the normal init() method.
 func InitCompliance() {
-	if !features.Compliance.Enabled() {
-		return
-	}
 	complianceOnce.Do(func() {
 		schema := getBuilder()
 		utils.Must(

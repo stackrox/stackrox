@@ -6,14 +6,10 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 func init() {
-	if !features.Compliance.Enabled() {
-		return
-	}
 	schema := getBuilder()
 	utils.Must(
 		schema.AddQuery("complianceRecentRuns(clusterId:ID, standardId:ID, since:Time): [ComplianceRun!]!"),

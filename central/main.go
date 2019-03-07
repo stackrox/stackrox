@@ -69,7 +69,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -179,6 +178,8 @@ func startGRPCServer() {
 		apiTokenService.Singleton(),
 		authproviderService.New(registry),
 		clusterService.Singleton(),
+		complianceService.Singleton(),
+		complianceManagerService.Singleton(),
 		debugService.Singleton(),
 		deploymentService.Singleton(),
 		detectionService.Singleton(),
@@ -202,14 +203,9 @@ func startGRPCServer() {
 		userService.Singleton(),
 		sensorService.New(streamer.ManagerSingleton(), all.Singleton()),
 	}
-	if features.Compliance.Enabled() {
-		servicesToRegister = append(servicesToRegister,
-			complianceService.Singleton(),
-			complianceManagerService.Singleton())
 
-		if err := manager.Singleton().Start(); err != nil {
-			log.Panicf("could not start compliance manager: %v", err)
-		}
+	if err := manager.Singleton().Start(); err != nil {
+		log.Panicf("could not start compliance manager: %v", err)
 	}
 
 	server.Register(servicesToRegister...)
@@ -294,6 +290,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			ServerHandler: graphqlHandler.Handler(),
 			Compression:   true,
 		},
+		{
+			Route:         "/api/compliance/export/csv",
+			Authorizer:    authzUser.With(permissions.View(resources.Compliance)),
+			ServerHandler: complianceHandlers.CSVHandler(),
+			Compression:   true,
+		},
 	}
 
 	logImbueRoute := "/api/logimbue"
@@ -312,16 +314,6 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   false,
 		},
 	)
-
-	if features.Compliance.Enabled() {
-		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/compliance/export/csv",
-			Authorizer:    authzUser.With(permissions.View(resources.Compliance)),
-			ServerHandler: complianceHandlers.CSVHandler(),
-			Compression:   true,
-		})
-
-	}
 
 	customRoutes = append(customRoutes, debugRoutes()...)
 	return
