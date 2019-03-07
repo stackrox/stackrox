@@ -10,18 +10,31 @@ import (
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/generated/internalapi/wrapper"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
 const (
-	source     = "stackrox"
-	sourceType = "_json"
+	source                    = "stackrox"
+	sourceType                = "_json"
+	splunkHECDefaultDataLimit = 10000
+)
+
+var (
+	log = logging.LoggerForModule()
+
+	// blacklist of annotations to be scrubbed
+	scrubAnnotations = map[string]bool{
+		"kubectl.kubernetes.io/last-applied-configuration": true,
+	}
 )
 
 type splunk struct {
 	token    string
 	endpoint string
 	insecure bool
+	truncate int
 	*storage.Notifier
 }
 
@@ -57,8 +70,32 @@ func (s *splunk) ResolveAlert(alert *storage.Alert) error {
 }
 
 func (s *splunk) postAlert(alert *storage.Alert) error {
+	clonedAlert := protoutils.CloneStorageAlert(alert)
+
+	// Splunk's HEC by default has a limitation of data size == 10KB
+	// Removing some of the fields here to make it smaller
+	// More details on HEC limitation: https://developers.perfectomobile.com/display/TT/Splunk+-+Configure+HTTP+Event+Collector
+	// Check section on "Increasing the Event Data Truncate Limit"
+	clonedAlert.GetDeployment().Risk = nil
+	for i := range clonedAlert.GetDeployment().GetContainers() {
+		clonedAlert.GetDeployment().Containers[i].GetImage().Metadata = nil
+		clonedAlert.GetDeployment().Containers[i].GetImage().Scan = nil
+	}
+
+	processViolations := clonedAlert.GetProcessViolation().GetProcesses()
+	if len(processViolations) > 5 {
+		clonedAlert.ProcessViolation.Processes = clonedAlert.ProcessViolation.Processes[0:5]
+	}
+
+	// Scrub black listed annotations
+	for needScrubbing := range clonedAlert.GetDeployment().GetAnnotations() {
+		if _, ok := scrubAnnotations[needScrubbing]; ok {
+			delete(clonedAlert.Deployment.Annotations, needScrubbing)
+		}
+	}
+
 	splunkEvent := &wrapper.SplunkEvent{
-		Event:      alert,
+		Event:      clonedAlert,
 		Source:     source,
 		Sourcetype: sourceType,
 	}
@@ -67,6 +104,14 @@ func (s *splunk) postAlert(alert *storage.Alert) error {
 	err := new(jsonpb.Marshaler).Marshal(&jsonPayload, splunkEvent)
 	if err != nil {
 		return err
+	}
+
+	if s.truncate == 0 {
+		s.truncate = splunkHECDefaultDataLimit
+	}
+
+	if jsonPayload.Len() > s.truncate {
+		return fmt.Errorf("Splunk HEC truncate data limit (%d bytes) exceeded: %d", s.truncate, jsonPayload.Len())
 	}
 
 	req, err := s.createSplunkHTTPRequest(&jsonPayload)
@@ -127,10 +172,16 @@ func newSplunk(notifier *storage.Notifier) (*splunk, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	truncate := 0
+	if conf.GetTruncate() == 0 {
+		truncate = splunkHECDefaultDataLimit
+	}
 	return &splunk{
 		conf.HttpToken,
 		endpoint,
 		conf.GetInsecure(),
+		int(truncate),
 		notifier}, nil
 }
 

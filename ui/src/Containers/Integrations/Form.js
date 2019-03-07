@@ -15,6 +15,7 @@ import ReduxTextAreaField from 'Components/forms/ReduxTextAreaField';
 import ReduxPasswordField from 'Components/forms/ReduxPasswordField';
 import ReduxCheckboxField from 'Components/forms/ReduxCheckboxField';
 import ReduxMultiSelectField from 'Components/forms/ReduxMultiSelectField';
+import ReduxNumericInputField from 'Components/forms/ReduxNumericInputField';
 
 import formDescriptors from 'Containers/Integrations/formDescriptors';
 
@@ -125,6 +126,15 @@ class Form extends Component {
                     <ReduxMultiSelectField
                         name={field.jsonpath}
                         options={field.options}
+                        disabled={disabled}
+                    />
+                );
+            case 'number':
+                return (
+                    <ReduxNumericInputField
+                        name={field.jsonpath}
+                        options={field.options}
+                        min={0}
                         disabled={disabled}
                     />
                 );

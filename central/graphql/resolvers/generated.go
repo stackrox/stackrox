@@ -671,6 +671,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"httpEndpoint: String!",
 		"httpToken: String!",
 		"insecure: Boolean!",
+		"truncate: Int!",
 	}))
 	utils.Must(builder.AddType("Taint", []string{
 		"key: String!",
@@ -5692,6 +5693,11 @@ func (resolver *splunkResolver) HttpToken() string {
 func (resolver *splunkResolver) Insecure() bool {
 	value := resolver.data.GetInsecure()
 	return value
+}
+
+func (resolver *splunkResolver) Truncate() int32 {
+	value := resolver.data.GetTruncate()
+	return int32(value)
 }
 
 type taintResolver struct {

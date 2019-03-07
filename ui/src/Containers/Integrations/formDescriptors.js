@@ -292,6 +292,12 @@ const formDescriptors = {
                 placeholder: ''
             },
             {
+                label: 'HEC Truncate Limit',
+                jsonpath: 'splunk.truncate',
+                type: 'number',
+                placeholder: ''
+            },
+            {
                 label: 'Disable TLS Certificate Validation (Insecure)',
                 jsonpath: 'splunk.insecure',
                 type: 'checkbox',

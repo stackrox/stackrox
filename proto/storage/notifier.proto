@@ -50,6 +50,7 @@ message Splunk {
     string http_token    = 1;
     string http_endpoint = 2;
     bool insecure        = 3;
+    int64 truncate       = 4;
 }
 
 message PagerDuty {
