@@ -6,7 +6,6 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
@@ -42,7 +41,7 @@ func (b *storeImpl) GetNetworkPolicy(id string) (np *storage.NetworkPolicy, exis
 	return
 }
 
-func (b *storeImpl) doForMatchingPolicies(request *v1.GetNetworkPoliciesRequest, f func(*storage.NetworkPolicy)) error {
+func (b *storeImpl) doForMatchingPolicies(clusterID, namespace string, f func(*storage.NetworkPolicy)) error {
 	return b.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(networkPolicyBucket)
 		return bucket.ForEach(func(k, v []byte) error {
@@ -50,10 +49,10 @@ func (b *storeImpl) doForMatchingPolicies(request *v1.GetNetworkPoliciesRequest,
 			if err := proto.Unmarshal(v, &np); err != nil {
 				return err
 			}
-			if request.GetClusterId() != "" && np.GetClusterId() != request.GetClusterId() {
+			if clusterID != "" && np.GetClusterId() != clusterID {
 				return nil
 			}
-			if request.GetNamespace() != "" && np.GetNamespace() != request.GetNamespace() {
+			if namespace != "" && np.GetNamespace() != namespace {
 				return nil
 			}
 			f(&np)
@@ -63,17 +62,17 @@ func (b *storeImpl) doForMatchingPolicies(request *v1.GetNetworkPoliciesRequest,
 }
 
 // GetNetworkPolicies retrieves network policies matching the request from bolt
-func (b *storeImpl) GetNetworkPolicies(request *v1.GetNetworkPoliciesRequest) ([]*storage.NetworkPolicy, error) {
+func (b *storeImpl) GetNetworkPolicies(clusterID, namespace string) ([]*storage.NetworkPolicy, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "NetworkPolicy")
 	var policies []*storage.NetworkPolicy
-	err := b.doForMatchingPolicies(request, func(np *storage.NetworkPolicy) {
+	err := b.doForMatchingPolicies(clusterID, namespace, func(np *storage.NetworkPolicy) {
 		policies = append(policies, np)
 	})
 	return policies, err
 }
 
-func (b *storeImpl) CountMatchingNetworkPolicies(request *v1.GetNetworkPoliciesRequest) (count int, err error) {
-	err = b.doForMatchingPolicies(request, func(_ *storage.NetworkPolicy) {
+func (b *storeImpl) CountMatchingNetworkPolicies(clusterID, namespace string) (count int, err error) {
+	err = b.doForMatchingPolicies(clusterID, namespace, func(_ *storage.NetworkPolicy) {
 		count++
 	})
 	return

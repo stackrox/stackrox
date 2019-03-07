@@ -79,7 +79,7 @@ func (s *generatorTestSuite) TearDownTest() {
 }
 
 func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteNone() {
-	s.mockNetworkPolicyStore.EXPECT().GetNetworkPolicies(gomock.Any()).Return(testNetworkPolicies, nil)
+	s.mockNetworkPolicyStore.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any()).Return(testNetworkPolicies, nil)
 
 	existing, toDelete, err := s.generator.getNetworkPolicies(v1.GenerateNetworkPoliciesRequest_NONE, "cluster")
 	s.NoError(err)
@@ -88,7 +88,7 @@ func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteNone() {
 }
 
 func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteGenerated() {
-	s.mockNetworkPolicyStore.EXPECT().GetNetworkPolicies(gomock.Any()).Return(testNetworkPolicies, nil)
+	s.mockNetworkPolicyStore.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any()).Return(testNetworkPolicies, nil)
 
 	existing, toDelete, err := s.generator.getNetworkPolicies(v1.GenerateNetworkPoliciesRequest_GENERATED_ONLY, "cluster")
 	s.NoError(err)
@@ -106,7 +106,7 @@ func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteGenerated() {
 }
 
 func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteAll() {
-	s.mockNetworkPolicyStore.EXPECT().GetNetworkPolicies(gomock.Any()).Return(testNetworkPolicies, nil)
+	s.mockNetworkPolicyStore.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any()).Return(testNetworkPolicies, nil)
 
 	existing, toDelete, err := s.generator.getNetworkPolicies(v1.GenerateNetworkPoliciesRequest_ALL, "cluster")
 	s.NoError(err)
@@ -195,8 +195,8 @@ func (s *generatorTestSuite) TestGenerate() {
 			},
 		}, nil)
 
-	clusterIDMatcher := testutils.PredMatcher("check cluster ID", func(req *v1.GetNetworkPoliciesRequest) bool { return req.GetClusterId() == "mycluster" })
-	s.mockNetworkPolicyStore.EXPECT().GetNetworkPolicies(clusterIDMatcher).Return(
+	clusterIDMatcher := testutils.PredMatcher("check cluster ID", func(clusterID string) bool { return clusterID == "mycluster" })
+	s.mockNetworkPolicyStore.EXPECT().GetNetworkPolicies(clusterIDMatcher, "").Return(
 		[]*storage.NetworkPolicy{
 			{
 				Id:        "np1",

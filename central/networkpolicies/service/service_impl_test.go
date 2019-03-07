@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -20,6 +21,7 @@ import (
 )
 
 const fakeClusterID = "FAKECLUSTERID"
+const fakeDeploymentID = "FAKEDEPLOYMENTID"
 const badYAML = `
 kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
@@ -154,7 +156,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 
 	// Mock that we have network policies in effect for the cluster.
 	pols := make([]*storage.NetworkPolicy, 0)
-	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID)).
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(pols, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -191,7 +193,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 	pols := []*storage.NetworkPolicy{
 		compiledPolicies[0],
 	}
-	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID)).
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(pols, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -229,7 +231,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 
 	// Mock that we have network policies in effect for the cluster.
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML2}.ToRoxNetworkPolicies()
-	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID)).
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(compiledPolicies, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -268,7 +270,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 
 	// Mock that we have network policies in effect for the cluster.
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML1}.ToRoxNetworkPolicies()
-	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID)).
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(compiledPolicies, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -309,7 +311,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletion() {
 
 	// Mock that we have network policies in effect for the cluster.
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML1}.ToRoxNetworkPolicies()
-	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID)).
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(compiledPolicies, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -353,7 +355,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletionAndAdditionOfSame(
 
 	// Mock that we have network policies in effect for the cluster.
 	compiledPolicies, _ := networkpolicy.YamlWrap{Yaml: fakeYAML2}.ToRoxNetworkPolicies()
-	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID)).
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(compiledPolicies, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -397,7 +399,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 		Return(deps, nil)
 
 	// Mock that we have network policies in effect for the cluster.
-	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID)).
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(networkPolicyGetIsForCluster(fakeClusterID), "").
 		Return(nil, nil)
 
 	// Check that the evaluator gets called with our created deployment and policy set.
@@ -424,6 +426,71 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 	suite.Equal(v1.NetworkPolicyInSimulation_ADDED, actualResp.GetPolicies()[1].GetStatus())
 }
 
+func (suite *ServiceTestSuite) TestGetNetworkPoliciesWithoutDeploymentQuery() {
+	// Mock that cluster exists.
+	cluster := &storage.Cluster{Id: fakeClusterID}
+	suite.clusters.EXPECT().GetCluster(fakeClusterID).
+		Return(cluster, true, nil)
+
+	// Mock that we have network policies in effect for the cluster.
+	neps := make([]*storage.NetworkPolicy, 0)
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(fakeClusterID, "").
+		Return(neps, nil)
+
+	// Make the request to the service and check that it did not err.
+	request := &v1.GetNetworkPoliciesRequest{
+		ClusterId: fakeClusterID,
+	}
+	actualResp, err := suite.tested.GetNetworkPolicies((context.Context)(nil), request)
+
+	suite.NoError(err, "expected graph generation to succeed")
+	suite.Equal(neps, actualResp.GetNetworkPolicies(), "response should be policies read from store")
+}
+
+func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
+	// Mock that cluster exists.
+	cluster := &storage.Cluster{Id: fakeClusterID}
+	suite.clusters.EXPECT().GetCluster(fakeClusterID).
+		Return(cluster, true, nil)
+
+	// Mock that we have network policies in effect for the cluster.
+	neps := make([]*storage.NetworkPolicy, 0)
+	suite.networkPolicies.EXPECT().GetNetworkPolicies(fakeClusterID, "").
+		Return(neps, nil)
+
+	// Mock that we receive deployments for the cluster
+	deps := make([]*storage.Deployment, 0)
+	suite.deployments.EXPECT().SearchRawDeployments(testutils.PredMatcher("deployment search is for cluster", func(query *v1.Query) bool {
+		// Should be a conjunction with cluster and deployment id.
+		conj := query.GetConjunction()
+		if len(conj.GetQueries()) != 2 {
+			return false
+		}
+		matchCount := 0
+		for _, query := range conj.GetQueries() {
+			if queryIsForClusterID(query, fakeClusterID) || queryIsForDeploymentID(query, fakeDeploymentID) {
+				matchCount = matchCount + 1
+			}
+		}
+		return matchCount == 2
+	})).Return(deps, nil)
+
+	// Check that the evaluator gets called with our created deployment and policy set.
+	expectedPolicies := make([]*storage.NetworkPolicy, 0)
+	suite.evaluator.EXPECT().GetAppliedPolicies(deps, neps).
+		Return(expectedPolicies)
+
+	// Make the request to the service and check that it did not err.
+	request := &v1.GetNetworkPoliciesRequest{
+		ClusterId:       fakeClusterID,
+		DeploymentQuery: fmt.Sprintf("%s:\"%s\"", search.DeploymentID, fakeDeploymentID),
+	}
+	actualResp, err := suite.tested.GetNetworkPolicies((context.Context)(nil), request)
+
+	suite.NoError(err, "expected graph generation to succeed")
+	suite.Equal(expectedPolicies, actualResp.GetNetworkPolicies(), "response should be policies applied to deployments")
+}
+
 // deploymentSearchIsForCluster returns a function that returns true if the in input ParsedSearchRequest has the
 // ClusterID field set to the input clusterID.
 func deploymentSearchIsForCluster(clusterID string) gomock.Matcher {
@@ -435,10 +502,24 @@ func deploymentSearchIsForCluster(clusterID string) gomock.Matcher {
 
 // networkPolicyGetIsForCluster returns a function that returns true if the in input GetNetworkPolicyRequest has the
 // ClusterID field set to the input clusterID.
-func networkPolicyGetIsForCluster(clusterID string) gomock.Matcher {
-	return testutils.PredMatcher("network policy get is for cluster", func(request *v1.GetNetworkPoliciesRequest) bool {
-		return request.ClusterId == clusterID
+func networkPolicyGetIsForCluster(expectedClusterID string) gomock.Matcher {
+	return testutils.PredMatcher("network policy get is for cluster", func(actualClusterID string) bool {
+		return actualClusterID == expectedClusterID
 	})
+}
+
+func queryIsForClusterID(query *v1.Query, clusterID string) bool {
+	if query.GetBaseQuery().GetMatchFieldQuery().GetField() != search.ClusterID.String() {
+		return false
+	}
+	return query.GetBaseQuery().GetMatchFieldQuery().GetValue() == search.ExactMatchString(clusterID)
+}
+
+func queryIsForDeploymentID(query *v1.Query, deploymentID string) bool {
+	if query.GetBaseQuery().GetMatchFieldQuery().GetField() != search.DeploymentID.String() {
+		return false
+	}
+	return query.GetBaseQuery().GetMatchFieldQuery().GetValue() == search.ExactMatchString(deploymentID)
 }
 
 // checkHasPolicies returns a function that returns true if the input is a slice of network policies, containing

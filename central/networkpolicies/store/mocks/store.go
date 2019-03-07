@@ -6,7 +6,6 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
@@ -47,16 +46,16 @@ func (mr *MockStoreMockRecorder) AddNetworkPolicy(arg0 interface{}) *gomock.Call
 }
 
 // CountMatchingNetworkPolicies mocks base method
-func (m *MockStore) CountMatchingNetworkPolicies(arg0 *v1.GetNetworkPoliciesRequest) (int, error) {
-	ret := m.ctrl.Call(m, "CountMatchingNetworkPolicies", arg0)
+func (m *MockStore) CountMatchingNetworkPolicies(arg0, arg1 string) (int, error) {
+	ret := m.ctrl.Call(m, "CountMatchingNetworkPolicies", arg0, arg1)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CountMatchingNetworkPolicies indicates an expected call of CountMatchingNetworkPolicies
-func (mr *MockStoreMockRecorder) CountMatchingNetworkPolicies(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountMatchingNetworkPolicies", reflect.TypeOf((*MockStore)(nil).CountMatchingNetworkPolicies), arg0)
+func (mr *MockStoreMockRecorder) CountMatchingNetworkPolicies(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountMatchingNetworkPolicies", reflect.TypeOf((*MockStore)(nil).CountMatchingNetworkPolicies), arg0, arg1)
 }
 
 // CountNetworkPolicies mocks base method
@@ -73,16 +72,16 @@ func (mr *MockStoreMockRecorder) CountNetworkPolicies() *gomock.Call {
 }
 
 // GetNetworkPolicies mocks base method
-func (m *MockStore) GetNetworkPolicies(arg0 *v1.GetNetworkPoliciesRequest) ([]*storage.NetworkPolicy, error) {
-	ret := m.ctrl.Call(m, "GetNetworkPolicies", arg0)
+func (m *MockStore) GetNetworkPolicies(arg0, arg1 string) ([]*storage.NetworkPolicy, error) {
+	ret := m.ctrl.Call(m, "GetNetworkPolicies", arg0, arg1)
 	ret0, _ := ret[0].([]*storage.NetworkPolicy)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetNetworkPolicies indicates an expected call of GetNetworkPolicies
-func (mr *MockStoreMockRecorder) GetNetworkPolicies(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkPolicies", reflect.TypeOf((*MockStore)(nil).GetNetworkPolicies), arg0)
+func (mr *MockStoreMockRecorder) GetNetworkPolicies(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkPolicies", reflect.TypeOf((*MockStore)(nil).GetNetworkPolicies), arg0, arg1)
 }
 
 // GetNetworkPolicy mocks base method

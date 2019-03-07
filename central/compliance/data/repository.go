@@ -182,9 +182,7 @@ func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[s
 	r.deployments = deploymentsByID(deployments)
 
 	clusterID := r.cluster.GetId()
-	networkPolicies, err := f.networkPoliciesStore.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{
-		ClusterId: clusterID,
-	})
+	networkPolicies, err := f.networkPoliciesStore.GetNetworkPolicies(clusterID, "")
 	if err != nil {
 		return err
 	}

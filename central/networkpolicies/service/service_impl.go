@@ -105,6 +105,7 @@ func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.Resource
 }
 
 func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNetworkPoliciesRequest) (*v1.NetworkPoliciesResponse, error) {
+	// Check the cluster information.
 	if request.GetClusterId() != "" {
 		_, exists, err := s.clusterStore.GetCluster(request.GetClusterId())
 		if err != nil {
@@ -114,10 +115,24 @@ func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNet
 			return nil, status.Errorf(codes.InvalidArgument, "cluster with id '%s' doesn't exist", request.GetClusterId())
 		}
 	}
-	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(request)
+
+	// Get the policies in the cluster
+	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(request.GetClusterId(), "")
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.Internal, err.Error())
 	}
+
+	// If there is a deployment query, filter the policies that apply to the deployments that match the query.
+	if request.GetDeploymentQuery() != "" {
+		// Get the deployments we want to check connectivity between.
+		deployments, err := s.getDeployments(request.GetClusterId(), request.GetDeploymentQuery())
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		networkPolicies = s.graphEvaluator.GetAppliedPolicies(deployments, networkPolicies)
+	}
+
+	// Get the policies that apply to the fetched deployments.
 	return &v1.NetworkPoliciesResponse{
 		NetworkPolicies: networkPolicies,
 	}, nil
@@ -138,7 +153,7 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetwor
 	}
 
 	// Gather all of the network policies that apply to the cluster and add the addition we are testing if applicable.
-	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: request.GetClusterId()})
+	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(request.GetClusterId(), "")
 	if err != nil {
 		return nil, err
 	}
@@ -332,6 +347,31 @@ func (s *serviceImpl) getDeployments(clusterID, query string) (deployments []*st
 	return
 }
 
+func (s *serviceImpl) getDeploymentIDs(clusterID, query string) (deploymentIDs []string, err error) {
+	clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
+
+	q := clusterQuery
+	if query != "" {
+		q, err = search.ParseRawQuery(query)
+		if err != nil {
+			return
+		}
+		q = search.ConjunctionQuery(q, clusterQuery)
+	}
+
+	var results []*v1.SearchResult
+	results, err = s.deployments.SearchDeployments(q)
+	if len(results) == 0 {
+		return
+	}
+
+	deploymentIDs = make([]string, 0, len(results))
+	for _, result := range results {
+		deploymentIDs = append(deploymentIDs, result.GetId())
+	}
+	return
+}
+
 func (s *serviceImpl) getNetworkPoliciesInSimulation(clusterID string, modification *v1.NetworkPolicyModification) ([]*v1.NetworkPolicyInSimulation, error) {
 	// Confirm that any input yamls are valid. Do this check first since it is the cheapest.
 	additionalPolicies, err := compileValidateYaml(modification.GetApplyYaml())
@@ -340,7 +380,7 @@ func (s *serviceImpl) getNetworkPoliciesInSimulation(clusterID string, modificat
 	}
 
 	// Gather all of the network policies that apply to the cluster and add the addition we are testing if applicable.
-	currentPolicies, err := s.networkPolicies.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: clusterID})
+	currentPolicies, err := s.networkPolicies.GetNetworkPolicies(clusterID, "")
 	if err != nil {
 		return nil, err
 	}

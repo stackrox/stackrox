@@ -68,10 +68,7 @@ func markAllPoliciesForDeletion(policies []*storage.NetworkPolicy) []*v1.Network
 }
 
 func (g *generator) getNetworkPolicies(deleteExistingMode v1.GenerateNetworkPoliciesRequest_DeleteExistingPoliciesMode, clusterID string) ([]*storage.NetworkPolicy, []*v1.NetworkPolicyReference, error) {
-	req := &v1.GetNetworkPoliciesRequest{
-		ClusterId: clusterID,
-	}
-	policies, err := g.networkPolicyStore.GetNetworkPolicies(req)
+	policies, err := g.networkPolicyStore.GetNetworkPolicies(clusterID, "")
 	if err != nil {
 		return nil, nil, fmt.Errorf("obtaining network policies: %v", err)
 	}

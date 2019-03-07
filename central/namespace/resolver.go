@@ -100,10 +100,10 @@ func populate(storageNamespace *storage.NamespaceMetadata, deploymentDataStore d
 		return nil, fmt.Errorf("searching secrets: %v", err)
 	}
 
-	networkPolicyCount, err := npStore.CountMatchingNetworkPolicies(&v1.GetNetworkPoliciesRequest{
-		ClusterId: storageNamespace.GetClusterId(),
-		Namespace: storageNamespace.GetName(),
-	})
+	networkPolicyCount, err := npStore.CountMatchingNetworkPolicies(
+		storageNamespace.GetClusterId(),
+		storageNamespace.GetName(),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("counting network policies: %v", err)
 	}

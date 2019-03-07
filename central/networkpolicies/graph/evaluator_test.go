@@ -332,7 +332,7 @@ func TestMatchPolicyPeer(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expected, g.matchPolicyPeer(c.deployment, c.policyNamespace, c.peer))
+			assert.Equal(t, c.expected, g.deploymentMatcher.matchPolicyPeer(c.deployment, c.policyNamespace, c.peer))
 		})
 	}
 }
@@ -594,7 +594,7 @@ func flattenEdges(edges ...[]edge) []edge {
 	return finalEdges
 }
 
-func createNode(node string, namespace string, internetAccess bool, policies ...string) *v1.NetworkNode {
+func mockNode(node string, namespace string, internetAccess bool, policies ...string) *v1.NetworkNode {
 	if policies == nil {
 		policies = []string{}
 	}
@@ -649,8 +649,8 @@ func TestEvaluateClusters(t *testing.T) {
 			},
 			edges: fullyConnectedEdges("d1", "d2"),
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "", true),
-				createNode("d2", "", true),
+				mockNode("d1", "", true),
+				mockNode("d2", "", true),
 			},
 		},
 		{
@@ -678,9 +678,9 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("web-deny-all"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", true, "web-deny-all"),
-				createNode("d2", "default", true),
-				createNode("d3", "default", true),
+				mockNode("d1", "default", true, "web-deny-all"),
+				mockNode("d2", "default", true),
+				mockNode("d3", "default", true),
 			},
 		},
 		{
@@ -711,9 +711,9 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("limit-traffic"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", true, "limit-traffic"),
-				createNode("d2", "default", true),
-				createNode("d3", "default", true),
+				mockNode("d1", "default", true, "limit-traffic"),
+				mockNode("d2", "default", true),
+				mockNode("d3", "default", true),
 			},
 		},
 		{
@@ -741,9 +741,9 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("web-allow-all"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", true, "web-allow-all", "web-deny-all"),
-				createNode("d2", "default", true),
-				createNode("d3", "default", true),
+				mockNode("d1", "default", true, "web-allow-all", "web-deny-all"),
+				mockNode("d2", "default", true),
+				mockNode("d3", "default", true),
 			},
 		},
 		{
@@ -771,9 +771,9 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("default-deny-all"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", true, "default-deny-all"),
-				createNode("d2", "default", true, "default-deny-all"),
-				createNode("d3", "stackrox", true),
+				mockNode("d1", "default", true, "default-deny-all"),
+				mockNode("d2", "default", true, "default-deny-all"),
+				mockNode("d3", "stackrox", true),
 			},
 		},
 		{
@@ -801,9 +801,9 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("deny-from-other-namespaces"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", true, "deny-from-other-namespaces"),
-				createNode("d2", "default", true, "deny-from-other-namespaces"),
-				createNode("d3", "stackrox", true),
+				mockNode("d1", "default", true, "deny-from-other-namespaces"),
+				mockNode("d2", "default", true, "deny-from-other-namespaces"),
+				mockNode("d3", "stackrox", true),
 			},
 		},
 		{
@@ -833,9 +833,9 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("web-allow-all-namespaces"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", true, "deny-from-other-namespaces", "web-allow-all-namespaces"),
-				createNode("d2", "default", true, "deny-from-other-namespaces"),
-				createNode("d3", "stackrox", true),
+				mockNode("d1", "default", true, "deny-from-other-namespaces", "web-allow-all-namespaces"),
+				mockNode("d2", "default", true, "deny-from-other-namespaces"),
+				mockNode("d3", "stackrox", true),
 			},
 		},
 		{
@@ -864,9 +864,9 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("web-allow-stackrox"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", true, "web-allow-stackrox"),
-				createNode("d2", "other", true),
-				createNode("d3", "stackrox", true),
+				mockNode("d1", "default", true, "web-allow-stackrox"),
+				mockNode("d2", "other", true),
+				mockNode("d3", "stackrox", true),
 			},
 		},
 		{
@@ -901,10 +901,10 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("allow-traffic-from-apps-using-multiple-selectors"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", true, "web-deny-all"),
-				createNode("d2", "default", true),
-				createNode("d3", "default", true),
-				createNode("d4", "default", true),
+				mockNode("d1", "default", true, "web-deny-all"),
+				mockNode("d2", "default", true),
+				mockNode("d3", "default", true),
+				mockNode("d4", "default", true),
 			},
 		},
 		{
@@ -927,8 +927,8 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("web-deny-egress"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", false, "web-deny-egress"),
-				createNode("d2", "default", true),
+				mockNode("d1", "default", false, "web-deny-egress"),
+				mockNode("d2", "default", true),
 			},
 		},
 		{
@@ -955,9 +955,9 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("default-deny-all-egress"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", false, "default-deny-all-egress"),
-				createNode("d2", "default", false, "default-deny-all-egress"),
-				createNode("d3", "stackrox", true),
+				mockNode("d1", "default", false, "default-deny-all-egress"),
+				mockNode("d2", "default", false, "default-deny-all-egress"),
+				mockNode("d3", "stackrox", true),
 			},
 		},
 		{
@@ -984,9 +984,9 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("web-deny-external-egress"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "default", false, "web-deny-external-egress"),
-				createNode("d2", "default", true),
-				createNode("d3", "stackrox", true),
+				mockNode("d1", "default", false, "web-deny-external-egress"),
+				mockNode("d2", "default", true),
+				mockNode("d3", "stackrox", true),
 			},
 		},
 		{
@@ -1021,10 +1021,10 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("allow-ingress-to-web"),
 			},
 			nodes: []*v1.NetworkNode{
-				createNode("d1", "qa", true, "allow-ingress-to-web", "deny-all-ingress"),
-				createNode("d2", "qa", true, "deny-all-ingress"),
-				createNode("d3", "stackrox", true),
-				createNode("d4", "default", true),
+				mockNode("d1", "qa", true, "allow-ingress-to-web", "deny-all-ingress"),
+				mockNode("d2", "qa", true, "deny-all-ingress"),
+				mockNode("d3", "stackrox", true),
+				mockNode("d4", "default", true),
 			},
 		},
 	}
@@ -1033,6 +1033,108 @@ func TestEvaluateClusters(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			nodes := g.evaluate(c.deployments, c.nps)
 			assert.ElementsMatch(t, c.nodes, nodes)
+		})
+	}
+}
+
+func TestGetApplicable(t *testing.T) {
+	g := newMockGraphEvaluator()
+
+	// These are the k8s examples from https://github.com/ahmetb/kubernetes-network-policy-recipes
+	// Seems like a good way to verify that the logic is correct
+	cases := []struct {
+		name        string
+		deployments []*storage.Deployment
+		policies    []*storage.NetworkPolicy
+		expected    []*storage.NetworkPolicy
+	}{
+		{
+			name: "No policies",
+			deployments: []*storage.Deployment{
+				{
+					Id: "d1",
+				},
+				{
+					Id: "d2",
+				},
+			},
+		},
+		{
+			name: "deny all to app=web with match",
+			deployments: []*storage.Deployment{
+				{
+					Id:        "d1",
+					Namespace: "default",
+					PodLabels: deploymentLabels("app", "web"),
+				},
+				{
+					Id:        "d2",
+					Namespace: "default",
+				},
+				{
+					Id:        "d3",
+					Namespace: "default",
+				},
+			},
+			policies: []*storage.NetworkPolicy{
+				getExamplePolicy("web-deny-all"),
+			},
+			expected: []*storage.NetworkPolicy{
+				getExamplePolicy("web-deny-all"),
+			},
+		},
+		{
+			name: "limit traffic to application with match",
+			deployments: []*storage.Deployment{
+				{
+					Id:        "d1",
+					Namespace: "default",
+					PodLabels: deploymentLabels("app", "bookstore", "role", "api"),
+				},
+				{
+					Id:        "d2",
+					Namespace: "default",
+					PodLabels: deploymentLabels("app", "bookstore", "role", "frontend"),
+				},
+				{
+					Id:        "d3",
+					Namespace: "default",
+					PodLabels: deploymentLabels("app", "coffeeshop", "role", "api"),
+				},
+			},
+			policies: []*storage.NetworkPolicy{
+				getExamplePolicy("limit-traffic"),
+			},
+			expected: []*storage.NetworkPolicy{
+				getExamplePolicy("limit-traffic"),
+			},
+		},
+		{
+			name: "limit traffic to application no match",
+			deployments: []*storage.Deployment{
+				{
+					Id:        "d1",
+					Namespace: "default",
+					PodLabels: deploymentLabels("app", "web"),
+				},
+				{
+					Id:        "d2",
+					Namespace: "default",
+				},
+				{
+					Id:        "d3",
+					Namespace: "default",
+				},
+			},
+			policies: []*storage.NetworkPolicy{
+				getExamplePolicy("limit-traffic"),
+			},
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			actual := g.GetAppliedPolicies(c.deployments, c.policies)
+			assert.ElementsMatch(t, c.expected, actual)
 		})
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stretchr/testify/suite"
@@ -36,11 +35,11 @@ func (suite *NetworkPolicyStoreTestSuite) TearDownSuite() {
 	suite.NoError(suite.db.Close())
 }
 
-func (suite *NetworkPolicyStoreTestSuite) expectPolicies(req *v1.GetNetworkPoliciesRequest, wantPolicies ...*storage.NetworkPolicy) {
-	gotPolicies, err := suite.store.GetNetworkPolicies(req)
+func (suite *NetworkPolicyStoreTestSuite) expectPolicies(clusterID, namespace string, wantPolicies ...*storage.NetworkPolicy) {
+	gotPolicies, err := suite.store.GetNetworkPolicies(clusterID, namespace)
 	suite.Require().NoError(err)
 	suite.ElementsMatch(gotPolicies, wantPolicies)
-	gotCount, err := suite.store.CountMatchingNetworkPolicies(req)
+	gotCount, err := suite.store.CountMatchingNetworkPolicies(clusterID, namespace)
 	suite.Require().NoError(err)
 	suite.Equal(len(wantPolicies), gotCount)
 }
@@ -71,16 +70,16 @@ func (suite *NetworkPolicyStoreTestSuite) TestNetworkPolicies() {
 		suite.Equal(got, d)
 	}
 
-	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{}, networkPolicies...)
-	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "1"}, networkPolicies[0])
-	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "2"}, networkPolicies[1])
-	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "INVALID"})
-	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{Namespace: "NS1"}, networkPolicies[0])
-	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "1", Namespace: "INVALID"})
-	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "INVALID", Namespace: "NS1"})
-	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{Namespace: "NS2"}, networkPolicies[1])
-	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "2", Namespace: "NS2"}, networkPolicies[1])
-	suite.expectPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: "1", Namespace: "NS2"})
+	suite.expectPolicies("", "", networkPolicies...)
+	suite.expectPolicies("1", "", networkPolicies[0])
+	suite.expectPolicies("2", "", networkPolicies[1])
+	suite.expectPolicies("INVALID", "")
+	suite.expectPolicies("", "NS1", networkPolicies[0])
+	suite.expectPolicies("1", "INVALID")
+	suite.expectPolicies("INVALID", "NS1")
+	suite.expectPolicies("", "NS2", networkPolicies[1])
+	suite.expectPolicies("2", "NS2", networkPolicies[1])
+	suite.expectPolicies("1", "NS2")
 
 	// Test Update
 	for _, d := range networkPolicies {

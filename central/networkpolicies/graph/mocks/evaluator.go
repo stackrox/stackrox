@@ -46,6 +46,18 @@ func (mr *MockEvaluatorMockRecorder) Epoch() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Epoch", reflect.TypeOf((*MockEvaluator)(nil).Epoch))
 }
 
+// GetAppliedPolicies mocks base method
+func (m *MockEvaluator) GetAppliedPolicies(arg0 []*storage.Deployment, arg1 []*storage.NetworkPolicy) []*storage.NetworkPolicy {
+	ret := m.ctrl.Call(m, "GetAppliedPolicies", arg0, arg1)
+	ret0, _ := ret[0].([]*storage.NetworkPolicy)
+	return ret0
+}
+
+// GetAppliedPolicies indicates an expected call of GetAppliedPolicies
+func (mr *MockEvaluatorMockRecorder) GetAppliedPolicies(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAppliedPolicies", reflect.TypeOf((*MockEvaluator)(nil).GetAppliedPolicies), arg0, arg1)
+}
+
 // GetGraph mocks base method
 func (m *MockEvaluator) GetGraph(arg0 []*storage.Deployment, arg1 []*storage.NetworkPolicy) *v1.NetworkGraph {
 	ret := m.ctrl.Call(m, "GetGraph", arg0, arg1)

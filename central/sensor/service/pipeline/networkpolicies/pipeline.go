@@ -9,7 +9,6 @@ import (
 	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -50,7 +49,7 @@ type pipelineImpl struct {
 func (s *pipelineImpl) Reconcile(clusterID string) error {
 	defer s.reconcileStore.Close()
 
-	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(&v1.GetNetworkPoliciesRequest{ClusterId: clusterID})
+	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(clusterID, "")
 	if err != nil {
 		return err
 	}
