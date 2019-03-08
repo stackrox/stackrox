@@ -1,6 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import dateFns from 'date-fns';
+
+import dateTimeFormat from 'constants/dateTimeFormat';
 import { clusterTypes } from 'reducers/clusters';
 import LabeledValue from 'Components/LabeledValue';
 
@@ -9,16 +12,32 @@ const clusterTypeLabels = {
     KUBERNETES_CLUSTER: 'Kubernetes'
 };
 
+const enabledOrDisabled = value => (value ? 'Enabled' : 'Disabled');
+
+export const formatRuntimeSupport = cluster => enabledOrDisabled(cluster.runtimeSupport);
+export const formatAdmissionController = cluster => enabledOrDisabled(cluster.admissionController);
+
+export const checkInLabel = 'Last Check-In';
+export const formatLastCheckIn = cluster => {
+    if (cluster.status && cluster.status.lastContact) {
+        return dateFns.format(cluster.status.lastContact, dateTimeFormat);
+    }
+    return 'N/A';
+};
+
+export const sensorVersionLabel = 'Current Sensor Version';
+export const formatSensorVersion = cluster =>
+    (cluster.status && cluster.status.sensorVersion) || 'Not Running';
+
 const CommonDetails = ({ cluster }) => (
     <React.Fragment>
         <LabeledValue label="Name" value={cluster.name} />
         <LabeledValue label="Cluster Type" value={clusterTypeLabels[cluster.type]} />
-        <LabeledValue label="StackRox Image" value={cluster.mainImage} />
+        <LabeledValue label="Original Configured Image" value={cluster.mainImage} />
         <LabeledValue label="Central API Endpoint" value={cluster.centralApiEndpoint} />
-        <LabeledValue
-            label="Runtime Support"
-            value={cluster.runtimeSupport ? 'Enabled' : 'Disabled'}
-        />
+        <LabeledValue label="Runtime Support" value={formatRuntimeSupport(cluster)} />
+        <LabeledValue label={checkInLabel} value={formatLastCheckIn(cluster)} />
+        <LabeledValue label={sensorVersionLabel} value={formatSensorVersion(cluster)} />
     </React.Fragment>
 );
 CommonDetails.propTypes = {
@@ -35,10 +54,7 @@ const K8sDetails = ({ cluster }) => (
     <React.Fragment>
         <CommonDetails cluster={cluster} />
         <LabeledValue label="Monitoring Endpoint" value={cluster.monitoringEndpoint || 'N/A'} />
-        <LabeledValue
-            label="Admission Controller"
-            value={cluster.admissionController ? 'Enabled' : 'Disabled'}
-        />
+        <LabeledValue label="Admission Controller" value={formatAdmissionController(cluster)} />
     </React.Fragment>
 );
 K8sDetails.propTypes = {

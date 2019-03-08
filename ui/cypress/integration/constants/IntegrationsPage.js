@@ -21,7 +21,8 @@ export const selectors = {
         create: 'button:contains("Create")',
         confirm: 'button:contains("Confirm")',
         generate: 'button:contains("Generate"):not([disabled])',
-        revoke: 'button:contains("Revoke")'
+        revoke: 'button:contains("Revoke")',
+        closePanel: 'button[data-test-id="cancel"]'
     },
     apiTokenForm: {
         nameInput: 'form[data-test-id="api-token-form"] input[name="name"]',

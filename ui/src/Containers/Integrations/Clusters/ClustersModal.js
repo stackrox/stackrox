@@ -3,10 +3,8 @@ import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
-import dateFns from 'date-fns';
 import Tooltip from 'rc-tooltip';
 
-import dateTimeFormat from 'constants/dateTimeFormat';
 import { actions, clusterTypes } from 'reducers/clusters';
 import { selectors } from 'reducers';
 
@@ -20,7 +18,14 @@ import NoResultsMessage from 'Components/NoResultsMessage';
 import PanelButton from 'Components/PanelButton';
 import { clusterTypeLabels } from 'messages/common';
 import ClusterWizardPanel from './ClusterWizardPanel';
-import ClusterDetails from './ClusterDetails';
+import ClusterDetails, {
+    checkInLabel,
+    formatRuntimeSupport,
+    formatAdmissionController,
+    formatLastCheckIn,
+    formatSensorVersion,
+    sensorVersionLabel
+} from './ClusterDetails';
 
 class ClustersModal extends Component {
     static propTypes = {
@@ -102,27 +107,37 @@ class ClustersModal extends Component {
                 className: `${wrapClassName} ${defaultColumnClassName}`
             },
             {
-                accessor: 'mainImage',
-                Header: 'StackRox Image',
-                className: `${wrapClassName} ${defaultColumnClassName} word-break`
-            },
-            {
-                accessor: 'status.lastContact',
-                Header: 'Last Check-In',
-                Cell: ({ original }) => {
-                    if (original.status && original.status.lastContact)
-                        return dateFns.format(original.status.lastContact, dateTimeFormat);
-                    return 'N/A';
-                }
-            },
-            {
-                Header: '',
-                accessor: '',
-                headerClassName: 'hidden',
-                className: rtTrActionsClassName,
-                Cell: ({ original }) => this.renderRowActionButtons(original)
+                Header: 'Runtime Support',
+                Cell: ({ original }) => formatRuntimeSupport(original)
             }
         ];
+
+        if (this.props.clusterType === 'KUBERNETES_CLUSTER') {
+            columns.push({
+                Header: 'Admission Controller',
+                Cell: ({ original }) => formatAdmissionController(original)
+            });
+        }
+        columns.push(
+            ...[
+                {
+                    Header: checkInLabel,
+                    Cell: ({ original }) => formatLastCheckIn(original)
+                },
+                {
+                    Header: sensorVersionLabel,
+                    Cell: ({ original }) => formatSensorVersion(original),
+                    className: `${wrapClassName} ${defaultColumnClassName} word-break`
+                },
+                {
+                    Header: '',
+                    accessor: '',
+                    headerClassName: 'hidden',
+                    className: rtTrActionsClassName,
+                    Cell: ({ original }) => this.renderRowActionButtons(original)
+                }
+            ]
+        );
         const { selectedCluster, clusters } = this.props;
         const selectedClusterId = selectedCluster && selectedCluster.id;
         if (!clusters || !clusters.length)

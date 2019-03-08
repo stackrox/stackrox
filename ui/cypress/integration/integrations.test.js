@@ -153,7 +153,7 @@ describe('Cluster Creation Flow', () => {
 
         cy.get(selectors.labeledValue)
             .eq(2)
-            .should('have.text', 'StackRox Image:stackrox/main:latest');
+            .should('have.text', 'Original Configured Image:stackrox/main:latest');
 
         cy.get(selectors.labeledValue)
             .eq(3)
@@ -198,9 +198,11 @@ describe('Cluster Creation Flow', () => {
                     'div:contains("Success! The cluster has been recognized properly by StackRox. You may now save the configuration.")'
                 );
 
+                cy.get(selectors.buttons.closePanel).click();
+
                 // clean up after the test by deleting the cluster
                 cy.get(`.rt-tr:contains("${clusterName}") .rt-td input[type="checkbox"]`).check();
-                cy.get(selectors.buttons.delete).click({ force: true });
+                cy.get(selectors.buttons.delete).click();
                 cy.get(selectors.buttons.confirm).click();
                 cy.get(`.rt-tr:contains("${clusterName}")`).should('not.exist');
             });
