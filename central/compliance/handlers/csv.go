@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -111,24 +110,13 @@ func (c *csvResults) write(writer *csv.Writer) {
 	}
 }
 
-func getControlDescription(control *v1.ComplianceControl) string {
-	des := control.GetDescription()
-	if len(des) > 60 {
-		idx := strings.IndexAny(des, ".:")
-		if idx > 20 {
-			des = des[:idx] + " \u2026"
-		}
-	}
-	return des
-}
-
 func (c *csvResults) addAll(row complianceRow, controls map[string]*v1.ComplianceControl, values map[string]*storage.ComplianceResultValue) {
 	for controlID, result := range values {
 		controlName := controlID
 		controlDescription := "N/A"
 		if control, ok := controls[controlID]; ok {
 			controlName = control.GetName()
-			controlDescription = getControlDescription(control)
+			controlDescription = control.GetDescription()
 		}
 		valueRow := row
 		valueRow.controlName = fmt.Sprintf(`=("%s")`, controlName) // avoid excel parsing as a number
