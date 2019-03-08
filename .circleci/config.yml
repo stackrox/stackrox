@@ -335,7 +335,7 @@ jobs:
 
       - run:
           name: Build image
-          command: make image
+          command: make main-image
 
       - run:
           name: Push new Docker image
@@ -344,7 +344,7 @@ jobs:
 
             TAG=$(make tag)
 
-            for img in main monitoring grpc-server scale; do
+            for img in main monitoring; do
               docker push "stackrox/${img}:${TAG}" | cat
             done
 
@@ -386,6 +386,35 @@ jobs:
 
             export TAG=$(make tag)
             hub-comment -template-file .circleci/comment-template.tpl
+
+  build-scale-and-mock-server:
+    <<: *defaults
+    resource_class: large
+    steps:
+      - checkout
+      - setup_remote_docker
+
+      - run:
+          name: Refresh base image
+          command: docker pull alpine:3.9
+
+      - *restoreDep
+      - *setupBazel
+
+      - run:
+          name: Build image
+          command: make scale-image mock-grpc-server-image
+
+      - run:
+          name: Push new Docker image
+          command: |
+            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD docker.io
+
+            TAG=$(make tag)
+
+            for img in scale grpc-server; do
+              docker push "stackrox/${img}:${TAG}" | cat
+            done
 
   unit-tests:
     <<: *defaults
@@ -1041,6 +1070,10 @@ workflows:
           filters:
             tags:
               only: /.*/
+      - build-scale-and-mock-server:
+          filters:
+            tags:
+              only: /.*/
       - unit-tests:
           filters:
             tags:
@@ -1074,6 +1107,7 @@ workflows:
       - scale:
           requires:
             - build
+            - build-scale-and-mock-server
           filters:
             tags:
               only: /.*/

@@ -28,8 +28,7 @@ COPY ./static-bin/* /stackrox/
 COPY ./ui/build  /ui/
 COPY ./docs/api/v1/swagger.json /docs/api/v1/swagger.json
 
-# This will expand to NOTICE.txt during a CI build.
-COPY ./*.txt /
+COPY ./NOTICE.txt /
 
 COPY ./assets /data/assets
 

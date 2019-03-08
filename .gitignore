@@ -27,8 +27,6 @@ proto-generated-srcs
 report.xml
 test.log
 protoc-*
-image/VERSION.txt
-image/NOTICE.txt
 coverage.out
 coverage.html
 combined_coverage.dat

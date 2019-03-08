@@ -229,18 +229,28 @@ cli: gazelle
 	cp bazel-bin/roxctl/$(BAZEL_OS)_amd64_pure_stripped/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
 
-.PHONY: build
-build: gazelle cli
+.PHONY: main-build
+main-build: gazelle cli
 	@echo "+ $@"
 	bazel build $(BAZEL_FLAGS) \
 		//central \
 		//migrator \
 		//sensor/kubernetes \
-		//integration-tests/mock-grpc-server \
+		//compliance/collection
+
+.PHONY: scale-build
+scale-build: gazelle
+	@echo "+ $@"
+	bazel build $(BAZEL_FLAGS) \
 		//scale/mocksensor \
 		//scale/mockcollector \
-		//scale/profiler \
-		//compliance/collection
+		//scale/profiler
+
+.PHONY: mock-grpc-server-build
+mock-grpc-server-build: gazelle
+	@echo "+ $@"
+	bazel build $(BAZEL_FLAGS) \
+		//integration-tests/mock-grpc-server
 
 .PHONY: gendocs
 gendocs: $(GENERATED_API_DOCS)
@@ -294,7 +304,8 @@ coverage:
 ###########
 ## Image ##
 ###########
-image: build clean-image $(MERGED_API_SWAGGER_SPEC)
+.PHONY: main-image
+main-image: main-build clean-image $(MERGED_API_SWAGGER_SPEC)
 	make -C ui build
 
 # TODO(cg): Replace with native bazel Docker build.
@@ -307,22 +318,29 @@ image: build clean-image $(MERGED_API_SWAGGER_SPEC)
 	cp bazel-bin/sensor/kubernetes/linux_amd64_pure_stripped/kubernetes image/bin/kubernetes-sensor
 	cp bazel-bin/compliance/collection/linux_amd64_pure_stripped/collection image/bin/compliance
 
-	# Scale
-	cp bazel-bin/integration-tests/mock-grpc-server/linux_amd64_pure_stripped/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
-	cp bazel-bin/scale/mocksensor/linux_amd64_pure_stripped/mocksensor scale/image/bin/mocksensor
-	cp bazel-bin/scale/mockcollector/linux_amd64_pure_stripped/mockcollector scale/image/bin/mockcollector
-	cp bazel-bin/scale/profiler/linux_amd64_pure_stripped/profiler scale/image/bin/profiler
-
-	echo "$(TAG)" > image/VERSION.txt
 	chmod +w image/bin/*
-	chmod +w scale/image/bin/*
+ifdef CI
+	@[ -f image/NOTICE.txt ] || { echo "image/NOTICE.txt file not found! It is required for CI-built images."; exit 1; }
+else
+	@[ -f image/NOTICE.txt ] || touch image/NOTICE.txt
+endif
 	docker build -t stackrox/main:$(TAG) image/
 	docker build -t stackrox/monitoring:$(TAG) monitoring
-	docker build -t stackrox/grpc-server:$(TAG) integration-tests/mock-grpc-server/image
-	docker build -t stackrox/scale:$(TAG) -f scale/image/Dockerfile scale
 	@echo "Built images with tag: $(TAG)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 
+.PHONY: scale-image
+scale-image: scale-build clean-image
+	cp bazel-bin/scale/mocksensor/linux_amd64_pure_stripped/mocksensor scale/image/bin/mocksensor
+	cp bazel-bin/scale/mockcollector/linux_amd64_pure_stripped/mockcollector scale/image/bin/mockcollector
+	cp bazel-bin/scale/profiler/linux_amd64_pure_stripped/profiler scale/image/bin/profiler
+	chmod +w scale/image/bin/*
+	docker build -t stackrox/scale:$(TAG) -f scale/image/Dockerfile scale
+
+.PHONY: mock-grpc-server-image
+mock-grpc-server-image: mock-grpc-server-build clean-image
+	cp bazel-bin/integration-tests/mock-grpc-server/linux_amd64_pure_stripped/mock-grpc-server integration-tests/mock-grpc-server/image/bin/mock-grpc-server
+	docker build -t stackrox/grpc-server:$(TAG) integration-tests/mock-grpc-server/image
 
 ###########
 ## Clean ##

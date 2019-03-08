@@ -29,7 +29,7 @@ The following tools are necessary to build image(s):
 
 ### How to Build
 ```bash
-make image
+make main-image
 ```
 
 This will create `stackrox/main` with a tag defined by `make tag`.

@@ -5,7 +5,7 @@
 
 [ -z "$1" ] && echo "Please specify a folder to search for .swagger.json files" && exit 1
 
-set -euxo pipefail
+set -euo pipefail
 
 folder="$1"
 
