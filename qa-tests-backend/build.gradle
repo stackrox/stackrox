@@ -123,7 +123,7 @@ test {
     environment "TESTRAIL" , System.getenv("TESTRAIL")
     environment "USERNAME" , System.getenv("USERNAME")
     environment "PASSWORD" , System.getenv("PASSWORD")
-    environment "GKE_SERVICE_ACCOUNT", System.getenv("GKE_SERVICE_ACCOUNT")
+    environment "GOOGLE_CREDENTIALS_GCR_SCANNER", System.getenv("GOOGLE_CREDENTIALS_GCR_SCANNER")
 
     // This ensures that repeated invocations of tests actually run the tests.
     // Otherwise, if the tests pass, Gradle "caches" the result and doesn't actually run the tests,

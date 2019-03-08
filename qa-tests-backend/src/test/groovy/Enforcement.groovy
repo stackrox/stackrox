@@ -7,6 +7,7 @@ import objects.Deployment
 import org.junit.Assume
 import org.junit.experimental.categories.Category
 import services.CreatePolicyService
+import spock.lang.Shared
 import spock.lang.Unroll
 import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass.EnforcementAction
@@ -16,7 +17,19 @@ class Enforcement extends BaseSpecification {
     private final static String CONTAINER_PORT_22_POLICY = "Secure Shell (ssh) Port Exposed"
     private final static String APT_GET_POLICY = "Ubuntu Package Manager Execution"
     private final static String LATEST_TAG = "Latest tag"
-    private final static String CVSS = "CVSS >= 7"
+    private final static String CVSS = "Fixable CVSS >= 7"
+
+    @Shared
+    private String gcrId
+
+    def setupSpec() {
+        gcrId = Services.addGcrRegistryAndScanner()
+        assert gcrId != null
+    }
+
+    def cleanupSpec() {
+        assert Services.deleteGcrRegistryAndScanner(gcrId)
+    }
 
     @Category([BAT, Integration, PolicyEnforcement])
     def "Test Admission Controller Enforcement - Integration"() {
@@ -254,7 +267,7 @@ class Enforcement extends BaseSpecification {
         // DEPLOY Lifecycle Stages
 
         given:
-        "add BUILD and DEPLOY ifecylce stages"
+        "add BUILD and DEPLOY lifecycle stages"
         def startlifeCycle = Services.updatePolicyLifecycleStage(
                 CVSS,
                 [LifecycleStage.BUILD, LifecycleStage.DEPLOY]
@@ -276,7 +289,7 @@ class Enforcement extends BaseSpecification {
         }
         Deployment d = new Deployment()
                 .setName("scale-down-enforcement-build-deploy-cvss")
-                .setImage("apollo-dtr.rox.systems/qa/enforcement:testing")
+                .setImage("us.gcr.io/stackrox-ci/nginx:1.11")
                 .addPort(22)
                 .addLabel("app", "scale-down-enforcement-build-deploy")
                 .setSkipReplicaWait(true)

@@ -35,7 +35,7 @@ function launch_central {
     if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
        rm -rf central-bundle "${k8s_dir}/central-bundle"
        roxctl central generate ${ORCH} ${EXTRA_ARGS[@]} --output-dir="central-bundle" --output-format="${OUTPUT_FORMAT}" --monitoring-password=stackrox \
-           -i "${MAIN_IMAGE}" --monitoring-persistence-type="${STORAGE}" "${STORAGE}"
+           -i "${MAIN_IMAGE}" --scanner-image "${SCANNER_IMAGE}" --monitoring-persistence-type="${STORAGE}" "${STORAGE}"
        cp -R central-bundle/ "${unzip_dir}/"
        rm -rf central-bundle
     else
@@ -64,6 +64,12 @@ function launch_central {
     $unzip_dir/central/scripts/setup.sh
     launch_service $unzip_dir central
     echo
+
+    if [[ "$SCANNER_SUPPORT" == "true" ]]; then
+        echo "Deploying Scanning..."
+        launch_service $unzip_dir scanner
+        echo
+    fi
 
     # if we have specified that we want to use a load balancer, then use that endpoint instead of localhost
     if [[ "${LOAD_BALANCER}" == "lb" ]]; then

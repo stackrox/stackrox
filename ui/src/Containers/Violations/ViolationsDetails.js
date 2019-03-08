@@ -95,7 +95,7 @@ class ViolationsDetails extends Component {
                         <div className="flex flex-1 bg-primary-100">
                             <div className="w-1/2 p-4 border-r border-base-300 leading-normal">
                                 <div className="flex justify-center font-700 italic">
-                                    First Occurence:
+                                    First Occurrence:
                                 </div>
                                 <div className="flex justify-center font-600">
                                     {format(firstOccurrenceTimestamp, dateTimeFormat)}
@@ -103,7 +103,7 @@ class ViolationsDetails extends Component {
                             </div>
                             <div className="w-1/2 p-4 leading-normal">
                                 <div className="flex justify-center font-700 italic">
-                                    Last Occurence:
+                                    Last Occurrence:
                                 </div>
                                 <div className="flex justify-center font-600">
                                     {format(lastOccurrenceTimestamp, dateTimeFormat)}

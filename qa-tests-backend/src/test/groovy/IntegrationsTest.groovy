@@ -7,42 +7,6 @@ import io.stackrox.proto.storage.NotifierOuterClass
 
 class IntegrationsTest extends BaseSpecification {
 
-    @Category(BAT)
-    def "Verify Clairify Integration"() {
-        when:
-        "Create Clairify deployment"
-        orchestrator.createClairifyDeployment()
-        sleep(20000)
-
-        and:
-        "Create Clairify integration"
-        def clairifyId = Services.addClairifyScanner(orchestrator.getClairifyEndpoint())
-
-        then:
-        "Verify the Clairify integration"
-        assert clairifyId != null
-
-        cleanup:
-        "Remove the deployment and integration"
-        assert Services.deleteClairifyScanner(clairifyId)
-        orchestrator.deleteDeployment(new Deployment(name: "clairify", namespace: "stackrox"))
-        orchestrator.deleteService("clairify", "stackrox")
-    }
-    @Category(BAT)
-    def "Verify GCR Integration"() {
-        when:
-        "Create GCR integration"
-        def gcrId = Services.addGcrRegistryAndScanner()
-        println "GCR ID is: " + gcrId
-        then:
-        "Verify the GCR integration"
-        assert gcrId != null
-
-        cleanup:
-        "Remove gcr integration"
-        assert Services.deleteGcrRegistryAndScanner(gcrId)
-    }
-
     @Unroll
     @Category([BAT])
     def "Verify Email Integration"() {

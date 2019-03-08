@@ -474,7 +474,7 @@ class Services extends BaseService {
     }
 
     static String addGcrRegistryAndScanner() {
-        String serviceAccount = System.getenv("GKE_SERVICE_ACCOUNT")
+        String serviceAccount = System.getenv("GOOGLE_CREDENTIALS_GCR_SCANNER")
         String gcrId = ""
 
         try {
@@ -487,7 +487,7 @@ class Services extends BaseService {
                         .setGoogle(
                         ImageIntegrationOuterClass.GoogleConfig.newBuilder()
                                 .setEndpoint("us.gcr.io")
-                                .setProject("ultra-current-825")
+                                .setProject("stackrox-ci")
                                 .setServiceAccount(serviceAccount)
                                 .build()
                 ).build()

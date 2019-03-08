@@ -307,6 +307,14 @@ const policyConfigurationDescriptor = [
         default: false
     },
     {
+        label: 'Fixed By',
+        jsonpath: 'fields.fixedBy',
+        type: 'text',
+        placeholder: '.*',
+        required: false,
+        default: false
+    },
+    {
         label: 'CVE',
         jsonpath: 'fields.cve',
         type: 'text',

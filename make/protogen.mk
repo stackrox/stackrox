@@ -46,13 +46,13 @@ PROTOC_GEN_GO := $(GOPATH)/src/github.com/golang/protobuf/protoc-gen-go
 
 PROTOC_GEN_GO_BIN := $(GOPATH)/bin/protoc-gen-gofast
 
-$(GOPATH)/src/github.com/gogo/protobuf/types:
+$(PROTOC_GEN_GO_BIN):
 	@echo "+ $@"
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/gogo/protobuf/types v1.2.0
-
-$(PROTOC_GEN_GO_BIN): $(GOPATH)/src/github.com/gogo/protobuf/types
-	@echo "+ $@"
-	@$(BASE_PATH)/scripts/go-get-version.sh github.com/gogo/protobuf/protoc-gen-gofast v1.2.0
+	@rm -rf $(GOPATH)/src/github.com/gogo/protobuf
+	mkdir -p $(GOPATH)/src/github.com/gogo
+	git clone https://github.com/connorgorman/protobuf.git $(GOPATH)/src/github.com/gogo/protobuf
+	cd $(GOPATH)/src/github.com/gogo/protobuf && git reset --hard a81e5c3a5053f77bc517be4fb2824a1fb62fa37c && cd -
+	go install github.com/gogo/protobuf/protoc-gen-gofast/...
 
 GOGO_M_STR := Mgoogle/protobuf/any.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/struct.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/wrappers.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types
 

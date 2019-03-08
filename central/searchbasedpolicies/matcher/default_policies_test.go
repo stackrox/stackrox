@@ -308,7 +308,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 					Scan: &storage.ImageScan{
 						Components: []*storage.ImageScanComponent{
 							{Name: "heartbleed", Version: "1.2", Vulns: []*storage.Vulnerability{
-								{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6},
+								{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6, SetFixedBy: &storage.Vulnerability_FixedBy{FixedBy: "v1.2"}},
 							}},
 						},
 					},
@@ -328,7 +328,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	strutsDep := deploymentWithComponents([]*storage.ImageScanComponent{
 		{Name: "struts", Version: "1.2", Vulns: []*storage.Vulnerability{
-			{Cve: "CVE-2017-5638", Link: "https://struts", Cvss: 8},
+			{Cve: "CVE-2017-5638", Link: "https://struts", Cvss: 8, SetFixedBy: &storage.Vulnerability_FixedBy{FixedBy: "v1.3"}},
 		}},
 		{Name: "OTHER", Version: "1.3", Vulns: []*storage.Vulnerability{
 			{Cve: "CVE-1223-451", Link: "https://cvefake"},
@@ -818,11 +818,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "CVSS >= 6 and Privileged",
+			policyName: "Fixable CVSS >= 6 and Privileged",
 			expectedViolations: map[string]searchbasedpolicies.Violations{
 				heartbleedDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
-						Message: "Found a CVSS score of 6 (greater than or equal to 6.0) (cve: CVE-2014-0160)",
+						Message: "Found a CVSS score of 6 (greater than or equal to 6.0) (cve: CVE-2014-0160) that is fixable",
 					},
 					{
 						Message: "Privileged container found",
@@ -832,11 +832,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "CVSS >= 7",
+			policyName: "Fixable CVSS >= 7",
 			expectedViolations: map[string]searchbasedpolicies.Violations{
 				strutsDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
-						Message: "Found a CVSS score of 8 (greater than or equal to 7.0) (cve: CVE-2017-5638)",
+						Message: "Found a CVSS score of 8 (greater than or equal to 7.0) (cve: CVE-2017-5638) that is fixable",
 					},
 				},
 				},
@@ -1185,11 +1185,11 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "CVSS >= 7",
+			policyName: "Fixable CVSS >= 7",
 			expectedViolations: map[string]searchbasedpolicies.Violations{
 				suite.imageIDFromDep(strutsDep): {AlertViolations: []*storage.Alert_Violation{
 					{
-						Message: "Found a CVSS score of 8 (greater than or equal to 7.0) (cve: CVE-2017-5638)",
+						Message: "Found a CVSS score of 8 (greater than or equal to 7.0) (cve: CVE-2017-5638) that is fixable",
 					},
 				},
 				},

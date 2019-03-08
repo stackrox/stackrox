@@ -4,6 +4,7 @@ import static Services.getPolicies
 import static Services.getViolations
 import static Services.waitForViolation
 
+import spock.lang.Shared
 import common.Constants
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
@@ -27,13 +28,19 @@ import java.util.stream.Collectors
 
 @Stepwise // We need to verify all of the expected alerts are present before other tests.
 class DefaultPoliciesTest extends BaseSpecification {
-
     // Deployment names
     static final private String NGINX_LATEST = "qadefpolnginxlatest"
     static final private String STRUTS = "qadefpolstruts"
     static final private String SSL_TERMINATOR = "qadefpolsslterm"
     static final private String NGINX_1_10 = "qadefpolnginx110"
     static final private String K8S_DASHBOARD = "kubernetes-dashboard"
+    static final private String GCR_NGINX = "qagcrnginx"
+
+    static final private List<String> WHITELISTED_KUBE_SYSTEM_POLICIES = [
+            "Fixable CVSS >= 6 and Privileged",
+            "Fixable CVSS >= 7",
+            "Ubuntu Package Manager in Image",
+    ]
 
     static final private Deployment STRUTS_DEPLOYMENT = new Deployment()
             .setName(STRUTS)
@@ -57,7 +64,14 @@ class DefaultPoliciesTest extends BaseSpecification {
             .setName(NGINX_1_10)
             .setImage("nginx:1.10")
             .addLabel("app", "test"),
+        new Deployment()
+            .setName(GCR_NGINX)
+            .setImage("us.gcr.io/stackrox-ci/nginx:1.11")
+            .addLabel ( "app", "test" ),
     ]
+
+    @Shared
+    private String gcrId
 
     def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
@@ -65,12 +79,15 @@ class DefaultPoliciesTest extends BaseSpecification {
         for (Deployment deployment : DEPLOYMENTS) {
             assert Services.waitForDeployment(deployment)
         }
+        gcrId = Services.addGcrRegistryAndScanner()
+        assert gcrId != null
     }
 
     def cleanupSpec() {
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
+        assert Services.deleteGcrRegistryAndScanner(gcrId)
     }
 
     @Unroll
@@ -110,7 +127,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "30-Day Scan Age"                               | SSL_TERMINATOR | "C941"
 
-        "CVSS >= 7"                                     | STRUTS         | "C933"
+        "Fixable CVSS >= 7"                             | GCR_NGINX      | "C933"
 
         "Shellshock: CVE-2014-6271"                     | SSL_TERMINATOR | "C948"
 
@@ -206,7 +223,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         getViolations(
           AlertServiceOuterClass.ListAlertsRequest.newBuilder()
             .setQuery("Namespace:kube-system+Policy:!Kubernetes Dashboard").build()
-        ).size() == 0
+        ).stream().filter { x -> !WHITELISTED_KUBE_SYSTEM_POLICIES.contains(x.policy.name) }.collect().size() == 0
     }
 
     def queryForDeployments() {

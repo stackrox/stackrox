@@ -16,7 +16,9 @@ type CVSSQueryBuilder struct {
 // Query implements the PolicyQueryBuilder interface.
 func (c CVSSQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[search.FieldLabel]*v1.SearchField) (q *v1.Query, v searchbasedpolicies.ViolationPrinter, err error) {
 	cvss := fields.GetCvss()
-	if cvss == nil {
+	fixedBy := fields.GetFixedBy()
+
+	if cvss == nil && fixedBy == "" {
 		return
 	}
 
@@ -31,13 +33,24 @@ func (c CVSSQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sea
 		return
 	}
 
-	q = search.NewQueryBuilder().AddLinkedFieldsHighlighted(
-		[]search.FieldLabel{search.CVSS, search.CVE},
-		[]string{search.NumericQueryString(cvss.GetOp(), cvss.GetValue()), search.WildcardString}).
-		ProtoQuery()
+	cveFixedByField, err := getSearchField(search.FixedBy, optionsMap)
+	if err != nil {
+		err = fmt.Errorf("%s: %s", c.Name(), err)
+		return
+	}
+
+	linkedFields := []search.FieldLabel{search.CVSS, search.CVE}
+	linkedValues := []string{search.NumericQueryString(cvss.GetOp(), cvss.GetValue()), search.WildcardString}
+	if fixedBy != "" {
+		linkedFields = append(linkedFields, search.FixedBy)
+		linkedValues = append(linkedValues, search.RegexQueryString(fixedBy))
+	}
+
+	q = search.NewQueryBuilder().AddLinkedFieldsHighlighted(linkedFields, linkedValues).ProtoQuery()
 	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) searchbasedpolicies.Violations {
 		cvssMatches := result.Matches[cvssSearchField.GetFieldPath()]
 		cveMatches := result.Matches[cveSearchField.GetFieldPath()]
+		fixedByMatches := result.Matches[cveFixedByField.GetFieldPath()]
 		if len(cvssMatches) != len(cveMatches) {
 			logger.Errorf("Got different number of matches for CVSS and CVEs: %+v %+v", cvssMatches, cveMatches)
 		}
@@ -50,8 +63,14 @@ func (c CVSSQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sea
 				break
 			}
 			cve := fmt.Sprintf(" (cve: %s)", cveMatches[i])
+			var msg string
+			if len(fixedByMatches) > i {
+				msg = fmt.Sprintf("Found a CVSS score of %s (%s %.1f)%s that is fixable", cvssMatch, readableOp(cvss.GetOp()), cvss.GetValue(), cve)
+			} else {
+				msg = fmt.Sprintf("Found a CVSS score of %s (%s %.1f)%s", cvssMatch, readableOp(cvss.GetOp()), cvss.GetValue(), cve)
+			}
 			violations = append(violations, &storage.Alert_Violation{
-				Message: fmt.Sprintf("Found a CVSS score of %s (%s %.1f)%s", cvssMatch, readableOp(cvss.GetOp()), cvss.GetValue(), cve),
+				Message: msg,
 			})
 		}
 		return searchbasedpolicies.Violations{

@@ -6,6 +6,9 @@ echo "StackRox image tag set to $MAIN_IMAGE_TAG"
 export MAIN_IMAGE="${MAIN_IMAGE:-stackrox/main:$MAIN_IMAGE_TAG}"
 echo "StackRox image set to $MAIN_IMAGE"
 
+export SCANNER_IMAGE="${SCANNER_IMAGE:-stackrox/scanner:0.5.3}"
+echo "StackRox scanner image set to $SCANNER_IMAGE"
+
 function curl_central() {
 	cmd=(curl -k)
 	local admin_user="${ROX_ADMIN_USER:-admin}"

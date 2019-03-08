@@ -1,10 +1,23 @@
 import groups.BAT
 import groups.Integration
 import org.junit.experimental.categories.Category
+import spock.lang.Shared
 import spock.lang.Unroll
 import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 
 class ImageManagementTest extends BaseSpecification {
+    @Shared
+    private String gcrId
+
+    def setupSpec() {
+        gcrId = Services.addGcrRegistryAndScanner()
+        assert gcrId != null
+    }
+
+    def cleanupSpec() {
+        assert Services.deleteGcrRegistryAndScanner(gcrId)
+    }
+
     @Unroll
     @Category([BAT, Integration])
     def "Verify CI/CD Integration Endpoint - #policy"() {
@@ -34,7 +47,7 @@ class ImageManagementTest extends BaseSpecification {
         "90-Day Image Age"                            | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
         "Ubuntu Package Manager in Image"             | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
         "Curl in Image"                               | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
-        "CVSS >= 7"                                   | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
+        "Fixable CVSS >= 7"                           | "us.gcr.io" | "stackrox-ci/nginx" | "1.11"
         "Wget in Image"                               | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
         "Apache Struts: CVE-2017-5638"                | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
     }

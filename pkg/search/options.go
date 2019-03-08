@@ -45,6 +45,7 @@ var (
 	ImageCommand                 = newFieldLabel("Image Command")
 	ImageEntrypoint              = newFieldLabel("Image Entrypoint")
 	ImageVolumes                 = newFieldLabel("Image Volumes")
+	FixedBy                      = newFieldLabel("Fixed By")
 
 	AddCapabilities        = newFieldLabel("Add Capabilities")
 	Annotation             = newFieldLabel("Annotation")

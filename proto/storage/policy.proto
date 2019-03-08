@@ -109,6 +109,7 @@ message PolicyFields {
     oneof set_read_only_root_fs {
         bool read_only_root_fs = 25;
     }
+    string fixed_by = 26;
 }
 
 message Component {

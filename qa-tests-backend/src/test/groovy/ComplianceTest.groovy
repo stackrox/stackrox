@@ -133,7 +133,7 @@ class ComplianceTest extends BaseSpecification {
                         k, v ->
                         assert v.controlResultsMap.get(control.id)?.overallState == control.state
                         assert v.controlResultsMap.get(control.id)?.evidenceList*.message
-                                .containsAll(control.evidenceMessages)
+                            .containsAll(control.evidenceMessages)
                     }
                     break
                 case Control.ControlType.NODE:
@@ -141,7 +141,7 @@ class ComplianceTest extends BaseSpecification {
                         k, v ->
                         assert v.controlResultsMap.get(control.id)?.overallState == control.state
                         assert v.controlResultsMap.get(control.id)?.evidenceList*.message
-                                .containsAll(control.evidenceMessages)
+                               .containsAll(control.evidenceMessages)
                     }
                     break
             }
@@ -388,16 +388,16 @@ class ComplianceTest extends BaseSpecification {
                         break
                     case "node":
                         value = result.nodeResultsMap.get(
-                            result.domain.nodesMap.find { it.value.name == row.objectName }?.key
+                                result.domain.nodesMap.find { it.value.name == row.objectName }?.key
                         )?.controlResultsMap?.find {
                             it.key == "${standardId}:${controlId}"
                         }?.value
                         break
                     default:
                         value = result.deploymentResultsMap.get(
-                            result.domain.deploymentsMap.find {
+                                result.domain.deploymentsMap.find {
                             it.value.name == row.objectName && it.value.namespace == row.namespace
-                            }?.key
+                                }?.key
                         )?.controlResultsMap?.find {
                             it.key == "${standardId}:${controlId}"
                         }?.value
@@ -434,10 +434,10 @@ class ComplianceTest extends BaseSpecification {
         when:
         "create a schedule"
         ComplianceRunScheduleInfo info = ComplianceManagementService.addSchedule(
-                        standards.get(0).id,
-                        clusterId,
-                        "* 4 * * *"
-                )
+                standards.get(0).id,
+                clusterId,
+                "* 4 * * *"
+        )
         assert info
         assert ComplianceManagementService.getSchedules().find { it.schedule.id == info.schedule.id }
 
@@ -462,11 +462,11 @@ class ComplianceTest extends BaseSpecification {
         }
         String cron = "${minute} ${hour} * * *"
         ComplianceRunScheduleInfo update = ComplianceManagementService.updateSchedule(
-                        info.schedule.id,
-                        standards.get(0).id,
-                        clusterId,
-                        cron
-                )
+                info.schedule.id,
+                standards.get(0).id,
+                clusterId,
+                cron
+        )
         assert update
 
         and:
@@ -717,7 +717,7 @@ class ComplianceTest extends BaseSpecification {
                         ComplianceState.COMPLIANCE_STATE_SUCCESS),
         ]
         def enforcementPolicies = [
-                "CVSS >= 7",
+                "Fixable CVSS >= 7",
                 "Privileged Container",
                 "90-Day Image Age",
                 "Latest tag",
@@ -726,7 +726,7 @@ class ComplianceTest extends BaseSpecification {
         given:
         "update policies"
         Services.updatePolicyLifecycleStage(
-                "CVSS >= 7",
+                "Fixable CVSS >= 7",
                 [PolicyOuterClass.LifecycleStage.BUILD, PolicyOuterClass.LifecycleStage.DEPLOY])
         for (String policyName : enforcementPolicies) {
             def enforcements = []
@@ -752,10 +752,10 @@ class ComplianceTest extends BaseSpecification {
                 .setDisabled(false)
                 .setSeverityValue(2)
                 .setFields(PolicyOuterClass.PolicyFields.newBuilder()
-                        .setEnv(PolicyOuterClass.KeyValuePolicy.newBuilder()
-                                .setKey(".*SECRET.*")
-                                .setValue(".*"))
-                        .build())
+                .setEnv(PolicyOuterClass.KeyValuePolicy.newBuilder()
+                .setKey(".*SECRET.*")
+                .setValue(".*"))
+                .build())
                 .build())
 
         when:
@@ -788,7 +788,7 @@ class ComplianceTest extends BaseSpecification {
             Services.updatePolicyEnforcement(policyName, [PolicyOuterClass.EnforcementAction.UNSET_ENFORCEMENT])
         }
         Services.updatePolicyLifecycleStage(
-                "CVSS >= 7",
+                "Fixable CVSS >= 7",
                 [PolicyOuterClass.LifecycleStage.DEPLOY])
         if (policyId) {
             CreatePolicyService.deletePolicy(policyId)

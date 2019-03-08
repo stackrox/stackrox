@@ -146,6 +146,10 @@ const fieldsMap = {
         label: 'CVE',
         formatValue: d => d
     },
+    fixedBy: {
+        label: 'Fixed By',
+        formatValue: d => d
+    },
     component: {
         label: 'Image Component',
         formatValue: d => {

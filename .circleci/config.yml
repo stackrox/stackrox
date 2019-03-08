@@ -248,6 +248,7 @@ collectK8sLogs: &collectK8sLogs
       ./scripts/ci/collect-service-logs.sh central deployment
       ./scripts/ci/collect-service-logs.sh monitoring deployment
       ./scripts/ci/collect-service-logs.sh sensor deployment
+      ./scripts/ci/collect-service-logs.sh scanner deployment
       ./scripts/ci/collect-service-logs.sh collector daemonset
     when: always
 

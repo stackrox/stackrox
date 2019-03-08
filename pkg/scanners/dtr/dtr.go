@@ -195,7 +195,7 @@ func (d *dtr) Test() error {
 
 // GetLastScan retrieves the most recent scan
 func (d *dtr) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
-	log.Infof("Getting latest scan for image %v", image.GetName().GetFullName())
+	log.Infof("Getting latest scan for image %s", image.GetName().GetFullName())
 	return d.getScan(image)
 }
 

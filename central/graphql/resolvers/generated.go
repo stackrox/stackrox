@@ -497,6 +497,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"disallowedAnnotation: KeyValuePolicy",
 		"dropCapabilities: [String!]!",
 		"env: KeyValuePolicy",
+		"fixedBy: String!",
 		"imageName: ImageNamePolicy",
 		"lineRule: DockerfileLineRuleField",
 		"portPolicy: PortPolicy",
@@ -4402,6 +4403,11 @@ func (resolver *policyFieldsResolver) DropCapabilities() []string {
 func (resolver *policyFieldsResolver) Env() (*keyValuePolicyResolver, error) {
 	value := resolver.data.GetEnv()
 	return resolver.root.wrapKeyValuePolicy(value, true, nil)
+}
+
+func (resolver *policyFieldsResolver) FixedBy() string {
+	value := resolver.data.GetFixedBy()
+	return value
 }
 
 func (resolver *policyFieldsResolver) ImageName() (*imageNamePolicyResolver, error) {
