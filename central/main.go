@@ -33,7 +33,10 @@ import (
 	graphqlHandler "github.com/stackrox/rox/central/graphql/handler"
 	groupService "github.com/stackrox/rox/central/group/service"
 	imageService "github.com/stackrox/rox/central/image/service"
+	"github.com/stackrox/rox/central/imageintegration"
+	iiDatastore "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
+	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	interceptorSingletons "github.com/stackrox/rox/central/interceptor/singletons"
 	"github.com/stackrox/rox/central/jwt"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
@@ -210,6 +213,8 @@ func startGRPCServer() {
 
 	enrichanddetect.GetLoop().Start()
 	startedSig := server.Start()
+
+	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 	go watchdog(startedSig, grpcServerWatchdogTimeout)
 }
 
@@ -221,6 +226,47 @@ func allResourcesViewPermissions() []*v1.Permission {
 		result[i] = permissions.View(resource)
 	}
 	return result
+}
+
+func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
+	integrations := make(map[int]iiStore.DelayedIntegration, len(integrationsInput))
+	for k, v := range integrationsInput {
+		integrations[k] = v
+	}
+	ds := iiDatastore.Singleton()
+	for len(integrations) > 0 {
+		for idx, integration := range integrations {
+			_, exists, _ := ds.GetImageIntegration(integration.Integration.GetId())
+			if exists {
+				delete(integrations, idx)
+				continue
+			}
+			ready := integration.Trigger()
+			if !ready {
+				continue
+			}
+			// add the integration first, which is more likely to fail. If it does, no big deal -- you can still try to
+			// manually add it and get the error message.
+			err := imageintegration.ToNotify().NotifyUpdated(integration.Integration)
+			if err == nil {
+				err = ds.UpdateImageIntegration(integration.Integration)
+				if err != nil {
+					// so, we added the integration to the set but we weren't able to save it.
+					// This is ok -- the image scanner will "work" and after a restart we'll try to save it again.
+					log.Errorf("We added the %q integration, but saving it failed with: %v. We'll try again next restart", integration.Integration.GetName(), err)
+				} else {
+					log.Infof("Registered integration %q", integration.Integration.GetName())
+				}
+				enrichanddetect.GetLoop().ShortCircuit()
+			} else {
+				log.Errorf("Unable to register integration %q: %v", integration.Integration.GetName(), err)
+			}
+			// either way, time to stop watching this entry
+			delete(integrations, idx)
+		}
+		time.Sleep(5 * time.Second)
+	}
+	log.Debugf("All dynamic integrations registered, exiting")
 }
 
 // allResourcesViewPermissions returns a slice containing view permissions for all resource types.

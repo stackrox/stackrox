@@ -1,6 +1,9 @@
 package store
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"github.com/stackrox/clairify/client"
+	"github.com/stackrox/rox/generated/storage"
+)
 
 // DefaultImageIntegrations are the default public registries
 var DefaultImageIntegrations = []*storage.ImageIntegration{
@@ -49,3 +52,33 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 		},
 	},
 }
+
+// DelayedIntegration is a default integration to be added only when the trigger function returns true
+type DelayedIntegration struct {
+	Trigger     func() bool
+	Integration *storage.ImageIntegration
+}
+
+var (
+	defaultScanner = &storage.ImageIntegration{
+		Id:         "81a5e2bb-80ea-487d-9cc6-7d53c00463e4",
+		Name:       "Stackrox Scanner",
+		Type:       "clairify",
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER},
+		IntegrationConfig: &storage.ImageIntegration_Clairify{
+			Clairify: &storage.ClairifyConfig{
+				Endpoint: "http://scanner.stackrox:8080",
+			},
+		},
+	}
+	// DelayedIntegrations are default integrations to be added only when the trigger function returns true
+	DelayedIntegrations = []DelayedIntegration{
+		{
+			Trigger: func() bool {
+				client := client.New(defaultScanner.GetClairify().GetEndpoint(), true)
+				return client.Ping() == nil
+			},
+			Integration: defaultScanner,
+		},
+	}
+)
