@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
+import { actions as backendActions } from 'reducers/network/backend';
 import { actions as pageActions } from 'reducers/network/page';
 import PropTypes from 'prop-types';
 import Panel from 'Components/Panel';
@@ -19,7 +20,8 @@ class Simulator extends Component {
     static propTypes = {
         wizardOpen: PropTypes.bool.isRequired,
         wizardStage: PropTypes.string.isRequired,
-        onClose: PropTypes.func.isRequired,
+        closeWizard: PropTypes.func.isRequired,
+        setModification: PropTypes.func.isRequired,
         modificationState: PropTypes.string.isRequired,
 
         errorMessage: PropTypes.string.isRequired
@@ -37,7 +39,8 @@ class Simulator extends Component {
     };
 
     onClose = () => {
-        this.props.onClose();
+        this.props.closeWizard();
+        this.props.setModification(null);
     };
 
     renderProcessingView = () => {
@@ -106,7 +109,7 @@ class Simulator extends Component {
                 <Panel
                     className="border-t-0 border-r-0 border-b-0"
                     header={header}
-                    onClose={this.props.onClose}
+                    onClose={this.onClose}
                     closeButtonClassName={`bg-${colorType}-600 hover:bg-${colorType}-700`}
                     closeButtonIconColor="text-base-100"
                 >
@@ -138,7 +141,8 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = {
-    onClose: pageActions.closeNetworkWizard
+    closeWizard: pageActions.closeNetworkWizard,
+    setModification: backendActions.fetchNetworkPolicyModification.success
 };
 
 export default connect(
