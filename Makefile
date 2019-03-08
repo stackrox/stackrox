@@ -304,6 +304,11 @@ coverage:
 ###########
 ## Image ##
 ###########
+
+# Exists for compatibility reasons. Please consider migrating to using `make main-image`.
+.PHONY: image
+image: main-image
+
 .PHONY: main-image
 main-image: main-build clean-image $(MERGED_API_SWAGGER_SPEC)
 	make -C ui build
