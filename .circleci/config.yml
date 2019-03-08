@@ -365,7 +365,9 @@ jobs:
           - generated
           - ui/deps
           - vendor
-          - bazel-bin/roxctl/linux_amd64_pure_stripped
+          - bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl
+          - bazel-bin/roxctl/darwin_amd64_pure_stripped/roxctl
+          - bazel-bin/roxctl/windows_amd64_pure_stripped/roxctl.exe
 
       - store_artifacts:
           path: bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl
@@ -986,6 +988,8 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
 
       - run:
           name: Push image into stackrox.io
@@ -1009,6 +1013,24 @@ jobs:
             docker tag     docker.io/stackrox/collector:$COLLECTOR_TAG collector.stackrox.io/collector:$COLLECTOR_TAG
             docker push collector.stackrox.io/collector:$COLLECTOR_TAG | cat
 
+      - run:
+          name: Push roxctl to stackrox-hub
+          working_directory: bazel-bin/roxctl
+          command: |
+            gcloud auth activate-service-account --key-file <(echo "$GOOGLE_CREDENTIALS_ROXCTL_UPLOAD")
+            gcloud auth list
+            MAIN_TAG=$(make tag)
+
+            for release in "${MAIN_TAG}" latest; do
+              gsutil cp linux_amd64_pure_stripped/roxctl "gs://sr-roxc/${release}/bin/linux/roxctl"
+              gsutil cp linux_amd64_pure_stripped/roxctl "gs://sr-roxc/${release}/bin/Linux/roxctl"
+
+              gsutil cp darwin_amd64_pure_stripped/roxctl "gs://sr-roxc/${release}/bin/darwin/roxctl"
+              gsutil cp darwin_amd64_pure_stripped/roxctl "gs://sr-roxc/${release}/bin/Darwin/roxctl"
+
+              gsutil cp windows_amd64_pure_stripped/roxctl.exe "gs://sr-roxc/${release}/bin/windows/roxctl.exe"
+              gsutil cp windows_amd64_pure_stripped/roxctl.exe "gs://sr-roxc/${release}/bin/Windows/roxctl.exe"
+            done
 
 workflows:
   version: 2
