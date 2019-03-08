@@ -6,7 +6,8 @@ export const types = {
     OPEN_WIZARD: 'network/OPEN_WIZARD',
     CLOSE_WIZARD: 'network/CLOSE_WIZARD',
     OPEN_DIALOGUE: 'network/OPEN_DIALOGUE',
-    CLOSE_DIALOGUE: 'network/CLOSE_DIALOGUE'
+    CLOSE_DIALOGUE: 'network/CLOSE_DIALOGUE',
+    SET_NETWORK_ACTIVITY_TIME_WINDOW: 'network/SET_NETWORK_ACTIVITY_TIME_WINDOW'
 };
 
 // Actions
@@ -15,7 +16,11 @@ export const actions = {
     openNetworkWizard: () => ({ type: types.OPEN_WIZARD }),
     closeNetworkWizard: () => ({ type: types.CLOSE_WIZARD }),
     openNetworkDialogue: () => ({ type: types.OPEN_DIALOGUE }),
-    closeNetworkDialogue: () => ({ type: types.CLOSE_DIALOGUE })
+    closeNetworkDialogue: () => ({ type: types.CLOSE_DIALOGUE }),
+    setNetworkActivityTimeWindow: window => ({
+        type: types.SET_NETWORK_ACTIVITY_TIME_WINDOW,
+        window
+    })
 };
 
 // Reducers
@@ -40,19 +45,29 @@ const dialogueOpen = (state = false, action) => {
     return state;
 };
 
+const networkActivityTimeWindow = (state = 'All time', action) => {
+    if (action.type === types.SET_NETWORK_ACTIVITY_TIME_WINDOW) {
+        return action.window;
+    }
+    return state;
+};
+
 const reducer = combineReducers({
     wizardOpen,
-    dialogueOpen
+    dialogueOpen,
+    networkActivityTimeWindow
 });
 
 // Selectors
 
 const getNetworkWizardOpen = state => state.wizardOpen;
 const getNetworDialogueOpen = state => state.dialogueOpen;
+const getNetworkActivityTimeWindow = state => state.networkActivityTimeWindow;
 
 export const selectors = {
     getNetworkWizardOpen,
-    getNetworDialogueOpen
+    getNetworDialogueOpen,
+    getNetworkActivityTimeWindow
 };
 
 export default reducer;

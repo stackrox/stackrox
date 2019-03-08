@@ -10,6 +10,7 @@ import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import ClusterSelect from './ClusterSelect';
 import SimulatorButton from './SimulatorButton';
+import TimeWindowSelector from './TimeWindowSelector';
 
 class Header extends Component {
     static propTypes = {
@@ -49,6 +50,7 @@ class Header extends Component {
                     onSearch={this.onSearch}
                 />
                 <ClusterSelect />
+                <TimeWindowSelector />
                 <SimulatorButton />
             </PageHeader>
         );

@@ -9,6 +9,7 @@ import {
 } from 'reducers/network/backend';
 import { types as dialogueNetworkTypes } from 'reducers/network/dialogue';
 import { actions as graphNetworkActions, types as graphNetworkTypes } from 'reducers/network/graph';
+import { types as pageNetworkTypes } from 'reducers/network/page';
 import { types as searchNetworkTypes } from 'reducers/network/search';
 import { actions as clusterActions } from 'reducers/clusters';
 import { actions as notificationActions } from 'reducers/notifications';
@@ -17,11 +18,18 @@ import { takeEveryLocation } from 'utils/sagaEffects';
 import { types as deploymentTypes } from 'reducers/deployments';
 import { types as locationActionTypes } from 'reducers/routes';
 import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import timeWindowToDate from 'utils/timeWindows';
 import { getDeployment } from './deploymentSagas';
 
 function* getNetworkFlowGraph(clusterId, query) {
     try {
-        const flowResult = yield call(service.fetchNetworkFlowGraph, clusterId, query, null);
+        const timeWindow = yield select(selectors.getNetworkActivityTimeWindow);
+        const flowResult = yield call(
+            service.fetchNetworkFlowGraph,
+            clusterId,
+            query,
+            timeWindowToDate(timeWindow)
+        );
         yield put(backendNetworkActions.fetchNetworkFlowGraph.success(flowResult.response));
         yield put(graphNetworkActions.setNetworkFlowMapping(flowResult.response));
         yield put(graphNetworkActions.updateNetworkGraphTimestamp(new Date()));
@@ -146,6 +154,10 @@ function* watchSelectNetworkCluster() {
     yield takeLatest(graphNetworkTypes.SELECT_NETWORK_CLUSTER_ID, filterNetworkPageBySearch);
 }
 
+function* watchSetActivityTimeWindow() {
+    yield takeLatest(pageNetworkTypes.SET_NETWORK_ACTIVITY_TIME_WINDOW, filterNetworkPageBySearch);
+}
+
 function* watchNetworkPolicyModification() {
     yield takeLatest(
         backendNetworkTypes.FETCH_NETWORK_POLICY_MODIFICATION.SUCCESS,
@@ -171,6 +183,7 @@ export default function* network() {
         fork(watchNetworkPoliciesRequest),
         fork(watchFetchDeploymentRequest),
         fork(watchSelectNetworkCluster),
+        fork(watchSetActivityTimeWindow),
         fork(watchNetworkNodesUpdate),
         fork(watchNetworkPolicyModification),
         fork(watchNotifyNetworkPolicyModification),
