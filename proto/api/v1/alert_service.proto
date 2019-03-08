@@ -87,38 +87,45 @@ message GetAlertTimeseriesResponse {
     repeated ClusterAlerts clusters = 1;
 }
 
+// AlertService APIs can be used to manage alerts.
 service AlertService {
 
+    // GetAlert returns the alert given its id.
     rpc GetAlert (ResourceByID) returns (storage.Alert) {
         option (google.api.http) = {
             get: "/v1/alerts/{id}"
         };
     }
 
+    // ListAlerts returns the minimally sized alert list.
     rpc ListAlerts (ListAlertsRequest) returns (ListAlertsResponse) {
         option (google.api.http) = {
             get: "/v1/alerts"
         };
     }
 
+    // GetAlertsGroup returns alerts grouped by policy.
     rpc GetAlertsGroup (ListAlertsRequest) returns (GetAlertsGroupResponse) {
         option (google.api.http) = {
             get: "/v1/alerts/summary/groups"
         };
     }
 
+    // GetAlertsCounts returns the number of alerts in the requested cluster or category.
     rpc GetAlertsCounts (GetAlertsCountsRequest) returns (GetAlertsCountsResponse) {
         option (google.api.http) = {
             get: "/v1/alerts/summary/counts"
         };
     }
 
+    // GetAlertTimeseries returns the alerts sorted by time.
     rpc GetAlertTimeseries (ListAlertsRequest) returns (GetAlertTimeseriesResponse) {
         option (google.api.http) = {
             get: "/v1/alerts/summary/timeseries"
         };
     }
 
+    // ResolveAlert marks the given alert (by ID) as resolved.
     rpc ResolveAlert (ResolveAlertRequest) returns (Empty) {
         option (google.api.http) = {
             patch: "/v1/alerts/{id}/resolve"
@@ -126,13 +133,12 @@ service AlertService {
         };
     }
 
+    // SnoozeAlert is deprecated.
     rpc SnoozeAlert (SnoozeAlertRequest) returns (Empty) {
         option (google.api.http) = {
             patch: "/v1/alerts/{id}/snooze"
             body: "*"
         };
     }
-
-    // No deletion of alerts
 
 }

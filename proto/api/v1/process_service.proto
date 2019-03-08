@@ -31,14 +31,17 @@ message GetGroupedProcessesResponse {
     repeated ProcessNameGroup groups = 3;
 }
 
+// ProcessService APIs can be used to list processes executed in deployments.
 service ProcessService {
 
+    // GetProcessesByDeployment returns the processes executed in the given deployment.
     rpc GetProcessesByDeployment (GetProcessesByDeploymentRequest) returns (GetProcessesResponse) {
         option (google.api.http) = {
             get: "/v1/processes/deployment/{deployment_id}"
         };
     }
 
+    // GetGroupedProcessByDeployment returns all the processes executed grouped by deployment.
     rpc GetGroupedProcessByDeployment (GetProcessesByDeploymentRequest) returns (GetGroupedProcessesResponse) {
         option (google.api.http) = {
             get: "/v1/processes/deployment/{deployment_id}/grouped"

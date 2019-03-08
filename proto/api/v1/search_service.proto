@@ -36,11 +36,19 @@ enum SearchDataType {
     SEARCH_ENUM     = 5;
 }
 
+// RawQuery represents the search query string.
+// The format of the query string is "<field name>:<value,value,...>+<field name>:<value, value,...>+..."
+// For example:
+// To search for deployments named "central" and "sensor" in the namespace "stackrox", the query string would be
+// "Deployment:central,sensor+Namespace:stackrox"
+// RawQuery is used in ListAPIs to search for a particular object.
 message RawQuery {
-    string query          = 1; // A query is a formatted string like Cluster:dev+Namespace:stackrox+Image Name:nginx
+    string query          = 1;
     Pagination pagination = 2;
 }
 
+// RawSearchRequest is used to scope a given search in a specific category.
+// The search categories could be deployments, policies, images etc.
 message RawSearchRequest {
     string query                       = 1;
     repeated SearchCategory categories = 2;

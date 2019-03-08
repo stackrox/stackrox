@@ -32,20 +32,24 @@ message GetAPITokensResponse {
     repeated storage.TokenMetadata tokens = 1;
 }
 
+// APITokenService APIs can be used to manage API tokens.
 service APITokenService {
 
+    // GetAPIToken returns API token metadata for a given id.
     rpc GetAPIToken (ResourceByID) returns (storage.TokenMetadata) {
         option (google.api.http) = {
             get: "/v1/apitokens/{id}"
         };
     }
 
+    // GetAPITokens returns all the API tokens.
     rpc GetAPITokens (GetAPITokensRequest) returns (GetAPITokensResponse) {
         option (google.api.http) = {
             get: "/v1/apitokens"
         };
     }
 
+    // GenerateToken generates API token for a given user and role.
     rpc GenerateToken (GenerateTokenRequest) returns (GenerateTokenResponse) {
         option (google.api.http) = {
             post: "/v1/apitokens/generate"
@@ -53,9 +57,11 @@ service APITokenService {
         };
     }
 
+    // RevokeToken removes the API token for a given id.
     rpc RevokeToken (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             patch: "/v1/apitokens/revoke/{id}"
         };
     }
+
 }

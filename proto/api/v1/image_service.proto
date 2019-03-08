@@ -15,20 +15,24 @@ message ListImagesResponse {
     repeated storage.ListImage images = 1;
 }
 
+// ImageService APIs manages image metadata.
 service ImageService {
 
+    // GetImage returns the image given its ID.
     rpc GetImage (ResourceByID) returns (storage.Image) {
         option (google.api.http) = {
             get: "/v1/images/{id}"
         };
     }
 
+    // ListImages returns all the images.
     rpc ListImages (RawQuery) returns (ListImagesResponse) {
         option (google.api.http) = {
             get: "/v1/images"
         };
     }
 
+    // InvalidateScanAndRegistryCaches removes the image metadata cache.
     rpc InvalidateScanAndRegistryCaches (Empty) returns (Empty) {
         option (google.api.http) = {
             get: "/v1/images/cache/invalidate"

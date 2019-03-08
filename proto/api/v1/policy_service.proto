@@ -48,20 +48,24 @@ message PatchPolicyRequest {
     }
 }
 
+// PolicyService APIs can be used to manage policies.
 service PolicyService {
 
+    // GetPolicy returns the requested policy by ID.
     rpc GetPolicy (ResourceByID) returns (storage.Policy) {
         option (google.api.http) = {
             get: "/v1/policies/{id}"
         };
     }
 
+    // ListPolicies returns the list of policies.
     rpc ListPolicies (RawQuery) returns (ListPoliciesResponse) {
         option (google.api.http) = {
             get: "/v1/policies"
         };
     }
 
+    // PostPolicy creates a new policy.
     rpc PostPolicy (storage.Policy) returns (storage.Policy) {
         option (google.api.http) = {
             post: "/v1/policies"
@@ -69,6 +73,7 @@ service PolicyService {
         };
     }
 
+    // PutPolicy modifies an existing policy.
     rpc PutPolicy (storage.Policy) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/policies/{id}"
@@ -76,6 +81,7 @@ service PolicyService {
         };
     }
 
+    // PatchPolicy edits an existing policy.
     rpc PatchPolicy (PatchPolicyRequest) returns (Empty) {
         option (google.api.http) = {
             patch: "/v1/policies/{id}"
@@ -83,18 +89,21 @@ service PolicyService {
         };
     }
 
+    // DeletePolicy removes a policy by ID.
     rpc DeletePolicy (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/policies/{id}"
         };
     }
 
+    // ReassessPolicies reevaluates all the policies.
     rpc ReassessPolicies (Empty) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/policies/reassess"
         };
     }
 
+    // DryRunPolicy evaluates the given policy and returns any alerts without creating the policy.
     rpc DryRunPolicy (storage.Policy) returns (DryRunResponse) {
         option (google.api.http) = {
             post: "/v1/policies/dryrun"
@@ -102,12 +111,14 @@ service PolicyService {
         };
     }
 
+    // GetPolicyCategories returns the policy categories.
     rpc GetPolicyCategories (Empty) returns (PolicyCategoriesResponse) {
         option (google.api.http) = {
             get: "/v1/policyCategories"
         };
     }
 
+    // RenamePolicyCategory renames the given policy category.
     rpc RenamePolicyCategory (RenamePolicyCategoryRequest) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/policyCategories/{old_category}"
@@ -115,6 +126,7 @@ service PolicyService {
         };
     }
 
+    // DeletePolicyCategory removes the given policy category.
     rpc DeletePolicyCategory (DeletePolicyCategoryRequest) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/policyCategories/{category}"

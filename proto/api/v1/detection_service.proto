@@ -39,8 +39,10 @@ message DeployDetectionResponse {
     repeated Run runs = 1;
 }
 
+// DetectionService APIs can be used to check for build and deploy time policy violations.
 service DetectionService {
 
+    // DetectBuildTime checks if any images violate build time policies.
     rpc DetectBuildTime(BuildDetectionRequest) returns (BuildDetectionResponse) {
         option (google.api.http) = {
             post: "/v1/detect/build"
@@ -48,6 +50,7 @@ service DetectionService {
         };
     }
 
+    // DetectDeployTime checks if any deployments violate deploy time policies.
     rpc DetectDeployTime(DeployDetectionRequest) returns (DeployDetectionResponse) {
         option (google.api.http) = {
             post: "/v1/detect/deploy"
@@ -55,10 +58,12 @@ service DetectionService {
         };
     }
 
+    // DetectDeployTimeFromYAML checks if the given deployment yaml violates any deploy time policies.
     rpc DetectDeployTimeFromYAML(DeployYAMLDetectionRequest) returns (DeployDetectionResponse) {
         option (google.api.http) = {
             post: "/v1/detect/deploy/yaml"
             body: "*"
         };
     }
+
 }

@@ -19,20 +19,24 @@ message GetImageIntegrationsResponse {
     repeated storage.ImageIntegration integrations = 1;
 }
 
+// ImageIntegrationService APIs manage image registry and image scanner integration.
 service ImageIntegrationService {
 
+    // GetImageIntegration returns the image integration given its ID.
     rpc GetImageIntegration (ResourceByID) returns (storage.ImageIntegration) {
         option (google.api.http) = {
             get: "/v1/imageintegrations/{id}"
         };
     }
 
+    // GetImageIntegrations returns all image integrations.
     rpc GetImageIntegrations (GetImageIntegrationsRequest) returns (GetImageIntegrationsResponse) {
         option (google.api.http) = {
             get: "/v1/imageintegrations"
         };
     }
 
+    // PostImageIntegration creates a image integraton.
     rpc PostImageIntegration (storage.ImageIntegration) returns (storage.ImageIntegration) {
         option (google.api.http) = {
             post: "/v1/imageintegrations"
@@ -40,6 +44,7 @@ service ImageIntegrationService {
         };
     }
 
+    // PutImageIntegration modifies a given image integration.
     rpc PutImageIntegration (storage.ImageIntegration) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/imageintegrations/{id}"
@@ -47,6 +52,7 @@ service ImageIntegrationService {
         };
     }
 
+    // TestImageIntegration checks if the given image integration is correctly configured.
     rpc TestImageIntegration (storage.ImageIntegration) returns (Empty) {
         option (google.api.http) = {
             post: "/v1/imageintegrations/test"
@@ -54,6 +60,7 @@ service ImageIntegrationService {
         };
     }
 
+    // DeleteImageIntegration removes a image integration given its ID.
     rpc DeleteImageIntegration (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/imageintegrations/{id}"

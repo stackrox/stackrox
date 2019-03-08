@@ -34,32 +34,38 @@ message GetDeploymentsResponse {
     repeated storage.Deployment deployments = 1;
 }
 
+// DeploymentService APIs can be used to manage deployments.
 service DeploymentService {
 
+    // GetDeployment returns a deployment given its ID.
     rpc GetDeployment (ResourceByID) returns (storage.Deployment) {
         option (google.api.http) = {
             get: "/v1/deployments/{id}"
         };
     }
 
+    // ListDeployments returns the list of deployments.
     rpc ListDeployments (RawQuery) returns (ListDeploymentsResponse) {
         option (google.api.http) = {
             get: "/v1/deployments"
         };
     }
 
+    // GetLabels returns the labels used by deployments.
     rpc GetLabels (Empty) returns (DeploymentLabelsResponse) {
         option (google.api.http) = {
             get: "/v1/deployments/metadata/labels"
         };
     }
 
+    // GetMultipliers is deprecated.
     rpc GetMultipliers (Empty) returns (GetMultipliersResponse) {
         option (google.api.http) = {
             get: "/v1/deployments/metadata/multipliers"
         };
     }
 
+    // AddMultiplier is deprecated.
     rpc AddMultiplier (storage.Multiplier) returns (storage.Multiplier) {
         option (google.api.http) = {
             post: "/v1/deployments/metadata/multipliers"
@@ -67,12 +73,14 @@ service DeploymentService {
         };
     }
 
+    // UpdateMultiplier is deprecated.
     rpc UpdateMultiplier (storage.Multiplier) returns (Empty) {
         option (google.api.http) = {
             put: "/v1/deployments/metadata/multipliers/{id}"
         };
     }
 
+    // RemoveMultiplier is deprecated.
     rpc RemoveMultiplier (ResourceByID) returns (Empty) {
         option (google.api.http) = {
             delete: "/v1/deployments/metadata/multipliers/{id}"
