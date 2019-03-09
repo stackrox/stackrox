@@ -1,7 +1,7 @@
 const wizardStages = {
     details: 'DETAILS',
     simulator: 'SIMULATOR',
-    apply: 'APPLY'
+    creator: 'CREATOR'
 };
 
 export default wizardStages;

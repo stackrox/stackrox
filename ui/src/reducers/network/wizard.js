@@ -8,7 +8,8 @@ import { types as deploymentTypes } from 'reducers/deployments';
 
 export const types = {
     SET_WIZARD_STAGE: 'network/SET_WIZARD_STAGE',
-    SET_POLICY_MODIFICATION_NAME: 'network/SET_POLICY_MODIFICATION_NAME'
+    SET_POLICY_MODIFICATION_NAME: 'network/SET_POLICY_MODIFICATION_NAME',
+    SET_POLICY_MODIFICATION_SOURCE: 'network/SET_POLICY_MODIFICATION_SOURCE'
 };
 
 // Actions
@@ -19,6 +20,10 @@ export const actions = {
     setNetworkPolicyModificationName: name => ({
         type: types.SET_POLICY_MODIFICATION_NAME,
         name
+    }),
+    setNetworkPolicyModificationSource: source => ({
+        type: types.SET_POLICY_MODIFICATION_SOURCE,
+        source
     })
 };
 
@@ -40,6 +45,13 @@ const networkPolicyModificationName = (state = null, action) => {
     return state;
 };
 
+const networkPolicyModificationSource = (state = null, action) => {
+    if (action.type === types.SET_POLICY_MODIFICATION_SOURCE) {
+        return action.source;
+    }
+    return state;
+};
+
 const selectedNodeDeployment = (state = {}, action) => {
     if (action.response && action.response.entities) {
         const { entities, result } = action.response;
@@ -56,6 +68,7 @@ const selectedNodeDeployment = (state = {}, action) => {
 const reducer = combineReducers({
     networkWizardStage,
     networkPolicyModificationName,
+    networkPolicyModificationSource,
     selectedNodeDeployment
 });
 
@@ -67,10 +80,12 @@ export default reducer;
 
 const getNetworkWizardStage = state => state.networkWizardStage;
 const getNetworkPolicyModificationName = state => state.networkPolicyModificationName;
+const getNetworkPolicyModificationSource = state => state.networkPolicyModificationSource;
 const getNodeDeployment = state => state.selectedNodeDeployment;
 
 export const selectors = {
     getNetworkWizardStage,
     getNetworkPolicyModificationName,
+    getNetworkPolicyModificationSource,
     getNodeDeployment
 };

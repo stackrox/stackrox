@@ -2,48 +2,28 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import PropTypes from 'prop-types';
-import * as Icon from 'react-feather';
 import { selectors } from 'reducers';
 
 import Message from 'Components/Message';
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
-
-const successMessage = 'YAML file uploaded successfully';
+import SendNotificationSection from './SendNotificationSection';
 
 class SuccessView extends Component {
     static propTypes = {
-        modificationName: PropTypes.string.isRequired,
+        modificationName: PropTypes.string,
+        modificationSource: PropTypes.string,
         modification: PropTypes.shape({
             applyYaml: PropTypes.string.isRequired
-        }).isRequired,
-        onCollapse: PropTypes.func.isRequired
+        }),
+        modificationState: PropTypes.string.isRequired,
+        policyGraphState: PropTypes.string.isRequired
     };
 
-    state = {
-        isCollapsed: true
-    };
-
-    toggleCollapse = () => {
-        this.props.onCollapse(!this.state.isCollapsed);
-        this.setState(prevState => ({ isCollapsed: !prevState.isCollapsed }));
-    };
-
-    renderCollapseButton = () => {
-        const icon = this.state.isCollapsed ? (
-            <Icon.Maximize2 className="h-4 w-4 text-base-500 hover:text-base-600" />
-        ) : (
-            <Icon.Minimize2 className="h-4 w-4 text-base-500 hover:text-base-600" />
-        );
-        return (
-            <button
-                type="button"
-                className="absolute pin-r pin-t h-9 w-12 border-base-200 z-10"
-                onClick={this.toggleCollapse}
-            >
-                {icon}
-            </button>
-        );
+    static defaultProps = {
+        modification: null,
+        modificationName: '',
+        modificationSource: 'GENERATED'
     };
 
     renderTabs = () => {
@@ -63,21 +43,37 @@ class SuccessView extends Component {
     };
 
     render() {
+        const { modification, modificationState, policyGraphState } = this.props;
+        if (
+            modification === null ||
+            modificationState !== 'SUCCESS' ||
+            policyGraphState !== 'SUCCESS'
+        )
+            return null;
+
+        const successMessage =
+            this.props.modificationSource === 'UPLOAD'
+                ? 'YAML uploaded successfully'
+                : 'YAML generated successfully';
+
         return (
-            <section className="flex flex-col bg-base-100 shadow text-base-600 border border-base-200 m-3 mt-4 overflow-hidden h-full">
-                <Message type="info" message={successMessage} />
-                <div className="flex relative h-full">
-                    {this.renderTabs()}
-                    {this.renderCollapseButton()}
-                </div>
-            </section>
+            <div className="flex flex-col w-full h-full space-between">
+                <section className="flex flex-col bg-base-100 shadow text-base-600 border border-base-200 m-3 mt-4 overflow-hidden h-full">
+                    <Message type="info" message={successMessage} />
+                    <div className="flex relative h-full">{this.renderTabs()}</div>
+                </section>
+                <SendNotificationSection />
+            </div>
         );
     }
 }
 
 const mapStateToProps = createStructuredSelector({
     modificationName: selectors.getNetworkPolicyModificationName,
-    modification: selectors.getNetworkPolicyModification
+    modificationSource: selectors.getNetworkPolicyModificationSource,
+    modification: selectors.getNetworkPolicyModification,
+    modificationState: selectors.getNetworkPolicyModificationState,
+    policyGraphState: selectors.getNetworkPolicyGraphState
 });
 
 export default connect(mapStateToProps)(SuccessView);

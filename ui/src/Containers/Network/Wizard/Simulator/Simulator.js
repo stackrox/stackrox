@@ -1,18 +1,14 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { createSelector, createStructuredSelector } from 'reselect';
+import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions as backendActions } from 'reducers/network/backend';
 import { actions as pageActions } from 'reducers/network/page';
 import PropTypes from 'prop-types';
 import Panel from 'Components/Panel';
 
-import DragAndDrop from './Tiles/DragAndDrop';
-import GettingStarted from './Tiles/GettingStarted';
-import LoadingSection from './Tiles/LoadingSection';
-
 import wizardStages from '../wizardStages';
-import SendNotificationSection from './SendNotificationSection';
+import ProcessingView from './ProcessingView';
 import SuccessView from './SuccessView';
 import ErrorView from './ErrorView';
 
@@ -22,75 +18,12 @@ class Simulator extends Component {
         wizardStage: PropTypes.string.isRequired,
         closeWizard: PropTypes.func.isRequired,
         setModification: PropTypes.func.isRequired,
-        modificationState: PropTypes.string.isRequired,
-
-        errorMessage: PropTypes.string.isRequired
-    };
-
-    state = {
-        showGetStartedSection: true,
-        showDragAndDrop: true
-    };
-
-    hideGetStartedSection = () => this.setState({ showGetStartedSection: false });
-
-    toggleDragAndDrop = showDragAndDrop => {
-        this.setState({ showDragAndDrop });
+        modificationState: PropTypes.string.isRequired
     };
 
     onClose = () => {
         this.props.closeWizard();
         this.props.setModification(null);
-    };
-
-    renderProcessingView = () => {
-        const { modificationState } = this.props;
-        if (modificationState !== 'REQUEST') return null;
-
-        return <div className="flex flex-col flex-1">{LoadingSection()}</div>;
-    };
-
-    renderUploadView = () => {
-        const { modificationState } = this.props;
-        if (modificationState !== 'INITIAL') return null;
-
-        const uploadMessage = 'Click to upload or drop network policy yaml inside';
-        return (
-            <div className="flex flex-col overflow-auto w-full h-full pb-4">
-                {this.state.showGetStartedSection && GettingStarted(this.hideGetStartedSection)}
-                <DragAndDrop uploadMessage={uploadMessage} />
-            </div>
-        );
-    };
-
-    renderSuccessView = () => {
-        const { modificationState } = this.props;
-        if (modificationState !== 'SUCCESS') return null;
-
-        const uploadMessage = 'Simulate another set of policies';
-        return (
-            <div className="flex flex-col w-full h-full space-between">
-                {this.state.showDragAndDrop && <DragAndDrop uploadMessage={uploadMessage} />}
-                <SuccessView onCollapse={this.toggleDragAndDrop} />
-                <SendNotificationSection />
-            </div>
-        );
-    };
-
-    renderErrorView = () => {
-        const { modificationState } = this.props;
-        if (modificationState !== 'ERROR') return null;
-
-        const uploadMessage = 'Simulate another set of policies';
-        return (
-            <div className="flex flex-col flex-1">
-                {this.state.showDragAndDrop && <DragAndDrop uploadMessage={uploadMessage} />}
-                <ErrorView
-                    errorMessage={this.props.errorMessage}
-                    onCollapse={this.toggleDragAndDrop}
-                />
-            </div>
-        );
     };
 
     render() {
@@ -113,31 +46,21 @@ class Simulator extends Component {
                     closeButtonClassName={`bg-${colorType}-600 hover:bg-${colorType}-700`}
                     closeButtonIconColor="text-base-100"
                 >
-                    {this.renderUploadView()}
-                    {this.renderProcessingView()}
-                    {this.renderErrorView()}
-                    {this.renderSuccessView()}
+                    <ProcessingView />
+                    <ErrorView />
+                    <SuccessView />
                 </Panel>
             </div>
         );
     }
 }
 
-const getModificationState = createSelector(
-    [selectors.getNetworkPolicyModification, selectors.getNetworkPolicyModificationState],
-    (modification, modificationState) => {
-        if (!modification) {
-            return 'INITIAL';
-        }
-        return modificationState;
-    }
-);
-
 const mapStateToProps = createStructuredSelector({
     wizardOpen: selectors.getNetworkWizardOpen,
     wizardStage: selectors.getNetworkWizardStage,
     errorMessage: selectors.getNetworkErrorMessage,
-    modificationState: getModificationState
+
+    modificationState: selectors.getNetworkPolicyModificationState
 });
 
 const mapDispatchToProps = {

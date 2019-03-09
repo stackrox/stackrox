@@ -71,6 +71,29 @@ export function fetchNetworkPolicies(policyIds) {
 }
 
 /**
+ * Generates a modification to policies based on a graph.
+ *
+ * @param {!String} clusterId
+ * @param {!Object} query
+ * @param {!String} since
+ * @returns {Promise<Object, Error>}
+ */
+export function generateNetworkModification(clusterId, query, date) {
+    let params;
+    if (date) {
+        const since = date.toISOString();
+        params = queryString.stringify({ query, since }, { arrayFormat: 'repeat' });
+    } else {
+        params = queryString.stringify({ query }, { arrayFormat: 'repeat' });
+    }
+    const options = {
+        method: 'GET',
+        url: `${networkPoliciesBaseUrl}/generate/${clusterId}?deleteExisting=ALL&${params}`
+    };
+    return axios(options).then(response => response.data.modification);
+}
+
+/**
  * Fetches Node updates.
  *
  * @returns {Promise<Object, Error>}

@@ -5,6 +5,7 @@ import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 
 import Details from './Details/Details';
+import Creator from './Creator/Creator';
 import Simulator from './Simulator/Simulator';
 import NodesUpdateSection from '../Graph/Overlays/NodesUpdateSection';
 import ZoomButtons from '../Graph/Overlays/ZoomButtons';
@@ -15,6 +16,7 @@ function Wizard(props) {
         <div className={`${width} h-full absolute pin-r z-1 bg-primary-200 shadow-lg`}>
             <NodesUpdateSection />
             <Details />
+            <Creator />
             <Simulator />
             <ZoomButtons getGraphRef={props.getGraphRef} />
         </div>

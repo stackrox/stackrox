@@ -11,6 +11,7 @@ import { types as dialogueNetworkTypes } from 'reducers/network/dialogue';
 import { actions as graphNetworkActions, types as graphNetworkTypes } from 'reducers/network/graph';
 import { types as pageNetworkTypes } from 'reducers/network/page';
 import { types as searchNetworkTypes } from 'reducers/network/search';
+import { actions as wizardNetworkActions } from 'reducers/network/wizard';
 import { actions as clusterActions } from 'reducers/clusters';
 import { actions as notificationActions } from 'reducers/notifications';
 import { selectors } from 'reducers';
@@ -76,6 +77,29 @@ export function* pollNodeUpdates() {
             yield put(backendNetworkActions.fetchNodeUpdates.failure(error));
         }
         yield call(delay, 5000); // poll every 5 sec
+    }
+}
+
+function* generateNetworkModification() {
+    yield put(wizardNetworkActions.setNetworkPolicyModificationName('StackRox Generated'));
+    try {
+        const clusterId = yield select(selectors.getSelectedNetworkClusterId);
+        const searchOptions = yield select(selectors.getNetworkSearchOptions);
+        const timeWindow = yield select(selectors.getNetworkActivityTimeWindow);
+        const modification = yield call(
+            service.generateNetworkModification,
+            clusterId,
+            searchOptionsToQuery(searchOptions),
+            timeWindowToDate(timeWindow)
+        );
+        yield put(wizardNetworkActions.setNetworkPolicyModificationSource('GENERATED'));
+        yield put(backendNetworkActions.fetchNetworkPolicyModification.success(modification));
+        yield put(notificationActions.addNotification('Successfully generated YAML.'));
+        yield put(notificationActions.removeOldestNotification());
+    } catch (error) {
+        yield put(backendNetworkActions.fetchNetworkPolicyModification.failure(error));
+        yield put(notificationActions.addNotification(error.response.data.error));
+        yield put(notificationActions.removeOldestNotification());
     }
 }
 
@@ -149,6 +173,12 @@ function* watchFetchDeploymentRequest() {
 function* watchNetworkPoliciesRequest() {
     yield takeLatest(backendNetworkTypes.FETCH_NETWORK_POLICIES.REQUEST, getNetworkPolicies);
 }
+function* watchGenerateNetworkModification() {
+    yield takeLatest(
+        backendNetworkTypes.FETCH_NETWORK_POLICY_MODIFICATION.REQUEST,
+        generateNetworkModification
+    );
+}
 
 function* watchSelectNetworkCluster() {
     yield takeLatest(graphNetworkTypes.SELECT_NETWORK_CLUSTER_ID, filterNetworkPageBySearch);
@@ -182,6 +212,7 @@ export default function* network() {
         fork(watchNetworkSearchOptions),
         fork(watchNetworkPoliciesRequest),
         fork(watchFetchDeploymentRequest),
+        fork(watchGenerateNetworkModification),
         fork(watchSelectNetworkCluster),
         fork(watchSetActivityTimeWindow),
         fork(watchNetworkNodesUpdate),

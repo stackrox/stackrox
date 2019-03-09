@@ -22,7 +22,7 @@ class SimulatorButton extends Component {
             this.props.closeWizard();
         } else {
             this.props.openWizard();
-            this.props.setWizardStage(wizardStages.simulator);
+            this.props.setWizardStage(wizardStages.creator);
         }
     };
 
