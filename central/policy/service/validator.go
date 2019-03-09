@@ -164,7 +164,7 @@ func (s *policyValidator) validateWhitelists(policy *storage.Policy) error {
 
 func (s *policyValidator) validateWhitelist(whitelist *storage.Whitelist) error {
 	// TODO(cgorman) once we have real whitelist support in UI, add validation for whitelist name
-	if whitelist.GetContainer() == nil && whitelist.GetDeployment() == nil {
+	if whitelist.GetContainer() == nil && whitelist.GetDeployment() == nil && whitelist.GetImage() == nil {
 		return errors.New("all whitelists must have some criteria to match on")
 	}
 	if whitelist.GetContainer() != nil {
@@ -175,6 +175,11 @@ func (s *policyValidator) validateWhitelist(whitelist *storage.Whitelist) error 
 	if whitelist.GetDeployment() != nil {
 		if err := s.validateDeploymentWhitelist(whitelist); err != nil {
 			return err
+		}
+	}
+	if whitelist.GetImage() != nil {
+		if whitelist.GetImage().GetName() == "" {
+			return fmt.Errorf("image whitelist must have nonempty name")
 		}
 	}
 	return nil

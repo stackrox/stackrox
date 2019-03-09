@@ -3,6 +3,7 @@ package buildtime
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/detection/image"
@@ -21,6 +22,20 @@ const (
 
 type detectorImpl struct {
 	policySet image.PolicySet
+}
+
+func matchesImageWhitelist(image string, whitelists []*storage.Whitelist) bool {
+	for _, w := range whitelists {
+		if w.GetImage() == nil {
+			continue
+		}
+		// The rationale for using a prefix is that it is the easiet way in the current format
+		// to support whitelisting registries, registry/remote, etc
+		if strings.HasPrefix(image, w.GetImage().GetName()) {
+			return true
+		}
+	}
+	return false
 }
 
 // Detect runs detection on an image, returning any generated alerts.
@@ -43,6 +58,12 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 
 	var alerts []*storage.Alert
 	err = d.policySet.ForEach(func(p *storage.Policy, matcher searchbasedpolicies.Matcher) error {
+		if p.GetDisabled() {
+			return nil
+		}
+		if matchesImageWhitelist(image.GetName().GetFullName(), p.GetWhitelists()) {
+			return nil
+		}
 		violations, err := matcher.MatchOne(tempIndexer, types.NewDigest(image.GetId()).Digest())
 		if err != nil {
 			return fmt.Errorf("matching against policy %s: %s", p.GetName(), err)

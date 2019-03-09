@@ -733,6 +733,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"container: Whitelist_Container",
 		"deployment: Whitelist_Deployment",
 		"expiration: Time",
+		"image: Whitelist_Image",
 		"name: String!",
 	}))
 	utils.Must(builder.AddType("Whitelist_Container", []string{
@@ -741,6 +742,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Whitelist_Deployment", []string{
 		"name: String!",
 		"scope: Scope",
+	}))
+	utils.Must(builder.AddType("Whitelist_Image", []string{
+		"name: String!",
 	}))
 }
 
@@ -6162,6 +6166,11 @@ func (resolver *whitelistResolver) Expiration() (*graphql.Time, error) {
 	return timestamp(value)
 }
 
+func (resolver *whitelistResolver) Image() (*whitelist_ImageResolver, error) {
+	value := resolver.data.GetImage()
+	return resolver.root.wrapWhitelist_Image(value, true, nil)
+}
+
 func (resolver *whitelistResolver) Name() string {
 	value := resolver.data.GetName()
 	return value
@@ -6226,4 +6235,32 @@ func (resolver *whitelist_DeploymentResolver) Name() string {
 func (resolver *whitelist_DeploymentResolver) Scope() (*scopeResolver, error) {
 	value := resolver.data.GetScope()
 	return resolver.root.wrapScope(value, true, nil)
+}
+
+type whitelist_ImageResolver struct {
+	root *Resolver
+	data *storage.Whitelist_Image
+}
+
+func (resolver *Resolver) wrapWhitelist_Image(value *storage.Whitelist_Image, ok bool, err error) (*whitelist_ImageResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &whitelist_ImageResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapWhitelist_Images(values []*storage.Whitelist_Image, err error) ([]*whitelist_ImageResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*whitelist_ImageResolver, len(values))
+	for i, v := range values {
+		output[i] = &whitelist_ImageResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *whitelist_ImageResolver) Name() string {
+	value := resolver.data.GetName()
+	return value
 }

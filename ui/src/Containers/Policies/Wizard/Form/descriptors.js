@@ -199,6 +199,14 @@ const policyDetailsFormDescriptor = [
         options: [],
         required: false,
         default: true
+    },
+    {
+        label: 'Images Whitelist',
+        jsonpath: 'images',
+        type: 'multiselect-creatable',
+        options: [],
+        required: false,
+        default: true
     }
 ];
 

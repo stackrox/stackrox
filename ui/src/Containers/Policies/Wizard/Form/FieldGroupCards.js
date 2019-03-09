@@ -18,7 +18,6 @@ class FieldGroupCards extends Component {
     static propTypes = {
         policyFormFields: PropTypes.shape({}).isRequired,
         formData: PropTypes.shape({}).isRequired,
-
         change: PropTypes.func.isRequired
     };
 
@@ -171,9 +170,10 @@ const getPolicyFormFields = createSelector(
         selectors.getNotifiers,
         selectors.getClusters,
         selectors.getDeployments,
+        selectors.getImages,
         selectors.getPolicyCategories
     ],
-    (notifiers, clusters, deployments, policyCategories) => {
+    (notifiers, clusters, deployments, images, policyCategories) => {
         const { descriptor } = policyFormFields.policyDetails;
         const policyDetailsFormFields = descriptor.map(field => {
             const newField = Object.assign({}, field);
@@ -195,6 +195,12 @@ const getPolicyFormFields = createSelector(
                     options = deployments.map(deployment => ({
                         label: deployment.name,
                         value: deployment.name
+                    }));
+                    break;
+                case 'images':
+                    options = images.map(image => ({
+                        label: image.name,
+                        value: image.name
                     }));
                     break;
                 case 'notifiers':

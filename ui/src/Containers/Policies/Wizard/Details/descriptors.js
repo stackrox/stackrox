@@ -106,12 +106,23 @@ const fieldsMap = {
         formatValue: d => d.join(', ')
     },
     whitelists: {
-        label: 'Whitelisted Deployments',
-        formatValue: d =>
-            d
-                .filter(obj => obj.deployment.name !== undefined && obj.deployment.name !== '')
-                .map(obj => obj.deployment.name)
-                .join(', ')
+        label: 'Whitelists',
+        formatValue: d => {
+            const whitelistObj = {};
+            const deployments = d
+                .filter(obj => obj.deployment !== null && obj.deployment.name !== '')
+                .map(obj => obj.deployment.name);
+            if (deployments.length !== 0) {
+                whitelistObj['Deployment Whitelists'] = deployments;
+            }
+            const images = d
+                .filter(obj => obj.image != null && obj.image.name !== '')
+                .map(obj => obj.image.name);
+            if (images.length !== 0) {
+                whitelistObj['Image Whitelists'] = images;
+            }
+            return whitelistObj;
+        }
     },
     imageName: {
         label: 'Image',

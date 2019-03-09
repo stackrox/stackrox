@@ -20,7 +20,15 @@ export function preFormatWhitelistField(policy) {
     const clientPolicy = Object.assign({}, policy);
     clientPolicy.deployments =
         whitelists && whitelists.length
-            ? whitelists.filter(o => o.deployment.name !== undefined).map(o => o.deployment.name)
+            ? whitelists
+                  .filter(o => o.deployment !== undefined && o.deployment.name !== undefined)
+                  .map(o => o.deployment.name)
+            : [];
+    clientPolicy.images =
+        whitelists && whitelists.length
+            ? whitelists
+                  .filter(o => o.image !== undefined && o.image.name !== undefined)
+                  .map(o => o.image.name)
             : [];
     return clientPolicy;
 }
@@ -31,7 +39,11 @@ export function postFormatWhitelistField(policy) {
     if (policy.deployments && policy.deployments.length !== 0) {
         serverPolicy.whitelists = policy.deployments.map(name => ({ deployment: { name } }));
     }
-
+    if (policy.images && policy.images.length !== 0) {
+        serverPolicy.whitelists = serverPolicy.whitelists.concat(
+            policy.images.map(name => ({ image: { name } }))
+        );
+    }
     return serverPolicy;
 }
 

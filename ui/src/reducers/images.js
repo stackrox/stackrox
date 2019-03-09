@@ -65,6 +65,10 @@ export default reducer;
 // Selectors
 
 const getImagesByID = state => state.byID;
+const getImages = createSelector(
+    [getImagesByID],
+    images => Object.values(images)
+);
 const getFilteredIDs = state => state.filteredIDs;
 const getFilteredImages = createSelector(
     [getImagesByID, getFilteredIDs],
@@ -73,6 +77,7 @@ const getFilteredImages = createSelector(
 const getImage = (state, id) => getImagesByID(state)[id];
 
 export const selectors = {
+    getImages,
     getImagesByID,
     getFilteredIDs,
     getFilteredImages,

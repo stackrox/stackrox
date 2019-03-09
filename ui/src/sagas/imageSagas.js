@@ -1,6 +1,6 @@
 import { all, takeLatest, call, fork, put, select } from 'redux-saga/effects';
 
-import { imagesPath } from 'routePaths';
+import { imagesPath, policiesPath } from 'routePaths';
 import { fetchImages, fetchImage } from 'services/ImagesService';
 import { actions, types } from 'reducers/images';
 import { selectors } from 'reducers';
@@ -33,6 +33,14 @@ function* filterImagesPageBySearch() {
     yield fork(getImages, { options });
 }
 
+function* filterPoliciesPageBySearch() {
+    const options = yield select(selectors.getPoliciesSearchOptions);
+    if (options.length && options[options.length - 1].type) {
+        return;
+    }
+    yield fork(getImages, { options });
+}
+
 function* watchImagesSearchOptions() {
     yield takeLatest(types.SET_SEARCH_OPTIONS, filterImagesPageBySearch);
 }
@@ -48,6 +56,7 @@ function* getSelectedImage({ match }) {
 export default function* images() {
     yield all([
         takeEveryNewlyMatchedLocation(imagesPath, filterImagesPageBySearch),
+        takeEveryNewlyMatchedLocation(policiesPath, filterPoliciesPageBySearch),
         takeEveryLocation(imagesPath, getSelectedImage),
         fork(watchImagesSearchOptions)
     ]);
