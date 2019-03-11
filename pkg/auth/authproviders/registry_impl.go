@@ -108,18 +108,6 @@ func (r *registryImpl) GetProviders(name, typ *string) []Provider {
 	return result
 }
 
-func (r *registryImpl) HasUsableProviders() bool {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
-
-	for _, provider := range r.providers {
-		if provider.Enabled() && provider.Validated() {
-			return true
-		}
-	}
-	return false
-}
-
 func (r *registryImpl) getFactory(typ string) BackendFactory {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()

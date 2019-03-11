@@ -93,9 +93,7 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 	u := []grpc.UnaryServerInterceptor{
 		contextutil.UnaryServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
 		grpc_prometheus.UnaryServerInterceptor,
-		contextutil.UnaryServerInterceptor(
-			authn.ContextUpdater(a.config.IdentityExtractors...),
-			authn.NewAuthConfigChecker(a.config.AuthProviders)),
+		contextutil.UnaryServerInterceptor(authn.ContextUpdater(a.config.IdentityExtractors...)),
 	}
 	u = append(u, a.config.UnaryInterceptors...)
 
@@ -111,8 +109,7 @@ func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 		contextutil.StreamServerInterceptor(a.requestInfoHandler.UpdateContextForGRPC),
 		grpc_prometheus.StreamServerInterceptor,
 		contextutil.StreamServerInterceptor(
-			authn.ContextUpdater(a.config.IdentityExtractors...),
-			authn.NewAuthConfigChecker(a.config.AuthProviders)),
+			authn.ContextUpdater(a.config.IdentityExtractors...)),
 	}
 	s = append(s, a.config.StreamInterceptors...)
 
@@ -151,9 +148,8 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	// - AuthConfigChecker
 	httpInterceptors := httputil.ChainInterceptors(
 		a.requestInfoHandler.HTTPIntercept,
-		contextutil.HTTPInterceptor(
-			authn.ContextUpdater(a.config.IdentityExtractors...),
-			authn.NewAuthConfigChecker(a.config.AuthProviders)))
+		contextutil.HTTPInterceptor(authn.ContextUpdater(a.config.IdentityExtractors...)),
+	)
 
 	mux := http.NewServeMux()
 	for _, route := range a.config.CustomRoutes {

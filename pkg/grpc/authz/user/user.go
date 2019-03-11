@@ -16,17 +16,6 @@ type permissionChecker struct {
 }
 
 func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
-	conf, err := authn.FromAuthConfigurationContext(ctx)
-	if err != nil {
-		return authz.ErrAuthnConfigMissing
-	}
-	// If no authentication provider is configured, default to allow access.
-	// This may change in the future, for instance if an administrator login
-	// is automatically provisioned.
-	if !conf.ProviderConfigured {
-		return nil
-	}
-
 	id := authn.IdentityFromContext(ctx)
 	if id == nil {
 		return authz.ErrNoCredentials

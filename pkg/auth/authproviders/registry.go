@@ -29,7 +29,4 @@ type Registry interface {
 	// factory is not delayed; the reason this function does not receive a factory instance directly is only to allow
 	// passing the URL prefix.
 	RegisterBackendFactory(typ string, factoryCreator BackendFactoryCreator) error
-
-	// HasUsableProviders returns whether there are any usable (i.e., enabled and validated) auth providers.
-	HasUsableProviders() bool
 }

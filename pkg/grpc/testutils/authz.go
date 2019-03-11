@@ -7,7 +7,6 @@ import (
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
-	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -37,11 +36,8 @@ func AssertAuthzWorks(t *testing.T, service pkgGRPC.APIService) {
 	authFunc, ok := service.(grpc_auth.ServiceAuthFuncOverride)
 	require.True(t, ok, "service must implement an AuthFuncOverride method")
 
-	ctx, err := authn.NewAuthConfigChecker(nil)(context.Background())
-	require.NoError(t, err, "could not obtain an auth context")
-
 	for _, method := range allMethods(service) {
-		_, err := authFunc.AuthFuncOverride(ctx, method)
+		_, err := authFunc.AuthFuncOverride(context.Background(), method)
 		s, _ := status.FromError(err)
 		assert.Containsf(t, allowedAuthStatusCodes, s.Code(), "authorizing method %s: invalid auth error code %v from error %v", method, s.Code(), err)
 	}
