@@ -117,7 +117,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Apache Struts: CVE-2017-5638"                  | STRUTS         | "C938"
 
-        "Heartbleed: CVE-2014-0160"                     | SSL_TERMINATOR | "C947"
+        //"Heartbleed: CVE-2014-0160"                     | SSL_TERMINATOR | "C947"
 
         "Wget in Image"                                 | STRUTS         | "C939"
 
@@ -125,7 +125,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Ubuntu Package Manager in Image"               | STRUTS         | "C931"
 
-        "30-Day Scan Age"                               | SSL_TERMINATOR | "C941"
+        //"30-Day Scan Age"                               | SSL_TERMINATOR | "C941"
 
         "Fixable CVSS >= 7"                             | GCR_NGINX      | "C933"
 

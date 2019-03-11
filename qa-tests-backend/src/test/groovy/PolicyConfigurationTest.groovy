@@ -159,7 +159,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .build())
                         .build()            | DEPLOYMENTAGE
 
-        "Days since image was last scanned" |
+        /*"Days since image was last scanned" |
                 Policy.newBuilder()
                         .setName("TestDaysImagescannedPolicy")
                         .setDescription("TestDaysImagescanned")
@@ -171,7 +171,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                         .setScanAgeDays(30)
                         .build())
-                        .build()            | DEPLOYMENTREMOTE
+                        .build()            | DEPLOYMENTREMOTE*/
 
         "Dockerfile Line"          |
                 Policy.newBuilder()
