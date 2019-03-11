@@ -8,12 +8,12 @@ import (
 )
 
 type config struct {
-	OauthToken string
+	OauthToken string `scrub:"always"`
 }
 
 type toplevel struct {
 	Name     string
-	Password string
+	Password string `scrub:"always"`
 	Config   *config
 }
 
@@ -49,5 +49,5 @@ func TestScrubEmbeddedConfig(t *testing.T) {
 		},
 	}
 	ScrubSecretsFromStruct(dtrIntegration)
-	assert.Empty(t, dtrIntegration.IntegrationConfig.(*storage.ImageIntegration_Dtr).Dtr.Password)
+	assert.Empty(t, dtrIntegration.GetDtr().GetPassword())
 }

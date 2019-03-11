@@ -3,6 +3,8 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "protobuf/gogoproto/gogo.proto";
+
 package storage;
 
 message Notifier {
@@ -23,7 +25,7 @@ message Notifier {
 }
 
 message CSCC {
-    string service_account = 1;
+    string service_account = 1 [(gogoproto.moretags) = "scrub:\"always\""];
     reserved                 2; // Formerly gcp_org_id
     reserved                 3; // Formerly gcp_project
     string source_id       = 4;
@@ -32,7 +34,7 @@ message CSCC {
 message Jira {
     string url        = 1;
     string username   = 2;
-    string password   = 3;
+    string password   = 3 [(gogoproto.moretags) = "scrub:\"always\""];
     string issue_type = 4;
 }
 
@@ -40,19 +42,19 @@ message Email {
     string server    = 1;
     string sender    = 2;
     string username  = 3;
-    string password  = 4;
+    string password  = 4 [(gogoproto.moretags) = "scrub:\"always\""];
     bool disableTLS  = 5;
     bool useSTARTTLS = 6;
     string from      = 7;
 }
 
 message Splunk {
-    string http_token    = 1;
+    string http_token    = 1 [(gogoproto.moretags) = "scrub:\"always\""];
     string http_endpoint = 2;
     bool insecure        = 3;
     int64 truncate       = 4;
 }
 
 message PagerDuty {
-    string api_key = 1;
+    string api_key = 1 [(gogoproto.moretags) = "scrub:\"always\""];
 }

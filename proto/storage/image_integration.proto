@@ -3,6 +3,8 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "protobuf/gogoproto/gogo.proto";
+
 package storage;
 
 message ImageIntegration {
@@ -29,7 +31,7 @@ message ImageIntegration {
 
 message QuayConfig {
     string endpoint   = 1;
-    string oauthToken = 2;
+    string oauthToken = 2 [(gogoproto.moretags) = "scrub:\"always\""];
 }
 
 message ClairConfig {
@@ -43,33 +45,33 @@ message ClairifyConfig {
 message DockerConfig {
     string endpoint = 1;
     string username = 2;
-    string password = 3;
+    string password = 3 [(gogoproto.moretags) = "scrub:\"always\""];
     bool insecure   = 4;
 }
 
 message ECRConfig {
     string registry_id       = 1;
     string access_key_id     = 2;
-    string secret_access_key = 3;
+    string secret_access_key = 3 [(gogoproto.moretags) = "scrub:\"always\""];
     string region            = 4;
 }
 
 message DTRConfig {
     string username = 1;
-    string password = 2;
+    string password = 2 [(gogoproto.moretags) = "scrub:\"always\""];
     string endpoint = 3;
     bool insecure   = 4;
 }
 
 message GoogleConfig {
     string endpoint        = 1;
-    string service_account = 2;
+    string service_account = 2 [(gogoproto.moretags) = "scrub:\"always\""];
     string project         = 3;
 }
 
 message TenableConfig {
-    string access_key = 1;
-    string secret_key = 2;
+    string access_key = 1 [(gogoproto.moretags) = "scrub:\"always\""];
+    string secret_key = 2 [(gogoproto.moretags) = "scrub:\"always\""];
 }
 
 enum ImageIntegrationCategory {

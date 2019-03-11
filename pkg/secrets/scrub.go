@@ -2,37 +2,12 @@ package secrets
 
 import (
 	"reflect"
-	"strings"
 )
 
-// secretKeys lists keys that have secret values that should be scrubbed
-// out of a config before returning it in the API.
-type secretKeys map[string]struct{}
-
-func newSecretKeys(keys []string) secretKeys {
-	sk := make(secretKeys)
-	for _, k := range keys {
-		sk[strings.ToLower(k)] = struct{}{}
-	}
-	return sk
-}
-
-func (sk secretKeys) shouldScrub(key string) bool {
-	_, present := sk[strings.ToLower(key)]
-	return present
-}
-
-var scrubber = newSecretKeys([]string{
-	"authToken",
-	"oauthToken",
-	"password",
-	"secretKey",
-	"serviceAccount",
-	"AccessKeyId",
-	"SecretAccessKey",
-	"httpToken",
-	"apiKey",
-})
+const (
+	scrubStructTag = "scrub"
+	scrubTagAlways = "always"
+)
 
 // ScrubSecretsFromStruct removes secret keys from an object
 func ScrubSecretsFromStruct(obj interface{}) {
@@ -43,7 +18,10 @@ func ScrubSecretsFromStruct(obj interface{}) {
 	if value.Kind() != reflect.Struct {
 		return
 	}
+
+	valueType := value.Type()
 	for i := 0; i < value.NumField(); i++ {
+		typeField := valueType.Field(i)
 		fieldKind := value.Field(i).Kind()
 		switch fieldKind {
 		case reflect.Struct:
@@ -54,7 +32,8 @@ func ScrubSecretsFromStruct(obj interface{}) {
 				ScrubSecretsFromStruct(value.Field(i).Interface())
 			}
 		}
-		if scrubber.shouldScrub(value.Type().Field(i).Name) {
+		switch typeField.Tag.Get(scrubStructTag) {
+		case scrubTagAlways:
 			value.Field(i).Set(reflect.ValueOf(""))
 		}
 	}
