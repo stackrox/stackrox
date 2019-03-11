@@ -7,7 +7,7 @@ import (
 
 	"github.com/stackrox/rox/central/compliance/data"
 	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/central/scrape"
+	"github.com/stackrox/rox/central/scrape/factory"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/concurrency"
 )
@@ -46,7 +46,7 @@ type scrapePromise struct {
 }
 
 // createAndRunScrape creates and returns a scrapePromise for the given domain. The returned promise will be running.
-func createAndRunScrape(scrapeFactory scrape.Factory, dataRepoFactory data.RepositoryFactory, domain framework.ComplianceDomain, timeout time.Duration) *scrapePromise {
+func createAndRunScrape(scrapeFactory factory.ScrapeFactory, dataRepoFactory data.RepositoryFactory, domain framework.ComplianceDomain, timeout time.Duration) *scrapePromise {
 	promise := &scrapePromise{
 		domain:          domain,
 		finishedSig:     concurrency.NewErrorSignal(),
@@ -76,7 +76,7 @@ func (p *scrapePromise) WaitForResult(cancel concurrency.Waitable) (framework.Co
 	return p.result, nil
 }
 
-func (p *scrapePromise) run(scrapeFactory scrape.Factory, domain framework.ComplianceDomain, timeout time.Duration) {
+func (p *scrapePromise) run(scrapeFactory factory.ScrapeFactory, domain framework.ComplianceDomain, timeout time.Duration) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	p.finish(scrapeFactory.RunScrape(domain, ctx))

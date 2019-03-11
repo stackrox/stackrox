@@ -14,7 +14,7 @@ import (
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
-	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -25,7 +25,7 @@ import (
 
 type indicatorWithInjector struct {
 	indicator           *storage.ProcessIndicator
-	msgToSensorInjector pipeline.MsgInjector
+	msgToSensorInjector common.MessageInjector
 }
 
 type managerImpl struct {
@@ -123,18 +123,18 @@ func (m *managerImpl) flushIndicatorQueue() {
 				deployment.GetNamespace(), deployment.GetName())
 			continue
 		}
-		injected := indicatorInfo.msgToSensorInjector.InjectMessage(&central.MsgToSensor{
+		err = indicatorInfo.msgToSensorInjector.InjectMessage(&central.MsgToSensor{
 			Msg: &central.MsgToSensor_Enforcement{
 				Enforcement: enforcementAction,
 			},
 		})
-		if !injected {
-			logger.Errorf("Failed to inject enforcement action: %s", proto.MarshalTextString(enforcementAction))
+		if err != nil {
+			logger.Errorf("Failed to inject enforcement action %s: %v", proto.MarshalTextString(enforcementAction), err)
 		}
 	}
 }
 
-func (m *managerImpl) addToQueue(indicator *storage.ProcessIndicator, injector pipeline.MsgInjector) {
+func (m *managerImpl) addToQueue(indicator *storage.ProcessIndicator, injector common.MessageInjector) {
 	m.queueLock.Lock()
 	defer m.queueLock.Unlock()
 
@@ -144,7 +144,7 @@ func (m *managerImpl) addToQueue(indicator *storage.ProcessIndicator, injector p
 	}
 }
 
-func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator, injector pipeline.MsgInjector) error {
+func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator, injector common.MessageInjector) error {
 	if indicator.GetId() == "" {
 		return fmt.Errorf("invalid indicator received: %s, id was empty", proto.MarshalTextString(indicator))
 	}

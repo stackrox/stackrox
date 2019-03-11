@@ -57,14 +57,14 @@ import (
 	searchService "github.com/stackrox/rox/central/search/service"
 	secretService "github.com/stackrox/rox/central/secret/service"
 	sensorService "github.com/stackrox/rox/central/sensor/service"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/all"
-	"github.com/stackrox/rox/central/sensor/service/streamer"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
 	siStore "github.com/stackrox/rox/central/serviceidentities/store"
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
@@ -202,7 +202,7 @@ func startGRPCServer() {
 		siService.Singleton(),
 		summaryService.Singleton(),
 		userService.Singleton(),
-		sensorService.New(streamer.ManagerSingleton(), all.Singleton()),
+		sensorService.New(connection.ManagerSingleton(), all.Singleton()),
 	}
 
 	if err := manager.Singleton().Start(); err != nil {

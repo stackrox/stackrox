@@ -11,7 +11,7 @@ import (
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
-	"github.com/stackrox/rox/central/sensor/service/pipeline"
+	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"golang.org/x/time/rate"
@@ -28,7 +28,7 @@ var (
 
 // A Manager manages deployment/policy lifecycle updates.
 type Manager interface {
-	IndicatorAdded(indicator *storage.ProcessIndicator, injector pipeline.MsgInjector) error
+	IndicatorAdded(indicator *storage.ProcessIndicator, injector common.MessageInjector) error
 	// DeploymentUpdated processes a new or updated deployment, generating and updating alerts in the store and returning
 	// enforcement action.
 	DeploymentUpdated(deployment *storage.Deployment) (string, storage.EnforcementAction, error)

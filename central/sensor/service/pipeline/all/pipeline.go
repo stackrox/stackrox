@@ -29,7 +29,7 @@ type pipelineImpl struct {
 }
 
 // Run looks for one fragment (and only one) that matches the input message and runs that fragment on the message and injector.
-func (s *pipelineImpl) Run(msg *central.MsgFromSensor, injector pipeline.MsgInjector) error {
+func (s *pipelineImpl) Run(msg *central.MsgFromSensor, injector common.MessageInjector) error {
 	// This will only happen once per cluster because the pipeline is generated every time the streamer connects
 	if msg.GetEvent().GetSynced() != nil {
 		log.Infof("Received Synced message from Sensor. Determining if there is any reconciliation to be done")

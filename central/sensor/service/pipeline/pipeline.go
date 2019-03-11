@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 )
 
@@ -12,7 +13,7 @@ type BasePipeline interface {
 // ClusterPipeline processes a message received from a given cluster.
 //go:generate mockgen-wrapper ClusterPipeline
 type ClusterPipeline interface {
-	Run(msg *central.MsgFromSensor, injector MsgInjector) error
+	Run(msg *central.MsgFromSensor, injector common.MessageInjector) error
 	BasePipeline
 }
 
@@ -28,18 +29,11 @@ type Factory interface {
 type Fragment interface {
 	BasePipeline
 	Match(msg *central.MsgFromSensor) bool
-	Run(clusterID string, msg *central.MsgFromSensor, injector MsgInjector) error
+	Run(clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error
 	Reconcile(clusterID string) error
 }
 
 // FragmentFactory returns a Fragment for the given cluster.
 type FragmentFactory interface {
 	GetFragment(clusterID string) (Fragment, error)
-}
-
-// MsgInjector allows a pipeline to return a MsgToSensor back into the pipeline.
-// It does a best-effort send, and returns a bool whether it succeeded. (It will fail if the stream in the
-// time between the object being passed to the pipeline and the stream being broken.)
-type MsgInjector interface {
-	InjectMessage(msg *central.MsgToSensor) bool
 }

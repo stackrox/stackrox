@@ -8,8 +8,9 @@ import (
 	"github.com/stackrox/rox/central/imageintegration"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/integration"
@@ -103,7 +104,7 @@ func (s *pipelineImpl) getMatchingImageIntegration(auto *storage.ImageIntegratio
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ pipeline.MsgInjector) error {
+func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ImageIntegration)
 
 	cluster, exists, err := s.clusterDatastore.GetCluster(clusterID)

@@ -8,6 +8,7 @@ import (
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/node/globalstore"
 	"github.com/stackrox/rox/central/node/store"
+	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -79,7 +80,7 @@ func (p *pipelineImpl) processRemove(store store.Store, n *storage.Node) error {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (p *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ pipeline.MsgInjector) error {
+func (p *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.Node)
 
 	event := msg.GetEvent()

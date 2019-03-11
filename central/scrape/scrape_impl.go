@@ -21,7 +21,6 @@ var (
 type scrapeImpl struct {
 	// immutable, not protected by mutex
 	scrapeID      string
-	clusterID     string
 	expectedHosts set.StringSet
 	creationTime  time.Time
 	////////////////////////////////////
@@ -34,10 +33,6 @@ type scrapeImpl struct {
 
 func (s *scrapeImpl) GetScrapeID() string {
 	return s.scrapeID
-}
-
-func (s *scrapeImpl) GetClusterID() string {
-	return s.clusterID
 }
 
 func (s *scrapeImpl) GetExpectedHosts() []string {
@@ -61,13 +56,6 @@ func (s *scrapeImpl) GetResults() map[string]*compliance.ComplianceReturn {
 		ret[id] = cr
 	}
 	return ret
-}
-
-// Fragment implementation for the Accepter.
-////////////////////////////////////////////
-
-func (s *scrapeImpl) Match(update *central.ScrapeUpdate) bool {
-	return update.GetScrapeId() == s.scrapeID
 }
 
 // Update the scrape with a new message from sensor.
@@ -147,9 +135,4 @@ func (s *scrapeImpl) acceptKill(killed *central.ScrapeKilled) {
 
 	// Everything is gucci baby.
 	s.stopped.Signal()
-}
-
-func (s *scrapeImpl) OnFinish() {
-	// The following will have no effect if we are already stopped.
-	s.stopped.SignalWithError(errors.New("connection to sensor was interrupted while scrape was ongoing"))
 }

@@ -2,6 +2,7 @@ package clusterstatusupdate
 
 import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
@@ -40,7 +41,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ pipeline.MsgInjector) error {
+func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	if status := msg.GetClusterStatusUpdate().GetStatus(); status != nil {
 		return s.clusters.UpdateClusterStatus(clusterID, status)
 	}

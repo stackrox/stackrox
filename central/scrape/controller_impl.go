@@ -3,46 +3,76 @@ package scrape
 import (
 	"errors"
 	"fmt"
+	"sync"
 
-	"github.com/stackrox/rox/central/compliance/framework"
-	"github.com/stackrox/rox/central/scrape/sensor/accept"
-	"github.com/stackrox/rox/central/scrape/sensor/emit"
+	"github.com/stackrox/rox/central/sensor/service/common"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 type controllerImpl struct {
-	emitter  emit.Emitter
-	accepter accept.Accepter
+	stoppedSig   concurrency.ReadOnlyErrorSignal
+	scrapes      map[string]*scrapeImpl
+	scrapesMutex sync.RWMutex
+
+	msgInjector common.MessageInjector
 }
 
-func (s *controllerImpl) RunScrape(domain framework.ComplianceDomain, kill concurrency.Waitable) (map[string]*compliance.ComplianceReturn, error) {
-	// Build a set of the expected nodes.
-	expectedHosts := set.NewStringSet()
-	for _, node := range framework.Nodes(domain) {
-		expectedHosts.Add(node.GetName())
+func (s *controllerImpl) sendStartScrapeMsg(scrape *scrapeImpl) error {
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ScrapeCommand{
+			ScrapeCommand: &central.ScrapeCommand{
+				ScrapeId: scrape.scrapeID,
+				Command: &central.ScrapeCommand_StartScrape{
+					StartScrape: &central.StartScrape{
+						Hostnames: scrape.expectedHosts.AsSlice(),
+					},
+				},
+			},
+		},
 	}
+	return s.msgInjector.InjectMessage(msg)
+}
+
+func (s *controllerImpl) sendKillScrapeMsg(scrape *scrapeImpl) error {
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ScrapeCommand{
+			ScrapeCommand: &central.ScrapeCommand{
+				ScrapeId: scrape.scrapeID,
+				Command: &central.ScrapeCommand_KillScrape{
+					KillScrape: &central.KillScrape{},
+				},
+			},
+		},
+	}
+	return s.msgInjector.InjectMessage(msg)
+}
+
+func (s *controllerImpl) RunScrape(expectedHosts set.StringSet, kill concurrency.Waitable) (map[string]*compliance.ComplianceReturn, error) {
 	// If no hosts need to be scraped, just bounce, otherwise we will be waiting for nothing.
 	if expectedHosts.Cardinality() == 0 {
 		return make(map[string]*compliance.ComplianceReturn), nil
 	}
 
 	// Create the scrape and register it so it can be updated.
-	scrape := newScrape(domain.Cluster().ID(), expectedHosts)
+	scrape := newScrape(expectedHosts)
 
-	// To start we need to register to accept updates. We do this before sending the message to
-	// sensor so that we don't miss anything due to a race condition.
-	s.accepter.AddFragment(scrape)
-	defer s.accepter.RemoveFragment(scrape)
+	concurrency.WithLock(&s.scrapesMutex, func() {
+		s.scrapes[scrape.scrapeID] = scrape
+	})
+	defer concurrency.WithLock(&s.scrapesMutex, func() {
+		delete(s.scrapes, scrape.scrapeID)
+	})
 
-	// And we need to successfully send a signal to the sensor to begin.
-	if err := s.emitter.StartScrape(scrape.GetClusterID(), scrape.GetScrapeID(), scrape.GetExpectedHosts()); err != nil {
+	if err := s.sendStartScrapeMsg(scrape); err != nil {
 		return nil, err
 	}
+
 	defer func() {
-		if err := s.emitter.KillScrape(scrape.GetClusterID(), scrape.GetScrapeID()); err != nil {
-			log.Errorf("tried to kill scrape but failed: %s", err)
+		if err := s.sendKillScrapeMsg(scrape); err != nil {
+			log.Errorf("tried to kill scrape %s but failed: %v", scrape.scrapeID, err)
 		}
 	}()
 
@@ -51,6 +81,8 @@ func (s *controllerImpl) RunScrape(domain framework.ComplianceDomain, kill concu
 	select {
 	case <-kill.Done():
 		err = errors.New("scrape stopped due to received kill command")
+	case <-s.stoppedSig.Done():
+		err = fmt.Errorf("scrape stopped as sensor connection was terminated: %v", s.stoppedSig.Err())
 	case <-scrape.Stopped().Done():
 		if scrapeErr := scrape.Stopped().Err(); scrapeErr != nil {
 			err = fmt.Errorf("scrape failed: %s", scrapeErr)
@@ -58,4 +90,26 @@ func (s *controllerImpl) RunScrape(domain framework.ComplianceDomain, kill concu
 	}
 
 	return scrape.GetResults(), err
+}
+
+func (s *controllerImpl) getScrape(scrapeID string, remove bool) *scrapeImpl {
+	s.scrapesMutex.RLock()
+	defer s.scrapesMutex.RUnlock()
+
+	scrape := s.scrapes[scrapeID]
+	if remove {
+		delete(s.scrapes, scrapeID)
+	}
+	return scrape
+}
+
+// AcceptUpdate forwards the update to a matching registered scrape.
+func (s *controllerImpl) ProcessScrapeUpdate(update *central.ScrapeUpdate) error {
+	scrape := s.getScrape(update.GetScrapeId(), update.GetScrapeKilled() != nil)
+	if scrape == nil {
+		return fmt.Errorf("received update for invalid scrape ID %q", update.GetScrapeId())
+	}
+
+	scrape.AcceptUpdate(update)
+	return nil
 }

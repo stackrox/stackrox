@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/nodes"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/processindicators"
-	"github.com/stackrox/rox/central/sensor/service/pipeline/scrapeupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/secrets"
 )
 
@@ -34,7 +33,6 @@ func (s *factoryImpl) PipelineForCluster(clusterID string) (pipeline.ClusterPipe
 		namespaces.GetPipeline(),
 		secrets.GetPipeline(),
 		nodes.GetPipeline(),
-		scrapeupdate.GetPipeline(),
 		flowUpdateFragment,
 		imageintegrations.GetPipeline(),
 		clusterstatusupdate.GetPipeline(),

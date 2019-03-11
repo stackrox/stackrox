@@ -10,8 +10,8 @@ import (
 	nodeStore "github.com/stackrox/rox/central/node/globalstore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
-	"github.com/stackrox/rox/central/sensor/service/streamer"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
@@ -45,7 +45,7 @@ func New(
 	dds deploymentDataStore.DataStore,
 	ns nodeStore.GlobalStore,
 	ss secretDataStore.DataStore,
-	sm streamer.Manager,
+	cm connection.Manager,
 	notifier notifierProcessor.Processor) (DataStore, error) {
 	ds := &datastoreImpl{
 		storage:  storage,
@@ -54,7 +54,7 @@ func New(
 		dds:      dds,
 		ns:       ns,
 		ss:       ss,
-		sm:       sm,
+		cm:       cm,
 		notifier: notifier,
 	}
 	if err := ds.buildIndex(); err != nil {

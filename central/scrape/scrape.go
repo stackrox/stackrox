@@ -13,7 +13,6 @@ import (
 // A scrape is stopped when a kill update is received from sensor, or when all expected results are returned.
 type Scrape interface {
 	GetScrapeID() string
-	GetClusterID() string
 	GetExpectedHosts() []string
 	GetCreationTime() time.Time
 
@@ -21,10 +20,9 @@ type Scrape interface {
 	GetResults() map[string]*compliance.ComplianceReturn
 }
 
-func newScrape(clusterID string, expectedHosts set.StringSet) *scrapeImpl {
+func newScrape(expectedHosts set.StringSet) *scrapeImpl {
 	return &scrapeImpl{
 		scrapeID:      uuid.NewV4().String(),
-		clusterID:     clusterID,
 		expectedHosts: expectedHosts,
 		creationTime:  time.Now(),
 

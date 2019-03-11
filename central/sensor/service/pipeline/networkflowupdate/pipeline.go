@@ -2,6 +2,7 @@ package networkflowupdate
 
 import (
 	countMetrics "github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/logging"
@@ -39,7 +40,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(_ string, msg *central.MsgFromSensor, _ pipeline.MsgInjector) (err error) {
+func (s *pipelineImpl) Run(_ string, msg *central.MsgFromSensor, _ common.MessageInjector) (err error) {
 	update := msg.GetNetworkFlowUpdate()
 
 	if len(update.Updated) == 0 {

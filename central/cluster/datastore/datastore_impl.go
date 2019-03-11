@@ -12,8 +12,8 @@ import (
 	nodeStore "github.com/stackrox/rox/central/node/globalstore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
-	"github.com/stackrox/rox/central/sensor/service/streamer"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/search"
@@ -28,7 +28,7 @@ type datastoreImpl struct {
 	dds deploymentDataStore.DataStore
 	ns  nodeStore.GlobalStore
 	ss  secretDataStore.DataStore
-	sm  streamer.Manager
+	cm  connection.Manager
 }
 
 func (ds *datastoreImpl) UpdateClusterStatus(id string, status *storage.ClusterStatus) error {
@@ -106,9 +106,9 @@ func (ds *datastoreImpl) RemoveCluster(id string) error {
 
 func (ds *datastoreImpl) postRemoveCluster(cluster *storage.Cluster) {
 	// Terminate the cluster connection to prevent new data from being stored.
-	if ds.sm != nil {
-		if streamer := ds.sm.GetStreamer(cluster.GetId()); streamer != nil {
-			streamer.Terminate(errors.New("cluster was deleted"))
+	if ds.cm != nil {
+		if conn := ds.cm.GetConnection(cluster.GetId()); conn != nil {
+			conn.Terminate(errors.New("cluster was deleted"))
 		}
 	}
 

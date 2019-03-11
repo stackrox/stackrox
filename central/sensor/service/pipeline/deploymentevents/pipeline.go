@@ -8,6 +8,7 @@ import (
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
+	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -93,7 +94,7 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 }
 
 // Run runs the pipeline template on the input and returns the output.
-func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, injector pipeline.MsgInjector) error {
+func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.Deployment)
 
 	event := msg.GetEvent()
@@ -114,13 +115,13 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, injecto
 	}
 	if resp != nil {
 		if enforcers.ShouldEnforce(deployment.GetAnnotations()) {
-			injected := injector.InjectMessage(&central.MsgToSensor{
+			err := injector.InjectMessage(&central.MsgToSensor{
 				Msg: &central.MsgToSensor_Enforcement{
 					Enforcement: resp,
 				},
 			})
-			if !injected {
-				log.Errorf("Failed to inject enforcement action %s", proto.MarshalTextString(resp))
+			if err != nil {
+				log.Errorf("Failed to inject enforcement action %s: %v", proto.MarshalTextString(resp), err)
 			}
 		} else {
 			log.Warnf("Did not inject enforcement because deployment %s contained Enforcement Bypass annotations", deployment.GetName())

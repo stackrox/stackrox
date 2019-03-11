@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	pipeline "github.com/stackrox/rox/central/sensor/service/pipeline"
+	common "github.com/stackrox/rox/central/sensor/service/common"
 	central "github.com/stackrox/rox/generated/internalapi/central"
 	reflect "reflect"
 )
@@ -69,7 +69,7 @@ func (mr *MockFragmentMockRecorder) Reconcile(arg0 interface{}) *gomock.Call {
 }
 
 // Run mocks base method
-func (m *MockFragment) Run(arg0 string, arg1 *central.MsgFromSensor, arg2 pipeline.MsgInjector) error {
+func (m *MockFragment) Run(arg0 string, arg1 *central.MsgFromSensor, arg2 common.MessageInjector) error {
 	ret := m.ctrl.Call(m, "Run", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0

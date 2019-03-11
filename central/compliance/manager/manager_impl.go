@@ -14,8 +14,8 @@ import (
 	complianceResultsStore "github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	nodeStore "github.com/stackrox/rox/central/node/globalstore"
-	"github.com/stackrox/rox/central/scrape"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/central/scrape/factory"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -54,12 +54,12 @@ type manager struct {
 	deploymentStore datastore.DataStore
 
 	dataRepoFactory data.RepositoryFactory
-	scrapeFactory   scrape.Factory
+	scrapeFactory   factory.ScrapeFactory
 
 	resultsStore complianceResultsStore.Store
 }
 
-func newManager(standardsRegistry *standards.Registry, scheduleStore ScheduleStore, clusterStore clusterDatastore.DataStore, nodeStore nodeStore.GlobalStore, deploymentStore datastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory scrape.Factory, resultsStore complianceResultsStore.Store) (*manager, error) {
+func newManager(standardsRegistry *standards.Registry, scheduleStore ScheduleStore, clusterStore clusterDatastore.DataStore, nodeStore nodeStore.GlobalStore, deploymentStore datastore.DataStore, dataRepoFactory data.RepositoryFactory, scrapeFactory factory.ScrapeFactory, resultsStore complianceResultsStore.Store) (*manager, error) {
 	mgr := &manager{
 		scheduleStore:     scheduleStore,
 		standardsRegistry: standardsRegistry,

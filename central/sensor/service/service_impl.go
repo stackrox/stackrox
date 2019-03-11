@@ -2,12 +2,12 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
-	"github.com/stackrox/rox/central/sensor/service/streamer"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -20,12 +20,12 @@ var (
 )
 
 type serviceImpl struct {
-	manager streamer.Manager
+	manager connection.Manager
 	pf      pipeline.Factory
 }
 
 // New creates a new Service using the given manager.
-func New(manager streamer.Manager, pf pipeline.Factory) Service {
+func New(manager connection.Manager, pf pipeline.Factory) Service {
 	return &serviceImpl{
 		manager: manager,
 		pf:      pf,
@@ -52,22 +52,11 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		return authz.ErrNotAuthorized("only sensor may access this API")
 	}
 	svc := identity.Service()
-	if svc == nil {
+	if svc == nil || svc.GetType() != storage.ServiceType_SENSOR_SERVICE {
 		return authz.ErrNotAuthorized("only sensor may access this API")
 	}
 
 	clusterID := svc.GetId()
 
-	// Create a Streamer for the cluster. Throw error if it already exists.
-	streamer, err := s.manager.CreateStreamer(clusterID, s.pf)
-	if err != nil {
-		return fmt.Errorf("unable to open stream to cluster %s: %s", clusterID, err)
-	}
-	streamer.Start(server)
-	err = streamer.WaitUntilFinished()
-
-	if removeErr := s.manager.RemoveStreamer(clusterID, streamer); removeErr != nil {
-		log.Errorf("Could not remove sensor connection for cluster %s: %v", clusterID, removeErr)
-	}
-	return err
+	return s.manager.HandleConnection(clusterID, s.pf, server)
 }
