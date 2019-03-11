@@ -1,5 +1,6 @@
 import artifactory from 'images/artifactory.svg';
 import aws from 'images/aws.svg';
+import azure from 'images/azure.svg';
 import clair from 'images/clair.svg';
 import docker from 'images/docker.svg';
 import email from 'images/email.svg';
@@ -55,6 +56,14 @@ const integrationsList = {
             categories: 'Registry + Scanner',
             source: 'imageIntegrations',
             image: google,
+            disabled: false
+        },
+        {
+            label: 'Microsoft ACR',
+            type: 'azure',
+            categories: 'Registry',
+            source: 'imageIntegrations',
+            image: azure,
             disabled: false
         },
         {

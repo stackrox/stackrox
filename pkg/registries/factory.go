@@ -3,6 +3,7 @@ package registries
 import (
 	"github.com/stackrox/rox/generated/storage"
 	artifactoryFactory "github.com/stackrox/rox/pkg/registries/artifactory"
+	azureFactory "github.com/stackrox/rox/pkg/registries/azure"
 	dockerFactory "github.com/stackrox/rox/pkg/registries/docker"
 	dtrFactory "github.com/stackrox/rox/pkg/registries/dtr"
 	ecrFactory "github.com/stackrox/rox/pkg/registries/ecr"
@@ -52,6 +53,9 @@ func NewFactory() Factory {
 
 	nexusFactoryType, nexusFactoryCreator := nexusFactory.Creator()
 	reg.creators[nexusFactoryType] = nexusFactoryCreator
+
+	azureFactoryType, azureFactoryCreator := azureFactory.Creator()
+	reg.creators[azureFactoryType] = azureFactoryCreator
 
 	return reg
 }

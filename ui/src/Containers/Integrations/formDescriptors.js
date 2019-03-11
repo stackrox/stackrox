@@ -649,6 +649,39 @@ const formDescriptors = {
                 type: 'checkbox',
                 placeholder: ''
             }
+        ],
+        azure: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: 'Azure Registry'
+            },
+            {
+                label: 'Types',
+                jsonpath: 'categories',
+                type: 'multiselect',
+                options: [{ value: 'REGISTRY', label: 'Registry', clearableValue: false }],
+                placeholder: ''
+            },
+            {
+                label: 'Endpoint',
+                jsonpath: 'docker.endpoint',
+                type: 'text',
+                placeholder: '<registry>.azurecr.io'
+            },
+            {
+                label: 'Username or App ID',
+                jsonpath: 'docker.username',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                label: 'Password or Service Principal Password',
+                jsonpath: 'docker.password',
+                type: 'password',
+                placeholder: ''
+            }
         ]
     }
 };
