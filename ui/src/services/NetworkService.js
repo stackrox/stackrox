@@ -81,14 +81,14 @@ export function fetchNetworkPolicies(policyIds) {
 export function generateNetworkModification(clusterId, query, date) {
     let params;
     if (date) {
-        const since = date.toISOString();
-        params = queryString.stringify({ query, since }, { arrayFormat: 'repeat' });
+        const networkDataSince = date.toISOString();
+        params = queryString.stringify({ query, networkDataSince }, { arrayFormat: 'repeat' });
     } else {
         params = queryString.stringify({ query }, { arrayFormat: 'repeat' });
     }
     const options = {
         method: 'GET',
-        url: `${networkPoliciesBaseUrl}/generate/${clusterId}?deleteExisting=ALL&${params}`
+        url: `${networkPoliciesBaseUrl}/generate/${clusterId}?deleteExisting=NONE&${params}`
     };
     return axios(options).then(response => response.data.modification);
 }

@@ -1,5 +1,7 @@
 import { combineReducers } from 'redux';
 
+import timeWindows from 'constants/timeWindows';
+
 // Action types
 
 export const types = {
@@ -45,7 +47,7 @@ const dialogueOpen = (state = false, action) => {
     return state;
 };
 
-const networkActivityTimeWindow = (state = 'All time', action) => {
+const networkActivityTimeWindow = (state = timeWindows[0], action) => {
     if (action.type === types.SET_NETWORK_ACTIVITY_TIME_WINDOW) {
         return action.window;
     }
