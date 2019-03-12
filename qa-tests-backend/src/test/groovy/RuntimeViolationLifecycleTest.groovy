@@ -1,11 +1,10 @@
 import static Services.getPolicies
-import static Services.getViolation
 import static Services.getViolationsByDeploymentID
-import static Services.resolveAlert
 import static Services.roxDetectedDeployment
 import static Services.updatePolicy
 import static Services.updatePolicyToWhitelistDeployment
 
+import services.AlertService
 import groups.BAT
 import java.util.stream.Collectors
 import objects.Deployment
@@ -50,12 +49,12 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
     def assertAlertExistsForDeploymentUid(String policyName, String deploymentUid) {
         checkPolicyExists(APTGETPOLICY)
-        def violations = getViolationsByDeploymentID(deploymentUid, policyName, 60)
+        def violations = Services.getViolationsByDeploymentID(deploymentUid, policyName, 60)
         assert violations?.size() == 1
         def violation = violations[0]
         assert violation.getDeployment().getId() == deploymentUid
         assert violation.getLifecycleStage() == PolicyOuterClass.LifecycleStage.RUNTIME
-        def alert = getViolation(violation.getId())
+        def alert = AlertService.getViolation(violation.getId())
         assert alert.getState() == ViolationState.ACTIVE
         return true
     }
@@ -84,7 +83,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
         when:
         "Fetch the alert corresponding to the original apt-get violation"
-        def alert = getViolation(violation.getId())
+        def alert = AlertService.getViolation(violation.getId())
 
         then:
         "Ensure the alert is active"
@@ -92,9 +91,9 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
         when:
         "Resolve the alert, get it again"
-        resolveAlert(alert.getId())
+        AlertService.resolveAlert(alert.getId())
         sleep(1000)
-        def resolvedAlert = getViolation(alert.getId())
+        def resolvedAlert = AlertService.getViolation(alert.getId())
 
         then:
         "Ensure the alert is now resolved"
@@ -133,7 +132,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
 
         when:
         "Fetch the alert corresponding to the original apt-get violation"
-        def originalAptGetAlert = getViolation(originalAptGetViolation.getId())
+        def originalAptGetAlert = AlertService.getViolation(originalAptGetViolation.getId())
 
         then:
         "Assert that the alert has the fields we expect"
@@ -156,7 +155,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         "Whitelist the deployment, get the alert again"
         originalAptGetPolicy = updatePolicyToWhitelistDeployment(APTGETPOLICY, DEPLOYMENT)
         sleep(1000)
-        def updatedAptGetAlert = getViolation(originalAptGetViolation.getId())
+        def updatedAptGetAlert = AlertService.getViolation(originalAptGetViolation.getId())
 
         then:
         "Verify the alert is now resolved"

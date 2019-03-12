@@ -2,13 +2,8 @@ import io.stackrox.proto.api.v1.DetectionServiceOuterClass.BuildDetectionRequest
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.storage.ImageIntegrationOuterClass.ImageIntegration
 import orchestratormanager.OrchestratorType
+import services.AlertService
 import services.BaseService
-import io.stackrox.proto.api.v1.AlertServiceGrpc
-import io.stackrox.proto.api.v1.AlertServiceOuterClass
-import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
-import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsResponse
-import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsGroupResponse
-import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertTimeseriesResponse
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.DeploymentServiceGrpc
 import io.stackrox.proto.api.v1.DetectionServiceGrpc
@@ -19,8 +14,6 @@ import io.stackrox.proto.api.v1.SearchServiceGrpc
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.SearchServiceOuterClass
-import io.stackrox.proto.storage.AlertOuterClass.Alert
-import io.stackrox.proto.storage.AlertOuterClass.ListAlert
 import io.stackrox.proto.storage.DeploymentOuterClass.ListDeployment
 import io.stackrox.proto.storage.DeploymentOuterClass.Deployment
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
@@ -50,10 +43,6 @@ class Services extends BaseService {
 
     static getPolicyClient() {
         return PolicyServiceGrpc.newBlockingStub(getChannel())
-      }
-
-    static getAlertClient() {
-        return AlertServiceGrpc.newBlockingStub(getChannel())
       }
 
     static getDeploymentClient() {
@@ -90,37 +79,10 @@ class Services extends BaseService {
             )
       }
 
-    static List<ListAlert> getViolations(ListAlertsRequest request = ListAlertsRequest.newBuilder().build()) {
-        return getAlertClient().listAlerts(request).alertsList
-      }
-
-    static GetAlertsCountsResponse getAlertCounts(
-            GetAlertsCountsRequest request = GetAlertsCountsRequest.newBuilder().build()) {
-        return getAlertClient().getAlertsCounts(request)
-      }
-
-    static GetAlertsGroupResponse getAlertGroups(ListAlertsRequest request = ListAlertsRequest.newBuilder().build()) {
-        return getAlertClient().getAlertsGroup(request)
-      }
-
-    static GetAlertTimeseriesResponse getAlertTimeseries(
-            ListAlertsRequest request = ListAlertsRequest.newBuilder().build()) {
-        return getAlertClient().getAlertTimeseries(request)
-      }
-
     static int getAlertEnforcementCount(String deploymentName, String policyName) {
-        def violations = getViolations(ListAlertsRequest.newBuilder()
+        def violations = AlertService.getViolations(ListAlertsRequest.newBuilder()
                 .setQuery("Deployment:${deploymentName}+Policy:${policyName}").build())
         return violations.get(0)?.enforcementCount
-    }
-
-    static Alert getViolation(String id) {
-        return getAlertClient().getAlert(getResourceByID(id))
-    }
-
-    static resolveAlert(String alertID) {
-        return getAlertClient().resolveAlert(
-            AlertServiceOuterClass.ResolveAlertRequest.newBuilder().setId(alertID).build())
     }
 
     static List<ListDeployment> getDeployments(RawQuery query = RawQuery.newBuilder().build()) {
@@ -149,7 +111,7 @@ class Services extends BaseService {
         int intervalSeconds = 1
         int waitTime
         for (waitTime = 0; waitTime < timeoutSeconds / intervalSeconds; waitTime++) {
-            def violations = getViolations(ListAlertsRequest.newBuilder()
+            def violations = AlertService.getViolations(ListAlertsRequest.newBuilder()
                     .setQuery(query).build())
             if (violations.size() > 0) {
                 println "violation size is: " + violations.size()

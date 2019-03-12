@@ -1,10 +1,9 @@
-import static Services.getAlertCounts
-import static Services.getAlertGroups
 import static Services.getPolicies
-import static Services.getViolations
 import static Services.waitForViolation
 
 import spock.lang.Shared
+import io.stackrox.proto.api.v1.PaginationOuterClass
+import services.AlertService
 import common.Constants
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
@@ -74,6 +73,14 @@ class DefaultPoliciesTest extends BaseSpecification {
     private String gcrId
 
     def setupSpec() {
+        for (int i = 1; i <= 10; i++) {
+            DEPLOYMENTS.add(
+                    new Deployment()
+                            .setName("pagination${i}")
+                            .setImage("nginx:latest")
+                            .addLabel("app", "pagination${i}")
+            )
+        }
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         orchestrator.createService(new Service(STRUTS_DEPLOYMENT))
         for (Deployment deployment : DEPLOYMENTS) {
@@ -137,6 +144,66 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Category(BAT)
+    def "Verify violation pagination"() {
+        when:
+        "Set pagination limit to 5"
+        ListAlertsRequest request = ListAlertsRequest.newBuilder()
+                .setQuery("Deployment:pagination+Policy:Latest tag")
+                .setPagination(
+                PaginationOuterClass.Pagination.newBuilder()
+                        .setLimit(5)
+                        .setOffset(0)
+        ).build()
+        def alerts = AlertService.getViolations(request)
+
+        then:
+        "verify result set is 5"
+        assert alerts.size() == 5
+
+        and:
+        "Set limit to 10 with offset to 5 on a total count of 10"
+        ListAlertsRequest request2 = ListAlertsRequest.newBuilder()
+                .setQuery("Deployment:pagination+Policy:Latest tag")
+                .setPagination(
+                PaginationOuterClass.Pagination.newBuilder()
+                        .setLimit(10)
+                        .setOffset(5)
+        ).build()
+        def alerts2 = AlertService.getViolations(request2)
+
+        then:
+        "Verify result set is 5"
+        assert alerts2.size() == 5
+
+        and:
+        "Get the same violation set in reversed and non-reversed order"
+        ListAlertsRequest request3 = ListAlertsRequest.newBuilder()
+                .setQuery("Deployment:pagination+Policy:Latest tag,No resource requests or limits specified")
+                .setPagination(
+                        PaginationOuterClass.Pagination.newBuilder()
+                                .setSortOption(
+                                        PaginationOuterClass.SortOption.newBuilder()
+                                                .setField("Violation")
+                                                .setReversed(false))
+                ).build()
+        def alerts3 = AlertService.getViolations(request3).collect { it.policy.name }
+        ListAlertsRequest request4 = ListAlertsRequest.newBuilder()
+                .setQuery("Deployment:pagination+Policy:Latest tag,No resource requests or limits specified")
+                .setPagination(
+                PaginationOuterClass.Pagination.newBuilder()
+                        .setSortOption(
+                        PaginationOuterClass.SortOption.newBuilder()
+                                .setField("Violation")
+                                .setReversed(true))
+        ).build()
+        def alerts4 = AlertService.getViolations(request4).collect { it.policy.name }
+
+        then:
+        "make sure the results are the same, just reversed"
+        assert alerts3 == alerts4.reverse()
+    }
+
+    @Category(BAT)
     def "Verify that Kubernetes Dashboard violation is generated"() {
         given:
         "Orchestrator is K8S"
@@ -151,7 +218,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     def "Verify that StackRox services don't trigger alerts"() {
         expect:
         "Verify policies are not violated within the stackrox namespace"
-        def violations = getViolations(
+        def violations = AlertService.getViolations(
                 ListAlertsRequest.newBuilder().setQuery("Namespace:stackrox,Violation State:*").build()
         )
         def unexpectedViolations = violations.findAll {
@@ -220,8 +287,8 @@ class DefaultPoliciesTest extends BaseSpecification {
     def "Verify that built-in services don't trigger unexpected alerts"() {
         expect:
         "Verify unexpected policies are not violated within the kube-system namespace"
-        getViolations(
-          AlertServiceOuterClass.ListAlertsRequest.newBuilder()
+        AlertService.getViolations(
+          ListAlertsRequest.newBuilder()
             .setQuery("Namespace:kube-system+Policy:!Kubernetes Dashboard").build()
         ).stream().filter { x -> !WHITELISTED_KUBE_SYSTEM_POLICIES.contains(x.policy.name) }.collect().size() == 0
     }
@@ -247,7 +314,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     def countAlerts(ListAlertsRequest req, RequestGroup group) {
-        def c = getAlertCounts(
+        def c = AlertService.getAlertCounts(
                 GetAlertsCountsRequest.newBuilder().setRequest(req).setGroupBy(group).build()
         )
         return c
@@ -267,7 +334,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     def "Verify that alert counts API is consistent with alerts"()  {
         given:
         def alertReq = queryForDeployments()
-        def violations = getViolations(alertReq)
+        def violations = AlertService.getViolations(alertReq)
         def uniqueCategories = numUniqueCategories(violations)
 
         when:
@@ -303,7 +370,7 @@ class DefaultPoliciesTest extends BaseSpecification {
         def alertReq = queryForDeployments()
 
         when:
-        def groups = getAlertGroups(alertReq)
+        def groups = AlertService.getAlertGroups(alertReq)
         def flat = flattenGroups(groups)
 
         then:

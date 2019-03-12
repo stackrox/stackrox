@@ -6,6 +6,7 @@ import objects.DaemonSet
 import objects.Deployment
 import org.junit.Assume
 import org.junit.experimental.categories.Category
+import services.AlertService
 import services.CreatePolicyService
 import spock.lang.Shared
 import spock.lang.Unroll
@@ -97,7 +98,7 @@ class Enforcement extends BaseSpecification {
                 30
         ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
-        AlertOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
+        AlertOuterClass.Alert alert = AlertService.getViolation(violations.get(0).id)
 
         then:
         "check pod was killed"
@@ -151,7 +152,7 @@ class Enforcement extends BaseSpecification {
                 30
         ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
-        AlertOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
+        AlertOuterClass.Alert alert = AlertService.getViolation(violations.get(0).id)
 
         then:
         "check deployment was scaled-down to 0 replicas"
@@ -232,7 +233,7 @@ class Enforcement extends BaseSpecification {
                 30
         ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
-        AlertOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
+        AlertOuterClass.Alert alert = AlertService.getViolation(violations.get(0).id)
 
         then:
         "check deployment was scaled-down to 0 replicas"
@@ -304,7 +305,7 @@ class Enforcement extends BaseSpecification {
                 30
         ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
-        AlertOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
+        AlertOuterClass.Alert alert = AlertService.getViolation(violations.get(0).id)
 
         then:
         "check deployment was scaled-down to 0 replicas"
@@ -365,7 +366,7 @@ class Enforcement extends BaseSpecification {
                 30
         ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
-        AlertOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
+        AlertOuterClass.Alert alert = AlertService.getViolation(violations.get(0).id)
 
         then:
         "check deployment set with unsatisfiable node constraint, and unavailable nodes = desired nodes"
@@ -507,7 +508,7 @@ class Enforcement extends BaseSpecification {
                 30
         ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
-        AlertOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
+        AlertOuterClass.Alert alert = AlertService.getViolation(violations.get(0).id)
 
         then:
         "check deployment was scaled-down to 0 replicas and node selection was not applied"
@@ -572,7 +573,7 @@ class Enforcement extends BaseSpecification {
                 30
         ) as List<AlertOuterClass.ListAlert>
         assert violations != null && violations?.size() > 0
-        AlertOuterClass.Alert alert = Services.getViolation(violations.get(0).id)
+        AlertOuterClass.Alert alert = AlertService.getViolation(violations.get(0).id)
 
         then:
         "check deployment set with unsatisfiable node constraint, and unavailable nodes = desired nodes"

@@ -14,6 +14,7 @@ import io.grpc.netty.NegotiationType
 import io.grpc.netty.NettyChannelBuilder
 import io.netty.handler.ssl.SslContext
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
+import io.stackrox.proto.api.v1.Common.ResourceByID
 import util.Env
 
 import java.util.concurrent.TimeUnit
@@ -115,5 +116,9 @@ class BaseService {
             tokenUpdated = false
         }
         return channelInstance
+    }
+
+    static ResourceByID getResourceByID(String id) {
+        return ResourceByID.newBuilder().setId(id).build()
     }
 }
