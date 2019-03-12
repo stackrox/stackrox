@@ -15,8 +15,8 @@ var (
 )
 
 type sensorConnection struct {
-	clusterID string
-	stopSig   concurrency.ErrorSignal
+	clusterID           string
+	stopSig, stoppedSig concurrency.ErrorSignal
 
 	sendC chan *central.MsgToSensor
 
@@ -34,6 +34,7 @@ func newConnection(clusterID string, pf pipeline.Factory) (*sensorConnection, er
 
 	conn := &sensorConnection{
 		stopSig:       concurrency.NewErrorSignal(),
+		stoppedSig:    concurrency.NewErrorSignal(),
 		sendC:         make(chan *central.MsgToSensor),
 		eventPipeline: eventPipeline,
 		eventQueue:    newDedupingQueue(),
@@ -48,7 +49,7 @@ func (c *sensorConnection) Terminate(err error) bool {
 }
 
 func (c *sensorConnection) Stopped() concurrency.ReadOnlyErrorSignal {
-	return &c.stopSig
+	return &c.stoppedSig
 }
 
 func (c *sensorConnection) runRecv(server central.SensorService_CommunicateServer) {
@@ -69,6 +70,7 @@ func (c *sensorConnection) handleMessages() {
 			log.Errorf("Error handling sensor message: %v", err)
 		}
 	}
+	c.stoppedSig.SignalWithError(c.stopSig.Err())
 }
 
 func (c *sensorConnection) runSend(server central.SensorService_CommunicateServer) {

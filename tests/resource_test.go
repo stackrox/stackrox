@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/search"
@@ -48,7 +48,12 @@ func TestClusters(t *testing.T) {
 	cancel()
 	require.NoError(t, err)
 
-	cByID.Cluster.Status.LastContact = c.GetStatus().GetLastContact()
+	if status := cByID.GetCluster().GetStatus(); status != nil {
+		status.LastContact = nil
+	}
+	if status := c.GetStatus(); status != nil {
+		status.LastContact = nil
+	}
 	assert.Equal(t, c, cByID.GetCluster())
 }
 

@@ -9,6 +9,9 @@ import (
 // SensorConnection provides a handle to an established connection from a sensor.
 type SensorConnection interface {
 	Terminate(err error) bool
+
+	// Stopped returns a signal that, when triggered, guarantees that no more messages from this sensor connection will
+	// be processed.
 	Stopped() concurrency.ReadOnlyErrorSignal
 
 	InjectMessage(msg *central.MsgToSensor) error

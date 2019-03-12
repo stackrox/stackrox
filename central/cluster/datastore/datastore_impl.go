@@ -15,8 +15,13 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/search"
+)
+
+const (
+	connectionTerminationTimeout = 5 * time.Second
 )
 
 type datastoreImpl struct {
@@ -109,6 +114,9 @@ func (ds *datastoreImpl) postRemoveCluster(cluster *storage.Cluster) {
 	if ds.cm != nil {
 		if conn := ds.cm.GetConnection(cluster.GetId()); conn != nil {
 			conn.Terminate(errors.New("cluster was deleted"))
+			if !concurrency.WaitWithTimeout(conn.Stopped(), connectionTerminationTimeout) {
+				errorhelpers.PanicOnDevelopmentf("connection to sensor from cluster %s not terminated after %v", cluster.GetId(), connectionTerminationTimeout)
+			}
 		}
 	}
 
