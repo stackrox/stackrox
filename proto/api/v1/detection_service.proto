@@ -14,6 +14,7 @@ message BuildDetectionRequest {
     oneof Resource {
         storage.Image image = 1;
     }
+    bool fast_path = 2;
 }
 
 message BuildDetectionResponse {
@@ -24,10 +25,12 @@ message DeployDetectionRequest {
     oneof Resource {
         storage.Deployment deployment = 1;
     }
+    bool fast_path = 2;
 }
 
 message DeployYAMLDetectionRequest {
     string yaml = 1;
+    bool fast_path = 2;
 }
 
 message DeployDetectionResponse {

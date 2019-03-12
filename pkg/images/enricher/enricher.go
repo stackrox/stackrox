@@ -15,9 +15,14 @@ var (
 	logger = logging.LoggerForModule()
 )
 
+// EnrichmentContext is used to pass options through the enricher without exploding the number of function arguments
+type EnrichmentContext struct {
+	FastPath bool
+}
+
 // ImageEnricher provides functions for enriching images with integrations.
 type ImageEnricher interface {
-	EnrichImage(image *storage.Image) bool
+	EnrichImage(ctx EnrichmentContext, image *storage.Image) bool
 }
 
 // New returns a new ImageEnricher instance for the given subsystem.

@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/set"
 	"golang.org/x/time/rate"
@@ -159,7 +160,7 @@ func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator, inject
 
 func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string, storage.EnforcementAction, error) {
 	// Attempt to enrich the image before detection.
-	updatedImages, updated, err := m.enricher.EnrichDeployment(deployment)
+	updatedImages, updated, err := m.enricher.EnrichDeployment(enricher.EnrichmentContext{FastPath: false}, deployment)
 	if err != nil {
 		logger.Errorf("Error enriching deployment %s: %s", deployment.GetName(), err)
 	}

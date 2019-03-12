@@ -24,9 +24,9 @@ type enricherImpl struct {
 }
 
 // EnrichImage enriches an image with the integration set present.
-func (e *enricherImpl) EnrichImage(image *storage.Image) bool {
+func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) bool {
 	updatedMetadata := e.enrichWithMetadata(image)
-	updatedScan := e.enrichWithScan(image)
+	updatedScan := e.enrichWithScan(ctx, image)
 	return updatedMetadata || updatedScan
 }
 
@@ -76,16 +76,16 @@ func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry re
 	return true
 }
 
-func (e *enricherImpl) enrichWithScan(image *storage.Image) bool {
+func (e *enricherImpl) enrichWithScan(ctx EnrichmentContext, image *storage.Image) bool {
 	for _, scanner := range e.integrations.ScannerSet().GetAll() {
-		if updated := e.enrichImageWithScanner(image, scanner); updated {
+		if updated := e.enrichImageWithScanner(ctx, image, scanner); updated {
 			return true
 		}
 	}
 	return false
 }
 
-func (e *enricherImpl) enrichImageWithScanner(image *storage.Image, scanner scannerTypes.ImageScanner) bool {
+func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *storage.Image, scanner scannerTypes.ImageScanner) bool {
 	if !scanner.Global() {
 		return false
 	}
@@ -99,6 +99,10 @@ func (e *enricherImpl) enrichImageWithScanner(image *storage.Image, scanner scan
 		return true
 	}
 	e.metrics.IncrementScanCacheMiss()
+
+	if ctx.FastPath {
+		return false
+	}
 
 	// Wait until limiter allows entrance
 	_ = e.scanLimiter.Wait(context.Background())

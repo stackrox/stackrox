@@ -13,14 +13,14 @@ type enricherImpl struct {
 }
 
 // EnrichDeployment enriches a deployment with data from registries and scanners.
-func (e *enricherImpl) EnrichDeployment(deployment *storage.Deployment) ([]*storage.Image, bool, error) {
-	return e.enrichDeployment(deployment)
+func (e *enricherImpl) EnrichDeployment(ctx enricher.EnrichmentContext, deployment *storage.Deployment) ([]*storage.Image, bool, error) {
+	return e.enrichDeployment(ctx, deployment)
 }
 
-func (e *enricherImpl) enrichDeployment(deployment *storage.Deployment) ([]*storage.Image, bool, error) {
+func (e *enricherImpl) enrichDeployment(ctx enricher.EnrichmentContext, deployment *storage.Deployment) ([]*storage.Image, bool, error) {
 	var updatedImages []*storage.Image
 	for _, c := range deployment.GetContainers() {
-		if updated := e.imageEnricher.EnrichImage(c.Image); updated && c.GetImage().GetId() != "" {
+		if updated := e.imageEnricher.EnrichImage(ctx, c.Image); updated && c.GetImage().GetId() != "" {
 			updatedImages = append(updatedImages, c.GetImage())
 		}
 	}

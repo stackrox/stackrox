@@ -181,7 +181,7 @@ func (s *handlerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
-	resp, err := s.client.DetectDeployTime(ctx, &v1.DeployDetectionRequest{Resource: &v1.DeployDetectionRequest_Deployment{Deployment: deployment}})
+	resp, err := s.client.DetectDeployTime(ctx, &v1.DeployDetectionRequest{Resource: &v1.DeployDetectionRequest_Deployment{Deployment: deployment}, FastPath: true})
 	if err != nil {
 		log.Warnf("Deployment %s/%s of type %s was deployed without being checked due to detection error: %v",
 			deployment.GetNamespace(), deployment.GetName(), deployment.GetType(), err)

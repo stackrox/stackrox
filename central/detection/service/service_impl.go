@@ -72,7 +72,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		return nil, fmt.Errorf("image name contents missing")
 	}
 
-	_ = s.imageEnricher.EnrichImage(req.GetImage())
+	_ = s.imageEnricher.EnrichImage(enricher.EnrichmentContext{FastPath: req.GetFastPath()}, req.GetImage())
 
 	alerts, err := s.buildTimeDetector.Detect(req.GetImage())
 	if err != nil {
@@ -83,8 +83,8 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 	}, nil
 }
 
-func (s *serviceImpl) enrichAndDetect(deployment *storage.Deployment) (*apiV1.DeployDetectionResponse_Run, error) {
-	_, _, err := s.deploymentEnricher.EnrichDeployment(deployment)
+func (s *serviceImpl) enrichAndDetect(ctx enricher.EnrichmentContext, deployment *storage.Deployment) (*apiV1.DeployDetectionResponse_Run, error) {
+	_, _, err := s.deploymentEnricher.EnrichDeployment(ctx, deployment)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -100,7 +100,7 @@ func (s *serviceImpl) enrichAndDetect(deployment *storage.Deployment) (*apiV1.De
 	}, nil
 }
 
-func (s *serviceImpl) runDeployTimeDetect(obj k8sRuntime.Object) (*apiV1.DeployDetectionResponse_Run, error) {
+func (s *serviceImpl) runDeployTimeDetect(ctx enricher.EnrichmentContext, obj k8sRuntime.Object) (*apiV1.DeployDetectionResponse_Run, error) {
 	if !kubernetes.IsDeploymentResource(obj.GetObjectKind().GroupVersionKind().Kind) {
 		return nil, nil
 	}
@@ -110,7 +110,7 @@ func (s *serviceImpl) runDeployTimeDetect(obj k8sRuntime.Object) (*apiV1.DeployD
 		return nil, status.Errorf(codes.InvalidArgument, "Could not convert to deployment from resource: %v", err)
 	}
 
-	return s.enrichAndDetect(deployment)
+	return s.enrichAndDetect(ctx, deployment)
 }
 
 // DetectDeployTime runs detection on a deployment
@@ -124,6 +124,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		return nil, status.Errorf(codes.InvalidArgument, "could not parse YAML: %v", err)
 	}
 
+	eCtx := enricher.EnrichmentContext{FastPath: req.GetFastPath()}
 	var runs []*apiV1.DeployDetectionResponse_Run
 	if list, ok := obj.(*coreV1.List); ok {
 		for i, item := range list.Items {
@@ -131,7 +132,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 			if err != nil {
 				return nil, status.Errorf(codes.InvalidArgument, "Could not decode item %d in the list: %v", i, err)
 			}
-			run, err := s.runDeployTimeDetect(o2)
+			run, err := s.runDeployTimeDetect(eCtx, o2)
 			if err != nil {
 				return nil, status.Errorf(codes.Internal, "Unable to convert item %d in the list: %v", i, err)
 			}
@@ -140,7 +141,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 			}
 		}
 	} else {
-		run, err := s.runDeployTimeDetect(obj)
+		run, err := s.runDeployTimeDetect(eCtx, obj)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "Unable to convert object: %v", err)
 		}
@@ -158,7 +159,7 @@ func (s *serviceImpl) DetectDeployTime(ctx context.Context, req *apiV1.DeployDet
 		return nil, status.Error(codes.InvalidArgument, "Deployment must be passed to deploy time detection")
 	}
 
-	run, err := s.enrichAndDetect(req.GetDeployment())
+	run, err := s.enrichAndDetect(enricher.EnrichmentContext{FastPath: req.GetFastPath()}, req.GetDeployment())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
