@@ -1045,12 +1045,12 @@ jobs:
 
       - run:
           name: Push roxctl to stackrox-hub
-          working_directory: bazel-bin/roxctl
           command: |
             gcloud auth activate-service-account --key-file <(echo "$GOOGLE_CREDENTIALS_ROXCTL_UPLOAD")
             gcloud auth list
             MAIN_TAG=$(make tag)
 
+            cd bazel-bin/roxctl
             for release in "${MAIN_TAG}" latest; do
               gsutil cp linux_amd64_pure_stripped/roxctl "gs://sr-roxc/${release}/bin/linux/roxctl"
               gsutil cp linux_amd64_pure_stripped/roxctl "gs://sr-roxc/${release}/bin/Linux/roxctl"
