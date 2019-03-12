@@ -4,8 +4,10 @@ package quay
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -55,10 +57,18 @@ func (suite *QuayIntegrationSuite) TestGetLastScan() {
 			Tag:      "1.10",
 		},
 	}
-	scan, err := suite.quay.GetLastScan(image)
-	suite.Nil(err)
-	suite.NotNil(scan)
-	if scan != nil {
-		suite.NotEmpty(scan.Components)
-	}
+
+	var scan *storage.ImageScan
+	err := retry.WithRetry(func() error {
+		var err error
+		scan, err = suite.quay.GetLastScan(image)
+		return err
+	},
+		retry.Tries(5),
+		retry.BetweenAttempts(func() {
+			time.Sleep(time.Second)
+		}),
+	)
+	suite.NoError(err)
+	suite.NotEmpty(scan.GetComponents())
 }
