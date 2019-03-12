@@ -60,3 +60,8 @@ func TestIPv6FromBytes(t *testing.T) {
 	addr := IPFromBytes([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1})
 	assert.Equal(t, IPAddress{data: ipv6data{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}}, addr)
 }
+
+func TestIPv4MappedIPv6FromBytes(t *testing.T) {
+	addr := IPFromBytes([]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x0A, 0x14, 0x25, 0xB2})
+	assert.Equal(t, IPAddress{data: ipv4data{10, 20, 37, 178}}, addr)
+}

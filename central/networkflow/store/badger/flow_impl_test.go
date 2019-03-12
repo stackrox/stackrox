@@ -43,6 +43,8 @@ func (suite *FlowStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *FlowStoreTestSuite) TestStore() {
+	t1 := time.Now().Add(-5 * time.Minute)
+	t2 := time.Now()
 	flows := []*storage.NetworkFlow{
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -51,7 +53,7 @@ func (suite *FlowStoreTestSuite) TestStore() {
 				DstPort:    1,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
-			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
+			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(t1),
 		},
 		{
 			Props: &storage.NetworkFlowProperties{
@@ -60,7 +62,15 @@ func (suite *FlowStoreTestSuite) TestStore() {
 				DstPort:    2,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
-			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(time.Now()),
+			LastSeenTimestamp: protoconv.ConvertTimeToTimestamp(t2),
+		},
+		{
+			Props: &storage.NetworkFlowProperties{
+				SrcEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "yetAnotherNode1"},
+				DstEntity:  &storage.NetworkEntityInfo{Type: storage.NetworkEntityInfo_DEPLOYMENT, Id: "yetAnotherNode2"},
+				DstPort:    3,
+				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+			},
 		},
 	}
 	var err error
@@ -68,35 +78,44 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	err = suite.tested.UpsertFlows(flows, timestamp.Now())
 	suite.NoError(err, "upsert should succeed on first insert")
 
+	readFlows, _, err := suite.tested.GetAllFlows(nil)
+	suite.Require().NoError(err)
+	suite.ElementsMatch(readFlows, flows)
+
+	readFlows, _, err = suite.tested.GetAllFlows(protoconv.ConvertTimeToTimestamp(t2))
+	suite.Require().NoError(err)
+	suite.ElementsMatch(readFlows, flows[1:])
+
+	readFlows, _, err = suite.tested.GetAllFlows(protoconv.ConvertTimeToTimestamp(time.Now()))
+	suite.Require().NoError(err)
+	suite.ElementsMatch(readFlows, flows[2:])
+
 	err = suite.tested.UpsertFlows(flows, timestamp.Now())
 	suite.NoError(err, "upsert should succeed on second insert")
 
 	err = suite.tested.RemoveFlow(&storage.NetworkFlowProperties{
-		SrcEntity:  flows[1].GetProps().GetSrcEntity(),
-		DstEntity:  flows[1].GetProps().GetDstEntity(),
-		DstPort:    flows[1].GetProps().GetDstPort(),
-		L4Protocol: flows[1].GetProps().GetL4Protocol(),
+		SrcEntity:  flows[0].GetProps().GetSrcEntity(),
+		DstEntity:  flows[0].GetProps().GetDstEntity(),
+		DstPort:    flows[0].GetProps().GetDstPort(),
+		L4Protocol: flows[0].GetProps().GetL4Protocol(),
 	})
 	suite.NoError(err, "remove should succeed when present")
 
 	err = suite.tested.RemoveFlow(&storage.NetworkFlowProperties{
-		SrcEntity:  flows[1].GetProps().GetSrcEntity(),
-		DstEntity:  flows[1].GetProps().GetDstEntity(),
-		DstPort:    flows[1].GetProps().GetDstPort(),
-		L4Protocol: flows[1].GetProps().GetL4Protocol(),
+		SrcEntity:  flows[0].GetProps().GetSrcEntity(),
+		DstEntity:  flows[0].GetProps().GetDstEntity(),
+		DstPort:    flows[0].GetProps().GetDstPort(),
+		L4Protocol: flows[0].GetProps().GetL4Protocol(),
 	})
 	suite.NoError(err, "remove should succeed when not present")
 
 	var actualFlows []*storage.NetworkFlow
 	actualFlows, _, err = suite.tested.GetAllFlows(nil)
-	suite.Equal(1, len(actualFlows), "only flows[0] should be present")
-	suite.Equal(flows[0], actualFlows[0], "flows should be equal")
+	suite.ElementsMatch(actualFlows, flows[1:])
 
 	err = suite.tested.UpsertFlows(flows, timestamp.Now())
 	suite.NoError(err, "upsert should succeed")
 
 	actualFlows, _, err = suite.tested.GetAllFlows(nil)
-	suite.Equal(2, len(actualFlows), "expected number of flows does not match")
-	suite.ElementsMatch(flows, actualFlows, "upserted values should be as expected")
-
+	suite.ElementsMatch(actualFlows, flows)
 }

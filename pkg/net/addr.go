@@ -1,6 +1,7 @@
 package net
 
 import (
+	"bytes"
 	"net"
 )
 
@@ -44,7 +45,7 @@ func (d ipv4data) bytes() []byte {
 }
 func (d ipv4data) isLoopback() bool {
 	// IPv4 loopback is 127.0.0.0/8
-	return d[0] == 127 && d[1] == 0 && d[2] == 0
+	return d[0] == 127
 }
 
 type ipv6data [16]byte
@@ -66,16 +67,14 @@ func (d ipv6data) isLoopback() bool {
 	}
 	return true
 }
+
+var (
+	ipv4MappedIPv6Prefix = []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff}
+)
+
 func (d ipv6data) canonicalize() ipAddrData {
-	for i := 0; i < 10; i++ {
-		if d[i] != 0 {
-			return d
-		}
-	}
-	for i := 10; i < 12; i++ {
-		if d[i] != 0xff {
-			return d
-		}
+	if !bytes.Equal(d[:12], ipv4MappedIPv6Prefix) {
+		return d
 	}
 	var canonicalized ipv4data
 	copy(canonicalized[:], d[12:])

@@ -103,8 +103,10 @@ func (s *flowStoreImpl) readAllFlows(since *types.Timestamp) (flows []*storage.N
 				if err := proto.Unmarshal(v, flow); err != nil {
 					return err
 				}
-				if since != nil && protoconv.CompareProtoTimestamps(flow.LastSeenTimestamp, since) < 0 {
-					return nil
+				if since != nil && flow.LastSeenTimestamp != nil {
+					if protoconv.CompareProtoTimestamps(flow.LastSeenTimestamp, since) < 0 {
+						return nil
+					}
 				}
 				flows = append(flows, flow)
 				return nil
