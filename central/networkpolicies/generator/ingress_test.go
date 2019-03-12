@@ -50,14 +50,10 @@ func TestGenerateIngressRule_WithInternetExposure(t *testing.T) {
 	deployment0 := createDeploymentNode("deployment0", "ns", map[string]string{"app": "foo"})
 	deployment1 := createDeploymentNode("deployment1", "ns", nil)
 
-	deployment1.deployment.Containers = []*storage.Container{
+	deployment1.deployment.Ports = []*storage.PortConfig{
 		{
-			Ports: []*storage.PortConfig{
-				{
-					ContainerPort: 443,
-					Exposure:      storage.PortConfig_EXTERNAL,
-				},
-			},
+			ContainerPort: 443,
+			Exposure:      storage.PortConfig_EXTERNAL,
 		},
 	}
 	deployment1.incoming[deployment0] = struct{}{}

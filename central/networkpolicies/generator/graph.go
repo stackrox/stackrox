@@ -27,11 +27,9 @@ func (n *node) hasInternetIngress() bool {
 		}
 	}
 
-	for _, container := range n.deployment.GetContainers() {
-		for _, port := range container.GetPorts() {
-			if port.GetExposure() == storage.PortConfig_NODE || port.GetExposure() == storage.PortConfig_EXTERNAL {
-				return true
-			}
+	for _, port := range n.deployment.GetPorts() {
+		if port.GetExposure() == storage.PortConfig_NODE || port.GetExposure() == storage.PortConfig_EXTERNAL {
+			return true
 		}
 	}
 	return false
