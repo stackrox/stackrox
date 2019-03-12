@@ -6,7 +6,10 @@ echo "StackRox image tag set to $MAIN_IMAGE_TAG"
 export MAIN_IMAGE="${MAIN_IMAGE:-stackrox/main:$MAIN_IMAGE_TAG}"
 echo "StackRox image set to $MAIN_IMAGE"
 
-export SCANNER_IMAGE="${SCANNER_IMAGE:-stackrox/scanner:0.5.3}"
+export SCANNER_IMAGE="${SCANNER_IMAGE:-}"
+if [[ -z "${SCANNER_IMAGE}" ]]; then
+  SCANNER_IMAGE="stackrox/scanner:$(cat "$(git rev-parse --show-toplevel)/SCANNER_VERSION")"
+fi
 echo "StackRox scanner image set to $SCANNER_IMAGE"
 
 function curl_central() {
