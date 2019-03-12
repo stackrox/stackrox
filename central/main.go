@@ -16,7 +16,7 @@ import (
 	authproviderService "github.com/stackrox/rox/central/authprovider/service"
 	authProviderStore "github.com/stackrox/rox/central/authprovider/store"
 	"github.com/stackrox/rox/central/cli"
-	"github.com/stackrox/rox/central/cluster/datastore"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
 	complianceHandlers "github.com/stackrox/rox/central/compliance/handlers"
@@ -202,7 +202,7 @@ func startGRPCServer() {
 		siService.Singleton(),
 		summaryService.Singleton(),
 		userService.Singleton(),
-		sensorService.New(connection.ManagerSingleton(), all.Singleton()),
+		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton()),
 	}
 
 	if err := manager.Singleton().Start(); err != nil {
@@ -290,7 +290,7 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		{
 			Route:         "/api/extensions/clusters/zip",
 			Authorizer:    authzUser.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity)),
-			ServerHandler: clustersZip.Handler(datastore.Singleton(), siStore.Singleton()),
+			ServerHandler: clustersZip.Handler(clusterDataStore.Singleton(), siStore.Singleton()),
 			Compression:   false,
 		},
 		{

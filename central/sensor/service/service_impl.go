@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -13,6 +14,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -20,15 +23,17 @@ var (
 )
 
 type serviceImpl struct {
-	manager connection.Manager
-	pf      pipeline.Factory
+	manager  connection.Manager
+	pf       pipeline.Factory
+	clusters clusterDataStore.DataStore
 }
 
 // New creates a new Service using the given manager.
-func New(manager connection.Manager, pf pipeline.Factory) Service {
+func New(manager connection.Manager, pf pipeline.Factory, clusters clusterDataStore.DataStore) Service {
 	return &serviceImpl{
-		manager: manager,
-		pf:      pf,
+		manager:  manager,
+		pf:       pf,
+		clusters: clusters,
 	}
 }
 
@@ -57,6 +62,14 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	}
 
 	clusterID := svc.GetId()
+
+	_, exists, err := s.clusters.GetCluster(clusterID)
+	if err != nil {
+		return status.Errorf(codes.Internal, "couldn't look-up cluster %q: %v", clusterID, err)
+	}
+	if !exists {
+		return status.Errorf(codes.NotFound, "cluster %q not found in DB; it was possibly deleted", clusterID)
+	}
 
 	return s.manager.HandleConnection(clusterID, s.pf, server)
 }
