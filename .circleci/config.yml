@@ -2,8 +2,8 @@ defaults: &defaults
   docker:
     - image: docker.io/stackrox/apollo-ci:0.1.11-22-g6963d4c4f3
       auth:
-        username: $DOCKERHUB_USERNAME
-        password: $DOCKERHUB_PASSWORD
+        username: $DOCKER_IO_USERNAME
+        password: $DOCKER_IO_PASSWORD
   working_directory: /go/src/github.com/stackrox/rox
 
 setupBazel: &setupBazel
@@ -66,10 +66,10 @@ setupGCP: &setupGCP
   run:
     name: Setup deployment env
     command: |
-      docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
+      docker login -u "$DOCKER_IO_USERNAME" -p "$DOCKER_IO_PASSWORD"
       cat >>"$BASH_ENV" <<EOF
-        export REGISTRY_USERNAME="$DOCKERHUB_USERNAME"
-        export REGISTRY_PASSWORD="$DOCKERHUB_PASSWORD"
+        export REGISTRY_USERNAME="$DOCKER_IO_USERNAME"
+        export REGISTRY_PASSWORD="$DOCKER_IO_PASSWORD"
         export MAIN_IMAGE_TAG="$(make tag)"
         export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json
       EOF
@@ -340,7 +340,7 @@ jobs:
       - run:
           name: Push new Docker image
           command: |
-            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD docker.io
+            docker login -u $DOCKER_IO_USERNAME -p $DOCKER_IO_PASSWORD docker.io
 
             TAG=$(make tag)
 
@@ -408,7 +408,7 @@ jobs:
       - run:
           name: Push new Docker image
           command: |
-            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD docker.io
+            docker login -u $DOCKER_IO_USERNAME -p $DOCKER_IO_PASSWORD docker.io
 
             TAG=$(make tag)
 
@@ -762,7 +762,7 @@ jobs:
 
       - run:
           name: Login to Docker Hub
-          command: docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
+          command: docker login -u "$DOCKER_IO_USERNAME" -p "$DOCKER_IO_PASSWORD"
 
       - run:
           name: Install kubectl
@@ -840,7 +840,7 @@ jobs:
 
       - run:
           name: Login to Docker Hub
-          command: docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
+          command: docker login -u "$DOCKER_IO_USERNAME" -p "$DOCKER_IO_PASSWORD"
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -864,8 +864,8 @@ jobs:
               export OPENSHIFT_HOST=$(cat openshift/master)
               export ROX_IMAGE_REGISTRY=docker.io
               export MAIN_IMAGE_TAG=$(make tag)
-              export REGISTRY_PASSWORD=$DOCKERHUB_PASSWORD
-              export REGISTRY_USERNAME=$DOCKERHUB_USERNAME
+              export REGISTRY_PASSWORD=$DOCKER_IO_PASSWORD
+              export REGISTRY_USERNAME=$DOCKER_IO_USERNAME
             EOF
 
       - run:
@@ -1024,9 +1024,9 @@ jobs:
       - run:
           name: Push image into stackrox.io
           command: |
-            docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD" docker.io
-            docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD" stackrox.io
-            docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD" collector.stackrox.io
+            docker login -u "$DOCKER_IO_USERNAME" -p "$DOCKER_IO_PASSWORD" docker.io
+            docker login -u "$STACKROX_IO_USERNAME" -p "$STACKROX_IO_PASSWORD" stackrox.io
+            docker login -u "$STACKROX_IO_USERNAME" -p "$STACKROX_IO_PASSWORD" collector.stackrox.io
 
             MAIN_TAG=$(make tag)
             COLLECTOR_TAG=$(make collector-tag)
