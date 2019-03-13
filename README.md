@@ -1,9 +1,9 @@
 [![CircleCI][circleci-badge]][circleci-link]
 [![Coverage Status][coveralls-badge]][coveralls-link]
 
-# StackRox Container Security Platform
+# StackRox Kubernetes Security Platform
 
-The StackRox Container Security Platform performs a risk analysis of the container
+The StackRox Kubernetes Security Platform performs a risk analysis of the container
 environment, delivers visibility and runtime alerts, and provides recommendations
 to proactively improve security by hardening the environment. StackRox
 integrates with every stage of container lifecycle: build, deploy and runtime.
