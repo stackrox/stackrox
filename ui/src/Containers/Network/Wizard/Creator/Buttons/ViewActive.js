@@ -7,24 +7,24 @@ import wizardStages from '../../wizardStages';
 
 class GenerateButton extends Component {
     static propTypes = {
-        setWizardStage: PropTypes.func.isRequired,
-        requestNetworkPolicyModification: PropTypes.func.isRequired
+        loadActivePolicies: PropTypes.func.isRequired,
+        setWizardStage: PropTypes.func.isRequired
     };
 
     onClick = () => {
-        this.props.requestNetworkPolicyModification();
+        this.props.loadActivePolicies();
         this.props.setWizardStage(wizardStages.simulator);
     };
 
     render() {
         return (
-            <div className="flex m-3 py-2 items-center justify-center">
+            <div className="flex items-center ml-2 -mr-2">
                 <button
                     type="button"
-                    className="rounded-sm px-4 py-3 border-2 border-primary-300 hover:border-primary-400 text-center text-3xlg font-700 text-primary-700 bg-primary-100 hover:bg-primary-200"
+                    className="px-3 py-2 text-xs border-2 border-base-400 bg-base-100 hover:border-primary-400 hover:text-primary-700 font-700 rounded-sm text-center text-base-500 uppercase"
                     onClick={this.onClick}
                 >
-                    Generate and simulate network policies
+                    View Active YAML
                 </button>
             </div>
         );
@@ -32,8 +32,8 @@ class GenerateButton extends Component {
 }
 
 const mapDispatchToProps = {
-    setWizardStage: wizardActions.setNetworkWizardStage,
-    requestNetworkPolicyModification: wizardActions.generateNetworkPolicyModification
+    loadActivePolicies: wizardActions.loadActiveNetworkPolicyModification,
+    setWizardStage: wizardActions.setNetworkWizardStage
 };
 
 export default connect(

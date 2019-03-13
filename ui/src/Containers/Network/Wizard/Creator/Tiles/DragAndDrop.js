@@ -5,17 +5,16 @@ import * as Icon from 'react-feather';
 import ReactDropzone from 'react-dropzone';
 
 import { actions as notificationActions } from 'reducers/notifications';
-import { actions as backendActions } from 'reducers/network/backend';
 import { actions as wizardActions } from 'reducers/network/wizard';
 import wizardStages from 'Containers/Network/Wizard/wizardStages';
 
 class DragAndDrop extends Component {
     static propTypes = {
-        setNetworkPolicyModificationSuccess: PropTypes.func.isRequired,
-        setNetworkPolicyModificationFailure: PropTypes.func.isRequired,
+        setNetworkPolicyModification: PropTypes.func.isRequired,
+        setNetworkPolicyModificationState: PropTypes.func.isRequired,
+        setNetworkPolicyModificationSource: PropTypes.func.isRequired,
         setNetworkPolicyModificationName: PropTypes.func.isRequired,
         setWizardStage: PropTypes.func.isRequired,
-        setNetworkPolicyModificationSource: PropTypes.func.isRequired,
 
         addToast: PropTypes.func.isRequired,
         removeToast: PropTypes.func.isRequired
@@ -33,10 +32,11 @@ class DragAndDrop extends Component {
             const reader = new FileReader();
             reader.onload = () => {
                 const fileAsBinaryString = reader.result;
-                this.props.setNetworkPolicyModificationSuccess({ applyYaml: fileAsBinaryString });
+                this.props.setNetworkPolicyModification({ applyYaml: fileAsBinaryString });
+                this.props.setNetworkPolicyModificationState('SUCCESS');
             };
-            reader.onerror = error => {
-                this.props.setNetworkPolicyModificationFailure(error);
+            reader.onerror = () => {
+                this.props.setNetworkPolicyModificationState('ERROR');
             };
             reader.readAsBinaryString(file);
             this.props.setNetworkPolicyModificationSource('UPLOAD');
@@ -97,10 +97,10 @@ class DragAndDrop extends Component {
 }
 
 const mapDispatchToProps = {
-    setNetworkPolicyModificationSuccess: backendActions.fetchNetworkPolicyModification.success,
-    setNetworkPolicyModificationFailure: backendActions.fetchNetworkPolicyModification.failure,
-    setNetworkPolicyModificationName: wizardActions.setNetworkPolicyModificationName,
+    setNetworkPolicyModification: wizardActions.setNetworkPolicyModification,
+    setNetworkPolicyModificationState: wizardActions.setNetworkPolicyModificationState,
     setNetworkPolicyModificationSource: wizardActions.setNetworkPolicyModificationSource,
+    setNetworkPolicyModificationName: wizardActions.setNetworkPolicyModificationName,
 
     setWizardStage: wizardActions.setNetworkWizardStage,
 

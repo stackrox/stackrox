@@ -106,14 +106,15 @@ func (s *serviceImpl) GetNetworkPolicy(ctx context.Context, request *v1.Resource
 
 func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNetworkPoliciesRequest) (*v1.NetworkPoliciesResponse, error) {
 	// Check the cluster information.
-	if request.GetClusterId() != "" {
-		_, exists, err := s.clusterStore.GetCluster(request.GetClusterId())
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-		if !exists {
-			return nil, status.Errorf(codes.InvalidArgument, "cluster with id '%s' doesn't exist", request.GetClusterId())
-		}
+	if request.GetClusterId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "cluster id is required")
+	}
+	_, exists, err := s.clusterStore.GetCluster(request.GetClusterId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if !exists {
+		return nil, status.Errorf(codes.InvalidArgument, "cluster with id '%s' doesn't exist", request.GetClusterId())
 	}
 
 	// Get the policies in the cluster
@@ -130,6 +131,14 @@ func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNet
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 		networkPolicies = s.graphEvaluator.GetAppliedPolicies(deployments, networkPolicies)
+	}
+
+	// Fill in YAML fields where they are not set.
+	for _, np := range networkPolicies {
+		np.Yaml, err = networkPolicyConversion.RoxNetworkPolicyWrap{NetworkPolicy: np}.ToYaml()
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
 	}
 
 	// Get the policies that apply to the fetched deployments.

@@ -51,10 +51,17 @@ class SuccessView extends Component {
         )
             return null;
 
-        const successMessage =
-            this.props.modificationSource === 'UPLOAD'
-                ? 'YAML uploaded successfully'
-                : 'YAML generated successfully';
+        let successMessage;
+        const { modificationSource } = this.props;
+        if (modificationSource === 'UPLOAD') {
+            successMessage = 'YAML uploaded successfully';
+        }
+        if (modificationSource === 'GENERATED') {
+            successMessage = 'YAML generated successfully';
+        }
+        if (modificationSource === 'ACTIVE') {
+            successMessage = 'Active YAML';
+        }
 
         return (
             <div className="flex flex-col w-full h-full space-between">

@@ -8,6 +8,7 @@ import Panel from 'Components/Panel';
 
 import DragAndDrop from './Tiles/DragAndDrop';
 import Generate from './Tiles/Generate';
+import ViewActive from './Buttons/ViewActive';
 
 import wizardStages from '../wizardStages';
 
@@ -42,7 +43,7 @@ class Creator extends Component {
                 data-test-id="network-creator-panel"
                 className="h-full w-full shadow-md bg-base-200"
             >
-                <Panel header={header} onClose={this.props.onClose}>
+                <Panel header={header} onClose={this.props.onClose} buttons={<ViewActive />}>
                     <div className="flex h-full w-full flex-col p-4 pb-0">
                         <Generate />
                         {this.renderOr()}

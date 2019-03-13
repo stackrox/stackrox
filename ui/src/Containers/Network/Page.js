@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { actions as backendActions } from 'reducers/network/backend';
+import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as pageActions } from 'reducers/network/page';
 
 import Graph from './Graph/Graph';
@@ -46,7 +46,7 @@ class Page extends Component {
 
 const mapDispatchToProps = {
     closeWizard: pageActions.closeNetworkWizard,
-    setNetworkModification: backendActions.fetchNetworkPolicyModification.success
+    setNetworkModification: wizardActions.setNetworkPolicyModification
 };
 
 export default connect(

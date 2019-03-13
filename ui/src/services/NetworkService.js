@@ -71,6 +71,44 @@ export function fetchNetworkPolicies(policyIds) {
 }
 
 /**
+ * Fetches Node updates.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function fetchNodeUpdates() {
+    return axios.get(`${networkPoliciesBaseUrl}/graph/epoch`).then(response => ({
+        response: response.data
+    }));
+}
+
+/**
+ * Fetches the network policies currently applied to a cluster and set of deployments (defined by query).
+ *
+ * @param {!String} clusterId
+ * @param {!Object} query
+ * @returns {Promise<Object, Error>}
+ */
+export function getActiveNetworkModification(clusterId, deploymentQuery) {
+    let params;
+    if (deploymentQuery) {
+        params = queryString.stringify({ clusterId, deploymentQuery }, { arrayFormat: 'repeat' });
+    } else {
+        params = queryString.stringify({ clusterId });
+    }
+    const options = {
+        method: 'GET',
+        url: `${networkPoliciesBaseUrl}?${params}`
+    };
+    return axios(options).then(response => {
+        const policies = response.data.networkPolicies;
+        if (policies) {
+            return { applyYaml: policies.map(policy => policy.yaml).join('\n---\n') };
+        }
+        return null;
+    });
+}
+
+/**
  * Generates a modification to policies based on a graph.
  *
  * @param {!String} clusterId
@@ -91,17 +129,6 @@ export function generateNetworkModification(clusterId, query, date) {
         url: `${networkPoliciesBaseUrl}/generate/${clusterId}?deleteExisting=NONE&${params}`
     };
     return axios(options).then(response => response.data.modification);
-}
-
-/**
- * Fetches Node updates.
- *
- * @returns {Promise<Object, Error>}
- */
-export function fetchNodeUpdates() {
-    return axios.get(`${networkPoliciesBaseUrl}/graph/epoch`).then(response => ({
-        response: response.data
-    }));
 }
 
 /**

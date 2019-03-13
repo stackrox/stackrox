@@ -11,7 +11,10 @@ import { types as dialogueNetworkTypes } from 'reducers/network/dialogue';
 import { actions as graphNetworkActions, types as graphNetworkTypes } from 'reducers/network/graph';
 import { types as pageNetworkTypes } from 'reducers/network/page';
 import { types as searchNetworkTypes } from 'reducers/network/search';
-import { actions as wizardNetworkActions } from 'reducers/network/wizard';
+import {
+    actions as wizardNetworkActions,
+    types as wizardNetworkTypes
+} from 'reducers/network/wizard';
 import { actions as clusterActions } from 'reducers/clusters';
 import { actions as notificationActions } from 'reducers/notifications';
 import { selectors } from 'reducers';
@@ -82,6 +85,7 @@ export function* pollNodeUpdates() {
 
 function* generateNetworkModification() {
     yield put(wizardNetworkActions.setNetworkPolicyModificationName('StackRox Generated'));
+    yield put(wizardNetworkActions.setNetworkPolicyModificationState('REQUEST'));
     try {
         const clusterId = yield select(selectors.getSelectedNetworkClusterId);
         const searchOptions = yield select(selectors.getNetworkSearchOptions);
@@ -93,11 +97,33 @@ function* generateNetworkModification() {
             timeWindowToDate(timeWindow)
         );
         yield put(wizardNetworkActions.setNetworkPolicyModificationSource('GENERATED'));
-        yield put(backendNetworkActions.fetchNetworkPolicyModification.success(modification));
+        yield put(wizardNetworkActions.setNetworkPolicyModification(modification));
+        yield put(wizardNetworkActions.setNetworkPolicyModificationState('SUCCESS'));
         yield put(notificationActions.addNotification('Successfully generated YAML.'));
         yield put(notificationActions.removeOldestNotification());
     } catch (error) {
-        yield put(backendNetworkActions.fetchNetworkPolicyModification.failure(error));
+        yield put(wizardNetworkActions.setNetworkPolicyModificationState('ERROR'));
+        yield put(notificationActions.addNotification(error.response.data.error));
+        yield put(notificationActions.removeOldestNotification());
+    }
+}
+
+export function* getActiveNetworkModification() {
+    yield put(wizardNetworkActions.setNetworkPolicyModificationName('Active'));
+    yield put(wizardNetworkActions.setNetworkPolicyModificationState('REQUEST'));
+    try {
+        const clusterId = yield select(selectors.getSelectedNetworkClusterId);
+        const searchOptions = yield select(selectors.getNetworkSearchOptions);
+        const modification = yield call(
+            service.getActiveNetworkModification,
+            clusterId,
+            searchOptionsToQuery(searchOptions)
+        );
+        yield put(wizardNetworkActions.setNetworkPolicyModificationSource('ACTIVE'));
+        yield put(wizardNetworkActions.setNetworkPolicyModification(modification));
+        yield put(wizardNetworkActions.setNetworkPolicyModificationState('SUCCESS'));
+    } catch (error) {
+        yield put(wizardNetworkActions.setNetworkPolicyModificationState('ERROR'));
         yield put(notificationActions.addNotification(error.response.data.error));
         yield put(notificationActions.removeOldestNotification());
     }
@@ -173,9 +199,17 @@ function* watchFetchDeploymentRequest() {
 function* watchNetworkPoliciesRequest() {
     yield takeLatest(backendNetworkTypes.FETCH_NETWORK_POLICIES.REQUEST, getNetworkPolicies);
 }
+
+function* watchActiveNetworkModification() {
+    yield takeLatest(
+        wizardNetworkTypes.LOAD_ACTIVE_NETWORK_POLICY_MODIFICATION,
+        getActiveNetworkModification
+    );
+}
+
 function* watchGenerateNetworkModification() {
     yield takeLatest(
-        backendNetworkTypes.FETCH_NETWORK_POLICY_MODIFICATION.REQUEST,
+        wizardNetworkTypes.GENERATE_NETWORK_POLICY_MODIFICATION,
         generateNetworkModification
     );
 }
@@ -189,10 +223,7 @@ function* watchSetActivityTimeWindow() {
 }
 
 function* watchNetworkPolicyModification() {
-    yield takeLatest(
-        backendNetworkTypes.FETCH_NETWORK_POLICY_MODIFICATION.SUCCESS,
-        filterNetworkPageBySearch
-    );
+    yield takeLatest(wizardNetworkTypes.SET_POLICY_MODIFICATION, filterNetworkPageBySearch);
 }
 
 function* watchNotifyNetworkPolicyModification() {
@@ -212,6 +243,7 @@ export default function* network() {
         fork(watchNetworkSearchOptions),
         fork(watchNetworkPoliciesRequest),
         fork(watchFetchDeploymentRequest),
+        fork(watchActiveNetworkModification),
         fork(watchGenerateNetworkModification),
         fork(watchSelectNetworkCluster),
         fork(watchSetActivityTimeWindow),

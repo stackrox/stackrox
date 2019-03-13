@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
-import { actions as backendActions } from 'reducers/network/backend';
+import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as pageActions } from 'reducers/network/page';
 import PropTypes from 'prop-types';
 import Panel from 'Components/Panel';
@@ -65,7 +65,7 @@ const mapStateToProps = createStructuredSelector({
 
 const mapDispatchToProps = {
     closeWizard: pageActions.closeNetworkWizard,
-    setModification: backendActions.fetchNetworkPolicyModification.success
+    setModification: wizardActions.setNetworkPolicyModification
 };
 
 export default connect(
