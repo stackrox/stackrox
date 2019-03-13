@@ -65,9 +65,9 @@ export function fetchNetworkPolicies(policyIds) {
     const networkPoliciesPromises = policyIds.map(policyId =>
         axios.get(`${networkPoliciesBaseUrl}/${policyId}`)
     );
-    return axios
-        .all([...networkPoliciesPromises])
-        .then(response => ({ response: response.map(networkPolicy => networkPolicy.data) }));
+    return Promise.all(networkPoliciesPromises).then(response => ({
+        response: response.map(networkPolicy => networkPolicy.data)
+    }));
 }
 
 /**
