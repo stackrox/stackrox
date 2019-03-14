@@ -1,16 +1,11 @@
 import * as constants from 'constants/networkGraph';
-import {
-    getLinks,
-    getLinksBetweenNamespaces,
-    getBidirectionalLinks
-} from 'utils/networkGraphUtils';
+import { getLinks } from 'utils/networkGraphUtils';
 
 const DataManager = canvas => {
     const { clientWidth, clientHeight } = canvas;
 
     let links = [];
     let namespaces = [];
-    let namespaceLinks = [];
 
     function getNodesFromNamespaces() {
         return namespaces.reduce((acc, curr) => [...acc, ...curr.nodes], []);
@@ -93,18 +88,12 @@ const DataManager = canvas => {
         return enrichedNodes;
     }
 
-    function getNamespaceLinks(dataNodes, networkFlowMapping) {
-        const linksBetweenNamespaces = getLinksBetweenNamespaces(dataNodes, networkFlowMapping);
-        return getBidirectionalLinks(linksBetweenNamespaces);
-    }
-
     function getData() {
         const nodes = getNodesFromNamespaces();
         return {
             nodes,
             links,
-            namespaces,
-            namespaceLinks
+            namespaces
         };
     }
 
@@ -112,7 +101,6 @@ const DataManager = canvas => {
         const nodes = enrichNodes(data.nodes);
         links = getLinks(nodes, data.networkFlowMapping);
         namespaces = getNamespaces(nodes);
-        namespaceLinks = getNamespaceLinks(nodes, data.networkFlowMapping);
         setUpForceLayout(data.worker);
     }
 

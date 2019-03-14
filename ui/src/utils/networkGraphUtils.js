@@ -84,34 +84,6 @@ export const forceCollide = nodes => alpha => {
 };
 
 /**
- * Iterates through a list of links that contain a source and target,
- * and returns a new list of links where an link has a property "bidirectional" set to true if
- * there is an link that has the same source and targets, but is flipped the other way around
- *
- * @param {!Object[]} links list of links that contain a "source" and "target"
- * @returns {!Object[]}
- */
-export const getBidirectionalLinks = links => {
-    const sourceTargetToLinkMapping = {};
-
-    links.forEach(link => {
-        const key = `${link.source}--${link.target}`;
-        const reverseKey = `${link.target}--${link.source}`;
-        if (!sourceTargetToLinkMapping[key]) {
-            if (!sourceTargetToLinkMapping[reverseKey]) {
-                sourceTargetToLinkMapping[key] = link;
-            } else {
-                sourceTargetToLinkMapping[reverseKey].bidirectional = true;
-                const activeStatus =
-                    sourceTargetToLinkMapping[reverseKey].isActive || link.isActive;
-                sourceTargetToLinkMapping[reverseKey].isActive = activeStatus;
-            }
-        }
-    });
-    return Object.values(sourceTargetToLinkMapping);
-};
-
-/**
  * Iterates through a list of nodes and returns only links in the same namespace
  *
  * @param {!Object[]} nodes list of nodes
@@ -138,45 +110,6 @@ export const getLinks = (nodes, networkFlowMapping) => {
     });
 
     return filteredLinks;
-};
-
-export const getLinksBetweenNamespaces = (nodes, networkFlowMapping) => {
-    const namespaceLinks = {};
-
-    nodes.forEach(node => {
-        if (!node.entity || node.entity.type !== 'DEPLOYMENT') {
-            return;
-        }
-        const {
-            id: srcDeploymentId,
-            deployment: { namespace: srcNamespace }
-        } = node.entity;
-        Object.keys(node.outEdges).forEach(targetIndex => {
-            const tgtNode = nodes[targetIndex];
-            if (!tgtNode.entity || tgtNode.entity.type !== 'DEPLOYMENT') {
-                return;
-            }
-            const {
-                id: tgtDeploymentId,
-                deployment: { namespace: tgtNamespace }
-            } = tgtNode.entity;
-            const key = `${srcNamespace}--${tgtNamespace}`;
-            const isActive = networkFlowMapping[`${srcDeploymentId}--${tgtDeploymentId}`];
-            const hasActive = namespaceLinks[key] && namespaceLinks[key].isActive;
-            if (srcNamespace !== tgtNamespace) {
-                const activeStatus = hasActive || isActive;
-                namespaceLinks[key] = {
-                    source: srcNamespace,
-                    target: tgtNamespace,
-                    sourceDeployment: srcDeploymentId,
-                    targetDeployment: tgtDeploymentId,
-                    isActive: !!activeStatus
-                };
-            }
-        });
-    });
-
-    return Object.values(namespaceLinks);
 };
 
 /**
