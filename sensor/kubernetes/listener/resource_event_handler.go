@@ -30,6 +30,13 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 	handle(sif.Core().V1().Nodes().Informer(), dispatchers.ForNodes(), output, nil)
 	handle(secretInformer, dispatchers.ForSecrets(), output, nil)
 	handle(sif.Core().V1().Services().Informer(), dispatchers.ForServices(), output, nil)
+	handle(sif.Core().V1().ServiceAccounts().Informer(), dispatchers.ForServiceAccounts(), output, nil)
+
+	// RBAC dispatcher handles multiple sets of data
+	handle(sif.Rbac().V1().Roles().Informer(), dispatchers.ForRBAC(), output, nil)
+	handle(sif.Rbac().V1().ClusterRoles().Informer(), dispatchers.ForRBAC(), output, nil)
+	handle(sif.Rbac().V1().RoleBindings().Informer(), dispatchers.ForRBAC(), output, nil)
+	handle(sif.Rbac().V1().ClusterRoleBindings().Informer(), dispatchers.ForRBAC(), output, nil)
 
 	// Deployment types.
 	handle(podInformer.Informer(), dispatchers.ForDeployments(kubernetes.Pod), output, &treatCreatesAsUpdates)

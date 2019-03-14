@@ -24,6 +24,8 @@ type DispatcherRegistry interface {
 	ForNodes() Dispatcher
 	ForSecrets() Dispatcher
 	ForServices() Dispatcher
+	ForServiceAccounts() Dispatcher
+	ForRBAC() Dispatcher
 }
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
@@ -33,26 +35,31 @@ func NewDispatcherRegistry(podLister v1Listers.PodLister, entityStore *clusteren
 	nodeStore := newNodeStore()
 	nsStore := newNamespaceStore()
 	endpointManager := newEndpointManager(serviceStore, deploymentStore, nodeStore, entityStore)
+	rbacStore := newRBACStore()
 
 	return &registryImpl{
 		deploymentHandler: newDeploymentHandler(serviceStore, deploymentStore, endpointManager, nsStore, roxMetadata, podLister),
+		rbacHandler:       newRBACHandler(rbacStore),
 
-		namespaceDispatcher:     newNamespaceDispatcher(nsStore, serviceStore, deploymentStore),
-		serviceDispatcher:       newServiceDispatcher(serviceStore, deploymentStore, endpointManager),
-		secretDispatcher:        newSecretDispatcher(),
-		networkPolicyDispatcher: newNetworkPolicyDispatcher(),
-		nodeDispatcher:          newNodeDispatcher(serviceStore, deploymentStore, nodeStore, endpointManager),
+		namespaceDispatcher:      newNamespaceDispatcher(nsStore, serviceStore, deploymentStore),
+		serviceDispatcher:        newServiceDispatcher(serviceStore, deploymentStore, endpointManager),
+		secretDispatcher:         newSecretDispatcher(),
+		networkPolicyDispatcher:  newNetworkPolicyDispatcher(),
+		nodeDispatcher:           newNodeDispatcher(serviceStore, deploymentStore, nodeStore, endpointManager),
+		serviceAccountDispatcher: newServiceAccountDispatcher(),
 	}
 }
 
 type registryImpl struct {
 	deploymentHandler *deploymentHandler
+	rbacHandler       *rbacHandler
 
-	namespaceDispatcher     *namespaceDispatcher
-	serviceDispatcher       *serviceDispatcher
-	secretDispatcher        *secretDispatcher
-	networkPolicyDispatcher *networkPolicyDispatcher
-	nodeDispatcher          *nodeDispatcher
+	namespaceDispatcher      *namespaceDispatcher
+	serviceDispatcher        *serviceDispatcher
+	secretDispatcher         *secretDispatcher
+	networkPolicyDispatcher  *networkPolicyDispatcher
+	nodeDispatcher           *nodeDispatcher
+	serviceAccountDispatcher *serviceAccountDispatcher
 
 	registryLock sync.Mutex
 }
@@ -79,6 +86,14 @@ func (d *registryImpl) ForSecrets() Dispatcher {
 
 func (d *registryImpl) ForServices() Dispatcher {
 	return d.newExclusive(d.serviceDispatcher)
+}
+
+func (d *registryImpl) ForServiceAccounts() Dispatcher {
+	return d.newExclusive(d.serviceAccountDispatcher)
+}
+
+func (d *registryImpl) ForRBAC() Dispatcher {
+	return d.newExclusive(newRBACDispatcher(d.rbacHandler))
 }
 
 // Wraps the input dispatcher so that only a single dispatcher returned from the registry can be run at a time.

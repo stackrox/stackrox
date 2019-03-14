@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+import "protobuf/gogoproto/gogo.proto";
+
+package storage;
+
+enum SubjectKind {
+    UNSET_KIND              = 0;
+    SERVICE_ACCOUNT         = 1;
+    USER                    = 2;
+    GROUP                   = 3;
+}
+
+// Properties of an individual k8s Role or ClusterRole.
+//////////////////////////////////////////
+message K8sRole {
+    string id                               = 1 [(gogoproto.moretags) = "search:\"Role ID,store,hidden\""];
+    string name                             = 2 [(gogoproto.moretags) = "search:\"Role,store\""];
+    string namespace                        = 3 [(gogoproto.moretags) = "search:\"Namespace,store\""];
+    string cluster_id                       = 4;
+    string cluster_name                     = 5;
+    bool cluster_scope                      = 6;
+    google.protobuf.Timestamp created_at    = 7;
+
+    repeated PolicyRule rules               = 8;
+}
+
+// Properties of an individual k8s RoleBinding or ClusterRoleBinding.
+//////////////////////////////////////////
+message K8sRoleBinding {
+    string id                               = 1 [(gogoproto.moretags) = "search:\"Binding ID,store,hidden\""];
+    string name                             = 2 [(gogoproto.moretags) = "search:\"Binding,store\""];
+    string namespace                        = 3 [(gogoproto.moretags) = "search:\"Namespace,store\""];
+    string cluster_id                       = 4;
+    string cluster_name                     = 5;
+    bool cluster_scope                      = 6;
+    google.protobuf.Timestamp created_at    = 7;
+
+    repeated Subject subjects               = 8;
+    string role_id                          = 9;
+}
+
+
+// Properties of an individual rules that grant permissions to resources.
+//////////////////////////////////////////
+message PolicyRule {
+    repeated string verbs           = 1;
+    repeated string api_groups      = 2;
+    repeated string resources       = 3;
+}
+
+// Properties of an individual subjects who are granted roles via role bindings.
+//////////////////////////////////////////
+message Subject {
+    SubjectKind kind    = 1;
+    string name         = 2;
+    string namespace    = 3;
+}

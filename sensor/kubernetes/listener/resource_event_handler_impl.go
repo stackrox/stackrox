@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 )
 
-// resourceEventHandlerImpl processes OnAdd, onUpdate, and onDelete events, and joins the results to an output
+// resourceEventHandlerImpl processes OnAdd, OnUpdate, and OnDelete events, and joins the results to an output
 // channel
 type resourceEventHandlerImpl struct {
 	dispatcher            resources.Dispatcher
