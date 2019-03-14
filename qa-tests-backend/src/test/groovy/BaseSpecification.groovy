@@ -48,7 +48,7 @@ class BaseSpecification extends Specification {
             dtrId = Services.addDockerTrustedRegistry()
             orchestrator.setup()
         } catch (Exception e) {
-            println "Error setting up orchestrator"
+            println "Error setting up orchestrator: ${e.message}"
             throw e
         }
         /*    if (isTestrail == true) {
@@ -64,7 +64,7 @@ class BaseSpecification extends Specification {
             Services.deleteImageIntegration(dtrId)
             orchestrator.cleanup()
         } catch (Exception e) {
-            println "Error to clean up orchestrator"
+            println "Error to clean up orchestrator: ${e.message}"
             throw e
         }
         /* if (isTestrail == true) {
