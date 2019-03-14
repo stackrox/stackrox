@@ -18,7 +18,8 @@ class NetworkPolicyService extends BaseService {
 
     static List<NetworkPolicy> getNetworkPolicies() {
         return getNetworkPolicyClient().getNetworkPolicies(
-                GetNetworkPoliciesRequest.newBuilder().build()
+                GetNetworkPoliciesRequest.newBuilder()
+                    .setClusterId(ClusterService.getClusterId()).build()
         ).networkPoliciesList
     }
 
