@@ -12,7 +12,7 @@ var allowAllIngress = &storage.NetworkPolicyIngressRule{
 	},
 }
 
-func generateIngressRule(node *node) *storage.NetworkPolicyIngressRule {
+func generateIngressRule(node *node, namespacesByName map[string]*storage.NamespaceMetadata) *storage.NetworkPolicyIngressRule {
 	if node.hasInternetIngress() {
 		return allowAllIngress
 	}
@@ -24,10 +24,10 @@ func generateIngressRule(node *node) *storage.NetworkPolicyIngressRule {
 			continue
 		}
 		peer := &storage.NetworkPolicyPeer{
-			PodSelector: srcNode.deployment.GetLabelSelector(),
+			PodSelector: labelSelectorForDeployment(srcNode.deployment),
 		}
 		if node.deployment.Namespace != srcNode.deployment.Namespace {
-			peer.NamespaceSelector = labelSelectorForNamespace(srcNode.deployment.Namespace)
+			peer.NamespaceSelector = labelSelectorForNamespace(namespacesByName[srcNode.deployment.Namespace])
 		}
 
 		peers = append(peers, peer)

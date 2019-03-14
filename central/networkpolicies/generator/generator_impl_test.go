@@ -8,9 +8,10 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	mocks2 "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	mocks4 "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	mocks3 "github.com/stackrox/rox/central/networkflow/store/mocks"
 	"github.com/stackrox/rox/central/networkpolicies/store/mocks"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/testutils"
@@ -25,6 +26,7 @@ type generatorTestSuite struct {
 	mockNetworkPolicyStore *mocks.MockStore
 	mockDeploymentsStore   *mocks2.MockDataStore
 	mockGlobalFlowStore    *mocks3.MockClusterStore
+	mockNamespaceStore     *mocks4.MockDataStore
 }
 
 func TestGenerator(t *testing.T) {
@@ -66,11 +68,13 @@ func (s *generatorTestSuite) SetupTest() {
 	s.mockNetworkPolicyStore = mocks.NewMockStore(s.mockCtrl)
 	s.mockDeploymentsStore = mocks2.NewMockDataStore(s.mockCtrl)
 	s.mockGlobalFlowStore = mocks3.NewMockClusterStore(s.mockCtrl)
+	s.mockNamespaceStore = mocks4.NewMockDataStore(s.mockCtrl)
 
 	s.generator = &generator{
 		networkPolicyStore: s.mockNetworkPolicyStore,
 		deploymentStore:    s.mockDeploymentsStore,
 		globalFlowStore:    s.mockGlobalFlowStore,
+		namespacesStore:    s.mockNamespaceStore,
 	}
 }
 
@@ -191,6 +195,24 @@ func (s *generatorTestSuite) TestGenerate() {
 				PodLabels: map[string]string{"depID": "D"},
 				LabelSelector: &storage.LabelSelector{
 					MatchLabels: map[string]string{"depID": "D"},
+				},
+			},
+		}, nil)
+
+	s.mockNamespaceStore.EXPECT().SearchNamespaces(gomock.Any()).Return(
+		[]*storage.NamespaceMetadata{
+			{
+				Id:   "1",
+				Name: "ns1",
+				Labels: map[string]string{
+					namespaces.NamespaceNameLabel: "ns1",
+				},
+			},
+			{
+				Id:   "2",
+				Name: "ns2",
+				Labels: map[string]string{
+					namespaces.NamespaceNameLabel: "ns2",
 				},
 			},
 		}, nil)

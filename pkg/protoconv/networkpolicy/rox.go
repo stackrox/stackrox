@@ -40,6 +40,12 @@ func (np RoxNetworkPolicyWrap) ToYaml() (string, error) {
 // ToKubernetesNetworkPolicy converts a proto network policy to a k8s network policy
 // This code allows for our tests to call the conversion on proto network policies
 func (np RoxNetworkPolicyWrap) ToKubernetesNetworkPolicy() *k8sV1.NetworkPolicy {
+	sel := np.convertSelector(np.GetSpec().GetPodSelector())
+	if sel == nil {
+		log.Errorf("Warning: network policy defines nil pod selector. Defaulting to empty (match-all) label selector")
+		sel = &k8sMetaV1.LabelSelector{}
+	}
+
 	return &k8sV1.NetworkPolicy{
 		TypeMeta: k8sMetaV1.TypeMeta{
 			Kind:       "NetworkPolicy",
@@ -56,7 +62,7 @@ func (np RoxNetworkPolicyWrap) ToKubernetesNetworkPolicy() *k8sV1.NetworkPolicy 
 			},
 		},
 		Spec: k8sV1.NetworkPolicySpec{
-			PodSelector: *np.convertSelector(np.GetSpec().GetPodSelector()),
+			PodSelector: *sel,
 			Ingress:     np.convertIngressRules(np.GetSpec().GetIngress()),
 			Egress:      np.convertEgressRules(np.GetSpec().GetEgress()),
 			PolicyTypes: np.convertPolicyTypes(np.GetSpec().GetPolicyTypes()),

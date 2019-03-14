@@ -35,12 +35,22 @@ func TestGenerateIngressRule_WithInternetIngress(t *testing.T) {
 		},
 	}
 
+	nss := map[string]*storage.NamespaceMetadata{
+		"ns": {
+			Id:   "ns",
+			Name: "ns",
+			Labels: map[string]string{
+				namespaces.NamespaceNameLabel: "ns",
+			},
+		},
+	}
+
 	deployment0 := createDeploymentNode("deployment0", "ns", map[string]string{"app": "foo"})
 	deployment1 := createDeploymentNode("deployment1", "ns", nil)
 	deployment1.incoming[deployment0] = struct{}{}
 	deployment1.incoming[internetNode] = struct{}{}
 
-	rule := generateIngressRule(deployment1)
+	rule := generateIngressRule(deployment1, nss)
 	assert.Equal(t, allowAllIngress, rule)
 }
 
@@ -58,7 +68,17 @@ func TestGenerateIngressRule_WithInternetExposure(t *testing.T) {
 	}
 	deployment1.incoming[deployment0] = struct{}{}
 
-	rule := generateIngressRule(deployment1)
+	nss := map[string]*storage.NamespaceMetadata{
+		"ns": {
+			Id:   "ns",
+			Name: "ns",
+			Labels: map[string]string{
+				namespaces.NamespaceNameLabel: "ns",
+			},
+		},
+	}
+
+	rule := generateIngressRule(deployment1, nss)
 	assert.Equal(t, allowAllIngress, rule)
 }
 
@@ -71,6 +91,23 @@ func TestGenerateIngressRule_WithoutInternet(t *testing.T) {
 	tgtDeployment := createDeploymentNode("tgtDeployment", "ns1", nil)
 	tgtDeployment.incoming[deployment0] = struct{}{}
 	tgtDeployment.incoming[deployment1] = struct{}{}
+
+	nss := map[string]*storage.NamespaceMetadata{
+		"ns1": {
+			Id:   "ns1",
+			Name: "ns1",
+			Labels: map[string]string{
+				namespaces.NamespaceNameLabel: "ns1",
+			},
+		},
+		"ns2": {
+			Id:   "ns2",
+			Name: "ns2",
+			Labels: map[string]string{
+				namespaces.NamespaceNameLabel: "ns2",
+			},
+		},
+	}
 
 	expectedPeers := []*storage.NetworkPolicyPeer{
 		{
@@ -88,6 +125,6 @@ func TestGenerateIngressRule_WithoutInternet(t *testing.T) {
 		},
 	}
 
-	rule := generateIngressRule(tgtDeployment)
+	rule := generateIngressRule(tgtDeployment, nss)
 	assert.ElementsMatch(t, expectedPeers, rule.From)
 }

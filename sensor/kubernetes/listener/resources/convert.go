@@ -19,7 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv/resources"
 	"github.com/stackrox/rox/pkg/uuid"
 	"k8s.io/api/batch/v1beta1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -137,14 +137,13 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 		// types do. So, we need to directly access the Pod's Spec field,
 		// instead of looking for it inside a PodTemplate.
 		podLabels = o.Labels
-
 		labelSelector = w.populateK8sComponentIfNecessary(o)
+
 	case *v1beta1.CronJob:
 		// Cron jobs have a Job spec that then have a Pod Template underneath
 		podLabels = o.Spec.JobTemplate.Spec.Template.GetLabels()
-		labelSelector = &metav1.LabelSelector{
-			MatchLabels: podLabels,
-		}
+		labelSelector = o.Spec.JobTemplate.Spec.Selector
+
 	default:
 		podTemplate, ok := spec.FieldByName("Template").Interface().(v1.PodTemplateSpec)
 		if !ok {
@@ -167,6 +166,12 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 	w.LabelSelector = labelSel
 	w.populatePorts()
 	w.populateNamespaceID(namespaceStore)
+
+	if labelSelector == nil {
+		labelSelector = &metav1.LabelSelector{
+			MatchLabels: podLabels,
+		}
+	}
 
 	if action != central.ResourceAction_REMOVE_RESOURCE {
 		// If we have a standalone pod, we cannot use the labels to try and select that pod so we must directly populate the pod data

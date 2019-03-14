@@ -5,9 +5,10 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/deployment/datastore"
+	namespacesDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	flowStore "github.com/stackrox/rox/central/networkflow/store"
 	"github.com/stackrox/rox/central/networkpolicies/store"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkentity"
 	"github.com/stackrox/rox/pkg/search"
@@ -35,6 +36,7 @@ type annotatedNode struct {
 type generator struct {
 	networkPolicyStore store.Store
 	deploymentStore    datastore.DataStore
+	namespacesStore    namespacesDataStore.DataStore
 	globalFlowStore    flowStore.ClusterStore
 }
 
@@ -116,7 +118,7 @@ func (g *generator) generateGraph(clusterID string, since *types.Timestamp) (map
 	return buildGraph(deployments, allFlows), nil
 }
 
-func generatePolicy(node *node, ingressPolicies, egressPolicies map[string][]*storage.NetworkPolicy) *storage.NetworkPolicy {
+func generatePolicy(node *node, namespacesByName map[string]*storage.NamespaceMetadata, ingressPolicies, egressPolicies map[string][]*storage.NetworkPolicy) *storage.NetworkPolicy {
 	if hasMatchingPolicy(node.deployment, ingressPolicies[node.deployment.GetNamespace()]) {
 		return nil
 	}
@@ -131,11 +133,11 @@ func generatePolicy(node *node, ingressPolicies, egressPolicies map[string][]*st
 		},
 		ApiVersion: networkPolicyAPIVersion,
 		Spec: &storage.NetworkPolicySpec{
-			PodSelector: node.deployment.GetLabelSelector(),
+			PodSelector: labelSelectorForDeployment(node.deployment),
 		},
 	}
 
-	ingressRule := generateIngressRule(node)
+	ingressRule := generateIngressRule(node, namespacesByName)
 	if ingressRule != nil {
 		policy.Spec.Ingress = append(policy.Spec.Ingress, ingressRule)
 		policy.Spec.PolicyTypes = append(policy.Spec.PolicyTypes, storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE)
@@ -144,7 +146,7 @@ func generatePolicy(node *node, ingressPolicies, egressPolicies map[string][]*st
 	return policy
 }
 
-func (g *generator) generatePolicies(graph map[networkentity.Entity]*node, deploymentIDs set.StringSet, existingPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy {
+func (g *generator) generatePolicies(graph map[networkentity.Entity]*node, deploymentIDs set.StringSet, namespacesByName map[string]*storage.NamespaceMetadata, existingPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy {
 	ingressPolicies, egressPolicies := groupNetworkPolicies(existingPolicies)
 
 	var generatedPolicies []*storage.NetworkPolicy
@@ -156,7 +158,7 @@ func (g *generator) generatePolicies(graph map[networkentity.Entity]*node, deplo
 			continue
 		}
 
-		policy := generatePolicy(node, ingressPolicies, egressPolicies)
+		policy := generatePolicy(node, namespacesByName, ingressPolicies, egressPolicies)
 		if policy != nil {
 			generatedPolicies = append(generatedPolicies, policy)
 		}
@@ -194,6 +196,13 @@ func (g *generator) Generate(req *v1.GenerateNetworkPoliciesRequest) (generated 
 		relevantDeploymentIDs = set.NewStringSet(search.ResultsToIDs(relevantDeploymentsResult)...)
 	}
 
-	generatedPolicies := g.generatePolicies(graph, relevantDeploymentIDs, existingPolicies)
+	namespaces, err := g.namespacesStore.SearchNamespaces(query)
+	if err != nil {
+		return nil, nil, fmt.Errorf("could not obtain namespaces metadata: %v", err)
+	}
+
+	namespacesByName := createNamespacesByNameMap(namespaces)
+
+	generatedPolicies := g.generatePolicies(graph, relevantDeploymentIDs, namespacesByName, existingPolicies)
 	return generatedPolicies, toDelete, nil
 }
