@@ -72,8 +72,23 @@ const NetworkGraphManager = element => {
         networkGraphCanvas.addEventListener('wheel', onMouseWheel, false);
     }
 
-    function setUpNetworkData({ nodes, networkFlowMapping }) {
-        dataManager.setData({ nodes, networkFlowMapping });
+    function setUpNetworkData({ nodes, networkFlowMapping, worker }) {
+        dataManager.setData({ nodes, networkFlowMapping, worker });
+    }
+
+    function setNetworkNodes(nodes) {
+        dataManager.setNodes(nodes);
+    }
+
+    function setNetworkLinks(links) {
+        dataManager.setLinks(links);
+    }
+
+    function setNetworkNamespaces(namespaces) {
+        dataManager.setNamespaces(namespaces);
+    }
+
+    function renderNetworkGraph() {
         const data = dataManager.getData();
         sceneManager.setData(data);
         shouldUpdate = true;
@@ -96,11 +111,16 @@ const NetworkGraphManager = element => {
     setUp();
 
     return {
+        dataManager,
         unbindEventListeners,
         zoomIn,
         zoomOut,
         setUpNetworkData,
-        setOnNodeClick
+        renderNetworkGraph,
+        setOnNodeClick,
+        setNetworkNodes,
+        setNetworkLinks,
+        setNetworkNamespaces
     };
 };
 

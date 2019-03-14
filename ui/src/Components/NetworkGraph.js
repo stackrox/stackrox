@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import NetworkGraphManager from 'webgl/NetworkGraph/Managers/NetworkGraphManager';
 import { ALLOWED_STATE } from 'constants/networkGraph';
+import { networkGraphWW, getBlobURL } from 'utils/webWorkers';
 
 class NetworkGraph extends Component {
     static propTypes = {
@@ -26,6 +27,8 @@ class NetworkGraph extends Component {
         super(props);
         this.manager = {};
         this.canvas = null;
+        const blobUrl = getBlobURL(networkGraphWW);
+        this.worker = new Worker(blobUrl);
     }
 
     componentDidMount() {
@@ -44,8 +47,24 @@ class NetworkGraph extends Component {
                 const { nodes, networkFlowMapping, filterState } = nextProps;
                 const filteredNetworkFlowMapping =
                     filterState === ALLOWED_STATE ? {} : networkFlowMapping;
+                // Test, used in all examples:
+                this.worker.onmessage = e => {
+                    if (e.data) {
+                        switch (e.data.type) {
+                            case 'end':
+                                this.manager.setNetworkNodes(e.data.nodes);
+                                this.manager.setNetworkLinks(e.data.links);
+                                this.manager.setNetworkNamespaces(e.data.namespaces);
+                                this.manager.renderNetworkGraph();
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                };
                 this.manager.setUpNetworkData({
                     nodes,
+                    worker: this.worker,
                     networkFlowMapping: filteredNetworkFlowMapping
                 });
                 this.manager.setOnNodeClick(nextProps.onNodeClick);
@@ -58,6 +77,7 @@ class NetworkGraph extends Component {
         if (this.isWebGLAvailable()) {
             this.manager.unbindEventListeners();
         }
+        this.worker.terminate();
     }
 
     isWebGLAvailable = () => {
