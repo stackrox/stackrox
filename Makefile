@@ -230,7 +230,7 @@ cli: gazelle
 	chmod u+w $(GOPATH)/bin/roxctl
 
 .PHONY: main-build
-main-build: gazelle cli
+main-build: gazelle
 	@echo "+ $@"
 	bazel build $(BAZEL_FLAGS) \
 		//central \
@@ -257,8 +257,8 @@ gendocs: $(GENERATED_API_DOCS)
 	@echo "+ $@"
 
 # We don't need to do anything here, because the $(MERGED_API_SWAGGER_SPEC) target already performs validation.
-.PHONY: testdocs
-testdocs: $(MERGED_API_SWAGGER_SPEC)
+.PHONY: swagger-docs
+swagger-docs: $(MERGED_API_SWAGGER_SPEC)
 	@echo "+ $@"
 
 .PHONY: bazel-test
@@ -307,13 +307,25 @@ coverage:
 
 # Exists for compatibility reasons. Please consider migrating to using `make main-image`.
 .PHONY: image
-image: main-image
+image: main-image monitoring-image
+
+.PHONY: monitoring-image
+monitoring-image:
+	docker build -t stackrox/monitoring:$(TAG) monitoring
 
 .PHONY: main-image
-main-image: main-build clean-image $(MERGED_API_SWAGGER_SPEC)
+main-image: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC)
 	make -C ui build
+	make docker-build-main-image
 
-# TODO(cg): Replace with native bazel Docker build.
+# This target copies compiled artifacts into the expected locations and
+# runs the docker build.
+# Please DO NOT invoke this target directly unless you know what you're doing;
+# you probably want to run `make main-image`. This target is only in Make for convenience;
+# it assumes the caller has taken care of the dependencies, and does not
+# declare its dependencies explicitly.
+.PHONY: docker-build-main-image
+docker-build-main-image:
 	cp -r ui/build image/ui/
 	cp bazel-bin/central/linux_amd64_pure_stripped/central image/bin/central
 	cp bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl image/bin/roxctl-linux
@@ -323,15 +335,14 @@ main-image: main-build clean-image $(MERGED_API_SWAGGER_SPEC)
 	cp bazel-bin/sensor/kubernetes/linux_amd64_pure_stripped/kubernetes image/bin/kubernetes-sensor
 	cp bazel-bin/compliance/collection/linux_amd64_pure_stripped/collection image/bin/compliance
 
-	chmod +w image/bin/*
 ifdef CI
 	@[ -f image/NOTICE.txt ] || { echo "image/NOTICE.txt file not found! It is required for CI-built images."; exit 1; }
 else
 	@[ -f image/NOTICE.txt ] || touch image/NOTICE.txt
 endif
+	@[ -d image/docs ] || { echo "Generated docs not found in image/docs. They are required for build."; exit 1; }
 	docker build -t stackrox/main:$(TAG) image/
-	docker build -t stackrox/monitoring:$(TAG) monitoring
-	@echo "Built images with tag: $(TAG)"
+	@echo "Built main image with tag: $(TAG)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 
 .PHONY: scale-image

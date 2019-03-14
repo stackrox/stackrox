@@ -56,6 +56,12 @@ setupHelm: &setupHelm
          exit 1
        fi
 
+refreshAlpineBaseImage: &refreshAlpineBaseImage
+  run:
+    name: Refresh base image
+    command: docker pull alpine:3.9
+
+
 setupRoxctl: &setupRoxctl
   run:
     name: Setup Roxctl from bazel-bin
@@ -302,6 +308,79 @@ checkOpenshiftLabel: &checkOpenshiftLabel
 version: 2
 jobs:
 
+  pre-build-ui:
+    <<: *defaults
+    resource_class: large
+    steps:
+      - checkout
+      - *restoreUI
+      - run:
+          name: Build UI
+          command: make -C ui build
+
+      - save-cache:
+          key: *uiCacheKey
+          paths:
+            - ui/node_modules
+            - ~/.cache/Cypress # Cypress binary will be put there, see https://docs.cypress.io/guides/guides/continuous-integration.html#Example-circle-yml-v2-config-file-with-yarn
+
+      - persist_to_workspace:
+          root: /go/src/github.com/stackrox/rox
+          paths:
+            - ui/build # Copied directly into the image downstream.
+            - ui/deps
+
+  pre-build-cli:
+    <<: *defaults
+    resource_class: large
+    steps:
+      - checkout
+      - *restoreDep
+      - *setupBazel
+      - run:
+          name: Build the CLI
+          command: make cli
+
+      - save-cache:
+          key: *depCacheKey
+          paths:
+            - /go/pkg/dep
+
+      - persist_to_workspace:
+          root: /go/src/github.com/stackrox/rox
+          paths:
+            - bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl
+            - bazel-bin/roxctl/darwin_amd64_pure_stripped/roxctl
+            - bazel-bin/roxctl/windows_amd64_pure_stripped/roxctl.exe
+
+  pre-build-go-binaries:
+    <<: *defaults
+    resource_class: large
+    steps:
+      - checkout
+      - *restoreDep
+      - *setupBazel
+
+      - run:
+          name: Build the main Go binaries
+          command: make main-build
+
+      - run:
+          name: Generate the swagger docs
+          command: make swagger-docs
+
+      - persist_to_workspace:
+          root: /go/src/github.com/stackrox/rox
+          paths:
+            - bazel-bin/central/linux_amd64_pure_stripped/central
+            - bazel-bin/migrator/linux_amd64_pure_stripped/migrator
+            - bazel-bin/sensor/kubernetes/linux_amd64_pure_stripped/kubernetes
+            - bazel-bin/compliance/collection/linux_amd64_pure_stripped/collection
+            - image/docs # This will go into the image as generated docs.
+            - deps # Used to speed up k8s-tests
+            - generated # Used to speed up k8s-tests
+            - vendor # Used to speed up k8s-tests
+
   build:
     <<: *defaults
     resource_class: large
@@ -309,14 +388,10 @@ jobs:
       - checkout
       - setup_remote_docker
 
-      - run:
-          name: Refresh base image
-          command: docker pull alpine:3.9
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
 
-      - *restoreDep
-      - *restoreUI
-
-      - *setupBazel
+      - *refreshAlpineBaseImage
 
       - run:
           name: Install ossls
@@ -334,15 +409,19 @@ jobs:
           command: make ossls-notice
 
       - run:
-          name: Build image
-          command: make main-image
+          name: Build main image
+          command: make docker-build-main-image
+
+      - run:
+          name: Build monitoring image
+          command: make monitoring-image
 
       - run:
           name: Push new Docker image
           command: |
             docker login -u $DOCKER_IO_USERNAME -p $DOCKER_IO_PASSWORD docker.io
 
-            TAG=$(make tag)
+            TAG="$(make tag)"
 
             for img in main monitoring; do
               docker push "stackrox/${img}:${TAG}" | cat
@@ -352,23 +431,6 @@ jobs:
           key: *depCacheKey
           paths:
             - /go/pkg/dep
-
-      - save-cache:
-          key: *uiCacheKey
-          paths:
-            - ui/node_modules
-            - ~/.cache/Cypress # Cypress binary will be put there, see https://docs.cypress.io/guides/guides/continuous-integration.html#Example-circle-yml-v2-config-file-with-yarn
-
-      - persist_to_workspace:
-          root: /go/src/github.com/stackrox/rox
-          paths:
-          - deps
-          - generated
-          - ui/deps
-          - vendor
-          - bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl
-          - bazel-bin/roxctl/darwin_amd64_pure_stripped/roxctl
-          - bazel-bin/roxctl/windows_amd64_pure_stripped/roxctl.exe
 
       - store_artifacts:
           path: bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl
@@ -394,9 +456,7 @@ jobs:
       - checkout
       - setup_remote_docker
 
-      - run:
-          name: Refresh base image
-          command: docker pull alpine:3.9
+      - *refreshAlpineBaseImage
 
       - *restoreDep
       - *setupBazel
@@ -1066,7 +1126,23 @@ workflows:
   version: 2
   build_all:
     jobs:
+      - pre-build-ui:
+          filters:
+            tags:
+              only: /.*/
+      - pre-build-cli:
+          filters:
+            tags:
+              only: /.*/
+      - pre-build-go-binaries:
+          filters:
+            tags:
+              only: /.*/
       - build:
+          requires:
+            - pre-build-ui
+            - pre-build-cli
+            - pre-build-go-binaries
           filters:
             tags:
               only: /.*/
