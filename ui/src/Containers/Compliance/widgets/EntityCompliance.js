@@ -56,8 +56,8 @@ const EntityCompliance = ({ entityType, entityName, clusterName, history }) => {
         <Query
             query={AGGREGATED_RESULTS}
             variables={{
-                unit: 'CONTROL',
-                groupBy: ['STANDARD', entityType],
+                unit: entityTypes.CONTROL,
+                groupBy: [entityTypes.STANDARD, entityType],
                 where: queryService.objectToWhereClause(whereClause)
             }}
         >

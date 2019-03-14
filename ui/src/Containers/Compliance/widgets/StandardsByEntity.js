@@ -81,7 +81,7 @@ function getLabelLinks(data, entityType) {
 
 const StandardsByEntity = ({ entityType, bodyClassName, className }) => {
     const variables = {
-        groupBy: [entityTypes.STANDARD, entityTypes.CLUSTER],
+        groupBy: [entityTypes.STANDARD, entityType],
         unit: entityTypes.CONTROL
     };
     return (

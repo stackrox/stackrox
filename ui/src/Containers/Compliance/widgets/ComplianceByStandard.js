@@ -44,13 +44,13 @@ const processSunburstData = (data, type) => {
     let controlKeyIndex = 0;
     let categoryKeyIndex = 0;
     data.results.results[0].aggregationKeys.forEach(({ scope }, idx) => {
-        if (scope === 'CONTROL') controlKeyIndex = idx;
-        if (scope === 'CATEGORY') categoryKeyIndex = idx;
+        if (scope === entityTypes.CONTROL) controlKeyIndex = idx;
+        if (scope === entityTypes.CATEGORY) categoryKeyIndex = idx;
     });
 
     const statsReducer = (statsMapping, { aggregationKeys, numPassing, numFailing, unit }) => {
         const mapping = { ...statsMapping };
-        const isGroup = unit === 'CONTROL';
+        const isGroup = unit === entityTypes.CONTROL;
         const keyIndex = isGroup ? categoryKeyIndex : controlKeyIndex;
         const key = `${aggregationKeys[keyIndex].id}`;
         const group = mapping[key];
@@ -125,13 +125,15 @@ const processSunburstData = (data, type) => {
 const getNumControls = sunburstData =>
     sunburstData.reduce((acc, curr) => acc + curr.children.length, 0);
 
+const getParams = standardType => ({
+    entityType: standardType,
+    query: {
+        groupBy: entityTypes.CATEGORY
+    }
+});
+
 const createURLLink = (entityType, standardType, entityName) => {
-    const linkParams = {
-        entityType: standardType,
-        query: {
-            groupBy: 'CATEGORY'
-        }
-    };
+    const linkParams = getParams(standardType);
     if (entityName) {
         const entityKey = capitalize(entityType);
         linkParams.query[entityKey] = entityName;
@@ -142,7 +144,12 @@ const createURLLink = (entityType, standardType, entityName) => {
 };
 
 const ComplianceByStandard = ({ standardType, entityName, entityType, entityId, className }) => {
-    const groupBy = ['STANDARD', 'CATEGORY', 'CONTROL', ...(entityType ? [entityType] : [])];
+    const groupBy = [
+        entityTypes.STANDARD,
+        entityTypes.CATEGORY,
+        entityTypes.CONTROL,
+        ...(entityType ? [entityType] : [])
+    ];
     const where = queryService.objectToWhereClause({
         Standard: standardLabels[standardType]
     });
@@ -171,13 +178,12 @@ const ComplianceByStandard = ({ standardType, entityName, entityType, entityId, 
                             link: link.url
                         }
                     ];
-
-                    const linkTo = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
-                        entityType: standardType,
-                        query: {
-                            groupBy: 'CATEGORY'
-                        }
-                    }).url;
+                    const linkToParams = getParams(standardType);
+                    const linkTo = URLService.getLinkTo(
+                        contextTypes.COMPLIANCE,
+                        pageTypes.LIST,
+                        linkToParams
+                    ).url;
 
                     viewStandardLink = (
                         <Link to={linkTo} className="no-underline">

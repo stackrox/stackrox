@@ -6,15 +6,16 @@ import getRouterOptions from 'constants/routerOptions';
 import entityTypes from 'constants/entityTypes';
 
 import { AGGREGATED_RESULTS } from 'queries/controls';
-import ComplianceAcrossEntities from './ComplianceAcrossEntities';
+import StandardsAcrossEntity from './StandardsAcrossEntity';
 
+const unit = entityTypes.CONTROL;
 const getMock = entityType => [
     {
         request: {
             query: AGGREGATED_RESULTS,
             variables: {
                 groupBy: [entityTypes.STANDARD, entityType],
-                unit: entityType
+                unit
             }
         }
     }
@@ -26,14 +27,14 @@ const checkQueryForElement = (element, entityType) => {
     const queryVars = queryProps.variables;
     expect(queryName === 'getAggregatedResults').toBe(true);
     expect(queryVars.groupBy).toEqual(['STANDARD', entityType]);
-    expect(queryVars.unit === entityType).toBe(true);
+    expect(queryVars.unit === unit).toBe(true);
 };
 
 const testQueryForEntityType = entityType => {
     const mock = getMock(entityType);
     const element = mount(
         <MockedProvider mocks={mock} addTypename={false}>
-            <ComplianceAcrossEntities entityType={entityType} />
+            <StandardsAcrossEntity entityType={entityType} />
         </MockedProvider>,
         getRouterOptions(jest.fn())
     );
@@ -41,14 +42,14 @@ const testQueryForEntityType = entityType => {
     checkQueryForElement(element, entityType);
 };
 
-it('renders for Nodes in Compliance', () => {
-    testQueryForEntityType(entityTypes.NODE);
+it('renders for Passing Standards Across Clusters', () => {
+    testQueryForEntityType(entityTypes.CLUSTER);
 });
 
-it('renders for Namespaces in Compliance', () => {
+it('renders for Passing Standards Across Namespaces', () => {
     testQueryForEntityType(entityTypes.NAMESPACE);
 });
 
-it('renders for Clusters in Compliance', () => {
-    testQueryForEntityType(entityTypes.CLUSTER);
+it('renders for Passing Standards Across Nodes', () => {
+    testQueryForEntityType(entityTypes.NODE);
 });

@@ -8,7 +8,6 @@ import { CLUSTER_VERSION_QUERY } from 'queries/cluster';
 import ClusterVersion from './ClusterVersion';
 
 const clusterId = '1234';
-
 const mocks = [
     {
         request: {
