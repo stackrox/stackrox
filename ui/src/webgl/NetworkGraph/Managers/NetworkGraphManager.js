@@ -76,10 +76,6 @@ const NetworkGraphManager = element => {
         dataManager.setData({ nodes, networkFlowMapping, worker });
     }
 
-    function setNetworkNodes(nodes) {
-        dataManager.setNodes(nodes);
-    }
-
     function setNetworkLinks(links) {
         dataManager.setLinks(links);
     }
@@ -118,7 +114,6 @@ const NetworkGraphManager = element => {
         setUpNetworkData,
         renderNetworkGraph,
         setOnNodeClick,
-        setNetworkNodes,
         setNetworkLinks,
         setNetworkNamespaces
     };

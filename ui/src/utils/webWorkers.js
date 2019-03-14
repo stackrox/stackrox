@@ -97,7 +97,7 @@ self.onmessage = function(event) {
         )
         .force('charge', d3.forceManyBody())
         .force('center', d3.forceCenter(clientWidth / 2, clientHeight / 2))
-        .force('collide', forceCollide(0.9))
+        .force('collide', forceCollide)
         .force('cluster', forceCluster().strength(0.9))
         .alpha(1)
         .stop();
@@ -110,7 +110,7 @@ self.onmessage = function(event) {
         i += 1;
     }
 
-    self.postMessage({ type: 'end', nodes, links, namespaces });
+    self.postMessage({ type: 'forceSimulation.end', nodes, links, namespaces });
 };`;
 
 export const getBlobURL = response => {

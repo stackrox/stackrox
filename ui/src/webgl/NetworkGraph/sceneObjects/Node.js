@@ -59,12 +59,21 @@ const Node = (scene, data) => {
         setNodeOpacity(1);
     }
 
+    function cleanUp() {
+        scene.remove(circle);
+        scene.remove(label);
+        nodeTexture.dispose();
+        geometry.dispose();
+        material.dispose();
+    }
+
     return {
         update,
         getType,
         getDeploymentId,
         highlight,
-        unhighlight
+        unhighlight,
+        cleanUp
     };
 };
 

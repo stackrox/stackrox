@@ -34,40 +34,51 @@ const Namespace = (scene, data) => {
     const namespace = data;
 
     let border = null;
-    let plane = null;
-    let label = null;
-    let icon = null;
+    let borderTexture = null;
+    let borderMaterial = null;
+    let borderGeometry = null;
 
-    let geometry = new THREE.PlaneGeometry(1, 1);
+    let plane = null;
+    let planeMaterial = null;
+    let planeGeometry = null;
+    let planeTexture = null;
     let canvasTexture = null;
-    let texture = null;
+
+    let icon = null;
+    let iconMaterial = null;
+    let iconGeometry = null;
+    let iconTexture = null;
+
+    let label = null;
+
     if (namespace.internetAccess) {
         const borderCanvas = getBorderCanvas(namespace);
         // adds texture to the border for the namespace
-        texture = new THREE.CanvasTexture(borderCanvas);
-        texture.needsUpdate = true;
-        texture.magFilter = THREE.NearestFilter;
-        texture.minFilter = THREE.LinearMipMapLinearFilter;
+        borderTexture = new THREE.CanvasTexture(borderCanvas);
+        borderTexture.needsUpdate = true;
+        borderTexture.magFilter = THREE.NearestFilter;
+        borderTexture.minFilter = THREE.LinearMipMapLinearFilter;
     }
-    let material = new THREE.MeshBasicMaterial({
-        map: texture,
+    borderGeometry = new THREE.PlaneGeometry(1, 1);
+    borderMaterial = new THREE.MeshBasicMaterial({
+        map: borderTexture,
         side: THREE.DoubleSide,
         userData: {
             type: constants.NETWORK_GRAPH_TYPES.NAMESPACE,
             namespace: namespace.namespace
         }
     });
-    // creates border for the namespace
-    border = new THREE.Mesh(geometry, material);
+    border = new THREE.Mesh(borderGeometry, borderMaterial);
+
     canvasTexture = getPlaneCanvas(constants.CANVAS_BG_COLOR);
-    texture = new THREE.CanvasTexture(canvasTexture);
-    geometry = new THREE.PlaneGeometry(1, 1);
-    material = new THREE.MeshBasicMaterial({
+    planeTexture = new THREE.CanvasTexture(canvasTexture);
+    planeGeometry = new THREE.PlaneGeometry(1, 1);
+    planeMaterial = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         side: THREE.DoubleSide,
-        map: texture
+        map: planeTexture
     });
-    plane = new THREE.Mesh(geometry, material);
+    plane = new THREE.Mesh(planeGeometry, planeMaterial);
 
     // creates texts shown below the namespace
     label = CreateTextLabelMesh(
@@ -83,26 +94,28 @@ const Namespace = (scene, data) => {
 
     if (namespace.internetAccess) {
         const iconCanvas = getIconCanvas();
-        texture = new THREE.Texture(iconCanvas);
-        texture.needsUpdate = true;
-        geometry = new THREE.PlaneBufferGeometry(1, 1);
-        material = new THREE.MeshBasicMaterial({
+        iconTexture = new THREE.Texture(iconCanvas);
+        iconTexture.needsUpdate = true;
+        iconGeometry = new THREE.PlaneBufferGeometry(1, 1);
+        iconMaterial = new THREE.MeshBasicMaterial({
             transparent: true,
-            map: texture,
+            map: iconTexture,
             side: THREE.DoubleSide
         });
-        icon = new THREE.Mesh(geometry, material);
+        icon = new THREE.Mesh(iconGeometry, iconMaterial);
         scene.add(icon);
     }
 
     function update() {
         const { nodes } = namespace;
         const { x, y, width, height } = getNamespaceContainerDimensions(nodes);
+        border.geometry.dispose();
         border.geometry = new THREE.PlaneGeometry(
             Math.abs(width + constants.CLUSTER_BORDER_PADDING),
             Math.abs(height - constants.CLUSTER_BORDER_PADDING)
         );
         border.position.set(x, y, 0);
+        plane.geometry.dispose();
         plane.geometry = new THREE.PlaneGeometry(
             Math.abs(width + constants.CLUSTER_INNER_PADDING),
             Math.abs(height - constants.CLUSTER_INNER_PADDING)
@@ -115,6 +128,7 @@ const Namespace = (scene, data) => {
         );
         // if the namespace has internet access then update the icon position
         if (namespace.internetAccess) {
+            icon.geometry.dispose();
             icon.geometry = new THREE.PlaneGeometry(
                 constants.INTERNET_ACCESS_ICON_WIDTH,
                 constants.INTERNET_ACCESS_ICON_HEIGHT
@@ -131,9 +145,25 @@ const Namespace = (scene, data) => {
         return constants.NETWORK_GRAPH_TYPES.Namespace;
     }
 
+    function cleanUp() {
+        scene.remove(border);
+        scene.remove(plane);
+        scene.remove(icon);
+        if (borderTexture) borderTexture.dispose();
+        borderMaterial.dispose();
+        borderGeometry.dispose();
+        planeMaterial.dispose();
+        planeGeometry.dispose();
+        planeTexture.dispose();
+        if (iconMaterial) iconMaterial.dispose();
+        if (iconGeometry) iconGeometry.dispose();
+        if (iconTexture) iconTexture.dispose();
+    }
+
     return {
         update,
-        getType
+        getType,
+        cleanUp
     };
 };
 

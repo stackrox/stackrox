@@ -19,11 +19,6 @@ const ravenMiddleware = createRavenMiddleware(Raven);
 
 export default function configureStore(initialState = {}, history) {
     const middlewares = [sagaMiddleware, routerMiddleware(history), ravenMiddleware];
-    if (process.env.NODE_ENV !== 'production') {
-        // disable ESLint for next line since we need to make dev only dependency import
-        // eslint-disable-next-line
-        middlewares.push(require('redux-immutable-state-invariant').default());
-    }
     const enhancers = [applyMiddleware(...middlewares)];
 
     // If Redux DevTools Extension is installed use it, otherwise use Redux compose

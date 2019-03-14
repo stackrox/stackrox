@@ -91,9 +91,15 @@ const SceneManager = canvas => {
     }
 
     function clearScene() {
+        sceneObjects.forEach(sceneObject => sceneObject.cleanUp());
         // Clear everything from the scene
         while (scene.children.length > 0) {
-            scene.remove(scene.children[0]);
+            let sceneChild = scene.children[0];
+            scene.remove(sceneChild);
+            sceneChild.geometry.dispose();
+            if (sceneChild.material.map) sceneChild.material.map.dispose();
+            sceneChild.material.dispose();
+            sceneChild = null;
         }
         // Clear everything from the renderer
         renderer.renderLists.dispose();
@@ -143,9 +149,10 @@ const SceneManager = canvas => {
                 if (!linkExists && isLinkToNode) {
                     link.createLink();
                 } else if (linkExists) {
-                    link.removeLink();
                     if (isLinkToNode) {
                         link.createLink();
+                    } else {
+                        link.removeLink();
                     }
                 }
             });

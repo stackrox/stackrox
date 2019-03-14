@@ -4,11 +4,15 @@ import * as constants from 'constants/networkGraph';
 
 const ServiceLink = (scene, canvas, data) => {
     const link = data;
+
     let line = null;
+    let geometry = null;
+    let meshLine = null;
+    let material = null;
 
     function createLink() {
         // create a link mesh
-        const geometry = new THREE.Geometry();
+        geometry = new THREE.Geometry();
         geometry.vertices[0] = new THREE.Vector3(0, 0, 0);
         geometry.vertices[1] = new THREE.Vector3(0, 0, 0);
         geometry.verticesNeedUpdate = true;
@@ -16,7 +20,7 @@ const ServiceLink = (scene, canvas, data) => {
          * Using MeshLine instead of Line because due to limitations of the OpenGL Core Profile with
          * the WebGL renderer on most platforms linewidth will always be 1 regardless of the set value.
          */
-        const meshLine = new MeshLine();
+        meshLine = new MeshLine();
         meshLine.setGeometry(geometry);
         const materialConfig = {
             useMap: false,
@@ -33,7 +37,7 @@ const ServiceLink = (scene, canvas, data) => {
             materialConfig.dashOffset = constants.NODE_DASH_OFFSET;
             materialConfig.dashRatio = constants.NODE_DASH_RATIO;
         }
-        const material = new MeshLineMaterial(materialConfig);
+        material = new MeshLineMaterial(materialConfig);
 
         line = new THREE.Mesh(meshLine.geometry, material);
         line.frustumCulled = false;
@@ -47,6 +51,11 @@ const ServiceLink = (scene, canvas, data) => {
     function removeLink() {
         if (!line) return;
         scene.remove(line);
+        line.geometry.dispose();
+        meshLine.geometry.dispose();
+        line.material.dispose();
+        geometry.dispose();
+        material.dispose();
         line = null;
     }
 
@@ -77,6 +86,10 @@ const ServiceLink = (scene, canvas, data) => {
         return constants.NETWORK_GRAPH_TYPES.LINK;
     }
 
+    function cleanUp() {
+        removeLink();
+    }
+
     return {
         update,
         removeLink,
@@ -84,7 +97,8 @@ const ServiceLink = (scene, canvas, data) => {
         getSource,
         getTarget,
         isLinkInScene,
-        getType
+        getType,
+        cleanUp
     };
 };
 

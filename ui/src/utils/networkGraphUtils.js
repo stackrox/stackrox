@@ -127,7 +127,7 @@ export const getLinks = (nodes, networkFlowMapping) => {
         const { id: srcDeploymentId } = node.entity;
         Object.keys(node.outEdges).forEach(targetIndex => {
             const tgtNode = nodes[targetIndex];
-            if (!tgtNode.entity || tgtNode.entity.type !== 'DEPLOYMENT') {
+            if (!tgtNode || !tgtNode.entity || tgtNode.entity.type !== 'DEPLOYMENT') {
                 return;
             }
             const { id: tgtDeploymentId } = tgtNode.entity;

@@ -14,7 +14,7 @@ export function* pollSummaryCounts() {
         } catch (error) {
             yield put(actions.fetchSummaryCounts.failure(error));
         }
-        yield call(delay, 5000); // poll every 5 sec
+        yield call(delay, 30000); // poll every 30 sec
     }
 }
 

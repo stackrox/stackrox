@@ -29,47 +29,37 @@ class NetworkGraph extends Component {
         this.canvas = null;
         const blobUrl = getBlobURL(networkGraphWW);
         this.worker = new Worker(blobUrl);
+        this.worker.onmessage = ({ data }) => {
+            if (!data) return;
+            switch (data.type) {
+                case 'forceSimulation.end':
+                    this.manager.setNetworkLinks(data.links);
+                    this.manager.setNetworkNamespaces(data.namespaces);
+                    this.manager.renderNetworkGraph();
+                    break;
+                default:
+                    break;
+            }
+        };
     }
 
     componentDidMount() {
         this.canvas = document.createElement('canvas');
         if (this.isWebGLAvailable()) {
             this.manager = new NetworkGraphManager(this.networkGraph);
+            const filteredNetworkFlowMapping =
+                this.props.filterState === ALLOWED_STATE ? {} : this.props.networkFlowMapping;
+            this.manager.setUpNetworkData({
+                nodes: this.props.nodes,
+                networkFlowMapping: filteredNetworkFlowMapping,
+                worker: this.worker
+            });
+            this.manager.setOnNodeClick(this.props.onNodeClick);
         }
     }
 
     shouldComponentUpdate(nextProps) {
-        if (this.isWebGLAvailable()) {
-            if (
-                nextProps.updateKey !== this.props.updateKey ||
-                nextProps.filterState !== this.props.filterState
-            ) {
-                const { nodes, networkFlowMapping, filterState } = nextProps;
-                const filteredNetworkFlowMapping =
-                    filterState === ALLOWED_STATE ? {} : networkFlowMapping;
-                // Test, used in all examples:
-                this.worker.onmessage = e => {
-                    if (e.data) {
-                        switch (e.data.type) {
-                            case 'end':
-                                this.manager.setNetworkNodes(e.data.nodes);
-                                this.manager.setNetworkLinks(e.data.links);
-                                this.manager.setNetworkNamespaces(e.data.namespaces);
-                                this.manager.renderNetworkGraph();
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                };
-                this.manager.setUpNetworkData({
-                    nodes,
-                    worker: this.worker,
-                    networkFlowMapping: filteredNetworkFlowMapping
-                });
-                this.manager.setOnNodeClick(nextProps.onNodeClick);
-            }
-        }
+        this.setUp(nextProps);
         return false;
     }
 
@@ -89,6 +79,26 @@ class NetworkGraph extends Component {
         } catch (e) {
             return false;
         }
+    };
+
+    setUp = nextProps => {
+        if (this.isWebGLAvailable()) {
+            if (
+                nextProps.updateKey !== this.props.updateKey ||
+                nextProps.filterState !== this.props.filterState
+            ) {
+                const { nodes, networkFlowMapping, filterState } = nextProps;
+                const filteredNetworkFlowMapping =
+                    filterState === ALLOWED_STATE ? {} : networkFlowMapping;
+                this.manager.setUpNetworkData({
+                    nodes,
+                    networkFlowMapping: filteredNetworkFlowMapping,
+                    worker: this.worker
+                });
+                this.manager.setOnNodeClick(nextProps.onNodeClick);
+            }
+        }
+        return false;
     };
 
     zoomIn = () => this.manager.zoomIn();

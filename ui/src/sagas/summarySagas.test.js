@@ -58,7 +58,7 @@ describe('Summary Sagas Test', () => {
             }
         });
         ({ value } = gen.next());
-        expect(value).toEqual(call(delay, 5000));
+        expect(value).toEqual(call(delay, 30000));
     });
 
     it('Should call pollSummaryCounts with a fail', () => {

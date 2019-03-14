@@ -8,16 +8,16 @@ import {
 const DataManager = canvas => {
     const { clientWidth, clientHeight } = canvas;
 
-    let simulationRunning = true;
-
-    let nodes = [];
     let links = [];
     let namespaces = [];
     let namespaceLinks = [];
 
-    function setUpForceLayout(worker) {
-        simulationRunning = true;
+    function getNodesFromNamespaces() {
+        return namespaces.reduce((acc, curr) => [...acc, ...curr.nodes], []);
+    }
 
+    function setUpForceLayout(worker) {
+        const nodes = getNodesFromNamespaces();
         const deploymentNodes = nodes.filter(n => n.deploymentId);
         if (worker && worker.postMessage) {
             worker.postMessage({
@@ -99,6 +99,7 @@ const DataManager = canvas => {
     }
 
     function getData() {
+        const nodes = getNodesFromNamespaces();
         return {
             nodes,
             links,
@@ -108,19 +109,11 @@ const DataManager = canvas => {
     }
 
     function setData(data) {
-        nodes = enrichNodes(data.nodes);
+        const nodes = enrichNodes(data.nodes);
         links = getLinks(nodes, data.networkFlowMapping);
         namespaces = getNamespaces(nodes);
         namespaceLinks = getNamespaceLinks(nodes, data.networkFlowMapping);
         setUpForceLayout(data.worker);
-    }
-
-    function isSimulationRunning() {
-        return simulationRunning;
-    }
-
-    function setNodes(_nodes) {
-        nodes = _nodes;
     }
 
     function setLinks(_links) {
@@ -135,10 +128,8 @@ const DataManager = canvas => {
         setUpForceLayout,
         getData,
         setData,
-        setNodes,
         setLinks,
-        setNamespaces,
-        isSimulationRunning
+        setNamespaces
     };
 };
 

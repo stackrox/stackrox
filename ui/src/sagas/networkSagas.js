@@ -52,7 +52,6 @@ function* getNetworkGraphs(clusterId, query, modification) {
         );
         yield put(backendNetworkActions.fetchNetworkPolicyGraph.success(policyResult.response));
         yield put(graphNetworkActions.updateNetworkGraphTimestamp(new Date()));
-        yield fork(getNetworkFlowGraph, clusterId, query);
     } catch (error) {
         yield put(backendNetworkActions.fetchNetworkPolicyGraph.failure(error));
     }
@@ -79,7 +78,7 @@ export function* pollNodeUpdates() {
         } catch (error) {
             yield put(backendNetworkActions.fetchNodeUpdates.failure(error));
         }
-        yield call(delay, 5000); // poll every 5 sec
+        yield call(delay, 30000); // poll every 30 sec
     }
 }
 
@@ -173,7 +172,11 @@ function* filterNetworkPageBySearch() {
         return;
     }
     if (clusterId) {
-        yield fork(getNetworkGraphs, clusterId, searchOptionsToQuery(searchOptions), modification);
+        const filters = searchOptionsToQuery(searchOptions);
+        yield all([
+            fork(getNetworkGraphs, clusterId, filters, modification),
+            fork(getNetworkFlowGraph, clusterId, filters)
+        ]);
     }
 }
 
