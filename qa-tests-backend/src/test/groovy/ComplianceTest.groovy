@@ -411,8 +411,7 @@ class ComplianceTest extends BaseSpecification {
                             row.state == "Unknown"
                     verifiedRows++
                 }
-                //assert row.controlDescription == control.description
-                assert control.description.startsWith(row.controlDescription[0..row.controlDescription.length() - 5])
+                assert row.controlDescription == control.description
             }
             println "Verified ${verifiedRows} out of ${rowNumber} total rows"
         } catch (Exception e) {
