@@ -15,6 +15,7 @@ import (
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check225"
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check23"
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check24"
+	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check362"
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check61"
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check62"
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check656"
