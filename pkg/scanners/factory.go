@@ -3,6 +3,7 @@ package scanners
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries"
+	anchoreScanner "github.com/stackrox/rox/pkg/scanners/anchore"
 	clairScanner "github.com/stackrox/rox/pkg/scanners/clair"
 	clairifyScanner "github.com/stackrox/rox/pkg/scanners/clairify"
 	dtrScanner "github.com/stackrox/rox/pkg/scanners/dtr"
@@ -31,6 +32,9 @@ func NewFactory(set registries.Set) Factory {
 	////////////////////////////
 	clairScannerType, clairScannerCreator := clairScanner.Creator()
 	reg.creators[clairScannerType] = clairScannerCreator
+
+	anchoreScannerType, anchoreScannerCreator := anchoreScanner.Creator(set)
+	reg.creators[anchoreScannerType] = anchoreScannerCreator
 
 	clairifyScannerType, clairifyScannerCreator := clairifyScanner.Creator(set)
 	reg.creators[clairifyScannerType] = clairifyScannerCreator

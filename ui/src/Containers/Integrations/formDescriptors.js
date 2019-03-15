@@ -682,6 +682,39 @@ const formDescriptors = {
                 type: 'password',
                 placeholder: ''
             }
+        ],
+        anchore: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: 'Anchore Scanner'
+            },
+            {
+                label: 'Types',
+                jsonpath: 'categories',
+                type: 'multiselect',
+                options: [{ value: 'SCANNER', label: 'Scanner', clearableValue: false }],
+                placeholder: ''
+            },
+            {
+                label: 'Endpoint',
+                jsonpath: 'anchore.endpoint',
+                type: 'text',
+                placeholder: 'scanner.anchore.com'
+            },
+            {
+                label: 'Username',
+                jsonpath: 'anchore.username',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                label: 'Password',
+                jsonpath: 'anchore.password',
+                type: 'password',
+                placeholder: ''
+            }
         ]
     }
 };

@@ -122,6 +122,14 @@
   version = "1.6.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:2b23c176460b7b078aeffc44d97515e13d7aa5857c1c2768b3e3defc0397626e"
+  name = "github.com/antihax/optional"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "ca021399b1a6796ecb758292c6311ce0b28857fc"
+
+[[projects]]
   digest = "1:975108e8d4f5dab096fc991326e96a5716ee8d02e5e7386bb4796171afc4ab9a"
   name = "github.com/aokoli/goutils"
   packages = ["."]
@@ -1185,6 +1193,13 @@
   version = "v1.0.3"
 
 [[projects]]
+  digest = "1:9a560c2f6b76037d5252e5246446cfc2e79b4ece294a51f2afa88dda902a1917"
+  name = "github.com/stackrox/anchore-client"
+  packages = ["client"]
+  pruneopts = "NUT"
+  revision = "608e0af2c0b40eeebf71c6c5d24f04de64510bf6"
+
+[[projects]]
   digest = "1:ac6ff75a94f98c4503dd379159771f8999285b1f38f0d9477659eda21650b0b9"
   name = "github.com/stackrox/clairify"
   packages = [
@@ -1860,6 +1875,7 @@
     "github.com/NYTimes/gziphandler",
     "github.com/PagerDuty/go-pagerduty",
     "github.com/andygrunwald/go-jira",
+    "github.com/antihax/optional",
     "github.com/aws/aws-sdk-go/aws",
     "github.com/aws/aws-sdk-go/aws/credentials",
     "github.com/aws/aws-sdk-go/aws/session",
@@ -1953,6 +1969,7 @@
     "github.com/satori/go.uuid",
     "github.com/spf13/cobra",
     "github.com/spf13/pflag",
+    "github.com/stackrox/anchore-client/client",
     "github.com/stackrox/clairify/client",
     "github.com/stackrox/clairify/types",
     "github.com/stretchr/testify/assert",

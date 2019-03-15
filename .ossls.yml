@@ -1146,3 +1146,10 @@ dependencies:
     attribution:
     - PagerDuty 
 
+  vendor/github.com/stackrox/anchore-client:
+    url: "https://github.com/stackrox/anchore-client"
+    license: Apache-2.0
+    files:
+      LICENSE: b05939968b4f187656525630fd5485ac939e7dcf2353737408bd59f82c932f1d
+    attribution:
+    - StackRox

@@ -214,3 +214,7 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
 [[constraint]]
   name = "github.com/PagerDuty/go-pagerduty"
   revision = "fe8f9c4593d05f029afeb2c08c3e220120306506"
+
+[[constraint]]
+  name = "github.com/stackrox/anchore-client"
+  revision = "608e0af2c0b40eeebf71c6c5d24f04de64510bf6"

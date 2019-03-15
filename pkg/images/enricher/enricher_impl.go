@@ -70,9 +70,7 @@ func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry re
 		return false
 	}
 	image.Metadata = metadata
-
 	e.metadataCache.Add(ref, metadata)
-
 	return true
 }
 
@@ -109,6 +107,9 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 	scan, err := scanner.GetLastScan(image)
 	if err != nil {
 		logger.Errorf("Error getting last scan for %s: %s", image.GetName().GetFullName(), err)
+		return false
+	}
+	if scan == nil {
 		return false
 	}
 	image.Scan = scan

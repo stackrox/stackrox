@@ -1,3 +1,4 @@
+import anchore from 'images/anchore.svg';
 import artifactory from 'images/artifactory.svg';
 import aws from 'images/aws.svg';
 import azure from 'images/azure.svg';
@@ -40,6 +41,14 @@ const integrationsList = {
             categories: 'Registry',
             source: 'imageIntegrations',
             image: docker,
+            disabled: false
+        },
+        {
+            label: 'Anchore Scanner',
+            type: 'anchore',
+            categories: 'Scanner',
+            source: 'imageIntegrations',
+            image: anchore,
             disabled: false
         },
         {

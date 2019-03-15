@@ -39,7 +39,8 @@ func (e *setImpl) GetRegistryMetadataByImage(image *storage.Image) *types.Config
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 
-	for _, i := range e.integrations {
+	integrations := e.getSortedRegistriesNoLock()
+	for _, i := range integrations {
 		if i.Match(image) {
 			return i.Config()
 		}

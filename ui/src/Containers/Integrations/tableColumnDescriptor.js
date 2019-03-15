@@ -110,6 +110,11 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'name', Header: 'Name' },
             { accessor: 'docker.endpoint', Header: 'Endpoint' },
             { accessor: 'docker.username', Header: 'Username' }
+        ],
+        anchore: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'anchore.endpoint', Header: 'Endpoint' },
+            { accessor: 'anchore.username', Header: 'Username' }
         ]
     }
 });
