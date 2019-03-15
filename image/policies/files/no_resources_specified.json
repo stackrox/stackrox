@@ -125,6 +125,14 @@
       }
     },
     {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
+        }
+      }
+    },
+    {
       "name": "Don't alert on ucp-agent",
       "deployment": {
         "name": "ucp-agent"

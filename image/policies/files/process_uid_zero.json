@@ -32,6 +32,14 @@
           "namespace": "stackrox"
         }
       }
+    },
+    {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
+        }
+      }
     }
   ],
   "scope": [],
