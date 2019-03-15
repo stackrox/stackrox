@@ -65,7 +65,7 @@ class ReconciliationTest extends BaseSpecification {
         // Recreate sensor
         Services.waitForDeployment(sensorDeployment, 10)
 
-        def maxWaitForSync = 10
+        def maxWaitForSync = 100
         def interval = 1
 
         then:
@@ -73,7 +73,7 @@ class ReconciliationTest extends BaseSpecification {
         // Get the resources from central and make sure the values exist
 
         int numDeployments, numNamespaces, numNetworkPolicies, numSecrets
-        for (int waitTime; waitTime < maxWaitForSync / interval * 1000; waitTime++) {
+        for (int waitTime; waitTime < maxWaitForSync / interval ; waitTime++) {
             numDeployments = Services.getDeployments().findAll { it.name == dep.getName() }.size()
             numNamespaces = NamespaceService.getNamespaces().findAll { it.metadata.name == ns }.size()
             numNetworkPolicies = NetworkPolicyService.getNetworkPolicies().findAll { it.id == networkPolicyID }.size()

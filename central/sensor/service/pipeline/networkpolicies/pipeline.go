@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
@@ -48,8 +47,6 @@ type pipelineImpl struct {
 }
 
 func (s *pipelineImpl) Reconcile(clusterID string) error {
-	defer s.reconcileStore.Close()
-
 	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(clusterID, "")
 	if err != nil {
 		return err
@@ -60,15 +57,9 @@ func (s *pipelineImpl) Reconcile(clusterID string) error {
 		existingIDs.Add(n.GetId())
 	}
 
-	idsToDelete := existingIDs.Difference(s.reconcileStore.GetSet()).AsSlice()
-	if len(idsToDelete) > 0 {
-		log.Infof("Deleting network policies %+v as a part of reconciliation", idsToDelete)
-	}
-	errList := errorhelpers.NewErrorList("Network Policy reconciliation")
-	for _, id := range idsToDelete {
-		errList.AddError(s.runRemovePipeline(central.ResourceAction_REMOVE_RESOURCE, &storage.NetworkPolicy{Id: id}))
-	}
-	return errList.ToError()
+	return reconciliation.Perform(s.reconcileStore, existingIDs, "network policies", func(id string) error {
+		return s.runRemovePipeline(central.ResourceAction_REMOVE_RESOURCE, &storage.NetworkPolicy{Id: id})
+	})
 }
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {

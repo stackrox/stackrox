@@ -20,8 +20,7 @@ func NewStore() Store {
 }
 
 type storeImpl struct {
-	synced bool
-	idSet  *set.StringSet
+	idSet *set.StringSet
 }
 
 // Add adds an id if the store has not already been closed

@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -45,23 +44,15 @@ type pipelineImpl struct {
 }
 
 func (s *pipelineImpl) Reconcile(clusterID string) error {
-	defer s.reconcileStore.Close()
-
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	results, err := s.secrets.Search(query)
 	if err != nil {
 		return err
 	}
 
-	idsToDelete := search.ResultsToIDSet(results).Difference(s.reconcileStore.GetSet()).AsSlice()
-	if len(idsToDelete) > 0 {
-		log.Infof("Deleting secrets %+v as a part of reconciliation", idsToDelete)
-	}
-	errList := errorhelpers.NewErrorList("Secret reconciliation")
-	for _, id := range idsToDelete {
-		errList.AddError(s.runRemovePipeline(central.ResourceAction_REMOVE_RESOURCE, &storage.Secret{Id: id}))
-	}
-	return errList.ToError()
+	return reconciliation.Perform(s.reconcileStore, search.ResultsToIDSet(results), "secrets", func(id string) error {
+		return s.runRemovePipeline(central.ResourceAction_REMOVE_RESOURCE, &storage.Secret{Id: id})
+	})
 }
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {

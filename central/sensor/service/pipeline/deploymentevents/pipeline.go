@@ -14,7 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/enforcers"
-	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -69,24 +69,16 @@ type pipelineImpl struct {
 }
 
 func (s *pipelineImpl) Reconcile(clusterID string) error {
-	defer s.reconcileStore.Close()
-
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	results, err := s.deployments.Search(query)
 	if err != nil {
 		return err
 	}
 
-	idsToDelete := search.ResultsToIDSet(results).Difference(s.reconcileStore.GetSet()).AsSlice()
-	if len(idsToDelete) > 0 {
-		log.Infof("Deleting deployments %+v as a part of reconciliation", idsToDelete)
-	}
-	errList := errorhelpers.NewErrorList("Deployment reconciliation")
-	for _, id := range idsToDelete {
+	return reconciliation.PerformDryRun(s.reconcileStore, search.ResultsToIDSet(results), "deployments", func(id string) error {
 		_, err := s.runRemovePipeline(central.ResourceAction_REMOVE_RESOURCE, &storage.Deployment{Id: id})
-		errList.AddError(err)
-	}
-	return errList.ToError()
+		return err
+	}, !features.PerformDeploymentReconciliation.Enabled())
 }
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {

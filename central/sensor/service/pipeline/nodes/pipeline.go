@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
@@ -47,8 +46,6 @@ type pipelineImpl struct {
 }
 
 func (p *pipelineImpl) Reconcile(clusterID string) error {
-	defer p.reconcileStore.Close()
-
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	results, err := p.nodeStore.Search(query)
 	if err != nil {
@@ -60,15 +57,9 @@ func (p *pipelineImpl) Reconcile(clusterID string) error {
 		return fmt.Errorf("getting cluster-local node store: %v", err)
 	}
 
-	idsToDelete := search.ResultsToIDSet(results).Difference(p.reconcileStore.GetSet()).AsSlice()
-	if len(idsToDelete) > 0 {
-		log.Infof("Deleting nodes %+v as a part of reconciliation", idsToDelete)
-	}
-	errList := errorhelpers.NewErrorList("Node reconciliation")
-	for _, id := range idsToDelete {
-		errList.AddError(p.processRemove(clusterStore, &storage.Node{Id: id}))
-	}
-	return errList.ToError()
+	return reconciliation.Perform(p.reconcileStore, search.ResultsToIDSet(results), "nodes", func(id string) error {
+		return p.processRemove(clusterStore, &storage.Node{Id: id})
+	})
 }
 
 func (p *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
