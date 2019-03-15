@@ -26,7 +26,10 @@ const metadata = (state = {}, action) => {
         if (action.response.version !== state.version) {
             return Object.assign({}, state, { stale: true });
         }
-        return Object.assign({}, state, { stale: false });
+        if (state.stale) {
+            return Object.assign({}, state, { stale: false });
+        }
+        return state;
     }
     return state;
 };
