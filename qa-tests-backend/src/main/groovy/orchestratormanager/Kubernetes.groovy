@@ -26,10 +26,14 @@ import io.fabric8.kubernetes.api.model.ServicePort
 import io.fabric8.kubernetes.api.model.ServiceSpec
 import io.fabric8.kubernetes.api.model.Volume
 import io.fabric8.kubernetes.api.model.VolumeMount
+import io.fabric8.kubernetes.api.model.apps.Deployment as K8sDeployment
+import io.fabric8.kubernetes.api.model.apps.DaemonSet as K8sDaemonSet
 import io.fabric8.kubernetes.api.model.apps.DaemonSetList
 import io.fabric8.kubernetes.api.model.apps.DaemonSetSpec
 import io.fabric8.kubernetes.api.model.apps.DeploymentList
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpec
+import io.fabric8.kubernetes.api.model.apps.DoneableDaemonSet
+import io.fabric8.kubernetes.api.model.apps.DoneableDeployment
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyEgressRuleBuilder
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder
@@ -37,12 +41,16 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.KubernetesClientException
+import io.fabric8.kubernetes.client.dsl.MixedOperation
+import io.fabric8.kubernetes.client.dsl.Resource
+import io.fabric8.kubernetes.client.dsl.ScalableResource
 import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
 import objects.DaemonSet
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Node
+import util.Timer
 
 import java.util.stream.Collectors
 
@@ -53,10 +61,17 @@ class Kubernetes implements OrchestratorMain {
     String namespace
     KubernetesClient client
 
+    MixedOperation<K8sDaemonSet, DaemonSetList, DoneableDaemonSet, Resource<K8sDaemonSet, DoneableDaemonSet>> daemonsets
+
+    MixedOperation<K8sDeployment, DeploymentList, DoneableDeployment,
+            ScalableResource<K8sDeployment, DoneableDeployment>> deployments
+
     Kubernetes(String ns) {
         this.namespace = ns
         this.client = new DefaultKubernetesClient()
         this.client.configuration.setRollingTimeout(60 * 60 * 1000)
+        this.deployments = this.client.apps().deployments()
+        this.daemonsets = this.client.apps().daemonSets()
     }
 
     Kubernetes() {
@@ -113,59 +128,47 @@ class Kubernetes implements OrchestratorMain {
         }
     }
 
-    def waitForDeploymentDeletion(Deployment deploy) {
-        int waitTime = 0
-        boolean beenDeleted = false
+    def waitForDeploymentDeletion(Deployment deploy, int iterations = 30, int intervalSeconds = 5) {
+        Timer t = new Timer(iterations, intervalSeconds)
 
-        while (waitTime < maxWaitTime && !beenDeleted) {
-            io.fabric8.kubernetes.api.model.apps.Deployment d =
-                    client.apps().deployments().inNamespace(deploy.namespace).withName(deploy.name).get()
-            beenDeleted = true
-
-            println "Waiting for deployment ${deploy.name} to be deleted"
-            if (d != null) {
-                sleep(sleepDuration)
-                waitTime += sleepDuration
-                beenDeleted = false
+        K8sDeployment d
+        while (t.IsValid()) {
+            d = this.deployments.inNamespace(deploy.namespace).withName(deploy.name).get()
+            if (d == null) {
+                println "${deploy.name}: deployment removed."
+                return
             }
             getAndPrintPods(deploy.namespace, deploy.name)
         }
-
-        if (beenDeleted) {
-            println deploy.name + ": deployment removed."
-        } else {
-            println "Timed out waiting for deployment ${deploy.name} to be deleted"
-        }
+        println "Timed out waiting for deployment ${deploy.name} to be deleted"
     }
 
     def deleteDeployment(Deployment deployment) {
         if (deployment.exposeAsService) {
             this.deleteService(deployment.name, deployment.namespace)
         }
-        client.apps().deployments().inNamespace(deployment.namespace).withName(deployment.name).delete()
-        println "removing the deployment:" + deployment.name
+        this.deployments.inNamespace(deployment.namespace).withName(deployment.name).delete()
+        println "removing the deployment: ${deployment.name}"
     }
 
-    def createOrchestratorDeployment(io.fabric8.kubernetes.api.model.apps.Deployment dep) {
+    def createOrchestratorDeployment(K8sDeployment dep) {
         dep.setApiVersion("")
         dep.metadata.setResourceVersion("")
-        return client.apps().deployments().create(dep)
+        return this.deployments.create(dep)
     }
 
-    io.fabric8.kubernetes.api.model.apps.Deployment getOrchestratorDeployment(String ns, String name) {
-        return client.apps().deployments().inNamespace(ns).withName(name).get()
+    K8sDeployment getOrchestratorDeployment(String ns, String name) {
+        return this.deployments.inNamespace(ns).withName(name).get()
     }
 
     String getDeploymentId(Deployment deployment) {
-        return client.apps().deployments()
-                .inNamespace(deployment.namespace)
+        return this.deployments.inNamespace(deployment.namespace)
                 .withName(deployment.name)
                 .get()?.metadata?.uid
     }
 
     def getDeploymentReplicaCount(Deployment deployment) {
-        io.fabric8.kubernetes.api.model.apps.Deployment d = client.apps().deployments()
-                .inNamespace(deployment.namespace)
+        K8sDeployment d = this.deployments.inNamespace(deployment.namespace)
                 .withName(deployment.name)
                 .get()
         if (d != null) {
@@ -175,7 +178,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def getDeploymentUnavailableReplicaCount(Deployment deployment) {
-        io.fabric8.kubernetes.api.model.apps.Deployment d = client.apps().deployments()
+        K8sDeployment d = this.deployments
                 .inNamespace(deployment.namespace)
                 .withName(deployment.name)
                 .get()
@@ -186,7 +189,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def getDeploymentNodeSelectors(Deployment deployment) {
-        io.fabric8.kubernetes.api.model.apps.Deployment d = client.apps().deployments()
+        K8sDeployment d = this.deployments
                 .inNamespace(deployment.namespace)
                 .withName(deployment.name)
                 .get()
@@ -197,18 +200,19 @@ class Kubernetes implements OrchestratorMain {
     }
 
     Set<String> getDeploymentSecrets(Deployment deployment) {
-        io.fabric8.kubernetes.api.model.apps.Deployment d =
-                client.apps().deployments().inNamespace(deployment.namespace).withName(deployment.name).get()
+        K8sDeployment d = this.deployments
+                .inNamespace(deployment.namespace)
+                .withName(deployment.name)
+                .get()
         Set<String> secretSet = [] as Set
         if (d != null) {
             d.getSpec()?.getTemplate()?.getSpec()?.getVolumes()?.each { secretSet.add(it.secret.secretName) }
         }
-
         return secretSet
     }
 
     def getDeploymentCount(String ns = null) {
-        return client.apps().deployments().inNamespace(ns).list().getItems().collect { it.metadata.name }
+        return this.deployments.inNamespace(ns).list().getItems().collect { it.metadata.name }
     }
 
     /*
@@ -221,27 +225,24 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def deleteDaemonSet(DaemonSet daemonSet) {
-        client.apps().daemonSets().inNamespace(daemonSet.namespace).withName(daemonSet.name).delete()
-        println daemonSet.name + ": daemonset removed."
+        this.daemonsets.inNamespace(daemonSet.namespace).withName(daemonSet.name).delete()
+        println "${daemonSet.name}: daemonset removed."
     }
 
     def waitForDaemonSetDeletion(String name, String ns = namespace) {
-        int waitTime = 0
+        Timer t = new Timer(30, 5)
 
-        while (waitTime < maxWaitTime) {
-            if (client.apps().daemonSets().inNamespace(ns).withName(name).get() == null) {
+        while (t.IsValid()) {
+            if (this.daemonsets.inNamespace(ns).withName(name).get() == null) {
+                println "Daemonset ${name} has been deleted"
                 return
             }
-            getAndPrintPods(ns, name)
-            sleep(sleepDuration)
-            waitTime += sleepDuration
         }
-
         println "Timed out waiting for daemonset ${name} to stop"
     }
 
     def getDaemonSetReplicaCount(DaemonSet daemonSet) {
-        io.fabric8.kubernetes.api.model.apps.DaemonSet d = client.apps().daemonSets()
+        K8sDaemonSet d = this.daemonsets
                 .inNamespace(daemonSet.namespace)
                 .withName(daemonSet.name)
                 .get()
@@ -253,7 +254,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def getDaemonSetUnavailableReplicaCount(DaemonSet daemonSet) {
-        io.fabric8.kubernetes.api.model.apps.DaemonSet d = client.apps().daemonSets()
+        K8sDaemonSet d = this.daemonsets
                 .inNamespace(daemonSet.namespace)
                 .withName(daemonSet.name)
                 .get()
@@ -265,7 +266,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def getDaemonSetNodeSelectors(DaemonSet daemonSet) {
-        io.fabric8.kubernetes.api.model.apps.DaemonSet d = client.apps().daemonSets()
+        K8sDaemonSet d = this.daemonsets
                 .inNamespace(daemonSet.namespace)
                 .withName(daemonSet.name)
                 .get()
@@ -277,7 +278,7 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def getDaemonSetCount(String ns = null) {
-        return client.apps().daemonSets().inNamespace(ns).list().getItems().collect { it.metadata.name }
+        return this.daemonsets.inNamespace(ns).list().getItems().collect { it.metadata.name }
     }
 
     /*
@@ -289,10 +290,10 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def wasContainerKilled(String containerName, String namespace = this.namespace) {
-        Long startTime = System.currentTimeMillis()
-        Pod pod
+        Timer t = new Timer(20, 3)
 
-        while (System.currentTimeMillis() - startTime < 60000) {
+        Pod pod
+        while (t.IsValid()) {
             try {
                 pod = client.pods().inNamespace(namespace).withName(containerName).get()
                 if (pod == null) {
@@ -303,7 +304,6 @@ class Kubernetes implements OrchestratorMain {
                 println "wasContainerKilled: error fetching pod details - retrying"
             }
         }
-
         println "wasContainerKilled: did not determine container was killed before 60s timeout"
         println "container details were found:\n${containerName}: ${pod.toString()}"
         return false
@@ -662,8 +662,8 @@ class Kubernetes implements OrchestratorMain {
                 )
         )
 
-        io.fabric8.kubernetes.api.model.apps.Deployment clairifyDeployment =
-                new io.fabric8.kubernetes.api.model.apps.Deployment(
+        K8sDeployment clairifyDeployment =
+                new K8sDeployment(
                         metadata: new ObjectMeta(
                                 name: "clairify",
                                 namespace: "stackrox",
@@ -690,7 +690,7 @@ class Kubernetes implements OrchestratorMain {
                                 )
                         )
                 )
-        client.apps().deployments().inNamespace("stackrox").createOrReplace(clairifyDeployment)
+        this.deployments.inNamespace("stackrox").createOrReplace(clairifyDeployment)
         waitForDeploymentCreation("clairify", "stackrox")
     }
 
@@ -748,7 +748,7 @@ class Kubernetes implements OrchestratorMain {
             createLoadBalancer(deployment)
         }
 
-        io.fabric8.kubernetes.api.model.apps.Deployment d = new io.fabric8.kubernetes.api.model.apps.Deployment(
+        K8sDeployment d = new K8sDeployment(
                 metadata: new ObjectMeta(
                         name: deployment.name,
                         namespace: deployment.namespace,
@@ -792,40 +792,35 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def waitForDeploymentCreation(String deploymentName, String namespace, Boolean skipReplicaWait = false) {
-        int waitTime = 0
-
-        while (waitTime < maxWaitTime) {
-            DeploymentList dList = client.apps().deployments().inNamespace(namespace).list()
-
+        Timer t = new Timer(30, 3)
+        while (t.IsValid()) {
             println "Waiting for ${deploymentName} to start"
-            for (io.fabric8.kubernetes.api.model.apps.Deployment deployment : dList.getItems()) {
-                if (deployment.getMetadata().getName() == deploymentName) {
-                    // Using the 'skipReplicaWait' bool to avoid timeout waiting for ready replicas if we know
-                    // the deployment will not have replicas available
-                    if (deployment.getStatus().getReadyReplicas() ==
-                            deployment.getSpec().getReplicas() ||
-                            skipReplicaWait) {
-                        // If skipReplicaWait is set, we still want to sleep for a few seconds to allow the deployment
-                        // to work its way through the system.
-                        if (skipReplicaWait) {
-                            sleep(sleepDuration)
-                        }
-                        println deploymentName + ": deployment created."
-                        return deployment.getMetadata().getUid()
-                    }
-                    getAndPrintPods(namespace, deploymentName)
-                }
+            K8sDeployment d = this.deployments.inNamespace(namespace).withName(deploymentName).get()
+            getAndPrintPods(namespace, deploymentName)
+            if (d == null) {
+                println "${deploymentName} not found yet"
+                continue
+            } else if (skipReplicaWait) {
+                // If skipReplicaWait is set, we still want to sleep for a few seconds to allow the deployment
+                // to work its way through the system.
+                sleep(sleepDuration)
+                println "${deploymentName}: deployment created (skipped replica wait)."
+                return
             }
-            sleep(sleepDuration)
-            waitTime += sleepDuration
+            if (d.getStatus().getReadyReplicas() == d.getSpec().getReplicas()) {
+                println "All ${d.getSpec().getReplicas()} replicas found " +
+                        "in ready state for ${deploymentName}"
+                return d.getMetadata().getUid()
+            }
+            println "${d.getStatus().getReadyReplicas()}/" +
+                    "${d.getSpec().getReplicas()} are in the ready state for ${deploymentName}"
         }
-        println "Timed out waiting for ${deploymentName} to start"
     }
 
     def createDaemonSetNoWait(DaemonSet daemonSet) {
         daemonSet.getNamespace() != null ?: daemonSet.setNamespace(this.namespace)
 
-        io.fabric8.kubernetes.api.model.apps.DaemonSet ds = new io.fabric8.kubernetes.api.model.apps.DaemonSet(
+        K8sDaemonSet ds = new K8sDaemonSet(
                 metadata: new ObjectMeta(
                         name: daemonSet.name,
                         namespace: daemonSet.namespace,
@@ -846,7 +841,7 @@ class Kubernetes implements OrchestratorMain {
         )
 
         try {
-            client.apps().daemonSets().inNamespace(daemonSet.namespace).createOrReplace(ds)
+            this.daemonsets.inNamespace(daemonSet.namespace).createOrReplace(ds)
             println("Told the orchestrator to create " + daemonSet.getName())
         } catch (Exception e) {
             println("Error creating k8s deployment" + e.toString())
@@ -867,33 +862,28 @@ class Kubernetes implements OrchestratorMain {
     }
 
     def waitForDaemonSetCreation(String name, String namespace, Boolean skipReplicaWait = false) {
-        int waitTime = 0
-
-        while (waitTime < maxWaitTime) {
-            DaemonSetList dList = client.apps().daemonSets().inNamespace(namespace).list()
-
-            println "Waiting for daemonset ${name} to start"
-            for (io.fabric8.kubernetes.api.model.apps.DaemonSet daemonSet : dList.getItems()) {
-                if (daemonSet.getMetadata().getName() == deploymentName) {
-                    // Using the 'skipReplicaWait' bool to avoid timeout waiting for ready replicas if we know
-                    // the deployment will not have replicas available
-                    if (daemonSet.getStatus().getNumberReady() ==
-                            daemonSet.getStatus().getDesiredNumberScheduled() ||
-                            skipReplicaWait) {
-                        // If skipReplicaWait is set, we still want to sleep for a few seconds to allow the deployment
-                        // to work its way through the system.
-                        if (skipReplicaWait) {
-                            sleep(sleepDuration)
-                        }
-                        println name + ": daemonset created."
-                        return daemonSet.getMetadata().getUid()
-                    }
-                }
+        Timer t = new Timer(30, 3)
+        while (t.IsValid()) {
+            println "Waiting for ${name} to start"
+            K8sDaemonSet d = this.daemonsets.inNamespace(namespace).withName(name).get()
+            getAndPrintPods(namespace, name)
+            if (d == null) {
+                println "${name} not found yet"
+                continue
+            } else if (skipReplicaWait) {
+                // If skipReplicaWait is set, we still want to sleep for a few seconds to allow the deployment
+                // to work its way through the system.
+                sleep(sleepDuration)
+                println "${name}: daemonset created (skipped replica wait)."
+                return
             }
-            sleep(sleepDuration)
-            waitTime += sleepDuration
+            if (d.getStatus().getCurrentNumberScheduled() == d.getStatus().getDesiredNumberScheduled()) {
+                println "All ${d.getStatus().getDesiredNumberScheduled()} replicas found in ready state for ${name}"
+                return d.getMetadata().getUid()
+            }
+            println "${d.getStatus().getCurrentNumberScheduled()}/" +
+                    "${d.getStatus().getDesiredNumberScheduled()} are in the ready state for ${name}"
         }
-        println "Timed out waiting for daemonset ${name} to start"
     }
 
     def generatePodSpec(Deployment deployment) {
@@ -1085,19 +1075,17 @@ class Kubernetes implements OrchestratorMain {
         client.namespaces().withName(ns).delete()
     }
 
-    def waitForNamespaceDeletion(String ns, int timeoutSeconds = 30) {
-        int intervalSeconds = 3
+    def waitForNamespaceDeletion(String ns, int iterations = 20, int intervalSeconds = 3) {
         println "Waiting for namespace ${ns} to be deleted"
-        for (int waitTime = 0; waitTime < timeoutSeconds / intervalSeconds; waitTime++) {
+        Timer t = new Timer(iterations, intervalSeconds)
+        while (t.IsValid()) {
             if (client.namespaces().withName(ns).get() == null ) {
                 println "K8s found that namespace ${ns} was deleted"
                 return true
             }
             println "Retrying in ${intervalSeconds}..."
-            sleep(intervalSeconds * 1000)
         }
         println "K8s did not detect that namespace ${ns} was deleted"
         return false
     }
-
 }

@@ -37,7 +37,7 @@ class ReconciliationTest extends BaseSpecification {
 
         // Wait is builtin
         orchestrator.createDeployment(dep)
-        assert Services.waitForDeployment(dep, 10)
+        assert Services.waitForDeployment(dep)
 
         NetworkPolicy policy = new NetworkPolicy("do-nothing")
                 .setNamespace(ns)
@@ -63,7 +63,7 @@ class ReconciliationTest extends BaseSpecification {
         }
 
         // Recreate sensor
-        Services.waitForDeployment(sensorDeployment, 10)
+        Services.waitForDeployment(sensorDeployment)
 
         def maxWaitForSync = 100
         def interval = 1

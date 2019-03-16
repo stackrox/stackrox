@@ -26,6 +26,7 @@ import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.PolicyOuterClass.Whitelist
 import io.stackrox.proto.storage.ScopeOuterClass
 import util.Env
+import util.Timer
 
 class Services extends BaseService {
 
@@ -108,20 +109,20 @@ class Services extends BaseService {
       }
 
     private static getViolationsHelper(String query, String policyName, int timeoutSeconds) {
-        int intervalSeconds = 1
-        int waitTime
-        for (waitTime = 0; waitTime < timeoutSeconds / intervalSeconds; waitTime++) {
+        int intervalSeconds = 3
+        int iterations = timeoutSeconds / intervalSeconds
+
+        Timer t = new Timer(iterations, intervalSeconds)
+        while (t.IsValid()) {
             def violations = AlertService.getViolations(ListAlertsRequest.newBuilder()
                     .setQuery(query).build())
             if (violations.size() > 0) {
-                println "violation size is: " + violations.size()
-                println policyName + " triggered after waiting " + waitTime * intervalSeconds + " seconds"
+                println "violation size is: ${violations.size()}"
+                println "${policyName} triggered after waiting ${t.SecondsSince()} seconds"
                 return violations
             }
-            sleep(intervalSeconds * 1000)
         }
-
-        println "Failed to trigger " + policyName + " after waiting " + waitTime * intervalSeconds + " seconds"
+        println "Failed to trigger ${policyName} after waiting ${t.SecondsSince()} seconds"
         return []
     }
 
@@ -474,26 +475,26 @@ class Services extends BaseService {
         }
     }
 
-    static boolean roxDetectedDeployment(String deploymentID) {
+    static boolean roxDetectedDeployment(String deploymentID, String name) {
         try {
             def deployment = getDeploymentClient().
                     getDeployment(ResourceByID.newBuilder().setId(deploymentID).build())
             if (deployment.getContainersList().size() == 0) {
-                println("Deployment found but it had no containers...")
+                println("Deployment ${name} found but it had no containers...")
                 return false
             }
             if (deployment.getContainers(0).getImage() == null) {
-                println("Deployment found by SR, but images not correlated yet... ")
+                println("Deployment ${name} found by SR, but images not correlated yet... ")
                 return false
             }
             return true
         } catch (Exception e) {
-            println "SR does not detect the deployment yet: " + e.toString()
+            println "SR does not detect the deployment ${name} yet: ${e.toString()}"
             return false
         }
     }
 
-    static waitForDeployment(objects.Deployment deployment, int timeoutSeconds = 30) {
+    static waitForDeployment(objects.Deployment deployment, int iterations = 15, int interval = 2) {
         if (deployment.deploymentUid == null) {
             println "deploymentID for [${deployment.name}] is null, checking orchestrator directly for deployment ID"
             deployment.deploymentUid = OrchestratorType.orchestrator.getDeploymentId(deployment)
@@ -502,18 +503,16 @@ class Services extends BaseService {
                 return false
             }
         }
-        int intervalSeconds = 1
-        int waitTime
-        def startTime = System.currentTimeMillis()
-        for (waitTime = 0; waitTime < timeoutSeconds / intervalSeconds; waitTime++) {
-            if (roxDetectedDeployment(deployment.deploymentUid)) {
-                println "SR found deployment within ${(System.currentTimeMillis() - startTime) / 1000}s"
+
+        Timer t = new Timer(iterations, interval)
+        while (t.IsValid()) {
+            if (roxDetectedDeployment(deployment.deploymentUid, deployment.getName())) {
+                println "SR found deployment ${deployment.name} within ${t.SecondsSince()}s"
                 return true
             }
-            println "Retrying in ${intervalSeconds}..."
-            sleep(intervalSeconds * 1000)
+            println "SR has not found deployment ${deployment.name} yet"
         }
-        println "SR did not detect the deployment"
+        println "SR did not detect the deployment ${deployment.name} in ${iterations * interval} seconds"
         return false
     }
 }

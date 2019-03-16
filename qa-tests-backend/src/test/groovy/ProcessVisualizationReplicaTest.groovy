@@ -43,7 +43,7 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
         long sleepInterval = 1000
         boolean disappearedFromStackRox = false
         while (sleepTime < 60000) {
-            if (!roxDetectedDeployment(deployment.getDeploymentUid())) {
+            if (!roxDetectedDeployment(deployment.getDeploymentUid(), deployment.getName())) {
                 disappearedFromStackRox = true
                 break
             }

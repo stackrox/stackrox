@@ -37,7 +37,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         long sleepInterval = 1000
         boolean disappearedFromStackRox = false
         while (sleepTime < 60000) {
-            if (!roxDetectedDeployment(deployment.getDeploymentUid())) {
+            if (!roxDetectedDeployment(deployment.getDeploymentUid(), deployment.getName())) {
                 disappearedFromStackRox = true
                 break
             }
@@ -190,7 +190,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
         when:
         "Delete the deployment, wait for it to disappear from StackRox, and fetch the new runtime alert."
         // Make sure the deployment initially exists, so that we know it's really gone when we check below.
-        assert roxDetectedDeployment(DEPLOYMENT.getDeploymentUid())
+        assert roxDetectedDeployment(DEPLOYMENT.getDeploymentUid(), DEPLOYMENT.getName())
         deploymentDeleted = deleteAndWaitForSR(DEPLOYMENT)
 
         then:

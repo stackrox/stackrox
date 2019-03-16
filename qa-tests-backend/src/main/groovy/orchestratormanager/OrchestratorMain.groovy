@@ -59,7 +59,7 @@ interface OrchestratorMain {
     //Namespaces
     String createNamespace(String ns)
     def deleteNamespace(String ns)
-    def waitForNamespaceDeletion(String ns, int timeoutSeconds)
+    def waitForNamespaceDeletion(String ns)
 
     //NetworkPolicies
     String applyNetworkPolicy(NetworkPolicy policy)
