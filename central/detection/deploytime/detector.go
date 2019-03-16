@@ -6,9 +6,14 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
+// DetectionContext is the context for detection
+type DetectionContext struct {
+	EnforcementOnly bool
+}
+
 // Detector provides an interface for getting and managing alerts and enforcements on deployments.
 type Detector interface {
-	Detect(deployment *storage.Deployment) ([]*storage.Alert, error)
+	Detect(ctx DetectionContext, deployment *storage.Deployment) ([]*storage.Alert, error)
 	AlertsForDeployment(deployment *storage.Deployment) ([]*storage.Alert, error)
 	AlertsForPolicy(policyID string) ([]*storage.Alert, error)
 	UpsertPolicy(policy *storage.Policy) error

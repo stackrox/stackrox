@@ -2,16 +2,20 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/detection/buildtime"
+	"github.com/stackrox/rox/central/detection/deployment"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/role/resources"
+	"github.com/stackrox/rox/central/searchbasedpolicies"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -44,6 +48,7 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
+	policySet          deployment.PolicySet
 	imageEnricher      enricher.ImageEnricher
 	deploymentEnricher enrichment.Enricher
 	buildTimeDetector  buildtime.Detector
@@ -72,7 +77,7 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		return nil, fmt.Errorf("image name contents missing")
 	}
 
-	_ = s.imageEnricher.EnrichImage(enricher.EnrichmentContext{FastPath: req.GetFastPath()}, req.GetImage())
+	_ = s.imageEnricher.EnrichImage(enricher.EnrichmentContext{NoExternalMetadata: req.GetNoExternalMetadata()}, req.GetImage())
 
 	alerts, err := s.buildTimeDetector.Detect(req.GetImage())
 	if err != nil {
@@ -89,7 +94,11 @@ func (s *serviceImpl) enrichAndDetect(ctx enricher.EnrichmentContext, deployment
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	alerts, err := s.detector.Detect(deployment)
+	detectionCtx := deploytime.DetectionContext{
+		EnforcementOnly: ctx.EnforcementOnly,
+	}
+
+	alerts, err := s.detector.Detect(detectionCtx, deployment)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -124,7 +133,7 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 		return nil, status.Errorf(codes.InvalidArgument, "could not parse YAML: %v", err)
 	}
 
-	eCtx := enricher.EnrichmentContext{FastPath: req.GetFastPath()}
+	eCtx := enricher.EnrichmentContext{NoExternalMetadata: req.GetNoExternalMetadata()}
 	var runs []*apiV1.DeployDetectionResponse_Run
 	if list, ok := obj.(*coreV1.List); ok {
 		for i, item := range list.Items {
@@ -154,12 +163,49 @@ func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.D
 	}, nil
 }
 
+func isDeployTimeEnforcement(actions []storage.EnforcementAction) bool {
+	for _, a := range actions {
+		if a == storage.EnforcementAction_SCALE_TO_ZERO_ENFORCEMENT || a == storage.EnforcementAction_UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *serviceImpl) DetectDeployTime(ctx context.Context, req *apiV1.DeployDetectionRequest) (*apiV1.DeployDetectionResponse, error) {
 	if req.GetDeployment() == nil {
 		return nil, status.Error(codes.InvalidArgument, "Deployment must be passed to deploy time detection")
 	}
 
-	run, err := s.enrichAndDetect(enricher.EnrichmentContext{FastPath: req.GetFastPath()}, req.GetDeployment())
+	// If we have enforcement only, then check if any of the policies need enforcement. If not, then just exit with no alerts generated
+	if req.GetEnforcementOnly() {
+		var evaluationRequired bool
+		_ = s.policySet.ForEach(func(p *storage.Policy, _ searchbasedpolicies.Matcher, _ predicate.Predicate) error {
+			if isDeployTimeEnforcement(p.GetEnforcementActions()) {
+				evaluationRequired = true
+				return errors.New("not a real error, just early exits this foreach")
+			}
+			return nil
+		})
+		if !evaluationRequired {
+			return &apiV1.DeployDetectionResponse{
+				Runs: []*apiV1.DeployDetectionResponse_Run{
+					{
+						Name:   req.GetDeployment().GetName(),
+						Type:   req.GetDeployment().GetType(),
+						Alerts: nil,
+					},
+				},
+			}, nil
+		}
+	}
+
+	enrichmentCtx := enricher.EnrichmentContext{
+		NoExternalMetadata: req.GetNoExternalMetadata(),
+		EnforcementOnly:    req.GetEnforcementOnly(),
+	}
+
+	run, err := s.enrichAndDetect(enrichmentCtx, req.GetDeployment())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

@@ -62,12 +62,12 @@ func tempDeploymentIndexer(deployment *storage.Deployment) (deploymentIndexer.In
 }
 
 // Detect runs detection on an deployment, returning any generated alerts.
-func (d *detectorImpl) Detect(deployment *storage.Deployment) ([]*storage.Alert, error) {
+func (d *detectorImpl) Detect(ctx DetectionContext, deployment *storage.Deployment) ([]*storage.Alert, error) {
 	deploymentIndex, err := tempDeploymentIndexer(deployment)
 	if err != nil {
 		return nil, err
 	}
-	return d.evaluateAlertsForDeployment(deploymentIndex, deployment)
+	return d.evaluateAlertsForDeployment(ctx, deploymentIndex, deployment)
 }
 
 // UpsertPolicy adds or updates a policy in the set.
@@ -89,16 +89,21 @@ func (d *detectorImpl) matchWithEmptyImageIDs(p *storage.Policy, matcher searchb
 	return violations.AlertViolations, nil
 }
 
-func (d *detectorImpl) evaluateAlertsForDeployment(searcher search.Searcher, deployment *storage.Deployment) ([]*storage.Alert, error) {
+func (d *detectorImpl) evaluateAlertsForDeployment(ctx DetectionContext, searcher search.Searcher, deployment *storage.Deployment) ([]*storage.Alert, error) {
 	var newAlerts []*storage.Alert
 	err := d.policySet.ForEach(func(p *storage.Policy, matcher searchbasedpolicies.Matcher, shouldProcess predicate.Predicate) error {
 		if shouldProcess != nil && !shouldProcess(deployment) {
 			return nil
 		}
 
+		enforcement, _ := policyAndDeploymentToEnforcement(p, deployment)
+		if enforcement == storage.EnforcementAction_UNSET_ENFORCEMENT && ctx.EnforcementOnly {
+			return nil
+		}
+
 		var err error
 		var violations []*storage.Alert_Violation
-		if enforcement, _ := policyAndDeploymentToEnforcement(p, deployment); enforcement != storage.EnforcementAction_UNSET_ENFORCEMENT {
+		if enforcement != storage.EnforcementAction_UNSET_ENFORCEMENT {
 			violations, err = d.matchWithEmptyImageIDs(p, matcher, deployment)
 		} else {
 			var violationsWrapper searchbasedpolicies.Violations
@@ -121,7 +126,7 @@ func (d *detectorImpl) evaluateAlertsForDeployment(searcher search.Searcher, dep
 }
 
 func (d *detectorImpl) AlertsForDeployment(deployment *storage.Deployment) ([]*storage.Alert, error) {
-	return d.evaluateAlertsForDeployment(d.deployments, deployment)
+	return d.evaluateAlertsForDeployment(DetectionContext{}, d.deployments, deployment)
 }
 
 func (d *detectorImpl) AlertsForPolicy(policyID string) ([]*storage.Alert, error) {

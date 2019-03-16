@@ -18,7 +18,8 @@ func initialize() {
 	as = New(enrichment.ImageEnricherSingleton(),
 		enrichment.Singleton(),
 		buildTimeDetection.SingletonDetector(),
-		deploytime.SingletonDetector())
+		deploytime.SingletonDetector(),
+		deploytime.SingletonPolicySet())
 }
 
 // Singleton provides the instance of the Service interface to register.

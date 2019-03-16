@@ -17,7 +17,8 @@ var (
 
 // EnrichmentContext is used to pass options through the enricher without exploding the number of function arguments
 type EnrichmentContext struct {
-	FastPath bool
+	NoExternalMetadata bool
+	EnforcementOnly    bool
 }
 
 // ImageEnricher provides functions for enriching images with integrations.

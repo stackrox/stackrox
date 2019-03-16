@@ -25,14 +25,14 @@ type enricherImpl struct {
 
 // EnrichImage enriches an image with the integration set present.
 func (e *enricherImpl) EnrichImage(ctx EnrichmentContext, image *storage.Image) bool {
-	updatedMetadata := e.enrichWithMetadata(image)
+	updatedMetadata := e.enrichWithMetadata(ctx, image)
 	updatedScan := e.enrichWithScan(ctx, image)
 	return updatedMetadata || updatedScan
 }
 
-func (e *enricherImpl) enrichWithMetadata(image *storage.Image) bool {
+func (e *enricherImpl) enrichWithMetadata(ctx EnrichmentContext, image *storage.Image) bool {
 	for _, registry := range e.integrations.RegistrySet().GetAll() {
-		if updated := e.enrichImageWithRegistry(image, registry); updated {
+		if updated := e.enrichImageWithRegistry(ctx, image, registry); updated {
 			return true
 		}
 	}
@@ -46,7 +46,7 @@ func getRef(image *storage.Image) string {
 	return image.GetName().GetFullName()
 }
 
-func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry registryTypes.ImageRegistry) bool {
+func (e *enricherImpl) enrichImageWithRegistry(ctx EnrichmentContext, image *storage.Image, registry registryTypes.ImageRegistry) bool {
 	if !registry.Global() {
 		return false
 	}
@@ -61,6 +61,10 @@ func (e *enricherImpl) enrichImageWithRegistry(image *storage.Image, registry re
 		return true
 	}
 	e.metrics.IncrementMetadataCacheMiss()
+
+	if ctx.NoExternalMetadata {
+		return false
+	}
 
 	// Wait until limiter allows entrance
 	_ = e.metadataLimiter.Wait(context.Background())
@@ -98,7 +102,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 	}
 	e.metrics.IncrementScanCacheMiss()
 
-	if ctx.FastPath {
+	if ctx.NoExternalMetadata {
 		return false
 	}
 

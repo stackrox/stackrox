@@ -26,9 +26,7 @@ import (
 )
 
 const (
-	// EKS uses a 30s timeout for all API requests, so make sure we return before that expires, as otherwise the entire
-	// request will be canceled.
-	timeout = 27 * time.Second
+	timeout = 3 * time.Second
 
 	// This purposefully leaves a newline at the top for formatting when using kubectl
 	kubectlTemplate = `
@@ -181,7 +179,13 @@ func (s *handlerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), timeout)
 	defer cancel()
 
-	resp, err := s.client.DetectDeployTime(ctx, &v1.DeployDetectionRequest{Resource: &v1.DeployDetectionRequest_Deployment{Deployment: deployment}, FastPath: true})
+	resp, err := s.client.DetectDeployTime(ctx, &v1.DeployDetectionRequest{
+		Resource: &v1.DeployDetectionRequest_Deployment{
+			Deployment: deployment,
+		},
+		NoExternalMetadata: true,
+		EnforcementOnly:    true,
+	})
 	if err != nil {
 		log.Warnf("Deployment %s/%s of type %s was deployed without being checked due to detection error: %v",
 			deployment.GetNamespace(), deployment.GetName(), deployment.GetType(), err)
