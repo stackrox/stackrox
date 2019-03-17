@@ -10,9 +10,8 @@ import (
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/flags"
 )
-
-const timeout = 5 * time.Second
 
 var (
 	levels = getValidLevels()
@@ -31,6 +30,7 @@ func Command() *cobra.Command {
 		},
 	}
 	c.AddCommand(LogLevelCommand())
+	flags.AddTimeout(c)
 	return c
 }
 
@@ -67,7 +67,7 @@ func getLogLevel(modules []string) error {
 		_ = conn.Close()
 	}()
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), flags.Timeout())
 	defer cancel()
 
 	client := v1.NewDebugServiceClient(conn)

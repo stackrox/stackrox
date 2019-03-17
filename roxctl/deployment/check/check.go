@@ -5,18 +5,16 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/report"
 	"golang.org/x/net/context"
 )
-
-const timeout = 1 * time.Minute
 
 var log = logging.LoggerForModule()
 
@@ -87,7 +85,7 @@ func getAlerts(yaml string) ([]*storage.Alert, error) {
 	}()
 	service := v1.NewDetectionServiceClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), flags.Timeout())
 	defer cancel()
 	// Call detection and return the returned alerts.
 	response, err := service.DetectDeployTimeFromYAML(ctx, &v1.DeployYAMLDetectionRequest{Yaml: yaml})

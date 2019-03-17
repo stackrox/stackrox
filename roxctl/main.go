@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/roxctl/central"
 	"github.com/stackrox/rox/roxctl/cluster"
-	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/deployment"
 	"github.com/stackrox/rox/roxctl/image"
 	"github.com/stackrox/rox/roxctl/sensor"
@@ -45,7 +45,8 @@ func main() {
 	// Cluster Commands
 	c.AddCommand(cluster.Command())
 
-	common.AddAuthFlags(c)
+	flags.AddPassword(c)
+	flags.AddEndpoint(c)
 
 	if err := c.Execute(); err != nil {
 		os.Exit(1)

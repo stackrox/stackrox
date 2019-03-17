@@ -2,6 +2,7 @@ package sensor
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/sensor/generate"
 )
 
@@ -13,5 +14,6 @@ func Command() *cobra.Command {
 		Long:  "Sensor is the list of commands that pertain to the Sensor service",
 	}
 	c.AddCommand(generate.Command())
+	flags.AddTimeout(c)
 	return c
 }

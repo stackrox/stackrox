@@ -7,13 +7,10 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common"
 )
-
-const timeout = 10 * time.Second
 
 // Command defines the db backup command
 func Command() *cobra.Command {
@@ -26,6 +23,7 @@ func Command() *cobra.Command {
 			return getBackup()
 		},
 	}
+
 	return c
 }
 
@@ -45,7 +43,7 @@ func getBackup() error {
 	}
 	common.AddAuthToRequest(req)
 
-	client := common.GetHTTPClient(timeout)
+	client := common.GetHTTPClient()
 	resp, err := client.Do(req)
 	if err != nil {
 		return err

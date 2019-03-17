@@ -12,20 +12,16 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/defaults"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-)
-
-const (
-	connectionTimeout = 5 * time.Second
 )
 
 var (
@@ -59,7 +55,7 @@ func fullClusterCreation() error {
 	if err != nil {
 		if status.Code(err) == codes.AlreadyExists && continueIfExists {
 			// Need to get the clusters and get the one with the name
-			ctx, cancel := context.WithTimeout(context.Background(), connectionTimeout)
+			ctx, cancel := context.WithTimeout(context.Background(), flags.Timeout())
 			defer cancel()
 			clusterResponse, err := service.GetClusters(ctx, &v1.Empty{})
 			if err != nil {
@@ -107,7 +103,7 @@ func Command() *cobra.Command {
 }
 
 func createCluster(svc v1.ClustersServiceClient) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), connectionTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), flags.Timeout())
 	defer cancel()
 	// Call detection and return the returned alerts.
 	response, err := svc.PostCluster(ctx, &cluster)
@@ -156,7 +152,7 @@ func writeZipToFolder(zipName string) error {
 
 func getBundle(id string) error {
 	url := common.GetURL("/api/extensions/clusters/zip")
-	client := common.GetHTTPClient(connectionTimeout)
+	client := common.GetHTTPClientWithTimeout(flags.Timeout())
 	body, _ := json.Marshal(&zipPost{ID: id})
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {

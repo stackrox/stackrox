@@ -4,22 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/report"
 	"golang.org/x/net/context"
 )
-
-// This is set very high, because typically the scan will need to be triggered as the image will be new
-// This means we must let the scanners do their thing otherwise we will miss the scans
-// TODO(cgorman) We need a flag currently that says --wait-for-image timeout or something like that because Clair does scanning inline
-// but other scanners do not
-const timeout = 10 * time.Minute
 
 // Command checks the image against image build lifecycle policies
 func Command() *cobra.Command {
@@ -89,7 +83,7 @@ func getAlerts(imageStr string) ([]*storage.Alert, error) {
 	}()
 	service := v1.NewDetectionServiceClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), flags.Timeout())
 	defer cancel()
 	// Call detection and return the returned alerts.
 	response, err := service.DetectBuildTime(ctx, &v1.BuildDetectionRequest{Resource: &v1.BuildDetectionRequest_Image{Image: image}})
