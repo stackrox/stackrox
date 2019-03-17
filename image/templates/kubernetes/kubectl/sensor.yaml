@@ -192,6 +192,9 @@ spec:
         - mountPath: /module
           name: tmpfs-module
         {{if .CollectorEbpf}}
+        - mountPath: /host/etc
+          name: etc-ro
+          readOnly: true
         - mountPath: /host/sys/kernel/debug/tracing/events
           name: sys-kernel-debug-tracing-events-ro
           readOnly: true
@@ -253,6 +256,9 @@ spec:
           medium: Memory
         name: tmpfs-module
       {{if .CollectorEbpf}}
+      - hostPath: 
+          path: /etc
+        name: etc-ro
       - hostPath: 
           path: /sys/kernel/debug/tracing/events
         name: sys-kernel-debug-tracing-events-ro
