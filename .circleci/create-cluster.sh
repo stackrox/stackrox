@@ -30,3 +30,15 @@ for zone in $zones; do
         gcloud container clusters delete "prevent-ci-${CIRCLE_BUILD_NUM}"
     fi
 done
+
+# Sleep to ensure that GKE has actually started to create the deployments/pods
+sleep 10
+
+while true; do
+    LINES="$(kubectl -n kube-system get po | grep -v Running | wc -l | awk '{print $1}')"
+    if [[ "${LINES}" == 1 ]]; then
+        break
+    fi
+    echo "Waiting for ${LINES} kube-system services to be initialized"
+    sleep 2
+done

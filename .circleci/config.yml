@@ -659,9 +659,6 @@ jobs:
     environment:
       - STORAGE: pvc
       - LOAD_BALANCER: lb
-      - NUM_NODES: 2
-      - RUNTIME_SUPPORT: false
-      - MONITORING_SUPPORT: false
 
     steps:
       - checkout
