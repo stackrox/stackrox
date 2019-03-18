@@ -29,12 +29,13 @@ class SuccessView extends Component {
     renderTabs = () => {
         const { applyYaml } = this.props.modification;
         const tabs = [{ text: this.props.modificationName }];
+        const displayYaml = applyYaml.length < 2 ? '\n\n(empty policy generated)' : applyYaml;
         return (
             <Tabs headers={tabs}>
                 <TabContent>
                     <div className="flex flex-col bg-base-100 overflow-auto h-full">
                         <pre className="p-3 pt-4 leading-tight whitespace-pre-wrap word-break">
-                            {applyYaml}
+                            {displayYaml}
                         </pre>
                     </div>
                 </TabContent>
