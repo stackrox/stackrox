@@ -69,3 +69,19 @@ func BenchmarkSearchAlert(b *testing.B) {
 		require.NoError(b, err)
 	}
 }
+
+func BenchmarkBatch(b *testing.B) {
+	indexer := getAlertIndex()
+
+	alerts := make([]*storage.Alert, 0, 4000)
+	for i := 0; i < 4000; i++ {
+		a := fixtures.GetAlert()
+		a.Deployment.Containers = nil
+		a.Id = fmt.Sprintf("%d", i)
+		alerts = append(alerts, a)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		require.NoError(b, indexer.AddAlerts(alerts))
+	}
+}

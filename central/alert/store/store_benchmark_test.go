@@ -50,6 +50,26 @@ func BenchmarkGetAlert(b *testing.B) {
 	}
 }
 
+func BenchmarkListAlert(b *testing.B) {
+	store := getAlertStore(b)
+	alert := fixtures.GetAlert()
+	require.NoError(b, store.AddAlert(alert))
+	for i := 0; i < b.N; i++ {
+		_, err := store.ListAlerts()
+		require.NoError(b, err)
+	}
+}
+
+func BenchmarkStateAlert(b *testing.B) {
+	store := getAlertStore(b)
+	alert := fixtures.GetAlert()
+	require.NoError(b, store.AddAlert(alert))
+	for i := 0; i < b.N; i++ {
+		_, err := store.GetAlertStates()
+		require.NoError(b, err)
+	}
+}
+
 // This really isn't a benchmark, but just prints out how many ListAlerts can be returned in an API call
 func BenchmarkListAlerts(b *testing.B) {
 	listAlert := &storage.ListAlert{

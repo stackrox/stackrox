@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/debug"
 )
 
 // searcherImpl provides an intermediary implementation layer for ProcessStorage.
@@ -16,6 +17,7 @@ type searcherImpl struct {
 }
 
 func (s *searcherImpl) buildIndex() error {
+	defer debug.FreeOSMemory()
 	indicators, err := s.storage.GetProcessIndicators()
 	if err != nil {
 		return err

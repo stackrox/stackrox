@@ -52,6 +52,11 @@ message ListAlert {
     int32 enforcement_count                 = 7;
 }
 
+message AlertState {
+    string id            = 1;
+    ViolationState state = 6;
+}
+
 message ListAlertPolicy {
     string id                                   = 1;
     string name                                 = 2;

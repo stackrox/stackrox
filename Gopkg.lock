@@ -195,7 +195,7 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
-  digest = "1:03549ed503f703403a28471fde114d5db3f0d1a9a4f3656594401e0a6c43f8d3"
+  digest = "1:a1f0bd8b3d6ea4d75ed9201f8ce24a44772a72e851b46ddd387523ddf6a92d63"
   name = "github.com/blevesearch/bleve"
   packages = [
     ".",
@@ -239,7 +239,7 @@
     "size",
   ]
   pruneopts = "NUT"
-  revision = "60afb9a57409d8d3f5dfda9a3415d4a0aab9de79"
+  revision = "da2730c630b7b4b1f8c795646549a104a734361b"
   source = "https://github.com/connorgorman/bleve.git"
 
 [[projects]]

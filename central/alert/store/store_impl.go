@@ -8,8 +8,11 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
+
+var log = logging.LoggerForModule()
 
 type storeImpl struct {
 	*bolt.DB
@@ -33,7 +36,26 @@ func (b *storeImpl) ListAlert(id string) (alert *storage.ListAlert, exists bool,
 	return
 }
 
-// GetAlerts ignores the request and gives all values
+// GetAlertStates returns a minimal message in order to determine the state of the alerts
+func (b *storeImpl) GetAlertStates() ([]*storage.AlertState, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "GetAlertStates")
+
+	var alerts []*storage.AlertState
+	err := b.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(alertListBucket)
+		return b.ForEach(func(k, v []byte) error {
+			var alert storage.AlertState
+			if err := proto.Unmarshal(v, &alert); err != nil {
+				return err
+			}
+			alerts = append(alerts, &alert)
+			return nil
+		})
+	})
+	return alerts, err
+}
+
+// ListAlerts returns a minimal form of the Alert struct for faster marshalling
 func (b *storeImpl) ListAlerts() ([]*storage.ListAlert, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "ListAlert")
 
@@ -65,10 +87,7 @@ func (b *storeImpl) GetAlert(id string) (alert *storage.Alert, exists bool, err 
 	return
 }
 
-// GetAlerts ignores the request and gives all values
-func (b *storeImpl) GetAlerts() ([]*storage.Alert, error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Alert")
-
+func (b *storeImpl) getAllAlerts() ([]*storage.Alert, error) {
 	var alerts []*storage.Alert
 	err := b.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(alertBucket)
@@ -81,6 +100,31 @@ func (b *storeImpl) GetAlerts() ([]*storage.Alert, error) {
 			return nil
 		})
 	})
+	return alerts, err
+}
+
+// GetAlerts takes in optional ids to filter the request by. No IDs will result in all IDs being returned
+func (b *storeImpl) GetAlerts(ids ...string) ([]*storage.Alert, error) {
+	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetMany, "Alert")
+
+	if len(ids) == 0 {
+		return b.getAllAlerts()
+	}
+
+	var alerts []*storage.Alert
+	err := b.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(alertBucket)
+		for _, id := range ids {
+			v := b.Get([]byte(id))
+			var alert storage.Alert
+			if err := proto.Unmarshal(v, &alert); err != nil {
+				return err
+			}
+			alerts = append(alerts, &alert)
+		}
+		return nil
+	})
+
 	return alerts, err
 }
 

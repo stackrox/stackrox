@@ -7,7 +7,18 @@ import (
 	"github.com/stackrox/rox/central/alert/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/batcher"
+	"github.com/stackrox/rox/pkg/debug"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
+)
+
+const (
+	alertBatchSize = 1000
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
@@ -17,12 +28,56 @@ type searcherImpl struct {
 }
 
 func (ds *searcherImpl) buildIndex() error {
-	// Alert Index
-	alerts, err := ds.storage.GetAlerts()
+	defer debug.FreeOSMemory()
+
+	stateAlerts, err := ds.storage.GetAlertStates()
 	if err != nil {
 		return err
 	}
-	return ds.indexer.AddAlerts(alerts)
+
+	var resolvedIDs, unresolvedIDs []string
+	for _, a := range stateAlerts {
+		if a.GetState() == storage.ViolationState_RESOLVED {
+			resolvedIDs = append(resolvedIDs, a.GetId())
+		} else {
+			unresolvedIDs = append(unresolvedIDs, a.GetId())
+		}
+	}
+
+	if err := ds.getAndIndexAlertsBatch(unresolvedIDs); err != nil {
+		return err
+	}
+
+	// Asynchronously index the resolved alerts because there is no hard
+	// dependency on resolved alerts being indexed
+	go func() {
+		if err := ds.getAndIndexAlertsBatch(resolvedIDs); err != nil {
+			log.Error(err)
+		}
+	}()
+	return nil
+}
+
+func (ds *searcherImpl) getAndIndexAlertsBatch(ids []string) error {
+	b := batcher.New(len(ids), alertBatchSize)
+	for start, end, ok := b.Next(); ok; start, end, ok = b.Next() {
+		if err := ds.getAndIndexAlerts(ids[start:end]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (ds *searcherImpl) getAndIndexAlerts(ids []string) error {
+	defer debug.FreeOSMemory()
+	alerts, err := ds.storage.GetAlerts(ids...)
+	if err != nil {
+		return err
+	}
+	if err := ds.indexer.AddAlerts(alerts); err != nil {
+		return err
+	}
+	return nil
 }
 
 // SearchAlerts retrieves SearchResults from the indexer and storage

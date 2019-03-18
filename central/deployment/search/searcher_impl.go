@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/debug"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -17,6 +18,7 @@ type searcherImpl struct {
 }
 
 func (ds *searcherImpl) buildIndex() error {
+	defer debug.FreeOSMemory()
 	deployments, err := ds.storage.GetDeployments()
 	if err != nil {
 		return err

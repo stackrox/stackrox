@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/secret/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/debug"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 )
 
@@ -20,6 +21,7 @@ func (d *datastoreImpl) ListSecrets() ([]*storage.ListSecret, error) {
 }
 
 func (d *datastoreImpl) buildIndex() error {
+	defer debug.FreeOSMemory()
 	secrets, err := d.storage.GetAllSecrets()
 	if err != nil {
 		return err

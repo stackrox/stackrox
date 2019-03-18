@@ -16,9 +16,10 @@ var (
 type Store interface {
 	ListAlert(id string) (*storage.ListAlert, bool, error)
 	ListAlerts() ([]*storage.ListAlert, error)
+	GetAlertStates() ([]*storage.AlertState, error)
 
 	GetAlert(id string) (*storage.Alert, bool, error)
-	GetAlerts() ([]*storage.Alert, error)
+	GetAlerts(...string) ([]*storage.Alert, error)
 	AddAlert(alert *storage.Alert) error
 	UpdateAlert(alert *storage.Alert) error
 }
