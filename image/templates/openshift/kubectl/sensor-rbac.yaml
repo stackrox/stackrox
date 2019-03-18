@@ -23,8 +23,8 @@ metadata:
 imagePullSecrets:
 - name: stackrox
 - name: stackrox-collector
-{{- end}}
 ---
+{{- end}}
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
@@ -108,12 +108,14 @@ metadata:
 rules:
   - resources:
     - daemonsets
+    - deployments
     apiGroups:
     - extensions
     verbs:
     - create
     - get
     - delete
+    - deletecollection
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
@@ -204,6 +206,38 @@ subjects:
 roleRef:
   kind: ClusterRole
   name: stackrox:update-namespaces
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:view-rbac
+rules:
+  - resources:
+      - roles
+      - clusterroles
+      - rolebindings
+      - clusterrolebindings
+      - serviceaccounts
+    apiGroups:
+      - ""
+      - "rbac.authorization.k8s.io"
+    verbs:
+      - get
+      - watch
+      - list
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: stackrox:view-rbac-binding
+subjects:
+  - kind: ServiceAccount
+    name: sensor
+    namespace: stackrox
+roleRef:
+  kind: ClusterRole
+  name: stackrox:view-rbac
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: SecurityContextConstraints
