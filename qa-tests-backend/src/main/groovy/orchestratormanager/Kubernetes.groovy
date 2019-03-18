@@ -4,6 +4,7 @@ import common.YamlGenerator
 import io.fabric8.kubernetes.api.model.Capabilities
 import io.fabric8.kubernetes.api.model.Container
 import io.fabric8.kubernetes.api.model.ContainerPort
+import io.fabric8.kubernetes.api.model.ContainerStatus
 import io.fabric8.kubernetes.api.model.EnvVar
 import io.fabric8.kubernetes.api.model.HostPathVolumeSource
 import io.fabric8.kubernetes.api.model.IntOrString
@@ -124,7 +125,10 @@ class Kubernetes implements OrchestratorMain {
 
         println "Status of ${name}'s pods:"
         for (Pod pod : list.getItems()) {
-            println "\t ${pod.metadata.name} ${pod.status.containerStatuses}"
+            println "\t- ${pod.metadata.name}"
+            for (ContainerStatus status : pod.status.containerStatuses) {
+                println "\t  Container status: ${status.state}"
+            }
         }
     }
 

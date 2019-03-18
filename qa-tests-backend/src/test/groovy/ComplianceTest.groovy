@@ -49,18 +49,17 @@ class ComplianceTest extends BaseSpecification {
     @Shared
     private String clusterId
     @Shared
-    private clairifyId = ""
+    private gcrId = ""
 
     def setupSpec() {
         // Get cluster ID
         clusterId = ClusterService.getClusterId()
 
-        // Clear image cache and add clairify/remove dtr scanners
+        // Clear image cache and add gcr/remove dtr scanners
         Services.deleteImageIntegration(dtrId)
         ImageService.clearImageCaches()
         dtrId = Services.addDockerTrustedRegistry(false)
-        orchestrator.createClairifyDeployment()
-        clairifyId = Services.addClairifyScanner(orchestrator.getClairifyEndpoint())
+        gcrId = Services.addGcrRegistryAndScanner()
 
         // Generate baseline compliance runs
         def complianceRuns = ComplianceManagementService.triggerComplianceRunsAndWait()
@@ -73,12 +72,8 @@ class ComplianceTest extends BaseSpecification {
     }
 
     def cleanupSpec() {
-        Services.deleteImageIntegration(clairifyId)
+        Services.deleteImageIntegration(gcrId)
         Services.deleteImageIntegration(dtrId)
-        orchestrator.deleteDeployment(new Deployment(name: "clairify", namespace: "stackrox"))
-        orchestrator.waitForDeploymentDeletion(new Deployment(name: "clairify", namespace: "stackrox"))
-        orchestrator.deleteService("clairify", "stackrox")
-        orchestrator.waitForServiceDeletion(new Service("clairify", "stackrox"))
         ImageService.clearImageCaches()
         dtrId = Services.addDockerTrustedRegistry()
     }
@@ -515,7 +510,7 @@ class ComplianceTest extends BaseSpecification {
 
         given:
         "remove image integrations"
-        def clairRemoved = Services.deleteImageIntegration(clairifyId)
+        def gcrRemoved = Services.deleteImageIntegration(gcrId)
 
         and:
         "add notifier integration"
@@ -557,8 +552,8 @@ class ComplianceTest extends BaseSpecification {
 
         cleanup:
         "re-add image integrations"
-        if (clairRemoved) {
-            clairifyId = Services.addClairifyScanner(orchestrator.getClairifyEndpoint())
+        if (gcrRemoved) {
+            gcrId = Services.addGcrRegistryAndScanner()
         }
         if (slackNotiferId) {
             Services.deleteNotifier(slackNotiferId)
@@ -850,25 +845,21 @@ class ComplianceTest extends BaseSpecification {
         def controls = [
                 new Control(
                         "PCI_DSS_3_2:6_2",
-                        ["Image apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest has 78 fixed CVEs. " +
+                        ["Image us.gcr.io/stackrox-ci/nginx:1.11 has \\d{2}\\d+ fixed CVEs. " +
                                  "An image upgrade is required."],
                         ComplianceState.COMPLIANCE_STATE_FAILURE),
                 new Control(
                         "HIPAA_164:306_e",
-                        ["Image apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest has 78 fixed CVEs. " +
+                        ["Image us.gcr.io/stackrox-ci/nginx:1.11 has \\d{2}\\d+ fixed CVEs. " +
                                  "An image upgrade is required."],
                         ComplianceState.COMPLIANCE_STATE_FAILURE),
         ]
 
         given:
-        "skip test due to ROX-1336"
-        Assume.assumeTrue(Constants.CHECK_CVES_IN_COMPLIANCE)
-
-        and:
         "deploy image with fixable CVEs"
         Deployment cveDeployment = new Deployment()
                 .setName("cve-compliance-deployment")
-                .setImage("apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest")
+                .setImage("us.gcr.io/stackrox-ci/nginx:1.11")
                 .addLabel("app", "cve-compliance-deployment")
         orchestrator.createDeployment(cveDeployment)
 
@@ -903,7 +894,8 @@ class ComplianceTest extends BaseSpecification {
                 println "Validating ${control.id}"
                 ComplianceResultValue value = clusterResults.get(control.id)
                 assert value.overallState == control.state
-                assert value.evidenceList*.message.containsAll(control.evidenceMessages)
+
+                assert value.evidenceList.findAll { it.message.matches(control.evidenceMessages.first()) }.size() > 0
             } else {
                 missingControls.add(control)
             }

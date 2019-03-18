@@ -4,7 +4,7 @@ class Timer {
     private Integer currIteration = 0
     private final Integer iterations
     private final Integer delayMilliseconds
-    private final int startTime
+    private final long startTime
 
     Timer(Integer iterations, Integer delaySeconds) {
         this.iterations = iterations

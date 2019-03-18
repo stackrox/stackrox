@@ -8,7 +8,7 @@ import objects.Deployment
 import org.junit.experimental.categories.Category
 
 class ProcessVisualizationReplicaTest extends BaseSpecification {
-    static final private Integer REPLICACOUNT = 10
+    static final private Integer REPLICACOUNT = 4
 
     // Deployment names
     static final private String APACHEDEPLOYMENT = "apacheserverdeployment"
