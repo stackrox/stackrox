@@ -14,7 +14,7 @@ export VERSION="1"
 export DESCRIPTION="API reference for the StackRox Security Platform"
 export CONTACT_EMAIL="support@stackrox.com"
 export LICENSE_NAME="All Rights Reserved"
-export LICENSE_URL="http://www.stackrox.com/"
+export LICENSE_URL="https://www.stackrox.com/"
 
 metadata='{
   "info": {
