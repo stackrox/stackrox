@@ -66,8 +66,6 @@ type Config struct {
 	TLS                verifier.TLSConfigurer
 	CustomRoutes       []routes.CustomRoute
 	IdentityExtractors []authn.IdentityExtractor
-	UnaryInterceptors  []grpc.UnaryServerInterceptor
-	StreamInterceptors []grpc.StreamServerInterceptor
 	AuthProviders      authproviders.Registry
 }
 
@@ -95,8 +93,6 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 		grpc_prometheus.UnaryServerInterceptor,
 		contextutil.UnaryServerInterceptor(authn.ContextUpdater(a.config.IdentityExtractors...)),
 	}
-	u = append(u, a.config.UnaryInterceptors...)
-
 	// Default to deny all access. This forces services to properly override the AuthFunc.
 	u = append(u, grpc_auth.UnaryServerInterceptor(deny.AuthFunc))
 
@@ -111,8 +107,6 @@ func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 		contextutil.StreamServerInterceptor(
 			authn.ContextUpdater(a.config.IdentityExtractors...)),
 	}
-	s = append(s, a.config.StreamInterceptors...)
-
 	// Default to deny all access. This forces services to properly override the AuthFunc.
 	s = append(s, grpc_auth.StreamServerInterceptor(deny.AuthFunc))
 

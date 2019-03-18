@@ -3,6 +3,7 @@ package connection
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
@@ -10,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"golang.org/x/time/rate"
 )
 
 var (
@@ -27,9 +29,12 @@ type sensorConnection struct {
 
 	eventQueue    *dedupingQueue
 	eventPipeline pipeline.ClusterPipeline
+
+	checkInRecorder          checkInRecorder
+	checkInRecordRateLimiter *rate.Limiter
 }
 
-func newConnection(clusterID string, pf pipeline.Factory) (*sensorConnection, error) {
+func newConnection(clusterID string, pf pipeline.Factory, recorder checkInRecorder) (*sensorConnection, error) {
 	eventPipeline, err := pf.PipelineForCluster(clusterID)
 	if err != nil {
 		return nil, fmt.Errorf("creating event pipeline: %v", err)
@@ -41,6 +46,11 @@ func newConnection(clusterID string, pf pipeline.Factory) (*sensorConnection, er
 		sendC:         make(chan *central.MsgToSensor),
 		eventPipeline: eventPipeline,
 		eventQueue:    newDedupingQueue(),
+
+		clusterID:       clusterID,
+		checkInRecorder: recorder,
+
+		checkInRecordRateLimiter: rate.NewLimiter(rate.Every(10*time.Second), 1),
 	}
 
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
@@ -56,6 +66,16 @@ func (c *sensorConnection) Stopped() concurrency.ReadOnlyErrorSignal {
 	return &c.stoppedSig
 }
 
+// Record the check-in if the rate limiter allows it.
+func (c *sensorConnection) recordCheckInRateLimited() {
+	if c.checkInRecordRateLimiter.Allow() {
+		err := c.checkInRecorder.UpdateClusterContactTime(c.clusterID, time.Now())
+		if err != nil {
+			log.Warnf("Could not record cluster contact: %v", err)
+		}
+	}
+}
+
 func (c *sensorConnection) runRecv(server central.SensorService_CommunicateServer) {
 	for !c.stopSig.IsDone() {
 		msg, err := server.Recv()
@@ -63,7 +83,7 @@ func (c *sensorConnection) runRecv(server central.SensorService_CommunicateServe
 			c.stopSig.SignalWithError(fmt.Errorf("recv error: %v", err))
 			return
 		}
-
+		c.recordCheckInRateLimited()
 		c.eventQueue.push(msg)
 	}
 }

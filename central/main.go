@@ -37,7 +37,6 @@ import (
 	iiDatastore "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
-	interceptorSingletons "github.com/stackrox/rox/central/interceptor/singletons"
 	"github.com/stackrox/rox/central/jwt"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
@@ -64,7 +63,7 @@ import (
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
@@ -165,8 +164,6 @@ func startGRPCServer() {
 	config := pkgGRPC.Config{
 		CustomRoutes:       customRoutes(),
 		TLS:                verifier.CA{},
-		UnaryInterceptors:  interceptorSingletons.GrpcUnaryInterceptors(),
-		StreamInterceptors: interceptorSingletons.GrpcStreamInterceptors(),
 		IdentityExtractors: idExtractors,
 		AuthProviders:      registry,
 	}
