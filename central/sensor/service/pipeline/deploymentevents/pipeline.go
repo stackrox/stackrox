@@ -1,6 +1,8 @@
 package deploymentevents
 
 import (
+	"context"
+
 	"github.com/gogo/protobuf/proto"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -107,7 +109,7 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, injecto
 	}
 	if resp != nil {
 		if enforcers.ShouldEnforce(deployment.GetAnnotations()) {
-			err := injector.InjectMessage(&central.MsgToSensor{
+			err := injector.InjectMessage(context.Background(), &central.MsgToSensor{
 				Msg: &central.MsgToSensor_Enforcement{
 					Enforcement: resp,
 				},

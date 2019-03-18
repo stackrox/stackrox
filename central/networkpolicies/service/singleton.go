@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/networkpolicies/store"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 )
 
 var (
@@ -19,7 +20,7 @@ var (
 )
 
 func initialize() {
-	as = New(store.Singleton(), deploymentDS.Singleton(), graph.Singleton(), nsDataStore.Singleton(), clusterDS.Singleton(), notifierStore.Singleton(), flowStoreSingleton.Singleton())
+	as = New(store.Singleton(), deploymentDS.Singleton(), graph.Singleton(), nsDataStore.Singleton(), clusterDS.Singleton(), notifierStore.Singleton(), flowStoreSingleton.Singleton(), connection.ManagerSingleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

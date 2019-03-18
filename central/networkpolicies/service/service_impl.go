@@ -14,7 +14,8 @@ import (
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -55,6 +56,7 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
+	sensorConnMgr   connection.Manager
 	clusterStore    clusterDataStore.DataStore
 	deployments     deploymentDataStore.DataStore
 	networkPolicies networkPoliciesStore.Store
@@ -184,7 +186,21 @@ func (s *serviceImpl) GetNetworkGraphEpoch(context.Context, *v1.Empty) (*v1.Netw
 }
 
 func (s *serviceImpl) ApplyNetworkPolicy(ctx context.Context, request *v1.ApplyNetworkPolicyYamlRequest) (*v1.Empty, error) {
-	return nil, status.Error(codes.Unimplemented, "Cannot yet apply network policies")
+	if !features.NetworkPolicyGenerator.Enabled() {
+		return nil, status.Error(codes.Unimplemented, "not implemented")
+	}
+
+	clusterID := request.GetClusterId()
+	conn := s.sensorConnMgr.GetConnection(clusterID)
+	if conn == nil {
+		return nil, status.Errorf(codes.FailedPrecondition, "no active connection to cluster %q", clusterID)
+	}
+
+	err := conn.NetworkPolicies().ApplyNetworkPolicies(ctx, request.GetModification())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "could not apply network policy modification: %v", err)
+	}
+	return &v1.Empty{}, nil
 }
 
 func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.SimulateNetworkGraphRequest) (*v1.SimulateNetworkGraphResponse, error) {

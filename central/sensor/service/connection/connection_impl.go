@@ -1,9 +1,11 @@
 package connection
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/stackrox/rox/central/scrape"
+	"github.com/stackrox/rox/central/sensor/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -20,7 +22,8 @@ type sensorConnection struct {
 
 	sendC chan *central.MsgToSensor
 
-	scrapeCtrl scrape.Controller
+	scrapeCtrl          scrape.Controller
+	networkPoliciesCtrl networkpolicies.Controller
 
 	eventQueue    *dedupingQueue
 	eventPipeline pipeline.ClusterPipeline
@@ -41,6 +44,7 @@ func newConnection(clusterID string, pf pipeline.Factory) (*sensorConnection, er
 	}
 
 	conn.scrapeCtrl = scrape.NewController(conn, &conn.stopSig)
+	conn.networkPoliciesCtrl = networkpolicies.NewController(conn, &conn.stopSig)
 	return conn, nil
 }
 
@@ -94,10 +98,16 @@ func (c *sensorConnection) Scrapes() scrape.Controller {
 	return c.scrapeCtrl
 }
 
-func (c *sensorConnection) InjectMessage(msg *central.MsgToSensor) error {
+func (c *sensorConnection) NetworkPolicies() networkpolicies.Controller {
+	return c.networkPoliciesCtrl
+}
+
+func (c *sensorConnection) InjectMessage(ctx concurrency.Waitable, msg *central.MsgToSensor) error {
 	select {
 	case c.sendC <- msg:
 		return nil
+	case <-ctx.Done():
+		return errors.New("context aborted")
 	case <-c.stopSig.Done():
 		return fmt.Errorf("could not send message as sensor connection was stopped: %v", c.stopSig.Err())
 	}
@@ -107,6 +117,8 @@ func (c *sensorConnection) handleMessage(msg *central.MsgFromSensor) error {
 	switch m := msg.Msg.(type) {
 	case *central.MsgFromSensor_ScrapeUpdate:
 		return c.scrapeCtrl.ProcessScrapeUpdate(m.ScrapeUpdate)
+	case *central.MsgFromSensor_NetworkPoliciesResponse:
+		return c.networkPoliciesCtrl.ProcessNetworkPoliciesResponse(m.NetworkPoliciesResponse)
 	default:
 		return c.eventPipeline.Run(msg, c)
 	}

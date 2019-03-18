@@ -26,6 +26,7 @@ func createDeploymentNode(id, namespace string, selectorLabels map[string]string
 		outgoing: make(map[*node]struct{}),
 	}
 }
+
 func TestGenerateIngressRule_WithInternetIngress(t *testing.T) {
 	t.Parallel()
 

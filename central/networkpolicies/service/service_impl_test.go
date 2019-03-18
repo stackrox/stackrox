@@ -96,7 +96,7 @@ func (suite *ServiceTestSuite) SetupTest() {
 	suite.deployments = dDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.notifiers = notifierStoreMocks.NewMockStore(suite.mockCtrl)
 
-	suite.tested = New(suite.networkPolicies, suite.deployments, suite.evaluator, nil, suite.clusters, suite.notifiers, nil)
+	suite.tested = New(suite.networkPolicies, suite.deployments, suite.evaluator, nil, suite.clusters, suite.notifiers, nil, nil)
 }
 
 func (suite *ServiceTestSuite) TearDownTest() {

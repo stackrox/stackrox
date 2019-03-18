@@ -1,6 +1,7 @@
 package lifecycle
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -124,7 +125,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 				deployment.GetNamespace(), deployment.GetName())
 			continue
 		}
-		err = indicatorInfo.msgToSensorInjector.InjectMessage(&central.MsgToSensor{
+		err = indicatorInfo.msgToSensorInjector.InjectMessage(context.Background(), &central.MsgToSensor{
 			Msg: &central.MsgToSensor_Enforcement{
 				Enforcement: enforcementAction,
 			},

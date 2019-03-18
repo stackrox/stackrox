@@ -20,7 +20,7 @@ type controllerImpl struct {
 	msgInjector common.MessageInjector
 }
 
-func (s *controllerImpl) sendStartScrapeMsg(scrape *scrapeImpl) error {
+func (s *controllerImpl) sendStartScrapeMsg(ctx concurrency.Waitable, scrape *scrapeImpl) error {
 	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_ScrapeCommand{
 			ScrapeCommand: &central.ScrapeCommand{
@@ -33,10 +33,10 @@ func (s *controllerImpl) sendStartScrapeMsg(scrape *scrapeImpl) error {
 			},
 		},
 	}
-	return s.msgInjector.InjectMessage(msg)
+	return s.msgInjector.InjectMessage(ctx, msg)
 }
 
-func (s *controllerImpl) sendKillScrapeMsg(scrape *scrapeImpl) error {
+func (s *controllerImpl) sendKillScrapeMsg(ctx concurrency.Waitable, scrape *scrapeImpl) error {
 	msg := &central.MsgToSensor{
 		Msg: &central.MsgToSensor_ScrapeCommand{
 			ScrapeCommand: &central.ScrapeCommand{
@@ -47,7 +47,7 @@ func (s *controllerImpl) sendKillScrapeMsg(scrape *scrapeImpl) error {
 			},
 		},
 	}
-	return s.msgInjector.InjectMessage(msg)
+	return s.msgInjector.InjectMessage(ctx, msg)
 }
 
 func (s *controllerImpl) RunScrape(expectedHosts set.StringSet, kill concurrency.Waitable) (map[string]*compliance.ComplianceReturn, error) {
@@ -66,12 +66,12 @@ func (s *controllerImpl) RunScrape(expectedHosts set.StringSet, kill concurrency
 		delete(s.scrapes, scrape.scrapeID)
 	})
 
-	if err := s.sendStartScrapeMsg(scrape); err != nil {
+	if err := s.sendStartScrapeMsg(kill, scrape); err != nil {
 		return nil, err
 	}
 
 	defer func() {
-		if err := s.sendKillScrapeMsg(scrape); err != nil {
+		if err := s.sendKillScrapeMsg(kill, scrape); err != nil {
 			log.Errorf("tried to kill scrape %s but failed: %v", scrape.scrapeID, err)
 		}
 	}()
