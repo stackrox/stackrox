@@ -5,6 +5,7 @@ import (
 	"runtime/debug"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 )
 
 // Abort aborts the current compliance check, optionally setting an error.
@@ -67,7 +68,9 @@ func finalize(ctx ComplianceContext) {
 	var err error
 	if action := recover(); action != nil {
 		log.Infof("finalize: %+v", action)
-		debug.PrintStack()
+		if env.DevelopmentBuild.Setting() == "true" {
+			debug.PrintStack()
+		}
 		switch a := action.(type) {
 		case error:
 			err = a
