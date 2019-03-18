@@ -10,10 +10,11 @@ class SecretsTest extends BaseSpecification {
         return new Deployment()
                 .setName (deploymentName)
                 .setNamespace("qa")
-                .setImage ("nginx:1.7.9")
+                .setImage ("busybox")
                 .addLabel ( "app", "test" )
                 .addVolume("test", "/etc/try")
                 .addSecretName("test", secretName)
+                .setCommand(["sleep", "600"])
     }
 
     @Category(BAT)

@@ -10,8 +10,6 @@ class ProcessVisualizationTest extends BaseSpecification {
     // Deployment names
     static final private String NGINXDEPLOYMENT = "qanginx"
     static final private String STRUTSDEPLOYMENT = "qastruts"
-    static final private String SSL_TERMINATOR = "qasslterm"
-    static final private String APACHEDEPLOYMENT = "apacheserverdeployment"
     static final private String CENTOSDEPLOYMENT = "centosdeployment"
     static final private String FEDORADEPLOYMENT = "fedoradeployment"
     static final private String ELASTICDEPLOYMENT = "elasticdeployment"
@@ -26,14 +24,6 @@ class ProcessVisualizationTest extends BaseSpecification {
             new Deployment()
                 .setName (STRUTSDEPLOYMENT)
                 .setImage ("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
-                .addLabel ("app", "test" ),
-            new Deployment()
-                .setName (SSL_TERMINATOR)
-                .setImage ("apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest")
-                .addLabel ("app", "test" ) ,
-            new Deployment()
-                .setName (APACHEDEPLOYMENT)
-                .setImage ("apollo-dtr.rox.systems/legacy-apps/apache-server")
                 .addLabel ("app", "test" ),
             new Deployment()
                 .setName (CENTOSDEPLOYMENT)
@@ -108,15 +98,6 @@ class ProcessVisualizationTest extends BaseSpecification {
          "/usr/bin/tty", "/bin/uname",
          "/usr/local/tomcat/bin/catalina.sh",
          "/usr/bin/dirname"] as Set | STRUTSDEPLOYMENT
-
-        // Need to skip because of DTR dumspterfire
-        // ["/bin/mv", "/bin/cat", "/main.sh", "/usr/bin/stat", "/usr/sbin/apache2",
-        // "/usr/sbin/apache2ctl", "/bin/mkdir", "/bin/chown",
-        // "/bin/chmod", "/bin/mktemp"] as Set | SSL_TERMINATOR
-
-        // Missing apache server image after DTR dumpsterfire - skipping for now
-        // ["/bin/mktemp", "/bin/mv", "/main.sh", "/usr/sbin/apache2", "/usr/sbin/apache2ctl",
-        //  "/bin/chown", "/usr/bin/stat", "/bin/chmod", "/bin/mkdir"] as Set | APACHEDEPLOYMENT
 
         ["/bin/sh", "/bin/sleep"] as Set | CENTOSDEPLOYMENT
 

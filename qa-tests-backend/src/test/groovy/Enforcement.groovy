@@ -137,9 +137,10 @@ class Enforcement extends BaseSpecification {
         }
         Deployment d = new Deployment()
                 .setName("scale-down-enforcement-int")
-                .setImage("nginx")
+                .setImage("busybox")
                 .addPort(22)
                 .addLabel("app", "scale-down-enforcement-int")
+                .setCommand(["sleep", "600"])
                 .setSkipReplicaWait(true)
         orchestrator.createDeployment(d)
         assert Services.waitForDeployment(d)
@@ -351,9 +352,10 @@ class Enforcement extends BaseSpecification {
 
         Deployment d = new Deployment()
                 .setName("node-constraint-enforcement-int")
-                .setImage("nginx")
+                .setImage("busybox")
                 .addPort(22)
                 .addLabel("app", "node-constraint-enforcement-int")
+                .setCommand(["sleep", "600"])
                 .setSkipReplicaWait(true)
         orchestrator.createDeployment(d)
         assert Services.waitForDeployment(d)
@@ -494,10 +496,11 @@ class Enforcement extends BaseSpecification {
         }
         Deployment d = new Deployment()
                 .setName("scale-node-deployment-enforcement-int")
-                .setImage("nginx")
+                .setImage("busybox")
                 .addPort(22)
                 .addLabel("app", "scale-node-deployment-enforcement-int")
                 .setSkipReplicaWait(true)
+                .setCommand(["sleep", "600"])
         orchestrator.createDeployment(d)
 
         and:
@@ -559,10 +562,11 @@ class Enforcement extends BaseSpecification {
         }
         DaemonSet d = new DaemonSet()
                 .setName("scale-node-daemonset-enforcement-int")
-                .setImage("nginx")
+                .setImage("busybox")
                 .addPort(22)
                 .addLabel("app", "scale-node-daemonset-enforcement-int")
                 .setSkipReplicaWait(true)
+                .setCommand(["sleep", "600"])
                 .create()
 
         and:

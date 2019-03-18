@@ -18,15 +18,11 @@ import spock.lang.Unroll
 
 class PolicyConfigurationTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX = "deploymentnginx"
-    static final private String DEPLOYMENTREMOTE = "deploymentremote"
-    //static final private String DEPLOYMENTREGISTRY = "deploymentregistry"
-    static final private String DEPLOYMENTAGE = "deploymentage"
-    static final private String DEPLOYMENTDOCKERFILE = "deploymentdockerfileandnoscan"
     static final private String STRUTS = "qadefpolstruts"
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName(DEPLOYMENTNGINX)
-                    .setImage("nginx:latest")
+                    .setImage("nginx:1.7.9")
                     .addPort(22, "TCP")
                     .addAnnotation("test", "annotation")
                     .setEnv(["CLUSTER_NAME": "main"])
@@ -36,25 +32,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .addLimits("memory", "0")
                     .addRequest("memory", "0")
                     .addRequest("cpu", "0")
-                    .addVolume("test", "/tmp")
-                    .setSkipReplicaWait(true),
-
-            new Deployment()
-                    .setName(DEPLOYMENTREMOTE)
-                    .setImage("apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest")
-                    .addLabel("app", "test"),
-            new Deployment()
-                    .setName(DEPLOYMENTAGE)
-                    .setImage("nginx:1.10")
-                    .addLabel("app", "test"),
-            new Deployment()
-                    .setName(DEPLOYMENTDOCKERFILE)
-                    .setImage("nginx:1.7.9")
-                    .addLabel("app", "test"),
-            /* new Deployment()
-                     .setName (DEPLOYMENTREGISTRY)
-                     .setImage ("us.gcr.io/ultra-current-825/apache-dns:latest")
-                     .addLabel ( "app", "test" ),*/
+                    .addVolume("test", "/tmp"),
             new Deployment()
                     .setName(STRUTS)
                     .setImage("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
@@ -106,27 +84,10 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                         .setImageName(
                         ImageNamePolicy.newBuilder()
-                                .setTag("1.10")
+                                .setTag("1.7.9")
                                 .build())
                         .build())
-                        .build()            | DEPLOYMENTAGE
-
-        /*"Image Registry" |
-                Policy.newBuilder()
-                        .setName("TestImageRegistryPolicy")
-                        .setDescription("Test registry tag")
-                        .setRationale("Test registry tag")
-                        .addLifecycleStages(LifecycleStage.DEPLOY)
-                        .addCategories("Image Assurance")
-                        .setDisabled(false)
-                        .setSeverityValue(2)
-                        .setFields(PolicyFields.newBuilder()
-                        .setImageName(
-                        ImageNamePolicy.newBuilder()
-                                .setRegistry("us.gcr.io")
-                                .build())
-                        .build())
-                        .build() | DEPLOYMENTREGISTRY */
+                        .build()            | DEPLOYMENTNGINX
 
         "Image Remote"             |
                 Policy.newBuilder()
@@ -140,10 +101,10 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                         .setImageName(
                         ImageNamePolicy.newBuilder()
-                                .setRemote("legacy-apps")
+                                .setRemote("library/nginx")
                                 .build())
                         .build())
-                        .build()            | DEPLOYMENTREMOTE
+                        .build()            | DEPLOYMENTNGINX
 
         "Days since image was created" |
                 Policy.newBuilder()
@@ -157,9 +118,9 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setFields(PolicyFields.newBuilder()
                         .setImageAgeDays(1)
                         .build())
-                        .build()            | DEPLOYMENTAGE
+                        .build()            | DEPLOYMENTNGINX
 
-        /*"Days since image was last scanned" |
+        "Days since image was last scanned" |
                 Policy.newBuilder()
                         .setName("TestDaysImagescannedPolicy")
                         .setDescription("TestDaysImagescanned")
@@ -169,9 +130,9 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setDisabled(false)
                         .setSeverityValue(2)
                         .setFields(PolicyFields.newBuilder()
-                        .setScanAgeDays(30)
+                        .setScanAgeDays(1)
                         .build())
-                        .build()            | DEPLOYMENTREMOTE*/
+                        .build()            | STRUTS
 
         "Dockerfile Line"          |
                 Policy.newBuilder()
@@ -187,7 +148,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setValue("apt-get")
                         .setInstruction("RUN")
                         .build()))
-                        .build()            | DEPLOYMENTDOCKERFILE
+                        .build()            | DEPLOYMENTNGINX
 
         "Image is NOT Scanned"     |
                 Policy.newBuilder()
@@ -200,7 +161,7 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setSeverityValue(2)
                         .setFields(PolicyFields.newBuilder()
                         .setNoScanExists(true))
-                        .build()            | DEPLOYMENTDOCKERFILE
+                        .build()            | DEPLOYMENTNGINX
 
         "CVE is available"         |
                 Policy.newBuilder()

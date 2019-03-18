@@ -11,9 +11,10 @@ class GlobalSearch extends BaseSpecification {
 
     static final private DEPLOYMENT = new Deployment()
             .setName("qaglobalsearch")
-            .setImage("nginx")
+            .setImage("busybox")
             .addPort(22)
             .addLabel("app", "test")
+            .setCommand(["sleep", "600"])
 
     def setupSpec() {
         orchestrator.createDeployment(DEPLOYMENT)
@@ -84,8 +85,8 @@ class GlobalSearch extends BaseSpecification {
         "Deployment:qaglobalsearch" | [SearchServiceOuterClass.SearchCategory.DEPLOYMENTS] |
                 "qaglobalsearch" | []
 
-        "Image:docker.io/library/nginx:latest" | [SearchServiceOuterClass.SearchCategory.IMAGES] |
-                "docker.io/library/nginx:latest" | []
+        "Image:docker.io/library/busybox:latest" | [SearchServiceOuterClass.SearchCategory.IMAGES] |
+                "docker.io/library/busybox:latest" | []
 
         "Policy:Latest tag" | [SearchServiceOuterClass.SearchCategory.POLICIES] | "Latest tag" | []
 
@@ -101,7 +102,7 @@ class GlobalSearch extends BaseSpecification {
         "Deployment:qaglobalsearch" | [] | "" |
                 [SearchServiceOuterClass.SearchCategory.DEPLOYMENTS, SearchServiceOuterClass.SearchCategory.ALERTS]
 
-        "Image:docker.io/library/nginx:latest" | [] | "" |
+        "Image:docker.io/library/busybox:latest" | [] | "" |
                 [SearchServiceOuterClass.SearchCategory.IMAGES, SearchServiceOuterClass.SearchCategory.DEPLOYMENTS]
     }
 

@@ -32,8 +32,9 @@ class ReconciliationTest extends BaseSpecification {
         Deployment dep = new Deployment()
                 .setNamespace(ns)
                 .setName ("testing123")
-                .setImage ("nginx")
+                .setImage ("busybox")
                 .addLabel ("app", "testing123")
+                .setCommand(["sleep", "600"])
 
         // Wait is builtin
         orchestrator.createDeployment(dep)

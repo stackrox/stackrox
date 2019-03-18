@@ -814,6 +814,7 @@ class Kubernetes implements OrchestratorMain {
             if (d.getStatus().getReadyReplicas() == d.getSpec().getReplicas()) {
                 println "All ${d.getSpec().getReplicas()} replicas found " +
                         "in ready state for ${deploymentName}"
+                println "Took ${t.SecondsSince()} seconds for k8s deployment ${deploymentName}"
                 return d.getMetadata().getUid()
             }
             println "${d.getStatus().getReadyReplicas()}/" +
