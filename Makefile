@@ -187,8 +187,10 @@ clean-generated-srcs: clean-packr-srcs clean-easyjson-srcs
 
 deps: Gopkg.toml Gopkg.lock proto-generated-srcs
 	@echo "+ $@"
+ifdef CI
 	@# `dep check` exits with a nonzero code if there is a toml->lock mismatch.
 	dep check -skip-vendor
+endif
 	@# `dep ensure` can be flaky sometimes, so try rerunning it if it fails.
 	dep ensure || (rm -rf vendor .vendor-new && dep ensure)
 	@touch deps
