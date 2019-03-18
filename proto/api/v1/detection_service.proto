@@ -32,6 +32,7 @@ message DeployDetectionRequest {
 message DeployYAMLDetectionRequest {
     string yaml = 1;
     bool no_external_metadata = 2;
+    bool enforcement_only     = 3;
 }
 
 message DeployDetectionResponse {

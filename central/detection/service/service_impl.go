@@ -1,9 +1,12 @@
 package service
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/detection/buildtime"
@@ -29,6 +32,7 @@ import (
 	"google.golang.org/grpc/status"
 	coreV1 "k8s.io/api/core/v1"
 	k8sRuntime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -122,35 +126,67 @@ func (s *serviceImpl) runDeployTimeDetect(ctx enricher.EnrichmentContext, obj k8
 	return s.enrichAndDetect(ctx, deployment)
 }
 
+func getObjectsFromYAML(yamlString string) ([]k8sRuntime.Object, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	reader := yaml.NewYAMLReader(bufio.NewReader(bytes.NewBufferString(yamlString)))
+	var objects []k8sRuntime.Object
+	var err error
+	for err == nil {
+		yamlBytes, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "Failed to read YAML with err: %v", err)
+		}
+		obj, _, err := decode(yamlBytes, nil, nil)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "could not parse YAML: %v", err)
+		}
+		if list, ok := obj.(*coreV1.List); ok {
+			listResources, err := getObjectsFromList(list)
+			if err != nil {
+				return nil, err
+			}
+			objects = append(listResources, listResources...)
+		} else {
+			objects = append(objects, obj)
+		}
+	}
+	return objects, nil
+}
+
+func getObjectsFromList(list *coreV1.List) ([]k8sRuntime.Object, error) {
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	objects := make([]k8sRuntime.Object, 0, len(list.Items))
+	for i, item := range list.Items {
+		obj, _, err := decode(item.Raw, nil, nil)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "Could not decode item %d in the list: %v", i, err)
+		}
+		objects = append(objects, obj)
+	}
+	return objects, nil
+}
+
 // DetectDeployTime runs detection on a deployment
 func (s *serviceImpl) DetectDeployTimeFromYAML(ctx context.Context, req *apiV1.DeployYAMLDetectionRequest) (*apiV1.DeployDetectionResponse, error) {
 	if req.GetYaml() == "" {
 		return nil, status.Error(codes.InvalidArgument, "yaml field must be specified in detection request")
 	}
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(req.GetYaml()), nil, nil)
+
+	resources, err := getObjectsFromYAML(req.GetYaml())
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "could not parse YAML: %v", err)
+		return nil, err
 	}
 
-	eCtx := enricher.EnrichmentContext{NoExternalMetadata: req.GetNoExternalMetadata()}
+	eCtx := enricher.EnrichmentContext{
+		NoExternalMetadata: req.GetNoExternalMetadata(),
+		EnforcementOnly:    req.GetEnforcementOnly(),
+	}
 	var runs []*apiV1.DeployDetectionResponse_Run
-	if list, ok := obj.(*coreV1.List); ok {
-		for i, item := range list.Items {
-			o2, _, err := decode(item.Raw, nil, nil)
-			if err != nil {
-				return nil, status.Errorf(codes.InvalidArgument, "Could not decode item %d in the list: %v", i, err)
-			}
-			run, err := s.runDeployTimeDetect(eCtx, o2)
-			if err != nil {
-				return nil, status.Errorf(codes.Internal, "Unable to convert item %d in the list: %v", i, err)
-			}
-			if run != nil {
-				runs = append(runs, run)
-			}
-		}
-	} else {
-		run, err := s.runDeployTimeDetect(eCtx, obj)
+	for _, r := range resources {
+		run, err := s.runDeployTimeDetect(eCtx, r)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "Unable to convert object: %v", err)
 		}

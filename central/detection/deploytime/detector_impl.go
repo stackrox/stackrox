@@ -33,14 +33,14 @@ type detectorImpl struct {
 	deployments deploymentDataStore.DataStore
 }
 
-func tempDeploymentIndexer(deployment *storage.Deployment) (deploymentIndexer.Indexer, error) {
+func tempDeploymentIndexer(deployment *storage.Deployment) (deploymentIndexer.Indexer, *storage.Deployment, error) {
 	clonedDeployment := proto.Clone(deployment).(*storage.Deployment)
 	if clonedDeployment.GetId() == "" {
 		clonedDeployment.Id = deploymentID
 	}
 	tempIndex, err := globalindex.MemOnlyIndex()
 	if err != nil {
-		return nil, fmt.Errorf("initializing temp index: %s", err)
+		return nil, nil, fmt.Errorf("initializing temp index: %s", err)
 	}
 	imageIndex := imageIndexer.New(tempIndex)
 	deploymentIndex := deploymentIndexer.New(tempIndex)
@@ -52,18 +52,18 @@ func tempDeploymentIndexer(deployment *storage.Deployment) (deploymentIndexer.In
 			container.Image.Id = fmt.Sprintf("image-id-%d", i)
 		}
 		if err := imageIndex.AddImage(container.GetImage()); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 	if err := deploymentIndex.AddDeployment(clonedDeployment); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return deploymentIndex, nil
+	return deploymentIndex, clonedDeployment, nil
 }
 
 // Detect runs detection on an deployment, returning any generated alerts.
 func (d *detectorImpl) Detect(ctx DetectionContext, deployment *storage.Deployment) ([]*storage.Alert, error) {
-	deploymentIndex, err := tempDeploymentIndexer(deployment)
+	deploymentIndex, deployment, err := tempDeploymentIndexer(deployment)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (d *detectorImpl) RemovePolicy(policyID string) error {
 }
 
 func (d *detectorImpl) matchWithEmptyImageIDs(p *storage.Policy, matcher searchbasedpolicies.Matcher, deployment *storage.Deployment) ([]*storage.Alert_Violation, error) {
-	deploymentIndex, err := tempDeploymentIndexer(deployment)
+	deploymentIndex, deployment, err := tempDeploymentIndexer(deployment)
 	violations, err := matcher.MatchOne(deploymentIndex, deployment.GetId())
 	if err != nil {
 		return nil, err
