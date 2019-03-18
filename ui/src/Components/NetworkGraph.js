@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import NetworkGraphManager from 'webgl/NetworkGraph/Managers/NetworkGraphManager';
-import { ALLOWED_STATE } from 'constants/networkGraph';
 import { networkGraphWW, getBlobURL } from 'utils/webWorkers';
 
 class NetworkGraph extends Component {
@@ -47,14 +46,13 @@ class NetworkGraph extends Component {
         this.canvas = document.createElement('canvas');
         if (this.isWebGLAvailable()) {
             this.manager = new NetworkGraphManager(this.networkGraph);
-            const filteredNetworkFlowMapping =
-                this.props.filterState === ALLOWED_STATE ? {} : this.props.networkFlowMapping;
+            const { nodes, networkFlowMapping, onNodeClick } = this.props;
             this.manager.setUpNetworkData({
-                nodes: this.props.nodes,
-                networkFlowMapping: filteredNetworkFlowMapping,
+                nodes,
+                networkFlowMapping,
                 worker: this.worker
             });
-            this.manager.setOnNodeClick(this.props.onNodeClick);
+            this.manager.setOnNodeClick(onNodeClick);
         }
     }
 
@@ -87,12 +85,10 @@ class NetworkGraph extends Component {
                 nextProps.updateKey !== this.props.updateKey ||
                 nextProps.filterState !== this.props.filterState
             ) {
-                const { nodes, networkFlowMapping, filterState } = nextProps;
-                const filteredNetworkFlowMapping =
-                    filterState === ALLOWED_STATE ? {} : networkFlowMapping;
+                const { nodes, networkFlowMapping } = nextProps;
                 this.manager.setUpNetworkData({
                     nodes,
-                    networkFlowMapping: filteredNetworkFlowMapping,
+                    networkFlowMapping,
                     worker: this.worker
                 });
                 this.manager.setOnNodeClick(nextProps.onNodeClick);

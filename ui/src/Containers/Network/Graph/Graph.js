@@ -48,6 +48,13 @@ class Graph extends Component {
         networkFlowGraph: null
     };
 
+    shouldComponentUpdate(nextProps) {
+        return (
+            nextProps.networkFlowGraphUpdateKey !== this.props.networkFlowGraphUpdateKey ||
+            nextProps.filterState !== this.props.filterState
+        );
+    }
+
     onNodeClick = node => {
         this.props.setSelectedNodeId(node.deploymentId);
         this.props.fetchDeployment(node.deploymentId);
@@ -56,7 +63,7 @@ class Graph extends Component {
         this.props.openWizard();
     };
 
-    renderGraph = (nodes, filterState) => {
+    renderGraph = nodes => {
         // If we have more than 200 nodes, display a message instead of the graph.
         if (nodes.length > 200) {
             // hopefully a temporal solution
@@ -64,12 +71,20 @@ class Graph extends Component {
                 <NoResultsMessage message="There are too many deployments to render on the graph. Please refine your search to a set of namespaces or deployments to display." />
             );
         }
+        const {
+            filterState,
+            networkFlowMapping,
+            networkFlowGraphUpdateKey,
+            setGraphRef
+        } = this.props;
+        const filteredNetworkFlowMapping =
+            filterState === filterModes.allowed ? {} : networkFlowMapping;
         return (
             <NetworkGraph
-                ref={this.props.setGraphRef}
-                updateKey={this.props.networkFlowGraphUpdateKey}
+                ref={setGraphRef}
+                updateKey={networkFlowGraphUpdateKey}
                 nodes={nodes}
-                networkFlowMapping={this.props.networkFlowMapping}
+                networkFlowMapping={filteredNetworkFlowMapping}
                 onNodeClick={this.onNodeClick}
                 filterState={filterState}
             />
@@ -101,7 +116,7 @@ class Graph extends Component {
         const width = this.props.wizardOpen ? 'w-2/3' : 'w-full';
         return (
             <div className={`${simulatorMode} ${networkGraphStateClass} ${width} h-full`}>
-                {this.renderGraph(nodes, filterState)}
+                {this.renderGraph(nodes)}
                 <Filters />
                 <Legend />
             </div>
