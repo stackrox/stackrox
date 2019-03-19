@@ -14,7 +14,7 @@ package storage;
 // next available tag: 14
 message Node {
     // A unique ID identifying this node.
-    string id                             = 1;
+    string id                             = 1 [(gogoproto.moretags) = "search:\"Node ID,store\""];
     // The (host)name of the node. Might or might not be the same as ID.
     string name = 2 [(gogoproto.moretags) = "search:\"Node,store\""];
     // Taints on the host

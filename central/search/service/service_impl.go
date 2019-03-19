@@ -13,6 +13,8 @@ import (
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
+	nodeDataStore "github.com/stackrox/rox/central/node/globalstore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/search/options"
@@ -47,6 +49,8 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 		v1.SearchCategory_IMAGES:      s.images.SearchImages,
 		v1.SearchCategory_POLICIES:    s.policies.SearchPolicies,
 		v1.SearchCategory_SECRETS:     s.secrets.SearchSecrets,
+		v1.SearchCategory_NAMESPACES:  s.namespaces.SearchResults,
+		v1.SearchCategory_NODES:       s.nodes.SearchResults,
 	}
 }
 
@@ -57,6 +61,8 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 		v1.SearchCategory_IMAGES:      s.images,
 		v1.SearchCategory_POLICIES:    s.policies,
 		v1.SearchCategory_SECRETS:     s.secrets,
+		v1.SearchCategory_NAMESPACES:  s.namespaces,
+		v1.SearchCategory_NODES:       s.nodes,
 		v1.SearchCategory_COMPLIANCE:  s.aggregator,
 	}
 }
@@ -69,6 +75,8 @@ var (
 		v1.SearchCategory_IMAGES,
 		v1.SearchCategory_POLICIES,
 		v1.SearchCategory_SECRETS,
+		v1.SearchCategory_NODES,
+		v1.SearchCategory_NAMESPACES,
 	)
 
 	autocompleteCategories = func() set.V1SearchCategorySet {
@@ -90,6 +98,8 @@ var (
 		v1.SearchCategory_POLICIES:    resources.Policy,
 		v1.SearchCategory_SECRETS:     resources.Secret,
 		v1.SearchCategory_COMPLIANCE:  resources.Compliance,
+		v1.SearchCategory_NODES:       resources.Node,
+		v1.SearchCategory_NAMESPACES:  resources.Namespace,
 	}
 )
 
@@ -100,7 +110,10 @@ type serviceImpl struct {
 	images      imageDataStore.DataStore
 	policies    policyDataStore.DataStore
 	secrets     secretDataStore.DataStore
-	aggregator  aggregation.Aggregator
+	nodes       nodeDataStore.GlobalStore
+	namespaces  namespaceDataStore.DataStore
+
+	aggregator aggregation.Aggregator
 
 	authorizer authz.Authorizer
 }

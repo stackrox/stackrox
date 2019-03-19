@@ -18,6 +18,7 @@ type GlobalStore interface {
 
 	CountAllNodes() (int, error)
 
+	SearchResults(q *v1.Query) ([]*v1.SearchResult, error)
 	Search(q *v1.Query) ([]search.Result, error)
 }
 

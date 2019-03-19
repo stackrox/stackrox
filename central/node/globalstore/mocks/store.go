@@ -85,3 +85,16 @@ func (m *MockGlobalStore) Search(arg0 *v1.Query) ([]search.Result, error) {
 func (mr *MockGlobalStoreMockRecorder) Search(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockGlobalStore)(nil).Search), arg0)
 }
+
+// SearchResults mocks base method
+func (m *MockGlobalStore) SearchResults(arg0 *v1.Query) ([]*v1.SearchResult, error) {
+	ret := m.ctrl.Call(m, "SearchResults", arg0)
+	ret0, _ := ret[0].([]*v1.SearchResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchResults indicates an expected call of SearchResults
+func (mr *MockGlobalStoreMockRecorder) SearchResults(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchResults", reflect.TypeOf((*MockGlobalStore)(nil).SearchResults), arg0)
+}

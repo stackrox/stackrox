@@ -61,6 +61,25 @@ func (s *globalStoreImpl) buildIndex() error {
 	return nil
 }
 
+func (s *globalStoreImpl) getAllClusterNodeStores() ([]store.Store, error) {
+	var bytes [][]byte
+	err := s.bucketRef.View(func(b *bolt.Bucket) error {
+		return b.ForEach(func(k, _ []byte) error {
+			bytes = append(bytes, k)
+			return nil
+		})
+	})
+	if err != nil {
+		return nil, fmt.Errorf("could not get all cluster nodes: %v", err)
+	}
+	stores := make([]store.Store, 0, len(bytes))
+	for _, k := range bytes {
+		crud := protoCrud.NewMessageCrudForBucket(bolthelper.NestedRef(s.bucketRef, k), key, alloc)
+		stores = append(stores, datastore.New(store.New(crud), s.indexer))
+	}
+	return stores, nil
+}
+
 func (s *globalStoreImpl) GetClusterNodeStore(clusterID string) (store.Store, error) {
 	err := s.bucketRef.Update(func(b *bolt.Bucket) error {
 		_, err := b.CreateBucketIfNotExists([]byte(clusterID))
@@ -92,6 +111,41 @@ func (s *globalStoreImpl) CountAllNodes() (int, error) {
 		return 0, err
 	}
 	return numNodes, nil
+}
+
+// SearchResults returns any node matches to the query
+func (s *globalStoreImpl) SearchResults(q *v1.Query) ([]*v1.SearchResult, error) {
+	stores, err := s.getAllClusterNodeStores()
+	if err != nil {
+		return nil, err
+	}
+	results, err := s.indexer.Search(q)
+	if err != nil {
+		return nil, err
+	}
+
+	searchResults := make([]*v1.SearchResult, 0, len(results))
+	for _, r := range results {
+		var node *storage.Node
+		for _, s := range stores {
+			node, err = s.GetNode(r.ID)
+			if err == nil {
+				break
+			}
+		}
+		if node == nil {
+			continue
+		}
+		searchResults = append(searchResults, &v1.SearchResult{
+			Id:             r.ID,
+			Name:           node.Name,
+			Category:       v1.SearchCategory_NODES,
+			FieldToMatches: search.GetProtoMatchesMap(r.Matches),
+			Score:          r.Score,
+			Location:       fmt.Sprintf("%s/%s", node.GetClusterName(), node.GetName()),
+		})
+	}
+	return searchResults, nil
 }
 
 // Search returns any node matches to the query

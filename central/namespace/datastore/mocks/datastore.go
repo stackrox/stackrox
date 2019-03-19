@@ -112,6 +112,19 @@ func (mr *MockDataStoreMockRecorder) SearchNamespaces(arg0 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchNamespaces", reflect.TypeOf((*MockDataStore)(nil).SearchNamespaces), arg0)
 }
 
+// SearchResults mocks base method
+func (m *MockDataStore) SearchResults(arg0 *v1.Query) ([]*v1.SearchResult, error) {
+	ret := m.ctrl.Call(m, "SearchResults", arg0)
+	ret0, _ := ret[0].([]*v1.SearchResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SearchResults indicates an expected call of SearchResults
+func (mr *MockDataStoreMockRecorder) SearchResults(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchResults", reflect.TypeOf((*MockDataStore)(nil).SearchResults), arg0)
+}
+
 // UpdateNamespace mocks base method
 func (m *MockDataStore) UpdateNamespace(arg0 *storage.NamespaceMetadata) error {
 	ret := m.ctrl.Call(m, "UpdateNamespace", arg0)

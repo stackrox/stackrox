@@ -114,7 +114,8 @@ var (
 	Control   = newFieldLabel("Control")
 
 	// Node search fields
-	Node = newFieldLabel("Node")
+	Node   = newFieldLabel("Node")
+	NodeID = newFieldLabel("Node ID")
 
 	// Namespace Search Fields
 	NamespaceID = newFieldLabel("Namespace ID")

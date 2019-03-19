@@ -11,6 +11,8 @@ import (
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/globalindex"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
+	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
+	nodeMocks "github.com/stackrox/rox/central/node/globalstore/mocks"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	policyIndex "github.com/stackrox/rox/central/policy/index"
@@ -42,6 +44,8 @@ func TestSearchFuncs(t *testing.T) {
 		imageMocks.NewMockDataStore(mockCtrl),
 		policyMocks.NewMockDataStore(mockCtrl),
 		secretMocks.NewMockDataStore(mockCtrl),
+		nodeMocks.NewMockGlobalStore(mockCtrl),
+		namespaceMocks.NewMockDataStore(mockCtrl),
 		nil,
 	)
 	searchFuncMap := s.(*serviceImpl).getSearchFuncs()
@@ -89,6 +93,8 @@ func TestAutocomplete(t *testing.T) {
 		imageMocks.NewMockDataStore(mockCtrl),
 		policyMocks.NewMockDataStore(mockCtrl),
 		secretMocks.NewMockDataStore(mockCtrl),
+		nodeMocks.NewMockGlobalStore(mockCtrl),
+		namespaceMocks.NewMockDataStore(mockCtrl),
 		nil,
 	).(*serviceImpl)
 
@@ -159,6 +165,8 @@ func TestAutocompleteForEnums(t *testing.T) {
 		imageMocks.NewMockDataStore(mockCtrl),
 		ds,
 		secretMocks.NewMockDataStore(mockCtrl),
+		nodeMocks.NewMockGlobalStore(mockCtrl),
+		namespaceMocks.NewMockDataStore(mockCtrl),
 		nil,
 	).(*serviceImpl)
 

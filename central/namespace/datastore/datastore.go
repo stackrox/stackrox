@@ -22,6 +22,7 @@ type DataStore interface {
 	UpdateNamespace(*storage.NamespaceMetadata) error
 	RemoveNamespace(id string) error
 
+	SearchResults(q *v1.Query) ([]*v1.SearchResult, error)
 	Search(q *v1.Query) ([]search.Result, error)
 	SearchNamespaces(q *v1.Query) ([]*storage.NamespaceMetadata, error)
 }
@@ -98,19 +99,41 @@ func (b *datastoreImpl) Search(q *v1.Query) ([]search.Result, error) {
 	return b.indexer.Search(q)
 }
 
-func (b *datastoreImpl) SearchNamespaces(q *v1.Query) ([]*storage.NamespaceMetadata, error) {
-	results, err := b.indexer.Search(q)
+func (b *datastoreImpl) SearchResults(q *v1.Query) ([]*v1.SearchResult, error) {
+	namespaces, results, err := b.searchNamespaces(q)
 	if err != nil {
 		return nil, err
 	}
+
+	searchResults := make([]*v1.SearchResult, 0, len(namespaces))
+	for i, r := range results {
+		namespace := namespaces[i]
+		searchResults = append(searchResults, &v1.SearchResult{
+			Id:             r.ID,
+			Name:           namespace.GetName(),
+			Category:       v1.SearchCategory_NAMESPACES,
+			Score:          r.Score,
+			FieldToMatches: search.GetProtoMatchesMap(r.Matches),
+			Location:       fmt.Sprintf("%s/%s", namespace.GetClusterName(), namespace.GetName()),
+		})
+	}
+	return searchResults, nil
+}
+
+func (b *datastoreImpl) searchNamespaces(q *v1.Query) ([]*storage.NamespaceMetadata, []search.Result, error) {
+	results, err := b.indexer.Search(q)
+	if err != nil {
+		return nil, nil, err
+	}
 	if len(results) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
 	nsSlice := make([]*storage.NamespaceMetadata, 0, len(results))
+	resultSlice := make([]search.Result, 0, len(results))
 	for _, res := range results {
 		ns, exists, err := b.GetNamespace(res.ID)
 		if err != nil {
-			return nil, fmt.Errorf("retrieving namespace %q: %v", res.ID, err)
+			return nil, resultSlice, fmt.Errorf("retrieving namespace %q: %v", res.ID, err)
 		}
 		if !exists {
 			// This could be due to a race where it's deleted in the time between
@@ -118,6 +141,12 @@ func (b *datastoreImpl) SearchNamespaces(q *v1.Query) ([]*storage.NamespaceMetad
 			continue
 		}
 		nsSlice = append(nsSlice, ns)
+		resultSlice = append(resultSlice, res)
 	}
-	return nsSlice, nil
+	return nsSlice, resultSlice, nil
+}
+
+func (b *datastoreImpl) SearchNamespaces(q *v1.Query) ([]*storage.NamespaceMetadata, error) {
+	namespaces, _, err := b.searchNamespaces(q)
+	return namespaces, err
 }
