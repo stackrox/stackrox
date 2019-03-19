@@ -27,6 +27,8 @@ func GetMessageType(msg *central.MsgFromSensor) string {
 		return strings.TrimPrefix(reflect.TypeOf(msg.GetEvent().GetResource()).Elem().Name(), "SensorEvent_")
 	case *central.MsgFromSensor_ClusterStatusUpdate:
 		return "ClusterStatusUpdate"
+	case *central.MsgFromSensor_NetworkPoliciesResponse:
+		return "NetworkPoliciesResponse"
 	default:
 		errorhelpers.PanicOnDevelopmentf("Unknown message type: %T", t)
 		return "Unknown"
