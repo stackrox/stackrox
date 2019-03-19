@@ -4,6 +4,7 @@ option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
 import "protobuf/gogoproto/gogo.proto";
+import "storage/common.proto";
 
 package storage;
 
@@ -21,6 +22,7 @@ message Notifier {
         CSCC  cscc             = 12;
         Splunk splunk          = 13;
         PagerDuty pagerduty    = 14;
+        Generic   generic      = 15;
     }
 }
 
@@ -57,4 +59,14 @@ message Splunk {
 
 message PagerDuty {
     string api_key = 1 [(gogoproto.moretags) = "scrub:\"always\""];
+}
+
+message Generic {
+    string endpoint                    = 1;
+    bool   skipTLSVerify               = 2;
+    string ca_cert                     = 3;
+    string username                    = 4;
+    string password                    = 5 [(gogoproto.moretags) = "scrub:\"always\""];
+    repeated KeyValuePair headers      = 6;
+    repeated KeyValuePair extra_fields = 7;
 }

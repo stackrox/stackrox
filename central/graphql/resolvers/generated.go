@@ -301,6 +301,15 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"metadata: TokenMetadata",
 		"token: String!",
 	}))
+	utils.Must(builder.AddType("Generic", []string{
+		"caCert: String!",
+		"endpoint: String!",
+		"extraFields: [KeyValuePair]!",
+		"headers: [KeyValuePair]!",
+		"password: String!",
+		"skipTLSVerify: Boolean!",
+		"username: String!",
+	}))
 	utils.Must(builder.AddType("GetComplianceRunStatusesResponse", []string{
 		"invalidRunIds: [String!]!",
 		"runs: [ComplianceRun]!",
@@ -363,6 +372,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"password: String!",
 		"url: String!",
 		"username: String!",
+	}))
+	utils.Must(builder.AddType("KeyValuePair", []string{
+		"key: String!",
+		"value: String!",
 	}))
 	utils.Must(builder.AddType("KeyValuePolicy", []string{
 		"key: String!",
@@ -457,6 +470,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"CSCC",
 		"Splunk",
 		"PagerDuty",
+		"Generic",
 	}))
 	utils.Must(builder.AddType("NumericalPolicy", []string{
 		"op: Comparator!",
@@ -2954,6 +2968,64 @@ func (resolver *generateTokenResponseResolver) Token() string {
 	return value
 }
 
+type genericResolver struct {
+	root *Resolver
+	data *storage.Generic
+}
+
+func (resolver *Resolver) wrapGeneric(value *storage.Generic, ok bool, err error) (*genericResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &genericResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapGenerics(values []*storage.Generic, err error) ([]*genericResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*genericResolver, len(values))
+	for i, v := range values {
+		output[i] = &genericResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *genericResolver) CaCert() string {
+	value := resolver.data.GetCaCert()
+	return value
+}
+
+func (resolver *genericResolver) Endpoint() string {
+	value := resolver.data.GetEndpoint()
+	return value
+}
+
+func (resolver *genericResolver) ExtraFields() ([]*keyValuePairResolver, error) {
+	value := resolver.data.GetExtraFields()
+	return resolver.root.wrapKeyValuePairs(value, nil)
+}
+
+func (resolver *genericResolver) Headers() ([]*keyValuePairResolver, error) {
+	value := resolver.data.GetHeaders()
+	return resolver.root.wrapKeyValuePairs(value, nil)
+}
+
+func (resolver *genericResolver) Password() string {
+	value := resolver.data.GetPassword()
+	return value
+}
+
+func (resolver *genericResolver) SkipTLSVerify() bool {
+	value := resolver.data.GetSkipTLSVerify()
+	return value
+}
+
+func (resolver *genericResolver) Username() string {
+	value := resolver.data.GetUsername()
+	return value
+}
+
 type getComplianceRunStatusesResponseResolver struct {
 	root *Resolver
 	data *v1.GetComplianceRunStatusesResponse
@@ -3446,6 +3518,39 @@ func (resolver *jiraResolver) Url() string {
 
 func (resolver *jiraResolver) Username() string {
 	value := resolver.data.GetUsername()
+	return value
+}
+
+type keyValuePairResolver struct {
+	root *Resolver
+	data *storage.KeyValuePair
+}
+
+func (resolver *Resolver) wrapKeyValuePair(value *storage.KeyValuePair, ok bool, err error) (*keyValuePairResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &keyValuePairResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapKeyValuePairs(values []*storage.KeyValuePair, err error) ([]*keyValuePairResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*keyValuePairResolver, len(values))
+	for i, v := range values {
+		output[i] = &keyValuePairResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *keyValuePairResolver) Key() string {
+	value := resolver.data.GetKey()
+	return value
+}
+
+func (resolver *keyValuePairResolver) Value() string {
+	value := resolver.data.GetValue()
 	return value
 }
 
@@ -4140,6 +4245,14 @@ func (resolver *notifierConfigResolver) ToPagerDuty() (*pagerDutyResolver, bool)
 	value := resolver.resolver.data.GetPagerduty()
 	if value != nil {
 		return &pagerDutyResolver{resolver.resolver.root, value}, true
+	}
+	return nil, false
+}
+
+func (resolver *notifierConfigResolver) ToGeneric() (*genericResolver, bool) {
+	value := resolver.resolver.data.GetGeneric()
+	if value != nil {
+		return &genericResolver{resolver.resolver.root, value}, true
 	}
 	return nil, false
 }

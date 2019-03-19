@@ -138,6 +138,12 @@ const integrationsList = {
             image: slack
         },
         {
+            label: 'Generic',
+            type: 'generic',
+            source: 'notifiers',
+            image: logo
+        },
+        {
             label: 'Jira',
             type: 'jira',
             source: 'notifiers',

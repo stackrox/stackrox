@@ -20,7 +20,8 @@ const (
 
 // These are the defined slash-handling modes.
 const (
-	NoTrailingSlash SlashHandling = iota
+	HonorInputSlash SlashHandling = iota
+	NoTrailingSlash
 	TrailingSlash
 )
 
@@ -40,10 +41,12 @@ func FormatURL(endpoint string, defaultScheme Scheme, slash SlashHandling) (stri
 	if !strings.HasPrefix(endpoint, "http") {
 		endpoint = fmt.Sprintf("%s://%s", defaultScheme, endpoint)
 	}
-	if slash == TrailingSlash && !strings.HasSuffix(endpoint, "/") {
-		return endpoint + "/", nil
-	} else if slash == NoTrailingSlash {
-		return strings.TrimRight(endpoint, "/"), nil
+	if slash != HonorInputSlash {
+		if slash == TrailingSlash && !strings.HasSuffix(endpoint, "/") {
+			return endpoint + "/", nil
+		} else if slash == NoTrailingSlash {
+			return strings.TrimRight(endpoint, "/"), nil
+		}
 	}
 	return endpoint, nil
 }

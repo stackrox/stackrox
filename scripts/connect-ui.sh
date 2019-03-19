@@ -16,8 +16,13 @@ if [[ -z "${CLUSTER_NAME}" ]]; then
   fi
 fi
 
+zone=""
+if [[ -n $ZONE ]]; then
+    zone="--zone $ZONE"
+fi
+
 # get gcloud user name
-gcloud container clusters get-credentials "${CLUSTER_NAME}" --project ultra-current-825 || {
+gcloud container clusters get-credentials "${CLUSTER_NAME}" --project ultra-current-825 $zone || {
   exit 1
 }
 [[ -n "$GCLOUD_USER" ]] || GCLOUD_USER="$(gcloud config get-value account 2>/dev/null)"

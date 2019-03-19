@@ -1,5 +1,7 @@
 import React from 'react';
 
+import renderKeyValues from './GenericNotifier/GenericNotifier';
+
 const formDescriptors = {
     authProviders: {
         oidc: [
@@ -128,6 +130,55 @@ const formDescriptors = {
         ]
     },
     notifiers: {
+        generic: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: 'Generic Integration'
+            },
+            {
+                label: 'Endpoint',
+                jsonpath: 'generic.endpoint',
+                type: 'text',
+                placeholder: 'https://example.com/endpoint'
+            },
+            {
+                label: 'Skip TLS Verification',
+                jsonpath: 'generic.skipTLSVerify',
+                type: 'checkbox'
+            },
+            {
+                label: 'CA Cert (optional)',
+                jsonpath: 'generic.caCert',
+                type: 'textarea',
+                placeholder: ''
+            },
+            {
+                label: 'Username (optional)',
+                jsonpath: 'generic.username',
+                type: 'text',
+                placeholder: ''
+            },
+            {
+                label: 'Password (optional)',
+                jsonpath: 'generic.password',
+                type: 'password',
+                placeholder: ''
+            },
+            {
+                label: 'Headers',
+                jsonpath: 'generic.headers',
+                type: 'list',
+                listRender: renderKeyValues
+            },
+            {
+                label: 'Extra Fields',
+                jsonpath: 'generic.extraFields',
+                type: 'list',
+                listRender: renderKeyValues
+            }
+        ],
         jira: [
             {
                 label: 'Integration Name',

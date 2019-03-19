@@ -248,6 +248,12 @@ scale-build: gazelle
 		//scale/mockcollector \
 		//scale/profiler
 
+.PHONY: genericserver-build
+genericserver-build: gazelle
+	@echo "+ $@"
+	bazel build $(BAZEL_FLAGS) \
+		//genericserver
+
 .PHONY: mock-grpc-server-build
 mock-grpc-server-build: gazelle
 	@echo "+ $@"
@@ -354,6 +360,12 @@ scale-image: scale-build clean-image
 	cp bazel-bin/scale/profiler/linux_amd64_pure_stripped/profiler scale/image/bin/profiler
 	chmod +w scale/image/bin/*
 	docker build -t stackrox/scale:$(TAG) -f scale/image/Dockerfile scale
+
+genericserver-image: genericserver-build
+	mkdir genericserver/bin
+	cp bazel-bin/genericserver/linux_amd64_pure_stripped/genericserver genericserver/bin/genericserver
+	chmod +w genericserver/bin/genericserver
+	docker build -t stackrox/genericserver:latest -f genericserver/Dockerfile genericserver
 
 .PHONY: mock-grpc-server-image
 mock-grpc-server-image: mock-grpc-server-build clean-image

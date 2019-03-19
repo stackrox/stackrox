@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import { selectors } from 'reducers';
 import { actions } from 'reducers/integrations';
 import { createSelector, createStructuredSelector } from 'reselect';
-import { reduxForm, formValueSelector } from 'redux-form';
+import { reduxForm, formValueSelector, FieldArray } from 'redux-form';
 import * as Icon from 'react-feather';
 
 import Panel from 'Components/Panel';
@@ -138,6 +138,8 @@ class Form extends Component {
                         disabled={disabled}
                     />
                 );
+            case 'list':
+                return <FieldArray name={field.jsonpath} component={field.listRender} />;
             default:
                 throw new Error(`Unknown field type: ${field.type}`);
         }
@@ -156,12 +158,16 @@ class Form extends Component {
                             }
                             return (
                                 // eslint-disable-next-line jsx-a11y/label-has-for
-                                <label className="flex mt-4" htmlFor={field.key} key={field.label}>
-                                    <div className="mr-4 flex items-center w-2/3 capitalize">
+                                <div className="flex mt-4" htmlFor={field.key} key={field.label}>
+                                    <div
+                                        className={`mr-4 flex w-2/3 capitalize ${
+                                            field.type !== 'list' ? 'items-center' : 'pt-2'
+                                        }`}
+                                    >
                                         {field.label}
                                     </div>
                                     {this.renderFormField(field)}
-                                </label>
+                                </div>
                             );
                         })}
                     {formFields
@@ -207,11 +213,13 @@ const getFormFields = createSelector(
     [selectors.getClusters, (state, props) => props],
     (clusters, props) => formDescriptors[props.source][props.type]
 );
+
 const getFormFieldKeys = (source, type) =>
     formDescriptors[source] ? formDescriptors[source][type].map(obj => obj.jsonpath) : '';
 
 const formFieldKeys = (state, props) =>
     formValueSelector('integrationForm')(state, ...getFormFieldKeys(props.source, props.type));
+
 const getFormData = createSelector(
     [formFieldKeys],
     formData => formData

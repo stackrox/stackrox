@@ -28,6 +28,7 @@ var (
 		"integration-tests",
 		"scale",
 		"compliance",
+		"genericserver",
 	}
 
 	ignoredRoots = []string{
