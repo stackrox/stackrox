@@ -40,13 +40,13 @@ type generator struct {
 	globalFlowStore    flowStore.ClusterStore
 }
 
-func markGeneratedPoliciesForDeletion(policies []*storage.NetworkPolicy) ([]*storage.NetworkPolicy, []*v1.NetworkPolicyReference) {
+func markGeneratedPoliciesForDeletion(policies []*storage.NetworkPolicy) ([]*storage.NetworkPolicy, []*storage.NetworkPolicyReference) {
 	var userPolicies []*storage.NetworkPolicy
-	var toDelete []*v1.NetworkPolicyReference
+	var toDelete []*storage.NetworkPolicyReference
 
 	for _, policy := range policies {
 		if isGeneratedPolicy(policy) {
-			toDelete = append(toDelete, &v1.NetworkPolicyReference{
+			toDelete = append(toDelete, &storage.NetworkPolicyReference{
 				Name:      policy.GetName(),
 				Namespace: policy.GetNamespace(),
 			})
@@ -58,10 +58,10 @@ func markGeneratedPoliciesForDeletion(policies []*storage.NetworkPolicy) ([]*sto
 	return userPolicies, toDelete
 }
 
-func markAllPoliciesForDeletion(policies []*storage.NetworkPolicy) []*v1.NetworkPolicyReference {
-	toDelete := make([]*v1.NetworkPolicyReference, 0, len(policies))
+func markAllPoliciesForDeletion(policies []*storage.NetworkPolicy) []*storage.NetworkPolicyReference {
+	toDelete := make([]*storage.NetworkPolicyReference, 0, len(policies))
 	for _, policy := range policies {
-		toDelete = append(toDelete, &v1.NetworkPolicyReference{
+		toDelete = append(toDelete, &storage.NetworkPolicyReference{
 			Name:      policy.GetName(),
 			Namespace: policy.GetNamespace(),
 		})
@@ -69,7 +69,7 @@ func markAllPoliciesForDeletion(policies []*storage.NetworkPolicy) []*v1.Network
 	return toDelete
 }
 
-func (g *generator) getNetworkPolicies(deleteExistingMode v1.GenerateNetworkPoliciesRequest_DeleteExistingPoliciesMode, clusterID string) ([]*storage.NetworkPolicy, []*v1.NetworkPolicyReference, error) {
+func (g *generator) getNetworkPolicies(deleteExistingMode v1.GenerateNetworkPoliciesRequest_DeleteExistingPoliciesMode, clusterID string) ([]*storage.NetworkPolicy, []*storage.NetworkPolicyReference, error) {
 	policies, err := g.networkPolicyStore.GetNetworkPolicies(clusterID, "")
 	if err != nil {
 		return nil, nil, fmt.Errorf("obtaining network policies: %v", err)
@@ -167,7 +167,7 @@ func (g *generator) generatePolicies(graph map[networkentity.Entity]*node, deplo
 	return generatedPolicies
 }
 
-func (g *generator) Generate(req *v1.GenerateNetworkPoliciesRequest) (generated []*storage.NetworkPolicy, toDelete []*v1.NetworkPolicyReference, err error) {
+func (g *generator) Generate(req *v1.GenerateNetworkPoliciesRequest) (generated []*storage.NetworkPolicy, toDelete []*storage.NetworkPolicyReference, err error) {
 	graph, err := g.generateGraph(req.GetClusterId(), req.GetNetworkDataSince())
 	if err != nil {
 		return nil, nil, fmt.Errorf("generating network graph: %v", err)

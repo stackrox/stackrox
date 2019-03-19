@@ -3,14 +3,14 @@ package networkpolicies
 import (
 	"fmt"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	networkingV1 "k8s.io/api/networking/v1"
 )
 
-func parseModification(mod *v1.NetworkPolicyModification) ([]*networkingV1.NetworkPolicy, map[k8sutil.NSObjRef]struct{}, error) {
+func parseModification(mod *storage.NetworkPolicyModification) ([]*networkingV1.NetworkPolicy, map[k8sutil.NSObjRef]struct{}, error) {
 	toDelete := make(map[k8sutil.NSObjRef]struct{})
 
 	for _, toDeleteProto := range mod.GetToDelete() {

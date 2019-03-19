@@ -7,8 +7,8 @@ import (
 	"sync/atomic"
 
 	"github.com/stackrox/rox/central/sensor/service/common"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -32,7 +32,7 @@ func newController(injector common.MessageInjector, stopSig concurrency.ReadOnly
 	}
 }
 
-func (c *controller) ApplyNetworkPolicies(ctx context.Context, mod *v1.NetworkPolicyModification) error {
+func (c *controller) ApplyNetworkPolicies(ctx context.Context, mod *storage.NetworkPolicyModification) (*storage.NetworkPolicyModification, error) {
 	seqID := atomic.AddInt64(&c.currSeqID, 1)
 
 	applyID := uuid.NewV4().String()
@@ -62,29 +62,29 @@ func (c *controller) ApplyNetworkPolicies(ctx context.Context, mod *v1.NetworkPo
 	})
 
 	if err := c.injector.InjectMessage(ctx, msg); err != nil {
-		return fmt.Errorf("could not send network policies modification: %v", err)
+		return nil, fmt.Errorf("could not send network policies modification: %v", err)
 	}
 
 	var resp *central.NetworkPoliciesResponse_Payload
 
 	select {
 	case <-ctx.Done():
-		return fmt.Errorf("context error: %v", ctx.Err())
+		return nil, fmt.Errorf("context error: %v", ctx.Err())
 	case resp = <-retC:
 	}
 
 	if errProto := resp.GetError(); errProto != nil {
-		return fmt.Errorf("sensor returned error: %s", errProto.GetMessage())
+		return nil, fmt.Errorf("sensor returned error: %s", errProto.GetMessage())
 	}
 
 	if resp.GetApply() == nil {
-		return fmt.Errorf("sensor returned an invalid apply of type %T", resp.GetCmd())
+		return nil, fmt.Errorf("sensor returned an invalid apply of type %T", resp.GetCmd())
 	}
 	if resp.GetApply().GetApplyId() != applyID {
-		return fmt.Errorf("sensor returned response with an invalid apply id (got %q, expected %q)", resp.GetApply().GetApplyId(), applyID)
+		return nil, fmt.Errorf("sensor returned response with an invalid apply id (got %q, expected %q)", resp.GetApply().GetApplyId(), applyID)
 	}
 
-	return nil
+	return resp.GetApply().GetUndoModification(), nil
 }
 
 func (c *controller) ProcessNetworkPoliciesResponse(resp *central.NetworkPoliciesResponse) error {

@@ -27,7 +27,7 @@ message NetworkPoliciesResponse {
 message SendNetworkPolicyYamlRequest {
     string                     cluster_id   = 1;
     repeated string            notifier_ids = 2;
-    NetworkPolicyModification  modification = 3;
+    storage.NetworkPolicyModification  modification = 3;
 }
 
 message GetNetworkGraphRequest {
@@ -38,12 +38,20 @@ message GetNetworkGraphRequest {
 message SimulateNetworkGraphRequest {
     string cluster_id                      = 1;
     string query                           = 2;
-    NetworkPolicyModification modification = 3;
+    storage.NetworkPolicyModification modification = 3;
 }
 
 message ApplyNetworkPolicyYamlRequest {
     string  cluster_id                     = 1;
-    NetworkPolicyModification modification = 2;
+    storage.NetworkPolicyModification modification = 2;
+}
+
+message GetUndoModificationRequest {
+    string cluster_id = 1;
+}
+
+message GetUndoModificationResponse {
+    storage.NetworkPolicyApplicationUndoRecord undo_record = 1;
 }
 
 message NetworkPolicyInSimulation {
@@ -81,18 +89,6 @@ message NetworkGraphEpoch {
     uint32 epoch = 1;
 }
 
-// Next available tag: 3
-message NetworkPolicyReference {
-    string namespace = 1;
-    string name      = 2;
-}
-
-// Next available tag: 3
-message NetworkPolicyModification {
-    string apply_yaml                         = 1;
-    repeated NetworkPolicyReference to_delete = 2;
-}
-
 // Next available tag: 5
 message GenerateNetworkPoliciesRequest {
     enum DeleteExistingPoliciesMode {
@@ -111,7 +107,7 @@ message GenerateNetworkPoliciesRequest {
 
 // Next available tag: 2
 message GenerateNetworkPoliciesResponse {
-    NetworkPolicyModification modification  = 1;
+    storage.NetworkPolicyModification modification  = 1;
 }
 
 service NetworkPolicyService {
@@ -144,6 +140,12 @@ service NetworkPolicyService {
         option (google.api.http) = {
             post: "/v1/networkpolicies/apply/{cluster_id}"
             body: "modification"
+        };
+    }
+
+    rpc GetUndoModification (GetUndoModificationRequest) returns (GetUndoModificationResponse) {
+        option (google.api.http) = {
+            get: "/v1/networkpolicies/undo/{cluster_id}"
         };
     }
 

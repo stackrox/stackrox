@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/generator"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
+	"github.com/stackrox/rox/central/networkpolicies/undostore"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/role/resources"
@@ -20,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -41,6 +44,7 @@ var (
 			"/v1.NetworkPolicyService/SimulateNetworkGraph",
 			"/v1.NetworkPolicyService/GetNetworkGraph",
 			"/v1.NetworkPolicyService/GetNetworkGraphEpoch",
+			"/v1.NetworkPolicyService/GetUndoModification",
 		},
 		user.With(permissions.Modify(resources.NetworkPolicy)): {
 			"/v1.NetworkPolicyService/ApplyNetworkPolicy",
@@ -64,6 +68,8 @@ type serviceImpl struct {
 	graphEvaluator  graph.Evaluator
 
 	policyGenerator generator.Generator
+
+	undoStore undostore.UndoStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -196,9 +202,29 @@ func (s *serviceImpl) ApplyNetworkPolicy(ctx context.Context, request *v1.ApplyN
 		return nil, status.Errorf(codes.FailedPrecondition, "no active connection to cluster %q", clusterID)
 	}
 
-	err := conn.NetworkPolicies().ApplyNetworkPolicies(ctx, request.GetModification())
+	undoMod, err := conn.NetworkPolicies().ApplyNetworkPolicies(ctx, request.GetModification())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "could not apply network policy modification: %v", err)
+	}
+
+	var user string
+	identity := authn.IdentityFromContext(ctx)
+	if identity != nil {
+		user = identity.FriendlyName()
+		if ap := identity.ExternalAuthProvider(); ap != nil {
+			user += fmt.Sprintf(" [%s]", ap.Name())
+		}
+	}
+	undoRecord := &storage.NetworkPolicyApplicationUndoRecord{
+		User:                 user,
+		ApplyTimestamp:       types.TimestampNow(),
+		OriginalModification: request.GetModification(),
+		UndoModification:     undoMod,
+	}
+
+	err = s.undoStore.UpsertUndoRecord(clusterID, undoRecord)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "network policy was applied, but undo record could not be stored: %v", err)
 	}
 	return &v1.Empty{}, nil
 }
@@ -346,13 +372,30 @@ func (s *serviceImpl) GenerateNetworkPolicies(ctx context.Context, req *v1.Gener
 		applyYAML += yaml
 	}
 
-	mod := &v1.NetworkPolicyModification{
+	mod := &storage.NetworkPolicyModification{
 		ApplyYaml: applyYAML,
 		ToDelete:  toDelete,
 	}
 
 	return &v1.GenerateNetworkPoliciesResponse{
 		Modification: mod,
+	}, nil
+}
+
+func (s *serviceImpl) GetUndoModification(ctx context.Context, req *v1.GetUndoModificationRequest) (*v1.GetUndoModificationResponse, error) {
+	if !features.NetworkPolicyGenerator.Enabled() || s.undoStore == nil {
+		return nil, status.Error(codes.Unimplemented, "not implemented")
+	}
+
+	undoRecord, exists, err := s.undoStore.GetUndoRecord(req.GetClusterId())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "could not query undo store: %v", err)
+	}
+	if !exists {
+		return nil, status.Errorf(codes.NotFound, "no undo record stored for cluster %q", req.GetClusterId())
+	}
+	return &v1.GetUndoModificationResponse{
+		UndoRecord: undoRecord,
 	}, nil
 }
 
@@ -397,7 +440,7 @@ func (s *serviceImpl) getDeploymentIDs(clusterID, query string) (deploymentIDs [
 	return
 }
 
-func (s *serviceImpl) getNetworkPoliciesInSimulation(clusterID string, modification *v1.NetworkPolicyModification) ([]*v1.NetworkPolicyInSimulation, error) {
+func (s *serviceImpl) getNetworkPoliciesInSimulation(clusterID string, modification *storage.NetworkPolicyModification) ([]*v1.NetworkPolicyInSimulation, error) {
 	// Confirm that any input yamls are valid. Do this check first since it is the cheapest.
 	additionalPolicies, err := compileValidateYaml(modification.GetApplyYaml())
 	if err != nil {
@@ -419,7 +462,7 @@ func (s *serviceImpl) getNetworkPoliciesInSimulation(clusterID string, modificat
 
 type policyModification struct {
 	ExistingPolicies []*storage.NetworkPolicy
-	ToDelete         []*v1.NetworkPolicyReference
+	ToDelete         []*storage.NetworkPolicyReference
 	NewPolicies      []*storage.NetworkPolicy
 }
 

@@ -5,7 +5,7 @@ import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.NetworkPolicyServiceGrpc
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GetNetworkPoliciesRequest
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.SimulateNetworkGraphRequest
-import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.NetworkPolicyModification
+import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.SendNetworkPolicyYamlRequest
 
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicy

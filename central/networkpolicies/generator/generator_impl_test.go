@@ -97,7 +97,7 @@ func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteGenerated() {
 	existing, toDelete, err := s.generator.getNetworkPolicies(v1.GenerateNetworkPoliciesRequest_GENERATED_ONLY, "cluster")
 	s.NoError(err)
 	s.ElementsMatch(existing, []*storage.NetworkPolicy{testNetworkPolicies[0], testNetworkPolicies[2]})
-	s.ElementsMatch(toDelete, []*v1.NetworkPolicyReference{
+	s.ElementsMatch(toDelete, []*storage.NetworkPolicyReference{
 		{
 			Namespace: testNetworkPolicies[1].Namespace,
 			Name:      testNetworkPolicies[1].Name,
@@ -115,7 +115,7 @@ func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteAll() {
 	existing, toDelete, err := s.generator.getNetworkPolicies(v1.GenerateNetworkPoliciesRequest_ALL, "cluster")
 	s.NoError(err)
 	s.Empty(existing)
-	s.ElementsMatch(toDelete, []*v1.NetworkPolicyReference{
+	s.ElementsMatch(toDelete, []*storage.NetworkPolicyReference{
 		{
 			Namespace: testNetworkPolicies[0].Namespace,
 			Name:      testNetworkPolicies[0].Name,

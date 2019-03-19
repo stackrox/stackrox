@@ -68,3 +68,23 @@ message NetworkPolicyIngressRule {
     repeated NetworkPolicyPort ports = 1;
     repeated NetworkPolicyPeer from  = 2;
 }
+
+// Next available tag: 3
+message NetworkPolicyReference {
+    string namespace = 1;
+    string name      = 2;
+}
+
+// Next available tag: 3
+message NetworkPolicyModification {
+    string apply_yaml                         = 1;
+    repeated NetworkPolicyReference to_delete = 2;
+}
+
+message NetworkPolicyApplicationUndoRecord {
+    string user                                 = 1;
+    google.protobuf.Timestamp apply_timestamp   = 2;
+
+    NetworkPolicyModification original_modification = 3;
+    NetworkPolicyModification undo_modification     = 4;
+}

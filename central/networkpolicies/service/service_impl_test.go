@@ -96,7 +96,7 @@ func (suite *ServiceTestSuite) SetupTest() {
 	suite.deployments = dDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.notifiers = notifierStoreMocks.NewMockStore(suite.mockCtrl)
 
-	suite.tested = New(suite.networkPolicies, suite.deployments, suite.evaluator, nil, suite.clusters, suite.notifiers, nil, nil)
+	suite.tested = New(suite.networkPolicies, suite.deployments, suite.evaluator, nil, suite.clusters, suite.notifiers, nil, nil, nil)
 }
 
 func (suite *ServiceTestSuite) TearDownTest() {
@@ -135,7 +135,7 @@ func (suite *ServiceTestSuite) TestRejectsYamlWithoutNamespace() {
 	// Make the request to the service and check that it did not err.
 	request := &v1.SimulateNetworkGraphRequest{
 		ClusterId: fakeClusterID,
-		Modification: &v1.NetworkPolicyModification{
+		Modification: &storage.NetworkPolicyModification{
 			ApplyYaml: badYAML,
 		},
 	}
@@ -206,7 +206,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 	// Make the request to the service and check that it did not err.
 	request := &v1.SimulateNetworkGraphRequest{
 		ClusterId: fakeClusterID,
-		Modification: &v1.NetworkPolicyModification{
+		Modification: &storage.NetworkPolicyModification{
 			ApplyYaml: fakeYAML1,
 		},
 	}
@@ -243,7 +243,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 
 	request := &v1.SimulateNetworkGraphRequest{
 		ClusterId: fakeClusterID,
-		Modification: &v1.NetworkPolicyModification{
+		Modification: &storage.NetworkPolicyModification{
 			ApplyYaml: fakeYAML1,
 		},
 	}
@@ -283,7 +283,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 	// Make the request to the service and check that it did not err.
 	request := &v1.SimulateNetworkGraphRequest{
 		ClusterId: fakeClusterID,
-		Modification: &v1.NetworkPolicyModification{
+		Modification: &storage.NetworkPolicyModification{
 			ApplyYaml: combinedYAMLs,
 		},
 	}
@@ -324,8 +324,8 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletion() {
 	// Make the request to the service and check that it did not err.
 	request := &v1.SimulateNetworkGraphRequest{
 		ClusterId: fakeClusterID,
-		Modification: &v1.NetworkPolicyModification{
-			ToDelete: []*v1.NetworkPolicyReference{
+		Modification: &storage.NetworkPolicyModification{
+			ToDelete: []*storage.NetworkPolicyReference{
 				{
 					Namespace: "default",
 					Name:      "first-policy",
@@ -367,8 +367,8 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletionAndAdditionOfSame(
 
 	request := &v1.SimulateNetworkGraphRequest{
 		ClusterId: fakeClusterID,
-		Modification: &v1.NetworkPolicyModification{
-			ToDelete: []*v1.NetworkPolicyReference{
+		Modification: &storage.NetworkPolicyModification{
+			ToDelete: []*storage.NetworkPolicyReference{
 				{
 					Namespace: "default",
 					Name:      "second-policy",
@@ -412,7 +412,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 	// Make the request to the service and check that it did not err.
 	request := &v1.SimulateNetworkGraphRequest{
 		ClusterId: fakeClusterID,
-		Modification: &v1.NetworkPolicyModification{
+		Modification: &storage.NetworkPolicyModification{
 			ApplyYaml: combinedYAMLs,
 		},
 	}

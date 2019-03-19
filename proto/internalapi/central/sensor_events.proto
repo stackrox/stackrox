@@ -2,7 +2,6 @@ syntax = "proto3";
 
 option go_package = "central";
 
-import "api/v1/network_policy_service.proto";
 import "internalapi/compliance/compliance_data.proto";
 import "storage/cluster.proto";
 import "storage/deployment.proto";
@@ -125,7 +124,7 @@ message ScrapeKilled {
 message NetworkPoliciesCommand {
     message Apply {
         string apply_id                           = 1;
-        v1.NetworkPolicyModification modification = 2;
+        storage.NetworkPolicyModification modification = 2;
     }
 
     message Payload {
@@ -141,6 +140,7 @@ message NetworkPoliciesCommand {
 message NetworkPoliciesResponse {
     message Apply {
         string apply_id = 1;
+        storage.NetworkPolicyModification undo_modification = 2;
     }
 
     message Error {

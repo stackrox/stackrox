@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/generator"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/networkpolicies/store"
+	"github.com/stackrox/rox/central/networkpolicies/undostore"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -31,7 +32,7 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(store store.Store, deployments deploymentDataStore.DataStore, graphEvaluator graph.Evaluator, namespacesStore nsDataStore.DataStore, clusterStore clusterDataStore.DataStore, notifierStore notifierStore.Store, globalFlowStore flowStore.ClusterStore, sensorConnMgr connection.Manager) Service {
+func New(store store.Store, deployments deploymentDataStore.DataStore, graphEvaluator graph.Evaluator, namespacesStore nsDataStore.DataStore, clusterStore clusterDataStore.DataStore, notifierStore notifierStore.Store, globalFlowStore flowStore.ClusterStore, sensorConnMgr connection.Manager, undoStore undostore.UndoStore) Service {
 	return &serviceImpl{
 		sensorConnMgr:   sensorConnMgr,
 		deployments:     deployments,
@@ -40,5 +41,6 @@ func New(store store.Store, deployments deploymentDataStore.DataStore, graphEval
 		clusterStore:    clusterStore,
 		graphEvaluator:  graphEvaluator,
 		policyGenerator: generator.New(store, deployments, namespacesStore, globalFlowStore),
+		undoStore:       undoStore,
 	}
 }

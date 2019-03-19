@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/storage"
 )
 
 func (h *commandHandler) createApplyTx(id string) *applyTx {
@@ -16,7 +17,7 @@ func (h *commandHandler) createApplyTx(id string) *applyTx {
 }
 
 func (h *commandHandler) dispatchApplyCommand(cmd *central.NetworkPoliciesCommand_Apply) (*central.NetworkPoliciesResponse_Payload, error) {
-	err := h.doApply(cmd)
+	undoMod, err := h.doApply(cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -24,20 +25,21 @@ func (h *commandHandler) dispatchApplyCommand(cmd *central.NetworkPoliciesComman
 	return &central.NetworkPoliciesResponse_Payload{
 		Cmd: &central.NetworkPoliciesResponse_Payload_Apply{
 			Apply: &central.NetworkPoliciesResponse_Apply{
-				ApplyId: cmd.GetApplyId(),
+				ApplyId:          cmd.GetApplyId(),
+				UndoModification: undoMod,
 			},
 		},
 	}, nil
 }
 
-func (h *commandHandler) doApply(cmd *central.NetworkPoliciesCommand_Apply) error {
+func (h *commandHandler) doApply(cmd *central.NetworkPoliciesCommand_Apply) (*storage.NetworkPolicyModification, error) {
 	policies, toDelete, err := parseModification(cmd.GetModification())
 	if err != nil {
-		return fmt.Errorf("parsing network policy modification: %v", err)
+		return nil, fmt.Errorf("parsing network policy modification: %v", err)
 	}
 
 	if err := validateModification(policies, toDelete); err != nil {
-		return fmt.Errorf("invalid network policy modification: %v", err)
+		return nil, fmt.Errorf("invalid network policy modification: %v", err)
 	}
 
 	tx := h.createApplyTx(cmd.GetApplyId())
@@ -45,9 +47,10 @@ func (h *commandHandler) doApply(cmd *central.NetworkPoliciesCommand_Apply) erro
 	if err := tx.Do(policies, toDelete); err != nil {
 		rollbackErr := tx.Rollback()
 		if rollbackErr == nil {
-			return fmt.Errorf("error applying network policies modification: %v. The old state has been restored", err)
+			return nil, fmt.Errorf("error applying network policies modification: %v. The old state has been restored", err)
 		}
-		return fmt.Errorf("error applying network policies modification: %v. Additionally, there was an error rolling back partial modifications: %v", err, rollbackErr)
+		return nil, fmt.Errorf("error applying network policies modification: %v. Additionally, there was an error rolling back partial modifications: %v", err, rollbackErr)
 	}
-	return nil
+
+	return tx.UndoModification(), nil
 }
