@@ -17,7 +17,7 @@ type ExternalUserClaim struct {
 	Attributes map[string][]string
 }
 
-// RoxClaims are the claims used for authentication by the StackRox container security platform.
+// RoxClaims are the claims used for authentication by the StackRox Kubernetes security platform.
 type RoxClaims struct {
 	// Permissions represents the claim that the user identified by the token has the given permissions. Setting this
 	// makes the token a pure by-value token.
