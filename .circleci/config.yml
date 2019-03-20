@@ -291,8 +291,6 @@ storeQASpockReports: &storeQASpockReports
     path: ./qa-tests-backend/build/spock-reports
     destination: qa-test-report
 
-
-
 checkOpenshiftLabel: &checkOpenshiftLabel
   run:
     name: Determine whether to run OpenShift tests
@@ -304,6 +302,16 @@ checkOpenshiftLabel: &checkOpenshiftLabel
         circleci step halt
       fi
 
+checkScaleLabel: &checkScaleLabel
+  run:
+    name: Determine whether to run Scale tests
+    command: |
+      set +e
+      .circleci/pr_has_label.sh ci-scale-tests
+      if [ $? -eq 1 ]; then
+        echo "Skipping tests because we're on a PR. Apply the ci-scale-tests label to your PR if you want to run them."
+        circleci step halt
+      fi
 
 version: 2
 jobs:
@@ -744,6 +752,7 @@ jobs:
 
     steps:
       - checkout
+      - *checkScaleLabel
       - setup_remote_docker
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
