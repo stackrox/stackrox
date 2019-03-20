@@ -7,5 +7,5 @@ proto_library(
         "@googleapi//:annotations_proto",
         "@com_google_protobuf//:descriptor_proto",
         "@com_google_protobuf//:timestamp_proto",
-    ]
+    ],
 )
