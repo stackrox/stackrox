@@ -70,6 +70,7 @@ export const NAMESPACE_LINK_COLOR = 0xbdc2d9;
 export const NAMESPACE_CONNECTION_POINT_COLOR = 0xffffff;
 export const TEXT_COLOR = PRIMARY_COLOR_STRING;
 export const NAMESPACE_TEXT_COLOR = '#60689B';
+export const NON_ISOLATED_DEPLOYMENT_COLOR = '#ef807d';
 
 // Network graph object types
 export const NETWORK_GRAPH_TYPES = Object.freeze({

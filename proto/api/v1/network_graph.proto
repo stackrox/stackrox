@@ -21,9 +21,11 @@ message NetworkEdgePropertiesBundle {
 }
 
 message NetworkNode {
-    storage.NetworkEntityInfo entity          = 1;
-    bool              internet_access = 2;
-    repeated string   policy_ids      = 3;
+    storage.NetworkEntityInfo entity       = 1;
+    bool              internet_access      = 2;
+    repeated string   policy_ids           = 3;
+    bool              non_isolated_ingress = 5;
+    bool              non_isolated_egress  = 6;
 
     map<int32, NetworkEdgePropertiesBundle> out_edges = 4;
 }

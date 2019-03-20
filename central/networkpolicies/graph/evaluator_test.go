@@ -2,9 +2,10 @@ package graph
 
 import (
 	"bytes"
+	"sort"
 	"testing"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stretchr/testify/assert"
@@ -594,10 +595,11 @@ func flattenEdges(edges ...[]edge) []edge {
 	return finalEdges
 }
 
-func mockNode(node string, namespace string, internetAccess bool, policies ...string) *v1.NetworkNode {
+func mockNode(node string, namespace string, internetAccess, nonIsolatedIngress, nonIsolatedEgress bool, policies ...string) *v1.NetworkNode {
 	if policies == nil {
 		policies = []string{}
 	}
+	sort.Strings(policies)
 	return &v1.NetworkNode{
 		Entity: &storage.NetworkEntityInfo{
 			Type: storage.NetworkEntityInfo_DEPLOYMENT,
@@ -608,9 +610,11 @@ func mockNode(node string, namespace string, internetAccess bool, policies ...st
 				},
 			},
 		},
-		PolicyIds:      policies,
-		InternetAccess: internetAccess,
-		OutEdges:       make(map[int32]*v1.NetworkEdgePropertiesBundle),
+		PolicyIds:          policies,
+		InternetAccess:     internetAccess,
+		NonIsolatedIngress: nonIsolatedIngress,
+		NonIsolatedEgress:  nonIsolatedEgress,
+		OutEdges:           make(map[int32]*v1.NetworkEdgePropertiesBundle),
 	}
 }
 
@@ -647,10 +651,9 @@ func TestEvaluateClusters(t *testing.T) {
 					Id: "d2",
 				},
 			},
-			edges: fullyConnectedEdges("d1", "d2"),
 			nodes: []*v1.NetworkNode{
-				mockNode("d1", "", true),
-				mockNode("d2", "", true),
+				mockNode("d1", "", true, true, true),
+				mockNode("d2", "", true, true, true),
 			},
 		},
 		{
@@ -670,17 +673,13 @@ func TestEvaluateClusters(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			edges: flattenEdges(
-				egressEdges("d1", "d2", "d3"),
-				fullyConnectedEdges("d2", "d3"),
-			),
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("web-deny-all"),
 			},
 			nodes: []*v1.NetworkNode{
-				mockNode("d1", "default", true, "web-deny-all"),
-				mockNode("d2", "default", true),
-				mockNode("d3", "default", true),
+				mockNode("d1", "default", true, false, true, "web-deny-all"),
+				mockNode("d2", "default", true, true, true),
+				mockNode("d3", "default", true, true, true),
 			},
 		},
 		{
@@ -703,17 +702,15 @@ func TestEvaluateClusters(t *testing.T) {
 				},
 			},
 			edges: flattenEdges(
-				fullyConnectedEdges("d1", "d2"),
-				fullyConnectedEdges("d2", "d3"),
-				ingressEdges("d3", "d1"),
+				ingressEdges("d1", "d2"),
 			),
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("limit-traffic"),
 			},
 			nodes: []*v1.NetworkNode{
-				mockNode("d1", "default", true, "limit-traffic"),
-				mockNode("d2", "default", true),
-				mockNode("d3", "default", true),
+				mockNode("d1", "default", true, false, true, "limit-traffic"),
+				mockNode("d2", "default", true, true, true),
+				mockNode("d3", "default", true, true, true),
 			},
 		},
 		{
@@ -734,16 +731,16 @@ func TestEvaluateClusters(t *testing.T) {
 				},
 			},
 			edges: flattenEdges(
-				fullyConnectedEdges("d1", "d2", "d3"),
+				ingressEdges("d1", "d2", "d3"),
 			),
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("web-deny-all"),
 				getExamplePolicy("web-allow-all"),
 			},
 			nodes: []*v1.NetworkNode{
-				mockNode("d1", "default", true, "web-allow-all", "web-deny-all"),
-				mockNode("d2", "default", true),
-				mockNode("d3", "default", true),
+				mockNode("d1", "default", true, false, true, "web-allow-all", "web-deny-all"),
+				mockNode("d2", "default", true, true, true),
+				mockNode("d3", "default", true, true, true),
 			},
 		},
 		{
@@ -763,17 +760,13 @@ func TestEvaluateClusters(t *testing.T) {
 					Namespace: "stackrox",
 				},
 			},
-			edges: flattenEdges(
-				egressEdges("d1", "d3"),
-				egressEdges("d2", "d3"),
-			),
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("default-deny-all"),
 			},
 			nodes: []*v1.NetworkNode{
-				mockNode("d1", "default", true, "default-deny-all"),
-				mockNode("d2", "default", true, "default-deny-all"),
-				mockNode("d3", "stackrox", true),
+				mockNode("d1", "default", true, false, true, "default-deny-all"),
+				mockNode("d2", "default", true, false, true, "default-deny-all"),
+				mockNode("d3", "stackrox", true, true, true),
 			},
 		},
 		{
@@ -794,16 +787,14 @@ func TestEvaluateClusters(t *testing.T) {
 			},
 			edges: flattenEdges(
 				fullyConnectedEdges("d1", "d2"),
-				egressEdges("d1", "d3"),
-				egressEdges("d2", "d3"),
 			),
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("deny-from-other-namespaces"),
 			},
 			nodes: []*v1.NetworkNode{
-				mockNode("d1", "default", true, "deny-from-other-namespaces"),
-				mockNode("d2", "default", true, "deny-from-other-namespaces"),
-				mockNode("d3", "stackrox", true),
+				mockNode("d1", "default", true, false, true, "deny-from-other-namespaces"),
+				mockNode("d2", "default", true, false, true, "deny-from-other-namespaces"),
+				mockNode("d3", "stackrox", true, true, true),
 			},
 		},
 		{
@@ -825,21 +816,20 @@ func TestEvaluateClusters(t *testing.T) {
 			},
 			edges: flattenEdges(
 				fullyConnectedEdges("d1", "d2"),
-				fullyConnectedEdges("d1", "d3"),
-				egressEdges("d2", "d3"),
+				ingressEdges("d1", "d3"),
 			),
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("deny-from-other-namespaces"),
 				getExamplePolicy("web-allow-all-namespaces"),
 			},
 			nodes: []*v1.NetworkNode{
-				mockNode("d1", "default", true, "deny-from-other-namespaces", "web-allow-all-namespaces"),
-				mockNode("d2", "default", true, "deny-from-other-namespaces"),
-				mockNode("d3", "stackrox", true),
+				mockNode("d1", "default", true, false, true, "deny-from-other-namespaces", "web-allow-all-namespaces"),
+				mockNode("d2", "default", true, false, true, "deny-from-other-namespaces"),
+				mockNode("d3", "stackrox", true, true, true),
 			},
 		},
 		{
-			name: "Web allow all traffic from other namespaces",
+			name: "Web allow all traffic from stackrox namespace",
 			deployments: []*storage.Deployment{
 				{
 					Id:        "d1",
@@ -856,17 +846,15 @@ func TestEvaluateClusters(t *testing.T) {
 				},
 			},
 			edges: flattenEdges(
-				fullyConnectedEdges("d1", "d3"),
-				fullyConnectedEdges("d2", "d3"),
-				egressEdges("d1", "d2"),
+				ingressEdges("d1", "d3"),
 			),
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("web-allow-stackrox"),
 			},
 			nodes: []*v1.NetworkNode{
-				mockNode("d1", "default", true, "web-allow-stackrox"),
-				mockNode("d2", "other", true),
-				mockNode("d3", "stackrox", true),
+				mockNode("d1", "default", true, false, true, "web-allow-stackrox"),
+				mockNode("d2", "other", true, true, true),
+				mockNode("d3", "stackrox", true, true, true),
 			},
 		},
 		{
@@ -893,18 +881,17 @@ func TestEvaluateClusters(t *testing.T) {
 				},
 			},
 			edges: flattenEdges(
-				fullyConnectedEdges("d2", "d3", "d4"),
-				egressEdges("d1", "d2", "d3", "d4"),
+				ingressEdges("d1", "d2", "d3"),
 			),
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("web-deny-all"),
 				getExamplePolicy("allow-traffic-from-apps-using-multiple-selectors"),
 			},
 			nodes: []*v1.NetworkNode{
-				mockNode("d1", "default", true, "web-deny-all"),
-				mockNode("d2", "default", true),
-				mockNode("d3", "default", true),
-				mockNode("d4", "default", true),
+				mockNode("d1", "default", true, false, true, "web-deny-all", "allow-traffic-from-apps-using-multiple-selectors"),
+				mockNode("d2", "default", true, true, true),
+				mockNode("d3", "default", true, true, true),
+				mockNode("d4", "default", true, true, true),
 			},
 		},
 		{
@@ -920,15 +907,12 @@ func TestEvaluateClusters(t *testing.T) {
 					Namespace: "default",
 				},
 			},
-			edges: flattenEdges(
-				ingressEdges("d1", "d2"),
-			),
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("web-deny-egress"),
 			},
 			nodes: []*v1.NetworkNode{
-				mockNode("d1", "default", false, "web-deny-egress"),
-				mockNode("d2", "default", true),
+				mockNode("d1", "default", false, true, false, "web-deny-egress"),
+				mockNode("d2", "default", true, true, true),
 			},
 		},
 		{
@@ -948,16 +932,13 @@ func TestEvaluateClusters(t *testing.T) {
 					Namespace: "stackrox",
 				},
 			},
-			edges: flattenEdges(
-				egressEdges("d3", "d1", "d2"),
-			),
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("default-deny-all-egress"),
 			},
 			nodes: []*v1.NetworkNode{
-				mockNode("d1", "default", false, "default-deny-all-egress"),
-				mockNode("d2", "default", false, "default-deny-all-egress"),
-				mockNode("d3", "stackrox", true),
+				mockNode("d1", "default", false, true, false, "default-deny-all-egress"),
+				mockNode("d2", "default", false, true, false, "default-deny-all-egress"),
+				mockNode("d3", "stackrox", true, true, true),
 			},
 		},
 		{
@@ -978,15 +959,15 @@ func TestEvaluateClusters(t *testing.T) {
 				},
 			},
 			edges: flattenEdges(
-				fullyConnectedEdges("d1", "d2", "d3"),
+				egressEdges("d1", "d2", "d3"),
 			),
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("web-deny-external-egress"),
 			},
 			nodes: []*v1.NetworkNode{
-				mockNode("d1", "default", false, "web-deny-external-egress"),
-				mockNode("d2", "default", true),
-				mockNode("d3", "stackrox", true),
+				mockNode("d1", "default", false, true, false, "web-deny-external-egress"),
+				mockNode("d2", "default", true, true, true),
+				mockNode("d3", "stackrox", true, true, true),
 			},
 		},
 		{
@@ -1013,18 +994,16 @@ func TestEvaluateClusters(t *testing.T) {
 			},
 			edges: flattenEdges(
 				ingressEdges("d1", "d2", "d3", "d4"),
-				ingressEdges("d3", "d1", "d2", "d4"),
-				ingressEdges("d4", "d1", "d2", "d3"),
 			),
 			nps: []*storage.NetworkPolicy{
 				getExamplePolicy("deny-all-ingress"),
 				getExamplePolicy("allow-ingress-to-web"),
 			},
 			nodes: []*v1.NetworkNode{
-				mockNode("d1", "qa", true, "allow-ingress-to-web", "deny-all-ingress"),
-				mockNode("d2", "qa", true, "deny-all-ingress"),
-				mockNode("d3", "stackrox", true),
-				mockNode("d4", "default", true),
+				mockNode("d1", "qa", true, false, true, "allow-ingress-to-web", "deny-all-ingress"),
+				mockNode("d2", "qa", true, false, true, "deny-all-ingress"),
+				mockNode("d3", "stackrox", true, true, true),
+				mockNode("d4", "default", true, true, true),
 			},
 		},
 	}

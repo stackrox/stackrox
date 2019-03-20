@@ -81,14 +81,17 @@ class NetworkSimulator extends BaseSpecification {
         // Verify no change to added nodes
         assert simulation.added.nodeDiffsCount == 0
 
-        // Verify all edges from nodes inside of 'qa' to nodes outside of 'qa' are removed
-        def nonQANodes = simulation.simulatedGraph.nodesList.findAll { it.namespace != "qa" }.size()
+        // Verify all edges from nodes inside of 'qa' to nodes outside of 'qa' that are ingress isolated are removed
+        def nonQANodes = simulation.simulatedGraph.nodesList.findAll {
+            it.namespace != "qa" && !it.nonIsolatedIngress
+        }.size()
         simulation.removed.nodeDiffsMap.each {
             def node = simulation.simulatedGraph.nodesList.get(it.key)
 
             assert node.namespace == "qa"
             assert it.value.policyIdsCount == 0
             assert it.value.outEdgesMap.size() == nonQANodes
+            assert it.value.getNonIsolatedEgress()
         }
 
         cleanup:

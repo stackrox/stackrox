@@ -71,6 +71,9 @@ message NetworkPolicyInSimulation {
 message NetworkNodeDiff {
     repeated string policy_ids = 1;
     map<int32, NetworkEdgePropertiesBundle> out_edges = 2;
+
+    bool non_isolated_ingress = 3;
+    bool non_isolated_egress  = 4;
 }
 
 message NetworkGraphDiff {

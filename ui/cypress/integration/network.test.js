@@ -48,25 +48,29 @@ describe('Network page', () => {
         cy.get(networkPageSelectors.legend.items)
             .eq(2)
             .children()
-            .should('have.attr', 'alt', 'namespace');
+            .should('have.attr', 'alt', 'non-isolated-deployment-allowed');
         cy.get(networkPageSelectors.legend.items)
             .eq(3)
             .children()
-            .should('have.attr', 'alt', 'namespace-allowed-connection');
+            .should('have.attr', 'alt', 'namespace');
         cy.get(networkPageSelectors.legend.items)
             .eq(4)
             .children()
-            .should('have.attr', 'alt', 'namespace-connection');
+            .should('have.attr', 'alt', 'namespace-allowed-connection');
         cy.get(networkPageSelectors.legend.items)
             .eq(5)
             .children()
-            .should('have.attr', 'alt', 'active-connection');
+            .should('have.attr', 'alt', 'namespace-connection');
         cy.get(networkPageSelectors.legend.items)
             .eq(6)
             .children()
-            .should('have.attr', 'alt', 'allowed-connection');
+            .should('have.attr', 'alt', 'active-connection');
         cy.get(networkPageSelectors.legend.items)
             .eq(7)
+            .children()
+            .should('have.attr', 'alt', 'allowed-connection');
+        cy.get(networkPageSelectors.legend.items)
+            .eq(8)
             .children()
             .should('have.class', 'icon-ingress-egress');
     });

@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import Tooltip from 'rc-tooltip';
 import deploymentActiveConnection from 'images/legend-icons/deployment-active-connection.svg';
 import deploymentAllowedConnection from 'images/legend-icons/deployment-allowed-connection.svg';
+import nonIsolatedDeploymentAllowed from 'images/legend-icons/non-isolated-deployment-allowed.svg';
 import namespace from 'images/legend-icons/namespace.svg';
 import namespaceAllowed from 'images/legend-icons/namespace-allowed.svg';
 import namespaceConnection from 'images/legend-icons/namespace-connection.svg';
@@ -13,7 +14,8 @@ const svgMapping = {
     'allowed-connection': deploymentAllowedConnection,
     namespace,
     'namespace-allowed-connection': namespaceAllowed,
-    'namespace-connection': namespaceConnection
+    'namespace-connection': namespaceConnection,
+    'non-isolated-deployment-allowed': nonIsolatedDeploymentAllowed
 };
 
 const fontIconMapping = {

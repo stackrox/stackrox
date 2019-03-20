@@ -6,6 +6,7 @@ kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
   name: allow-traffic-from-apps-using-multiple-selectors
+  namespace: default
 spec:
   podSelector:
     matchLabels:

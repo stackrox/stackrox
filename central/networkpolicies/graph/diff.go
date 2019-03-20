@@ -62,6 +62,33 @@ func computeNodeDiff(oldNode, newNode *v1.NetworkNode) (oldNodeDiff, newNodeDiff
 		}
 		newNodeDiff.OutEdges = adjacentNodeIDsToMap(addedAdjacencies)
 	}
+
+	if oldNode.GetNonIsolatedIngress() != newNode.GetNonIsolatedIngress() {
+		if oldNode.GetNonIsolatedIngress() {
+			if oldNodeDiff == nil {
+				oldNodeDiff = &v1.NetworkNodeDiff{}
+			}
+			oldNodeDiff.NonIsolatedIngress = true
+		} else {
+			if newNodeDiff == nil {
+				oldNodeDiff = &v1.NetworkNodeDiff{}
+			}
+			newNodeDiff.NonIsolatedIngress = true
+		}
+	}
+	if oldNode.GetNonIsolatedEgress() != newNode.GetNonIsolatedEgress() {
+		if oldNode.GetNonIsolatedEgress() {
+			if oldNodeDiff == nil {
+				oldNodeDiff = &v1.NetworkNodeDiff{}
+			}
+			oldNodeDiff.NonIsolatedEgress = true
+		} else {
+			if newNodeDiff == nil {
+				newNodeDiff = &v1.NetworkNodeDiff{}
+			}
+			newNodeDiff.NonIsolatedEgress = true
+		}
+	}
 	return
 }
 

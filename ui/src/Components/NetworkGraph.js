@@ -13,7 +13,9 @@ class NetworkGraph extends Component {
                     deployment: PropTypes.shape({
                         name: PropTypes.string.isRequired
                     })
-                }).isRequired
+                }).isRequired,
+                nonIsolatedIngress: PropTypes.bool,
+                nonIsolatedEgress: PropTypes.bool
             })
         ).isRequired,
         networkFlowMapping: PropTypes.shape({}).isRequired,

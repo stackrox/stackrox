@@ -48,6 +48,11 @@ class Legend extends Component {
                             tooltip="Deployment with allowed external connections"
                             type="font"
                         />
+                        <LegendTile
+                            name="non-isolated-deployment-allowed"
+                            tooltip="Non-isolated deployment (all connections allowed)"
+                            type="svg"
+                        />
                     </div>
                     <div className="flex border-b border-base-400">
                         <LegendTile name="namespace" tooltip="Namespace" type="svg" />
@@ -56,13 +61,13 @@ class Legend extends Component {
                             tooltip="Namespace with allowed external connections"
                             type="svg"
                         />
-                    </div>
-                    <div className="flex border-b border-base-400">
                         <LegendTile
                             name="namespace-connection"
                             tooltip="Namespace connection"
                             type="svg"
                         />
+                    </div>
+                    <div className="flex border-b border-base-400">
                         <LegendTile
                             name="active-connection"
                             tooltip="Active connection"
@@ -73,8 +78,6 @@ class Legend extends Component {
                             tooltip="Allowed connection"
                             type="svg"
                         />
-                    </div>
-                    <div className="flex">
                         <LegendTile
                             name="namespace-egress-ingress"
                             tooltip="Namespace external egress/ingress traffic"

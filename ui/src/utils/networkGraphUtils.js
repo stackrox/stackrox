@@ -83,6 +83,8 @@ export const forceCollide = nodes => alpha => {
     });
 };
 
+const nonIsolated = node => node.nonIsolatedIngress && node.nonIsolatedEgress;
+
 /**
  * Iterates through a list of nodes and returns only links in the same namespace
  *
@@ -97,6 +99,30 @@ export const getLinks = (nodes, networkFlowMapping) => {
             return;
         }
         const { id: srcDeploymentId } = node.entity;
+
+        // For nodes that are egress non-isolated, add outgoing edges to ingress non-isolated nodes, as long as the pair
+        // of nodes is not fully non-isolated. This is a compromise to make the non-isolation highlight only apply in
+        // the case when there are neither ingress nor egress policies (the data sent from the backend is optimized to
+        // treat both phenomena separately and omit edges from a egress non-isolated to an ingress non-isolated
+        // deployment, but that would be to confusing in the UI).
+        if (node.nonIsolatedEgress) {
+            nodes.forEach(targetNode => {
+                if (
+                    Object.is(node, targetNode) ||
+                    !targetNode.entity ||
+                    targetNode.entity.type !== 'DEPLOYMENT' ||
+                    !targetNode.nonIsolatedIngress || // nodes that are ingress-isolated have explicit incoming edges
+                    (node.nonIsolatedIngress && targetNode.nonIsolatedEgress) // do not draw edges between two fully isolated nodes
+                ) {
+                    return;
+                }
+                const { id: tgtDeploymentId } = targetNode.entity;
+                const link = { source: srcDeploymentId, target: tgtDeploymentId };
+                link.isActive = !!networkFlowMapping[`${srcDeploymentId}--${tgtDeploymentId}`];
+                filteredLinks.push(link);
+            });
+        }
+
         Object.keys(node.outEdges).forEach(targetIndex => {
             const tgtNode = nodes[targetIndex];
             if (!tgtNode || !tgtNode.entity || tgtNode.entity.type !== 'DEPLOYMENT') {
@@ -306,13 +332,34 @@ export const getNodeCanvas = node => {
         ctx.fillText(iconPotential, canvas.width / 2, canvas.height / 2);
     }
 
-    const iconNode = '\ue902';
-    ctx.fillStyle = node.internetAccess
-        ? constants.INTERNET_ACCESS_NODE_COLOR
-        : constants.NODE_COLOR;
-    ctx.font = '140px stackrox';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(iconNode, canvas.width / 2, canvas.height / 2);
+    if (nonIsolated(node)) {
+        const size = 40;
+        const x = canvas.width / 2;
+        const y = canvas.height / 2;
+
+        ctx.beginPath();
+        ctx.moveTo(x + size * Math.cos(0), y + size * Math.sin(0));
+
+        for (let side = 0; side < 7; side += 1) {
+            ctx.lineTo(
+                x + size * Math.cos((side * 2 * Math.PI) / 6),
+                y + size * Math.sin((side * 2 * Math.PI) / 6)
+            );
+        }
+
+        ctx.fillStyle = constants.NON_ISOLATED_DEPLOYMENT_COLOR;
+        ctx.fill();
+    } else {
+        const iconNode = '\ue902';
+        const color = node.internetAccess
+            ? constants.INTERNET_ACCESS_NODE_COLOR
+            : constants.NODE_COLOR;
+        ctx.fillStyle = color;
+        ctx.font = '140px stackrox';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(iconNode, canvas.width / 2, canvas.height / 2);
+    }
+
     return canvas;
 };

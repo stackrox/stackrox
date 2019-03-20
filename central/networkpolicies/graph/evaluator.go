@@ -4,7 +4,7 @@ import (
 	"sort"
 	"sync/atomic"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/set"
@@ -132,11 +132,20 @@ func createNode(deployment *storage.Deployment, dpd *DeploymentPolicyData) *v1.N
 func setOutgoingEdges(nodes []*v1.NetworkNode, nodeToNodeData map[*v1.NetworkNode]*DeploymentPolicyData) {
 	for srcIndex, srcNode := range nodes {
 		srcData := nodeToNodeData[srcNode]
+		srcNode.NonIsolatedIngress = srcData.appliedIngress.Cardinality() == 0
+		srcNode.NonIsolatedEgress = srcData.appliedEgress.Cardinality() == 0
+
 		for dstIndex, dstNode := range nodes {
 			if srcIndex == dstIndex {
 				continue
 			}
 			dstData := nodeToNodeData[dstNode]
+
+			// Only add edges that are either due to an ingress policy on the destination side, or an egress policy on
+			// the source side.
+			if srcData.appliedEgress.Cardinality() == 0 && dstData.appliedIngress.Cardinality() == 0 {
+				continue
+			}
 
 			// This set is the set of Egress policies that are applicable to the src
 			selectedEgressPoliciesSet := srcData.appliedEgress
