@@ -99,7 +99,7 @@ storage-protos-compatible: $(PROTOLOCK_BIN)
 .PHONY: lint
 lint:
 	@echo "+ $@"
-	@set -e; git -C $(CURDIR) ls-files '*.go' | xargs -n 1 dirname | sort | uniq | while IFS='' read -r dir || [[ -n "$$dir" ]]; do golint -set_exit_status "$$dir"/*.go ; done
+	@set -e; git -C $(CURDIR) ls-files '*.go' | xargs -n 1 dirname | sort | uniq | while IFS='' read -r dir || [ -n "$$dir" ]; do golint -set_exit_status "$$dir"/*.go ; done
 
 .PHONY: vet
 vet:
