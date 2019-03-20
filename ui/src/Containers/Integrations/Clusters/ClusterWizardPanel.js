@@ -25,15 +25,11 @@ class ClusterWizardPanel extends Component {
         currentPage: PropTypes.oneOf(Object.values(wizardPages)).isRequired,
         onFinish: PropTypes.func.isRequired,
         onNext: PropTypes.func.isRequired,
-        onDownload: PropTypes.func.isRequired,
-        metadata: PropTypes.shape({ version: PropTypes.string })
+        onDownload: PropTypes.func.isRequired
     };
 
     static defaultProps = {
-        cluster: null,
-        metadata: {
-            version: 'latest'
-        }
+        cluster: null
     };
 
     componentWillUnmount() {
@@ -67,16 +63,10 @@ class ClusterWizardPanel extends Component {
     }
 
     renderPage() {
-        const { currentPage, clusterType, cluster, metadata, onDownload } = this.props;
+        const { currentPage, clusterType, cluster, onDownload } = this.props;
         switch (currentPage) {
             case wizardPages.FORM:
-                return (
-                    <ClusterEditForm
-                        clusterType={clusterType}
-                        initialValues={cluster}
-                        metadata={metadata}
-                    />
-                );
+                return <ClusterEditForm clusterType={clusterType} initialValues={cluster} />;
             case wizardPages.DEPLOYMENT:
                 return (
                     <ClusterDeploymentPage
@@ -116,8 +106,7 @@ const getCluster = createSelector(
 
 const mapStateToProps = createStructuredSelector({
     cluster: getCluster,
-    currentPage: selectors.getWizardCurrentPage,
-    metadata: selectors.getMetadata
+    currentPage: selectors.getWizardCurrentPage
 });
 
 const mapDispatchToProps = {

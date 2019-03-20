@@ -25,15 +25,11 @@ CentralAPIFormField.propTypes = {
     placeholder: PropTypes.string.isRequired
 };
 
-const StackRoxImageFormField = ({ version }) => (
-    <FormField label="StackRox Image" required>
-        <ReduxTextField name="mainImage" placeholder={`stackrox.io/main:${version}`} />
+const StackRoxImageFormField = () => (
+    <FormField label="Main Image Repository" required>
+        <ReduxTextField name="mainImage" placeholder="stackrox.io/main" />
     </FormField>
 );
-
-StackRoxImageFormField.propTypes = {
-    version: PropTypes.string.isRequired
-};
 
 const RuntimeSupportFormField = () => (
     <FormField label="Runtime Support">
@@ -47,10 +43,10 @@ const MonitoringEndpointFormField = () => (
     </FormField>
 );
 
-const K8sFields = ({ metadata }) => (
+const K8sFields = () => (
     <React.Fragment>
         <CommonFields />
-        <StackRoxImageFormField version={metadata.version} />
+        <StackRoxImageFormField />
         <CentralAPIFormField placeholder="central.stackrox:443" />
         <MonitoringEndpointFormField />
         <RuntimeSupportFormField />
@@ -60,95 +56,60 @@ const K8sFields = ({ metadata }) => (
     </React.Fragment>
 );
 
-K8sFields.propTypes = {
-    metadata: PropTypes.shape({ version: PropTypes.string }).isRequired
-};
-
-const OpenShiftFields = ({ metadata }) => (
+const OpenShiftFields = () => (
     <React.Fragment>
         <CommonFields />
-        <StackRoxImageFormField version={metadata.version} />
+        <StackRoxImageFormField />
         <CentralAPIFormField placeholder="central.stackrox:443" />
         <MonitoringEndpointFormField />
         <RuntimeSupportFormField />
     </React.Fragment>
 );
 
-OpenShiftFields.propTypes = {
-    metadata: PropTypes.shape({ version: PropTypes.string }).isRequired
-};
-
-const DockerFields = ({ metadata }) => (
-    <React.Fragment>
-        <CommonFields />
-        <StackRoxImageFormField version={metadata.version} />
-        <CentralAPIFormField placeholder="central.prevent_net:443" />
-        <FormField label="Disable Swarm TLS">
-            <ReduxCheckboxField name="swarm.disableSwarmTls" />
-        </FormField>
-    </React.Fragment>
-);
-
-DockerFields.propTypes = {
-    metadata: PropTypes.shape({ version: PropTypes.string }).isRequired
-};
-
 const clusterFields = {
-    SWARM_CLUSTER: DockerFields,
     OPENSHIFT_CLUSTER: OpenShiftFields,
     KUBERNETES_CLUSTER: K8sFields
 };
 
-const ClusterEditForm = ({ clusterType, metadata }) => {
+const ClusterEditForm = ({ clusterType }) => {
     const ClusterFields = clusterFields[clusterType];
     if (!ClusterFields) throw new Error(`Unknown cluster type "${clusterType}"`);
     return (
         <form className="p-4 w-full mb-8" data-test-id="cluster-form">
-            <ClusterFields metadata={metadata} />
+            <ClusterFields />
         </form>
     );
 };
 ClusterEditForm.propTypes = {
-    clusterType: PropTypes.oneOf(clusterTypes).isRequired,
-    metadata: PropTypes.shape({ version: PropTypes.string }).isRequired
+    clusterType: PropTypes.oneOf(clusterTypes).isRequired
 };
 
 const ConnectedForm = reduxForm({ form: clusterFormId })(ClusterEditForm);
 
 const initialValuesFactories = {
-    SWARM_CLUSTER: metadata => ({
-        mainImage: `stackrox.io/main:${metadata.version}`,
-        centralApiEndpoint: 'central.prevent_net:443'
-    }),
-    OPENSHIFT_CLUSTER: metadata => ({
-        mainImage: `stackrox.io/main:${metadata.version}`,
+    OPENSHIFT_CLUSTER: {
+        mainImage: `stackrox.io/main`,
         centralApiEndpoint: 'central.stackrox:443',
         monitoringEndpoint: 'monitoring.stackrox:443',
         runtimeSupport: true
-    }),
-    KUBERNETES_CLUSTER: metadata => ({
-        mainImage: `stackrox.io/main:${metadata.version}`,
+    },
+    KUBERNETES_CLUSTER: {
+        mainImage: `stackrox.io/main`,
         centralApiEndpoint: 'central.stackrox:443',
         monitoringEndpoint: 'monitoring.stackrox:443',
         runtimeSupport: true,
         admissionController: false
-    })
+    }
 };
 
-const FormWrapper = ({ metadata, clusterType, initialValues }) => {
+const FormWrapper = ({ clusterType, initialValues }) => {
     const combinedInitialValues = {
-        ...initialValuesFactories[clusterType](metadata),
+        ...initialValuesFactories[clusterType],
         type: clusterType,
         ...initialValues // passed initial values can override anything
     };
 
-    return (
-        <ConnectedForm
-            clusterType={clusterType}
-            metadata={metadata}
-            initialValues={combinedInitialValues}
-        />
-    );
+    return <ConnectedForm clusterType={clusterType} initialValues={combinedInitialValues} />;
 };
 FormWrapper.propTypes = {
     clusterType: PropTypes.oneOf(clusterTypes).isRequired,

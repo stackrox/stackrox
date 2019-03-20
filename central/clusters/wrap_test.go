@@ -37,8 +37,8 @@ func TestGenerateCollectorImage(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.mainImage, func(t *testing.T) {
-			inputImg := utils.GenerateImageFromString(c.mainImage)
-			outputImg := utils.GenerateImageFromString(c.expectedImage)
+			inputImg := utils.GenerateImageFromStringIgnoringError(c.mainImage)
+			outputImg := utils.GenerateImageFromStringIgnoringError(c.expectedImage)
 			assert.Equal(t, outputImg.GetName(), generateCollectorImage(inputImg.GetName(), c.collectorTag))
 		})
 	}

@@ -85,7 +85,12 @@ func generateCollectorImage(mainImageName *storage.ImageName, tag string) *stora
 }
 
 func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
-	mainImageName := utils.GenerateImageFromString(c.MainImage).GetName()
+	mainImage, err := utils.GenerateImageFromStringWithDefaultTag(c.MainImage, version.GetMainVersion())
+	if err != nil {
+		return nil, err
+	}
+	mainImageName := mainImage.GetName()
+
 	collectorName := generateCollectorImage(mainImageName, version.GetCollectorVersion())
 
 	mainRegistry, err := urlfmt.FormatURL(mainImageName.GetRegistry(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
@@ -98,7 +103,7 @@ func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
 	}
 
 	fields := map[string]interface{}{
-		"Image":         c.MainImage,
+		"Image":         mainImageName.GetFullName(),
 		"ImageRegistry": mainRegistry,
 		"ImageTag":      mainImageName.GetTag(),
 

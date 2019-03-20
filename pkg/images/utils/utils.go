@@ -11,9 +11,9 @@ import (
 
 var logger = logging.LoggerForModule()
 
-// GenerateImageFromStringWithError generates an image type from a common string format and returns an error if
-// there was an issue parsing it
-func GenerateImageFromStringWithError(imageStr string) (*storage.Image, error) {
+// GenerateImageFromStringWithDefaultTag generates an image type from a common string format and returns an error if
+// there was an issue parsing it. It takes in a defaultTag which it populates if the image doesn't have a tag.
+func GenerateImageFromStringWithDefaultTag(imageStr, defaultTag string) (*storage.Image, error) {
 	image := &storage.Image{
 		Name: &storage.ImageName{
 			FullName: imageStr,
@@ -44,14 +44,20 @@ func GenerateImageFromStringWithError(imageStr string) (*storage.Image, error) {
 	}
 
 	// Default the image to latest if and only if there was no tag specific and also no SHA specified
-	if image.GetId() == "" && image.GetName().GetTag() == "" {
-		image.Name.Tag = "latest"
-		image.Name.FullName = ref.String() + ":latest"
+	if image.GetId() == "" && image.GetName().GetTag() == "" && defaultTag != "" {
+		image.Name.Tag = defaultTag
+		image.Name.FullName = fmt.Sprintf("%s:%s", ref.String(), defaultTag)
 	} else {
 		image.Name.FullName = ref.String()
 	}
 
 	return image, nil
+}
+
+// GenerateImageFromString generates an image type from a common string format and returns an error if
+// there was an issue parsing it
+func GenerateImageFromString(imageStr string) (*storage.Image, error) {
+	return GenerateImageFromStringWithDefaultTag(imageStr, "latest")
 }
 
 // GetSHA returns the SHA of the image if it exists
@@ -79,9 +85,9 @@ func Reference(img *storage.Image) string {
 	return "latest"
 }
 
-// GenerateImageFromString generates an image type from a common string format
-func GenerateImageFromString(imageStr string) *storage.Image {
-	image, err := GenerateImageFromStringWithError(imageStr)
+// GenerateImageFromStringIgnoringError generates an image type from a common string format
+func GenerateImageFromStringIgnoringError(imageStr string) *storage.Image {
+	image, err := GenerateImageFromString(imageStr)
 	if err != nil {
 		logger.Error(err)
 	}

@@ -95,7 +95,7 @@ func getAlerts(imageStr string) ([]*storage.Alert, error) {
 
 // Use inputs to generate an image name for request.
 func buildRequest(image string) (*storage.Image, error) {
-	img, err := utils.GenerateImageFromStringWithError(image)
+	img, err := utils.GenerateImageFromString(image)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse image '%s': %s", image, err)
 	}

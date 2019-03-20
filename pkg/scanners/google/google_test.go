@@ -46,7 +46,7 @@ func TestGoogle(t *testing.T) {
 	}
 
 	for _, i := range images {
-		img := utils.GenerateImageFromString(i)
+		img := utils.GenerateImageFromStringIgnoringError(i)
 		metadata, err := registry.Metadata(img)
 		require.NoError(t, err)
 		img.Metadata = metadata

@@ -205,7 +205,7 @@ func executeTemplate(temp *template.Template, c *Config) ([]byte, error) {
 }
 
 func generateMonitoringImage(mainImage string) string {
-	img := types.Wrapper{Image: utils.GenerateImageFromString(mainImage)}
+	img := types.Wrapper{Image: utils.GenerateImageFromStringIgnoringError(mainImage)}
 	remote := img.Namespace() + "/monitoring"
 	// This handles the case where there is no namespace. e.g. stackrox.io/collector:latest
 	if img.Repo() == "" {

@@ -275,7 +275,7 @@ func (w *DeploymentWrap) populateContainerConfigs(podSpec v1.PodSpec) {
 
 func (w *DeploymentWrap) populateImages(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
-		w.Deployment.Containers[i].Image = imageUtils.GenerateImageFromString(c.Image)
+		w.Deployment.Containers[i].Image = imageUtils.GenerateImageFromStringIgnoringError(c.Image)
 	}
 }
 

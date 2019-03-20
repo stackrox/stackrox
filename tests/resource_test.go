@@ -37,11 +37,9 @@ func TestClusters(t *testing.T) {
 	assert.Equal(t, storage.ClusterType_KUBERNETES_CLUSTER, c.GetType())
 	assert.Equal(t, `remote`, c.GetName())
 
-	img := utils.GenerateImageFromString(c.GetMainImage())
-	assert.Equal(t, imageName, img.GetName().GetRemote())
-	if sha, ok := os.LookupEnv(`MAIN_IMAGE_TAG`); ok {
-		assert.Equal(t, sha, img.GetName().GetTag())
-	}
+	img, err := utils.GenerateImageFromStringWithDefaultTag(c.GetMainImage(), "")
+	require.NoError(t, err)
+	assert.Equal(t, "docker.io/"+imageName, img.GetName().GetFullName())
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	cByID, err := service.GetCluster(ctx, &v1.ResourceByID{Id: c.GetId()})

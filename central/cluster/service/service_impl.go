@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -23,7 +22,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 var (
@@ -64,19 +62,6 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func normalizeCluster(cluster *storage.Cluster) {
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "http://")
-}
-
-// Validate a field that should adhere to DNS1123 standards,
-// and format a helpful error message so the end user
-// knows which field to fix.
-func validateDNS1123Field(fieldName, value string) error {
-	errors := validation.IsDNS1123Label(value)
-	if len(errors) == 0 {
-		return nil
-	}
-	errorList := errorhelpers.NewErrorList(fmt.Sprintf("%s validation failed", fieldName))
-	errorList.AddStrings(errors...)
-	return errorList.ToError()
 }
 
 func validateInput(cluster *storage.Cluster) error {

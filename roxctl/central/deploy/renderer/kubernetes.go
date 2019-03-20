@@ -128,6 +128,6 @@ func (k *kubernetes) Instructions(c Config) string {
 }
 
 func injectImageTags(c *Config) {
-	c.K8sConfig.ScannerImageTag = utils.GenerateImageFromString(c.K8sConfig.ScannerImage).GetName().GetTag()
-	c.K8sConfig.MainImageTag = utils.GenerateImageFromString(c.K8sConfig.MainImage).GetName().GetTag()
+	c.K8sConfig.ScannerImageTag = utils.GenerateImageFromStringIgnoringError(c.K8sConfig.ScannerImage).GetName().GetTag()
+	c.K8sConfig.MainImageTag = utils.GenerateImageFromStringIgnoringError(c.K8sConfig.MainImage).GetName().GetTag()
 }
