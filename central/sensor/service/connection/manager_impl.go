@@ -3,11 +3,11 @@ package connection
 import (
 	"errors"
 	"fmt"
-	"sync"
 
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 type manager struct {

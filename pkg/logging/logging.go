@@ -10,9 +10,10 @@ import (
 	"runtime"
 	"sort"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"unsafe"
+
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (

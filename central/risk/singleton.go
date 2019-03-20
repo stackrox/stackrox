@@ -1,7 +1,7 @@
 package risk
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 )

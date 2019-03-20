@@ -1,7 +1,7 @@
 package resources
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/sensor/common/clusterentities"

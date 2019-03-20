@@ -2,7 +2,8 @@ package ranking
 
 import (
 	"sort"
-	"sync"
+
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // Ranker ranks an object based on its score

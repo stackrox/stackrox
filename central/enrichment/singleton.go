@@ -1,13 +1,13 @@
 package enrichment
 
 import (
-	"sync"
 	"time"
 
 	"github.com/stackrox/rox/central/imageintegration"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

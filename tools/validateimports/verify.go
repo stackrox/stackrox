@@ -36,6 +36,10 @@ var (
 		"generated",
 		"tests",
 	}
+
+	forbiddenImports = map[string]string{
+		"sync": "github.com/stackrox/rox/pkg/sync",
+	}
 )
 
 // Given the package name, get the root directory of the service.
@@ -62,7 +66,7 @@ func getRoot(packageName string) (root string, valid bool) {
 		}
 	}
 	logAndExit("Package %s not found in list. If you added a new build root, "+
-		"you might need to add it to the validRoots list in tools/crosspkgimports/verify.go.", packageName)
+		"you might need to add it to the validRoots list in tools/validateimports/verify.go.", packageName)
 	return "", false
 }
 
@@ -85,31 +89,35 @@ func getImports(path string) ([]*ast.ImportSpec, error) {
 	return impSpecs, nil
 }
 
-// roxImportsFromAllowedPackagesOnly returns true if imports to rox packages
-// are made only from the allowed packages.
-func roxImportsFromAllowedPackagesOnly(spec *ast.ImportSpec, allowedPackages ...string) (bool, error) {
+// verifySingleImportFromAllowedPackagesOnly returns true if the given import statement is allowed from the respective
+// source package.
+func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName string, allowedPackages ...string) error {
 	impPath, err := strconv.Unquote(spec.Path.Value)
 	if err != nil {
-		return false, err
+		return err
+	}
+
+	if replacement, ok := forbiddenImports[impPath]; ok && replacement != packageName {
+		return fmt.Errorf("import is illegal; use %q instead", replacement)
 	}
 
 	if !strings.HasPrefix(impPath, roxPrefix) {
-		return true, nil
+		return nil
 	}
 
 	trimmed := strings.TrimPrefix(impPath, roxPrefix)
 
 	for _, allowedPrefix := range allowedPackages {
 		if strings.HasPrefix(trimmed, allowedPrefix) {
-			return true, nil
+			return nil
 		}
 	}
-	return false, nil
+	return fmt.Errorf("import %s is illegal", spec.Path.Value)
 }
 
 // verifyImportsFromAllowedPackagesOnly verifies that all Go files in (subdirectories of) root
 // only import StackRox code from allowedPackages
-func verifyImportsFromAllowedPackagesOnly(path, validImportRoot string) (errs []error) {
+func verifyImportsFromAllowedPackagesOnly(path, validImportRoot, packageName string) (errs []error) {
 	imps, err := getImports(path)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("import retrieval: %s", err))
@@ -142,13 +150,9 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot string) (errs []
 	}
 
 	for _, imp := range imps {
-		ok, err := roxImportsFromAllowedPackagesOnly(imp, allowedPackages...)
+		err := verifySingleImportFromAllowedPackagesOnly(imp, packageName, allowedPackages...)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("import verification for %s: %s", imp.Path.Value, err))
-			continue
-		}
-		if !ok {
-			errs = append(errs, fmt.Errorf("import %s is illegal", imp.Path.Value))
 		}
 	}
 	return
@@ -199,7 +203,7 @@ func main() {
 		goFiles := getGoFilesInPackage(goPath, packageName)
 
 		for _, goFile := range goFiles {
-			errs := verifyImportsFromAllowedPackagesOnly(goFile, root)
+			errs := verifyImportsFromAllowedPackagesOnly(goFile, root, packageName)
 			if len(errs) > 0 {
 				failed = true
 				fmt.Printf("File %s\n", goFile)
@@ -212,6 +216,6 @@ func main() {
 	}
 
 	if failed {
-		logAndExit("Failures were found. Please fix your cross-package imports!")
+		logAndExit("Failures were found. Please fix your package imports!")
 	}
 }

@@ -1,7 +1,7 @@
 package manager
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/data"

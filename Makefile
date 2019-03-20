@@ -23,7 +23,7 @@ all: deps style test image
 ## Style ##
 ###########
 .PHONY: style
-style: fmt imports lint vet blanks crosspkgimports no-large-files only-store-storage-protos storage-protos-compatible no-unchecked-errors ui-lint qa-tests-style
+style: fmt imports lint vet blanks validateimports no-large-files only-store-storage-protos storage-protos-compatible no-unchecked-errors ui-lint qa-tests-style
 
 .PHONY: qa-tests-style
 qa-tests-style:
@@ -61,10 +61,10 @@ ifdef CI
 endif
 	@echo $(FORMATTING_FILES) | xargs goimports -w
 
-.PHONY: crosspkgimports
-crosspkgimports:
+.PHONY: validateimports
+validateimports:
 	@echo "+ $@"
-	@go run $(BASE_DIR)/tools/crosspkgimports/verify.go $(shell go list -e ./...)
+	@go run $(BASE_DIR)/tools/validateimports/verify.go $(shell go list -e ./...)
 
 .PHONY: no-large-files
 no-large-files:

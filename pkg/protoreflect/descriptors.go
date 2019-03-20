@@ -7,10 +7,10 @@ import (
 	"io/ioutil"
 	"reflect"
 	"strings"
-	"sync"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"github.com/stackrox/rox/pkg/sync"
 	"google.golang.org/grpc"
 )
 

@@ -1,7 +1,7 @@
 package clusterentities
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkentity"

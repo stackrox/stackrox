@@ -2,7 +2,6 @@ package deployment
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/stackrox/rox/central/deployment/index/mappings"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 type predicatedMatcher struct {

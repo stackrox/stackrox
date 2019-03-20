@@ -3,7 +3,6 @@ package manager
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/gogo/protobuf/types"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (

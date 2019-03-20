@@ -1,7 +1,7 @@
 package service
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"

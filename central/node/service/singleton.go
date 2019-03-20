@@ -1,7 +1,7 @@
 package service
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	"github.com/stackrox/rox/central/node/globalstore"
 	"github.com/stackrox/rox/pkg/grpc"

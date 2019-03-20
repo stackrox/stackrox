@@ -1,7 +1,7 @@
 package resolvers
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	"github.com/stackrox/rox/central/graphql/generator"
 )

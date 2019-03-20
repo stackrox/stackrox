@@ -1,7 +1,7 @@
 package image
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	"github.com/stackrox/rox/central/image/index/mappings"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"

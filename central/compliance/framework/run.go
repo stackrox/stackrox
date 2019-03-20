@@ -3,10 +3,10 @@ package framework
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

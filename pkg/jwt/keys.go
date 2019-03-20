@@ -3,9 +3,9 @@ package jwt
 import (
 	"encoding/json"
 	"net/http"
-	"sync"
 	"time"
 
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"gopkg.in/square/go-jose.v2"
 )

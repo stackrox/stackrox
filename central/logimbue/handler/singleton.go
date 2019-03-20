@@ -2,10 +2,10 @@ package handler
 
 import (
 	"net/http"
-	"sync"
 
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/logimbue/store"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

@@ -3,13 +3,13 @@ package manager
 import (
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 	"gopkg.in/robfig/cron.v2"
 )
 

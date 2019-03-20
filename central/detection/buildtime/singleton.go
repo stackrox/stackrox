@@ -1,7 +1,7 @@
 package buildtime
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	"github.com/stackrox/rox/central/detection/image"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"

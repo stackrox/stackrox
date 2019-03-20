@@ -2,7 +2,6 @@ package manager
 
 import (
 	"errors"
-	"sync"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkentity"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterentities"

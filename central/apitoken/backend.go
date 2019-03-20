@@ -2,7 +2,6 @@ package apitoken
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/stackrox/rox/central/apitoken/store"
 	"github.com/stackrox/rox/central/globaldb"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

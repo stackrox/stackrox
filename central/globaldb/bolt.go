@@ -1,7 +1,7 @@
 package globaldb
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/pkg/bolthelper"

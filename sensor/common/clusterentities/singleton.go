@@ -1,6 +1,6 @@
 package clusterentities
 
-import "sync"
+import "github.com/stackrox/rox/pkg/sync"
 
 var (
 	storeInstance     *Store

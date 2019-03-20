@@ -2,10 +2,10 @@ package risk
 
 import (
 	"sort"
-	"sync"
 
 	"github.com/stackrox/rox/central/risk/multipliers"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // Scorer is the object that encompasses the multipliers for evaluating risk

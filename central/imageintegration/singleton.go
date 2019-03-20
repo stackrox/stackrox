@@ -1,7 +1,7 @@
 package imageintegration
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	"github.com/stackrox/rox/pkg/images/integration"
 )

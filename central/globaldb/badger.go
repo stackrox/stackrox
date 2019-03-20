@@ -1,12 +1,12 @@
 package globaldb
 
 import (
-	"sync"
 	"time"
 
 	"github.com/dgraph-io/badger"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

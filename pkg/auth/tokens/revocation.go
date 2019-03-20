@@ -2,9 +2,9 @@ package tokens
 
 import (
 	"errors"
-	"sync"
 	"time"
 
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timeutil"
 )
 

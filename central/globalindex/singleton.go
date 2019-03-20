@@ -1,7 +1,7 @@
 package globalindex
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	"github.com/blevesearch/bleve"
 )

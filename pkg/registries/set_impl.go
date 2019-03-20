@@ -2,10 +2,10 @@ package registries
 
 import (
 	"sort"
-	"sync"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 type setImpl struct {

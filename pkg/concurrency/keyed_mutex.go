@@ -2,7 +2,8 @@ package concurrency
 
 import (
 	"hash/fnv"
-	"sync"
+
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // A KeyedMutex allows callers to synchronize a block of code based on a key.

@@ -1,7 +1,7 @@
 package service
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"

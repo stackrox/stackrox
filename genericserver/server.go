@@ -5,7 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"sync"
+
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 type message struct {

@@ -1,7 +1,7 @@
 package mapper
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	groupStore "github.com/stackrox/rox/central/group/store"
 	roleStore "github.com/stackrox/rox/central/role/store"

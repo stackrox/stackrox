@@ -1,7 +1,7 @@
 package singleton
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/networkflow/store"

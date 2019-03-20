@@ -1,7 +1,7 @@
 package graph
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	"github.com/stackrox/rox/central/globaldb"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/store"

@@ -2,7 +2,8 @@ package framework
 
 import (
 	"fmt"
-	"sync"
+
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // CheckRegistry stores compliance checks, and allows retrieving them by ID.

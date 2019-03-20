@@ -3,7 +3,6 @@ package lifecycle
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -22,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/time/rate"
 )
 

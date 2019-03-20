@@ -10,7 +10,6 @@ import (
 	"math"
 	"math/big"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/cloudflare/cfssl/config"
@@ -20,6 +19,7 @@ import (
 	"github.com/cloudflare/cfssl/signer/local"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (

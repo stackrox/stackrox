@@ -1,7 +1,7 @@
 package manager
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	multiplierDS "github.com/stackrox/rox/central/multiplier/store"

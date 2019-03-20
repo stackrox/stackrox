@@ -2,13 +2,13 @@ package connection
 
 import (
 	"container/list"
-	"sync"
 
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 type dedupingQueue struct {

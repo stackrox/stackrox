@@ -2,11 +2,11 @@ package concurrency
 
 import (
 	"math/rand"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"os/exec"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/stackrox/rox/generated/api/v1"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 

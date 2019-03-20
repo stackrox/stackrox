@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"sync"
 	"time"
 
 	"github.com/stackrox/rox/central/globaldb"
@@ -11,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 const (

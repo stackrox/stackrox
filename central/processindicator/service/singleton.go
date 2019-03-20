@@ -1,9 +1,8 @@
 package service
 
 import (
-	"sync"
-
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

@@ -1,7 +1,7 @@
 package service
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	"github.com/stackrox/rox/central/alert/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"

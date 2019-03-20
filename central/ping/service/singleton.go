@@ -1,6 +1,6 @@
 package service
 
-import "sync"
+import "github.com/stackrox/rox/pkg/sync"
 
 var (
 	once sync.Once

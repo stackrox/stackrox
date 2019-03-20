@@ -1,8 +1,9 @@
 package concurrency
 
 import (
-	"sync"
 	"time"
+
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // Error is an alias for the builtin `error` interface. It is needed to trick the linter into

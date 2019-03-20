@@ -1,7 +1,7 @@
 package networkflowupdate
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 
 	networkFlowStoreSingleton "github.com/stackrox/rox/central/networkflow/store/singleton"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"

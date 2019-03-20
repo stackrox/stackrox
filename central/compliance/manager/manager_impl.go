@@ -3,7 +3,6 @@ package manager
 import (
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
@@ -23,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stackrox/rox/pkg/uuid"
 )

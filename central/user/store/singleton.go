@@ -1,7 +1,7 @@
 package store
 
 import (
-	"sync"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

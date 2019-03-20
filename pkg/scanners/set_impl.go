@@ -2,11 +2,11 @@ package scanners
 
 import (
 	"sort"
-	"sync"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 type setImpl struct {
