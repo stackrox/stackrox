@@ -12,6 +12,8 @@
     "apollo-link-http": "^1.5.9",
     "axios": "^0.18.0",
     "computed-style-to-inline-style": "^3.0.0",
+    "cytoscape": "^3.5.0",
+    "cytoscape-cose-bilkent": "^4.0.0",
     "d3": "^5.7.0",
     "date-fns": "^1.29.0",
     "deepmerge": "^3.0.0",

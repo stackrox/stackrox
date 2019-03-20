@@ -116,6 +116,27 @@ dependencies:
         attribution:
          - 2016 Luke Horvat
 
+  ui/node_modules/cytoscape:
+        url: https://github.com/cytoscape/cytoscape.js
+        license: MIT
+        files:
+          LICENSE: 5c6214ac1434d62415a46d561a0808c4a5d896138403ab31c85abd0308405223
+          package.json:
+            author: ba5824c7438dcaff0c4c6b2cd8fbc4017c23398e177dc84ba1b672ee3cb3373d
+            license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+        attribution:
+         - Cytoscape Consortium
+  
+  ui/node_modules/cytoscape-cose-bilkent:
+        url: https://github.com/cytoscape/cytoscape.js-cose-bilkent
+        license: MIT
+        files:
+          LICENSE: 81de421a095e1f19de704e4d22c817badddfa59ff8fa8d2a2139722c15770f59
+          package.json:
+            license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+        attribution:
+         - Cytoscape Consortium
+
   ui/node_modules/d3:
     url: https://github.com/d3/d3
     license: BSD-3-Clause

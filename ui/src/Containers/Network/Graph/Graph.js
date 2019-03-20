@@ -15,6 +15,7 @@ import filterModes from './filterModes';
 import Filters from './Overlays/Filters';
 import Legend from './Overlays/Legend';
 import NetworkGraph from '../../../Components/NetworkGraph';
+import NetworkGraph2 from '../../../Components/NetworkGraph2';
 
 class Graph extends Component {
     static propTypes = {
@@ -65,7 +66,7 @@ class Graph extends Component {
 
     renderGraph = nodes => {
         // If we have more than 200 nodes, display a message instead of the graph.
-        if (nodes.length > 200) {
+        if (nodes.length > 1500) {
             // hopefully a temporal solution
             return (
                 <NoResultsMessage message="There are too many deployments to render on the graph. Please refine your search to a set of namespaces or deployments to display." />
@@ -79,6 +80,17 @@ class Graph extends Component {
         } = this.props;
         const filteredNetworkFlowMapping =
             filterState === filterModes.allowed ? {} : networkFlowMapping;
+        if (process.env.NODE_ENV === 'development') {
+            return (
+                <NetworkGraph2
+                    updateKey={this.props.networkFlowGraphUpdateKey}
+                    nodes={nodes}
+                    networkFlowMapping={this.props.networkFlowMapping}
+                    onNodeClick={this.onNodeClick}
+                    filterState={filterState}
+                />
+            );
+        }
         return (
             <NetworkGraph
                 ref={setGraphRef}

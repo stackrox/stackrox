@@ -34,4 +34,3 @@ gcloud container clusters get-credentials "${CLUSTER_NAME}" --project ultra-curr
 # create cluster role bindings
 role_binding_name="temporary-admin-$(echo "${GCLOUD_USER}" | sed 's/@.*//')"
 kubectl get clusterrolebinding "${role_binding_name}" >/dev/null 2>&1 || kubectl create clusterrolebinding "${role_binding_name}" --clusterrole=cluster-admin --user="$GCLOUD_USER"
-
