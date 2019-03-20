@@ -37,7 +37,9 @@ func (suite *PipelineTestSuite) TearDownTest() {
 
 func (suite *PipelineTestSuite) TestCallsMatchingPipeline() {
 	expectedError := fmt.Errorf("this is expected")
-	msg := &central.MsgFromSensor{}
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{},
+	}
 
 	suite.depMock.EXPECT().Match(msg).Return(true)
 	suite.depMock.EXPECT().Run("clusterID", msg, nil).Return(expectedError)

@@ -58,15 +58,24 @@ const navLinks = [
     }
 ];
 
+const versionString = metadata => {
+    let result = `v${metadata.version}`;
+    if (!metadata.releaseBuild) {
+        result += ' [DEV BUILD]';
+    }
+    return result;
+};
+
 class LeftNavigation extends Component {
     static propTypes = {
         location: ReactRouterPropTypes.location.isRequired,
-        metadata: PropTypes.shape({ version: PropTypes.string })
+        metadata: PropTypes.shape({ version: PropTypes.string, releaseBuild: PropTypes.bool })
     };
 
     static defaultProps = {
         metadata: {
-            version: 'latest'
+            version: 'latest',
+            releaseBuild: false
         }
     };
 
@@ -178,7 +187,7 @@ class LeftNavigation extends Component {
                 </div>
             </Link>
             <span className="left-navigation p-3 text-primary-400 word-break-all">
-                v{this.props.metadata.version}
+                {versionString(this.props.metadata)}
             </span>
         </div>
     );

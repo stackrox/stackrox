@@ -399,6 +399,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.LifecycleStage(0)))
 	utils.Must(builder.AddType("Metadata", []string{
+		"buildFlavor: String!",
+		"releaseBuild: Boolean!",
 		"version: String!",
 	}))
 	utils.Must(builder.AddType("Namespace", []string{
@@ -3771,6 +3773,16 @@ func (resolver *Resolver) wrapMetadatas(values []*v1.Metadata, err error) ([]*me
 		output[i] = &metadataResolver{resolver, v}
 	}
 	return output, nil
+}
+
+func (resolver *metadataResolver) BuildFlavor() string {
+	value := resolver.data.GetBuildFlavor()
+	return value
+}
+
+func (resolver *metadataResolver) ReleaseBuild() bool {
+	value := resolver.data.GetReleaseBuild()
+	return value
 }
 
 func (resolver *metadataResolver) Version() string {

@@ -9,7 +9,9 @@ import "api/v1/empty.proto";
 package v1;
 
 message Metadata {
-    string version = 1;
+    string version      = 1;
+    string build_flavor = 2;
+    bool release_build  = 3;
 }
 
 service MetadataService {

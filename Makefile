@@ -3,6 +3,17 @@ TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
 TAG=$(shell git describe --tags --abbrev=10 --dirty)
 
+RELEASE_GOTAGS := release
+ifdef CI
+ifneq ($(CIRCLE_TAG),)
+GOTAGS := $(RELEASE_GOTAGS)
+endif
+endif
+
+null :=
+space := $(null) $(null)
+comma := ,
+
 FORMATTING_FILES=$(shell find . -name vendor -prune -o -name generated -prune -o -name mocks -prune -o -name '*_easyjson.go' -prune -o -name '*.go' -print)
 
 .PHONY: all
@@ -88,12 +99,16 @@ storage-protos-compatible: $(PROTOLOCK_BIN)
 .PHONY: lint
 lint:
 	@echo "+ $@"
-	@set -e; for pkg in $(shell go list -e ./... | grep -v generated | grep -v vendor); do golint -set_exit_status $$pkg; done
+	@set -e; git -C $(CURDIR) ls-files '*.go' | xargs -n 1 dirname | sort | uniq | while IFS='' read -r dir || [[ -n "$$dir" ]]; do golint -set_exit_status "$$dir"/*.go ; done
 
 .PHONY: vet
 vet:
 	@echo "+ $@"
-	@$(BASE_DIR)/tools/go-vet.sh $(shell go list -e ./... | grep -v generated | grep -v vendor)
+	@$(BASE_DIR)/tools/go-vet.sh -tags "$(subst $(comma),$(space),$(GOTAGS))" $(shell go list -e ./... | grep -v generated | grep -v vendor)
+ifdef CI
+	@echo "+ $@ ($(RELEASE_GOTAGS))"
+	@$(BASE_DIR)/tools/go-vet.sh -tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" $(shell go list -e ./... | grep -v generated | grep -v vendor)
+endif
 
 .PHONY: blanks
 blanks:
@@ -213,14 +228,14 @@ ifeq ($(UNAME_S),Darwin)
 endif
 PLATFORMS := --platforms=@io_bazel_rules_go//go/toolchain:$(BAZEL_OS)_amd64
 
-BAZEL_FLAGS := $(PURE) $(LINUX_AMD64) $(VARIABLE_STAMPS)
+BAZEL_FLAGS := $(PURE) $(LINUX_AMD64) $(VARIABLE_STAMPS) --define gotags=$(GOTAGS)
 cleanup:
 	@echo "Total BUILD.bazel files deleted: "
 	@git status --ignored --untracked-files=all --porcelain | grep '^\(!!\|??\) ' | cut -d' ' -f 2- | grep '\(/\|^\)BUILD\.bazel$$' | xargs rm -v | wc -l
 
 .PHONY: gazelle
 gazelle: deps volatile-generated-srcs cleanup
-	bazel run //:gazelle
+	bazel run //:gazelle -- -build_tags=$(GOTAGS)
 
 cli: gazelle
 	bazel build $(BAZEL_FLAGS) --platforms=@io_bazel_rules_go//go/toolchain:darwin_amd64 -- //roxctl
@@ -276,7 +291,7 @@ bazel-test: gazelle
 	-rm vendor/github.com/grpc-ecosystem/grpc-gateway/BUILD
 	@# Be careful if you add action_env arguments; their values can invalidate cached
 	@# test results. See https://github.com/bazelbuild/bazel/issues/2574#issuecomment-320006871.
-	bazel coverage $(PURE) $(RACE) \
+	bazel coverage $(BAZEL_FLAGS) $(RACE) \
 	    --test_output=errors \
 	    -- \
 	    //... -proto/... -tests/... -vendor/...

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/compliance/standards"
+	"github.com/stackrox/rox/central/compliance/standards/metadata"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/set"
@@ -19,6 +20,23 @@ func qualifiedNamespace(clusterID, namespace string) string {
 
 func qualifiedNamespaceID(clusterID, namespace string) string {
 	return qualifiedNamespace(clusterID, namespace) + "ID"
+}
+
+type mockStandardsRepo struct {
+	standards.Repository
+}
+
+func (mockStandardsRepo) GetCategoryByControl(controlID string) *standards.Category {
+	return &standards.Category{
+		Category: metadata.Category{
+			ID: "",
+		},
+		Standard: &standards.Standard{
+			Standard: metadata.Standard{
+				ID: "standard1",
+			},
+		},
+	}
 }
 
 func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
@@ -139,29 +157,30 @@ func mockRunResult(cluster, standard string) *storage.ComplianceRunResults {
 }
 
 func mockFlatChecks(clusterID, standardID string) []flatCheck {
+	category := fmt.Sprintf("%s:%s", standardID, "")
 	return []flatCheck{
-		newFlatCheck(clusterID, "", standardID, "", "control1", "", "", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
-		newFlatCheck(clusterID, "", standardID, "", "control2", "", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
-		newFlatCheck(clusterID, "", standardID, "", "control7", "", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
-		newFlatCheck(clusterID, "", standardID, "", "control3", clusterID+"node1", "", storage.ComplianceState_COMPLIANCE_STATE_ERROR),
-		newFlatCheck(clusterID, "", standardID, "", "control4", clusterID+"node1", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
-		newFlatCheck(clusterID, "", standardID, "", "control3", clusterID+"node2", "", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
-		newFlatCheck(clusterID, "", standardID, "", "control4", clusterID+"node2", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace1"), standardID, "", "control5", "", clusterID+"deployment1", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace1"), standardID, "", "control6", "", clusterID+"deployment1", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace1"), standardID, "", "control7", "", clusterID+"deployment1", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace2"), standardID, "", "control5", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace2"), standardID, "", "control6", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace2"), standardID, "", "control7", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace3"), standardID, "", "control5", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace3"), standardID, "", "control6", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
-		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace3"), standardID, "", "control7", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
+		newFlatCheck(clusterID, "", standardID, category, "control1", "", "", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
+		newFlatCheck(clusterID, "", standardID, category, "control2", "", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
+		newFlatCheck(clusterID, "", standardID, category, "control7", "", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
+		newFlatCheck(clusterID, "", standardID, category, "control3", clusterID+"node1", "", storage.ComplianceState_COMPLIANCE_STATE_ERROR),
+		newFlatCheck(clusterID, "", standardID, category, "control4", clusterID+"node1", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
+		newFlatCheck(clusterID, "", standardID, category, "control3", clusterID+"node2", "", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
+		newFlatCheck(clusterID, "", standardID, category, "control4", clusterID+"node2", "", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
+		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace1"), standardID, category, "control5", "", clusterID+"deployment1", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
+		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace1"), standardID, category, "control6", "", clusterID+"deployment1", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
+		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace1"), standardID, category, "control7", "", clusterID+"deployment1", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
+		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace2"), standardID, category, "control5", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
+		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace2"), standardID, category, "control6", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_SUCCESS),
+		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace2"), standardID, category, "control7", "", clusterID+"deployment2", storage.ComplianceState_COMPLIANCE_STATE_FAILURE),
+		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace3"), standardID, category, "control5", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
+		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace3"), standardID, category, "control6", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
+		newFlatCheck(clusterID, qualifiedNamespaceID(clusterID, "namespace3"), standardID, category, "control7", "", clusterID+"deployment3", storage.ComplianceState_COMPLIANCE_STATE_SKIP),
 	}
 }
 
 func TestGetFlatChecksFromRunResult(t *testing.T) {
 	ag := &aggregatorImpl{
-		standards: standards.NewRegistry(nil, nil),
+		standards: mockStandardsRepo{},
 	}
 	assert.ElementsMatch(t, mockFlatChecks("cluster1", "standard1"), ag.getFlatChecksFromRunResult(mockRunResult("cluster1", "standard1"), [numScopes]set.StringSet{}))
 }
@@ -275,7 +294,7 @@ func TestGetAggregatedResults(t *testing.T) {
 	for _, c := range cases {
 		t.Run(testName(c.groupBy, c.unit), func(t *testing.T) {
 			ag := &aggregatorImpl{
-				standards: standards.NewRegistry(nil, nil),
+				standards: mockStandardsRepo{},
 			}
 			results, _ := ag.getAggregatedResults(c.groupBy, c.unit, runResults, [numScopes]set.StringSet{})
 			require.Equal(t, c.numResults, len(results))
@@ -289,7 +308,7 @@ func TestGetAggregatedResults(t *testing.T) {
 
 func TestDomainAttribution(t *testing.T) {
 	ag := &aggregatorImpl{
-		standards: standards.NewRegistry(nil, nil),
+		standards: mockStandardsRepo{},
 	}
 	complianceRunResults := []*storage.ComplianceRunResults{
 		{

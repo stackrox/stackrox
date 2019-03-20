@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/version"
 	"golang.org/x/net/context"
@@ -30,6 +31,8 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetMetadata returns the metadata for Rox.
 func (s *serviceImpl) GetMetadata(context.Context, *v1.Empty) (*v1.Metadata, error) {
 	return &v1.Metadata{
-		Version: version.GetMainVersion(),
+		Version:      version.GetMainVersion(),
+		BuildFlavor:  buildinfo.BuildFlavor,
+		ReleaseBuild: buildinfo.ReleaseBuild,
 	}, nil
 }
