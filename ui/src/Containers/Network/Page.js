@@ -1,9 +1,12 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+import { actions as dialogueActions } from 'reducers/network/dialogue';
 import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as pageActions } from 'reducers/network/page';
+import dialogueStages from './Dialogue/dialogueStages';
 
+import Dialogue from './Dialogue';
 import Graph from './Graph/Graph';
 import Header from './Header/Header';
 import SimulationBorder from './SimulationBorder';
@@ -11,12 +14,14 @@ import Wizard from './Wizard/Wizard';
 
 class Page extends Component {
     static propTypes = {
+        setNetworkModification: PropTypes.func.isRequired,
         closeWizard: PropTypes.func.isRequired,
-        setNetworkModification: PropTypes.func.isRequired
+        setDialogueStage: PropTypes.func.isRequired
     };
 
     componentWillUnmount() {
         this.props.closeWizard();
+        this.props.setDialogueStage(dialogueStages.closed);
         this.props.setNetworkModification(null);
     }
 
@@ -39,6 +44,7 @@ class Page extends Component {
                         <Wizard getGraphRef={this.getGraphRef} />
                     </section>
                 </div>
+                <Dialogue />
             </section>
         );
     }
@@ -46,7 +52,8 @@ class Page extends Component {
 
 const mapDispatchToProps = {
     closeWizard: pageActions.closeNetworkWizard,
-    setNetworkModification: wizardActions.setNetworkPolicyModification
+    setNetworkModification: wizardActions.setNetworkPolicyModification,
+    setDialogueStage: dialogueActions.setNetworkDialogueStage
 };
 
 export default connect(

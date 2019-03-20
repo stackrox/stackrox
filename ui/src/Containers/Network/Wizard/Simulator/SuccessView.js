@@ -7,7 +7,7 @@ import { selectors } from 'reducers';
 import Message from 'Components/Message';
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
-import SendNotificationSection from './SendNotificationSection';
+import UsageButtons from './UsageButtons';
 
 class SuccessView extends Component {
     static propTypes = {
@@ -70,7 +70,7 @@ class SuccessView extends Component {
                     <Message type="info" message={successMessage} />
                     <div className="flex relative h-full">{this.renderTabs()}</div>
                 </section>
-                <SendNotificationSection />
+                <UsageButtons />
             </div>
         );
     }

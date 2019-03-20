@@ -150,3 +150,21 @@ export function notifyNetworkPolicyModification(clusterId, notifierIds, modifica
         response: response.data
     }));
 }
+
+/**
+ * Sends a yaml to the backed for application to a cluster.
+ *
+ * @param {!String} clusterId
+ * @param {!Object} modification
+ * @returns {Promise<Object, Error>}
+ */
+export function applyNetworkPolicyModification(clusterId, modification) {
+    const options = {
+        method: 'POST',
+        data: modification,
+        url: `${networkPoliciesBaseUrl}/apply/${clusterId}`
+    };
+    return axios(options).then(response => ({
+        response: response.data
+    }));
+}

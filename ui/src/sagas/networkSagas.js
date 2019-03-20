@@ -142,6 +142,19 @@ function* sendNetworkModificationNotification() {
     }
 }
 
+function* sendNetworkModificationApplication() {
+    try {
+        const clusterId = yield select(selectors.getSelectedNetworkClusterId);
+        const modification = yield select(selectors.getNetworkPolicyModification);
+        yield call(service.applyNetworkPolicyModification, clusterId, modification);
+        yield put(notificationActions.addNotification('Successfully applied YAML.'));
+        yield put(notificationActions.removeOldestNotification());
+    } catch (error) {
+        yield put(notificationActions.addNotification(error.response.data.error));
+        yield put(notificationActions.removeOldestNotification());
+    }
+}
+
 function* watchLocation() {
     let pollTask = null;
     while (true) {
@@ -236,6 +249,13 @@ function* watchNotifyNetworkPolicyModification() {
     );
 }
 
+function* watchApplyNetworkPolicyModification() {
+    yield takeLatest(
+        dialogueNetworkTypes.SEND_POLICY_MODIFICATION_APPLICATION,
+        sendNetworkModificationApplication
+    );
+}
+
 function* watchNetworkNodesUpdate() {
     yield takeLatest(graphNetworkTypes.NETWORK_NODES_UPDATE, filterNetworkPageBySearch);
 }
@@ -253,6 +273,7 @@ export default function* network() {
         fork(watchNetworkNodesUpdate),
         fork(watchNetworkPolicyModification),
         fork(watchNotifyNetworkPolicyModification),
+        fork(watchApplyNetworkPolicyModification),
         fork(watchLocation)
     ]);
 }
