@@ -35,10 +35,10 @@ done
 sleep 10
 
 while true; do
-    LINES="$(kubectl -n kube-system get po | grep -v Running | wc -l | awk '{print $1}')"
-    if [[ "${LINES}" == 1 ]]; then
-        break
-    fi
-    echo "Waiting for ${LINES} kube-system services to be initialized"
-    sleep 2
+	NUMSTARTING=$(kubectl -n kube-system get pod -o json | jq '(.items[].status.containerStatuses // [])[].ready' | grep false | wc -l | awk '{print $1}')
+	if [[ "${NUMSTARTING}" == "0" ]]; then
+		break
+	fi
+    echo "Waiting for ${NUMSTARTING} kube-system containers to be initialized"
+    sleep 10
 done
