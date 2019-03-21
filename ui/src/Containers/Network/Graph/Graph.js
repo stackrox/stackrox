@@ -19,8 +19,6 @@ import Legend from './Overlays/Legend';
 
 class Graph extends Component {
     static propTypes = {
-        setGraphRef: PropTypes.func.isRequired,
-
         wizardOpen: PropTypes.bool.isRequired,
         wizardStage: PropTypes.string.isRequired,
         filterState: PropTypes.number.isRequired,
@@ -36,7 +34,6 @@ class Graph extends Component {
         networkFlowMapping: PropTypes.shape({}).isRequired,
         networkFlowGraphUpdateKey: PropTypes.number.isRequired,
         networkFlowGraphState: PropTypes.string.isRequired,
-
         setSelectedNodeId: PropTypes.func.isRequired,
         fetchDeployment: PropTypes.func.isRequired,
         fetchNetworkPolicies: PropTypes.func.isRequired,
@@ -45,7 +42,8 @@ class Graph extends Component {
         openWizard: PropTypes.func.isRequired,
 
         isLoading: PropTypes.bool.isRequired,
-        setNetworkGraphLoading: PropTypes.func.isRequired
+        setNetworkGraphLoading: PropTypes.func.isRequired,
+        setNetworkGraphRef: PropTypes.func.isRequired
     };
 
     static defaultProps = {
@@ -80,7 +78,6 @@ class Graph extends Component {
             filterState,
             networkFlowMapping,
             networkFlowGraphUpdateKey,
-            setGraphRef,
             isLoading,
             setNetworkGraphLoading
         } = this.props;
@@ -89,7 +86,6 @@ class Graph extends Component {
         if (process.env.NODE_ENV === 'development') {
             return (
                 <NetworkGraph2
-                    setGraphRef={setGraphRef}
                     updateKey={this.props.networkFlowGraphUpdateKey}
                     nodes={nodes}
                     networkFlowMapping={this.props.networkFlowMapping}
@@ -100,7 +96,7 @@ class Graph extends Component {
         }
         return (
             <NetworkGraph
-                ref={setGraphRef}
+                ref={this.props.setNetworkGraphRef}
                 updateKey={networkFlowGraphUpdateKey}
                 nodes={nodes}
                 networkFlowMapping={filteredNetworkFlowMapping}
@@ -168,7 +164,7 @@ const mapDispatchToProps = {
 
     openWizard: pageActions.openNetworkWizard,
     setWizardStage: wizardActions.setNetworkWizardStage,
-
+    setNetworkGraphRef: graphActions.setNetworkGraphRef,
     setNetworkGraphLoading: graphActions.setNetworkGraphLoading
 };
 

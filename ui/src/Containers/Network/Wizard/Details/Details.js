@@ -39,8 +39,14 @@ function Details(props) {
         </Tabs>
     );
 
+    function closeHandler() {
+        const { onClose, networkGraphRef } = props;
+        onClose();
+        if (networkGraphRef) props.networkGraphRef.setSelectedNode();
+    }
+
     return (
-        <Panel header={deployment.name} onClose={props.onClose}>
+        <Panel header={deployment.name} onClose={closeHandler}>
             {content}
         </Panel>
     );
@@ -55,7 +61,14 @@ Details.propTypes = {
     }).isRequired,
 
     isFetchingNode: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired
+    onClose: PropTypes.func.isRequired,
+    networkGraphRef: PropTypes.shape({
+        setSelectedNode: PropTypes.func
+    })
+};
+
+Details.defaultProps = {
+    networkGraphRef: null
 };
 
 const mapStateToProps = createStructuredSelector({
@@ -65,7 +78,8 @@ const mapStateToProps = createStructuredSelector({
     networkPolicyGraph: selectors.getNetworkPolicyGraph,
     nodeUpdatesEpoch: selectors.getNodeUpdatesEpoch,
     deployment: selectors.getNodeDeployment,
-    isFetchingNode: state => selectors.getLoadingStatus(state, deploymentTypes.FETCH_DEPLOYMENT)
+    isFetchingNode: state => selectors.getLoadingStatus(state, deploymentTypes.FETCH_DEPLOYMENT),
+    networkGraphRef: selectors.getNetworkGraphRef
 });
 
 const mapDispatchToProps = {

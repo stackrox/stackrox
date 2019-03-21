@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import { actions as graphActions } from 'reducers/network/graph';
 
 import Cytoscape from 'cytoscape';
 import coseBilkentPlugin from 'cytoscape-cose-bilkent';
@@ -23,7 +25,13 @@ function getClasses(map) {
         .join(' ');
 }
 
-const NetworkGraph = ({ nodes, networkFlowMapping, onNodeClick, filterState, setGraphRef }) => {
+const NetworkGraph = ({
+    nodes,
+    networkFlowMapping,
+    onNodeClick,
+    filterState,
+    setNetworkGraphRef
+}) => {
     const [selectedNode, setSelectedNode] = useState();
     const [hoveredNode, setHoveredNode] = useState();
     const cy = useRef();
@@ -121,7 +129,7 @@ const NetworkGraph = ({ nodes, networkFlowMapping, onNodeClick, filterState, set
             return;
         }
 
-        // // Parent Click: Do nothing
+        // Parent Click: Do nothing
         if (ev.target.isParent()) {
             return;
         }
@@ -158,31 +166,6 @@ const NetworkGraph = ({ nodes, networkFlowMapping, onNodeClick, filterState, set
         cy.current.center();
     }
 
-    // Initialize window events
-    useEffect(() => {
-        // handle resizing
-        window.addEventListener(
-            'resize',
-            debounce(() => {
-                if (cy.current) cy.current.fit(null, GRAPH_PADDING);
-            }, 100)
-        );
-
-        // Return cleanup function
-        const cleanup = () => {
-            window.removeEventListener('resize');
-        };
-
-        return cleanup;
-    }, []);
-
-    useEffect(
-        () => {
-            if (!cy.current) return;
-            cy.current.layout(layout).run();
-        },
-        [nodes.length]
-    );
     function getElements() {
         return { nodes: getNodes(), edges: getEdges() };
     }
@@ -199,11 +182,39 @@ const NetworkGraph = ({ nodes, networkFlowMapping, onNodeClick, filterState, set
 
     const elements = getElements();
 
-    setGraphRef({
-        zoomToFit,
-        zoomIn,
-        zoomOut
-    });
+    // Effects
+    function handleWindowResize() {
+        window.addEventListener(
+            'resize',
+            debounce(() => {
+                if (cy.current) cy.current.fit(null, GRAPH_PADDING);
+            }, 100)
+        );
+
+        const cleanup = () => {
+            window.removeEventListener('resize');
+        };
+
+        return cleanup;
+    }
+
+    function setGraphRef() {
+        setNetworkGraphRef({
+            zoomToFit,
+            zoomIn,
+            zoomOut,
+            setSelectedNode
+        });
+    }
+
+    function runLayout() {
+        if (!cy.current) return;
+        cy.current.layout(layout).run();
+    }
+
+    useEffect(handleWindowResize, []);
+    useEffect(setGraphRef, []);
+    useEffect(runLayout, [nodes.length]);
 
     return (
         <div className="h-full w-full relative">
@@ -237,7 +248,14 @@ NetworkGraph.propTypes = {
     networkFlowMapping: PropTypes.shape({}).isRequired,
     onNodeClick: PropTypes.func.isRequired,
     filterState: PropTypes.number.isRequired,
-    setGraphRef: PropTypes.func.isRequired
+    setNetworkGraphRef: PropTypes.func.isRequired
 };
 
-export default NetworkGraph;
+const mapDispatchToProps = {
+    setNetworkGraphRef: graphActions.setNetworkGraphRef
+};
+
+export default connect(
+    null,
+    mapDispatchToProps
+)(NetworkGraph);

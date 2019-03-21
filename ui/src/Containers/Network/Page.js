@@ -25,12 +25,6 @@ class Page extends Component {
         this.props.setNetworkModification(null);
     }
 
-    setGraphRef = instance => {
-        this.graphInstance = instance;
-    };
-
-    getGraphRef = () => this.graphInstance;
-
     render() {
         return (
             <section className="flex flex-1 h-full w-full">
@@ -40,8 +34,8 @@ class Page extends Component {
                     </div>
                     <section className="network-grid-bg flex flex-1 relative">
                         <SimulationBorder />
-                        <Graph setGraphRef={this.setGraphRef} />
-                        <Wizard getGraphRef={this.getGraphRef} />
+                        <Graph />
+                        <Wizard />
                     </section>
                 </div>
                 <Dialogue />

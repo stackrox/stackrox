@@ -2,28 +2,39 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Button from 'Components/Button';
 import * as Icon from 'react-feather';
+import { connect } from 'react-redux';
+import { selectors } from 'reducers';
+import { createStructuredSelector } from 'reselect';
 
 class ZoomButtons extends Component {
     static propTypes = {
-        getGraphRef: PropTypes.func.isRequired
+        networkGraphRef: PropTypes.shape({
+            zoomToFit: PropTypes.func,
+            zoomIn: PropTypes.func,
+            zoomOut: PropTypes.func
+        })
+    };
+
+    static defaultProps = {
+        networkGraphRef: null
     };
 
     zoomToFit = () => {
-        const graph = this.props.getGraphRef();
+        const graph = this.props.networkGraphRef;
         if (graph) {
             graph.zoomToFit();
         }
     };
 
     zoomIn = () => {
-        const graph = this.props.getGraphRef();
+        const graph = this.props.networkGraphRef;
         if (graph) {
             graph.zoomIn();
         }
     };
 
     zoomOut = () => {
-        const graph = this.props.getGraphRef();
+        const graph = this.props.networkGraphRef;
         if (graph) {
             graph.zoomOut();
         }
@@ -56,4 +67,8 @@ class ZoomButtons extends Component {
     }
 }
 
-export default ZoomButtons;
+const mapStateToProps = createStructuredSelector({
+    networkGraphRef: selectors.getNetworkGraphRef
+});
+
+export default connect(mapStateToProps)(ZoomButtons);
