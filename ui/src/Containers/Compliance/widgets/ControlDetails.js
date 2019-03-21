@@ -39,7 +39,7 @@ const ControlDetails = ({ standardId, control, description, className }) => (
                 </div>
             </div>
         </div>
-        <div className="px-4 py-3 leading-loose">{description}</div>
+        <div className="px-4 py-3 leading-loose whitespace-pre-wrap">{description}</div>
     </Widget>
 );
 

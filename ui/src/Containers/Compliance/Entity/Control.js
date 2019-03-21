@@ -57,7 +57,7 @@ const ControlPage = ({ match, location, controlId, sidePanelMode }) => {
                                         className={`sx-2 ${pdfClassName}`}
                                         header="Control guidance"
                                     >
-                                        <div className="p-4 leading-loose">
+                                        <div className="p-4 leading-loose whitespace-pre-wrap">
                                             {interpretationText}
                                         </div>
                                     </Widget>
