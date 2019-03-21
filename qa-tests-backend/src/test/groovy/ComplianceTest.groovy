@@ -3,6 +3,7 @@ import com.opencsv.bean.CsvToBeanBuilder
 import com.opencsv.bean.HeaderColumnNameTranslateMappingStrategy
 import common.Constants
 import groups.BAT
+import groups.SensorBounce
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass
 import io.stackrox.proto.api.v1.ComplianceManagementServiceOuterClass.ComplianceRunScheduleInfo
 import io.stackrox.proto.storage.Compliance
@@ -909,7 +910,7 @@ class ComplianceTest extends BaseSpecification {
         }
     }
 
-    @Category([BAT])
+    @Category([SensorBounce])
     def "Verify failed run result"() {
         given:
         "Get Sensor pod name"

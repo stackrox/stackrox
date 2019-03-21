@@ -7,3 +7,4 @@ package groups
 @interface PolicyEnforcement { }
 @interface NetworkFlowVisualization { }
 @interface Upgrade { }
+@interface SensorBounce { }

@@ -6,11 +6,11 @@ import services.NetworkPolicyService
 import services.SecretService
 
 import org.junit.experimental.categories.Category
-import groups.BAT
+import groups.SensorBounce
 
 class ReconciliationTest extends BaseSpecification {
 
-    @Category(BAT)
+    @Category(SensorBounce)
     def "Verify the Sensor reconciles after being restarted"() {
         when:
         "Get Sensor and counts"
