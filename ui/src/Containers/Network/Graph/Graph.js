@@ -89,6 +89,7 @@ class Graph extends Component {
         if (process.env.NODE_ENV === 'development') {
             return (
                 <NetworkGraph2
+                    setGraphRef={setGraphRef}
                     updateKey={this.props.networkFlowGraphUpdateKey}
                     nodes={nodes}
                     networkFlowMapping={this.props.networkFlowMapping}

@@ -1,16 +1,28 @@
 import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
+
 import Cytoscape from 'cytoscape';
 import coseBilkentPlugin from 'cytoscape-cose-bilkent';
+import { coseBilkent as layout } from 'Containers/Network/Graph/networkGraphLayouts';
+
 import { getLinks } from 'utils/networkGraphUtils';
 import { uniq, debounce } from 'lodash';
-import { coseBilkent as layout } from 'Containers/Network/Graph/networkGraphLayouts';
+
 import filterModes from 'Containers/Network/Graph/filterModes';
 import style from 'Containers/Network/Graph/networkGraphStyles';
 
+import { MAX_ZOOM, MIN_ZOOM, ZOOM_STEP, GRAPH_PADDING } from 'constants/cytoscapeGraph';
+
 Cytoscape.use(coseBilkentPlugin);
 
-const NetworkGraph = ({ nodes, networkFlowMapping, onNodeClick, updateKey, filterState }) => {
+const NetworkGraph = ({
+    nodes,
+    networkFlowMapping,
+    onNodeClick,
+    updateKey,
+    filterState,
+    setGraphRef
+}) => {
     const selectedNode = useRef();
     let cy = useRef();
 
@@ -128,6 +140,26 @@ const NetworkGraph = ({ nodes, networkFlowMapping, onNodeClick, updateKey, filte
         onNodeClick(node);
     }
 
+    function zoomToFit() {
+        cy.fit(null, GRAPH_PADDING);
+    }
+
+    function zoomIn() {
+        cy.zoom({
+            level: Math.max(cy.zoom() + ZOOM_STEP, MIN_ZOOM),
+            position: { x: 0, y: 0 }
+        });
+        cy.center();
+    }
+
+    function zoomOut() {
+        cy.zoom({
+            level: Math.min(cy.zoom() - ZOOM_STEP, MAX_ZOOM),
+            position: { x: 0, y: 0 }
+        });
+        cy.center();
+    }
+
     // New Nodes: Create new cytoscape instance
     useEffect(
         () => {
@@ -141,20 +173,24 @@ const NetworkGraph = ({ nodes, networkFlowMapping, onNodeClick, updateKey, filte
                     clickHandler(ev);
                 })
                 .on('mouseover', 'node', debounce(nodeHoverHandler, 100))
-                .on('mouseout', 'node', nodeMouseOutHandler);
+                .on('mouseout', 'node', nodeMouseOutHandler)
+                .maxZoom(MAX_ZOOM)
+                .minZoom(MIN_ZOOM);
+
             window.CY = cy;
 
             // handle resizing
             window.addEventListener(
                 'resize',
                 debounce(() => {
-                    cy.fit(null, 50);
+                    cy.fit(null, GRAPH_PADDING);
                 }, 100)
             );
             // Return cleanup function
             const cleanup = () => {
                 window.removeEventListener('resize');
             };
+
             return cleanup;
         },
         [nodes.length, filterState]
@@ -167,6 +203,12 @@ const NetworkGraph = ({ nodes, networkFlowMapping, onNodeClick, updateKey, filte
         },
         [updateKey]
     );
+
+    setGraphRef({
+        zoomToFit,
+        zoomIn,
+        zoomOut
+    });
 
     return (
         <div className="h-full w-full relative">
@@ -190,7 +232,8 @@ NetworkGraph.propTypes = {
     networkFlowMapping: PropTypes.shape({}).isRequired,
     onNodeClick: PropTypes.func.isRequired,
     updateKey: PropTypes.number.isRequired,
-    filterState: PropTypes.number.isRequired
+    filterState: PropTypes.number.isRequired,
+    setGraphRef: PropTypes.func.isRequired
 };
 
 export default NetworkGraph;
