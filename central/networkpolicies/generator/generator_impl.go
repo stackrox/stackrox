@@ -140,8 +140,8 @@ func generatePolicy(node *node, namespacesByName map[string]*storage.NamespaceMe
 	ingressRule := generateIngressRule(node, namespacesByName)
 	if ingressRule != nil {
 		policy.Spec.Ingress = append(policy.Spec.Ingress, ingressRule)
-		policy.Spec.PolicyTypes = append(policy.Spec.PolicyTypes, storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE)
 	}
+	policy.Spec.PolicyTypes = append(policy.Spec.PolicyTypes, storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE)
 
 	return policy
 }

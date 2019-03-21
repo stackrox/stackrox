@@ -381,9 +381,6 @@ func (s *generatorTestSuite) TestGenerate() {
 				PodSelector: &storage.LabelSelector{
 					MatchLabels: map[string]string{"depID": "D"},
 				},
-				Ingress: []*storage.NetworkPolicyIngressRule{
-					{},
-				},
 			},
 		},
 	}

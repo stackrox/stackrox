@@ -3,13 +3,7 @@ package generator
 import "github.com/stackrox/rox/generated/storage"
 
 var allowAllIngress = &storage.NetworkPolicyIngressRule{
-	From: []*storage.NetworkPolicyPeer{
-		{
-			IpBlock: &storage.IPBlock{
-				Cidr: "0.0.0.0/0",
-			},
-		},
-	},
+	From: []*storage.NetworkPolicyPeer{},
 }
 
 func generateIngressRule(node *node, namespacesByName map[string]*storage.NamespaceMetadata) *storage.NetworkPolicyIngressRule {
@@ -31,6 +25,10 @@ func generateIngressRule(node *node, namespacesByName map[string]*storage.Namesp
 		}
 
 		peers = append(peers, peer)
+	}
+
+	if len(peers) == 0 {
+		return nil
 	}
 
 	return &storage.NetworkPolicyIngressRule{
