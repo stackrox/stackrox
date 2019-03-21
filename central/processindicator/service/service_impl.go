@@ -5,9 +5,10 @@ import (
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -31,6 +32,7 @@ var (
 
 type serviceImpl struct {
 	processIndicators processIndicatorStore.DataStore
+	deployments       deploymentStore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -52,6 +54,13 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func (s *serviceImpl) GetProcessesByDeployment(_ context.Context, req *v1.GetProcessesByDeploymentRequest) (*v1.GetProcessesResponse, error) {
 	if req.GetDeploymentId() == "" {
 		return nil, status.Error(codes.Internal, "Deployment ID must be specified when retrieving processes")
+	}
+	_, exists, err := s.deployments.GetDeployment(req.GetDeploymentId())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if !exists {
+		return nil, status.Errorf(codes.NotFound, "deployment with id '%s' does not exist", req.GetDeploymentId())
 	}
 	indicators, err := s.processIndicators.SearchRawProcessIndicators(
 		search.NewQueryBuilder().

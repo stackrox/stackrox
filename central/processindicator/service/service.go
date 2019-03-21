@@ -1,8 +1,9 @@
 package service
 
 import (
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 )
 
@@ -14,8 +15,9 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(processIndicators processIndicatorDataStore.DataStore) Service {
+func New(processIndicators processIndicatorDataStore.DataStore, deployments deploymentDataStore.DataStore) Service {
 	return &serviceImpl{
+		deployments:       deployments,
 		processIndicators: processIndicators,
 	}
 }
