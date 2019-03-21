@@ -10,12 +10,12 @@ import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as deploymentActions } from 'reducers/deployments';
 
 import NoResultsMessage from 'Components/NoResultsMessage';
+import NetworkGraph from 'Components/NetworkGraph';
+import NetworkGraph2 from 'Components/NetworkGraph2';
 import wizardStages from '../Wizard/wizardStages';
 import filterModes from './filterModes';
 import Filters from './Overlays/Filters';
 import Legend from './Overlays/Legend';
-import NetworkGraph from '../../../Components/NetworkGraph';
-import NetworkGraph2 from '../../../Components/NetworkGraph2';
 
 class Graph extends Component {
     static propTypes = {
@@ -42,7 +42,10 @@ class Graph extends Component {
         fetchNetworkPolicies: PropTypes.func.isRequired,
 
         setWizardStage: PropTypes.func.isRequired,
-        openWizard: PropTypes.func.isRequired
+        openWizard: PropTypes.func.isRequired,
+
+        isLoading: PropTypes.bool.isRequired,
+        setNetworkGraphLoading: PropTypes.func.isRequired
     };
 
     static defaultProps = {
@@ -52,7 +55,8 @@ class Graph extends Component {
     shouldComponentUpdate(nextProps) {
         return (
             nextProps.networkFlowGraphUpdateKey !== this.props.networkFlowGraphUpdateKey ||
-            nextProps.filterState !== this.props.filterState
+            nextProps.filterState !== this.props.filterState ||
+            nextProps.isLoading !== this.props.isLoading
         );
     }
 
@@ -65,8 +69,8 @@ class Graph extends Component {
     };
 
     renderGraph = nodes => {
-        // If we have more than 200 nodes, display a message instead of the graph.
-        if (nodes.length > 1500) {
+        // If we have more than 700 nodes, display a message instead of the graph.
+        if (nodes.length > 1000) {
             // hopefully a temporal solution
             return (
                 <NoResultsMessage message="There are too many deployments to render on the graph. Please refine your search to a set of namespaces or deployments to display." />
@@ -76,7 +80,9 @@ class Graph extends Component {
             filterState,
             networkFlowMapping,
             networkFlowGraphUpdateKey,
-            setGraphRef
+            setGraphRef,
+            isLoading,
+            setNetworkGraphLoading
         } = this.props;
         const filteredNetworkFlowMapping =
             filterState === filterModes.allowed ? {} : networkFlowMapping;
@@ -99,6 +105,8 @@ class Graph extends Component {
                 networkFlowMapping={filteredNetworkFlowMapping}
                 onNodeClick={this.onNodeClick}
                 filterState={filterState}
+                setNetworkGraphLoading={setNetworkGraphLoading}
+                isLoading={isLoading}
             />
         );
     };
@@ -147,7 +155,9 @@ const mapStateToProps = createStructuredSelector({
     networkFlowGraph: selectors.getNetworkFlowGraph,
     networkFlowMapping: selectors.getNetworkFlowMapping,
     networkFlowGraphUpdateKey: selectors.getNetworkFlowGraphUpdateKey,
-    networkFlowGraphState: selectors.getNetworkFlowGraphState
+    networkFlowGraphState: selectors.getNetworkFlowGraphState,
+
+    isLoading: selectors.getNetworkGraphLoading
 });
 
 const mapDispatchToProps = {
@@ -156,7 +166,9 @@ const mapDispatchToProps = {
     fetchNetworkPolicies: backendActions.fetchNetworkPolicies.request,
 
     openWizard: pageActions.openNetworkWizard,
-    setWizardStage: wizardActions.setNetworkWizardStage
+    setWizardStage: wizardActions.setNetworkWizardStage,
+
+    setNetworkGraphLoading: graphActions.setNetworkGraphLoading
 };
 
 export default connect(

@@ -10,13 +10,18 @@ import { actions as graphActions } from 'reducers/network/graph';
 
 class NodesUpdateSection extends Component {
     static propTypes = {
-        lastUpdatedEpoch: PropTypes.number.isRequired,
-        lastUpdatedTimestamp: PropTypes.instanceOf(Date).isRequired,
+        lastUpdatedEpoch: PropTypes.number,
+        lastUpdatedTimestamp: PropTypes.instanceOf(Date),
         networkPolicyGraph: PropTypes.shape({
             epoch: PropTypes.number
         }).isRequired,
         networkNodesUpdate: PropTypes.func.isRequired,
         incrementNetworkGraphUpdateKey: PropTypes.func.isRequired
+    };
+
+    static defaultProps = {
+        lastUpdatedTimestamp: null,
+        lastUpdatedEpoch: null
     };
 
     onUpdateGraph = () => {

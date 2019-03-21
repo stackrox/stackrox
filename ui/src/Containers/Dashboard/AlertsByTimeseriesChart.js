@@ -116,7 +116,27 @@ const AlertsByTimeseriesChart = ({ clusterData }) => (
 );
 
 AlertsByTimeseriesChart.propTypes = {
-    clusterData: PropTypes.string.isRequired
+    clusterData: PropTypes.arrayOf(
+        PropTypes.shape({
+            cluster: PropTypes.string.isRequired,
+            severities: PropTypes.arrayOf(
+                PropTypes.shape({
+                    severity: PropTypes.string.isRequired,
+                    events: PropTypes.arrayOf(
+                        PropTypes.shape({
+                            id: PropTypes.string.isRequired,
+                            time: PropTypes.string.isRequired,
+                            type: PropTypes.string.isRequired
+                        })
+                    )
+                })
+            )
+        })
+    )
+};
+
+AlertsByTimeseriesChart.defaultProps = {
+    clusterData: []
 };
 
 export default connect()(AlertsByTimeseriesChart);

@@ -1150,3 +1150,8 @@ h6 {
   bottom: -13px;
   padding-top: 3px;
 }
+
+.pin-center {
+  top: 50%;
+  left: 50%;
+}

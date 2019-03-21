@@ -47,6 +47,7 @@ const SceneManager = canvas => {
             constants.MAX_ZOOM
         );
         orthographicCamera.position.z = constants.MIN_ZOOM;
+        orthographicCamera.updateProjectionMatrix();
         return orthographicCamera;
     }
 

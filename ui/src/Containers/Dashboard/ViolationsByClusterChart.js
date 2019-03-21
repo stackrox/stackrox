@@ -18,10 +18,25 @@ import { severityLabels } from 'messages/common';
 
 class ViolationsByClusterChart extends Component {
     static propTypes = {
-        clusterCharts: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+        clusterCharts: PropTypes.arrayOf(
+            PropTypes.arrayOf(
+                PropTypes.shape({
+                    name: PropTypes.string.isRequired,
+                    Critical: PropTypes.number.isRequired,
+                    High: PropTypes.number.isRequired,
+                    Medium: PropTypes.number.isRequired,
+                    Low: PropTypes.number.isRequired
+                })
+            )
+        ),
         history: PropTypes.shape({
             push: PropTypes.func.isRequired
-        }).isRequired
+        })
+    };
+
+    static defaultProps = {
+        clusterCharts: [],
+        history: null
     };
 
     makeBarClickHandler = (clusterName, severity) => () => {
@@ -98,12 +113,5 @@ class ViolationsByClusterChart extends Component {
         );
     }
 }
-
-ViolationsByClusterChart.propTypes = {
-    clusterCharts: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-    history: PropTypes.shape({
-        push: PropTypes.func.isRequired
-    }).isRequired
-};
 
 export default ViolationsByClusterChart;

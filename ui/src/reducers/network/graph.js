@@ -21,7 +21,8 @@ export const types = {
     SELECT_NETWORK_CLUSTER_ID: 'network/SELECT_NETWORK_CLUSTER_ID',
     INCREMENT_NETWORK_GRAPH_UPDATE_KEY: 'network/INCREMENT_NETWORK_GRAPH_UPDATE_KEY',
     UPDATE_NETWORK_GRAPH_TIMESTAMP: 'network/UPDATE_NETWORK_GRAPH_TIMESTAMP',
-    NETWORK_NODES_UPDATE: 'network/NETWORK_NODES_UPDATE'
+    NETWORK_NODES_UPDATE: 'network/NETWORK_NODES_UPDATE',
+    NETWORK_GRAPH_LOADING: 'network/NETWORK_GRAPH_LOADING'
 };
 
 // Actions
@@ -53,6 +54,10 @@ export const actions = {
     }),
     networkNodesUpdate: () => ({
         type: types.NETWORK_NODES_UPDATE
+    }),
+    setNetworkGraphLoading: isNetworkGraphLoading => ({
+        type: types.NETWORK_GRAPH_LOADING,
+        isNetworkGraphLoading
     })
 };
 
@@ -143,13 +148,21 @@ const lastUpdatedTimestamp = (state = null, action) => {
     return state;
 };
 
+const isNetworkGraphLoading = (state = true, action) => {
+    if (action.type === types.NETWORK_GRAPH_LOADING) {
+        return action.isNetworkGraphLoading;
+    }
+    return state;
+};
+
 const reducer = combineReducers({
     networkGraphFilterMode,
     networkFlowMapping,
     selectedNodeId,
     selectedNetworkClusterId,
     networkFlowGraphUpdateKey,
-    lastUpdatedTimestamp
+    lastUpdatedTimestamp,
+    isNetworkGraphLoading
 });
 
 // Selectors
@@ -160,6 +173,7 @@ const getSelectedNodeId = state => state.selectedNodeId;
 const getSelectedNetworkClusterId = state => state.selectedNetworkClusterId;
 const getNetworkFlowGraphUpdateKey = state => state.networkFlowGraphUpdateKey.key;
 const getLastUpdatedTimestamp = state => state.lastUpdatedTimestamp;
+const getNetworkGraphLoading = state => state.isNetworkGraphLoading;
 
 export const selectors = {
     getNetworkGraphFilterMode,
@@ -167,7 +181,8 @@ export const selectors = {
     getSelectedNodeId,
     getSelectedNetworkClusterId,
     getNetworkFlowGraphUpdateKey,
-    getLastUpdatedTimestamp
+    getLastUpdatedTimestamp,
+    getNetworkGraphLoading
 };
 
 export default reducer;
