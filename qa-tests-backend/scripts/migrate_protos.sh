@@ -10,7 +10,7 @@ for file in $(find ../proto/*); do
     fi
 done
 
-for file in $(find ../proto/*); do
+for file in $(find ../proto/* -name '*.proto'); do
     if [[ -f $file ]]; then
         java_file=${file#"../proto/"}
         sed -e 's/\[[^][]*\]//g' "$file" | sed -e 's/\[[^][]*\]//g' | sed '/gogo/d' > "${JAVA_PATH}${java_file}"

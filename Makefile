@@ -228,7 +228,9 @@ ifeq ($(UNAME_S),Darwin)
 endif
 PLATFORMS := --platforms=@io_bazel_rules_go//go/toolchain:$(BAZEL_OS)_amd64
 
-BAZEL_FLAGS := $(PURE) $(LINUX_AMD64) $(VARIABLE_STAMPS) --define gotags=$(GOTAGS)
+BAZEL_BASE_FLAGS := $(PURE) $(VARIABLE_STAMPS) --define gotags=$(GOTAGS)
+BAZEL_FLAGS := $(BAZEL_BASE_FLAGS) $(LINUX_AMD64)
+
 cleanup:
 	@echo "Total BUILD.bazel files deleted: "
 	@git status --ignored --untracked-files=all --porcelain | grep '^\(!!\|??\) ' | cut -d' ' -f 2- | grep '\(/\|^\)BUILD\.bazel$$' | xargs rm -v | wc -l
@@ -291,7 +293,7 @@ bazel-test: gazelle
 	-rm vendor/github.com/grpc-ecosystem/grpc-gateway/BUILD
 	@# Be careful if you add action_env arguments; their values can invalidate cached
 	@# test results. See https://github.com/bazelbuild/bazel/issues/2574#issuecomment-320006871.
-	bazel coverage $(BAZEL_FLAGS) $(RACE) \
+	bazel coverage $(BAZEL_BASE_FLAGS) $(RACE) \
 	    --test_output=errors \
 	    -- \
 	    //... -proto/... -tests/... -vendor/...
