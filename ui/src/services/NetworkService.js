@@ -109,6 +109,28 @@ export function getActiveNetworkModification(clusterId, deploymentQuery) {
 }
 
 /**
+ * Retrieves the modification that will undo the last action done through the stackrox UI.
+ *
+ * @param {!String} clusterId
+ * @param {!Object} query
+ * @returns {Promise<Object, Error>}
+ */
+export function getUndoNetworkModification(clusterId) {
+    const params = queryString.stringify({ clusterId });
+    const options = {
+        method: 'GET',
+        url: `${networkPoliciesBaseUrl}?${params}`
+    };
+    return axios(options).then(response => {
+        const policies = response.data.networkPolicies;
+        if (policies) {
+            return { applyYaml: policies.map(policy => policy.yaml).join('\n---\n') };
+        }
+        return null;
+    });
+}
+
+/**
  * Generates a modification to policies based on a graph.
  *
  * @param {!String} clusterId

@@ -8,6 +8,10 @@ import Message from 'Components/Message';
 import Tabs from 'Components/Tabs';
 import TabContent from 'Components/TabContent';
 import UsageButtons from './UsageButtons';
+import Download from './Icons/Download';
+import Generate from './Icons/Generate';
+import Undo from './Icons/Undo';
+import Upload from './Icons/Upload';
 
 class SuccessView extends Component {
     static propTypes = {
@@ -17,7 +21,8 @@ class SuccessView extends Component {
             applyYaml: PropTypes.string.isRequired
         }),
         modificationState: PropTypes.string.isRequired,
-        policyGraphState: PropTypes.string.isRequired
+        policyGraphState: PropTypes.string.isRequired,
+        timeWindow: PropTypes.string.isRequired
     };
 
     static defaultProps = {
@@ -44,7 +49,7 @@ class SuccessView extends Component {
     };
 
     render() {
-        const { modification, modificationState, policyGraphState } = this.props;
+        const { modification, modificationState, policyGraphState, timeWindow } = this.props;
         if (
             modification === null ||
             modificationState !== 'SUCCESS' ||
@@ -52,23 +57,39 @@ class SuccessView extends Component {
         )
             return null;
 
+        const timeWindowMessage =
+            timeWindow === 'All Time'
+                ? 'all network activity'
+                : `network activity in the ${timeWindow.toLowerCase()}`;
+
         let successMessage;
         const { modificationSource } = this.props;
         if (modificationSource === 'UPLOAD') {
             successMessage = 'YAML uploaded successfully';
         }
         if (modificationSource === 'GENERATED') {
-            successMessage = 'YAML generated successfully';
+            successMessage = `YAML generated successfully from ${timeWindowMessage}`;
         }
         if (modificationSource === 'ACTIVE') {
             successMessage = 'Active YAML';
+        }
+        if (modificationSource === 'UNDO') {
+            successMessage = 'Viewing modification that will undo last applied change';
         }
 
         return (
             <div className="flex flex-col w-full h-full space-between">
                 <section className="flex flex-col bg-base-100 shadow text-base-600 border border-base-200 m-3 mt-4 overflow-hidden h-full">
                     <Message type="info" message={successMessage} />
-                    <div className="flex relative h-full">{this.renderTabs()}</div>
+                    <div className="flex relative h-full border-t border-r border-base-300">
+                        {this.renderTabs()}
+                        <div className="absolute pin-r pin-t h-9 z-10">
+                            <Undo />
+                            <Generate />
+                            <Upload />
+                            <Download />
+                        </div>
+                    </div>
                 </section>
                 <UsageButtons />
             </div>
@@ -81,7 +102,8 @@ const mapStateToProps = createStructuredSelector({
     modificationSource: selectors.getNetworkPolicyModificationSource,
     modification: selectors.getNetworkPolicyModification,
     modificationState: selectors.getNetworkPolicyModificationState,
-    policyGraphState: selectors.getNetworkPolicyGraphState
+    policyGraphState: selectors.getNetworkPolicyGraphState,
+    timeWindow: selectors.getNetworkActivityTimeWindow
 });
 
 export default connect(mapStateToProps)(SuccessView);

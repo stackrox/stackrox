@@ -1,20 +1,18 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
+import Tooltip from 'rc-tooltip';
 import * as Icon from 'react-feather';
 import ReactDropzone from 'react-dropzone';
-
-import { actions as notificationActions } from 'reducers/notifications';
 import { actions as wizardActions } from 'reducers/network/wizard';
-import wizardStages from 'Containers/Network/Wizard/wizardStages';
+import { actions as notificationActions } from 'reducers/notifications';
 
-class DragAndDrop extends Component {
+class Upload extends Component {
     static propTypes = {
         setNetworkPolicyModification: PropTypes.func.isRequired,
         setNetworkPolicyModificationState: PropTypes.func.isRequired,
         setNetworkPolicyModificationSource: PropTypes.func.isRequired,
         setNetworkPolicyModificationName: PropTypes.func.isRequired,
-        setWizardStage: PropTypes.func.isRequired,
 
         addToast: PropTypes.func.isRequired,
         removeToast: PropTypes.func.isRequired
@@ -41,7 +39,6 @@ class DragAndDrop extends Component {
             };
             reader.readAsBinaryString(file);
             this.props.setNetworkPolicyModificationSource('UPLOAD');
-            this.props.setWizardStage(wizardStages.simulator);
         });
     };
 
@@ -51,48 +48,21 @@ class DragAndDrop extends Component {
         setTimeout(this.props.removeToast, 500);
     };
 
-    renderHeader = () => (
-        <div className="flex text-accent-700 p-3 border-b border-base-300 mb-2 items-center flex-no-shrink">
-            <Icon.Upload size="20px" strokeWidth="1.5px" />
-
-            <div className="pl-3 font-700 text-lg">Upload a network policy YAML</div>
-        </div>
-    );
-
-    renderDescription = () => (
-        <div className="mb-3 px-3 font-600 text-lg leading-loose text-base-600">
-            Upload your network policies to quickly preview your environment under different policy
-            configurations and time windows. When ready, apply the network policies directly or
-            share them with your team.
-        </div>
-    );
-
-    renderDropZone = () => (
-        <ReactDropzone
-            onDrop={this.onDrop}
-            className="flex w-full min-h-32 h-full mt-3 py-3 flex-col self-center uppercase hover:bg-warning-100 border border-dashed border-warning-500 bg-warning-100 hover:bg-warning-200 cursor-pointer justify-center"
-        >
-            <div className="flex flex-no-shrink flex-col">
-                <div
-                    className="mt-3 h-18 w-18 self-center rounded-full flex items-center justify-center flex-no-shrink"
-                    style={{ background: '#faecd2', color: '#b39357' }}
-                >
-                    <Icon.Upload className="h-8 w-8" strokeWidth="1.5px" />
-                </div>
-                <span className="font-700 mt-3 text-center text-warning-800">
-                    Upload and simulate network policy YAML
-                </span>
-            </div>
-        </ReactDropzone>
-    );
-
     render() {
         return (
-            <div className="flex flex-col bg-base-100 rounded-sm shadow flex-grow flex-no-shrink mb-4">
-                {this.renderHeader()}
-                {this.renderDescription()}
-                {this.renderDropZone()}
-            </div>
+            <ReactDropzone
+                onDrop={this.onDrop}
+                className="inline-block px-2 py-2 border-r border-base-300 cursor-pointer"
+            >
+                <Tooltip
+                    placement="top"
+                    overlay={<div>Upload a new YAML</div>}
+                    mouseEnterDelay={0.5}
+                    mouseLeaveDelay={0}
+                >
+                    <Icon.Upload className="h-4 w-4 text-base-500 hover:bg-base-200" />
+                </Tooltip>
+            </ReactDropzone>
         );
     }
 }
@@ -103,8 +73,6 @@ const mapDispatchToProps = {
     setNetworkPolicyModificationSource: wizardActions.setNetworkPolicyModificationSource,
     setNetworkPolicyModificationName: wizardActions.setNetworkPolicyModificationName,
 
-    setWizardStage: wizardActions.setNetworkWizardStage,
-
     addToast: notificationActions.addNotification,
     removeToast: notificationActions.removeOldestNotification
 };
@@ -112,4 +80,4 @@ const mapDispatchToProps = {
 export default connect(
     null,
     mapDispatchToProps
-)(DragAndDrop);
+)(Upload);

@@ -128,6 +128,22 @@ export function* getActiveNetworkModification() {
     }
 }
 
+export function* getUndoNetworkModification() {
+    yield put(wizardNetworkActions.setNetworkPolicyModificationName('Undo'));
+    yield put(wizardNetworkActions.setNetworkPolicyModificationState('REQUEST'));
+    try {
+        const clusterId = yield select(selectors.getSelectedNetworkClusterId);
+        const modification = yield call(service.getUndoNetworkModification, clusterId);
+        yield put(wizardNetworkActions.setNetworkPolicyModificationSource('UNDO'));
+        yield put(wizardNetworkActions.setNetworkPolicyModification(modification));
+        yield put(wizardNetworkActions.setNetworkPolicyModificationState('SUCCESS'));
+    } catch (error) {
+        yield put(wizardNetworkActions.setNetworkPolicyModificationState('ERROR'));
+        yield put(notificationActions.addNotification(error.response.data.error));
+        yield put(notificationActions.removeOldestNotification());
+    }
+}
+
 function* sendNetworkModificationNotification() {
     try {
         const clusterId = yield select(selectors.getSelectedNetworkClusterId);
@@ -223,6 +239,13 @@ function* watchActiveNetworkModification() {
     );
 }
 
+function* watchUndoNetworkModification() {
+    yield takeLatest(
+        wizardNetworkTypes.LOAD_UNDO_NETWORK_POLICY_MODIFICATION,
+        getUndoNetworkModification
+    );
+}
+
 function* watchGenerateNetworkModification() {
     yield takeLatest(
         wizardNetworkTypes.GENERATE_NETWORK_POLICY_MODIFICATION,
@@ -267,6 +290,7 @@ export default function* network() {
         fork(watchNetworkPoliciesRequest),
         fork(watchFetchDeploymentRequest),
         fork(watchActiveNetworkModification),
+        fork(watchUndoNetworkModification),
         fork(watchGenerateNetworkModification),
         fork(watchSelectNetworkCluster),
         fork(watchSetActivityTimeWindow),
