@@ -3499,7 +3499,7 @@ cytoscape-cose-bilkent@^4.0.0:
   resolved "https://registry.yarnpkg.com/cytoscape-cose-bilkent/-/cytoscape-cose-bilkent-4.0.0.tgz#5f0afbe5c55a7a026442b756ca388ce77c262967"
   integrity sha1-Xwr75cVaegJkQrdWyjiM53wmKWc=
 
-cytoscape@^3.5.0:
+cytoscape@^3.2.19, cytoscape@^3.5.0:
   version "3.5.0"
   resolved "https://registry.yarnpkg.com/cytoscape/-/cytoscape-3.5.0.tgz#b6cc5a9c66b7f29f8d7f6dfbb0c0e31a8af748a1"
   integrity sha512-00CKGVqp8L1TOPfDv8Xfra0pBcSkMHpk0VmLNKRxQ+isSvDtJafDYfvcTCUO4CrvKW2c7pKli0ZcWPjProBGTw==
@@ -10184,6 +10184,14 @@ react-copy-to-clipboard@^5.0.1:
   dependencies:
     copy-to-clipboard "^3"
     prop-types "^15.5.8"
+
+react-cytoscapejs@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/react-cytoscapejs/-/react-cytoscapejs-1.1.0.tgz#2175e444f12f4023901a960f71e761cb5b5d0b3a"
+  integrity sha512-CdeEVsOQmw3Cqz47Hx83RelZLT9y3ct6t+YTQ0nRdAt7n+bYD/bTskAmfAm1GvQhzCKylYi2VcY05B8nC4u2Gw==
+  dependencies:
+    cytoscape "^3.2.19"
+    prop-types "^15.6.2"
 
 react-dev-utils@^6.1.1:
   version "6.1.1"

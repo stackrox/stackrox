@@ -386,6 +386,16 @@ dependencies:
     attribution:
       - 2016 Nik Butenko
 
+  ui/node_modules/react-cytoscapejs:
+    url: https://github.com/plotly/react-cytoscapejs
+    license: MIT
+    files:
+      LICENSE: 0876f4ab580161849dbd1c422c9a93fbc83fc1e75cdc6355cc10907edb850afe
+      package.json:
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+      - Max Franz
+
   ui/node_modules/react-dom:
     url: https://github.com/facebook/react/tree/master/packages/react-dom
     license: MIT
