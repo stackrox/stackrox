@@ -201,7 +201,7 @@ const policyDetailsFormDescriptor = [
         default: true
     },
     {
-        label: 'Images Whitelist',
+        label: 'Images Whitelist (Build Lifecycle only)',
         jsonpath: 'images',
         type: 'multiselect-creatable',
         options: [],

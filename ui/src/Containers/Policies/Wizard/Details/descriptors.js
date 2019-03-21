@@ -110,13 +110,13 @@ const fieldsMap = {
         formatValue: d => {
             const whitelistObj = {};
             const deployments = d
-                .filter(obj => obj.deployment !== null && obj.deployment.name !== '')
+                .filter(obj => obj.deployment && obj.deployment.name !== '')
                 .map(obj => obj.deployment.name);
             if (deployments.length !== 0) {
                 whitelistObj['Deployment Whitelists'] = deployments;
             }
             const images = d
-                .filter(obj => obj.image != null && obj.image.name !== '')
+                .filter(obj => obj.image && obj.image.name !== '')
                 .map(obj => obj.image.name);
             if (images.length !== 0) {
                 whitelistObj['Image Whitelists'] = images;
