@@ -32,7 +32,7 @@ const networkDialogueStage = (state = dialogueStages.closed, action) => {
     return state;
 };
 
-const selectedNetworkNotifiers = (state = null, action) => {
+const selectedNetworkNotifiers = (state = [], action) => {
     if (action.type === types.SET_NETWORK_NOTIFIERS) {
         return action.notifierIds;
     }
