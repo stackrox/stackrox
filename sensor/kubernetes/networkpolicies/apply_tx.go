@@ -19,6 +19,15 @@ const (
 	disablePolicyLabelKey   = `network-policies.stackrox.io/disable`
 	disablePolicyLabelValue = `nomatch`
 
+	previousJSONAnnotationKey   = `network-policies.stackrox.io/previous-json`
+	applyTimestampAnnotationKey = `network-policies.stackrox.io/apply-timestamp`
+
+	deletedAnnotationKey   = `network-policies.stackrox.io/deleted`
+	deletedAnnotationValue = `This network policy was deleted via StackRox. To avoid the risk of data loss, it has been preserved but ` +
+		`rendered ineffective by means of a special pod selector. Remove the "` + disablePolicyLabelKey + `" pod ` +
+		`selector and rename the policy to restore it.`
+	originalNameAnnotationKey = `network-policies.stackrox.io/original-name`
+
 	yamlSep = "---\n"
 
 	maxConflictRetries = 5
@@ -62,25 +71,23 @@ func (t *applyTx) Do(newOrUpdated []*networkingV1.NetworkPolicy, toDelete map[k8
 	return nil
 }
 
-func (t *applyTx) oldNetworkPolicyJSONAnnotationKey() string {
-	return fmt.Sprintf("previous-json.network-policies.stackrox.io/%s", t.id)
-}
-
-func (t *applyTx) applyTimestampAnnotationKey() string {
-	return fmt.Sprintf("apply-timestamp.network-policies.stackrox.io/%s", t.id)
-}
-
 func (t *applyTx) annotateAndLabel(np *networkingV1.NetworkPolicy) {
 	if np.Annotations == nil {
 		np.Annotations = make(map[string]string)
 	}
-	np.Annotations[t.applyTimestampAnnotationKey()] = t.timestamp
+	np.Annotations[applyTimestampAnnotationKey] = t.timestamp
 
 	if np.Labels == nil {
 		np.Labels = make(map[string]string)
 	}
 	np.Labels[applyIDLabelKey] = t.id
 }
+
+type norecordAction struct {
+	rollbackAction
+}
+
+func (a norecordAction) Record(mod *storage.NetworkPolicyModification) {}
 
 type deletePolicy struct {
 	name, namespace string
@@ -98,7 +105,8 @@ func (a *deletePolicy) Record(mod *storage.NetworkPolicyModification) {
 }
 
 type restorePolicy struct {
-	oldPolicy *networkingV1.NetworkPolicy
+	oldPolicy  *networkingV1.NetworkPolicy
+	wasDeleted bool
 }
 
 func (a *restorePolicy) Execute(client networkingV1Client.NetworkingV1Interface) error {
@@ -118,10 +126,12 @@ func (a *restorePolicy) Record(mod *storage.NetworkPolicyModification) {
 	}
 	mod.ApplyYaml += yaml
 
-	mod.ToDelete = append(mod.ToDelete, &storage.NetworkPolicyReference{
-		Namespace: a.oldPolicy.Namespace,
-		Name:      a.oldPolicy.Name,
-	})
+	if !a.wasDeleted {
+		mod.ToDelete = append(mod.ToDelete, &storage.NetworkPolicyReference{
+			Namespace: a.oldPolicy.Namespace,
+			Name:      a.oldPolicy.Name,
+		})
+	}
 }
 
 func (t *applyTx) Rollback() error {
@@ -154,13 +164,16 @@ func (t *applyTx) replaceNetworkPolicy(policy *networkingV1.NetworkPolicy) error
 			return fmt.Errorf("retrieving network policy: %v", err)
 		}
 
-		oldJSON, err := json.Marshal(old)
+		// Do not serialize the `previous JSON` annotation when JSON-encoding.
+		oldStripped := old.DeepCopy()
+		delete(oldStripped.Annotations, previousJSONAnnotationKey)
+		oldJSON, err := json.Marshal(oldStripped)
 		if err != nil {
 			return fmt.Errorf("marshalling old network policy: %v", err)
 		}
 
 		t.annotateAndLabel(policy)
-		policy.Annotations[t.oldNetworkPolicyJSONAnnotationKey()] = string(oldJSON)
+		policy.Annotations[previousJSONAnnotationKey] = string(oldJSON)
 
 		updated, err := nsClient.Update(policy)
 		if err != nil {
@@ -187,36 +200,40 @@ func (t *applyTx) replaceNetworkPolicy(policy *networkingV1.NetworkPolicy) error
 func (t *applyTx) deleteNetworkPolicy(namespace, name string) error {
 	nsClient := t.networkingClient.NetworkPolicies(namespace)
 
-	for retryCount := 0; retryCount < maxConflictRetries; retryCount++ {
-		existing, err := nsClient.Get(name, metav1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("retrieving network policy: %v", err)
-		}
-
-		disabled := existing.DeepCopy()
-		t.annotateAndLabel(disabled)
-		disabled.Spec.PodSelector.MatchLabels[disablePolicyLabelKey] = disablePolicyLabelValue
-
-		updated, err := nsClient.Update(disabled)
-		if err != nil {
-			if errors.IsConflict(err) {
-				log.Errorf("Encountered conflict when trying to delete network policy %s/%s: %v. Retrying (attempt %d of %d)...", existing.GetNamespace(), existing.GetName(), err, retryCount+1, maxConflictRetries)
-				continue
-			}
-			return fmt.Errorf("updating network policy: %v", err)
-		}
-
-		// For rollback, update the resource version of the original network policy to the updated one, so we don't
-		// accidentally overwrite a concurrent modification.
-		existing.ResourceVersion = updated.ResourceVersion
-		t.rollbackActions = append(t.rollbackActions, &restorePolicy{
-			oldPolicy: existing,
-		})
-
-		return nil
+	existing, err := nsClient.Get(name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("retrieving network policy: %v", err)
 	}
 
-	return fmt.Errorf("trying to delete network policy %s/%s: giving up after %d conflicts", namespace, name, maxConflictRetries)
+	deleted := existing.DeepCopy()
+	// no need to worry about max length, name will automatically be truncated.
+	deleted.GenerateName = fmt.Sprintf("deleted-%s-", deleted.Name)
+	t.annotateAndLabel(deleted)
+	deleted.Annotations[deletedAnnotationKey] = deletedAnnotationValue
+	deleted.Annotations[originalNameAnnotationKey] = existing.Name
+	deleted.Spec.PodSelector.MatchLabels[disablePolicyLabelKey] = disablePolicyLabelValue
+	deleted.Name = ""
+	deleted.ResourceVersion = ""
+
+	deleted, err = nsClient.Create(deleted)
+	if err != nil {
+		return fmt.Errorf("creating backup network policy: %v", err)
+	}
+	t.rollbackActions = append(t.rollbackActions, norecordAction{rollbackAction: &deletePolicy{
+		namespace: deleted.Namespace,
+		name:      deleted.Name,
+	}})
+
+	err = nsClient.Delete(existing.Name, &metav1.DeleteOptions{})
+	if err != nil {
+		return fmt.Errorf("deleting network policy %s/%s: %v", existing.Namespace, existing.Name, err)
+	}
+	t.rollbackActions = append(t.rollbackActions, &restorePolicy{
+		oldPolicy:  existing,
+		wasDeleted: true,
+	})
+
+	return nil
 }
 
 func (t *applyTx) UndoModification() *storage.NetworkPolicyModification {
