@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+
+import "api/v1/license.proto";
+
+package v1;
+
+message LicenseInfo {
+    enum Status {
+        UNKNOWN       = 0;
+        VALID         = 1;
+        REVOKED       = 2;
+        NOT_YET_VALID = 3;
+        EXPIRED       = 4;
+        OTHER         = 5;
+    }
+
+    License license      = 1;
+    Status status        = 2;
+    string status_reason = 3;
+    bool active          = 4;
+}
+
+message AddLicenseRequest {
+    string license_key = 1;
+}
+
+message AddLicenseResponse {
+    LicenseInfo license  = 1;
+
+    // Indicates whether or not the license was accepted by the product. Only licenses which are either valid or
+    // not yet valid will be accepted. Note that we prefer this over a GRPC error, as it might be helpful to show the,
+    // e.g., contact information from the decoded blob.
+    bool        accepted = 2;
+}
+
+
+message GetLicensesRequest {
+    oneof active_opt {
+        bool active = 1;
+    }
+    repeated LicenseInfo.Status statuses = 2;
+}
+
+message GetLicensesResponse {
+    repeated LicenseInfo licenses = 1;
+}
+
+service LicenseService {
+
+    rpc GetLicenses(GetLicensesRequest) returns (GetLicensesResponse) {
+        option (google.api.http) = {
+            get: "/v1/licenses/list"
+        };
+    }
+
+    rpc AddLicense(AddLicenseRequest) returns (AddLicenseResponse) {
+        option (google.api.http) = {
+            post: "/v1/licenses/add"
+        };
+    }
+}

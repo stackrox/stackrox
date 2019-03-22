@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import "google/protobuf/timestamp.proto";
+
+package v1;
+
+message License {
+    message Contact {
+        string phone = 1;
+        string email = 2;
+        string url   = 3;
+
+        string name = 4;
+    }
+
+    message Metadata {
+        string id = 1;
+        google.protobuf.Timestamp issue_date = 2;
+
+        string licensed_for_id   = 3;
+        string licensed_for_name = 4;
+    }
+
+    message Restrictions {
+        google.protobuf.Timestamp not_valid_before = 1;
+        google.protobuf.Timestamp not_valid_after  = 2;
+
+        // Allow offline use (i.e., no online license enforcement).
+        bool allow_offline = 3;
+
+        // Maximum number of nodes. If 0, no restriction.
+        int32 max_nodes = 4;
+
+        // Build flavors of the product this license is valid for. If empty, no restrictions.
+        repeated string build_flavors = 5;
+
+        // Deployment environments that are valid for the product, such as `gcp` or `gcp/ultra-current-825`. If empty,
+        // no restrictions.
+        repeated string deployment_environments = 6;
+    }
+
+    Metadata metadata         = 1;
+    Contact support_contact   = 2;
+    Restrictions restrictions = 3;
+}
