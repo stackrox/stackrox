@@ -1,8 +1,6 @@
 package service
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	nsDataStore "github.com/stackrox/rox/central/namespace/datastore"
@@ -12,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/undostore"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

@@ -1,12 +1,11 @@
 package service
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/compliance/store"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

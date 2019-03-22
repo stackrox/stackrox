@@ -1,9 +1,8 @@
 package resources
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
 	v1Listers "k8s.io/client-go/listers/core/v1"

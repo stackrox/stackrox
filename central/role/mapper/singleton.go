@@ -1,12 +1,11 @@
 package mapper
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	groupStore "github.com/stackrox/rox/central/group/store"
 	roleStore "github.com/stackrox/rox/central/role/store"
 	userStore "github.com/stackrox/rox/central/user/store"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

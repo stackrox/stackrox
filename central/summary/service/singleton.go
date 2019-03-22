@@ -1,14 +1,13 @@
 package service
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	nodeStore "github.com/stackrox/rox/central/node/globalstore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

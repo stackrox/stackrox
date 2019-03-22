@@ -1,12 +1,11 @@
 package authproviders
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // If you add new data fields to this class, make sure you make commensurate modifications

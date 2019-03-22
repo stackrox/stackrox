@@ -1,13 +1,12 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/image/index"
 	"github.com/stackrox/rox/central/image/search"
 	"github.com/stackrox/rox/central/image/store"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

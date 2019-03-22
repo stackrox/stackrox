@@ -1,8 +1,6 @@
 package service
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
@@ -11,6 +9,7 @@ import (
 	nodeDataStore "github.com/stackrox/rox/central/node/globalstore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

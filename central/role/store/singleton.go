@@ -1,11 +1,10 @@
 package store
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/central/globaldb"
 	rolePkg "github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

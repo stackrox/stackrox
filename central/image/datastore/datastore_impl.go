@@ -1,8 +1,6 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/central/image/index"
 	"github.com/stackrox/rox/central/image/search"
 	"github.com/stackrox/rox/central/image/store"
@@ -10,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 type datastoreImpl struct {

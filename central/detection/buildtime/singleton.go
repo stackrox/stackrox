@@ -1,11 +1,10 @@
 package buildtime
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/central/detection/image"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

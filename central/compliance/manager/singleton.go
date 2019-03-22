@@ -1,8 +1,6 @@
 package manager
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/data"
 	"github.com/stackrox/rox/central/compliance/standards"
@@ -10,6 +8,7 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	nodeStore "github.com/stackrox/rox/central/node/globalstore"
 	"github.com/stackrox/rox/central/scrape/factory"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

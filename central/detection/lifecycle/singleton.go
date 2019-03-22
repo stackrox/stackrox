@@ -1,8 +1,6 @@
 package lifecycle
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/alertmanager"
 	"github.com/stackrox/rox/central/detection/deploytime"
@@ -11,6 +9,7 @@ import (
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

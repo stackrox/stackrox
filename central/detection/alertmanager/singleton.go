@@ -1,11 +1,10 @@
 package alertmanager
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/detection/runtime"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

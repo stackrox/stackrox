@@ -1,11 +1,10 @@
 package service
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	networkFlowStoreSingleton "github.com/stackrox/rox/central/networkflow/store/singleton"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

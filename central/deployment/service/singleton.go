@@ -1,12 +1,11 @@
 package service
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/central/deployment/datastore"
 	multiplierStore "github.com/stackrox/rox/central/multiplier/store"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

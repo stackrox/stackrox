@@ -1,12 +1,11 @@
 package service
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/enrichanddetect"
 	"github.com/stackrox/rox/central/imageintegration"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

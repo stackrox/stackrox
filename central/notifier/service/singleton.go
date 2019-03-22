@@ -1,13 +1,12 @@
 package service
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	deployTimeDetection "github.com/stackrox/rox/central/detection/deploytime"
 	runTimeDetectiomn "github.com/stackrox/rox/central/detection/runtime"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/notifier/store"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

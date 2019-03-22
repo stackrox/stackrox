@@ -1,9 +1,8 @@
 package factory
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

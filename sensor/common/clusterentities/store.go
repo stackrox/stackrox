@@ -1,11 +1,10 @@
 package clusterentities
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkentity"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // ContainerMetadata is the container metadata that is stored per instance

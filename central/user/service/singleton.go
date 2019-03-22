@@ -1,9 +1,8 @@
 package service
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/central/user/store"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

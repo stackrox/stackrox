@@ -1,13 +1,12 @@
 package runtime
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/deployment"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

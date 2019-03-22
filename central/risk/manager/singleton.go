@@ -1,11 +1,10 @@
 package manager
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	multiplierDS "github.com/stackrox/rox/central/multiplier/store"
 	"github.com/stackrox/rox/central/risk"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

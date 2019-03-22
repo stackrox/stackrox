@@ -1,8 +1,6 @@
 package service
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
@@ -13,6 +11,7 @@ import (
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/policy/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

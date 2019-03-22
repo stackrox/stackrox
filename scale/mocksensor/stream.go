@@ -1,9 +1,8 @@
 package main
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 type threadSafeStream struct {

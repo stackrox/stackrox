@@ -1,10 +1,9 @@
 package service
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/central/apitoken"
 	rolestore "github.com/stackrox/rox/central/role/store"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

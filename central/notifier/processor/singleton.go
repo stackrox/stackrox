@@ -1,9 +1,8 @@
 package processor
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/central/notifier/store"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

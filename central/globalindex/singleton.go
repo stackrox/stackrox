@@ -1,9 +1,8 @@
 package globalindex
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/blevesearch/bleve"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

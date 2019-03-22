@@ -1,10 +1,9 @@
 package graph
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/central/globaldb"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/store"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

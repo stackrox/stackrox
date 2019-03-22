@@ -1,11 +1,10 @@
 package singleton
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/networkflow/store"
 	"github.com/stackrox/rox/central/networkflow/store/badger"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (

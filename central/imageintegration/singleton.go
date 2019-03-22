@@ -1,9 +1,8 @@
 package imageintegration
 
 import (
-	"github.com/stackrox/rox/pkg/sync"
-
 	"github.com/stackrox/rox/pkg/images/integration"
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 var (
