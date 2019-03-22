@@ -71,7 +71,7 @@ func computeNodeDiff(oldNode, newNode *v1.NetworkNode) (oldNodeDiff, newNodeDiff
 			oldNodeDiff.NonIsolatedIngress = true
 		} else {
 			if newNodeDiff == nil {
-				oldNodeDiff = &v1.NetworkNodeDiff{}
+				newNodeDiff = &v1.NetworkNodeDiff{}
 			}
 			newNodeDiff.NonIsolatedIngress = true
 		}

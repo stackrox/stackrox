@@ -116,18 +116,11 @@ export function getActiveNetworkModification(clusterId, deploymentQuery) {
  * @returns {Promise<Object, Error>}
  */
 export function getUndoNetworkModification(clusterId) {
-    const params = queryString.stringify({ clusterId });
     const options = {
         method: 'GET',
-        url: `${networkPoliciesBaseUrl}?${params}`
+        url: `${networkPoliciesBaseUrl}/undo/${clusterId}`
     };
-    return axios(options).then(response => {
-        const policies = response.data.networkPolicies;
-        if (policies) {
-            return { applyYaml: policies.map(policy => policy.yaml).join('\n---\n') };
-        }
-        return null;
-    });
+    return axios(options).then(response => response.data.undoRecord.undoModification);
 }
 
 /**
