@@ -3,6 +3,7 @@ import static Services.roxDetectedDeployment
 import services.ProcessService
 
 import groups.BAT
+import groups.RUNTIME
 import spock.lang.Unroll
 import objects.Deployment
 import org.junit.experimental.categories.Category
@@ -71,7 +72,7 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
         return counts
     }
 
-    @Category(BAT)
+    @Category([BAT, RUNTIME])
     @Unroll
     def "Verify process visualization with replicas on #depName"()  {
         when:

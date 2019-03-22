@@ -1,5 +1,6 @@
 package groups
 
+@interface RUNTIME { }
 @interface SMOKE { }
 @interface BAT { }
 @interface Integration { }

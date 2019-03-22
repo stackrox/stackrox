@@ -8,6 +8,9 @@
 
 REGION=us-central1
 NUM_NODES="${NUM_NODES:-4}"
+GCP_IMAGE_TYPE="${GCP_IMAGE_TYPE:-UBUNTU}"
+
+echo "Creating ${NUM_NODES} node cluster with image type \"${GCP_IMAGE_TYPE}\""
 
 zones=$(gcloud compute zones list --filter="region=$REGION" | grep UP | cut -f1 -d' ')
 for zone in $zones; do
@@ -21,7 +24,7 @@ for zone in $zones; do
         --services-ipv4-cidr=/24 \
         --enable-ip-alias \
         --enable-network-policy \
-        --image-type UBUNTU \
+        --image-type ${GCP_IMAGE_TYPE} \
         --tags="stackrox-ci,stackrox-ci-${CIRCLE_JOB}" \
         "prevent-ci-${CIRCLE_BUILD_NUM}"
     then

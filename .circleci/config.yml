@@ -662,6 +662,74 @@ jobs:
 
       - *teardownGKE
 
+  qa-tests-cos-ebpf:
+    <<: *defaults
+    environment:
+      - LOCAL_PORT: 443
+      - RUNTIME_SUPPORT: true
+      - MONITORING_SUPPORT: true
+      - ROX_COMPLIANCE_ENABLED: true
+      - ROX_COLLECTOR_EBPF: true
+      - GCP_IMAGE_TYPE: "COS"
+      - ROX_PERFORM_DEPLOYMENT_RECONCILIATION: true
+      - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
+      - LOAD_BALANCER: lb
+
+    steps:
+      - checkout
+
+      - run:
+          name: Determine whether to skip tests
+          command: |
+            if .circleci/pr_has_label.sh ci-no-qa-tests; then
+              echo "Skipping tests because of the presence of the ci-no-qa-tests label..."
+              circleci step halt
+            fi
+
+      - setup_remote_docker
+
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - *setupRoxctl
+      - *setupGCP
+      - *createGKE
+      - *deployGKE
+      - *setupCIMonitoring
+      - *waitForAPI
+      - *waitForSensorK8s
+
+      - *restoreGradle
+      - run:
+          name: QA Automation Platform
+          command: |
+            export CLUSTER=K8S
+            export HOSTNAME="${API_HOSTNAME}"
+            export PORT="${API_PORT}"
+            if [ "${CIRCLE_BRANCH}" = "master" ]; then
+              echo "On master, running all QA tests..."
+              make -C qa-tests-backend test
+            elif .circleci/pr_has_label.sh ci-all-qa-tests; then
+              echo "ci-all-qa-tests label was specified, so running all QA tests..."
+              make -C qa-tests-backend test
+            else
+              echo "On a PR branch, running RUNTIME tests only..."
+              make -C qa-tests-backend runtime-test
+            fi
+
+      - save-cache:
+          key: *gradleCacheKey
+          paths:
+          - ~/.gradle/caches/
+
+      - *storeQATestResults
+      - *storeQASpockReports
+
+      - *collectK8sLogs
+      - *storeK8sLogs
+
+      - *teardownGKE
+
   upgrade-test:
     <<: *defaults
     environment:
@@ -1182,6 +1250,12 @@ workflows:
             tags:
               only: /.*/
       - qa-tests:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /.*/
+      - qa-tests-cos-ebpf:
           requires:
             - build
           filters:

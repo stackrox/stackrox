@@ -2,6 +2,7 @@ import static com.jayway.restassured.RestAssured.given
 
 import com.google.protobuf.Timestamp
 import groups.BAT
+import groups.RUNTIME
 import groups.NetworkFlowVisualization
 import objects.Deployment
 import objects.Edge
@@ -147,7 +148,7 @@ class NetworkFlowTest extends BaseSpecification {
     }
 
     @Unroll
-    @Category([BAT, NetworkFlowVisualization])
+    @Category([BAT, RUNTIME, NetworkFlowVisualization])
     def "Verify connections can be detected: #protocol"() {
         given:
         "Two deployments, A and B, where B communicates to A via #protocol"
@@ -193,7 +194,7 @@ class NetworkFlowTest extends BaseSpecification {
         assert sourceUid != null
 
         when:
-        "Check for edge in entwork graph"
+        "Check for edge in network graph"
         println "Checking for edge between ${SHORTCONSISTENTSOURCE} and ${NGINXCONNECTIONTARGET}"
         List<Edge> edges = checkForEdge(sourceUid, targetUid)
         assert edges

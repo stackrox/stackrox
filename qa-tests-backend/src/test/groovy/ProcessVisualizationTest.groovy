@@ -1,6 +1,7 @@
 import services.ProcessService
 
 import groups.BAT
+import groups.RUNTIME
 import groups.SMOKE
 import spock.lang.Unroll
 import objects.Deployment
@@ -65,7 +66,7 @@ class ProcessVisualizationTest extends BaseSpecification {
         }
     }
 
-    @Category([BAT, SMOKE])
+    @Category([BAT, SMOKE, RUNTIME])
     @Unroll
     def "Verify process visualization on default: #depName"()  {
         when:

@@ -48,6 +48,11 @@ smoke-test: proto-generated-srcs
 	@echo "+ $@"
 	gradle test -Dgroups=SMOKE
 
+.PHONY: runtime-test
+runtime-test: proto-generated-srcs
+	@echo "+ $@"
+	gradle test -Dgroups=RUNTIME
+
 .PHONY: enforcement-test
 enforcement-test: proto-generated-srcs
 	@echo "+ $@"
