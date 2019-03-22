@@ -43,8 +43,8 @@ func (p *processorImpl) HasNotifiers() bool {
 }
 
 func sendAuditMessage(notifier notifiers.Notifier, msg *v1.Audit_Message) {
-	protoNotifier := notifier.ProtoNotifier()
 	if err := notifier.SendAuditMessage(msg); err != nil {
+		protoNotifier := notifier.ProtoNotifier()
 		log.Errorf("Unable to send audit msg to %s (%s): %v", protoNotifier.GetName(), protoNotifier.GetType(), err)
 	}
 }
@@ -54,19 +54,17 @@ func (p *processorImpl) Start() {}
 
 func sendAlert(notifier notifiers.Notifier, alert *storage.Alert) {
 	protoNotifier := notifier.ProtoNotifier()
+	var err error
 	switch alert.GetState() {
 	case storage.ViolationState_ACTIVE:
-		if err := notifier.AlertNotify(alert); err != nil {
-			log.Errorf("Unable to send notification to %s (%s) for alert %s: %v", protoNotifier.GetName(), protoNotifier.GetType(), alert.GetId(), err)
-		}
+		err = notifier.AlertNotify(alert)
 	case storage.ViolationState_SNOOZED:
-		if err := notifier.AckAlert(alert); err != nil {
-			log.Errorf("Unable to send acknowledge notification to %s (%s) for alert %s: %v", protoNotifier.GetName(), protoNotifier.GetType(), alert.GetId(), err)
-		}
+		err = notifier.AckAlert(alert)
 	case storage.ViolationState_RESOLVED:
-		if err := notifier.ResolveAlert(alert); err != nil {
-			log.Errorf("Unable to send resolve notification to %s (%s) for alert %s: %v", protoNotifier.GetName(), protoNotifier.GetType(), alert.GetId(), err)
-		}
+		err = notifier.ResolveAlert(alert)
+	}
+	if err != nil {
+		log.Errorf("Unable to send %s notification to %s (%s) for alert %s: %v", alert.GetState().String(), protoNotifier.GetName(), protoNotifier.GetType(), alert.GetId(), err)
 	}
 }
 
