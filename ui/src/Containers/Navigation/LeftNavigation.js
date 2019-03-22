@@ -60,7 +60,7 @@ const navLinks = [
 
 const versionString = metadata => {
     let result = `v${metadata.version}`;
-    if (!metadata.releaseBuild) {
+    if (metadata.releaseBuild === false) {
         result += ' [DEV BUILD]';
     }
     return result;

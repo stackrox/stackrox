@@ -20,7 +20,7 @@ export const actions = {
 
 const metadata = (state = {}, action) => {
     if (action.type === types.INITIAL_FETCH_METADATA.SUCCESS) {
-        return { version: action.response.version, stale: false };
+        return { ...action.response, stale: false };
     }
     if (action.type === types.POLL_METADATA.SUCCESS) {
         if (action.response.version !== state.version) {
