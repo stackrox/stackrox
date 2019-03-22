@@ -11,4 +11,9 @@ var (
 	// It exists while we stabilize the feature.
 	// NB: When removing this feature flag, please also remove references to it in .circleci/config.yml
 	PerformDeploymentReconciliation = registerFeature("Reconciliation", "ROX_PERFORM_DEPLOYMENT_RECONCILIATION", false)
+
+	// LicenseEnforcement governs whether the product enforces licenses
+	// IMPORTANT: When enabling licensing, DO NOT SET THIS FLAG TO TRUE. DELETE IT AND ASSUME IT IS TRUE WHEREEVER IT IS
+	// BEING USED.
+	LicenseEnforcement = registerFeature("License Enforcement", "ROX_LICENSE_ENFORCEMENT" /* NEVER CHANGE THIS TO TRUE */, false)
 )
