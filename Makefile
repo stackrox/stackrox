@@ -240,10 +240,13 @@ gazelle: deps volatile-generated-srcs cleanup
 	bazel run //:gazelle -- -build_tags=$(GOTAGS)
 
 cli: gazelle
+ifdef CI
 	bazel build $(BAZEL_FLAGS) --platforms=@io_bazel_rules_go//go/toolchain:darwin_amd64 -- //roxctl
 	bazel build $(BAZEL_FLAGS) --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 -- //roxctl
 	bazel build $(BAZEL_FLAGS) --platforms=@io_bazel_rules_go//go/toolchain:windows_amd64 -- //roxctl
-
+else
+	bazel build $(BAZEL_FLAGS) --platforms=@io_bazel_rules_go//go/toolchain:$(BAZEL_OS)_amd64 -- //roxctl
+endif
 	# Copy the user's specific OS into gopath
 	cp bazel-bin/roxctl/$(BAZEL_OS)_amd64_pure_stripped/roxctl $(GOPATH)/bin/roxctl
 	chmod u+w $(GOPATH)/bin/roxctl
@@ -353,9 +356,13 @@ main-image: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC)
 docker-build-main-image:
 	cp -r ui/build image/ui/
 	cp bazel-bin/central/linux_amd64_pure_stripped/central image/bin/central
+ifdef CI
 	cp bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl image/bin/roxctl-linux
 	cp bazel-bin/roxctl/darwin_amd64_pure_stripped/roxctl image/bin/roxctl-darwin
 	cp bazel-bin/roxctl/windows_amd64_pure_stripped/roxctl.exe image/bin/roxctl-windows.exe
+else
+	cp bazel-bin/roxctl/$(BAZEL_OS)_amd64_pure_stripped/roxctl image/bin/roxctl-$(BAZEL_OS)
+endif
 	cp bazel-bin/migrator/linux_amd64_pure_stripped/migrator image/bin/migrator
 	cp bazel-bin/sensor/kubernetes/linux_amd64_pure_stripped/kubernetes image/bin/kubernetes-sensor
 	cp bazel-bin/compliance/collection/linux_amd64_pure_stripped/collection image/bin/compliance
