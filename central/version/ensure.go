@@ -39,12 +39,12 @@ func Ensure(boltDB *bolt.DB, badgerDB *badger.DB) error {
 		return nil
 	}
 
-	// DB is of the same version. This happens if Central does a regular restart, and was not patched.
-	if version.GetSeqNum() == migrations.CurrentDBVersionSeqNum {
-		log.Info("Version found in the DB was current. We're good to go!")
-		return nil
+	if version.GetSeqNum() != migrations.CurrentDBVersionSeqNum {
+		return fmt.Errorf("invalid DB version found: %s", proto.MarshalTextString(version))
 	}
 
-	// The DB was found to have an invalid version.
-	return fmt.Errorf("invalid DB version found: %s", proto.MarshalTextString(version))
+	// TYPICAL CASE: DB is of the same version. This happens if Central does a regular restart, and was not patched.
+
+	log.Info("Version found in the DB was current. We're good to go!")
+	return nil
 }

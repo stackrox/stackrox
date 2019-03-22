@@ -27,7 +27,12 @@ type Store interface {
 func New(db *bolt.DB) Store {
 	bolthelper.RegisterBucketOrPanic(db, groupsBucket)
 
-	return &storeImpl{
+	store := &storeImpl{
 		db: db,
 	}
+
+	allEmptyGroupProperty := storage.GroupProperties{AuthProviderId: "", Key: "", Value: ""}
+	_ = store.Remove(&allEmptyGroupProperty) // ignore error to suppress warning
+
+	return store
 }
