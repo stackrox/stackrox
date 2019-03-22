@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"text/template"
 	"time"
 
@@ -118,6 +119,13 @@ func (s *slack) AlertNotify(alert *storage.Alert) error {
 
 // YamlNotify takes in a yaml file and generates the Slack message
 func (s *slack) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
+	if strings.Count(yaml, "\n") > 300 { // Looks like messages are truncated at ~340 lines.
+		return fmt.Errorf("yaml is too large (>300 lines) to send over slack")
+	}
+	if len(yaml) > 35000 { // Slack hard limit is 40,000 characters, so leave 5,000 as a buffer to a round number.
+		return fmt.Errorf("yaml is too large (>35,000 characters) to send over slack")
+	}
+
 	tagLine := fmt.Sprintf("*Network policy YAML to be applied on cluster '%s'*", clusterName)
 	funcMap := template.FuncMap{
 		"codeBlock": func(s string) string {
