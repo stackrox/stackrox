@@ -5,11 +5,15 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/wrapper"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -23,6 +27,8 @@ const (
 
 var (
 	log = logging.LoggerForModule()
+
+	timeout = 5 * time.Second
 
 	// blacklist of annotations to be scrubbed
 	scrubAnnotations = map[string]bool{
@@ -93,15 +99,33 @@ func (s *splunk) postAlert(alert *storage.Alert) error {
 			delete(clonedAlert.Deployment.Annotations, needScrubbing)
 		}
 	}
+	return s.sendHTTPPayload(clonedAlert)
+}
 
-	splunkEvent := &wrapper.SplunkEvent{
-		Event:      clonedAlert,
+func getSplunkEvent(msg proto.Message) (*wrapper.SplunkEvent, error) {
+	any, err := protoutils.MarshalAny(msg)
+	if err != nil {
+		return nil, err
+	}
+	return &wrapper.SplunkEvent{
+		Event:      any,
 		Source:     source,
 		Sourcetype: sourceType,
+	}, nil
+}
+
+func (s *splunk) SendAuditMessage(msg *v1.Audit_Message) error {
+	return s.sendHTTPPayload(msg)
+}
+
+func (s *splunk) sendHTTPPayload(msg proto.Message) error {
+	splunkEvent, err := getSplunkEvent(msg)
+	if err != nil {
+		return err
 	}
 
-	var jsonPayload bytes.Buffer
-	err := new(jsonpb.Marshaler).Marshal(&jsonPayload, splunkEvent)
+	var data bytes.Buffer
+	err = new(jsonpb.Marshaler).Marshal(&data, splunkEvent)
 	if err != nil {
 		return err
 	}
@@ -109,47 +133,34 @@ func (s *splunk) postAlert(alert *storage.Alert) error {
 	if s.truncate == 0 {
 		s.truncate = splunkHECDefaultDataLimit
 	}
-
-	if jsonPayload.Len() > s.truncate {
-		return fmt.Errorf("Splunk HEC truncate data limit (%d bytes) exceeded: %d", s.truncate, jsonPayload.Len())
+	if data.Len() > s.truncate {
+		return fmt.Errorf("Splunk HEC truncate data limit (%d bytes) exceeded: %d", s.truncate, data.Len())
 	}
 
-	req, err := s.createSplunkHTTPRequest(&jsonPayload)
+	req, err := http.NewRequest(http.MethodPost, s.endpoint, &data)
 	if err != nil {
 		return err
 	}
-
-	resp, err := s.sendHTTPPayload(req)
-	if err != nil {
-		return err
-	}
-	if resp != nil {
-		defer func() {
-			_ = resp.Body.Close()
-		}()
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("HTTP Status Code: %d", resp.StatusCode)
-	}
-	return nil
-}
-
-func (s *splunk) createSplunkHTTPRequest(jsonPayload *bytes.Buffer) (*http.Request, error) {
-	req, err := http.NewRequest("POST", s.endpoint, jsonPayload)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Splunk %s", s.token))
-	return req, err
-}
 
-func (s *splunk) sendHTTPPayload(req *http.Request) (*http.Response, error) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: s.insecure},
 	}
 
-	client := &http.Client{Transport: tr}
+	client := &http.Client{Timeout: timeout, Transport: tr}
 	resp, err := client.Do(req)
-	return resp, err
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		body, err := httputil.ReadResponse(resp)
+		if err != nil {
+			return fmt.Errorf("HTTP Status Code: %d", resp.StatusCode)
+		}
+		return fmt.Errorf("HTTP Status Code: %d - %s", resp.StatusCode, string(body))
+	}
+	return nil
 }
 
 func init() {

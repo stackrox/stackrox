@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/notifiers/cscc/client"
 	"github.com/stackrox/rox/central/notifiers/cscc/findings"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -221,6 +222,10 @@ func (c *cscc) AckAlert(alert *storage.Alert) error {
 }
 
 func (c *cscc) ResolveAlert(alert *storage.Alert) error {
+	return nil
+}
+
+func (c *cscc) SendAuditMessage(msg *v1.Audit_Message) error {
 	return nil
 }
 

@@ -9,6 +9,7 @@ import (
 
 type roleBasedIdentity struct {
 	uid          string
+	username     string
 	friendlyName string
 	role         *storage.Role
 	expiry       time.Time
@@ -28,6 +29,14 @@ func (i *roleBasedIdentity) Role() *storage.Role {
 
 func (i *roleBasedIdentity) Service() *storage.ServiceIdentity {
 	return nil
+}
+
+func (i *roleBasedIdentity) User() *storage.UserInfo {
+	return &storage.UserInfo{
+		Username:     i.username,
+		FriendlyName: i.friendlyName,
+		Role:         i.role,
+	}
 }
 
 func (i *roleBasedIdentity) Expiry() time.Time {

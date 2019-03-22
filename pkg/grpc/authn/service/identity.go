@@ -29,6 +29,10 @@ func (i identity) Role() *storage.Role {
 	return nil // services do not have roles
 }
 
+func (i identity) User() *storage.UserInfo {
+	return nil // services is not a user
+}
+
 func (i identity) Expiry() time.Time {
 	return i.id.Expiry
 }

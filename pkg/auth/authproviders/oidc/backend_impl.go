@@ -180,7 +180,7 @@ func newBackend(ctx context.Context, id string, uiEndpoints []string, callbackUR
 	p.baseOauthConfig = oauth2.Config{
 		ClientID: oidcCfg.ClientID,
 		Endpoint: oidcProvider.Endpoint(),
-		Scopes:   []string{oidc.ScopeOpenID, "profile"},
+		Scopes:   []string{oidc.ScopeOpenID, "profile", "email"},
 	}
 
 	effectiveConfig := map[string]string{

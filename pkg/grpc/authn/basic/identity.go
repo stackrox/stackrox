@@ -31,6 +31,13 @@ func (i identity) Service() *storage.ServiceIdentity {
 	return nil
 }
 
+func (i identity) User() *storage.UserInfo {
+	return &storage.UserInfo{
+		Username: i.username,
+		Role:     i.role,
+	}
+}
+
 func (i identity) Expiry() time.Time {
 	return timeutil.Max
 }

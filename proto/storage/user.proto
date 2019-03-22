@@ -3,6 +3,8 @@ syntax = "proto3";
 option go_package = "storage";
 option java_package = "io.stackrox.proto.storage";
 
+import "storage/role.proto";
+
 package storage;
 
 
@@ -17,4 +19,10 @@ message User {
 message UserAttribute {
     string key = 1;
     string value = 2;
+}
+
+message UserInfo {
+    string       username      = 1;
+    string       friendly_name = 2;
+    storage.Role role          = 3;
 }

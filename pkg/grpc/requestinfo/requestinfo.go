@@ -48,6 +48,13 @@ type CertInfo struct {
 	SerialNumber        *big.Int
 }
 
+// HTTPRequest provides a gob encodeable way of passing HTTP Request parameters
+type HTTPRequest struct {
+	Method  string
+	URL     *url.URL
+	Headers http.Header
+}
+
 // RequestInfo provides a unified view of a GRPC request, regardless of whether it came through the HTTP/1.1 gateway
 // or directly via GRPC.
 // When forwarding requests in the HTTP/1.1 gateway, there are two independent mechanisms to defend against spoofing:
@@ -62,12 +69,11 @@ type RequestInfo struct {
 	Hostname string
 	// VerifiedSubjectChains are the subjects of the verified certificate chains presented by the client.
 	VerifiedChains [][]CertInfo
-	// RequestURL is the original request URL in the case of a request through the HTTP/1.1 gateway. Nil for direct GRPC
-	// requests.
-	RequestURL *url.URL
 	// Metadata is the request metadata. For *pure* HTTP/1.1 requests, these are the actual HTTP headers. Otherwise,
 	// these are only the headers that make it to the GRPC handler.
 	Metadata metadata.MD
+	// HTTPRequest is a slimmed down version of *http.Request that will only be populated if the request came through the gateway
+	HTTPRequest *HTTPRequest
 }
 
 type serializedRequestInfo struct {
@@ -121,12 +127,22 @@ func NewDefaultRequestInfoHandler() *Handler {
 	return NewRequestInfoHandler(cryptoutils.NewED25519Signer(pk))
 }
 
+func slimHTTPRequest(req *http.Request) *HTTPRequest {
+	return &HTTPRequest{
+		Method:  req.Method,
+		URL:     req.URL,
+		Headers: req.Header,
+	}
+}
+
 // AnnotateMD builds a RequestInfo for a request coming in through the HTTP/1.1 gateway, and returns it in serialized
 // form as GRPC metadata.
 func (h *Handler) AnnotateMD(ctx context.Context, req *http.Request) metadata.MD {
 	tlsState := req.TLS
 
 	var ri serializedRequestInfo
+
+	ri.HTTPRequest = slimHTTPRequest(req)
 
 	// X-Forwarded-Host takes precedence in case we are behind a proxy. `Hostname` should match what the client sees.
 	if fwdHost := req.Header.Get("X-Forwarded-Host"); fwdHost != "" {
@@ -245,10 +261,11 @@ func (h *Handler) UpdateContextForGRPC(ctx context.Context) (context.Context, er
 // HTTPIntercept provides a http interceptor logic for populating the context with the request info.
 func (h *Handler) HTTPIntercept(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
 		ri := &RequestInfo{
-			Hostname:   r.Host,
-			RequestURL: r.URL,
-			Metadata:   metadataFromHeader(r.Header),
+			Hostname:    r.Host,
+			Metadata:    metadataFromHeader(r.Header),
+			HTTPRequest: slimHTTPRequest(r),
 		}
 		// X-Forwarded-Host takes precedence in case we are behind a proxy.
 		// `Hostname` should match what the client sees.

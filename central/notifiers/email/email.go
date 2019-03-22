@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -364,6 +365,10 @@ func (e *email) tlsConfig() *tls.Config {
 
 func (e *email) ProtoNotifier() *storage.Notifier {
 	return e.notifier
+}
+
+func (e *email) SendAuditMessage(msg *v1.Audit_Message) error {
+	return nil
 }
 
 func init() {

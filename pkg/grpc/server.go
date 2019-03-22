@@ -13,11 +13,13 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
+	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil"
@@ -67,6 +69,7 @@ type Config struct {
 	CustomRoutes       []routes.CustomRoute
 	IdentityExtractors []authn.IdentityExtractor
 	AuthProviders      authproviders.Registry
+	Auditor            audit.Auditor
 }
 
 // NewAPI returns an API object.
@@ -93,8 +96,17 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 		grpc_prometheus.UnaryServerInterceptor,
 		contextutil.UnaryServerInterceptor(authn.ContextUpdater(a.config.IdentityExtractors...)),
 	}
-	// Default to deny all access. This forces services to properly override the AuthFunc.
-	u = append(u, grpc_auth.UnaryServerInterceptor(deny.AuthFunc))
+
+	// Check auth and update the context with the error
+	u = append(u, interceptor.AuthContextUpdaterInterceptor())
+
+	if a.config.Auditor != nil {
+		// Audit the request
+		u = append(u, a.config.Auditor.UnaryServerInterceptor())
+	}
+
+	// Check if there was an auth failure and return error if so
+	u = append(u, interceptor.AuthCheckerInterceptor())
 
 	u = append(u, a.unaryRecovery())
 	return u

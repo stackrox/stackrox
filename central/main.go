@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
+	"github.com/stackrox/rox/central/audit"
 	authService "github.com/stackrox/rox/central/auth/service"
 	"github.com/stackrox/rox/central/auth/userpass"
 	authproviderService "github.com/stackrox/rox/central/authprovider/service"
@@ -44,6 +45,7 @@ import (
 	networkFlowService "github.com/stackrox/rox/central/networkflow/service"
 	networkPolicyService "github.com/stackrox/rox/central/networkpolicies/service"
 	nodeService "github.com/stackrox/rox/central/node/service"
+	"github.com/stackrox/rox/central/notifier/processor"
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
 	pingService "github.com/stackrox/rox/central/ping/service"
@@ -69,6 +71,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
@@ -166,6 +169,10 @@ func startGRPCServer() {
 		TLS:                verifier.CA{},
 		IdentityExtractors: idExtractors,
 		AuthProviders:      registry,
+	}
+
+	if features.AuditLogging.Enabled() {
+		config.Auditor = audit.New(processor.Singleton())
 	}
 
 	server := pkgGRPC.NewAPI(config)

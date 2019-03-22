@@ -12,6 +12,7 @@ type Identity interface {
 	UID() string
 	FriendlyName() string
 
+	User() *storage.UserInfo
 	Role() *storage.Role
 	Service() *storage.ServiceIdentity
 

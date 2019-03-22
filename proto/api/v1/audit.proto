@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+import "storage/user.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+package v1;
+
+message Audit {
+    enum RequestStatus {
+        UNKNOWN_STATUS    = 0;
+        REQUEST_SUCCEEDED = 1;
+        AUTH_FAILED       = 2;
+        REQUEST_FAILED    = 3;
+    }
+    enum Interaction {
+        UNKNOWN_INTERACTION = 0;
+        CREATE              = 1;
+        UPDATE              = 2;
+        DELETE              = 3;
+    }
+
+    enum AccessMethod {
+        UNKNOWN_METHOD = 0;
+        CLI            = 1;
+        UI             = 2;
+        API            = 3;
+    }
+
+    message Message {
+        message Request {
+            string endpoint             = 1;
+            string method               = 2;
+            google.protobuf.Any payload = 3;
+        }
+        google.protobuf.Timestamp time          = 1;
+        RequestStatus             status        = 2;
+        string                    status_reason = 3;
+        storage.UserInfo          user          = 4;
+        Request                   request       = 5;
+        AccessMethod              method        = 6;
+        Interaction               interaction   = 7;
+    }
+}
+

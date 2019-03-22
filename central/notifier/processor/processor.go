@@ -3,13 +3,9 @@ package processor
 import (
 	"github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
-)
-
-const (
-	alertChanSize     = 100
-	benchmarkChanSize = 100
 )
 
 var (
@@ -21,7 +17,9 @@ var (
 type Processor interface {
 	Start()
 	ProcessAlert(alert *storage.Alert)
+	ProcessAuditMessage(msg *v1.Audit_Message)
 
+	HasNotifiers() bool
 	UpdateNotifier(notifier notifiers.Notifier)
 	RemoveNotifier(id string)
 
@@ -33,7 +31,6 @@ type Processor interface {
 // New returns a new Processor
 func New(s store.Store) (Processor, error) {
 	processor := &processorImpl{
-		alertChan:           make(chan *storage.Alert, alertChanSize),
 		notifiers:           make(map[string]notifiers.Notifier),
 		notifiersToPolicies: make(map[string]map[string]*storage.Policy),
 		storage:             s,

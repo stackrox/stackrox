@@ -12,7 +12,6 @@ import (
 
 // Processor takes in alerts and sends the notifications tied to that alert
 type processorImpl struct {
-	alertChan     chan *storage.Alert
 	notifiers     map[string]notifiers.Notifier
 	notifiersLock sync.RWMutex
 
@@ -37,46 +36,61 @@ func (p *processorImpl) initializeNotifiers() error {
 	return nil
 }
 
-func (p *processorImpl) notifyAlert(alert *storage.Alert) {
+func (p *processorImpl) HasNotifiers() bool {
 	p.notifiersLock.RLock()
 	defer p.notifiersLock.RUnlock()
-	for _, id := range alert.Policy.Notifiers {
-		notifier, exists := p.notifiers[id]
-		if !exists {
-			log.Errorf("Could not send notification to notifier id %v for alert %v because it does not exist", id, alert.GetId())
-			continue
-		}
-		switch alert.GetState() {
-		case storage.ViolationState_ACTIVE:
-			if err := notifier.AlertNotify(alert); err != nil {
-				log.Errorf("Unable to send notification to %v (%v) for alert %v: %v", id, notifier.ProtoNotifier().GetName(), alert.GetId(), err)
-			}
-		case storage.ViolationState_SNOOZED:
-			if err := notifier.AckAlert(alert); err != nil {
-				log.Errorf("Unable to send acknowledge notification to %v (%v) for alert %v: %v", id, notifier.ProtoNotifier().GetName(), alert.GetId(), err)
-			}
-		case storage.ViolationState_RESOLVED:
-			if err := notifier.ResolveAlert(alert); err != nil {
-				log.Errorf("Unable to send resolve notification to %v (%v) for alert %v: %v", id, notifier.ProtoNotifier().GetName(), alert.GetId(), err)
-			}
-		}
-	}
+	return len(p.notifiers) != 0
 }
 
-func (p *processorImpl) processAlerts() {
-	for alert := range p.alertChan {
-		p.notifyAlert(alert)
+func sendAuditMessage(notifier notifiers.Notifier, msg *v1.Audit_Message) {
+	protoNotifier := notifier.ProtoNotifier()
+	if err := notifier.SendAuditMessage(msg); err != nil {
+		log.Errorf("Unable to send audit msg to %s (%s): %v", protoNotifier.GetName(), protoNotifier.GetType(), err)
 	}
 }
 
 // Start begins the notification processor and is blocking
-func (p *processorImpl) Start() {
-	go p.processAlerts()
+func (p *processorImpl) Start() {}
+
+func sendAlert(notifier notifiers.Notifier, alert *storage.Alert) {
+	protoNotifier := notifier.ProtoNotifier()
+	switch alert.GetState() {
+	case storage.ViolationState_ACTIVE:
+		if err := notifier.AlertNotify(alert); err != nil {
+			log.Errorf("Unable to send notification to %s (%s) for alert %s: %v", protoNotifier.GetName(), protoNotifier.GetType(), alert.GetId(), err)
+		}
+	case storage.ViolationState_SNOOZED:
+		if err := notifier.AckAlert(alert); err != nil {
+			log.Errorf("Unable to send acknowledge notification to %s (%s) for alert %s: %v", protoNotifier.GetName(), protoNotifier.GetType(), alert.GetId(), err)
+		}
+	case storage.ViolationState_RESOLVED:
+		if err := notifier.ResolveAlert(alert); err != nil {
+			log.Errorf("Unable to send resolve notification to %s (%s) for alert %s: %v", protoNotifier.GetName(), protoNotifier.GetType(), alert.GetId(), err)
+		}
+	}
 }
 
 // ProcessAlert pushes the alert into a channel to be processed
 func (p *processorImpl) ProcessAlert(alert *storage.Alert) {
-	p.alertChan <- alert
+	p.notifiersLock.RLock()
+	defer p.notifiersLock.RUnlock()
+
+	for _, id := range alert.Policy.Notifiers {
+		notifier, exists := p.notifiers[id]
+		if !exists {
+			log.Errorf("Could not send notification to notifier id %s for alert %s because it does not exist", id, alert.GetId())
+			continue
+		}
+		go sendAlert(notifier, alert)
+	}
+}
+
+func (p *processorImpl) ProcessAuditMessage(msg *v1.Audit_Message) {
+	p.notifiersLock.RLock()
+	defer p.notifiersLock.RUnlock()
+	for _, n := range p.notifiers {
+		go sendAuditMessage(n, msg)
+	}
 }
 
 // RemoveNotifier removes the in memory copy of the specified notifier

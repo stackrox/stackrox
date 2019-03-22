@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	notifiers "github.com/stackrox/rox/central/notifiers"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	reflect "reflect"
 )
@@ -46,6 +47,18 @@ func (mr *MockProcessorMockRecorder) GetIntegratedPolicies(arg0 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIntegratedPolicies", reflect.TypeOf((*MockProcessor)(nil).GetIntegratedPolicies), arg0)
 }
 
+// HasNotifiers mocks base method
+func (m *MockProcessor) HasNotifiers() bool {
+	ret := m.ctrl.Call(m, "HasNotifiers")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HasNotifiers indicates an expected call of HasNotifiers
+func (mr *MockProcessorMockRecorder) HasNotifiers() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasNotifiers", reflect.TypeOf((*MockProcessor)(nil).HasNotifiers))
+}
+
 // ProcessAlert mocks base method
 func (m *MockProcessor) ProcessAlert(arg0 *storage.Alert) {
 	m.ctrl.Call(m, "ProcessAlert", arg0)
@@ -54,6 +67,16 @@ func (m *MockProcessor) ProcessAlert(arg0 *storage.Alert) {
 // ProcessAlert indicates an expected call of ProcessAlert
 func (mr *MockProcessorMockRecorder) ProcessAlert(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessAlert", reflect.TypeOf((*MockProcessor)(nil).ProcessAlert), arg0)
+}
+
+// ProcessAuditMessage mocks base method
+func (m *MockProcessor) ProcessAuditMessage(arg0 *v1.Audit_Message) {
+	m.ctrl.Call(m, "ProcessAuditMessage", arg0)
+}
+
+// ProcessAuditMessage indicates an expected call of ProcessAuditMessage
+func (mr *MockProcessorMockRecorder) ProcessAuditMessage(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessAuditMessage", reflect.TypeOf((*MockProcessor)(nil).ProcessAuditMessage), arg0)
 }
 
 // RemoveNotifier mocks base method

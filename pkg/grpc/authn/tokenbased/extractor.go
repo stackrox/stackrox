@@ -62,6 +62,7 @@ func (e *extractor) IdentityForRequest(ri requestinfo.RequestInfo) (authn.Identi
 func (e *extractor) withPermissions(token *tokens.TokenInfo) (authn.Identity, error) {
 	id := &roleBasedIdentity{
 		uid:          fmt.Sprintf("auth-token:%s", token.ID),
+		username:     token.ExternalUser.Email,
 		friendlyName: token.Subject,
 		role:         permissions.NewRoleWithPermissions("unnamed", token.Permissions...),
 		expiry:       token.Expiry(),
@@ -80,8 +81,13 @@ func (e *extractor) withRoleName(token *tokens.TokenInfo) (authn.Identity, error
 	if role == nil {
 		return nil, fmt.Errorf("token referenced invalid role %q", token.RoleName)
 	}
+	var email string
+	if token.ExternalUser != nil {
+		email = token.ExternalUser.Email
+	}
 	id := &roleBasedIdentity{
 		uid:          fmt.Sprintf("auth-token:%s", token.ID),
+		username:     email,
 		friendlyName: token.Subject,
 		role:         role,
 		expiry:       token.Expiry(),
@@ -128,6 +134,7 @@ func (e *extractor) withExternalUser(token *tokens.TokenInfo) (authn.Identity, e
 func createRoleBasedIdentity(role *storage.Role, token *tokens.TokenInfo) *roleBasedIdentity {
 	id := &roleBasedIdentity{
 		uid:          fmt.Sprintf("sso:%s:%s", token.Sources[0].ID(), token.ExternalUser.UserID),
+		username:     token.ExternalUser.Email,
 		friendlyName: token.ExternalUser.FullName,
 		role:         role,
 	}

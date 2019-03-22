@@ -28,20 +28,6 @@ func AlertLink(endpoint string, alertID string) string {
 	return base.ResolveReference(u).String()
 }
 
-// BenchmarkLink is the link URL for this alert
-func BenchmarkLink(endpoint string) string {
-	base, err := url.Parse(endpoint)
-	if err != nil {
-		log.Print(err)
-	}
-	u, err := url.Parse(benchmarkLinkPath)
-	if err != nil {
-		log.Print(err)
-		return ""
-	}
-	return base.ResolveReference(u).String()
-}
-
 // SeverityString is the nice form of the Severity enum
 func SeverityString(s storage.Severity) string {
 	switch s {

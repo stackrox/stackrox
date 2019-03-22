@@ -1,6 +1,7 @@
 package notifiers
 
 import (
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -18,4 +19,6 @@ type Notifier interface {
 	AckAlert(alert *storage.Alert) error
 	// ResolveAlert resolves an alert
 	ResolveAlert(alert *storage.Alert) error
+	// SendAuditMessage sends an audit message
+	SendAuditMessage(msg *v1.Audit_Message) error
 }

@@ -188,6 +188,10 @@ proto-generated-srcs: $(PROTO_GENERATED_SRCS)
 	@echo "+ $@"
 	@touch proto-generated-srcs
 
+clean-proto-generated-srcs:
+	@echo "+ $@"
+	git clean -xdf generated
+
 # volatile-generated-srcs are all generated sources that are NOT committed
 .PHONY: volatile-generated-srcs
 volatile-generated-srcs: proto-generated-srcs go-packr-srcs
@@ -196,9 +200,8 @@ volatile-generated-srcs: proto-generated-srcs go-packr-srcs
 generated-srcs: volatile-generated-srcs go-generated-srcs
 
 .PHONY: clean-generated-srcs
-clean-generated-srcs: clean-packr-srcs clean-easyjson-srcs
+clean-generated-srcs: clean-packr-srcs clean-easyjson-srcs clean-proto-generated-srcs
 	@echo "+ $@"
-	git clean -xdf generated
 
 deps: Gopkg.toml Gopkg.lock proto-generated-srcs
 	@echo "+ $@"

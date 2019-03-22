@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/notifiers"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -223,6 +224,10 @@ func postMessage(url string, jsonPayload []byte) (err error) {
 		log.Errorf("Slack error response: %v %v", resp.StatusCode, string(bytes))
 	}
 	return
+}
+
+func (s *slack) SendAuditMessage(msg *v1.Audit_Message) error {
+	return nil
 }
 
 // GetAttachmentColor returns the corresponding color for each severity.
