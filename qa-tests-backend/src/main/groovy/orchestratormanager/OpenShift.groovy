@@ -73,6 +73,7 @@ class OpenShift extends Kubernetes {
                 anyuid.setAllowHostNetwork(true)
                 anyuid.setAllowHostDirVolumePlugin(true)
                 anyuid.setAllowHostPorts(true)
+                anyuid.setAllowPrivilegedContainer(true)
                 oClient.securityContextConstraints().createOrReplace(anyuid)
             }
         } catch (Exception e) {

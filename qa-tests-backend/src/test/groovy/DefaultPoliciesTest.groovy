@@ -58,7 +58,8 @@ class DefaultPoliciesTest extends BaseSpecification {
         new Deployment()
             .setName(SSL_TERMINATOR)
             .setImage("apollo-dtr.rox.systems/legacy-apps/ssl-terminator:latest")
-            .addLabel("app", "test"),
+            .addLabel("app", "test")
+            .setCommand(["sleep", "600"]),
         new Deployment()
             .setName(NGINX_1_10)
             .setImage("nginx:1.10")
@@ -66,19 +67,21 @@ class DefaultPoliciesTest extends BaseSpecification {
         new Deployment()
             .setName(GCR_NGINX)
             .setImage("us.gcr.io/stackrox-ci/nginx:1.11")
-            .addLabel ( "app", "test" ),
+            .addLabel ( "app", "test" )
+            .setCommand(["sleep", "600"]),
     ]
 
     @Shared
     private String gcrId
 
     def setupSpec() {
-        for (int i = 1; i <= 10; i++) {
+        for (int i = 1; i <= 6; i++) {
             DEPLOYMENTS.add(
                     new Deployment()
                             .setName("pagination${i}")
-                            .setImage("nginx:latest")
+                            .setImage("busybox:latest")
                             .addLabel("app", "pagination${i}")
+                            .setCommand(["sleep", "600"])
             )
         }
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
@@ -145,20 +148,26 @@ class DefaultPoliciesTest extends BaseSpecification {
 
     @Category(BAT)
     def "Verify violation pagination"() {
+        given:
+        "6 violations exist for pagination"
+        for (int i = 1; i <= 6; i++) {
+            assert Services.waitForViolation("pagination${i}", "Latest tag", 30)
+        }
+
         when:
-        "Set pagination limit to 5"
+        "Set pagination limit to 3"
         ListAlertsRequest request = ListAlertsRequest.newBuilder()
                 .setQuery("Deployment:pagination+Policy:Latest tag")
                 .setPagination(
                 PaginationOuterClass.Pagination.newBuilder()
-                        .setLimit(5)
+                        .setLimit(3)
                         .setOffset(0)
         ).build()
         def alerts = AlertService.getViolations(request)
 
         then:
-        "verify result set is 5"
-        assert alerts.size() == 5
+        "verify result set is 3"
+        assert alerts.size() == 3
 
         and:
         "Set limit to 10 with offset to 5 on a total count of 10"
@@ -166,14 +175,14 @@ class DefaultPoliciesTest extends BaseSpecification {
                 .setQuery("Deployment:pagination+Policy:Latest tag")
                 .setPagination(
                 PaginationOuterClass.Pagination.newBuilder()
-                        .setLimit(10)
-                        .setOffset(5)
+                        .setLimit(6)
+                        .setOffset(3)
         ).build()
         def alerts2 = AlertService.getViolations(request2)
 
         then:
-        "Verify result set is 5"
-        assert alerts2.size() == 5
+        "Verify result set is 3"
+        assert alerts2.size() == 3
 
         and:
         "Get the same violation set in reversed and non-reversed order"

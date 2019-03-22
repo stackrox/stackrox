@@ -295,6 +295,7 @@ class Enforcement extends BaseSpecification {
                 .addPort(22)
                 .addLabel("app", "scale-down-enforcement-build-deploy")
                 .setSkipReplicaWait(true)
+                .setCommand(["sleep", "600"])
         orchestrator.createDeployment(d)
         assert Services.waitForDeployment(d)
 

@@ -304,6 +304,10 @@ class Kubernetes implements OrchestratorMain {
                     println "Could not query K8S for pod details, assuming pod was killed"
                     return true
                 }
+                println "Pod Deletion Timestamp: ${pod.metadata.deletionTimestamp}"
+                if (pod.metadata.deletionTimestamp != null ) {
+                    return true
+                }
             } catch (Exception e) {
                 println "wasContainerKilled: error fetching pod details - retrying"
             }

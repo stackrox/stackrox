@@ -902,6 +902,8 @@ jobs:
       - MONITORING_SUPPORT: true
       - ROX_COMPLIANCE_ENABLED: true
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
+      - ROX_PERFORM_DEPLOYMENT_RECONCILIATION: true
+
     steps:
       - checkout
       - *checkOpenshiftLabel
@@ -936,6 +938,8 @@ jobs:
               export REGISTRY_PASSWORD=$DOCKER_IO_PASSWORD
               export REGISTRY_USERNAME=$DOCKER_IO_USERNAME
             EOF
+
+            ./scripts/ci/openshift-gcr-secrets.sh
 
       - run:
           name: Deploy to remote cluster
