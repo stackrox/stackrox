@@ -11,6 +11,7 @@ import Tooltip from 'rc-tooltip';
 import 'rc-tooltip/assets/bootstrap.css';
 
 import Logo from 'Components/icons/logo';
+import Menu from 'Components/Menu';
 import { actions as authActions, AUTH_STATUS } from 'reducers/auth';
 
 const titleMap = {
@@ -26,6 +27,8 @@ const topNavBtnTextClass = 'sm:hidden md:flex uppercase text-sm tracking-wide';
 const topNavBtnSvgClass = 'sm:mr-0 md:mr-3 h-4 w-4';
 const topNavBtnClass =
     'flex flex-end px-4 no-underline pt-3 pb-2 text-base-600 hover:bg-base-200 items-center cursor-pointer';
+const topNavMenuBtnClass =
+    'no-underline text-base-600 hover:bg-base-200 items-center cursor-pointer';
 
 class TopNavigation extends Component {
     static propTypes = {
@@ -125,6 +128,25 @@ class TopNavigation extends Component {
         );
     };
 
+    renderNavBarMenu = () => {
+        const NavItem = () => (
+            <div className="px-4">
+                <Icon.MoreHorizontal className="h-4 w-4" />
+            </div>
+        );
+        const options = [
+            { label: 'Product License', link: '/main/license' },
+            { label: 'Logout', onClick: () => this.props.logout() }
+        ];
+        return (
+            <Menu
+                className={`${topNavMenuBtnClass} border-l border-base-400`}
+                triggerComponent={<NavItem />}
+                options={options}
+            />
+        );
+    };
+
     render() {
         return (
             <nav className="top-navigation flex flex-1 justify-between bg-base-200 relative bg-header">
@@ -137,7 +159,9 @@ class TopNavigation extends Component {
                 <div className="flex">
                     {this.renderSearchButton()}
                     {this.renderCLIDownloadButton()}
-                    {this.renderLogoutButton()}
+                    {process.env.NODE_ENV === 'development'
+                        ? this.renderNavBarMenu()
+                        : this.renderLogoutButton()}
                 </div>
             </nav>
         );

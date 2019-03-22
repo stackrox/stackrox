@@ -148,7 +148,7 @@ class MainPage extends Component {
                 <div className="navigation-gradient" />
                 {this.renderVersionOutOfDate()}
                 <UnreachableWarning />
-                <header className="flex z-1">
+                <header className="flex z-20">
                     <TopNavigation />
                 </header>
                 <section className="flex flex-1 flex-row">

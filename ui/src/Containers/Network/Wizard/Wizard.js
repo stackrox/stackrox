@@ -14,7 +14,7 @@ function Wizard(props) {
     const width = props.wizardOpen ? 'w-1/3' : 'w-0';
 
     return (
-        <div className={`${width} h-full absolute pin-r z-1 bg-primary-200 shadow-lg`}>
+        <div className={`${width} h-full absolute pin-r bg-primary-200 shadow-lg`}>
             <NodesUpdateSection />
             <Details />
             <Creator />

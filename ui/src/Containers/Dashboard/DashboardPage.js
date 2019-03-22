@@ -183,7 +183,7 @@ class DashboardPage extends Component {
         return (
             <section className="flex flex-1 h-full w-full bg-base-200">
                 <div className="flex flex-col w-full">
-                    <div className="z-1">
+                    <div className="">
                         <PageHeader header="Dashboard" subHeader={subHeader}>
                             <SearchInput
                                 className="w-full"
