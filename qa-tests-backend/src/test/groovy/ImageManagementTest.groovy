@@ -8,19 +8,25 @@ import io.stackrox.proto.storage.PolicyOuterClass.LifecycleStage
 class ImageManagementTest extends BaseSpecification {
     @Shared
     private String gcrId
+    @Shared
+    private String azureId
 
     def setupSpec() {
         gcrId = Services.addGcrRegistryAndScanner()
         assert gcrId != null
+
+        azureId = Services.addAzureACRRegistry()
+        assert azureId != null
     }
 
     def cleanupSpec() {
         assert Services.deleteGcrRegistryAndScanner(gcrId)
+        assert Services.deleteImageIntegration(azureId)
     }
 
     @Unroll
     @Category([BAT, Integration])
-    def "Verify CI/CD Integration Endpoint - #policy"() {
+    def "Verify CI/CD Integration Endpoint - #policy - #imageRegistry"() {
         when:
         "Update Policy to build time"
         def startStages = Services.updatePolicyLifecycleStage(policy, [LifecycleStage.BUILD,])
@@ -45,6 +51,8 @@ class ImageManagementTest extends BaseSpecification {
         //intentionally use the same policy twice to make sure alert count does not increment
         "Latest tag"                                  | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
         "90-Day Image Age"                            | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
+        // verify Azure registry
+        "90-Day Image Age"                            | "stackroxacr.azurecr.io" | "nginx" | "1.12"
         "Ubuntu Package Manager in Image"             | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
         "Curl in Image"                               | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
         "Fixable CVSS >= 7"                           | "us.gcr.io" | "stackrox-ci/nginx" | "1.11"

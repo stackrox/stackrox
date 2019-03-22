@@ -436,6 +436,32 @@ class Services extends BaseService {
         }
     }
 
+    static String addAzureACRRegistry() {
+        String azurePassword = System.getenv("AZURE_REGISTRY_PASSWORD")
+
+        try {
+            String azureID = getIntegrationClient().postImageIntegration(
+                    ImageIntegrationOuterClass.ImageIntegration.newBuilder()
+                            .setName("azure")
+                            .setType("azure")
+                            .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
+                            .setDocker(
+                            ImageIntegrationOuterClass.DockerConfig.newBuilder()
+                                    .setEndpoint("stackroxacr.azurecr.io")
+                                    .setUsername("3e30919c-a552-4b1f-a67a-c68f8b32dad8")
+                                    .setPassword(azurePassword)
+                                    .build()
+                    ).build()
+            )
+                    .getId()
+            return azureID
+        } catch (Exception e) {
+            println e.toString()
+        }
+
+        return ""
+    }
+
     static String addGcrRegistryAndScanner() {
         String serviceAccount = System.getenv("GOOGLE_CREDENTIALS_GCR_SCANNER")
         String gcrId = ""
