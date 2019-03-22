@@ -304,7 +304,7 @@ ui-test:
 	make -C ui test
 
 .PHONY: test
-test: bazel-test ui-test collector-tag
+test: bazel-test ui-test
 
 .PHONY: integration-unit-tests
 integration-unit-tests: gazelle

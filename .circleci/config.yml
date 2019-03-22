@@ -498,8 +498,16 @@ jobs:
       - *setupBazel
 
       - run:
-          name: Run unit tests
-          command: make test upload-coverage
+          name: Run Go unit tests
+          command: make bazel-test
+
+      - run:
+          name: Run UI unit tests
+          command: make ui-test
+
+      - run:
+          name: Upload coverage information
+          command: make upload-coverage
 
   style-checks:
     <<: *defaults
