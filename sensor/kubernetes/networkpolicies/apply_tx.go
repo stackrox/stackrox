@@ -144,6 +144,12 @@ func (t *applyTx) Rollback() error {
 
 func (t *applyTx) createNetworkPolicy(policy *networkingV1.NetworkPolicy) error {
 	nsClient := t.networkingClient.NetworkPolicies(policy.Namespace)
+
+	if policy.ResourceVersion != "" {
+		policy = policy.DeepCopy()
+		policy.ResourceVersion = ""
+	}
+
 	_, err := nsClient.Create(policy)
 	if err != nil {
 		return err
