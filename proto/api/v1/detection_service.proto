@@ -13,6 +13,7 @@ package v1;
 message BuildDetectionRequest {
     oneof Resource {
         storage.Image image = 1;
+        string image_name   = 3;
     }
     bool no_external_metadata = 2;
 }

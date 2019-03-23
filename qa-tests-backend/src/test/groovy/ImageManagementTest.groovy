@@ -60,6 +60,40 @@ class ImageManagementTest extends BaseSpecification {
         "Apache Struts: CVE-2017-5638"                | "apollo-dtr.rox.systems" | "legacy-apps/struts-app" | "latest"
     }
 
+    @Unroll
+    @Category([BAT, Integration])
+    def "Verify CI/CD Integration Endpoint Whitelists - #policy"() {
+        when:
+        "Update Policy to build time and mark policy whitelist"
+        def startStages = Services.updatePolicyLifecycleStage(policy, [LifecycleStage.BUILD,])
+        Services.updatePolicyImageWhitelist(policy, whitelists)
+
+        and:
+        "Request Image Scan"
+        def scanResults = Services.requestBuildImageScan(imageRegistry, imageRemote, imageTag)
+
+        then:
+        "verify violation matches expected violation status"
+        assert expectedViolation == (scanResults.getAlertsList().findAll { it.getPolicy().name == policy }.size() == 1)
+
+        cleanup:
+        "Revert Policy"
+        Services.updatePolicyLifecycleStage(policy, startStages)
+        Services.updatePolicyImageWhitelist(policy, [])
+
+        where:
+        "Data inputs are: "
+
+        policy       | imageRegistry | imageRemote       | imageTag | whitelists | expectedViolation
+        "Latest tag" | "docker.io"   | "library/busybox" | "latest" | ["docker.io"]                         | false
+        "Latest tag" | "docker.io"   | "library/busybox" | "latest" | ["docker.io/library"]                 | false
+        "Latest tag" | "docker.io"   | "library/busybox" | "latest" | ["docker.io/library/busybox"]         | false
+        "Latest tag" | "docker.io"   | "library/busybox" | "latest" | ["docker.io/library/busybox:latest"]  | false
+        "Latest tag" | "docker.io"   | "library/busybox" | "latest" | ["other"]                             | true
+        "Latest tag" | "docker.io"   | "library/busybox" | "latest" | ["docker.io/library/busybox:1.10"]    | true
+        "Latest tag" | "docker.io"   | "library/busybox" | "latest" | ["library/busybox:1.10"]              | true
+    }
+
     @Category(Integration)
     def "Verify lifecycle Stage can only be build time for policies with image criteria"() {
         when:

@@ -248,6 +248,7 @@ class Services extends BaseService {
     }
 
     static requestBuildImageScan(String registry, String remote, String tag) {
+        println "${registry}/${remote}:${tag}"
         return getDetectionClient().detectBuildTime(BuildDetectionRequest.newBuilder().setImage(
                 ImageOuterClass.Image.newBuilder()
                         .setName(ImageOuterClass.ImageName.newBuilder()
@@ -308,6 +309,31 @@ class Services extends BaseService {
         }
         println "Updated lifecycleStage of '${policyName}' to ${stages}"
         return policyMeta.getLifecycleStagesList()
+    }
+
+    static updatePolicyImageWhitelist(String policyName, List<String> images) {
+        Policy policyMeta = getPolicyByName(policyName)
+
+        def builder = Policy.newBuilder(policyMeta).clearWhitelists()
+        for (String image: images) {
+            builder.addWhitelists(
+                    Whitelist.newBuilder()
+                            .setImage(
+                                Whitelist.Image.newBuilder()
+                                        .setName(image)
+                                        .build()
+                            ).build())
+        }
+        def policyDef = builder.build()
+
+        try {
+            getPolicyClient().putPolicy(policyDef)
+        } catch (Exception e) {
+            println e.toString()
+            return []
+        }
+        println "Updated whitelists of '${policyName}' to ${images}"
+        return images
     }
 
     static updatePolicyEnforcement(String policyName, List<EnforcementAction> enforcementActions) {

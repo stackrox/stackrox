@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -32,4 +33,18 @@ func (i Wrapper) ShortRegistrySHA() string {
 		return withoutAlgorithm
 	}
 	return withoutAlgorithm[:12]
+}
+
+// FullName returns a fullname generated from the image fields
+func (i Wrapper) FullName() string {
+	if i.GetName().GetFullName() != "" {
+		return i.GetName().GetFullName()
+	}
+	if i.GetName().GetTag() == "" {
+		return fmt.Sprintf("%s/%s@%s", i.GetName().GetRegistry(), i.GetName().GetRemote(), i.GetId())
+	}
+	if i.GetId() != "" {
+		return fmt.Sprintf("%s/%s:%s@%s", i.GetName().GetRegistry(), i.GetName().GetRemote(), i.GetName().GetTag(), i.GetId())
+	}
+	return fmt.Sprintf("%s/%s:%s", i.GetName().GetRegistry(), i.GetName().GetRemote(), i.GetName().GetTag())
 }

@@ -24,6 +24,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/images/enricher"
+	"github.com/stackrox/rox/pkg/images/types"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	resourcesConv "github.com/stackrox/rox/pkg/protoconv/resources"
@@ -77,8 +79,20 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // DetectBuildTime runs detection on a built image.
 func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetectionRequest) (*apiV1.BuildDetectionResponse, error) {
-	if req.GetImage().GetName() == nil {
-		return nil, fmt.Errorf("image name contents missing")
+	image := req.GetImage()
+	if req.GetImageName() != "" {
+		var err error
+		image, err = utils.GenerateImageFromString(req.GetImageName())
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	}
+	if image.GetName() == nil {
+		return nil, fmt.Errorf("image or image_name must be specified")
+	}
+	// This is a workaround for those who post the full image, but don't fill in fullname
+	if name := req.GetImage().GetName(); name != nil && name.GetFullName() == "" {
+		name.FullName = types.Wrapper{Image: req.GetImage()}.FullName()
 	}
 
 	_ = s.imageEnricher.EnrichImage(enricher.EnrichmentContext{NoExternalMetadata: req.GetNoExternalMetadata()}, req.GetImage())
