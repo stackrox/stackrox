@@ -4,19 +4,39 @@ import { connect } from 'react-redux';
 import { actions as graphActions } from 'reducers/network/graph';
 
 import Cytoscape from 'cytoscape';
+import CytoscapeComponent from 'react-cytoscapejs';
 import coseBilkentPlugin from 'cytoscape-cose-bilkent';
-import { coseBilkent as layout } from 'Containers/Network/Graph/networkGraphLayouts';
-
-import { getLinks } from 'utils/networkGraphUtils';
+import nodeHtmlLabel from 'cytoscape-node-html-label';
+import popper from 'cytoscape-popper';
+import Tippy from 'tippy.js';
 import { uniq, debounce } from 'lodash';
 
+import { coseBilkent as layout } from 'Containers/Network/Graph/networkGraphLayouts';
 import filterModes from 'Containers/Network/Graph/filterModes';
 import style from 'Containers/Network/Graph/networkGraphStyles';
-import CytoscapeComponent from 'react-cytoscapejs';
-
+import { getLinks } from 'utils/networkGraphUtils';
 import { MAX_ZOOM, MIN_ZOOM, ZOOM_STEP, GRAPH_PADDING } from 'constants/cytoscapeGraph';
+import namespaceConnectedSvg from 'images/legend-icons/namespace-egress-ingress.svg';
 
 Cytoscape.use(coseBilkentPlugin);
+Cytoscape.use(nodeHtmlLabel);
+Cytoscape.use(popper);
+
+const namespaceSvgElm = `<img src=${namespaceConnectedSvg} alt="icon" class="h-2 self-center pr-1" />`;
+const nodeHtmlLabelConfig = [
+    {
+        query: ':parent', // cytoscape query selector
+        halign: 'center', // title vertical position. Can be 'left',''center, 'right'
+        valign: 'bottom', // title vertical position. Can be 'top',''center, 'bottom'
+        halignBox: 'center', // title vertical position. Can be 'left',''center, 'right'
+        valignBox: 'bottom', // title relative box vertical position. Can be 'top',''center, 'bottom'
+        tpl: ({ id, active }) =>
+            `<div class="label-img flex bg-base-100 rounded-full border mt-4 px-2 py-1 font-700">
+                ${active ? namespaceSvgElm : ''}
+                ${id}
+            </div>`
+    }
+];
 
 function getClasses(map) {
     return Object.entries(map)
@@ -35,21 +55,73 @@ const NetworkGraph = ({
     const [selectedNode, setSelectedNode] = useState();
     const [hoveredNode, setHoveredNode] = useState();
     const cy = useRef();
+    const tippy = useRef();
 
     const data = nodes.map(datum => ({
         ...datum,
         isActive: filterState !== filterModes.active && datum.internetAccess
     }));
 
-    function getEdgesFromNode(nodeId) {
-        const edges = getLinks(data, networkFlowMapping)
-            .filter(linkItem => !nodeId || linkItem.source === nodeId || linkItem.target === nodeId) // filter by specific nodeId
-            .filter(linkItem => filterState !== filterModes.active || linkItem.isActive)
-            .map(linkItem => ({
-                data: linkItem,
-                classes: linkItem.isActive ? 'active' : ''
-            }));
+    function makePopperDiv(text) {
+        const div = document.createElement('div');
+        div.classList.add('popper');
+        div.innerHTML = text;
+        document.body.appendChild(div);
+        return div;
+    }
 
+    // function createEdgePopper(elm, text) {
+    //     const popperElm = elm.popper({
+    //         content: makePopperDiv(text),
+    //         popper: {
+    //             removeOnDestroy: true
+    //         }
+    //     });
+    //     const updatePopper = () => popperElm.scheduleUpdate();
+
+    //     elm.connectedNodes().on('position', updatePopper);
+    //     elm.connectedNodes()
+    //         .parent()
+    //         .on('position', updatePopper);
+    //     cy.on('pan zoom resize', updatePopper);
+    // }
+
+    function createTippy(elm, text) {
+        if (!elm) return;
+        const popperRef = elm.popperRef();
+        if (tippy.current) tippy.current.destroy();
+
+        tippy.current = new Tippy(popperRef, {
+            content: makePopperDiv(text),
+            arrow: true,
+            delay: 0,
+            duration: 0
+        });
+
+        tippy.current.show();
+    }
+
+    function getEdgesFromNode(nodeId) {
+        const links = getLinks(data, networkFlowMapping);
+        const edgeMap = {};
+        const edges = [];
+        links.forEach(linkItem => {
+            const { source, target, isActive } = linkItem;
+            if (
+                (!nodeId || source === nodeId || target === nodeId) &&
+                (filterState !== filterModes.active || isActive)
+            ) {
+                const edge = {
+                    data: linkItem,
+                    classes: filterState !== filterModes.allowed && isActive ? 'active' : ''
+                };
+                const id = [source, target].sort().join('--');
+                if (!edgeMap[id]) edges.push(edge);
+                edgeMap[id] = true;
+            }
+        });
+
+        // TODO: check for edges in different namespace and consolidate them into one line
         return edges;
     }
 
@@ -92,12 +164,16 @@ const NetworkGraph = ({
 
         const namespaceList = uniq(
             filteredData.map(datum => datum.entity.deployment.namespace)
-        ).map(namespace => ({
-            data: {
-                id: namespace
-            },
-            classes: activeNamespaces.includes(namespace) ? 'nsActive' : ''
-        }));
+        ).map(namespace => {
+            const active = activeNamespaces.includes(namespace);
+            return {
+                data: {
+                    id: namespace,
+                    active
+                },
+                classes: active ? 'nsActive' : ''
+            };
+        });
 
         return [...namespaceList, ...deploymentList];
     }
@@ -113,6 +189,11 @@ const NetworkGraph = ({
 
     function nodeHoverHandler(ev) {
         setHoveredNode(ev.target.data());
+        const { name, parent, id } = ev.target.data();
+        const isChild = !!parent;
+        if (!cy || !isChild) return;
+        const nodeElm = cy.current.getElementById(id);
+        createTippy(nodeElm, name);
     }
 
     function nodeMouseOutHandler() {
@@ -177,7 +258,10 @@ const NetworkGraph = ({
                 clickHandler(ev);
             })
             .on('mouseover', 'node', debounce(nodeHoverHandler, 100))
-            .on('mouseout', 'node', nodeMouseOutHandler);
+            .on('mouseout', 'node', nodeMouseOutHandler)
+            .on('mouseout mousedown', 'node', () => {
+                if (tippy.current) tippy.current.destroy();
+            });
     }
 
     const elements = getElements();
@@ -212,9 +296,15 @@ const NetworkGraph = ({
         cy.current.layout(layout).run();
     }
 
+    function setNodeHtmlLabel() {
+        if (!cy.current) return;
+        cy.current.nodeHtmlLabel(nodeHtmlLabelConfig);
+    }
+
     useEffect(handleWindowResize, []);
     useEffect(setGraphRef, []);
     useEffect(runLayout, [nodes.length]);
+    useEffect(setNodeHtmlLabel, [nodes.length]);
 
     return (
         <div className="h-full w-full relative">

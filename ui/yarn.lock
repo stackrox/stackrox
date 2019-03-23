@@ -3499,6 +3499,18 @@ cytoscape-cose-bilkent@^4.0.0:
   resolved "https://registry.yarnpkg.com/cytoscape-cose-bilkent/-/cytoscape-cose-bilkent-4.0.0.tgz#5f0afbe5c55a7a026442b756ca388ce77c262967"
   integrity sha1-Xwr75cVaegJkQrdWyjiM53wmKWc=
 
+cytoscape-node-html-label@^1.1.3:
+  version "1.1.3"
+  resolved "https://registry.yarnpkg.com/cytoscape-node-html-label/-/cytoscape-node-html-label-1.1.3.tgz#b6c286b7fed71506f60d1898a4226811ae9f6d20"
+  integrity sha512-KLpNsOTCcUOKFmbzluHWY07dlk8JQ3K+ZOAxVFT1aiBDTGIWzJEB1hkxE/tYdbHI9M2L6at3J0QcBxdVVYDxjA==
+
+cytoscape-popper@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/cytoscape-popper/-/cytoscape-popper-1.0.4.tgz#13388223d6d84f66f121643fb1213c26d1c693f8"
+  integrity sha512-rKzWiuhGDw0+1UwKK+2eXkZVSNR8TxAXp3k0QOOkH0GW1w55mnCDUVUKZuQyXqHtcZie+TnW1FJ5ml2Uc/lkOg==
+  dependencies:
+    popper.js "^1.0.0"
+
 cytoscape@^3.2.19, cytoscape@^3.5.0:
   version "3.5.0"
   resolved "https://registry.yarnpkg.com/cytoscape/-/cytoscape-3.5.0.tgz#b6cc5a9c66b7f29f8d7f6dfbb0c0e31a8af748a1"
@@ -9102,6 +9114,11 @@ polished@^2.0.2:
   dependencies:
     "@babel/runtime" "^7.0.0"
 
+popper.js@^1.0.0, popper.js@^1.14.7:
+  version "1.14.7"
+  resolved "https://registry.yarnpkg.com/popper.js/-/popper.js-1.14.7.tgz#e31ec06cfac6a97a53280c3e55e4e0c860e7738e"
+  integrity sha512-4q1hNvoUre/8srWsH7hnoSJ5xVmIL4qgz+s4qf2TnJIMyZFUFMGH+9vE7mXynAlHSZ/NdTmmow86muD0myUkVQ==
+
 portfinder@^1.0.9:
   version "1.0.17"
   resolved "https://registry.yarnpkg.com/portfinder/-/portfinder-1.0.17.tgz#a8a1691143e46c4735edefcf4fbcccedad26456a"
@@ -12183,6 +12200,13 @@ tiny-emitter@^2.0.0:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/tiny-emitter/-/tiny-emitter-2.0.2.tgz#82d27468aca5ade8e5fd1e6d22b57dd43ebdfb7c"
   integrity sha512-2NM0auVBGft5tee/OxP4PI3d8WItkDM+fPnaRAVo6xTDI2knbz9eC5ArWGqtGlYqiH3RU5yMpdyTTO7MguC4ow==
+
+tippy.js@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/tippy.js/-/tippy.js-4.2.0.tgz#68387485cbc5d30ad5416bb01a20e63548898145"
+  integrity sha512-+WZRGtpIusZeJdZB2W5/rmOsT+6t3ASiQP0gln/OW1c+Goc6lx4vf+3i3KAJO875y7Vc1hGmFgyAMHor/eISBQ==
+  dependencies:
+    popper.js "^1.14.7"
 
 tmp@0.0.31:
   version "0.0.31"

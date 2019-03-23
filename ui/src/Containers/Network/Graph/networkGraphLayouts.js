@@ -37,7 +37,9 @@ export const coseBilkent = {
     // Gravity range (constant)
     gravityRange: 3.8,
     // Initial cooling factor for incremental layout
-    initialEnergyOnIncremental: 0.5
+    initialEnergyOnIncremental: 0.5,
+    // a positive value which adjusts spacing between nodes (>1 means greater than usual spacing)
+    spacingFactor: 2
 };
 
 export const grid = {

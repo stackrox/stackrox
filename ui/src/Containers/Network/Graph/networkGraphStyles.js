@@ -1,34 +1,41 @@
+const activeColor = 'hsla(214, 74%, 68%, 1)';
+
 const styles = [
     {
-        selector: 'node',
+        selector: ':parent > node',
         style: {
-            'background-color': 'hsla(225, 18%, 32%, 1)',
+            'background-color': 'hsla(229, 24%, 59%, 1)',
             width: 10,
             height: 10,
             label: 'data(name)',
-            'font-size': '2px',
-            'text-max-width': '12px',
+            'font-size': '8px',
+            'text-max-width': '35px',
             'text-wrap': 'ellipsis',
-            'text-margin-y': '-1px'
+            'text-margin-y': '5px',
+            'text-valign': 'bottom',
+            'font-weight': 'bold',
+            'font-family': 'Open Sans',
+            'min-zoomed-font-size': '20px',
+            color: 'hsla(231, 22%, 49%, 1)'
         }
     },
     {
         selector: 'node.active',
         style: {
-            'background-color': 'hsla(225, 65%, 68%, 1)',
+            'background-color': activeColor,
             'border-style': 'double',
             'border-width': '1px',
-            'border-color': 'hsla(225, 65%, 68%, 1)'
+            'border-color': activeColor
         }
     },
 
     {
         selector: 'node.nsActive',
         style: {
-            'background-color': 'hsla(225, 65%, 68%, 1)',
+            'background-color': activeColor,
             'border-style': 'dashed',
             'border-width': '2px',
-            'border-color': 'hsla(225, 65%, 68%, 1)'
+            'border-color': activeColor
         }
     },
 
@@ -36,22 +43,18 @@ const styles = [
         selector: ':parent',
         style: {
             'background-color': '#fff',
-            'background-opacity': 0.333,
-            label: 'data(id)',
-            'text-max-width': '40px',
-            'font-size': '3px',
-            'text-halign': 'center',
-            'text-valign': 'top',
-            'text-margin-y': 5,
-            'text-background-padding': 5
+            shape: 'roundrectangle',
+            'compound-sizing-wrt-labels': 'include'
         }
     },
 
     {
         selector: 'edge',
         style: {
-            width: 1,
-            'line-color': 'hsla(225, 37%, 36%, 1)'
+            width: 2,
+            'line-style': 'dotted',
+            'line-color': 'hsla(230, 68%, 87%, 1)',
+            'curve-style': 'unbundled-bezier'
         }
     },
 
@@ -65,7 +68,9 @@ const styles = [
     {
         selector: 'edge.active',
         style: {
-            'line-style': 'dotted'
+            'line-style': 'solid',
+            'line-color': 'hsla(229°, 76%, 87%, 1)'
+            // 'curve-style': 'unbundled-bezier'
         }
     }
 ];

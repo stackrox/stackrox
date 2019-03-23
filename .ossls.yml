@@ -137,6 +137,28 @@ dependencies:
         attribution:
          - Cytoscape Consortium
 
+  ui/node_modules/cytoscape-node-html-label:
+    url: https://github.com/kaluginserg/cytoscape-node-html-label
+    license: MIT
+    files:
+      LICENSE: 418b3a46691c9716339e85b61293c8dfa45e79a4ff65c9f43661d1f53ae9dcc5
+      package.json:
+        author: 494214a9a6e7a9679a447cfc252b319d0e87ab6ce0e9729e835a77242e4f6ffc
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+     - Kalugin Sergey
+
+  ui/node_modules/cytoscape-popper:
+    url: https://github.com/cytoscape/cytoscape.js-popper
+    license: MIT
+    files:
+      LICENSE: 81983e54932e9cc49f971f7077f00e5b358c20921a7d42b50ab4aa41a80cfd6e
+      package.json:
+        author: f7006c320744548bf50c26283841b6000097577ca4d92069ae0d0538115792b6
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+     - Cytoscape Consortium
+
   ui/node_modules/d3:
     url: https://github.com/d3/d3
     license: BSD-3-Clause
@@ -728,6 +750,17 @@ dependencies:
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
       - 2016-present Glen Maddern and Maximilian Stoiber
+
+  ui/node_modules/tippy.js:
+    url: https://github.com/atomiks/tippyjs
+    license: MIT
+    files:
+      LICENSE: bc5ffacf450a9310f00eaa36ed0e2367116d63451bcb4311b3a04feb556bf297
+      package.json:
+        author: 385824df27464f826dacfc4aedf37003331d00e79128d890773a83edfcd125fe
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution:
+      - 2017 atomiks
 
   ui/node_modules/three:
     url: https://github.com/mrdoob/three.js
