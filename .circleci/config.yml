@@ -94,7 +94,7 @@ createGKE: &createGKE
   run:
     name: Create GKE cluster
     command: |
-      .circleci/create-cluster.sh
+      source .circleci/create-cluster.sh && create-cluster
 
 # See https://stackoverflow.com/a/46316672 for why we have to use user/pass.
 # This step requires the GCP IAM permission "Kubernetes Engine Admin".
