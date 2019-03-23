@@ -156,7 +156,7 @@ class ImageDetails extends Component {
     renderCVEsTable = () => {
         const { scan, fixableCves } = this.props.image;
         if (!scan) return <div className="p-3">No scanner setup for this registry</div>;
-        return <CVETable components={scan.components} isFixable={fixableCves} />;
+        return <CVETable components={scan.components} containsFixableCVEs={fixableCves > 0} />;
     };
 
     renderDockerfileModal() {

@@ -31,16 +31,10 @@ class DockerfileModal extends Component {
         if (!layer.components || layer.components.length === 0) {
             return null;
         }
-        if (this.props.image.fixableCves) {
-            // Add fixableCount to the row
-            layer.components.forEach((c, i) => {
-                layer.components[i].fixableCount = c.vulns.filter(x => x.fixedBy !== '').length;
-            });
-        }
         return (
             <CVETable
                 components={layer.components}
-                isFixable={this.props.image.fixableCves}
+                containsFixableCVEs={this.props.image.fixableCves > 0}
                 className="cve-table my-3 ml-4 px-2 border-0 border-l-4 border-base-300"
             />
         );

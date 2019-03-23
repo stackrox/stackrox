@@ -1,17 +1,18 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Table, { defaultHeaderClassName } from 'Components/Table';
+import { sortValue } from 'sorters/sorters';
 
 import VulnsTable from './VulnsTable';
 
 class CVETable extends Component {
     static propTypes = {
         components: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-        isFixable: PropTypes.bool
+        containsFixableCVEs: PropTypes.bool
     };
 
     static defaultProps = {
-        isFixable: false
+        containsFixableCVEs: false
     };
 
     getColumns = () => {
@@ -49,13 +50,14 @@ class CVETable extends Component {
             }
         ];
 
-        if (this.props.isFixable) {
+        if (this.props.containsFixableCVEs) {
             columns.push({
                 Header: 'Fixable',
-                accessor: 'fixableCount',
                 className: 'w-1/8 pr-4 flex items-center justify-end',
                 headerClassName:
-                    'w-1/8 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200'
+                    'w-1/8 font-600 text-right border-b border-base-300 border-r-0 pr-4 bg-primary-200',
+                Cell: ({ original }) => original.vulns.filter(vuln => vuln.fixedBy).length,
+                sortMethod: sortValue
             });
         }
         return columns;
@@ -64,7 +66,7 @@ class CVETable extends Component {
     renderVulnsTable = ({ original }) => {
         const { vulns } = original;
         if (vulns.length === 0) return null;
-        return <VulnsTable vulns={vulns} isFixable={this.props.isFixable} />;
+        return <VulnsTable vulns={vulns} containsFixableCVEs={this.props.containsFixableCVEs} />;
     };
 
     render() {

@@ -5,11 +5,11 @@ import Table from 'Components/Table';
 class VulnsTable extends Component {
     static propTypes = {
         vulns: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-        isFixable: PropTypes.bool
+        containsFixableCVEs: PropTypes.bool
     };
 
     static defaultProps = {
-        isFixable: false
+        containsFixableCVEs: false
     };
 
     getColumns = () => {
@@ -42,7 +42,7 @@ class VulnsTable extends Component {
                 className: 'pointer-events-none flex items-center justify-end italic'
             }
         ];
-        if (this.props.isFixable) {
+        if (this.props.containsFixableCVEs) {
             columns.push({
                 Header: 'Fixed',
                 accessor: 'fixedBy',
