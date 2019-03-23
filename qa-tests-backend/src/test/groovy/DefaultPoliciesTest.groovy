@@ -236,6 +236,9 @@ class DefaultPoliciesTest extends BaseSpecification {
             !Constants.VIOLATIONS_WHITELIST.containsKey(deploymentName) ||
                     !Constants.VIOLATIONS_WHITELIST.get(deploymentName).contains(policyName)
         }
+        for (ListAlert violation: unexpectedViolations) {
+            print AlertService.getViolation(violation.getId())
+        }
         unexpectedViolations == []
     }
 

@@ -1,0 +1,46 @@
+FROM registry.redhat.io/rhel7:7.6-151.1550575774
+
+LABEL name="stackrox.io/main"
+LABEL vendor="StackRox (support@stackrox.com)"
+LABEL summary="The StackRox Kubernetes platform"
+LABEL description="This image contains everything required to operate the StackRox Kubernetes platform."
+
+# Telegraf (for monitoring)
+RUN curl -L https://github.com/connorgorman/telegraf/releases/download/1.8.0%2B49-slim/telegraf -o /telegraf && chmod +x /telegraf
+
+ENV PATH="/stackrox:$PATH"
+
+COPY ./policies/ /data/policies
+COPY ./templates/ /data/templates
+COPY ./central-entrypoint.sh /stackrox/
+COPY ./bin/migrator /stackrox/
+COPY ./bin/central /stackrox/
+COPY ./bin/compliance /stackrox/compliance
+COPY ./bin/roxctl* /assets/downloads/cli/
+COPY ./bin/kubernetes-sensor /stackrox/
+COPY ./static-bin/* /stackrox/
+COPY ./ui/build  /ui/
+COPY ./docs/api/v1/swagger.json /docs/api/v1/swagger.json
+
+COPY ./NOTICE.txt /licenses/
+
+COPY ./assets /data/assets
+
+EXPOSE 443
+
+ENTRYPOINT ["/assets/downloads/cli/roxctl-linux"]
+
+# The following paths are written to in Central.
+# Including these VOLUME instructions means that we can enable a
+# read-only root file system without preventing writes to these paths.
+# Trusted CA certificates are written to this path by `update-ca-trust`.
+VOLUME /etc/pki/ca-trust
+# Search indices are generated upon startup and updated thereafter.
+VOLUME /tmp/search
+# The BoltDB is stored at this path.
+VOLUME /var/lib/stackrox
+# The log file is stored at this path
+VOLUME /var/log/stackrox
+
+# /tmp needs to be a read-write filesystem.
+VOLUME /tmp

@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
+export MAIN_IMAGE_REPO="${MAIN_IMAGE_REPO:-stackrox/main}"
+echo "MAIN_IMAGE_REPO set to $MAIN_IMAGE_REPO"
+
 export MAIN_IMAGE_TAG="${MAIN_IMAGE_TAG:-$(git describe --tags --abbrev=10 --dirty)}"
 echo "StackRox image tag set to $MAIN_IMAGE_TAG"
 
-export MAIN_IMAGE="${MAIN_IMAGE:-stackrox/main:$MAIN_IMAGE_TAG}"
+export MAIN_IMAGE="${MAIN_IMAGE_REPO}:${MAIN_IMAGE_TAG}"
 echo "StackRox image set to $MAIN_IMAGE"
 
 export SCANNER_IMAGE="${SCANNER_IMAGE:-}"

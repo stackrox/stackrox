@@ -18,9 +18,20 @@ import (
 )
 
 const (
-	imageName   = `stackrox/main`
-	imageTagEnv = `MAIN_IMAGE_TAG`
+	imageName     = `stackrox/main`
+	rhelImageName = imageName + `-rhel`
+	imageTagEnv   = `MAIN_IMAGE_TAG`
 )
+
+func isMainImage(img string) bool {
+	return img == imageName || img == rhelImageName
+}
+
+func assertImageIsMainImage(t *testing.T, img string) {
+	if !isMainImage(img) {
+		t.Errorf("Image %s is not a known main image", img)
+	}
+}
 
 func TestClusters(t *testing.T) {
 	conn := testutils.GRPCConnectionToCentral(t)
@@ -39,7 +50,11 @@ func TestClusters(t *testing.T) {
 
 	img, err := utils.GenerateImageFromStringWithDefaultTag(c.GetMainImage(), "")
 	require.NoError(t, err)
-	assert.Equal(t, "docker.io/"+imageName, img.GetName().GetFullName())
+
+	name := img.GetName().GetFullName()
+	const expectedPrefix = "docker.io/"
+	assert.True(t, strings.HasPrefix(name, expectedPrefix), "Expected %s to start with %s", name, expectedPrefix)
+	assertImageIsMainImage(t, strings.TrimPrefix(name, expectedPrefix))
 
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
 	cByID, err := service.GetCluster(ctx, &v1.ResourceByID{Id: c.GetId()})
@@ -104,7 +119,7 @@ func verifyCentralDeployment(t *testing.T, centralDeployment *storage.Deployment
 	require.True(t, len(centralDeployment.GetContainers()) >= 1)
 	c := centralDeployment.GetContainers()[0]
 
-	assert.Equal(t, imageName, c.GetImage().GetName().GetRemote())
+	assertImageIsMainImage(t, c.GetImage().GetName().GetRemote())
 	if sha, ok := os.LookupEnv(imageTagEnv); ok {
 		assert.Equal(t, sha, c.GetImage().GetName().GetTag())
 	}
@@ -143,7 +158,8 @@ func verifySensorDeployment(t *testing.T, sensorDeployment *storage.Deployment) 
 	require.True(t, len(sensorDeployment.GetContainers()) >= 1)
 	c := sensorDeployment.GetContainers()[0]
 
-	assert.Equal(t, imageName, c.GetImage().GetName().GetRemote())
+	assertImageIsMainImage(t, c.GetImage().GetName().GetRemote())
+
 	if sha, ok := os.LookupEnv(imageTagEnv); ok {
 		assert.Equal(t, sha, c.GetImage().GetName().GetTag())
 	}
@@ -191,7 +207,7 @@ func TestImages(t *testing.T) {
 	foundMainImage := false
 
 	for _, img := range imageMap[dockerRegistry] {
-		if img.GetName().GetRemote() == imageName {
+		if isMainImage(img.GetName().GetRemote()) {
 			foundMainImage = true
 
 			if sha, ok := os.LookupEnv(imageTagEnv); ok {

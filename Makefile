@@ -304,6 +304,11 @@ bazel-test: gazelle
 	    -- \
 	    //... -proto/... -tests/... -vendor/...
 
+
+.PHONY: ui-build
+ui-build:
+	make -C ui build
+
 .PHONY: ui-test
 ui-test:
 	@# UI tests don't work in Bazel yet.
@@ -344,19 +349,37 @@ image: main-image monitoring-image
 monitoring-image:
 	docker build -t stackrox/monitoring:$(TAG) monitoring
 
+.PHONY: all-builds
+all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) ui-build
+
 .PHONY: main-image
-main-image: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC)
-	make -C ui build
+main-image: all-builds
 	make docker-build-main-image
 
-# This target copies compiled artifacts into the expected locations and
+.PHONY: main-image-rhel
+main-image-rhel: all-builds
+	make docker-build-main-image-rhel
+
+# The following targets copy compiled artifacts into the expected locations and
 # runs the docker build.
 # Please DO NOT invoke this target directly unless you know what you're doing;
 # you probably want to run `make main-image`. This target is only in Make for convenience;
 # it assumes the caller has taken care of the dependencies, and does not
 # declare its dependencies explicitly.
 .PHONY: docker-build-main-image
-docker-build-main-image:
+docker-build-main-image: copy-binaries-to-image-dir
+	docker build -t stackrox/main:$(TAG) image/
+	@echo "Built main image with tag: $(TAG)"
+	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
+
+.PHONY: docker-build-main-image-rhel
+docker-build-main-image-rhel: copy-binaries-to-image-dir
+	docker build -t stackrox/main-rhel:$(TAG) --file image/Dockerfile_rhel --label version=$(TAG) --label release=$(TAG) image/
+	@echo "Built main image for RHEL with tag: $(TAG)"
+	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
+
+.PHONY: copy-binaries-to-image-dir
+copy-binaries-to-image-dir:
 	cp -r ui/build image/ui/
 	cp bazel-bin/central/linux_amd64_pure_stripped/central image/bin/central
 ifdef CI
@@ -376,9 +399,6 @@ else
 	@[ -f image/NOTICE.txt ] || touch image/NOTICE.txt
 endif
 	@[ -d image/docs ] || { echo "Generated docs not found in image/docs. They are required for build."; exit 1; }
-	docker build -t stackrox/main:$(TAG) image/
-	@echo "Built main image with tag: $(TAG)"
-	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 
 .PHONY: scale-image
 scale-image: scale-build clean-image

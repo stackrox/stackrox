@@ -79,6 +79,10 @@ setupGCP: &setupGCP
         export MAIN_IMAGE_TAG="$(make tag)"
         export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json
       EOF
+      if .circleci/pr_has_label.sh ci-run-against-rhel; then
+        echo 'export MAIN_IMAGE_REPO=stackrox/main-rhel' >> "${BASH_ENV}"
+      fi
+
       echo $GKE_SERVICE_ACCOUNT > /tmp/gcp.json
       gcloud auth activate-service-account --key-file /tmp/gcp.json
       gcloud config set project stackrox-ci
@@ -377,6 +381,21 @@ jobs:
           name: Generate the swagger docs
           command: make swagger-docs
 
+      - run:
+          name: Install ossls
+          working_directory: /tmp
+          command: |
+            wget --quiet https://github.com/gruntwork-io/fetch/releases/download/v0.3.2/fetch_linux_amd64
+            sudo install fetch_linux_amd64 /usr/bin/fetch
+            export GITHUB_OAUTH_TOKEN="$GITHUB_TOKEN"
+            fetch --repo="https://github.com/stackrox/ossls" --tag="0.3.0-rc1" --release-asset="ossls_linux_amd64" .
+            sudo install ossls_linux_amd64 /usr/bin/ossls
+            ossls -version
+
+      - run:
+          name: Generate OSS notice
+          command: make ossls-notice
+
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
           paths:
@@ -384,6 +403,7 @@ jobs:
             - bazel-bin/migrator/linux_amd64_pure_stripped/migrator
             - bazel-bin/sensor/kubernetes/linux_amd64_pure_stripped/kubernetes
             - bazel-bin/compliance/collection/linux_amd64_pure_stripped/collection
+            - image/NOTICE.txt # Required license notice
             - image/docs # This will go into the image as generated docs.
             - deps # Used to speed up k8s-tests
             - generated # Used to speed up k8s-tests
@@ -400,21 +420,6 @@ jobs:
           at: /go/src/github.com/stackrox/rox
 
       - *refreshAlpineBaseImage
-
-      - run:
-          name: Install ossls
-          working_directory: /tmp
-          command: |
-            wget --quiet https://github.com/gruntwork-io/fetch/releases/download/v0.3.2/fetch_linux_amd64
-            sudo install fetch_linux_amd64 /usr/bin/fetch
-            export GITHUB_OAUTH_TOKEN="$GITHUB_TOKEN"
-            fetch --repo="https://github.com/stackrox/ossls" --tag="0.3.0-rc1" --release-asset="ossls_linux_amd64" .
-            sudo install ossls_linux_amd64 /usr/bin/ossls
-            ossls -version
-
-      - run:
-          name: Generate OSS notice
-          command: make ossls-notice
 
       - run:
           name: Build main image
@@ -456,6 +461,32 @@ jobs:
 
             export TAG=$(make tag)
             hub-comment -template-file .circleci/comment-template.tpl
+
+  build-rhel:
+    <<: *defaults
+    resource_class: large
+    steps:
+      - checkout
+      - setup_remote_docker
+
+      - attach_workspace:
+          at: /go/src/github.com/stackrox/rox
+
+      - run:
+          name: Login to RedHat registry
+          command: docker login -u "$REDHAT_REGISTRY_USERNAME" -p "$REDHAT_REGISTRY_PASSWORD" https://registry.redhat.io
+
+      - run:
+          name: Build main image for RHEL
+          command: make docker-build-main-image-rhel
+
+      - run:
+          name: Push new image
+          command: |
+            docker login -u "$DOCKER_IO_USERNAME" -p "$DOCKER_IO_PASSWORD" docker.io
+
+            TAG="$(make tag)"
+            docker push "stackrox/main-rhel:${TAG}" | cat
 
   build-scale-and-mock-server:
     <<: *defaults
@@ -1228,6 +1259,14 @@ workflows:
             tags:
               only: /.*/
       - build:
+          requires:
+            - pre-build-ui
+            - pre-build-cli
+            - pre-build-go-binaries
+          filters:
+            tags:
+              only: /.*/
+      - build-rhel:
           requires:
             - pre-build-ui
             - pre-build-cli
