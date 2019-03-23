@@ -5,11 +5,11 @@ import * as Icon from 'react-feather';
 function Message(props) {
     const messageClasses = {
         warn:
-            'warn-message p-4 rounded-sm text-warning-700 items-center border-2 border-base-100 bg-base-100 leading-normal flex-no-shrink justify-center w-full',
+            'warn-message p-4 rounded-sm text-warning-800 items-center border border-warning-700 bg-warning-200 leading-normal flex-no-shrink justify-center w-full',
         error:
-            'error-message p-4 rounded-sm text-alert-800 text-sm items-center border-2 border-base-100 bg-alert-100 leading-normal flex-no-shrink justify-center w-full',
+            'error-message p-4 rounded-sm text-alert-800 items-center border border-alert-700 bg-alert-200 leading-normal flex-no-shrink justify-center w-full',
         info:
-            'info-message p-4 rounded-sm text-success-800 text-sm items-center border-2 border-base-100 bg-success-200 leading-normal flex-no-shrink justify-center w-full'
+            'info-message p-4 rounded-sm text-success-800 items-center border border-success-700 bg-success-200 leading-normal flex-no-shrink justify-center w-full'
     };
 
     const icons = {

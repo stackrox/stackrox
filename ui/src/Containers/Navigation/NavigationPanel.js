@@ -17,6 +17,13 @@ const navLinks = [
     }
 ];
 
+if (process.env.NODE_ENV === 'development') {
+    navLinks.push({
+        text: 'Product License',
+        to: '/main/license'
+    });
+}
+
 class NavigationPanel extends Component {
     static propTypes = {
         panelType: PropTypes.string.isRequired,

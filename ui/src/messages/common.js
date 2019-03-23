@@ -38,6 +38,13 @@ const common = Object.freeze({
         NODE: 'node',
         DEPLOYMENT: 'deployment',
         SECRET: 'secret'
+    },
+    stackroxSupport: {
+        phoneNumber: {
+            withSpaces: '1 (650) 489-6769',
+            withDashes: '1-650-489-6769'
+        },
+        email: 'support@stackrox.com'
     }
 });
 

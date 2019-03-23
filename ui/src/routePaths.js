@@ -18,6 +18,7 @@ export const imagesPath = `${mainPath}/images/:imageId?`;
 export const secretsPath = `${mainPath}/secrets/:secretId?`;
 export const apidocsPath = `${mainPath}/apidocs`;
 export const accessControlPath = `${mainPath}/access`;
+export const licensePath = `${mainPath}/license`;
 
 /**
  *Compliance-related route paths

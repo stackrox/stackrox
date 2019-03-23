@@ -17,7 +17,8 @@ import {
     imagesPath,
     secretsPath,
     apidocsPath,
-    accessControlPath
+    accessControlPath,
+    licensePath
 } from 'routePaths';
 import { selectors } from 'reducers';
 import { actions as globalSearchActions } from 'reducers/globalSearch';
@@ -46,10 +47,10 @@ const AsyncViolationsPage = asyncComponent(() => import('Containers/Violations/V
 const AsyncPoliciesPage = asyncComponent(() => import('Containers/Policies/Page'));
 const AsyncImagesPage = asyncComponent(() => import('Containers/Images/ImagesPage'));
 const AsyncCompliancePage = asyncComponent(() => import('Containers/Compliance/Page'));
-
 const AsyncRiskPage = asyncComponent(() => import('Containers/Risk/RiskPage'));
 const AsyncSecretsPage = asyncComponent(() => import('Containers/Secrets/SecretsPage'));
 const AsyncAccessControlPage = asyncComponent(() => import('Containers/AccessControl/Page'));
+const AsyncLicensePage = asyncComponent(() => import('Containers/License/Page'));
 
 class MainPage extends Component {
     static propTypes = {
@@ -113,6 +114,7 @@ class MainPage extends Component {
                     <ProtectedRoute path={secretsPath} component={AsyncSecretsPage} />
                     <ProtectedRoute path={accessControlPath} component={AsyncAccessControlPage} />
                     <ProtectedRoute path={apidocsPath} component={AsyncApiDocsPage} />
+                    <ProtectedRoute devOnly path={licensePath} component={AsyncLicensePage} />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
                 {this.renderPDFLoader()}
