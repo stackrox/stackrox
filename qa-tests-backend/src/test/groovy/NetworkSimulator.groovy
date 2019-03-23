@@ -320,9 +320,6 @@ class NetworkSimulator extends BaseSpecification {
         def clientAppId = simulation.simulatedGraph.nodesList.find {
             it.deploymentName == CLIENTDEPLOYMENT
         }.deploymentId
-        def clientAppIndex = simulation.simulatedGraph.nodesList.indexOf(
-                simulation.simulatedGraph.nodesList.find { it.deploymentName == CLIENTDEPLOYMENT }
-        )
 
         then:
         "verify simulation"
@@ -337,17 +334,22 @@ class NetworkSimulator extends BaseSpecification {
         assert simulation.policiesList.find { it.policy.name == "allow-ingress-to-application-web" }?.status ==
                 NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.ADDED
 
-        // Verify outEdges are not changed
-        simulation.added.nodeDiffsMap.each {
-            assert it.value.policyIdsCount > 0
-            assert it.value.outEdgesCount == 0
+        // Verify added details for deployments in test namespace
+        simulation.added.nodeDiffsMap.each { k, v ->
+            if (simulation.simulatedGraph.nodesList.get(k).entity.deployment.namespace == "qa") {
+                assert v.policyIdsCount > 0
+                assert v.outEdgesCount == 0
+                assert !v.nonIsolatedIngress
+                assert !v.nonIsolatedEgress
+            }
         }
 
-        // Verify outEdge to 'client' is removed from all nodes
-        simulation.removed.nodeDiffsMap.each {
-            if (it.key != clientAppIndex) {
-                assert it.value.outEdgesMap.containsKey(clientAppIndex)
-            }
+        // Verify removed details contains only deployments from test namespace
+        simulation.removed.nodeDiffsMap.each { k, v ->
+            assert simulation.simulatedGraph.nodesList.get(k).entity.deployment.namespace == "qa"
+            assert v.policyIdsCount == 0
+            assert v.nonIsolatedIngress
+            assert v.nonIsolatedEgress
         }
      }
 
