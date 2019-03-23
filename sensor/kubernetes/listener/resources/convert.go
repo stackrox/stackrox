@@ -326,10 +326,8 @@ func (w *deploymentWrap) populateNamespaceID(namespaceStore *namespaceStore) {
 
 func (w *deploymentWrap) populatePorts() {
 	w.portConfigs = make(map[portRef]*storage.PortConfig)
-	w.Ports = nil
 	for _, c := range w.GetContainers() {
 		for _, p := range c.GetPorts() {
-			w.Ports = append(w.Ports, p)
 			w.portConfigs[portRef{Port: intstr.FromInt(int(p.ContainerPort)), Protocol: v1.Protocol(p.Protocol)}] = p
 			if p.Name != "" {
 				w.portConfigs[portRef{Port: intstr.FromString(p.Name), Protocol: v1.Protocol(p.Protocol)}] = p

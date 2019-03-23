@@ -24,8 +24,6 @@ import (
 
 const (
 	openshiftEncodedDeploymentConfigAnnotation = `openshift.io/encoded-deployment-config`
-
-	megabyte = 1024 * 1024
 )
 
 var (
@@ -254,9 +252,33 @@ func (w *DeploymentWrap) populateContainerConfigs(podSpec v1.PodSpec) {
 
 		envSlice := make([]*storage.ContainerConfig_EnvironmentConfig, len(c.Env))
 		for i, env := range c.Env {
-			envSlice[i] = &storage.ContainerConfig_EnvironmentConfig{
-				Key:   env.Name,
-				Value: env.Value,
+			if env.ValueFrom == nil {
+				envSlice[i] = &storage.ContainerConfig_EnvironmentConfig{
+					Key:   env.Name,
+					Value: env.Value,
+				}
+			} else {
+				var value string
+				switch {
+				case env.ValueFrom.SecretKeyRef != nil:
+					ref := env.ValueFrom.SecretKeyRef
+					value = fmt.Sprintf("Refers to secret %q with key %q", ref.Name, ref.Key)
+				case env.ValueFrom.ConfigMapKeyRef != nil:
+					ref := env.ValueFrom.ConfigMapKeyRef
+					value = fmt.Sprintf("Refers to config map %q with key %q", ref.Key, ref.Name)
+				case env.ValueFrom.FieldRef != nil:
+					ref := env.ValueFrom.FieldRef
+					value = fmt.Sprintf("Refers to field %q", ref.FieldPath)
+				case env.ValueFrom.ResourceFieldRef != nil:
+					ref := env.ValueFrom.ResourceFieldRef
+					value = fmt.Sprintf("Refers to resource %q from container %q", ref.Resource, ref.ContainerName)
+				default:
+					value = "Unknown environment value reference"
+				}
+				envSlice[i] = &storage.ContainerConfig_EnvironmentConfig{
+					Key:   env.Name,
+					Value: value,
+				}
 			}
 		}
 
@@ -372,6 +394,7 @@ func (w *DeploymentWrap) populateVolumesAndSecrets(podSpec v1.PodSpec) {
 }
 
 func (w *DeploymentWrap) populatePorts(podSpec v1.PodSpec) {
+	w.Ports = nil
 	for i, c := range podSpec.Containers {
 		for _, p := range c.Ports {
 			var exposures []*storage.PortConfig_ExposureInfo
@@ -385,14 +408,20 @@ func (w *DeploymentWrap) populatePorts(podSpec v1.PodSpec) {
 				exposureLevel = storage.PortConfig_HOST
 			}
 
+			protocolStr := string(p.Protocol)
+			if protocolStr == "" {
+				protocolStr = string(v1.ProtocolTCP)
+			}
+
 			portConfig := &storage.PortConfig{
 				Name:          p.Name,
 				ContainerPort: p.ContainerPort,
-				Protocol:      string(p.Protocol),
+				Protocol:      protocolStr,
 				Exposure:      exposureLevel,
 				ExposureInfos: exposures,
 			}
 			w.Deployment.Containers[i].Ports = append(w.Deployment.Containers[i].Ports, portConfig)
+			w.Ports = append(w.Ports, portConfig)
 		}
 	}
 }

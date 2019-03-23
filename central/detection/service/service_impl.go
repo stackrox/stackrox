@@ -136,7 +136,6 @@ func (s *serviceImpl) runDeployTimeDetect(ctx enricher.EnrichmentContext, obj k8
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Could not convert to deployment from resource: %v", err)
 	}
-
 	return s.enrichAndDetect(ctx, deployment)
 }
 

@@ -811,7 +811,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			expectedViolations: map[string]searchbasedpolicies.Violations{
 				secretEnvDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
-						Message: "Container Environment (key='THIS_IS_SECRET_VAR', value='stealthmode') matched environment policy (key = '.*SECRET.*', value = '.*')",
+						Message: "Container Environment (key='THIS_IS_SECRET_VAR', value='stealthmode') matched environment policy (key = '.*SECRET.*|.*PASSWORD.*')",
 					},
 				},
 				},
