@@ -32,6 +32,7 @@ var (
 	Policy                = newResource("Policy")
 	Role                  = newResource("Role")
 	Secret                = newResource("Secret")
+	ServiceAccount        = newResource("ServiceAccount")
 	ServiceIdentity       = newResource("ServiceIdentity")
 	User                  = newResource("User")
 

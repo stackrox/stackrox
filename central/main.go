@@ -60,6 +60,7 @@ import (
 	sensorService "github.com/stackrox/rox/central/sensor/service"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/all"
+	serviceAccountService "github.com/stackrox/rox/central/serviceaccount/service"
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
 	siStore "github.com/stackrox/rox/central/serviceidentities/store"
 	summaryService "github.com/stackrox/rox/central/summary/service"
@@ -203,6 +204,7 @@ func startGRPCServer() {
 		roleService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),
+		serviceAccountService.Singleton(),
 		siService.Singleton(),
 		summaryService.Singleton(),
 		userService.Singleton(),

@@ -22,7 +22,7 @@ func (*serviceAccountDispatcher) ProcessEvent(obj interface{}, action central.Re
 
 	var serviceAccountSecrets []string
 	for _, secret := range serviceAccount.Secrets {
-		serviceAccountSecrets = append(serviceAccountSecrets, string(secret.UID))
+		serviceAccountSecrets = append(serviceAccountSecrets, secret.Name)
 	}
 
 	var serviceAccountImagePullSecrets []string
@@ -38,6 +38,8 @@ func (*serviceAccountDispatcher) ProcessEvent(obj interface{}, action central.Re
 			ClusterName:      serviceAccount.GetClusterName(),
 			CreatedAt:        protoconv.ConvertTimeToTimestamp(serviceAccount.GetCreationTimestamp().Time),
 			AutomountToken:   false,
+			Labels:           serviceAccount.GetLabels(),
+			Annotations:      serviceAccount.GetAnnotations(),
 			Secrets:          serviceAccountSecrets,
 			ImagePullSecrets: serviceAccountImagePullSecrets,
 		},

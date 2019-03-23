@@ -17,6 +17,7 @@ import (
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	policyIndex "github.com/stackrox/rox/central/policy/index"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
+	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
@@ -27,8 +28,9 @@ import (
 
 func TestSearchCategoryToResourceMap(t *testing.T) {
 	allCategories := set.NewV1SearchCategorySet(GetAllSearchableCategories()...).Union(autocompleteCategories)
+	categoryToResource := GetSearchCategoryToResource()
 	for _, searchCategory := range allCategories.AsSlice() {
-		_, ok := SearchCategoryToResource[searchCategory]
+		_, ok := categoryToResource[searchCategory]
 		// This is a programming error. If you see this, add the new category you've added to the
 		// SearchCategoryToResource map!
 		assert.True(t, ok, "Please add category %s to the SearchCategoryToResource map used by the authorizer", searchCategory.String())
@@ -44,6 +46,7 @@ func TestSearchFuncs(t *testing.T) {
 		imageMocks.NewMockDataStore(mockCtrl),
 		policyMocks.NewMockDataStore(mockCtrl),
 		secretMocks.NewMockDataStore(mockCtrl),
+		serviceAccountMocks.NewMockDataStore(mockCtrl),
 		nodeMocks.NewMockGlobalStore(mockCtrl),
 		namespaceMocks.NewMockDataStore(mockCtrl),
 		nil,
@@ -93,6 +96,7 @@ func TestAutocomplete(t *testing.T) {
 		imageMocks.NewMockDataStore(mockCtrl),
 		policyMocks.NewMockDataStore(mockCtrl),
 		secretMocks.NewMockDataStore(mockCtrl),
+		serviceAccountMocks.NewMockDataStore(mockCtrl),
 		nodeMocks.NewMockGlobalStore(mockCtrl),
 		namespaceMocks.NewMockDataStore(mockCtrl),
 		nil,
@@ -165,6 +169,7 @@ func TestAutocompleteForEnums(t *testing.T) {
 		imageMocks.NewMockDataStore(mockCtrl),
 		ds,
 		secretMocks.NewMockDataStore(mockCtrl),
+		serviceAccountMocks.NewMockDataStore(mockCtrl),
 		nodeMocks.NewMockGlobalStore(mockCtrl),
 		namespaceMocks.NewMockDataStore(mockCtrl),
 		nil,

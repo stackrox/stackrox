@@ -19,8 +19,10 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/search/options"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
+	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -43,7 +45,7 @@ type autocompleteResult struct {
 type SearchFunc func(q *v1.Query) ([]*v1.SearchResult, error)
 
 func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
-	return map[v1.SearchCategory]SearchFunc{
+	searchfuncs := map[v1.SearchCategory]SearchFunc{
 		v1.SearchCategory_ALERTS:      s.alerts.SearchAlerts,
 		v1.SearchCategory_DEPLOYMENTS: s.deployments.SearchDeployments,
 		v1.SearchCategory_IMAGES:      s.images.SearchImages,
@@ -52,10 +54,16 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 		v1.SearchCategory_NAMESPACES:  s.namespaces.SearchResults,
 		v1.SearchCategory_NODES:       s.nodes.SearchResults,
 	}
+
+	if features.K8sRBAC.Enabled() {
+		searchfuncs[v1.SearchCategory_SERVICE_ACCOUNTS] = s.serviceAccounts.SearchServiceAccounts
+	}
+
+	return searchfuncs
 }
 
 func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Searcher {
-	return map[v1.SearchCategory]search.Searcher{
+	searchers := map[v1.SearchCategory]search.Searcher{
 		v1.SearchCategory_ALERTS:      s.alerts,
 		v1.SearchCategory_DEPLOYMENTS: s.deployments,
 		v1.SearchCategory_IMAGES:      s.images,
@@ -65,25 +73,24 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 		v1.SearchCategory_NODES:       s.nodes,
 		v1.SearchCategory_COMPLIANCE:  s.aggregator,
 	}
+
+	if features.K8sRBAC.Enabled() {
+		searchers[v1.SearchCategory_SERVICE_ACCOUNTS] = s.serviceAccounts
+	}
+
+	return searchers
 }
 
 var (
-	// GlobalSearchCategories is exposed for e2e options test
-	GlobalSearchCategories = set.NewV1SearchCategorySet(
-		v1.SearchCategory_ALERTS,
-		v1.SearchCategory_DEPLOYMENTS,
-		v1.SearchCategory_IMAGES,
-		v1.SearchCategory_POLICIES,
-		v1.SearchCategory_SECRETS,
-		v1.SearchCategory_NODES,
-		v1.SearchCategory_NAMESPACES,
-	)
-
 	autocompleteCategories = func() set.V1SearchCategorySet {
-		s := set.NewV1SearchCategorySet(GlobalSearchCategories.AsSlice()...)
+		s := set.NewV1SearchCategorySet(GetGlobalSearchCategories().AsSlice()...)
 		s.Add(v1.SearchCategory_COMPLIANCE)
 		return s
 	}()
+)
+
+// GetSearchCategoryToResource gets a map of search category to corresponding resource
+func GetSearchCategoryToResource() map[v1.SearchCategory]permissions.Resource {
 
 	// SearchCategoryToResource maps search categories to resources.
 	// To access search, we require users to have view access to every searchable resource.
@@ -91,7 +98,7 @@ var (
 	// but that requires non-trivial refactoring, so we'll do it if we feel the need later.
 	// This variable is package-level to facilitate the unit test that asserts
 	// that it covers all the searchable categories.
-	SearchCategoryToResource = map[v1.SearchCategory]permissions.Resource{
+	searchCategoryToResource := map[v1.SearchCategory]permissions.Resource{
 		v1.SearchCategory_ALERTS:      resources.Alert,
 		v1.SearchCategory_DEPLOYMENTS: resources.Deployment,
 		v1.SearchCategory_IMAGES:      resources.Image,
@@ -101,20 +108,47 @@ var (
 		v1.SearchCategory_NODES:       resources.Node,
 		v1.SearchCategory_NAMESPACES:  resources.Namespace,
 	}
-)
+
+	if features.K8sRBAC.Enabled() {
+		searchCategoryToResource[v1.SearchCategory_SERVICE_ACCOUNTS] = resources.ServiceAccount
+	}
+
+	return searchCategoryToResource
+}
+
+// GetGlobalSearchCategories returns a set of search categories
+func GetGlobalSearchCategories() set.V1SearchCategorySet {
+	// globalSearchCategories is exposed for e2e options test
+	globalSearchCategories := set.NewV1SearchCategorySet(
+		v1.SearchCategory_ALERTS,
+		v1.SearchCategory_DEPLOYMENTS,
+		v1.SearchCategory_IMAGES,
+		v1.SearchCategory_POLICIES,
+		v1.SearchCategory_SECRETS,
+		v1.SearchCategory_NODES,
+		v1.SearchCategory_NAMESPACES,
+	)
+
+	if features.K8sRBAC.Enabled() {
+		globalSearchCategories.Add(v1.SearchCategory_SERVICE_ACCOUNTS)
+	}
+
+	return globalSearchCategories
+
+}
 
 // SearchService provides APIs for search.
 type serviceImpl struct {
-	alerts      alertDataStore.DataStore
-	deployments deploymentDataStore.DataStore
-	images      imageDataStore.DataStore
-	policies    policyDataStore.DataStore
-	secrets     secretDataStore.DataStore
-	nodes       nodeDataStore.GlobalStore
-	namespaces  namespaceDataStore.DataStore
+	alerts          alertDataStore.DataStore
+	deployments     deploymentDataStore.DataStore
+	images          imageDataStore.DataStore
+	policies        policyDataStore.DataStore
+	secrets         secretDataStore.DataStore
+	serviceAccounts serviceAccountDataStore.DataStore
+	nodes           nodeDataStore.GlobalStore
+	namespaces      namespaceDataStore.DataStore
 
 	aggregator aggregation.Aggregator
-
 	authorizer authz.Authorizer
 }
 
@@ -241,8 +275,9 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 }
 
 func (s *serviceImpl) initializeAuthorizer() {
-	requiredPermissions := make([]*v1.Permission, 0, len(SearchCategoryToResource))
-	for _, resource := range SearchCategoryToResource {
+	searchCategoryToResource := GetSearchCategoryToResource()
+	requiredPermissions := make([]*v1.Permission, 0, len(searchCategoryToResource))
+	for _, resource := range searchCategoryToResource {
 		requiredPermissions = append(requiredPermissions, permissions.View(resource))
 	}
 
@@ -341,7 +376,7 @@ func (s *serviceImpl) Options(ctx context.Context, request *v1.SearchOptionsRequ
 
 // GetAllSearchableCategories returns a list of categories that are currently valid for global search
 func GetAllSearchableCategories() (categories []v1.SearchCategory) {
-	return GlobalSearchCategories.AsSortedSlice(func(catI, catJ v1.SearchCategory) bool {
+	return GetGlobalSearchCategories().AsSortedSlice(func(catI, catJ v1.SearchCategory) bool {
 		return catI < catJ
 	})
 }

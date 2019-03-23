@@ -18,4 +18,5 @@ const (
 	ProviderMetadata
 	ComplianceReturn
 	ImageIntegration
+	ServiceAccount
 )

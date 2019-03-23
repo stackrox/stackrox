@@ -7,7 +7,7 @@ type Batcher struct {
 	batch int
 }
 
-// New returns new betacher
+// New returns new batcher
 func New(totalSize, batchSize int) *Batcher {
 	return &Batcher{
 		total: totalSize,

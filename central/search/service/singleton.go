@@ -9,6 +9,7 @@ import (
 	nodeDataStore "github.com/stackrox/rox/central/node/globalstore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
+	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -25,6 +26,7 @@ func initialize() {
 		imageDataStore.Singleton(),
 		policyDataStore.Singleton(),
 		secretDataStore.Singleton(),
+		serviceAccountDataStore.Singleton(),
 		nodeDataStore.Singleton(),
 		namespaceDataStore.Singleton(),
 		aggregation.Singleton(),

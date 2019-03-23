@@ -23,7 +23,9 @@ import (
 	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
 	processIndicatorMapping "github.com/stackrox/rox/central/processindicator/index/mappings"
 	secretOptions "github.com/stackrox/rox/central/secret/search/options"
+	serviceAccountOptions "github.com/stackrox/rox/central/serviceaccount/search/options"
 	"github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
@@ -31,9 +33,28 @@ import (
 )
 
 var (
+
+	// SearchOptionsMap includes options maps that are not required for document mapping
+	SearchOptionsMap = func() map[v1.SearchCategory][]search.FieldLabel {
+		var searchMap = map[v1.SearchCategory][]search.FieldLabel{
+			v1.SearchCategory_COMPLIANCE: complianceMapping.Options,
+		}
+		entityOptions := GetEntityOptionsMap()
+		for k, v := range entityOptions {
+			searchMap[k] = optionsMapToSlice(v)
+		}
+		return searchMap
+	}
+
+	log = logging.LoggerForModule()
+)
+
+// GetEntityOptionsMap is a mapping from search categories to the options
+func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	// EntityOptionsMap is a mapping from search categories to the options map for that category.
 	// search document maps are also built off this map
-	EntityOptionsMap = map[v1.SearchCategory]search.OptionsMap{
+
+	entityOptionsMap := map[v1.SearchCategory]search.OptionsMap{
 		v1.SearchCategory_ALERTS:              alertMapping.OptionsMap,
 		v1.SearchCategory_DEPLOYMENTS:         deploymentMapping.OptionsMap,
 		v1.SearchCategory_IMAGES:              imageMapping.OptionsMap,
@@ -47,19 +68,13 @@ var (
 		v1.SearchCategory_NODES:               nodeMapping.OptionsMap,
 	}
 
-	// SearchOptionsMap includes options maps that are not required for document mapping
-	SearchOptionsMap = func() map[v1.SearchCategory][]search.FieldLabel {
-		var searchMap = map[v1.SearchCategory][]search.FieldLabel{
-			v1.SearchCategory_COMPLIANCE: complianceMapping.Options,
-		}
-		for k, v := range EntityOptionsMap {
-			searchMap[k] = optionsMapToSlice(v)
-		}
-		return searchMap
+	if features.K8sRBAC.Enabled() {
+		entityOptionsMap[v1.SearchCategory_SERVICE_ACCOUNTS] = serviceAccountOptions.Map
 	}
 
-	log = logging.LoggerForModule()
-)
+	return entityOptionsMap
+
+}
 
 func optionsMapToSlice(options search.OptionsMap) []search.FieldLabel {
 	labels := make([]search.FieldLabel, 0, len(options.Original()))
@@ -127,7 +142,7 @@ func getIndexMapping() mapping.IndexMapping {
 	indexMapping.StoreDynamic = false
 	indexMapping.TypeField = "Type"
 
-	for category, optMap := range EntityOptionsMap {
+	for category, optMap := range GetEntityOptionsMap() {
 		indexMapping.AddDocumentMapping(category.String(), blevesearch.DocumentMappingFromOptionsMap(optMap.Original()))
 	}
 

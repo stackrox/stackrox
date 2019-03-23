@@ -75,7 +75,7 @@ var (
 	SecretID               = newFieldLabel("Secret ID")
 	SecretName             = newFieldLabel("Secret")
 	SecretPath             = newFieldLabel("Secret Path")
-	ServiceAccount         = newFieldLabel("Service Account")
+	ServiceAccountName     = newFieldLabel("Service Account")
 	VolumeName             = newFieldLabel("Volume Name")
 	VolumeSource           = newFieldLabel("Volume Source")
 	VolumeDestination      = newFieldLabel("Volume Destination")

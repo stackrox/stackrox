@@ -30,6 +30,7 @@ import (
 	"github.com/stackrox/rox/central/role/resources"
 	roleStore "github.com/stackrox/rox/central/role/store"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
+	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -58,6 +59,7 @@ type Resolver struct {
 	ProcessIndicatorStore       processIndicatorStore.DataStore
 	RoleStore                   roleStore.Store
 	SecretsDataStore            secretDataStore.DataStore
+	ServiceAccountsDataStore    serviceAccountDataStore.DataStore
 	ViolationsDataStore         violationsDatastore.DataStore
 }
 
@@ -84,29 +86,30 @@ func New() *Resolver {
 		ProcessIndicatorStore:       processIndicatorStore.Singleton(),
 		RoleStore:                   roleStore.Singleton(),
 		SecretsDataStore:            secretDataStore.Singleton(),
+		ServiceAccountsDataStore:    serviceAccountDataStore.Singleton(),
 		ViolationsDataStore:         violationsDatastore.Singleton(),
 	}
 	return resolver
 }
 
 var (
-	readAlerts                = readAuth(resources.Alert)
-	readTokens                = readAuth(resources.APIToken)
-	readClusters              = readAuth(resources.Cluster)
-	readCompliance            = readAuth(resources.Compliance)
-	readComplianceRuns        = readAuth(resources.ComplianceRuns)
-	readComplianceRunSchedule = readAuth(resources.ComplianceRunSchedule)
-	readDeployments           = readAuth(resources.Deployment)
-	readGroups                = readAuth(resources.Group)
-	readImages                = readAuth(resources.Image)
-	readIndicators            = readAuth(resources.Indicator)
-	readNamespaces            = readAuth(resources.Namespace)
-	readNodes                 = readAuth(resources.Node)
-	readNotifiers             = readAuth(resources.Notifier)
-	readPolicies              = readAuth(resources.Policy)
-	readRoles                 = readAuth(resources.Role)
-	readSecrets               = readAuth(resources.Secret)
-
+	readAlerts                 = readAuth(resources.Alert)
+	readTokens                 = readAuth(resources.APIToken)
+	readClusters               = readAuth(resources.Cluster)
+	readCompliance             = readAuth(resources.Compliance)
+	readComplianceRuns         = readAuth(resources.ComplianceRuns)
+	readComplianceRunSchedule  = readAuth(resources.ComplianceRunSchedule)
+	readDeployments            = readAuth(resources.Deployment)
+	readGroups                 = readAuth(resources.Group)
+	readImages                 = readAuth(resources.Image)
+	readIndicators             = readAuth(resources.Indicator)
+	readNamespaces             = readAuth(resources.Namespace)
+	readNodes                  = readAuth(resources.Node)
+	readNotifiers              = readAuth(resources.Notifier)
+	readPolicies               = readAuth(resources.Policy)
+	readRoles                  = readAuth(resources.Role)
+	readSecrets                = readAuth(resources.Secret)
+	readServiceAccounts        = readAuth(resources.ServiceAccount)
 	writeCompliance            = writeAuth(resources.Compliance)
 	writeComplianceRuns        = writeAuth(resources.ComplianceRuns)
 	writeComplianceRunSchedule = writeAuth(resources.ComplianceRunSchedule)

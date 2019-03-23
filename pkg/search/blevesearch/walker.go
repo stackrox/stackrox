@@ -26,6 +26,7 @@ var (
 		"Deployment":       v1.SearchCategory_DEPLOYMENTS,
 		"ProcessIndicator": v1.SearchCategory_PROCESS_INDICATORS,
 		"Secret":           v1.SearchCategory_SECRETS,
+		"ServiceAccount":   v1.SearchCategory_SERVICE_ACCOUNTS,
 		"Alert":            v1.SearchCategory_ALERTS,
 		"Policy":           v1.SearchCategory_POLICIES,
 	}

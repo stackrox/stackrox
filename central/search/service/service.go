@@ -9,6 +9,7 @@ import (
 	nodeDataStore "github.com/stackrox/rox/central/node/globalstore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
+	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -30,16 +31,17 @@ type Service interface {
 
 // New returns a search service
 func New(alerts alertDataStore.DataStore, deployments deploymentDataStore.DataStore, images imageDataStore.DataStore, policies policyDataStore.DataStore,
-	secrets secretDataStore.DataStore, nodes nodeDataStore.GlobalStore, namespaces namespaceDataStore.DataStore, aggregator aggregation.Aggregator) Service {
+	secrets secretDataStore.DataStore, serviceAccounts serviceAccountDataStore.DataStore, nodes nodeDataStore.GlobalStore, namespaces namespaceDataStore.DataStore, aggregator aggregation.Aggregator) Service {
 	s := &serviceImpl{
-		alerts:      alerts,
-		deployments: deployments,
-		images:      images,
-		policies:    policies,
-		secrets:     secrets,
-		nodes:       nodes,
-		namespaces:  namespaces,
-		aggregator:  aggregator,
+		alerts:          alerts,
+		deployments:     deployments,
+		images:          images,
+		policies:        policies,
+		secrets:         secrets,
+		serviceAccounts: serviceAccounts,
+		nodes:           nodes,
+		namespaces:      namespaces,
+		aggregator:      aggregator,
 	}
 	s.initializeAuthorizer()
 	return s
