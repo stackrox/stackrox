@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+# Making this an internal subpackage to keep the impact of having to manually populate a BUILD.bazel file as
+# local as possible.
+
+go_library(
+    name = "go_default_library",
+    srcs = ["timestamp.go"],
+    importpath = "github.com/stackrox/rox/pkg/buildinfo/internal/timestamp",
+    visibility = ["//visibility:public"],
+    x_defs = {
+        "buildTimestampRFC3339": "{BUILD_TIMESTAMP}",
+    },
+)
