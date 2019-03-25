@@ -68,7 +68,7 @@ function* getSearchOptions(setSearchModifiers, setSearchSuggestions, setSearchOp
         yield put(setSearchModifiers(result.options));
         yield put(setSearchSuggestions(result.options));
         const queryOptions = getQuery();
-        if (queryOptions.length) {
+        if (queryOptions.length && setSearchOptions) {
             yield put(setSearchOptions(queryOptions));
         }
     } catch (error) {
@@ -83,7 +83,9 @@ export default function* searches() {
             mainPath,
             getSearchOptions,
             globalSearchActions.setGlobalSearchModifiers,
-            globalSearchActions.setGlobalSearchSuggestions
+            globalSearchActions.setGlobalSearchSuggestions,
+            null,
+            ''
         ),
         takeEveryNewlyMatchedLocation(
             violationsPath,

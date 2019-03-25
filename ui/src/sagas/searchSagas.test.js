@@ -23,10 +23,14 @@ describe('Search Sagas Test', () => {
             .silentRun();
     });
 
+    const expectSagaWithGlobalSearchMocked = toProvide =>
+        expectSaga(saga).provide([[call(fetchOptions, ''), {}], ...toProvide]);
+
     it('Should load search modifiers/suggestions for Alerts when location changes to Violations Page', () => {
         const options = ['option1', 'option2'];
-        return expectSaga(saga)
-            .provide([[call(fetchOptions, 'categories=ALERTS'), { options }]])
+        return expectSagaWithGlobalSearchMocked([
+            [call(fetchOptions, 'categories=ALERTS'), { options }]
+        ])
             .put(alertActions.setAlertsSearchModifiers(options))
             .put(alertActions.setAlertsSearchSuggestions(options))
             .dispatch(createLocationChange('/main/violations'))
@@ -35,8 +39,9 @@ describe('Search Sagas Test', () => {
 
     it('Should load search modifiers/suggestions for Deployments when location changes to Risk Page', () => {
         const options = ['option1', 'option2'];
-        return expectSaga(saga)
-            .provide([[call(fetchOptions, 'categories=DEPLOYMENTS'), { options }]])
+        return expectSagaWithGlobalSearchMocked([
+            [call(fetchOptions, 'categories=DEPLOYMENTS'), { options }]
+        ])
             .put(deploymentsActions.setDeploymentsSearchModifiers(options))
             .put(deploymentsActions.setDeploymentsSearchSuggestions(options))
             .dispatch(createLocationChange('/main/risk'))
@@ -45,8 +50,9 @@ describe('Search Sagas Test', () => {
 
     it('Should load search modifiers/suggestions for Policies when location changes to Policies Page', () => {
         const options = ['option1', 'option2'];
-        return expectSaga(saga)
-            .provide([[call(fetchOptions, 'categories=POLICIES'), { options }]])
+        return expectSagaWithGlobalSearchMocked([
+            [call(fetchOptions, 'categories=POLICIES'), { options }]
+        ])
             .put(policiesActions.setPoliciesSearchModifiers(options))
             .put(policiesActions.setPoliciesSearchSuggestions(options))
             .dispatch(createLocationChange('/main/policies'))

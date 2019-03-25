@@ -78,7 +78,8 @@ describe('Policies Sagas', () => {
         return expectSaga(saga)
             .provide([
                 [select(selectors.getPoliciesSearchOptions), policyTypeSearchOptions],
-                [call(service.fetchPolicies, policiesSearchQuery), dynamic(fetchMock)]
+                [call(service.fetchPolicies, policiesSearchQuery), dynamic(fetchMock)],
+                [call(service.fetchPolicyCategories), { response: policyCategories }]
             ])
             .put(backendActions.fetchPolicies.success(policies))
             .dispatch({
@@ -115,7 +116,9 @@ describe('Policies Sagas', () => {
             .provide([
                 [select(selectors.getPoliciesSearchOptions), []],
                 [call(service.fetchPolicy, policyId), dynamic(fetchMock)],
-                [select(selectors.getWizardPolicy), policy]
+                [select(selectors.getWizardPolicy), policy],
+                [call(service.fetchPolicyCategories), { response: policyCategories }],
+                [call(service.fetchPolicies, { query: '' }), {}]
             ])
             .put(backendActions.fetchPolicy.success(response))
             .put(tableActions.selectPolicyId(policy.id))
@@ -149,7 +152,8 @@ describe('Policies Sagas', () => {
         return expectSaga(saga)
             .provide([
                 [select(selectors.getPoliciesSearchOptions), []],
-                [call(service.savePolicy, policy), dynamic(saveMock)]
+                [call(service.savePolicy, policy), dynamic(saveMock)],
+                [call(service.fetchPolicies, { query: '' }), {}]
             ])
             .dispatch({ type: backendTypes.UPDATE_POLICY, policy })
             .silentRun()
@@ -165,7 +169,8 @@ describe('Policies Sagas', () => {
             .provide([
                 [select(selectors.getPoliciesSearchOptions), []],
                 [select(selectors.getWizardPolicy), policy],
-                [call(service.createPolicy, policy), dynamic(createMock)]
+                [call(service.createPolicy, policy), dynamic(createMock)],
+                [call(service.fetchPolicies, { query: '' }), {}]
             ])
             .put(wizardActions.setWizardStage(wizardStages.details))
             .put(push(`/main/policies/${policy.id}`))
@@ -183,7 +188,10 @@ describe('Policies Sagas', () => {
             .provide([
                 [select(selectors.getPoliciesSearchOptions), []],
                 [select(selectors.getWizardPolicy), policy],
-                [call(service.savePolicy, policy), dynamic(saveMock)]
+                [call(service.savePolicy, policy), dynamic(saveMock)],
+                [call(service.fetchPolicy, policy.id), {}],
+                [call(service.fetchPolicies, { query: '' }), {}],
+                [call(service.fetchPolicyCategories), { response: policyCategories }]
             ])
             .put(wizardActions.setWizardStage(wizardStages.details))
             .dispatch(wizardActions.setWizardStage(wizardStages.save))

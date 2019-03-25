@@ -100,7 +100,8 @@ describe('Deployment Sagas', () => {
                 [select(selectors.getDeploymentsSearchOptions), []],
                 [select(selectors.getDashboardSearchOptions), []],
                 [select(selectors.getPoliciesSearchOptions), []],
-                [call(fetchDeployment, deployment.id), dynamic(fetchMock)]
+                [call(fetchDeployment, deployment.id), dynamic(fetchMock)],
+                [call(fetchDeployments, []), {}]
             ])
             .put(actions.fetchDeployment.success(deployment, { id: deployment.id }))
             .dispatch(createLocationChange(`/main/risk/${deployment.id}`))

@@ -2,7 +2,7 @@ import React from 'react';
 import { mount } from 'enzyme';
 import { MockedProvider } from 'react-apollo/test-utils';
 import { Query } from 'react-apollo';
-import getRouterOptions from 'constants/routerOptions';
+import ReactRouterEnzymeContext from 'react-router-enzyme-context';
 import entityTypes from 'constants/entityTypes';
 
 import { AGGREGATED_RESULTS } from 'queries/controls';
@@ -40,6 +40,7 @@ const checkQueryForElement = (mock, element, entityType) => {
 };
 
 const testQueryForEntityType = (entityType, entityName, clusterName, id) => {
+    const options = new ReactRouterEnzymeContext();
     const mock = getMock(entityType, entityName, clusterName);
     const element = mount(
         <MockedProvider mocks={mock} addTypename={false}>
@@ -50,7 +51,7 @@ const testQueryForEntityType = (entityType, entityName, clusterName, id) => {
                 clusterName={clusterName}
             />
         </MockedProvider>,
-        getRouterOptions(jest.fn())
+        options.get()
     );
 
     checkQueryForElement(mock[0], element, entityType);

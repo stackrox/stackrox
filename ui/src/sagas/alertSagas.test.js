@@ -91,6 +91,7 @@ describe('Alert Sagas', () => {
         return expectSaga(saga)
             .provide([
                 [select(selectors.getAlertsSearchOptions), []],
+                [call(fetchAlerts, { query: '' }), {}],
                 [call(fetchAlert, violation.id), dynamic(fetchMock)]
             ])
             .put(actions.fetchAlert.success(violation, { id: violation.id }))
@@ -115,6 +116,7 @@ describe('Alert Sagas', () => {
 
         return expectSaga(saga)
             .provide([
+                [call(fetchAlerts, { query: '' }), {}],
                 [select(selectors.getAlertsSearchOptions), []],
                 [select(selectors.getAlert, alert.id), alert],
                 [

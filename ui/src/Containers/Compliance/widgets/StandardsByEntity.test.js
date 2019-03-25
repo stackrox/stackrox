@@ -18,6 +18,12 @@ const mocks = [
                 groupBy,
                 unit
             }
+        },
+        result: {
+            loading: false,
+            data: {
+                results: []
+            }
         }
     }
 ];

@@ -10385,6 +10385,14 @@ react-router-dom@^4.3.1:
     react-router "^4.3.1"
     warning "^4.0.1"
 
+react-router-enzyme-context@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/react-router-enzyme-context/-/react-router-enzyme-context-1.2.0.tgz#7aa11c80e23278fa31f8a29845f7b37760d99350"
+  integrity sha512-z6+PQ6sdOHsRk9u4gSfsbeEuWZeogffrmgHo4dFXX5t/K8mUFftZBJQ+imzL3f3T6rkIIp+J7I0CeREYgcqe9A==
+  dependencies:
+    history "^4.7.2"
+    prop-types "^15.6.0"
+
 react-router-prop-types@^1.0.4:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/react-router-prop-types/-/react-router-prop-types-1.0.4.tgz#74716e92d014bb51ee4376ee198f34903cf8dc1d"
