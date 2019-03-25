@@ -1295,30 +1295,35 @@ workflows:
       - k8s-tests:
           requires:
             - build
+            - build-rhel
           filters:
             tags:
               only: /.*/
       - qa-tests:
           requires:
             - build
+            - build-rhel
           filters:
             tags:
               only: /.*/
       - qa-tests-cos-ebpf:
           requires:
             - build
+            - build-rhel
           filters:
             tags:
               only: /.*/
       - upgrade-test:
           requires:
             - build
+            - build-rhel
           filters:
             tags:
               only: /.*/
       - scale:
           requires:
             - build
+            - build-rhel
             - build-scale-and-mock-server
           filters:
             tags:
