@@ -1,7 +1,7 @@
 **/container/bin/*
 **/container/conf/*
 **/container/data/*
-genericserver/bin/*
+webhookserver/bin/*
 
 # Crypto/Secrets
 *.csr

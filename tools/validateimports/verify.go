@@ -28,7 +28,7 @@ var (
 		"integration-tests",
 		"scale",
 		"compliance",
-		"genericserver",
+		"webhookserver",
 	}
 
 	ignoredRoots = []string{

@@ -1,6 +1,6 @@
 defaults: &defaults
   docker:
-    - image: docker.io/stackrox/apollo-ci:0.1.11-22-g6963d4c4f3
+    - image: docker.io/stackrox/apollo-ci:snapshot-0.1.11-23-gdac52dd20a
       auth:
         username: $DOCKER_IO_USERNAME
         password: $DOCKER_IO_PASSWORD
@@ -677,6 +677,7 @@ jobs:
             export CLUSTER=K8S
             export HOSTNAME="${API_HOSTNAME}"
             export PORT="${API_PORT}"
+            ./scripts/ci/create-webhookserver.sh kubectl
             if [ "${CIRCLE_BRANCH}" = "master" ]; then
               echo "On master, running all QA tests..."
               make -C qa-tests-backend test
@@ -1074,6 +1075,7 @@ jobs:
               export CLUSTER=OPENSHIFT
               export HOSTNAME=localhost
               export PORT=${LOCAL_PORT}
+              ./scripts/ci/create-webhookserver.sh oc
               if [ "${CIRCLE_BRANCH}" = "master" ]; then
                 echo "On master, running all QA tests..."
                 make -C qa-tests-backend test

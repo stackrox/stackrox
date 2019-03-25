@@ -1,6 +1,8 @@
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass.BuildDetectionRequest
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
+import io.stackrox.proto.storage.Common
 import io.stackrox.proto.storage.ImageIntegrationOuterClass.ImageIntegration
+import io.stackrox.proto.storage.NotifierOuterClass.Notifier
 import orchestratormanager.OrchestratorType
 import services.AlertService
 import services.BaseService
@@ -442,10 +444,11 @@ class Services extends BaseService {
 
     static testNotifier(NotifierOuterClass.Notifier notifier) {
         try {
-            return getNotifierClient().testNotifier(notifier)
+            getNotifierClient().testNotifier(notifier)
+            return true
         } catch (Exception e) {
             println e.toString()
-            return e
+            return false
         }
     }
 
@@ -566,5 +569,38 @@ class Services extends BaseService {
         }
         println "SR did not detect the deployment ${deployment.name} in ${iterations * interval} seconds"
         return false
+    }
+
+    static Notifier getWebhookIntegrationConfiguration(Boolean enableTLS, String caCert,
+                                                       Boolean skipTLSVerification)  {
+        NotifierOuterClass.GenericOrBuilder genericBuilder =  NotifierOuterClass.Generic.newBuilder()
+                .setEndpoint("http://webhookserver.stackrox:8080")
+                .setCaCert(caCert)
+                .setSkipTLSVerify(skipTLSVerification)
+                .setUsername("admin")
+                .setPassword("admin")
+                .addHeaders(
+                    Common.KeyValuePair.newBuilder().setKey("headerkey").setValue("headervalue").build()
+                )
+                .addExtraFields(Common.KeyValuePair.newBuilder().setKey("fieldkey").setValue("fieldvalue").build())
+        if (enableTLS) {
+            genericBuilder.setEndpoint("https://webhookserver.stackrox:8443")
+        }
+
+        return Notifier.newBuilder()
+            .setName("generic")
+            .setType("generic")
+            .setGeneric(genericBuilder.build())
+            .setUiEndpoint("localhost:8000")
+        .build()
+    }
+
+    static addNotifier(Notifier notifier) {
+        try {
+            return getNotifierClient().postNotifier(notifier).getId()
+        } catch (Exception e) {
+            println e.toString()
+            return ""
+        }
     }
 }

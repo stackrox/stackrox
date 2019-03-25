@@ -1,0 +1,48 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: webhookserver
+  name: webhookserver
+  namespace: stackrox
+spec:
+  selector:
+    matchLabels:
+      app: webhookserver
+  template:
+    metadata:
+      labels:
+        app: webhookserver
+    spec:
+      imagePullSecrets:
+        - name: stackrox
+      containers:
+      - image: stackrox/webhookserver:1.0
+        name: webhookserver
+        command: ["/webhookserver"]
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: "100Mi"
+            cpu: "100m"
+          limits:
+            memory: "100Mi"
+            cpu: "100m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhookserver
+  namespace: stackrox
+spec:
+  ports:
+  - name: "nontls"
+    port: 8080
+    targetPort: 8080
+  - name: "tls"
+    port: 8443
+    targetPort: 8443
+  selector:
+    app: webhookserver
+  type: ClusterIP

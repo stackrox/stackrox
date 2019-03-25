@@ -1,11 +1,37 @@
-import org.junit.experimental.categories.Category
-import groups.BAT
-import spock.lang.Unroll
-import objects.Deployment
-import io.stackrox.proto.api.v1.EmptyOuterClass
+import groovy.json.JsonSlurper
+import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.NotifierOuterClass
 
+import groups.BAT
+import org.junit.experimental.categories.Category
+import spock.lang.Unroll
+import objects.Deployment
+
 class IntegrationsTest extends BaseSpecification {
+
+    static final private String BUSYBOX = "genericbusybox"
+
+    private static final CA_CERT = '''-----BEGIN CERTIFICATE-----
+MIIDgDCCAmgCCQDYOU2KIlcBQjANBgkqhkiG9w0BAQsFADCBgTELMAkGA1UEBhMC
+VVMxCzAJBgNVBAgMAkNBMQswCQYDVQQHDAJTRjERMA8GA1UECgwIc3RhY2tyb3gx
+HzAdBgNVBAMMFndlYmhvb2tzZXJ2ZXIuc3RhY2tyb3gxJDAiBgkqhkiG9w0BCQEW
+FXN0YWNrcm94QHN0YWNrcm94LmNvbTAeFw0xOTAzMjMxNTQzMjVaFw0yOTAzMjAx
+NTQzMjVaMIGBMQswCQYDVQQGEwJVUzELMAkGA1UECAwCQ0ExCzAJBgNVBAcMAlNG
+MREwDwYDVQQKDAhzdGFja3JveDEfMB0GA1UEAwwWd2ViaG9va3NlcnZlci5zdGFj
+a3JveDEkMCIGCSqGSIb3DQEJARYVc3RhY2tyb3hAc3RhY2tyb3guY29tMIIBIjAN
+BgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuPzgVGykTALNHDljDiCjwI4ZfF2r
+lGKWdtvUhurh42Cl2Kfn0Vgy7mYRjdK/uOiSIl6LVXuNw7w4yg48dXm8By+I3+hs
+vMH4ixykWxPn6Ez3Utuuwggn/yAs4kE2Wj0ztFMpRHBGL7Qi7oEv+Vo4349ZJg16
+a55db45O3LgOED119F1hQvxblNZhcA2hnNOhveXsJLfdOQKz6UA4KtdBFXxEeZuB
+fC45wCHw6kjRrBEPYKB4py4ywYMdUHqswBDn6B3LtwvrrJVPTySK4sgZmOTF2XGg
+JRm52MS0rYEvBpEtgkPdknoIv0VnxihMUuRhMXHfGOTFyhWuf/nF2aihXwIDAQAB
+MA0GCSqGSIb3DQEBCwUAA4IBAQCYT7jo6Durhx+liRgYNO3G3mRyc36syVNGsllU
+Mf5wOUHjxWfppWHzldxMeZRKksrg7xfMXdcGaOOZgD8Ir/pPK2HP48g6KIDWCiVO
+kh9AGCLY9osxkBqAihtvJWNkEda+wA9ggF/7wx+0Ci+b/1NvXHeNU3uO3rP7Npwc
+rxhvyNqv7MwqpMN6V8hFxqM/3ny8aoUedFsYsEvm8Dm1VLyBiIqZk0CA2oj3NIjb
+ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
+/jvC1xBvPVtJFbYeBVysQCrRk+f/NyyUejQv+OCJ+B1KtJh4
+-----END CERTIFICATE-----'''
 
     @Unroll
     @Category([BAT])
@@ -21,15 +47,11 @@ class IntegrationsTest extends BaseSpecification {
 
         when:
         "the integration is tested"
-        Object response = Services.testNotifier(notifier)
+        Boolean response = Services.testNotifier(notifier)
 
         then:
         "the API should return an empty message or an error, depending on the config"
-        if (shouldSucceed) {
-            assert response instanceof EmptyOuterClass.Empty
-        } else {
-            assert response instanceof io.grpc.StatusRuntimeException
-        }
+        assert response == shouldSucceed
 
         cleanup:
         "remove notifier"
@@ -124,5 +146,70 @@ class IntegrationsTest extends BaseSpecification {
         orchestrator.deleteDeployment(deployment)
         orchestrator.deleteService( "splunk-hec", "stackrox")
         orchestrator.deleteService( "splunk-http", "stackrox")
+    }
+
+    @Unroll
+    @Category(BAT)
+    def "Verify Generic Integration Test Endpoint"() {
+        when:
+        "the integration is tested"
+
+        NotifierOuterClass.Notifier notifier = Services.getWebhookIntegrationConfiguration(
+                enableTLS, caCert, skipTLSVerification)
+
+        then :
+        "the API should return an empty message or an error, depending on the config"
+        assert shouldSucceed == Services.testNotifier(notifier)
+
+        where:
+        "data"
+
+        enableTLS | caCert | skipTLSVerification | shouldSucceed
+
+        false | ""         | false               | true
+        true  | ""         | true                | true
+        true  | CA_CERT    | false               | true
+        true  | ""         | false               | false
+    }
+
+    @Category(BAT)
+    def "Verify Generic Integration Values"() {
+        when:
+        "the integration is created"
+        NotifierOuterClass.Notifier notifier = Services.getWebhookIntegrationConfiguration(
+                false, "", false)
+        String notifierId = Services.addNotifier(notifier)
+
+        def policy = Services.getPolicyByName("Latest tag")
+        def updatedPolicy = PolicyOuterClass.Policy.newBuilder(policy).addNotifiers(notifierId).build()
+        Services.updatePolicy(updatedPolicy)
+
+        Deployment  deployment =
+                new Deployment()
+                        .setName(BUSYBOX)
+                        .setImage("busybox")
+                        .setCommand(["sleep", "8000"])
+
+        orchestrator.createDeployment(deployment)
+
+        then:
+        "We should check to make sure we got a value"
+        assert Services.waitForViolation(BUSYBOX, "Latest tag", 30)
+
+        def get = new URL("http://localhost:8080").openConnection();
+        def jsonSlurper = new JsonSlurper()
+        def object = jsonSlurper.parseText(get.getInputStream().getText())
+        def generic = object[-1]
+
+        assert generic["headers"]["Headerkey"] == ["headervalue"]
+        assert generic["headers"]["Content-Type"] == ["application/json"]
+        assert generic["headers"]["Authorization"] == ["Basic YWRtaW46YWRtaW4="]
+        assert generic["data"]["fieldkey"] == "fieldvalue"
+        assert generic["data"]["alert"]["policy"]["name"] == "Latest tag"
+        assert generic["data"]["alert"]["deployment"]["name"] == BUSYBOX
+
+        cleanup:
+        Services.deleteNotifier(notifierId)
+        orchestrator.deleteDeployment(deployment)
     }
 }

@@ -271,11 +271,11 @@ scale-build: gazelle
 		//scale/mockcollector \
 		//scale/profiler
 
-.PHONY: genericserver-build
-genericserver-build: gazelle
+.PHONY: webhookserver-build
+webhookserver-build: gazelle
 	@echo "+ $@"
 	bazel build $(BAZEL_FLAGS) \
-		//genericserver
+		//webhookserver
 
 .PHONY: mock-grpc-server-build
 mock-grpc-server-build: gazelle
@@ -408,11 +408,11 @@ scale-image: scale-build clean-image
 	chmod +w scale/image/bin/*
 	docker build -t stackrox/scale:$(TAG) -f scale/image/Dockerfile scale
 
-genericserver-image: genericserver-build
-	mkdir genericserver/bin
-	cp bazel-bin/genericserver/linux_amd64_pure_stripped/genericserver genericserver/bin/genericserver
-	chmod +w genericserver/bin/genericserver
-	docker build -t stackrox/genericserver:latest -f genericserver/Dockerfile genericserver
+webhookserver-image: webhookserver-build
+	-mkdir webhookserver/bin
+	cp bazel-bin/webhookserver/linux_amd64_pure_stripped/webhookserver webhookserver/bin/webhookserver
+	chmod +w webhookserver/bin/webhookserver
+	docker build -t stackrox/webhookserver:1.0 -f webhookserver/Dockerfile webhookserver
 
 .PHONY: mock-grpc-server-image
 mock-grpc-server-image: mock-grpc-server-build clean-image
