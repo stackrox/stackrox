@@ -101,28 +101,83 @@ const NetworkGraph = ({
         tippy.current.show();
     }
 
+    const namespaceMap = {};
+    function getNamespace(nodeId) {
+        if (!nodeId) return null;
+
+        if (namespaceMap[nodeId]) return namespaceMap[nodeId];
+
+        const match = data.find(datum => {
+            if (datum && datum.entity) return datum.entity.id === nodeId;
+            return false;
+        });
+
+        if (!match || !match.entity.deployment) return null;
+
+        namespaceMap[nodeId] = match.entity.deployment.namespace;
+        return match.entity.deployment.namespace;
+    }
+
     function getEdgesFromNode(nodeId) {
         const links = getLinks(data, networkFlowMapping);
+
         const edgeMap = {};
-        const edges = [];
+        const allEdges = [];
+
+        // Get all edges
         links.forEach(linkItem => {
             const { source, target, isActive } = linkItem;
+
             if (
                 (!nodeId || source === nodeId || target === nodeId) &&
                 (filterState !== filterModes.active || isActive)
             ) {
+                const sourceNS = getNamespace(source);
+                const targetNS = getNamespace(target);
                 const edge = {
-                    data: linkItem,
-                    classes: filterState !== filterModes.allowed && isActive ? 'active' : ''
+                    data: {
+                        sourceNS,
+                        targetNS,
+                        ...linkItem
+                    },
+                    classes: `node ${
+                        filterState !== filterModes.allowed && isActive ? 'active' : ''
+                    }`
                 };
                 const id = [source, target].sort().join('--');
-                if (!edgeMap[id]) edges.push(edge);
+                if (!edgeMap[id]) allEdges.push(edge);
                 edgeMap[id] = true;
             }
         });
 
-        // TODO: check for edges in different namespace and consolidate them into one line
-        return edges;
+        // Get namespace counts
+        const NSEdgeCounts = allEdges
+            .filter(edge => edge.data.sourceNS !== edge.data.targetNS)
+            .reduce((acc, curr) => {
+                const { sourceNS, targetNS } = curr.data;
+                const id = [sourceNS, targetNS].sort().join(',');
+                if (!acc[id]) acc[id] = 1;
+                else acc[id] += 1;
+                return acc;
+            }, {});
+
+        // Create NS Edges with count
+        const NSEdges = Object.keys(NSEdgeCounts).map(NSId => {
+            const [source, target] = NSId.split(',');
+            const count = NSEdgeCounts[NSId];
+            return {
+                data: {
+                    source,
+                    target,
+                    count
+                },
+                classes: `namespace`
+            };
+        });
+
+        // remove inter namespace edges
+        const nodeEdges = allEdges.filter(edge => edge.data.sourceNS === edge.data.targetNS);
+        return [...nodeEdges, ...NSEdges];
     }
 
     function getNodes() {

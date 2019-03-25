@@ -53,8 +53,21 @@ const styles = [
         style: {
             width: 2,
             'line-style': 'dotted',
-            'line-color': 'hsla(230, 68%, 87%, 1)',
+            'line-color': 'hsla(230, 68%, 87%, 1)'
+        }
+    },
+    {
+        selector: 'edge.node',
+        style: {
             'curve-style': 'unbundled-bezier'
+        }
+    },
+
+    {
+        selector: 'edge.namespace',
+        style: {
+            'curve-style': 'straight',
+            label: 'data(count)'
         }
     },
 
@@ -70,7 +83,6 @@ const styles = [
         style: {
             'line-style': 'solid',
             'line-color': 'hsla(229°, 76%, 87%, 1)'
-            // 'curve-style': 'unbundled-bezier'
         }
     }
 ];
