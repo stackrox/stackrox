@@ -13,7 +13,9 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 // NewClusterPipeline returns a new instance of a ClusterPipeline that handles all event types.
 func NewClusterPipeline(clusterID string, fragments ...pipeline.Fragment) pipeline.ClusterPipeline {

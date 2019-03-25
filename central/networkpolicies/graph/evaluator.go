@@ -10,7 +10,9 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-var logger = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 // Evaluator implements the interface for the network graph generator
 //go:generate mockgen-wrapper Evaluator

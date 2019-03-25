@@ -58,7 +58,7 @@ func (j *JWKSGetter) fetch() {
 	resp, err := cli.Get(j.url)
 	if err != nil {
 		// TODO(cg)
-		logger.Warnf("Couldn't get JWKS URL '%s': %s", j.url, err)
+		log.Warnf("Couldn't get JWKS URL '%s': %s", j.url, err)
 		return
 	}
 	defer utils.IgnoreError(resp.Body.Close)
@@ -66,7 +66,7 @@ func (j *JWKSGetter) fetch() {
 	var jwks jose.JSONWebKeySet
 	if err := dec.Decode(&jwks); err != nil {
 		// TODO(cg)
-		logger.Warnf("Couldn't decode JWKS response: %s", err)
+		log.Warnf("Couldn't decode JWKS response: %s", err)
 		return
 	}
 	for _, jwk := range jwks.Keys {
@@ -83,7 +83,7 @@ func (s *singleKeyStore) Key(id string) interface{} {
 	if id == s.keyID {
 		return s.key
 	}
-	logger.Errorf("not found")
+	log.Errorf("not found")
 	return nil
 }
 

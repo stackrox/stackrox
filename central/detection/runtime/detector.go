@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 // Detector provides an interface for performing runtime policy violation detection.

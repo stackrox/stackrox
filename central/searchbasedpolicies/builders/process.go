@@ -94,18 +94,18 @@ func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[
 	v = func(result search.Result, processGetter searchbasedpolicies.ProcessIndicatorGetter) searchbasedpolicies.Violations {
 		matches := result.Matches[processIDSearchField.GetFieldPath()]
 		if len(result.Matches[processIDSearchField.GetFieldPath()]) == 0 {
-			logger.Errorf("ID %s matched process query, but couldn't find the matching id", result.ID)
+			log.Errorf("ID %s matched process query, but couldn't find the matching id", result.ID)
 			return searchbasedpolicies.Violations{}
 		}
 		if processGetter == nil {
-			logger.Errorf("Ran process policy %+v but had a nil process getter.", fields)
+			log.Errorf("Ran process policy %+v but had a nil process getter.", fields)
 			return searchbasedpolicies.Violations{}
 		}
 		processes := make([]*storage.ProcessIndicator, 0, len(matches))
 		for _, processID := range matches {
 			process, exists, err := processGetter.GetProcessIndicator(processID)
 			if err != nil {
-				logger.Errorf("Error retrieving process with id %s from store", processID)
+				log.Errorf("Error retrieving process with id %s from store", processID)
 				continue
 			}
 			if !exists { // Likely a race condition

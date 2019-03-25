@@ -5,7 +5,9 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-var logger = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 // Creator is a function stub that defined how to create a Listener
 type Creator func() (Listener, error)

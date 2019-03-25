@@ -17,7 +17,9 @@ import (
 	"github.com/stackrox/rox/pkg/registries/types"
 )
 
-var logger = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 type ecr struct {
 	*docker.Registry

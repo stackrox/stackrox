@@ -9,7 +9,6 @@ import (
 	"github.com/blevesearch/bleve/search"
 	"github.com/blevesearch/bleve/search/query"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/logging"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch/validpositions"
 )
@@ -17,8 +16,6 @@ import (
 const maxSearchResponses = 20000
 
 var (
-	logger = logging.LoggerForModule()
-
 	subQueryContext = context{
 		pagination: &v1.Pagination{
 			Limit: maxSearchResponses,
@@ -84,7 +81,7 @@ func getValueFromField(val interface{}) string {
 	case bool:
 		return strconv.FormatBool(val)
 	default:
-		logger.Errorf("Unknown type field from index: %T", val)
+		log.Errorf("Unknown type field from index: %T", val)
 	}
 	return ""
 }

@@ -24,7 +24,9 @@ const (
 	typeString = "quay"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 // Creator provides the type an scanners.Creator to add to the scanners Registry.
 func Creator() (string, func(integration *storage.ImageIntegration) (types.ImageScanner, error)) {

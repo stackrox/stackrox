@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 // Multiplier is the interface that all risk calculations must implement

@@ -46,7 +46,7 @@ func (d *detectorImpl) policyMatcher(alerts *alertSlice, deploymentIDs ...string
 				return err
 			}
 			if !exists {
-				logger.Errorf("deployment with id '%s' had violations, but doesn't exist", deploymentID)
+				log.Errorf("deployment with id '%s' had violations, but doesn't exist", deploymentID)
 				continue
 			}
 			if shouldProcess != nil && !shouldProcess(dep) {
@@ -100,7 +100,7 @@ func (d *detectorImpl) DeploymentWhitelistedForPolicy(deploymentID, policyID str
 		return nil
 	})
 	if err != nil {
-		logger.Errorf("Couldn't evaluate whitelist for deployment %s, policy %s", deploymentID, policyID)
+		log.Errorf("Couldn't evaluate whitelist for deployment %s, policy %s", deploymentID, policyID)
 	}
 	return
 }

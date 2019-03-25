@@ -47,7 +47,7 @@ func (e EnvQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sear
 		}
 		for i, keyMatch := range keyMatches {
 			if i >= len(valueMatches) {
-				logger.Errorf("Mismatched number of key and value matches: %+v; %+v", keyMatches, valueMatches)
+				log.Errorf("Mismatched number of key and value matches: %+v; %+v", keyMatches, valueMatches)
 				return violations
 			}
 			violations.AlertViolations = append(violations.AlertViolations, &storage.Alert_Violation{

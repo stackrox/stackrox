@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 // EnforceFunc represents an enforcement function.
@@ -56,17 +56,17 @@ func (e *enforcer) Start() {
 		case action := <-e.actionsC:
 			f, ok := e.enforcementMap[action.Enforcement]
 			if !ok {
-				logger.Errorf("unknown enforcement action: %s", action.Enforcement)
+				log.Errorf("unknown enforcement action: %s", action.Enforcement)
 				continue
 			}
 
 			if err := f(action); err != nil {
-				logger.Errorf("failed to take enforcement action: %s err: %s", proto.MarshalTextString(action), err)
+				log.Errorf("failed to take enforcement action: %s err: %s", proto.MarshalTextString(action), err)
 			} else {
-				logger.Infof("Successfully taken action %s", proto.MarshalTextString(action))
+				log.Infof("Successfully taken action %s", proto.MarshalTextString(action))
 			}
 		case <-e.stopC.Done():
-			logger.Info("Shutting down Enforcer")
+			log.Info("Shutting down Enforcer")
 			return
 		}
 	}

@@ -11,7 +11,9 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 // CheckNotifierInUseByCluster checks if any notifiers have been sent up for alerts.
 func CheckNotifierInUseByCluster(ctx framework.ComplianceContext) {

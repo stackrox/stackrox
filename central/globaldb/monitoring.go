@@ -5,12 +5,9 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/globaldb/metrics"
-	"github.com/stackrox/rox/pkg/logging"
 )
 
 const gatherFrequency = 20 * time.Second
-
-var logger = logging.LoggerForModule()
 
 func gatherBucketStats(name string, stats bolt.BucketStats) {
 	metrics.SetGaugeBucketInt(metrics.BranchPageN, stats.BranchPageN, name)

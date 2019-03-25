@@ -3,16 +3,11 @@ package k8s
 import (
 	"strconv"
 
-	"github.com/stackrox/rox/pkg/logging"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 const (
 	megabyte = 1024 * 1024
-)
-
-var (
-	logger = logging.LoggerForModule()
 )
 
 // ConvertQuantityToCores converts a quantity representing a number of cores
@@ -21,7 +16,7 @@ func ConvertQuantityToCores(q *resource.Quantity) float32 {
 	// kubernetes does not like floating point values so they make you jump through hoops
 	f, err := strconv.ParseFloat(q.AsDec().String(), 32)
 	if err != nil {
-		logger.Error(err)
+		log.Error(err)
 	}
 	return float32(f)
 }

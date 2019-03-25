@@ -50,6 +50,6 @@ func (e *enforcerImpl) unsatisfiableNodeConstraint(enforcement *central.SensorEn
 		retry.Tries(5),
 		retry.OnlyRetryableErrors(),
 		retry.OnFailedAttempts(func(e error) {
-			logger.Error(e)
+			log.Error(e)
 		}))
 }

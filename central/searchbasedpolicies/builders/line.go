@@ -70,7 +70,7 @@ func (c *dockerFileLineFieldQueryBuilder) Query(fields *storage.PolicyFields, op
 		for i, instMatch := range instMatches {
 			// This should not happen if search works as expected.
 			if i >= len(valMatches) {
-				logger.Errorf("Matching Dockerfile line rule: %+v, "+
+				log.Errorf("Matching Dockerfile line rule: %+v, "+
 					"instMatches %+v and valMatches %+v not of equal length", lineRule, instMatches, valMatches)
 				break
 			}

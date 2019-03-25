@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 type enforcerImpl struct {

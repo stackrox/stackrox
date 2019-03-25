@@ -14,7 +14,9 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 // Manager manages changes to the risk of the deployments
 type Manager interface {

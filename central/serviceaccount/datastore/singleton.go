@@ -15,7 +15,7 @@ var (
 
 	ds DataStore
 
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 func initialize() {
@@ -23,7 +23,7 @@ func initialize() {
 	var err error
 	ds, err = New(store, index.New(globalindex.GetGlobalIndex()), search.New(store, globalindex.GetGlobalIndex()))
 	if err != nil {
-		logger.Panicf("Failed to initialize secrets datastore: %s", err)
+		log.Panicf("Failed to initialize secrets datastore: %s", err)
 	}
 }
 

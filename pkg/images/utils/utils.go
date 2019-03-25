@@ -9,7 +9,9 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-var logger = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 // GenerateImageFromStringWithDefaultTag generates an image type from a common string format and returns an error if
 // there was an issue parsing it. It takes in a defaultTag which it populates if the image doesn't have a tag.
@@ -89,7 +91,7 @@ func Reference(img *storage.Image) string {
 func GenerateImageFromStringIgnoringError(imageStr string) *storage.Image {
 	image, err := GenerateImageFromString(imageStr)
 	if err != nil {
-		logger.Error(err)
+		log.Error(err)
 	}
 	return image
 }

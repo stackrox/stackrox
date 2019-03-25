@@ -4,10 +4,10 @@ package globaldb
 func Close() {
 	boltDB := GetGlobalDB()
 	if err := boltDB.Close(); err != nil {
-		logger.Errorf("Unable to close bolt db: %v", err)
+		log.Errorf("Unable to close bolt db: %v", err)
 	}
 	badgerDB := GetGlobalBadgerDB()
 	if err := badgerDB.Close(); err != nil {
-		logger.Errorf("Unable to close badger db: %v", err)
+		log.Errorf("Unable to close badger db: %v", err)
 	}
 }

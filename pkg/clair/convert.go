@@ -10,7 +10,9 @@ import (
 	"github.com/stackrox/rox/pkg/scans"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 type nvd struct {
 	Cvss cvss `json:"CVSSv2"`

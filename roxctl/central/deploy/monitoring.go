@@ -7,7 +7,9 @@ import (
 	"github.com/stackrox/rox/roxctl/central/deploy/renderer"
 )
 
-var logger = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 type monitoringWrapper struct {
 	Monitoring *renderer.MonitoringType

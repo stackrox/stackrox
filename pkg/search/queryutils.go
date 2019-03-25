@@ -3,11 +3,6 @@ package search
 import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/logging"
-)
-
-var (
-	logger = logging.LoggerForModule()
 )
 
 // ApplyFnToAllBaseQueries walks recursively over the query, applying fn to all the base queries.
@@ -28,7 +23,7 @@ func ApplyFnToAllBaseQueries(q *v1.Query, fn func(*v1.BaseQuery)) {
 	case *v1.Query_BaseQuery:
 		fn(typedQ.BaseQuery)
 	default:
-		logger.Errorf("Unhandled query type: %T; query was %s", q, proto.MarshalTextString(q))
+		log.Errorf("Unhandled query type: %T; query was %s", q, proto.MarshalTextString(q))
 	}
 }
 
@@ -58,7 +53,7 @@ func FilterQuery(q *v1.Query, fn func(*v1.BaseQuery) bool) (*v1.Query, bool) {
 		}
 		return nil, false
 	default:
-		logger.Errorf("Unhandled query type: %T; query was %s", q, proto.MarshalTextString(q))
+		log.Errorf("Unhandled query type: %T; query was %s", q, proto.MarshalTextString(q))
 		return nil, false
 	}
 }

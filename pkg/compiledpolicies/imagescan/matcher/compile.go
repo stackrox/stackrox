@@ -5,7 +5,9 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 // compiler is a functino that turns a policy into a matcher.
 type compiler func(*storage.Policy) (Matcher, error)

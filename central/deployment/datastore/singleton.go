@@ -16,7 +16,7 @@ var (
 
 	ad DataStore
 
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 func initialize() {
@@ -24,12 +24,12 @@ func initialize() {
 
 	storage, err := store.New(globaldb.GetGlobalDB())
 	if err != nil {
-		logger.Panicf("Failed to initialize deployment store: %s", err)
+		log.Panicf("Failed to initialize deployment store: %s", err)
 	}
 
 	searcher, err := search.New(storage, indexer)
 	if err != nil {
-		logger.Panicf("Failed to load deployment index %s", err)
+		log.Panicf("Failed to load deployment index %s", err)
 	}
 
 	ad = New(storage, indexer, searcher, processDataStore.Singleton())

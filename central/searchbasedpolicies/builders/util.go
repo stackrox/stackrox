@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 
 	opToHumanReadable = map[storage.Comparator]string{
 		storage.Comparator_LESS_THAN:              "less than",

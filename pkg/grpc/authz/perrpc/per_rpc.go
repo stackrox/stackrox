@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 // perRPC allows the application of a default policy, with exceptions
@@ -44,7 +44,7 @@ func FromMap(m map[authz.Authorizer][]string) authz.Authorizer {
 			// This is a programming error, and will be rewarded with a deny.Everyone() to force
 			// the programmer to right their ways.
 			if _, exists := authorizers[rpcName]; exists {
-				logger.Errorf("rpcName %s mapped to multiple authorizers in map: %#v", rpcName, m)
+				log.Errorf("rpcName %s mapped to multiple authorizers in map: %#v", rpcName, m)
 				return deny.Everyone()
 			}
 			authorizers[rpcName] = authorizer

@@ -6,7 +6,9 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 const checkID = "HIPAA_164:308_a_3_ii_a"
 

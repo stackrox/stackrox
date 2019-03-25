@@ -70,7 +70,7 @@ func (e *enricherImpl) enrichImageWithRegistry(ctx EnrichmentContext, image *sto
 	_ = e.metadataLimiter.Wait(context.Background())
 	metadata, err := registry.Metadata(image)
 	if err != nil {
-		logger.Error(err)
+		log.Error(err)
 		return false
 	}
 	image.Metadata = metadata
@@ -110,7 +110,7 @@ func (e *enricherImpl) enrichImageWithScanner(ctx EnrichmentContext, image *stor
 	_ = e.scanLimiter.Wait(context.Background())
 	scan, err := scanner.GetLastScan(image)
 	if err != nil {
-		logger.Errorf("Error getting last scan for %s: %s", image.GetName().GetFullName(), err)
+		log.Errorf("Error getting last scan for %s: %s", image.GetName().GetFullName(), err)
 		return false
 	}
 	if scan == nil {

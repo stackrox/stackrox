@@ -90,19 +90,19 @@ func (m *managerImpl) flushIndicatorQueue() {
 
 	// Index the process indicators in batch
 	if err := m.processesDataStore.AddProcessIndicators(indicatorSlice...); err != nil {
-		logger.Errorf("Error adding process indicators: %v", err)
+		log.Errorf("Error adding process indicators: %v", err)
 	}
 
 	deploymentIDs := uniqueDeploymentIDs(copiedQueue)
 	newAlerts, err := m.runtimeDetector.AlertsForDeployments(deploymentIDs...)
 	if err != nil {
-		logger.Errorf("Failed to compute runtime alerts: %s", err)
+		log.Errorf("Failed to compute runtime alerts: %s", err)
 		return
 	}
 
 	modified, err := m.alertManager.AlertAndNotify(newAlerts, alertmanager.WithLifecycleStage(storage.LifecycleStage_RUNTIME), alertmanager.WithDeploymentIDs(deploymentIDs...))
 	if err != nil {
-		logger.Errorf("Couldn't alert and notify: %s", err)
+		log.Errorf("Couldn't alert and notify: %s", err)
 	} else if modified {
 		defer m.riskManager.ReprocessRiskForDeployments(deploymentIDs...)
 	}
@@ -112,16 +112,16 @@ func (m *managerImpl) flushIndicatorQueue() {
 		info := indicatorInfo.indicator
 		deployment, exists, err := m.deploymentDataStore.GetDeployment(info.GetDeploymentId())
 		if err != nil {
-			logger.Errorf("Couldn't enforce on deployment %s: failed to retrieve: %s", info.GetDeploymentId(), err)
+			log.Errorf("Couldn't enforce on deployment %s: failed to retrieve: %s", info.GetDeploymentId(), err)
 			continue
 		}
 		if !exists {
-			logger.Errorf("Couldn't enforce on deployment %s: not found in store", info.GetDeploymentId())
+			log.Errorf("Couldn't enforce on deployment %s: not found in store", info.GetDeploymentId())
 			continue
 		}
 		enforcementAction := createEnforcementAction(deployment, info.GetSignal().GetContainerId())
 		if enforcementAction == nil {
-			logger.Errorf("Couldn't enforce on container %s, not found in deployment %s/%s", info.GetSignal().GetContainerId(),
+			log.Errorf("Couldn't enforce on container %s, not found in deployment %s/%s", info.GetSignal().GetContainerId(),
 				deployment.GetNamespace(), deployment.GetName())
 			continue
 		}
@@ -131,7 +131,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 			},
 		})
 		if err != nil {
-			logger.Errorf("Failed to inject enforcement action %s: %v", proto.MarshalTextString(enforcementAction), err)
+			log.Errorf("Failed to inject enforcement action %s: %v", proto.MarshalTextString(enforcementAction), err)
 		}
 	}
 }
@@ -163,16 +163,16 @@ func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string,
 	// Attempt to enrich the image before detection.
 	updatedImages, updated, err := m.enricher.EnrichDeployment(enricher.EnrichmentContext{NoExternalMetadata: false}, deployment)
 	if err != nil {
-		logger.Errorf("Error enriching deployment %s: %s", deployment.GetName(), err)
+		log.Errorf("Error enriching deployment %s: %s", deployment.GetName(), err)
 	}
 	if updated {
 		for _, i := range updatedImages {
 			if err := m.imageDataStore.UpsertImage(i); err != nil {
-				logger.Errorf("Error persisting image %s: %s", i.GetName().GetFullName(), err)
+				log.Errorf("Error persisting image %s: %s", i.GetName().GetFullName(), err)
 			}
 		}
 		if err := m.deploymentDataStore.UpdateDeployment(deployment); err != nil {
-			logger.Errorf("Error persisting deployment %s: %s", deployment.GetName(), err)
+			log.Errorf("Error persisting deployment %s: %s", deployment.GetName(), err)
 		}
 	}
 

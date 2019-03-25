@@ -224,7 +224,7 @@ func walkTree(c *cobra.Command) (args []string) {
 			// prompt if they want that section
 			wanted, err := promptUserForSection(fg.groupPrompt)
 			if err != nil {
-				logger.Fatalf("Error prompting for section: %v", err)
+				log.Fatalf("Error prompting for section: %v", err)
 			}
 			if !wanted {
 				if fg.cmdLineSpec != "" {

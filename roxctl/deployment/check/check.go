@@ -16,7 +16,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 // Command checks the image against image build lifecycle policies
 func Command() *cobra.Command {

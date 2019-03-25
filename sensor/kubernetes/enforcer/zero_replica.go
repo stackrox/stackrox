@@ -55,6 +55,6 @@ func (e *enforcerImpl) scaleToZero(enforcement *central.SensorEnforcement) (err 
 			time.Sleep(time.Second)
 		}),
 		retry.OnFailedAttempts(func(e error) {
-			logger.Error(e)
+			log.Error(e)
 		}))
 }

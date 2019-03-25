@@ -12,7 +12,9 @@ import (
 	ops "github.com/stackrox/rox/pkg/metrics"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 type storeImpl struct {
 	*bolt.DB

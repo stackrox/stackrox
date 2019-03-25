@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 // The Cloud SCC notifier plugin integrates with Google's Cloud Security Command Center.
@@ -203,7 +203,7 @@ func newWithConfig(protoNotifier *storage.Notifier, clusters clusterDatastore.Da
 		client: client.Config{
 			ServiceAccount: []byte(cfg.ServiceAccount),
 			SourceID:       cfg.SourceID,
-			Logger:         logger,
+			Logger:         log,
 		},
 		config: cfg,
 	}

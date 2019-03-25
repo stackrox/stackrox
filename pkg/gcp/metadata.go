@@ -12,7 +12,9 @@ import (
 
 const timeout = 5 * time.Second
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 // GetMetadata returns the cluster metadata if on GCP or an error
 // If not on GCP, then returns nil, nil

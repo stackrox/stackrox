@@ -6,7 +6,9 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 const checkID = "PCI_DSS_3_2:6_5_6"
 

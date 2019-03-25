@@ -8,7 +8,9 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 var (
 	processIndicatorBucket = []byte("process_indicators")

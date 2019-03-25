@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 // Enricher enriches images with data from registries and scanners.

@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 type alertManagerImpl struct {
@@ -118,7 +118,7 @@ func (d *alertManagerImpl) trimResolvedProcessesFromRuntimeAlert(alert *storage.
 	oldRunTimeAlerts, err := d.alerts.SearchRawAlerts(q)
 	// If there's an error, just log it, and assume there was no previously resolved alert.
 	if err != nil {
-		logger.Errorf("Failed to retrieve resolved runtime alerts corresponding to %+v: %s", alert, err)
+		log.Errorf("Failed to retrieve resolved runtime alerts corresponding to %+v: %s", alert, err)
 		return false
 	}
 	if len(oldRunTimeAlerts) == 0 {
@@ -152,13 +152,13 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 	oldProcessViolation := old.GetProcessViolation()
 
 	if len(oldProcessViolation.GetProcesses()) == 0 {
-		logger.Errorf("UNEXPECTED: found no old violation with processes for runtime alert %s", proto.MarshalTextString(old))
+		log.Errorf("UNEXPECTED: found no old violation with processes for runtime alert %s", proto.MarshalTextString(old))
 		newAlertHasNewProcesses = true
 		return
 	}
 
 	if len(newAlert.GetProcessViolation().GetProcesses()) == 0 {
-		logger.Errorf("UNEXPECTED: found no new violation with processes for runtime alert %s", proto.MarshalTextString(newAlert))
+		log.Errorf("UNEXPECTED: found no new violation with processes for runtime alert %s", proto.MarshalTextString(newAlert))
 		return
 	}
 

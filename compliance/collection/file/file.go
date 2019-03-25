@@ -44,7 +44,9 @@ var fileExtensions = set.NewStringSet(
 	".rules",
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 func dbusConn() (*dbus.Conn, error) {
 	conn, err := dbus.Dial("unix:path=/host/run/systemd/private")

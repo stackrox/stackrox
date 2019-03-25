@@ -42,7 +42,7 @@ var (
 	// ErrUnverifiableToken means that, despite all efforts, the token could not be validated.
 	ErrUnverifiableToken = errors.New("token could not be validated")
 
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 // Validate validates the token or returns an error.

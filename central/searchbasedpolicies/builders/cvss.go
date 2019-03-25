@@ -52,7 +52,7 @@ func (c CVSSQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sea
 		cveMatches := result.Matches[cveSearchField.GetFieldPath()]
 		fixedByMatches := result.Matches[cveFixedByField.GetFieldPath()]
 		if len(cvssMatches) != len(cveMatches) {
-			logger.Errorf("Got different number of matches for CVSS and CVEs: %+v %+v", cvssMatches, cveMatches)
+			log.Errorf("Got different number of matches for CVSS and CVEs: %+v %+v", cvssMatches, cveMatches)
 		}
 		if len(cvssMatches) == 0 {
 			return searchbasedpolicies.Violations{}

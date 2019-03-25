@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 // Scorer is the object that encompasses the multipliers for evaluating risk

@@ -14,7 +14,7 @@ const (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 // A HashFile can read or write the format produced by the Apache `htpasswd`
@@ -51,7 +51,7 @@ func ReadHashFile(r io.Reader) (*HashFile, error) {
 	hashes := make(map[username]hash)
 	for i, entry := range entries {
 		if len(entry) < 2 {
-			logger.Warnf("Invalid hash on line %d: %s", i, err)
+			log.Warnf("Invalid hash on line %d: %s", i, err)
 			continue
 		}
 
@@ -61,7 +61,7 @@ func ReadHashFile(r io.Reader) (*HashFile, error) {
 		// Check validity of the hash by verifying it can be parsed.
 		_, err := bcrypt.Cost(userHash)
 		if err != nil {
-			logger.Warnf("Invalid hash on line %d: %s", i, err)
+			log.Warnf("Invalid hash on line %d: %s", i, err)
 			continue
 		}
 		hashes[user] = userHash

@@ -8,7 +8,9 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 type loopImpl struct {
 	tickerDuration time.Duration

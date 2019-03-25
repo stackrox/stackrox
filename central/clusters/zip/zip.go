@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 
 	separators                = regexp.MustCompile(`[ &_=+:/]`)
 	alphanumericNameAndDashes = regexp.MustCompile(`[^[:alnum:]\-]`)

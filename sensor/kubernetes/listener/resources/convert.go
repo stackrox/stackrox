@@ -32,7 +32,7 @@ const (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 
 	k8sComponentLabelKeys = []string{
 		"component",
@@ -43,7 +43,7 @@ var (
 func getK8sComponentID(component string) string {
 	u, err := uuid.FromString(env.ClusterID.Setting())
 	if err != nil {
-		logger.Error(err)
+		log.Error(err)
 		return ""
 	}
 	return uuid.NewV5(u, component).String()
@@ -68,7 +68,7 @@ func newDeploymentEventFromResource(obj interface{}, action central.ResourceActi
 		return nil
 	}
 	if err := wrap.populateNonStaticFields(obj, action, lister, namespaceStore); err != nil {
-		logger.Error(err)
+		log.Error(err)
 		return nil
 	}
 	return wrap
@@ -159,7 +159,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 
 	labelSel, err := k8s.ToRoxLabelSelector(labelSelector)
 	if err != nil {
-		logger.Warnf("Could not convert label selector: %v", err)
+		log.Warnf("Could not convert label selector: %v", err)
 	}
 
 	w.PodLabels = podLabels
@@ -209,7 +209,7 @@ func matchesOwnerName(name string, p *v1.Pod) bool {
 		// nginx-deployment-7gmsk we want nginx-deployment
 		numExpectedDashes = 1
 	default:
-		logger.Warnf("Currently do not handle owner kind %q. Attributing the pod", kind)
+		log.Warnf("Currently do not handle owner kind %q. Attributing the pod", kind)
 		// By default if we can't parse, then we'll hit the mis-attribution edge case, but I'd rather do that
 		// then miss the pods altogether
 		return true
@@ -217,7 +217,7 @@ func matchesOwnerName(name string, p *v1.Pod) bool {
 	if spl := strings.Split(p.GetName(), "-"); len(spl) > numExpectedDashes {
 		return name == strings.Join(spl[:len(spl)-numExpectedDashes], "-")
 	}
-	logger.Warnf("Could not parse pod %q with owner type %q", p.GetName(), kind)
+	log.Warnf("Could not parse pod %q with owner type %q", p.GetName(), kind)
 	return false
 }
 
@@ -289,7 +289,7 @@ func (w *deploymentWrap) populateImageShas(pods ...*v1.Pod) {
 				// Logging to see that we are clobbering a value from an old sha
 				currentSHA := w.Deployment.GetContainers()[i].GetImage().GetId()
 				if currentSHA != "" && currentSHA != sha {
-					logger.Warnf("Clobbering SHA '%s' found for image '%s' with SHA '%s'", currentSHA, c.Image, sha)
+					log.Warnf("Clobbering SHA '%s' found for image '%s' with SHA '%s'", currentSHA, c.Image, sha)
 				}
 				w.Deployment.Containers[i].Image.Id = types.NewDigest(sha).Digest()
 			}

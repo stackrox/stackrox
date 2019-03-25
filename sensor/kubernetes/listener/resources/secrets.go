@@ -137,7 +137,7 @@ func getImageIntegrationSensorEvents(secret *v1.Secret) []*central.SensorEvent {
 			return nil
 		}
 		if err := json.Unmarshal(data, &dockerConfig); err != nil {
-			logger.Error(err)
+			log.Error(err)
 			return nil
 		}
 	case v1.SecretTypeDockerConfigJson:
@@ -147,7 +147,7 @@ func getImageIntegrationSensorEvents(secret *v1.Secret) []*central.SensorEvent {
 		}
 		var dockerConfigJSON credentialprovider.DockerConfigJson
 		if err := json.Unmarshal(data, &dockerConfigJSON); err != nil {
-			logger.Error(err)
+			log.Error(err)
 			return nil
 		}
 		dockerConfig = dockerConfigJSON.Auths

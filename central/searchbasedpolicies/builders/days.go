@@ -35,7 +35,7 @@ func (d *dayQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sea
 	v = violationPrinterForField(searchField.GetFieldPath(), func(match string) string {
 		epochTime, err := strconv.ParseInt(match, 10, 64)
 		if err != nil {
-			logger.Errorf("Days query for %s: retrieved invalid epoch time in match: %s.", d.fieldHumanName, match)
+			log.Errorf("Days query for %s: retrieved invalid epoch time in match: %s.", d.fieldHumanName, match)
 			return ""
 		}
 		return fmt.Sprintf("%s '%s' was more than %d days ago", d.fieldHumanName, readable.Time(time.Unix(epochTime, 0)), days)

@@ -46,7 +46,7 @@ func (c CVEQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sear
 		cveMatches := result.Matches[cveSearchField.GetFieldPath()]
 		cveLinkMatches := result.Matches[cveLinkSearchField.GetFieldPath()]
 		if len(cveMatches) != len(cveLinkMatches) {
-			logger.Errorf("Got different number of matches for CVEs and links: %+v %+v", cveMatches, cveLinkMatches)
+			log.Errorf("Got different number of matches for CVEs and links: %+v %+v", cveMatches, cveLinkMatches)
 		}
 		if len(cveMatches) == 0 {
 			return searchbasedpolicies.Violations{}

@@ -27,7 +27,7 @@ const (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 // DeploymentWrap is a wrapper around a deployment to help convert the static fields
@@ -58,7 +58,7 @@ func NewDeploymentFromStaticResource(obj interface{}, deploymentType string) (*s
 	if encDeploymentConfig, ok := objMeta.GetLabels()[openshiftEncodedDeploymentConfigAnnotation]; ok {
 		newMeta, newKind, err := extractDeploymentConfig(encDeploymentConfig)
 		if err != nil {
-			logger.Error(err)
+			log.Error(err)
 		} else {
 			objMeta, kind = newMeta, newKind
 		}
@@ -84,7 +84,7 @@ func extractDeploymentConfig(encodedDeploymentConfig string) (metav1.Object, str
 func newWrap(meta metav1.Object, kind string) *DeploymentWrap {
 	updatedTime, err := ptypes.TimestampProto(meta.GetCreationTimestamp().Time)
 	if err != nil {
-		logger.Error(err)
+		log.Error(err)
 	}
 	return &DeploymentWrap{
 		Deployment: &storage.Deployment{
@@ -104,7 +104,7 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
 	spec := objValue.FieldByName("Spec")
 	if !doesFieldExist(spec) {
-		logger.Errorf("Obj %+v does not have a Spec field", objValue)
+		log.Errorf("Obj %+v does not have a Spec field", objValue)
 		return
 	}
 
@@ -115,7 +115,7 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 	switch o := obj.(type) {
 	case *openshift_appsv1.DeploymentConfig:
 		if o.Spec.Template == nil {
-			logger.Errorf("Spec obj %+v does not have a Template field or is not a pointer pod spec", spec)
+			log.Errorf("Spec obj %+v does not have a Template field or is not a pointer pod spec", spec)
 			return
 		}
 		podSpec = o.Spec.Template.Spec
@@ -130,7 +130,7 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 	default:
 		podTemplate, ok := spec.FieldByName("Template").Interface().(v1.PodTemplateSpec)
 		if !ok {
-			logger.Errorf("Spec obj %+v does not have a Template field", spec)
+			log.Errorf("Spec obj %+v does not have a Template field", spec)
 			return
 		}
 		podSpec = podTemplate.Spec
@@ -228,7 +228,7 @@ func (w *DeploymentWrap) populateImageShas(pods ...*v1.Pod) {
 				// Logging to see that we are clobbering a value from an old sha
 				currentSHA := w.Deployment.GetContainers()[i].GetImage().GetId()
 				if currentSHA != "" && currentSHA != sha {
-					logger.Warnf("Clobbering SHA '%s' found for image '%s' with SHA '%s'", currentSHA, c.Image, sha)
+					log.Warnf("Clobbering SHA '%s' found for image '%s' with SHA '%s'", currentSHA, c.Image, sha)
 				}
 				w.Deployment.Containers[i].Image.Id = types.NewDigest(sha).Digest()
 			}

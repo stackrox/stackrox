@@ -8,7 +8,9 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-var logger = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 // CompareProtoTimestamps compares two of the proto timestamps
 // This is necessary because the library has few equality checks
@@ -73,7 +75,7 @@ func ConvertTimeToTimestamp(goTime time.Time) *gogoTimestamp.Timestamp {
 func ConvertTimeToTimestampOrNil(goTime time.Time) *gogoTimestamp.Timestamp {
 	t, err := gogoTimestamp.TimestampProto(goTime)
 	if err != nil {
-		logger.Error(err)
+		log.Error(err)
 		return nil
 	}
 	return t

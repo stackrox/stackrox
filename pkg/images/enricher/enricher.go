@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 // EnrichmentContext is used to pass options through the enricher without exploding the number of function arguments

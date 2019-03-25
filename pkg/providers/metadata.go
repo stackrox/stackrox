@@ -6,7 +6,9 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 // GetMetadata returns the metadata for specific cloud providers
 func GetMetadata() *storage.ProviderMetadata {

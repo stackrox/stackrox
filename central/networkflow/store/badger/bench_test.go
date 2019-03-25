@@ -16,7 +16,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 func getFlows(maxNetworkFlows int) []*storage.NetworkFlow {
 	numDeployments := int(math.Sqrt(float64(maxNetworkFlows)))

@@ -44,7 +44,7 @@ func (v *ViolationsMultiplier) Score(deployment *storage.Deployment) *storage.Ri
 		Query: qb.Query(),
 	})
 	if err != nil {
-		logger.Errorf("Couldn't get risk violations for %s: %s", deployment.GetId(), err)
+		log.Errorf("Couldn't get risk violations for %s: %s", deployment.GetId(), err)
 		return nil
 	}
 

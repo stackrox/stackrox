@@ -89,7 +89,7 @@ func (ds *datastoreImpl) UpsertDeployment(deployment *storage.Deployment) error 
 	}
 
 	if err := ds.processDataStore.RemoveProcessIndicatorsOfStaleContainers(deployment.GetId(), containerIds(deployment)); err != nil {
-		logger.Errorf("Failed to remove stale process indicators for deployment %s/%s: %s",
+		log.Errorf("Failed to remove stale process indicators for deployment %s/%s: %s",
 			deployment.GetNamespace(), deployment.GetName(), err)
 	}
 	return nil

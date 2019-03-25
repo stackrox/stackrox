@@ -9,7 +9,9 @@ import (
 	"github.com/stackrox/rox/sensor/common/metrics"
 )
 
-var logger = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+)
 
 // Pipeline is the struct that handles a process signal
 type Pipeline struct {

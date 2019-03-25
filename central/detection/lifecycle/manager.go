@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	logger = logging.LoggerForModule()
+	log = logging.LoggerForModule()
 )
 
 // A Manager manages deployment/policy lifecycle updates.

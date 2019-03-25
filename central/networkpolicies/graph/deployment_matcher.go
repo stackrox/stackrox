@@ -126,7 +126,7 @@ func (g *deploymentMatcher) matchPolicyPeers(d *storage.Deployment, namespace st
 
 func (g *deploymentMatcher) matchPolicyPeer(deployment *storage.Deployment, policyNamespace string, peer *storage.NetworkPolicyPeer) bool {
 	if peer.IpBlock != nil {
-		logger.Debug("IP Block network policy is currently not handled")
+		log.Debug("IP Block network policy is currently not handled")
 		return false
 	}
 

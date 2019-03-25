@@ -29,6 +29,6 @@ func (e *enforcerImpl) kill(enforcement *central.SensorEnforcement) (err error) 
 			time.Sleep(time.Second)
 		}),
 		retry.OnFailedAttempts(func(e error) {
-			logger.Error(e)
+			log.Error(e)
 		}))
 }
