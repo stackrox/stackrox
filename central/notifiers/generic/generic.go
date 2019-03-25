@@ -47,11 +47,6 @@ func (g *generic) AlertNotify(alert *storage.Alert) error {
 	return g.postMessage(alert, alertMessageKey)
 }
 
-// SendAuditMessage is a placeholder for the generic webhook for now
-func (g *generic) SendAuditMessage(msg *v1.Audit_Message) error {
-	return nil
-}
-
 // YamlNotify takes in a yaml file and generates the Slack message
 func (g *generic) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
 	msg := &v1.NetworkPolicyNotification{
@@ -153,14 +148,6 @@ func (g *generic) Test() error {
 		},
 	}
 	return g.AlertNotify(alert)
-}
-
-func (g *generic) AckAlert(alert *storage.Alert) error {
-	return nil
-}
-
-func (g *generic) ResolveAlert(alert *storage.Alert) error {
-	return nil
 }
 
 func (g *generic) constructJSON(message proto.Message, msgKey string) (io.Reader, error) {

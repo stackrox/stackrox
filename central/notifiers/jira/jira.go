@@ -202,14 +202,6 @@ func (j *jira) Test() error {
 	return j.createIssue(i)
 }
 
-func (j *jira) AckAlert(alert *storage.Alert) error {
-	return nil
-}
-
-func (j *jira) ResolveAlert(alert *storage.Alert) error {
-	return nil
-}
-
 func severityToPriority(sev storage.Severity) string {
 	switch sev {
 	case storage.Severity_CRITICAL_SEVERITY:

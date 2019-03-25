@@ -99,16 +99,6 @@ func (mr *MockProcessorMockRecorder) RemovePolicy(arg0 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePolicy", reflect.TypeOf((*MockProcessor)(nil).RemovePolicy), arg0)
 }
 
-// Start mocks base method
-func (m *MockProcessor) Start() {
-	m.ctrl.Call(m, "Start")
-}
-
-// Start indicates an expected call of Start
-func (mr *MockProcessorMockRecorder) Start() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockProcessor)(nil).Start))
-}
-
 // UpdateNotifier mocks base method
 func (m *MockProcessor) UpdateNotifier(arg0 notifiers.Notifier) {
 	m.ctrl.Call(m, "UpdateNotifier", arg0)

@@ -9,7 +9,6 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -71,10 +70,6 @@ func (p *pagerDuty) AlertNotify(alert *storage.Alert) error {
 	return p.postAlert(alert, newAlert)
 }
 
-func (p *pagerDuty) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
-	return nil
-}
-
 func (p *pagerDuty) ProtoNotifier() *storage.Notifier {
 	return p.Notifier
 }
@@ -118,10 +113,6 @@ func (p *pagerDuty) postAlert(alert *storage.Alert, eventType string) error {
 		log.Errorf("PagerDuty response: %+v. Error: %s", resp, err)
 	}
 	return err
-}
-
-func (p *pagerDuty) SendAuditMessage(msg *v1.Audit_Message) error {
-	return nil
 }
 
 // More details on V2 API: https://v2.developer.pagerduty.com/docs/events-api-v2

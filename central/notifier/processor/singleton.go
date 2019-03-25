@@ -17,7 +17,6 @@ func initialize() {
 	if err != nil {
 		panic(err)
 	}
-	go pr.Start()
 }
 
 // Singleton provides the interface for processing notifications.

@@ -331,8 +331,13 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 			errorList.AddStringf("error creating notifier with id:%s (%s) and type %s: %v", notifierProto.GetId(), notifierProto.GetName(), notifierProto.GetType(), err)
 			continue
 		}
+		netpolNotifier, ok := notifier.(notifiers.NetworkPolicyNotifier)
+		if !ok {
+			errorList.AddStringf("notifier %s cannot notify on network policies", notifierProto.GetName())
+			continue
+		}
 
-		err = notifier.NetworkPolicyYAMLNotify(request.GetModification().GetApplyYaml(), cluster.GetName())
+		err = netpolNotifier.NetworkPolicyYAMLNotify(request.GetModification().GetApplyYaml(), cluster.GetName())
 		if err != nil {
 			errorList.AddStringf("error sending yaml notification to %s: %v", notifierProto.GetName(), err)
 		}

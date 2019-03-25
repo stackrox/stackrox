@@ -42,22 +42,24 @@ func (p *processorImpl) HasNotifiers() bool {
 	return len(p.notifiers) != 0
 }
 
-func sendAuditMessage(notifier notifiers.Notifier, msg *v1.Audit_Message) {
+func sendAuditMessage(notifier notifiers.AuditNotifier, msg *v1.Audit_Message) {
 	if err := notifier.SendAuditMessage(msg); err != nil {
 		protoNotifier := notifier.ProtoNotifier()
 		log.Errorf("Unable to send audit msg to %s (%s): %v", protoNotifier.GetName(), protoNotifier.GetType(), err)
 	}
 }
 
-// Start begins the notification processor and is blocking
-func (p *processorImpl) Start() {}
+func sendAlert(notifier notifiers.AlertNotifier, alert *storage.Alert) {
+	if err := notifier.AlertNotify(alert); err != nil {
+		protoNotifier := notifier.ProtoNotifier()
+		log.Errorf("Unable to send %s notification to %s (%s) for alert %s: %v", alert.GetState().String(), protoNotifier.GetName(), protoNotifier.GetType(), alert.GetId(), err)
+	}
+}
 
-func sendAlert(notifier notifiers.Notifier, alert *storage.Alert) {
+func sendResolvableAlert(notifier notifiers.ResolvableAlertNotifier, alert *storage.Alert) {
 	protoNotifier := notifier.ProtoNotifier()
 	var err error
 	switch alert.GetState() {
-	case storage.ViolationState_ACTIVE:
-		err = notifier.AlertNotify(alert)
 	case storage.ViolationState_SNOOZED:
 		err = notifier.AckAlert(alert)
 	case storage.ViolationState_RESOLVED:
@@ -79,7 +81,19 @@ func (p *processorImpl) ProcessAlert(alert *storage.Alert) {
 			log.Errorf("Could not send notification to notifier id %s for alert %s because it does not exist", id, alert.GetId())
 			continue
 		}
-		go sendAlert(notifier, alert)
+		if alert.GetState() == storage.ViolationState_ACTIVE {
+			alertNotifier, ok := notifier.(notifiers.AlertNotifier)
+			if !ok {
+				continue
+			}
+			go sendAlert(alertNotifier, alert)
+		} else {
+			alertNotifier, ok := notifier.(notifiers.ResolvableAlertNotifier)
+			if !ok {
+				continue
+			}
+			go sendResolvableAlert(alertNotifier, alert)
+		}
 	}
 }
 
@@ -87,7 +101,11 @@ func (p *processorImpl) ProcessAuditMessage(msg *v1.Audit_Message) {
 	p.notifiersLock.RLock()
 	defer p.notifiersLock.RUnlock()
 	for _, n := range p.notifiers {
-		go sendAuditMessage(n, msg)
+		auditNotifier, ok := n.(notifiers.AuditNotifier)
+		if !ok {
+			continue
+		}
+		go sendAuditMessage(auditNotifier, msg)
 	}
 }
 

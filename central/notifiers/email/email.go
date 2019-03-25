@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -277,14 +276,6 @@ func (e *email) sendEmail(recipient, subject, body string) error {
 	return nil
 }
 
-func (e *email) AckAlert(alert *storage.Alert) error {
-	return nil
-}
-
-func (e *email) ResolveAlert(alert *storage.Alert) error {
-	return nil
-}
-
 // createClient creates an SMTP client but bails out in cases where
 // smtp.NewClient would otherwise hang.
 // The known case (ROX-366) is when dialing a TLS server with a non-TLS dialer;
@@ -365,10 +356,6 @@ func (e *email) tlsConfig() *tls.Config {
 
 func (e *email) ProtoNotifier() *storage.Notifier {
 	return e.notifier
-}
-
-func (e *email) SendAuditMessage(msg *v1.Audit_Message) error {
-	return nil
 }
 
 func init() {

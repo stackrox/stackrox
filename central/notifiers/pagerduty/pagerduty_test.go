@@ -44,12 +44,6 @@ func TestPagerDutyAlertNotify(t *testing.T) {
 	assert.NoError(t, p.AlertNotify(fixtures.GetAlert()))
 }
 
-func TestPagerDutyNetworkPolicyYAMLNotify(t *testing.T) {
-	s := getPagerDuty(t)
-
-	assert.NoError(t, s.NetworkPolicyYAMLNotify(fixtures.GetYAML(), "test-cluster"))
-}
-
 func TestPagerDutyTest(t *testing.T) {
 	s := getPagerDuty(t)
 	assert.NoError(t, s.Test())

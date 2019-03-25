@@ -55,12 +55,6 @@ func TestSplunkAlertNotify(t *testing.T) {
 	assert.NoError(t, s.AlertNotify(fixtures.GetAlert()))
 }
 
-func TestSplunkNetworkPolicyYAMLNotify(t *testing.T) {
-	s := getSplunk(t)
-
-	assert.NoError(t, s.NetworkPolicyYAMLNotify(fixtures.GetYAML(), "test-cluster"))
-}
-
 func TestSplunkTest(t *testing.T) {
 	s := getSplunk(t)
 	assert.NoError(t, s.Test())

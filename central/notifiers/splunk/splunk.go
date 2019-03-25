@@ -48,10 +48,6 @@ func (s *splunk) AlertNotify(alert *storage.Alert) error {
 	return s.postAlert(alert)
 }
 
-func (s *splunk) NetworkPolicyYAMLNotify(yaml string, clusterName string) error {
-	return nil
-}
-
 func (s *splunk) ProtoNotifier() *storage.Notifier {
 	return s.Notifier
 }
@@ -65,14 +61,6 @@ func (s *splunk) Test() error {
 		},
 	}
 	return s.postAlert(alert)
-}
-
-func (s *splunk) AckAlert(alert *storage.Alert) error {
-	return nil
-}
-
-func (s *splunk) ResolveAlert(alert *storage.Alert) error {
-	return nil
 }
 
 func (s *splunk) postAlert(alert *storage.Alert) error {

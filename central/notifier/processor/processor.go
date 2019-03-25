@@ -15,7 +15,6 @@ var (
 // Processor is the interface for processing benchmarks, notifiers, and policies.
 //go:generate mockgen-wrapper Processor
 type Processor interface {
-	Start()
 	ProcessAlert(alert *storage.Alert)
 	ProcessAuditMessage(msg *v1.Audit_Message)
 
