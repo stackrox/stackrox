@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/roxmetadata"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/tools/cache"
 )
@@ -24,32 +25,34 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 	namespaceInformer := sif.Core().V1().Namespaces().Informer()
 	secretInformer := sif.Core().V1().Secrets().Informer()
 
+	wg := &concurrency.WaitGroup{}
+
 	// Non-deployment types.
-	handle(namespaceInformer, dispatchers.ForNamespaces(), output, nil)
-	handle(sif.Networking().V1().NetworkPolicies().Informer(), dispatchers.ForNetworkPolicies(), output, nil)
-	handle(sif.Core().V1().Nodes().Informer(), dispatchers.ForNodes(), output, nil)
-	handle(secretInformer, dispatchers.ForSecrets(), output, nil)
-	handle(sif.Core().V1().Services().Informer(), dispatchers.ForServices(), output, nil)
-	handle(sif.Core().V1().ServiceAccounts().Informer(), dispatchers.ForServiceAccounts(), output, nil)
+	handle(namespaceInformer, dispatchers.ForNamespaces(), output, nil, wg, stopSignal)
+	handle(sif.Networking().V1().NetworkPolicies().Informer(), dispatchers.ForNetworkPolicies(), output, nil, wg, stopSignal)
+	handle(sif.Core().V1().Nodes().Informer(), dispatchers.ForNodes(), output, nil, wg, stopSignal)
+	handle(secretInformer, dispatchers.ForSecrets(), output, nil, wg, stopSignal)
+	handle(sif.Core().V1().Services().Informer(), dispatchers.ForServices(), output, nil, wg, stopSignal)
+	handle(sif.Core().V1().ServiceAccounts().Informer(), dispatchers.ForServiceAccounts(), output, nil, wg, stopSignal)
 
 	// RBAC dispatcher handles multiple sets of data
-	handle(sif.Rbac().V1().Roles().Informer(), dispatchers.ForRBAC(), output, nil)
-	handle(sif.Rbac().V1().ClusterRoles().Informer(), dispatchers.ForRBAC(), output, nil)
-	handle(sif.Rbac().V1().RoleBindings().Informer(), dispatchers.ForRBAC(), output, nil)
-	handle(sif.Rbac().V1().ClusterRoleBindings().Informer(), dispatchers.ForRBAC(), output, nil)
+	handle(sif.Rbac().V1().Roles().Informer(), dispatchers.ForRBAC(), output, nil, wg, stopSignal)
+	handle(sif.Rbac().V1().ClusterRoles().Informer(), dispatchers.ForRBAC(), output, nil, wg, stopSignal)
+	handle(sif.Rbac().V1().RoleBindings().Informer(), dispatchers.ForRBAC(), output, nil, wg, stopSignal)
+	handle(sif.Rbac().V1().ClusterRoleBindings().Informer(), dispatchers.ForRBAC(), output, nil, wg, stopSignal)
 
 	// Deployment types.
-	handle(podInformer.Informer(), dispatchers.ForDeployments(kubernetes.Pod), output, &treatCreatesAsUpdates)
-	handle(sif.Extensions().V1beta1().DaemonSets().Informer(), dispatchers.ForDeployments(kubernetes.DaemonSet), output, &treatCreatesAsUpdates)
-	handle(sif.Extensions().V1beta1().Deployments().Informer(), dispatchers.ForDeployments(kubernetes.Deployment), output, &treatCreatesAsUpdates)
-	handle(sif.Extensions().V1beta1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetes.ReplicaSet), output, &treatCreatesAsUpdates)
-	handle(sif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetes.ReplicationController), output, &treatCreatesAsUpdates)
-	handle(sif.Apps().V1beta1().StatefulSets().Informer(), dispatchers.ForDeployments(kubernetes.StatefulSet), output, &treatCreatesAsUpdates)
-	handle(sif.Batch().V1().Jobs().Informer(), dispatchers.ForDeployments(kubernetes.Job), output, &treatCreatesAsUpdates)
-	handle(sif.Batch().V1beta1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetes.CronJob), output, &treatCreatesAsUpdates)
+	handle(podInformer.Informer(), dispatchers.ForDeployments(kubernetes.Pod), output, &treatCreatesAsUpdates, wg, stopSignal)
+	handle(sif.Extensions().V1beta1().DaemonSets().Informer(), dispatchers.ForDeployments(kubernetes.DaemonSet), output, &treatCreatesAsUpdates, wg, stopSignal)
+	handle(sif.Extensions().V1beta1().Deployments().Informer(), dispatchers.ForDeployments(kubernetes.Deployment), output, &treatCreatesAsUpdates, wg, stopSignal)
+	handle(sif.Extensions().V1beta1().ReplicaSets().Informer(), dispatchers.ForDeployments(kubernetes.ReplicaSet), output, &treatCreatesAsUpdates, wg, stopSignal)
+	handle(sif.Core().V1().ReplicationControllers().Informer(), dispatchers.ForDeployments(kubernetes.ReplicationController), output, &treatCreatesAsUpdates, wg, stopSignal)
+	handle(sif.Apps().V1beta1().StatefulSets().Informer(), dispatchers.ForDeployments(kubernetes.StatefulSet), output, &treatCreatesAsUpdates, wg, stopSignal)
+	handle(sif.Batch().V1().Jobs().Informer(), dispatchers.ForDeployments(kubernetes.Job), output, &treatCreatesAsUpdates, wg, stopSignal)
+	handle(sif.Batch().V1beta1().CronJobs().Informer(), dispatchers.ForDeployments(kubernetes.CronJob), output, &treatCreatesAsUpdates, wg, stopSignal)
 
 	if osf != nil {
-		handle(osf.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kubernetes.DeploymentConfig), output, &treatCreatesAsUpdates)
+		handle(osf.Apps().V1().DeploymentConfigs().Informer(), dispatchers.ForDeployments(kubernetes.DeploymentConfig), output, &treatCreatesAsUpdates, wg, stopSignal)
 	}
 
 	// Run the pod and namespace informers first since other handlers rely on their outputs.
@@ -64,10 +67,14 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 	// Start our informers and wait for the caches of each to sync so that we know all objects that existed at startup
 	// have been consumed.
 	sif.Start(stopSignal.Done())
-	sif.WaitForCacheSync(stopSignal.Done())
 	if osf != nil {
 		osf.Start(stopSignal.Done())
-		osf.WaitForCacheSync(stopSignal.Done())
+	}
+	// WaitForCacheSync synchronization is broken for SharedIndexInformers due to internal addCh/pendingNotifications
+	// copy.  We have implemented our own sync in order to work around this.
+
+	if !concurrency.WaitInContext(wg, stopSignal) {
+		return
 	}
 
 	// Set the flag that all objects present at start up have been consumed.
@@ -82,10 +89,27 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 
 // Helper function that creates and adds a handler to an informer.
 //////////////////////////////////////////////////////////////////
-func handle(informer cache.SharedIndexInformer, dispatcher resources.Dispatcher, output chan<- *central.SensorEvent, treatCreatesAsUpdates *concurrency.Flag) {
-	informer.AddEventHandler(&resourceEventHandlerImpl{
+func handle(informer cache.SharedIndexInformer, dispatcher resources.Dispatcher, output chan<- *central.SensorEvent, treatCreatesAsUpdates *concurrency.Flag, wg *concurrency.WaitGroup, stopSignal *concurrency.Signal) {
+	handlerImpl := &resourceEventHandlerImpl{
 		dispatcher:            dispatcher,
 		output:                output,
 		treatCreatesAsUpdates: treatCreatesAsUpdates,
-	})
+
+		hasSeenAllInitialIDsSignal: concurrency.NewSignal(),
+		seenIDs:                    make(map[types.UID]struct{}),
+		missingInitialIDs:          nil,
+	}
+	informer.AddEventHandler(handlerImpl)
+	wg.Add(1)
+	go func() {
+		defer wg.Add(-1)
+		if !cache.WaitForCacheSync(stopSignal.Done(), informer.HasSynced) {
+			return
+		}
+		doneChannel := handlerImpl.PopulateInitialObjects(informer.GetIndexer().List())
+		select {
+		case <-stopSignal.Done():
+		case <-doneChannel:
+		}
+	}()
 }

@@ -10,6 +10,7 @@ import (
 
 // Dispatcher is responsible for processing resource events, and returning the sensor events that should be emitted
 // in response.
+//go:generate mockgen-wrapper Dispatcher
 type Dispatcher interface {
 	ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent
 }
