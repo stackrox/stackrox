@@ -191,7 +191,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
         def simulation = NetworkPolicyService.submitNetworkGraphSimulation(
                 orchestrator.generateYaml(policy2) + orchestrator.generateYaml(policy3),
-                "Deployment:web,client+Namespace:qa")
+                "Deployment:\"web\",\"client\"+Namespace:qa")
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
         def webAppIndex = simulation.simulatedGraph.nodesList.indexOf(
@@ -258,7 +258,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addPodSelector(["app": WEBDEPLOYMENT])
                 .addIngressNamespaceSelector()
         def simulation = NetworkPolicyService.submitNetworkGraphSimulation(orchestrator.generateYaml(policy2),
-                "Deployment:web,central+Namespace:qa,stackrox")
+                "Deployment:\"web\",\"central\"+Namespace:qa,stackrox")
         assert simulation != null
         def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
         def webAppIndex = simulation.simulatedGraph.nodesList.indexOf(
