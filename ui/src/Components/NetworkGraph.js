@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import NetworkGraphManager from 'webgl/NetworkGraph/Managers/NetworkGraphManager';
 import { networkGraphWW, getBlobURL } from 'utils/webWorkers';
 import { ClipLoader as Loader } from 'react-spinners';
+import { connect } from 'react-redux';
+import { actions as graphActions } from 'reducers/network/graph';
 
 class NetworkGraph extends Component {
     static propTypes = {
@@ -24,7 +26,8 @@ class NetworkGraph extends Component {
         updateKey: PropTypes.number.isRequired,
         filterState: PropTypes.number.isRequired,
         isLoading: PropTypes.bool.isRequired,
-        setNetworkGraphLoading: PropTypes.func.isRequired
+        setNetworkGraphLoading: PropTypes.func.isRequired,
+        setNetworkGraphRef: PropTypes.func.isRequired
     };
 
     constructor(props) {
@@ -45,6 +48,7 @@ class NetworkGraph extends Component {
                 worker: this.worker
             });
             this.manager.setOnNodeClick(onNodeClick);
+            this.setGraphRef();
         }
     }
 
@@ -53,11 +57,24 @@ class NetworkGraph extends Component {
         return nextProps.isLoading !== this.props.isLoading;
     }
 
+    componentDidUpdate() {
+        this.setGraphRef();
+    }
+
     componentWillUnmount() {
         if (this.isWebGLAvailable()) {
             this.manager.unbindEventListeners();
         }
         this.worker.terminate();
+    }
+
+    setGraphRef() {
+        this.props.setNetworkGraphRef({
+            zoomIn: this.zoomIn,
+            zoomOut: this.zoomOut,
+            zoomToFit: () => {},
+            setSelectedNode: () => {}
+        });
     }
 
     isWebGLAvailable = () => {
@@ -146,4 +163,11 @@ class NetworkGraph extends Component {
     }
 }
 
-export default NetworkGraph;
+const mapDispatchToProps = {
+    setNetworkGraphRef: graphActions.setNetworkGraphRef
+};
+
+export default connect(
+    null,
+    mapDispatchToProps
+)(NetworkGraph);
