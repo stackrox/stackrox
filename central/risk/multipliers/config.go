@@ -51,6 +51,9 @@ func (s *serviceConfigMultiplier) Score(deployment *storage.Deployment) *storage
 		overallScore *= 2
 		riskResult.Factors = append(riskResult.Factors, &storage.Risk_Result_Factor{Message: factor})
 	}
+	if len(riskResult.GetFactors()) == 0 {
+		return nil
+	}
 	// riskResult.Score is the normalized [1.0,2.0] score
 	riskResult.Score = normalizeScore(overallScore, configSaturation, configMaxScore)
 	return riskResult
