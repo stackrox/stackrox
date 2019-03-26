@@ -111,15 +111,18 @@ export const getLinks = (nodes, networkFlowMapping) => {
                     Object.is(node, targetNode) ||
                     !targetNode.entity ||
                     targetNode.entity.type !== 'DEPLOYMENT' ||
-                    !targetNode.nonIsolatedIngress || // nodes that are ingress-isolated have explicit incoming edges
-                    (node.nonIsolatedIngress && targetNode.nonIsolatedEgress) // do not draw edges between two fully isolated nodes
+                    !targetNode.nonIsolatedIngress // nodes that are ingress-isolated have explicit incoming edges
                 ) {
                     return;
                 }
                 const { id: tgtDeploymentId } = targetNode.entity;
                 const link = { source: srcDeploymentId, target: tgtDeploymentId };
                 link.isActive = !!networkFlowMapping[`${srcDeploymentId}--${tgtDeploymentId}`];
-                filteredLinks.push(link);
+                // Do not draw implicit links between fully non-isolated nodes unless the connection is active.
+                const isImplicit = node.nonIsolatedIngress && targetNode.nonIsolatedEgress;
+                if (!isImplicit || link.isActive) {
+                    filteredLinks.push(link);
+                }
             });
         }
 
