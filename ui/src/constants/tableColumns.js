@@ -1,6 +1,6 @@
 import React from 'react';
 import { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import { standardTypes, resourceTypes } from 'constants/entityTypes';
+import { standardTypes, resourceTypes, standardEntityTypes } from 'constants/entityTypes';
 import { sortVersion } from 'sorters/sorters';
 
 const getColumnValue = (row, accessor) => (row[accessor] ? row[accessor] : 'N/A');
@@ -150,6 +150,29 @@ const namespaceColumns = [
     }
 ];
 
+const controlColumns = [
+    {
+        accessor: 'id',
+        Header: 'id',
+        headerClassName: 'hidden',
+        className: 'hidden'
+    },
+    {
+        accessor: 'control',
+        sortMethod: sortVersion,
+        Header: `Control`,
+        headerClassName: `w-5/6 ${defaultHeaderClassName}`,
+        className: `w-5/6 ${defaultColumnClassName}`,
+        Cell: ({ original }) => getNameCell(`${original.control} - ${original.description}`)
+    },
+    {
+        accessor: 'compliance',
+        Header: 'Compliance',
+        headerClassName: `w-1/8 flex justify-end pr-4 ${defaultHeaderClassName}`,
+        className: `w-1/8 justify-end pr-4 ${defaultColumnClassName}`
+    }
+];
+
 const entityToColumns = {
     [resourceTypes.CLUSTER]: clusterColumns,
     [standardTypes.PCI_DSS_3_2]: getStandardColumns('PCI'),
@@ -158,7 +181,8 @@ const entityToColumns = {
     [standardTypes.CIS_Kubernetes_v1_2_0]: getStandardColumns('CIS Kubernetes'),
     [standardTypes.CIS_Docker_v1_1_0]: getStandardColumns('CIS Docker'),
     [resourceTypes.NODE]: nodeColumns,
-    [resourceTypes.NAMESPACE]: namespaceColumns
+    [resourceTypes.NAMESPACE]: namespaceColumns,
+    [standardEntityTypes.CONTROL]: controlColumns
 };
 
 export default entityToColumns;

@@ -8,6 +8,9 @@ export const LIST_STANDARD = gql`
                     scope
                 }
                 keys {
+                    ... on ComplianceStandardMetadata {
+                        id
+                    }
                     ... on ComplianceControlGroup {
                         id
                         name
@@ -17,6 +20,7 @@ export const LIST_STANDARD = gql`
                         id
                         name
                         description
+                        standardId
                     }
                     ... on Cluster {
                         id

@@ -21,6 +21,8 @@ import Loader from 'Components/Loader';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
+import ResourceTabs from 'Components/ResourceTabs';
+import ComplianceList from 'Containers/Compliance/List/List';
 import Header from './Header';
 
 function processData(data) {
@@ -39,17 +41,38 @@ function processData(data) {
 const NodePage = ({ match, location, nodeId, sidePanelMode }) => {
     const params = URLService.getParams(match, location);
     const entityId = nodeId || params.entityId;
+    const listEntityType = URLService.getEntityTypeKeyFromValue(params.listEntityType);
 
     return (
         <Query query={NODE_QUERY} variables={{ id: entityId }}>
             {({ loading, data }) => {
                 if (loading || !data) return <Loader />;
                 const node = processData(data);
-                const header = node.name || 'Loading...';
+                const {
+                    name,
+                    id,
+                    containerRuntimeVersion,
+                    clusterName,
+                    osImage,
+                    ipAddress,
+                    joinedAtDate,
+                    joinedAtTime,
+                    kernelVersion
+                } = node;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
-                return (
-                    <section className="flex flex-col h-full w-full">
-                        {!sidePanelMode && <Header header={header} subHeader="Node" />}
+                let contents;
+                if (listEntityType && !sidePanelMode) {
+                    const listQuery = {
+                        node: name,
+                        groupBy: listEntityType === entityTypes.CONTROL ? entityTypes.STANDARD : ''
+                    };
+                    contents = (
+                        <section id="capture-list">
+                            <ComplianceList entityType={listEntityType} query={listQuery} />;
+                        </section>
+                    );
+                } else {
+                    contents = (
                         <div
                             className={`flex-1 relative bg-base-200 overflow-auto ${
                                 !sidePanelMode ? `p-6` : `p-4`
@@ -71,16 +94,16 @@ const NodePage = ({ match, location, nodeId, sidePanelMode }) => {
                                     <div className="s-full pb-3">
                                         <EntityCompliance
                                             entityType={entityTypes.NODE}
-                                            entityId={node.id}
-                                            entityName={node.name}
-                                            clusterName={node.clusterName}
+                                            entityId={id}
+                                            entityName={name}
+                                            clusterName={clusterName}
                                         />
                                     </div>
                                     <div className="md:pr-3 pt-3">
                                         <IconWidget
                                             title="Parent Cluster"
                                             icon={Cluster}
-                                            description={node.clusterName}
+                                            description={clusterName}
                                             loading={loading}
                                         />
                                     </div>
@@ -88,7 +111,7 @@ const NodePage = ({ match, location, nodeId, sidePanelMode }) => {
                                         <IconWidget
                                             title="Container Runtime"
                                             icon={ContainerRuntime}
-                                            description={node.containerRuntimeVersion}
+                                            description={containerRuntimeVersion}
                                             loading={loading}
                                         />
                                     </div>
@@ -101,16 +124,16 @@ const NodePage = ({ match, location, nodeId, sidePanelMode }) => {
                                     <div className="md:pr-3 pb-3">
                                         <InfoWidget
                                             title="Operating System"
-                                            headline={node.osImage}
-                                            description={node.kernelVersion}
+                                            headline={osImage}
+                                            description={kernelVersion}
                                             loading={loading}
                                         />
                                     </div>
                                     <div className="md:pl-3 pb-3">
                                         <InfoWidget
                                             title="Node Join Time"
-                                            headline={node.joinedAtDate}
-                                            description={node.joinedAtTime}
+                                            headline={joinedAtDate}
+                                            description={joinedAtTime}
                                             loading={loading}
                                         />
                                     </div>
@@ -118,7 +141,7 @@ const NodePage = ({ match, location, nodeId, sidePanelMode }) => {
                                         <IconWidget
                                             title="IP Address"
                                             icon={IpAddress}
-                                            description={node.ipAddress}
+                                            description={ipAddress}
                                             loading={loading}
                                         />
                                     </div>
@@ -127,7 +150,7 @@ const NodePage = ({ match, location, nodeId, sidePanelMode }) => {
                                             title="Hostname"
                                             icon={Hostname}
                                             textSizeClass="text-base"
-                                            description={node.name}
+                                            description={name}
                                             loading={loading}
                                         />
                                     </div>
@@ -144,27 +167,52 @@ const NodePage = ({ match, location, nodeId, sidePanelMode }) => {
                                 </Widget>
                                 <ComplianceByStandard
                                     standardType={entityTypes.NIST_800_190}
-                                    entityName={node.name}
-                                    entityId={node.id}
+                                    entityName={name}
+                                    entityId={id}
                                     entityType={entityTypes.NODE}
                                     className={pdfClassName}
                                 />
                                 <ComplianceByStandard
                                     standardType={entityTypes.CIS_Kubernetes_v1_2_0}
-                                    entityName={node.name}
-                                    entityId={node.id}
+                                    entityName={name}
+                                    entityId={id}
                                     entityType={entityTypes.NODE}
                                     className={pdfClassName}
                                 />
                                 <ComplianceByStandard
                                     standardType={entityTypes.CIS_Docker_v1_1_0}
-                                    entityName={node.name}
-                                    entityId={node.id}
+                                    entityName={name}
+                                    entityId={id}
                                     entityType={entityTypes.NODE}
                                     className={pdfClassName}
                                 />
                             </div>
                         </div>
+                    );
+                }
+
+                return (
+                    <section className="flex flex-col h-full w-full">
+                        {!sidePanelMode && (
+                            <>
+                                <Header
+                                    entityType={entityTypes.NODE}
+                                    listEntityType={listEntityType}
+                                    entity={node}
+                                />
+                                <ResourceTabs
+                                    entityId={id}
+                                    entityType={entityTypes.NODE}
+                                    resourceTabs={[
+                                        entityTypes.CONTROL,
+                                        entityTypes.CLUSTER,
+                                        entityTypes.NAMESPACE
+                                    ]}
+                                />
+                            </>
+                        )}
+
+                        {contents}
                     </section>
                 );
             }}

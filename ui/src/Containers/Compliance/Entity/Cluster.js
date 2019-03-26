@@ -6,12 +6,13 @@ import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
 import ClusterVersion from 'Containers/Compliance/widgets/ClusterVersion';
 import Query from 'Components/ThrowingQuery';
 import { CLUSTER_QUERY as QUERY } from 'queries/cluster';
-import ResourceRelatedResourceList from 'Containers/Compliance/widgets/ResourceRelatedResourceList';
+import ComplianceList from 'Containers/Compliance/List/List';
 import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
 import Loader from 'Components/Loader';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
+import ResourceTabs from 'Components/ResourceTabs';
 import Header from './Header';
 
 function processData(data) {
@@ -22,6 +23,7 @@ function processData(data) {
 const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
     const params = URLService.getParams(match, location);
     const entityId = clusterId || params.entityId;
+    const listEntityType = URLService.getEntityTypeKeyFromValue(params.listEntityType);
 
     return (
         <Query query={QUERY} variables={{ id: entityId }}>
@@ -29,15 +31,23 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
                 if (loading) return <Loader />;
                 const cluster = processData(data);
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
-                return (
-                    <section className="flex flex-col h-full w-full">
-                        {!sidePanelMode && (
-                            <Header
-                                header={cluster.name}
-                                subHeader="Cluster"
-                                scanCluster={cluster.id}
+                let contents;
+                if (listEntityType && !sidePanelMode) {
+                    const listQuery = {
+                        'Cluster Id': entityId,
+                        groupBy: listEntityType === entityTypes.CONTROL ? entityTypes.STANDARD : ''
+                    };
+                    contents = (
+                        <section id="capture-list">
+                            <ComplianceList
+                                entityType={listEntityType}
+                                query={listQuery}
+                                className={pdfClassName}
                             />
-                        )}
+                        </section>
+                    );
+                } else {
+                    contents = (
                         <div
                             className={`flex-1 relative bg-base-200 overflow-auto ${
                                 !sidePanelMode ? `p-6` : `p-4`
@@ -55,7 +65,7 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
                                     className={`grid s-2 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
                                     style={{ '--min-tile-width': '50%' }}
                                 >
-                                    <div className="s-full pb-3">
+                                    <div className="s-full pb-5">
                                         <EntityCompliance
                                             entityType={entityTypes.CLUSTER}
                                             entityId={cluster.id}
@@ -63,14 +73,7 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
                                             clusterName={cluster.name}
                                         />
                                     </div>
-                                    <div className="md:pr-3 pt-3 rounded">
-                                        <ResourceCount
-                                            resourceType={entityTypes.NODE}
-                                            relatedToResourceType={entityTypes.CLUSTER}
-                                            relatedToResourceId={cluster.id}
-                                        />
-                                    </div>
-                                    <div className="md:pl-3 pt-3 rounded">
+                                    <div className="s-full">
                                         <ClusterVersion clusterId={cluster.id} />
                                     </div>
                                 </div>
@@ -109,33 +112,62 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
                                     entityType={entityTypes.CLUSTER}
                                     className={pdfClassName}
                                 />
-                                {!sidePanelMode && (
+                                {sidePanelMode && (
                                     <>
-                                        <ResourceRelatedResourceList
-                                            listEntityType={entityTypes.NAMESPACE}
-                                            pageEntityType={entityTypes.CLUSTER}
-                                            pageEntity={cluster}
-                                            clusterName={cluster.name}
-                                            className={`sx-2 ${pdfClassName}`}
-                                        />
-                                        <ResourceRelatedResourceList
-                                            listEntityType={entityTypes.DEPLOYMENT}
-                                            pageEntityType={entityTypes.CLUSTER}
-                                            pageEntity={cluster}
-                                            clusterName={cluster.name}
-                                            className={`sx-2 ${pdfClassName}`}
-                                        />
-                                        <ResourceRelatedResourceList
-                                            listEntityType={entityTypes.NODE}
-                                            pageEntityType={entityTypes.CLUSTER}
-                                            pageEntity={cluster}
-                                            clusterName={cluster.name}
-                                            className={`sx-2 ${pdfClassName}`}
-                                        />
+                                        <div
+                                            className={`grid s-2 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
+                                            style={{ '--min-tile-width': '50%' }}
+                                        >
+                                            <div className="md:pr-3 pb-3">
+                                                <ResourceCount
+                                                    entityType={entityTypes.NAMESPACE}
+                                                    relatedToResourceType={entityTypes.CLUSTER}
+                                                    relatedToResource={cluster}
+                                                />
+                                            </div>
+                                            <div className="md:pl-3 pb-3">
+                                                <ResourceCount
+                                                    entityType={entityTypes.NODE}
+                                                    relatedToResourceType={entityTypes.CLUSTER}
+                                                    relatedToResource={cluster}
+                                                />
+                                            </div>
+                                            <div className="md:pr-3 pt-2">
+                                                <ResourceCount
+                                                    entityType={entityTypes.DEPLOYMENT}
+                                                    relatedToResourceType={entityTypes.CLUSTER}
+                                                    relatedToResource={cluster}
+                                                />
+                                            </div>
+                                        </div>
                                     </>
                                 )}
                             </div>
                         </div>
+                    );
+                }
+                return (
+                    <section className="flex flex-col h-full w-full">
+                        {!sidePanelMode && (
+                            <>
+                                <Header
+                                    entityType={entityTypes.CLUSTER}
+                                    listEntityType={listEntityType}
+                                    entity={cluster}
+                                />
+                                <ResourceTabs
+                                    entityId={entityId}
+                                    entityType={entityTypes.CLUSTER}
+                                    resourceTabs={[
+                                        entityTypes.CONTROL,
+                                        entityTypes.NAMESPACE,
+                                        entityTypes.NODE
+                                    ]}
+                                />
+                            </>
+                        )}
+
+                        {contents}
                     </section>
                 );
             }}

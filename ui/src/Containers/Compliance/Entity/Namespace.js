@@ -11,42 +11,55 @@ import pluralize from 'pluralize';
 import Cluster from 'images/cluster.svg';
 import { NAMESPACE_QUERY as QUERY } from 'queries/namespace';
 import Widget from 'Components/Widget';
-import ResourceRelatedResourceList from 'Containers/Compliance/widgets/ResourceRelatedResourceList';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
+import ComplianceList from 'Containers/Compliance/List/List';
+import ResourceTabs from 'Components/ResourceTabs';
+import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
 import Header from './Header';
-
-function processData(data) {
-    const defaultValue = {
-        labels: [],
-        name: '',
-        clusterName: ''
-    };
-
-    if (!data || !data.results || !data.results.metadata) return defaultValue;
-
-    const { metadata, ...rest } = data.results;
-
-    return {
-        ...rest,
-        ...metadata
-    };
-}
 
 const NamespacePage = ({ match, location, namespaceId, sidePanelMode }) => {
     const params = URLService.getParams(match, location);
     const entityId = namespaceId || params.entityId;
+    const listEntityType = URLService.getEntityTypeKeyFromValue(params.listEntityType);
+
+    function processData(data) {
+        const defaultValue = {
+            labels: [],
+            name: '',
+            clusterName: '',
+            id: entityId
+        };
+
+        if (!data || !data.results || !data.results.metadata) return defaultValue;
+
+        const { metadata, ...rest } = data.results;
+
+        return {
+            ...rest,
+            ...metadata
+        };
+    }
 
     return (
         <Query query={QUERY} variables={{ id: entityId }}>
             {({ loading, data }) => {
                 const namespace = processData(data);
-                const header = namespace.name || 'Loading';
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
-                return (
-                    <section className="flex flex-col h-full w-full">
-                        {!sidePanelMode && <Header header={header} subHeader="Namespace" />}
+                let contents;
+                if (listEntityType && !sidePanelMode) {
+                    const listQuery = {
+                        Namespace: namespace.name,
+                        groupBy: listEntityType === entityTypes.CONTROL ? entityTypes.STANDARD : ''
+                    };
+                    contents = (
+                        <section id="capture-list">
+                            <ComplianceList entityType={listEntityType} query={listQuery} />;
+                        </section>
+                    );
+                } else {
+                    contents = (
                         <div
                             className={`flex-1 relative bg-base-200 overflow-auto ${
                                 !sidePanelMode ? `p-6` : `p-4`
@@ -119,26 +132,56 @@ const NamespacePage = ({ match, location, namespaceId, sidePanelMode }) => {
                                     entityType={entityTypes.NAMESPACE}
                                     className={pdfClassName}
                                 />
-                                {!sidePanelMode && (
+                                {sidePanelMode && (
                                     <>
-                                        <ResourceRelatedResourceList
-                                            listEntityType={entityTypes.DEPLOYMENT}
-                                            pageEntityType={entityTypes.NAMESPACE}
-                                            pageEntity={namespace}
-                                            clusterName={namespace.clusterName}
-                                            className={`sx-2 ${pdfClassName}`}
-                                        />
-                                        <ResourceRelatedResourceList
-                                            listEntityType={entityTypes.SECRET}
-                                            pageEntityType={entityTypes.NAMESPACE}
-                                            pageEntity={namespace}
-                                            clusterName={namespace.clusterName}
-                                            className={`sx-2 ${pdfClassName}`}
-                                        />
+                                        <div
+                                            className={`grid sx-2 sy-1 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
+                                            style={{ '--min-tile-width': '50%' }}
+                                        >
+                                            <div className="md:pr-3 pt-3">
+                                                <ResourceCount
+                                                    entityType={entityTypes.DEPLOYMENT}
+                                                    relatedToResourceType={entityTypes.NAMESPACE}
+                                                    relatedToResource={namespace}
+                                                />
+                                            </div>
+                                            <div className="md:pl-3 pt-3">
+                                                <ResourceCount
+                                                    entityType={entityTypes.SECRET}
+                                                    relatedToResourceType={entityTypes.NAMESPACE}
+                                                    relatedToResource={namespace}
+                                                />
+                                            </div>
+                                        </div>
                                     </>
                                 )}
                             </div>
                         </div>
+                    );
+                }
+
+                return (
+                    <section className="flex flex-col h-full w-full">
+                        {!sidePanelMode && (
+                            <>
+                                <Header
+                                    entityType={entityTypes.NAMESPACE}
+                                    listEntityType={listEntityType}
+                                    entity={namespace}
+                                />
+                                <ResourceTabs
+                                    entityId={namespace.id}
+                                    entityType={entityTypes.NAMESPACE}
+                                    resourceTabs={[
+                                        entityTypes.CONTROL,
+                                        entityTypes.CLUSTER,
+                                        entityTypes.NODE
+                                    ]}
+                                />
+                            </>
+                        )}
+
+                        {contents}
                     </section>
                 );
             }}

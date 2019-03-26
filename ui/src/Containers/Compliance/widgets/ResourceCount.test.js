@@ -4,14 +4,14 @@ import { MockedProvider } from 'react-apollo/test-utils';
 import { Query } from 'react-apollo';
 import getRouterOptions from 'constants/routerOptions';
 
-import { NODES_BY_CLUSTER } from 'queries/node';
 import ResourceCount from './ResourceCount';
 
 const id = '1234';
+const name = 'myNodeName';
+
 const mocks = [
     {
         request: {
-            query: NODES_BY_CLUSTER,
             variables: {
                 id
             }
@@ -25,15 +25,13 @@ it('renders without error', () => {
             <ResourceCount
                 resourceType="NODE"
                 relatedToResourceType="CLUSTER"
-                relatedToResourceId={id}
+                relatedToResource={{ id, name }}
             />
         </MockedProvider>,
         getRouterOptions(jest.fn())
     );
 
     const queryProps = element.find(Query).props();
-    const queryName = queryProps.query.definitions[0].name.value;
     const queryVars = queryProps.variables;
-    expect(queryName === 'getNodesByCluster').toBe(true);
-    expect(queryVars.id === id).toBe(true);
+    expect(queryVars.query === `Cluster ID:${id}`).toBe(true);
 });

@@ -1,87 +1,52 @@
-import React, { Component } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import URLService from 'modules/URLService';
-
+import entityTypes, { standardBaseTypes } from 'constants/entityTypes';
+import { standardLabels } from 'messages/standards';
 import CollapsibleBanner from 'Components/CollapsibleBanner/CollapsibleBanner';
 import ComplianceAcrossEntities from 'Containers/Compliance/widgets/ComplianceAcrossEntities';
 import ControlsMostFailed from 'Containers/Compliance/widgets/ControlsMostFailed';
+import ComplianceList from 'Containers/Compliance/List/List';
 import SearchInput from './SearchInput';
 import Header from './Header';
-import ListTable from './Table';
-import SidePanel from './SidePanel';
 
-class ComplianceListPage extends Component {
-    static propTypes = {
-        match: ReactRouterPropTypes.match.isRequired,
-        location: ReactRouterPropTypes.location.isRequired,
-        params: PropTypes.shape({
-            entityType: PropTypes.string.isRequired
-        })
-    };
+const ComplianceListPage = ({ match, location }) => {
+    const params = URLService.getParams(match, location);
+    const groupBy = params.query && params.query.groupBy ? params.query.groupBy : null;
+    let { entityType } = params;
+    const query = { ...params.query };
 
-    static defaultProps = {
-        params: null
-    };
-
-    constructor(props) {
-        super(props);
-        this.state = {
-            selectedRow: null
-        };
+    // TODO: get rid of this when standards have their own path.
+    if (standardBaseTypes[entityType]) {
+        query.standard = standardLabels[entityType];
+        query.standardId = entityType;
+        entityType = entityTypes.CONTROL;
     }
 
-    componentWillReceiveProps(nextProps) {
-        if (nextProps.location !== this.props.location) {
-            this.setState({ selectedRow: null });
-        }
-    }
+    return (
+        <section className="flex flex-col h-full relative" id="capture-list">
+            <Header searchComponent={<SearchInput categories={['COMPLIANCE']} />} />
+            <CollapsibleBanner className="pdf-page">
+                <ComplianceAcrossEntities entityType={entityType} query={query} groupBy={groupBy} />
+                <ControlsMostFailed entityType={entityType} query={query} showEmpty />
+            </CollapsibleBanner>
+            <ComplianceList entityType={entityType} query={query} />
+        </section>
+    );
+};
 
-    updateSelectedRow = selectedRow => this.setState({ selectedRow });
+ComplianceListPage.propTypes = {
+    match: ReactRouterPropTypes.match.isRequired,
+    location: ReactRouterPropTypes.location.isRequired,
+    params: PropTypes.shape({
+        entityType: PropTypes.string.isRequired
+    })
+};
 
-    clearSelectedRow = () => {
-        this.setState({ selectedRow: null });
-    };
-
-    render() {
-        const { match, location } = this.props;
-        const { selectedRow } = this.state;
-        const params = URLService.getParams(match, location);
-        const groupBy = params.query && params.query.groupBy ? params.query.groupBy : null;
-        const { entityType, entityId, query } = params;
-        return (
-            <section className="flex flex-col h-full relative" id="capture-list">
-                <Header searchComponent={<SearchInput categories={['COMPLIANCE']} />} />
-                <CollapsibleBanner className="pdf-page">
-                    <ComplianceAcrossEntities
-                        entityType={entityType}
-                        query={query}
-                        groupBy={groupBy}
-                    />
-                    <ControlsMostFailed entityType={entityType} query={query} showEmpty />
-                </CollapsibleBanner>
-                <div className="flex flex-1 overflow-y-auto">
-                    <ListTable
-                        selectedRow={selectedRow}
-                        entityType={entityType}
-                        entityId={entityId}
-                        query={query}
-                        updateSelectedRow={this.updateSelectedRow}
-                        pdfId="capture-list"
-                    />
-                    {selectedRow && (
-                        <SidePanel
-                            match={match}
-                            location={location}
-                            selectedRow={selectedRow}
-                            clearSelectedRow={this.clearSelectedRow}
-                        />
-                    )}
-                </div>
-            </section>
-        );
-    }
-}
+ComplianceListPage.defaultProps = {
+    params: null
+};
 
 export default withRouter(ComplianceListPage);

@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import entityTypes, { standardBaseTypes, standardTypes } from 'constants/entityTypes';
+import entityTypes, { standardTypes } from 'constants/entityTypes';
+import { standardLabels } from 'messages/standards';
+
 import pluralize from 'pluralize';
 import toLower from 'lodash/toLower';
 import startCase from 'lodash/startCase';
@@ -17,12 +19,11 @@ import Query from 'Components/ThrowingQuery';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import { CLUSTERS_LIST_QUERY, NAMESPACES_LIST_QUERY, NODES_QUERY } from 'queries/table';
 import { LIST_STANDARD } from 'queries/standard';
-import { standardLabels } from 'messages/standards';
 import queryService from 'modules/queryService';
 import orderBy from 'lodash/orderBy';
 
 function getQuery(entityType) {
-    if (standardTypes[entityType]) {
+    if (standardTypes[entityType] || entityType === entityTypes.CONTROL) {
         return LIST_STANDARD;
     }
     switch (entityType) {
@@ -37,13 +38,13 @@ function getQuery(entityType) {
     }
 }
 
-function getVariables(entityType, entityId, query) {
-    if (!standardTypes[entityType]) {
-        return { where: queryService.objectToWhereClause(query) };
-    }
-    const groupBy = ['CONTROL', 'CATEGORY', ...(query.groupBy ? [query.groupBy] : [])];
+function getVariables(entityType, query) {
+    const groupBy =
+        entityType === entityTypes.CONTROL
+            ? ['CONTROL', 'CATEGORY', ...(query.groupBy ? [query.groupBy] : [])]
+            : null;
     return {
-        where: queryService.objectToWhereClause({ Standard: standardLabels[entityType] }),
+        where: queryService.objectToWhereClause(query),
         groupBy
     };
 }
@@ -110,39 +111,50 @@ function formatStandardData(data) {
         if (scope === 'CATEGORY') categoryKeyIndex = idx;
         if (scope !== 'CATEGORY' && scope !== 'CONTROL') groupByKeyIndex = idx;
     });
-    data.results.results.forEach(({ keys, numPassing, numFailing }) => {
-        const groupKey = groupByKeyIndex === null ? categoryKeyIndex : groupByKeyIndex;
-        const { name, clusterName, description: groupDescription, metadata, __typename } = keys[
-            groupKey
-        ];
-        // the check below is to address ROX-1420
-        if (__typename !== '') {
-            let groupName = name;
-            if (__typename === 'Node') {
-                groupName = `${clusterName}/${name}`;
-            } else if (__typename === 'Namespace') {
-                groupName = `${metadata.clusterName}/${metadata.name}`;
+    data.results.results
+        .filter(datum => datum.numFailing + datum.numPassing)
+        .forEach(({ keys, numPassing, numFailing }) => {
+            const groupKey = groupByKeyIndex === null ? categoryKeyIndex : groupByKeyIndex;
+            const {
+                id: standard,
+                name,
+                clusterName,
+                description: groupDescription,
+                metadata,
+                __typename
+            } = keys[groupKey];
+            // the check below is to address ROX-1420
+            if (__typename !== '') {
+                let groupName = name || standardLabels[standard];
+                if (__typename === 'Node') {
+                    groupName = `${clusterName}/${name}`;
+                } else if (__typename === 'Namespace') {
+                    groupName = `${metadata.clusterName}/${metadata.name}`;
+                }
+                if (!groups[groupName]) {
+                    const groupId = parseInt(groupName, 10) || groupName;
+                    groups[groupName] = {
+                        groupId,
+                        name: `${groupName} ${groupDescription ? `- ${groupDescription}` : ''}`,
+                        rows: []
+                    };
+                }
+                if (controlKeyIndex) {
+                    const { id, name: controlName, description, standardId } = keys[
+                        controlKeyIndex
+                    ];
+                    groups[groupName].rows.push({
+                        id,
+                        description,
+                        standardId,
+                        standard: standardLabels[standardId],
+                        control: controlName,
+                        compliance: complianceRate(numPassing, numFailing),
+                        group: groupName
+                    });
+                }
             }
-            if (!groups[groupName]) {
-                const groupId = parseInt(groupName, 10) || groupName;
-                groups[groupName] = {
-                    groupId,
-                    name: `${groupName} ${groupDescription ? `- ${groupDescription}` : ''}`,
-                    rows: []
-                };
-            }
-            if (controlKeyIndex) {
-                const { id, name: controlName, description } = keys[controlKeyIndex];
-                groups[groupName].rows.push({
-                    id,
-                    description,
-                    control: controlName,
-                    compliance: complianceRate(numPassing, numFailing),
-                    group: groupName
-                });
-            }
-        }
-    });
+        });
     Object.keys(groups).forEach(group => {
         formattedData.results.push(groups[group]);
         formattedData.totalRows += groups[group].rows.length;
@@ -152,6 +164,7 @@ function formatStandardData(data) {
 }
 
 const createPDFTable = (tableData, entityType, query, pdfId) => {
+    const { standardId } = query;
     const table = document.getElementById('pdf-table');
     const parent = document.getElementById(pdfId);
     if (table) {
@@ -160,18 +173,15 @@ const createPDFTable = (tableData, entityType, query, pdfId) => {
     let type = null;
     if (query.groupBy) {
         type = startCase(toLower(query.groupBy));
-    } else if (standardBaseTypes[entityType]) {
+    } else if (standardId) {
         type = 'Standard';
     }
+    const columns = entityToColumns[standardId || entityType];
     if (tableData.length) {
-        const headers = entityToColumns[entityType]
-            .map(col => col.Header)
-            .filter(header => header !== 'id');
-        const headerKeys = entityToColumns[entityType]
-            .map(col => col.accessor)
-            .filter(header => header !== 'id');
+        const headers = columns.map(col => col.Header).filter(header => header !== 'id');
+        const headerKeys = columns.map(col => col.accessor).filter(header => header !== 'id');
 
-        if (tableData[0].rows) {
+        if (tableData[0].rows && type) {
             headers.unshift(type);
             headerKeys.unshift(type);
         }
@@ -217,7 +227,6 @@ const createPDFTable = (tableData, entityType, query, pdfId) => {
 class ListTable extends Component {
     static propTypes = {
         entityType: PropTypes.string,
-        entityId: PropTypes.string,
         query: PropTypes.shape({}),
         selectedRow: PropTypes.shape({}),
         updateSelectedRow: PropTypes.func.isRequired,
@@ -228,7 +237,6 @@ class ListTable extends Component {
         selectedRow: null,
         pdfId: null,
         entityType: null,
-        entityId: null,
         query: null
     };
 
@@ -242,14 +250,14 @@ class ListTable extends Component {
     setTablePage = page => this.setState({ page });
 
     // This is a client-side implementation of filtering by the "Compliance State" Search Option
-    filterByComplianceState = (data, query, isStandard) => {
+    filterByComplianceState = (data, query, isControlList) => {
         const complianceStateKey = SEARCH_OPTIONS.COMPLIANCE.STATE;
         if (!query[complianceStateKey]) return data.results;
         const val = query[complianceStateKey].toLowerCase();
         const isPassing = val === 'pass';
         const isFailing = val === 'fail';
         const { results } = data;
-        if (isStandard) {
+        if (isControlList) {
             return results
                 .map(result => {
                     const newResult = { ...result };
@@ -293,15 +301,17 @@ class ListTable extends Component {
     };
 
     render() {
-        const { entityType, entityId, query, selectedRow, updateSelectedRow, pdfId } = this.props;
+        const { entityType, query, selectedRow, updateSelectedRow, pdfId } = this.props;
+        const { standardId } = query;
         const { page } = this.state;
         const gqlQuery = getQuery(entityType);
-        const variables = getVariables(entityType, entityId, query);
-        const formatData = standardTypes[entityType] ? formatStandardData : formatResourceData;
+        const variables = getVariables(entityType, query);
+        const isControlList = entityType === entityTypes.CONTROL;
+        const formatData = isControlList ? formatStandardData : formatResourceData;
+        const tableColumns = entityToColumns[standardId || entityType];
         return (
             <Query query={gqlQuery} variables={variables}>
                 {({ loading, data }) => {
-                    const isStandard = !!standardTypes[entityType];
                     let tableData;
                     let contents = <Loader />;
                     let paginationComponent;
@@ -313,35 +323,40 @@ class ListTable extends Component {
                                 <NoResultsMessage message="No compliance data available. Please run a scan." />
                             );
 
-                        tableData = this.filterByComplianceState(formattedData, query, isStandard);
+                        tableData = this.filterByComplianceState(
+                            formattedData,
+                            query,
+                            isControlList
+                        );
 
                         if (tableData.length) {
                             createPDFTable(tableData, entityType, query, pdfId);
                         }
-                        const totalRows = this.getTotalRows(tableData, isStandard);
+                        const totalRows = this.getTotalRows(tableData, isControlList);
                         const { groupBy } = query;
+
                         const groupedByText = groupBy
                             ? `across ${tableData.length} ${pluralize(groupBy, tableData.length)}`
                             : '';
-                        const listEntityType = isStandard ? 'control' : entityType;
                         headerText = `${totalRows} ${pluralize(
-                            listEntityType,
+                            entityType,
                             totalRows
                         )} ${groupedByText}`;
-                        contents = isStandard ? (
+
+                        contents = isControlList ? (
                             <TableGroup
                                 groups={tableData}
                                 totalRows={totalRows}
-                                tableColumns={entityToColumns[entityType]}
+                                tableColumns={tableColumns}
                                 onRowClick={updateSelectedRow}
-                                entityType={listEntityType}
+                                entityType={entityType}
                                 idAttribute="id"
                                 selectedRowId={selectedRow ? selectedRow.id : null}
                             />
                         ) : (
                             <Table
                                 rows={tableData}
-                                columns={entityToColumns[entityType]}
+                                columns={tableColumns}
                                 onRowClick={updateSelectedRow}
                                 idAttribute="id"
                                 selectedRowId={selectedRow ? selectedRow.id : null}

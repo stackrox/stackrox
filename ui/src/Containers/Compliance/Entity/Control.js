@@ -29,8 +29,10 @@ const ControlPage = ({ match, location, controlId, sidePanelMode }) => {
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
                             <Header
-                                header={`${standardLabels[standardId]} ${name}`}
-                                subHeader="Control"
+                                entityType={entityTypes.CONTROL}
+                                listEntityType={null}
+                                entity={control}
+                                headerText={`${standardLabels[standardId]} ${name}`}
                             />
                         )}
                         <div

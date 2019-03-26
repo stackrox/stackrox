@@ -5,7 +5,7 @@ import { CLIENT_SIDE_SEARCH_OPTIONS as SEARCH_OPTIONS } from 'constants/searchOp
 import Query from 'Components/ThrowingQuery';
 import URLSearchInput from 'Components/URLSearchInput';
 
-import SEARCH_OPTIONS_QUERY from 'queries/search';
+import { SEARCH_OPTIONS_QUERY } from 'queries/search';
 
 const addComplianceStateOption = searchOptions => {
     let modifiedSearchOptions = [];

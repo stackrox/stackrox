@@ -1,6 +1,6 @@
 import qs from 'qs';
 import pageTypes from 'constants/pageTypes';
-import { resourceTypes } from 'constants/entityTypes';
+import { resourceTypes, standardTypes } from 'constants/entityTypes';
 import contextTypes from 'constants/contextTypes';
 import { generatePath } from 'react-router-dom';
 import { nestedCompliancePaths, resourceTypesToUrl, riskPath, secretsPath } from '../routePaths';
@@ -9,17 +9,16 @@ function isResource(type) {
     return Object.values(resourceTypes).includes(type);
 }
 
+function getEntityTypeKeyFromValue(entityTypeValue) {
+    const match = Object.entries(resourceTypesToUrl).find(entry => entry[1] === entityTypeValue);
+    return match ? match[0] : null;
+}
+
 function getEntityTypeFromMatch(match) {
     if (!match || !match.params || !match.params.entityType) return null;
-
-    const { entityType } = match.params;
-
-    // Handle url to resourceType mapping for resources
-    const entityEntry = Object.entries(resourceTypesToUrl).find(
-        entry => entry[1] === match.params.entityType
+    return (
+        standardTypes[match.params.entityType] || getEntityTypeKeyFromValue(match.params.entityType)
     );
-
-    return entityEntry ? entityEntry[0] : entityType;
 }
 
 function getPath(context, pageType, urlParams) {
@@ -57,7 +56,8 @@ function getPath(context, pageType, urlParams) {
     }
 
     if (isResourceType) {
-        params.entityType = resourceTypesToUrl[urlParams.entityType];
+        params.entityType = resourceTypesToUrl[params.entityType];
+        params.listEntityType = resourceTypesToUrl[params.listEntityType];
     }
 
     return generatePath(path, params);
@@ -101,5 +101,6 @@ function getLinkTo(context, pageType, params) {
 
 export default {
     getParams,
-    getLinkTo
+    getLinkTo,
+    getEntityTypeKeyFromValue
 };

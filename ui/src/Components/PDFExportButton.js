@@ -103,6 +103,21 @@ class PDFExportButton extends Component {
         return promises;
     };
 
+    drawTable = (positionY, doc) => {
+        const tableOptions = Object.assign(
+            {
+                html: '#pdf-table',
+                startY: positionY + 2,
+                styles: {
+                    fontSize: 6
+                },
+                margin: { left: 3, right: 3 }
+            },
+            this.props.tableOptions
+        );
+        doc.autoTable(tableOptions);
+    };
+
     saveFn = () => {
         const {
             id,
@@ -209,21 +224,17 @@ class PDFExportButton extends Component {
                                 imgHeight
                             );
                             positionY += imgHeight;
-                            const tableOptions = Object.assign(
-                                {
-                                    html: '#pdf-table',
-                                    startY: positionY + 2,
-                                    styles: {
-                                        fontSize: 6
-                                    },
-                                    margin: { left: 3, right: 3 }
-                                },
-                                this.props.tableOptions
-                            );
-                            doc.autoTable(tableOptions);
+                            this.drawTable(positionY, doc);
                         }
                     }
                 });
+
+                // only header and table
+                if (canvases.length === 1) {
+                    if (id === 'capture-list') {
+                        this.drawTable(positionY, doc);
+                    }
+                }
                 Array.from(imgElements).forEach((el, index) => {
                     printElements[index].className = printClonedElements[index].getAttribute(
                         'data-class-name'

@@ -1,43 +1,34 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import ReactRouterPropTypes from 'react-router-prop-types';
-import URLService from 'modules/URLService';
+import contexts from 'constants/contextTypes';
 import pageTypes from 'constants/pageTypes';
 import Panel from 'Components/Panel';
 import ControlPage from 'Containers/Compliance/Entity/Control';
 
 import AppLink from 'Components/AppLink';
-import entityTypes, {
-    standardBaseTypes,
-    standardTypes,
-    resourceTypes
-} from 'constants/entityTypes';
+import entityTypes, { resourceTypes } from 'constants/entityTypes';
 import NamespacePage from '../Entity/Namespace';
 import ClusterPage from '../Entity/Cluster';
 import NodePage from '../Entity/Node';
 
-const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRow }) => {
-    const { name, control } = selectedRow;
-    const { context, query, entityType } = URLService.getParams(match, location);
-    const { groupBy, ...rest } = query;
-    const isControl = !!standardTypes[entityType];
-
+const ComplianceListSidePanel = ({
+    entityType,
+    entityId,
+    clearSelectedRow,
+    linkText,
+    standardId
+}) => {
+    const isControl = entityType === entityTypes.CONTROL;
     const linkParams = {
-        query: rest,
-        entityId: selectedRow.id,
-        entityType
+        entityId,
+        entityType,
+        standardId,
+        controlId: entityId
     };
 
-    if (isControl) {
-        linkParams.standardId = entityType;
-        linkParams.controlId = selectedRow.id;
-        linkParams.entityType = entityTypes.CONTROL;
-    }
-
     function getEntityPage() {
-        if (isControl) return <ControlPage controlId={selectedRow.id} sidePanelMode />;
+        if (isControl) return <ControlPage controlId={entityId} sidePanelMode />;
 
-        const entityId = selectedRow.id;
         switch (entityType) {
             case resourceTypes.NODE:
                 return <NodePage nodeId={entityId} sidePanelMode />;
@@ -53,7 +44,7 @@ const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRo
         <div className="w-full flex items-center">
             <div>
                 <AppLink
-                    context={context}
+                    context={contexts.COMPLIANCE}
                     externalLink
                     pageType={pageTypes.ENTITY}
                     entityType={entityType}
@@ -64,9 +55,7 @@ const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRo
                         className="flex flex-1 uppercase items-center tracking-wide pl-4 leading-normal font-700"
                         data-test-id="panel-header"
                     >
-                        {standardBaseTypes[entityType]
-                            ? `${standardBaseTypes[entityType]} ${control}`
-                            : name}
+                        {linkText}
                     </div>
                 </AppLink>
             </div>
@@ -85,14 +74,17 @@ const ComplianceListSidePanel = ({ match, location, selectedRow, clearSelectedRo
 };
 
 ComplianceListSidePanel.propTypes = {
-    match: ReactRouterPropTypes.match.isRequired,
-    location: ReactRouterPropTypes.location.isRequired,
-    selectedRow: PropTypes.shape({}),
-    clearSelectedRow: PropTypes.func.isRequired
+    entityType: PropTypes.string.isRequired,
+    entityId: PropTypes.string.isRequired,
+    clearSelectedRow: PropTypes.func,
+    linkText: PropTypes.string,
+    standardId: PropTypes.string
 };
 
 ComplianceListSidePanel.defaultProps = {
-    selectedRow: null
+    clearSelectedRow: () => {},
+    linkText: 'Link',
+    standardId: null
 };
 
 export default ComplianceListSidePanel;

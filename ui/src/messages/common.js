@@ -37,7 +37,8 @@ const common = Object.freeze({
         NAMESPACE: 'namespace',
         NODE: 'node',
         DEPLOYMENT: 'deployment',
-        SECRET: 'secret'
+        SECRET: 'secret',
+        CONTROL: 'control'
     },
     stackroxSupport: {
         phoneNumber: {

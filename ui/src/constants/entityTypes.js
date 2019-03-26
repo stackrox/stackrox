@@ -29,6 +29,15 @@ export const standardBaseTypes = {
     [standardTypes.CIS_Kubernetes_v1_2_0]: 'CIS K8s'
 };
 
+export const searchCategories = {
+    NAMESPACE: 'NAMESPACES',
+    NODE: 'NODES',
+    CLUSTER: 'CLUSTERS',
+    CONTROL: 'CONTROLS',
+    DEPLOYMENT: 'DEPLOYMENTS',
+    SECRET: 'SECRETS'
+};
+
 export default {
     ...resourceTypes,
     ...standardTypes,
