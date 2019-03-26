@@ -39,6 +39,7 @@ import (
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/jwt"
+	licenseService "github.com/stackrox/rox/central/license/service"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
@@ -209,6 +210,10 @@ func startGRPCServer() {
 		summaryService.Singleton(),
 		userService.Singleton(),
 		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton()),
+	}
+
+	if features.LicenseEnforcement.Enabled() {
+		servicesToRegister = append(servicesToRegister, licenseService.Singleton())
 	}
 
 	if err := manager.Singleton().Start(); err != nil {
