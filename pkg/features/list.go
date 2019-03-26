@@ -10,7 +10,7 @@ var (
 	// PerformDeploymentReconciliation controls whether we actually do the reconciliation.
 	// It exists while we stabilize the feature.
 	// NB: When removing this feature flag, please also remove references to it in .circleci/config.yml
-	PerformDeploymentReconciliation = registerFeature("Reconciliation", "ROX_PERFORM_DEPLOYMENT_RECONCILIATION", false)
+	PerformDeploymentReconciliation = registerFeature("Reconciliation", "ROX_PERFORM_DEPLOYMENT_RECONCILIATION", true)
 
 	// LicenseEnforcement governs whether the product enforces licenses
 	// IMPORTANT: When enabling licensing, DO NOT SET THIS FLAG TO TRUE. DELETE IT AND ASSUME IT IS TRUE WHEREEVER IT IS
