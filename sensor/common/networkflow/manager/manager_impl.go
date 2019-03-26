@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/net"
-	"github.com/stackrox/rox/pkg/networkentity"
+	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -42,8 +42,8 @@ type connStatus struct {
 }
 
 type networkConnIndicator struct {
-	srcEntity networkentity.Entity
-	dstEntity networkentity.Entity
+	srcEntity networkgraph.Entity
+	dstEntity networkgraph.Entity
 	dstPort   uint16
 	protocol  storage.L4Protocol
 }
@@ -157,7 +157,7 @@ func (m *networkFlowManager) currentEnrichedConns() map[networkConnIndicator]tim
 			// Fake a lookup result with an empty deployment ID.
 			lookupResults = []clusterentities.LookupResult{
 				{
-					Entity: networkentity.Entity{
+					Entity: networkgraph.Entity{
 						Type: storage.NetworkEntityInfo_INTERNET,
 					},
 					ContainerPorts: []uint16{port},
@@ -181,9 +181,9 @@ func (m *networkFlowManager) currentEnrichedConns() map[networkConnIndicator]tim
 
 				if conn.incoming {
 					indicator.srcEntity = lookupResult.Entity
-					indicator.dstEntity = networkentity.ForDeployment(container.DeploymentID)
+					indicator.dstEntity = networkgraph.EntityForDeployment(container.DeploymentID)
 				} else {
-					indicator.srcEntity = networkentity.ForDeployment(container.DeploymentID)
+					indicator.srcEntity = networkgraph.EntityForDeployment(container.DeploymentID)
 					indicator.dstEntity = lookupResult.Entity
 				}
 

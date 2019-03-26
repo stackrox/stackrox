@@ -10,7 +10,7 @@ import (
 	"github.com/stackrox/rox/central/networkpolicies/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/networkentity"
+	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -88,7 +88,7 @@ func (g *generator) getNetworkPolicies(deleteExistingMode v1.GenerateNetworkPoli
 	}
 }
 
-func (g *generator) generateGraph(clusterID string, since *types.Timestamp) (map[networkentity.Entity]*node, error) {
+func (g *generator) generateGraph(clusterID string, since *types.Timestamp) (map[networkgraph.Entity]*node, error) {
 	clusterFlowStore := g.globalFlowStore.GetFlowStore(clusterID)
 	if clusterFlowStore == nil {
 		return nil, fmt.Errorf("could not obtain flow store for cluster %q", clusterID)
@@ -146,7 +146,7 @@ func generatePolicy(node *node, namespacesByName map[string]*storage.NamespaceMe
 	return policy
 }
 
-func (g *generator) generatePolicies(graph map[networkentity.Entity]*node, deploymentIDs set.StringSet, namespacesByName map[string]*storage.NamespaceMetadata, existingPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy {
+func (g *generator) generatePolicies(graph map[networkgraph.Entity]*node, deploymentIDs set.StringSet, namespacesByName map[string]*storage.NamespaceMetadata, existingPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy {
 	ingressPolicies, egressPolicies := groupNetworkPolicies(existingPolicies)
 
 	var generatedPolicies []*storage.NetworkPolicy

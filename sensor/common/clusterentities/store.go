@@ -2,7 +2,7 @@ package clusterentities
 
 import (
 	"github.com/stackrox/rox/pkg/net"
-	"github.com/stackrox/rox/pkg/networkentity"
+	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -228,7 +228,7 @@ func (e *Store) AddCallbackForContainerMetadata(containerID string) {
 
 // LookupResult contains the result of a lookup operation.
 type LookupResult struct {
-	Entity         networkentity.Entity
+	Entity         networkgraph.Entity
 	ContainerPorts []uint16
 	PortNames      []string
 }
@@ -251,7 +251,7 @@ func (e *Store) LookupByContainerID(containerID string) (ContainerMetadata, bool
 func (e *Store) lookupNoLock(endpoint net.NumericEndpoint) (results []LookupResult) {
 	for deploymentID, targetInfoSet := range e.endpointMap[endpoint] {
 		result := LookupResult{
-			Entity:         networkentity.ForDeployment(deploymentID),
+			Entity:         networkgraph.EntityForDeployment(deploymentID),
 			ContainerPorts: make([]uint16, 0, len(targetInfoSet)),
 		}
 		for tgtInfo := range targetInfoSet {
@@ -269,7 +269,7 @@ func (e *Store) lookupNoLock(endpoint net.NumericEndpoint) (results []LookupResu
 
 	for deploymentID := range e.ipMap[endpoint.IPAndPort.Address] {
 		result := LookupResult{
-			Entity:         networkentity.ForDeployment(deploymentID),
+			Entity:         networkgraph.EntityForDeployment(deploymentID),
 			ContainerPorts: []uint16{endpoint.IPAndPort.Port},
 		}
 		results = append(results, result)

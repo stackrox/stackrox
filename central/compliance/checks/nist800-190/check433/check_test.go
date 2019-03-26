@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/networkentity"
+	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -52,7 +52,7 @@ func (s *suiteImpl) TestHostNetwork() {
 	testNetworkGraph := &v1.NetworkGraph{
 		Nodes: []*v1.NetworkNode{
 			{
-				Entity:    networkentity.ForDeployment(testDeployments[0].GetId()).ToProto(),
+				Entity:    networkgraph.EntityForDeployment(testDeployments[0].GetId()).ToProto(),
 				PolicyIds: []string{testPolicies[0].GetId(), testPolicies[1].GetId()},
 			},
 		},
@@ -100,7 +100,7 @@ func (s *suiteImpl) TestMissingIngress() {
 	testNetworkGraph := &v1.NetworkGraph{
 		Nodes: []*v1.NetworkNode{
 			{
-				Entity:    networkentity.ForDeployment(testDeployments[0].GetId()).ToProto(),
+				Entity:    networkgraph.EntityForDeployment(testDeployments[0].GetId()).ToProto(),
 				PolicyIds: []string{testPolicies[1].GetId()}, // Only egress
 			},
 		},
@@ -148,7 +148,7 @@ func (s *suiteImpl) TestMissingEgress() {
 	testNetworkGraph := &v1.NetworkGraph{
 		Nodes: []*v1.NetworkNode{
 			{
-				Entity:    networkentity.ForDeployment(testDeployments[0].GetId()).ToProto(),
+				Entity:    networkgraph.EntityForDeployment(testDeployments[0].GetId()).ToProto(),
 				PolicyIds: []string{testPolicies[0].GetId()}, // Only ingress
 			},
 		},
@@ -241,11 +241,11 @@ func (s *suiteImpl) TestPass() {
 	testNetworkGraph := &v1.NetworkGraph{
 		Nodes: []*v1.NetworkNode{
 			{
-				Entity:    networkentity.ForDeployment(testDeployments[0].GetId()).ToProto(),
+				Entity:    networkgraph.EntityForDeployment(testDeployments[0].GetId()).ToProto(),
 				PolicyIds: []string{testPolicies[0].GetId(), testPolicies[1].GetId()},
 			},
 			{
-				Entity:    networkentity.ForDeployment(testDeployments[1].GetId()).ToProto(),
+				Entity:    networkgraph.EntityForDeployment(testDeployments[1].GetId()).ToProto(),
 				PolicyIds: []string{testPolicies[0].GetId(), testPolicies[1].GetId()},
 			},
 		},

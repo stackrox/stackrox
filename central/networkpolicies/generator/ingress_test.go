@@ -5,13 +5,13 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
-	"github.com/stackrox/rox/pkg/networkentity"
+	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stretchr/testify/assert"
 )
 
 func createDeploymentNode(id, namespace string, selectorLabels map[string]string) *node {
 	return &node{
-		entity: networkentity.Entity{
+		entity: networkgraph.Entity{
 			Type: storage.NetworkEntityInfo_DEPLOYMENT,
 			ID:   id,
 		},
@@ -31,7 +31,7 @@ func TestGenerateIngressRule_WithInternetIngress(t *testing.T) {
 	t.Parallel()
 
 	internetNode := &node{
-		entity: networkentity.Entity{
+		entity: networkgraph.Entity{
 			Type: storage.NetworkEntityInfo_INTERNET,
 		},
 	}

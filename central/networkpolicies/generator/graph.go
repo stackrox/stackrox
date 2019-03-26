@@ -2,17 +2,17 @@ package generator
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/networkentity"
+	"github.com/stackrox/rox/pkg/networkgraph"
 )
 
 type node struct {
-	entity     networkentity.Entity
+	entity     networkgraph.Entity
 	deployment *storage.Deployment
 	incoming   map[*node]struct{}
 	outgoing   map[*node]struct{}
 }
 
-func createNode(entity networkentity.Entity) *node {
+func createNode(entity networkgraph.Entity) *node {
 	return &node{
 		entity:   entity,
 		incoming: make(map[*node]struct{}),
@@ -35,18 +35,18 @@ func (n *node) hasInternetIngress() bool {
 	return false
 }
 
-func buildGraph(deployments []*storage.Deployment, allFlows []*storage.NetworkFlow) map[networkentity.Entity]*node {
-	nodesByKey := make(map[networkentity.Entity]*node)
+func buildGraph(deployments []*storage.Deployment, allFlows []*storage.NetworkFlow) map[networkgraph.Entity]*node {
+	nodesByKey := make(map[networkgraph.Entity]*node)
 
 	for _, flow := range allFlows {
-		srcKey := networkentity.FromProto(flow.GetProps().GetSrcEntity())
+		srcKey := networkgraph.EntityFromProto(flow.GetProps().GetSrcEntity())
 		srcNode := nodesByKey[srcKey]
 		if srcNode == nil {
 			srcNode = createNode(srcKey)
 			nodesByKey[srcKey] = srcNode
 		}
 
-		dstKey := networkentity.FromProto(flow.GetProps().GetDstEntity())
+		dstKey := networkgraph.EntityFromProto(flow.GetProps().GetDstEntity())
 		dstNode := nodesByKey[dstKey]
 		if dstNode == nil {
 			dstNode = createNode(dstKey)
@@ -58,7 +58,7 @@ func buildGraph(deployments []*storage.Deployment, allFlows []*storage.NetworkFl
 	}
 
 	for _, deployment := range deployments {
-		key := networkentity.Entity{
+		key := networkgraph.Entity{
 			Type: storage.NetworkEntityInfo_DEPLOYMENT,
 			ID:   deployment.GetId(),
 		}

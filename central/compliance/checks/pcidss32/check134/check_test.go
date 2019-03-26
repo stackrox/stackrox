@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/compliance/framework/mocks"
 	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/networkentity"
+	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -61,7 +61,7 @@ func (s *suiteImpl) TestHostNetwork() {
 	tc.networkGraph = &v1.NetworkGraph{
 		Nodes: []*v1.NetworkNode{
 			{
-				Entity:    networkentity.ForDeployment(tc.deployments[0].GetId()).ToProto(),
+				Entity:    networkgraph.EntityForDeployment(tc.deployments[0].GetId()).ToProto(),
 				PolicyIds: []string{tc.networkPolicies[0].GetId(), tc.networkPolicies[1].GetId()},
 			},
 		},
@@ -88,7 +88,7 @@ func (s *suiteImpl) TestEgress() {
 	tc.networkGraph = &v1.NetworkGraph{
 		Nodes: []*v1.NetworkNode{
 			{
-				Entity:    networkentity.ForDeployment(tc.deployments[0].GetId()).ToProto(),
+				Entity:    networkgraph.EntityForDeployment(tc.deployments[0].GetId()).ToProto(),
 				PolicyIds: []string{tc.networkPolicies[1].GetId()},
 			},
 		},
@@ -115,7 +115,7 @@ func (s *suiteImpl) TestIngress() {
 	tc.networkGraph = &v1.NetworkGraph{
 		Nodes: []*v1.NetworkNode{
 			{
-				Entity:    networkentity.ForDeployment(tc.deployments[0].GetId()).ToProto(),
+				Entity:    networkgraph.EntityForDeployment(tc.deployments[0].GetId()).ToProto(),
 				PolicyIds: []string{tc.networkPolicies[0].GetId()},
 			},
 		},
@@ -143,7 +143,7 @@ func (s *suiteImpl) TestKubeSystem() {
 	tc.networkGraph = &v1.NetworkGraph{
 		Nodes: []*v1.NetworkNode{
 			{
-				Entity: networkentity.ForDeployment(tc.deployments[0].GetId()).ToProto(),
+				Entity: networkgraph.EntityForDeployment(tc.deployments[0].GetId()).ToProto(),
 			},
 		},
 	}
@@ -171,11 +171,11 @@ func (s *suiteImpl) TestPass() {
 	tc.networkGraph = &v1.NetworkGraph{
 		Nodes: []*v1.NetworkNode{
 			{
-				Entity:    networkentity.ForDeployment(tc.deployments[0].GetId()).ToProto(),
+				Entity:    networkgraph.EntityForDeployment(tc.deployments[0].GetId()).ToProto(),
 				PolicyIds: []string{tc.networkPolicies[0].GetId(), tc.networkPolicies[1].GetId()},
 			},
 			{
-				Entity:    networkentity.ForDeployment(tc.deployments[1].GetId()).ToProto(),
+				Entity:    networkgraph.EntityForDeployment(tc.deployments[1].GetId()).ToProto(),
 				PolicyIds: []string{tc.networkPolicies[0].GetId(), tc.networkPolicies[1].GetId()},
 			},
 		},

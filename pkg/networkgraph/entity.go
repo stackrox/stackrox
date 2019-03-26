@@ -1,4 +1,4 @@
-package networkentity
+package networkgraph
 
 import (
 	"github.com/stackrox/rox/generated/storage"
@@ -18,16 +18,16 @@ func (e Entity) ToProto() *storage.NetworkEntityInfo {
 	}
 }
 
-// FromProto converts a storage.NetworkEntityInfo proto to an Entity struct.
-func FromProto(protoEnt *storage.NetworkEntityInfo) Entity {
+// EntityFromProto converts a storage.NetworkEntityInfo proto to an Entity struct.
+func EntityFromProto(protoEnt *storage.NetworkEntityInfo) Entity {
 	return Entity{
 		Type: protoEnt.GetType(),
 		ID:   protoEnt.GetId(),
 	}
 }
 
-// ForDeployment returns an Entity struct for the deployment with the given ID.
-func ForDeployment(id string) Entity {
+// EntityForDeployment returns an Entity struct for the deployment with the given ID.
+func EntityForDeployment(id string) Entity {
 	return Entity{
 		Type: storage.NetworkEntityInfo_DEPLOYMENT,
 		ID:   id,

@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/networkflow/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
-	"github.com/stackrox/rox/pkg/networkentity"
+	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/require"
@@ -22,8 +22,8 @@ func getFlows(maxNetworkFlows int) []*storage.NetworkFlow {
 		for j := 0; j < numDeployments; j++ {
 			flow := &storage.NetworkFlow{
 				Props: &storage.NetworkFlowProperties{
-					SrcEntity:  networkentity.ForDeployment(fmt.Sprintf("%d", i)).ToProto(),
-					DstEntity:  networkentity.ForDeployment(fmt.Sprintf("%d", j)).ToProto(),
+					SrcEntity:  networkgraph.EntityForDeployment(fmt.Sprintf("%d", i)).ToProto(),
+					DstEntity:  networkgraph.EntityForDeployment(fmt.Sprintf("%d", j)).ToProto(),
 					L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 					DstPort:    80,
 				},
@@ -85,8 +85,8 @@ func BenchmarkLeveledFlows(b *testing.B) {
 
 func BenchmarkGetID(b *testing.B) {
 	props := &storage.NetworkFlowProperties{
-		SrcEntity:  networkentity.ForDeployment(uuid.NewV4().String()).ToProto(),
-		DstEntity:  networkentity.ForDeployment(uuid.NewV4().String()).ToProto(),
+		SrcEntity:  networkgraph.EntityForDeployment(uuid.NewV4().String()).ToProto(),
+		DstEntity:  networkgraph.EntityForDeployment(uuid.NewV4().String()).ToProto(),
 		DstPort:    9999,
 		L4Protocol: storage.L4Protocol_L4_PROTOCOL_UDP,
 	}

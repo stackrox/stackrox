@@ -7,7 +7,7 @@ import (
 	protobuf "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/networkflow/store"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/networkentity"
+	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
@@ -82,16 +82,16 @@ func convertTS(ts timestamp.MicroTS) *types.Timestamp {
 ////////////////
 
 type networkFlowProperties struct {
-	srcEntity networkentity.Entity
-	dstEntity networkentity.Entity
+	srcEntity networkgraph.Entity
+	dstEntity networkgraph.Entity
 	dstPort   uint32
 	protocol  storage.L4Protocol
 }
 
 func fromProto(protoProps *storage.NetworkFlowProperties) networkFlowProperties {
 	return networkFlowProperties{
-		srcEntity: networkentity.FromProto(protoProps.SrcEntity),
-		dstEntity: networkentity.FromProto(protoProps.DstEntity),
+		srcEntity: networkgraph.EntityFromProto(protoProps.SrcEntity),
+		dstEntity: networkgraph.EntityFromProto(protoProps.DstEntity),
 		dstPort:   protoProps.DstPort,
 		protocol:  protoProps.L4Protocol,
 	}
