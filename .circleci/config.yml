@@ -426,19 +426,10 @@ jobs:
           command: make docker-build-main-image
 
       - run:
-          name: Build monitoring image
-          command: make monitoring-image
-
-      - run:
           name: Push new Docker image
           command: |
             docker login -u $DOCKER_IO_USERNAME -p $DOCKER_IO_PASSWORD docker.io
-
-            TAG="$(make tag)"
-
-            for img in main monitoring; do
-              docker push "stackrox/${img}:${TAG}" | cat
-            done
+            docker push "stackrox/main:$(make tag)" | cat
 
       - save-cache:
           key: *depCacheKey
@@ -488,7 +479,7 @@ jobs:
             TAG="$(make tag)"
             docker push "stackrox/main-rhel:${TAG}" | cat
 
-  build-scale-and-mock-server:
+  build-scale-monitoring-and-mock-server:
     <<: *defaults
     resource_class: large
     steps:
@@ -501,8 +492,8 @@ jobs:
       - *setupBazel
 
       - run:
-          name: Build image
-          command: make scale-image mock-grpc-server-image
+          name: Build images
+          command: make scale-image mock-grpc-server-image monitoring-image
 
       - run:
           name: Push new Docker image
@@ -511,7 +502,7 @@ jobs:
 
             TAG=$(make tag)
 
-            for img in scale grpc-server; do
+            for img in scale grpc-server monitoring; do
               docker push "stackrox/${img}:${TAG}" | cat
             done
 
@@ -1276,7 +1267,7 @@ workflows:
           filters:
             tags:
               only: /.*/
-      - build-scale-and-mock-server:
+      - build-scale-monitoring-and-mock-server:
           filters:
             tags:
               only: /.*/
@@ -1296,6 +1287,7 @@ workflows:
           requires:
             - build
             - build-rhel
+            - build-scale-monitoring-and-mock-server
           filters:
             tags:
               only: /.*/
@@ -1303,6 +1295,7 @@ workflows:
           requires:
             - build
             - build-rhel
+            - build-scale-monitoring-and-mock-server
           filters:
             tags:
               only: /.*/
@@ -1310,6 +1303,7 @@ workflows:
           requires:
             - build
             - build-rhel
+            - build-scale-monitoring-and-mock-server
           filters:
             tags:
               only: /.*/
@@ -1317,6 +1311,7 @@ workflows:
           requires:
             - build
             - build-rhel
+            - build-scale-monitoring-and-mock-server
           filters:
             tags:
               only: /.*/
@@ -1324,7 +1319,7 @@ workflows:
           requires:
             - build
             - build-rhel
-            - build-scale-and-mock-server
+            - build-scale-monitoring-and-mock-server
           filters:
             tags:
               only: /.*/
