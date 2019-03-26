@@ -511,7 +511,6 @@ jobs:
     resource_class: large
     steps:
       - checkout
-      - setup_remote_docker
 
       - *restoreDep
       - *restoreGradle
@@ -536,7 +535,6 @@ jobs:
     resource_class: large
     steps:
       - checkout
-      - setup_remote_docker
 
       - *restoreDep
       - *restoreGradle
