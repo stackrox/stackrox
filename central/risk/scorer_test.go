@@ -37,7 +37,7 @@ func TestScore(t *testing.T) {
 		{
 			Name: multipliers.VulnsHeading,
 			Factors: []*storage.Risk_Result_Factor{
-				{Message: "Image contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0"},
+				{Message: "Image \"docker.io/library/nginx:1.10\" (container \"nginx\") contains 2 CVEs with CVSS scores ranging between 5.0 and 5.0"},
 			},
 			Score: 1.15,
 		},
@@ -137,6 +137,7 @@ func getMockDeployment() *storage.Deployment {
 		},
 		Containers: []*storage.Container{
 			{
+				Name: "nginx",
 				Volumes: []*storage.Volume{
 					{
 						Name:     "readonly",

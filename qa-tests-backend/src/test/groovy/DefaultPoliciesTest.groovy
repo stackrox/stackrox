@@ -279,7 +279,8 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Image Vulnerabilities"           | 4.0f     | null |
                 // This makes sure it has at least a 100 CVEs.
-                "Image contains \\d{2}\\d+ CVEs with CVSS scores ranging between " +
+                "Image \"apollo-dtr.rox.systems/legacy-apps/struts-app:latest\" \\(container \"" +
+                     STRUTS + "\"\\) contains \\d{2}\\d+ CVEs with CVSS scores ranging between " +
                      "\\d+(\\.\\d{1,2})? and \\d+(\\.\\d{1,2})?"
 
         "Service Configuration"           | 2.0f     |
