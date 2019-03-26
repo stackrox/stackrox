@@ -17,29 +17,40 @@ message License {
     }
 
     message Metadata {
-        string id = 1;
-        google.protobuf.Timestamp issue_date = 2;
+        string id             = 1;
+        string signing_key_id = 2;
 
-        string licensed_for_id   = 3;
-        string licensed_for_name = 4;
+        google.protobuf.Timestamp issue_date = 3;
+
+        string licensed_for_id   = 4;
+        string licensed_for_name = 5;
     }
 
     message Restrictions {
         google.protobuf.Timestamp not_valid_before = 1;
         google.protobuf.Timestamp not_valid_after  = 2;
 
+        // URL for on-line license enforcement. Must be set unless allow_offline is true.
+        string enforcement_url = 3;
         // Allow offline use (i.e., no online license enforcement).
-        bool allow_offline = 3;
+        bool allow_offline = 4;
 
-        // Maximum number of nodes. If 0, no restriction.
-        int32 max_nodes = 4;
+        // Maximum number of nodes. Must be set unless no_node_restriction is true.
+        int32 max_nodes = 5;
+        // Do not restrict the number of nodes.
+        bool no_node_restriction = 6;
 
-        // Build flavors of the product this license is valid for. If empty, no restrictions.
-        repeated string build_flavors = 5;
+        // Build flavors of the product this license is valid for (e.g., "development" or "release"). Must be set unless
+        // no_build_flavor_restriction is true.
+        repeated string build_flavors = 7;
+        // Do not restrict license to certain build flavors.
+        bool no_build_flavor_restriction = 8;
 
-        // Deployment environments that are valid for the product, such as `gcp` or `gcp/ultra-current-825`. If empty,
-        // no restrictions.
-        repeated string deployment_environments = 6;
+        // Deployment environments that are valid for the product, such as `gcp` or `gcp/ultra-current-825`. Must be
+        // set unless no_deployment_environment_restriction is true.
+        repeated string deployment_environments = 9;
+        // Do not restrict license to certain deployment environments.
+        bool no_deployment_environment_restriction = 10;
     }
 
     Metadata metadata         = 1;

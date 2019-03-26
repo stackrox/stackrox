@@ -31,14 +31,14 @@ func TestED25519(t *testing.T) {
 	suite.Run(t, testSuite)
 }
 
-func TestECDSA256(t *testing.T) {
+func TestECDSA(t *testing.T) {
 	t.Parallel()
 
 	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
 
 	testSuite := &signerTestSuite{
-		signer: NewECDSA256Signer(pk, crypto.SHA256),
+		signer: NewECDSASigner(pk, crypto.SHA256),
 	}
 	suite.Run(t, testSuite)
 }

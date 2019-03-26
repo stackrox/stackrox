@@ -27,6 +27,17 @@ func BoolDiff(a, b []bool, lessFunc func(a, b bool) bool) (aOnly, bOnly []bool) 
 	return
 }
 
+// BoolFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func BoolFind(slice []bool, elem bool) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
+}
+
 // ByteDiff returns, given two sorted byte slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func ByteDiff(a, b []byte, lessFunc func(a, b byte) bool) (aOnly, bOnly []byte) {
@@ -47,6 +58,17 @@ func ByteDiff(a, b []byte, lessFunc func(a, b byte) bool) (aOnly, bOnly []byte) 
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// ByteFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func ByteFind(slice []byte, elem byte) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
 }
 
 // Complex128Diff returns, given two sorted complex128 slices a and b, a slice of the elements occurring in a and b only,
@@ -71,6 +93,17 @@ func Complex128Diff(a, b []complex128, lessFunc func(a, b complex128) bool) (aOn
 	return
 }
 
+// Complex128Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func Complex128Find(slice []complex128, elem complex128) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
+}
+
 // Complex64Diff returns, given two sorted complex64 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Complex64Diff(a, b []complex64, lessFunc func(a, b complex64) bool) (aOnly, bOnly []complex64) {
@@ -91,6 +124,17 @@ func Complex64Diff(a, b []complex64, lessFunc func(a, b complex64) bool) (aOnly,
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// Complex64Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func Complex64Find(slice []complex64, elem complex64) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
 }
 
 // ErrorDiff returns, given two sorted error slices a and b, a slice of the elements occurring in a and b only,
@@ -115,6 +159,17 @@ func ErrorDiff(a, b []error, lessFunc func(a, b error) bool) (aOnly, bOnly []err
 	return
 }
 
+// ErrorFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func ErrorFind(slice []error, elem error) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
+}
+
 // Float32Diff returns, given two sorted float32 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Float32Diff(a, b []float32, lessFunc func(a, b float32) bool) (aOnly, bOnly []float32) {
@@ -135,6 +190,17 @@ func Float32Diff(a, b []float32, lessFunc func(a, b float32) bool) (aOnly, bOnly
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// Float32Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func Float32Find(slice []float32, elem float32) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
 }
 
 // Float64Diff returns, given two sorted float64 slices a and b, a slice of the elements occurring in a and b only,
@@ -159,6 +225,17 @@ func Float64Diff(a, b []float64, lessFunc func(a, b float64) bool) (aOnly, bOnly
 	return
 }
 
+// Float64Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func Float64Find(slice []float64, elem float64) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
+}
+
 // IntDiff returns, given two sorted int slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func IntDiff(a, b []int, lessFunc func(a, b int) bool) (aOnly, bOnly []int) {
@@ -179,6 +256,17 @@ func IntDiff(a, b []int, lessFunc func(a, b int) bool) (aOnly, bOnly []int) {
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// IntFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func IntFind(slice []int, elem int) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
 }
 
 // Int16Diff returns, given two sorted int16 slices a and b, a slice of the elements occurring in a and b only,
@@ -203,6 +291,17 @@ func Int16Diff(a, b []int16, lessFunc func(a, b int16) bool) (aOnly, bOnly []int
 	return
 }
 
+// Int16Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func Int16Find(slice []int16, elem int16) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
+}
+
 // Int32Diff returns, given two sorted int32 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Int32Diff(a, b []int32, lessFunc func(a, b int32) bool) (aOnly, bOnly []int32) {
@@ -223,6 +322,17 @@ func Int32Diff(a, b []int32, lessFunc func(a, b int32) bool) (aOnly, bOnly []int
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// Int32Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func Int32Find(slice []int32, elem int32) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
 }
 
 // Int64Diff returns, given two sorted int64 slices a and b, a slice of the elements occurring in a and b only,
@@ -247,6 +357,17 @@ func Int64Diff(a, b []int64, lessFunc func(a, b int64) bool) (aOnly, bOnly []int
 	return
 }
 
+// Int64Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func Int64Find(slice []int64, elem int64) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
+}
+
 // Int8Diff returns, given two sorted int8 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Int8Diff(a, b []int8, lessFunc func(a, b int8) bool) (aOnly, bOnly []int8) {
@@ -267,6 +388,17 @@ func Int8Diff(a, b []int8, lessFunc func(a, b int8) bool) (aOnly, bOnly []int8) 
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// Int8Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func Int8Find(slice []int8, elem int8) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
 }
 
 // RuneDiff returns, given two sorted rune slices a and b, a slice of the elements occurring in a and b only,
@@ -291,6 +423,17 @@ func RuneDiff(a, b []rune, lessFunc func(a, b rune) bool) (aOnly, bOnly []rune) 
 	return
 }
 
+// RuneFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func RuneFind(slice []rune, elem rune) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
+}
+
 // StringDiff returns, given two sorted string slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func StringDiff(a, b []string, lessFunc func(a, b string) bool) (aOnly, bOnly []string) {
@@ -311,6 +454,17 @@ func StringDiff(a, b []string, lessFunc func(a, b string) bool) (aOnly, bOnly []
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// StringFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func StringFind(slice []string, elem string) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
 }
 
 // UintDiff returns, given two sorted uint slices a and b, a slice of the elements occurring in a and b only,
@@ -335,6 +489,17 @@ func UintDiff(a, b []uint, lessFunc func(a, b uint) bool) (aOnly, bOnly []uint) 
 	return
 }
 
+// UintFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func UintFind(slice []uint, elem uint) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
+}
+
 // Uint16Diff returns, given two sorted uint16 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Uint16Diff(a, b []uint16, lessFunc func(a, b uint16) bool) (aOnly, bOnly []uint16) {
@@ -355,6 +520,17 @@ func Uint16Diff(a, b []uint16, lessFunc func(a, b uint16) bool) (aOnly, bOnly []
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// Uint16Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func Uint16Find(slice []uint16, elem uint16) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
 }
 
 // Uint32Diff returns, given two sorted uint32 slices a and b, a slice of the elements occurring in a and b only,
@@ -379,6 +555,17 @@ func Uint32Diff(a, b []uint32, lessFunc func(a, b uint32) bool) (aOnly, bOnly []
 	return
 }
 
+// Uint32Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func Uint32Find(slice []uint32, elem uint32) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
+}
+
 // Uint64Diff returns, given two sorted uint64 slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func Uint64Diff(a, b []uint64, lessFunc func(a, b uint64) bool) (aOnly, bOnly []uint64) {
@@ -399,6 +586,17 @@ func Uint64Diff(a, b []uint64, lessFunc func(a, b uint64) bool) (aOnly, bOnly []
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// Uint64Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func Uint64Find(slice []uint64, elem uint64) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
 }
 
 // Uint8Diff returns, given two sorted uint8 slices a and b, a slice of the elements occurring in a and b only,
@@ -423,6 +621,17 @@ func Uint8Diff(a, b []uint8, lessFunc func(a, b uint8) bool) (aOnly, bOnly []uin
 	return
 }
 
+// Uint8Find returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func Uint8Find(slice []uint8, elem uint8) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
+}
+
 // UintptrDiff returns, given two sorted uintptr slices a and b, a slice of the elements occurring in a and b only,
 // respectively.
 func UintptrDiff(a, b []uintptr, lessFunc func(a, b uintptr) bool) (aOnly, bOnly []uintptr) {
@@ -443,4 +652,15 @@ func UintptrDiff(a, b []uintptr, lessFunc func(a, b uintptr) bool) (aOnly, bOnly
 	aOnly = append(aOnly, a[i:]...)
 	bOnly = append(bOnly, b[j:]...)
 	return
+}
+
+// UintptrFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func UintptrFind(slice []uintptr, elem uintptr) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
 }

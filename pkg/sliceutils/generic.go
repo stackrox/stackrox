@@ -27,4 +27,15 @@ func ElemTypeDiff(a, b []ElemType, lessFunc func(a, b ElemType) bool) (aOnly, bO
 	return
 }
 
+// ElemTypeFind returns, given a slice and an element, the first index of elem in the slice, or -1 if the slice does
+// not contain elem.
+func ElemTypeFind(slice []ElemType, elem ElemType) int {
+	for i, sliceElem := range slice {
+		if sliceElem == elem {
+			return i
+		}
+	}
+	return -1
+}
+
 //go:generate genny -in=$GOFILE -out=gen-builtins-$GOFILE gen "ElemType=BUILTINS"
