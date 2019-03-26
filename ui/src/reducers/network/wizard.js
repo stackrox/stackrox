@@ -48,7 +48,7 @@ export const actions = {
 };
 
 // Reducers
-// If adding a reducer, you'll need to wire it through reducers/policies/reducer.js
+// If adding a reducer, you'll need to wire it through reducers/network/reducer.js
 //---------------------------------------------------------------------------------
 
 const networkWizardStage = (state = wizardStages.details, action) => {
@@ -111,7 +111,7 @@ const reducer = combineReducers({
 export default reducer;
 
 // Selectors
-// If adding a selector, you'll need to wire it through reducers/policies/reducer.js
+// If adding a selector, you'll need to wire it through reducers/network/reducer.js
 //---------------------------------------------------------------------------------
 
 const getNetworkWizardStage = state => state.networkWizardStage;

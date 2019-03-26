@@ -163,9 +163,11 @@ function* sendNetworkModificationApplication() {
         const clusterId = yield select(selectors.getSelectedNetworkClusterId);
         const modification = yield select(selectors.getNetworkPolicyModification);
         yield call(service.applyNetworkPolicyModification, clusterId, modification);
+        yield put(backendNetworkActions.applyNetworkPolicyModification.success());
         yield put(notificationActions.addNotification('Successfully applied YAML.'));
         yield put(notificationActions.removeOldestNotification());
     } catch (error) {
+        yield put(backendNetworkActions.applyNetworkPolicyModification.failure(error));
         yield put(notificationActions.addNotification(error.response.data.error));
         yield put(notificationActions.removeOldestNotification());
     }
@@ -232,6 +234,13 @@ function* watchNetworkPoliciesRequest() {
     yield takeLatest(backendNetworkTypes.FETCH_NETWORK_POLICIES.REQUEST, getNetworkPolicies);
 }
 
+function* watchApplyNetworkPolicyModification() {
+    yield takeLatest(
+        backendNetworkTypes.APPLY_NETWORK_POLICY_MODIFICATION.REQUEST,
+        sendNetworkModificationApplication
+    );
+}
+
 function* watchActiveNetworkModification() {
     yield takeLatest(
         wizardNetworkTypes.LOAD_ACTIVE_NETWORK_POLICY_MODIFICATION,
@@ -269,13 +278,6 @@ function* watchNotifyNetworkPolicyModification() {
     yield takeLatest(
         dialogueNetworkTypes.SEND_POLICY_MODIFICATION_NOTIFICATION,
         sendNetworkModificationNotification
-    );
-}
-
-function* watchApplyNetworkPolicyModification() {
-    yield takeLatest(
-        dialogueNetworkTypes.SEND_POLICY_MODIFICATION_APPLICATION,
-        sendNetworkModificationApplication
     );
 }
 

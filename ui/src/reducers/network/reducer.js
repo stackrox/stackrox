@@ -8,7 +8,7 @@ import pageReducer, { selectors as pageSelectors } from 'reducers/network/page';
 import searchReducer, { selectors as searchSelectors } from 'reducers/network/search';
 import wizardReducer, { selectors as wizardSelectors } from 'reducers/network/wizard';
 
-// File combines all of the reducers and selectors under reducers/policies.
+// File combines all of the reducers and selectors under reducers/network.
 
 // Reducers
 //---------

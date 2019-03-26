@@ -1,12 +1,15 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
 import PropTypes from 'prop-types';
 import Tooltip from 'rc-tooltip';
 import * as Icon from 'react-feather';
+import { selectors } from 'reducers';
 import { actions as wizardActions } from 'reducers/network/wizard';
 
 class Undo extends Component {
     static propTypes = {
+        applicationState: PropTypes.string.isRequired,
         undoModification: PropTypes.func.isRequired
     };
 
@@ -15,9 +18,11 @@ class Undo extends Component {
     };
 
     render() {
+        const { applicationState } = this.props;
         return (
             <button
                 type="button"
+                disabled={applicationState === 'REQUEST'}
                 className="inline-block px-2 py-2 border-l border-r border-base-300 cursor-pointer"
                 onClick={this.onClick}
             >
@@ -34,11 +39,15 @@ class Undo extends Component {
     }
 }
 
+const mapStateToProps = createStructuredSelector({
+    applicationState: selectors.getNetworkPolicyApplicationState
+});
+
 const mapDispatchToProps = {
     undoModification: wizardActions.loadUndoNetworkPolicyModification
 };
 
 export default connect(
-    null,
+    mapStateToProps,
     mapDispatchToProps
 )(Undo);

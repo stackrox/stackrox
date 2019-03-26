@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import * as Icon from 'react-feather';
 import { selectors } from 'reducers';
+import { actions as backendActions } from 'reducers/network/backend';
 import { actions as dialogueActions } from 'reducers/network/dialogue';
 import { actions as graphActions } from 'reducers/network/graph';
 
@@ -67,7 +68,7 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = {
-    applyModification: dialogueActions.applyNetworkPolicyModification,
+    applyModification: backendActions.applyNetworkPolicyModification.request,
     setDialogueStage: dialogueActions.setNetworkDialogueStage,
     incrementNetworkGraphUpdateKey: graphActions.incrementNetworkGraphUpdateKey
 };

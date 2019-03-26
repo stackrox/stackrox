@@ -32,7 +32,7 @@ export const actions = {
 };
 
 // Reducers
-// If adding a reducer, you'll need to wire it through reducers/policies/reducer.js
+// If adding a reducer, you'll need to wire it through reducers/network/reducer.js
 //---------------------------------------------------------------------------------
 
 const reducer = combineReducers({
@@ -42,7 +42,7 @@ const reducer = combineReducers({
 export default reducer;
 
 // Selectors
-// If adding a selector, you'll need to wire it through reducers/policies/reducer.js
+// If adding a selector, you'll need to wire it through reducers/network/reducer.js
 //---------------------------------------------------------------------------------
 
 export const selectors = {

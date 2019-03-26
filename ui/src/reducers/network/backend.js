@@ -8,7 +8,10 @@ export const types = {
     FETCH_NETWORK_POLICY_GRAPH: createFetchingActionTypes('network/FETCH_NETWORK_POLICY_GRAPH'),
     FETCH_NETWORK_FLOW_GRAPH: createFetchingActionTypes('network/FETCH_NETWORK_FLOW_GRAPH'),
     FETCH_NETWORK_POLICIES: createFetchingActionTypes('network/FETCH_NETWORK_POLICIES'),
-    FETCH_NODE_UPDATES: createFetchingActionTypes('network/FETCH_NODE_UPDATES')
+    FETCH_NODE_UPDATES: createFetchingActionTypes('network/FETCH_NODE_UPDATES'),
+    APPLY_NETWORK_POLICY_MODIFICATION: createFetchingActionTypes(
+        'network/APPLY_NETWORK_POLICY_MODIFICATION'
+    )
 };
 
 // Actions
@@ -17,7 +20,8 @@ export const actions = {
     fetchNetworkPolicyGraph: createFetchingActions(types.FETCH_NETWORK_POLICY_GRAPH),
     fetchNetworkFlowGraph: createFetchingActions(types.FETCH_NETWORK_FLOW_GRAPH),
     fetchNetworkPolicies: createFetchingActions(types.FETCH_NETWORK_POLICIES),
-    fetchNodeUpdates: createFetchingActions(types.FETCH_NODE_UPDATES)
+    fetchNodeUpdates: createFetchingActions(types.FETCH_NODE_UPDATES),
+    applyNetworkPolicyModification: createFetchingActions(types.APPLY_NETWORK_POLICY_MODIFICATION)
 };
 
 // Reducers
@@ -86,6 +90,20 @@ const networkFlowGraphState = (state = 'INITIAL', action) => {
     return state;
 };
 
+const networkPolicyApplicationState = (state = 'INITIAL', action) => {
+    const { type } = action;
+    if (type === types.APPLY_NETWORK_POLICY_MODIFICATION.REQUEST) {
+        return 'REQUEST';
+    }
+    if (type === types.APPLY_NETWORK_POLICY_MODIFICATION.FAILURE) {
+        return 'ERROR';
+    }
+    if (type === types.APPLY_NETWORK_POLICY_MODIFICATION.SUCCESS) {
+        return 'SUCCESS';
+    }
+    return state;
+};
+
 const reducer = combineReducers({
     networkPolicyGraph,
     networkFlowGraph,
@@ -93,7 +111,8 @@ const reducer = combineReducers({
     nodeUpdatesEpoch,
     networkErrorMessage,
     networkPolicyGraphState,
-    networkFlowGraphState
+    networkFlowGraphState,
+    networkPolicyApplicationState
 });
 
 // Selectors
@@ -105,6 +124,7 @@ const getNodeUpdatesEpoch = state => state.nodeUpdatesEpoch;
 const getNetworkErrorMessage = state => state.networkErrorMessage;
 const getNetworkPolicyGraphState = state => state.networkPolicyGraphState;
 const getNetworkFlowGraphState = state => state.networkFlowGraphState;
+const getNetworkPolicyApplicationState = state => state.networkPolicyApplicationState;
 
 export const selectors = {
     getNetworkPolicyGraph,
@@ -113,7 +133,8 @@ export const selectors = {
     getNodeUpdatesEpoch,
     getNetworkErrorMessage,
     getNetworkPolicyGraphState,
-    getNetworkFlowGraphState
+    getNetworkFlowGraphState,
+    getNetworkPolicyApplicationState
 };
 
 export default reducer;

@@ -167,7 +167,8 @@ export function notifyNetworkPolicyModification(clusterId, notifierIds, modifica
 }
 
 /**
- * Sends a yaml to the backed for application to a cluster.
+ * Sends a yaml to the backed for application to a cluster. We use a longer timeout since application may take time
+ * in larger clusters or with larger modifications.
  *
  * @param {!String} clusterId
  * @param {!Object} modification
@@ -177,7 +178,8 @@ export function applyNetworkPolicyModification(clusterId, modification) {
     const options = {
         method: 'POST',
         data: modification,
-        url: `${networkPoliciesBaseUrl}/apply/${clusterId}`
+        url: `${networkPoliciesBaseUrl}/apply/${clusterId}`,
+        timeout: 30000
     };
     return axios(options).then(response => ({
         response: response.data
