@@ -166,6 +166,7 @@ function* sendNetworkModificationApplication() {
         yield put(backendNetworkActions.applyNetworkPolicyModification.success());
         yield put(notificationActions.addNotification('Successfully applied YAML.'));
         yield put(notificationActions.removeOldestNotification());
+        yield put(wizardNetworkActions.loadActiveNetworkPolicyModification());
     } catch (error) {
         yield put(backendNetworkActions.applyNetworkPolicyModification.failure(error));
         yield put(notificationActions.addNotification(error.response.data.error));
@@ -204,10 +205,8 @@ function* filterNetworkPageBySearch() {
     }
     if (clusterId) {
         const filters = searchOptionsToQuery(searchOptions);
-        yield all([
-            fork(getNetworkGraphs, clusterId, filters, modification),
-            fork(getNetworkFlowGraph, clusterId, filters)
-        ]);
+        yield fork(getNetworkFlowGraph, clusterId, filters);
+        yield fork(getNetworkGraphs, clusterId, filters, modification);
     }
 }
 

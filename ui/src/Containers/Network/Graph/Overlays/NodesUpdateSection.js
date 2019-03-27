@@ -15,8 +15,7 @@ class NodesUpdateSection extends Component {
         networkPolicyGraph: PropTypes.shape({
             epoch: PropTypes.number
         }).isRequired,
-        networkNodesUpdate: PropTypes.func.isRequired,
-        incrementNetworkGraphUpdateKey: PropTypes.func.isRequired
+        networkNodesUpdate: PropTypes.func.isRequired
     };
 
     static defaultProps = {
@@ -25,8 +24,7 @@ class NodesUpdateSection extends Component {
     };
 
     onUpdateGraph = () => {
-        if (this.props.networkNodesUpdate) this.props.networkNodesUpdate();
-        this.props.incrementNetworkGraphUpdateKey();
+        this.props.networkNodesUpdate();
     };
 
     getNodeUpdates = () => {
@@ -73,8 +71,7 @@ const mapStateToProps = createStructuredSelector({
 
 const mapDispatchToProps = {
     getNodeUpdates: graphActions.setNetworkGraphFilterMode,
-    networkNodesUpdate: graphActions.networkNodesUpdate,
-    incrementNetworkGraphUpdateKey: graphActions.incrementNetworkGraphUpdateKey
+    networkNodesUpdate: graphActions.networkNodesUpdate
 };
 
 export default connect(

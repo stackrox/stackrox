@@ -195,6 +195,9 @@ func (s *serviceImpl) ApplyNetworkPolicy(ctx context.Context, request *v1.ApplyN
 	if !features.NetworkPolicyGenerator.Enabled() {
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
+	if request.GetModification().GetApplyYaml() == "" && len(request.GetModification().GetToDelete()) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "Modification must have contents")
+	}
 
 	clusterID := request.GetClusterId()
 	conn := s.sensorConnMgr.GetConnection(clusterID)
@@ -304,6 +307,9 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 	}
 	if len(request.GetNotifierIds()) == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "Notifier IDs must be specified")
+	}
+	if request.GetModification().GetApplyYaml() == "" && len(request.GetModification().GetToDelete()) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "Modification must have contents")
 	}
 
 	cluster, exists, err := s.clusterStore.GetCluster(request.GetClusterId())

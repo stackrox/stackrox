@@ -21,7 +21,6 @@ export const types = {
     SET_SELECTED_NODE_ID: 'network/SET_SELECTED_NODE_ID',
     SELECT_DEFAULT_NETWORK_CLUSTER_ID: 'network/SELECT_DEFAULT_NETWORK_CLUSTER_ID',
     SELECT_NETWORK_CLUSTER_ID: 'network/SELECT_NETWORK_CLUSTER_ID',
-    INCREMENT_NETWORK_GRAPH_UPDATE_KEY: 'network/INCREMENT_NETWORK_GRAPH_UPDATE_KEY',
     UPDATE_NETWORK_GRAPH_TIMESTAMP: 'network/UPDATE_NETWORK_GRAPH_TIMESTAMP',
     NETWORK_NODES_UPDATE: 'network/NETWORK_NODES_UPDATE',
     NETWORK_GRAPH_LOADING: 'network/NETWORK_GRAPH_LOADING'
@@ -50,9 +49,6 @@ export const actions = {
     selectNetworkClusterId: clusterId => ({
         type: types.SELECT_NETWORK_CLUSTER_ID,
         clusterId
-    }),
-    incrementNetworkGraphUpdateKey: () => ({
-        type: types.INCREMENT_NETWORK_GRAPH_UPDATE_KEY
     }),
     updateNetworkGraphTimestamp: lastUpdatedTimestamp => ({
         type: types.UPDATE_NETWORK_GRAPH_TIMESTAMP,
@@ -144,13 +140,7 @@ const networkFlowGraphUpdateKey = (state = { shouldUpdate: true, key: 0 }, actio
         if (length && !action.options[length - 1].type)
             return { shouldUpdate: true, key: state.key };
     }
-    if (type === types.INCREMENT_NETWORK_GRAPH_UPDATE_KEY) {
-        return { shouldUpdate: true, key: state.key + 1 };
-    }
-    if (
-        type === backendTypes.FETCH_NETWORK_POLICY_GRAPH.SUCCESS ||
-        type === backendTypes.FETCH_NETWORK_FLOW_GRAPH.SUCCESS
-    ) {
+    if (type === backendTypes.FETCH_NETWORK_POLICY_GRAPH.SUCCESS) {
         return { shouldUpdate: true, key: state.key + 1 };
     }
     return state;

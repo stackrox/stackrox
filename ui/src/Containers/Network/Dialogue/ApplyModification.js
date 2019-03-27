@@ -6,7 +6,6 @@ import * as Icon from 'react-feather';
 import { selectors } from 'reducers';
 import { actions as backendActions } from 'reducers/network/backend';
 import { actions as dialogueActions } from 'reducers/network/dialogue';
-import { actions as graphActions } from 'reducers/network/graph';
 
 import Modal from 'Components/Modal';
 import dialogueStages from './dialogueStages';
@@ -17,14 +16,12 @@ class ApplyModification extends Component {
         dialogueStage: PropTypes.string.isRequired,
 
         applyModification: PropTypes.func.isRequired,
-        setDialogueStage: PropTypes.func.isRequired,
-        incrementNetworkGraphUpdateKey: PropTypes.func.isRequired
+        setDialogueStage: PropTypes.func.isRequired
     };
 
     onConfirm = () => {
         this.props.setDialogueStage(dialogueStages.closed);
         this.props.applyModification();
-        this.props.incrementNetworkGraphUpdateKey();
     };
 
     onClose = () => {
@@ -69,8 +66,7 @@ const mapStateToProps = createStructuredSelector({
 
 const mapDispatchToProps = {
     applyModification: backendActions.applyNetworkPolicyModification.request,
-    setDialogueStage: dialogueActions.setNetworkDialogueStage,
-    incrementNetworkGraphUpdateKey: graphActions.incrementNetworkGraphUpdateKey
+    setDialogueStage: dialogueActions.setNetworkDialogueStage
 };
 
 export default connect(
