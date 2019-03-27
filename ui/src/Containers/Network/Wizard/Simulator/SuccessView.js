@@ -18,7 +18,13 @@ class SuccessView extends Component {
         modificationName: PropTypes.string,
         modificationSource: PropTypes.string,
         modification: PropTypes.shape({
-            applyYaml: PropTypes.string.isRequired
+            applyYaml: PropTypes.string.isRequired,
+            toDelete: PropTypes.arrayOf(
+                PropTypes.shape({
+                    namespace: PropTypes.string.isRequired,
+                    name: PropTypes.string.isRequired
+                })
+            )
         }),
         modificationState: PropTypes.string.isRequired,
         policyGraphState: PropTypes.string.isRequired,
@@ -32,9 +38,31 @@ class SuccessView extends Component {
     };
 
     renderTabs = () => {
-        const { applyYaml } = this.props.modification;
         const tabs = [{ text: this.props.modificationName }];
-        const displayYaml = applyYaml.length < 2 ? '\n\n(empty policy generated)' : applyYaml;
+        const { applyYaml, toDelete } = this.props.modification;
+        const hasToDelete = toDelete && toDelete.length > 0;
+        const hasApplyYaml = applyYaml && applyYaml.length >= 2;
+
+        // Format toDelete portion of YAML.
+        let toDeleteSection;
+        if (hasToDelete) {
+            toDeleteSection = toDelete
+                .map(entry => `# kubectl -n ${entry.namespace} delete networkpolicy ${entry.name}`)
+                .join('\n');
+        }
+
+        // Format complete YAML for display.
+        let displayYaml;
+        if (hasToDelete && hasApplyYaml) {
+            displayYaml = [toDeleteSection, applyYaml].join('\n---\n');
+        } else if (hasToDelete && !hasApplyYaml) {
+            displayYaml = toDeleteSection;
+        } else if (!hasToDelete && hasApplyYaml) {
+            displayYaml = applyYaml;
+        } else {
+            displayYaml = '(empty policy generated)';
+        }
+
         return (
             <Tabs headers={tabs}>
                 <TabContent>
