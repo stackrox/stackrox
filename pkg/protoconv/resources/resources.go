@@ -35,6 +35,13 @@ type DeploymentWrap struct {
 	*storage.Deployment
 }
 
+// NewDeploymentWrap creates a deployment wrap from an existing deployment
+func NewDeploymentWrap(d *storage.Deployment) *DeploymentWrap {
+	return &DeploymentWrap{
+		Deployment: d,
+	}
+}
+
 // This checks if a reflect value is a Zero value, which means the field did not exist
 func doesFieldExist(value reflect.Value) bool {
 	return !reflect.DeepEqual(value, reflect.Value{})
@@ -136,8 +143,16 @@ func (w *DeploymentWrap) populateFields(obj interface{}) {
 		podSpec = podTemplate.Spec
 	}
 
+	w.PopulateDeploymentFromPodSpec(podSpec)
+}
+
+// PopulateDeploymentFromPodSpec fills in the initialized wrap with data from the passed pod spec
+func (w *DeploymentWrap) PopulateDeploymentFromPodSpec(podSpec v1.PodSpec) {
 	w.HostNetwork = podSpec.HostNetwork
 	w.populateTolerations(podSpec)
+	w.populateServiceAccount(podSpec)
+	w.populateImagePullSecrets(podSpec)
+
 	w.populateContainers(podSpec)
 }
 
@@ -157,18 +172,17 @@ func (w *DeploymentWrap) populateContainers(podSpec v1.PodSpec) {
 	w.Deployment.Containers = make([]*storage.Container, 0, len(podSpec.Containers))
 	for _, c := range podSpec.Containers {
 		w.Deployment.Containers = append(w.Deployment.Containers, &storage.Container{
+			Id:   fmt.Sprintf("%s:%s", w.Deployment.Id, c.Name),
 			Name: c.Name,
 		})
 	}
 
-	w.populateServiceAccount(podSpec)
 	w.populateContainerConfigs(podSpec)
 	w.populateImages(podSpec)
 	w.populateSecurityContext(podSpec)
 	w.populateVolumesAndSecrets(podSpec)
 	w.populatePorts(podSpec)
 	w.populateResources(podSpec)
-	w.populateImagePullSecrets(podSpec)
 }
 
 func (w *DeploymentWrap) populateServiceAccount(podSpec v1.PodSpec) {
@@ -238,12 +252,6 @@ func (w *DeploymentWrap) populateImageShas(pods ...*v1.Pod) {
 
 func (w *DeploymentWrap) populateContainerConfigs(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
-
-		// Skip if there's nothing to add.
-		if len(c.Command) == 0 && len(c.Args) == 0 && len(c.WorkingDir) == 0 && len(c.Env) == 0 && c.SecurityContext == nil {
-			continue
-		}
-
 		config := &storage.ContainerConfig{
 			Command:   c.Command,
 			Args:      c.Args,
@@ -290,7 +298,6 @@ func (w *DeploymentWrap) populateContainerConfigs(podSpec v1.PodSpec) {
 			}
 		}
 
-		w.Deployment.Containers[i].Id = w.Deployment.Id + ":" + c.Name
 		w.Deployment.Containers[i].Config = config
 	}
 }

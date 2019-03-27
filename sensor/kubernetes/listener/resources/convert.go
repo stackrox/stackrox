@@ -17,9 +17,10 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"k8s.io/api/batch/v1beta1"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -104,6 +105,28 @@ func (w *deploymentWrap) populateK8sComponentIfNecessary(o *v1.Pod) *metav1.Labe
 	return nil
 }
 
+func checkIfNewPodSpecRequired(podSpec *v1.PodSpec, pods []*v1.Pod) bool {
+	containerSet := set.NewStringSet()
+	for _, c := range podSpec.Containers {
+		containerSet.Add(c.Name)
+	}
+	var updated bool
+	for _, p := range pods {
+		if p.GetDeletionTimestamp() != nil {
+			continue
+		}
+		for _, c := range p.Spec.Containers {
+			if containerSet.Contains(c.Name) {
+				continue
+			}
+			updated = true
+			containerSet.Add(c.Name)
+			podSpec.Containers = append(podSpec.Containers, c)
+		}
+	}
+	return updated
+}
+
 func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central.ResourceAction, lister v1listers.PodLister, namespaceStore *namespaceStore) error {
 	w.original = obj
 	objValue := reflect.Indirect(reflect.ValueOf(obj))
@@ -112,9 +135,12 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 		return fmt.Errorf("obj %+v does not have a Spec field", objValue)
 	}
 
-	var podLabels map[string]string
-	var labelSelector *metav1.LabelSelector
-	var err error
+	var (
+		podSpec       v1.PodSpec
+		podLabels     map[string]string
+		labelSelector *metav1.LabelSelector
+		err           error
+	)
 
 	switch o := obj.(type) {
 	case *openshift_appsv1.DeploymentConfig:
@@ -122,6 +148,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 			return fmt.Errorf("spec obj %+v does not have a Template field or is not a pointer pod spec", spec)
 		}
 		podLabels = o.Spec.Template.Labels
+		podSpec = o.Spec.Template.Spec
 
 		labelSelector, err = w.getLabelSelector(spec)
 		if err != nil {
@@ -142,6 +169,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 	case *v1beta1.CronJob:
 		// Cron jobs have a Job spec that then have a Pod Template underneath
 		podLabels = o.Spec.JobTemplate.Spec.Template.GetLabels()
+		podSpec = o.Spec.JobTemplate.Spec.Template.Spec
 		labelSelector = o.Spec.JobTemplate.Spec.Selector
 
 	default:
@@ -150,6 +178,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 			return fmt.Errorf("spec obj %+v does not have a Template field", spec)
 		}
 		podLabels = podTemplate.Labels
+		podSpec = podTemplate.Spec
 
 		labelSelector, err = w.getLabelSelector(spec)
 		if err != nil {
@@ -164,7 +193,6 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 
 	w.PodLabels = podLabels
 	w.LabelSelector = labelSel
-	w.populatePorts()
 	w.populateNamespaceID(namespaceStore)
 
 	if labelSelector == nil {
@@ -177,11 +205,18 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 		// If we have a standalone pod, we cannot use the labels to try and select that pod so we must directly populate the pod data
 		// We need to special case kube-proxy because we are consolidating it into a deployment
 		if pod, ok := obj.(*v1.Pod); ok && w.Type != k8sStandalonePodType {
+			w.populatePorts()
 			w.populateDataFromPods(pod)
 		} else {
-			if err := w.populatePodData(w.Name, labelSelector, lister); err != nil {
-				return fmt.Errorf("could not populate pod data: %v", err)
+			pods, err := w.getPods(w.Name, labelSelector, lister)
+			if err != nil {
+				return err
 			}
+			if updated := checkIfNewPodSpecRequired(&podSpec, pods); updated {
+				resources.NewDeploymentWrap(w.Deployment).PopulateDeploymentFromPodSpec(podSpec)
+			}
+			w.populatePorts()
+			w.populateDataFromPods(pods...)
 		}
 	}
 	return nil
@@ -232,19 +267,17 @@ func filterOnName(name string, pods []*v1.Pod) []*v1.Pod {
 	return filteredPods
 }
 
-func (w *deploymentWrap) populatePodData(topLevelName string, labelSelector *metav1.LabelSelector, lister v1listers.PodLister) error {
+func (w *deploymentWrap) getPods(topLevelName string, labelSelector *metav1.LabelSelector, lister v1listers.PodLister) ([]*v1.Pod, error) {
 	compiledLabelSelector, err := metav1.LabelSelectorAsSelector(labelSelector)
 	if err != nil {
-		return fmt.Errorf("could not compile label selector: %v", err)
+		return nil, fmt.Errorf("could not compile label selector: %v", err)
 	}
 	w.podSelector = compiledLabelSelector
 	pods, err := lister.Pods(w.Namespace).List(w.podSelector)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	w.pods = filterOnName(topLevelName, pods)
-	w.populateDataFromPods(w.pods...)
-	return nil
+	return filterOnName(topLevelName, pods), nil
 }
 
 func (w *deploymentWrap) populateDataFromPods(pods ...*v1.Pod) {
