@@ -163,7 +163,7 @@ func getObjectsFromYAML(yamlString string) ([]k8sRuntime.Object, error) {
 			if err != nil {
 				return nil, err
 			}
-			objects = append(listResources, listResources...)
+			objects = append(objects, listResources...)
 		} else {
 			objects = append(objects, obj)
 		}

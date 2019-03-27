@@ -604,6 +604,7 @@ jobs:
       - run:
           name: API tests
           command: |
+            ./tests/yamls/roxctl_verification.sh
             make -C tests
 
       - *restoreUI
