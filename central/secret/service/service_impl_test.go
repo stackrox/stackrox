@@ -9,7 +9,7 @@ import (
 	"github.com/golang/mock/gomock"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	datastoreMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"

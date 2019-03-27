@@ -9,7 +9,7 @@ import (
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	"github.com/stackrox/rox/central/searchbasedpolicies/builders"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"

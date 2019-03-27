@@ -2,7 +2,7 @@ package apitoken
 
 import (
 	"github.com/stackrox/rox/central/apitoken/store"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timeutil"

@@ -9,7 +9,7 @@ import "github.com/stackrox/rox/generated/api/v1"
 import (
 	"sort"
 
-	"github.com/deckarep/golang-set"
+	mapset "github.com/deckarep/golang-set"
 )
 
 // If you want to add a set for your custom type, simply add another go generate line along with the

@@ -2,7 +2,7 @@ package options
 
 import (
 	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	searchCommon "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )

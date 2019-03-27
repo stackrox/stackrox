@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/central/secret/index"
 	"github.com/stackrox/rox/central/secret/search"
 	"github.com/stackrox/rox/central/secret/store"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/debug"
 	searchPkg "github.com/stackrox/rox/pkg/search"

@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/manager"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"

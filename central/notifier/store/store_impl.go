@@ -7,7 +7,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
 	ops "github.com/stackrox/rox/pkg/metrics"

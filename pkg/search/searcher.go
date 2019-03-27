@@ -1,8 +1,6 @@
 package search
 
-import (
-	"github.com/stackrox/rox/generated/api/v1"
-)
+import v1 "github.com/stackrox/rox/generated/api/v1"
 
 // Searcher allows you to search objects.
 type Searcher interface {

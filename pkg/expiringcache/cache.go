@@ -3,7 +3,7 @@ package expiringcache
 import (
 	"time"
 
-	"github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru"
 )
 
 type elem struct {

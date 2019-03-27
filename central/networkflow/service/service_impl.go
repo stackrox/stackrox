@@ -9,7 +9,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"

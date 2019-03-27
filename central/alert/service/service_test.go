@@ -17,7 +17,7 @@ import (
 	storeMocks "github.com/stackrox/rox/central/alert/store/mocks"
 	"github.com/stackrox/rox/central/alerttest"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"

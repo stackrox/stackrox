@@ -24,7 +24,7 @@ import (
 	processIndicatorMapping "github.com/stackrox/rox/central/processindicator/index/mappings"
 	secretOptions "github.com/stackrox/rox/central/secret/search/options"
 	serviceAccountOptions "github.com/stackrox/rox/central/serviceaccount/search/options"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"

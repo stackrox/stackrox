@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
-	"k8s.io/api/rbac/v1"
+	v1 "k8s.io/api/rbac/v1"
 )
 
 // rbacDispatcher handles rbac resource events.

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/utils"
 )
 

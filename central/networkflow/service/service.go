@@ -6,7 +6,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )

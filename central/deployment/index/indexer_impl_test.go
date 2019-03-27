@@ -10,7 +10,7 @@ import (
 	imageIndex "github.com/stackrox/rox/central/image/index"
 	processIndicatorIndex "github.com/stackrox/rox/central/processindicator/index"
 	secretIndex "github.com/stackrox/rox/central/secret/index"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"

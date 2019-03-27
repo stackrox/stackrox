@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/stackrox/rox/pkg/orchestrators"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // only hostmounts are currently supported.

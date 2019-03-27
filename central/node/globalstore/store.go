@@ -4,7 +4,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/central/node/index"
 	"github.com/stackrox/rox/central/node/store"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/search"
 )

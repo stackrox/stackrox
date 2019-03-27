@@ -7,7 +7,7 @@ import (
 	"time"
 	"unicode"
 
-	"cloud.google.com/go/containeranalysis/apiv1beta1"
+	containeranalysis "cloud.google.com/go/containeranalysis/apiv1beta1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -18,7 +18,7 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/common"
 	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/grafeas"
-	"google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/package"
+	_package "google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/package"
 )
 
 const (

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/pkg/orchestrators"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 func convertSpecialEnvs(envVars []orchestrators.SpecialEnvVar) []v1.EnvVar {

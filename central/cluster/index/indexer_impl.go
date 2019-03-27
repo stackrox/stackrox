@@ -6,7 +6,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/cluster/index/mappings"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"

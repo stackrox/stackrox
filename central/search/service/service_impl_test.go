@@ -18,7 +18,7 @@ import (
 	policyIndex "github.com/stackrox/rox/central/policy/index"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"

@@ -10,9 +10,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/russellhaering/gosaml2"
+	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/russellhaering/gosaml2/types"
-	"github.com/russellhaering/goxmldsig"
+	dsig "github.com/russellhaering/goxmldsig"
 )
 
 func configureIDPFromMetadataURL(ctx context.Context, sp *saml2.SAMLServiceProvider, metadataURL string) error {

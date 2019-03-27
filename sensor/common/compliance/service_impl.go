@@ -2,7 +2,7 @@ package compliance
 
 import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"

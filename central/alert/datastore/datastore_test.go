@@ -10,7 +10,7 @@ import (
 	searchMocks "github.com/stackrox/rox/central/alert/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/alert/store/mocks"
 	"github.com/stackrox/rox/central/alerttest"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"

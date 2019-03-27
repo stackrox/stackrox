@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"golang.org/x/time/rate"

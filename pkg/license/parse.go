@@ -7,7 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
 // EncodeLicenseKey takes the bytes of a serialized license and the corresponding cryptographic signature, and

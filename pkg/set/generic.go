@@ -3,7 +3,7 @@ package set
 import (
 	"sort"
 
-	"github.com/deckarep/golang-set"
+	mapset "github.com/deckarep/golang-set"
 	"github.com/mauricelam/genny/generic"
 )
 

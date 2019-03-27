@@ -2,7 +2,7 @@ package search
 
 import (
 	"github.com/gogo/protobuf/proto"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
 // ApplyFnToAllBaseQueries walks recursively over the query, applying fn to all the base queries.

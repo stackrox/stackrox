@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/stackrox/rox/generated/storage"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (

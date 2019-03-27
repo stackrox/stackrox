@@ -5,7 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/namespace"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"

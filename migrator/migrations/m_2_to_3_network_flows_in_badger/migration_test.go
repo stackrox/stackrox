@@ -7,7 +7,7 @@ import (
 
 	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 	"github.com/stackrox/rox/migrator/badgerhelpers"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stretchr/testify/assert"

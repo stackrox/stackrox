@@ -4,7 +4,7 @@ import (
 	bolt "github.com/etcd-io/bbolt"
 	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/store"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/secrets"
 )
 

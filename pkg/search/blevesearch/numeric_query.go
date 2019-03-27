@@ -6,7 +6,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 )
 
 func parseNumericPrefix(value string) (prefix string, trimmedValue string) {

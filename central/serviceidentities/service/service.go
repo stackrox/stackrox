@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/stackrox/rox/central/serviceidentities/store"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"golang.org/x/net/context"

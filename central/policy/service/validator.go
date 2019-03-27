@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/deckarep/golang-set"
+	mapset "github.com/deckarep/golang-set"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentMappings "github.com/stackrox/rox/central/deployment/index/mappings"
 	imageMappings "github.com/stackrox/rox/central/image/index/mappings"

@@ -10,7 +10,7 @@ import (
 
 	jiraLib "github.com/andygrunwald/go-jira"
 	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"

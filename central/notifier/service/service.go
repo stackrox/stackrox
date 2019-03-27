@@ -7,7 +7,7 @@ import (
 	imageDetection "github.com/stackrox/rox/central/detection/image"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/notifier/store"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"

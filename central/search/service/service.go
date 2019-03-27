@@ -10,7 +10,7 @@ import (
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"golang.org/x/net/context"

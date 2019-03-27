@@ -5,7 +5,7 @@ package uuid
 import (
 	"database/sql/driver"
 
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 )
 
 // UUID in a universally unique identifier. The type is a wrapper around the uuid library.

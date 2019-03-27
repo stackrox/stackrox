@@ -3,7 +3,7 @@ package tokens
 import (
 	"encoding/json"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"gopkg.in/square/go-jose.v2/jwt"
 )
 

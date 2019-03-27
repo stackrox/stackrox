@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/central/alert/search"
 	"github.com/stackrox/rox/central/alert/store"
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	searchPkg "github.com/stackrox/rox/pkg/search"

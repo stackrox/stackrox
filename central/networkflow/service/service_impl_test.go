@@ -9,7 +9,7 @@ import (
 	dDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store/mocks"
 	npGraphMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"

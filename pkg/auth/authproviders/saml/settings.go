@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/russellhaering/gosaml2"
-	"github.com/russellhaering/goxmldsig"
+	saml2 "github.com/russellhaering/gosaml2"
+	dsig "github.com/russellhaering/goxmldsig"
 )
 
 func configureIDPFromSettings(sp *saml2.SAMLServiceProvider, idpIssuer, idpLoginURL, idpCertPEM string) error {

@@ -7,7 +7,7 @@ import (
 	groupStore "github.com/stackrox/rox/central/group/store"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/user/store"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"

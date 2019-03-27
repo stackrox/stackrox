@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	licensePkg "github.com/stackrox/rox/pkg/license"
 	"github.com/stackrox/rox/pkg/sync"

@@ -7,7 +7,7 @@ import (
 	multiplierStore "github.com/stackrox/rox/central/multiplier/store"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )

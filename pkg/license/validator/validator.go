@@ -1,6 +1,6 @@
 package validator
 
-import "github.com/stackrox/rox/generated/api/v1"
+import v1 "github.com/stackrox/rox/generated/api/v1"
 
 // Validator encapsulates the logic for validating license keys, verifying their signatures against a set of registered
 // signing keys.

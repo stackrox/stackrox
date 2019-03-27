@@ -3,7 +3,7 @@ package search
 import (
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/secret/store"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"

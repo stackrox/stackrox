@@ -6,8 +6,8 @@ import (
 	"reflect"
 
 	"github.com/stackrox/rox/central/graphql/generator"
-	"github.com/stackrox/rox/generated/api/v1"
 	_ "github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
 

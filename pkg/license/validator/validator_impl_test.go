@@ -14,7 +14,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/license"
 	"github.com/stackrox/rox/pkg/protoconv"

@@ -16,7 +16,7 @@ import (
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"

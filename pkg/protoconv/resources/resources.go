@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoconv/k8s"
 	"github.com/stackrox/rox/pkg/protoconv/resources/volumes"
 	"k8s.io/api/batch/v1beta1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

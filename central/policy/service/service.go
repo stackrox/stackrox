@@ -10,7 +10,7 @@ import (
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/policy/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"

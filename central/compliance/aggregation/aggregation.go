@@ -13,7 +13,7 @@ import (
 	namespaceMappings "github.com/stackrox/rox/central/namespace/index/mappings"
 	nodeStore "github.com/stackrox/rox/central/node/globalstore"
 	nodeMappings "github.com/stackrox/rox/central/node/index/mappings"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"

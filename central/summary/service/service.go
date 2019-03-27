@@ -9,7 +9,7 @@ import (
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	nodeStore "github.com/stackrox/rox/central/node/globalstore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )

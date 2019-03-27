@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/node/index"
 	"github.com/stackrox/rox/central/node/store"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	protoCrud "github.com/stackrox/rox/pkg/bolthelper/crud/proto"

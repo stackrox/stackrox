@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/protoconv/resources/volumes"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 func TestGetVolumeSourceMap(t *testing.T) {

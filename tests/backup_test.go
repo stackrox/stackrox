@@ -11,7 +11,7 @@ import (
 	"time"
 
 	deploymentStore "github.com/stackrox/rox/central/deployment/store"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/utils"

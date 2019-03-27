@@ -2,7 +2,7 @@ package mappings
 
 import (
 	processIndicatorMapping "github.com/stackrox/rox/central/processindicator/index/mappings"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )

@@ -6,7 +6,7 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/enrichanddetect"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/logging"

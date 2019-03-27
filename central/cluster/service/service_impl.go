@@ -9,7 +9,7 @@ import (
 	"github.com/stackrox/rox/central/monitoring"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"

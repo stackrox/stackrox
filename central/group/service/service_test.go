@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	storeMocks "github.com/stackrox/rox/central/group/store/mocks"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

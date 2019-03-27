@@ -67,7 +67,7 @@ import (
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"

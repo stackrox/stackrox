@@ -7,7 +7,7 @@ import (
 	deploymentSearch "github.com/stackrox/rox/central/deployment/search"
 	deploymentStore "github.com/stackrox/rox/central/deployment/store"
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/containerid"

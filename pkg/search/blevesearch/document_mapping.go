@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/blevesearch/bleve/mapping"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
 )
 

@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 type endpointManager struct {

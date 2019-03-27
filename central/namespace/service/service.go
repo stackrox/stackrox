@@ -5,7 +5,7 @@ import (
 	"github.com/stackrox/rox/central/namespace/datastore"
 	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 )

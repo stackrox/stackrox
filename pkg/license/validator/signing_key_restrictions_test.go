@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/suite"
 )

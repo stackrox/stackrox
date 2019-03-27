@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/notifiers"
-	"github.com/stackrox/rox/generated/api/v1"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sync"
 )
