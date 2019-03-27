@@ -34,8 +34,8 @@ function* getNetworkFlowGraph(clusterId, query) {
             query,
             timeWindowToDate(timeWindow)
         );
-        yield put(backendNetworkActions.fetchNetworkFlowGraph.success(flowResult.response));
         yield put(graphNetworkActions.setNetworkFlowMapping(flowResult.response));
+        yield put(backendNetworkActions.fetchNetworkFlowGraph.success(flowResult.response));
         yield put(graphNetworkActions.updateNetworkGraphTimestamp(new Date()));
     } catch (error) {
         yield put(backendNetworkActions.fetchNetworkFlowGraph.failure(error));

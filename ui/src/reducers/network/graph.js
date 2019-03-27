@@ -2,6 +2,7 @@ import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
 import { LOCATION_CHANGE } from 'react-router-redux';
 
+import { types as backendTypes } from 'reducers/network/backend';
 import { types as searchTypes } from 'reducers/network/search';
 
 import filterModes from 'Containers/Network/Graph/filterModes';
@@ -146,7 +147,10 @@ const networkFlowGraphUpdateKey = (state = { shouldUpdate: true, key: 0 }, actio
     if (type === types.INCREMENT_NETWORK_GRAPH_UPDATE_KEY) {
         return { shouldUpdate: true, key: state.key + 1 };
     }
-    if (type === types.SET_NETWORK_FLOW_MAPPING) {
+    if (
+        type === backendTypes.FETCH_NETWORK_POLICY_GRAPH.SUCCESS ||
+        type === backendTypes.FETCH_NETWORK_FLOW_GRAPH.SUCCESS
+    ) {
         return { shouldUpdate: true, key: state.key + 1 };
     }
     return state;
