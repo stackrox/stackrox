@@ -62,20 +62,16 @@ func (s *globalStoreImpl) buildIndex() error {
 }
 
 func (s *globalStoreImpl) getAllClusterNodeStores() ([]store.Store, error) {
-	var bytes [][]byte
+	var stores []store.Store
 	err := s.bucketRef.View(func(b *bolt.Bucket) error {
 		return b.ForEach(func(k, _ []byte) error {
-			bytes = append(bytes, k)
+			crud := protoCrud.NewMessageCrudForBucket(bolthelper.NestedRef(s.bucketRef, k), key, alloc)
+			stores = append(stores, datastore.New(store.New(crud), s.indexer))
 			return nil
 		})
 	})
 	if err != nil {
 		return nil, fmt.Errorf("could not get all cluster nodes: %v", err)
-	}
-	stores := make([]store.Store, 0, len(bytes))
-	for _, k := range bytes {
-		crud := protoCrud.NewMessageCrudForBucket(bolthelper.NestedRef(s.bucketRef, k), key, alloc)
-		stores = append(stores, datastore.New(store.New(crud), s.indexer))
 	}
 	return stores, nil
 }
