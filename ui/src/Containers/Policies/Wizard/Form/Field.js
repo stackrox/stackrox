@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { FieldArray } from 'redux-form';
 
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import ReduxTextField from 'Components/forms/ReduxTextField';
@@ -9,6 +10,7 @@ import ReduxMultiSelectField from 'Components/forms/ReduxMultiSelectField';
 import ReduxMultiSelectCreatableField from 'Components/forms/ReduxMultiSelectCreatableField';
 import ReduxNumericInputField from 'Components/forms/ReduxNumericInputField';
 import ReduxToggleField from 'Components/forms/ReduxToggleField';
+import renderScopes from './Scope';
 
 export default function Field({ field }) {
     if (field === undefined) return null;
@@ -68,6 +70,8 @@ export default function Field({ field }) {
             );
         case 'group':
             return field.jsonpaths.map(input => <Field field={input} />);
+        case 'scope':
+            return <FieldArray name={field.jsonpath} component={renderScopes} />;
         default:
             throw new Error(`Unknown field type: ${field.type}`);
     }

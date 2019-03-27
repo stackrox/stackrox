@@ -9,6 +9,7 @@ import (
 	"io"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deployment"
 	"github.com/stackrox/rox/central/detection/deploytime"
@@ -58,6 +59,7 @@ type serviceImpl struct {
 	imageEnricher      enricher.ImageEnricher
 	deploymentEnricher enrichment.Enricher
 	buildTimeDetector  buildtime.Detector
+	clusters           clusterDatastore.DataStore
 
 	detector deploytime.Detector
 }
@@ -221,9 +223,28 @@ func isDeployTimeEnforcement(actions []storage.EnforcementAction) bool {
 	return false
 }
 
+func (s *serviceImpl) populateDeploymentWithClusterInfo(clusterID string, deployment *storage.Deployment) error {
+	if clusterID == "" {
+		return nil
+	}
+	cluster, exists, err := s.clusters.GetCluster(clusterID)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return status.Errorf(codes.InvalidArgument, "cluster with ID %q does not exist", clusterID)
+	}
+	deployment.ClusterId = cluster.GetId()
+	deployment.ClusterName = cluster.GetName()
+	return nil
+}
+
 func (s *serviceImpl) DetectDeployTime(ctx context.Context, req *apiV1.DeployDetectionRequest) (*apiV1.DeployDetectionResponse, error) {
 	if req.GetDeployment() == nil {
 		return nil, status.Error(codes.InvalidArgument, "Deployment must be passed to deploy time detection")
+	}
+	if err := s.populateDeploymentWithClusterInfo(req.GetClusterId(), req.GetDeployment()); err != nil {
+		return nil, err
 	}
 
 	// If we have enforcement only, then check if any of the policies need enforcement. If not, then just exit with no alerts generated

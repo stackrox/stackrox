@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deployment"
 	"github.com/stackrox/rox/central/detection/deploytime"
@@ -22,8 +23,9 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(imageEnricher enricher.ImageEnricher, deploymentEnricher enrichment.Enricher, buildTimeDetector buildTimeDetection.Detector, detector deploytime.Detector, policySet deployment.PolicySet) Service {
+func New(clusters clusterDatastore.DataStore, imageEnricher enricher.ImageEnricher, deploymentEnricher enrichment.Enricher, buildTimeDetector buildTimeDetection.Detector, detector deploytime.Detector, policySet deployment.PolicySet) Service {
 	return &serviceImpl{
+		clusters:           clusters,
 		imageEnricher:      imageEnricher,
 		deploymentEnricher: deploymentEnricher,
 		buildTimeDetector:  buildTimeDetector,

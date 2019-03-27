@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/enforcers"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv/resources"
@@ -185,6 +186,7 @@ func (s *handlerImpl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		},
 		NoExternalMetadata: true,
 		EnforcementOnly:    true,
+		ClusterId:          env.ClusterID.Setting(),
 	})
 	if err != nil {
 		log.Warnf("Deployment %s/%s of type %s was deployed without being checked due to detection error: %v",

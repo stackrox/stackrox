@@ -28,6 +28,7 @@ message DeployDetectionRequest {
     }
     bool no_external_metadata = 2;
     bool enforcement_only     = 3;
+    string cluster_id         = 4;
 }
 
 message DeployYAMLDetectionRequest {

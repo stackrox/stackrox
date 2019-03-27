@@ -474,57 +474,6 @@ func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
 	suite.Error(err, "should fail when an error is thrown")
 }
 
-func (suite *PolicyValidatorTestSuite) TestValidateScopes() {
-	policy := &storage.Policy{}
-	err := suite.validator.validateScopes(policy)
-	suite.NoError(err, "scopes should not be required")
-
-	scope := &storage.Scope{
-		Cluster: "cluster1",
-	}
-	policy = &storage.Policy{
-		Scope: []*storage.Scope{
-			scope,
-		},
-	}
-	suite.cStorage.EXPECT().GetCluster("cluster1").Return((*storage.Cluster)(nil), true, nil)
-	err = suite.validator.validateScopes(policy)
-	suite.NoError(err, "valid scope definition")
-
-	scope = &storage.Scope{}
-	policy = &storage.Policy{
-		Scope: []*storage.Scope{
-			scope,
-		},
-	}
-	err = suite.validator.validateScopes(policy)
-	suite.NoError(err, "scopes with no cluster should be allowed")
-
-	scope = &storage.Scope{
-		Cluster: "cluster2",
-	}
-	policy = &storage.Policy{
-		Scope: []*storage.Scope{
-			scope,
-		},
-	}
-	suite.cStorage.EXPECT().GetCluster("cluster2").Return((*storage.Cluster)(nil), false, nil)
-	err = suite.validator.validateScopes(policy)
-	suite.Error(err, "scopes whose clusters can't be found should fail")
-
-	scope = &storage.Scope{
-		Cluster: "cluster3",
-	}
-	policy = &storage.Policy{
-		Scope: []*storage.Scope{
-			scope,
-		},
-	}
-	suite.cStorage.EXPECT().GetCluster("cluster3").Return((*storage.Cluster)(nil), true, fmt.Errorf("dang boi"))
-	err = suite.validator.validateScopes(policy)
-	suite.Error(err, "scopes whose clusters fail to be found should fail")
-}
-
 func (suite *PolicyValidatorTestSuite) TestValidateWhitelists() {
 	policy := &storage.Policy{}
 	err := suite.validator.validateWhitelists(policy)

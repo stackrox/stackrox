@@ -27,6 +27,9 @@ func ForPolicy(policy *storage.Policy, optionsMap search.OptionsMap, processGett
 	if q == nil || v == nil {
 		return nil, fmt.Errorf("failed to construct matcher for policy %+v: no fields specified", policy)
 	}
+	if scopeQuery := scopeToQuery(policy.GetScope()); scopeQuery != nil {
+		q = search.NewConjunctionQuery(scopeQuery, q)
+	}
 	return &matcherImpl{
 		q:                q,
 		violationPrinter: v,

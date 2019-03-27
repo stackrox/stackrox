@@ -210,15 +210,8 @@ func (s *policyValidator) validateDeploymentWhitelist(whitelist *storage.Whiteli
 }
 
 func (s *policyValidator) validateScope(scope *storage.Scope) error {
-	if scope.GetCluster() == "" {
-		return nil
-	}
-	_, exists, err := s.clusterStorage.GetCluster(scope.GetCluster())
-	if err != nil {
-		return fmt.Errorf("unable to get cluster id %s: %s", scope.GetCluster(), err)
-	}
-	if !exists {
-		return fmt.Errorf("cluster %s does not exist", scope.GetCluster())
+	if scope.GetCluster() == "" && scope.GetNamespace() == "" && scope.GetLabel() == nil {
+		return errors.New("scope must have at least one field populated")
 	}
 	return nil
 }

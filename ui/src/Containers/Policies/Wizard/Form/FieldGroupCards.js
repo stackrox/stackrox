@@ -185,12 +185,6 @@ const getPolicyFormFields = createSelector(
                         value: category
                     }));
                     break;
-                case 'scope':
-                    options = clusters.map(cluster => ({
-                        label: cluster.name,
-                        value: cluster.id
-                    }));
-                    break;
                 case 'deployments':
                     options = deployments.map(deployment => ({
                         label: deployment.name,

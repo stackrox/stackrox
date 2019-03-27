@@ -80,18 +80,25 @@ const fieldsMap = {
                 .join(', ')
     },
     scope: {
-        label: 'Restricted to Clusters',
+        label: 'Restricted to Scopes',
         formatValue: (d, props) =>
-            d
-                .map(o => {
+            d.map(o => {
+                const values = [];
+                if (o.cluster !== '') {
+                    let { cluster } = o;
                     if (props.clustersById[o.cluster]) {
-                        return props.clustersById[o.cluster].name;
+                        cluster = props.clustersById[o.cluster].name;
                     }
-                    // Fall back to returning the cluster id, if we can't find
-                    // the mapping to the cluster name.
-                    return o.cluster;
-                })
-                .join(', ')
+                    values.push(`Cluster:${cluster}`);
+                }
+                if (o.namespace !== '') {
+                    values.push(`Namespace:${o.namespace}`);
+                }
+                if (o.label) {
+                    values.push(`Label:${o.label.key}=${o.label.value}`);
+                }
+                return values.join('; ');
+            })
     },
     enforcementActions: {
         label: 'Enforcement Action',

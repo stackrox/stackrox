@@ -40,6 +40,16 @@ class Fields extends Component {
                                 notifiers: this.props.notifiers
                             });
                             if (!value) return '';
+                            if (Array.isArray(value)) {
+                                return (
+                                    <div className="mb-4" key={field}>
+                                        <div className="text-base-600 font-700">{label}:</div>
+                                        {value.map(v => (
+                                            <div className="flex pt-1 leading-normal">{v}</div>
+                                        ))}
+                                    </div>
+                                );
+                            }
                             if (typeof value === 'object') {
                                 return (
                                     <div>

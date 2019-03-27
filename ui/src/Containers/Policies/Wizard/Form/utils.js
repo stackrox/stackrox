@@ -1,20 +1,6 @@
 import policyFormFields from 'Containers/Policies/Wizard/Form/descriptors';
 import removeEmptyFields from 'utils/removeEmptyFields';
 
-export function preFormatScopeField(obj) {
-    const newObj = Object.assign({}, obj);
-    newObj.scope = obj.scope && obj.scope.length !== 0 ? obj.scope.map(o => o.cluster) : [];
-    return newObj;
-}
-
-export function postFormatScopeField(obj) {
-    const newObj = Object.assign({}, obj);
-    if (newObj.scope && newObj.scope.length !== 0) {
-        newObj.scope = obj.scope.map(clusterId => ({ cluster: clusterId }));
-    }
-    return newObj;
-}
-
 export function preFormatWhitelistField(policy) {
     const { whitelists } = policy;
     const clientPolicy = Object.assign({}, policy);
@@ -70,7 +56,6 @@ export function postFormatEnforcementField(policy) {
 export function preFormatPolicyFields(policy) {
     let formattedPolicy = removeEmptyFields(policy);
     formattedPolicy = preFormatWhitelistField(formattedPolicy);
-    formattedPolicy = preFormatScopeField(formattedPolicy);
     return formattedPolicy;
 }
 
@@ -79,7 +64,6 @@ export function formatPolicyFields(policy) {
     serverPolicy = postFormatLifecycleField(serverPolicy);
     serverPolicy = postFormatEnforcementField(serverPolicy);
     serverPolicy = postFormatWhitelistField(serverPolicy);
-    serverPolicy = postFormatScopeField(serverPolicy);
     return serverPolicy;
 }
 

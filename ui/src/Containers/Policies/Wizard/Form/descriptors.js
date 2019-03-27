@@ -185,9 +185,9 @@ const policyDetailsFormDescriptor = [
         default: true
     },
     {
-        label: 'Restrict to Clusters',
+        label: 'Restrict to Scope',
         jsonpath: 'scope',
-        type: 'multiselect',
+        type: 'scope',
         options: [],
         required: false,
         default: true
