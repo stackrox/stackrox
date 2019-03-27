@@ -6,7 +6,7 @@ RUN wget https://dl.influxdata.com/influxdb/releases/influxdb-${INFLUXDB_VERSION
     tar xvfz influxdb-${INFLUXDB_VERSION}-static_linux_amd64.tar.gz && mv /influxdb-${INFLUXDB_VERSION}-1/influxd /influxd && \
     mv /influxdb-${INFLUXDB_VERSION}-1/influx /influx
 
-RUN wget https://github.com/connorgorman/telegraf/releases/download/1.8.3%2B179-slim/telegraf -O /telegraf && chmod +x /telegraf
+RUN wget https://github.com/connorgorman/telegraf/releases/download/1.8.3.1%2B179-slim/telegraf -O /telegraf && chmod +x /telegraf
 
 FROM grafana/grafana:6.0.0
 

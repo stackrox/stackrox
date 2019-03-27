@@ -144,6 +144,10 @@ data:
       ## existing data has been written.
       # influx_uint_support = false
 
+    [[outputs.prometheus_client]]
+      ## Address to listen on.
+      listen = ":9090"
+
     ###############################################################################
     #                            INPUT PLUGINS                                    #
     ###############################################################################
