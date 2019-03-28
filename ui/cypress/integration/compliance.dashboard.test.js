@@ -25,7 +25,8 @@ describe('Compliance dashboard page', () => {
             });
     });
 
-    it('should show the same amount of namespaces between the Dashboard and List Page', () => {
+    // TODO(ROX-1774): Fix and re-enable
+    xit('should show the same amount of namespaces between the Dashboard and List Page', () => {
         cy.get(selectors.dashboard.tileLinks.namespace.value)
             .invoke('text')
             .then(text => {
