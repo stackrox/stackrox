@@ -218,6 +218,8 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 			w.populatePorts()
 			w.populateDataFromPods(pods...)
 		}
+	} else {
+		w.populatePorts()
 	}
 	return nil
 }
