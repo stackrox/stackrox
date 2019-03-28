@@ -14,8 +14,7 @@ spec:
       labels:
         app: webhookserver
     spec:
-      imagePullSecrets:
-        - name: stackrox
+      serviceAccount: webhookserver
       containers:
       - image: stackrox/webhookserver:1.0
         name: webhookserver
@@ -28,7 +27,6 @@ spec:
           limits:
             memory: "100Mi"
             cpu: "100m"
-
 ---
 apiVersion: v1
 kind: Service

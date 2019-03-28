@@ -1,0 +1,13 @@
+kind: SecurityContextConstraints
+apiVersion: v1
+metadata:
+  name: webhookserver
+priority: 100
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - '*'
+users:
+  - system:serviceaccount:stackrox:webhookserver
