@@ -31,6 +31,12 @@ const StackRoxImageFormField = () => (
     </FormField>
 );
 
+const StackRoxCollectorImageFormField = () => (
+    <FormField label="Collector Image Repository (uses Main image repository by default)">
+        <ReduxTextField name="collectorImage" placeholder="collector.stackrox.io/collector" />
+    </FormField>
+);
+
 const RuntimeSupportFormField = () => (
     <FormField label="Runtime Support">
         <ReduxCheckboxField name="runtimeSupport" />
@@ -50,6 +56,7 @@ const K8sFields = () => (
         <CentralAPIFormField placeholder="central.stackrox:443" />
         <MonitoringEndpointFormField />
         <RuntimeSupportFormField />
+        <StackRoxCollectorImageFormField />
         <FormField label="Enable Admission Controller">
             <ReduxCheckboxField name="admissionController" />
         </FormField>
@@ -63,6 +70,7 @@ const OpenShiftFields = () => (
         <CentralAPIFormField placeholder="central.stackrox:443" />
         <MonitoringEndpointFormField />
         <RuntimeSupportFormField />
+        <StackRoxCollectorImageFormField />
     </React.Fragment>
 );
 

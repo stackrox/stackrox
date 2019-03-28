@@ -153,7 +153,7 @@ describe('Cluster Creation Flow', () => {
 
         cy.get(selectors.labeledValue)
             .eq(2)
-            .should('have.text', 'Original Configured Image:stackrox/main:latest');
+            .should('have.text', 'Main Image:stackrox/main:latest');
 
         cy.get(selectors.labeledValue)
             .eq(3)

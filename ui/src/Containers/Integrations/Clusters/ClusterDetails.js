@@ -33,7 +33,10 @@ const CommonDetails = ({ cluster }) => (
     <React.Fragment>
         <LabeledValue label="Name" value={cluster.name} />
         <LabeledValue label="Cluster Type" value={clusterTypeLabels[cluster.type]} />
-        <LabeledValue label="Original Configured Image" value={cluster.mainImage} />
+        <LabeledValue label="Main Image" value={cluster.mainImage} />
+        {cluster.collectorImage && (
+            <LabeledValue label="Collector Image" value={cluster.collectorImage} />
+        )}
         <LabeledValue label="Central API Endpoint" value={cluster.centralApiEndpoint} />
         <LabeledValue label="Runtime Support" value={formatRuntimeSupport(cluster)} />
         <LabeledValue label={checkInLabel} value={formatLastCheckIn(cluster)} />

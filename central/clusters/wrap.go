@@ -2,7 +2,6 @@ package clusters
 
 import (
 	"bytes"
-	"fmt"
 	"path"
 	"path/filepath"
 	"strings"
@@ -24,6 +23,8 @@ import (
 
 const (
 	defaultMonitoringPort = 8186
+	prodMainRegistry      = "stackrox.io"
+	prodCollectorRegistry = "collector.stackrox.io"
 )
 
 var (
@@ -61,15 +62,15 @@ func executeTemplate(temp *template.Template, fields map[string]interface{}) ([]
 	return buf.Bytes(), nil
 }
 
-func generateCollectorImage(mainImageName *storage.ImageName, tag string) *storage.ImageName {
+func generateCollectorImageFromMainImage(mainImageName *storage.ImageName, tag string) *storage.ImageName {
 	// Populate the tag
 	collectorName := &storage.ImageName{
 		Tag: tag,
 	}
 	// Populate Registry
 	collectorName.Registry = mainImageName.GetRegistry()
-	if mainImageName.GetRegistry() == "stackrox.io" {
-		collectorName.Registry = "collector.stackrox.io"
+	if mainImageName.GetRegistry() == prodMainRegistry {
+		collectorName.Registry = prodCollectorRegistry
 	}
 	// Populate Remote
 	// This handles the case where there is no namespace. e.g. stackrox.io/collector:latest
@@ -79,9 +80,32 @@ func generateCollectorImage(mainImageName *storage.ImageName, tag string) *stora
 		collectorName.Remote = mainImageName.GetRemote()[:slashIdx] + "/collector"
 	}
 	// Populate FullName
-	collectorName.FullName = fmt.Sprintf("%s/%s:%s",
-		collectorName.GetRegistry(), collectorName.GetRemote(), collectorName.GetTag())
+	utils.NormalizeImageFullNameNoSha(collectorName)
 	return collectorName
+}
+
+func generateCollectorImageNameFromString(collectorImage, tag string) (*storage.ImageName, error) {
+	image, _, err := utils.GenerateImageNameFromString(collectorImage)
+	if err != nil {
+		return nil, err
+	}
+	utils.SetImageTagNoSha(image, tag)
+	return image, nil
+}
+
+func generateCollectorImageName(mainImageName *storage.ImageName, collectorImage string) (*storage.ImageName, error) {
+	collectorVersion := version.GetCollectorVersion()
+	var collectorImageName *storage.ImageName
+	if collectorImage != "" {
+		var err error
+		collectorImageName, err = generateCollectorImageNameFromString(collectorImage, collectorVersion)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		collectorImageName = generateCollectorImageFromMainImage(mainImageName, collectorVersion)
+	}
+	return collectorImageName, nil
 }
 
 func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
@@ -91,13 +115,16 @@ func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
 	}
 	mainImageName := mainImage.GetName()
 
-	collectorName := generateCollectorImage(mainImageName, version.GetCollectorVersion())
+	collectorImageName, err := generateCollectorImageName(mainImageName, c.CollectorImage)
+	if err != nil {
+		return nil, err
+	}
 
 	mainRegistry, err := urlfmt.FormatURL(mainImageName.GetRegistry(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if err != nil {
 		return nil, err
 	}
-	collectorRegistry, err := urlfmt.FormatURL(collectorName.GetRegistry(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
+	collectorRegistry, err := urlfmt.FormatURL(collectorImageName.GetRegistry(), urlfmt.HTTPS, urlfmt.NoTrailingSlash)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +146,7 @@ func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
 
 		"RuntimeSupport":                 c.RuntimeSupport,
 		"CollectorRegistry":              collectorRegistry,
-		"CollectorImage":                 collectorName.GetFullName(),
+		"CollectorImage":                 collectorImageName.GetFullName(),
 		"CollectorEbpf":                  features.CollectorEbpf.Enabled(),
 		"CollectorModuleDownloadBaseURL": "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656",
 

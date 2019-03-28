@@ -16,15 +16,13 @@ var (
 // GenerateImageFromStringWithDefaultTag generates an image type from a common string format and returns an error if
 // there was an issue parsing it. It takes in a defaultTag which it populates if the image doesn't have a tag.
 func GenerateImageFromStringWithDefaultTag(imageStr, defaultTag string) (*storage.Image, error) {
-	image := &storage.Image{
-		Name: &storage.ImageName{
-			FullName: imageStr,
-		},
+	imageName, ref, err := GenerateImageNameFromString(imageStr)
+	if err != nil {
+		return nil, err
 	}
 
-	ref, err := reference.ParseAnyReference(imageStr)
-	if err != nil {
-		return image, fmt.Errorf("error parsing image name '%s': %s", imageStr, err)
+	image := &storage.Image{
+		Name: imageName,
 	}
 
 	digest, ok := ref.(reference.Digested)
@@ -32,28 +30,57 @@ func GenerateImageFromStringWithDefaultTag(imageStr, defaultTag string) (*storag
 		image.Id = digest.Digest().String()
 	}
 
+	// Default the image to latest if and only if there was no tag specific and also no SHA specified
+	if image.GetId() == "" && image.GetName().GetTag() == "" && defaultTag != "" {
+		SetImageTagNoSha(image.Name, defaultTag)
+	}
+
+	return image, nil
+}
+
+// GenerateImageNameFromString generated an ImageName from a common string format and returns an error if there was an
+// issure parsing it.
+func GenerateImageNameFromString(imageStr string) (*storage.ImageName, reference.Reference, error) {
+	name := &storage.ImageName{
+		FullName: imageStr,
+	}
+
+	ref, err := reference.ParseAnyReference(imageStr)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error parsing image name '%s': %s", imageStr, err)
+	}
+
 	named, ok := ref.(reference.Named)
 	if ok {
-		image.Name.Registry = reference.Domain(named)
-		image.Name.Remote = reference.Path(named)
+		name.Registry = reference.Domain(named)
+		name.Remote = reference.Path(named)
 	}
 
 	namedTagged, ok := ref.(reference.NamedTagged)
 	if ok {
-		image.Name.Registry = reference.Domain(namedTagged)
-		image.Name.Remote = reference.Path(namedTagged)
-		image.Name.Tag = namedTagged.Tag()
+		name.Registry = reference.Domain(namedTagged)
+		name.Remote = reference.Path(namedTagged)
+		name.Tag = namedTagged.Tag()
 	}
 
-	// Default the image to latest if and only if there was no tag specific and also no SHA specified
-	if image.GetId() == "" && image.GetName().GetTag() == "" && defaultTag != "" {
-		image.Name.Tag = defaultTag
-		image.Name.FullName = fmt.Sprintf("%s:%s", ref.String(), defaultTag)
-	} else {
-		image.Name.FullName = ref.String()
-	}
+	name.FullName = ref.String()
 
-	return image, nil
+	return name, ref, nil
+}
+
+// SetImageTagNoSha sets the tag on an ImageName and updates the FullName to reflect the new tag.  This function should be
+// part of a wrapper instead of a util function
+func SetImageTagNoSha(name *storage.ImageName, tag string) *storage.ImageName {
+	name.Tag = tag
+	NormalizeImageFullNameNoSha(name)
+	return name
+}
+
+// NormalizeImageFullNameNoSha sets the ImageName.FullName correctly based on the parts of the name and should be part of a
+// wrapper instead of a util function.
+func NormalizeImageFullNameNoSha(name *storage.ImageName) *storage.ImageName {
+	name.FullName = fmt.Sprintf("%s/%s:%s", name.GetRegistry(), name.GetRemote(), name.GetTag())
+	return name
 }
 
 // GenerateImageFromString generates an image type from a common string format and returns an error if

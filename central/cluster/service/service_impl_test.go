@@ -134,6 +134,35 @@ func TestValidateCluster(t *testing.T) {
 			expectedError: true,
 		},
 		{
+			name: "Valid collector registry",
+			cluster: &storage.Cluster{
+				Name:               "name",
+				MainImage:          "image",
+				CentralApiEndpoint: "central:443",
+				CollectorImage:     "collector.stackrox.io/collector",
+			},
+			expectedError: false,
+		},
+		{
+			name: "Empty string collector registry",
+			cluster: &storage.Cluster{
+				Name:               "name",
+				MainImage:          "image",
+				CentralApiEndpoint: "central:443",
+				CollectorImage:     "",
+			},
+		},
+		{
+			name: "Invalid collector registry",
+			cluster: &storage.Cluster{
+				Name:               "name",
+				MainImage:          "image",
+				CentralApiEndpoint: "central:443",
+				CollectorImage:     "collector.stackrox.io/collector injectedCommand",
+			},
+			expectedError: true,
+		},
+		{
 			name: "Happy path K8s",
 			cluster: &storage.Cluster{
 				Name:               "name",

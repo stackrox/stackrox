@@ -79,6 +79,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Cluster", []string{
 		"admissionController: Boolean!",
 		"centralApiEndpoint: String!",
+		"collectorImage: String!",
 		"id: ID!",
 		"mainImage: String!",
 		"monitoringEndpoint: String!",
@@ -1310,6 +1311,11 @@ func (resolver *clusterResolver) AdmissionController() bool {
 
 func (resolver *clusterResolver) CentralApiEndpoint() string {
 	value := resolver.data.GetCentralApiEndpoint()
+	return value
+}
+
+func (resolver *clusterResolver) CollectorImage() string {
+	value := resolver.data.GetCollectorImage()
 	return value
 }
 

@@ -17,7 +17,18 @@ func Validate(cluster *storage.Cluster) *errorhelpers.ErrorList {
 		errorList.AddString("Cluster name is required")
 	}
 	if _, err := reference.ParseAnyReference(cluster.GetMainImage()); err != nil {
-		errorList.AddError(fmt.Errorf("invalid image '%s': %s", cluster.GetMainImage(), err))
+		errorList.AddError(fmt.Errorf("invalid main image '%s': %s", cluster.GetMainImage(), err))
+	}
+	if cluster.GetCollectorImage() != "" {
+		ref, err := reference.ParseAnyReference(cluster.GetCollectorImage())
+		if err != nil {
+			errorList.AddError(fmt.Errorf("invalid collector image '%s': %s", cluster.GetCollectorImage(), err))
+		}
+		namedTagged, ok := ref.(reference.NamedTagged)
+		if ok {
+			errorList.AddError(fmt.Errorf("collector image may not specify a tag.  Please "+
+				"remove tag '%s' to continue", namedTagged.Tag()))
+		}
 	}
 	if cluster.GetCentralApiEndpoint() == "" {
 		errorList.AddString("Central API Endpoint is required")
