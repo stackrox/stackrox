@@ -1,12 +1,4 @@
-**/container/bin/*
-**/container/conf/*
-**/container/data/*
 webhookserver/bin/*
-
-# Crypto/Secrets
-*.csr
-*.pem
-registry-auth
 
 # Deployment
 sensor*.zip

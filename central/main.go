@@ -27,6 +27,7 @@ import (
 	debugService "github.com/stackrox/rox/central/debug/service"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
 	detectionService "github.com/stackrox/rox/central/detection/service"
+	developmentService "github.com/stackrox/rox/central/development/service"
 	"github.com/stackrox/rox/central/docs"
 	"github.com/stackrox/rox/central/enrichanddetect"
 	"github.com/stackrox/rox/central/globaldb"
@@ -73,6 +74,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -214,6 +216,10 @@ func startGRPCServer() {
 
 	if features.LicenseEnforcement.Enabled() {
 		servicesToRegister = append(servicesToRegister, licenseService.Singleton())
+	}
+
+	if env.DevelopmentBuild.Setting() == "true" {
+		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
 	}
 
 	if err := manager.Singleton().Start(); err != nil {

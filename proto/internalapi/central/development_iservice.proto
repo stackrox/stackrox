@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option go_package = "central";
+
+// This is an internal service which contains tools intended to be used only for testing.
+// It will NOT be available in Central in production builds.
+// Even in dev, access is gRPC-only.
+package central;
+
+message URLHasValidCertRequest {
+    string url = 1;
+}
+
+message URLHasValidCertResponse {
+    enum URLResult {
+        UNSET = 0;
+        CERT_SIGNED_BY_UNKNOWN_AUTHORITY = 1;
+        CERT_SIGNING_AUTHORITY_VALID_BUT_OTHER_ERROR = 2;
+        OTHER_GET_ERROR = 3;
+        REQUEST_SUCCEEDED = 4;
+    }
+    URLResult result  = 1;
+    string details    = 2;
+}
+
+service DevelopmentService {
+    rpc URLHasValidCert (URLHasValidCertRequest) returns (URLHasValidCertResponse);
+}
