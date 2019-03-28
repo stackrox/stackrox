@@ -1,0 +1,396 @@
+package manager
+
+import (
+	"sort"
+	"time"
+
+	"github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/license/store"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/license/validator"
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sliceutils"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/timeutil"
+)
+
+var (
+	log = logging.LoggerForModule()
+)
+
+type licenseData struct {
+	licenseProto                  *v1.License
+	notValidBefore, notValidAfter time.Time
+	licenseKey                    string
+}
+
+func (d *licenseData) getLicenseProto() *v1.License {
+	if d == nil {
+		return nil
+	}
+	return d.licenseProto
+}
+
+type manager struct {
+	store     store.Store
+	validator validator.Validator
+
+	mutex         sync.RWMutex
+	licenses      map[string]*licenseData
+	activeLicense *licenseData
+
+	interruptC chan struct{}
+	stopSig    concurrency.Signal
+	stoppedSig concurrency.Signal
+
+	listener LicenseEventListener
+}
+
+func newManager(store store.Store, validator validator.Validator) *manager {
+	return &manager{
+		store:     store,
+		validator: validator,
+
+		interruptC: make(chan struct{}, 1),
+		stopSig:    concurrency.NewSignal(),
+	}
+}
+
+func (m *manager) interrupt() bool {
+	select {
+	case m.interruptC <- struct{}{}:
+		return true
+	case <-m.stoppedSig.Done():
+		return false
+	}
+}
+
+func (m *manager) Initialize(listener LicenseEventListener) (*v1.License, error) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	if m.licenses != nil {
+		return nil, errors.New("license manager was already initialized")
+	}
+	m.licenses = make(map[string]*licenseData)
+
+	if err := m.populateFromStoreNoLock(); err != nil {
+		return nil, errors.Wrap(err, "could not populate licenses from store")
+	}
+
+	// TODO: populate licenses from a secret mount?
+
+	m.checkLicensesNoLock()
+
+	// Only set the listener now to prevent any event delivery during initial license selection.
+	m.listener = listener
+
+	go m.run()
+
+	return m.activeLicense.getLicenseProto(), nil
+}
+
+func (m *manager) Stop() concurrency.Waitable {
+	m.stopSig.Signal()
+	return &m.stoppedSig
+}
+
+func (m *manager) populateFromStoreNoLock() error {
+	storedLicenseKeys, err := m.store.ListLicenseKeys()
+	if err != nil {
+		return err
+	}
+
+	m.importStoredKeysNoLock(storedLicenseKeys)
+	return nil
+}
+
+func (m *manager) importStoredKeysNoLock(storedKeys []*storage.StoredLicenseKey) {
+	var selected *licenseData
+	for _, storedKey := range storedKeys {
+		license, err := m.decodeLicenseKey(storedKey.GetLicenseKey())
+		if err != nil {
+			log.Errorf("Could not read license key from store: %v. The license key will be ignored.", err)
+			continue
+		}
+		if license.licenseProto.GetMetadata().GetId() != storedKey.GetLicenseId() {
+			log.Errorf("Stored license key data is corrupted: ID %q does not match ID %q of decoded license. The license key will be ignored.", license.licenseProto.GetMetadata().GetIssueDate(), storedKey.GetLicenseId())
+			continue
+		}
+
+		if storedKey.GetSelected() {
+			if selected != nil {
+				log.Errorf("Stored license key data is corrupted: multiple licenses (%q and %q) are marked as selected. Will default to the first one.", selected.licenseProto.GetMetadata().GetId(), license.licenseProto.GetMetadata().GetId())
+			} else {
+				selected = license
+			}
+		}
+
+		m.licenses[license.licenseProto.GetMetadata().GetId()] = license
+	}
+
+	m.makeLicenseActiveNoLock(selected)
+}
+
+func (m *manager) run() {
+	m.stoppedSig.Reset()
+	defer m.stoppedSig.Signal()
+
+	var nextEventTimer *time.Timer
+
+	for !m.stopSig.IsDone() {
+		timeutil.StopTimer(nextEventTimer)
+		nextEventTimer = nil
+
+		nextEventTS := m.checkLicenses()
+		if !nextEventTS.IsZero() {
+			nextEventTimer = time.NewTimer(nextEventTS.Sub(time.Now()))
+		}
+
+		select {
+		case <-m.stopSig.Done():
+			log.Info("License manager is shutting down.")
+			timeutil.StopTimer(nextEventTimer)
+			return
+		case <-timeutil.TimerC(nextEventTimer):
+			nextEventTimer = nil
+		case <-m.interruptC:
+		}
+	}
+}
+
+func (m *manager) checkLicenses() time.Time {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	return m.checkLicensesNoLock()
+}
+
+func (m *manager) checkLicensesNoLock() time.Time {
+	if m.activeLicense != nil {
+		err := m.checkLicenseIsUsable(m.activeLicense)
+		if err == nil {
+			return m.activeLicense.notValidAfter
+		}
+
+		log.Warnf("Disabling active license %s: %v", m.activeLicense.licenseProto.GetMetadata().GetId(), err)
+	}
+
+	// Do the following in a loop to ensure that we try to make a new license active until we either have found a new
+	// license that works, or have determined that we do not currently have a usable license.
+	// Otherwise, if `makeLicenseActiveNoLock` does not succeed because the license has become invalid (e.g., just
+	// expired), we might not deactive the old license.
+	for {
+		newActiveLicense, nextEventTS := m.chooseUsableLicenseNoLock()
+
+		_, _, licenseChanged := m.makeLicenseActiveNoLock(newActiveLicense)
+		if licenseChanged || newActiveLicense == nil {
+			if newActiveLicense != nil {
+				log.Infof("Automatically selected new license %s, valid until %v", newActiveLicense.licenseProto.GetMetadata().GetId(), newActiveLicense.notValidAfter)
+			}
+			return nextEventTS
+		}
+	}
+}
+
+// chooseUsableLicenseNoLock returns the "best" available license, or nil if no usable license is available. The
+// second return value indicates the timestamp when we should next check for an available license (this could either
+// be the expiration time of the chosen license, or the next time a license that is not yet valid becomes valid).
+func (m *manager) chooseUsableLicenseNoLock() (*licenseData, time.Time) {
+	var bestCandidate *licenseData
+
+	var nextActivationTS time.Time
+	now := time.Now()
+
+	for _, license := range m.licenses {
+		// Calculate the nearest `notValidBefore` timestamp that is in the future, regardless of why the license
+		// is not valid (conditions might change, so we should always re-check once a license becomes valid time-wise).
+		if now.Before(license.notValidBefore) && (nextActivationTS.IsZero() || license.notValidBefore.Before(nextActivationTS)) {
+			nextActivationTS = license.notValidBefore
+		}
+
+		if err := m.checkLicenseIsUsable(license); err != nil {
+			continue
+		}
+
+		// For now, only select the license which is valid for the longest time.
+		if bestCandidate == nil || license.notValidAfter.After(bestCandidate.notValidAfter) {
+			bestCandidate = license
+		}
+	}
+
+	if bestCandidate != nil {
+		return bestCandidate, bestCandidate.notValidAfter
+	}
+	return nil, nextActivationTS
+}
+
+func (m *manager) getLicenseInfoNoLock(license *licenseData) *v1.LicenseInfo {
+	if license == nil {
+		return nil
+	}
+
+	licenseInfo := &v1.LicenseInfo{
+		License: license.licenseProto,
+		Active:  license == m.activeLicense,
+	}
+	licenseInfo.Status, licenseInfo.StatusReason = statusFromError(m.checkLicenseIsUsable(license))
+	return licenseInfo
+}
+
+func (m *manager) makeLicenseActiveNoLock(newLicense *licenseData) (newLicenseInfo, oldLicenseInfo *v1.LicenseInfo, changed bool) {
+	newLicenseInfo = m.getLicenseInfoNoLock(newLicense)
+
+	oldLicense := m.activeLicense
+	if oldLicense == newLicense {
+		oldLicenseInfo = newLicenseInfo
+		return
+	}
+
+	oldLicenseInfo = m.getLicenseInfoNoLock(oldLicense)
+	if newLicenseInfo != nil {
+		if newLicenseInfo.GetStatus() != v1.LicenseInfo_VALID {
+			return // new license is not valid, so we cannot change it
+		}
+	}
+
+	m.activeLicense = newLicense
+
+	changed = true
+	if newLicenseInfo != nil {
+		newLicenseInfo.Active = true
+	}
+	if oldLicenseInfo != nil {
+		oldLicenseInfo.Active = false
+	}
+
+	if m.listener != nil {
+		m.listener.OnActiveLicenseChanged(newLicenseInfo, oldLicenseInfo)
+	}
+
+	m.interrupt()
+
+	return
+}
+
+func (m *manager) GetActiveLicense() *v1.License {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	if m.activeLicense == nil {
+		return nil
+	}
+	return m.activeLicense.licenseProto
+}
+
+func (m *manager) GetAllLicenses() []*v1.LicenseInfo {
+	var allLicenses []*v1.LicenseInfo
+
+	concurrency.WithRLock(&m.mutex, func() {
+		allLicenses = make([]*v1.LicenseInfo, 0, len(m.licenses))
+
+		for _, license := range m.licenses {
+			allLicenses = append(allLicenses, m.getLicenseInfoNoLock(license))
+		}
+	})
+
+	sort.Slice(allLicenses, func(i, j int) bool {
+		return allLicenses[i].GetLicense().GetMetadata().GetId() < allLicenses[j].GetLicense().GetMetadata().GetId()
+	})
+
+	return allLicenses
+}
+
+func (m *manager) AddLicenseKey(licenseKey string) (*v1.LicenseInfo, error) {
+	license, err := m.decodeLicenseKey(licenseKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "decoding license key")
+	}
+
+	return m.addLicense(license), nil
+}
+
+func (m *manager) addLicense(license *licenseData) *v1.LicenseInfo {
+	defer m.interrupt()
+
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	m.licenses[license.licenseProto.GetMetadata().GetId()] = license
+
+	if m.activeLicense == nil && m.checkLicenseIsUsable(license) == nil {
+		newLicenseInfo, _, _ := m.makeLicenseActiveNoLock(license)
+		return newLicenseInfo
+	}
+
+	return m.getLicenseInfoNoLock(license)
+}
+
+func (m *manager) decodeLicenseKey(licenseKey string) (*licenseData, error) {
+	licenseProto, err := m.validator.ValidateLicenseKey(licenseKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not validate license key")
+	}
+
+	nvb, err := types.TimestampFromProto(licenseProto.GetRestrictions().GetNotValidBefore())
+	if err != nil {
+		return nil, errors.Wrap(err, "could not convert NotValidBefore timestamp")
+	}
+
+	nva, err := types.TimestampFromProto(licenseProto.GetRestrictions().GetNotValidAfter())
+	if err != nil {
+		return nil, errors.Wrap(err, "could not convert NotValidAfter timestamp")
+	}
+
+	return &licenseData{
+		licenseProto:   licenseProto,
+		notValidBefore: nvb,
+		notValidAfter:  nva,
+		licenseKey:     licenseKey,
+	}, nil
+}
+
+func (m *manager) checkLicenseIsUsable(license *licenseData) error {
+	// First check time-independent constraints. We do not want to say "not yet valid" for a license that won't
+	// be usable anyway.
+	if err := m.checkConstraints(license.licenseProto.GetRestrictions()); err != nil {
+		return err
+	}
+
+	if time.Now().Before(license.notValidBefore) {
+		return notYetValidError(license.notValidBefore)
+	}
+
+	if time.Now().After(license.notValidAfter) {
+		return expiredError(license.notValidAfter)
+	}
+	return nil
+}
+
+func (m *manager) checkConstraints(restr *v1.License_Restrictions) error {
+	// TODO: Enforce deployment environment
+	// TODO: Enforce online licenses
+	if !restr.GetNoBuildFlavorRestriction() {
+		if sliceutils.StringFind(restr.GetBuildFlavors(), buildinfo.BuildFlavor) == -1 {
+			return errors.Errorf("licenseData cannot be used with build flavor %s", buildinfo.BuildFlavor)
+		}
+	}
+	return nil
+}
+
+func (m *manager) SelectLicense(id string) (*v1.LicenseInfo, error) {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	license := m.licenses[id]
+	if license == nil {
+		return nil, errors.Errorf("invalid license ID %q", id)
+	}
+
+	newLicenseInfo, _, _ := m.makeLicenseActiveNoLock(license)
+	return newLicenseInfo, nil
+}

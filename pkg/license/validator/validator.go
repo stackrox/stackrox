@@ -14,3 +14,10 @@ type Validator interface {
 	// NOTE: THIS DOES NOT PERFORM ANY CHECKING OF TIMESTAMPS.
 	ValidateLicenseKey(licenseKey string) (*v1.License, error)
 }
+
+// New returns a new validator instance.
+func New() Validator {
+	return newValidator()
+}
+
+//go:generate mockgen-wrapper Validator

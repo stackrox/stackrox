@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+package storage;
+
+message StoredLicenseKey {
+    string license_key = 1;
+    string license_id  = 2;
+    bool selected      = 3;  // if there are multiple valid licenses, store which of those were selected.
+}

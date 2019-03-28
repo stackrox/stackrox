@@ -1,0 +1,508 @@
+package tests
+
+import (
+	"testing"
+	"time"
+
+	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/license/manager"
+	licenseMgrMocks "github.com/stackrox/rox/central/license/manager/mocks"
+	licenseStoreMocks "github.com/stackrox/rox/central/license/store/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
+	validatorMocks "github.com/stackrox/rox/pkg/license/validator/mocks"
+	"github.com/stackrox/rox/pkg/protoconv"
+	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stretchr/testify/suite"
+)
+
+type managerTestSuite struct {
+	suite.Suite
+
+	mockCtrl      *gomock.Controller
+	mockStore     *licenseStoreMocks.MockStore
+	mockValidator *validatorMocks.MockValidator
+	mockListener  *licenseMgrMocks.MockLicenseEventListener
+
+	mgr manager.LicenseManager
+}
+
+func TestManager(t *testing.T) {
+	t.Parallel()
+	suite.Run(t, new(managerTestSuite))
+}
+
+func (s *managerTestSuite) SetupTest() {
+	s.mockCtrl = gomock.NewController(s.T())
+	s.mockStore = licenseStoreMocks.NewMockStore(s.mockCtrl)
+	s.mockValidator = validatorMocks.NewMockValidator(s.mockCtrl)
+	s.mockListener = licenseMgrMocks.NewMockLicenseEventListener(s.mockCtrl)
+
+	s.mgr = manager.New(s.mockStore, s.mockValidator)
+}
+
+func (s *managerTestSuite) TearDownTest() {
+	s.True(concurrency.WaitWithTimeout(s.mgr.Stop(), time.Second))
+	s.mockCtrl.Finish()
+}
+
+func (s *managerTestSuite) TestInitializeEmpty() {
+	s.mockStore.EXPECT().ListLicenseKeys().Return(nil, nil)
+	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	s.Nil(activeLicense)
+	s.NoError(err)
+}
+
+func (s *managerTestSuite) TestInitializeWithValidAndSelected() {
+	s.mockStore.EXPECT().ListLicenseKeys().Return([]*storage.StoredLicenseKey{
+		{
+			LicenseKey: "KEY1",
+			LicenseId:  "license1",
+			Selected:   false,
+		},
+		{
+			LicenseKey: "KEY2",
+			LicenseId:  "license2",
+			Selected:   true,
+		},
+	}, nil)
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&v1.License{
+		Metadata: &v1.License_Metadata{
+			Id: "license1",
+		},
+		Restrictions: &v1.License_Restrictions{
+			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now()),
+			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(10 * time.Second)),
+			AllowOffline:                       true,
+			NoNodeRestriction:                  true,
+			NoBuildFlavorRestriction:           true,
+			NoDeploymentEnvironmentRestriction: true,
+		},
+	}, nil)
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&v1.License{
+		Metadata: &v1.License_Metadata{
+			Id: "license2",
+		},
+		Restrictions: &v1.License_Restrictions{
+			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now()),
+			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(10 * time.Second)),
+			AllowOffline:                       true,
+			NoNodeRestriction:                  true,
+			NoBuildFlavorRestriction:           true,
+			NoDeploymentEnvironmentRestriction: true,
+		},
+	}, nil)
+
+	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	s.NoError(err)
+
+	s.Equal("license2", activeLicense.GetMetadata().GetId())
+}
+
+func (s *managerTestSuite) TestInitializeWithInvalidSelected() {
+	s.mockStore.EXPECT().ListLicenseKeys().Return([]*storage.StoredLicenseKey{
+		{
+			LicenseKey: "KEY1",
+			LicenseId:  "license1",
+			Selected:   true,
+		},
+		{
+			LicenseKey: "KEY2",
+			LicenseId:  "license2",
+			Selected:   false,
+		},
+	}, nil)
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&v1.License{
+		Metadata: &v1.License_Metadata{
+			Id: "license1",
+		},
+		Restrictions: &v1.License_Restrictions{
+			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now().Add(-20 * time.Second)),
+			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(-10 * time.Second)),
+			AllowOffline:                       true,
+			NoNodeRestriction:                  true,
+			NoBuildFlavorRestriction:           true,
+			NoDeploymentEnvironmentRestriction: true,
+		},
+	}, nil)
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&v1.License{
+		Metadata: &v1.License_Metadata{
+			Id: "license2",
+		},
+		Restrictions: &v1.License_Restrictions{
+			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now()),
+			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(10 * time.Second)),
+			AllowOffline:                       true,
+			NoNodeRestriction:                  true,
+			NoBuildFlavorRestriction:           true,
+			NoDeploymentEnvironmentRestriction: true,
+		},
+	}, nil)
+
+	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	s.NoError(err)
+
+	s.Equal("license2", activeLicense.GetMetadata().GetId())
+}
+
+func (s *managerTestSuite) TestInitializeWithNoneSelected() {
+	s.mockStore.EXPECT().ListLicenseKeys().Return([]*storage.StoredLicenseKey{
+		{
+			LicenseKey: "KEY1",
+			LicenseId:  "license1",
+			Selected:   false,
+		},
+		{
+			LicenseKey: "KEY2",
+			LicenseId:  "license2",
+			Selected:   false,
+		},
+	}, nil)
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&v1.License{
+		Metadata: &v1.License_Metadata{
+			Id: "license1",
+		},
+		Restrictions: &v1.License_Restrictions{
+			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now()),
+			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(10 * time.Second)),
+			AllowOffline:                       true,
+			NoNodeRestriction:                  true,
+			NoBuildFlavorRestriction:           true,
+			NoDeploymentEnvironmentRestriction: true,
+		},
+	}, nil)
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&v1.License{
+		Metadata: &v1.License_Metadata{
+			Id: "license2",
+		},
+		Restrictions: &v1.License_Restrictions{
+			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now()),
+			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(20 * time.Second)),
+			AllowOffline:                       true,
+			NoNodeRestriction:                  true,
+			NoBuildFlavorRestriction:           true,
+			NoDeploymentEnvironmentRestriction: true,
+		},
+	}, nil)
+
+	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	s.NoError(err)
+
+	s.Equal("license2", activeLicense.GetMetadata().GetId())
+}
+
+func (s *managerTestSuite) TestLicenseSwitchOnExpiration() {
+	s.mockStore.EXPECT().ListLicenseKeys().Return([]*storage.StoredLicenseKey{
+		{
+			LicenseKey: "KEY1",
+			LicenseId:  "license1",
+			Selected:   true,
+		},
+		{
+			LicenseKey: "KEY2",
+			LicenseId:  "license2",
+			Selected:   false,
+		},
+	}, nil)
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&v1.License{
+		Metadata: &v1.License_Metadata{
+			Id: "license1",
+		},
+		Restrictions: &v1.License_Restrictions{
+			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now()),
+			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(1 * time.Second)),
+			AllowOffline:                       true,
+			NoNodeRestriction:                  true,
+			NoBuildFlavorRestriction:           true,
+			NoDeploymentEnvironmentRestriction: true,
+		},
+	}, nil)
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&v1.License{
+		Metadata: &v1.License_Metadata{
+			Id: "license2",
+		},
+		Restrictions: &v1.License_Restrictions{
+			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now()),
+			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(20 * time.Second)),
+			AllowOffline:                       true,
+			NoNodeRestriction:                  true,
+			NoBuildFlavorRestriction:           true,
+			NoDeploymentEnvironmentRestriction: true,
+		},
+	}, nil)
+
+	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	s.NoError(err)
+
+	s.Equal("license1", activeLicense.GetMetadata().GetId())
+
+	s.mockListener.EXPECT().OnActiveLicenseChanged(
+		testutils.PredMatcher("new license is license 2 and valid", func(l *v1.LicenseInfo) bool {
+			if l.GetLicense().GetMetadata().GetId() != "license2" {
+				return false
+			}
+			return l.GetStatus() == v1.LicenseInfo_VALID
+		}),
+		testutils.PredMatcher("old license is license 1 and expired", func(l *v1.LicenseInfo) bool {
+			if l.GetLicense().GetMetadata().GetId() != "license1" {
+				return false
+			}
+			return l.GetStatus() == v1.LicenseInfo_EXPIRED
+		}))
+	time.Sleep(2 * time.Second)
+
+	newActiveLicense := s.mgr.GetActiveLicense()
+	s.Equal("license2", newActiveLicense.GetMetadata().GetId())
+}
+
+func (s *managerTestSuite) TestLicenseSwitchOffOnExpiration() {
+	s.mockStore.EXPECT().ListLicenseKeys().Return([]*storage.StoredLicenseKey{
+		{
+			LicenseKey: "KEY1",
+			LicenseId:  "license1",
+			Selected:   true,
+		},
+		{
+			LicenseKey: "KEY2",
+			LicenseId:  "license2",
+			Selected:   false,
+		},
+	}, nil)
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&v1.License{
+		Metadata: &v1.License_Metadata{
+			Id: "license1",
+		},
+		Restrictions: &v1.License_Restrictions{
+			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now()),
+			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(1 * time.Second)),
+			AllowOffline:                       true,
+			NoNodeRestriction:                  true,
+			NoBuildFlavorRestriction:           true,
+			NoDeploymentEnvironmentRestriction: true,
+		},
+	}, nil)
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&v1.License{
+		Metadata: &v1.License_Metadata{
+			Id: "license2",
+		},
+		Restrictions: &v1.License_Restrictions{
+			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now()),
+			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(20 * time.Second)),
+			AllowOffline:                       true,
+			NoNodeRestriction:                  true,
+			NoBuildFlavorRestriction:           false,
+			BuildFlavors:                       []string{"some-really-weird-build-flavor"},
+			NoDeploymentEnvironmentRestriction: true,
+		},
+	}, nil)
+
+	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	s.NoError(err)
+
+	s.Equal("license1", activeLicense.GetMetadata().GetId())
+
+	s.mockListener.EXPECT().OnActiveLicenseChanged(
+		nil,
+		testutils.PredMatcher("old license is license 1 and expired", func(l *v1.LicenseInfo) bool {
+			if l.GetLicense().GetMetadata().GetId() != "license1" {
+				return false
+			}
+			return l.GetStatus() == v1.LicenseInfo_EXPIRED
+		}))
+	time.Sleep(2 * time.Second)
+
+	newActiveLicense := s.mgr.GetActiveLicense()
+	s.Nil(newActiveLicense)
+}
+
+func (s *managerTestSuite) TestLicenseActivatedWhenValid() {
+	s.mockStore.EXPECT().ListLicenseKeys().Return([]*storage.StoredLicenseKey{
+		{
+			LicenseKey: "KEY1",
+			LicenseId:  "license1",
+			Selected:   false,
+		},
+	}, nil)
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&v1.License{
+		Metadata: &v1.License_Metadata{
+			Id: "license1",
+		},
+		Restrictions: &v1.License_Restrictions{
+			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now().Add(1 * time.Second)),
+			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(10 * time.Second)),
+			AllowOffline:                       true,
+			NoNodeRestriction:                  true,
+			NoBuildFlavorRestriction:           true,
+			NoDeploymentEnvironmentRestriction: true,
+		},
+	}, nil)
+
+	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	s.NoError(err)
+	s.Nil(activeLicense)
+
+	s.mockListener.EXPECT().OnActiveLicenseChanged(
+		testutils.PredMatcher("new license is license 1 and is valid", func(l *v1.LicenseInfo) bool {
+			if l.GetLicense().GetMetadata().GetId() != "license1" {
+				return false
+			}
+			return l.GetStatus() == v1.LicenseInfo_VALID
+		}),
+		nil)
+	time.Sleep(2 * time.Second)
+
+	newActiveLicense := s.mgr.GetActiveLicense()
+	s.Equal("license1", newActiveLicense.GetMetadata().GetId())
+}
+
+func (s *managerTestSuite) TestLicenseActivatedWhenValidAdded() {
+	s.mockStore.EXPECT().ListLicenseKeys().Return(nil, nil)
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&v1.License{
+		Metadata: &v1.License_Metadata{
+			Id: "license1",
+		},
+		Restrictions: &v1.License_Restrictions{
+			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now().Add(-1 * time.Second)),
+			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(10 * time.Second)),
+			AllowOffline:                       true,
+			NoNodeRestriction:                  true,
+			NoBuildFlavorRestriction:           true,
+			NoDeploymentEnvironmentRestriction: true,
+		},
+	}, nil)
+
+	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	s.NoError(err)
+	s.Nil(activeLicense)
+
+	s.mockListener.EXPECT().OnActiveLicenseChanged(
+		testutils.PredMatcher("new license is license 1 and is valid", func(l *v1.LicenseInfo) bool {
+			if l.GetLicense().GetMetadata().GetId() != "license1" {
+				return false
+			}
+			return l.GetStatus() == v1.LicenseInfo_VALID
+		}),
+		nil)
+
+	addedLicense, err := s.mgr.AddLicenseKey("KEY1")
+	s.Require().NoError(err)
+
+	s.Equal("license1", addedLicense.GetLicense().GetMetadata().GetId())
+	s.Equal(v1.LicenseInfo_VALID, addedLicense.GetStatus())
+
+	newActiveLicense := s.mgr.GetActiveLicense()
+	s.Equal(addedLicense.GetLicense(), newActiveLicense)
+}
+
+func (s *managerTestSuite) TestLicenseActivatedAfterAdded() {
+	s.mockStore.EXPECT().ListLicenseKeys().Return(nil, nil)
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&v1.License{
+		Metadata: &v1.License_Metadata{
+			Id: "license1",
+		},
+		Restrictions: &v1.License_Restrictions{
+			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now().Add(1 * time.Second)),
+			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(10 * time.Second)),
+			AllowOffline:                       true,
+			NoNodeRestriction:                  true,
+			NoBuildFlavorRestriction:           true,
+			NoDeploymentEnvironmentRestriction: true,
+		},
+	}, nil)
+
+	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	s.NoError(err)
+	s.Nil(activeLicense)
+
+	addedLicense, err := s.mgr.AddLicenseKey("KEY1")
+	s.Require().NoError(err)
+
+	s.Equal("license1", addedLicense.GetLicense().GetMetadata().GetId())
+	s.Equal(v1.LicenseInfo_NOT_YET_VALID, addedLicense.GetStatus())
+
+	newActiveLicense := s.mgr.GetActiveLicense()
+	s.Nil(newActiveLicense)
+
+	s.mockListener.EXPECT().OnActiveLicenseChanged(
+		testutils.PredMatcher("new license is license 1 and is valid", func(l *v1.LicenseInfo) bool {
+			if l.GetLicense().GetMetadata().GetId() != "license1" {
+				return false
+			}
+			return l.GetStatus() == v1.LicenseInfo_VALID
+		}),
+		nil)
+
+	time.Sleep(1500 * time.Millisecond)
+
+	newActiveLicense = s.mgr.GetActiveLicense()
+	s.Equal("license1", newActiveLicense.GetMetadata().GetId())
+}
+
+func (s *managerTestSuite) TestLicenseExpiredAfterAdded() {
+	s.mockStore.EXPECT().ListLicenseKeys().Return(nil, nil)
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&v1.License{
+		Metadata: &v1.License_Metadata{
+			Id: "license1",
+		},
+		Restrictions: &v1.License_Restrictions{
+			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now().Add(-10 * time.Second)),
+			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(1 * time.Second)),
+			AllowOffline:                       true,
+			NoNodeRestriction:                  true,
+			NoBuildFlavorRestriction:           true,
+			NoDeploymentEnvironmentRestriction: true,
+		},
+	}, nil)
+
+	activeLicense, err := s.mgr.Initialize(s.mockListener)
+	s.NoError(err)
+	s.Nil(activeLicense)
+
+	s.mockListener.EXPECT().OnActiveLicenseChanged(
+		testutils.PredMatcher("new license is license 1 and is valid", func(l *v1.LicenseInfo) bool {
+			if l.GetLicense().GetMetadata().GetId() != "license1" {
+				return false
+			}
+			return l.GetStatus() == v1.LicenseInfo_VALID
+		}),
+		nil)
+
+	addedLicense, err := s.mgr.AddLicenseKey("KEY1")
+	s.Require().NoError(err)
+
+	s.Equal("license1", addedLicense.GetLicense().GetMetadata().GetId())
+	s.Equal(v1.LicenseInfo_VALID, addedLicense.GetStatus())
+	s.True(addedLicense.GetActive())
+
+	newActiveLicense := s.mgr.GetActiveLicense()
+	s.Equal(addedLicense.GetLicense(), newActiveLicense)
+
+	s.mockListener.EXPECT().OnActiveLicenseChanged(
+		nil,
+		testutils.PredMatcher("old license is license 1 and is expired", func(l *v1.LicenseInfo) bool {
+			if l.GetLicense().GetMetadata().GetId() != "license1" {
+				return false
+			}
+			return l.GetStatus() == v1.LicenseInfo_EXPIRED
+		}))
+
+	time.Sleep(1500 * time.Millisecond)
+
+	newActiveLicense = s.mgr.GetActiveLicense()
+	s.Nil(newActiveLicense)
+}
