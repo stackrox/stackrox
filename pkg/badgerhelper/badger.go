@@ -33,6 +33,7 @@ func New(path string) (*badger.DB, error) {
 	options.ValueDir = path
 	options.Dir = path
 	options.Logger = nullLogger{}
+	options.Truncate = true
 
 	return badger.Open(options)
 }

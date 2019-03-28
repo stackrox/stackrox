@@ -31,6 +31,7 @@ func New(path string) (*badger.DB, error) {
 	options := badger.DefaultOptions
 	options.ValueDir = path
 	options.Dir = path
+	options.Truncate = true
 
 	return badger.Open(options)
 }
