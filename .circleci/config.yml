@@ -737,6 +737,7 @@ jobs:
             export CLUSTER=K8S
             export HOSTNAME="${API_HOSTNAME}"
             export PORT="${API_PORT}"
+            ./scripts/ci/create-webhookserver.sh kubectl
             if [ "${CIRCLE_BRANCH}" = "master" ]; then
               echo "On master, running all QA tests..."
               make -C qa-tests-backend test
