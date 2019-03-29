@@ -33,6 +33,7 @@ func (k *kubernetes) Render(c Wrap, ca []byte) ([]*zip.File, error) {
 		"kubernetes/kubectl/sensor.sh",
 		"kubernetes/kubectl/sensor.yaml",
 		"kubernetes/kubectl/sensor-rbac.yaml",
+		"kubernetes/kubectl/sensor-netpol.yaml",
 		"kubernetes/kubectl/delete-sensor.sh",
 	}
 

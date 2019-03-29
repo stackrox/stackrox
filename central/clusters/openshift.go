@@ -25,6 +25,7 @@ func (o *openshift) Render(c Wrap, _ []byte) ([]*zip.File, error) {
 
 	filenames := []string{
 		"kubernetes/kubectl/sensor.yaml",
+		"kubernetes/kubectl/sensor-netpol.yaml",
 		"openshift/kubectl/sensor.sh",
 		"openshift/kubectl/sensor-image-setup.sh",
 		"openshift/kubectl/sensor-rbac.yaml",

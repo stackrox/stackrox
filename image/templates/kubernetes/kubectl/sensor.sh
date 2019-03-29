@@ -56,6 +56,8 @@ function print_rbac_instructions {
 
 echo "Creating RBAC roles..."
 kubectl apply -f "$DIR/sensor-rbac.yaml" || print_rbac_instructions
+echo "Creating network policies..."
+kubectl apply -f "$DIR/sensor-netpol.yaml" || exit 1
 
 {{if .AdmissionController}}
 kubectl apply -f "$DIR/admission-controller.yaml"

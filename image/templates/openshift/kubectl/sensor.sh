@@ -5,6 +5,7 @@ oc get project "stackrox" || oc new-project "stackrox"
 oc project "stackrox"
 
 oc apply -f "$DIR/sensor-rbac.yaml"
+oc apply -f "$DIR/sensor-netpol.yaml"
 
 # OpenShift roles can be delayed to be added
 sleep 5

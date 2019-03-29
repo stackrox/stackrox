@@ -1,0 +1,49 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sensor
+  namespace: stackrox
+spec:
+  ingress:
+  - from:
+      - podSelector:
+          matchLabels:
+            app: collector
+      - podSelector:
+          matchLabels:
+            service: collector
+      - podSelector:
+          matchLabels:
+            "com.stackrox.io/service": "compliance"
+    ports:
+    - port: 443
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: sensor
+  policyTypes:
+    - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: collector-no-ingress
+  namespace: stackrox
+spec:
+  podSelector:
+    matchLabels:
+      app: collector
+  policyTypes:
+    - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: compliance-no-ingress
+  namespace: stackrox
+spec:
+  podSelector:
+    matchLabels:
+      "com.stackrox.io/service": "compliance"
+  policyTypes:
+    - Ingress

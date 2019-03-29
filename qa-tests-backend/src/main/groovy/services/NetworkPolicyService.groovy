@@ -4,6 +4,7 @@ import io.grpc.StatusRuntimeException
 import io.stackrox.proto.api.v1.Common.ResourceByID
 import io.stackrox.proto.api.v1.NetworkPolicyServiceGrpc
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GetNetworkPoliciesRequest
+import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.GetNetworkGraphRequest
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.SimulateNetworkGraphRequest
 import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyModification
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass.SendNetworkPolicyYamlRequest
@@ -14,6 +15,20 @@ class NetworkPolicyService extends BaseService {
 
     static getNetworkPolicyClient() {
         return NetworkPolicyServiceGrpc.newBlockingStub(getChannel())
+    }
+
+    static getNetworkPolicyGraph(String query = null) {
+        try {
+            GetNetworkGraphRequest.Builder request =
+                    GetNetworkGraphRequest.newBuilder()
+                            .setClusterId(ClusterService.getClusterId())
+            if (query != null) {
+                request.setQuery(query)
+            }
+            return getNetworkPolicyClient().getNetworkGraph(request.build())
+        } catch (Exception e) {
+            println "Exception fetching network policy graph: ${e.toString()}"
+        }
     }
 
     static List<NetworkPolicy> getNetworkPolicies() {

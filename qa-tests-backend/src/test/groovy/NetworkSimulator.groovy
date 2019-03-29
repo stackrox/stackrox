@@ -4,7 +4,6 @@ import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import org.junit.experimental.categories.Category
-import services.NetworkGraphService
 import services.NetworkPolicyService
 import spock.lang.Unroll
 import util.NetworkGraphUtil
@@ -60,7 +59,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addPolicyType(NetworkPolicyTypes.INGRESS)
         def policyId = orchestrator.applyNetworkPolicy(policy)
         assert NetworkPolicyService.waitForNetworkPolicy(policyId)
-        def baseline = NetworkGraphService.getNetworkGraph()
+        def baseline = NetworkPolicyService.getNetworkPolicyGraph()
 
         and:
         "generate simulation"
@@ -81,16 +80,21 @@ class NetworkSimulator extends BaseSpecification {
         // Verify no change to added nodes
         assert simulation.added.nodeDiffsCount == 0
 
-        // Verify all edges from nodes inside of 'qa' to nodes outside of 'qa' that are ingress isolated are removed
-        def nonQANodes = simulation.simulatedGraph.nodesList.findAll {
-            it.namespace != "qa" && !it.nonIsolatedIngress
-        }.size()
+        def nonQAOutEdges = baseline.nodesList.collectEntries {
+            if (it.namespace != "qa" || !it.deploymentId) {
+                return Collections.emptyMap()
+            }
+            return [it.deploymentId, it.outEdgesMap.keySet().count {
+                baseline.nodesList.get(it).namespace != "qa"
+            },]
+        }
+
         simulation.removed.nodeDiffsMap.each {
             def node = simulation.simulatedGraph.nodesList.get(it.key)
 
             assert node.namespace == "qa"
             assert it.value.policyIdsCount == 0
-            assert it.value.outEdgesMap.size() == nonQANodes
+            assert it.value.outEdgesMap.size() == nonQAOutEdges.get(node.deploymentId)
             assert it.value.getNonIsolatedEgress()
         }
 
@@ -112,7 +116,7 @@ class NetworkSimulator extends BaseSpecification {
                 .addPolicyType(NetworkPolicyTypes.EGRESS)
         def policyId = orchestrator.applyNetworkPolicy(policy1)
         assert NetworkPolicyService.waitForNetworkPolicy(policyId)
-        def baseline = NetworkGraphService.getNetworkGraph()
+        def baseline = NetworkPolicyService.getNetworkPolicyGraph()
 
         and:
         "generate simulation"
@@ -388,7 +392,7 @@ class NetworkSimulator extends BaseSpecification {
     def "Verify NetworkPolicy Simulator results"() {
         when:
         "Get Base Graph"
-        def baseline = NetworkGraphService.getNetworkGraph()
+        def baseline = NetworkPolicyService.getNetworkPolicyGraph()
         def appId = baseline.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
 
         then:
