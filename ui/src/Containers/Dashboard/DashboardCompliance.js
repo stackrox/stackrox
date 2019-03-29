@@ -76,9 +76,9 @@ class DashboardCompliance extends Component {
                 backgroundColor: standardsResultsMap[result]
             };
             return (
-                <div className="flex items-center" key={result}>
+                <div className="flex items-center mb-2" key={result}>
                     <div className="h-1 w-8 mr-4" style={backgroundStyle} />
-                    <div className="text-sm text-primary-800 tracking-wide capitalize mr-4">
+                    <div className="text-sm text-primary-800 tracking-wide capitalize">
                         {result}
                     </div>
                 </div>
@@ -88,25 +88,16 @@ class DashboardCompliance extends Component {
     renderScanButton = () => {
         const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.DASHBOARD, {});
         return (
-            <div className="h-full">
-                <h2 className="bg-base-100 inline-block leading-normal px-3 h-10 flex items-center pl-6 pr-4 rounded-r-full text-base-600 text-lg text-primary-800 tracking-wide tracking-widest uppercase">
-                    <Link className="text-base-600 hover:text-primary-600" to="/main/compliance">
-                        Compliance
-                    </Link>
-                </h2>
-                <div className="flex flex-col text-center font-700 items-center px-6">
-                    <div className="flex flex-col p-4">
-                        <span className="mb-4">
-                            No Standard results available. Run a scan on the Compliance page.
-                        </span>
-                        <Link
-                            to={link.url}
-                            className="no-underline self-center bg-primary-600 px-5 py-3 text-base-100 font-600 rounded-sm uppercase text-sm hover:bg-primary-700"
-                        >
-                            Go to Compliance
-                        </Link>
-                    </div>
-                </div>
+            <div className="flex flex-col items-center justify-center p-4 w-full">
+                <span className="mb-4">
+                    No Standard results available. Run a scan on the Compliance page.
+                </span>
+                <Link
+                    to={link.url}
+                    className="no-underline self-center bg-primary-600 px-5 py-3 text-base-100 font-600 rounded-sm uppercase text-sm hover:bg-primary-700"
+                >
+                    Go to Compliance
+                </Link>
             </div>
         );
     };
@@ -123,21 +114,15 @@ class DashboardCompliance extends Component {
                 {({ loading, data }) => {
                     if (loading) return <Loader />;
                     const results = this.processData(data);
-                    if (!results.length) return <div>{this.renderScanButton()}</div>;
+                    if (!results.length) return this.renderScanButton();
                     return (
-                        <div>
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="bg-base-100 inline-block leading-normal px-3 h-10 flex items-center pl-6 pr-4 rounded-r-full text-base-600 text-lg text-primary-800 tracking-wide tracking-widest uppercase">
-                                    <Link
-                                        className="text-base-600 hover:text-primary-600"
-                                        to="/main/compliance"
-                                    >
-                                        Compliance
-                                    </Link>
-                                </h2>
-                                <div className="flex mr-2">{this.renderLegend()}</div>
+                        <div className="flex w-full">
+                            <div className="pr-6 flex flex-1 flex-col">
+                                {this.renderStandardsData(results)}
                             </div>
-                            <div className="pt-4 px-6">{this.renderStandardsData(results)}</div>
+                            <div className="flex items-start">
+                                <div className="flex flex-col">{this.renderLegend()}</div>
+                            </div>
                         </div>
                     );
                 }}
