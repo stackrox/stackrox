@@ -19,4 +19,7 @@ var (
 
 	// K8sRBAC is used to enable k8s rbac collection and processing
 	K8sRBAC = registerFeature("Enable k8s RBAC objects collection and processing", "ROX_K8S_RBAC", false)
+
+	// CentralTLSSecretLoader will read secrets from the orchestrator to configure TLS.
+	CentralTLSSecretLoader = registerFeature("Enable Central TLS secret loading from orchestrator", "ROX_CENTRAL_TLS", false)
 )
