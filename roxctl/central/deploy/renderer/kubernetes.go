@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image"
@@ -68,7 +69,11 @@ func (k *kubernetes) Render(c Config) ([]*zip.File, error) {
 		return nil, err
 	}
 	injectImageTags(&c)
-	c.K8sConfig.Monitoring.Image = generateMonitoringImage(c.K8sConfig.MainImage)
+	monitoringImage, err := generateMonitoringImage(c.K8sConfig.MainImage, c.K8sConfig.MonitoringImage)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error parsing monitoring image: ")
+	}
+	c.K8sConfig.Monitoring.Image = monitoringImage
 	c.K8sConfig.Monitoring.Endpoint = netutil.WithDefaultPort(c.K8sConfig.Monitoring.Endpoint, defaultMonitoringPort)
 
 	var renderedFiles []*zip.File

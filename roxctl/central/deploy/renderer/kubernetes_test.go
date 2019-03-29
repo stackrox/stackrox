@@ -107,9 +107,12 @@ func (suite *renderSuite) TestRenderMultiple() {
 }
 
 func (suite *renderSuite) testWithMonitoring(t *testing.T, c Config) {
+	_, err := suite.Render(c)
+	suite.Empty(c.K8sConfig.Monitoring.Endpoint)
+
 	c.K8sConfig.Monitoring.Type = OnPrem
 	c.K8sConfig.Monitoring.Endpoint = "monitoring.stackrox:443"
-	_, err := suite.Render(c)
+	_, err = suite.Render(c)
 	suite.NoError(err)
 
 	c.K8sConfig.Monitoring.LoadBalancerType = v1.LoadBalancerType_NODE_PORT
@@ -119,4 +122,14 @@ func (suite *renderSuite) testWithMonitoring(t *testing.T, c Config) {
 	c.K8sConfig.Monitoring.LoadBalancerType = v1.LoadBalancerType_LOAD_BALANCER
 	_, err = suite.Render(c)
 	suite.NoError(err)
+
+	alternateImage := "some.other.repo/monitoring"
+	c.K8sConfig.MonitoringImage = alternateImage
+	_, err = suite.Render(c)
+	suite.NoError(err)
+	suite.Equal(alternateImage, c.K8sConfig.Monitoring.Image)
+
+	c.K8sConfig.MonitoringImage = "not a valid image"
+	_, err = suite.Render(c)
+	suite.Error(err)
 }

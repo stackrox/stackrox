@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/docker/distribution/reference"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image"
@@ -55,8 +56,9 @@ func (h *HostPathPersistence) WithNodeSelector() bool {
 // Image is an example as it can be parameterized per orchestrator with different defaults so it cannot be placed
 // at the top level
 type CommonConfig struct {
-	MainImage    string
-	ScannerImage string
+	MainImage       string
+	ScannerImage    string
+	MonitoringImage string
 }
 
 // MonitoringType is the enum for the place monitoring is hosted
@@ -204,14 +206,21 @@ func executeTemplate(temp *template.Template, c *Config) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func generateMonitoringImage(mainImage string) string {
+func generateMonitoringImage(mainImage string, monitoringImage string) (string, error) {
+	if monitoringImage != "" {
+		_, err := reference.ParseAnyReference(monitoringImage)
+		if err != nil {
+			return "", err
+		}
+		return monitoringImage, nil
+	}
 	img := types.Wrapper{Image: utils.GenerateImageFromStringIgnoringError(mainImage)}
 	remote := img.Namespace() + "/monitoring"
 	// This handles the case where there is no namespace. e.g. stackrox.io/collector:latest
 	if img.Repo() == "" {
 		remote = "monitoring"
 	}
-	return fmt.Sprintf("%s/%s:%s", img.GetName().GetRegistry(), remote, img.GetName().GetTag())
+	return fmt.Sprintf("%s/%s:%s", img.GetName().GetRegistry(), remote, img.GetName().GetTag()), nil
 }
 
 func wrapFiles(files []*zip.File, c *Config) ([]*zip.File, error) {
