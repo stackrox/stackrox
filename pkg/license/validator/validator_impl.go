@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	licensePkg "github.com/stackrox/rox/pkg/license"
 	"github.com/stackrox/rox/pkg/sync"
@@ -62,7 +62,7 @@ func (v *validator) getSigningKey(keyID string) *signingKey {
 	return v.verifiersByKeyID[keyID]
 }
 
-func (v *validator) ValidateLicenseKey(licenseKey string) (*v1.License, error) {
+func (v *validator) ValidateLicenseKey(licenseKey string) (*licenseproto.License, error) {
 	licenseBytes, sig, err := licensePkg.ParseLicenseKey(licenseKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing license key")

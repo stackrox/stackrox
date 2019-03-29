@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	license "github.com/stackrox/rox/generated/shared/license"
 	validator "github.com/stackrox/rox/pkg/license/validator"
 	reflect "reflect"
 )
@@ -47,9 +47,9 @@ func (mr *MockValidatorMockRecorder) RegisterSigningKey(arg0, arg1, arg2, arg3 i
 }
 
 // ValidateLicenseKey mocks base method
-func (m *MockValidator) ValidateLicenseKey(arg0 string) (*v1.License, error) {
+func (m *MockValidator) ValidateLicenseKey(arg0 string) (*license.License, error) {
 	ret := m.ctrl.Call(m, "ValidateLicenseKey", arg0)
-	ret0, _ := ret[0].(*v1.License)
+	ret0, _ := ret[0].(*license.License)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

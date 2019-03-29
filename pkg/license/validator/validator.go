@@ -1,6 +1,6 @@
 package validator
 
-import v1 "github.com/stackrox/rox/generated/api/v1"
+import licenseproto "github.com/stackrox/rox/generated/shared/license"
 
 // Validator encapsulates the logic for validating license keys, verifying their signatures against a set of registered
 // signing keys.
@@ -12,7 +12,7 @@ type Validator interface {
 	// ValidateLicenseKey checks that the given license key is parseable, well-formed, and has a valid signature (including
 	// that it complies with the restrictions for the signing key).
 	// NOTE: THIS DOES NOT PERFORM ANY CHECKING OF TIMESTAMPS.
-	ValidateLicenseKey(licenseKey string) (*v1.License, error)
+	ValidateLicenseKey(licenseKey string) (*licenseproto.License, error)
 }
 
 // New returns a new validator instance.

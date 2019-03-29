@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gogo/protobuf/types"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -19,7 +19,7 @@ func validateUUID(input string) error {
 	return nil
 }
 
-func checkMetadataIsWellFormed(md *v1.License_Metadata, errs *errorhelpers.ErrorList) {
+func checkMetadataIsWellFormed(md *licenseproto.License_Metadata, errs *errorhelpers.ErrorList) {
 	if err := validateUUID(md.GetId()); err != nil {
 		errs.AddStringf("invalid license ID: %v", err)
 	}
@@ -38,7 +38,7 @@ func checkMetadataIsWellFormed(md *v1.License_Metadata, errs *errorhelpers.Error
 	}
 }
 
-func checkRestrictionsAreWellFormed(restr *v1.License_Restrictions, errs *errorhelpers.ErrorList) {
+func checkRestrictionsAreWellFormed(restr *licenseproto.License_Restrictions, errs *errorhelpers.ErrorList) {
 	nvb, err := types.TimestampFromProto(restr.GetNotValidBefore())
 	if err != nil {
 		errs.AddStringf("invalid NotValidBefore: %v", err)
@@ -85,7 +85,7 @@ func checkRestrictionsAreWellFormed(restr *v1.License_Restrictions, errs *errorh
 
 // CheckLicenseIsWellFormed ensures that the given license is well-formed (i.e., all required fields are populated
 // with values that make sense).
-func CheckLicenseIsWellFormed(license *v1.License) error {
+func CheckLicenseIsWellFormed(license *licenseproto.License) error {
 	errs := errorhelpers.NewErrorList("validating license well-formedness")
 
 	if md := license.GetMetadata(); md == nil {

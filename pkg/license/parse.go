@@ -7,7 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	licenseproto "github.com/stackrox/rox/generated/shared/license"
 )
 
 // EncodeLicenseKey takes the bytes of a serialized license and the corresponding cryptographic signature, and
@@ -47,8 +47,8 @@ func ParseLicenseKey(key string) ([]byte, []byte, error) {
 
 // UnmarshalLicense takes a byte slice containing a serialized license proto and unmarshals it, failing if there are any
 // extra bytes.
-func UnmarshalLicense(licenseBytes []byte) (*v1.License, error) {
-	var license v1.License
+func UnmarshalLicense(licenseBytes []byte) (*licenseproto.License, error) {
+	var license licenseproto.License
 	if err := proto.Unmarshal(licenseBytes, &license); err != nil {
 		return nil, errors.Wrap(err, "could not unmarshal license")
 	}

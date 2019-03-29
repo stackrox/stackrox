@@ -5,7 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sliceutils"
 )
@@ -32,7 +32,7 @@ type SigningKeyRestrictions struct {
 }
 
 // Check checks that the given license restrictions are within the bounds set by the signing key restrictions.
-func (r *SigningKeyRestrictions) Check(licenseRestrictions *v1.License_Restrictions) error {
+func (r *SigningKeyRestrictions) Check(licenseRestrictions *licenseproto.License_Restrictions) error {
 	errs := errorhelpers.NewErrorList("checking restrictions of signing key")
 
 	notValidBefore, err := types.TimestampFromProto(licenseRestrictions.GetNotValidBefore())

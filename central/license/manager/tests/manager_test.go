@@ -9,6 +9,7 @@ import (
 	licenseMgrMocks "github.com/stackrox/rox/central/license/manager/mocks"
 	licenseStoreMocks "github.com/stackrox/rox/central/license/store/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	validatorMocks "github.com/stackrox/rox/pkg/license/validator/mocks"
@@ -68,11 +69,11 @@ func (s *managerTestSuite) TestInitializeWithValidAndSelected() {
 		},
 	}, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&v1.License{
-		Metadata: &v1.License_Metadata{
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&licenseproto.License{
+		Metadata: &licenseproto.License_Metadata{
 			Id: "license1",
 		},
-		Restrictions: &v1.License_Restrictions{
+		Restrictions: &licenseproto.License_Restrictions{
 			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now()),
 			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(10 * time.Second)),
 			AllowOffline:                       true,
@@ -82,11 +83,11 @@ func (s *managerTestSuite) TestInitializeWithValidAndSelected() {
 		},
 	}, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&v1.License{
-		Metadata: &v1.License_Metadata{
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&licenseproto.License{
+		Metadata: &licenseproto.License_Metadata{
 			Id: "license2",
 		},
-		Restrictions: &v1.License_Restrictions{
+		Restrictions: &licenseproto.License_Restrictions{
 			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now()),
 			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(10 * time.Second)),
 			AllowOffline:                       true,
@@ -116,11 +117,11 @@ func (s *managerTestSuite) TestInitializeWithInvalidSelected() {
 		},
 	}, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&v1.License{
-		Metadata: &v1.License_Metadata{
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&licenseproto.License{
+		Metadata: &licenseproto.License_Metadata{
 			Id: "license1",
 		},
-		Restrictions: &v1.License_Restrictions{
+		Restrictions: &licenseproto.License_Restrictions{
 			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now().Add(-20 * time.Second)),
 			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(-10 * time.Second)),
 			AllowOffline:                       true,
@@ -130,11 +131,11 @@ func (s *managerTestSuite) TestInitializeWithInvalidSelected() {
 		},
 	}, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&v1.License{
-		Metadata: &v1.License_Metadata{
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&licenseproto.License{
+		Metadata: &licenseproto.License_Metadata{
 			Id: "license2",
 		},
-		Restrictions: &v1.License_Restrictions{
+		Restrictions: &licenseproto.License_Restrictions{
 			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now()),
 			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(10 * time.Second)),
 			AllowOffline:                       true,
@@ -164,11 +165,11 @@ func (s *managerTestSuite) TestInitializeWithNoneSelected() {
 		},
 	}, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&v1.License{
-		Metadata: &v1.License_Metadata{
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&licenseproto.License{
+		Metadata: &licenseproto.License_Metadata{
 			Id: "license1",
 		},
-		Restrictions: &v1.License_Restrictions{
+		Restrictions: &licenseproto.License_Restrictions{
 			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now()),
 			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(10 * time.Second)),
 			AllowOffline:                       true,
@@ -178,11 +179,11 @@ func (s *managerTestSuite) TestInitializeWithNoneSelected() {
 		},
 	}, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&v1.License{
-		Metadata: &v1.License_Metadata{
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&licenseproto.License{
+		Metadata: &licenseproto.License_Metadata{
 			Id: "license2",
 		},
-		Restrictions: &v1.License_Restrictions{
+		Restrictions: &licenseproto.License_Restrictions{
 			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now()),
 			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(20 * time.Second)),
 			AllowOffline:                       true,
@@ -212,11 +213,11 @@ func (s *managerTestSuite) TestLicenseSwitchOnExpiration() {
 		},
 	}, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&v1.License{
-		Metadata: &v1.License_Metadata{
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&licenseproto.License{
+		Metadata: &licenseproto.License_Metadata{
 			Id: "license1",
 		},
-		Restrictions: &v1.License_Restrictions{
+		Restrictions: &licenseproto.License_Restrictions{
 			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now()),
 			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(1 * time.Second)),
 			AllowOffline:                       true,
@@ -226,11 +227,11 @@ func (s *managerTestSuite) TestLicenseSwitchOnExpiration() {
 		},
 	}, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&v1.License{
-		Metadata: &v1.License_Metadata{
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&licenseproto.License{
+		Metadata: &licenseproto.License_Metadata{
 			Id: "license2",
 		},
-		Restrictions: &v1.License_Restrictions{
+		Restrictions: &licenseproto.License_Restrictions{
 			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now()),
 			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(20 * time.Second)),
 			AllowOffline:                       true,
@@ -278,11 +279,11 @@ func (s *managerTestSuite) TestLicenseSwitchOffOnExpiration() {
 		},
 	}, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&v1.License{
-		Metadata: &v1.License_Metadata{
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&licenseproto.License{
+		Metadata: &licenseproto.License_Metadata{
 			Id: "license1",
 		},
-		Restrictions: &v1.License_Restrictions{
+		Restrictions: &licenseproto.License_Restrictions{
 			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now()),
 			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(1 * time.Second)),
 			AllowOffline:                       true,
@@ -292,11 +293,11 @@ func (s *managerTestSuite) TestLicenseSwitchOffOnExpiration() {
 		},
 	}, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&v1.License{
-		Metadata: &v1.License_Metadata{
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&licenseproto.License{
+		Metadata: &licenseproto.License_Metadata{
 			Id: "license2",
 		},
-		Restrictions: &v1.License_Restrictions{
+		Restrictions: &licenseproto.License_Restrictions{
 			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now()),
 			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(20 * time.Second)),
 			AllowOffline:                       true,
@@ -335,11 +336,11 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValid() {
 		},
 	}, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&v1.License{
-		Metadata: &v1.License_Metadata{
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&licenseproto.License{
+		Metadata: &licenseproto.License_Metadata{
 			Id: "license1",
 		},
-		Restrictions: &v1.License_Restrictions{
+		Restrictions: &licenseproto.License_Restrictions{
 			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now().Add(1 * time.Second)),
 			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(10 * time.Second)),
 			AllowOffline:                       true,
@@ -370,11 +371,11 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValid() {
 func (s *managerTestSuite) TestLicenseActivatedWhenValidAdded() {
 	s.mockStore.EXPECT().ListLicenseKeys().Return(nil, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&v1.License{
-		Metadata: &v1.License_Metadata{
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&licenseproto.License{
+		Metadata: &licenseproto.License_Metadata{
 			Id: "license1",
 		},
-		Restrictions: &v1.License_Restrictions{
+		Restrictions: &licenseproto.License_Restrictions{
 			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now().Add(-1 * time.Second)),
 			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(10 * time.Second)),
 			AllowOffline:                       true,
@@ -410,11 +411,11 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValidAdded() {
 func (s *managerTestSuite) TestLicenseActivatedAfterAdded() {
 	s.mockStore.EXPECT().ListLicenseKeys().Return(nil, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&v1.License{
-		Metadata: &v1.License_Metadata{
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&licenseproto.License{
+		Metadata: &licenseproto.License_Metadata{
 			Id: "license1",
 		},
-		Restrictions: &v1.License_Restrictions{
+		Restrictions: &licenseproto.License_Restrictions{
 			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now().Add(1 * time.Second)),
 			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(10 * time.Second)),
 			AllowOffline:                       true,
@@ -455,11 +456,11 @@ func (s *managerTestSuite) TestLicenseActivatedAfterAdded() {
 func (s *managerTestSuite) TestLicenseExpiredAfterAdded() {
 	s.mockStore.EXPECT().ListLicenseKeys().Return(nil, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&v1.License{
-		Metadata: &v1.License_Metadata{
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&licenseproto.License{
+		Metadata: &licenseproto.License_Metadata{
 			Id: "license1",
 		},
-		Restrictions: &v1.License_Restrictions{
+		Restrictions: &licenseproto.License_Restrictions{
 			NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now().Add(-10 * time.Second)),
 			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(1 * time.Second)),
 			AllowOffline:                       true,

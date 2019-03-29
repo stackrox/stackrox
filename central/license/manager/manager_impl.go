@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/license/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -23,12 +24,12 @@ var (
 )
 
 type licenseData struct {
-	licenseProto                  *v1.License
+	licenseProto                  *licenseproto.License
 	notValidBefore, notValidAfter time.Time
 	licenseKey                    string
 }
 
-func (d *licenseData) getLicenseProto() *v1.License {
+func (d *licenseData) getLicenseProto() *licenseproto.License {
 	if d == nil {
 		return nil
 	}
@@ -69,7 +70,7 @@ func (m *manager) interrupt() bool {
 	}
 }
 
-func (m *manager) Initialize(listener LicenseEventListener) (*v1.License, error) {
+func (m *manager) Initialize(listener LicenseEventListener) (*licenseproto.License, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -277,7 +278,7 @@ func (m *manager) makeLicenseActiveNoLock(newLicense *licenseData) (newLicenseIn
 	return
 }
 
-func (m *manager) GetActiveLicense() *v1.License {
+func (m *manager) GetActiveLicense() *licenseproto.License {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
@@ -371,7 +372,7 @@ func (m *manager) checkLicenseIsUsable(license *licenseData) error {
 	return nil
 }
 
-func (m *manager) checkConstraints(restr *v1.License_Restrictions) error {
+func (m *manager) checkConstraints(restr *licenseproto.License_Restrictions) error {
 	// TODO: Enforce deployment environment
 	// TODO: Enforce online licenses
 	if !restr.GetNoBuildFlavorRestriction() {

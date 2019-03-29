@@ -5,7 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -82,15 +82,15 @@ func TestParseLicenseKey_TooManyDots(t *testing.T) {
 func TestUnmarshalLicense_Valid(t *testing.T) {
 	t.Parallel()
 
-	lic := &v1.License{
-		Metadata: &v1.License_Metadata{
+	lic := &licenseproto.License{
+		Metadata: &licenseproto.License_Metadata{
 			Id:              uuid.NewV4().String(),
 			SigningKeyId:    "test/key/1",
 			IssueDate:       types.TimestampNow(),
 			LicensedForId:   "test",
 			LicensedForName: "Test",
 		},
-		Restrictions: &v1.License_Restrictions{
+		Restrictions: &licenseproto.License_Restrictions{
 			NotValidBefore: types.TimestampNow(),
 			NotValidAfter:  types.TimestampNow(),
 		},
@@ -107,15 +107,15 @@ func TestUnmarshalLicense_Valid(t *testing.T) {
 func TestUnmarshalLicense_ExtraBytes(t *testing.T) {
 	t.Parallel()
 
-	lic := &v1.License{
-		Metadata: &v1.License_Metadata{
+	lic := &licenseproto.License{
+		Metadata: &licenseproto.License_Metadata{
 			Id:              uuid.NewV4().String(),
 			SigningKeyId:    "test/key/1",
 			IssueDate:       types.TimestampNow(),
 			LicensedForId:   "test",
 			LicensedForName: "Test",
 		},
-		Restrictions: &v1.License_Restrictions{
+		Restrictions: &licenseproto.License_Restrictions{
 			NotValidBefore:   types.TimestampNow(),
 			NotValidAfter:    types.TimestampNow(),
 			XXX_unrecognized: []byte("some extra data"),

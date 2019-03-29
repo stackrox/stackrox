@@ -14,7 +14,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/license"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -30,7 +30,7 @@ const (
 type validatorTestSuite struct {
 	suite.Suite
 
-	license *v1.License
+	license *licenseproto.License
 
 	signer    cryptoutils.Signer
 	validator Validator
@@ -69,15 +69,15 @@ func (s *validatorTestSuite) SetupSuite() {
 }
 
 func (s *validatorTestSuite) SetupTest() {
-	s.license = &v1.License{
-		Metadata: &v1.License_Metadata{
+	s.license = &licenseproto.License{
+		Metadata: &licenseproto.License_Metadata{
 			Id:              uuid.NewV4().String(),
 			SigningKeyId:    testKeyID,
 			IssueDate:       types.TimestampNow(),
 			LicensedForId:   "test",
 			LicensedForName: "Test",
 		},
-		Restrictions: &v1.License_Restrictions{
+		Restrictions: &licenseproto.License_Restrictions{
 			NotValidBefore:                     types.TimestampNow(),
 			NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(24 * time.Hour)),
 			EnforcementUrl:                     "https://license-enforcement.stackrox.io/api/v1/validate",

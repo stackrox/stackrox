@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/suite"
 )
@@ -13,7 +13,7 @@ type signingKeyRestrictionsTestSuite struct {
 	suite.Suite
 
 	keyRestrictions     SigningKeyRestrictions
-	licenseRestrictions *v1.License_Restrictions
+	licenseRestrictions *licenseproto.License_Restrictions
 }
 
 func TestSigningKeyRestrictions(t *testing.T) {
@@ -32,7 +32,7 @@ func (s *signingKeyRestrictionsTestSuite) SetupTest() {
 		BuildFlavors:           []string{"development", "rc"},
 		DeploymentEnvironments: []string{"gcp/ultra-current-825", "gcp/stackrox-ci"},
 	}
-	s.licenseRestrictions = &v1.License_Restrictions{
+	s.licenseRestrictions = &licenseproto.License_Restrictions{
 		NotValidBefore:         protoconv.ConvertTimeToTimestamp(time.Date(2018, 5, 3, 0, 0, 0, 0, time.UTC)),
 		NotValidAfter:          protoconv.ConvertTimeToTimestamp(time.Date(2018, 5, 8, 23, 59, 59, 0, time.UTC)),
 		AllowOffline:           false,

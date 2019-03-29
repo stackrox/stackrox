@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/types"
-	v1 "github.com/stackrox/rox/generated/api/v1"
+	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -19,7 +19,7 @@ var (
 type wellFormednessTestSuite struct {
 	suite.Suite
 
-	license *v1.License
+	license *licenseproto.License
 }
 
 func TestCheckLicenseIsWellFormed(t *testing.T) {
@@ -28,15 +28,15 @@ func TestCheckLicenseIsWellFormed(t *testing.T) {
 }
 
 func (s *wellFormednessTestSuite) SetupTest() {
-	s.license = &v1.License{
-		Metadata: &v1.License_Metadata{
+	s.license = &licenseproto.License{
+		Metadata: &licenseproto.License_Metadata{
 			Id:              uuid.NewV4().String(),
 			SigningKeyId:    "project/key/version",
 			IssueDate:       types.TimestampNow(),
 			LicensedForId:   "test",
 			LicensedForName: "Test",
 		},
-		Restrictions: &v1.License_Restrictions{
+		Restrictions: &licenseproto.License_Restrictions{
 			NotValidBefore:         types.TimestampNow(),
 			NotValidAfter:          protoconv.ConvertTimeToTimestamp(time.Now().Add(24 * time.Hour)),
 			EnforcementUrl:         "https://license-enforcement.stackrox.io/api/v1/validate",

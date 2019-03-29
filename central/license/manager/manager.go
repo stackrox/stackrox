@@ -3,6 +3,7 @@ package manager
 import (
 	"github.com/stackrox/rox/central/license/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/license/validator"
 )
@@ -12,10 +13,10 @@ type LicenseManager interface {
 
 	// Initialize starts the license manager and returns the active license, if any. The listener is registered
 	// synchronously and will deliver any license event *after* the selection of an initially active license.
-	Initialize(listener LicenseEventListener) (*v1.License, error)
+	Initialize(listener LicenseEventListener) (*licenseproto.License, error)
 	Stop() concurrency.Waitable
 
-	GetActiveLicense() *v1.License
+	GetActiveLicense() *licenseproto.License
 	GetAllLicenses() []*v1.LicenseInfo
 
 	AddLicenseKey(licenseKey string) (*v1.LicenseInfo, error)

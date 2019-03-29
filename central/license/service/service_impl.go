@@ -7,6 +7,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -33,21 +34,21 @@ var (
 
 	licenseInfos = []*v1.LicenseInfo{
 		{
-			License: &v1.License{
-				Metadata: &v1.License_Metadata{
+			License: &licenseproto.License{
+				Metadata: &licenseproto.License_Metadata{
 					Id:              uuid.NewV4().String(),
 					SigningKeyId:    "test/key/1",
 					IssueDate:       protoconv.ConvertTimeToTimestamp(time.Now().Add(-42 * 24 * time.Hour)),
 					LicensedForId:   customerID,
 					LicensedForName: "Acme Inc.",
 				},
-				SupportContact: &v1.License_Contact{
+				SupportContact: &licenseproto.License_Contact{
 					Phone: "+1 (123) 456-7890",
 					Email: "support@stackrox.com",
 					Url:   "https://stackrox.com",
 					Name:  "StackRox Customer Support",
 				},
-				Restrictions: &v1.License_Restrictions{
+				Restrictions: &licenseproto.License_Restrictions{
 					NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now().Add(-42 * 24 * time.Hour)),
 					NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(-14 * 24 * time.Hour)),
 					AllowOffline:                       true,
@@ -60,21 +61,21 @@ var (
 			Active: false,
 		},
 		{
-			License: &v1.License{
-				Metadata: &v1.License_Metadata{
+			License: &licenseproto.License{
+				Metadata: &licenseproto.License_Metadata{
 					Id:              uuid.NewV4().String(),
 					SigningKeyId:    "test/key/1",
 					IssueDate:       protoconv.ConvertTimeToTimestamp(time.Now().Add(-14 * 24 * time.Hour)),
 					LicensedForId:   customerID,
 					LicensedForName: "Acme Inc.",
 				},
-				SupportContact: &v1.License_Contact{
+				SupportContact: &licenseproto.License_Contact{
 					Phone: "+1 (123) 456-7890",
 					Email: "support@stackrox.com",
 					Url:   "https://stackrox.com",
 					Name:  "StackRox Customer Support",
 				},
-				Restrictions: &v1.License_Restrictions{
+				Restrictions: &licenseproto.License_Restrictions{
 					NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now().Add(-14 * 24 * time.Hour)),
 					NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(28 * 24 * time.Hour)),
 					AllowOffline:                       true,
@@ -87,21 +88,21 @@ var (
 			Active: true,
 		},
 		{
-			License: &v1.License{
-				Metadata: &v1.License_Metadata{
+			License: &licenseproto.License{
+				Metadata: &licenseproto.License_Metadata{
 					Id:              uuid.NewV4().String(),
 					SigningKeyId:    "test/key/1",
 					IssueDate:       protoconv.ConvertTimeToTimestamp(time.Now()),
 					LicensedForId:   customerID,
 					LicensedForName: "Acme Inc.",
 				},
-				SupportContact: &v1.License_Contact{
+				SupportContact: &licenseproto.License_Contact{
 					Phone: "+1 (123) 456-7890",
 					Email: "support@stackrox.com",
 					Url:   "https://stackrox.com",
 					Name:  "StackRox Customer Support",
 				},
-				Restrictions: &v1.License_Restrictions{
+				Restrictions: &licenseproto.License_Restrictions{
 					NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now().Add(14 * 24 * time.Hour)),
 					NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(42 * 24 * time.Hour)),
 					AllowOffline:                       true,
@@ -163,21 +164,21 @@ func (s *service) AddLicense(ctx context.Context, req *v1.AddLicenseRequest) (*v
 	}
 
 	fakeLicense := &v1.LicenseInfo{
-		License: &v1.License{
-			Metadata: &v1.License_Metadata{
+		License: &licenseproto.License{
+			Metadata: &licenseproto.License_Metadata{
 				Id:              uuid.NewV4().String(),
 				SigningKeyId:    "test/key/1",
 				IssueDate:       protoconv.ConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 				LicensedForId:   customerID,
 				LicensedForName: "Acme Inc.",
 			},
-			SupportContact: &v1.License_Contact{
+			SupportContact: &licenseproto.License_Contact{
 				Phone: "+1 (123) 456-7890",
 				Email: "support@stackrox.com",
 				Url:   "https://stackrox.com",
 				Name:  "StackRox Customer Support",
 			},
-			Restrictions: &v1.License_Restrictions{
+			Restrictions: &licenseproto.License_Restrictions{
 				NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
 				NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(24 * time.Hour)),
 				AllowOffline:                       true,

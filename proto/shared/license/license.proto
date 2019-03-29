@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-option go_package = "v1";
+option go_package = "licenseproto";
 option java_package = "io.stackrox.proto.api.v1";
 
 import "google/protobuf/timestamp.proto";
 
-package v1;
+package license;
 
 message License {
     message Contact {
