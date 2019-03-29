@@ -549,6 +549,22 @@ class Services extends BaseService {
         }
     }
 
+    static boolean waitForSRDeletion(objects.Deployment deployment) {
+        // Wait until the deployment disappears from StackRox.
+        long sleepTime = 0
+        long sleepInterval = 1000
+        boolean disappearedFromStackRox = false
+        while (sleepTime < 60000) {
+            if (!roxDetectedDeployment(deployment.deploymentUid, deployment.name)) {
+                disappearedFromStackRox = true
+                break
+            }
+            sleep(sleepInterval)
+            sleepTime += sleepInterval
+        }
+        return disappearedFromStackRox
+    }
+
     static waitForDeployment(objects.Deployment deployment, int iterations = 15, int interval = 2) {
         if (deployment.deploymentUid == null) {
             println "deploymentID for [${deployment.name}] is null, checking orchestrator directly for deployment ID"

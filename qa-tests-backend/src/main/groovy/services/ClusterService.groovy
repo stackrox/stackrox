@@ -14,16 +14,26 @@ class ClusterService extends BaseService {
     }
 
     static getClusterId(String name = "remote") {
-        return getClusterServiceClient().getClusters().clustersList.find { it.name == name }?.id
+        try {
+            return getClusterServiceClient().getClusters().clustersList.find { it.name == name }?.id
+        } catch (Exception e) {
+            println "Error getting cluster ID: ${e}"
+            return e
+        }
     }
 
     static createCluster(String name, String mainImage, String centralEndpoint) {
-        return getClusterServiceClient().postCluster(Cluster.newBuilder()
-                .setName(name)
-                .setMainImage(mainImage)
-                .setCentralApiEndpoint(centralEndpoint)
-                .build()
-        )
+        try {
+            return getClusterServiceClient().postCluster(Cluster.newBuilder()
+                    .setName(name)
+                    .setMainImage(mainImage)
+                    .setCentralApiEndpoint(centralEndpoint)
+                    .build()
+            )
+        } catch (Exception e) {
+            println "Error creating cluster: ${e}"
+            return e
+        }
     }
 
     static deleteCluster(String clusterId) {

@@ -82,7 +82,7 @@ class Kubernetes implements OrchestratorMain {
     def ensureNamespaceExists(String ns) {
         Namespace namespace = new Namespace("v1", null, new ObjectMeta(name: ns), null, null)
         try {
-            client.namespaces().createOrReplace(namespace)
+            client.namespaces().create(namespace)
             println "Created namespace ${ns}"
         } catch (KubernetesClientException kce) {
             // 409 is already exists
@@ -104,12 +104,14 @@ class Kubernetes implements OrchestratorMain {
     */
 
     def createDeployment(Deployment deployment) {
+        ensureNamespaceExists(deployment.namespace)
         createDeploymentNoWait(deployment)
         waitForDeploymentAndPopulateInfo(deployment)
     }
 
     def batchCreateDeployments(List<Deployment> deployments) {
         for (Deployment deployment : deployments) {
+            ensureNamespaceExists(deployment.namespace)
             createDeploymentNoWait(deployment)
         }
         for (Deployment deployment : deployments) {
@@ -224,6 +226,7 @@ class Kubernetes implements OrchestratorMain {
     */
 
     def createDaemonSet(DaemonSet daemonSet) {
+        ensureNamespaceExists(daemonSet.namespace)
         createDaemonSetNoWait(daemonSet)
         waitForDaemonSetAndPopulateInfo(daemonSet)
     }
@@ -567,6 +570,22 @@ class Kubernetes implements OrchestratorMain {
 
     def getNetworkPolicyCount(String ns) {
         return client.network().networkPolicies().inNamespace(ns).list().items.size()
+    }
+
+    def getAllNetworkPoliciesNamesByNamespace(Boolean ignoreUndoneStackroxGenerated = false) {
+        Map<String, List<String>> networkPolicies = [:]
+        client.network().networkPolicies().inAnyNamespace().list().items.each {
+            boolean skip = false
+            if (ignoreUndoneStackroxGenerated) {
+                if (it.spec.podSelector.matchLabels.get("network-policies.stackrox.io/disable") == "nomatch") {
+                    skip = true
+                }
+            }
+            skip ?: networkPolicies.containsKey(it.metadata.namespace) ?
+                        networkPolicies.get(it.metadata.namespace).add(it.metadata.name) :
+                        networkPolicies.put(it.metadata.namespace, [it.metadata.name])
+        }
+        return networkPolicies
     }
 
     /*
@@ -1000,6 +1019,10 @@ class Kubernetes implements OrchestratorMain {
 
         if (policy.namespace) {
             networkPolicy.withNamespace(policy.namespace)
+        }
+
+        if (policy.labels != null) {
+            networkPolicy.withLabels(policy.labels)
         }
 
         networkPolicy = networkPolicy.endMetadata().withNewSpec()

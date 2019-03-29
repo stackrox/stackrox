@@ -4,10 +4,12 @@ import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import org.junit.experimental.categories.Category
+import services.NetworkGraphService
 import services.NetworkPolicyService
 import spock.lang.Unroll
 import util.NetworkGraphUtil
 import io.stackrox.proto.api.v1.NetworkPolicyServiceOuterClass
+import io.stackrox.proto.storage.NetworkPolicyOuterClass.NetworkPolicyReference
 import io.stackrox.proto.storage.NotifierOuterClass
 
 class NetworkSimulator extends BaseSpecification {
@@ -301,6 +303,90 @@ class NetworkSimulator extends BaseSpecification {
         if (policyId != null) {
             orchestrator.deleteNetworkPolicy(policy1)
         }
+    }
+
+    @Category([NetworkPolicySimulation, BAT])
+    def "Verify NetworkPolicy Simulator with with delete policies"() {
+        when:
+        "apply network policy"
+        NetworkPolicy policy1 = new NetworkPolicy("deny-all-traffic")
+                .setNamespace("qa")
+                .addPodSelector()
+                .addPolicyType(NetworkPolicyTypes.INGRESS)
+                .addPolicyType(NetworkPolicyTypes.EGRESS)
+        def policyId1 = orchestrator.applyNetworkPolicy(policy1)
+        assert NetworkPolicyService.waitForNetworkPolicy(policyId1)
+        NetworkPolicy policy2 = new NetworkPolicy("allow-ingress-application-web")
+                .setNamespace("qa")
+                .addPodSelector(["app": WEBDEPLOYMENT])
+                .addIngressNamespaceSelector()
+        def policyId2 = orchestrator.applyNetworkPolicy(policy2)
+        assert NetworkPolicyService.waitForNetworkPolicy(policyId2)
+        def baseline = NetworkGraphService.getNetworkGraph()
+
+        and:
+        "compile list of to delete policies"
+        def toDelete = [
+                NetworkPolicyReference.newBuilder()
+                        .setName("allow-ingress-application-web")
+                        .setNamespace("qa")
+                        .build(),
+        ]
+
+        and:
+        "generate simulation"
+        NetworkPolicy policy3 = new NetworkPolicy("allow-ingress-application-client")
+                .setNamespace("qa")
+                .addPodSelector(["app": CLIENTDEPLOYMENT])
+                .addIngressNamespaceSelector()
+        def simulation = NetworkPolicyService.submitNetworkGraphSimulation(
+                orchestrator.generateYaml(policy3),
+                null,
+                toDelete)
+        assert simulation != null
+        def webAppId = simulation.simulatedGraph.nodesList.find { it.deploymentName == WEBDEPLOYMENT }.deploymentId
+        def clientAppIndex = simulation.simulatedGraph.nodesList.indexOf(
+                simulation.simulatedGraph.nodesList.find { it.deploymentName == CLIENTDEPLOYMENT }
+        )
+        def clientAppId = simulation.simulatedGraph.nodesList.find {
+            it.deploymentName == CLIENTDEPLOYMENT
+        }.deploymentId
+
+        then:
+        "verify simulation"
+        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, clientAppId).size() > 0
+        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, null, webAppId).size() ==
+                NetworkGraphUtil.findEdges(baseline, null, webAppId).size()
+        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, webAppId, null).size() ==
+                NetworkGraphUtil.findEdges(baseline, webAppId, null).size()
+        assert NetworkGraphUtil.findEdges(simulation.simulatedGraph, clientAppId, null).size() ==
+                NetworkGraphUtil.findEdges(baseline, clientAppId, null).size()
+
+        assert simulation.policiesList.find { it.policy.name == "deny-all-traffic" }?.status ==
+                NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.UNCHANGED
+
+        assert simulation.policiesList.find { it.policy.name == "allow-ingress-application-client" }?.status ==
+                NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.ADDED
+
+        assert simulation.policiesList.find { it.oldPolicy.name == "allow-ingress-application-web" }?.status ==
+                NetworkPolicyServiceOuterClass.NetworkPolicyInSimulation.Status.DELETED
+
+        // Verify outEdge to 'web' is added to all nodes
+        simulation.added.nodeDiffsMap.each {
+            if (it.key != clientAppIndex) {
+                assert it.value.outEdgesMap.containsKey(clientAppIndex)
+            } else {
+                assert it.value.policyIdsCount > 0
+            }
+        }
+
+        // Verify removed contains the toDelete policy
+        assert simulation.removed.nodeDiffsMap.each { it.value.policyIdsList.contains(policyId1) }
+
+        cleanup:
+        "cleanup"
+        policyId1 ? orchestrator.deleteNetworkPolicy(policy1) : null
+        policyId2 ? orchestrator.deleteNetworkPolicy(policy2) : null
     }
 
     @Category([NetworkPolicySimulation])

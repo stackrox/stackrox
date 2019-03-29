@@ -3,6 +3,7 @@ package objects
 class NetworkPolicy {
     String name
     String namespace
+    Map<String, String> labels
     Map<String, String> metadataPodSelector
     Map<String, String> ingressPodSelector
     Map<String, String> egressPodSelector
@@ -17,6 +18,18 @@ class NetworkPolicy {
 
     NetworkPolicy setNamespace(String namespace) {
         this.namespace = namespace
+        return this
+    }
+
+    NetworkPolicy addLabel(String key, String value) {
+        labels = labels ?: new HashMap<>()
+        labels.put(key, value)
+        return this
+    }
+
+    NetworkPolicy addLabels(Map<String, String> labels) {
+        this.labels = this.labels ?: new HashMap<>()
+        this.labels.putAll(labels)
         return this
     }
 

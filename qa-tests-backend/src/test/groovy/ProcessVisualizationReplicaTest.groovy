@@ -1,5 +1,3 @@
-import static Services.roxDetectedDeployment
-
 import services.ProcessService
 
 import groups.BAT
@@ -37,29 +35,12 @@ class ProcessVisualizationReplicaTest extends BaseSpecification {
             assert Services.waitForDeployment(deployment)
         }
     }
-
-    def waitForSRDeletion(Deployment deployment) {
-        // Wait until the deployment disappears from StackRox.
-        long sleepTime = 0
-        long sleepInterval = 1000
-        boolean disappearedFromStackRox = false
-        while (sleepTime < 60000) {
-            if (!roxDetectedDeployment(deployment.getDeploymentUid(), deployment.getName())) {
-                disappearedFromStackRox = true
-                break
-            }
-            sleep(sleepInterval)
-            sleepTime += sleepInterval
-        }
-        return disappearedFromStackRox
-    }
-
     def cleanupSpec() {
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
         for (Deployment deployment : DEPLOYMENTS) {
-            waitForSRDeletion(deployment)
+            Services.waitForSRDeletion(deployment)
         }
     }
 

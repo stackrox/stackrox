@@ -60,6 +60,7 @@ interface OrchestratorMain {
     String createNamespace(String ns)
     def deleteNamespace(String ns)
     def waitForNamespaceDeletion(String ns)
+    def getAllNetworkPoliciesNamesByNamespace(Boolean ignoreUndoneStackroxGenerated)
 
     //NetworkPolicies
     String applyNetworkPolicy(NetworkPolicy policy)
