@@ -1,12 +1,12 @@
 package store
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/generated/storage"
@@ -65,7 +65,7 @@ func (b *storeImpl) GetProcessInfoToArgs() (map[processindicator.ProcessWithCont
 		return b.ForEach(func(k, v []byte) error {
 			uniqueKey := new(storage.ProcessIndicatorUniqueKey)
 			if err := proto.Unmarshal(k, uniqueKey); err != nil {
-				return fmt.Errorf("key unmarshaling: %s", err)
+				return errors.Wrap(err, "key unmarshaling")
 			}
 			info := processindicator.ProcessWithContainerInfo{
 				ContainerName: uniqueKey.GetContainerName(),
@@ -113,15 +113,15 @@ func (b *storeImpl) addProcessIndicator(tx *bolt.Tx, indicator *storage.ProcessI
 	if oldID != nil {
 		// Remove the old indicator.
 		if err := removeProcessIndicator(tx, oldID); err != nil {
-			return "", fmt.Errorf("Removing old indicator: %v", err)
+			return "", errors.Wrap(err, "Removing old indicator")
 		}
 		oldIDString = string(oldID)
 	}
 	if err := indicatorBucket.Put(indicatorIDBytes, data); err != nil {
-		return "", fmt.Errorf("inserting into indicator bucket: %s", err)
+		return "", errors.Wrap(err, "inserting into indicator bucket")
 	}
 	if err := uniqueBucket.Put(secondaryKey, indicatorIDBytes); err != nil {
-		return "", fmt.Errorf("inserting into unique field bucket: %s", err)
+		return "", errors.Wrap(err, "inserting into unique field bucket")
 	}
 	return oldIDString, nil
 }
@@ -134,7 +134,7 @@ func (b *storeImpl) AddProcessIndicator(indicator *storage.ProcessIndicator) (st
 	}
 	indicatorBytes, err := proto.Marshal(indicator)
 	if err != nil {
-		return "", fmt.Errorf("process indicator proto marshalling: %s", err)
+		return "", errors.Wrap(err, "process indicator proto marshalling")
 	}
 
 	var oldIDString string
@@ -183,7 +183,7 @@ func (b *storeImpl) RemoveProcessIndicator(id string) error {
 	return b.Update(func(tx *bolt.Tx) error {
 		indicator, exists, err := getProcessIndicator(tx, id)
 		if err != nil {
-			return fmt.Errorf("retrieving existing indicator: %s", err)
+			return errors.Wrap(err, "retrieving existing indicator")
 		}
 		// No error if the indicator didn't exist.
 		if !exists {
@@ -195,10 +195,10 @@ func (b *storeImpl) RemoveProcessIndicator(id string) error {
 			return err
 		}
 		if err := uniqueBucket.Delete(secondaryKey); err != nil {
-			return fmt.Errorf("deleting from unique bucket: %s", err)
+			return errors.Wrap(err, "deleting from unique bucket")
 		}
 		if err := removeProcessIndicator(tx, []byte(id)); err != nil {
-			return fmt.Errorf("removing indicator: %s", err)
+			return errors.Wrap(err, "removing indicator")
 		}
 		return nil
 	})

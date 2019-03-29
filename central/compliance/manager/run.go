@@ -2,10 +2,10 @@ package manager
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards"
 	"github.com/stackrox/rox/central/compliance/store"
@@ -81,7 +81,7 @@ func (r *runInstance) Run(dataPromise dataPromise, resultsStore store.Store) {
 	if err == nil {
 		results := r.collectResults(run)
 		if storeErr := resultsStore.StoreRunResults(results); storeErr != nil {
-			err = fmt.Errorf("storing results: %v", err)
+			err = errors.Wrap(err, "storing results")
 		}
 	}
 	if err != nil {
@@ -110,12 +110,12 @@ func (r *runInstance) doRun(dataPromise dataPromise) (framework.ComplianceRun, e
 	r.updateStatus(v1.ComplianceRun_WAIT_FOR_DATA)
 	data, err := dataPromise.WaitForResult(r.ctx)
 	if err != nil {
-		return nil, fmt.Errorf("waiting for compliance data: %v", err)
+		return nil, errors.Wrap(err, "waiting for compliance data")
 	}
 
 	run, err := framework.NewComplianceRun(r.standard.AllChecks()...)
 	if err != nil {
-		return nil, fmt.Errorf("creating compliance run: %v", err)
+		return nil, errors.Wrap(err, "creating compliance run")
 	}
 
 	r.updateStatus(v1.ComplianceRun_EVALUTING_CHECKS)

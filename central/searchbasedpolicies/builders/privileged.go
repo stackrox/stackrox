@@ -1,8 +1,7 @@
 package builders
 
 import (
-	"fmt"
-
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -21,7 +20,7 @@ func (p PrivilegedQueryBuilder) Query(fields *storage.PolicyFields, optionsMap m
 	}
 	searchField, err := getSearchField(search.Privileged, optionsMap)
 	if err != nil {
-		err = fmt.Errorf("%s: %s", p.Name(), err)
+		err = errors.Wrapf(err, "%s", p.Name())
 		return
 	}
 

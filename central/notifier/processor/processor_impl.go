@@ -1,8 +1,7 @@
 package processor
 
 import (
-	"fmt"
-
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -29,7 +28,7 @@ func (p *processorImpl) initializeNotifiers() error {
 	for _, protoNotifier := range protoNotifiers {
 		notifier, err := notifiers.CreateNotifier(protoNotifier)
 		if err != nil {
-			return fmt.Errorf("Error creating notifier with %v (%v) and type %v: %v", protoNotifier.GetId(), protoNotifier.GetName(), protoNotifier.GetType(), err)
+			return errors.Wrapf(err, "Error creating notifier with %v (%v) and type %v", protoNotifier.GetId(), protoNotifier.GetName(), protoNotifier.GetType())
 		}
 		p.UpdateNotifier(notifier)
 	}

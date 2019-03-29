@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	bolt "github.com/etcd-io/bbolt"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 )
 
@@ -120,19 +121,19 @@ func (s *storeImpl) Mutate(toRemove, toUpdate, toAdd []*storage.Group) error {
 		for _, group := range toRemove {
 			key := serializeKey(group.GetProps())
 			if err := removeInTransaction(tx, key); err != nil {
-				return fmt.Errorf("error removing during mutation: %s", err)
+				return errors.Wrap(err, "error removing during mutation")
 			}
 		}
 		for _, group := range toUpdate {
 			key, value := serialize(group)
 			if err := updateInTransaction(tx, key, value); err != nil {
-				return fmt.Errorf("error updating during mutation: %s", err)
+				return errors.Wrap(err, "error updating during mutation")
 			}
 		}
 		for _, group := range toAdd {
 			key, value := serialize(group)
 			if err := addInTransaction(tx, key, value); err != nil {
-				return fmt.Errorf("error adding during mutation: %s", err)
+				return errors.Wrap(err, "error adding during mutation")
 			}
 		}
 		return nil

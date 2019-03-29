@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
 	groupStore "github.com/stackrox/rox/central/group/store"
 	roleStore "github.com/stackrox/rox/central/role/store"
@@ -50,7 +51,7 @@ func (rm *storeBasedMapperImpl) getRole(claims *tokens.Claims) (*storage.Role, e
 	// Load the roles that apply to the user based on their groups.
 	roles, err := rm.rolesForGroups(groups)
 	if err != nil {
-		return nil, fmt.Errorf("failure to load roles: %s", err)
+		return nil, errors.Wrap(err, "failure to load roles")
 	}
 
 	// Generate a role that has the highest permissions of all roles the user has.

@@ -3,8 +3,8 @@ package verifier
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/mtls"
 )
 
@@ -36,17 +36,17 @@ func TrustedCertPool() (*x509.CertPool, error) {
 func (CA) TLSConfig() (*tls.Config, error) {
 	issuedCert, err := mtls.IssueNewCert(mtls.CentralSubject, nil)
 	if err != nil {
-		return nil, fmt.Errorf("server keypair: %s", err)
+		return nil, errors.Wrap(err, "server keypair")
 	}
 	caPEM, err := mtls.CACertPEM()
 	if err != nil {
-		return nil, fmt.Errorf("CA cert retrieval: %s", err)
+		return nil, errors.Wrap(err, "CA cert retrieval")
 	}
 	serverCertBundle := append(issuedCert.CertPEM, caPEM...)
 
 	serverTLSCert, err := tls.X509KeyPair(serverCertBundle, issuedCert.KeyPEM)
 	if err != nil {
-		return nil, fmt.Errorf("tls conversion: %s", err)
+		return nil, errors.Wrap(err, "tls conversion")
 	}
 
 	return config(serverTLSCert)
@@ -57,7 +57,7 @@ func (CA) TLSConfig() (*tls.Config, error) {
 func (NonCA) TLSConfig() (*tls.Config, error) {
 	serverTLSCert, err := mtls.LeafCertificateFromFile()
 	if err != nil {
-		return nil, fmt.Errorf("tls conversion: %s", err)
+		return nil, errors.Wrap(err, "tls conversion")
 	}
 
 	conf, err := config(serverTLSCert)
@@ -73,7 +73,7 @@ func (NonCA) TLSConfig() (*tls.Config, error) {
 func config(serverBundle tls.Certificate) (*tls.Config, error) {
 	certPool, err := TrustedCertPool()
 	if err != nil {
-		return nil, fmt.Errorf("CA cert: %s", err)
+		return nil, errors.Wrap(err, "CA cert")
 	}
 
 	// This is based on TLSClientAuthServerConfig from cfssl/transport.

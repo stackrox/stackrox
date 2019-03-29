@@ -1,10 +1,9 @@
 package alertmanager
 
 import (
-	"fmt"
-
 	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/detection/runtime"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
@@ -212,7 +211,7 @@ func (d *alertManagerImpl) mergeManyAlerts(presentAlerts []*storage.Alert, oldAl
 	}
 	previousAlerts, err := d.alerts.SearchRawAlerts(qb.ProtoQuery())
 	if err != nil {
-		err = fmt.Errorf("couldn't load previous alerts (query was %s): %s", qb.Query(), err)
+		err = errors.Wrapf(err, "couldn't load previous alerts (query was %s)", qb.Query())
 		return
 	}
 

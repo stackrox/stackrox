@@ -7,6 +7,7 @@ import (
 	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -29,7 +30,7 @@ func retrieveAuthProviderIDsExceptBasic(db *bolt.DB) (authProviderIDs []string, 
 		return b.ForEach(func(_, v []byte) error {
 			authProvider := new(storage.AuthProvider)
 			if err := proto.Unmarshal(v, authProvider); err != nil {
-				return fmt.Errorf("unmarshaling auth provider: %v", err)
+				return errors.Wrap(err, "unmarshaling auth provider")
 			}
 			if authProvider.GetType() != basicAuthProviderTypeName {
 				authProviderIDs = append(authProviderIDs, authProvider.GetId())
@@ -73,7 +74,7 @@ func addDefaultAdminMappingForAuthProviders(db *bolt.DB, authProviderIDs []strin
 			// This effectively gives all users authenticated by this auth provider the Admin role.
 			// See central/group/store/serialize.go for serialization logic.
 			if err := b.Put([]byte(fmt.Sprintf("%s::", id)), []byte("Admin")); err != nil {
-				return fmt.Errorf("inserting auth provider %q: %v", id, err)
+				return errors.Wrapf(err, "inserting auth provider %q", id)
 			}
 		}
 		return nil
@@ -87,16 +88,16 @@ var (
 		Run: func(db *bolt.DB, _ *badger.DB) error {
 			authProviderIDs, err := retrieveAuthProviderIDsExceptBasic(db)
 			if err != nil {
-				return fmt.Errorf("retrieving auth providers: %v", err)
+				return errors.Wrap(err, "retrieving auth providers")
 			}
 			notRepresentedAuthProviders, err := findAuthProvidersNotRepresentedInGroups(db, authProviderIDs)
 			if err != nil {
-				return fmt.Errorf("finding auth providers not represented: %v", err)
+				return errors.Wrap(err, "finding auth providers not represented")
 			}
 
 			err = addDefaultAdminMappingForAuthProviders(db, notRepresentedAuthProviders)
 			if err != nil {
-				return fmt.Errorf("adding default admin mapping: %v", err)
+				return errors.Wrap(err, "adding default admin mapping")
 			}
 			return nil
 		},

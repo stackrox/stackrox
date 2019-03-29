@@ -6,6 +6,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
@@ -72,7 +73,7 @@ func (b *storeImpl) AddMultiplier(multiplier *storage.Multiplier) (string, error
 			return fmt.Errorf("Multiplier %s (%s) cannot be added because it already exists", multiplier.GetId(), multiplier.GetName())
 		}
 		if err := secondarykey.CheckUniqueKeyExistsAndInsert(tx, multiplierBucket, multiplier.GetId(), multiplier.GetName()); err != nil {
-			return fmt.Errorf("Could not add multiplier due to name validation: %s", err)
+			return errors.Wrap(err, "Could not add multiplier due to name validation")
 		}
 		bytes, err := proto.Marshal(multiplier)
 		if err != nil {
@@ -91,7 +92,7 @@ func (b *storeImpl) UpdateMultiplier(multiplier *storage.Multiplier) error {
 		// If the update is changing the name, check if the name has already been taken
 		if val, _ := secondarykey.GetCurrentUniqueKey(tx, multiplierBucket, multiplier.GetId()); val != multiplier.GetName() {
 			if err := secondarykey.UpdateUniqueKey(tx, multiplierBucket, multiplier.GetId(), multiplier.GetName()); err != nil {
-				return fmt.Errorf("Could not update multiplier due to name validation: %s", err)
+				return errors.Wrap(err, "Could not update multiplier due to name validation")
 			}
 		}
 		bytes, err := proto.Marshal(multiplier)

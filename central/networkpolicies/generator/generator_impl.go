@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	namespacesDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	flowStore "github.com/stackrox/rox/central/networkflow/store"
@@ -72,7 +73,7 @@ func markAllPoliciesForDeletion(policies []*storage.NetworkPolicy) []*storage.Ne
 func (g *generator) getNetworkPolicies(deleteExistingMode v1.GenerateNetworkPoliciesRequest_DeleteExistingPoliciesMode, clusterID string) ([]*storage.NetworkPolicy, []*storage.NetworkPolicyReference, error) {
 	policies, err := g.networkPolicyStore.GetNetworkPolicies(clusterID, "")
 	if err != nil {
-		return nil, nil, fmt.Errorf("obtaining network policies: %v", err)
+		return nil, nil, errors.Wrap(err, "obtaining network policies")
 	}
 
 	switch deleteExistingMode {
@@ -96,7 +97,7 @@ func (g *generator) generateGraph(clusterID string, since *types.Timestamp) (map
 
 	allFlows, _, err := clusterFlowStore.GetAllFlows(since)
 	if err != nil {
-		return nil, fmt.Errorf("could not obtain network flow information for cluster %q: %v", clusterID, err)
+		return nil, errors.Wrapf(err, "could not obtain network flow information for cluster %q", clusterID)
 	}
 
 	deployments, err := g.deploymentStore.SearchRawDeployments(&v1.Query{
@@ -112,7 +113,7 @@ func (g *generator) generateGraph(clusterID string, since *types.Timestamp) (map
 		},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("could not obtain deployments for cluster %q: %v", clusterID, err)
+		return nil, errors.Wrapf(err, "could not obtain deployments for cluster %q", clusterID)
 	}
 
 	return buildGraph(deployments, allFlows), nil
@@ -170,18 +171,18 @@ func (g *generator) generatePolicies(graph map[networkgraph.Entity]*node, deploy
 func (g *generator) Generate(req *v1.GenerateNetworkPoliciesRequest) (generated []*storage.NetworkPolicy, toDelete []*storage.NetworkPolicyReference, err error) {
 	graph, err := g.generateGraph(req.GetClusterId(), req.GetNetworkDataSince())
 	if err != nil {
-		return nil, nil, fmt.Errorf("generating network graph: %v", err)
+		return nil, nil, errors.Wrap(err, "generating network graph")
 	}
 	existingPolicies, toDelete, err := g.getNetworkPolicies(req.GetDeleteExisting(), req.GetClusterId())
 	if err != nil {
-		return nil, nil, fmt.Errorf("obtaining existing network policies: %v", err)
+		return nil, nil, errors.Wrap(err, "obtaining existing network policies")
 	}
 
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, req.GetClusterId()).ProtoQuery()
 
 	deploymentsQuery, err := search.ParseRawQueryOrEmpty(req.GetQuery())
 	if err != nil {
-		return nil, nil, fmt.Errorf("parsing query: %v", err)
+		return nil, nil, errors.Wrap(err, "parsing query")
 	}
 
 	var relevantDeploymentIDs set.StringSet
@@ -190,7 +191,7 @@ func (g *generator) Generate(req *v1.GenerateNetworkPoliciesRequest) (generated 
 
 		relevantDeploymentsResult, err := g.deploymentStore.Search(query)
 		if err != nil {
-			return nil, nil, fmt.Errorf("determining relevant deployments: %v", err)
+			return nil, nil, errors.Wrap(err, "determining relevant deployments")
 		}
 
 		relevantDeploymentIDs = set.NewStringSet(search.ResultsToIDs(relevantDeploymentsResult)...)
@@ -198,7 +199,7 @@ func (g *generator) Generate(req *v1.GenerateNetworkPoliciesRequest) (generated 
 
 	namespaces, err := g.namespacesStore.SearchNamespaces(query)
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not obtain namespaces metadata: %v", err)
+		return nil, nil, errors.Wrap(err, "could not obtain namespaces metadata")
 	}
 
 	namespacesByName := createNamespacesByNameMap(namespaces)

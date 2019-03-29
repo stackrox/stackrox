@@ -3,9 +3,9 @@ package common
 import (
 	"bytes"
 	"compress/gzip"
-	"fmt"
 
 	"github.com/mailru/easyjson"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/docker"
@@ -30,7 +30,7 @@ func PerNodeCheckWithDockerData(f func(ctx framework.ComplianceContext, data *do
 	return PerNodeCheck(func(ctx framework.ComplianceContext, ret *compliance.ComplianceReturn) {
 		data, err := getDockerData(ret)
 		if err != nil {
-			framework.Abort(ctx, fmt.Errorf("could not process scraped data: %v", err))
+			framework.Abort(ctx, errors.Wrap(err, "could not process scraped data"))
 		}
 		f(ctx, data)
 	})

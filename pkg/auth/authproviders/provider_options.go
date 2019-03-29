@@ -2,8 +2,8 @@ package authproviders
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 )
@@ -21,7 +21,7 @@ func WithBackendFromFactory(factory BackendFactory) ProviderOption {
 	return func(pr *providerImpl) error {
 		backend, effectiveConfig, err := factory.CreateBackend(context.Background(), pr.storedInfo.Id, AllUIEndpoints(&pr.storedInfo), pr.storedInfo.Config)
 		if err != nil {
-			return fmt.Errorf("failed to create auth provider of type %s: %s", pr.storedInfo.Type, err)
+			return errors.Wrapf(err, "failed to create auth provider of type %s", pr.storedInfo.Type)
 		}
 
 		pr.backend = backend

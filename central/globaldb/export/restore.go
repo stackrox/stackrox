@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	bolt "github.com/etcd-io/bbolt"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -27,23 +28,23 @@ func tryRestoreBolt(r io.Reader, outDir string) error {
 	boltFilePath := path.Join(outDir, bolthelper.DBFileName)
 	boltFile, err := os.OpenFile(boltFilePath, os.O_CREATE|os.O_RDWR, 0600)
 	if err != nil {
-		return fmt.Errorf("could not create bolt file: %v", err)
+		return errors.Wrap(err, "could not create bolt file")
 	}
 	_, err = io.Copy(boltFile, r)
 	_ = boltFile.Close()
 
 	if err != nil {
-		return fmt.Errorf("could not write bolt file: %v", err)
+		return errors.Wrap(err, "could not write bolt file")
 	}
 
 	opts := *bolt.DefaultOptions
 	opts.ReadOnly = true
 	db, err := bolt.Open(boltFilePath, 0600, &opts)
 	if err != nil {
-		return fmt.Errorf("could not open bolt database: %v", err)
+		return errors.Wrap(err, "could not open bolt database")
 	}
 	if err := db.Close(); err != nil {
-		return fmt.Errorf("could not close bolt database after opening: %v", err)
+		return errors.Wrap(err, "could not close bolt database after opening")
 	}
 
 	return nil
@@ -52,19 +53,19 @@ func tryRestoreBolt(r io.Reader, outDir string) error {
 func tryRestoreBadger(r io.Reader, outDir string) error {
 	badgerDirPath := path.Join(outDir, badgerhelper.BadgerDBDirName)
 	if err := os.Mkdir(badgerDirPath, 0600); err != nil {
-		return fmt.Errorf("could not create badger database directory: %v", err)
+		return errors.Wrap(err, "could not create badger database directory")
 	}
 
 	db, err := badgerhelper.New(badgerDirPath)
 	if err != nil {
-		return fmt.Errorf("could not create new badger DB in empty dir: %v", err)
+		return errors.Wrap(err, "could not create new badger DB in empty dir")
 	}
 
 	if err := db.Load(r); err != nil {
-		return fmt.Errorf("could not load badger DB backup: %v", err)
+		return errors.Wrap(err, "could not load badger DB backup")
 	}
 	if err := db.Close(); err != nil {
-		return fmt.Errorf("could not close badger DB after loading: %v", err)
+		return errors.Wrap(err, "could not close badger DB after loading")
 	}
 
 	return nil
@@ -73,11 +74,11 @@ func tryRestoreBadger(r io.Reader, outDir string) error {
 func tryRestoreZip(backupFile *os.File, outPath string) error {
 	stat, err := backupFile.Stat()
 	if err != nil {
-		return fmt.Errorf("could not stat file: %v", err)
+		return errors.Wrap(err, "could not stat file")
 	}
 	zipReader, err := zip.NewReader(backupFile, stat.Size())
 	if err != nil {
-		return fmt.Errorf("could not read file as ZIP archive: %v", err)
+		return errors.Wrap(err, "could not read file as ZIP archive")
 	}
 
 	hasBolt := false
@@ -87,23 +88,23 @@ func tryRestoreZip(backupFile *os.File, outPath string) error {
 		if f.Name == boltFileName {
 			r, err := f.Open()
 			if err != nil {
-				return fmt.Errorf("could not open %s in ZIP archive: %v", boltFileName, err)
+				return errors.Wrapf(err, "could not open %s in ZIP archive", boltFileName)
 			}
 			err = tryRestoreBolt(r, outPath)
 			_ = r.Close()
 			if err != nil {
-				return fmt.Errorf("could not restore bolt DB from file %s in ZIP archive: %v", boltFileName, err)
+				return errors.Wrapf(err, "could not restore bolt DB from file %s in ZIP archive", boltFileName)
 			}
 			hasBolt = true
 		} else if f.Name == badgerFileName {
 			r, err := f.Open()
 			if err != nil {
-				return fmt.Errorf("could not open %s in ZIP archive: %v", badgerFileName, err)
+				return errors.Wrapf(err, "could not open %s in ZIP archive", badgerFileName)
 			}
 			err = tryRestoreBadger(r, outPath)
 			_ = r.Close()
 			if err != nil {
-				return fmt.Errorf("could not restore badger DB from file %s in ZIP archive: %v", badgerFileName, err)
+				return errors.Wrapf(err, "could not restore badger DB from file %s in ZIP archive", badgerFileName)
 			}
 			hasBadger = true
 		}
@@ -125,7 +126,7 @@ func removeChildren(path string) error {
 	}
 	for _, f := range files {
 		if err := os.RemoveAll(filepath.Join(path, f.Name())); err != nil {
-			return fmt.Errorf("could not remove file %s: %v", f.Name(), err)
+			return errors.Wrapf(err, "could not remove file %s", f.Name())
 		}
 	}
 	return nil
@@ -139,7 +140,7 @@ func tryRestore(backupFile *os.File, outPath string) error {
 	}
 	allErrs.AddStringf("treating input as ZIP file: %v", zipErr)
 	if err := removeChildren(outPath); err != nil {
-		return fmt.Errorf("could not clean up directory %s after unsuccessful restore attempt: %v", outPath, err)
+		return errors.Wrapf(err, "could not clean up directory %s after unsuccessful restore attempt", outPath)
 	}
 
 	boltErr := tryRestoreBolt(backupFile, outPath)
@@ -154,17 +155,17 @@ func tryRestore(backupFile *os.File, outPath string) error {
 func Restore(backupFile *os.File) error {
 	tempRestoreDir, err := ioutil.TempDir(migrations.DBMountPath, ".restore-")
 	if err != nil {
-		return fmt.Errorf("could not create a temporary restore directory: %v", err)
+		return errors.Wrap(err, "could not create a temporary restore directory")
 	}
 
 	if err := tryRestore(backupFile, tempRestoreDir); err != nil {
 		_ = os.RemoveAll(tempRestoreDir)
-		return fmt.Errorf("could not restore database backup: %v", err)
+		return errors.Wrap(err, "could not restore database backup")
 	}
 
 	if err := os.Rename(tempRestoreDir, restoreDir); err != nil {
 		_ = os.RemoveAll(tempRestoreDir)
-		return fmt.Errorf("could not rename temporary restore directory to canonical location: %v", err)
+		return errors.Wrap(err, "could not rename temporary restore directory to canonical location")
 	}
 
 	return nil

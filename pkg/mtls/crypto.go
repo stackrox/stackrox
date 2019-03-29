@@ -17,6 +17,7 @@ import (
 	"github.com/cloudflare/cfssl/helpers"
 	cfsigner "github.com/cloudflare/cfssl/signer"
 	"github.com/cloudflare/cfssl/signer/local"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/sync"
@@ -73,7 +74,7 @@ func LeafCertificateFromFile() (tls.Certificate, error) {
 func CACertDER() ([]byte, error) {
 	b, err := ioutil.ReadFile(caCertFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("file access: %s", err)
+		return nil, errors.Wrap(err, "file access")
 	}
 	decoded, _ := pem.Decode(b)
 	if decoded == nil {
@@ -86,7 +87,7 @@ func CACertDER() ([]byte, error) {
 func CACertPEM() ([]byte, error) {
 	_, caDER, err := CACert()
 	if err != nil {
-		return nil, fmt.Errorf("CA cert loading: %s", err)
+		return nil, errors.Wrap(err, "CA cert loading")
 	}
 	return pem.EncodeToMemory(&pem.Block{
 		Type:  "CERTIFICATE",
@@ -99,12 +100,12 @@ func CACert() (*x509.Certificate, []byte, error) {
 	readCAOnce.Do(func() {
 		der, err := CACertDER()
 		if err != nil {
-			caCertErr = fmt.Errorf("CA cert could not be decoded: %s", err)
+			caCertErr = errors.Wrap(err, "CA cert could not be decoded")
 			return
 		}
 		cert, err := x509.ParseCertificate(der)
 		if err != nil {
-			caCertErr = fmt.Errorf("CA cert could not be parsed: %s", err)
+			caCertErr = errors.Wrap(err, "CA cert could not be parsed")
 			return
 		}
 		caCert = cert
@@ -154,7 +155,7 @@ type serviceIdentityStorage interface {
 // IssueNewCertFromCA issues a certificate from the CA that is passed in
 func IssueNewCertFromCA(subj Subject, caCert, caKey []byte) (cert *IssuedCert, err error) {
 	returnErr := func(err error, prefix string) (*IssuedCert, error) {
-		return nil, fmt.Errorf("%s: %s", prefix, err)
+		return nil, errors.Wrapf(err, "%s", prefix)
 	}
 
 	s, err := signerFromCABytes(caCert, caKey)
@@ -208,7 +209,7 @@ func validateSubject(subj Subject) error {
 // IssueNewCert generates a new key and certificate chain for a sensor.
 func IssueNewCert(subj Subject, store serviceIdentityStorage) (cert *IssuedCert, err error) {
 	returnErr := func(err error, prefix string) (*IssuedCert, error) {
-		return nil, fmt.Errorf("%s: %s", prefix, err)
+		return nil, errors.Wrapf(err, "%s", prefix)
 	}
 
 	if err := validateSubject(subj); err != nil {
@@ -265,7 +266,7 @@ func IssueNewCert(subj Subject, store serviceIdentityStorage) (cert *IssuedCert,
 func randomSerial() (int64, error) {
 	serial, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
 	if err != nil {
-		return 0, fmt.Errorf("serial number generation: %s", err)
+		return 0, errors.Wrap(err, "serial number generation")
 	}
 	return serial.Int64(), nil
 }

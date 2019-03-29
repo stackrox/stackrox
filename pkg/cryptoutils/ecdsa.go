@@ -4,10 +4,11 @@ import (
 	"crypto"
 	"crypto/ecdsa"
 	"encoding/asn1"
-	"errors"
 	"fmt"
 	"io"
 	"math/big"
+
+	"github.com/pkg/errors"
 )
 
 // NewECDSAVerifier returns a new verifier using the ECDSA algorithm with the given private key and hash
@@ -31,12 +32,12 @@ type ecdsaSig struct {
 func (v *ecdsaVerifier) Verify(data, sig []byte) error {
 	digest, err := ComputeDigest(data, v.hash)
 	if err != nil {
-		return fmt.Errorf("computing digest: %v", err)
+		return errors.Wrap(err, "computing digest")
 	}
 
 	var ecdsaSig ecdsaSig
 	if rest, err := asn1.Unmarshal(sig, &ecdsaSig); err != nil {
-		return fmt.Errorf("unmarshalling signature: %v", err)
+		return errors.Wrap(err, "unmarshalling signature")
 	} else if len(rest) != 0 {
 		return fmt.Errorf("unmarshalling signature: %d extra bytes", len(rest))
 	}
@@ -67,16 +68,16 @@ type ecdsaSigner struct {
 func (es *ecdsaSigner) Sign(data []byte, entropySrc io.Reader) ([]byte, error) {
 	digest, err := ComputeDigest(data, es.hash)
 	if err != nil {
-		return nil, fmt.Errorf("computing digest: %v", err)
+		return nil, errors.Wrap(err, "computing digest")
 	}
 
 	r, s, err := ecdsa.Sign(entropySrc, es.priv, digest)
 	if err != nil {
-		return nil, fmt.Errorf("signing: %v", err)
+		return nil, errors.Wrap(err, "signing")
 	}
 	sig, err := asn1.Marshal(ecdsaSig{R: r, S: s})
 	if err != nil {
-		return nil, fmt.Errorf("marshalling: %v", err)
+		return nil, errors.Wrap(err, "marshalling")
 	}
 	return sig, nil
 }

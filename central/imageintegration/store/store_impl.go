@@ -6,6 +6,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
@@ -72,7 +73,7 @@ func (b *storeImpl) AddImageIntegration(integration *storage.ImageIntegration) (
 			return fmt.Errorf("Image integration %s (%s) cannot be added because it already exists", integration.GetId(), integration.GetName())
 		}
 		if err := secondarykey.CheckUniqueKeyExistsAndInsert(tx, imageIntegrationBucket, integration.GetId(), integration.GetName()); err != nil {
-			return fmt.Errorf("Could not add image integration due to name validation: %s", err)
+			return errors.Wrap(err, "Could not add image integration due to name validation")
 		}
 		bytes, err := proto.Marshal(integration)
 		if err != nil {
@@ -91,7 +92,7 @@ func (b *storeImpl) UpdateImageIntegration(integration *storage.ImageIntegration
 		// If the update is changing the name, check if the name has already been taken
 		if val, _ := secondarykey.GetCurrentUniqueKey(tx, imageIntegrationBucket, integration.GetId()); val != integration.GetName() {
 			if err := secondarykey.UpdateUniqueKey(tx, imageIntegrationBucket, integration.GetId(), integration.GetName()); err != nil {
-				return fmt.Errorf("Could not update integration due to name validation: %s", err)
+				return errors.Wrap(err, "Could not update integration due to name validation")
 			}
 		}
 		bytes, err := proto.Marshal(integration)

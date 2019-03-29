@@ -5,6 +5,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/node/index"
 	"github.com/stackrox/rox/central/node/store"
@@ -71,7 +72,7 @@ func (s *globalStoreImpl) getAllClusterNodeStores() ([]store.Store, error) {
 		})
 	})
 	if err != nil {
-		return nil, fmt.Errorf("could not get all cluster nodes: %v", err)
+		return nil, errors.Wrap(err, "could not get all cluster nodes")
 	}
 	return stores, nil
 }
@@ -82,7 +83,7 @@ func (s *globalStoreImpl) GetClusterNodeStore(clusterID string) (store.Store, er
 		return err
 	})
 	if err != nil {
-		return nil, fmt.Errorf("could not create per-cluster bucket: %v", err)
+		return nil, errors.Wrap(err, "could not create per-cluster bucket")
 	}
 	crud := protoCrud.NewMessageCrudForBucket(bolthelper.NestedRef(s.bucketRef, []byte(clusterID)), key, alloc)
 	return datastore.New(store.New(crud), s.indexer), nil

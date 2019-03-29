@@ -1,11 +1,11 @@
 package store
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -82,7 +82,7 @@ func readResults(resultsBucket *bbolt.Bucket, flags GetFlags) (*storage.Complian
 	}
 	var metadata storage.ComplianceRunMetadata
 	if err := metadata.Unmarshal(metadataBytes); err != nil {
-		return nil, nil, fmt.Errorf("unmarshalling metadata: %v", err)
+		return nil, nil, errors.Wrap(err, "unmarshalling metadata")
 	}
 
 	if !metadata.GetSuccess() {
@@ -96,14 +96,14 @@ func readResults(resultsBucket *bbolt.Bucket, flags GetFlags) (*storage.Complian
 
 	var results storage.ComplianceRunResults
 	if err := results.Unmarshal(resultsBytes); err != nil {
-		return nil, nil, fmt.Errorf("unmarshalling results: %v", err)
+		return nil, nil, errors.Wrap(err, "unmarshalling results")
 	}
 	results.RunMetadata = &metadata
 
 	if flags&(WithMessageStrings|RequireMessageStrings) != 0 {
 		if err := loadMessageStrings(resultsBucket, &results); err != nil {
 			if flags&RequireMessageStrings != 0 {
-				return nil, nil, fmt.Errorf("loading message strings: %v", err)
+				return nil, nil, errors.Wrap(err, "loading message strings")
 			}
 			log.Errorf("Could not load message strings for compliance run results: %v", err)
 		}
@@ -220,23 +220,23 @@ func createRunBucket(root *bbolt.Bucket, metadata *storage.ComplianceRunMetadata
 	}
 	finishTime, err := types.TimestampFromProto(metadata.GetFinishTimestamp())
 	if err != nil {
-		return nil, fmt.Errorf("run has an invalid finish timestamp: %v", err)
+		return nil, errors.Wrap(err, "run has an invalid finish timestamp")
 	}
 	microTS := timestamp.FromGoTime(finishTime)
 	runKey := []byte(fmt.Sprintf("%016X:%s", microTS, runID))
 
 	clusterBucket, err := root.CreateBucketIfNotExists(clusterKey)
 	if err != nil {
-		return nil, fmt.Errorf("creating bucket for cluster %q: %v", clusterID, err)
+		return nil, errors.Wrapf(err, "creating bucket for cluster %q", clusterID)
 	}
 	standardBucket, err := clusterBucket.CreateBucketIfNotExists(standardKey)
 	if err != nil {
-		return nil, fmt.Errorf("creating bucket for standard %q: %v", standardID, err)
+		return nil, errors.Wrapf(err, "creating bucket for standard %q", standardID)
 	}
 
 	runBucket, err := standardBucket.CreateBucket(runKey)
 	if err != nil {
-		return nil, fmt.Errorf("creating bucket for run %s: %v", string(runKey), err)
+		return nil, errors.Wrapf(err, "creating bucket for run %s", string(runKey))
 	}
 
 	return runBucket, nil
@@ -253,24 +253,24 @@ func (s *boltStore) StoreRunResults(runResults *storage.ComplianceRunResults) er
 
 	serializedMD, err := metadata.Marshal()
 	if err != nil {
-		return fmt.Errorf("serializing metadata: %v", err)
+		return errors.Wrap(err, "serializing metadata")
 	}
 
 	stringsProto := externalizeStrings(runResults)
 	serializedStrings, err := stringsProto.Marshal()
 	if err != nil {
-		return fmt.Errorf("serializing message strings: %v", err)
+		return errors.Wrap(err, "serializing message strings")
 	}
 
 	serializedResults, err := runResults.Marshal()
 	if err != nil {
-		return fmt.Errorf("serializing results: %v", err)
+		return errors.Wrap(err, "serializing results")
 	}
 
 	return s.resultsBucket.Update(func(b *bbolt.Bucket) error {
 		runBucket, err := createRunBucket(b, metadata)
 		if err != nil {
-			return fmt.Errorf("creating run bucket: %v", err)
+			return errors.Wrap(err, "creating run bucket")
 		}
 		if err := runBucket.Put(metadataKey, serializedMD); err != nil {
 			return err
@@ -289,13 +289,13 @@ func (s *boltStore) StoreFailure(metadata *storage.ComplianceRunMetadata) error 
 
 	serializedMD, err := metadata.Marshal()
 	if err != nil {
-		return fmt.Errorf("serializing metadata: %v", err)
+		return errors.Wrap(err, "serializing metadata")
 	}
 
 	return s.resultsBucket.Update(func(b *bbolt.Bucket) error {
 		runBucket, err := createRunBucket(b, metadata)
 		if err != nil {
-			return fmt.Errorf("creating run bucket: %v", err)
+			return errors.Wrap(err, "creating run bucket")
 		}
 		return runBucket.Put(metadataKey, serializedMD)
 	})

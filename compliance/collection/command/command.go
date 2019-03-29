@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/file"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/pkg/set"
@@ -75,9 +76,9 @@ func getPID(process string) (int, error) {
 	output, err := exec.Command("/usr/bin/pgrep", "--exact", process).CombinedOutput()
 	if err != nil {
 		if len(output) != 0 {
-			return -1, fmt.Errorf("Error getting process %q. Output: %s. Err: %v", process, output, err)
+			return -1, errors.Wrapf(err, "Error getting process %q. Output: %s. Err", process, output)
 		}
-		return -1, fmt.Errorf("Error getting process %q: %v", process, err)
+		return -1, errors.Wrapf(err, "Error getting process %q", process)
 	}
 	pid, err := strconv.Atoi(strings.TrimSpace(string(output)))
 	return pid, err

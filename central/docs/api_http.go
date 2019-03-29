@@ -2,10 +2,11 @@ package docs
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // Swagger returns an HTTP handler that exposes the swagger.json doc directly.
@@ -29,12 +30,12 @@ func Swagger() http.Handler {
 func swaggerForRequest(req *http.Request) ([]byte, error) {
 	b, err := ioutil.ReadFile("/docs/api/v1/swagger.json")
 	if err != nil {
-		return nil, fmt.Errorf("could not load swagger file: %v", err)
+		return nil, errors.Wrap(err, "could not load swagger file")
 	}
 
 	var swaggerSpec map[string]json.RawMessage
 	if err := json.Unmarshal(b, &swaggerSpec); err != nil {
-		return nil, fmt.Errorf("could not parse swagger spec: %v", err)
+		return nil, errors.Wrap(err, "could not parse swagger spec")
 	}
 
 	swaggerSpecOut := make(map[string]interface{}, len(swaggerSpec)+2)
@@ -48,7 +49,7 @@ func swaggerForRequest(req *http.Request) ([]byte, error) {
 
 	out, err := json.MarshalIndent(swaggerSpecOut, "", "  ")
 	if err != nil {
-		return nil, fmt.Errorf("could not marshal swagger spec: %v", err)
+		return nil, errors.Wrap(err, "could not marshal swagger spec")
 	}
 	return out, nil
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/node/globalstore"
@@ -54,7 +55,7 @@ func (p *pipelineImpl) Reconcile(clusterID string) error {
 
 	clusterStore, err := p.nodeStore.GetClusterNodeStore(clusterID)
 	if err != nil {
-		return fmt.Errorf("getting cluster-local node store: %v", err)
+		return errors.Wrap(err, "getting cluster-local node store")
 	}
 
 	return reconciliation.Perform(p.reconcileStore, search.ResultsToIDSet(results), "nodes", func(id string) error {
@@ -78,7 +79,7 @@ func (p *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 
 	store, err := p.nodeStore.GetClusterNodeStore(clusterID)
 	if err != nil {
-		return fmt.Errorf("getting cluster-local node store: %v", err)
+		return errors.Wrap(err, "getting cluster-local node store")
 	}
 
 	nodeOneof, ok := event.Resource.(*central.SensorEvent_Node)

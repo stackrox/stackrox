@@ -3,6 +3,7 @@ package builders
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -24,18 +25,18 @@ func (c CVSSQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sea
 
 	cvssSearchField, err := getSearchField(search.CVSS, optionsMap)
 	if err != nil {
-		err = fmt.Errorf("%s: %s", c.Name(), err)
+		err = errors.Wrapf(err, "%s", c.Name())
 		return
 	}
 	cveSearchField, err := getSearchField(search.CVE, optionsMap)
 	if err != nil {
-		err = fmt.Errorf("%s: %s", c.Name(), err)
+		err = errors.Wrapf(err, "%s", c.Name())
 		return
 	}
 
 	cveFixedByField, err := getSearchField(search.FixedBy, optionsMap)
 	if err != nil {
-		err = fmt.Errorf("%s: %s", c.Name(), err)
+		err = errors.Wrapf(err, "%s", c.Name())
 		return
 	}
 

@@ -7,6 +7,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search/query"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
@@ -64,7 +65,7 @@ func newStringQuery(category v1.SearchCategory, field string, value string) (que
 		boolQuery := newBooleanQuery(category)
 		subQuery, err := newStringQuery(category, field, value[len(pkgSearch.NegationPrefix):])
 		if err != nil {
-			return nil, fmt.Errorf("error computing sub query under negation: %s %s: %s", field, value, err)
+			return nil, errors.Wrapf(err, "error computing sub query under negation: %s %s", field, value)
 		}
 		boolQuery.AddMustNot(subQuery)
 		return boolQuery, nil

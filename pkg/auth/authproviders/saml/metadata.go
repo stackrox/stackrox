@@ -5,11 +5,11 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/pkg/errors"
 	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/russellhaering/gosaml2/types"
 	dsig "github.com/russellhaering/goxmldsig"
@@ -18,7 +18,7 @@ import (
 func configureIDPFromMetadataURL(ctx context.Context, sp *saml2.SAMLServiceProvider, metadataURL string) error {
 	entityID, descriptor, err := fetchIDPMetadata(ctx, metadataURL)
 	if err != nil {
-		return fmt.Errorf("fetching IdP metadata: %v", err)
+		return errors.Wrap(err, "fetching IdP metadata")
 	}
 	sp.IdentityProviderIssuer = entityID
 	return configureIDPFromDescriptor(sp, descriptor)
@@ -27,18 +27,18 @@ func configureIDPFromMetadataURL(ctx context.Context, sp *saml2.SAMLServiceProvi
 func fetchIDPMetadata(ctx context.Context, url string) (string, *types.IDPSSODescriptor, error) {
 	request, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return "", nil, fmt.Errorf("could not create HTTP request: %v", err)
+		return "", nil, errors.Wrap(err, "could not create HTTP request")
 	}
 	resp, err := http.DefaultClient.Do(request.WithContext(ctx))
 	if err != nil {
-		return "", nil, fmt.Errorf("fetching metadata: %v", err)
+		return "", nil, errors.Wrap(err, "fetching metadata")
 	}
 	defer func() {
 		_ = resp.Body.Close()
 	}()
 	var desc types.EntityDescriptor
 	if err := xml.NewDecoder(resp.Body).Decode(&desc); err != nil {
-		return "", nil, fmt.Errorf("parsing metadata XML: %v", err)
+		return "", nil, errors.Wrap(err, "parsing metadata XML")
 	}
 	if desc.IDPSSODescriptor == nil {
 		return "", nil, errors.New("metadata contains no IdP SSO descriptor")
@@ -73,11 +73,11 @@ func configureIDPFromDescriptor(sp *saml2.SAMLServiceProvider, descriptor *types
 		for _, cert := range keyDesc.KeyInfo.X509Data.X509Certificates {
 			rawData, err := base64.StdEncoding.DecodeString(cert.Data)
 			if err != nil {
-				return fmt.Errorf("could not decode X.509 certificate data: %v", err)
+				return errors.Wrap(err, "could not decode X.509 certificate data")
 			}
 			parsedCert, err := x509.ParseCertificate(rawData)
 			if err != nil {
-				return fmt.Errorf("could not parse X.509 certificate: %v", err)
+				return errors.Wrap(err, "could not parse X.509 certificate")
 			}
 			certStore.Roots = append(certStore.Roots, parsedCert)
 		}

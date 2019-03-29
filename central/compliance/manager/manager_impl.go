@@ -1,10 +1,10 @@
 package manager
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance"
 	"github.com/stackrox/rox/central/compliance/data"
@@ -80,7 +80,7 @@ func newManager(standardsRegistry *standards.Registry, scheduleStore ScheduleSto
 	}
 
 	if err := mgr.readFromStore(); err != nil {
-		return nil, fmt.Errorf("reading schedules from store: %v", err)
+		return nil, errors.Wrap(err, "reading schedules from store")
 	}
 	return mgr, nil
 }
@@ -124,22 +124,22 @@ func (m *manager) createDomain(clusterID string) (framework.ComplianceDomain, er
 		err = errors.New("cluster not found")
 	}
 	if err != nil {
-		return nil, fmt.Errorf("could not get cluster with ID %q: %v", clusterID, err)
+		return nil, errors.Wrapf(err, "could not get cluster with ID %q", clusterID)
 	}
 
 	clusterNodeStore, err := m.nodeStore.GetClusterNodeStore(clusterID)
 	if err != nil {
-		return nil, fmt.Errorf("could not get node store for cluster %s: %v", clusterID, err)
+		return nil, errors.Wrapf(err, "could not get node store for cluster %s", clusterID)
 	}
 	nodes, err := clusterNodeStore.ListNodes()
 	if err != nil {
-		return nil, fmt.Errorf("listing nodes for cluster %s: %v", clusterID, err)
+		return nil, errors.Wrapf(err, "listing nodes for cluster %s", clusterID)
 	}
 
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
 	deployments, err := m.deploymentStore.SearchRawDeployments(query)
 	if err != nil {
-		return nil, fmt.Errorf("could not get deployments for cluster %s: %v", clusterID, err)
+		return nil, errors.Wrapf(err, "could not get deployments for cluster %s", clusterID)
 	}
 
 	return framework.NewComplianceDomain(cluster, nodes, deployments), nil
@@ -299,7 +299,7 @@ func (m *manager) DeleteSchedule(id string) error {
 	// No need to interrupt - the next run time can only shift further into the future.
 
 	if err := m.scheduleStore.DeleteSchedule(id); err != nil {
-		return fmt.Errorf("deleting schedule from store: %v", err)
+		return errors.Wrap(err, "deleting schedule from store")
 	}
 
 	return nil
@@ -314,7 +314,7 @@ func (m *manager) AddSchedule(spec *storage.ComplianceRunSchedule) (*v1.Complian
 		if err == nil {
 			err = errors.New("no such cluster")
 		}
-		return nil, fmt.Errorf("could not check cluster ID %q: %v", spec.GetClusterId(), err)
+		return nil, errors.Wrapf(err, "could not check cluster ID %q", spec.GetClusterId())
 	}
 
 	if standard := m.standardsRegistry.LookupStandard(spec.GetStandardId()); standard == nil {
@@ -325,7 +325,7 @@ func (m *manager) AddSchedule(spec *storage.ComplianceRunSchedule) (*v1.Complian
 
 	scheduleMD, err := newScheduleInstance(spec)
 	if err != nil {
-		return nil, fmt.Errorf("instantiating schedule: %v", err)
+		return nil, errors.Wrap(err, "instantiating schedule")
 	}
 
 	concurrency.WithLock(&m.mutex, func() {
@@ -345,7 +345,7 @@ func (m *manager) UpdateSchedule(spec *storage.ComplianceRunSchedule) (*v1.Compl
 		if err == nil {
 			err = errors.New("no such cluster")
 		}
-		return nil, fmt.Errorf("could not check cluster ID %q: %v", spec.GetClusterId(), err)
+		return nil, errors.Wrapf(err, "could not check cluster ID %q", spec.GetClusterId())
 	}
 
 	if standard := m.standardsRegistry.LookupStandard(spec.GetStandardId()); standard == nil {
@@ -361,7 +361,7 @@ func (m *manager) UpdateSchedule(spec *storage.ComplianceRunSchedule) (*v1.Compl
 	}
 
 	if err := scheduleInstance.update(spec); err != nil {
-		return nil, fmt.Errorf("could not update schedule %s: %v", spec.GetId(), err)
+		return nil, errors.Wrapf(err, "could not update schedule %s", spec.GetId())
 	}
 
 	m.interrupt()
@@ -453,7 +453,7 @@ func (m *manager) ExpandSelection(clusterIDOrWildcard, standardIDOrWildcard stri
 	if clusterIDOrWildcard == Wildcard {
 		clusters, err := m.clusterStore.GetClusters()
 		if err != nil {
-			return nil, fmt.Errorf("retrieving clusters: %v", err)
+			return nil, errors.Wrap(err, "retrieving clusters")
 		}
 		clusterIDs = make([]string, len(clusters))
 		for i, cluster := range clusters {
@@ -518,7 +518,7 @@ func (m *manager) createAndLaunchRuns(clusterStandardPairs []compliance.ClusterS
 	for clusterID, standardImpls := range standardsByClusterID {
 		domain, err := m.createDomain(clusterID)
 		if err != nil {
-			return nil, fmt.Errorf("could not create domain for cluster ID %q: %v", clusterID, err)
+			return nil, errors.Wrapf(err, "could not create domain for cluster ID %q", clusterID)
 		}
 
 		var scrapeBasedPromise, scrapeLessPromise dataPromise

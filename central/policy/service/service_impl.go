@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/index/mappings"
@@ -166,7 +167,7 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *storage.Policy) (
 	request.Id = id
 
 	if err := s.addActivePolicy(request); err != nil {
-		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
+		return nil, errors.Wrap(err, "Policy could not be edited due to")
 	}
 	return request, nil
 }
@@ -182,7 +183,7 @@ func (s *serviceImpl) PutPolicy(ctx context.Context, request *storage.Policy) (*
 	}
 
 	if err := s.addActivePolicy(request); err != nil {
-		return nil, fmt.Errorf("Policy could not be edited due to: %+v", err)
+		return nil, errors.Wrap(err, "Policy could not be edited due to")
 	}
 	return &v1.Empty{}, nil
 }

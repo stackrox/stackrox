@@ -8,6 +8,7 @@ import (
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
 	"github.com/docker/distribution/manifest/schema2"
 	"github.com/heroku/docker-registry-client/registry"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -129,7 +130,7 @@ func (r *Registry) Metadata(image *storage.Image) (*storage.ImageMetadata, error
 	remote := image.GetName().GetRemote()
 	digest, manifestType, err := r.Client.ManifestDigest(remote, utils.Reference(image))
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get the manifest digest : %s", err)
+		return nil, errors.Wrap(err, "Failed to get the manifest digest ")
 	}
 
 	switch manifestType {

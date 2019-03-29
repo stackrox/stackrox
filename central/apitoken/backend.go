@@ -1,8 +1,7 @@
 package apitoken
 
 import (
-	"fmt"
-
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/apitoken/store"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/jwt"
@@ -51,11 +50,11 @@ type backend struct {
 func newBackend(issuerFactory tokens.IssuerFactory, tokenStore store.Store) (*backend, error) {
 	src, err := newSource(tokenStore)
 	if err != nil {
-		return nil, fmt.Errorf("creating source: %v", err)
+		return nil, errors.Wrap(err, "creating source")
 	}
 	issuer, err := issuerFactory.CreateIssuer(src, tokens.WithDefaultTTL(defaultTTL))
 	if err != nil {
-		return nil, fmt.Errorf("creating issuer: %v", err)
+		return nil, errors.Wrap(err, "creating issuer")
 	}
 	return &backend{
 		source: src,

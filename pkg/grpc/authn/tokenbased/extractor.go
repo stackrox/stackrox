@@ -1,9 +1,9 @@
 package tokenbased
 
 import (
-	"errors"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -38,7 +38,7 @@ func (e *extractor) IdentityForRequest(ri requestinfo.RequestInfo) (authn.Identi
 
 	token, err := e.validator.Validate(rawToken)
 	if err != nil {
-		return nil, fmt.Errorf("token validation failed: %v", err)
+		return nil, errors.Wrap(err, "token validation failed")
 	}
 
 	// Anonymous permission-based tokens (true bearer tokens).
@@ -76,7 +76,7 @@ func (e *extractor) withPermissions(token *tokens.TokenInfo) (authn.Identity, er
 func (e *extractor) withRoleName(token *tokens.TokenInfo) (authn.Identity, error) {
 	role, err := e.roleStore.GetRole(token.RoleName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read role role %q: %s", token.RoleName, err)
+		return nil, errors.Wrapf(err, "failed to read role role %q", token.RoleName)
 	}
 	if role == nil {
 		return nil, fmt.Errorf("token referenced invalid role %q", token.RoleName)
@@ -118,7 +118,7 @@ func (e *extractor) withExternalUser(token *tokens.TokenInfo) (authn.Identity, e
 
 	role, err := roleMapper.FromTokenClaims(token.Claims)
 	if err != nil {
-		return nil, fmt.Errorf("unable to load role for user: %s", err)
+		return nil, errors.Wrap(err, "unable to load role for user")
 	}
 	if role == nil {
 		return nil, fmt.Errorf("external user %s has no assigned role", token.ExternalUser.UserID)

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/alertmanager"
 	"github.com/stackrox/rox/central/detection/deploytime"
@@ -181,7 +182,7 @@ func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string,
 
 	presentAlerts, err := m.deploytimeDetector.AlertsForDeployment(deployment)
 	if err != nil {
-		return "", storage.EnforcementAction_UNSET_ENFORCEMENT, fmt.Errorf("fetching deploy time alerts: %s", err)
+		return "", storage.EnforcementAction_UNSET_ENFORCEMENT, errors.Wrap(err, "fetching deploy time alerts")
 	}
 
 	if _, err := m.alertManager.AlertAndNotify(presentAlerts,
@@ -203,33 +204,33 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 	// Add policy to set.
 	if policies.AppliesAtDeployTime(policy) {
 		if err := m.deploytimeDetector.UpsertPolicy(policy); err != nil {
-			return fmt.Errorf("adding policy %s to deploy time detector: %s", policy.GetName(), err)
+			return errors.Wrapf(err, "adding policy %s to deploy time detector", policy.GetName())
 		}
 		deployTimeAlerts, err := m.deploytimeDetector.AlertsForPolicy(policy.GetId())
 		if err != nil {
-			return fmt.Errorf("error generating deploy-time alerts for policy %s: %s", policy.GetName(), err)
+			return errors.Wrapf(err, "error generating deploy-time alerts for policy %s", policy.GetName())
 		}
 		presentAlerts = append(presentAlerts, deployTimeAlerts...)
 	} else {
 		err := m.deploytimeDetector.RemovePolicy(policy.GetId())
 		if err != nil {
-			return fmt.Errorf("removing policy %s from deploy time detector: %s", policy.GetName(), err)
+			return errors.Wrapf(err, "removing policy %s from deploy time detector", policy.GetName())
 		}
 	}
 
 	if policies.AppliesAtRunTime(policy) {
 		if err := m.runtimeDetector.UpsertPolicy(policy); err != nil {
-			return fmt.Errorf("adding policy %s to runtime detector: %s", policy.GetName(), err)
+			return errors.Wrapf(err, "adding policy %s to runtime detector", policy.GetName())
 		}
 		runTimeAlerts, err := m.runtimeDetector.AlertsForPolicy(policy.GetId())
 		if err != nil {
-			return fmt.Errorf("error generating runtime alerts for policy %s: %s", policy.GetName(), err)
+			return errors.Wrapf(err, "error generating runtime alerts for policy %s", policy.GetName())
 		}
 		presentAlerts = append(presentAlerts, runTimeAlerts...)
 	} else {
 		err := m.runtimeDetector.RemovePolicy(policy.GetId())
 		if err != nil {
-			return fmt.Errorf("removing policy %s from runtime detector: %s", policy.GetName(), err)
+			return errors.Wrapf(err, "removing policy %s from runtime detector", policy.GetName())
 		}
 	}
 

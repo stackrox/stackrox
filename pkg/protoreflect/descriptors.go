@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/sync"
 	"google.golang.org/grpc"
 )
@@ -66,15 +67,15 @@ func ParseFileDescriptor(data []byte) (*descriptor.FileDescriptorProto, error) {
 
 	uncompressedReader, err := gzip.NewReader(bytes.NewBuffer(data))
 	if err != nil {
-		return nil, fmt.Errorf("uncompressing file descriptor data: %v", err)
+		return nil, errors.Wrap(err, "uncompressing file descriptor data")
 	}
 	uncompressedData, err := ioutil.ReadAll(uncompressedReader)
 	if err != nil {
-		return nil, fmt.Errorf("uncompressing file descriptor data: %v", err)
+		return nil, errors.Wrap(err, "uncompressing file descriptor data")
 	}
 	desc = &descriptor.FileDescriptorProto{}
 	if err := proto.Unmarshal(uncompressedData, desc); err != nil {
-		return nil, fmt.Errorf("unmarshalling file descriptor: %v", err)
+		return nil, errors.Wrap(err, "unmarshalling file descriptor")
 	}
 
 	fileDescCacheMutex.Lock()
@@ -149,11 +150,11 @@ func GetEnumDescriptor(e ProtoEnum) (*descriptor.EnumDescriptorProto, error) {
 	fileDescData, path := e.EnumDescriptor()
 	fileDesc, err := ParseFileDescriptor(fileDescData)
 	if err != nil {
-		return nil, fmt.Errorf("parsing enum descriptor: %v", err)
+		return nil, errors.Wrap(err, "parsing enum descriptor")
 	}
 	inner, err := traverse(fileDescWrap{FileDescriptorProto: fileDesc}, path[:len(path)-1])
 	if err != nil {
-		return nil, fmt.Errorf("resolving path to enum: %v", err)
+		return nil, errors.Wrap(err, "resolving path to enum")
 	}
 	enumIdx := path[len(path)-1]
 	enums := inner.GetEnumType()
@@ -174,11 +175,11 @@ func GetMessageDescriptor(pb ProtoMessage) (*descriptor.DescriptorProto, error) 
 	fileDescData, path := pb.Descriptor()
 	fileDesc, err := ParseFileDescriptor(fileDescData)
 	if err != nil {
-		return nil, fmt.Errorf("parsing message descriptor: %v", err)
+		return nil, errors.Wrap(err, "parsing message descriptor")
 	}
 	innermost, err := traverse(fileDescWrap{FileDescriptorProto: fileDesc}, path)
 	if err != nil {
-		return nil, fmt.Errorf("resolving path to message: %v", err)
+		return nil, errors.Wrap(err, "resolving path to message")
 	}
 	messageDesc, ok := innermost.(*descriptor.DescriptorProto)
 	if !ok {

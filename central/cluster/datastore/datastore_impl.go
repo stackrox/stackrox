@@ -1,10 +1,10 @@
 package datastore
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/central/cluster/index"
 	"github.com/stackrox/rox/central/cluster/store"
@@ -102,7 +102,7 @@ func (ds *datastoreImpl) RemoveCluster(id string) error {
 	}
 
 	if err := ds.storage.RemoveCluster(id); err != nil {
-		return fmt.Errorf("failed to remove cluster %q: %v", id, err)
+		return errors.Wrapf(err, "failed to remove cluster %q", id)
 	}
 
 	go ds.postRemoveCluster(cluster)

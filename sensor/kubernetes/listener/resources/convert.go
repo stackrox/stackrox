@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	openshift_appsv1 "github.com/openshift/api/apps/v1"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containers"
@@ -152,7 +153,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 
 		labelSelector, err = w.getLabelSelector(spec)
 		if err != nil {
-			return fmt.Errorf("error getting label selector: %v", err)
+			return errors.Wrap(err, "error getting label selector")
 		}
 
 	// Pods don't have the abstractions that higher level objects have so maintain it's lifecycle independently
@@ -182,7 +183,7 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 
 		labelSelector, err = w.getLabelSelector(spec)
 		if err != nil {
-			return fmt.Errorf("error getting label selector: %v", err)
+			return errors.Wrap(err, "error getting label selector")
 		}
 	}
 
@@ -272,7 +273,7 @@ func filterOnName(name string, pods []*v1.Pod) []*v1.Pod {
 func (w *deploymentWrap) getPods(topLevelName string, labelSelector *metav1.LabelSelector, lister v1listers.PodLister) ([]*v1.Pod, error) {
 	compiledLabelSelector, err := metav1.LabelSelectorAsSelector(labelSelector)
 	if err != nil {
-		return nil, fmt.Errorf("could not compile label selector: %v", err)
+		return nil, errors.Wrap(err, "could not compile label selector")
 	}
 	w.podSelector = compiledLabelSelector
 	pods, err := lister.Pods(w.Namespace).List(w.podSelector)

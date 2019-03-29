@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,18 +24,18 @@ func (c CVEQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sear
 
 	_, err = regexp.Compile(cve)
 	if err != nil {
-		err = fmt.Errorf("regex '%s' invalid: %s", cve, err)
+		err = errors.Wrapf(err, "regex '%s' invalid", cve)
 		return
 	}
 
 	cveSearchField, err := getSearchField(search.CVE, optionsMap)
 	if err != nil {
-		err = fmt.Errorf("%s: %s", c.Name(), err)
+		err = errors.Wrapf(err, "%s", c.Name())
 		return
 	}
 	cveLinkSearchField, err := getSearchField(search.CVELink, optionsMap)
 	if err != nil {
-		err = fmt.Errorf("%s: %s", c.Name(), err)
+		err = errors.Wrapf(err, "%s", c.Name())
 		return
 	}
 

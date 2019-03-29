@@ -8,6 +8,7 @@ import (
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search"
 	"github.com/blevesearch/bleve/search/query"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch/validpositions"
@@ -202,12 +203,12 @@ func resolveMatchFieldQuery(ctx context, index bleve.Index, category v1.SearchCa
 	// Go get the query that needs to be run
 	subQuery, err := resolveMatchFieldQuery(subQueryContext, index, nextHopCategory, searchFieldsAndValues, highlightCtx)
 	if err != nil {
-		return nil, fmt.Errorf("resolving query with next hop: '%s': %s", nextHopCategory, err)
+		return nil, errors.Wrapf(err, "resolving query with next hop: '%s'", nextHopCategory)
 	}
 
 	results, err := runQuery(subQueryContext, subQuery, index, highlightCtx, relationshipField.dstField)
 	if err != nil {
-		return nil, fmt.Errorf("running sub query to retrieve field %s: %s", relationshipField.dstField, err)
+		return nil, errors.Wrapf(err, "running sub query to retrieve field %s", relationshipField.dstField)
 	}
 	if len(results) == 0 {
 		return bleve.NewMatchNoneQuery(), nil
@@ -231,7 +232,7 @@ func resolveMatchFieldQuery(ctx context, index bleve.Index, category v1.SearchCa
 			refSet[fieldValue] = struct{}{}
 			q, err := matchFieldQuery(parentCategory, relationshipField.srcField, v1.SearchDataType_SEARCH_STRING, fieldValue)
 			if err != nil {
-				return nil, fmt.Errorf("computing query for field '%s': %s", fieldValue, err)
+				return nil, errors.Wrapf(err, "computing query for field '%s'", fieldValue)
 			}
 			disjunctionQuery.AddQuery(q)
 		}
@@ -330,7 +331,7 @@ func buildQuery(ctx context, index bleve.Index, category v1.SearchCategory, q *v
 	queryConverter := newQueryConverter(category, index, optionsMap)
 	bleveQuery, highlightCtx, err := queryConverter.convert(ctx, q)
 	if err != nil {
-		return nil, nil, fmt.Errorf("converting to bleve query: %s", err)
+		return nil, nil, errors.Wrap(err, "converting to bleve query")
 	}
 
 	// If a non-empty query was passed, but we couldn't find a query, that means that the query is invalid

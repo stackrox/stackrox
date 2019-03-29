@@ -1,9 +1,9 @@
 package buildinfo
 
 import (
-	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/buildinfo/internal/timestamp"
 )
 
@@ -19,7 +19,7 @@ const (
 // CAVEAT: This function panics if no build timestamp information is available.
 func BuildTimestamp() time.Time {
 	if timestamp.BuildTimestampParsingErr != nil {
-		panic(fmt.Errorf("failed to parse build timestamp: %v", timestamp.BuildTimestampParsingErr))
+		panic(errors.Wrap(timestamp.BuildTimestampParsingErr, "failed to parse build timestamp"))
 	}
 	return timestamp.BuildTimestamp
 }

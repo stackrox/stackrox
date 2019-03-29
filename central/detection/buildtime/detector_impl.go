@@ -1,11 +1,10 @@
 package buildtime
 
 import (
-	"errors"
-	"fmt"
 	"strings"
 
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/detection/image"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/image/index"
@@ -48,12 +47,12 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 	}
 	tempIndex, err := globalindex.MemOnlyIndex()
 	if err != nil {
-		return nil, fmt.Errorf("initializing temp index: %s", err)
+		return nil, errors.Wrap(err, "initializing temp index")
 	}
 	tempIndexer := index.New(tempIndex)
 	err = tempIndexer.AddImage(image)
 	if err != nil {
-		return nil, fmt.Errorf("inserting into temp index: %s", err)
+		return nil, errors.Wrap(err, "inserting into temp index")
 	}
 
 	var alerts []*storage.Alert
@@ -66,7 +65,7 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 		}
 		violations, err := matcher.MatchOne(tempIndexer, types.NewDigest(image.GetId()).Digest())
 		if err != nil {
-			return fmt.Errorf("matching against policy %s: %s", p.GetName(), err)
+			return errors.Wrapf(err, "matching against policy %s", p.GetName())
 		}
 		alertViolations := violations.AlertViolations
 		if len(alertViolations) > 0 {

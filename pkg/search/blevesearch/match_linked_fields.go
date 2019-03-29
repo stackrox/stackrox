@@ -1,13 +1,13 @@
 package blevesearch
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/search"
 	"github.com/blevesearch/bleve/search/query"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/blevesearch/validpositions"
@@ -218,7 +218,7 @@ func matchAllFieldsQuery(ctx context, index bleve.Index, category v1.SearchCateg
 		}
 		mfQ, err := matchFieldQuery(category, fieldAndValue.sf.GetFieldPath(), fieldAndValue.sf.GetType(), fieldAndValue.value)
 		if err != nil {
-			return nil, fmt.Errorf("computing match field query for %+v (sf: %+v): %s", fieldAndValue, fieldAndValue.sf, err)
+			return nil, errors.Wrapf(err, "computing match field query for %+v (sf: %+v)", fieldAndValue, fieldAndValue.sf)
 		}
 		mfQs = append(mfQs, mfQ)
 		if fieldAndValue.highlight && highlightCtx != nil {
@@ -229,7 +229,7 @@ func matchAllFieldsQuery(ctx context, index bleve.Index, category v1.SearchCateg
 	conjunction.AddQuery(mapQueries...)
 	searchResult, err := runBleveQuery(ctx, conjunction, index, highlightCtx, true)
 	if err != nil {
-		return nil, fmt.Errorf("running sub query for category %s, fieldsAndValues: %+v: %s", category, fieldsAndValues, err)
+		return nil, errors.Wrapf(err, "running sub query for category %s, fieldsAndValues: %+v", category, fieldsAndValues)
 	}
 
 	var resultIDs []string

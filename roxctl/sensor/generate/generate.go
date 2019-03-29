@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -59,7 +60,7 @@ func fullClusterCreation() error {
 			defer cancel()
 			clusterResponse, err := service.GetClusters(ctx, &v1.Empty{})
 			if err != nil {
-				return fmt.Errorf("error getting clusters: %v", err)
+				return errors.Wrap(err, "error getting clusters")
 			}
 			for _, c := range clusterResponse.GetClusters() {
 				if strings.EqualFold(c.GetName(), cluster.GetName()) {
@@ -70,12 +71,12 @@ func fullClusterCreation() error {
 				return fmt.Errorf("error finding preexisting cluster with name %q", cluster.GetName())
 			}
 		} else {
-			return fmt.Errorf("error creating cluster: %v", err)
+			return errors.Wrap(err, "error creating cluster")
 		}
 	}
 
 	if err := getBundle(id); err != nil {
-		return fmt.Errorf("error getting cluster zip file: %v", err)
+		return errors.Wrap(err, "error getting cluster zip file")
 	}
 	return nil
 }
@@ -131,20 +132,20 @@ func writeZipToFolder(zipName string) error {
 
 	outputFolder := strings.TrimRight(zipName, filepath.Ext(zipName))
 	if err := os.MkdirAll(outputFolder, 0777); err != nil {
-		return fmt.Errorf("Unable to create folder %q: %v", outputFolder, err)
+		return errors.Wrapf(err, "Unable to create folder %q", outputFolder)
 	}
 
 	for _, f := range reader.File {
 		fileReader, err := f.Open()
 		if err != nil {
-			return fmt.Errorf("Unable to open file %q: %v", f.Name, err)
+			return errors.Wrapf(err, "Unable to open file %q", f.Name)
 		}
 		data, err := ioutil.ReadAll(fileReader)
 		if err != nil {
-			return fmt.Errorf("Unable to read file %q: %v", f.Name, err)
+			return errors.Wrapf(err, "Unable to read file %q", f.Name)
 		}
 		if err := ioutil.WriteFile(filepath.Join(outputFolder, f.Name), data, f.Mode()); err != nil {
-			return fmt.Errorf("Unable to write file %q: %v", f.Name, err)
+			return errors.Wrapf(err, "Unable to write file %q", f.Name)
 		}
 	}
 	printf("Successfully wrote sensor folder %q\n", outputFolder)
@@ -183,20 +184,20 @@ func getBundle(id string) error {
 	// If containerized, then write a zip file
 	if docker.IsContainerized() {
 		if _, err := io.Copy(os.Stdout, resp.Body); err != nil {
-			return fmt.Errorf("Error writing out zip file: %v", err)
+			return errors.Wrap(err, "Error writing out zip file")
 		}
 		printf("Successfully wrote sensor zip file\n")
 	} else {
 		file, err := os.Create(outputFilename)
 		if err != nil {
-			return fmt.Errorf("Could not create file %q: %v", outputFilename, err)
+			return errors.Wrapf(err, "Could not create file %q", outputFilename)
 		}
 		if _, err := io.Copy(file, resp.Body); err != nil {
 			_ = file.Close()
-			return fmt.Errorf("Error writing out zip file: %v", err)
+			return errors.Wrap(err, "Error writing out zip file")
 		}
 		if err := file.Close(); err != nil {
-			return fmt.Errorf("Error closing file: %v", err)
+			return errors.Wrap(err, "Error closing file")
 		}
 		if err := writeZipToFolder(outputFilename); err != nil {
 			return err

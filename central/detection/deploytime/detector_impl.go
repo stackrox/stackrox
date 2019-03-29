@@ -5,6 +5,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentIndexer "github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/detection/deployment"
@@ -40,7 +41,7 @@ func tempDeploymentIndexer(deployment *storage.Deployment) (deploymentIndexer.In
 	}
 	tempIndex, err := globalindex.MemOnlyIndex()
 	if err != nil {
-		return nil, nil, fmt.Errorf("initializing temp index: %s", err)
+		return nil, nil, errors.Wrap(err, "initializing temp index")
 	}
 	imageIndex := imageIndexer.New(tempIndex)
 	deploymentIndex := deploymentIndexer.New(tempIndex)
@@ -112,7 +113,7 @@ func (d *detectorImpl) evaluateAlertsForDeployment(ctx DetectionContext, searche
 			violations = violationsWrapper.AlertViolations
 		}
 		if err != nil {
-			return fmt.Errorf("evaluating violations for policy %s; deployment %s/%s: %s", p.GetName(), deployment.GetNamespace(), deployment.GetName(), err)
+			return errors.Wrapf(err, "evaluating violations for policy %s; deployment %s/%s", p.GetName(), deployment.GetNamespace(), deployment.GetName())
 		}
 		if len(violations) > 0 {
 			newAlerts = append(newAlerts, policyDeploymentAndViolationsToAlert(p, deployment, violations))

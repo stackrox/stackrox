@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/central/monitoring"
@@ -102,14 +103,14 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	ca, err := mtls.CACertPEM()
 	if err != nil {
-		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("unable to retrieve CA Cert: %v", err))
+		writeGRPCStyleError(w, codes.Internal, errors.Wrap(err, "unable to retrieve CA Cert"))
 		return
 	}
 	wrapper.AddFiles(zip.NewFile("ca.pem", ca, 0))
 
 	baseFiles, err := deployer.Render(clusters.Wrap(*cluster), ca)
 	if err != nil {
-		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("could not render all files: %v", err))
+		writeGRPCStyleError(w, codes.Internal, errors.Wrap(err, "could not render all files"))
 		return
 	}
 
@@ -151,7 +152,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	bytes, err := wrapper.Zip()
 	if err != nil {
-		writeGRPCStyleError(w, codes.Internal, fmt.Errorf("unable to render zip file: %v", err))
+		writeGRPCStyleError(w, codes.Internal, errors.Wrap(err, "unable to render zip file"))
 		return
 	}
 

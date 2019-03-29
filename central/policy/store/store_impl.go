@@ -7,6 +7,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -82,7 +83,7 @@ func (b *storeImpl) AddPolicy(policy *storage.Policy) (string, error) {
 			return fmt.Errorf("Policy %v (%v) cannot be added because it already exists", policy.GetName(), policy.GetId())
 		}
 		if err := secondarykey.CheckUniqueKeyExistsAndInsert(tx, policyBucket, policy.GetId(), policy.GetName()); err != nil {
-			return fmt.Errorf("Could not add policy due to name validation: %s", err)
+			return errors.Wrap(err, "Could not add policy due to name validation")
 		}
 		bytes, err := proto.Marshal(policy)
 		if err != nil {
@@ -101,7 +102,7 @@ func (b *storeImpl) UpdatePolicy(policy *storage.Policy) error {
 		// If the update is changing the name, check if the name has already been taken
 		if val, _ := secondarykey.GetCurrentUniqueKey(tx, policyBucket, policy.GetId()); val != policy.GetName() {
 			if err := secondarykey.UpdateUniqueKey(tx, policyBucket, policy.GetId(), policy.GetName()); err != nil {
-				return fmt.Errorf("Could not update policy due to name validation: %s", err)
+				return errors.Wrap(err, "Could not update policy due to name validation")
 			}
 		}
 		bytes, err := proto.Marshal(policy)

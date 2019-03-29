@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -26,7 +27,7 @@ func (c *dockerFileLineFieldQueryBuilder) Query(fields *storage.PolicyFields, op
 
 	instSearchField, err := getSearchField(search.DockerfileInstructionKeyword, optionsMap)
 	if err != nil {
-		err = fmt.Errorf("%s: %s", c.Name(), err)
+		err = errors.Wrapf(err, "%s", c.Name())
 	}
 
 	if _, ok := types.DockerfileInstructionSet[lineRule.GetInstruction()]; !ok {
@@ -45,13 +46,13 @@ func (c *dockerFileLineFieldQueryBuilder) Query(fields *storage.PolicyFields, op
 
 	_, err = regexp.Compile(lineRule.GetValue())
 	if err != nil {
-		err = fmt.Errorf("invalid line regex %+v: %s", lineRule, err)
+		err = errors.Wrapf(err, "invalid line regex %+v", lineRule)
 		return
 	}
 
 	valSearchField, err := getSearchField(search.DockerfileInstructionValue, optionsMap)
 	if err != nil {
-		err = fmt.Errorf("%s: %s", c.Name(), err)
+		err = errors.Wrapf(err, "%s", c.Name())
 	}
 
 	q = search.NewQueryBuilder().AddLinkedFieldsHighlighted(

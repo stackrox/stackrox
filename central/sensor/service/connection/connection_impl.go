@@ -1,10 +1,9 @@
 package connection
 
 import (
-	"errors"
-	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -37,7 +36,7 @@ type sensorConnection struct {
 func newConnection(clusterID string, pf pipeline.Factory, recorder checkInRecorder) (*sensorConnection, error) {
 	eventPipeline, err := pf.PipelineForCluster(clusterID)
 	if err != nil {
-		return nil, fmt.Errorf("creating event pipeline: %v", err)
+		return nil, errors.Wrap(err, "creating event pipeline")
 	}
 
 	conn := &sensorConnection{
@@ -80,7 +79,7 @@ func (c *sensorConnection) runRecv(server central.SensorService_CommunicateServe
 	for !c.stopSig.IsDone() {
 		msg, err := server.Recv()
 		if err != nil {
-			c.stopSig.SignalWithError(fmt.Errorf("recv error: %v", err))
+			c.stopSig.SignalWithError(errors.Wrap(err, "recv error"))
 			return
 		}
 		c.recordCheckInRateLimited()
@@ -103,11 +102,11 @@ func (c *sensorConnection) runSend(server central.SensorService_CommunicateServe
 		case <-c.stopSig.Done():
 			return
 		case <-server.Context().Done():
-			c.stopSig.SignalWithError(fmt.Errorf("context error: %v", server.Context().Err()))
+			c.stopSig.SignalWithError(errors.Wrap(server.Context().Err(), "context error"))
 			return
 		case msg := <-c.sendC:
 			if err := server.Send(msg); err != nil {
-				c.stopSig.SignalWithError(fmt.Errorf("send error: %v", err))
+				c.stopSig.SignalWithError(errors.Wrap(err, "send error"))
 				return
 			}
 		}
@@ -129,7 +128,7 @@ func (c *sensorConnection) InjectMessage(ctx concurrency.Waitable, msg *central.
 	case <-ctx.Done():
 		return errors.New("context aborted")
 	case <-c.stopSig.Done():
-		return fmt.Errorf("could not send message as sensor connection was stopped: %v", c.stopSig.Err())
+		return errors.Wrap(c.stopSig.Err(), "could not send message as sensor connection was stopped")
 	}
 }
 

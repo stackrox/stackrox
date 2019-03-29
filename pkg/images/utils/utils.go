@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/docker/distribution/reference"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 )
@@ -47,7 +48,7 @@ func GenerateImageNameFromString(imageStr string) (*storage.ImageName, reference
 
 	ref, err := reference.ParseAnyReference(imageStr)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing image name '%s': %s", imageStr, err)
+		return nil, nil, errors.Wrapf(err, "error parsing image name '%s'", imageStr)
 	}
 
 	named, ok := ref.(reference.Named)

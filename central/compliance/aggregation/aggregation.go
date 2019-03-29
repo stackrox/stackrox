@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	clusterMappings "github.com/stackrox/rox/central/cluster/index/mappings"
 	"github.com/stackrox/rox/central/compliance/standards"
@@ -77,7 +78,7 @@ func (a *aggregatorImpl) Search(q *v1.Query) ([]search.Result, error) {
 		}
 		results, err := searchFuncAndMap.searchFunc(q)
 		if err != nil {
-			return nil, fmt.Errorf("searching category %s: %v", category, err)
+			return nil, errors.Wrapf(err, "searching category %s", category)
 		}
 		allResults = append(allResults, results...)
 	}

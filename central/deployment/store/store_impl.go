@@ -1,11 +1,11 @@
 package store
 
 import (
-	"fmt"
 	"time"
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/ranking"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,7 +23,7 @@ func (b *storeImpl) initializeRanker() error {
 	b.ranker = ranking.NewRanker()
 	deployments, err := b.GetDeployments()
 	if err != nil {
-		return fmt.Errorf("retrieving deployments: %s", err)
+		return errors.Wrap(err, "retrieving deployments")
 	}
 	for _, deployment := range deployments {
 		b.ranker.Add(deployment.GetId(), deployment.GetRisk().GetScore())

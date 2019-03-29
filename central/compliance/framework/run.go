@@ -2,8 +2,8 @@ package framework
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -69,7 +69,7 @@ func NewComplianceRun(checks ...Check) (ComplianceRun, error) {
 func signalOnContextErr(ctx context.Context, sig *concurrency.ErrorSignal) {
 	select {
 	case <-ctx.Done():
-		sig.SignalWithError(fmt.Errorf("context error: %v", ctx.Err()))
+		sig.SignalWithError(errors.Wrap(ctx.Err(), "context error"))
 	case <-sig.Done():
 	}
 }

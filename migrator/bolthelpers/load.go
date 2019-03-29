@@ -1,12 +1,12 @@
 package bolthelpers
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	bolt "github.com/etcd-io/bbolt"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/migrations"
 )
 
@@ -23,7 +23,7 @@ func Load() (*bolt.DB, error) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("couldn't stat file: %v", err)
+		return nil, errors.Wrap(err, "couldn't stat file")
 	}
 	return newBolt(dbPath)
 }
@@ -31,7 +31,7 @@ func Load() (*bolt.DB, error) {
 func newBolt(dbPath string) (*bolt.DB, error) {
 	db, err := bolt.Open(dbPath, 0600, nil)
 	if err != nil {
-		return nil, fmt.Errorf("bolt open failed: %v", err)
+		return nil, errors.Wrap(err, "bolt open failed")
 	}
 
 	return db, nil

@@ -2,8 +2,8 @@ package sensor
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"google.golang.org/grpc"
@@ -41,7 +41,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	///////////////////////////
 	stream, err := client.Communicate(context.Background())
 	if err != nil {
-		s.stopC.SignalWithError(fmt.Errorf("opening stream: %v", err))
+		s.stopC.SignalWithError(errors.Wrap(err, "opening stream"))
 		return
 	}
 	defer func() {

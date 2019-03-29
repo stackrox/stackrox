@@ -1,8 +1,7 @@
 package search
 
 import (
-	"fmt"
-
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -35,7 +34,7 @@ func (s *searcherImpl) SearchRawProcessIndicators(q *v1.Query) ([]*storage.Proce
 	for _, result := range results {
 		indicator, exists, err := s.storage.GetProcessIndicator(result.ID)
 		if err != nil {
-			return nil, fmt.Errorf("retrieving indicator with id '%s': %s", result.ID, err)
+			return nil, errors.Wrapf(err, "retrieving indicator with id '%s'", result.ID)
 		}
 		// The result may not exist if the object was deleted after the search
 		if !exists {

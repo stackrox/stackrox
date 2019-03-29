@@ -1,12 +1,11 @@
 package store
 
 import (
-	"errors"
-	"fmt"
 	"time"
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -27,7 +26,7 @@ func (b *storeImpl) AddToken(token *storage.TokenMetadata) error {
 
 	bytes, err := proto.Marshal(token)
 	if err != nil {
-		return fmt.Errorf("proto marshaling: %s", err)
+		return errors.Wrap(err, "proto marshaling")
 	}
 
 	return b.Update(func(tx *bolt.Tx) error {
@@ -48,7 +47,7 @@ func (b *storeImpl) GetTokenOrNil(id string) (token *storage.TokenMetadata, err 
 		token = new(storage.TokenMetadata)
 		err := proto.Unmarshal(tokenBytes, token)
 		if err != nil {
-			return fmt.Errorf("proto unmarshaling: %s", err)
+			return errors.Wrap(err, "proto unmarshaling")
 		}
 		return nil
 	})
@@ -64,7 +63,7 @@ func (b *storeImpl) GetTokens(req *v1.GetAPITokensRequest) (tokens []*storage.To
 			var token storage.TokenMetadata
 			err := proto.Unmarshal(v, &token)
 			if err != nil {
-				return fmt.Errorf("proto unmarshaling: %s", err)
+				return errors.Wrap(err, "proto unmarshaling")
 			}
 			// If the request specifies a value for revoked, make sure the value matches.
 			if req.GetRevokedOneof() != nil && req.GetRevoked() != token.GetRevoked() {

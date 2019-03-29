@@ -3,6 +3,7 @@ package namespace
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/namespace/datastore"
 	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
@@ -18,7 +19,7 @@ func ResolveAll(dataStore datastore.DataStore, deploymentDataStore deploymentDat
 	secretDataStore secretDataStore.DataStore, npStore networkPoliciesStore.Store) ([]*v1.Namespace, error) {
 	metadataSlice, err := dataStore.GetNamespaces()
 	if err != nil {
-		return nil, fmt.Errorf("retrieving namespaces: %v", err)
+		return nil, errors.Wrap(err, "retrieving namespaces")
 	}
 	return populateFromMetadataSlice(metadataSlice, deploymentDataStore, secretDataStore, npStore)
 }
@@ -30,7 +31,7 @@ func ResolveByClusterID(clusterID string, datastore datastore.DataStore, deploym
 		AddExactMatches(search.ClusterID, clusterID).
 		ProtoQuery())
 	if err != nil {
-		return nil, fmt.Errorf("searching namespace for cluster id %q: %v", clusterID, err)
+		return nil, errors.Wrapf(err, "searching namespace for cluster id %q", clusterID)
 	}
 	return populateFromMetadataSlice(metadataSlice, deploymentDataStore, secretDataStore, npStore)
 }
@@ -44,7 +45,7 @@ func populateFromMetadataSlice(metadataSlice []*storage.NamespaceMetadata, deplo
 	for _, metadata := range metadataSlice {
 		ns, err := populate(metadata, deploymentDataStore, secretDataStore, npStore)
 		if err != nil {
-			return nil, fmt.Errorf("populating namespace '%s/%s': %v", metadata.GetClusterName(), metadata.GetName(), err)
+			return nil, errors.Wrapf(err, "populating namespace '%s/%s'", metadata.GetClusterName(), metadata.GetName())
 		}
 		namespaces = append(namespaces, ns)
 	}
@@ -74,7 +75,7 @@ func ResolveByID(id string, dataStore datastore.DataStore, deploymentDataStore d
 	secretDataStore secretDataStore.DataStore, npStore networkPoliciesStore.Store) (*v1.Namespace, bool, error) {
 	ns, exists, err := dataStore.GetNamespace(id)
 	if err != nil {
-		return nil, false, fmt.Errorf("retrieving from store: %v", err)
+		return nil, false, errors.Wrap(err, "retrieving from store")
 	}
 	if !exists {
 		return nil, false, nil
@@ -92,12 +93,12 @@ func populate(storageNamespace *storage.NamespaceMetadata, deploymentDataStore d
 		ProtoQuery()
 	deploymentResults, err := deploymentDataStore.Search(protoutils.CloneV1Query(q))
 	if err != nil {
-		return nil, fmt.Errorf("searching deployments: %v", err)
+		return nil, errors.Wrap(err, "searching deployments")
 	}
 
 	secretResults, err := secretDataStore.Search(q)
 	if err != nil {
-		return nil, fmt.Errorf("searching secrets: %v", err)
+		return nil, errors.Wrap(err, "searching secrets")
 	}
 
 	networkPolicyCount, err := npStore.CountMatchingNetworkPolicies(
@@ -105,7 +106,7 @@ func populate(storageNamespace *storage.NamespaceMetadata, deploymentDataStore d
 		storageNamespace.GetName(),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("counting network policies: %v", err)
+		return nil, errors.Wrap(err, "counting network policies")
 	}
 
 	return &v1.Namespace{

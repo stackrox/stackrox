@@ -3,7 +3,6 @@ package oidc
 import (
 	"context"
 	"crypto/rand"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -226,7 +226,7 @@ func (p *backendImpl) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request)
 
 	userClaim, opts, err := p.verifyIDToken(r.Context(), rawIDToken)
 	if err != nil {
-		return nil, nil, clientState, fmt.Errorf("id token verification failed: %v", err)
+		return nil, nil, clientState, errors.Wrap(err, "id token verification failed")
 	}
 
 	return userClaim, opts, clientState, nil

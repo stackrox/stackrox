@@ -1,9 +1,8 @@
 package search
 
 import (
-	"fmt"
-
 	"github.com/blevesearch/bleve"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/secret/search/options"
 	"github.com/stackrox/rox/central/secret/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -44,7 +43,7 @@ func (ds *searcherImpl) SearchListSecrets(q *v1.Query) ([]*storage.ListSecret, e
 func (ds *searcherImpl) getSearchResults(q *v1.Query) ([]search.Result, error) {
 	results, err := blevesearch.RunSearchRequest(v1.SearchCategory_SECRETS, q, ds.index, options.Map)
 	if err != nil {
-		return nil, fmt.Errorf("running search request: %s", err)
+		return nil, errors.Wrap(err, "running search request")
 	}
 	return results, nil
 }

@@ -1,9 +1,9 @@
 package scrape
 
 import (
-	"errors"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
@@ -82,10 +82,10 @@ func (s *controllerImpl) RunScrape(expectedHosts set.StringSet, kill concurrency
 	case <-kill.Done():
 		err = errors.New("scrape stopped due to received kill command")
 	case <-s.stoppedSig.Done():
-		err = fmt.Errorf("scrape stopped as sensor connection was terminated: %v", s.stoppedSig.Err())
+		err = errors.Wrap(s.stoppedSig.Err(), "scrape stopped as sensor connection was terminated")
 	case <-scrape.Stopped().Done():
 		if scrapeErr := scrape.Stopped().Err(); scrapeErr != nil {
-			err = fmt.Errorf("scrape failed: %s", scrapeErr)
+			err = errors.Wrap(scrapeErr, "scrape failed")
 		}
 	}
 

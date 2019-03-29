@@ -3,6 +3,7 @@ package datastore
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/namespace/index"
 	"github.com/stackrox/rox/central/namespace/store"
@@ -133,7 +134,7 @@ func (b *datastoreImpl) searchNamespaces(q *v1.Query) ([]*storage.NamespaceMetad
 	for _, res := range results {
 		ns, exists, err := b.GetNamespace(res.ID)
 		if err != nil {
-			return nil, resultSlice, fmt.Errorf("retrieving namespace %q: %v", res.ID, err)
+			return nil, resultSlice, errors.Wrapf(err, "retrieving namespace %q", res.ID)
 		}
 		if !exists {
 			// This could be due to a race where it's deleted in the time between

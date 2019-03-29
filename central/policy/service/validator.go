@@ -1,12 +1,12 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 
 	mapset "github.com/deckarep/golang-set"
+	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentMappings "github.com/stackrox/rox/central/deployment/index/mappings"
 	imageMappings "github.com/stackrox/rox/central/image/index/mappings"
@@ -219,7 +219,7 @@ func (s *policyValidator) validateScope(scope *storage.Scope) error {
 func compilesForBuildTime(policy *storage.Policy) error {
 	m, err := matcher.ForPolicy(policy, imageMappings.OptionsMap, nil)
 	if err != nil {
-		return fmt.Errorf("policy configuration is invalid for build time: %s", err)
+		return errors.Wrap(err, "policy configuration is invalid for build time")
 	}
 	if m == nil {
 		return errors.New("build time policy contains no image constraints")
@@ -230,7 +230,7 @@ func compilesForBuildTime(policy *storage.Policy) error {
 func compilesForDeployTime(policy *storage.Policy) error {
 	m, err := matcher.ForPolicy(policy, deploymentMappings.OptionsMap, nil)
 	if err != nil {
-		return fmt.Errorf("policy configuration is invalid for deploy time: %s", err)
+		return errors.Wrap(err, "policy configuration is invalid for deploy time")
 	}
 	if m == nil {
 		return fmt.Errorf("deploy time policy contains no constraints")
@@ -244,7 +244,7 @@ func compilesForDeployTime(policy *storage.Policy) error {
 func compilesForRunTime(policy *storage.Policy) error {
 	m, err := matcher.ForPolicy(policy, deploymentMappings.OptionsMap, nil)
 	if err != nil {
-		return fmt.Errorf("policy configuration is invalid for run time: %s", err)
+		return errors.Wrap(err, "policy configuration is invalid for run time")
 	}
 	if m == nil {
 		return errors.New("run time policy contains no constraints")

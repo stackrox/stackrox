@@ -2,7 +2,6 @@ package renderer
 
 import (
 	"encoding/base64"
-	"fmt"
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -32,19 +31,19 @@ func newKubernetes() deployer {
 func (k *kubernetes) renderKubectl(c Config) ([]*zip.File, error) {
 	renderedFiles, err := k.renderHelmFiles(c, image.GetCentralChart(), "central")
 	if err != nil {
-		return nil, fmt.Errorf("error rendering central files: %v", err)
+		return nil, errors.Wrap(err, "error rendering central files")
 	}
 
 	scannerRenderedFiles, err := k.renderHelmFiles(c, image.GetScannerChart(), "scanner")
 	if err != nil {
-		return nil, fmt.Errorf("error rendering scanner files: %v", err)
+		return nil, errors.Wrap(err, "error rendering scanner files")
 	}
 	renderedFiles = append(renderedFiles, scannerRenderedFiles...)
 
 	if c.K8sConfig.Monitoring.Type.OnPrem() {
 		monitoringFiles, err := k.renderHelmFiles(c, image.GetMonitoringChart(), "monitoring")
 		if err != nil {
-			return nil, fmt.Errorf("error rendering monitoring files: %v", err)
+			return nil, errors.Wrap(err, "error rendering monitoring files")
 		}
 		renderedFiles = append(renderedFiles, monitoringFiles...)
 	}

@@ -1,12 +1,12 @@
 package runner
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 )
@@ -22,7 +22,7 @@ var (
 func getCurrentSeqNumBolt(db *bolt.DB) (int, error) {
 	bucketExists, err := bolthelpers.BucketExists(db, versionBucketName)
 	if err != nil {
-		return 0, fmt.Errorf("checking for version bucket existence: %v", err)
+		return 0, errors.Wrap(err, "checking for version bucket existence")
 	}
 	if !bucketExists {
 		return 0, nil
@@ -30,7 +30,7 @@ func getCurrentSeqNumBolt(db *bolt.DB) (int, error) {
 	versionBucket := bolthelpers.TopLevelRef(db, versionBucketName)
 	versionBytes, err := bolthelpers.RetrieveElementAtKey(versionBucket, versionKey)
 	if err != nil {
-		return 0, fmt.Errorf("failed to retrieve version: %v", err)
+		return 0, errors.Wrap(err, "failed to retrieve version")
 	}
 	if versionBytes == nil {
 		return 0, errors.New("INVALID STATE: a version bucket existed, but no version was found")
@@ -38,7 +38,7 @@ func getCurrentSeqNumBolt(db *bolt.DB) (int, error) {
 	version := new(storage.Version)
 	err = proto.Unmarshal(versionBytes, version)
 	if err != nil {
-		return 0, fmt.Errorf("unmarshaling version proto: %v", err)
+		return 0, errors.Wrap(err, "unmarshaling version proto")
 	}
 	return int(version.GetSeqNum()), nil
 }
@@ -62,7 +62,7 @@ func getCurrentSeqNumBadger(db *badger.DB) (int, error) {
 		})
 	})
 	if err != nil {
-		return 0, fmt.Errorf("reading badger version: %v", err)
+		return 0, errors.Wrap(err, "reading badger version")
 	}
 
 	return int(badgerVersion.GetSeqNum()), nil
@@ -89,7 +89,7 @@ func getCurrentSeqNum(boltDB *bolt.DB, badgerDB *badger.DB) (int, error) {
 func updateVersion(boltDB *bolt.DB, badgerDB *badger.DB, newVersion *storage.Version) error {
 	versionBytes, err := proto.Marshal(newVersion)
 	if err != nil {
-		return fmt.Errorf("marshalling version: %v", err)
+		return errors.Wrap(err, "marshalling version")
 	}
 
 	err = boltDB.Update(func(tx *bolt.Tx) error {
@@ -100,14 +100,14 @@ func updateVersion(boltDB *bolt.DB, badgerDB *badger.DB, newVersion *storage.Ver
 		return versionBucket.Put(versionKey, versionBytes)
 	})
 	if err != nil {
-		return fmt.Errorf("updating version in bolt: %v", err)
+		return errors.Wrap(err, "updating version in bolt")
 	}
 
 	err = badgerDB.Update(func(txn *badger.Txn) error {
 		return txn.Set(versionBucketName, versionBytes)
 	})
 	if err != nil {
-		return fmt.Errorf("updating version in badger: %v", err)
+		return errors.Wrap(err, "updating version in badger")
 	}
 
 	return nil

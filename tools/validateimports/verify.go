@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
 	"golang.org/x/tools/go/ast/astutil"
 )
 
@@ -76,7 +77,7 @@ func getImports(path string) ([]*ast.ImportSpec, error) {
 	fileSet := token.NewFileSet()
 	parsed, err := parser.ParseFile(fileSet, path, fileContents, parser.ImportsOnly)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't parse file %s: %s", path, err)
+		return nil, errors.Wrapf(err, "couldn't parse file %s", path)
 	}
 	impSections := astutil.Imports(fileSet, parsed)
 
@@ -120,7 +121,7 @@ func verifySingleImportFromAllowedPackagesOnly(spec *ast.ImportSpec, packageName
 func verifyImportsFromAllowedPackagesOnly(path, validImportRoot, packageName string) (errs []error) {
 	imps, err := getImports(path)
 	if err != nil {
-		errs = append(errs, fmt.Errorf("import retrieval: %s", err))
+		errs = append(errs, errors.Wrap(err, "import retrieval"))
 		return
 	}
 
@@ -152,7 +153,7 @@ func verifyImportsFromAllowedPackagesOnly(path, validImportRoot, packageName str
 	for _, imp := range imps {
 		err := verifySingleImportFromAllowedPackagesOnly(imp, packageName, allowedPackages...)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("import verification for %s: %s", imp.Path.Value, err))
+			errs = append(errs, errors.Wrapf(err, "import verification for %s", imp.Path.Value))
 		}
 	}
 	return

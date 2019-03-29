@@ -13,6 +13,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -193,7 +194,7 @@ func (g *generic) postMessage(message proto.Message, msgKey string) error {
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("Error reading generic response body: %v", err)
+			return errors.Wrap(err, "Error reading generic response body")
 		}
 		return fmt.Errorf("Generic error response: %d %s", resp.StatusCode, string(body))
 	}

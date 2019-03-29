@@ -3,9 +3,9 @@ package saml
 import (
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 	"fmt"
 
+	"github.com/pkg/errors"
 	saml2 "github.com/russellhaering/gosaml2"
 	dsig "github.com/russellhaering/goxmldsig"
 )
@@ -24,7 +24,7 @@ func configureIDPFromSettings(sp *saml2.SAMLServiceProvider, idpIssuer, idpLogin
 	}
 	parsedCert, err := x509.ParseCertificate(certDERBlock.Bytes)
 	if err != nil {
-		return fmt.Errorf("could not parse certificate: %v", err)
+		return errors.Wrap(err, "could not parse certificate")
 	}
 	certStore.Roots = append(certStore.Roots, parsedCert)
 	sp.IDPCertificateStore = certStore

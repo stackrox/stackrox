@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -37,7 +38,7 @@ func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[
 
 	_, err = getSearchFieldNotStored(search.ProcessName, optionsMap)
 	if err != nil {
-		err = fmt.Errorf("%s: %s", p.Name(), err)
+		err = errors.Wrapf(err, "%s", p.Name())
 		return
 	}
 	_, err = getSearchFieldNotStored(search.ProcessArguments, optionsMap)
@@ -52,12 +53,12 @@ func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[
 
 	processIDSearchField, err := getSearchFieldNotStored(search.ProcessID, optionsMap)
 	if err != nil {
-		err = fmt.Errorf("%s: %s", p.Name(), err)
+		err = errors.Wrapf(err, "%s", p.Name())
 	}
 
 	_, err = getSearchFieldNotStored(search.ProcessUID, optionsMap)
 	if err != nil {
-		err = fmt.Errorf("%s: %s", p.Name(), err)
+		err = errors.Wrapf(err, "%s", p.Name())
 	}
 
 	// Construct query for ProcessID

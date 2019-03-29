@@ -1,9 +1,7 @@
 package connection
 
 import (
-	"errors"
-	"fmt"
-
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -36,7 +34,7 @@ func (m *manager) HandleConnection(clusterID string, pf pipeline.Factory, server
 	conn, err := newConnection(clusterID, pf, recorder)
 
 	if err != nil {
-		return fmt.Errorf("creating sensor connection: %v", err)
+		return errors.Wrap(err, "creating sensor connection")
 	}
 
 	var oldConnection *sensorConnection

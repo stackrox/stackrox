@@ -2,9 +2,9 @@ package htpasswd
 
 import (
 	"encoding/csv"
-	"fmt"
 	"io"
 
+	"github.com/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -31,7 +31,7 @@ func (hf *HashFile) Write(w io.Writer) error {
 func (hf *HashFile) Set(user, pass string) error {
 	passHash, err := bcrypt.GenerateFromPassword([]byte(pass), bcryptCost)
 	if err != nil {
-		return fmt.Errorf("hash: %s", err)
+		return errors.Wrap(err, "hash")
 	}
 	hf.hashes[username(user)] = passHash
 	return nil

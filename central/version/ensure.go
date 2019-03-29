@@ -6,6 +6,7 @@ import (
 	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/version/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -26,14 +27,14 @@ func Ensure(boltDB *bolt.DB, badgerDB *badger.DB) error {
 	versionStore := store.New(boltDB, badgerDB)
 	version, err := versionStore.GetVersion()
 	if err != nil {
-		return fmt.Errorf("failed to read version from DB: %v", err)
+		return errors.Wrap(err, "failed to read version from DB")
 	}
 
 	// No version in the DB. This means that we're starting from scratch, with a blank DB, so we can just
 	// write the current version in and move on.
 	if version == nil {
 		if err := versionStore.UpdateVersion(&storage.Version{SeqNum: migrations.CurrentDBVersionSeqNum}); err != nil {
-			return fmt.Errorf("failed to write version to the DB: %vs", err)
+			return errors.Wrap(err, "failed to write version to the DB")
 		}
 		log.Info("No version found in the DB. Assuming that this is a fresh install...")
 		return nil

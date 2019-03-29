@@ -2,10 +2,10 @@ package jwt
 
 import (
 	"crypto/x509"
-	"fmt"
 	"io/ioutil"
 	"log"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -27,12 +27,12 @@ const (
 func create() (tokens.IssuerFactory, tokens.Validator, error) {
 	privateKeyBytes, err := ioutil.ReadFile(privateKeyPath)
 	if err != nil {
-		return nil, nil, fmt.Errorf("loading private key: %v", err)
+		return nil, nil, errors.Wrap(err, "loading private key")
 	}
 
 	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBytes)
 	if err != nil {
-		return nil, nil, fmt.Errorf("parsing private key: %v", err)
+		return nil, nil, errors.Wrap(err, "parsing private key")
 	}
 
 	return tokens.CreateIssuerFactoryAndValidator(issuerID, privateKey, keyID)

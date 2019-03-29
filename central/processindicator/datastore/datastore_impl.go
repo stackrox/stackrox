@@ -1,9 +1,9 @@
 package datastore
 
 import (
-	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/pruner"
@@ -77,15 +77,15 @@ func (ds *datastoreImpl) AddProcessIndicators(indicators ...*storage.ProcessIndi
 func (ds *datastoreImpl) AddProcessIndicator(i *storage.ProcessIndicator) error {
 	removedIndicator, err := ds.storage.AddProcessIndicator(i)
 	if err != nil {
-		return fmt.Errorf("adding indicator to bolt: %s", err)
+		return errors.Wrap(err, "adding indicator to bolt")
 	}
 	if removedIndicator != "" {
 		if err := ds.indexer.DeleteProcessIndicator(removedIndicator); err != nil {
-			return fmt.Errorf("removing process indicator: %s", err)
+			return errors.Wrap(err, "removing process indicator")
 		}
 	}
 	if err := ds.indexer.AddProcessIndicator(i); err != nil {
-		return fmt.Errorf("adding indicator to index: %s", err)
+		return errors.Wrap(err, "adding indicator to index")
 	}
 	return nil
 }

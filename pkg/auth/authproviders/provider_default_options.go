@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -44,7 +45,7 @@ func DefaultTokenIssuerFromFactory(tf tokens.IssuerFactory) ProviderOption {
 		}
 		issuer, err := tf.CreateIssuer(pr, tokens.WithTTL(tokenTTL))
 		if err != nil {
-			return fmt.Errorf("failed to create issuer for newly created auth provider: %s", err)
+			return errors.Wrap(err, "failed to create issuer for newly created auth provider")
 		}
 		pr.issuer = issuer
 		return nil

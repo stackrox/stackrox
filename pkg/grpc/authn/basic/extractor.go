@@ -2,12 +2,12 @@ package basic
 
 import (
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -65,7 +65,7 @@ func (e *extractor) IdentityForRequest(ri requestinfo.RequestInfo) (authn.Identi
 func NewExtractor(htpasswdFile string, userRole *storage.Role) (authn.IdentityExtractor, error) {
 	f, err := os.Open(htpasswdFile)
 	if err != nil {
-		return nil, fmt.Errorf("could not open htpasswd file %q: %v", htpasswdFile, err)
+		return nil, errors.Wrapf(err, "could not open htpasswd file %q", htpasswdFile)
 	}
 	defer utils.IgnoreError(f.Close)
 

@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/monoclock"
@@ -208,22 +209,22 @@ func (h *Handler) extractFromMD(ctx context.Context) (*RequestInfo, error) {
 
 	riRaw, err := base64.URLEncoding.DecodeString(riB64)
 	if err != nil {
-		return nil, fmt.Errorf("could not decode request info: %v", err)
+		return nil, errors.Wrap(err, "could not decode request info")
 	}
 
 	riSigB64 := md.Get(requestInfoSigMDKey)
 	riSig, err := base64.URLEncoding.DecodeString(riSigB64)
 	if err != nil {
-		return nil, fmt.Errorf("could not decode request info signature: %v", err)
+		return nil, errors.Wrap(err, "could not decode request info signature")
 	}
 
 	if err := h.signer.Verify(riRaw, riSig); err != nil {
-		return nil, fmt.Errorf("could not validate request info: %v", err)
+		return nil, errors.Wrap(err, "could not validate request info")
 	}
 
 	var serializedRI serializedRequestInfo
 	if err := gob.NewDecoder(bytes.NewReader(riRaw)).Decode(&serializedRI); err != nil {
-		return nil, fmt.Errorf("could not decode request info: %v", err)
+		return nil, errors.Wrap(err, "could not decode request info")
 	}
 
 	timeDelta := h.clock.SinceEpoch() - serializedRI.RequestMonotime

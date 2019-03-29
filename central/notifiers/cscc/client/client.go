@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers/cscc/findings"
 	"github.com/stackrox/rox/pkg/utils"
 	"golang.org/x/oauth2/google"
@@ -45,19 +46,19 @@ func (c *Config) postURL(findingID string) string {
 func (c *Config) CreateFinding(finding *findings.Finding, id string) error {
 	req, err := c.request(finding, id)
 	if err != nil {
-		return fmt.Errorf("request creation: %s", err)
+		return errors.Wrap(err, "request creation")
 	}
 
 	ctx, cancel := timeoutContext()
 	defer cancel()
 	tokenSource, err := c.getTokenSource(ctx)
 	if err != nil {
-		return fmt.Errorf("token source retrieval: %s", err)
+		return errors.Wrap(err, "token source retrieval")
 	}
 
 	token, err := tokenSource.TokenSource.Token()
 	if err != nil {
-		return fmt.Errorf("token retrieval: %s", err)
+		return errors.Wrap(err, "token retrieval")
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.AccessToken))
@@ -67,7 +68,7 @@ func (c *Config) CreateFinding(finding *findings.Finding, id string) error {
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("request: %s", err)
+		return errors.Wrap(err, "request")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 	return c.handleResponse(resp)
@@ -76,13 +77,13 @@ func (c *Config) CreateFinding(finding *findings.Finding, id string) error {
 func (c *Config) request(finding *findings.Finding, id string) (*http.Request, error) {
 	b, err := json.Marshal(finding)
 	if err != nil {
-		return nil, fmt.Errorf("marshal: %s", err)
+		return nil, errors.Wrap(err, "marshal")
 	}
 	c.Logger.Debugf("Request: %s", string(b))
 
 	req, err := http.NewRequest("POST", c.postURL(id), bytes.NewReader(b))
 	if err != nil {
-		return nil, fmt.Errorf("build: %s", err)
+		return nil, errors.Wrap(err, "build")
 	}
 	return req, nil
 }
@@ -102,11 +103,11 @@ func (c *Config) handleResponse(r *http.Response) error {
 func (c *Config) getTokenSource(ctx context.Context) (*google.DefaultCredentials, error) {
 	cfg, err := google.JWTConfigFromJSON(c.ServiceAccount, cloudPlatformScope)
 	if err != nil {
-		return nil, fmt.Errorf("google.JWTConfigFromJSON: %s", err)
+		return nil, errors.Wrap(err, "google.JWTConfigFromJSON")
 	}
 	pid, err := c.embeddedProjectID()
 	if err != nil {
-		return nil, fmt.Errorf("project ID retrieval: %s", err)
+		return nil, errors.Wrap(err, "project ID retrieval")
 	}
 	return &google.DefaultCredentials{
 		ProjectID:   pid,

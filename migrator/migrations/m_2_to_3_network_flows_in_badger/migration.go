@@ -5,6 +5,7 @@ import (
 
 	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations"
 	"github.com/stackrox/rox/migrator/types"
@@ -40,7 +41,7 @@ func readFromBolt(db *bolt.DB, entryC chan<- flowEntry, badgerErrC <-chan error)
 				select {
 				case entryC <- flowEntry{bucket: bucketKey, key: valueKey, value: v}:
 				case err := <-badgerErrC:
-					return fmt.Errorf("badger write goroutine reported error: %v", err)
+					return errors.Wrap(err, "badger write goroutine reported error")
 				}
 				return nil
 			})
@@ -79,14 +80,14 @@ func migrate(boltDB *bolt.DB, badgerDB *badger.DB) error {
 	go writeToBadgerAsync(badgerDB, kvC, badgerErrC)
 
 	if err := readFromBolt(boltDB, kvC, badgerErrC); err != nil {
-		return fmt.Errorf("reading from bolt: %v", err)
+		return errors.Wrap(err, "reading from bolt")
 	}
 	if err := <-badgerErrC; err != nil {
-		return fmt.Errorf("writing to badger: %v", err)
+		return errors.Wrap(err, "writing to badger")
 	}
 
 	if err := deleteFromBolt(boltDB); err != nil {
-		return fmt.Errorf("deleting from bolt: %v", err)
+		return errors.Wrap(err, "deleting from bolt")
 	}
 	return nil
 }

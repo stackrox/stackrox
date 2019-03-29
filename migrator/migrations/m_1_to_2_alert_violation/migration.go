@@ -1,11 +1,10 @@
 package m1to2
 
 import (
-	"fmt"
-
 	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/migrations"
@@ -26,7 +25,7 @@ var (
 					alert := new(storage.Alert)
 					err := proto.Unmarshal(v, alert)
 					if err != nil {
-						return fmt.Errorf("proto umarshaling failed: %s", err)
+						return errors.Wrap(err, "proto umarshaling failed")
 					}
 					indexToRemove := -1
 					for i, violation := range alert.GetViolations() {
@@ -44,7 +43,7 @@ var (
 						alert.Violations = append(alert.Violations[:indexToRemove], alert.Violations[indexToRemove+1:]...)
 						alertBytes, err := proto.Marshal(alert)
 						if err != nil {
-							return fmt.Errorf("marshaling %+v: %v", alert, err)
+							return errors.Wrapf(err, "marshaling %+v", alert)
 						}
 						modifiedAlertBytes[alert.GetId()] = alertBytes
 					}
@@ -52,13 +51,13 @@ var (
 				})
 			})
 			if err != nil {
-				return fmt.Errorf("failed to read existing alerts into memory: %v", err)
+				return errors.Wrap(err, "failed to read existing alerts into memory")
 			}
 			return alertsBucket.Update(func(b *bolt.Bucket) error {
 				for id, alertBytes := range modifiedAlertBytes {
 					err := b.Put([]byte(id), alertBytes)
 					if err != nil {
-						return fmt.Errorf("inserting alert %s: %v", id, err)
+						return errors.Wrapf(err, "inserting alert %s", id)
 					}
 				}
 				return nil

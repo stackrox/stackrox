@@ -1,8 +1,7 @@
 package framework
 
 import (
-	"fmt"
-
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
 )
 
@@ -99,7 +98,7 @@ func (c *baseContext) ForObject(target ComplianceTarget) ComplianceContext {
 
 func (c *baseContext) checkErr() {
 	if err, ok := c.stopSig.Error(); ok {
-		panic(fmt.Errorf("compliance run was aborted: %v", err))
+		panic(errors.Wrap(err, "compliance run was aborted"))
 	}
 }
 

@@ -3,6 +3,7 @@ package k8s
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -37,7 +38,7 @@ func FromRoxLabelSelector(sel *storage.LabelSelector) (*v1.LabelSelector, error)
 		for i, roxReq := range sel.GetRequirements() {
 			k8sReq, err := FromRoxLabelSelectorRequirement(roxReq)
 			if err != nil {
-				return nil, fmt.Errorf("converting requirement: %v", err)
+				return nil, errors.Wrap(err, "converting requirement")
 			}
 			k8sReqs[i] = *k8sReq
 		}
@@ -75,7 +76,7 @@ func ToRoxLabelSelector(sel *v1.LabelSelector) (*storage.LabelSelector, error) {
 		for i, k8sReq := range sel.MatchExpressions {
 			roxReq, err := ToRoxLabelSelectorRequirement(&k8sReq)
 			if err != nil {
-				return nil, fmt.Errorf("converting requirement: %v", err)
+				return nil, errors.Wrap(err, "converting requirement")
 			}
 			roxReqs[i] = roxReq
 		}

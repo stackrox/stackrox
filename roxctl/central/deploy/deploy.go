@@ -12,6 +12,7 @@ import (
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/initca"
 	cflog "github.com/cloudflare/cfssl/log"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
@@ -42,7 +43,7 @@ func generateJWTSigningKey(fileMap map[string][]byte) error {
 	// Generate the private key that we will use to sign JWTs for API keys.
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
-		return fmt.Errorf("couldn't generate private key: %s", err)
+		return errors.Wrap(err, "couldn't generate private key")
 	}
 	fileMap["jwt-key.der"] = x509.MarshalPKCS1PrivateKey(privateKey)
 	return nil
@@ -56,7 +57,7 @@ func generateMTLSFiles(fileMap map[string][]byte) (cert, key []byte, err error) 
 	}
 	cert, _, key, err = initca.New(&req)
 	if err != nil {
-		err = fmt.Errorf("could not generate keypair: %s", err)
+		err = errors.Wrap(err, "could not generate keypair")
 		return
 	}
 	fileMap["ca.pem"] = cert
@@ -154,7 +155,7 @@ func outputZip(config renderer.Config) error {
 
 	files, err := d.Render(config)
 	if err != nil {
-		return fmt.Errorf("could not render files: %s", err)
+		return errors.Wrap(err, "could not render files")
 	}
 	wrapper.AddFiles(files...)
 
@@ -162,17 +163,17 @@ func outputZip(config renderer.Config) error {
 	if docker.IsContainerized() {
 		bytes, err := wrapper.Zip()
 		if err != nil {
-			return fmt.Errorf("error generating zip file: %v", err)
+			return errors.Wrap(err, "error generating zip file")
 		}
 		_, err = os.Stdout.Write(bytes)
 		if err != nil {
-			return fmt.Errorf("couldn't write zip file: %v", err)
+			return errors.Wrap(err, "couldn't write zip file")
 		}
 	} else {
 		var err error
 		outputPath, err = wrapper.Directory(config.OutputDir)
 		if err != nil {
-			return fmt.Errorf("error generating directory for Central output: %v", err)
+			return errors.Wrap(err, "error generating directory for Central output")
 		}
 	}
 

@@ -2,11 +2,10 @@ package saml
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 
+	"github.com/pkg/errors"
 	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -27,11 +26,11 @@ type backendImpl struct {
 func (p *backendImpl) loginURL(clientState string) (string, error) {
 	doc, err := p.sp.BuildAuthRequestDocument()
 	if err != nil {
-		return "", fmt.Errorf("could not construct auth request: %v", err)
+		return "", errors.Wrap(err, "could not construct auth request")
 	}
 	authURL, err := p.sp.BuildAuthURLRedirect(makeState(p.id, clientState), doc)
 	if err != nil {
-		return "", fmt.Errorf("could not construct auth URL: %v", err)
+		return "", errors.Wrap(err, "could not construct auth URL")
 	}
 	return authURL, nil
 }
@@ -67,7 +66,7 @@ func newBackend(ctx context.Context, acsURLPath string, id string, uiEndpoints [
 			return nil, nil, errors.New("if IdP metadata URL is set, IdP issuer, SSO URL and certificate data must be left blank")
 		}
 		if err := configureIDPFromMetadataURL(ctx, &p.sp, config["idp_metadata_url"]); err != nil {
-			return nil, nil, fmt.Errorf("could not configure auth provider from IdP metadata URL: %v", err)
+			return nil, nil, errors.Wrap(err, "could not configure auth provider from IdP metadata URL")
 		}
 		effectiveConfig["idp_metadata_url"] = config["idp_metadata_url"]
 	} else {
@@ -75,7 +74,7 @@ func newBackend(ctx context.Context, acsURLPath string, id string, uiEndpoints [
 			return nil, nil, errors.New("if IdP metadata URL is not set, IdP issuer, SSO URL, and certificate data must be specified")
 		}
 		if err := configureIDPFromSettings(&p.sp, config["idp_issuer"], config["idp_sso_url"], config["idp_cert_pem"]); err != nil {
-			return nil, nil, fmt.Errorf("could not configure auth provider from settings: %v", err)
+			return nil, nil, errors.Wrap(err, "could not configure auth provider from settings")
 		}
 		effectiveConfig["idp_issuer"] = config["idp_issuer"]
 		effectiveConfig["idp_sso_url"] = config["idp_sso_url"]

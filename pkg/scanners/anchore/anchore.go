@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/antihax/optional"
+	"github.com/pkg/errors"
 	anchoreClient "github.com/stackrox/anchore-client/client"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -183,7 +184,7 @@ func (a *anchore) Test() error {
 func (a *anchore) GetLastScan(image *storage.Image) (*storage.ImageScan, error) {
 	img, exists, err := a.getImage(image)
 	if err != nil {
-		return nil, fmt.Errorf("error getting image %q: %v", image.GetName().GetFullName(), err)
+		return nil, errors.Wrapf(err, "error getting image %q", image.GetName().GetFullName())
 	}
 	if !exists {
 		err := a.scan(image)
@@ -194,11 +195,11 @@ func (a *anchore) GetLastScan(image *storage.Image) (*storage.ImageScan, error) 
 	}
 	packages, err := a.getPackages(img.ImageDigest)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieving packages for %q: %v", img.ImageDigest, err)
+		return nil, errors.Wrapf(err, "error retrieving packages for %q", img.ImageDigest)
 	}
 	vulns, err := a.getVulnerabilities(img.ImageDigest)
 	if err != nil {
-		return nil, fmt.Errorf("error retrieve vulnerabilities for %q: %v", img.ImageDigest, err)
+		return nil, errors.Wrapf(err, "error retrieve vulnerabilities for %q", img.ImageDigest)
 	}
 	return convertImageScan(img, packages, vulns), nil
 }
@@ -272,7 +273,7 @@ func (a *anchore) scan(image *storage.Image) error {
 	_, resp, err := a.addImage(iar)
 	if resp != nil && resp.StatusCode == http.StatusBadRequest {
 		if err := a.registerRegistry(image); err != nil {
-			return fmt.Errorf("error registering integration: %v", err)
+			return errors.Wrap(err, "error registering integration")
 		}
 		_, resp, err = a.addImage(iar)
 	}

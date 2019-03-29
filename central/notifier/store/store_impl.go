@@ -6,6 +6,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -73,7 +74,7 @@ func (b *storeImpl) AddNotifier(notifier *storage.Notifier) (string, error) {
 			return fmt.Errorf("Notifier %v (%v) cannot be added because it already exists", notifier.GetName(), notifier.GetId())
 		}
 		if err := secondarykey.CheckUniqueKeyExistsAndInsert(tx, notifierBucket, notifier.GetId(), notifier.GetName()); err != nil {
-			return fmt.Errorf("Could not add notifier due to name validation: %s", err)
+			return errors.Wrap(err, "Could not add notifier due to name validation")
 		}
 		bytes, err := proto.Marshal(notifier)
 		if err != nil {
@@ -92,7 +93,7 @@ func (b *storeImpl) UpdateNotifier(notifier *storage.Notifier) error {
 		// If the update is changing the name, check if the name has already been taken
 		if val, _ := secondarykey.GetCurrentUniqueKey(tx, notifierBucket, notifier.GetId()); val != notifier.GetName() {
 			if err := secondarykey.UpdateUniqueKey(tx, notifierBucket, notifier.GetId(), notifier.GetName()); err != nil {
-				return fmt.Errorf("Could not update notifier due to name validation: %s", err)
+				return errors.Wrap(err, "Could not update notifier due to name validation")
 			}
 		}
 		bytes, err := proto.Marshal(notifier)

@@ -1,9 +1,9 @@
 package networkpolicies
 
 import (
-	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -35,11 +35,11 @@ func (h *commandHandler) dispatchApplyCommand(cmd *central.NetworkPoliciesComman
 func (h *commandHandler) doApply(cmd *central.NetworkPoliciesCommand_Apply) (*storage.NetworkPolicyModification, error) {
 	policies, toDelete, err := parseModification(cmd.GetModification())
 	if err != nil {
-		return nil, fmt.Errorf("parsing network policy modification: %v", err)
+		return nil, errors.Wrap(err, "parsing network policy modification")
 	}
 
 	if err := validateModification(policies, toDelete); err != nil {
-		return nil, fmt.Errorf("invalid network policy modification: %v", err)
+		return nil, errors.Wrap(err, "invalid network policy modification")
 	}
 
 	tx := h.createApplyTx(cmd.GetApplyId())
@@ -47,9 +47,9 @@ func (h *commandHandler) doApply(cmd *central.NetworkPoliciesCommand_Apply) (*st
 	if err := tx.Do(policies, toDelete); err != nil {
 		rollbackErr := tx.Rollback()
 		if rollbackErr == nil {
-			return nil, fmt.Errorf("error applying network policies modification: %v. The old state has been restored", err)
+			return nil, errors.Wrap(err, "error applying network policies modification. The old state has been restored")
 		}
-		return nil, fmt.Errorf("error applying network policies modification: %v. Additionally, there was an error rolling back partial modifications: %v", err, rollbackErr)
+		return nil, errors.Wrapf(rollbackErr, "error applying network policies modification: %v. Additionally, there was an error rolling back partial modifications", err)
 	}
 
 	return tx.UndoModification(), nil

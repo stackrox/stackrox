@@ -2,10 +2,9 @@
 package jwt
 
 import (
-	"errors"
-	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 	"gopkg.in/square/go-jose.v2"
 	"gopkg.in/square/go-jose.v2/jwt"
@@ -83,7 +82,7 @@ func (v rs256Validator) validateWithHeader(token *jwt.JSONWebToken, header jose.
 	copy(allClaims[1:], extraClaims)
 	err := token.Claims(key, allClaims...)
 	if err != nil {
-		return fmt.Errorf("claim processing: %s", err)
+		return errors.Wrap(err, "claim processing")
 	}
 
 	err = claims.Validate(v.expected.WithTime(time.Now()))

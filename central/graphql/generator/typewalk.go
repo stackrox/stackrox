@@ -1,7 +1,6 @@
 package generator
 
 import (
-	"fmt"
 	"reflect"
 	"sort"
 	"strings"
@@ -9,6 +8,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/golang/protobuf/protoc-gen-go/generator"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/protoreflect"
 )
 
@@ -39,7 +39,7 @@ func (ctx *walkState) walkUnions(p reflect.Type) (output []unionData) {
 	msg := reflect.Zero(p).Interface().(protoreflect.ProtoMessage)
 	des, err := protoreflect.GetMessageDescriptor(msg)
 	if err != nil {
-		panic(fmt.Errorf("err on type %s: %q", p.Name(), err))
+		panic(errors.Wrapf(err, "err on type %s", p.Name()))
 	}
 	for i, oneOf := range des.GetOneofDecl() {
 		union := unionData{

@@ -1,13 +1,13 @@
 package store
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -76,7 +76,7 @@ func (b *storeImpl) AddAuthProvider(authProvider *storage.AuthProvider) error {
 			return fmt.Errorf("AuthProvider %v (%v) cannot be added because it already exists", authProvider.GetId(), authProvider.GetName())
 		}
 		if err := secondarykey.CheckUniqueKeyExistsAndInsert(tx, authProviderBucket, authProvider.GetId(), authProvider.GetName()); err != nil {
-			return fmt.Errorf("Could not add AuthProvider due to name validation: %s", err)
+			return errors.Wrap(err, "Could not add AuthProvider due to name validation")
 		}
 		bytes, err := proto.Marshal(authProvider)
 		if err != nil {
@@ -95,7 +95,7 @@ func (b *storeImpl) UpdateAuthProvider(authProvider *storage.AuthProvider) error
 		// If the update is changing the name, check if the name has already been taken
 		if val, _ := secondarykey.GetCurrentUniqueKey(tx, authProviderBucket, authProvider.GetId()); val != authProvider.GetName() {
 			if err := secondarykey.UpdateUniqueKey(tx, authProviderBucket, authProvider.GetId(), authProvider.GetName()); err != nil {
-				return fmt.Errorf("Could not update auth provider due to name validation: %s", err)
+				return errors.Wrap(err, "Could not update auth provider due to name validation")
 			}
 		}
 		bytes, err := proto.Marshal(authProvider)

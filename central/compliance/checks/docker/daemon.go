@@ -2,7 +2,6 @@ package docker
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -151,7 +150,7 @@ func getDockerdProcess(ret *compliance.ComplianceReturn) (*compliance.CommandLin
 	config := make(map[string]interface{})
 	if daemonConfigFile != nil {
 		if err := json.Unmarshal(daemonConfigFile.Content, &config); err != nil {
-			return nil, nil, fmt.Errorf("Unable to unmarshal Daemon config file %q: %v", daemonConfigFile.Path, err)
+			return nil, nil, errors.Wrapf(err, "Unable to unmarshal Daemon config file %q", daemonConfigFile.Path)
 		}
 	}
 	return dockerdProcess, config, nil

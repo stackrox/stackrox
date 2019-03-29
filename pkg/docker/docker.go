@@ -3,13 +3,13 @@ package docker
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"time"
 
 	"github.com/docker/docker/api"
 	"github.com/docker/docker/client"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -26,7 +26,7 @@ const (
 func NewClient() (*client.Client, error) {
 	cli, err := client.NewEnvClient()
 	if err != nil {
-		return nil, fmt.Errorf("Unable to create docker client: %+v", err)
+		return nil, errors.Wrap(err, "Unable to create docker client")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

@@ -1,12 +1,12 @@
 package undostore
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
@@ -61,7 +61,7 @@ func (s *undoStore) UpsertUndoRecord(clusterID string, record *storage.NetworkPo
 
 	serialized, err := proto.Marshal(record)
 	if err != nil {
-		return fmt.Errorf("serializing record: %v", err)
+		return errors.Wrap(err, "serializing record")
 	}
 
 	clusterKey := []byte(clusterID)

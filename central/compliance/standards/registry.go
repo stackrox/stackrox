@@ -1,10 +1,10 @@
 package standards
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance/framework"
 	"github.com/stackrox/rox/central/compliance/standards/index"
 	"github.com/stackrox/rox/central/compliance/standards/metadata"
@@ -43,7 +43,7 @@ func (r *Registry) RegisterStandards(standardMDs ...metadata.Standard) error {
 
 	for _, standardMD := range standardMDs {
 		if err := r.registerStandardNoLock(standardMD); err != nil {
-			return fmt.Errorf("registering standard %q: %v", standardMD.ID, err)
+			return errors.Wrapf(err, "registering standard %q", standardMD.ID)
 		}
 	}
 

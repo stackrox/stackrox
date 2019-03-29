@@ -7,6 +7,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/generator"
@@ -294,7 +295,7 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 	oldGraph := s.graphEvaluator.GetGraph(deployments, oldPolicies)
 	removedEdges, addedEdges, err := graph.ComputeDiff(oldGraph, newGraph)
 	if err != nil {
-		return nil, fmt.Errorf("could not compute a network graph diff: %v", err)
+		return nil, errors.Wrap(err, "could not compute a network graph diff")
 	}
 
 	result.Removed, result.Added = removedEdges, addedEdges

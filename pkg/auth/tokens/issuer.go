@@ -1,6 +1,6 @@
 package tokens
 
-import "fmt"
+import "github.com/pkg/errors"
 
 // Issuer is an interface for issuing tokens, tied to a token source.
 type Issuer interface {
@@ -29,12 +29,12 @@ func (i *issuerForSource) Issue(roxClaims RoxClaims, options ...Option) (*TokenI
 	}
 	// Sanity check: the source should accept the token.
 	if err := i.source.Validate(claims); err != nil {
-		return nil, fmt.Errorf("issued token was rejected by source: %v", err)
+		return nil, errors.Wrap(err, "issued token was rejected by source")
 	}
 
 	token, err := i.factory.encode(claims)
 	if err != nil {
-		return nil, fmt.Errorf("could not encode token: %v", err)
+		return nil, errors.Wrap(err, "could not encode token")
 	}
 
 	return &TokenInfo{

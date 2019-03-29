@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 // Wrapper is a wrapper around the current zip implementation so we can
@@ -71,11 +73,11 @@ func (w *Wrapper) Zip() ([]byte, error) {
 
 		f, err := zipW.CreateHeader(hdr)
 		if err != nil {
-			return nil, fmt.Errorf("file creation: %s", err)
+			return nil, errors.Wrap(err, "file creation")
 		}
 		_, err = f.Write(file.Content)
 		if err != nil {
-			return nil, fmt.Errorf("file writing: %s", err)
+			return nil, errors.Wrap(err, "file writing")
 		}
 	}
 	if err := zipW.Close(); err != nil {

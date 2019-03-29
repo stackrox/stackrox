@@ -3,12 +3,13 @@ package networkpolicies
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	networkingV1 "k8s.io/api/networking/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/json"
 	networkingV1Client "k8s.io/client-go/kubernetes/typed/networking/v1"
@@ -167,7 +168,7 @@ func (t *applyTx) replaceNetworkPolicy(policy *networkingV1.NetworkPolicy) error
 	for retryCount := 0; retryCount < maxConflictRetries; retryCount++ {
 		old, err := nsClient.Get(policy.Name, metav1.GetOptions{})
 		if err != nil {
-			return fmt.Errorf("retrieving network policy: %v", err)
+			return errors.Wrap(err, "retrieving network policy")
 		}
 
 		// Do not serialize the `previous JSON` annotation when JSON-encoding.
@@ -175,7 +176,7 @@ func (t *applyTx) replaceNetworkPolicy(policy *networkingV1.NetworkPolicy) error
 		delete(oldStripped.Annotations, previousJSONAnnotationKey)
 		oldJSON, err := json.Marshal(oldStripped)
 		if err != nil {
-			return fmt.Errorf("marshalling old network policy: %v", err)
+			return errors.Wrap(err, "marshalling old network policy")
 		}
 
 		t.annotateAndLabel(policy)
@@ -183,11 +184,11 @@ func (t *applyTx) replaceNetworkPolicy(policy *networkingV1.NetworkPolicy) error
 
 		updated, err := nsClient.Update(policy)
 		if err != nil {
-			if errors.IsConflict(err) {
+			if k8sErrors.IsConflict(err) {
 				log.Errorf("Encountered conflict when trying to update network policy %s/%s: %v. Retrying (attempt %d of %d)...", old.GetNamespace(), old.GetName(), err, retryCount+1, maxConflictRetries)
 				continue
 			}
-			return fmt.Errorf("updating network policy: %v", err)
+			return errors.Wrap(err, "updating network policy")
 		}
 
 		// For rollback, update the resource version of the original network policy to the updated one, so we don't
@@ -208,7 +209,7 @@ func (t *applyTx) deleteNetworkPolicy(namespace, name string) error {
 
 	existing, err := nsClient.Get(name, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("retrieving network policy: %v", err)
+		return errors.Wrap(err, "retrieving network policy")
 	}
 
 	deleted := existing.DeepCopy()
@@ -223,7 +224,7 @@ func (t *applyTx) deleteNetworkPolicy(namespace, name string) error {
 
 	deleted, err = nsClient.Create(deleted)
 	if err != nil {
-		return fmt.Errorf("creating backup network policy: %v", err)
+		return errors.Wrap(err, "creating backup network policy")
 	}
 	t.rollbackActions = append(t.rollbackActions, norecordAction{rollbackAction: &deletePolicy{
 		namespace: deleted.Namespace,
@@ -232,7 +233,7 @@ func (t *applyTx) deleteNetworkPolicy(namespace, name string) error {
 
 	err = nsClient.Delete(existing.Name, &metav1.DeleteOptions{})
 	if err != nil {
-		return fmt.Errorf("deleting network policy %s/%s: %v", existing.Namespace, existing.Name, err)
+		return errors.Wrapf(err, "deleting network policy %s/%s", existing.Namespace, existing.Name)
 	}
 	t.rollbackActions = append(t.rollbackActions, &restorePolicy{
 		oldPolicy:  existing,

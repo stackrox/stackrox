@@ -6,6 +6,7 @@ import (
 	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -27,7 +28,7 @@ func (s *storeImpl) getBoltVersion() (*storage.Version, error) {
 		}
 		boltVersion = new(storage.Version)
 		if err := proto.Unmarshal(val, boltVersion); err != nil {
-			return fmt.Errorf("proto unmarshaling: %s", err)
+			return errors.Wrap(err, "proto unmarshaling")
 		}
 		return nil
 	})
@@ -80,23 +81,23 @@ func (s *storeImpl) GetVersion() (*storage.Version, error) {
 func (s *storeImpl) UpdateVersion(version *storage.Version) error {
 	bytes, err := proto.Marshal(version)
 	if err != nil {
-		return fmt.Errorf("marshaling version %+v to proto: %s", version, err)
+		return errors.Wrapf(err, "marshaling version %+v to proto", version)
 	}
 	err = s.bucketRef.Update(func(b *bolt.Bucket) error {
 		if err := b.Put(key, bytes); err != nil {
-			return fmt.Errorf("failed to insert: %s", err)
+			return errors.Wrap(err, "failed to insert")
 		}
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("updating version in bolt: %v", err)
+		return errors.Wrap(err, "updating version in bolt")
 	}
 
 	err = s.badgerDB.Update(func(txn *badger.Txn) error {
 		return txn.Set(versionBucket, bytes)
 	})
 	if err != nil {
-		return fmt.Errorf("updating version in badger: %v", err)
+		return errors.Wrap(err, "updating version in badger")
 	}
 	return nil
 }

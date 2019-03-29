@@ -1,10 +1,10 @@
 package orchestrator
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
@@ -155,7 +155,7 @@ func (k *kubernetesOrchestrator) labelSelector(ownedByThisInstance bool) (labels
 func (k *kubernetesOrchestrator) CleanUp(ownedByThisInstance bool) error {
 	ls, err := k.labelSelector(ownedByThisInstance)
 	if err != nil {
-		return fmt.Errorf("creating label selector: %v", err)
+		return errors.Wrap(err, "creating label selector")
 	}
 	listOpts := metav1.ListOptions{
 		LabelSelector: ls.String(),

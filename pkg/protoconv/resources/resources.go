@@ -8,6 +8,7 @@ import (
 
 	ptypes "github.com/gogo/protobuf/types"
 	openshift_appsv1 "github.com/openshift/api/apps/v1"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -51,7 +52,7 @@ func doesFieldExist(value reflect.Value) bool {
 func NewDeploymentFromStaticResource(obj interface{}, deploymentType string) (*storage.Deployment, error) {
 	objMeta, err := meta.Accessor(obj)
 	if err != nil {
-		return nil, fmt.Errorf("could not access metadata of object of type %T: %v", obj, err)
+		return nil, errors.Wrapf(err, "could not access metadata of object of type %T", obj)
 	}
 	kind := deploymentType
 

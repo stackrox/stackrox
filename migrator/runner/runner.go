@@ -5,6 +5,7 @@ import (
 
 	"github.com/dgraph-io/badger"
 	bolt "github.com/etcd-io/bbolt"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/log"
 	"github.com/stackrox/rox/migrator/migrations"
 	pkgMigrations "github.com/stackrox/rox/pkg/migrations"
@@ -38,11 +39,11 @@ func runMigrations(boltDB *bolt.DB, badgerDB *badger.DB, startingSeqNum int) err
 		}
 		err := migration.Run(boltDB, badgerDB)
 		if err != nil {
-			return fmt.Errorf("error running migration starting at %d: %v", startingSeqNum, err)
+			return errors.Wrapf(err, "error running migration starting at %d", startingSeqNum)
 		}
 		err = updateVersion(boltDB, badgerDB, &migration.VersionAfter)
 		if err != nil {
-			return fmt.Errorf("failed to update version after migration %d: %v", startingSeqNum, err)
+			return errors.Wrapf(err, "failed to update version after migration %d", startingSeqNum)
 		}
 		log.WriteToStderr("Successfully updated DB from version %d to %d", seqNum, migration.VersionAfter.GetSeqNum())
 	}

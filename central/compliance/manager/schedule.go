@@ -1,10 +1,9 @@
 package manager
 
 import (
-	"errors"
-	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/compliance"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -92,7 +91,7 @@ func (s *scheduleInstance) update(spec *storage.ComplianceRunSchedule) error {
 
 	cronSchedule, err := cron.Parse(spec.GetCrontabSpec())
 	if err != nil {
-		return fmt.Errorf("parsing crontab spec: %v", err)
+		return errors.Wrap(err, "parsing crontab spec")
 	}
 
 	s.mutex.Lock()
@@ -107,7 +106,7 @@ func (s *scheduleInstance) update(spec *storage.ComplianceRunSchedule) error {
 func newScheduleInstance(spec *storage.ComplianceRunSchedule) (*scheduleInstance, error) {
 	cronSchedule, err := cron.Parse(spec.GetCrontabSpec())
 	if err != nil {
-		return nil, fmt.Errorf("parsing crontab spec: %v", err)
+		return nil, errors.Wrap(err, "parsing crontab spec")
 	}
 	si := &scheduleInstance{
 		id:           spec.GetId(),

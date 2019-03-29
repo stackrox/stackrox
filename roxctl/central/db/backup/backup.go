@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common"
 )
@@ -67,7 +68,7 @@ func getBackup() error {
 	}
 	file, err := os.Create(filename)
 	if err != nil {
-		return fmt.Errorf("Could not create backup file %q: %v", filename, err)
+		return errors.Wrapf(err, "Could not create backup file %q", filename)
 	}
 
 	if _, err := io.Copy(file, resp.Body); err != nil {

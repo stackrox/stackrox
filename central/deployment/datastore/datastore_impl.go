@@ -1,8 +1,7 @@
 package datastore
 
 import (
-	"fmt"
-
+	"github.com/pkg/errors"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	deploymentSearch "github.com/stackrox/rox/central/deployment/search"
 	deploymentStore "github.com/stackrox/rox/central/deployment/store"
@@ -82,10 +81,10 @@ func (ds *datastoreImpl) UpsertDeployment(deployment *storage.Deployment) error 
 	ds.keyedMutex.Lock(deployment.GetId())
 	defer ds.keyedMutex.Unlock(deployment.GetId())
 	if err := ds.deploymentStore.UpsertDeployment(deployment); err != nil {
-		return fmt.Errorf("inserting deployment '%s' to store: %s", deployment.GetId(), err)
+		return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
 	}
 	if err := ds.deploymentIndexer.AddDeployment(deployment); err != nil {
-		return fmt.Errorf("inserting deployment '%s' to index: %s", deployment.GetId(), err)
+		return errors.Wrapf(err, "inserting deployment '%s' to index", deployment.GetId())
 	}
 
 	if err := ds.processDataStore.RemoveProcessIndicatorsOfStaleContainers(deployment.GetId(), containerIds(deployment)); err != nil {

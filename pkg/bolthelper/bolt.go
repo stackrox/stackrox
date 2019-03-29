@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	bolt "github.com/etcd-io/bbolt"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/secondarykey"
 	"github.com/stackrox/rox/pkg/utils"
@@ -28,7 +29,7 @@ func New(path string) (*bolt.DB, error) {
 	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 		err = os.MkdirAll(dirPath, 0600)
 		if err != nil {
-			return nil, fmt.Errorf("Error creating db path %v: %+v", dirPath, err)
+			return nil, errors.Wrapf(err, "Error creating db path %v", dirPath)
 		}
 	} else if err != nil {
 		return nil, err
@@ -64,10 +65,10 @@ func NewTemp(dbPath string) (*bolt.DB, error) {
 func RegisterBucket(db *bolt.DB, bucket []byte) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		if _, err := tx.CreateBucketIfNotExists(bucket); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
+			return errors.Wrap(err, "create bucket")
 		}
 		if err := secondarykey.CreateUniqueKeyBucket(tx, bucket); err != nil {
-			return fmt.Errorf("create bucket: %s", err)
+			return errors.Wrap(err, "create bucket")
 		}
 		return nil
 	})

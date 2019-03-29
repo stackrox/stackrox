@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -62,14 +63,14 @@ func (c *controller) ApplyNetworkPolicies(ctx context.Context, mod *storage.Netw
 	})
 
 	if err := c.injector.InjectMessage(ctx, msg); err != nil {
-		return nil, fmt.Errorf("could not send network policies modification: %v", err)
+		return nil, errors.Wrap(err, "could not send network policies modification")
 	}
 
 	var resp *central.NetworkPoliciesResponse_Payload
 
 	select {
 	case <-ctx.Done():
-		return nil, fmt.Errorf("context error: %v", ctx.Err())
+		return nil, errors.Wrap(ctx.Err(), "context error")
 	case resp = <-retC:
 	}
 
@@ -102,7 +103,7 @@ func (c *controller) ProcessNetworkPoliciesResponse(resp *central.NetworkPolicie
 
 	select {
 	case <-c.stopSig.Done():
-		return fmt.Errorf("sensor connection stopped while waiting for network policies response: %v", c.stopSig.Err())
+		return errors.Wrap(c.stopSig.Err(), "sensor connection stopped while waiting for network policies response")
 	case retC <- resp.GetPayload():
 		return nil
 	}

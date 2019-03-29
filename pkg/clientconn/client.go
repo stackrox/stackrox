@@ -3,9 +3,9 @@ package clientconn
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/grpc/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -38,11 +38,11 @@ func tlsConfig(clientCert tls.Certificate, rootCAs *x509.CertPool, server string
 func AuthenticatedGRPCConnection(endpoint string, service Service) (conn *grpc.ClientConn, err error) {
 	clientCert, err := mtls.LeafCertificateFromFile()
 	if err != nil {
-		return nil, fmt.Errorf("client credentials: %s", err)
+		return nil, errors.Wrap(err, "client credentials")
 	}
 	rootCAs, err := verifier.TrustedCertPool()
 	if err != nil {
-		return nil, fmt.Errorf("trusted pool: %s", err)
+		return nil, errors.Wrap(err, "trusted pool")
 	}
 
 	var creds credentials.TransportCredentials

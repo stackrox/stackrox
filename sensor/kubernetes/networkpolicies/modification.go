@@ -1,8 +1,7 @@
 package networkpolicies
 
 import (
-	"fmt"
-
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/k8sutil"
@@ -19,7 +18,7 @@ func parseModification(mod *storage.NetworkPolicyModification) ([]*networkingV1.
 
 	policies, err := networkpolicy.YamlWrap{Yaml: mod.GetApplyYaml()}.ToKubernetesNetworkPolicies()
 	if err != nil {
-		return nil, nil, fmt.Errorf("parsing YAML: %v", err)
+		return nil, nil, errors.Wrap(err, "parsing YAML")
 	}
 
 	return policies, toDelete, nil

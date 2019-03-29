@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/dgraph-io/badger"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/migrations"
 )
 
@@ -20,7 +21,7 @@ func New(path string) (*badger.DB, error) {
 	if stat, err := os.Stat(path); os.IsNotExist(err) {
 		err = os.MkdirAll(path, 0600)
 		if err != nil {
-			return nil, fmt.Errorf("error creating badger path %s: %v", path, err)
+			return nil, errors.Wrapf(err, "error creating badger path %s", path)
 		}
 	} else if err != nil {
 		return nil, err

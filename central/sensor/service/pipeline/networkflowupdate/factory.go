@@ -1,8 +1,7 @@
 package networkflowupdate
 
 import (
-	"fmt"
-
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/networkflow/store"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 )
@@ -23,7 +22,7 @@ type factoryImpl struct {
 func (s *factoryImpl) GetFragment(clusterID string) (pipeline.Fragment, error) {
 	flowStore, err := s.clusterStore.CreateFlowStore(clusterID)
 	if err != nil {
-		return nil, fmt.Errorf("creating flow store: %v", err)
+		return nil, errors.Wrap(err, "creating flow store")
 	}
 	return NewPipeline(clusterID, newFlowStoreUpdater(flowStore)), nil
 }

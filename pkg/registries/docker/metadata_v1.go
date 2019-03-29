@@ -2,7 +2,6 @@ package docker
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/docker/docker/image"
 	"github.com/gogo/protobuf/types"
 	"github.com/opencontainers/go-digest"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	instructionTypes "github.com/stackrox/rox/pkg/registries/types"
@@ -62,7 +62,7 @@ func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, 
 		historyLayer := manifest.History[i]
 		var v1Image image.V1Image
 		if err := json.Unmarshal([]byte(historyLayer.V1Compatibility), &v1Image); err != nil {
-			return nil, fmt.Errorf("Failed unmarshalling v1 capability: %s", err)
+			return nil, errors.Wrap(err, "Failed unmarshalling v1 capability")
 		}
 		layer := convertImageToDockerFileLine(&v1Image)
 		if protoconv.CompareProtoTimestamps(layer.Created, latest.Created) == 1 {

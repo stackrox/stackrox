@@ -1,8 +1,7 @@
 package tokens
 
 import (
-	"fmt"
-
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/jwt"
 )
 
@@ -34,7 +33,7 @@ func (v *validator) Validate(token string) (*TokenInfo, error) {
 	}
 	for _, src := range srcs {
 		if err := src.Validate(&claims); err != nil {
-			return nil, fmt.Errorf("token rejected by source: %v", err)
+			return nil, errors.Wrap(err, "token rejected by source")
 		}
 	}
 	return &TokenInfo{

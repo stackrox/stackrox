@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	ptypes "github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/deployment"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
@@ -37,7 +38,7 @@ func (d *detectorImpl) policyMatcher(alerts *alertSlice, deploymentIDs ...string
 		}
 
 		if err != nil {
-			return fmt.Errorf("matching policy %s: %s", p.GetName(), err)
+			return errors.Wrapf(err, "matching policy %s", p.GetName())
 		}
 
 		for deploymentID, violations := range violationsByDeployment {

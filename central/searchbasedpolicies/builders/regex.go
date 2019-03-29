@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -47,7 +48,7 @@ func (r RegexQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[se
 		var searchField *v1.SearchField
 		searchField, err = getSearchField(field.FieldLabel, optionsMap)
 		if err != nil {
-			err = fmt.Errorf("%s: %s", r.Name(), err)
+			err = errors.Wrapf(err, "%s", r.Name())
 			return
 		}
 
@@ -60,7 +61,7 @@ func (r RegexQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[se
 			// Make sure the regex compiles (Bleve will just fail silently.)
 			_, err = regexp.Compile(actualQueriedVal)
 			if err != nil {
-				err = fmt.Errorf("'%s' is an invalid regex: %s", actualQueriedVal, err)
+				err = errors.Wrapf(err, "'%s' is an invalid regex", actualQueriedVal)
 				return
 			}
 

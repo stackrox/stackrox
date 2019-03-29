@@ -1,10 +1,10 @@
 package check
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -97,7 +97,7 @@ func getAlerts(imageStr string) ([]*storage.Alert, error) {
 func buildRequest(image string) (*storage.Image, error) {
 	img, err := utils.GenerateImageFromString(image)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse image '%s': %s", image, err)
+		return nil, errors.Wrapf(err, "could not parse image '%s'", image)
 	}
 	return img, nil
 }

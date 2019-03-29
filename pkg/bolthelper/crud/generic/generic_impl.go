@@ -1,10 +1,10 @@
 package generic
 
 import (
-	"errors"
 	"fmt"
 
 	bolt "github.com/etcd-io/bbolt"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/bolthelper"
 )
 
@@ -47,7 +47,7 @@ func traverse(bucket *bolt.Bucket, createBuckets bool, path KeyPath) (*bolt.Buck
 			}
 			nextBucket, err := currBucket.CreateBucket(key)
 			if err != nil {
-				return nil, fmt.Errorf("creating bucket: %v", err)
+				return nil, errors.Wrap(err, "creating bucket")
 			}
 			currBucket = nextBucket
 		}

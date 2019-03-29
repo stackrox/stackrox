@@ -1,8 +1,7 @@
 package builders
 
 import (
-	"fmt"
-
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +21,7 @@ func (s ScanExistsQueryBuilder) Query(fields *storage.PolicyFields, optionsMap m
 
 	_, err = getSearchFieldNotStored(search.ImageScanTime, optionsMap)
 	if err != nil {
-		err = fmt.Errorf("%s: %s", s.Name(), err)
+		err = errors.Wrapf(err, "%s", s.Name())
 		return
 	}
 

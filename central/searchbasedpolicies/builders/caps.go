@@ -3,6 +3,7 @@ package builders
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -21,7 +22,7 @@ func (c addCapQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[s
 
 	searchField, err := getSearchField(search.AddCapabilities, optionsMap)
 	if err != nil {
-		err = fmt.Errorf("%s: %s", c.Name(), err)
+		err = errors.Wrapf(err, "%s", c.Name())
 		return
 	}
 
@@ -48,7 +49,7 @@ func (c dropCapQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[
 
 	searchField, err := getSearchField(search.DropCapabilities, optionsMap)
 	if err != nil {
-		err = fmt.Errorf("%s: %s", c.Name(), err)
+		err = errors.Wrapf(err, "%s", c.Name())
 		return
 	}
 

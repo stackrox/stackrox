@@ -3,6 +3,7 @@ package builders
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ func (r *resourcePolicyBuilder) Query(fields *storage.PolicyFields, optionsMap m
 	}
 	searchField, err := getSearchField(r.fieldLabel, optionsMap)
 	if err != nil {
-		err = fmt.Errorf("%s: %s", r.Name(), err)
+		err = errors.Wrapf(err, "%s", r.Name())
 		return
 	}
 

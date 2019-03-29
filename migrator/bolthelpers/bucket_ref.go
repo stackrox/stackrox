@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	bolt "github.com/etcd-io/bbolt"
+	"github.com/pkg/errors"
 )
 
 // BucketRef is a reference to a bucket. The user does not need to care whether this is a top-level bucket, or a nested
@@ -30,7 +31,7 @@ func TopLevelRefWithCreateIfNotExists(db *bolt.DB, key []byte) (BucketRef, error
 		return err
 	})
 	if err != nil {
-		return nil, fmt.Errorf("creating bucket %v: %v", key, err)
+		return nil, errors.Wrapf(err, "creating bucket %v", key)
 	}
 	return TopLevelRef(db, key), nil
 }

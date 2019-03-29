@@ -1,7 +1,6 @@
 package store
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -9,6 +8,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
 	timestamp "github.com/gogo/protobuf/types"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/dberrors"
@@ -106,7 +106,7 @@ func (b *storeImpl) updateCluster(tx *bolt.Tx, cluster *storage.Cluster) error {
 	// If the update is changing the name, check if the name has already been taken
 	if val, _ := secondarykey.GetCurrentUniqueKey(tx, clusterBucket, cluster.GetId()); val != cluster.GetName() {
 		if err := secondarykey.UpdateUniqueKey(tx, clusterBucket, cluster.GetId(), cluster.GetName()); err != nil {
-			return fmt.Errorf("Could not update cluster due to name validation: %s", err)
+			return errors.Wrap(err, "Could not update cluster due to name validation")
 		}
 	}
 	bytes, err := proto.Marshal(cluster)
@@ -245,7 +245,7 @@ func (b *storeImpl) UpdateClusterStatus(id string, status *storage.ClusterStatus
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Update, "ClusterStatus")
 	bytes, err := proto.Marshal(status)
 	if err != nil {
-		return fmt.Errorf("marshaling cluster status: %v", err)
+		return errors.Wrap(err, "marshaling cluster status")
 	}
 	return b.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(clusterStatusBucket)

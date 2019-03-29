@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -26,7 +27,7 @@ func (d *dayQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sea
 
 	searchField, err := getSearchField(d.fieldLabel, optionsMap)
 	if err != nil {
-		err = fmt.Errorf("%s: %s", d.Name(), err)
+		err = errors.Wrapf(err, "%s", d.Name())
 		return
 	}
 

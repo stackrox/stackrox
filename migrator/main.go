@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/migrator/badgerhelpers"
 	"github.com/stackrox/rox/migrator/bolthelpers"
 	"github.com/stackrox/rox/migrator/log"
@@ -20,7 +20,7 @@ func main() {
 func run() error {
 	boltDB, err := bolthelpers.Load()
 	if err != nil {
-		return fmt.Errorf("failed to open bolt DB: %v", err)
+		return errors.Wrap(err, "failed to open bolt DB")
 	}
 	if boltDB == nil {
 		log.WriteToStderr("No DB found. Nothing to migrate...")
@@ -29,7 +29,7 @@ func run() error {
 
 	badgerDB, err := badgerhelpers.NewWithDefaults()
 	if err != nil {
-		return fmt.Errorf("failed to open badger DB: %v", err)
+		return errors.Wrap(err, "failed to open badger DB")
 	}
 
 	defer func() {
@@ -42,7 +42,7 @@ func run() error {
 	}()
 	err = runner.Run(boltDB, badgerDB)
 	if err != nil {
-		return fmt.Errorf("migrations failed: %s", err)
+		return errors.Wrap(err, "migrations failed")
 	}
 	return nil
 }

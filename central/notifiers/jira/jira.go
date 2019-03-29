@@ -1,7 +1,6 @@
 package jira
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -9,6 +8,7 @@ import (
 	"time"
 
 	jiraLib "github.com/andygrunwald/go-jira"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -177,7 +177,7 @@ func (j *jira) createIssue(i *jiraLib.Issue) error {
 	if err != nil {
 		bytes, readErr := ioutil.ReadAll(resp.Body)
 		if readErr == nil {
-			return fmt.Errorf("Error creating issue: %+v. Response: %v", err, string(bytes))
+			return errors.Wrapf(err, "Error creating issue. Response: %v", string(bytes))
 		}
 	}
 	return err

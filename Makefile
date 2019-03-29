@@ -23,7 +23,7 @@ all: deps style test image
 ## Style ##
 ###########
 .PHONY: style
-style: fmt imports lint vet blanks validateimports no-large-files only-store-storage-protos storage-protos-compatible no-unchecked-errors ui-lint qa-tests-style
+style: fmt imports lint vet roxvet blanks validateimports no-large-files storage-protos-compatible ui-lint qa-tests-style
 
 .PHONY: qa-tests-style
 qa-tests-style:
@@ -71,16 +71,11 @@ no-large-files:
 	@echo "+ $@"
 	@$(BASE_DIR)/tools/large-git-files/find.sh
 
-.PHONY: only-store-storage-protos
-only-store-storage-protos:
+.PHONY: roxvet
+roxvet:
 	@echo "+ $@"
-	@go run $(BASE_DIR)/tools/storedprotos/verify.go $(shell go list github.com/stackrox/rox/central/...)
-
-
-.PHONY: no-unchecked-errors
-no-unchecked-errors:
-	@echo "+ $@"
-	@go run $(BASE_DIR)/tools/uncheckederrors/cmd/main.go $(shell go list -e ./... | grep -v -e 'stackrox/rox/image')
+	@go install $(BASE_DIR)/tools/roxvet
+	@go vet -vettool "$$(go env GOPATH)/bin/roxvet" $(shell go list -e ./... | grep -v -e 'stackrox/rox/image')
 
 
 PROTOLOCK_BIN := $(GOPATH)/bin/protolock
@@ -122,6 +117,7 @@ dev:
 	@go get -u golang.org/x/tools/cmd/goimports
 	@go get -u github.com/jstemmer/go-junit-report
 	@go get -u github.com/golang/dep/cmd/dep
+	@go install ./tools/roxvet
 
 
 #####################################

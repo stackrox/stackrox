@@ -1,8 +1,7 @@
 package datastore
 
 import (
-	"fmt"
-
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/serviceaccount/index"
 	"github.com/stackrox/rox/central/serviceaccount/search"
 	"github.com/stackrox/rox/central/serviceaccount/store"
@@ -33,7 +32,7 @@ func New(storage store.Store, indexer index.Indexer, searcher search.Searcher) (
 		searcher: searcher,
 	}
 	if err := d.buildIndex(); err != nil {
-		return nil, fmt.Errorf("failed to build index from existing store: %s", err)
+		return nil, errors.Wrap(err, "failed to build index from existing store")
 	}
 	return d, nil
 }
