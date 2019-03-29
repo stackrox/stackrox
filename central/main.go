@@ -21,7 +21,7 @@ import (
 	clusterService "github.com/stackrox/rox/central/cluster/service"
 	clustersZip "github.com/stackrox/rox/central/clusters/zip"
 	complianceHandlers "github.com/stackrox/rox/central/compliance/handlers"
-	"github.com/stackrox/rox/central/compliance/manager"
+	complianceManager "github.com/stackrox/rox/central/compliance/manager"
 	complianceManagerService "github.com/stackrox/rox/central/compliance/manager/service"
 	complianceService "github.com/stackrox/rox/central/compliance/service"
 	debugService "github.com/stackrox/rox/central/debug/service"
@@ -116,11 +116,19 @@ func main() {
 		log.Errorf("Failed to remove backup DB: %v", err)
 	}
 
-	go startGRPCServer()
+	if features.LicenseEnforcement.Enabled() {
+		if !verifyValidLicense() {
+			log.Error("*** No valid license found")
+			log.Error("*** ")
+			log.Error("*** Server starting in limited mode until license activated")
+			go startLimitedModeServer()
+			waitForTerminationSignal()
+			return
+		}
+	}
+	go startMainServer()
 
-	signalsC := make(chan os.Signal, 1)
-	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
-	waitForTerminationSignal(signalsC)
+	waitForTerminationSignal()
 }
 
 func ensureDB() {
@@ -130,57 +138,50 @@ func ensureDB() {
 	}
 }
 
-func watchdog(signal *concurrency.Signal, timeout time.Duration) {
-	if !concurrency.WaitWithTimeout(signal, timeout) {
-		log.Errorf("API server failed to start within %v!", timeout)
-		log.Errorf("This usually means something is *very* wrong. Terminating ...")
-		if err := syscall.Kill(syscall.Getpid(), syscall.SIGABRT); err != nil {
-			panic(err)
-		}
+func verifyValidLicense() bool {
+	// TODO: use license store
+	return false
+}
+
+type invalidLicenseFactory struct {
+}
+
+func (invalidLicenseFactory) ServicesToRegister(authproviders.Registry) []pkgGRPC.APIService {
+	return []pkgGRPC.APIService{
+		licenseService.Singleton(),
+		metadataService.New(),
+		// might also need to allow at least a read-only view of auth service for UI to work.
 	}
 }
 
-func startGRPCServer() {
-	registry, err := authproviders.NewStoreBackedRegistry(
-		ssoURLPathPrefix, tokenRedirectURLPath,
-		authProviderStore.New(globaldb.GetGlobalDB()), jwt.IssuerFactorySingleton(),
-		mapper.FactorySingleton())
+func (invalidLicenseFactory) StartServices() {
 
-	if err != nil {
-		log.Panicf("Could not create auth provider registry: %v", err)
+}
+
+func (invalidLicenseFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
+	return []routes.CustomRoute{uiDefaultRoute()}
+}
+
+func startLimitedModeServer() {
+	startGRPCServer(invalidLicenseFactory{})
+}
+
+type serviceFactory interface {
+	CustomRoutes() (customRoutes []routes.CustomRoute)
+	ServicesToRegister(authproviders.Registry) []pkgGRPC.APIService
+	StartServices()
+}
+
+type defaultFactory struct{}
+
+func (defaultFactory) StartServices() {
+	if err := complianceManager.Singleton().Start(); err != nil {
+		log.Panicf("could not start compliance manager: %v", err)
 	}
+	enrichanddetect.GetLoop().Start()
+}
 
-	for typeName, factoryCreator := range authProviderBackendFactories {
-		if err := registry.RegisterBackendFactory(typeName, factoryCreator); err != nil {
-			log.Panicf("Could not register %s auth provider factory: %v", typeName, err)
-		}
-	}
-
-	if err := registry.Init(); err != nil {
-		log.Panicf("Could not initialize auth provider registry: %v", err)
-	}
-
-	userpass.RegisterAuthProviderOrPanic(registry)
-
-	idExtractors := []authn.IdentityExtractor{
-		service.NewExtractor(), // internal services
-		tokenbased.NewExtractor(roleStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens
-		userpass.IdentityExtractorOrPanic(),
-	}
-
-	config := pkgGRPC.Config{
-		CustomRoutes:       customRoutes(),
-		TLS:                verifier.CA{},
-		IdentityExtractors: idExtractors,
-		AuthProviders:      registry,
-	}
-
-	if features.AuditLogging.Enabled() {
-		config.Auditor = audit.New(processor.Singleton())
-	}
-
-	server := pkgGRPC.NewAPI(config)
-
+func (defaultFactory) ServicesToRegister(registry authproviders.Registry) []pkgGRPC.APIService {
 	servicesToRegister := []pkgGRPC.APIService{
 		alertService.Singleton(),
 		authService.New(),
@@ -221,14 +222,67 @@ func startGRPCServer() {
 	if env.DevelopmentBuild.Setting() == "true" {
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
 	}
+	return servicesToRegister
+}
 
-	if err := manager.Singleton().Start(); err != nil {
-		log.Panicf("could not start compliance manager: %v", err)
+func startMainServer() {
+	startGRPCServer(defaultFactory{})
+}
+
+func watchdog(signal *concurrency.Signal, timeout time.Duration) {
+	if !concurrency.WaitWithTimeout(signal, timeout) {
+		log.Errorf("API server failed to start within %v!", timeout)
+		log.Errorf("This usually means something is *very* wrong. Terminating ...")
+		if err := syscall.Kill(syscall.Getpid(), syscall.SIGABRT); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func startGRPCServer(factory serviceFactory) {
+	registry, err := authproviders.NewStoreBackedRegistry(
+		ssoURLPathPrefix, tokenRedirectURLPath,
+		authProviderStore.New(globaldb.GetGlobalDB()), jwt.IssuerFactorySingleton(),
+		mapper.FactorySingleton())
+
+	if err != nil {
+		log.Panicf("Could not create auth provider registry: %v", err)
 	}
 
-	server.Register(servicesToRegister...)
+	for typeName, factoryCreator := range authProviderBackendFactories {
+		if err := registry.RegisterBackendFactory(typeName, factoryCreator); err != nil {
+			log.Panicf("Could not register %s auth provider factory: %v", typeName, err)
+		}
+	}
 
-	enrichanddetect.GetLoop().Start()
+	if err := registry.Init(); err != nil {
+		log.Panicf("Could not initialize auth provider registry: %v", err)
+	}
+
+	userpass.RegisterAuthProviderOrPanic(registry)
+
+	idExtractors := []authn.IdentityExtractor{
+		service.NewExtractor(), // internal services
+		tokenbased.NewExtractor(roleStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens
+		userpass.IdentityExtractorOrPanic(),
+	}
+
+	config := pkgGRPC.Config{
+		CustomRoutes:       factory.CustomRoutes(),
+		TLS:                verifier.CA{},
+		IdentityExtractors: idExtractors,
+		AuthProviders:      registry,
+	}
+
+	if features.AuditLogging.Enabled() {
+		config.Auditor = audit.New(processor.Singleton())
+	}
+
+	server := pkgGRPC.NewAPI(config)
+
+	server.Register(factory.ServicesToRegister(registry)...)
+
+	factory.StartServices()
 	startedSig := server.Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
@@ -296,14 +350,19 @@ func allResourcesModifyPermissions() []*v1.Permission {
 	return result
 }
 
-func customRoutes() (customRoutes []routes.CustomRoute) {
+func uiDefaultRoute() routes.CustomRoute {
+	return routes.CustomRoute{
+		Route:         "/",
+		Authorizer:    allow.Anonymous(),
+		ServerHandler: ui.Mux(),
+		Compression:   true,
+	}
+
+}
+
+func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 	customRoutes = []routes.CustomRoute{
-		{
-			Route:         "/",
-			Authorizer:    allow.Anonymous(),
-			ServerHandler: ui.Mux(),
-			Compression:   true,
-		},
+		uiDefaultRoute(),
 		{
 			Route:         "/api/extensions/clusters/zip",
 			Authorizer:    authzUser.With(permissions.View(resources.Cluster), permissions.View(resources.ServiceIdentity)),
@@ -394,7 +453,9 @@ func debugRoutes() []routes.CustomRoute {
 	return customRoutes
 }
 
-func waitForTerminationSignal(signalsC <-chan os.Signal) {
+func waitForTerminationSignal() {
+	signalsC := make(chan os.Signal, 1)
+	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-signalsC
 	log.Infof("Caught %s signal", sig)
 	enrichanddetect.GetLoop().Stop()
