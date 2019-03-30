@@ -13,6 +13,8 @@ import { actions, types, AUTH_STATUS } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
 import { types as locationActionTypes } from 'reducers/routes';
 import { actions as notificationActions } from 'reducers/notifications';
+import { actions as licenseActions } from 'reducers/license';
+import { getLicenses } from 'sagas/licenseSagas';
 
 function* evaluateUserAccess() {
     const authProviders = yield select(selectors.getAuthProviders);
@@ -139,6 +141,10 @@ function* dispatchAuthResponse(type, location) {
         }
         yield put(actions.handleIdpError(result));
     }
+
+    // When the user logs in, we should show the license reminder if it will expire soon
+    yield put(licenseActions.showLicenseReminder());
+    yield fork(getLicenses);
 
     const storedLocation = yield call(AuthService.getAndClearRequestedLocation);
     yield put(push(storedLocation || '/')); // try to restore requested path

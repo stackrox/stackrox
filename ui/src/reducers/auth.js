@@ -1,7 +1,6 @@
 import { combineReducers } from 'redux';
 import isEqual from 'lodash/isEqual';
 import { availableAuthProviders } from 'constants/accessControl';
-
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
 
 // Helper functions

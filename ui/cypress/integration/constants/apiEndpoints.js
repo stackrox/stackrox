@@ -56,3 +56,9 @@ export const compliance = {
         csv: '/api/compliance/export/csv'
     }
 };
+
+export const logs = '/api/logimbue';
+
+export const licenses = {
+    list: '/v1/licenses/list*'
+};

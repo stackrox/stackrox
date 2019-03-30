@@ -20,9 +20,11 @@ import processes from './processSagas';
 import groups from './groupSagas';
 import attributes from './attributesSagas';
 import cli from './cliSagas';
+import license from './licenseSagas';
 
 export default function* root() {
     yield all([
+        fork(license),
         fork(alerts),
         fork(apiTokens),
         fork(authProviders),

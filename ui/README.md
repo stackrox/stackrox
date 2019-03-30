@@ -90,3 +90,6 @@ For better development experience it's recommended to use [Google Chrome Browser
 * [React Developer Tools](https://chrome.google.com/webstore/detail/react-developer-tools/fmkadmapgofadopljbjfkapdkoienihi?hl=en)
 * [Redux DevTools](https://chrome.google.com/webstore/detail/redux-devtools/lmhkpmbekcpmknklioeibfkpmmfibljd?hl=en)
 
+### Feature Flags
+
+Just like the backend, we can enable/disable certain features by using environment variables. Create React App will inject environment variables in the app with the prefix `REACT_APP_`. For example, if we want to have a feature flag for Licensing, we could enable the feature by doing a `export REACT_APP_ROX_LICENSE_ENFORCMENT=true` and then starting the app through the usual means. Once a feature is deliverable, we can go ahead and remove the feature flags.

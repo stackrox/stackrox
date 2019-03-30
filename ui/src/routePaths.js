@@ -6,6 +6,7 @@ import { standardTypes, resourceTypes, standardEntityTypes } from 'constants/ent
 
 export const mainPath = '/main';
 export const loginPath = '/login';
+export const licenseStartUpPath = `/license`;
 export const authResponsePrefix = '/auth/response/';
 
 export const dashboardPath = `${mainPath}/dashboard`;

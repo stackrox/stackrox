@@ -1,12 +1,17 @@
 import React from 'react';
-import { customerID, licenseType } from 'mockData/licenseData';
+import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
+import { selectors } from 'reducers';
+import { licenseType } from 'mockData/licenseData';
 
 import PageHeader from 'Components/PageHeader';
 
 import LicenseExpiration from './widgets/LicenseExpiration';
 import UpgradeSupport from './widgets/UpgradeSupport';
 
-const Page = () => {
+const Page = ({ license }) => {
+    const customerID = license ? license.license.metadata.licensedForId : '';
     const header = `License: ${licenseType}`;
     const subHeader = `Customer ID: #${customerID}`;
     return (
@@ -30,4 +35,19 @@ const Page = () => {
     );
 };
 
-export default Page;
+Page.propTypes = {
+    license: PropTypes.shape({})
+};
+
+Page.defaultProps = {
+    license: null
+};
+
+const mapStateToProps = createStructuredSelector({
+    license: selectors.getLicense
+});
+
+export default connect(
+    mapStateToProps,
+    null
+)(Page);

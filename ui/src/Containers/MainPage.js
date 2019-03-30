@@ -32,6 +32,7 @@ import TopNavigation from 'Containers/Navigation/TopNavigation';
 import LeftNavigation from 'Containers/Navigation/LeftNavigation';
 import SearchModal from 'Containers/Search/SearchModal';
 import CLIModal from 'Containers/CLI/CLIModal';
+import LicenseReminder from 'Containers/License/LicenseReminder';
 
 import ErrorBoundary from 'Containers/ErrorBoundary';
 import UnreachableWarning from 'Containers/UnreachableWarning';
@@ -114,7 +115,9 @@ class MainPage extends Component {
                     <ProtectedRoute path={secretsPath} component={AsyncSecretsPage} />
                     <ProtectedRoute path={accessControlPath} component={AsyncAccessControlPage} />
                     <ProtectedRoute path={apidocsPath} component={AsyncApiDocsPage} />
-                    <ProtectedRoute devOnly path={licensePath} component={AsyncLicensePage} />
+                    {process.env.REACT_APP_ROX_LICENSE_ENFORCEMENT === 'true' && (
+                        <ProtectedRoute path={licensePath} component={AsyncLicensePage} />
+                    )}
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
                 {this.renderPDFLoader()}
@@ -147,6 +150,7 @@ class MainPage extends Component {
         return (
             <section className="flex flex-1 flex-col h-full relative">
                 <Notifications />
+                {process.env.REACT_APP_ROX_LICENSE_ENFORCEMENT === 'true' && <LicenseReminder />}
                 <div className="navigation-gradient" />
                 {this.renderVersionOutOfDate()}
                 <UnreachableWarning />

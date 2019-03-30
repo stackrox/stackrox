@@ -19,7 +19,7 @@ const UpgradeSupport = () => (
                         </div>
                         <div>
                             <a
-                                className="text-base-600 tracking-wide"
+                                className="text-base-600 tracking-wide hover:text-primary-600"
                                 href={`tel:+${stackroxSupport.phoneNumber.withDashes}`}
                             >
                                 {stackroxSupport.phoneNumber.withSpaces}
@@ -34,7 +34,7 @@ const UpgradeSupport = () => (
                         </div>
                         <div>
                             <a
-                                className="text-base-600 tracking-wide"
+                                className="text-base-600 tracking-wide hover:text-primary-600"
                                 href={`mailto:${
                                     stackroxSupport.email
                                 }?subject=StackRox License Renewal&body=I would like to renew my StackRox Kubernetes Security Platform License.`}
