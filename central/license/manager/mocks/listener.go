@@ -6,7 +6,9 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	manager "github.com/stackrox/rox/central/license/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	license "github.com/stackrox/rox/generated/shared/license"
 	reflect "reflect"
 )
 
@@ -41,4 +43,14 @@ func (m *MockLicenseEventListener) OnActiveLicenseChanged(arg0, arg1 *v1.License
 // OnActiveLicenseChanged indicates an expected call of OnActiveLicenseChanged
 func (mr *MockLicenseEventListenerMockRecorder) OnActiveLicenseChanged(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnActiveLicenseChanged", reflect.TypeOf((*MockLicenseEventListener)(nil).OnActiveLicenseChanged), arg0, arg1)
+}
+
+// OnInitialize mocks base method
+func (m *MockLicenseEventListener) OnInitialize(arg0 manager.LicenseManager, arg1 *license.License) {
+	m.ctrl.Call(m, "OnInitialize", arg0, arg1)
+}
+
+// OnInitialize indicates an expected call of OnInitialize
+func (mr *MockLicenseEventListenerMockRecorder) OnInitialize(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnInitialize", reflect.TypeOf((*MockLicenseEventListener)(nil).OnInitialize), arg0, arg1)
 }

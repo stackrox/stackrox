@@ -10,6 +10,7 @@ import (
 	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -118,10 +119,13 @@ var (
 )
 
 type service struct {
+	lockdownMode bool
 }
 
-func newService() *service {
-	return &service{}
+func newService(lockdownMode bool) *service {
+	return &service{
+		lockdownMode: lockdownMode,
+	}
 }
 
 func (s *service) RegisterServiceServer(server *grpc.Server) {
@@ -133,6 +137,9 @@ func (s *service) RegisterServiceHandler(ctx context.Context, mux *runtime.Serve
 }
 
 func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
+	if s.lockdownMode {
+		return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
+	}
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 

@@ -11,8 +11,8 @@ var (
 	instanceInit sync.Once
 )
 
-// Singleton returns the license manager singleton instance
-func Singleton() manager.LicenseManager {
+// ManagerSingleton returns the license manager singleton instance
+func ManagerSingleton() manager.LicenseManager {
 	instanceInit.Do(func() {
 		instance = manager.New(store.Singleton(), validatorInstance)
 	})

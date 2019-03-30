@@ -40,7 +40,9 @@ import (
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
 	"github.com/stackrox/rox/central/jwt"
+	licenseEnforcer "github.com/stackrox/rox/central/license/enforcer"
 	licenseService "github.com/stackrox/rox/central/license/service"
+	licenseSingletons "github.com/stackrox/rox/central/license/singleton"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
@@ -117,7 +119,12 @@ func main() {
 	}
 
 	if features.LicenseEnforcement.Enabled() {
-		if !verifyValidLicense() {
+		licenseMgr := licenseSingletons.ManagerSingleton()
+		initialLicense, err := licenseMgr.Initialize(licenseEnforcer.New())
+		if err != nil {
+			log.Fatalf("Could not initialize license manager: %v", err)
+		}
+		if initialLicense == nil {
 			log.Error("*** No valid license found")
 			log.Error("*** ")
 			log.Error("*** Server starting in limited mode until license activated")
@@ -148,9 +155,9 @@ type invalidLicenseFactory struct {
 
 func (invalidLicenseFactory) ServicesToRegister(authproviders.Registry) []pkgGRPC.APIService {
 	return []pkgGRPC.APIService{
-		licenseService.Singleton(),
+		licenseService.New(true),
 		metadataService.New(),
-		// might also need to allow at least a read-only view of auth service for UI to work.
+		pingService.Singleton(), // required for dev scripts & health checking
 	}
 }
 
@@ -179,6 +186,8 @@ func (defaultFactory) StartServices() {
 		log.Panicf("could not start compliance manager: %v", err)
 	}
 	enrichanddetect.GetLoop().Start()
+
+	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
 
 func (defaultFactory) ServicesToRegister(registry authproviders.Registry) []pkgGRPC.APIService {
@@ -216,7 +225,7 @@ func (defaultFactory) ServicesToRegister(registry authproviders.Registry) []pkgG
 	}
 
 	if features.LicenseEnforcement.Enabled() {
-		servicesToRegister = append(servicesToRegister, licenseService.Singleton())
+		servicesToRegister = append(servicesToRegister, licenseService.New(false))
 	}
 
 	if env.DevelopmentBuild.Setting() == "true" {
@@ -285,7 +294,6 @@ func startGRPCServer(factory serviceFactory) {
 	factory.StartServices()
 	startedSig := server.Start()
 
-	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 	go watchdog(startedSig, grpcServerWatchdogTimeout)
 }
 

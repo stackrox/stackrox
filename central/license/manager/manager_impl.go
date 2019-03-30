@@ -104,6 +104,10 @@ func (m *manager) Initialize(listener LicenseEventListener) (*licenseproto.Licen
 
 	go m.run()
 
+	if listener != nil {
+		listener.OnInitialize(m, m.activeLicense.getLicenseProto())
+	}
+
 	return m.activeLicense.getLicenseProto(), nil
 }
 

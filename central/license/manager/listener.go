@@ -1,9 +1,14 @@
 package manager
 
-import v1 "github.com/stackrox/rox/generated/api/v1"
+import (
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	licenseproto "github.com/stackrox/rox/generated/shared/license"
+)
 
 // LicenseEventListener defines a listener interface for license events.
 type LicenseEventListener interface {
+	OnInitialize(mgr LicenseManager, initialLicense *licenseproto.License)
+
 	// OnActiveLicenseChanged gets called whenever the active license changes (including deactivation of
 	// an existing license, in which case `newLicense` will be `nil`). To ensure strict in-order guarantees, this
 	// function is invoked *synchronously*, hence its implementation should spawn a goroutine for tasks that might

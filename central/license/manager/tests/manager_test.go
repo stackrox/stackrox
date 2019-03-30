@@ -52,6 +52,7 @@ func (s *managerTestSuite) TearDownTest() {
 
 func (s *managerTestSuite) TestInitializeEmpty() {
 	s.mockStore.EXPECT().ListLicenseKeys().Return(nil, nil)
+	s.mockListener.EXPECT().OnInitialize(s.mgr, gomock.Nil())
 	activeLicense, err := s.mgr.Initialize(s.mockListener)
 	s.Nil(activeLicense)
 	s.NoError(err)
@@ -85,7 +86,7 @@ func (s *managerTestSuite) TestInitializeWithValidAndSelected() {
 		},
 	}, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&licenseproto.License{
+	license2 := &licenseproto.License{
 		Metadata: &licenseproto.License_Metadata{
 			Id: "license2",
 		},
@@ -97,7 +98,11 @@ func (s *managerTestSuite) TestInitializeWithValidAndSelected() {
 			NoBuildFlavorRestriction:           true,
 			NoDeploymentEnvironmentRestriction: true,
 		},
-	}, nil)
+	}
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(license2, nil)
+
+	s.mockListener.EXPECT().OnInitialize(s.mgr, license2)
 
 	activeLicense, err := s.mgr.Initialize(s.mockListener)
 	s.NoError(err)
@@ -133,7 +138,7 @@ func (s *managerTestSuite) TestInitializeWithInvalidSelected() {
 		},
 	}, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&licenseproto.License{
+	license2 := &licenseproto.License{
 		Metadata: &licenseproto.License_Metadata{
 			Id: "license2",
 		},
@@ -145,7 +150,11 @@ func (s *managerTestSuite) TestInitializeWithInvalidSelected() {
 			NoBuildFlavorRestriction:           true,
 			NoDeploymentEnvironmentRestriction: true,
 		},
-	}, nil)
+	}
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(license2, nil)
+
+	s.mockListener.EXPECT().OnInitialize(s.mgr, license2)
 
 	s.mockStore.EXPECT().UpsertLicenseKeys(
 		testutils.AssertionMatcher(
@@ -197,7 +206,7 @@ func (s *managerTestSuite) TestInitializeWithNoneSelected() {
 		},
 	}, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&licenseproto.License{
+	license2 := &licenseproto.License{
 		Metadata: &licenseproto.License_Metadata{
 			Id: "license2",
 		},
@@ -209,7 +218,11 @@ func (s *managerTestSuite) TestInitializeWithNoneSelected() {
 			NoBuildFlavorRestriction:           true,
 			NoDeploymentEnvironmentRestriction: true,
 		},
-	}, nil)
+	}
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(license2, nil)
+
+	s.mockListener.EXPECT().OnInitialize(s.mgr, license2)
 
 	s.mockStore.EXPECT().UpsertLicenseKeys(
 		[]*storage.StoredLicenseKey{
@@ -240,7 +253,7 @@ func (s *managerTestSuite) TestLicenseSwitchOnExpiration() {
 		},
 	}, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&licenseproto.License{
+	license1 := &licenseproto.License{
 		Metadata: &licenseproto.License_Metadata{
 			Id: "license1",
 		},
@@ -252,7 +265,9 @@ func (s *managerTestSuite) TestLicenseSwitchOnExpiration() {
 			NoBuildFlavorRestriction:           true,
 			NoDeploymentEnvironmentRestriction: true,
 		},
-	}, nil)
+	}
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(license1, nil)
 
 	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&licenseproto.License{
 		Metadata: &licenseproto.License_Metadata{
@@ -267,6 +282,8 @@ func (s *managerTestSuite) TestLicenseSwitchOnExpiration() {
 			NoDeploymentEnvironmentRestriction: true,
 		},
 	}, nil)
+
+	s.mockListener.EXPECT().OnInitialize(s.mgr, license1)
 
 	activeLicense, err := s.mgr.Initialize(s.mockListener)
 	s.NoError(err)
@@ -319,7 +336,7 @@ func (s *managerTestSuite) TestLicenseSwitchOffOnExpiration() {
 		},
 	}, nil)
 
-	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(&licenseproto.License{
+	license1 := &licenseproto.License{
 		Metadata: &licenseproto.License_Metadata{
 			Id: "license1",
 		},
@@ -331,7 +348,9 @@ func (s *managerTestSuite) TestLicenseSwitchOffOnExpiration() {
 			NoBuildFlavorRestriction:           true,
 			NoDeploymentEnvironmentRestriction: true,
 		},
-	}, nil)
+	}
+
+	s.mockValidator.EXPECT().ValidateLicenseKey("KEY1").Return(license1, nil)
 
 	s.mockValidator.EXPECT().ValidateLicenseKey("KEY2").Return(&licenseproto.License{
 		Metadata: &licenseproto.License_Metadata{
@@ -347,6 +366,8 @@ func (s *managerTestSuite) TestLicenseSwitchOffOnExpiration() {
 			NoDeploymentEnvironmentRestriction: true,
 		},
 	}, nil)
+
+	s.mockListener.EXPECT().OnInitialize(s.mgr, license1)
 
 	activeLicense, err := s.mgr.Initialize(s.mockListener)
 	s.NoError(err)
@@ -398,6 +419,8 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValid() {
 		},
 	}, nil)
 
+	s.mockListener.EXPECT().OnInitialize(s.mgr, gomock.Nil())
+
 	activeLicense, err := s.mgr.Initialize(s.mockListener)
 	s.NoError(err)
 	s.Nil(activeLicense)
@@ -440,6 +463,8 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValidAdded() {
 			NoDeploymentEnvironmentRestriction: true,
 		},
 	}, nil)
+
+	s.mockListener.EXPECT().OnInitialize(s.mgr, gomock.Nil())
 
 	activeLicense, err := s.mgr.Initialize(s.mockListener)
 	s.NoError(err)
@@ -487,6 +512,8 @@ func (s *managerTestSuite) TestLicenseActivatedAfterAdded() {
 			NoDeploymentEnvironmentRestriction: true,
 		},
 	}, nil)
+
+	s.mockListener.EXPECT().OnInitialize(s.mgr, gomock.Nil())
 
 	activeLicense, err := s.mgr.Initialize(s.mockListener)
 	s.NoError(err)
@@ -548,6 +575,8 @@ func (s *managerTestSuite) TestLicenseExpiredAfterAdded() {
 			NoDeploymentEnvironmentRestriction: true,
 		},
 	}, nil)
+
+	s.mockListener.EXPECT().OnInitialize(s.mgr, gomock.Nil())
 
 	activeLicense, err := s.mgr.Initialize(s.mockListener)
 	s.NoError(err)
