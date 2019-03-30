@@ -29,7 +29,7 @@ func TestStore(t *testing.T) {
 		Selected:   true,
 	}
 
-	err = store.UpsertLicenseKey(key1)
+	err = store.UpsertLicenseKeys([]*storage.StoredLicenseKey{key1})
 	require.NoError(t, err)
 
 	allKeys, err = store.ListLicenseKeys()
@@ -43,7 +43,7 @@ func TestStore(t *testing.T) {
 		Selected:   false,
 	}
 
-	err = store.UpsertLicenseKey(key2)
+	err = store.UpsertLicenseKeys([]*storage.StoredLicenseKey{key2})
 	require.NoError(t, err)
 
 	allKeys, err = store.ListLicenseKeys()

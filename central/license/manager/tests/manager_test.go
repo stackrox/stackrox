@@ -15,6 +15,7 @@ import (
 	validatorMocks "github.com/stackrox/rox/pkg/license/validator/mocks"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -44,6 +45,7 @@ func (s *managerTestSuite) SetupTest() {
 }
 
 func (s *managerTestSuite) TearDownTest() {
+	time.Sleep(100 * time.Millisecond)
 	s.True(concurrency.WaitWithTimeout(s.mgr.Stop(), time.Second))
 	s.mockCtrl.Finish()
 }
@@ -145,6 +147,22 @@ func (s *managerTestSuite) TestInitializeWithInvalidSelected() {
 		},
 	}, nil)
 
+	s.mockStore.EXPECT().UpsertLicenseKeys(
+		testutils.AssertionMatcher(
+			assert.ElementsMatch,
+			[]*storage.StoredLicenseKey{
+				{
+					LicenseId:  "license1",
+					LicenseKey: "KEY1",
+					Selected:   false,
+				},
+				{
+					LicenseId:  "license2",
+					LicenseKey: "KEY2",
+					Selected:   true,
+				},
+			}))
+
 	activeLicense, err := s.mgr.Initialize(s.mockListener)
 	s.NoError(err)
 
@@ -192,6 +210,15 @@ func (s *managerTestSuite) TestInitializeWithNoneSelected() {
 			NoDeploymentEnvironmentRestriction: true,
 		},
 	}, nil)
+
+	s.mockStore.EXPECT().UpsertLicenseKeys(
+		[]*storage.StoredLicenseKey{
+			{
+				LicenseKey: "KEY2",
+				LicenseId:  "license2",
+				Selected:   true,
+			},
+		})
 
 	activeLicense, err := s.mgr.Initialize(s.mockListener)
 	s.NoError(err)
@@ -259,6 +286,19 @@ func (s *managerTestSuite) TestLicenseSwitchOnExpiration() {
 			}
 			return l.GetStatus() == v1.LicenseInfo_EXPIRED
 		}))
+
+	s.mockStore.EXPECT().UpsertLicenseKeys(testutils.AssertionMatcher(assert.ElementsMatch, []*storage.StoredLicenseKey{
+		{
+			LicenseKey: "KEY1",
+			LicenseId:  "license1",
+			Selected:   false,
+		},
+		{
+			LicenseKey: "KEY2",
+			LicenseId:  "license2",
+			Selected:   true,
+		},
+	}))
 	time.Sleep(2 * time.Second)
 
 	newActiveLicense := s.mgr.GetActiveLicense()
@@ -321,6 +361,14 @@ func (s *managerTestSuite) TestLicenseSwitchOffOnExpiration() {
 			}
 			return l.GetStatus() == v1.LicenseInfo_EXPIRED
 		}))
+
+	s.mockStore.EXPECT().UpsertLicenseKeys([]*storage.StoredLicenseKey{
+		{
+			LicenseKey: "KEY1",
+			LicenseId:  "license1",
+			Selected:   false,
+		},
+	})
 	time.Sleep(2 * time.Second)
 
 	newActiveLicense := s.mgr.GetActiveLicense()
@@ -362,6 +410,14 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValid() {
 			return l.GetStatus() == v1.LicenseInfo_VALID
 		}),
 		nil)
+
+	s.mockStore.EXPECT().UpsertLicenseKeys([]*storage.StoredLicenseKey{
+		{
+			LicenseKey: "KEY1",
+			LicenseId:  "license1",
+			Selected:   true,
+		},
+	})
 	time.Sleep(2 * time.Second)
 
 	newActiveLicense := s.mgr.GetActiveLicense()
@@ -398,6 +454,13 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValidAdded() {
 		}),
 		nil)
 
+	s.mockStore.EXPECT().UpsertLicenseKeys([]*storage.StoredLicenseKey{
+		{
+			LicenseKey: "KEY1",
+			LicenseId:  "license1",
+			Selected:   true,
+		},
+	})
 	addedLicense, err := s.mgr.AddLicenseKey("KEY1")
 	s.Require().NoError(err)
 
@@ -429,6 +492,14 @@ func (s *managerTestSuite) TestLicenseActivatedAfterAdded() {
 	s.NoError(err)
 	s.Nil(activeLicense)
 
+	s.mockStore.EXPECT().UpsertLicenseKeys([]*storage.StoredLicenseKey{
+		{
+			LicenseKey: "KEY1",
+			LicenseId:  "license1",
+			Selected:   false,
+		},
+	})
+
 	addedLicense, err := s.mgr.AddLicenseKey("KEY1")
 	s.Require().NoError(err)
 
@@ -446,6 +517,14 @@ func (s *managerTestSuite) TestLicenseActivatedAfterAdded() {
 			return l.GetStatus() == v1.LicenseInfo_VALID
 		}),
 		nil)
+
+	s.mockStore.EXPECT().UpsertLicenseKeys([]*storage.StoredLicenseKey{
+		{
+			LicenseKey: "KEY1",
+			LicenseId:  "license1",
+			Selected:   true,
+		},
+	})
 
 	time.Sleep(1500 * time.Millisecond)
 
@@ -483,6 +562,14 @@ func (s *managerTestSuite) TestLicenseExpiredAfterAdded() {
 		}),
 		nil)
 
+	s.mockStore.EXPECT().UpsertLicenseKeys([]*storage.StoredLicenseKey{
+		{
+			LicenseKey: "KEY1",
+			LicenseId:  "license1",
+			Selected:   true,
+		},
+	})
+
 	addedLicense, err := s.mgr.AddLicenseKey("KEY1")
 	s.Require().NoError(err)
 
@@ -501,6 +588,14 @@ func (s *managerTestSuite) TestLicenseExpiredAfterAdded() {
 			}
 			return l.GetStatus() == v1.LicenseInfo_EXPIRED
 		}))
+
+	s.mockStore.EXPECT().UpsertLicenseKeys([]*storage.StoredLicenseKey{
+		{
+			LicenseKey: "KEY1",
+			LicenseId:  "license1",
+			Selected:   false,
+		},
+	})
 
 	time.Sleep(1500 * time.Millisecond)
 

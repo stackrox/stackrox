@@ -58,14 +58,14 @@ func (mr *MockStoreMockRecorder) ListLicenseKeys() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListLicenseKeys", reflect.TypeOf((*MockStore)(nil).ListLicenseKeys))
 }
 
-// UpsertLicenseKey mocks base method
-func (m *MockStore) UpsertLicenseKey(arg0 *storage.StoredLicenseKey) error {
-	ret := m.ctrl.Call(m, "UpsertLicenseKey", arg0)
+// UpsertLicenseKeys mocks base method
+func (m *MockStore) UpsertLicenseKeys(arg0 []*storage.StoredLicenseKey) error {
+	ret := m.ctrl.Call(m, "UpsertLicenseKeys", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpsertLicenseKey indicates an expected call of UpsertLicenseKey
-func (mr *MockStoreMockRecorder) UpsertLicenseKey(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertLicenseKey", reflect.TypeOf((*MockStore)(nil).UpsertLicenseKey), arg0)
+// UpsertLicenseKeys indicates an expected call of UpsertLicenseKeys
+func (mr *MockStoreMockRecorder) UpsertLicenseKeys(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertLicenseKeys", reflect.TypeOf((*MockStore)(nil).UpsertLicenseKeys), arg0)
 }

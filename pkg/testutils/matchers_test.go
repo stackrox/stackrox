@@ -30,3 +30,13 @@ func TestPredMatcherWithConversionTypeMatch(t *testing.T) {
 	m := PredMatcher("", func(x error) bool { return true })
 	assert.True(t, m.Matches(mockError{}))
 }
+
+func TestAssertionMatcher(t *testing.T) {
+	t.Parallel()
+
+	m := AssertionMatcher(assert.ElementsMatch, []string{"a", "b"})
+	assert.True(t, m.Matches([]string{"b", "a"}))
+	assert.False(t, m.Matches([]string{"a", "c"}))
+
+	assert.Regexp(t, `.*ElementsMatch\(\[a b\]\)`, m.String())
+}

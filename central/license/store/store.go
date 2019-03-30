@@ -8,7 +8,7 @@ import (
 // Store is a store for license keys.
 type Store interface {
 	ListLicenseKeys() ([]*storage.StoredLicenseKey, error)
-	UpsertLicenseKey(key *storage.StoredLicenseKey) error
+	UpsertLicenseKeys(keys []*storage.StoredLicenseKey) error
 	DeleteLicenseKey(licenseID string) error
 }
 

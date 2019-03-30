@@ -19,6 +19,10 @@ import (
 	"github.com/stackrox/rox/pkg/timeutil"
 )
 
+const (
+	storeRetryInterval = 5 * time.Second
+)
+
 var (
 	log = logging.LoggerForModule()
 )
@@ -44,6 +48,8 @@ type manager struct {
 	licenses      map[string]*licenseData
 	activeLicense *licenseData
 
+	dirty map[*licenseData]struct{}
+
 	interruptC chan struct{}
 	stopSig    concurrency.Signal
 	stoppedSig concurrency.Signal
@@ -56,6 +62,8 @@ func newManager(store store.Store, validator validator.Validator) *manager {
 		store:     store,
 		validator: validator,
 
+		dirty: make(map[*licenseData]struct{}),
+
 		interruptC: make(chan struct{}, 1),
 		stopSig:    concurrency.NewSignal(),
 	}
@@ -67,6 +75,10 @@ func (m *manager) interrupt() bool {
 		return true
 	case <-m.stoppedSig.Done():
 		return false
+	default:
+		// If the above to cases block, we are not stopped and could not write to the channel. Since the channel is
+		// buffered, there already is an interrupt pending, so no need for an additional one.
+		return true
 	}
 }
 
@@ -134,7 +146,7 @@ func (m *manager) importStoredKeysNoLock(storedKeys []*storage.StoredLicenseKey)
 		m.licenses[license.licenseProto.GetMetadata().GetId()] = license
 	}
 
-	m.makeLicenseActiveNoLock(selected)
+	m.activeLicense = selected
 }
 
 func (m *manager) run() {
@@ -148,6 +160,15 @@ func (m *manager) run() {
 		nextEventTimer = nil
 
 		nextEventTS := m.checkLicenses()
+
+		if err := m.updateStore(); err != nil {
+			log.Errorf("Could not update license key store: %v. Retrying in %v", err, storeRetryInterval)
+			retryTS := time.Now().Add(storeRetryInterval)
+			if nextEventTS.IsZero() || retryTS.Before(nextEventTS) {
+				nextEventTS = retryTS
+			}
+		}
+
 		if !nextEventTS.IsZero() {
 			nextEventTimer = time.NewTimer(nextEventTS.Sub(time.Now()))
 		}
@@ -243,6 +264,12 @@ func (m *manager) getLicenseInfoNoLock(license *licenseData) *v1.LicenseInfo {
 	return licenseInfo
 }
 
+func (m *manager) markDirtyNoLock(license *licenseData) {
+	if license != nil {
+		m.dirty[license] = struct{}{}
+	}
+}
+
 func (m *manager) makeLicenseActiveNoLock(newLicense *licenseData) (newLicenseInfo, oldLicenseInfo *v1.LicenseInfo, changed bool) {
 	newLicenseInfo = m.getLicenseInfoNoLock(newLicense)
 
@@ -273,9 +300,38 @@ func (m *manager) makeLicenseActiveNoLock(newLicense *licenseData) (newLicenseIn
 		m.listener.OnActiveLicenseChanged(newLicenseInfo, oldLicenseInfo)
 	}
 
+	m.markDirtyNoLock(oldLicense)
+	m.markDirtyNoLock(newLicense)
+
 	m.interrupt()
 
 	return
+}
+
+func (m *manager) toStoredKeyNoLock(license *licenseData) *storage.StoredLicenseKey {
+	return &storage.StoredLicenseKey{
+		LicenseKey: license.licenseKey,
+		LicenseId:  license.licenseProto.GetMetadata().GetId(),
+		Selected:   license == m.activeLicense,
+	}
+}
+
+func (m *manager) updateStore() error {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	if len(m.dirty) == 0 {
+		return nil
+	}
+
+	toUpsert := make([]*storage.StoredLicenseKey, 0, len(m.dirty))
+
+	for dirtyLicense := range m.dirty {
+		toUpsert = append(toUpsert, m.toStoredKeyNoLock(dirtyLicense))
+	}
+	m.dirty = make(map[*licenseData]struct{})
+
+	return m.store.UpsertLicenseKeys(toUpsert)
 }
 
 func (m *manager) GetActiveLicense() *licenseproto.License {
@@ -322,6 +378,7 @@ func (m *manager) addLicense(license *licenseData) *v1.LicenseInfo {
 	defer m.mutex.Unlock()
 
 	m.licenses[license.licenseProto.GetMetadata().GetId()] = license
+	m.dirty[license] = struct{}{}
 
 	if m.activeLicense == nil && m.checkLicenseIsUsable(license) == nil {
 		newLicenseInfo, _, _ := m.makeLicenseActiveNoLock(license)

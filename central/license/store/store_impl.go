@@ -51,8 +51,12 @@ func (s *store) ListLicenseKeys() ([]*storage.StoredLicenseKey, error) {
 	return storedKeys, nil
 }
 
-func (s *store) UpsertLicenseKey(key *storage.StoredLicenseKey) error {
-	return s.crud.Upsert(key)
+func (s *store) UpsertLicenseKeys(keys []*storage.StoredLicenseKey) error {
+	msgs := make([]proto2.Message, len(keys))
+	for i, key := range keys {
+		msgs[i] = key
+	}
+	return s.crud.UpsertBatch(msgs)
 }
 
 func (s *store) DeleteLicenseKey(licenseID string) error {
