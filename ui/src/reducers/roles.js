@@ -3,7 +3,14 @@ import isEqual from 'lodash/isEqual';
 
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
 
+export const ACCESS_LEVEL = Object.freeze({
+    READ_WRITE_ACCESS: 'READ_WRITE_ACCESS',
+    READ_ACCESS: 'READ_ACCESS',
+    NO_ACCESS: 'NO_ACCESS'
+});
+
 export const types = {
+    FETCH_USER_ROLE_PERMISSIONS: createFetchingActionTypes('roles/FETCH_USER_ROLE_PERMISSIONS'),
     FETCH_ROLES: createFetchingActionTypes('roles/FETCH_ROLES'),
     SELECTED_ROLE: 'roles/SELECTED_ROLE',
     SAVE_ROLE: 'roles/SAVE_ROLE',
@@ -11,6 +18,7 @@ export const types = {
 };
 
 export const actions = {
+    fetchUserRolePermissions: createFetchingActions(types.FETCH_USER_ROLE_PERMISSIONS),
     fetchRoles: createFetchingActions(types.FETCH_ROLES),
     selectRole: role => ({
         type: types.SELECTED_ROLE,
@@ -46,17 +54,43 @@ const selectedRole = (state = null, action) => {
     return state;
 };
 
+const userRolePermissions = (state = null, action) => {
+    if (action.type === types.FETCH_USER_ROLE_PERMISSIONS.SUCCESS) {
+        return isEqual(action.response, state) ? state : action.response;
+    }
+    return state;
+};
+
 const reducer = combineReducers({
     roles,
-    selectedRole
+    selectedRole,
+    userRolePermissions
 });
 
 const getRoles = state => state.roles;
 const getSelectedRole = state => state.selectedRole;
 
+const getAccessForPermission = (state, permission) => {
+    if (!state.userRolePermissions) return true;
+    const { globalAccess, resourceToAccess } = state.userRolePermissions;
+    const access = !resourceToAccess ? globalAccess : resourceToAccess[permission];
+    return access;
+};
+
+const hasReadPermission = state => permission => {
+    const access = getAccessForPermission(state, permission);
+    return access === ACCESS_LEVEL.READ_WRITE_ACCESS || access === ACCESS_LEVEL.READ_ACCESS;
+};
+const hasReadWritePermission = state => permission => {
+    const access = getAccessForPermission(state, permission);
+    return access === ACCESS_LEVEL.READ_WRITE_ACCESS;
+};
+
 export const selectors = {
     getRoles,
-    getSelectedRole
+    getSelectedRole,
+    hasReadPermission,
+    hasReadWritePermission
 };
 
 export default reducer;

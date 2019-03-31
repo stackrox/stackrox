@@ -8,13 +8,24 @@ import { loginPath, integrationsPath, authResponsePrefix } from 'routePaths';
 import { takeEveryLocation } from 'utils/sagaEffects';
 import * as AuthService from 'services/AuthService';
 import fetchUsersAttributes from 'services/AttributesService';
+import { fetchUserRolePermissions } from 'services/RolesService';
 import { selectors } from 'reducers';
 import { actions, types, AUTH_STATUS } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
 import { types as locationActionTypes } from 'reducers/routes';
 import { actions as notificationActions } from 'reducers/notifications';
 import { actions as licenseActions } from 'reducers/license';
+import { actions as rolesActions } from 'reducers/roles';
 import { getLicenses } from 'sagas/licenseSagas';
+
+function* getUserPermissions() {
+    try {
+        const result = yield call(fetchUserRolePermissions);
+        yield put(rolesActions.fetchUserRolePermissions.success(result.response));
+    } catch (error) {
+        yield put(rolesActions.fetchUserRolePermissions.error());
+    }
+}
 
 function* evaluateUserAccess() {
     const authProviders = yield select(selectors.getAuthProviders);
@@ -145,6 +156,7 @@ function* dispatchAuthResponse(type, location) {
     // When the user logs in, we should show the license reminder if it will expire soon
     yield put(licenseActions.showLicenseReminder());
     yield fork(getLicenses);
+    yield fork(getUserPermissions);
 
     const storedLocation = yield call(AuthService.getAndClearRequestedLocation);
     yield put(push(storedLocation || '/')); // try to restore requested path
@@ -260,6 +272,7 @@ export default function* auth() {
     } else {
         // otherwise we still need to fetch auth providers to check if user can access the app
         yield fork(getAuthProviders);
+        yield fork(getUserPermissions);
     }
 
     yield all([

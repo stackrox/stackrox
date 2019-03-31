@@ -8,6 +8,7 @@ import { actions, AUTH_STATUS } from 'reducers/auth';
 import { LICENSE_STATUS } from 'reducers/license';
 import * as AuthService from 'services/AuthService';
 import * as LicenseService from 'services/LicenseService';
+import { fetchUserRolePermissions } from 'services/RolesService';
 import saga from './authSagas';
 import createLocationChange from './sagaTestUtils';
 
@@ -27,7 +28,8 @@ describe('Auth Sagas', () => {
         return expectSaga(saga)
             .provide([
                 ...createStateSelectors(),
-                [call(AuthService.fetchAuthProviders), dynamic(fetchMock)]
+                [call(AuthService.fetchAuthProviders), dynamic(fetchMock)],
+                [call(fetchUserRolePermissions), { response: {} }]
             ])
             .put(actions.fetchAuthProviders.success(authProviders))
             .dispatch(createLocationChange('/')) // first location change will also trigger auth providers fetching
@@ -40,7 +42,8 @@ describe('Auth Sagas', () => {
         return expectSaga(saga)
             .provide([
                 ...createStateSelectors(),
-                [call(AuthService.fetchAuthProviders), dynamic(fetchMock)]
+                [call(AuthService.fetchAuthProviders), dynamic(fetchMock)],
+                [call(fetchUserRolePermissions), { response: {} }]
             ])
             .dispatch(createLocationChange('/'))
             .dispatch(createLocationChange('/main/policies'))
@@ -62,7 +65,8 @@ describe('Auth Sagas', () => {
                     call(AuthService.fetchAuthProviders),
                     { response: [{ name: 'ap1', validated: true }] }
                 ],
-                [call(AuthService.isTokenPresent), false]
+                [call(AuthService.isTokenPresent), false],
+                [call(fetchUserRolePermissions), { response: {} }]
             ])
             .put(actions.logout())
             .dispatch(createLocationChange('/'))
@@ -82,7 +86,8 @@ describe('Auth Sagas', () => {
                     { response: [{ name: 'ap1', validated: false }] }
                 ],
                 [call(AuthService.isTokenPresent), false],
-                [call(actions.logout), dynamic(logoutMock)]
+                [call(actions.logout), dynamic(logoutMock)],
+                [call(fetchUserRolePermissions), { response: {} }]
             ])
             .dispatch(createLocationChange('/'))
             .silentRun()
@@ -100,7 +105,8 @@ describe('Auth Sagas', () => {
                     { response: [{ name: 'ap1', validated: true }] }
                 ],
                 [call(AuthService.isTokenPresent), true],
-                [call(AuthService.fetchAuthStatus), 'ok']
+                [call(AuthService.fetchAuthStatus), 'ok'],
+                [call(fetchUserRolePermissions), { response: {} }]
             ])
             .put(actions.login())
             .dispatch(createLocationChange('/'))
@@ -115,7 +121,8 @@ describe('Auth Sagas', () => {
                     { response: [{ name: 'ap1', validated: true }] }
                 ],
                 [call(AuthService.isTokenPresent), true],
-                [call(AuthService.fetchAuthStatus), throwError(new Error('401'))]
+                [call(AuthService.fetchAuthStatus), throwError(new Error('401'))],
+                [call(fetchUserRolePermissions), { response: {} }]
             ])
             .put(actions.logout())
             .dispatch(createLocationChange('/'))
@@ -128,7 +135,8 @@ describe('Auth Sagas', () => {
                 ...createStateSelectors(),
                 [call(AuthService.fetchAuthProviders), { response: [] }],
                 [call(AuthService.isTokenPresent), true],
-                [call(AuthService.clearAccessToken), dynamic(clearTokenMock)]
+                [call(AuthService.clearAccessToken), dynamic(clearTokenMock)],
+                [call(fetchUserRolePermissions), { response: {} }]
             ])
             .put(actions.grantAnonymousAccess())
             .dispatch(createLocationChange('/'))
@@ -145,7 +153,8 @@ describe('Auth Sagas', () => {
                 ...createStateSelectors(),
                 [call(AuthService.fetchAuthProviders), { response: [] }],
                 [call(AuthService.isTokenPresent), true],
-                [call(AuthService.clearAccessToken), dynamic(clearTokenMock)]
+                [call(AuthService.clearAccessToken), dynamic(clearTokenMock)],
+                [call(fetchUserRolePermissions), { response: {} }]
             ])
             .put(actions.grantAnonymousAccess())
             .dispatch(createLocationChange('/'))
@@ -165,7 +174,8 @@ describe('Auth Sagas', () => {
                     { response: [{ name: 'ap1', validated: true }] }
                 ],
                 [call(AuthService.isTokenPresent), true],
-                [call(AuthService.clearAccessToken), dynamic(clearTokenMock)]
+                [call(AuthService.clearAccessToken), dynamic(clearTokenMock)],
+                [call(fetchUserRolePermissions), { response: {} }]
             ])
             .dispatch(createLocationChange('/'))
             .dispatch(actions.logout())
@@ -182,7 +192,8 @@ describe('Auth Sagas', () => {
             .provide([
                 ...createStateSelectors(),
                 [call(AuthService.fetchAuthProviders), { response: [] }],
-                [call(AuthService.storeRequestedLocation, from), dynamic(storeLocationMock)]
+                [call(AuthService.storeRequestedLocation, from), dynamic(storeLocationMock)],
+                [call(fetchUserRolePermissions), { response: {} }]
             ])
             .dispatch(createLocationChange('/'))
             .dispatch(createLocationChange('/login', from))
@@ -213,7 +224,8 @@ describe('Auth Sagas', () => {
                     {
                         response: { licenses: [{ status: LICENSE_STATUS.VALID }] }
                     }
-                ]
+                ],
+                [call(fetchUserRolePermissions), { response: {} }]
             ])
             .put(push(requestedLocation))
             .dispatch(
@@ -237,7 +249,8 @@ describe('Auth Sagas', () => {
                     call(AuthService.fetchAuthProviders),
                     { response: [{ name: 'ap1', validated: true }] }
                 ],
-                [call(AuthService.isTokenPresent), true]
+                [call(AuthService.isTokenPresent), true],
+                [call(fetchUserRolePermissions), { response: {} }]
             ])
             .put(actions.logout())
             .dispatch(createLocationChange('/'))
@@ -252,7 +265,8 @@ describe('Auth Sagas', () => {
                     call(AuthService.fetchAuthProviders),
                     { response: [{ name: 'ap1', validated: true }] }
                 ],
-                [call(AuthService.isTokenPresent), true]
+                [call(AuthService.isTokenPresent), true],
+                [call(fetchUserRolePermissions), { response: {} }]
             ])
             .not.put(actions.logout())
             .dispatch(createLocationChange('/'))

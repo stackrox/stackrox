@@ -1,6 +1,7 @@
 import axios from './instance';
 
 const url = '/v1/roles';
+const permissionsURL = '/v1/mypermissions';
 
 /**
  * Fetches list of roles
@@ -9,6 +10,17 @@ const url = '/v1/roles';
  */
 export function fetchRoles() {
     return axios.get(url).then(response => ({
+        response: response.data
+    }));
+}
+
+/**
+ * Fetches current user's role permissions
+ *
+ * @returns {Promise<Object, Error>} fulfilled with array of roles
+ */
+export function fetchUserRolePermissions() {
+    return axios.get(permissionsURL).then(response => ({
         response: response.data
     }));
 }

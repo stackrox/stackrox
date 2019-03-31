@@ -21,7 +21,8 @@ const getExpirationMessage = expirationDate => {
     };
 };
 
-const LicenseExpiration = ({ expirationDate }) => {
+const LicenseExpiration = ({ expirationDate, hasReadWritePermission }) => {
+    const canUploadLicense = hasReadWritePermission('Licenses');
     const expirationMessage = getExpirationMessage(expirationDate);
     return (
         <Widget header="License Expiration">
@@ -37,7 +38,7 @@ const LicenseExpiration = ({ expirationDate }) => {
                 </div>
                 <div className="text-center">
                     <Message type={expirationMessage.type} message={expirationMessage.message} />
-                    <UploadLicense />
+                    {canUploadLicense && <UploadLicense />}
                 </div>
             </div>
         </Widget>
@@ -45,7 +46,8 @@ const LicenseExpiration = ({ expirationDate }) => {
 };
 
 LicenseExpiration.propTypes = {
-    expirationDate: PropTypes.string
+    expirationDate: PropTypes.string,
+    hasReadWritePermission: PropTypes.func.isRequired
 };
 
 LicenseExpiration.defaultProps = {
@@ -53,7 +55,8 @@ LicenseExpiration.defaultProps = {
 };
 
 const mapStateToProps = createStructuredSelector({
-    expirationDate: selectors.getLicenseExpirationDate
+    expirationDate: selectors.getLicenseExpirationDate,
+    hasReadWritePermission: selectors.hasReadWritePermission
 });
 
 export default connect(

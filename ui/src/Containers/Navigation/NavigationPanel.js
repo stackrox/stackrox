@@ -17,13 +17,6 @@ const navLinks = [
     }
 ];
 
-if (process.env.REACT_APP_ROX_LICENSE_ENFORCEMENT === 'true') {
-    navLinks.push({
-        text: 'Product License',
-        to: '/main/license'
-    });
-}
-
 class NavigationPanel extends Component {
     static propTypes = {
         panelType: PropTypes.string.isRequired,
