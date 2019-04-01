@@ -45,6 +45,9 @@ function launch_central {
     fi
 
     echo
+    if [[ -n "${TRUSTED_CA_FILE}" ]]; then
+        "${unzip_dir}/central/scripts/ca-setup.sh" -f "${TRUSTED_CA_FILE}"
+    fi
 
     if [[ "$MONITORING_SUPPORT" == "true" ]]; then
         echo "Deploying Monitoring..."

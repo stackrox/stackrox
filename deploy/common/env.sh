@@ -42,3 +42,11 @@ echo "ROX_DEVELOPMENT_BUILD is set to ${ROX_DEVELOPMENT_BUILD}"
 
 export API_ENDPOINT="${API_ENDPOINT:-localhost:8000}"
 echo "API_ENDPOINT is set to ${API_ENDPOINT}"
+
+export TRUSTED_CA_FILE="${TRUSTED_CA_FILE:-}"
+if [[ -n "${TRUSTED_CA_FILE}" ]]; then
+  [[ -f "${TRUSTED_CA_FILE}" ]] || { echo "Trusted CA file ${TRUSTED_CA_FILE} not found"; return 1; }
+  echo "TRUSTED_CA_FILE is set to ${TRUSTED_CA_FILE}"
+else
+  echo "No TRUSTED_CA_FILE provided"
+fi

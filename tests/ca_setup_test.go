@@ -10,17 +10,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDevelopmentServer(t *testing.T) {
+func TestCASetup(t *testing.T) {
 	conn := testutils.GRPCConnectionToCentral(t)
 
 	service := central.NewDevelopmentServiceClient(conn)
 
 	cases := []struct {
-		url          string
-		expectedResp central.URLHasValidCertResponse_URLResult
+		url               string
+		expectedResp      central.URLHasValidCertResponse_URLResult
+		additionalMessage string
 	}{
 		{
-			url:          "https://superfish.badssl.com",
+			url: "https://superfish.badssl.com",
+			// This should succeed because, even though it's a bad cert, we have configured Central to trust it
+			// on startup.
+			expectedResp:      central.URLHasValidCertResponse_REQUEST_SUCCEEDED,
+			additionalMessage: "This failure likely means that setting up trusted CAs with Central is broken. Look at the TRUSTED_CA_FILE being exported in the deploy scripts",
+		},
+		{
+			url:          "https://untrusted-root.badssl.com",
 			expectedResp: central.URLHasValidCertResponse_CERT_SIGNED_BY_UNKNOWN_AUTHORITY,
 		},
 		{
@@ -45,7 +53,7 @@ func TestDevelopmentServer(t *testing.T) {
 			defer cancel()
 			resp, err := service.URLHasValidCert(ctx, &central.URLHasValidCertRequest{Url: c.url})
 			a.NoError(err)
-			a.Equal(c.expectedResp, resp.Result, "received resp: %+v", resp)
+			a.Equal(c.expectedResp, resp.Result, "received resp: %+v. %s", resp, c.additionalMessage)
 		})
 	}
 }

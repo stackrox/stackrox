@@ -597,6 +597,10 @@ jobs:
       - *setupRoxctl
       - *setupGCP
       - *createGKE
+      - run:
+          name: Export Trusted CA file
+          command: echo "export TRUSTED_CA_FILE=$(pwd)/tests/bad-ca/superfish.pem" >> "${BASH_ENV}"
+
       - *deployGKE
       - *setupCIMonitoring
       - *waitForAPI
