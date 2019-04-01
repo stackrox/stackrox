@@ -35,11 +35,11 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 	handle(sif.Core().V1().Services().Informer(), dispatchers.ForServices(), output, nil, wg, stopSignal)
 	handle(sif.Core().V1().ServiceAccounts().Informer(), dispatchers.ForServiceAccounts(), output, nil, wg, stopSignal)
 
-	// RBAC dispatcher handles multiple sets of data
-	handle(sif.Rbac().V1().Roles().Informer(), dispatchers.ForRBAC(), output, nil, wg, stopSignal)
-	handle(sif.Rbac().V1().ClusterRoles().Informer(), dispatchers.ForRBAC(), output, nil, wg, stopSignal)
-	handle(sif.Rbac().V1().RoleBindings().Informer(), dispatchers.ForRBAC(), output, nil, wg, stopSignal)
-	handle(sif.Rbac().V1().ClusterRoleBindings().Informer(), dispatchers.ForRBAC(), output, nil, wg, stopSignal)
+	// RBAC dispatchers handles multiple sets of data
+	handle(sif.Rbac().V1().Roles().Informer(), dispatchers.ForRoles(), output, nil, wg, stopSignal)
+	handle(sif.Rbac().V1().ClusterRoles().Informer(), dispatchers.ForClusterRoles(), output, nil, wg, stopSignal)
+	handle(sif.Rbac().V1().RoleBindings().Informer(), dispatchers.ForRoleBindings(), output, nil, wg, stopSignal)
+	handle(sif.Rbac().V1().ClusterRoleBindings().Informer(), dispatchers.ForClusterRoleBindings(), output, nil, wg, stopSignal)
 
 	// Deployment types.
 	handle(podInformer.Informer(), dispatchers.ForDeployments(kubernetes.Pod), output, &treatCreatesAsUpdates, wg, stopSignal)

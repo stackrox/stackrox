@@ -25,7 +25,10 @@ type DispatcherRegistry interface {
 	ForSecrets() Dispatcher
 	ForServices() Dispatcher
 	ForServiceAccounts() Dispatcher
-	ForRBAC() Dispatcher
+	ForRoles() Dispatcher
+	ForClusterRoles() Dispatcher
+	ForRoleBindings() Dispatcher
+	ForClusterRoleBindings() Dispatcher
 }
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
@@ -54,12 +57,16 @@ type registryImpl struct {
 	deploymentHandler *deploymentHandler
 	rbacHandler       *rbacHandler
 
-	namespaceDispatcher      *namespaceDispatcher
-	serviceDispatcher        *serviceDispatcher
-	secretDispatcher         *secretDispatcher
-	networkPolicyDispatcher  *networkPolicyDispatcher
-	nodeDispatcher           *nodeDispatcher
-	serviceAccountDispatcher *serviceAccountDispatcher
+	namespaceDispatcher          *namespaceDispatcher
+	serviceDispatcher            *serviceDispatcher
+	secretDispatcher             *secretDispatcher
+	networkPolicyDispatcher      *networkPolicyDispatcher
+	nodeDispatcher               *nodeDispatcher
+	serviceAccountDispatcher     *serviceAccountDispatcher
+	roleDispatcher               *roleDispatcher
+	clusterRoleDispatcher        *clusterRoleDispatcher
+	roleBindingDispatcher        *roleBindingDispatcher
+	clusterRoleBindingDispatcher *clusterRoleBindingDispatcher
 
 	registryLock sync.Mutex
 }
@@ -92,8 +99,20 @@ func (d *registryImpl) ForServiceAccounts() Dispatcher {
 	return d.newExclusive(d.serviceAccountDispatcher)
 }
 
-func (d *registryImpl) ForRBAC() Dispatcher {
-	return d.newExclusive(newRBACDispatcher(d.rbacHandler))
+func (d *registryImpl) ForRoles() Dispatcher {
+	return d.newExclusive(newRoleDispatcher(d.rbacHandler))
+}
+
+func (d *registryImpl) ForClusterRoles() Dispatcher {
+	return d.newExclusive(newClusterRoleDispatcher(d.rbacHandler))
+}
+
+func (d *registryImpl) ForRoleBindings() Dispatcher {
+	return d.newExclusive(newRoleBindingDispatcher(d.rbacHandler))
+}
+
+func (d *registryImpl) ForClusterRoleBindings() Dispatcher {
+	return d.newExclusive(newClusterRoleBindingDispatcher(d.rbacHandler))
 }
 
 // Wraps the input dispatcher so that only a single dispatcher returned from the registry can be run at a time.

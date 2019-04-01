@@ -6,16 +6,16 @@ import (
 
 type rbacStore struct {
 	roles                map[string]map[string]*storage.K8SRole
-	roleToBinding        map[string]map[string]*storage.K8SRoleBinding
-	clusterRoleToBinding map[string]map[string]*storage.K8SRoleBinding
+	roleToBinding        map[string]map[string][]*storage.K8SRoleBinding
+	clusterRoleToBinding map[string]map[string][]*storage.K8SRoleBinding
 }
 
 // newServiceStore creates and returns a new service store.
 func newRBACStore() *rbacStore {
 	return &rbacStore{
 		roles:                make(map[string]map[string]*storage.K8SRole),
-		roleToBinding:        make(map[string]map[string]*storage.K8SRoleBinding),
-		clusterRoleToBinding: make(map[string]map[string]*storage.K8SRoleBinding),
+		roleToBinding:        make(map[string]map[string][]*storage.K8SRoleBinding),
+		clusterRoleToBinding: make(map[string]map[string][]*storage.K8SRoleBinding),
 	}
 }
 
@@ -52,45 +52,76 @@ func (rs *rbacStore) getRole(roleName string, namespace string) string {
 	return ""
 }
 
-func (rs *rbacStore) getBindingsForRole(roleName string, clusterRole bool) []*storage.K8SRoleBinding {
-	var rolebindingsMap map[string]*storage.K8SRoleBinding
+func (rs *rbacStore) getBindingsForRole(role *storage.K8SRole) []*storage.K8SRoleBinding {
+	var rolebindingsMap map[string][]*storage.K8SRoleBinding
 
-	if clusterRole {
-		rolebindingsMap = rs.clusterRoleToBinding[roleName]
+	roleName := role.GetName()
+	namespace := role.GetNamespace()
+
+	if role.ClusterScope {
+		rolebindingsMap = rs.clusterRoleToBinding[namespace]
+	} else {
+		rolebindingsMap = rs.roleToBinding[namespace]
 	}
-	rolebindingsMap = rs.roleToBinding[roleName]
-
-	var roleBindings []*storage.K8SRoleBinding
-	for _, binding := range rolebindingsMap {
-		roleBindings = append(roleBindings, binding)
-	}
-
-	return roleBindings
+	return rolebindingsMap[roleName]
 }
 
-func (rs *rbacStore) addOrUpdateRoleBinding(roleBinding *storage.K8SRoleBinding) {
-	var rolebindingsMap map[string]*storage.K8SRoleBinding
+func (rs *rbacStore) addOrUpdateRoleBinding(roleBinding *storage.K8SRoleBinding, roleName string) {
 
+	var roleBindingMap map[string][]*storage.K8SRoleBinding
 	if roleBinding.ClusterScope {
-		rolebindingsMap = rs.clusterRoleToBinding[roleBinding.GetRoleId()]
-	}
-	rolebindingsMap = rs.roleToBinding[roleBinding.GetRoleId()]
+		roleBindingMap = rs.clusterRoleToBinding[roleBinding.GetNamespace()]
+	} else {
+		roleBindingMap = rs.roleToBinding[roleBinding.GetNamespace()]
 
-	if rolebindingsMap == nil {
-		rolebindingsMap = make(map[string]*storage.K8SRoleBinding)
 	}
-	rolebindingsMap[roleBinding.GetRoleId()] = roleBinding
+
+	if roleBindingMap == nil {
+		if roleBinding.ClusterScope {
+			rs.clusterRoleToBinding[roleBinding.GetNamespace()] = make(map[string][]*storage.K8SRoleBinding)
+		} else {
+			rs.roleToBinding[roleBinding.GetNamespace()] = make(map[string][]*storage.K8SRoleBinding)
+		}
+	}
+
+	roleBindingMap[roleName] = append(roleBindingMap[roleName], roleBinding)
 }
 
-func (rs *rbacStore) removeRoleBinding(roleBinding *storage.K8SRoleBinding) {
-	var rolebindingsMap map[string]*storage.K8SRoleBinding
+func (rs *rbacStore) removeRoleBinding(roleBinding *storage.K8SRoleBinding, roleName string) {
+	var roleBindingMap map[string][]*storage.K8SRoleBinding
 
 	if roleBinding.ClusterScope {
-		rolebindingsMap = rs.clusterRoleToBinding[roleBinding.GetRoleId()]
-	}
-	rolebindingsMap = rs.roleToBinding[roleBinding.GetRoleId()]
+		roleBindingMap = rs.clusterRoleToBinding[roleBinding.GetNamespace()]
+	} else {
+		roleBindingMap = rs.roleToBinding[roleBinding.GetNamespace()]
 
-	if rolebindingsMap != nil {
-		delete(rolebindingsMap, roleBinding.GetId())
 	}
+
+	if roleBindingMap == nil {
+		return
+	}
+
+	bindings := roleBindingMap[roleName]
+	for i, binding := range bindings {
+		if binding.GetId() == roleBinding.GetId() {
+			bindings = append(bindings[:i], bindings[i+1:]...)
+			break
+		}
+	}
+}
+
+func (rs *rbacStore) removeBindingsForRoleName(namespace string, roleName string, clusterScope bool) {
+	if clusterScope {
+		clusterRoleBindingsMap := rs.clusterRoleToBinding[namespace]
+		if clusterRoleBindingsMap != nil {
+			delete(clusterRoleBindingsMap, roleName)
+		}
+		return
+	}
+
+	roleBindingMap := rs.roleToBinding[namespace]
+	if roleBindingMap != nil {
+		delete(roleBindingMap, roleName)
+	}
+
 }

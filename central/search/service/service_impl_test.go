@@ -16,6 +16,8 @@ import (
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	policyIndex "github.com/stackrox/rox/central/policy/index"
+	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
+	roleBindingsMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	serviceAccountMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -41,16 +43,20 @@ func TestSearchFuncs(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	s := New(alertMocks.NewMockDataStore(mockCtrl),
-		deploymentMocks.NewMockDataStore(mockCtrl),
-		imageMocks.NewMockDataStore(mockCtrl),
-		policyMocks.NewMockDataStore(mockCtrl),
-		secretMocks.NewMockDataStore(mockCtrl),
-		serviceAccountMocks.NewMockDataStore(mockCtrl),
-		nodeMocks.NewMockGlobalStore(mockCtrl),
-		namespaceMocks.NewMockDataStore(mockCtrl),
-		nil,
-	)
+	s := NewBuilder().
+		WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
+		WithDeploymentStore(deploymentMocks.NewMockDataStore(mockCtrl)).
+		WithImageStore(imageMocks.NewMockDataStore(mockCtrl)).
+		WithPolicyStore(policyMocks.NewMockDataStore(mockCtrl)).
+		WithSecretStore(secretMocks.NewMockDataStore(mockCtrl)).
+		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(mockCtrl)).
+		WithNodeStore(nodeMocks.NewMockGlobalStore(mockCtrl)).
+		WithNamespaceStore(namespaceMocks.NewMockDataStore(mockCtrl)).
+		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
+		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
+		WithAggregator(nil).
+		Build()
+
 	searchFuncMap := s.(*serviceImpl).getSearchFuncs()
 	for _, searchCategory := range GetAllSearchableCategories() {
 		_, ok := searchFuncMap[searchCategory]
@@ -90,17 +96,19 @@ func TestAutocomplete(t *testing.T) {
 
 	ds := deploymentDatastore.New(nil, deploymentIndexer, nil, nil)
 
-	service := New(
-		alertMocks.NewMockDataStore(mockCtrl),
-		ds,
-		imageMocks.NewMockDataStore(mockCtrl),
-		policyMocks.NewMockDataStore(mockCtrl),
-		secretMocks.NewMockDataStore(mockCtrl),
-		serviceAccountMocks.NewMockDataStore(mockCtrl),
-		nodeMocks.NewMockGlobalStore(mockCtrl),
-		namespaceMocks.NewMockDataStore(mockCtrl),
-		nil,
-	).(*serviceImpl)
+	service := NewBuilder().
+		WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
+		WithDeploymentStore(ds).
+		WithImageStore(imageMocks.NewMockDataStore(mockCtrl)).
+		WithPolicyStore(policyMocks.NewMockDataStore(mockCtrl)).
+		WithSecretStore(secretMocks.NewMockDataStore(mockCtrl)).
+		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(mockCtrl)).
+		WithNodeStore(nodeMocks.NewMockGlobalStore(mockCtrl)).
+		WithNamespaceStore(namespaceMocks.NewMockDataStore(mockCtrl)).
+		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
+		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
+		WithAggregator(nil).
+		Build().(*serviceImpl)
 
 	for _, testCase := range []struct {
 		query           string
@@ -164,16 +172,20 @@ func TestAutocompleteForEnums(t *testing.T) {
 
 	ds := policyDatastore.New(nil, policyIndexer, nil)
 
-	service := New(alertMocks.NewMockDataStore(mockCtrl),
-		deploymentMocks.NewMockDataStore(mockCtrl),
-		imageMocks.NewMockDataStore(mockCtrl),
-		ds,
-		secretMocks.NewMockDataStore(mockCtrl),
-		serviceAccountMocks.NewMockDataStore(mockCtrl),
-		nodeMocks.NewMockGlobalStore(mockCtrl),
-		namespaceMocks.NewMockDataStore(mockCtrl),
-		nil,
-	).(*serviceImpl)
+	service := NewBuilder().
+		WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).
+		WithDeploymentStore(deploymentMocks.NewMockDataStore(mockCtrl)).
+		WithImageStore(imageMocks.NewMockDataStore(mockCtrl)).
+		WithPolicyStore(ds).
+		WithSecretStore(secretMocks.NewMockDataStore(mockCtrl)).
+		WithSecretStore(secretMocks.NewMockDataStore(mockCtrl)).
+		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(mockCtrl)).
+		WithNodeStore(nodeMocks.NewMockGlobalStore(mockCtrl)).
+		WithNamespaceStore(namespaceMocks.NewMockDataStore(mockCtrl)).
+		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
+		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
+		WithAggregator(nil).
+		Build().(*serviceImpl)
 
 	results, err := service.autocomplete(fmt.Sprintf("%s:", search.Severity), []v1.SearchCategory{v1.SearchCategory_POLICIES})
 	require.NoError(t, err)

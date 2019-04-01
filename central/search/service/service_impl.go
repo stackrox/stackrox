@@ -16,6 +16,8 @@ import (
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globalstore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
+	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/search/options"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
@@ -56,7 +58,9 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 	}
 
 	if features.K8sRBAC.Enabled() {
-		searchfuncs[v1.SearchCategory_SERVICE_ACCOUNTS] = s.serviceAccounts.SearchServiceAccounts
+		searchfuncs[v1.SearchCategory_SERVICE_ACCOUNTS] = s.serviceaccounts.SearchServiceAccounts
+		searchfuncs[v1.SearchCategory_ROLES] = s.roles.SearchRoles
+		searchfuncs[v1.SearchCategory_ROLEBINDINGS] = s.bindings.SearchRoleBindings
 	}
 
 	return searchfuncs
@@ -75,7 +79,9 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 	}
 
 	if features.K8sRBAC.Enabled() {
-		searchers[v1.SearchCategory_SERVICE_ACCOUNTS] = s.serviceAccounts
+		searchers[v1.SearchCategory_SERVICE_ACCOUNTS] = s.serviceaccounts
+		searchers[v1.SearchCategory_ROLES] = s.roles
+		searchers[v1.SearchCategory_ROLEBINDINGS] = s.bindings
 	}
 
 	return searchers
@@ -111,6 +117,8 @@ func GetSearchCategoryToResource() map[v1.SearchCategory]permissions.Resource {
 
 	if features.K8sRBAC.Enabled() {
 		searchCategoryToResource[v1.SearchCategory_SERVICE_ACCOUNTS] = resources.ServiceAccount
+		searchCategoryToResource[v1.SearchCategory_ROLES] = resources.K8sRole
+		searchCategoryToResource[v1.SearchCategory_ROLEBINDINGS] = resources.K8sRoleBinding
 	}
 
 	return searchCategoryToResource
@@ -131,6 +139,9 @@ func GetGlobalSearchCategories() set.V1SearchCategorySet {
 
 	if features.K8sRBAC.Enabled() {
 		globalSearchCategories.Add(v1.SearchCategory_SERVICE_ACCOUNTS)
+		globalSearchCategories.Add(v1.SearchCategory_ROLES)
+		globalSearchCategories.Add(v1.SearchCategory_ROLEBINDINGS)
+
 	}
 
 	return globalSearchCategories
@@ -144,9 +155,11 @@ type serviceImpl struct {
 	images          imageDataStore.DataStore
 	policies        policyDataStore.DataStore
 	secrets         secretDataStore.DataStore
-	serviceAccounts serviceAccountDataStore.DataStore
+	serviceaccounts serviceAccountDataStore.DataStore
 	nodes           nodeDataStore.GlobalStore
 	namespaces      namespaceDataStore.DataStore
+	roles           roleDataStore.DataStore
+	bindings        roleBindingDataStore.DataStore
 
 	aggregator aggregation.Aggregator
 	authorizer authz.Authorizer

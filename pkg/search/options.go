@@ -119,6 +119,14 @@ var (
 
 	// Namespace Search Fields
 	NamespaceID = newFieldLabel("Namespace ID")
+
+	// Role Search Fields
+	RoleID   = newFieldLabel("Role ID")
+	RoleName = newFieldLabel("Role")
+
+	// Role Binding Search Fields
+	RoleBindingID   = newFieldLabel("Role Binding ID")
+	RoleBindingName = newFieldLabel("Role Binding")
 )
 
 func newFieldLabel(s string) FieldLabel {

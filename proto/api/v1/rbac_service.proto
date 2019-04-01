@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/common.proto";
+import "storage/rbac.proto";
+import "api/v1/search_service.proto";
+
+package v1;
+
+// API specific objects.
+////////////////////////
+
+// A list of k8s roles (free of scoped information)
+// Next Tag: 2
+message ListRolesResponse {
+    repeated storage.K8sRole roles = 1;
+}
+
+message GetRoleResponse {
+    storage.K8sRole role = 1;
+}
+
+// A list of k8s role bindings (free of scoped information)
+// Next Tag: 2
+message ListRoleBindingsResponse {
+    repeated storage.K8sRoleBinding bindings = 1;
+}
+
+message GetRoleBindingResponse {
+    storage.K8sRoleBinding binding = 1;
+}
+
+
+service RbacService {
+
+    rpc GetRole (ResourceByID) returns (GetRoleResponse) {
+        option (google.api.http) = {
+            get: "/v1/rbac/role/{id}"
+        };
+    }
+
+    rpc ListRoles (RawQuery) returns (ListRolesResponse) {
+        option (google.api.http) = {
+            get: "/v1/rbac/roles"
+        };
+    }
+
+    rpc GetRoleBinding (ResourceByID) returns (GetRoleBindingResponse) {
+        option (google.api.http) = {
+            get: "/v1/rbac/binding/{id}"
+        };
+    }
+
+    rpc ListRoleBindings (RawQuery) returns (ListRoleBindingsResponse) {
+        option (google.api.http) = {
+            get: "/v1/rbac/bindings"
+        };
+    }
+}

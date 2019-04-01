@@ -11,7 +11,6 @@ const (
 	ProcessIndicator
 	Image
 	Secret
-	OrchestratorMetadata
 	Namespace
 	NetworkPolicy
 	Node
@@ -19,4 +18,6 @@ const (
 	ComplianceReturn
 	ImageIntegration
 	ServiceAccount
+	Role
+	RoleBinding
 )

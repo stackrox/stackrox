@@ -36,6 +36,8 @@ var (
 	ServiceAccount        = newResource("ServiceAccount")
 	ServiceIdentity       = newResource("ServiceIdentity")
 	User                  = newResource("User")
+	K8sRole               = newResource("K8sRole")
+	K8sRoleBinding        = newResource("K8sRoleBinding")
 
 	allResources = permissions.NewResourceSet()
 )

@@ -55,6 +55,7 @@ import (
 	pingService "github.com/stackrox/rox/central/ping/service"
 	policyService "github.com/stackrox/rox/central/policy/service"
 	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
+	rbacService "github.com/stackrox/rox/central/rbac/service"
 	"github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
@@ -215,6 +216,7 @@ func (defaultFactory) ServicesToRegister(registry authproviders.Registry) []pkgG
 		policyService.Singleton(),
 		processIndicatorService.Singleton(),
 		roleService.Singleton(),
+		rbacService.Singleton(),
 		searchService.Singleton(),
 		secretService.Singleton(),
 		serviceAccountService.Singleton(),

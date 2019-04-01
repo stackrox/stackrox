@@ -7,33 +7,84 @@ import (
 	v1 "k8s.io/api/rbac/v1"
 )
 
-// rbacDispatcher handles rbac resource events.
-type rbacDispatcher struct {
+// roleDispatcher handles k8s role resource events.
+type roleDispatcher struct {
 	handler *rbacHandler
 }
 
-// newRBACDispatcher creates and returns a new rbac handler.
-func newRBACDispatcher(handler *rbacHandler) *rbacDispatcher {
-	return &rbacDispatcher{
+// newRoleDispatcher creates and returns a new role handler.
+func newRoleDispatcher(handler *rbacHandler) *roleDispatcher {
+	return &roleDispatcher{
 		handler: handler,
 	}
 }
 
-// Process processes a rbac resource event, and returns the sensor events to emit in response.
-func (r *rbacDispatcher) ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent {
+// Process processes a k8s role resource event, and returns the sensor events to emit in response.
+func (r *roleDispatcher) ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent {
 
 	switch obj := obj.(type) {
 	case *v1.Role:
-		r.handler.processRoleEvents(obj, action)
+		return r.handler.processRoleEvents(obj, action)
 	case *v1.ClusterRole:
-		r.handler.processClusterRoleEvents(obj, action)
+		return r.handler.processClusterRoleEvents(obj, action)
 	case *v1.RoleBinding:
-		r.handler.processRoleBindingEvents(obj, action)
+		return r.handler.processRoleBindingEvents(obj, action)
 	case *v1.ClusterRoleBinding:
-		r.handler.processClusterRoleBindingEvents(obj, action)
+		return r.handler.processClusterRoleBindingEvents(obj, action)
 	}
 
 	return nil
+}
+
+// clusterRoleDispatcher handles k8s clusterrole resource events.
+type clusterRoleDispatcher struct {
+	handler *rbacHandler
+}
+
+// newClusterRoleDispatcher creates and returns a new clusterrole handler.
+func newClusterRoleDispatcher(handler *rbacHandler) *clusterRoleDispatcher {
+	return &clusterRoleDispatcher{
+		handler: handler,
+	}
+}
+
+// Process processes a clusterrole resource event, and returns the sensor events to emit in response.
+func (r *clusterRoleDispatcher) ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent {
+	return r.handler.processClusterRoleEvents(obj.(*v1.ClusterRole), action)
+}
+
+// roleBindingDispatcher handles k8s rolebinding resource events.
+type roleBindingDispatcher struct {
+	handler *rbacHandler
+}
+
+// newRoleBindingDispatcher creates and returns a new rolebinding handler.
+func newRoleBindingDispatcher(handler *rbacHandler) *roleBindingDispatcher {
+	return &roleBindingDispatcher{
+		handler: handler,
+	}
+}
+
+// Process processes a clusterrolebinding resource event, and returns the sensor events to emit in response.
+func (r *roleBindingDispatcher) ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent {
+	return r.handler.processRoleBindingEvents(obj.(*v1.RoleBinding), action)
+}
+
+// clusterRoleBindingDispatcher handles k8s clusterrolebinding resource events.
+type clusterRoleBindingDispatcher struct {
+	handler *rbacHandler
+}
+
+// newClusterRoleBindingDispatcher creates and returns a new clusterrolebinding handler.
+func newClusterRoleBindingDispatcher(handler *rbacHandler) *clusterRoleBindingDispatcher {
+	return &clusterRoleBindingDispatcher{
+		handler: handler,
+	}
+}
+
+// Process processes a clusterrolebinding resource event, and returns the sensor events to emit in response.
+func (r *clusterRoleBindingDispatcher) ProcessEvent(obj interface{}, action central.ResourceAction) []*central.SensorEvent {
+	return r.handler.processClusterRoleBindingEvents(obj.(*v1.ClusterRoleBinding), action)
 }
 
 // rbacHandler handles rbac resource events and does the actual processing.
@@ -60,12 +111,12 @@ func (h *rbacHandler) processClusterRoleEvents(clusterRole *v1.ClusterRole, acti
 
 func (h *rbacHandler) processRoleBindingEvents(roleBinding *v1.RoleBinding, action central.ResourceAction) []*central.SensorEvent {
 	k8sRoleBinding := h.convertRoleBinding(roleBinding)
-	return h.processRoleBindingEventsWithType(k8sRoleBinding, action)
+	return h.processRoleBindingEventsWithType(k8sRoleBinding, roleBinding.RoleRef.Name, action)
 }
 
 func (h *rbacHandler) processClusterRoleBindingEvents(clusterRoleBinding *v1.ClusterRoleBinding, action central.ResourceAction) []*central.SensorEvent {
 	k8sRoleBinding := h.convertClusterRoleBinding(clusterRoleBinding)
-	return h.processRoleBindingEventsWithType(k8sRoleBinding, action)
+	return h.processRoleBindingEventsWithType(k8sRoleBinding, clusterRoleBinding.RoleRef.Name, action)
 }
 
 func (h *rbacHandler) processRoleEventsWithType(k8sRole *storage.K8SRole, action central.ResourceAction) []*central.SensorEvent {
@@ -75,6 +126,7 @@ func (h *rbacHandler) processRoleEventsWithType(k8sRole *storage.K8SRole, action
 	case central.ResourceAction_CREATE_RESOURCE:
 		h.rbacStore.addOrUpdateRole(k8sRole)
 		h.updateRoleBindingEvents(k8sRole, events)
+		h.rbacStore.removeBindingsForRoleName(k8sRole.GetNamespace(), k8sRole.GetName(), k8sRole.ClusterScope)
 
 	case central.ResourceAction_UPDATE_RESOURCE:
 		h.rbacStore.addOrUpdateRole(k8sRole)
@@ -94,15 +146,19 @@ func (h *rbacHandler) processRoleEventsWithType(k8sRole *storage.K8SRole, action
 	return events
 }
 
-func (h *rbacHandler) processRoleBindingEventsWithType(k8sRoleBinding *storage.K8SRoleBinding, action central.ResourceAction) []*central.SensorEvent {
+func (h *rbacHandler) processRoleBindingEventsWithType(k8sRoleBinding *storage.K8SRoleBinding, roleName string, action central.ResourceAction) []*central.SensorEvent {
 
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE:
 	case central.ResourceAction_UPDATE_RESOURCE:
-		h.rbacStore.addOrUpdateRoleBinding(k8sRoleBinding)
+		if k8sRoleBinding.RoleId == "" {
+			h.rbacStore.addOrUpdateRoleBinding(k8sRoleBinding, roleName)
+		}
 
 	case central.ResourceAction_REMOVE_RESOURCE:
-		h.rbacStore.removeRoleBinding(k8sRoleBinding)
+		if k8sRoleBinding.RoleId == "" {
+			h.rbacStore.removeRoleBinding(k8sRoleBinding, roleName)
+		}
 	}
 
 	return []*central.SensorEvent{
@@ -205,7 +261,7 @@ func getSubjects(k8sSubjects []v1.Subject) []*storage.Subject {
 }
 
 func (h *rbacHandler) updateRoleBindingEvents(role *storage.K8SRole, events []*central.SensorEvent) {
-	bindings := h.rbacStore.getBindingsForRole(role.GetName(), role.GetClusterScope())
+	bindings := h.rbacStore.getBindingsForRole(role)
 	for _, binding := range bindings {
 		binding.RoleId = role.GetId()
 		events = append(events, &central.SensorEvent{
@@ -216,4 +272,5 @@ func (h *rbacHandler) updateRoleBindingEvents(role *storage.K8SRole, events []*c
 			},
 		})
 	}
+
 }

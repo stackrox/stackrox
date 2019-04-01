@@ -25,7 +25,8 @@ enum SearchCategory {
     COMPLIANCE_CONTROL_GROUP = 12;
     COMPLIANCE_CONTROL       = 13;
     SERVICE_ACCOUNTS         = 14;
-
+    ROLES                    = 15;
+    ROLEBINDINGS             = 16;
 }
 
 // TODO(cgorman) collapse these into Go code and not proto
