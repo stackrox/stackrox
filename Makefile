@@ -253,11 +253,14 @@ endif
 .PHONY: main-build
 main-build: gazelle
 	@echo "+ $@"
-	bazel build $(BAZEL_FLAGS) \
-		//central \
-		//migrator \
-		//sensor/kubernetes \
-		//compliance/collection
+	@# PLEASE KEEP THE TWO LISTS BELOW IN SYNC.
+	@# The only exception is that `roxctl` should not be built in CI here, since it's built separately when in CI.
+	@# This isn't pretty, but it saves 30 seconds on every build, which seems worth it.
+ifdef CI
+	bazel build $(BAZEL_FLAGS) //central //migrator //sensor/kubernetes //compliance/collection
+else
+	bazel build $(BAZEL_FLAGS) //central //migrator //sensor/kubernetes //compliance/collection //roxctl
+endif
 
 .PHONY: scale-build
 scale-build: gazelle
@@ -383,6 +386,7 @@ ifdef CI
 	cp bazel-bin/roxctl/darwin_amd64_pure_stripped/roxctl image/bin/roxctl-darwin
 	cp bazel-bin/roxctl/windows_amd64_pure_stripped/roxctl.exe image/bin/roxctl-windows.exe
 else
+	cp bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl image/bin/roxctl-linux
 	cp bazel-bin/roxctl/$(BAZEL_OS)_amd64_pure_stripped/roxctl image/bin/roxctl-$(BAZEL_OS)
 endif
 	cp bazel-bin/migrator/linux_amd64_pure_stripped/migrator image/bin/migrator
