@@ -207,8 +207,7 @@ runUIE2E: &runUIE2E
           sudo sh -c "echo >>/etc/hosts ${LB_IP} central-lb"
           export UI_BASE_URL="https://central-lb:443"
         else
-          export UI_BASE_URL="https://localhost:8000"
-          ./scripts/port-forward-ui.sh
+          export UI_BASE_URL="https://localhost:${LOCAL_PORT}"
         fi
       fi
 
