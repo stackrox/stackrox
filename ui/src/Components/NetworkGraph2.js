@@ -44,7 +44,7 @@ function getClasses(map) {
         .map(entry => entry[0])
         .join(' ');
 }
-
+let timeStamp = 0;
 const NetworkGraph = ({
     nodes,
     networkFlowMapping,
@@ -256,6 +256,12 @@ const NetworkGraph = ({
     }
 
     function clickHandler(ev) {
+        const currTimeStamp = new Date().getSeconds();
+        // prevent handler from being called multiple times
+        if (currTimeStamp - timeStamp === 0) {
+            return;
+        }
+        timeStamp = currTimeStamp;
         // Canvas or Selected node click: clear selection
         if (
             !ev.target.data ||
@@ -308,10 +314,8 @@ const NetworkGraph = ({
 
     function configureCY(cyInstance) {
         cy.current = cyInstance;
-        cyInstance
-            .on('click', null, ev => {
-                clickHandler(ev);
-            })
+        cy.current
+            .on('click', null, clickHandler)
             .on('mouseover', 'node', debounce(nodeHoverHandler, 100))
             .on('mouseout', 'node', nodeMouseOutHandler)
             .on('mouseout mousedown', 'node', () => {
