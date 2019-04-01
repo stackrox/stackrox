@@ -504,12 +504,12 @@
   revision = "0bce6a6887123b67a60366d2c9fe2dfb74289d2e"
 
 [[projects]]
-  digest = "1:e907c2cf2df370592f4e3a5b8c2bcdf6e16709cace789d53ea7d22720e8b79c2"
+  digest = "1:ae8eea1a24ae43a46c2e96631b6303fcc4210ca0ac9d643e4da965029d1b511d"
   name = "github.com/etcd-io/bbolt"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "7ee3ded59d4835e10f3e7d0f7603c42aa5e83820"
-  version = "v1.3.1-etcd.8"
+  revision = "63597a96ec0ad9e6d43c3fc81e809909e0237461"
+  version = "v1.3.2"
 
 [[projects]]
   digest = "1:aa3ed0a71c4e66e4ae6486bf97a3f4cab28edc78df2e50c5ad01dc7d91604b88"

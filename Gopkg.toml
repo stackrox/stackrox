@@ -21,7 +21,7 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
 
 [[constraint]]
   name = "github.com/etcd-io/bbolt"
-  version = "v1.3.1-etcd.8"
+  version = "v1.3.2"
 
 [[constraint]]
   name = "github.com/docker/distribution"
