@@ -3,8 +3,12 @@
   "name": "Mounting Sensitive Host Directories",
   "description": "Alert on deployments mounting sensitive host directories",
   "severity": "MEDIUM_SEVERITY",
-  "lifecycle_stages": ["DEPLOY"],
-  "categories": ["Security Best Practices"],
+  "lifecycle_stages": [
+    "DEPLOY"
+  ],
+  "categories": [
+    "Security Best Practices"
+  ],
   "fields": {
     "volume_policy": {
       "source": "(/etc/.*|/sys/.*|/dev/.*|/proc/.*|/var/.*)"

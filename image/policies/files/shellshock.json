@@ -1,15 +1,20 @@
 {
   "id": "2b251b91-fd41-4a71-ad01-586c385714ba",
-  "name": "Shellshock: CVE-2014-6271",
-  "description": "Alert on deployments with images containing Shellshock vulnerability (CVE-2014-6271)",
+  "name": "Shellshock: Multiple CVEs",
+  "description": "Alert on deployments with images containing Shellshock vulnerability (CVE-2014-6271 + others)",
   "severity": "CRITICAL_SEVERITY",
-  "lifecycle_stages": ["BUILD", "DEPLOY"],
-  "categories": ["Vulnerability Management"],
+  "lifecycle_stages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "categories": [
+    "Vulnerability Management"
+  ],
   "enforcementActions": [
     "FAIL_BUILD_ENFORCEMENT"
   ],
   "fields": {
-    "cve": "CVE-2014-6271"
+    "cve": "CVE-2014-(6271|6277|6278|7169|7186|7187)"
   },
   "rationale": "Shellshock is a serious and easily-exploitable vulnerability in the Unix Bash shell.",
   "remediation": "Rebuild your container with an updated Unix Bash shell. Usually this can be accomplished by simply rebuilding your Dockerfile."

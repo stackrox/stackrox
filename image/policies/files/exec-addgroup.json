@@ -3,8 +3,13 @@
   "name": "Linux Group Add Execution",
   "description": "Detects when the 'addgroup' or 'groupadd' binary is executed, which can be used to add a new linux group.",
   "severity": "HIGH_SEVERITY",
-  "lifecycle_stages": ["RUNTIME"],
-  "categories": ["System Modification", "Privileges"],
+  "lifecycle_stages": [
+    "RUNTIME"
+  ],
+  "categories": [
+    "System Modification",
+    "Privileges"
+  ],
   "fields": {
     "process_policy": {
       "name": "addgroup|groupadd"

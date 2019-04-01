@@ -3,8 +3,13 @@
   "name": "DockerHub NGINX 1.10",
   "description": "Alert on deployments with nginx:1.10 image from 'docker.io'",
   "severity": "MEDIUM_SEVERITY",
-  "lifecycle_stages": ["DEPLOY"],
-  "categories": ["DevOps Best Practices", "Security Best Practices"],
+  "lifecycle_stages": [
+    "DEPLOY"
+  ],
+  "categories": [
+    "DevOps Best Practices",
+    "Security Best Practices"
+  ],
   "fields": {
     "image_name": {
       "registry": "docker.io",

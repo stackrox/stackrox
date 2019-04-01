@@ -1,15 +1,19 @@
 {
   "id": "2361bb4c-4cf6-4997-bae6-825da6cf932e",
-    "name": "Network Management Execution",
-    "description": "Detects execution of binaries that can be used to manipulate network configuration and management.",
-    "categories": ["Network Tools"],
-    "severity": "HIGH_SEVERITY",
-    "lifecycle_stages": ["RUNTIME"],
-    "fields": {
-      "process_policy": {
-        "name": "([a-z])ip|ifrename|ethtool|ifconfig|([a-z])arp|ipmaddr|iptunnel|route|nameif|mii-tool"
-      }
-    },
+  "name": "Network Management Execution",
+  "description": "Detects execution of binaries that can be used to manipulate network configuration and management.",
+  "categories": [
+    "Network Tools"
+  ],
+  "severity": "HIGH_SEVERITY",
+  "lifecycle_stages": [
+    "RUNTIME"
+  ],
+  "fields": {
+    "process_policy": {
+      "name": "([a-z])ip|ifrename|ethtool|ifconfig|([a-z])arp|ipmaddr|iptunnel|route|nameif|mii-tool"
+    }
+  },
   "rationale": "Network management tools can be used for a variety of tasks, including mapping out your network, overwriting iptables rules, or ssh tunneling to name a few.",
   "remediation": "Remove unncessary network managment tools from the container image."
 }

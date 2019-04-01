@@ -3,8 +3,12 @@
   "name": "Container using read-write root filesystem",
   "description": "Alert on deployments with containers with read-write root filesystem",
   "severity": "MEDIUM_SEVERITY",
-  "lifecycle_stages": ["DEPLOY"],
-  "categories": ["Privileges"],
+  "lifecycle_stages": [
+    "DEPLOY"
+  ],
+  "categories": [
+    "Privileges"
+  ],
   "fields": {
     "readOnlyRootFs": false
   },

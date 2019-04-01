@@ -753,18 +753,18 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 		},
 		{
-			policyName: "Shellshock: CVE-2014-6271",
+			policyName: "Shellshock: Multiple CVEs",
 			expectedViolations: map[string]searchbasedpolicies.Violations{
 				shellshockDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
-						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-6271'",
+						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-(6271|6277|6278|7169|7186|7187)'",
 						Link:    "https://shellshock",
 					},
 				},
 				},
 				fixtureDep.GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
-						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-6271'",
+						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-(6271|6277|6278|7169|7186|7187)'",
 						Link:    "https://nvd.nist.gov/vuln/detail/CVE-2014-6271",
 					},
 				},
@@ -1142,18 +1142,18 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			sampleViolationForMatched: "Image has not been scanned",
 		},
 		{
-			policyName: "Shellshock: CVE-2014-6271",
+			policyName: "Shellshock: Multiple CVEs",
 			expectedViolations: map[string]searchbasedpolicies.Violations{
 				suite.imageIDFromDep(shellshockDep): {AlertViolations: []*storage.Alert_Violation{
 					{
-						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-6271'",
+						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-(6271|6277|6278|7169|7186|7187)'",
 						Link:    "https://shellshock",
 					},
 				},
 				},
 				fixtureDep.GetContainers()[1].GetImage().GetId(): {AlertViolations: []*storage.Alert_Violation{
 					{
-						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-6271'",
+						Message: "CVE CVE-2014-6271 matched regex 'CVE-2014-(6271|6277|6278|7169|7186|7187)'",
 						Link:    "https://nvd.nist.gov/vuln/detail/CVE-2014-6271",
 					},
 				},

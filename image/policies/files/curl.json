@@ -3,8 +3,12 @@
   "name": "Curl in Image",
   "description": "Alert on deployments with curl present",
   "severity": "LOW_SEVERITY",
-  "lifecycle_stages": ["DEPLOY"],
-  "categories": ["Security Best Practices"],
+  "lifecycle_stages": [
+    "DEPLOY"
+  ],
+  "categories": [
+    "Security Best Practices"
+  ],
   "fields": {
     "component": {
       "name": "curl"

@@ -3,8 +3,12 @@
   "name": "Heartbleed: CVE-2014-0160",
   "description": "Alert on deployments with images containing Heartbleed vulnerability (CVE-2014-0160)",
   "severity": "CRITICAL_SEVERITY",
-  "lifecycle_stages": ["DEPLOY"],
-  "categories": ["Vulnerability Management"],
+  "lifecycle_stages": [
+    "DEPLOY"
+  ],
+  "categories": [
+    "Vulnerability Management"
+  ],
   "fields": {
     "cve": "CVE-2014-0160"
   },

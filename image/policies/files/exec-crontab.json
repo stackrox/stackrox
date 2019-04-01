@@ -1,15 +1,19 @@
 {
   "id": "28f833df-eb14-4265-a4fe-4e5e8ce9d959",
-    "name": "crontab Execution",
-    "description": "Detects the usage of the crontab scheduled jobs editor",
-    "severity": "MEDIUM_SEVERITY",
-    "lifecycle_stages": ["RUNTIME"],
-    "categories": ["System Modification"],
-    "fields": {
-        "process_policy": {
-            "name": "anacron|cron|crond|crontab"
-        }
-    },
-    "rationale": "Crontab running in a container with access to a shell makes it easier to 'clandestinely' schedule processes to run in order to better evade detection",
-    "remediation": "In Kubernetes, consider replacing your crontab with an orchestrator-native CronJob as part of Kube workload"
+  "name": "crontab Execution",
+  "description": "Detects the usage of the crontab scheduled jobs editor",
+  "severity": "MEDIUM_SEVERITY",
+  "lifecycle_stages": [
+    "RUNTIME"
+  ],
+  "categories": [
+    "System Modification"
+  ],
+  "fields": {
+    "process_policy": {
+      "name": "anacron|cron|crond|crontab"
+    }
+  },
+  "rationale": "Crontab running in a container with access to a shell makes it easier to 'clandestinely' schedule processes to run in order to better evade detection",
+  "remediation": "In Kubernetes, consider replacing your crontab with an orchestrator-native CronJob as part of Kube workload"
 }

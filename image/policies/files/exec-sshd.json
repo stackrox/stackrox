@@ -1,15 +1,19 @@
 {
   "id": "618e65ca-737b-4fec-bb42-57a04e7dfc28",
-    "name": "Secure Shell Server (sshd) Execution",
-    "description": "Detects container running the SSH daemon",
-    "categories": ["Network Tools"],
-    "severity": "HIGH_SEVERITY",
-    "lifecycle_stages": ["RUNTIME"],
-    "fields": {
-      "process_policy" : {
-        "name": "sshd"
-      }
-    },
+  "name": "Secure Shell Server (sshd) Execution",
+  "description": "Detects container running the SSH daemon",
+  "categories": [
+    "Network Tools"
+  ],
+  "severity": "HIGH_SEVERITY",
+  "lifecycle_stages": [
+    "RUNTIME"
+  ],
+  "fields": {
+    "process_policy": {
+      "name": "sshd"
+    }
+  },
   "rationale": "The secure shell server allows shell access to a container, which can be dangerous.",
   "remediation": "If ssh is absolutely required, ensure that it is not using default authentication. Otherwise, consider removing it from the container altogether."
 }

@@ -3,8 +3,13 @@
   "name": "90-Day Image Age",
   "description": "Alert on deployments with images that haven't been updated in 90 days",
   "severity": "LOW_SEVERITY",
-  "lifecycle_stages": ["DEPLOY"],
-  "categories": ["DevOps Best Practices", "Security Best Practices"],
+  "lifecycle_stages": [
+    "DEPLOY"
+  ],
+  "categories": [
+    "DevOps Best Practices",
+    "Security Best Practices"
+  ],
   "fields": {
     "image_age_days": 90
   },

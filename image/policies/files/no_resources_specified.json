@@ -3,8 +3,12 @@
   "name": "No resource requests or limits specified",
   "description": "Alert on deployments that have containers without resource requests and limits",
   "severity": "MEDIUM_SEVERITY",
-  "lifecycle_stages": ["DEPLOY"],
-  "categories": ["DevOps Best Practices"],
+  "lifecycle_stages": [
+    "DEPLOY"
+  ],
+  "categories": [
+    "DevOps Best Practices"
+  ],
   "fields": {
     "containerResourcePolicy": {
       "cpuResourceRequest": {

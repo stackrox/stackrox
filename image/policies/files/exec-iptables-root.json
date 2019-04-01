@@ -1,0 +1,50 @@
+{
+  "id": "ed8c7957-14de-40bc-aeab-d27ceeecfa7b",
+  "name": "Iptables Executed in Privileged Container",
+  "description": "Alert on privileged pods that execute iptables",
+  "rationale": "Processes that are running with UID 0 run as the root user. iptables can be used in privileged containers to modify the node's network routing.",
+  "remediation": "Specify the USER instruction in the Docker image or the runAsUser field within the Pod Security Context",
+  "categories": [
+    "Networking Tools",
+    "Security Best Practices"
+  ],
+  "fields": {
+    "processPolicy": {
+      "uid": "0",
+      "name": "iptables"
+    },
+    "privileged": true
+  },
+  "lifecycleStages": [
+    "RUNTIME"
+  ],
+  "whitelists": [
+    {
+      "name": "Don't alert on Kube System Namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "kube-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on istio-system namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "istio-system"
+        }
+      }
+    },
+    {
+      "name": "Don't alert on stackrox namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    }
+  ],
+  "scope": [],
+  "severity": "CRITICAL_SEVERITY",
+  "notifiers": []
+}

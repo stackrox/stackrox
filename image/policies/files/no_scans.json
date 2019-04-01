@@ -3,8 +3,12 @@
   "name": "Images with no scans",
   "description": "Alert on deployments with images that have not been scanned",
   "severity": "MEDIUM_SEVERITY",
-  "lifecycle_stages": ["DEPLOY"],
-  "categories": ["Vulnerability Management"],
+  "lifecycle_stages": [
+    "DEPLOY"
+  ],
+  "categories": [
+    "Vulnerability Management"
+  ],
   "fields": {
     "noScanExists": true
   },

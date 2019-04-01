@@ -2,11 +2,15 @@
   "id": "6e0239e1-f4ca-43d0-ad3f-79ec683db811",
   "name": "Shadow File Modification",
   "description": "Processes that indicate attempts to modify shadow files",
-  "categories": ["System Modification"],
+  "categories": [
+    "System Modification"
+  ],
   "severity": "HIGH_SEVERITY",
-  "lifecycle_stages": ["RUNTIME"],
+  "lifecycle_stages": [
+    "RUNTIME"
+  ],
   "fields": {
-    "process_policy" : {
+    "process_policy": {
       "name": "chage|gpasswd|lastlog|newgrp|sg|adduser|deluser|chpasswd|groupadd|groupdel|addgroup|delgroup|groupmems|groupmod|grpck|grpconv|grpunconv|newusers|pwck|pwconv|pwunconv|useradd|userdel|usermod|vigr|vipw|unix_chkpwd"
     }
   },

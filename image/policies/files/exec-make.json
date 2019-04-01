@@ -1,16 +1,19 @@
 {
   "id": "101952d3-ec69-4ebe-bfa3-ff26b6e4c29d",
-    "name": "Compiler Tool Execution",
-    "description": "Detects process execution of make",
-    "description": "Detects execution of binaries which are used to compile software",
-    "categories": ["Package Management"],
-    "severity": "LOW_SEVERITY",
-    "lifecycle_stages": ["RUNTIME"],
-    "fields": {
-      "process_policy": {
-        "name": "make|gcc|llc|llvm-.*"
-      }
-    },
+  "name": "Compiler Tool Execution",
+  "description": "Detects execution of binaries which are used to compile software",
+  "categories": [
+    "Package Management"
+  ],
+  "severity": "LOW_SEVERITY",
+  "lifecycle_stages": [
+    "RUNTIME"
+  ],
+  "fields": {
+    "process_policy": {
+      "name": "make|gcc|llc|llvm-.*"
+    }
+  },
   "rationale": "Usage of compilation tools during runtime may indicate usage of infrastructure to build software.",
   "remediation": "Avoid packaging compiler tools container image."
 }

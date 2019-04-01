@@ -2,7 +2,9 @@
   "id": "014a03c6-9053-49b5-88ea-c1efcf19804f",
   "name": "Required Annotation: Email",
   "severity": "LOW_SEVERITY",
-  "lifecycle_stages": ["DEPLOY"],
+  "lifecycle_stages": [
+    "DEPLOY"
+  ],
   "description": "Alert on deployments missing the 'email' annotation",
   "rationale": "The 'email' annotation should always be specified so that issues with the deployment can quickly be routed to the proper party.",
   "remediation": "Redeploy your service and set the 'email' annotation as your email or your team's email.",

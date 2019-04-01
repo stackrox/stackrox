@@ -3,8 +3,12 @@
   "name": "Ubuntu Package Manager in Image",
   "description": "Alert on deployments with components of the Debian/Ubuntu package management system in the image.",
   "severity": "LOW_SEVERITY",
-  "lifecycle_stages": ["DEPLOY"],
-  "categories": ["Security Best Practices"],
+  "lifecycle_stages": [
+    "DEPLOY"
+  ],
+  "categories": [
+    "Security Best Practices"
+  ],
   "fields": {
     "component": {
       "name": "apt|dpkg"

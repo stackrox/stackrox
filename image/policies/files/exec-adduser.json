@@ -3,12 +3,17 @@
   "name": "Linux User Add Execution",
   "description": "Detects when the 'useradd' or 'adduser' binary is executed, which can be used to add a new linux user.",
   "severity": "HIGH_SEVERITY",
-  "lifecycle_stages": ["RUNTIME"],
-  "categories": ["System Modification", "Privileges"],
+  "lifecycle_stages": [
+    "RUNTIME"
+  ],
+  "categories": [
+    "System Modification",
+    "Privileges"
+  ],
   "fields": {
-      "process_policy": {
-          "name": "useradd|adduser|usermod"
-      }
+    "process_policy": {
+      "name": "useradd|adduser|usermod"
+    }
   },
   "rationale": "Users or groups added in run time can be used to take ownership of files and processes.",
   "remediation": "Consider using a base image that doesn't have a shell such as SCRATCH or gcr.io/distroless. If not, modify your Dockerfile to use the exec form of CMD/ENTRYPOINT ([\"using braces\"]) instead of the shell form (no braces)"

@@ -3,8 +3,13 @@
   "name": "Fixable CVSS >= 6 and Privileged",
   "description": "Alert on deployments with vulnerabilities with a CVSS score >= 6 and running in Privileged Mode",
   "severity": "HIGH_SEVERITY",
-  "lifecycle_stages": ["DEPLOY"],
-  "categories": ["Vulnerability Management", "Privileges"],
+  "lifecycle_stages": [
+    "DEPLOY"
+  ],
+  "categories": [
+    "Vulnerability Management",
+    "Privileges"
+  ],
   "fields": {
     "cvss": {
       "op": "GREATER_THAN_OR_EQUALS",

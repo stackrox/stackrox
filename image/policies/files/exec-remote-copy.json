@@ -1,15 +1,19 @@
 {
   "id": "3e546913-de60-445c-a6d5-e70ac4ed4e98",
-    "name": "Remote File Copy Binary Execution",
-    "description": "Alert on deployments that execute a remote file copy tool", 
-    "categories": ["Network Tools"],
-    "severity": "MEDIUM_SEVERITY",
-    "lifecycle_stages": ["RUNTIME"],
-    "fields": {
-      "process_policy": {
-        "name": "scp|sshfs|ssh-copy-id|rsync"
-      }
-    },
-    "rationale": "Remote copy tools can be used to exfiltrate data from a container",
-    "remediation": "Remove tools like scp, sshfs, ssh-copy-id, etc. from your image and redeploy it"
+  "name": "Remote File Copy Binary Execution",
+  "description": "Alert on deployments that execute a remote file copy tool",
+  "categories": [
+    "Network Tools"
+  ],
+  "severity": "MEDIUM_SEVERITY",
+  "lifecycle_stages": [
+    "RUNTIME"
+  ],
+  "fields": {
+    "process_policy": {
+      "name": "scp|sshfs|ssh-copy-id|rsync"
+    }
+  },
+  "rationale": "Remote copy tools can be used to exfiltrate data from a container",
+  "remediation": "Remove tools like scp, sshfs, ssh-copy-id, etc. from your image and redeploy it"
 }

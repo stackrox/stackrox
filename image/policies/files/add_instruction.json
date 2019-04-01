@@ -3,8 +3,12 @@
   "name": "ADD Command used instead of COPY",
   "description": "Alert on deployments using a ADD command",
   "severity": "LOW_SEVERITY",
-  "lifecycle_stages": ["DEPLOY"],
-  "categories": ["DevOps Best Practices"],
+  "lifecycle_stages": [
+    "DEPLOY"
+  ],
+  "categories": [
+    "DevOps Best Practices"
+  ],
   "rationale": "ADD incorporates a broader set of capabilities than COPY, including the ability to specify URLs as the source argument and automatic unpacking of compressed files onto the local filesystem. The effects of ADD can be unpredictable and can lead to larger images. Unless ADD's additional capabilities are required, COPY is recommended.",
   "remediation": "Replace ADD with COPY when adding new files to the image. Per https://docs.docker.com/develop/develop-images/dockerfile_best-practices, it is better to use RUN curl instead of ADD if you need to access a URL.",
   "fields": {

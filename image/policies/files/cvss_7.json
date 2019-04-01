@@ -3,8 +3,13 @@
   "name": "Fixable CVSS >= 7",
   "description": "Alert on deployments with a vulnerability with a CVSS >= 7",
   "severity": "HIGH_SEVERITY",
-  "lifecycle_stages": ["BUILD", "DEPLOY"],
-  "categories": ["Vulnerability Management"],
+  "lifecycle_stages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "categories": [
+    "Vulnerability Management"
+  ],
   "enforcementActions": [
     "FAIL_BUILD_ENFORCEMENT"
   ],

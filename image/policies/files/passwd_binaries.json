@@ -2,11 +2,15 @@
   "id": "1c224010-9e0b-41a8-be9a-a17c7040ce98",
   "name": "Password Binaries",
   "description": "Processes that indicate attempts to change passwd",
-  "categories": ["System Modification"],
+  "categories": [
+    "System Modification"
+  ],
   "severity": "HIGH_SEVERITY",
-  "lifecycle_stages": ["RUNTIME"],
+  "lifecycle_stages": [
+    "RUNTIME"
+  ],
   "fields": {
-    "process_policy" : {
+    "process_policy": {
       "name": "shadowconfig|grpck|pwunconv|grpconv|pwck|groupmod|vipw|pwconv|useradd|newusers|cppw|chpasswd|usermod|groupadd|groupdel|grpunconv|chgpasswd|userdel|chage|chsh|gpasswd|chfn|expiry|passwd|vigr|cpgr"
     }
   },

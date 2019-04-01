@@ -2,11 +2,15 @@
   "id": "1c4e2cab-ce24-4e2a-9a66-f61028e79931",
   "name": "Login Binaries",
   "description": "Processes that indicate login attempts",
-  "categories": ["Security Best Practices"],
+  "categories": [
+    "Security Best Practices"
+  ],
   "severity": "HIGH_SEVERITY",
-  "lifecycle_stages": ["RUNTIME"],
+  "lifecycle_stages": [
+    "RUNTIME"
+  ],
   "fields": {
-    "process_policy" : {
+    "process_policy": {
       "name": "login|systemd|systemd|systemd-logind|gosu|su|nologin|faillog|lastlog|newgrp|sg"
     }
   },

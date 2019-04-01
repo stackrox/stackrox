@@ -3,8 +3,12 @@
   "name": "Alpine Linux Package Manager Execution",
   "description": "Alert on deployments with the Alpine Linux package manager (apk) is executed in runtime",
   "severity": "LOW_SEVERITY",
-  "lifecycle_stages": ["RUNTIME"],
-  "categories": ["Package Management"],
+  "lifecycle_stages": [
+    "RUNTIME"
+  ],
+  "categories": [
+    "Package Management"
+  ],
   "fields": {
     "process_policy": {
       "name": "apk"

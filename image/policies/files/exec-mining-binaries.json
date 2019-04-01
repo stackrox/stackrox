@@ -2,11 +2,15 @@
   "id": "e9635b83-4ec5-4e7a-9be1-1bcdd6d82bb7",
   "name": "Cryptocurrency Mining Process Execution",
   "description": "Cryptocurrency mining process spawned",
-  "categories": ["Cryptocurrency Mining"],
+  "categories": [
+    "Cryptocurrency Mining"
+  ],
   "severity": "HIGH_SEVERITY",
-  "lifecycle_stages": ["RUNTIME"],
+  "lifecycle_stages": [
+    "RUNTIME"
+  ],
   "fields": {
-    "process_policy" : {
+    "process_policy": {
       "name": ".*sgminer|.*cgminer|.*cpuminer|.*minerd|.*geth|.*ethminer|.*xmr-stak-cpu|.*xmr-stak-amd|.*xmr-stak-nvidia|.*xmrminer|.*cpuminer-multi"
     }
   },

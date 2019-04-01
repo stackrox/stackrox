@@ -2,11 +2,15 @@
   "id": "1037940a-fc22-4f64-8784-b8f5bd1cc93f",
   "name": "Shell Management",
   "description": "Commands that are used to add/remove a shell",
-  "categories": ["System Modification"],
+  "categories": [
+    "System Modification"
+  ],
   "severity": "LOW_SEVERITY",
-  "lifecycle_stages": ["RUNTIME"],
+  "lifecycle_stages": [
+    "RUNTIME"
+  ],
   "fields": {
-    "process_policy" : {
+    "process_policy": {
       "name": "add-shell|remove-shell"
     }
   },

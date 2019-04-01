@@ -3,8 +3,12 @@
   "name": "Red Hat Package Manager in Image",
   "description": "Alert on deployments with compoenents of the Red Hat/Fedora/CentOS package management system.",
   "severity": "LOW_SEVERITY",
-  "lifecycle_stages": ["DEPLOY"],
-  "categories": ["Security Best Practices"],
+  "lifecycle_stages": [
+    "DEPLOY"
+  ],
+  "categories": [
+    "Security Best Practices"
+  ],
   "fields": {
     "component": {
       "name": "rpm|dnf|yum"

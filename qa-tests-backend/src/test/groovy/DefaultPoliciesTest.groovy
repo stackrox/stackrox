@@ -139,7 +139,7 @@ class DefaultPoliciesTest extends BaseSpecification {
 
         "Fixable CVSS >= 7"                             | GCR_NGINX      | "C933"
 
-        "Shellshock: CVE-2014-6271"                     | SSL_TERMINATOR | "C948"
+        "Shellshock: Multiple CVEs"                     | SSL_TERMINATOR | "C948"
 
         "Curl in Image"                                 | STRUTS         | "C948"
 
