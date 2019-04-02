@@ -14,7 +14,7 @@ import { uniq, debounce } from 'lodash';
 import { coseBilkent as layout } from 'Containers/Network/Graph/networkGraphLayouts';
 import filterModes from 'Containers/Network/Graph/filterModes';
 import style from 'Containers/Network/Graph/networkGraphStyles';
-import { getLinks } from 'utils/networkGraphUtils';
+import { getLinks, nonIsolated } from 'utils/networkGraphUtils';
 import { MAX_ZOOM, MIN_ZOOM, ZOOM_STEP, GRAPH_PADDING } from 'constants/cytoscapeGraph';
 import namespaceConnectedSvg from 'images/legend-icons/namespace-egress-ingress.svg';
 
@@ -233,9 +233,11 @@ const NetworkGraph = ({
             const { deployment, ...entityProps } = entity;
             const { namespace: parent, ...deploymentProps } = deployment;
             const isSelected = selectedNode && selectedNode.id === entity.id;
+            const isNonIsolated = nonIsolated(datum);
             const classes = getClasses({
                 active: datum.isActive,
-                selected: isSelected
+                selected: isSelected,
+                nonIsolated: isNonIsolated
             });
 
             return {

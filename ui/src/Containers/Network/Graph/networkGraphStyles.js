@@ -1,5 +1,6 @@
 const activeColor = 'hsla(214, 74%, 68%, 1)';
 const hoverColor = '#92bae5';
+const nonIsolatedColor = 'hsla(2, 78%, 71%, 1)';
 
 const styles = [
     {
@@ -36,6 +37,15 @@ const styles = [
             'border-style': 'solid',
             'border-width': '1px',
             'border-color': activeColor
+        }
+    },
+    {
+        selector: 'node.nonIsolated',
+        style: {
+            'background-color': nonIsolatedColor,
+            'border-style': 'double',
+            'border-width': '1px',
+            'border-color': nonIsolatedColor
         }
     },
     {

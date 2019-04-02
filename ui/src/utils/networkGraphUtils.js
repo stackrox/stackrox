@@ -83,7 +83,7 @@ export const forceCollide = nodes => alpha => {
     });
 };
 
-const nonIsolated = node => node.nonIsolatedIngress && node.nonIsolatedEgress;
+export const nonIsolated = node => node.nonIsolatedIngress && node.nonIsolatedEgress;
 
 /**
  * Iterates through a list of nodes and returns only links in the same namespace
