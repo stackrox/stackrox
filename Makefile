@@ -306,7 +306,11 @@ bazel-test: gazelle
 
 .PHONY: ui-build
 ui-build:
+ifdef SKIP_UI_BUILD
+	test -d ui/build || make -C ui build
+else
 	make -C ui build
+endif
 
 .PHONY: ui-test
 ui-test:
