@@ -138,6 +138,10 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 		if _, err := s.datastore.AddImageIntegration(imageIntegration); err != nil {
 			return err
 		}
+		// Only when adding the integration the first time do we need to run processing
+		// Central receives many updates from OpenShift about the image integrations due to service accounts
+		// So we can assume the other creds were valid up to this point. Also, they will eventually be picked up within an hour
+		go s.enrichAndDetectLoop.ShortCircuit()
 	} else {
 		imageIntegration.Id = integrationToUpdate.GetId()
 		imageIntegration.Name = integrationToUpdate.GetName()
@@ -148,7 +152,6 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 			return err
 		}
 	}
-	go s.enrichAndDetectLoop.ShortCircuit()
 	return nil
 }
 
