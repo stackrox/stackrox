@@ -57,21 +57,22 @@ func AuthenticatedGRPCConnection(endpoint string, service Service) (conn *grpc.C
 
 // GRPCConnectionWithBasicAuth returns a grpc.ClientConn using the given username/password to authenticate
 // via basic auth.
-func GRPCConnectionWithBasicAuth(endpoint string, username, password string) (*grpc.ClientConn, error) {
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: true,
-	}
-	creds := credentials.NewTLS(tlsConfig)
-	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(basic.PerRPCCredentials(username, password)))
+func GRPCConnectionWithBasicAuth(endpoint string, serverName, username, password string) (*grpc.ClientConn, error) {
+	return grpcConnectionWithPerRPCCreds(endpoint, serverName, basic.PerRPCCredentials(username, password))
 }
 
 // GRPCConnectionWithToken returns a grpc.ClientConn using the given token to authenticate
-func GRPCConnectionWithToken(endpoint, token string) (*grpc.ClientConn, error) {
+func GRPCConnectionWithToken(endpoint, serverName, token string) (*grpc.ClientConn, error) {
+	return grpcConnectionWithPerRPCCreds(endpoint, serverName, tokenbased.PerRPCCredentials(token))
+}
+
+func grpcConnectionWithPerRPCCreds(endpoint string, serverName string, perRPCCreds credentials.PerRPCCredentials) (*grpc.ClientConn, error) {
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
+		ServerName:         serverName,
 	}
 	creds := credentials.NewTLS(tlsConfig)
-	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(tokenbased.PerRPCCredentials(token)))
+	return grpc.Dial(endpoint, grpc.WithTransportCredentials(creds), grpc.WithPerRPCCredentials(perRPCCreds))
 }
 
 // Parameters for keep alive.

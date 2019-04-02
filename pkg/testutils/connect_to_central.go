@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
@@ -40,7 +41,10 @@ func RoxAPIEndpoint(t *testing.T) string {
 // GRPCConnectionToCentral returns a GRPC connection to Central, which can be used in E2E tests.
 // It fatals the test if there's an error.
 func GRPCConnectionToCentral(t *testing.T) *grpc.ClientConn {
-	conn, err := clientconn.GRPCConnectionWithBasicAuth(RoxAPIEndpoint(t), RoxUsername(t), RoxPassword(t))
+	endpoint := RoxAPIEndpoint(t)
+	host, _, _, err := netutil.ParseEndpoint(endpoint)
+	require.NoError(t, err)
+	conn, err := clientconn.GRPCConnectionWithBasicAuth(endpoint, host, RoxUsername(t), RoxPassword(t))
 	require.NoError(t, err)
 	return conn
 }
