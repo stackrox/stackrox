@@ -1,6 +1,7 @@
-const activeColor = 'hsla(214, 74%, 68%, 1)';
 const hoverColor = '#92bae5';
 const nonIsolatedColor = 'hsla(2, 78%, 71%, 1)';
+const activeColor = 'hsla(214, 74%, 68%, 1)';
+const labelColor = 'hsla(231, 22%, 49%, 1)';
 
 const styles = [
     {
@@ -18,7 +19,7 @@ const styles = [
             'font-weight': 'bold',
             'font-family': 'Open Sans',
             'min-zoomed-font-size': '20px',
-            color: 'hsla(231, 22%, 49%, 1)'
+            color: labelColor
         }
     },
     {
@@ -72,7 +73,17 @@ const styles = [
         style: {
             'background-color': '#fff',
             shape: 'roundrectangle',
-            'compound-sizing-wrt-labels': 'include'
+            'compound-sizing-wrt-labels': 'include',
+            'font-family': 'stackrox, Open Sans',
+            'text-margin-y': '8px',
+            'text-valign': 'bottom',
+            'font-size': '18px',
+            color: labelColor,
+            'text-outline-width': 1,
+            'text-outline-opacity': 1,
+            'text-outline-color': 'white',
+            'font-weight': 600,
+            label: 'data(name)'
         }
     },
 

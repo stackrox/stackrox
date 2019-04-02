@@ -6,7 +6,6 @@ import { actions as graphActions } from 'reducers/network/graph';
 import Cytoscape from 'cytoscape';
 import CytoscapeComponent from 'react-cytoscapejs';
 import coseBilkentPlugin from 'cytoscape-cose-bilkent';
-import nodeHtmlLabel from 'cytoscape-node-html-label';
 import popper from 'cytoscape-popper';
 import Tippy from 'tippy.js';
 import { uniq, debounce } from 'lodash';
@@ -16,27 +15,9 @@ import filterModes from 'Containers/Network/Graph/filterModes';
 import style from 'Containers/Network/Graph/networkGraphStyles';
 import { getLinks, nonIsolated } from 'utils/networkGraphUtils';
 import { MAX_ZOOM, MIN_ZOOM, ZOOM_STEP, GRAPH_PADDING } from 'constants/cytoscapeGraph';
-import namespaceConnectedSvg from 'images/legend-icons/namespace-egress-ingress.svg';
 
 Cytoscape.use(coseBilkentPlugin);
-Cytoscape.use(nodeHtmlLabel);
 Cytoscape.use(popper);
-
-const namespaceSvgElm = `<img src=${namespaceConnectedSvg} alt="icon" class="h-2 self-center pr-1" />`;
-const nodeHtmlLabelConfig = [
-    {
-        query: ':parent', // cytoscape query selector
-        halign: 'center', // title vertical position. Can be 'left',''center, 'right'
-        valign: 'bottom', // title vertical position. Can be 'top',''center, 'bottom'
-        halignBox: 'center', // title vertical position. Can be 'left',''center, 'right'
-        valignBox: 'bottom', // title relative box vertical position. Can be 'top',''center, 'bottom'
-        tpl: ({ id, active }) =>
-            `<div class="label-img flex bg-base-100 rounded-full border mt-4 px-2 py-1 font-700">
-                ${active ? namespaceSvgElm : ''}
-                ${id}
-            </div>`
-    }
-];
 
 function getClasses(map) {
     return Object.entries(map)
@@ -282,6 +263,7 @@ const NetworkGraph = ({
             return {
                 data: {
                     id: namespace,
+                    name: `${active ? '\ue901' : ''} ${namespace}`,
                     active
                 },
                 classes: active ? 'nsActive' : namespaceClassName
@@ -444,15 +426,9 @@ const NetworkGraph = ({
         cy.current.layout(layout).run();
     }
 
-    function setNodeHtmlLabel() {
-        if (!cy.current) return;
-        cy.current.nodeHtmlLabel(nodeHtmlLabelConfig);
-    }
-
     useEffect(handleWindowResize, []);
     useEffect(setGraphRef, []);
     useEffect(runLayout, [nodes.length]);
-    useEffect(setNodeHtmlLabel, [nodes.length]);
 
     return (
         <div className="h-full w-full relative">
