@@ -1528,6 +1528,7 @@ workflows:
             tags:
               only: /.*/
       # Push release only on tags.
+      # Skip tags that end in -rc.#
       - mark-collector-release:
           requires:
             - build
@@ -1535,7 +1536,7 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /.*/
+              only: /^(?!.*-rc\.\d+$).*$/
       - push-release:
           requires:
             - build
@@ -1543,4 +1544,4 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /.*/
+              only: /^(?!.*-rc\.\d+$).*$/
