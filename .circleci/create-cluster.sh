@@ -41,12 +41,26 @@ create-cluster() {
   # Sleep to ensure that GKE has actually started to create the deployments/pods
   sleep 10
 
+  GRACE_PERIOD=30
+  CURRENT_GRACE_PERIOD=0
   while true; do
     NUMSTARTING=$(kubectl -n kube-system get pod -o json | jq '(.items[].status.containerStatuses // [])[].ready' | grep false | wc -l | awk '{print $1}')
     if [[ "${NUMSTARTING}" == "0" ]]; then
-      break
+      if (( CURRENT_GRACE_PERIOD >= GRACE_PERIOD )); then
+        break
+      fi
+      sleep 5
+
+      CURRENT_GRACE_PERIOD=$((CURRENT_GRACE_PERIOD + 5))
+      echo "Current grace period set to ${CURRENT_GRACE_PERIOD}".
+
+      continue
     fi
-      echo "Waiting for ${NUMSTARTING} kube-system containers to be initialized"
-      sleep 10
+
+    # Reset the grace period if we find a pod that is not started
+    CURRENT_GRACE_PERIOD=0
+
+    echo "Waiting for ${NUMSTARTING} kube-system containers to be initialized"
+    sleep 10
   done
 }
