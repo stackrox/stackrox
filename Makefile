@@ -390,7 +390,9 @@ ifdef CI
 	cp bazel-bin/roxctl/darwin_amd64_pure_stripped/roxctl image/bin/roxctl-darwin
 	cp bazel-bin/roxctl/windows_amd64_pure_stripped/roxctl.exe image/bin/roxctl-windows.exe
 else
+ifneq ($(BAZEL_OS),linux)
 	cp bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl image/bin/roxctl-linux
+endif
 	cp bazel-bin/roxctl/$(BAZEL_OS)_amd64_pure_stripped/roxctl image/bin/roxctl-$(BAZEL_OS)
 endif
 	cp bazel-bin/migrator/linux_amd64_pure_stripped/migrator image/bin/migrator
