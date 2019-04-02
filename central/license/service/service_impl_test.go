@@ -9,11 +9,11 @@ import (
 func TestServiceAuthz_Lockdown(t *testing.T) {
 	t.Parallel()
 
-	testutils.AssertAuthzWorks(t, newService(true))
+	testutils.AssertAuthzWorks(t, newService(true, nil))
 }
 
 func TestServiceAuthz_NonLockdown(t *testing.T) {
 	t.Parallel()
 
-	testutils.AssertAuthzWorks(t, newService(false))
+	testutils.AssertAuthzWorks(t, newService(false, nil))
 }

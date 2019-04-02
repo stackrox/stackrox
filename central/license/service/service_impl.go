@@ -2,20 +2,17 @@ package service
 
 import (
 	"context"
-	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/central/license/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	licenseproto "github.com/stackrox/rox/generated/shared/license"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sliceutils"
-	"github.com/stackrox/rox/pkg/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -30,101 +27,18 @@ var (
 			"/v1.LicenseService/AddLicense",
 		},
 	})
-
-	customerID = uuid.NewV4().String()
-
-	licenseInfos = []*v1.LicenseInfo{
-		{
-			License: &licenseproto.License{
-				Metadata: &licenseproto.License_Metadata{
-					Id:              uuid.NewV4().String(),
-					SigningKeyId:    "test/key/1",
-					IssueDate:       protoconv.ConvertTimeToTimestamp(time.Now().Add(-42 * 24 * time.Hour)),
-					LicensedForId:   customerID,
-					LicensedForName: "Acme Inc.",
-				},
-				SupportContact: &licenseproto.License_Contact{
-					Phone: "+1 (123) 456-7890",
-					Email: "support@stackrox.com",
-					Url:   "https://stackrox.com",
-					Name:  "StackRox Customer Support",
-				},
-				Restrictions: &licenseproto.License_Restrictions{
-					NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now().Add(-42 * 24 * time.Hour)),
-					NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(-14 * 24 * time.Hour)),
-					AllowOffline:                       true,
-					MaxNodes:                           100,
-					NoBuildFlavorRestriction:           true,
-					NoDeploymentEnvironmentRestriction: true,
-				},
-			},
-			Status: v1.LicenseInfo_EXPIRED,
-			Active: false,
-		},
-		{
-			License: &licenseproto.License{
-				Metadata: &licenseproto.License_Metadata{
-					Id:              uuid.NewV4().String(),
-					SigningKeyId:    "test/key/1",
-					IssueDate:       protoconv.ConvertTimeToTimestamp(time.Now().Add(-14 * 24 * time.Hour)),
-					LicensedForId:   customerID,
-					LicensedForName: "Acme Inc.",
-				},
-				SupportContact: &licenseproto.License_Contact{
-					Phone: "+1 (123) 456-7890",
-					Email: "support@stackrox.com",
-					Url:   "https://stackrox.com",
-					Name:  "StackRox Customer Support",
-				},
-				Restrictions: &licenseproto.License_Restrictions{
-					NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now().Add(-14 * 24 * time.Hour)),
-					NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(28 * 24 * time.Hour)),
-					AllowOffline:                       true,
-					MaxNodes:                           100,
-					NoBuildFlavorRestriction:           true,
-					NoDeploymentEnvironmentRestriction: true,
-				},
-			},
-			Status: v1.LicenseInfo_VALID,
-			Active: true,
-		},
-		{
-			License: &licenseproto.License{
-				Metadata: &licenseproto.License_Metadata{
-					Id:              uuid.NewV4().String(),
-					SigningKeyId:    "test/key/1",
-					IssueDate:       protoconv.ConvertTimeToTimestamp(time.Now()),
-					LicensedForId:   customerID,
-					LicensedForName: "Acme Inc.",
-				},
-				SupportContact: &licenseproto.License_Contact{
-					Phone: "+1 (123) 456-7890",
-					Email: "support@stackrox.com",
-					Url:   "https://stackrox.com",
-					Name:  "StackRox Customer Support",
-				},
-				Restrictions: &licenseproto.License_Restrictions{
-					NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now().Add(14 * 24 * time.Hour)),
-					NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(42 * 24 * time.Hour)),
-					AllowOffline:                       true,
-					MaxNodes:                           100,
-					NoBuildFlavorRestriction:           true,
-					NoDeploymentEnvironmentRestriction: true,
-				},
-			},
-			Status: v1.LicenseInfo_NOT_YET_VALID,
-			Active: false,
-		},
-	}
 )
 
 type service struct {
 	lockdownMode bool
+
+	licenseMgr manager.LicenseManager
 }
 
-func newService(lockdownMode bool) *service {
+func newService(lockdownMode bool, licenseMgr manager.LicenseManager) *service {
 	return &service{
 		lockdownMode: lockdownMode,
+		licenseMgr:   licenseMgr,
 	}
 }
 
@@ -144,9 +58,10 @@ func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (
 }
 
 func (s *service) GetLicenses(ctx context.Context, req *v1.GetLicensesRequest) (*v1.GetLicensesResponse, error) {
-	selected := make([]*v1.LicenseInfo, 0, len(licenseInfos))
+	allLicenseInfos := s.licenseMgr.GetAllLicenses()
 
-	for _, licenseInfo := range licenseInfos {
+	var selected []*v1.LicenseInfo
+	for _, licenseInfo := range allLicenseInfos {
 		if req.GetActiveOpt() != nil {
 			if req.GetActive() != licenseInfo.GetActive() {
 				continue
@@ -170,37 +85,13 @@ func (s *service) AddLicense(ctx context.Context, req *v1.AddLicenseRequest) (*v
 		return nil, status.Error(codes.InvalidArgument, "must provide a non-empty license key")
 	}
 
-	fakeLicense := &v1.LicenseInfo{
-		License: &licenseproto.License{
-			Metadata: &licenseproto.License_Metadata{
-				Id:              uuid.NewV4().String(),
-				SigningKeyId:    "test/key/1",
-				IssueDate:       protoconv.ConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
-				LicensedForId:   customerID,
-				LicensedForName: "Acme Inc.",
-			},
-			SupportContact: &licenseproto.License_Contact{
-				Phone: "+1 (123) 456-7890",
-				Email: "support@stackrox.com",
-				Url:   "https://stackrox.com",
-				Name:  "StackRox Customer Support",
-			},
-			Restrictions: &licenseproto.License_Restrictions{
-				NotValidBefore:                     protoconv.ConvertTimeToTimestamp(time.Now().Add(-1 * time.Hour)),
-				NotValidAfter:                      protoconv.ConvertTimeToTimestamp(time.Now().Add(24 * time.Hour)),
-				AllowOffline:                       true,
-				MaxNodes:                           100,
-				NoBuildFlavorRestriction:           true,
-				NoDeploymentEnvironmentRestriction: true,
-			},
-		},
-		Status:       v1.LicenseInfo_OTHER,
-		StatusReason: "The license was signed with an invalid key. Please contact support if you believe this is an error.",
-		Active:       false,
+	licenseInfo, err := s.licenseMgr.AddLicenseKey(req.GetLicenseKey())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to add license key: %v", err)
 	}
 
 	return &v1.AddLicenseResponse{
-		License:  fakeLicense,
-		Accepted: false,
+		License:  licenseInfo,
+		Accepted: true,
 	}, nil
 }

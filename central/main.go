@@ -156,7 +156,7 @@ type invalidLicenseFactory struct {
 
 func (invalidLicenseFactory) ServicesToRegister(authproviders.Registry) []pkgGRPC.APIService {
 	return []pkgGRPC.APIService{
-		licenseService.New(true),
+		licenseService.New(true, licenseSingletons.ManagerSingleton()),
 		metadataService.New(),
 		pingService.Singleton(), // required for dev scripts & health checking
 	}
@@ -227,7 +227,7 @@ func (defaultFactory) ServicesToRegister(registry authproviders.Registry) []pkgG
 	}
 
 	if features.LicenseEnforcement.Enabled() {
-		servicesToRegister = append(servicesToRegister, licenseService.New(false))
+		servicesToRegister = append(servicesToRegister, licenseService.New(false, licenseSingletons.ManagerSingleton()))
 	}
 
 	if env.DevelopmentBuild.Setting() == "true" {
