@@ -61,6 +61,7 @@ service LicenseService {
     rpc AddLicense(AddLicenseRequest) returns (AddLicenseResponse) {
         option (google.api.http) = {
             post: "/v1/licenses/add"
+            body: "*"
         };
     }
 }

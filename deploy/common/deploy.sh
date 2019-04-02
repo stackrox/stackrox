@@ -167,6 +167,33 @@ function get_authority {
     echo
 }
 
+function setup_license() {
+    local local_api_endpoint="$1"
+    local license_file="$2"
+
+    echo "Injecting license ..."
+    [[ -f "$license_file" ]] || { echo "License file $license_file not found!" ; return 1 ; }
+
+    local tmp="$(mktemp)"
+
+    local status
+    status=$(curl_central \
+	    -s \
+	    -o "$tmp" \
+        "https://${local_api_endpoint}/v1/licenses/add" \
+        -w "%{http_code}\n" \
+        -X POST \
+        -d @- < <(
+            jq -r -n '{"licenseKey": $key}' --arg key "$(cat "$license_file")"
+        ) )
+    local exit_code=$?
+    echo "Status: $status"
+    [[ "$exit_code" -eq 0 ]] || { echo "Failed to inject license" ; cat "$(tmp)" ; return 1 ; }
+    echo "Waiting for central to restart ..."
+    sleep 3
+    wait_for_central "$local_api_endpoint"
+}
+
 function setup_auth0() {
     local LOCAL_API_ENDPOINT="$1"
 	echo "Setting up StackRox Dev Auth0 login"

@@ -92,6 +92,7 @@ function launch_central {
     wait_for_central "${API_ENDPOINT}"
     echo "Successfully deployed Central!"
     echo "Access the UI at: https://${API_ENDPOINT}"
+    setup_license "${API_ENDPOINT}" "${k8s_dir}/../common/dev-license.lic"
     setup_auth0 "${API_ENDPOINT}"
 }
 
