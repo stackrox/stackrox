@@ -59,8 +59,8 @@ func (s *pipelineImpl) Run(msg *central.MsgFromSensor, injector common.MessageIn
 	return matchingFragment.Run(s.clusterID, msg, injector)
 }
 
-func (s *pipelineImpl) OnFinish() {
+func (s *pipelineImpl) OnFinish(clusterID string) {
 	for _, fragment := range s.fragments {
-		fragment.OnFinish()
+		fragment.OnFinish(clusterID)
 	}
 }

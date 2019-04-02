@@ -1,7 +1,9 @@
 package clusterstatusupdate
 
 import (
+	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/deploymentenvs"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -17,18 +19,20 @@ var (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(clusterDataStore.Singleton())
+	return NewPipeline(clusterDataStore.Singleton(), deploymentenvs.ManagerSingleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(clusters clusterDataStore.DataStore) pipeline.Fragment {
+func NewPipeline(clusters clusterDataStore.DataStore, deploymentEnvsMgr deploymentenvs.Manager) pipeline.Fragment {
 	return &pipelineImpl{
-		clusters: clusters,
+		clusters:          clusters,
+		deploymentEnvsMgr: deploymentEnvsMgr,
 	}
 }
 
 type pipelineImpl struct {
-	clusters clusterDataStore.DataStore
+	clusters          clusterDataStore.DataStore
+	deploymentEnvsMgr deploymentenvs.Manager
 }
 
 func (s *pipelineImpl) Reconcile(clusterID string) error {
@@ -42,10 +46,17 @@ func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
 
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
-	if status := msg.GetClusterStatusUpdate().GetStatus(); status != nil {
-		return s.clusters.UpdateClusterStatus(clusterID, status)
+	switch m := msg.GetClusterStatusUpdate().Msg.(type) {
+	case *central.ClusterStatusUpdate_DeploymentEnvUpdate:
+		s.deploymentEnvsMgr.UpdateDeploymentEnvironments(clusterID, m.DeploymentEnvUpdate.Environments)
+		return nil
+	case *central.ClusterStatusUpdate_Status:
+		return s.clusters.UpdateClusterStatus(clusterID, m.Status)
+	default:
+		return errors.Errorf("unknown cluster status update message type %T", m)
 	}
-	return nil
 }
 
-func (s *pipelineImpl) OnFinish() {}
+func (s *pipelineImpl) OnFinish(clusterID string) {
+	s.deploymentEnvsMgr.MarkClusterInactive(clusterID)
+}

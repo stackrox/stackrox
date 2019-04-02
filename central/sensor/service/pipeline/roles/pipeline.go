@@ -146,4 +146,4 @@ func (s *pipelineImpl) persistRole(action central.ResourceAction, role *storage.
 	}
 }
 
-func (s *pipelineImpl) OnFinish() {}
+func (s *pipelineImpl) OnFinish(clusterID string) {}

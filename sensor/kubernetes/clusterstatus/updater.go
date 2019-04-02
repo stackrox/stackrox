@@ -12,6 +12,8 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/clusterstatus"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -24,10 +26,65 @@ type updaterImpl struct {
 
 	updates chan *central.ClusterStatusUpdate
 	stopSig concurrency.Signal
+
+	deploymentEnvs *deploymentEnvSet
 }
 
 func (u *updaterImpl) Start() {
+	sif := informers.NewSharedInformerFactory(u.client, 0)
+	nodeInformer := sif.Core().V1().Nodes().Informer()
+	nodeInformer.AddEventHandler(u)
+	go nodeInformer.Run(u.stopSig.Done())
 	go u.run()
+}
+
+func (u *updaterImpl) OnDelete(obj interface{}) {
+	u.onChange(nil, obj)
+}
+
+func (u *updaterImpl) OnUpdate(newObj, oldObj interface{}) {
+	u.onChange(newObj, oldObj)
+}
+
+func (u *updaterImpl) OnAdd(obj interface{}) {
+	u.onChange(obj, nil)
+}
+
+func (u *updaterImpl) onChange(newObj, oldObj interface{}) {
+	var newDeploymentEnv, oldDeploymentEnv string
+
+	if newObj != nil {
+		newNode, _ := newObj.(*v1.Node)
+		newDeploymentEnv = getDeploymentEnvironment(newNode)
+	}
+	if oldObj != nil {
+		oldNode, _ := oldObj.(*v1.Node)
+		oldDeploymentEnv = getDeploymentEnvironment(oldNode)
+	}
+
+	changed := u.deploymentEnvs.Replace(newDeploymentEnv, oldDeploymentEnv)
+	if !changed {
+		return
+	}
+
+	u.sendDeploymentEnvUpdateMessage()
+}
+
+func (u *updaterImpl) sendDeploymentEnvUpdateMessage() {
+	environments := u.deploymentEnvs.AsSlice()
+
+	msg := &central.ClusterStatusUpdate{
+		Msg: &central.ClusterStatusUpdate_DeploymentEnvUpdate{
+			DeploymentEnvUpdate: &central.DeploymentEnvironmentUpdate{
+				Environments: environments,
+			},
+		},
+	}
+
+	select {
+	case u.updates <- msg:
+	case <-u.stopSig.Done():
+	}
 }
 
 func (u *updaterImpl) run() {
@@ -83,8 +140,9 @@ func (u *updaterImpl) getCloudProviderMetadata() *storage.ProviderMetadata {
 // NewUpdater returns a new ready-to-use updater.
 func NewUpdater() clusterstatus.Updater {
 	return &updaterImpl{
-		client:  client.MustCreateClientSet(),
-		updates: make(chan *central.ClusterStatusUpdate),
-		stopSig: concurrency.NewSignal(),
+		client:         client.MustCreateClientSet(),
+		updates:        make(chan *central.ClusterStatusUpdate),
+		stopSig:        concurrency.NewSignal(),
+		deploymentEnvs: newDeploymentEnvSet(),
 	}
 }

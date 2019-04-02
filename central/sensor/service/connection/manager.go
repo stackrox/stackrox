@@ -15,4 +15,6 @@ type checkInRecorder interface {
 type Manager interface {
 	HandleConnection(clusterID string, pf pipeline.Factory, server central.SensorService_CommunicateServer, recorder checkInRecorder) error
 	GetConnection(clusterID string) SensorConnection
+
+	GetActiveConnections() []SensorConnection
 }

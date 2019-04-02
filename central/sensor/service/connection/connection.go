@@ -19,4 +19,6 @@ type SensorConnection interface {
 
 	Scrapes() scrape.Controller
 	NetworkPolicies() networkpolicies.Controller
+
+	ClusterID() string
 }

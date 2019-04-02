@@ -142,4 +142,4 @@ func (s *pipelineImpl) persistSecret(action central.ResourceAction, secret *stor
 	}
 }
 
-func (s *pipelineImpl) OnFinish() {}
+func (s *pipelineImpl) OnFinish(clusterID string) {}

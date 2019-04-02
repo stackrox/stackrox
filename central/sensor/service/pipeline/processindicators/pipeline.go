@@ -64,4 +64,4 @@ func (s *pipelineImpl) process(indicator *storage.ProcessIndicator, injector com
 	return s.manager.IndicatorAdded(indicator, injector)
 }
 
-func (s *pipelineImpl) OnFinish() {}
+func (s *pipelineImpl) OnFinish(clusterID string) {}

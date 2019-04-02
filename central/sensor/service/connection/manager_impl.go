@@ -47,5 +47,27 @@ func (m *manager) HandleConnection(clusterID string, pf pipeline.Factory, server
 		oldConnection.Terminate(errors.New("replaced by new connection"))
 	}
 
-	return conn.Run(server)
+	err = conn.Run(server)
+
+	concurrency.WithLock(&m.connectionsByClusterIDMutex, func() {
+		currentConn := m.connectionsByClusterID[clusterID]
+		if currentConn == conn {
+			delete(m.connectionsByClusterID, clusterID)
+		}
+	})
+
+	return err
+}
+
+func (m *manager) GetActiveConnections() []SensorConnection {
+	m.connectionsByClusterIDMutex.RLock()
+	defer m.connectionsByClusterIDMutex.RUnlock()
+
+	result := make([]SensorConnection, 0, len(m.connectionsByClusterID))
+
+	for _, conn := range m.connectionsByClusterID {
+		result = append(result, conn)
+	}
+
+	return result
 }

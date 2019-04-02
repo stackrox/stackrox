@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	deploymentEnvsMocks "github.com/stackrox/rox/central/deploymentenvs/mocks"
 	"github.com/stackrox/rox/central/license/manager"
 	licenseMgrMocks "github.com/stackrox/rox/central/license/manager/mocks"
 	licenseStoreMocks "github.com/stackrox/rox/central/license/store/mocks"
@@ -22,10 +23,11 @@ import (
 type managerTestSuite struct {
 	suite.Suite
 
-	mockCtrl      *gomock.Controller
-	mockStore     *licenseStoreMocks.MockStore
-	mockValidator *validatorMocks.MockValidator
-	mockListener  *licenseMgrMocks.MockLicenseEventListener
+	mockCtrl              *gomock.Controller
+	mockStore             *licenseStoreMocks.MockStore
+	mockValidator         *validatorMocks.MockValidator
+	mockListener          *licenseMgrMocks.MockLicenseEventListener
+	mockDeploymentEnvsMgr *deploymentEnvsMocks.MockManager
 
 	mgr manager.LicenseManager
 }
@@ -40,8 +42,12 @@ func (s *managerTestSuite) SetupTest() {
 	s.mockStore = licenseStoreMocks.NewMockStore(s.mockCtrl)
 	s.mockValidator = validatorMocks.NewMockValidator(s.mockCtrl)
 	s.mockListener = licenseMgrMocks.NewMockLicenseEventListener(s.mockCtrl)
+	s.mockDeploymentEnvsMgr = deploymentEnvsMocks.NewMockManager(s.mockCtrl)
 
-	s.mgr = manager.New(s.mockStore, s.mockValidator)
+	s.mgr = manager.New(s.mockStore, s.mockValidator, s.mockDeploymentEnvsMgr)
+
+	s.mockDeploymentEnvsMgr.EXPECT().RegisterListener(gomock.Any()).Times(1)
+	s.mockDeploymentEnvsMgr.EXPECT().GetDeploymentEnvironmentsByClusterID().AnyTimes().Return(map[string][]string{})
 }
 
 func (s *managerTestSuite) TearDownTest() {

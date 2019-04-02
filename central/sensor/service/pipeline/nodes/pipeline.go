@@ -103,4 +103,4 @@ func (p *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 	return store.UpsertNode(node)
 }
 
-func (p *pipelineImpl) OnFinish() {}
+func (p *pipelineImpl) OnFinish(clusterID string) {}

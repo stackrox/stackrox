@@ -148,4 +148,4 @@ func (s *pipelineImpl) persistNamespace(action central.ResourceAction, ns *stora
 	}
 }
 
-func (s *pipelineImpl) OnFinish() {}
+func (s *pipelineImpl) OnFinish(clusterID string) {}

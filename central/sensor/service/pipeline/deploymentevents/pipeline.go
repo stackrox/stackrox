@@ -175,4 +175,4 @@ func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, deploym
 	return resp, nil
 }
 
-func (s *pipelineImpl) OnFinish() {}
+func (s *pipelineImpl) OnFinish(clusterID string) {}

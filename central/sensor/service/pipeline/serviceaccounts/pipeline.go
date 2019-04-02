@@ -158,4 +158,4 @@ func (s *pipelineImpl) persistServiceAccount(action central.ResourceAction, sa *
 	}
 }
 
-func (s *pipelineImpl) OnFinish() {}
+func (s *pipelineImpl) OnFinish(clusterID string) {}

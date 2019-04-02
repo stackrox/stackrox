@@ -6,9 +6,14 @@ package central;
 
 import "storage/cluster.proto";
 
+message DeploymentEnvironmentUpdate {
+    repeated string environments = 1;
+}
+
 message ClusterStatusUpdate {
     // Making it a oneof for future proof-ness.
     oneof msg {
         storage.ClusterStatus status = 1;
+        DeploymentEnvironmentUpdate deployment_env_update = 2;
     }
 }

@@ -7,7 +7,7 @@ import (
 
 // BasePipeline represents methods that are shared between Pipelines and fragments of pipelines.
 type BasePipeline interface {
-	OnFinish()
+	OnFinish(clusterID string)
 }
 
 // ClusterPipeline processes a message received from a given cluster.

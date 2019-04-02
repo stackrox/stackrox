@@ -153,4 +153,4 @@ func (s *pipelineImpl) persistNetworkPolicy(action central.ResourceAction, np *s
 	}
 }
 
-func (s *pipelineImpl) OnFinish() {}
+func (s *pipelineImpl) OnFinish(clusterID string) {}

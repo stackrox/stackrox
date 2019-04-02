@@ -47,13 +47,13 @@ func (mr *MockFragmentMockRecorder) Match(arg0 interface{}) *gomock.Call {
 }
 
 // OnFinish mocks base method
-func (m *MockFragment) OnFinish() {
-	m.ctrl.Call(m, "OnFinish")
+func (m *MockFragment) OnFinish(arg0 string) {
+	m.ctrl.Call(m, "OnFinish", arg0)
 }
 
 // OnFinish indicates an expected call of OnFinish
-func (mr *MockFragmentMockRecorder) OnFinish() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnFinish", reflect.TypeOf((*MockFragment)(nil).OnFinish))
+func (mr *MockFragmentMockRecorder) OnFinish(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnFinish", reflect.TypeOf((*MockFragment)(nil).OnFinish), arg0)
 }
 
 // Reconcile mocks base method

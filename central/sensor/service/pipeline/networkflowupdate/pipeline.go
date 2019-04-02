@@ -54,4 +54,4 @@ func (s *pipelineImpl) Run(_ string, msg *central.MsgFromSensor, _ common.Messag
 	return nil
 }
 
-func (s *pipelineImpl) OnFinish() {}
+func (s *pipelineImpl) OnFinish(clusterID string) {}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/deploymentenvs"
 	"github.com/stackrox/rox/central/license/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	licenseproto "github.com/stackrox/rox/generated/shared/license"
@@ -55,9 +56,11 @@ type manager struct {
 	stoppedSig concurrency.Signal
 
 	listener LicenseEventListener
+
+	deploymentEnvsMgr deploymentenvs.Manager
 }
 
-func newManager(store store.Store, validator validator.Validator) *manager {
+func newManager(store store.Store, validator validator.Validator, deploymentEnvsMgr deploymentenvs.Manager) *manager {
 	return &manager{
 		store:     store,
 		validator: validator,
@@ -66,6 +69,8 @@ func newManager(store store.Store, validator validator.Validator) *manager {
 
 		interruptC: make(chan struct{}, 1),
 		stopSig:    concurrency.NewSignal(),
+
+		deploymentEnvsMgr: deploymentEnvsMgr,
 	}
 }
 
@@ -76,7 +81,7 @@ func (m *manager) interrupt() bool {
 	case <-m.stoppedSig.Done():
 		return false
 	default:
-		// If the above to cases block, we are not stopped and could not write to the channel. Since the channel is
+		// If the above two cases block, we are not stopped and could not write to the channel. Since the channel is
 		// buffered, there already is an interrupt pending, so no need for an additional one.
 		return true
 	}
@@ -107,6 +112,10 @@ func (m *manager) Initialize(listener LicenseEventListener) (*licenseproto.Licen
 	if listener != nil {
 		listener.OnInitialize(m, m.activeLicense.getLicenseProto())
 	}
+
+	m.deploymentEnvsMgr.RegisterListener(deploymentEnvListener{
+		manager: m,
+	})
 
 	return m.activeLicense.getLicenseProto(), nil
 }
@@ -197,8 +206,10 @@ func (m *manager) checkLicenses() time.Time {
 }
 
 func (m *manager) checkLicensesNoLock() time.Time {
+	deploymentEnvsByClusterID := m.deploymentEnvsMgr.GetDeploymentEnvironmentsByClusterID()
+
 	if m.activeLicense != nil {
-		err := m.checkLicenseIsUsable(m.activeLicense)
+		err := m.checkLicenseIsUsable(m.activeLicense, deploymentEnvsByClusterID)
 		if err == nil {
 			return m.activeLicense.notValidAfter
 		}
@@ -211,9 +222,9 @@ func (m *manager) checkLicensesNoLock() time.Time {
 	// Otherwise, if `makeLicenseActiveNoLock` does not succeed because the license has become invalid (e.g., just
 	// expired), we might not deactive the old license.
 	for {
-		newActiveLicense, nextEventTS := m.chooseUsableLicenseNoLock()
+		newActiveLicense, nextEventTS := m.chooseUsableLicenseNoLock(deploymentEnvsByClusterID)
 
-		_, _, licenseChanged := m.makeLicenseActiveNoLock(newActiveLicense)
+		_, _, licenseChanged := m.makeLicenseActiveNoLock(newActiveLicense, deploymentEnvsByClusterID)
 		if licenseChanged || newActiveLicense == nil {
 			if newActiveLicense != nil {
 				log.Infof("Automatically selected new license %s, valid until %v", newActiveLicense.licenseProto.GetMetadata().GetId(), newActiveLicense.notValidAfter)
@@ -226,7 +237,7 @@ func (m *manager) checkLicensesNoLock() time.Time {
 // chooseUsableLicenseNoLock returns the "best" available license, or nil if no usable license is available. The
 // second return value indicates the timestamp when we should next check for an available license (this could either
 // be the expiration time of the chosen license, or the next time a license that is not yet valid becomes valid).
-func (m *manager) chooseUsableLicenseNoLock() (*licenseData, time.Time) {
+func (m *manager) chooseUsableLicenseNoLock(deploymentEnvsByClusterID map[string][]string) (*licenseData, time.Time) {
 	var bestCandidate *licenseData
 
 	var nextActivationTS time.Time
@@ -239,7 +250,7 @@ func (m *manager) chooseUsableLicenseNoLock() (*licenseData, time.Time) {
 			nextActivationTS = license.notValidBefore
 		}
 
-		if err := m.checkLicenseIsUsable(license); err != nil {
+		if err := m.checkLicenseIsUsable(license, deploymentEnvsByClusterID); err != nil {
 			continue
 		}
 
@@ -255,7 +266,7 @@ func (m *manager) chooseUsableLicenseNoLock() (*licenseData, time.Time) {
 	return nil, nextActivationTS
 }
 
-func (m *manager) getLicenseInfoNoLock(license *licenseData) *v1.LicenseInfo {
+func (m *manager) getLicenseInfoNoLock(license *licenseData, deploymentEnvsByClusterID map[string][]string) *v1.LicenseInfo {
 	if license == nil {
 		return nil
 	}
@@ -264,7 +275,7 @@ func (m *manager) getLicenseInfoNoLock(license *licenseData) *v1.LicenseInfo {
 		License: license.licenseProto,
 		Active:  license == m.activeLicense,
 	}
-	licenseInfo.Status, licenseInfo.StatusReason = statusFromError(m.checkLicenseIsUsable(license))
+	licenseInfo.Status, licenseInfo.StatusReason = statusFromError(m.checkLicenseIsUsable(license, deploymentEnvsByClusterID))
 	return licenseInfo
 }
 
@@ -274,8 +285,8 @@ func (m *manager) markDirtyNoLock(license *licenseData) {
 	}
 }
 
-func (m *manager) makeLicenseActiveNoLock(newLicense *licenseData) (newLicenseInfo, oldLicenseInfo *v1.LicenseInfo, changed bool) {
-	newLicenseInfo = m.getLicenseInfoNoLock(newLicense)
+func (m *manager) makeLicenseActiveNoLock(newLicense *licenseData, deploymentEnvsByClusterID map[string][]string) (newLicenseInfo, oldLicenseInfo *v1.LicenseInfo, changed bool) {
+	newLicenseInfo = m.getLicenseInfoNoLock(newLicense, deploymentEnvsByClusterID)
 
 	oldLicense := m.activeLicense
 	if oldLicense == newLicense {
@@ -283,7 +294,7 @@ func (m *manager) makeLicenseActiveNoLock(newLicense *licenseData) (newLicenseIn
 		return
 	}
 
-	oldLicenseInfo = m.getLicenseInfoNoLock(oldLicense)
+	oldLicenseInfo = m.getLicenseInfoNoLock(oldLicense, deploymentEnvsByClusterID)
 	if newLicenseInfo != nil {
 		if newLicenseInfo.GetStatus() != v1.LicenseInfo_VALID {
 			return // new license is not valid, so we cannot change it
@@ -351,11 +362,13 @@ func (m *manager) GetActiveLicense() *licenseproto.License {
 func (m *manager) GetAllLicenses() []*v1.LicenseInfo {
 	var allLicenses []*v1.LicenseInfo
 
+	deploymentEnvsByClusterID := m.deploymentEnvsMgr.GetDeploymentEnvironmentsByClusterID()
+
 	concurrency.WithRLock(&m.mutex, func() {
 		allLicenses = make([]*v1.LicenseInfo, 0, len(m.licenses))
 
 		for _, license := range m.licenses {
-			allLicenses = append(allLicenses, m.getLicenseInfoNoLock(license))
+			allLicenses = append(allLicenses, m.getLicenseInfoNoLock(license, deploymentEnvsByClusterID))
 		}
 	})
 
@@ -378,18 +391,20 @@ func (m *manager) AddLicenseKey(licenseKey string) (*v1.LicenseInfo, error) {
 func (m *manager) addLicense(license *licenseData) *v1.LicenseInfo {
 	defer m.interrupt()
 
+	deploymentEnvsByClusterID := m.deploymentEnvsMgr.GetDeploymentEnvironmentsByClusterID()
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
 	m.licenses[license.licenseProto.GetMetadata().GetId()] = license
 	m.dirty[license] = struct{}{}
 
-	if m.activeLicense == nil && m.checkLicenseIsUsable(license) == nil {
-		newLicenseInfo, _, _ := m.makeLicenseActiveNoLock(license)
+	if m.activeLicense == nil && m.checkLicenseIsUsable(license, deploymentEnvsByClusterID) == nil {
+		newLicenseInfo, _, _ := m.makeLicenseActiveNoLock(license, deploymentEnvsByClusterID)
 		return newLicenseInfo
 	}
 
-	return m.getLicenseInfoNoLock(license)
+	return m.getLicenseInfoNoLock(license, deploymentEnvsByClusterID)
 }
 
 func (m *manager) decodeLicenseKey(licenseKey string) (*licenseData, error) {
@@ -416,10 +431,10 @@ func (m *manager) decodeLicenseKey(licenseKey string) (*licenseData, error) {
 	}, nil
 }
 
-func (m *manager) checkLicenseIsUsable(license *licenseData) error {
+func (m *manager) checkLicenseIsUsable(license *licenseData, deploymentEnvsByClusterID map[string][]string) error {
 	// First check time-independent constraints. We do not want to say "not yet valid" for a license that won't
 	// be usable anyway.
-	if err := m.checkConstraints(license.licenseProto.GetRestrictions()); err != nil {
+	if err := m.checkConstraints(license.licenseProto.GetRestrictions(), deploymentEnvsByClusterID); err != nil {
 		return err
 	}
 
@@ -433,9 +448,13 @@ func (m *manager) checkLicenseIsUsable(license *licenseData) error {
 	return nil
 }
 
-func (m *manager) checkConstraints(restr *licenseproto.License_Restrictions) error {
-	// TODO: Enforce deployment environment
+func (m *manager) checkConstraints(restr *licenseproto.License_Restrictions, deploymentEnvsByClusterID map[string][]string) error {
+	if err := checkDeploymentEnvironmentRestrictions(restr, deploymentEnvsByClusterID); err != nil {
+		return err
+	}
+
 	// TODO: Enforce online licenses
+
 	if !restr.GetNoBuildFlavorRestriction() {
 		if sliceutils.StringFind(restr.GetBuildFlavors(), buildinfo.BuildFlavor) == -1 {
 			return errors.Errorf("licenseData cannot be used with build flavor %s", buildinfo.BuildFlavor)
@@ -445,6 +464,8 @@ func (m *manager) checkConstraints(restr *licenseproto.License_Restrictions) err
 }
 
 func (m *manager) SelectLicense(id string) (*v1.LicenseInfo, error) {
+	deploymentEnvsByClusterID := m.deploymentEnvsMgr.GetDeploymentEnvironmentsByClusterID()
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -453,6 +474,6 @@ func (m *manager) SelectLicense(id string) (*v1.LicenseInfo, error) {
 		return nil, errors.Errorf("invalid license ID %q", id)
 	}
 
-	newLicenseInfo, _, _ := m.makeLicenseActiveNoLock(license)
+	newLicenseInfo, _, _ := m.makeLicenseActiveNoLock(license, deploymentEnvsByClusterID)
 	return newLicenseInfo, nil
 }

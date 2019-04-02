@@ -93,6 +93,7 @@ func (c *sensorConnection) handleMessages() {
 			log.Errorf("Error handling sensor message: %v", err)
 		}
 	}
+	c.eventPipeline.OnFinish(c.clusterID)
 	c.stoppedSig.SignalWithError(c.stopSig.Err())
 }
 
@@ -147,6 +148,9 @@ func (c *sensorConnection) Run(server central.SensorService_CommunicateServer) e
 	go c.runSend(server)
 	go c.handleMessages()
 	c.runRecv(server)
-	c.eventPipeline.OnFinish()
 	return c.stopSig.Err()
+}
+
+func (c *sensorConnection) ClusterID() string {
+	return c.clusterID
 }
