@@ -20,7 +20,7 @@ echo -n "Setting up port-forwarding..."
 
 # kubectl should be killed whenever this script is killed
 trap 'kill -TERM ${PID}; wait ${PID}' TERM INT
-kubectl port-forward -n "$NAMESPACE" "$CENTRAL_POD" "${LOCAL_PORT}:443" > /dev/null &
+kubectl port-forward -n "$NAMESPACE" "$CENTRAL_POD" "${LOCAL_PORT}:8443" > /dev/null &
 PID=$!
 
 until $(curl --output /dev/null --silent --fail -k "https://localhost:${LOCAL_PORT}/v1/ping"); do

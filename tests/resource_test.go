@@ -147,7 +147,7 @@ func verifyCentralDeployment(t *testing.T, centralDeployment *storage.Deployment
 
 	require.Len(t, c.GetPorts(), 1)
 	p := c.GetPorts()[0]
-	assert.Equal(t, int32(443), p.GetContainerPort())
+	assert.Equal(t, int32(8443), p.GetContainerPort())
 	assert.Equal(t, "TCP", p.GetProtocol())
 }
 

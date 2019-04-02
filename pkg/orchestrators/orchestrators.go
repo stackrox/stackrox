@@ -32,6 +32,7 @@ type SystemService struct {
 	HostPID        bool
 	ServiceAccount string
 	Secrets        []Secret
+	RunAsUser      *int64
 }
 
 // Orchestrator is the interface that allows for actions against an orchestrator

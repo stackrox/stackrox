@@ -15,5 +15,5 @@ while true; do
 done
 echo
 
-nohup {{.K8sConfig.Command}} port-forward -n 'stackrox' "$central_pod" "$1:443" 1>/dev/null 2>&1 &
+nohup {{.K8sConfig.Command}} port-forward -n 'stackrox' "$central_pod" "$1:8443" 1>/dev/null 2>&1 &
 echo "Access central on https://localhost:$1"

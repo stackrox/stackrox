@@ -19,7 +19,7 @@ const (
 // New returns an instance of the persistent BadgerDB store
 func New(path string) (*badger.DB, error) {
 	if stat, err := os.Stat(path); os.IsNotExist(err) {
-		err = os.MkdirAll(path, 0600)
+		err = os.MkdirAll(path, 0700)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error creating badger path %s", path)
 		}

@@ -29,8 +29,8 @@ import (
 )
 
 const (
-	publicAPIEndpoint     = ":443"
-	insecureLocalEndpoint = "127.0.0.1:444"
+	publicAPIEndpoint     = ":8443"
+	insecureLocalEndpoint = "127.0.0.1:8444"
 
 	maxMsgSize = 8 * 1024 * 1024
 )

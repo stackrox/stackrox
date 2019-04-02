@@ -197,6 +197,7 @@ func (c *commandHandlerImpl) createService(scrapeID string) (*orchestrators.Syst
 	if image == "" {
 		return nil, errors.New("couldn't find sensor image to use")
 	}
+	zeroInt64 := int64(0)
 	return &orchestrators.SystemService{
 		GenerateName: scrapeServiceName,
 		ExtraPodLabels: map[string]string{
@@ -235,6 +236,7 @@ func (c *commandHandlerImpl) createService(scrapeID string) (*orchestrators.Syst
 				TargetPath: "/run/secrets/stackrox.io/certs/",
 			},
 		},
+		RunAsUser: &zeroInt64,
 	}, nil
 }
 

@@ -10,6 +10,7 @@ RUN apk update && \
     apk add --no-cache \
         ca-certificates=20190108-r0 \
         procps=3.3.15-r0 \
+        su-exec=0.2-r0 \
         && \
     apk --purge del apk-tools \
     ;
@@ -32,7 +33,7 @@ COPY ./NOTICE.txt /
 
 COPY ./assets /data/assets
 
-EXPOSE 443
+EXPOSE 8443
 
 ENTRYPOINT ["/assets/downloads/cli/roxctl-linux"]
 
@@ -40,13 +41,18 @@ ENTRYPOINT ["/assets/downloads/cli/roxctl-linux"]
 # Including these VOLUME instructions means that we can enable a
 # read-only root file system without preventing writes to these paths.
 # Trusted CA certificates are written to this path by `update-ca-certificates`.
+RUN chown -R 4000 /etc/ssl
 VOLUME /etc/ssl
 # Search indices are generated upon startup and updated thereafter.
+RUN mkdir -p /tmp/search && chown -R 4000 /tmp/search
 VOLUME /tmp/search
 # The BoltDB is stored at this path.
+RUN mkdir -p /var/lib/stackrox && chown -R 4000 /var/lib/stackrox
 VOLUME /var/lib/stackrox
 # The log file is stored at this path
+RUN mkdir -p /var/log/stackrox && chown -R 4000 /var/log/stackrox
 VOLUME /var/log/stackrox
 
 # /tmp needs to be a read-write filesystem.
+RUN chown -R 4000 /tmp
 VOLUME /tmp

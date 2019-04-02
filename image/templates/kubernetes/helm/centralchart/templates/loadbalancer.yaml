@@ -6,7 +6,7 @@ metadata:
   namespace: {{.Values.namespace}}
 spec:
   port:
-    targetPort: https
+    targetPort: api
   tls:
     termination: passthrough
   to:
@@ -21,7 +21,7 @@ metadata:
 spec:
   host: central.{{.Values.namespace}}
   port:
-    targetPort: https
+    targetPort: api
   tls:
     termination: passthrough
   to:
@@ -36,7 +36,7 @@ metadata:
 spec:
   ports:
   - port: {{.Values.exposure.port}}
-    targetPort: 443
+    targetPort: api
   selector:
     app: central
   type: {{.Values.exposure.type}}

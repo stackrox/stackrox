@@ -16,7 +16,7 @@ spec:
           matchLabels:
             "com.stackrox.io/service": "compliance"
     ports:
-    - port: 443
+    - port: api
       protocol: TCP
   podSelector:
     matchLabels:

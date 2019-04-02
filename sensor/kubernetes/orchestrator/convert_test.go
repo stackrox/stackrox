@@ -123,6 +123,8 @@ func TestConvertDeployment(t *testing.T) {
 func TestCovertDaemonSet(t *testing.T) {
 	t.Parallel()
 
+	zeroInt64 := int64(0)
+
 	cases := []struct {
 		input    *serviceWrap
 		expected *v1beta1.DaemonSet
@@ -135,9 +137,10 @@ func TestCovertDaemonSet(t *testing.T) {
 					ExtraPodLabels: map[string]string{
 						"extra-pod-label": "blah-daemon",
 					},
-					Envs:  []string{"hello=world", "foo=bar"},
-					Name:  `daemon`,
-					Image: `stackrox/daemon:1.0`,
+					Envs:      []string{"hello=world", "foo=bar"},
+					Name:      `daemon`,
+					Image:     `stackrox/daemon:1.0`,
+					RunAsUser: &zeroInt64,
 				},
 				namespace: "prevent",
 			},
@@ -186,6 +189,9 @@ func TestCovertDaemonSet(t *testing.T) {
 											Name:      `tmp`,
 											MountPath: `/var/lib`,
 										},
+									},
+									SecurityContext: &v1.SecurityContext{
+										RunAsUser: &zeroInt64,
 									},
 								},
 							},

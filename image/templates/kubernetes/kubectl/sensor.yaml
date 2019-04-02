@@ -20,6 +20,10 @@ spec:
       labels:
         app: sensor
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 4000
+        fsGroup: 4000
       {{if eq .ClusterType "KUBERNETES_CLUSTER"}}
       imagePullSecrets:
         - name: stackrox
@@ -28,6 +32,9 @@ spec:
       containers:
       - image: {{.Image}}
         name: sensor
+        ports:
+          - containerPort: 8443
+            name: api
         command:
           - kubernetes-sensor
         resources:
@@ -38,8 +45,6 @@ spec:
             memory: "1000Mi"
             cpu: "500m"
         securityContext:
-          capabilities:
-            drop: ["NET_RAW"]
           readOnlyRootFilesystem: true
         env:
         - name: {{.PublicEndpointEnv}}
@@ -69,7 +74,7 @@ spec:
         - name: CLUSTER_NAME
           value: {{.ClusterName}}
         - name: PROMETHEUS_ENDPOINT
-          value: https://localhost:443
+          value: https://localhost:8443
         - name: MONITORING_ENDPOINT
           value: {{.MonitoringEndpoint}}
         resources:
@@ -124,7 +129,7 @@ spec:
   ports:
   - name: https
     port: 443
-    targetPort: 443
+    targetPort: api
   selector:
     app: sensor
   type: ClusterIP

@@ -52,7 +52,7 @@ func tryRestoreBolt(r io.Reader, outDir string) error {
 
 func tryRestoreBadger(r io.Reader, outDir string) error {
 	badgerDirPath := path.Join(outDir, badgerhelper.BadgerDBDirName)
-	if err := os.Mkdir(badgerDirPath, 0600); err != nil {
+	if err := os.Mkdir(badgerDirPath, 0700); err != nil {
 		return errors.Wrap(err, "could not create badger database directory")
 	}
 

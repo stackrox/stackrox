@@ -27,7 +27,7 @@ const (
 func New(path string) (*bolt.DB, error) {
 	dirPath := filepath.Dir(path)
 	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
-		err = os.MkdirAll(dirPath, 0600)
+		err = os.MkdirAll(dirPath, 0700)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error creating db path %v", dirPath)
 		}

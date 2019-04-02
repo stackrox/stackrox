@@ -32,7 +32,7 @@ spec:
           - /stackrox/central-entrypoint.sh
         ports:
           - name: api
-            containerPort: 443
+            containerPort: 8443
         resources:
 {{ toYaml .Values.resources | indent 10 }}
         securityContext:
@@ -74,7 +74,7 @@ spec:
           - name: CLUSTER_NAME
             value: main
           - name: PROMETHEUS_ENDPOINT
-            value: https://localhost:443
+            value: https://localhost:8443
           - name: MONITORING_ENDPOINT
             value: {{.Values.monitoring.endpoint}}
         resources:

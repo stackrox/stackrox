@@ -9,7 +9,7 @@ spec:
   ports:
   - name: https
     port: 443
-    targetPort: 443
+    targetPort: api
   selector:
     app: central
   type: ClusterIP

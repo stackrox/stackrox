@@ -815,8 +815,24 @@ jobs:
           name: Do the upgrade
           command: |
             new_image="stackrox/main:$(make tag)"
-            kubectl -n stackrox set image deploy/central central="${new_image}"
+            central_patch='[
+              {"op": "replace", "path": "/spec/template/spec/containers/0/image", "value": "'"$new_image"'"},
+              {"op": "replace", "path": "/spec/template/spec/containers/0/ports", "value": [{"name": "api", "containerPort": 8443}]}
+            ]'
+            kubectl -n stackrox patch deploy/central --type json -p "$central_patch"
             kubectl -n stackrox describe deploy/central
+
+            network_policy_patch='[
+              {"op": "replace", "path": "/spec/ingress/0/ports/0/port", "value": "api"}
+            ]'
+            kubectl -n stackrox patch networkpolicy/allow-ext-to-central --type json -p "$network_policy_patch"
+
+            if [[ "${LOAD_BALANCER}" == "lb" ]]; then
+              lb_patch='[
+                {"op": "replace", "path": "/spec/ports/0/targetPort", "value": "api"}
+              ]'
+              kubectl -n stackrox patch service/central-loadbalancer --type json -p "$lb_patch"
+            fi
 
             central_image="$(kubectl -n stackrox get deploy/central -o jsonpath='{.spec.template.spec.containers[?(@.name=="central")].image}')"
             if [ "${central_image}" != "${new_image}" ]; then

@@ -141,16 +141,21 @@ func asContainers(service *serviceWrap) []v1.Container {
 		containerName = service.GenerateName
 	}
 
-	return []v1.Container{
-		{
-			Name:         containerName,
-			Env:          allEnvs(service),
-			Image:        service.Image,
-			Command:      service.Command,
-			VolumeMounts: asVolumeMounts(service),
-			Resources:    convertResourceRequirements(service.Resources),
-		},
+	container := v1.Container{
+		Name:         containerName,
+		Env:          allEnvs(service),
+		Image:        service.Image,
+		Command:      service.Command,
+		VolumeMounts: asVolumeMounts(service),
+		Resources:    convertResourceRequirements(service.Resources),
 	}
+
+	if service.RunAsUser != nil {
+		container.SecurityContext = &v1.SecurityContext{
+			RunAsUser: service.RunAsUser,
+		}
+	}
+	return []v1.Container{container}
 }
 
 func asEnv(envs []string) (vars []v1.EnvVar) {
