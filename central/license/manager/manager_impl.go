@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"io/ioutil"
 	"sort"
 	"time"
 
@@ -22,6 +23,9 @@ import (
 
 const (
 	storeRetryInterval = 5 * time.Second
+	// should match license-volume path in central deployment.yaml and
+	// data key name in values.yaml
+	secretPath = "/var/run/secrets/stackrox.io/central-license/license.lic"
 )
 
 var (
@@ -100,7 +104,7 @@ func (m *manager) Initialize(listener LicenseEventListener) (*licenseproto.Licen
 		return nil, errors.Wrap(err, "could not populate licenses from store")
 	}
 
-	// TODO: populate licenses from a secret mount?
+	m.populateLicenseFromSecretNoLock()
 
 	m.checkLicensesNoLock()
 
@@ -123,6 +127,25 @@ func (m *manager) Initialize(listener LicenseEventListener) (*licenseproto.Licen
 func (m *manager) Stop() concurrency.Waitable {
 	m.stopSig.Signal()
 	return &m.stoppedSig
+}
+
+func (m *manager) populateLicenseFromSecretNoLock() {
+	data, err := ioutil.ReadFile(secretPath)
+	if err != nil {
+		return
+	}
+	license, err := m.decodeLicenseKey((string)(data))
+	if err != nil {
+		log.Errorf("Invalid license data in secret: %s", err)
+		return
+	}
+	deploymentEnvsByClusterID := m.deploymentEnvsMgr.GetDeploymentEnvironmentsByClusterID()
+	info := m.addLicenseNoLock(deploymentEnvsByClusterID, license)
+	if info.GetStatus() == v1.LicenseInfo_VALID {
+		log.Infof("License successfully imported from orchestrator secret")
+	} else {
+		log.Errorf("Imported license but not valid: %s: %s", info.GetStatus(), info.GetStatusReason())
+	}
 }
 
 func (m *manager) populateFromStoreNoLock() error {
@@ -395,6 +418,11 @@ func (m *manager) addLicense(license *licenseData) *v1.LicenseInfo {
 
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
+
+	return m.addLicenseNoLock(deploymentEnvsByClusterID, license)
+}
+
+func (m *manager) addLicenseNoLock(deploymentEnvsByClusterID map[string][]string, license *licenseData) *v1.LicenseInfo {
 
 	m.licenses[license.licenseProto.GetMetadata().GetId()] = license
 	m.dirty[license] = struct{}{}

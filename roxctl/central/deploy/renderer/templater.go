@@ -173,6 +173,8 @@ type Config struct {
 	Password     string
 	PasswordAuto bool
 
+	LicenseData []byte
+
 	SecretsByteMap   map[string][]byte
 	SecretsBase64Map map[string]string
 

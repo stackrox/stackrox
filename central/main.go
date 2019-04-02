@@ -146,11 +146,6 @@ func ensureDB() {
 	}
 }
 
-func verifyValidLicense() bool {
-	// TODO: use license store
-	return false
-}
-
 type invalidLicenseFactory struct {
 }
 

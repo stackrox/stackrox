@@ -34,7 +34,7 @@ function launch_central {
     rm -rf "${unzip_dir}"
     if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
        rm -rf central-bundle "${k8s_dir}/central-bundle"
-       roxctl central generate ${ORCH} ${EXTRA_ARGS[@]} --output-dir="central-bundle" --output-format="${OUTPUT_FORMAT}" --monitoring-password=stackrox \
+       roxctl central generate --license "${k8s_dir}/../common/dev-license.lic" ${ORCH} ${EXTRA_ARGS[@]} --output-dir="central-bundle" --output-format="${OUTPUT_FORMAT}" --monitoring-password=stackrox \
            -i "${MAIN_IMAGE}" --scanner-image "${SCANNER_IMAGE}" --monitoring-persistence-type="${STORAGE}" "${STORAGE}"
        cp -R central-bundle/ "${unzip_dir}/"
        rm -rf central-bundle
@@ -92,7 +92,6 @@ function launch_central {
     wait_for_central "${API_ENDPOINT}"
     echo "Successfully deployed Central!"
     echo "Access the UI at: https://${API_ENDPOINT}"
-    setup_license "${API_ENDPOINT}" "${k8s_dir}/../common/dev-license.lic"
     setup_auth0 "${API_ENDPOINT}"
 }
 

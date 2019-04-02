@@ -58,6 +58,11 @@ secrets:
     data:
       htpasswd: {{index .SecretsBase64Map "htpasswd"}}
   {{end -}}
+  {{if ne (index .SecretsBase64Map "central-license") ""}}
+  centrallicense:
+    data:
+      license.lic: {{index .SecretsBase64Map "central-license"}}
+  {{end -}}
 
   {{if not .K8sConfig.Monitoring.Type.None}}
   monitoring:
