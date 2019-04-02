@@ -26,13 +26,13 @@ func init() {
 				0x9f, 0x9f, 0x2a, 0x4b, 0xf8, 0xd8, 0x70,
 			},
 			validator.SigningKeyRestrictions{
-				EarliestNotValidBefore:        timeutil.MustParse(time.RFC3339, "2019-04-01T00:00:00Z"),
-				LatestNotValidAfter:           timeutil.MustParse(time.RFC3339, "2019-04-12T00:00:00Z"),
-				MaxDuration:                   14 * 24 * time.Hour,
-				AllowOffline:                  true,
-				MaxNodeLimit:                  50,
-				AllowNoBuildFlavorRestriction: true,
-				DeploymentEnvironments:        []string{"docker-for-desktop", "docker-for-mac", "gcp/ultra-current-825", "gcp/stackrox-ci", "gcp/stackrox-dev"},
+				EarliestNotValidBefore:                  timeutil.MustParse(time.RFC3339, "2019-04-01T00:00:00Z"),
+				LatestNotValidAfter:                     timeutil.MustParse(time.RFC3339, "2019-04-12T00:00:00Z"),
+				MaxDuration:                             14 * 24 * time.Hour,
+				AllowOffline:                            true,
+				MaxNodeLimit:                            50,
+				AllowNoBuildFlavorRestriction:           true,
+				AllowNoDeploymentEnvironmentRestriction: true,
 			}),
 	)
 }
