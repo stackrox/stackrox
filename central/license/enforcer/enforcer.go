@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	// enforcementTimeBuffer specifies how long to wait before actually restarting.
-	enforcementTimeBuffer = 2 * time.Second
+	// enforcementTimeBuffer specifies how long to wait before actually restarting. This doesn't need to be super long,
+	// just make sure that the response is delivered to the client before we restart.
+	enforcementTimeBuffer = 1 * time.Second
 
 	// managerGracePeriod specifies how long to wait for the license manager to shut down.
 	managerGracePeriod = 2 * time.Second

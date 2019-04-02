@@ -171,12 +171,22 @@ function setup_license() {
     local local_api_endpoint="$1"
     local license_file="$2"
 
+    local status
+    status="$(curl_central \
+	    -s \
+	    -o /dev/null \
+        "https://${local_api_endpoint}/v1/licenses/list" \
+        -w "%{http_code}\n" || true)"
+    if [[ "$status" == "404" ]]; then
+        echo "Received a 404 response when querying license API. It looks like license enforcement is not enabled."
+        return 0
+    fi
+
     echo "Injecting license ..."
     [[ -f "$license_file" ]] || { echo "License file $license_file not found!" ; return 1 ; }
 
     local tmp="$(mktemp)"
 
-    local status
     status=$(curl_central \
 	    -s \
 	    -o "$tmp" \
@@ -190,7 +200,7 @@ function setup_license() {
     echo "Status: $status"
     [[ "$exit_code" -eq 0 ]] || { echo "Failed to inject license" ; cat "$(tmp)" ; return 1 ; }
     echo "Waiting for central to restart ..."
-    sleep 3
+    sleep 5
     wait_for_central "$local_api_endpoint"
 }
 
