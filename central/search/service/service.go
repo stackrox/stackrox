@@ -157,5 +157,6 @@ func NewService() Service {
 		WithNamespaceStore(namespaceDataStore.Singleton()).
 		WithRoleStore(roleDataStore.Singleton()).
 		WithRoleBindingStore(roleBindingDataStore.Singleton()).
+		WithAggregator(aggregation.Singleton()).
 		Build()
 }

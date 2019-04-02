@@ -24,6 +24,7 @@ import (
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -224,7 +225,10 @@ func RunAutoComplete(queryString string, categories []v1.SearchCategory, searche
 			continue
 		}
 		searcher, ok := searchers[category]
-		if !ok {
+		if searcher == nil {
+			if ok {
+				errorhelpers.PanicOnDevelopmentf("searchers map has an entry for category %v, but the returned searcher was nil", category)
+			}
 			return nil, status.Errorf(codes.InvalidArgument, "Search category '%s' is not implemented", category.String())
 		}
 		results, err := searcher.Search(query)
