@@ -57,6 +57,7 @@ const NetworkGraph = ({
 }) => {
     const [selectedNode, setSelectedNode] = useState();
     const [hoveredNode, setHoveredNode] = useState();
+    const [firstRenderFinished, setFirstRenderFinished] = useState(false);
     const cy = useRef();
     const tippy = useRef();
     const namespacesWithDeployments = {};
@@ -365,16 +366,21 @@ const NetworkGraph = ({
 
     function zoomToFit() {
         if (!cy) return;
-
-        cy.current.fit(null, GRAPH_PADDING);
+        cy.current.fit([], GRAPH_PADDING);
+        const curFitZoom = cy.current.zoom();
+        const curMinZoom = cy.current.minZoom();
+        if (curFitZoom >= MIN_ZOOM) {
+            let newMinZoom = curFitZoom;
+            if (curMinZoom !== MIN_ZOOM) newMinZoom = Math.min(curFitZoom, curMinZoom);
+            cy.current.minZoom(newMinZoom);
+        }
     }
 
     function zoomIn() {
         if (!cy.current) return;
 
         cy.current.zoom({
-            level: Math.max(cy.current.zoom() + ZOOM_STEP, MIN_ZOOM),
-            position: { x: 0, y: 0 }
+            level: Math.max(cy.current.zoom() + ZOOM_STEP, cy.current.minZoom())
         });
         cy.current.center();
     }
@@ -383,8 +389,7 @@ const NetworkGraph = ({
         if (!cy.current) return;
 
         cy.current.zoom({
-            level: Math.min(cy.current.zoom() - ZOOM_STEP, MAX_ZOOM),
-            position: { x: 0, y: 0 }
+            level: Math.min(cy.current.zoom() - ZOOM_STEP, MAX_ZOOM)
         });
         cy.current.center();
     }
@@ -401,6 +406,11 @@ const NetworkGraph = ({
             .on('mouseout', 'node', nodeMouseOutHandler)
             .on('mouseout mousedown', 'node', () => {
                 if (tippy.current) tippy.current.destroy();
+            })
+            .ready(() => {
+                if (firstRenderFinished) return;
+                setFirstRenderFinished(true);
+                zoomToFit();
             });
     }
 
@@ -408,12 +418,7 @@ const NetworkGraph = ({
 
     // Effects
     function handleWindowResize() {
-        window.addEventListener(
-            'resize',
-            debounce(() => {
-                if (cy.current) cy.current.fit(null, GRAPH_PADDING);
-            }, 100)
-        );
+        window.addEventListener('resize', debounce(() => zoomToFit, 100));
 
         const cleanup = () => {
             window.removeEventListener('resize');
