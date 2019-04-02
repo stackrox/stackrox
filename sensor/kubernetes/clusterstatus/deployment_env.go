@@ -8,7 +8,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// getDeploymentEnvironment extracts a "deployment environment" (such as "docker-for-mac" or "gcp/<project>") from a
+// getDeploymentEnvironment extracts a "deployment environment" (such as "docker-for-desktop" or "gcp/<project>") from a
 // node.
 // NOTE: This is only used for license enforcement, and further only for development/CI/QA/demo/... licenses to make
 // them more restricted. As such, we only need to extract those deployment environments that we use/care about.
@@ -27,8 +27,8 @@ func getDeploymentEnvironment(node *v1.Node) string {
 			return fmt.Sprintf("gcp/%s", components[0])
 		}
 	}
-	if node.Spec.ExternalID == "docker-for-mac" {
-		return "docker-for-mac"
+	if node.Spec.ExternalID == "docker-for-desktop" {
+		return "docker-for-desktop"
 	}
 	return "unknown"
 }

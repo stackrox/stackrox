@@ -32,7 +32,7 @@ func init() {
 				AllowOffline:                  true,
 				MaxNodeLimit:                  50,
 				AllowNoBuildFlavorRestriction: true,
-				DeploymentEnvironments:        []string{"docker-for-mac", "gcp/ultra-current-825", "gcp/stackrox-ci", "gcp/stackrox-dev"},
+				DeploymentEnvironments:        []string{"docker-for-desktop", "docker-for-mac", "gcp/ultra-current-825", "gcp/stackrox-ci", "gcp/stackrox-dev"},
 			}),
 	)
 }
