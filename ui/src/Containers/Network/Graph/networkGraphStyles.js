@@ -1,4 +1,5 @@
 const activeColor = 'hsla(214, 74%, 68%, 1)';
+const hoverColor = '#92bae5';
 
 const styles = [
     {
@@ -20,6 +21,24 @@ const styles = [
         }
     },
     {
+        selector: 'node.nsHovered',
+        style: {
+            'background-color': hoverColor,
+            'border-style': 'solid',
+            'border-width': '1px',
+            'border-color': hoverColor
+        }
+    },
+    {
+        selector: 'node.nsSelected',
+        style: {
+            'background-color': activeColor,
+            'border-style': 'solid',
+            'border-width': '1px',
+            'border-color': activeColor
+        }
+    },
+    {
         selector: 'node.active',
         style: {
             'background-color': activeColor,
@@ -28,7 +47,6 @@ const styles = [
             'border-color': activeColor
         }
     },
-
     {
         selector: 'node.nsActive',
         style: {

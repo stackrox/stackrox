@@ -18,7 +18,8 @@ export const types = {
     SET_NETWORK_GRAPH_REF: 'network/SET_NETWORK_GRAPH_REF',
     SET_NETWORK_GRAPH_FILTER_MODE: 'network/SET_NETWORK_GRAPH_FILTER_MODE',
     SET_NETWORK_FLOW_MAPPING: 'network/SET_NETWORK_FLOW_MAPPING',
-    SET_SELECTED_NODE_ID: 'network/SET_SELECTED_NODE_ID',
+    SET_SELECTED_NODE: 'network/SET_SELECTED_NODE',
+    SET_SELECTED_NAMESPACE: 'network/SET_SELECTED_NAMESPACE',
     SELECT_DEFAULT_NETWORK_CLUSTER_ID: 'network/SELECT_DEFAULT_NETWORK_CLUSTER_ID',
     SELECT_NETWORK_CLUSTER_ID: 'network/SELECT_NETWORK_CLUSTER_ID',
     UPDATE_NETWORK_GRAPH_TIMESTAMP: 'network/UPDATE_NETWORK_GRAPH_TIMESTAMP',
@@ -41,7 +42,8 @@ export const actions = {
         type: types.SET_NETWORK_FLOW_MAPPING,
         flowGraph
     }),
-    setSelectedNodeId: id => ({ type: types.SET_SELECTED_NODE_ID, id }),
+    setSelectedNode: node => ({ type: types.SET_SELECTED_NODE, node }),
+    setSelectedNamespace: namespace => ({ type: types.SET_SELECTED_NAMESPACE, namespace }),
     selectDefaultNetworkClusterId: response => ({
         type: types.SELECT_DEFAULT_NETWORK_CLUSTER_ID,
         response
@@ -105,9 +107,16 @@ const networkFlowMapping = (state = {}, action) => {
     return state;
 };
 
-const selectedNodeId = (state = null, action) => {
-    if (action.type === types.SET_SELECTED_NODE_ID) {
-        return action.id;
+const selectedNode = (state = null, action) => {
+    if (action.type === types.SET_SELECTED_NODE) {
+        return action.node;
+    }
+    return state;
+};
+
+const selectedNamespace = (state = null, action) => {
+    if (action.type === types.SET_SELECTED_NAMESPACE) {
+        return action.namespace;
     }
     return state;
 };
@@ -164,7 +173,8 @@ const reducer = combineReducers({
     networkGraphRef,
     networkGraphFilterMode,
     networkFlowMapping,
-    selectedNodeId,
+    selectedNode,
+    selectedNamespace,
     selectedNetworkClusterId,
     networkFlowGraphUpdateKey,
     lastUpdatedTimestamp,
@@ -176,7 +186,8 @@ const reducer = combineReducers({
 const getNetworkGraphRef = state => state.networkGraphRef;
 const getNetworkGraphFilterMode = state => state.networkGraphFilterMode;
 const getNetworkFlowMapping = state => state.networkFlowMapping;
-const getSelectedNodeId = state => state.selectedNodeId;
+const getSelectedNode = state => state.selectedNode;
+const getSelectedNamespace = state => state.selectedNamespace;
 const getSelectedNetworkClusterId = state => state.selectedNetworkClusterId;
 const getNetworkFlowGraphUpdateKey = state => state.networkFlowGraphUpdateKey.key;
 const getLastUpdatedTimestamp = state => state.lastUpdatedTimestamp;
@@ -186,7 +197,8 @@ export const selectors = {
     getNetworkGraphRef,
     getNetworkGraphFilterMode,
     getNetworkFlowMapping,
-    getSelectedNodeId,
+    getSelectedNode,
+    getSelectedNamespace,
     getSelectedNetworkClusterId,
     getNetworkFlowGraphUpdateKey,
     getLastUpdatedTimestamp,

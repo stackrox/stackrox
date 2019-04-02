@@ -191,7 +191,7 @@ function* watchLocation() {
         } else if (pollTask) {
             yield cancel(pollTask);
             pollTask = null;
-            yield put(graphNetworkActions.setSelectedNodeId(null));
+            yield put(graphNetworkActions.setSelectedNode(null));
         }
     }
 }

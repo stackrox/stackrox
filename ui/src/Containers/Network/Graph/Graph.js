@@ -9,9 +9,9 @@ import { actions as pageActions } from 'reducers/network/page';
 import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as deploymentActions } from 'reducers/deployments';
 
-import NoResultsMessage from 'Components/NoResultsMessage';
 import NetworkGraph from 'Components/NetworkGraph';
 import NetworkGraph2 from 'Components/NetworkGraph2';
+import NoResultsMessage from 'Components/NoResultsMessage';
 import wizardStages from '../Wizard/wizardStages';
 import filterModes from './filterModes';
 import Filters from './Overlays/Filters';
@@ -34,12 +34,14 @@ class Graph extends Component {
         networkFlowMapping: PropTypes.shape({}).isRequired,
         networkFlowGraphUpdateKey: PropTypes.number.isRequired,
         networkFlowGraphState: PropTypes.string.isRequired,
-        setSelectedNodeId: PropTypes.func.isRequired,
+        setSelectedNode: PropTypes.func.isRequired,
+        setSelectedNamespace: PropTypes.func.isRequired,
         fetchDeployment: PropTypes.func.isRequired,
         fetchNetworkPolicies: PropTypes.func.isRequired,
 
         setWizardStage: PropTypes.func.isRequired,
         openWizard: PropTypes.func.isRequired,
+        closeWizard: PropTypes.func.isRequired,
 
         isLoading: PropTypes.bool.isRequired,
         setNetworkGraphLoading: PropTypes.func.isRequired,
@@ -58,8 +60,14 @@ class Graph extends Component {
         );
     }
 
+    onNamespaceClick = namespace => {
+        this.props.setSelectedNamespace(namespace);
+        this.props.setWizardStage(wizardStages.namespaceDetails);
+        this.props.openWizard();
+    };
+
     onNodeClick = node => {
-        this.props.setSelectedNodeId(node.deploymentId);
+        this.props.setSelectedNode(node);
         this.props.fetchDeployment(node.deploymentId);
         this.props.fetchNetworkPolicies([...node.policyIds]);
         this.props.setWizardStage(wizardStages.details);
@@ -90,6 +98,8 @@ class Graph extends Component {
                     nodes={nodes}
                     networkFlowMapping={this.props.networkFlowMapping}
                     onNodeClick={this.onNodeClick}
+                    onNamespaceClick={this.onNamespaceClick}
+                    onClickOutside={this.props.closeWizard}
                     filterState={filterState}
                 />
             );
@@ -158,14 +168,16 @@ const mapStateToProps = createStructuredSelector({
 });
 
 const mapDispatchToProps = {
-    setSelectedNodeId: graphActions.setSelectedNodeId,
+    setSelectedNode: graphActions.setSelectedNode,
+    setSelectedNamespace: graphActions.setSelectedNamespace,
     fetchDeployment: deploymentActions.fetchDeployment.request,
     fetchNetworkPolicies: backendActions.fetchNetworkPolicies.request,
 
     openWizard: pageActions.openNetworkWizard,
     setWizardStage: wizardActions.setNetworkWizardStage,
     setNetworkGraphRef: graphActions.setNetworkGraphRef,
-    setNetworkGraphLoading: graphActions.setNetworkGraphLoading
+    setNetworkGraphLoading: graphActions.setNetworkGraphLoading,
+    closeWizard: pageActions.closeNetworkWizard
 };
 
 export default connect(

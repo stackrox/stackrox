@@ -7,6 +7,7 @@ import { selectors } from 'reducers';
 import Details from './Details/Details';
 import Creator from './Creator/Creator';
 import Simulator from './Simulator/Simulator';
+import NamespaceDetails from './NamespaceDetails/NamespaceDetails';
 import NodesUpdateSection from '../Graph/Overlays/NodesUpdateSection';
 import ZoomButtons from '../Graph/Overlays/ZoomButtons';
 
@@ -19,6 +20,7 @@ function Wizard(props) {
             <Details />
             <Creator />
             <Simulator />
+            <NamespaceDetails />
             <ZoomButtons />
         </div>
     );

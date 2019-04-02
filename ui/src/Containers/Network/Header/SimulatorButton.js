@@ -47,7 +47,10 @@ class SimulatorButton extends Component {
 
 const getCreatingOrSimulating = createSelector(
     [selectors.getNetworkWizardOpen, selectors.getNetworkWizardStage],
-    (wizardOpen, wizardStage) => wizardOpen && wizardStage !== wizardStages.details
+    (wizardOpen, wizardStage) =>
+        wizardOpen &&
+        wizardStage !== wizardStages.details &&
+        wizardStage !== wizardStages.namespaceDetails
 );
 
 const mapStateToProps = createStructuredSelector({

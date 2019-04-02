@@ -49,13 +49,17 @@ const NetworkGraph = ({
     nodes,
     networkFlowMapping,
     onNodeClick,
+    onNamespaceClick,
+    onClickOutside,
     filterState,
-    setNetworkGraphRef
+    setNetworkGraphRef,
+    setSelectedNamespace
 }) => {
     const [selectedNode, setSelectedNode] = useState();
     const [hoveredNode, setHoveredNode] = useState();
     const cy = useRef();
     const tippy = useRef();
+    const namespacesWithDeployments = {};
 
     const data = nodes.map(datum => ({
         ...datum,
@@ -127,18 +131,37 @@ const NetworkGraph = ({
         // Get all edges
         links.forEach(linkItem => {
             const { source, target, isActive } = linkItem;
-
+            let modifiedLinkItem = null;
             if (
                 (!nodeId || source === nodeId || target === nodeId) &&
                 (filterState !== filterModes.active || isActive)
             ) {
-                const sourceNS = getNamespace(source);
-                const targetNS = getNamespace(target);
+                let sourceNS = getNamespace(source);
+                let targetNS = getNamespace(target);
+                const temp = sourceNS;
+                if (source === nodeId) {
+                    modifiedLinkItem = Object.assign({}, linkItem);
+                }
+
+                if (target === nodeId) {
+                    sourceNS = targetNS;
+                    targetNS = temp;
+                    modifiedLinkItem = Object.assign(
+                        {},
+                        {
+                            source: nodeId,
+                            target: source,
+                            targetName: linkItem.sourceName,
+                            sourceName: linkItem.targetName
+                        }
+                    );
+                }
+
                 const edge = {
                     data: {
                         sourceNS,
                         targetNS,
-                        ...linkItem
+                        ...modifiedLinkItem
                     },
                     classes: `node ${
                         filterState !== filterModes.allowed && isActive ? 'active' : ''
@@ -165,12 +188,35 @@ const NetworkGraph = ({
         const NSEdges = Object.keys(NSEdgeCounts).map(NSId => {
             const [source, target] = NSId.split(',');
             const count = NSEdgeCounts[NSId];
+            const modifiedData = {
+                source,
+                target,
+                count
+            };
+
+            allEdges.forEach(edge => {
+                if (edge.data.source === nodeId) {
+                    Object.assign(modifiedData, {
+                        source: edge.data.sourceNS,
+                        target: edge.data.targetNS,
+                        targetNS: edge.data.targetNS,
+                        targetId: edge.data.target,
+                        targetName: edge.data.targetName
+                    });
+                }
+
+                if (edge.data.target === nodeId) {
+                    Object.assign(modifiedData, {
+                        source: edge.data.targetNS,
+                        target: edge.data.sourceNS,
+                        targetId: edge.data.source,
+                        targetNS: edge.data.sourceNS,
+                        targetName: edge.data.sourceName
+                    });
+                }
+            });
             return {
-                data: {
-                    source,
-                    target,
-                    count
-                },
+                data: modifiedData,
                 classes: `namespace`
             };
         });
@@ -180,7 +226,7 @@ const NetworkGraph = ({
         return [...nodeEdges, ...NSEdges];
     }
 
-    function getNodes() {
+    function getDeploymentsList() {
         const filteredData = data.filter(datum => datum.entity && datum.entity.deployment);
         const deploymentList = filteredData.map(datum => {
             const { entity, ...datumProps } = datum;
@@ -198,12 +244,18 @@ const NetworkGraph = ({
                     ...entityProps,
                     ...deploymentProps,
                     parent,
+                    edges: getEdgesFromNode(entityProps.id),
                     deploymentId: entityProps.id
                 },
                 classes
             };
         });
+        return deploymentList;
+    }
 
+    function getNodes() {
+        const filteredData = data.filter(datum => datum.entity && datum.entity.deployment);
+        const deploymentList = getDeploymentsList();
         const activeNamespaces = filteredData.reduce((acc, curr) => {
             const nsName = curr.entity.deployment.namespace;
             if (
@@ -221,13 +273,27 @@ const NetworkGraph = ({
             filteredData.map(datum => datum.entity.deployment.namespace)
         ).map(namespace => {
             const active = activeNamespaces.includes(namespace);
+            const hoveredClassName = hoveredNode && hoveredNode.id === namespace ? 'nsHovered' : '';
+            const namespaceClassName =
+                selectedNode && selectedNode.parent === namespace ? 'nsSelected' : hoveredClassName;
             return {
                 data: {
                     id: namespace,
                     active
                 },
-                classes: active ? 'nsActive' : ''
+                classes: active ? 'nsActive' : namespaceClassName
             };
+        });
+
+        namespaceList.forEach(namespace => {
+            deploymentList.forEach(deployment => {
+                if (!namespacesWithDeployments[namespace.data.id]) {
+                    namespacesWithDeployments[namespace.data.id] = [];
+                }
+                if (deployment.data.parent === namespace.data.id) {
+                    namespacesWithDeployments[namespace.data.id].push(deployment);
+                }
+            });
         });
 
         return [...namespaceList, ...deploymentList];
@@ -255,6 +321,10 @@ const NetworkGraph = ({
         setHoveredNode();
     }
 
+    function getNodeData(id) {
+        return getDeploymentsList().filter(node => node.data.deploymentId === id);
+    }
+
     function clickHandler(ev) {
         const currTimeStamp = new Date().getSeconds();
         // prevent handler from being called multiple times
@@ -268,11 +338,17 @@ const NetworkGraph = ({
             (selectedNode && ev.target.data() && ev.target.data().id === selectedNode.id)
         ) {
             setSelectedNode();
+            onClickOutside();
             return;
         }
 
         // Parent Click: Do nothing
         if (ev.target.isParent()) {
+            const { id } = ev.target.data();
+            if (id) {
+                onNamespaceClick({ id, deployments: namespacesWithDeployments[id] || [] });
+                setSelectedNode();
+            }
             return;
         }
 
@@ -280,6 +356,9 @@ const NetworkGraph = ({
         const node = ev.target.data();
         setSelectedNode(node);
         onNodeClick(node);
+        if (!ev.target.isParent()) {
+            setSelectedNamespace(null);
+        }
     }
 
     function zoomToFit() {
@@ -346,7 +425,10 @@ const NetworkGraph = ({
             zoomToFit,
             zoomIn,
             zoomOut,
-            setSelectedNode
+            setSelectedNode,
+            selectedNode,
+            getNodeData,
+            onNodeClick
         });
     }
 
@@ -395,13 +477,17 @@ NetworkGraph.propTypes = {
         })
     ).isRequired,
     networkFlowMapping: PropTypes.shape({}).isRequired,
+    onNamespaceClick: PropTypes.func.isRequired,
     onNodeClick: PropTypes.func.isRequired,
+    onClickOutside: PropTypes.func.isRequired,
     filterState: PropTypes.number.isRequired,
-    setNetworkGraphRef: PropTypes.func.isRequired
+    setNetworkGraphRef: PropTypes.func.isRequired,
+    setSelectedNamespace: PropTypes.func.isRequired
 };
 
 const mapDispatchToProps = {
-    setNetworkGraphRef: graphActions.setNetworkGraphRef
+    setNetworkGraphRef: graphActions.setNetworkGraphRef,
+    setSelectedNamespace: graphActions.setSelectedNamespace
 };
 
 export default connect(

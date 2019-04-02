@@ -2,7 +2,7 @@ const proxy = require('http-proxy-middleware');
 
 module.exports = function main(app) {
     const defaultOptions = {
-        target: process.env.YARN_START_TARGET || 'https://localhost:8000',
+        target: process.env.YARN_START_TARGET || 'https://35.247.72.144',
         changeOrigin: true,
         secure: false
     };

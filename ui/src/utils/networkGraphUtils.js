@@ -115,8 +115,12 @@ export const getLinks = (nodes, networkFlowMapping) => {
                 ) {
                     return;
                 }
-                const { id: tgtDeploymentId } = targetNode.entity;
-                const link = { source: srcDeploymentId, target: tgtDeploymentId };
+                const { id: tgtDeploymentId, deployment } = targetNode.entity;
+                const link = {
+                    source: srcDeploymentId,
+                    target: tgtDeploymentId,
+                    targetName: deployment.name
+                };
                 link.isActive = !!networkFlowMapping[`${srcDeploymentId}--${tgtDeploymentId}`];
                 // Do not draw implicit links between fully non-isolated nodes unless the connection is active.
                 const isImplicit = node.nonIsolatedIngress && targetNode.nonIsolatedEgress;
@@ -131,8 +135,13 @@ export const getLinks = (nodes, networkFlowMapping) => {
             if (!tgtNode || !tgtNode.entity || tgtNode.entity.type !== 'DEPLOYMENT') {
                 return;
             }
-            const { id: tgtDeploymentId } = tgtNode.entity;
-            const link = { source: srcDeploymentId, target: tgtDeploymentId };
+            const { id: tgtDeploymentId, deployment } = tgtNode.entity;
+            const link = {
+                source: srcDeploymentId,
+                target: tgtDeploymentId,
+                sourceName: node.entity.deployment.name,
+                targetName: deployment.name
+            };
             link.isActive = !!networkFlowMapping[`${srcDeploymentId}--${tgtDeploymentId}`];
             filteredLinks.push(link);
         });

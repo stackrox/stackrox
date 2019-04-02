@@ -6,9 +6,10 @@ import CloseButton from './CloseButton';
 export const headerClassName = 'flex w-full h-12 word-break';
 
 const Panel = props => {
+    const titleClassName = props.isUpperCase ? 'uppercase' : 'capitalize';
     const headerText = (
         <div
-            className="flex flex-1 text-base-600 uppercase items-center tracking-wide pl-4 pt-1 leading-normal font-700"
+            className={`flex flex-1 text-base-600 items-center tracking-wide pl-4 pt-1 leading-normal font-700 ${titleClassName}`}
             data-test-id="panel-header"
         >
             {props.header}
@@ -21,6 +22,11 @@ const Panel = props => {
         >
             <div className="border-b border-base-400">
                 <div className={props.headerClassName}>
+                    {props.leftButtons && (
+                        <div className="flex items-center pr-3 relative border-base-400 border-r hover:bg-primary-300 hover:border-primary-300">
+                            {props.leftButtons}
+                        </div>
+                    )}
                     {props.headerTextComponent ? props.headerTextComponent : headerText}
                     <div className="panel-actions relative flex items-center mr-2">
                         {props.buttons}
@@ -57,7 +63,9 @@ Panel.propTypes = {
     onClose: PropTypes.func,
     closeButtonClassName: PropTypes.string,
     closeButtonIconColor: PropTypes.string,
-    headerComponents: PropTypes.element
+    headerComponents: PropTypes.element,
+    leftButtons: PropTypes.node,
+    isUpperCase: PropTypes.bool
 };
 
 Panel.defaultProps = {
@@ -70,7 +78,9 @@ Panel.defaultProps = {
     onClose: null,
     closeButtonClassName: '',
     closeButtonIconColor: '',
-    headerComponents: null
+    headerComponents: null,
+    leftButtons: null,
+    isUpperCase: true
 };
 
 export default Panel;
