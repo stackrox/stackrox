@@ -4,7 +4,14 @@ LABEL "com.vendor"="StackRox (support@stackrox.com)"
 RUN printf "http://apk.rox.systems/v3.9/main\\nhttp://apk.rox.systems/v3.9/community" > /etc/apk/repositories
 
 # Pulled from https://github.com/connorgorman/telegraf/releases with the slimmed down version of telegraf
-RUN wget https://github.com/connorgorman/telegraf/releases/download/1.8.0%2B49-slim/telegraf -O /telegraf && chmod +x /telegraf
+RUN wget -O telegraf https://github.com/connorgorman/telegraf/releases/download/1.8.0%2B49-slim/telegraf && \
+    chmod +x /telegraf
+
+RUN wget -O product-docs.tgz https://storage.googleapis.com/doc-bundles/03c318a8759d13e8ed7611bccd6618dde60d768a345ff3c0a870e60c53bcfbe9/0.0.0-73-g12b831f1.tgz && \
+    tar xzf product-docs.tgz && \
+    mv public /product-docs && \
+    ls /product-docs/index.html && \
+    rm product-docs.tgz
 
 RUN apk update && \
     apk add --no-cache \
