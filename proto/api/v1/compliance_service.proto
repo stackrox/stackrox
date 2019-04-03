@@ -90,7 +90,7 @@ message ComplianceControl {
 }
 
 message ComplianceStandard {
-    ComplianceStandardMetadata metadata    = 1 [(gogoproto.moretags) = "search:\"Control ID,hidden\""];
+    ComplianceStandardMetadata metadata    = 1;
     repeated ComplianceControlGroup groups = 2 [(gogoproto.moretags) = "search:\"-\""];
     repeated ComplianceControl controls    = 3 [(gogoproto.moretags) = "search:\"-\""];
 }
