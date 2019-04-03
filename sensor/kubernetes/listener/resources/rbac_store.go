@@ -77,10 +77,13 @@ func (rs *rbacStore) addOrUpdateRoleBinding(roleBinding *storage.K8SRoleBinding,
 	}
 
 	if roleBindingMap == nil {
+		roleBindingMap = make(map[string][]*storage.K8SRoleBinding)
+
 		if roleBinding.ClusterScope {
-			rs.clusterRoleToBinding[roleBinding.GetNamespace()] = make(map[string][]*storage.K8SRoleBinding)
+			rs.clusterRoleToBinding[roleBinding.GetNamespace()] = roleBindingMap
 		} else {
-			rs.roleToBinding[roleBinding.GetNamespace()] = make(map[string][]*storage.K8SRoleBinding)
+			rs.roleToBinding[roleBinding.GetNamespace()] = roleBindingMap
+
 		}
 	}
 
