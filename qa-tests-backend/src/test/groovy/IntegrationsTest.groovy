@@ -3,7 +3,9 @@ import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.NotifierOuterClass
 
 import groups.BAT
+import groups.Integration
 import org.junit.experimental.categories.Category
+import services.NotifierService
 import spock.lang.Unroll
 import objects.Deployment
 
@@ -97,55 +99,108 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
 
     @Category(BAT)
     def "Verify Splunk Integration"() {
-       when:
+        when:
         "the integration is tested"
 
         Deployment  deployment =
-               new Deployment()
-                       .setNamespace("stackrox")
-                       .setName("splunk")
-                       .setImage("store/splunk/enterprise:latest")
-                       .addPort (8000)
-                       .addPort (8088)
-                       .addAnnotation("test", "annotation")
-                       .setEnv([ "SPLUNK_START_ARGS": "--accept-license", "SPLUNK_USER": "root" ])
-                       .addLabel("app", "splunk")
-                       .setPrivilegedFlag(true)
-                       .addVolume("test", "/tmp")
-                       .setSkipReplicaWait(true)
-                       .addImagePullSecret("stackrox")
+            new Deployment()
+                .setNamespace("stackrox")
+                .setName("splunk")
+                .setImage("store/splunk/enterprise:latest")
+                .addPort (8000)
+                .addPort (8088)
+                .addAnnotation("test", "annotation")
+                .setEnv([ "SPLUNK_START_ARGS": "--accept-license", "SPLUNK_USER": "root" ])
+                .addLabel("app", "splunk")
+                .setPrivilegedFlag(true)
+                .addVolume("test", "/tmp")
+                .setSkipReplicaWait(true)
+                .addImagePullSecret("stackrox")
 
         orchestrator.createDeployment(deployment)
 
-        Deployment serviceDeployment = new Deployment()
-               .addLabel("app", "splunk")
-               .setCreateLoadBalancer(true)
-               .setNamespace("stackrox")
-               .setName("splunk")
-               .setTargetPort(8000)
-               .addPort(8000, "TCP")
-               .setServiceName("splunk-http")
+        Deployment serviceDeployment =
+            new Deployment()
+                .addLabel("app", "splunk")
+                .setCreateLoadBalancer(true)
+                .setNamespace("stackrox")
+                .setName("splunk")
+                .setTargetPort(8000)
+                .addPort(8000, "TCP")
+                .setServiceName("splunk-http")
 
         orchestrator.createService(serviceDeployment)
 
-        Deployment serviceDeploymentHec = new Deployment()
-               .addLabel("app" , "splunk")
-               .setCreateLoadBalancer(true)
-               .setNamespace("stackrox")
-               .setName("splunk")
-               .setTargetPort(8088)
-               .addPort(8088, "TCP")
-               .setServiceName("splunk-hec")
+        Deployment serviceDeploymentHec =
+            new Deployment()
+                .addLabel("app" , "splunk")
+                .setCreateLoadBalancer(true)
+                .setNamespace("stackrox")
+                .setName("splunk")
+                .setTargetPort(8088)
+                .addPort(8088, "TCP")
+                .setServiceName("splunk-hec")
 
         orchestrator.createService(serviceDeploymentHec)
 
- then : "the API should return an empty message or an error, depending on the config"
+        then :
+        "the API should return an empty message or an error, depending on the config"
 
-      cleanup:
+        cleanup:
         "remove Deployment and services"
-        orchestrator.deleteDeployment(deployment)
+        if (deployment != null) {
+            orchestrator.deleteDeployment(deployment)
+        }
         orchestrator.deleteService( "splunk-hec", "stackrox")
         orchestrator.deleteService( "splunk-http", "stackrox")
+    }
+
+    @Category(Integration)
+    def "Verify PagerDuty Integration"() {
+        when:
+        "Add PagerDuty integration and test it"
+        NotifierOuterClass.Notifier notifier = NotifierService.addPagerDutyNotifier("pdTest")
+        Boolean response = NotifierService.testNotifier(notifier)
+        assert response
+
+        and:
+        "Get current the incidents' number from the PagerDuty"
+        int preNum = NotifierService.getFirstPagerDutyIncident().incidents[0].incident_number
+
+        and:
+        "Binding the notifier with the policy"
+        def policy = Services.getPolicyByName("Latest tag")
+        def updatedPolicy = PolicyOuterClass.Policy.newBuilder(policy).addNotifiers(notifier.getId()).build()
+        Services.updatePolicy(updatedPolicy)
+
+        and:
+        "Create a new deployment to trigger the policy"
+        Deployment  deployment =
+                new Deployment()
+                        .setName ("pgtest")
+                        .setImage ("nginx:latest")
+                        .addPort (22)
+                        .addLabel ("app", "test")
+        orchestrator.createDeployment(deployment)
+        assert Services.waitForViolation("pgtest", "Latest tag", 30)
+
+        and:
+        "Get current the first incident from the PagerDuty"
+        def firIncident = NotifierService.waitForPagerDutyUpdate(preNum)
+
+        then:
+        "Verify a new incident is triggered and it contains the latest tag alert information"
+        assert firIncident != null
+        assert firIncident.incidents[0].description.contains("Alert on deployments with images using tag 'latest'")
+
+        cleanup:
+        "remove Deployment and service"
+        if (deployment != null) {
+            orchestrator.deleteDeployment(deployment)
+        }
+        if (notifier != null) {
+            NotifierService.deleteNotifier(notifier.getId())
+        }
     }
 
     @Unroll
@@ -196,7 +251,7 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         "We should check to make sure we got a value"
         assert Services.waitForViolation(BUSYBOX, "Latest tag", 30)
 
-        def get = new URL("http://localhost:8080").openConnection();
+        def get = new URL("http://localhost:8080").openConnection()
         def jsonSlurper = new JsonSlurper()
         def object = jsonSlurper.parseText(get.getInputStream().getText())
         def generic = object[-1]
@@ -209,7 +264,11 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         assert generic["data"]["alert"]["deployment"]["name"] == BUSYBOX
 
         cleanup:
-        Services.deleteNotifier(notifierId)
-        orchestrator.deleteDeployment(deployment)
+        if (notifier != null) {
+            Services.deleteNotifier(notifierId)
+        }
+        if (deployment != null) {
+            orchestrator.deleteDeployment(deployment)
+        }
     }
 }
