@@ -2,9 +2,9 @@ package service
 
 import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/enrichanddetect"
 	"github.com/stackrox/rox/central/imageintegration"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
+	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -20,7 +20,7 @@ func initialize() {
 		imageintegration.ToNotify(),
 		datastore.Singleton(),
 		clusterDatastore.Singleton(),
-		enrichanddetect.GetLoop())
+		reprocessor.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

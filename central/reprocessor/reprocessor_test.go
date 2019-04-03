@@ -1,14 +1,12 @@
-package enrichanddetect
+package reprocessor
 
 import (
 	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
-	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	enrichAndDetectorMocks "github.com/stackrox/rox/central/enrichanddetect/mocks"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -18,15 +16,14 @@ func TestLoop(t *testing.T) {
 
 type loopTestSuite struct {
 	suite.Suite
-	mockDeployments *deploymentMocks.MockDataStore
-	mockEnricher    *enrichAndDetectorMocks.MockEnricherAndDetector
-	mockCtrl        *gomock.Controller
+	mockCtrl *gomock.Controller
+
+	mockManager *connectionMocks.MockManager
 }
 
 func (suite *loopTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.mockDeployments = deploymentMocks.NewMockDataStore(suite.mockCtrl)
-	suite.mockEnricher = enrichAndDetectorMocks.NewMockEnricherAndDetector(suite.mockCtrl)
+	suite.mockManager = connectionMocks.NewMockManager(suite.mockCtrl)
 }
 
 func (suite *loopTestSuite) TearDownTest() {
@@ -34,25 +31,23 @@ func (suite *loopTestSuite) TearDownTest() {
 }
 
 func (suite *loopTestSuite) expectCalls(times int, allowMore bool) {
-	deployment := fixtures.GetDeployment()
 	timesSpec := (*gomock.Call).Times
 	if allowMore {
 		timesSpec = (*gomock.Call).MinTimes
 	}
-	timesSpec(suite.mockDeployments.EXPECT().GetDeployments(), times).Return([]*storage.Deployment{deployment}, nil)
-	timesSpec(suite.mockEnricher.EXPECT().EnrichAndDetect(deployment), times).Return(nil)
+	timesSpec(suite.mockManager.EXPECT().GetActiveConnections(), times).Return([]connection.SensorConnection{})
 }
 
 func (suite *loopTestSuite) TestTimerDoesNotTick() {
-	loop := NewLoop(suite.mockEnricher, suite.mockDeployments)
+	loop := NewLoop(suite.mockManager)
 	loop.Start()
 	loop.Stop()
-	suite.mockEnricher.EXPECT().EnrichAndDetect(gomock.Any()).MaxTimes(0)
+	suite.mockManager.EXPECT().GetActiveConnections().MaxTimes(0)
 }
 
 func (suite *loopTestSuite) TestTimerTicksOnce() {
 	duration := 1 * time.Second // Need this to be long enough that the ticker won't get called twice during the test.
-	loop := newLoopWithDuration(suite.mockEnricher, suite.mockDeployments, duration)
+	loop := newLoopWithDuration(suite.mockManager, duration)
 	suite.expectCalls(1, false)
 	loop.Start()
 	time.Sleep(duration + 10*time.Millisecond)
@@ -61,7 +56,7 @@ func (suite *loopTestSuite) TestTimerTicksOnce() {
 
 func (suite *loopTestSuite) TestTimerTicksTwice() {
 	duration := 100 * time.Millisecond
-	loop := newLoopWithDuration(suite.mockEnricher, suite.mockDeployments, duration)
+	loop := newLoopWithDuration(suite.mockManager, duration)
 	suite.expectCalls(2, true)
 	loop.Start()
 	time.Sleep((2 * duration) + (10 * time.Millisecond))
@@ -69,7 +64,7 @@ func (suite *loopTestSuite) TestTimerTicksTwice() {
 }
 
 func (suite *loopTestSuite) TestShortCircuitOnce() {
-	loop := NewLoop(suite.mockEnricher, suite.mockDeployments)
+	loop := NewLoop(suite.mockManager)
 	suite.expectCalls(1, false)
 	loop.Start()
 	go loop.ShortCircuit()
@@ -79,7 +74,7 @@ func (suite *loopTestSuite) TestShortCircuitOnce() {
 }
 
 func (suite *loopTestSuite) TestShortCircuitTwice() {
-	loop := NewLoop(suite.mockEnricher, suite.mockDeployments)
+	loop := NewLoop(suite.mockManager)
 	suite.expectCalls(2, false)
 	loop.Start()
 	go loop.ShortCircuit()
@@ -90,7 +85,7 @@ func (suite *loopTestSuite) TestShortCircuitTwice() {
 }
 
 func (suite *loopTestSuite) TestStopWorks() {
-	loop := NewLoop(suite.mockEnricher, suite.mockDeployments)
+	loop := NewLoop(suite.mockManager)
 	suite.expectCalls(1, false)
 	loop.Start()
 	go loop.ShortCircuit()

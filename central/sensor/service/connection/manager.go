@@ -7,13 +7,15 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 )
 
-type checkInRecorder interface {
+// CheckInRecorder updates the cluster contact time
+type CheckInRecorder interface {
 	UpdateClusterContactTime(clusterID string, time time.Time) error
 }
 
 // Manager is responsible for managing all active connections from sensors.
+//go:generate mockgen-wrapper Manager
 type Manager interface {
-	HandleConnection(clusterID string, pf pipeline.Factory, server central.SensorService_CommunicateServer, recorder checkInRecorder) error
+	HandleConnection(clusterID string, pf pipeline.Factory, server central.SensorService_CommunicateServer, recorder CheckInRecorder) error
 	GetConnection(clusterID string) SensorConnection
 
 	GetActiveConnections() []SensorConnection

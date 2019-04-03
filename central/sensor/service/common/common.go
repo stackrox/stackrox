@@ -29,6 +29,8 @@ func GetMessageType(msg *central.MsgFromSensor) string {
 		return "ClusterStatusUpdate"
 	case *central.MsgFromSensor_NetworkPoliciesResponse:
 		return "NetworkPoliciesResponse"
+	case *central.MsgFromSensor_ReprocessDeployments:
+		return "ReprocessDeployments"
 	default:
 		errorhelpers.PanicOnDevelopmentf("Unknown message type: %T", t)
 		return "Unknown"

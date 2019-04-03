@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/enrichanddetect"
 	"github.com/stackrox/rox/central/imageintegration"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -35,7 +35,7 @@ func GetPipeline() pipeline.Fragment {
 		imageintegration.ToNotify(),
 		datastore.Singleton(),
 		clusterDatastore.Singleton(),
-		enrichanddetect.GetLoop())
+		reprocessor.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
@@ -44,7 +44,7 @@ func NewPipeline(registryFactory registries.Factory,
 	toNotify integration.ToNotify,
 	datastore datastore.DataStore,
 	clusterDatastore clusterDatastore.DataStore,
-	enrichAndDetectLoop enrichanddetect.Loop) pipeline.Fragment {
+	enrichAndDetectLoop reprocessor.Loop) pipeline.Fragment {
 	return &pipelineImpl{
 		registryFactory:     registryFactory,
 		scannerFactory:      scannerFactory,
@@ -62,7 +62,7 @@ type pipelineImpl struct {
 
 	datastore           datastore.DataStore
 	clusterDatastore    clusterDatastore.DataStore
-	enrichAndDetectLoop enrichanddetect.Loop
+	enrichAndDetectLoop reprocessor.Loop
 }
 
 func (s *pipelineImpl) Reconcile(clusterID string) error {

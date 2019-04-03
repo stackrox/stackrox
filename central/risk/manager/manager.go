@@ -23,9 +23,7 @@ type Manager interface {
 	UpdateMultiplier(multiplier *storage.Multiplier)
 	RemoveMultiplier(id string)
 
-	ReprocessRisk()
 	ReprocessDeploymentRisk(deployment *storage.Deployment)
-	ReprocessRiskForDeployments(deploymentIDs ...string)
 }
 
 type managerImpl struct {

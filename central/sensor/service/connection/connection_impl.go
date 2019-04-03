@@ -29,11 +29,11 @@ type sensorConnection struct {
 	eventQueue    *dedupingQueue
 	eventPipeline pipeline.ClusterPipeline
 
-	checkInRecorder          checkInRecorder
+	checkInRecorder          CheckInRecorder
 	checkInRecordRateLimiter *rate.Limiter
 }
 
-func newConnection(clusterID string, pf pipeline.Factory, recorder checkInRecorder) (*sensorConnection, error) {
+func newConnection(clusterID string, pf pipeline.Factory, recorder CheckInRecorder) (*sensorConnection, error) {
 	eventPipeline, err := pf.PipelineForCluster(clusterID)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating event pipeline")
@@ -116,6 +116,10 @@ func (c *sensorConnection) runSend(server central.SensorService_CommunicateServe
 
 func (c *sensorConnection) Scrapes() scrape.Controller {
 	return c.scrapeCtrl
+}
+
+func (c *sensorConnection) InjectMessageIntoQueue(msg *central.MsgFromSensor) {
+	c.eventQueue.push(msg)
 }
 
 func (c *sensorConnection) NetworkPolicies() networkpolicies.Controller {

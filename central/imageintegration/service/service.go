@@ -4,8 +4,8 @@ import (
 	"context"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/enrichanddetect"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
+	"github.com/stackrox/rox/central/reprocessor"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/images/integration"
@@ -33,13 +33,13 @@ func New(registryFactory registries.Factory,
 	toNotify integration.ToNotify,
 	datastore datastore.DataStore,
 	clusterDatastore clusterDatastore.DataStore,
-	enrichAndDetectLoop enrichanddetect.Loop) Service {
+	reprocessorLoop reprocessor.Loop) Service {
 	return &serviceImpl{
-		registryFactory:     registryFactory,
-		scannerFactory:      scannerFactory,
-		toNotify:            toNotify,
-		datastore:           datastore,
-		clusterDatastore:    clusterDatastore,
-		enrichAndDetectLoop: enrichAndDetectLoop,
+		registryFactory:  registryFactory,
+		scannerFactory:   scannerFactory,
+		toNotify:         toNotify,
+		datastore:        datastore,
+		clusterDatastore: clusterDatastore,
+		reprocessorLoop:  reprocessorLoop,
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/nodes"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/processindicators"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/reprocessing"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/rolebindings"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/roles"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/secrets"
@@ -42,5 +43,6 @@ func (s *factoryImpl) PipelineForCluster(clusterID string) (pipeline.ClusterPipe
 		serviceaccounts.GetPipeline(),
 		roles.GetPipeline(),
 		rolebindings.GetPipeline(),
+		reprocessing.GetPipeline(),
 	), nil
 }

@@ -6,8 +6,8 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
-	"github.com/stackrox/rox/central/enrichanddetect"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
+	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -49,9 +49,9 @@ type serviceImpl struct {
 	scannerFactory  scanners.Factory
 	toNotify        integration.ToNotify
 
-	datastore           datastore.DataStore
-	clusterDatastore    clusterDatastore.DataStore
-	enrichAndDetectLoop enrichanddetect.Loop
+	datastore        datastore.DataStore
+	clusterDatastore clusterDatastore.DataStore
+	reprocessorLoop  reprocessor.Loop
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -136,7 +136,7 @@ func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *storage.
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	go s.enrichAndDetectLoop.ShortCircuit()
+	go s.reprocessorLoop.ShortCircuit()
 	return &v1.Empty{}, nil
 }
 
@@ -168,7 +168,7 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	go s.enrichAndDetectLoop.ShortCircuit()
+	go s.reprocessorLoop.ShortCircuit()
 	return request, nil
 }
 

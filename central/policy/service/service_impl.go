@@ -11,10 +11,10 @@ import (
 	"github.com/stackrox/rox/central/deployment/index/mappings"
 	imageDetection "github.com/stackrox/rox/central/detection/image"
 	"github.com/stackrox/rox/central/detection/lifecycle"
-	"github.com/stackrox/rox/central/enrichanddetect"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
+	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -68,13 +68,13 @@ type serviceImpl struct {
 	clusters    clusterDataStore.DataStore
 	deployments deploymentDataStore.DataStore
 	processes   processDataStore.DataStore
+	reprocessor reprocessor.Loop
 
-	buildTimePolicies   imageDetection.PolicySet
-	lifecycleManager    lifecycle.Manager
-	processor           notifierProcessor.Processor
-	enricherAndDetector enrichanddetect.EnricherAndDetector
-	metadataCache       expiringcache.Cache
-	scanCache           expiringcache.Cache
+	buildTimePolicies imageDetection.PolicySet
+	lifecycleManager  lifecycle.Manager
+	processor         notifierProcessor.Processor
+	metadataCache     expiringcache.Cache
+	scanCache         expiringcache.Cache
 
 	validator *policyValidator
 }
@@ -231,11 +231,7 @@ func (s *serviceImpl) ReassessPolicies(context.Context, *v1.Empty) (*v1.Empty, e
 	s.metadataCache.Purge()
 	s.scanCache.Purge()
 
-	deployments, err := s.deployments.GetDeployments()
-	if err != nil {
-		return &v1.Empty{}, err
-	}
-	go s.reprocessDeployments(deployments)
+	go s.reprocessor.ShortCircuit()
 	return &v1.Empty{}, nil
 }
 
@@ -347,14 +343,6 @@ func (s *serviceImpl) getPolicyCategorySet() (categorySet set.StringSet, err err
 		}
 	}
 	return
-}
-
-func (s *serviceImpl) reprocessDeployments(deployments []*storage.Deployment) {
-	for _, deployment := range deployments {
-		if err := s.enricherAndDetector.EnrichAndDetect(deployment); err != nil {
-			log.Errorf("Failed to enrich deployment %s/%s/%s/: %v", deployment.GetClusterName(), deployment.GetNamespace(), deployment.GetName(), err)
-		}
-	}
 }
 
 func (s *serviceImpl) addActivePolicy(policy *storage.Policy) error {

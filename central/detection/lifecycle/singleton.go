@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/enrichment"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	"github.com/stackrox/rox/central/reprocessor"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -20,7 +21,7 @@ var (
 func initialize() {
 	manager = NewManager(enrichment.Singleton(), deploytime.SingletonDetector(), runtime.SingletonDetector(),
 		deploymentDatastore.Singleton(), processDatastore.Singleton(), imageDataStore.Singleton(), alertmanager.Singleton(),
-		riskManager.Singleton())
+		riskManager.Singleton(), reprocessor.Singleton())
 }
 
 // SingletonManager returns the manager instance.

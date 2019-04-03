@@ -30,7 +30,7 @@ func (m *manager) GetConnection(clusterID string) SensorConnection {
 	return conn
 }
 
-func (m *manager) HandleConnection(clusterID string, pf pipeline.Factory, server central.SensorService_CommunicateServer, recorder checkInRecorder) error {
+func (m *manager) HandleConnection(clusterID string, pf pipeline.Factory, server central.SensorService_CommunicateServer, recorder CheckInRecorder) error {
 	conn, err := newConnection(clusterID, pf, recorder)
 
 	if err != nil {

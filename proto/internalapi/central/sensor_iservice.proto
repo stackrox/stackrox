@@ -8,6 +8,18 @@ import "internalapi/central/sensor_events.proto";
 
 package central;
 
+message ReprocessDeployments {
+    message AllTarget  {}
+    message RiskTarget {}
+
+    repeated string deployment_ids = 1;
+    oneof Target {
+        AllTarget  all   = 2;
+        RiskTarget risk  = 3;
+    }
+
+}
+
 message MsgFromSensor {
     oneof msg {
         SensorEvent                  event                           = 1;
@@ -15,6 +27,7 @@ message MsgFromSensor {
         ScrapeUpdate                 scrape_update                   = 3;
         NetworkPoliciesResponse      network_policies_response       = 4;
         ClusterStatusUpdate          cluster_status_update           = 5;
+        ReprocessDeployments         reprocess_deployments           = 6;
     }
 }
 

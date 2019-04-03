@@ -29,7 +29,6 @@ import (
 	detectionService "github.com/stackrox/rox/central/detection/service"
 	developmentService "github.com/stackrox/rox/central/development/service"
 	"github.com/stackrox/rox/central/docs"
-	"github.com/stackrox/rox/central/enrichanddetect"
 	"github.com/stackrox/rox/central/globaldb"
 	globaldbHandlers "github.com/stackrox/rox/central/globaldb/handlers"
 	graphqlHandler "github.com/stackrox/rox/central/graphql/handler"
@@ -56,6 +55,7 @@ import (
 	policyService "github.com/stackrox/rox/central/policy/service"
 	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
+	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
@@ -181,7 +181,7 @@ func (defaultFactory) StartServices() {
 	if err := complianceManager.Singleton().Start(); err != nil {
 		log.Panicf("could not start compliance manager: %v", err)
 	}
-	enrichanddetect.GetLoop().Start()
+	reprocessor.Singleton().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -333,7 +333,7 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 				} else {
 					log.Infof("Registered integration %q", integration.Integration.GetName())
 				}
-				enrichanddetect.GetLoop().ShortCircuit()
+				reprocessor.Singleton().ShortCircuit()
 			} else {
 				log.Errorf("Unable to register integration %q: %v", integration.Integration.GetName(), err)
 			}
@@ -463,7 +463,7 @@ func waitForTerminationSignal() {
 	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-signalsC
 	log.Infof("Caught %s signal", sig)
-	enrichanddetect.GetLoop().Stop()
+	reprocessor.Singleton().Stop()
 	globaldb.Close()
 	log.Infof("Central terminated")
 	return

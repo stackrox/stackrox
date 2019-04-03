@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/central/scrape"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/common"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 )
 
@@ -21,4 +22,6 @@ type SensorConnection interface {
 	NetworkPolicies() networkpolicies.Controller
 
 	ClusterID() string
+
+	InjectMessageIntoQueue(msg *central.MsgFromSensor)
 }

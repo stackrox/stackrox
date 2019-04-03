@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	"github.com/stackrox/rox/central/reprocessor"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -32,6 +33,7 @@ type indicatorWithInjector struct {
 }
 
 type managerImpl struct {
+	reprocessor        reprocessor.Loop
 	enricher           enrichment.Enricher
 	riskManager        riskManager.Manager
 	runtimeDetector    runtime.Detector
@@ -105,7 +107,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 	if err != nil {
 		log.Errorf("Couldn't alert and notify: %s", err)
 	} else if modified {
-		defer m.riskManager.ReprocessRiskForDeployments(deploymentIDs...)
+		defer m.reprocessor.ReprocessRiskForDeployments(deploymentIDs...)
 	}
 
 	containersSet := containersToKill(newAlerts, copiedQueue)
@@ -177,7 +179,7 @@ func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string,
 		}
 	}
 
-	// Asynchronously update risk after processing.
+	// Update risk after processing.
 	defer m.riskManager.ReprocessDeploymentRisk(deployment)
 
 	presentAlerts, err := m.deploytimeDetector.AlertsForDeployment(deployment)
@@ -197,7 +199,7 @@ func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string,
 
 func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 	// Asynchronously update all deployments' risk after processing.
-	defer m.riskManager.ReprocessRisk()
+	defer m.reprocessor.ReprocessRisk()
 
 	var presentAlerts []*storage.Alert
 
