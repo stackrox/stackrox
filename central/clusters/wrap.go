@@ -24,6 +24,7 @@ import (
 const (
 	defaultMonitoringPort = 8186
 	prodMainRegistry      = "stackrox.io"
+	prodRedHatRegistry    = "registry.connect.redhat.com"
 	prodCollectorRegistry = "collector.stackrox.io"
 )
 
@@ -69,7 +70,7 @@ func generateCollectorImageFromMainImage(mainImageName *storage.ImageName, tag s
 	}
 	// Populate Registry
 	collectorName.Registry = mainImageName.GetRegistry()
-	if mainImageName.GetRegistry() == prodMainRegistry {
+	if mainImageName.GetRegistry() == prodMainRegistry || mainImageName.GetRegistry() == prodRedHatRegistry {
 		collectorName.Registry = prodCollectorRegistry
 	}
 	// Populate Remote

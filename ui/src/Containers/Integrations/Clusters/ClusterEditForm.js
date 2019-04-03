@@ -6,6 +6,9 @@ import { clusterFormId, clusterTypes } from 'reducers/clusters';
 import FormField from 'Components/FormField';
 import ReduxTextField from 'Components/forms/ReduxTextField';
 import ReduxCheckboxField from 'Components/forms/ReduxCheckboxField';
+import { connect } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
+import { selectors } from 'reducers';
 
 const CommonFields = () => (
     <React.Fragment>
@@ -96,23 +99,26 @@ const ConnectedForm = reduxForm({ form: clusterFormId })(ClusterEditForm);
 
 const initialValuesFactories = {
     OPENSHIFT_CLUSTER: {
-        mainImage: `stackrox.io/main`,
-        centralApiEndpoint: 'central.stackrox:443',
-        monitoringEndpoint: 'monitoring.stackrox:443',
-        runtimeSupport: true
-    },
-    KUBERNETES_CLUSTER: {
-        mainImage: `stackrox.io/main`,
         centralApiEndpoint: 'central.stackrox:443',
         monitoringEndpoint: 'monitoring.stackrox:443',
         runtimeSupport: true,
+        collectorImage: `collector.stackrox.io/collector`
+    },
+    KUBERNETES_CLUSTER: {
+        centralApiEndpoint: 'central.stackrox:443',
+        monitoringEndpoint: 'monitoring.stackrox:443',
+        runtimeSupport: true,
+        collectorImage: `collector.stackrox.io/collector`,
         admissionController: false
     }
 };
 
-const FormWrapper = ({ clusterType, initialValues }) => {
+const FormWrapper = ({ clusterType, initialValues, metadata }) => {
+    const { releaseBuild } = metadata;
     const combinedInitialValues = {
         ...initialValuesFactories[clusterType],
+        mainImage: releaseBuild ? 'stackrox.io/main' : 'stackrox/main',
+        collectorImage: releaseBuild ? 'collector.stackrox.io/collector' : 'stackrox/collector',
         type: clusterType,
         ...initialValues // passed initial values can override anything
     };
@@ -121,11 +127,16 @@ const FormWrapper = ({ clusterType, initialValues }) => {
 };
 FormWrapper.propTypes = {
     clusterType: PropTypes.oneOf(clusterTypes).isRequired,
-    metadata: PropTypes.shape({ version: PropTypes.string }).isRequired,
+    metadata: PropTypes.shape({ version: PropTypes.string, releaseBuild: PropTypes.bool })
+        .isRequired,
     initialValues: PropTypes.shape({})
 };
 FormWrapper.defaultProps = {
     initialValues: {}
 };
 
-export default FormWrapper;
+const mapStateToProps = createStructuredSelector({
+    metadata: selectors.getMetadata
+});
+
+export default connect(mapStateToProps)(FormWrapper);
