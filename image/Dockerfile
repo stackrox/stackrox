@@ -1,8 +1,6 @@
 FROM alpine:3.9
 LABEL "com.vendor"="StackRox (support@stackrox.com)"
 
-RUN printf "http://apk.rox.systems/v3.9/main\\nhttp://apk.rox.systems/v3.9/community" > /etc/apk/repositories
-
 # Pulled from https://github.com/connorgorman/telegraf/releases with the slimmed down version of telegraf
 RUN wget -O telegraf https://github.com/connorgorman/telegraf/releases/download/1.8.0%2B49-slim/telegraf && \
     chmod +x /telegraf
