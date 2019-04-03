@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCASetup(t *testing.T) {
@@ -47,13 +48,11 @@ func TestCASetup(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.url, func(t *testing.T) {
-			a := assert.New(t)
-
 			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 			defer cancel()
 			resp, err := service.URLHasValidCert(ctx, &central.URLHasValidCertRequest{Url: c.url})
-			a.NoError(err)
-			a.Equal(c.expectedResp, resp.Result, "received resp: %+v. %s", resp, c.additionalMessage)
+			require.NoError(t, err)
+			assert.Equal(t, c.expectedResp, resp.GetResult(), "received resp: %+v. %s", resp, c.additionalMessage)
 		})
 	}
 }
