@@ -4,11 +4,17 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"net"
 	"strings"
+	"time"
 
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
+)
+
+const (
+	timeout = 500 * time.Millisecond
 )
 
 // CheckTLS checks if the address is using TLS
@@ -25,7 +31,11 @@ func CheckTLS(origAddr string) (bool, error) {
 			port = "443"
 		}
 	}
-	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%s", host, port), nil)
+
+	dialer := &net.Dialer{
+		Timeout: timeout,
+	}
+	conn, err := tls.DialWithDialer(dialer, "tcp", fmt.Sprintf("%s:%s", host, port), nil)
 	if err != nil {
 		switch err.(type) {
 		case x509.CertificateInvalidError, x509.HostnameError, x509.UnknownAuthorityError, tls.RecordHeaderError:
