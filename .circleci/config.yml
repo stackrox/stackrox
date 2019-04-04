@@ -10,7 +10,9 @@ setupBazel: &setupBazel
   run:
     name: Setup Bazel cache access and bazel.rc
     command: |
-      echo "$GKE_SERVICE_ACCOUNT" > /tmp/gcp.json
+      touch /tmp/gcp.json
+      chmod 0600 /tmp/gcp.json
+      echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" >/tmp/gcp.json
       cp tools/ci-bazel.rc .bazelrc
 
 depCacheKey: &depCacheKey 'v1-rox-go-pkg-dep-{{ checksum "Gopkg.lock" }}'
@@ -83,8 +85,8 @@ setupGCP: &setupGCP
         echo 'export MAIN_IMAGE_REPO=stackrox/main-rhel' >> "${BASH_ENV}"
       fi
 
-      echo $GKE_SERVICE_ACCOUNT > /tmp/gcp.json
-      gcloud auth activate-service-account --key-file /tmp/gcp.json
+      gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
+      gcloud auth list
       gcloud config set project stackrox-ci
       gcloud config set compute/region us-central1
       gcloud config unset compute/zone
@@ -102,7 +104,7 @@ deployGKE: &deployGKE
   run:
     name: Deploy to remote cluster
     command: |
-      kubectl create clusterrolebinding temporary-admin --clusterrole=cluster-admin --user circleci-gke@ultra-current-825.iam.gserviceaccount.com
+      kubectl create clusterrolebinding temporary-admin --clusterrole=cluster-admin --user circleci-rox@stackrox-ci.iam.gserviceaccount.com
       ./deploy/k8s/deploy.sh
       kubectl delete clusterrolebinding temporary-admin
 
@@ -969,7 +971,7 @@ jobs:
           command: |
             docker run --rm -t \
               -v $PWD/openshift:/data \
-              -e GOOGLE_CREDENTIALS="$OPENSHIFT_TERRAFORM_CREDENTIALS" \
+              -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
               stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION create "${CIRCLE_SHA1:0:7}"
 
       - store_artifacts:
@@ -1004,7 +1006,7 @@ jobs:
           command: |
             docker run --rm -t \
               -v $PWD/openshift:/data \
-              -e GOOGLE_CREDENTIALS="$OPENSHIFT_TERRAFORM_CREDENTIALS" \
+              -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
               stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION destroy "${CIRCLE_SHA1:0:7}"
           when: on_fail
 
@@ -1127,7 +1129,7 @@ jobs:
           command: |
             docker run --rm -t \
               --volumes-from openshift \
-              -e GOOGLE_CREDENTIALS="$OPENSHIFT_TERRAFORM_CREDENTIALS" \
+              -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
               stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION destroy "${CIRCLE_SHA1:0:7}"
           when: always
 
@@ -1406,7 +1408,7 @@ jobs:
       - run:
           name: Push roxctl to stackrox-hub
           command: |
-            gcloud auth activate-service-account --key-file <(echo "$GOOGLE_CREDENTIALS_ROXCTL_UPLOAD")
+            gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
             gcloud auth list
             MAIN_TAG=$(make tag)
 
