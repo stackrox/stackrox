@@ -18,6 +18,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -191,7 +192,7 @@ func (g *generic) postMessage(message proto.Message, msgKey string) error {
 	defer func() {
 		_ = resp.Body.Close()
 	}()
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+	if httputil.Is2xxStatusCode(resp.StatusCode) {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return errors.Wrap(err, "Error reading generic response body")

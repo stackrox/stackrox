@@ -21,12 +21,22 @@ message GoogleProviderMetadata {
     string cluster_name = 2;
 }
 
+message AWSProviderMetadata {
+    string account_id = 1;
+}
+
+message AzureProviderMetadata {
+    string subscription_id = 1;
+}
+
 message ProviderMetadata {
     string region = 1;
     string zone   = 2;
 
     oneof Provider {
         GoogleProviderMetadata google = 3;
+        AWSProviderMetadata aws       = 4;
+        AzureProviderMetadata azure   = 5;
     }
 }
 

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/urlfmt"
@@ -93,7 +94,7 @@ func (q *Quay) Test() error {
 	if err != nil {
 		return err
 	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+	if !httputil.Is2xxOr3xxStatusCode(resp.StatusCode) {
 		body, err := ioutil.ReadAll(resp.Body)
 		defer utils.IgnoreError(resp.Body.Close)
 		if err != nil {

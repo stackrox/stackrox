@@ -14,6 +14,9 @@ import (
 
 func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Label", []string{"key: String!", "value: String!"}))
+	utils.Must(builder.AddType("AWSProviderMetadata", []string{
+		"accountId: String!",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Access(0)))
 	utils.Must(builder.AddType("Alert", []string{
 		"deployment: Deployment",
@@ -39,6 +42,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Alert_Violation", []string{
 		"link: String!",
 		"message: String!",
+	}))
+	utils.Must(builder.AddType("AzureProviderMetadata", []string{
+		"subscriptionId: String!",
 	}))
 	utils.Must(builder.AddType("CSCC", []string{
 		"serviceAccount: String!",
@@ -591,6 +597,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddUnionType("ProviderMetadataProvider", []string{
 		"GoogleProviderMetadata",
+		"AWSProviderMetadata",
+		"AzureProviderMetadata",
 	}))
 	utils.Must(builder.AddType("ResourcePolicy", []string{
 		"cpuResourceLimit: NumericalPolicy",
@@ -765,6 +773,34 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Whitelist_Image", []string{
 		"name: String!",
 	}))
+}
+
+type aWSProviderMetadataResolver struct {
+	root *Resolver
+	data *storage.AWSProviderMetadata
+}
+
+func (resolver *Resolver) wrapAWSProviderMetadata(value *storage.AWSProviderMetadata, ok bool, err error) (*aWSProviderMetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &aWSProviderMetadataResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapAWSProviderMetadatas(values []*storage.AWSProviderMetadata, err error) ([]*aWSProviderMetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*aWSProviderMetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &aWSProviderMetadataResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *aWSProviderMetadataResolver) AccountId() string {
+	value := resolver.data.GetAccountId()
+	return value
 }
 
 func toAccess(value *string) storage.Access {
@@ -996,6 +1032,34 @@ func (resolver *alert_ViolationResolver) Link() string {
 
 func (resolver *alert_ViolationResolver) Message() string {
 	value := resolver.data.GetMessage()
+	return value
+}
+
+type azureProviderMetadataResolver struct {
+	root *Resolver
+	data *storage.AzureProviderMetadata
+}
+
+func (resolver *Resolver) wrapAzureProviderMetadata(value *storage.AzureProviderMetadata, ok bool, err error) (*azureProviderMetadataResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &azureProviderMetadataResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapAzureProviderMetadatas(values []*storage.AzureProviderMetadata, err error) ([]*azureProviderMetadataResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*azureProviderMetadataResolver, len(values))
+	for i, v := range values {
+		output[i] = &azureProviderMetadataResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *azureProviderMetadataResolver) SubscriptionId() string {
+	value := resolver.data.GetSubscriptionId()
 	return value
 }
 
@@ -5062,6 +5126,22 @@ func (resolver *providerMetadataProviderResolver) ToGoogleProviderMetadata() (*g
 	value := resolver.resolver.data.GetGoogle()
 	if value != nil {
 		return &googleProviderMetadataResolver{resolver.resolver.root, value}, true
+	}
+	return nil, false
+}
+
+func (resolver *providerMetadataProviderResolver) ToAWSProviderMetadata() (*aWSProviderMetadataResolver, bool) {
+	value := resolver.resolver.data.GetAws()
+	if value != nil {
+		return &aWSProviderMetadataResolver{resolver.resolver.root, value}, true
+	}
+	return nil, false
+}
+
+func (resolver *providerMetadataProviderResolver) ToAzureProviderMetadata() (*azureProviderMetadataResolver, bool) {
+	value := resolver.resolver.data.GetAzure()
+	if value != nil {
+		return &azureProviderMetadataResolver{resolver.resolver.root, value}, true
 	}
 	return nil, false
 }

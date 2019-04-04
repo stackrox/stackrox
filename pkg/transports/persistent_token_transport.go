@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -56,7 +57,7 @@ func (t *PersistentTokenTransport) refreshToken() error {
 		return err
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+	if !httputil.Is2xxStatusCode(resp.StatusCode) {
 		return fmt.Errorf(resp.Status)
 	}
 

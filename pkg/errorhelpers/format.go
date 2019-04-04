@@ -3,6 +3,8 @@ package errorhelpers
 import (
 	"fmt"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // ErrorList is a wrapper around many errors
@@ -33,6 +35,16 @@ func (e *ErrorList) AddError(err error) {
 		return
 	}
 	e.errors = append(e.errors, err.Error())
+}
+
+// AddWrap is a convenient wrapper around `AddError(errors.Wrap(err, msg))`.
+func (e *ErrorList) AddWrap(err error, msg string) {
+	e.AddError(errors.Wrap(err, msg))
+}
+
+// AddWrapf is a convenient wrapper around `AddError(errors.Wrapf(err, format, args...))`.
+func (e *ErrorList) AddWrapf(err error, format string, args ...interface{}) {
+	e.AddError(errors.Wrapf(err, format, args...))
 }
 
 // AddString adds a string based error to the list

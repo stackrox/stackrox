@@ -5,10 +5,21 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/stackrox/rox/generated/storage"
 	v1 "k8s.io/api/core/v1"
 )
 
-// getDeploymentEnvironment extracts a "deployment environment" (such as "docker-for-desktop" or "gcp/<project>") from a
+func getDeploymentEnvFromProviderMetadata(metadata *storage.ProviderMetadata) string {
+	if gcpProject := metadata.GetGoogle().GetProject(); gcpProject != "" {
+		return fmt.Sprintf("gcp/%s", gcpProject)
+	}
+	if awsAccountID := metadata.GetAws().GetAccountId(); awsAccountID != "" {
+		return fmt.Sprintf("aws/%s", awsAccountID)
+	}
+	return ""
+}
+
+// getDeploymentEnvFromNode extracts a "deployment environment" (such as "docker-for-desktop" or "gcp/<project>") from a
 // node.
 // NOTE: This is only used for license enforcement, and further only for development/CI/QA/demo/... licenses to make
 // them more restricted. As such, we only need to extract those deployment environments that we use/care about.
@@ -16,7 +27,7 @@ import (
 // do not anticipate issuing deployment environment-restricted licenses to customers. If somebody manages to obtain
 // one of our internal-only licenses, however, a deployment environment of "unknown" will most likely cause the license
 // to be rejected, which is intended.
-func getDeploymentEnvironment(node *v1.Node) string {
+func getDeploymentEnvFromNode(node *v1.Node) string {
 	if node == nil {
 		return ""
 	}

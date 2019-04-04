@@ -12,8 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/clusterstatus"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -31,43 +29,16 @@ type updaterImpl struct {
 }
 
 func (u *updaterImpl) Start() {
-	sif := informers.NewSharedInformerFactory(u.client, 0)
-	nodeInformer := sif.Core().V1().Nodes().Informer()
-	nodeInformer.AddEventHandler(u)
-	go nodeInformer.Run(u.stopSig.Done())
 	go u.run()
 }
 
-func (u *updaterImpl) OnDelete(obj interface{}) {
-	u.onChange(nil, obj)
-}
-
-func (u *updaterImpl) OnUpdate(newObj, oldObj interface{}) {
-	u.onChange(newObj, oldObj)
-}
-
-func (u *updaterImpl) OnAdd(obj interface{}) {
-	u.onChange(obj, nil)
-}
-
-func (u *updaterImpl) onChange(newObj, oldObj interface{}) {
-	var newDeploymentEnv, oldDeploymentEnv string
-
-	if newObj != nil {
-		newNode, _ := newObj.(*v1.Node)
-		newDeploymentEnv = getDeploymentEnvironment(newNode)
+func (u *updaterImpl) sendMessage(msg *central.ClusterStatusUpdate) bool {
+	select {
+	case u.updates <- msg:
+		return true
+	case <-u.stopSig.Done():
+		return false
 	}
-	if oldObj != nil {
-		oldNode, _ := oldObj.(*v1.Node)
-		oldDeploymentEnv = getDeploymentEnvironment(oldNode)
-	}
-
-	changed := u.deploymentEnvs.Replace(newDeploymentEnv, oldDeploymentEnv)
-	if !changed {
-		return
-	}
-
-	u.sendDeploymentEnvUpdateMessage()
 }
 
 func (u *updaterImpl) sendDeploymentEnvUpdateMessage() {
@@ -88,19 +59,43 @@ func (u *updaterImpl) sendDeploymentEnvUpdateMessage() {
 }
 
 func (u *updaterImpl) run() {
+	clusterMetadata := u.getClusterMetadata()
+	cloudProviderMetadata := u.getCloudProviderMetadata()
+
 	updateMessage := &central.ClusterStatusUpdate{
 		Msg: &central.ClusterStatusUpdate_Status{
 			Status: &storage.ClusterStatus{
 				SensorVersion:        version.GetMainVersion(),
-				ProviderMetadata:     u.getCloudProviderMetadata(),
-				OrchestratorMetadata: u.getClusterMetadata(),
+				ProviderMetadata:     cloudProviderMetadata,
+				OrchestratorMetadata: clusterMetadata,
 			},
 		},
 	}
-	select {
-	case u.updates <- updateMessage:
-	case <-u.stopSig.Done():
+
+	if !u.sendMessage(updateMessage) {
+		return
 	}
+
+	deploymentEnvFromMD := getDeploymentEnvFromProviderMetadata(cloudProviderMetadata)
+
+	// If we get the deployment environment from the cloud provider metadata, be happy with that - send the message
+	// and just return.
+	if deploymentEnvFromMD != "" {
+		updateMessage := &central.ClusterStatusUpdate{
+			Msg: &central.ClusterStatusUpdate_DeploymentEnvUpdate{
+				DeploymentEnvUpdate: &central.DeploymentEnvironmentUpdate{
+					Environments: []string{deploymentEnvFromMD},
+				},
+			},
+		}
+
+		u.sendMessage(updateMessage)
+		return
+	}
+
+	// Otherwise, infer it from watching nodes.
+	nw := newNodeWatcher(u.updates, u.stopSig.Done())
+	nw.Run(u.client)
 }
 
 func (u *updaterImpl) Stop() {

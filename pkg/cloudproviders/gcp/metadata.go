@@ -10,14 +10,21 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-const timeout = 5 * time.Second
+const (
+	timeout = 5 * time.Second
+)
 
 var (
 	log = logging.LoggerForModule()
 )
 
+func isNotDefinedError(err error) bool {
+	_, ok := err.(metadata.NotDefinedError)
+	return ok
+}
+
 // GetMetadata returns the cluster metadata if on GCP or an error
-// If not on GCP, then returns nil, nil
+// If not on GCP, then returns nil, nil.
 func GetMetadata() (*storage.ProviderMetadata, error) {
 	if !metadata.OnGCE() {
 		return nil, nil
@@ -39,8 +46,9 @@ func GetMetadata() (*storage.ProviderMetadata, error) {
 		region = strings.Join(regionSlice[:len(regionSlice)-1], "-")
 	}
 
+	// clusterName only exists on GKE
 	clusterName, err := c.InstanceAttributeValue("cluster-name")
-	if err != nil {
+	if err != nil && !isNotDefinedError(err) {
 		return nil, err
 	}
 

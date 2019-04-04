@@ -1,6 +1,13 @@
 package deploymentenvs
 
-import "github.com/stackrox/rox/pkg/sync"
+import (
+	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/sync"
+)
+
+var (
+	log = logging.LoggerForModule()
+)
 
 type manager struct {
 	mutex sync.RWMutex
