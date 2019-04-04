@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/registries"
 	"github.com/stackrox/rox/pkg/scanners"
+	"github.com/stackrox/rox/pkg/tlscheck"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
@@ -117,6 +118,18 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 
 	imageIntegration := msg.GetEvent().GetImageIntegration()
 	imageIntegration.ClusterId = clusterID
+
+	validTLS, err := tlscheck.CheckTLS(imageIntegration.GetDocker().GetEndpoint())
+	if err != nil {
+		return err
+	}
+
+	if imageIntegration.GetDocker() == nil {
+		return nil
+	}
+
+	// Using GetDocker() because the config is within a oneof
+	imageIntegration.GetDocker().Insecure = !validTLS
 
 	// Action is currently always update
 	// We should not overwrite image integrations that already have a username and password
