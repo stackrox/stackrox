@@ -22,15 +22,12 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-const (
-	testKeyID      = "test/key/1"
-	testOtherKeyID = "test/otherkey/1"
-)
-
 type validatorTestSuite struct {
 	suite.Suite
 
 	license *licenseproto.License
+
+	pubKey1, pubKey2 []byte
 
 	signer    cryptoutils.Signer
 	validator Validator
@@ -44,12 +41,12 @@ func (s *validatorTestSuite) SetupSuite() {
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	s.Require().NoError(err)
 
-	rawPublicKey, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
+	s.pubKey1, err = x509.MarshalPKIXPublicKey(&key.PublicKey)
 	s.Require().NoError(err)
 
 	s.signer = cryptoutils.NewECDSASigner(key, crypto.SHA256)
 	s.validator = newValidator()
-	err = s.validator.RegisterSigningKey(testKeyID, EC256, rawPublicKey, SigningKeyRestrictions{
+	err = s.validator.RegisterSigningKey(EC256, s.pubKey1, SigningKeyRestrictions{
 		MaxDuration:                             7 * 24 * time.Hour,
 		EnforcementURLs:                         []string{"https://license-enforcement.stackrox.io/api/v1/validate"},
 		AllowNoNodeLimit:                        true,
@@ -61,10 +58,10 @@ func (s *validatorTestSuite) SetupSuite() {
 	otherKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	s.Require().NoError(err)
 
-	rawOtherPublicKey, err := x509.MarshalPKIXPublicKey(&otherKey.PublicKey)
+	s.pubKey2, err = x509.MarshalPKIXPublicKey(&otherKey.PublicKey)
 	s.Require().NoError(err)
 
-	err = s.validator.RegisterSigningKey(testOtherKeyID, EC256, rawOtherPublicKey, SigningKeyRestrictions{})
+	err = s.validator.RegisterSigningKey(EC256, s.pubKey2, SigningKeyRestrictions{})
 	s.Require().NoError(err)
 }
 
@@ -72,7 +69,7 @@ func (s *validatorTestSuite) SetupTest() {
 	s.license = &licenseproto.License{
 		Metadata: &licenseproto.License_Metadata{
 			Id:              uuid.NewV4().String(),
-			SigningKeyId:    testKeyID,
+			SigningKeyId:    license.SigningKeyFingerprint(s.pubKey1),
 			IssueDate:       types.TimestampNow(),
 			LicensedForId:   "test",
 			LicensedForName: "Test",
@@ -113,7 +110,7 @@ func (s *validatorTestSuite) TestInvalidSigningKeyID() {
 }
 
 func (s *validatorTestSuite) TestInvalidSignature() {
-	s.license.Metadata.SigningKeyId = testOtherKeyID
+	s.license.Metadata.SigningKeyId = license.SigningKeyFingerprint(s.pubKey2)
 	licenseKey := s.generateLicenseKey()
 	_, err := s.validator.ValidateLicenseKey(licenseKey)
 	s.Error(err)

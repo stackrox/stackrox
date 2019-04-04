@@ -13,7 +13,6 @@ import (
 func init() {
 	utils.Must(
 		validatorInstance.RegisterSigningKey(
-			"stackrox-dev/licensing-dev/dev-license/2",
 			validator.EC256,
 			[]byte{
 				0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02,

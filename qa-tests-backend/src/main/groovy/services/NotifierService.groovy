@@ -56,7 +56,7 @@ class NotifierService extends BaseService {
 
     static getFirstPagerDutyIncident() {
         try {
-            def con =(HttpURLConnection) new URL(PAGERDUTY_URL).openConnection()
+            def con = (HttpURLConnection) new URL(PAGERDUTY_URL).openConnection()
             con.setRequestMethod("GET")
             con.setRequestProperty("Content-Type", "application/json; charset=UTF-8")
             con.setRequestProperty("Accept", "application/vnd.pagerduty+json;version=2")

@@ -26,10 +26,8 @@ type validator struct {
 	verifiersByKeyID map[string]*signingKey
 }
 
-func (v *validator) RegisterSigningKey(keyID string, algo string, raw []byte, restrictions SigningKeyRestrictions) error {
-	if keyID == "" {
-		return errors.New("signing key ID must not be empty")
-	}
+func (v *validator) RegisterSigningKey(algo string, raw []byte, restrictions SigningKeyRestrictions) error {
+	keyID := licensePkg.SigningKeyFingerprint(raw)
 
 	verifierCreator := signatureVerifierByName[algo]
 	if verifierCreator == nil {

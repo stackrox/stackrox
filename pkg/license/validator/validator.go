@@ -7,7 +7,7 @@ import licenseproto "github.com/stackrox/rox/generated/shared/license"
 type Validator interface {
 	// RegisterSigningKey registers the **PUBLIC** part of a signing key under the given name, with optional
 	// restrictions.
-	RegisterSigningKey(keyID string, algo string, raw []byte, restrictions SigningKeyRestrictions) error
+	RegisterSigningKey(algo string, raw []byte, restrictions SigningKeyRestrictions) error
 
 	// ValidateLicenseKey checks that the given license key is parseable, well-formed, and has a valid signature (including
 	// that it complies with the restrictions for the signing key).

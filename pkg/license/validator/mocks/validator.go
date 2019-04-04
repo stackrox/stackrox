@@ -35,15 +35,15 @@ func (m *MockValidator) EXPECT() *MockValidatorMockRecorder {
 }
 
 // RegisterSigningKey mocks base method
-func (m *MockValidator) RegisterSigningKey(arg0, arg1 string, arg2 []byte, arg3 validator.SigningKeyRestrictions) error {
-	ret := m.ctrl.Call(m, "RegisterSigningKey", arg0, arg1, arg2, arg3)
+func (m *MockValidator) RegisterSigningKey(arg0 string, arg1 []byte, arg2 validator.SigningKeyRestrictions) error {
+	ret := m.ctrl.Call(m, "RegisterSigningKey", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RegisterSigningKey indicates an expected call of RegisterSigningKey
-func (mr *MockValidatorMockRecorder) RegisterSigningKey(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterSigningKey", reflect.TypeOf((*MockValidator)(nil).RegisterSigningKey), arg0, arg1, arg2, arg3)
+func (mr *MockValidatorMockRecorder) RegisterSigningKey(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterSigningKey", reflect.TypeOf((*MockValidator)(nil).RegisterSigningKey), arg0, arg1, arg2)
 }
 
 // ValidateLicenseKey mocks base method
