@@ -86,16 +86,6 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					},
 					ApiGroups: []string{
 						"custom",
-					},
-					Resources: []string{
-						"pods",
-					},
-				},
-				{
-					Verbs: []string{
-						"Get",
-					},
-					ApiGroups: []string{
 						"custom2",
 					},
 					Resources: []string{
@@ -140,16 +130,6 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 					},
 					Resources: []string{
 						"deployments",
-					},
-				},
-				{
-					Verbs: []string{
-						"Get",
-					},
-					ApiGroups: []string{
-						"custom",
-					},
-					Resources: []string{
 						"pods",
 					},
 				},
@@ -262,10 +242,10 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 						"*",
 					},
 					ApiGroups: []string{
-						"*",
+						"custom",
 					},
 					Resources: []string{
-						"deployments",
+						"*",
 					},
 				},
 				{
@@ -273,10 +253,10 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 						"*",
 					},
 					ApiGroups: []string{
-						"custom",
+						"*",
 					},
 					Resources: []string{
-						"*",
+						"deployments",
 					},
 				},
 			},
@@ -285,7 +265,7 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			prs := NewPolicyRuleSet()
+			prs := NewPolicyRuleSet(APIGroupsField(), ResourcesField(), VerbsField())
 			prs.Add(c.input...)
 			assert.Equal(t, c.expected, prs.ToSlice())
 		})
@@ -707,7 +687,7 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			prs := NewPolicyRuleSet()
+			prs := NewPolicyRuleSet(APIGroupsField(), ResourcesField(), VerbsField())
 			prs.Add(c.initial...)
 			assert.Equal(t, c.expected, prs.Grants(c.grants))
 		})

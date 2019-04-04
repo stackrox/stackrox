@@ -1,0 +1,79 @@
+package k8srbac
+
+import (
+	"github.com/stackrox/rox/generated/storage"
+)
+
+const wildcard = "*"
+
+// Wildcardable is a fields whos 'all values' state can be represented by a wildcard: *.
+// To use this, you need to input the set of all possible values.
+type Wildcardable interface {
+	PolicyRuleField
+
+	IsWildcarded(rule *storage.PolicyRule) bool
+}
+
+// NewWildcardable returns a new instance of a Wildcardable set of values.
+func NewWildcardable(underlying PolicyRuleField) Wildcardable {
+	return &wildcardable{
+		underlying: underlying,
+	}
+}
+
+type wildcardable struct {
+	underlying PolicyRuleField
+}
+
+// Get gets the value using the underlying field.
+func (w *wildcardable) Get(rule *storage.PolicyRule) []string {
+	return w.underlying.Get(rule)
+}
+
+// Set sets the value using the underlying field.
+func (w *wildcardable) Set(values []string, rule *storage.PolicyRule) {
+	w.underlying.Set(values, rule)
+}
+
+// Merge merges the two by checking for wildcards before using the underlying if that fails.
+func (w *wildcardable) Merge(to, from *storage.PolicyRule) {
+	// If either has a wildcard, just set that value and return.
+	if w.IsWildcarded(to) || w.IsWildcarded(from) {
+		w.Set([]string{wildcard}, to)
+		return
+	}
+	// Use underlying to merge.
+	w.underlying.Merge(to, from)
+}
+
+// Equals uses the Equals from the underlying field.
+func (w *wildcardable) Equals(first, second *storage.PolicyRule) bool {
+	return w.underlying.Equals(first, second)
+}
+
+// Grants checks if a wildcard gives all permissions, if not, it checks that the underlying grants the second.
+func (w *wildcardable) Grants(first, second *storage.PolicyRule) bool {
+	if w.IsWildcarded(first) {
+		return true
+	}
+	return w.underlying.Grants(first, second)
+}
+
+// Granters returns a list of needed field values to grant the values in the input rule.
+// Fir a base field, that means a single option, one which holds all of the input rule's value for the field.
+func (w *wildcardable) Granters(rule *storage.PolicyRule) [][]string {
+	if w.IsWildcarded(rule) {
+		return [][]string{{wildcard}}
+	}
+	return append(w.underlying.Granters(rule), []string{wildcard})
+}
+
+// IsWildcarded returns if the field is wildcarded in the input rule.
+func (w *wildcardable) IsWildcarded(rule *storage.PolicyRule) bool {
+	for _, v := range w.Get(rule) {
+		if v == wildcard {
+			return true
+		}
+	}
+	return false
+}
