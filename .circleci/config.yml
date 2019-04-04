@@ -105,6 +105,9 @@ deployGKE: &deployGKE
     name: Deploy to remote cluster
     command: |
       kubectl create clusterrolebinding temporary-admin --clusterrole=cluster-admin --user circleci-rox@stackrox-ci.iam.gserviceaccount.com
+      if [[ -n "$CIRCLE_TAG" ]]; then
+        export ROX_LICENSE_ENFORCEMENT=false
+      fi
       ./deploy/k8s/deploy.sh
       kubectl delete clusterrolebinding temporary-admin
 
@@ -1061,6 +1064,9 @@ jobs:
       - run:
           name: Deploy to remote cluster
           command: |
+            if [[ -n "$CIRCLE_TAG" ]]; then
+              export ROX_LICENSE_ENFORCEMENT=false
+            fi
             ./deploy/openshift/deploy.sh
             oc -n stackrox get all
 
@@ -1245,6 +1251,9 @@ jobs:
       - run:
           name: Deploy to remote cluster
           command: |
+            if [[ -n "$CIRCLE_TAG" ]]; then
+              export ROX_LICENSE_ENFORCEMENT=false
+            fi
             ./deploy/k8s/deploy.sh
             kubectl -n stackrox get all
 
