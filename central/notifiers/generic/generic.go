@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -189,10 +190,8 @@ func (g *generic) postMessage(message proto.Message, msgKey string) error {
 		return err
 	}
 
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-	if httputil.Is2xxStatusCode(resp.StatusCode) {
+	defer utils.IgnoreError(resp.Body.Close)
+	if !httputil.Is2xxStatusCode(resp.StatusCode) {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return errors.Wrap(err, "Error reading generic response body")
