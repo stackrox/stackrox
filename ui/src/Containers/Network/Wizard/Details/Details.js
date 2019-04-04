@@ -26,11 +26,10 @@ function Details(props) {
     }
 
     const { deployment, selectedNode } = props;
-    const envGraphPanelTabs = [
-        { text: 'Details' },
-        { text: 'Network Policies' },
-        { text: 'Network Flows' }
-    ];
+    const envGraphPanelTabs = [{ text: 'Details' }, { text: 'Network Policies' }];
+    if (process.env.NODE_ENV === 'development') {
+        envGraphPanelTabs.push({ text: 'Network Flows' });
+    }
     const content = props.isFetchingNode ? (
         <Loader />
     ) : (
@@ -45,11 +44,13 @@ function Details(props) {
                     <NetworkPoliciesDetails />
                 </div>
             </TabContent>
-            <TabContent>
-                <div className="flex flex-1 flex-col h-full">
-                    <DeploymentNetworkFlows deploymentEdges={selectedNode.edges} />
-                </div>
-            </TabContent>
+            {process.env.NODE_ENV === 'development' && (
+                <TabContent>
+                    <div className="flex flex-1 flex-col h-full">
+                        <DeploymentNetworkFlows deploymentEdges={selectedNode.edges} />
+                    </div>
+                </TabContent>
+            )}
         </Tabs>
     );
 
