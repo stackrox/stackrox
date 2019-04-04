@@ -14,6 +14,16 @@
       "name": "systemctl"
     }
   },
+  "whitelists": [
+    {
+      "name": "Don't alert on StackRox namespace",
+      "deployment": {
+        "scope": {
+          "namespace": "stackrox"
+        }
+      }
+    }
+  ],
   "rationale": "The systemctl service manager is generally not used in containers, and its use could indicate suspicious activity",
   "remediation": "Remove systemctl from the image before deploying, or consider using a base image that doesn't bundle systemctl"
 }

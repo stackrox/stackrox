@@ -1058,6 +1058,9 @@ jobs:
               export REGISTRY_PASSWORD=$DOCKER_IO_PASSWORD
               export REGISTRY_USERNAME=$DOCKER_IO_USERNAME
             EOF
+            if .circleci/pr_has_label.sh ci-run-against-rhel; then
+              echo 'export MAIN_IMAGE_REPO=stackrox/main-rhel' >> "${BASH_ENV}"
+            fi
 
             ./scripts/ci/openshift-gcr-secrets.sh
 
