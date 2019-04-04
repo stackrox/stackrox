@@ -822,7 +822,7 @@ jobs:
             kubectl -n stackrox describe deploy/central
 
             network_policy_patch='[
-              {"op": "replace", "path": "/spec/ingress/0/ports/0/port", "value": "api"}
+              {"op": "replace", "path": "/spec/ingress/0/ports/0/port", "value": 8443}
             ]'
             kubectl -n stackrox patch networkpolicy/allow-ext-to-central --type json -p "$network_policy_patch"
 

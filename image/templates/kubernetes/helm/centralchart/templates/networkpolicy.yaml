@@ -6,7 +6,7 @@ metadata:
 spec:
   ingress:
   - ports:
-    - port: api
+    - port: 8443
       protocol: TCP
   podSelector:
     matchLabels:
