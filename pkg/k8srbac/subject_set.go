@@ -9,25 +9,29 @@ import (
 // SubjectSet holds a deduplicating set of Subjects.
 type SubjectSet interface {
 	Add(subs ...*storage.Subject)
-	Contains(sub *storage.Subject) bool
+	Contains(sub ...*storage.Subject) bool
+	ContainsSet(inputSet SubjectSet) bool
 	ToSlice() []*storage.Subject
+	Cardinality() int
 }
 
 // NewSubjectSet returns a new SubjectSet instance.
-func NewSubjectSet() SubjectSet {
-	return &subjectSet{
-		subjectsByKey: make(map[subjectKey]*storage.Subject),
+func NewSubjectSet(subs ...*storage.Subject) SubjectSet {
+	ss := &subjectSet{
+		subjectsByKey: make(map[subjectKey]struct{}),
 	}
+	ss.Add(subs...)
+	return ss
 }
 
 type subjectSet struct {
-	subjectsByKey map[subjectKey]*storage.Subject
+	subjectsByKey map[subjectKey]struct{}
 }
 
 // AddAll adds all of the inputs to the set.
 func (ss *subjectSet) Add(subs ...*storage.Subject) {
 	for _, sub := range subs {
-		ss.subjectsByKey[keyForSubject(sub)] = sub
+		ss.subjectsByKey[keyForSubject(sub)] = struct{}{}
 	}
 }
 
@@ -40,17 +44,34 @@ func (ss *subjectSet) ToSlice() []*storage.Subject {
 }
 
 // Contains returns if the set contains the given subject.
-func (ss *subjectSet) Contains(sub *storage.Subject) bool {
-	key := keyForSubject(sub)
-	_, contains := ss.subjectsByKey[key]
-	return contains
+func (ss *subjectSet) Contains(subs ...*storage.Subject) bool {
+	for _, sub := range subs {
+		key := keyForSubject(sub)
+		if _, contains := ss.subjectsByKey[key]; !contains {
+			return false
+		}
+	}
+	return true
 }
 
-func getSortedSubjectList(subjectsByKey map[subjectKey]*storage.Subject) []*storage.Subject {
+// ContainsSet returns whether the set contains all subjects in the input set.
+func (ss *subjectSet) ContainsSet(inputSet SubjectSet) bool {
+	if ss.Cardinality() < inputSet.Cardinality() {
+		return false
+	}
+	return ss.Contains(inputSet.ToSlice()...)
+}
+
+// Cardinality returns the current count of subjects in the set.
+func (ss *subjectSet) Cardinality() int {
+	return len(ss.subjectsByKey)
+}
+
+func getSortedSubjectList(subjectsByKey map[subjectKey]struct{}) []*storage.Subject {
 	// Sort for stability
 	sortedSubjects := make([]*storage.Subject, 0, len(subjectsByKey))
-	for _, subject := range subjectsByKey {
-		sortedSubjects = append(sortedSubjects, subject)
+	for key := range subjectsByKey {
+		sortedSubjects = append(sortedSubjects, subjectForKey(key))
 	}
 	sort.SliceStable(sortedSubjects, func(idx1, idx2 int) bool {
 		return subjectIsLess(sortedSubjects[idx1], sortedSubjects[idx2])

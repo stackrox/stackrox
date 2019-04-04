@@ -45,3 +45,12 @@ func VerbsField() PolicyRuleField {
 		),
 	)
 }
+
+// CoreFields is a helper that returns the fields we usually use.
+func CoreFields() []PolicyRuleField {
+	return []PolicyRuleField{
+		APIGroupsField(),
+		ResourcesField(),
+		VerbsField(),
+	}
+}

@@ -17,3 +17,11 @@ func keyForSubject(sub *storage.Subject) subjectKey {
 		kind:      sub.Kind,
 	}
 }
+
+func subjectForKey(key subjectKey) *storage.Subject {
+	return &storage.Subject{
+		Name:      key.name,
+		Namespace: key.namespace,
+		Kind:      key.kind,
+	}
+}
