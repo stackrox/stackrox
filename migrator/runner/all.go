@@ -7,4 +7,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_2_to_3_network_flows_in_badger"
 	_ "github.com/stackrox/rox/migrator/migrations/m_3_to_4_cluster_spec_to_status"
 	_ "github.com/stackrox/rox/migrator/migrations/m_4_to_5_auth_provider_default_group"
+	_ "github.com/stackrox/rox/migrator/migrations/m_5_to_6_collection_method"
 )

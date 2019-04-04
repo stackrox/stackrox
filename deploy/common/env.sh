@@ -4,7 +4,7 @@ set -e
 export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-central.stackrox:443}"
 echo "In-cluster Central endpoint set to $CLUSTER_API_ENDPOINT"
 
-export RUNTIME_SUPPORT=${RUNTIME_SUPPORT:-true}
+export RUNTIME_SUPPORT=${RUNTIME_SUPPORT:-kernel-module}
 echo "RUNTIME_SUPPORT set to $RUNTIME_SUPPORT"
 
 export SCANNER_SUPPORT=${SCANNER_SUPPORT:-false}

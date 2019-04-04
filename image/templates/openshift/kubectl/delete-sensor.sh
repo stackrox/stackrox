@@ -5,7 +5,7 @@ oc delete -f "$DIR/sensor.yaml"
 oc delete -n stackrox secret sensor-tls benchmark-tls
 oc delete -f "$DIR/sensor-rbac.yaml"
 
-{{if .RuntimeSupport}}
+{{if ne .CollectionMethod "NO_COLLECTION"}}
 oc -n stackrox delete secret collector-tls collector-stackrox
 {{- end}}
 

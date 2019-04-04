@@ -133,7 +133,7 @@ spec:
   selector:
     app: sensor
   type: ClusterIP
-{{if .RuntimeSupport -}}
+{{if ne .CollectionMethod "NO_COLLECTION" -}}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -170,7 +170,7 @@ spec:
         imagePullPolicy: Always
         env:
         - name: COLLECTOR_CONFIG
-          value: '{"useEbpf":{{.CollectorEbpf}},"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"},"syscalls":["accept","connect","execve","fork","clone","close","shutdown","socket"]}'
+          value: '{"useEbpf":{{eq .CollectionMethod "EBPF"}},"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"},"syscalls":["accept","connect","execve","fork","clone","close","shutdown","socket"]}'
         - name: GRPC_SERVER
           value: sensor.stackrox:443
         - name: MODULE_DOWNLOAD_BASE_URL
@@ -196,7 +196,7 @@ spec:
           readOnly: true
         - mountPath: /module
           name: tmpfs-module
-        {{if .CollectorEbpf}}
+        {{if eq .CollectionMethod "EBPF"}}
         - mountPath: /host/etc
           name: etc-ro
           readOnly: true
@@ -260,7 +260,7 @@ spec:
       - emptyDir:
           medium: Memory
         name: tmpfs-module
-      {{if .CollectorEbpf}}
+      {{if eq .CollectionMethod "EBPF"}}
       - hostPath: 
           path: /etc
         name: etc-ro

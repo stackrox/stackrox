@@ -20,7 +20,7 @@ import { clusterTypeLabels } from 'messages/common';
 import ClusterWizardPanel from './ClusterWizardPanel';
 import ClusterDetails, {
     checkInLabel,
-    formatRuntimeSupport,
+    formatCollectionMethod,
     formatAdmissionController,
     formatLastCheckIn,
     formatSensorVersion,
@@ -108,7 +108,7 @@ class ClustersModal extends Component {
             },
             {
                 Header: 'Runtime Support',
-                Cell: ({ original }) => formatRuntimeSupport(original)
+                Cell: ({ original }) => formatCollectionMethod(original)
             }
         ];
 

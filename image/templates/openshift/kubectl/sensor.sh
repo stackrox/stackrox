@@ -32,7 +32,7 @@ oc secrets add serviceaccount/benchmark secrets/stackrox --for=pull
 oc create secret -n "stackrox" generic sensor-tls --from-file="$DIR/sensor-cert.pem" --from-file="$DIR/sensor-key.pem" --from-file="$DIR/ca.pem"
 oc create secret -n "stackrox" generic benchmark-tls --from-file="$DIR/benchmark-cert.pem" --from-file="$DIR/benchmark-key.pem" --from-file="$DIR/ca.pem"
 
-{{if .RuntimeSupport}}
+{{if ne .CollectionMethod "NO_COLLECTION"}}
 if ! oc get secret/collector-stackrox -n stackrox > /dev/null; then
   registry_auth="$("${DIR}/docker-auth.sh" -m k8s "{{.CollectorRegistry}}")"
   [[ -n "$registry_auth" ]] || { echo >&2 "Unable to get registry auth info." ; exit 1 ; }

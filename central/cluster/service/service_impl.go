@@ -62,6 +62,15 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 func normalizeCluster(cluster *storage.Cluster) {
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "https://")
 	cluster.CentralApiEndpoint = strings.TrimPrefix(cluster.GetCentralApiEndpoint(), "http://")
+
+	// For backwards compatibility reasons, if Collection Method is not set then honor defaults for runtime support
+	if cluster.GetCollectionMethod() == storage.CollectionMethod_UNSET_COLLECTION {
+		if !cluster.GetRuntimeSupport() {
+			cluster.CollectionMethod = storage.CollectionMethod_NO_COLLECTION
+		} else {
+			cluster.CollectionMethod = storage.CollectionMethod_KERNEL_MODULE
+		}
+	}
 }
 
 func validateInput(cluster *storage.Cluster) error {

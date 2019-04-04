@@ -79,6 +79,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("Cluster", []string{
 		"admissionController: Boolean!",
 		"centralApiEndpoint: String!",
+		"collectionMethod: CollectionMethod!",
 		"collectorImage: String!",
 		"id: ID!",
 		"mainImage: String!",
@@ -95,6 +96,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"sensorVersion: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ClusterType(0)))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.CollectionMethod(0)))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Comparator(0)))
 	utils.Must(builder.AddType("ComplianceAggregation_AggregationKey", []string{
 		"id: ID!",
@@ -1314,6 +1316,11 @@ func (resolver *clusterResolver) CentralApiEndpoint() string {
 	return value
 }
 
+func (resolver *clusterResolver) CollectionMethod() string {
+	value := resolver.data.GetCollectionMethod()
+	return value.String()
+}
+
 func (resolver *clusterResolver) CollectorImage() string {
 	value := resolver.data.GetCollectorImage()
 	return value
@@ -1411,6 +1418,24 @@ func toClusterTypes(values *[]string) []storage.ClusterType {
 	output := make([]storage.ClusterType, len(*values))
 	for i, v := range *values {
 		output[i] = toClusterType(&v)
+	}
+	return output
+}
+
+func toCollectionMethod(value *string) storage.CollectionMethod {
+	if value != nil {
+		return storage.CollectionMethod(storage.CollectionMethod_value[*value])
+	}
+	return storage.CollectionMethod(0)
+}
+
+func toCollectionMethods(values *[]string) []storage.CollectionMethod {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.CollectionMethod, len(*values))
+	for i, v := range *values {
+		output[i] = toCollectionMethod(&v)
 	}
 	return output
 }

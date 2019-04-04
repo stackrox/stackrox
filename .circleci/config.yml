@@ -633,7 +633,7 @@ jobs:
     <<: *defaults
     environment:
       - LOCAL_PORT: 443
-      - RUNTIME_SUPPORT: true
+      - RUNTIME_SUPPORT: kernel-module
       - MONITORING_SUPPORT: true
       - ROX_PERFORM_DEPLOYMENT_RECONCILIATION: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
@@ -699,9 +699,8 @@ jobs:
     <<: *defaults
     environment:
       - LOCAL_PORT: 443
-      - RUNTIME_SUPPORT: true
+      - RUNTIME_SUPPORT: ebpf
       - MONITORING_SUPPORT: true
-      - ROX_COLLECTOR_EBPF: true
       - GCP_IMAGE_TYPE: "COS"
       - ROX_PERFORM_DEPLOYMENT_RECONCILIATION: true
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
@@ -1015,7 +1014,7 @@ jobs:
     environment:
       - OPENSHIFT_AUTOMATION_VERSION: 0.4.0
       - LOCAL_PORT: 8000
-      - RUNTIME_SUPPORT: true
+      - RUNTIME_SUPPORT: kernel-module
       - MONITORING_SUPPORT: true
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_PERFORM_DEPLOYMENT_RECONCILIATION: true
@@ -1199,7 +1198,7 @@ jobs:
     environment:
       - KOPS_AUTOMATION_VERSION: 0.2.6
       - LOCAL_PORT: 8000
-      - RUNTIME_SUPPORT: true
+      - RUNTIME_SUPPORT: kernel-module
       - MONITORING_SUPPORT: true
       - INFLUXDB_URL: "https://influxdb.monitoring.ci.rox.systems"
       - ROX_PERFORM_DEPLOYMENT_RECONCILIATION: true

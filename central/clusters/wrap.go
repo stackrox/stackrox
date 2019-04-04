@@ -9,7 +9,6 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/netutil"
@@ -145,11 +144,10 @@ func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
 		"AdvertisedEndpointEnv": env.AdvertisedEndpoint.EnvVar(),
 		"AdvertisedEndpoint":    env.AdvertisedEndpoint.Setting(),
 
-		"RuntimeSupport":                 c.RuntimeSupport,
 		"CollectorRegistry":              collectorRegistry,
 		"CollectorImage":                 collectorImageName.GetFullName(),
-		"CollectorEbpf":                  features.CollectorEbpf.Enabled(),
 		"CollectorModuleDownloadBaseURL": "https://collector-modules.stackrox.io/612dd2ee06b660e728292de9393e18c81a88f347ec52a39207c5166b5302b656",
+		"CollectionMethod":               c.CollectionMethod.String(),
 
 		"MonitoringEndpoint": netutil.WithDefaultPort(c.MonitoringEndpoint, defaultMonitoringPort),
 		"ClusterType":        c.Type.String(),

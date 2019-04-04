@@ -14,7 +14,7 @@ metadata:
 imagePullSecrets:
 - name: stackrox
 ---
-{{if .RuntimeSupport}}
+{{if ne .CollectionMethod "NO_COLLECTION"}}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -280,7 +280,7 @@ allowHostPID: true
 volumes:
 - '*'
 ---
-{{if .RuntimeSupport}}
+{{if ne .CollectionMethod "NO_COLLECTION"}}
 kind: SecurityContextConstraints
 apiVersion: v1
 metadata:

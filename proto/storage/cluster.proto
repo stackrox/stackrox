@@ -35,6 +35,13 @@ message OrchestratorMetadata {
     google.protobuf.Timestamp build_date = 2;
 }
 
+enum CollectionMethod {
+    UNSET_COLLECTION = 0;
+    NO_COLLECTION    = 1;
+    KERNEL_MODULE    = 2;
+    EBPF             = 3;
+}
+
 message Cluster {
     string                    id                          = 1 [(gogoproto.moretags) = "search:\"Cluster ID,hidden\""];
     string                    name                        = 2 [(gogoproto.moretags) = "search:\"Cluster\""];
@@ -43,8 +50,9 @@ message Cluster {
     string                    collector_image             = 16;
     string                    central_api_endpoint        = 5;
     reserved                                                6;
-    bool                      runtime_support             = 7;
+    bool                      runtime_support             = 7 [deprecated=true];
     string                    monitoring_endpoint         = 8;
+    CollectionMethod          collection_method           = 17;
 
     reserved 9,10,11;
 

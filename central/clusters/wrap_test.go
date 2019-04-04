@@ -91,7 +91,7 @@ func getBaseConfig() Wrap {
 		Type:                storage.ClusterType_KUBERNETES_CLUSTER,
 		MainImage:           "stackrox.io/main",
 		CentralApiEndpoint:  "central.stackrox:443",
-		RuntimeSupport:      true,
+		CollectionMethod:    storage.CollectionMethod_KERNEL_MODULE,
 		AdmissionController: false,
 	}
 	return test

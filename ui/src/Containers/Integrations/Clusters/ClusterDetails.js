@@ -14,7 +14,13 @@ const clusterTypeLabels = {
 
 const enabledOrDisabled = value => (value ? 'Enabled' : 'Disabled');
 
-export const formatRuntimeSupport = cluster => enabledOrDisabled(cluster.runtimeSupport);
+const collectionMethodMap = {
+    NO_COLLECTION: 'None',
+    KERNEL_MODULE: 'Kernel Module',
+    EBPF: 'eBPF'
+};
+
+export const formatCollectionMethod = cluster => collectionMethodMap[cluster.collectionMethod];
 export const formatAdmissionController = cluster => enabledOrDisabled(cluster.admissionController);
 
 export const checkInLabel = 'Last Check-In';
@@ -38,7 +44,7 @@ const CommonDetails = ({ cluster }) => (
             <LabeledValue label="Collector Image" value={cluster.collectorImage} />
         )}
         <LabeledValue label="Central API Endpoint" value={cluster.centralApiEndpoint} />
-        <LabeledValue label="Runtime Support" value={formatRuntimeSupport(cluster)} />
+        <LabeledValue label="Runtime Support" value={formatCollectionMethod(cluster)} />
         <LabeledValue label={checkInLabel} value={formatLastCheckIn(cluster)} />
         <LabeledValue label={sensorVersionLabel} value={formatSensorVersion(cluster)} />
     </React.Fragment>

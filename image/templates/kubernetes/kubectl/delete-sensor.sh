@@ -5,7 +5,7 @@ kubectl delete -f "$DIR/sensor.yaml"
 kubectl delete -n stackrox secret sensor-tls benchmark-tls
 kubectl delete -f "$DIR/sensor-rbac.yaml"
 
-{{if .RuntimeSupport}}
+{{if ne .CollectionMethod "NO_COLLECTION"}}
 kubectl -n stackrox delete secret collector-tls collector-stackrox
 {{end}}
 

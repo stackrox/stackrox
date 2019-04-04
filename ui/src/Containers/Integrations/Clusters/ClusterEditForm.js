@@ -9,6 +9,7 @@ import ReduxCheckboxField from 'Components/forms/ReduxCheckboxField';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
+import ReduxSelectField from 'Components/forms/ReduxSelectField';
 
 const CommonFields = () => (
     <React.Fragment>
@@ -40,11 +41,27 @@ const StackRoxCollectorImageFormField = () => (
     </FormField>
 );
 
-const RuntimeSupportFormField = () => (
-    <FormField label="Runtime Support">
-        <ReduxCheckboxField name="runtimeSupport" />
-    </FormField>
-);
+const RuntimeSupportFormField = () => {
+    const options = [
+        {
+            label: 'No Runtime Support',
+            value: 'NO_COLLECTION'
+        },
+        {
+            label: 'Kernel Module Support',
+            value: 'KERNEL_MODULE'
+        },
+        {
+            label: '[BETA] eBPF Support',
+            value: 'EBPF'
+        }
+    ];
+    return (
+        <FormField label="Collection Method">
+            <ReduxSelectField key="collectionMethod" name="collectionMethod" options={options} />
+        </FormField>
+    );
+};
 
 const MonitoringEndpointFormField = () => (
     <FormField label="Monitoring Endpoint (include port; empty means no monitoring)">
@@ -101,13 +118,13 @@ const initialValuesFactories = {
     OPENSHIFT_CLUSTER: {
         centralApiEndpoint: 'central.stackrox:443',
         monitoringEndpoint: 'monitoring.stackrox:443',
-        runtimeSupport: true,
+        collectionMethod: 'KERNEL_MODULE',
         collectorImage: `collector.stackrox.io/collector`
     },
     KUBERNETES_CLUSTER: {
         centralApiEndpoint: 'central.stackrox:443',
         monitoringEndpoint: 'monitoring.stackrox:443',
-        runtimeSupport: true,
+        collectionMethod: 'KERNEL_MODULE',
         collectorImage: `collector.stackrox.io/collector`,
         admissionController: false
     }
