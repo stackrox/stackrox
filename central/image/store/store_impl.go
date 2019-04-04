@@ -199,10 +199,7 @@ func hasImage(tx *bolt.Tx, id []byte) bool {
 	bucket := tx.Bucket(imageBucket)
 
 	bytes := bucket.Get(id)
-	if bytes == nil {
-		return false
-	}
-	return true
+	return bytes != nil
 }
 
 // readImage reads a image within a transaction.

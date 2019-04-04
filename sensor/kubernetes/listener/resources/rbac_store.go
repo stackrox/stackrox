@@ -107,7 +107,7 @@ func (rs *rbacStore) removeRoleBinding(roleBinding *storage.K8SRoleBinding, role
 	bindings := roleBindingMap[roleName]
 	for i, binding := range bindings {
 		if binding.GetId() == roleBinding.GetId() {
-			bindings = append(bindings[:i], bindings[i+1:]...)
+			roleBindingMap[roleName] = append(bindings[:i], bindings[i+1:]...)
 			break
 		}
 	}

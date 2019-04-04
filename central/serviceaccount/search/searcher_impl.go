@@ -72,7 +72,7 @@ func (ds *searcherImpl) searchServiceAccounts(q *v1.Query) ([]*storage.ServiceAc
 }
 
 func convertMany(serviceAccounts []*storage.ServiceAccount, results []search.Result) []*v1.SearchResult {
-	outputResults := make([]*v1.SearchResult, len(serviceAccounts), len(serviceAccounts))
+	outputResults := make([]*v1.SearchResult, len(serviceAccounts))
 	for index, sar := range serviceAccounts {
 		outputResults[index] = convertServiceAccount(sar, &results[index])
 	}

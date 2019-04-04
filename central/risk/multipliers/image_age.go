@@ -40,7 +40,7 @@ func (c *imageAgeMultiplier) Score(deployment *storage.Deployment) *storage.Risk
 	}
 
 	// Calculate days from creation time.
-	durationSinceImageCreated := time.Now().Sub(earliestImageCreated)
+	durationSinceImageCreated := time.Since(earliestImageCreated)
 	daysSinceCreated := int(durationSinceImageCreated.Hours() / 24)
 
 	// Creates a score that is:

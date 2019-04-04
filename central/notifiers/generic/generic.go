@@ -176,6 +176,9 @@ func (g *generic) postMessage(message proto.Message, msgKey string) error {
 	}
 
 	req, err := http.NewRequest(http.MethodPost, g.fullyQualifiedEndpoint, body)
+	if err != nil {
+		return err
+	}
 	req.Header.Set("Content-Type", "application/json")
 	for _, h := range g.GetGeneric().GetHeaders() {
 		req.Header.Add(h.GetKey(), h.GetValue())

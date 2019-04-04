@@ -44,21 +44,25 @@ func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[
 	_, err = getSearchFieldNotStored(search.ProcessArguments, optionsMap)
 	if err != nil {
 		err = fmt.Errorf("%s: %s", p.Name(), search.ProcessArguments)
+		return
 	}
 
 	_, err = getSearchFieldNotStored(search.ProcessAncestor, optionsMap)
 	if err != nil {
 		err = fmt.Errorf("%s: %s", p.Name(), search.ProcessAncestor)
+		return
 	}
 
 	processIDSearchField, err := getSearchFieldNotStored(search.ProcessID, optionsMap)
 	if err != nil {
 		err = errors.Wrapf(err, "%s", p.Name())
+		return
 	}
 
 	_, err = getSearchFieldNotStored(search.ProcessUID, optionsMap)
 	if err != nil {
 		err = errors.Wrapf(err, "%s", p.Name())
+		return
 	}
 
 	// Construct query for ProcessID

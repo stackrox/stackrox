@@ -57,9 +57,9 @@ func TestLabelForLevel(t *testing.T) {
 		assert.Equal(t, expectedLabel, actualLabel)
 		assert.Equal(t, expectedLabel, LabelForLevelOrInvalid(level))
 	}
-	label, ok := LabelForLevel(-1)
+	_, ok := LabelForLevel(-1)
 	assert.False(t, ok)
-	label = LabelForLevelOrInvalid(-1)
+	label := LabelForLevelOrInvalid(-1)
 	assert.Equal(t, "Invalid", label)
 }
 

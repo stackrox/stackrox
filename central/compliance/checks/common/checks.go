@@ -18,7 +18,7 @@ var (
 // CheckNotifierInUseByCluster checks if any notifiers have been sent up for alerts.
 func CheckNotifierInUseByCluster(ctx framework.ComplianceContext) {
 	for _, notifier := range ctx.Data().Notifiers() {
-		if notifier.GetEnabled() == true {
+		if notifier.GetEnabled() {
 			framework.Pass(ctx, "At least one notifier is enabled.")
 			return
 		}
@@ -401,26 +401,24 @@ func CheckSecretFilePerms(ctx framework.ComplianceContext) {
 	framework.Pass(ctx, "Deployment is not using any secret volume mounts")
 }
 
+var (
+	secretRegexp = regexp.MustCompile("(?i)secret")
+)
+
 // CheckSecretsInEnv check if any policy is configured to alert on the string secret contained in env vars
 func CheckSecretsInEnv(ctx framework.ComplianceContext) {
 	policiesEnabledNotEnforced := []string{}
 	policies := ctx.Data().Policies()
 	passed := 0
 	for _, policy := range policies {
-		matchSecret, err := regexp.MatchString("(?i)secret", policy.GetFields().GetEnv().GetKey())
-		if err != nil {
-			log.Error(err)
-		}
+		matchSecret := secretRegexp.MatchString(policy.GetFields().GetEnv().GetKey())
 		enabled := false
-		if matchSecret && err == nil &&
-			policy.GetFields().GetEnv().GetValue() != "" && !policy.GetDisabled() {
+		if matchSecret && policy.GetFields().GetEnv().GetValue() != "" && !policy.GetDisabled() {
 			enabled = true
 		}
 
 		enforced := false
-		if (matchSecret) && err == nil &&
-			policy.GetFields().GetEnv().GetValue() != "" && !policy.GetDisabled() &&
-			IsPolicyEnforced(policy) {
+		if matchSecret && policy.GetFields().GetEnv().GetValue() != "" && !policy.GetDisabled() && IsPolicyEnforced(policy) {
 			enforced = true
 		}
 

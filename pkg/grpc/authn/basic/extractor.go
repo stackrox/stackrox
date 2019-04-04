@@ -70,6 +70,9 @@ func NewExtractor(htpasswdFile string, userRole *storage.Role) (authn.IdentityEx
 	defer utils.IgnoreError(f.Close)
 
 	hashFile, err := htpasswd.ReadHashFile(f)
+	if err != nil {
+		return nil, err
+	}
 
 	return &extractor{
 		hashFile: hashFile,

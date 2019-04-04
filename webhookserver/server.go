@@ -132,10 +132,10 @@ func nonTLSServer() {
 }
 
 func writeCerts() {
-	if err := ioutil.WriteFile("server.crt", []byte(serverCRT), 777); err != nil {
+	if err := ioutil.WriteFile("server.crt", []byte(serverCRT), 0777); err != nil {
 		panic(err)
 	}
-	if err := ioutil.WriteFile("server.key", []byte(serverKey), 777); err != nil {
+	if err := ioutil.WriteFile("server.key", []byte(serverKey), 0777); err != nil {
 		panic(err)
 	}
 }

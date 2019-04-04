@@ -109,6 +109,6 @@ func convertTagScanSummaryToImageScan(tagScanSummary *tagScanSummary) *storage.I
 
 	return &storage.ImageScan{
 		ScanTime:   completedAt,
-		Components: convertedLayers,
+		Components: uniqueLayers,
 	}
 }

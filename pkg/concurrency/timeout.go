@@ -23,5 +23,5 @@ func Timeout(duration time.Duration) Waitable {
 // Note: Every call to `Deadline` with a future time point spawns a new goroutine that lives until the given deadline,
 // hence this function should not be used in potentially hot code sites.
 func Deadline(deadline time.Time) Waitable {
-	return Timeout(deadline.Sub(time.Now()))
+	return Timeout(time.Until(deadline))
 }

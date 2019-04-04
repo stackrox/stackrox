@@ -64,7 +64,7 @@ func (suite *QuaySuite) SetupSuite() {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		_, err := fmt.Fprintf(w, scanPayload)
+		_, err := fmt.Fprint(w, scanPayload)
 		suite.NoError(err)
 	})
 	// Handle Registry ping

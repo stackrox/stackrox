@@ -197,8 +197,8 @@ func interactive() *cobra.Command {
 	return &cobra.Command{
 		Use:   "interactive",
 		Short: "Interactive runs the CLI in interactive mode with user prompts",
-		RunE: func(c *cobra.Command, args []string) error {
-			c = Command()
+		RunE: func(_ *cobra.Command, args []string) error {
+			c := Command()
 			c.SilenceUsage = true
 			return runInteractive(c)
 		},

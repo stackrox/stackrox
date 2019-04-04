@@ -64,7 +64,7 @@ func (suite *TenableSuite) SetupSuite() {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		_, err := fmt.Fprintf(w, scanPayload)
+		_, err := fmt.Fprint(w, scanPayload)
 		suite.NoError(err)
 	})
 	masterRouter.HandleFunc("/container-security/api/v1/container/list", func(w http.ResponseWriter, r *http.Request) {

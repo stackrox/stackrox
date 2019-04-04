@@ -89,5 +89,4 @@ func (q *dedupingQueue) pushNoLock(msg *central.MsgFromSensor) {
 		msgInserted = q.queue.PushBack(msg)
 	}
 	q.resourceIDToEvent[msg.GetEvent().GetId()] = msgInserted
-	return
 }

@@ -178,10 +178,7 @@ func hasSecret(tx *bolt.Tx, id string) bool {
 	bucket := tx.Bucket(secretBucket)
 
 	bytes := bucket.Get([]byte(id))
-	if bytes == nil {
-		return false
-	}
-	return true
+	return bytes != nil
 }
 
 // readAllSecrets reads all the secrets in the DB within a transaction.

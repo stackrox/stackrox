@@ -45,9 +45,7 @@ var (
 	groupByFunctions = map[v1.GetAlertsCountsRequest_RequestGroup]func(*storage.ListAlert) []string{
 		v1.GetAlertsCountsRequest_UNSET: func(*storage.ListAlert) []string { return []string{""} },
 		v1.GetAlertsCountsRequest_CATEGORY: func(a *storage.ListAlert) (output []string) {
-			for _, c := range a.GetPolicy().GetCategories() {
-				output = append(output, c)
-			}
+			output = append(output, a.GetPolicy().GetCategories()...)
 			return
 		},
 		v1.GetAlertsCountsRequest_CLUSTER: func(a *storage.ListAlert) []string { return []string{a.GetDeployment().GetClusterName()} },

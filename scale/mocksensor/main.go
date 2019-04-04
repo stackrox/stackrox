@@ -160,7 +160,7 @@ func sendNetworkFlows(stream *threadSafeStream, networkFlowInterval time.Duratio
 
 	nextTick := time.Now()
 	for u := 0; u < maxUpdates; u++ {
-		time.Sleep(nextTick.Sub(time.Now()))
+		time.Sleep(time.Until(nextTick))
 		update := generateNetworkFlowUpdate(maxNetworkFlows, flowDeleteRate)
 		if err := stream.SendNetworkFlows(update); err != nil {
 			logger.Errorf("Error: %v", err)

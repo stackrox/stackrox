@@ -206,7 +206,7 @@ func (m *manager) run() {
 		}
 
 		if !nextEventTS.IsZero() {
-			nextEventTimer = time.NewTimer(nextEventTS.Sub(time.Now()))
+			nextEventTimer = time.NewTimer(time.Until(nextEventTS))
 		}
 
 		select {

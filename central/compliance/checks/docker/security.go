@@ -40,7 +40,7 @@ func containerSprawl(funcCtx framework.ComplianceContext) {
 	common.PerNodeCheckWithDockerData(func(ctx framework.ComplianceContext, data *docker.Data) {
 		var runningContainers int
 		for _, c := range data.Containers {
-			if c.State != nil && c.State.Running == true {
+			if c.State != nil && c.State.Running {
 				runningContainers++
 			}
 		}

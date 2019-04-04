@@ -23,7 +23,7 @@ all: deps style test image
 ## Style ##
 ###########
 .PHONY: style
-style: fmt imports lint vet roxvet blanks validateimports no-large-files storage-protos-compatible ui-lint qa-tests-style
+style: fmt imports lint staticcheck vet roxvet blanks validateimports no-large-files storage-protos-compatible ui-lint qa-tests-style
 
 .PHONY: qa-tests-style
 qa-tests-style:
@@ -34,6 +34,16 @@ qa-tests-style:
 ui-lint:
 	@echo "+ $@"
 	make -C ui lint
+
+STATICCHECK_BIN := $(GOPATH)/bin/staticcheck
+$(STATICCHECK_BIN):
+	@echo "+ $@"
+	@go get honnef.co/go/tools/cmd/staticcheck
+
+.PHONY: staticcheck
+staticcheck: $(STATICCHECK_BIN)
+	@echo "+ $@"
+	@staticcheck -checks=all,-ST1000,-U1000,-ST1005,-SA1019,-SA4001,-ST1016 ./...
 
 .PHONY: fmt
 fmt:
@@ -169,6 +179,7 @@ $(EASYJSON_BIN):
 go-easyjson-srcs: $(EASYJSON_BIN)
 	@echo "+ $@"
 	@easyjson -pkg pkg/docker/types.go
+	@echo "//lint:file-ignore SA4006 This is a generated file" >> pkg/docker/types_easyjson.go
 
 .PHONY: clean-easyjson-srcs
 clean-easyjson-srcs:

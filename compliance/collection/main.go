@@ -51,6 +51,9 @@ func main() {
 	}
 
 	msgReturn.SystemdFiles, err = file.CollectSystemdFiles()
+	if err != nil {
+		log.Error(err)
+	}
 
 	msgReturn.Files, err = file.CollectFiles()
 	if err != nil {
@@ -96,7 +99,7 @@ func main() {
 		log.Fatalf("Couldn't post data to sensor despite retries: %v", err)
 	}
 
-	signalsC := make(chan os.Signal)
+	signalsC := make(chan os.Signal, 1)
 	signal.Notify(signalsC, syscall.SIGINT, syscall.SIGTERM)
 	// Wait for a signal to terminate
 	sig := <-signalsC

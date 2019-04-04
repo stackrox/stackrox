@@ -89,8 +89,7 @@ func schemaExpand(p reflect.Type) string {
 		}
 		return ""
 	case reflect.Map:
-		if p.Elem().Kind() == reflect.String &&
-			p.Elem().Kind() == reflect.String {
+		if p.Key().Kind() == reflect.String && p.Elem().Kind() == reflect.String {
 			return "[Label!]!"
 		}
 	case reflect.Ptr:

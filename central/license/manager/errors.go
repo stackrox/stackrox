@@ -15,7 +15,7 @@ type licenseError interface {
 type notYetValidError time.Time
 
 func (e notYetValidError) Error() string {
-	return fmt.Sprintf("license is not valid for another %v", time.Time(e).Sub(time.Now()))
+	return fmt.Sprintf("license is not valid for another %v", time.Until(time.Time(e)))
 }
 
 func (notYetValidError) Status() v1.LicenseInfo_Status {
@@ -25,7 +25,7 @@ func (notYetValidError) Status() v1.LicenseInfo_Status {
 type expiredError time.Time
 
 func (e expiredError) Error() string {
-	return fmt.Sprintf("license expired %v ago", time.Now().Sub(time.Time(e)))
+	return fmt.Sprintf("license expired %v ago", time.Since(time.Time(e)))
 }
 
 func (expiredError) Status() v1.LicenseInfo_Status {

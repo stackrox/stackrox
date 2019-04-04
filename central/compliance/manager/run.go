@@ -169,5 +169,5 @@ func (r *runInstance) shouldDelete() bool {
 	if r.status != v1.ComplianceRun_FINISHED {
 		return false
 	}
-	return time.Now().Sub(r.finishTime) > maxFinishedRunAge
+	return time.Since(r.finishTime) > maxFinishedRunAge
 }

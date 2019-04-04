@@ -125,7 +125,7 @@ func (h *rbacHandler) processRoleEventsWithType(k8sRole *storage.K8SRole, action
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE:
 		h.rbacStore.addOrUpdateRole(k8sRole)
-		h.updateRoleBindingEvents(k8sRole, events)
+		events = append(events, h.getRoleBindingEvents(k8sRole)...)
 		h.rbacStore.removeBindingsForRoleName(k8sRole.GetNamespace(), k8sRole.GetName(), k8sRole.ClusterScope)
 
 	case central.ResourceAction_UPDATE_RESOURCE:
@@ -260,7 +260,7 @@ func getSubjects(k8sSubjects []v1.Subject) []*storage.Subject {
 	return subjects
 }
 
-func (h *rbacHandler) updateRoleBindingEvents(role *storage.K8SRole, events []*central.SensorEvent) {
+func (h *rbacHandler) getRoleBindingEvents(role *storage.K8SRole) (events []*central.SensorEvent) {
 	bindings := h.rbacStore.getBindingsForRole(role)
 	for _, binding := range bindings {
 		binding.RoleId = role.GetId()
@@ -272,5 +272,5 @@ func (h *rbacHandler) updateRoleBindingEvents(role *storage.K8SRole, events []*c
 			},
 		})
 	}
-
+	return
 }

@@ -358,7 +358,9 @@ func (c *crudImpl) DeleteBatch(keyPaths ...KeyPath) error {
 			if innermostBucket == nil {
 				return nil
 			}
-			return innermostBucket.Delete(leafKey)
+			if err := innermostBucket.Delete(leafKey); err != nil {
+				return err
+			}
 		}
 		return nil
 	})

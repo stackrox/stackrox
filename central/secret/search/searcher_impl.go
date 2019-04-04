@@ -50,7 +50,7 @@ func (ds *searcherImpl) getSearchResults(q *v1.Query) ([]search.Result, error) {
 
 // ToSecrets returns the secrets from the db for the given search results.
 func (ds *searcherImpl) resultsToListSecrets(results []search.Result) ([]*storage.ListSecret, error) {
-	ids := make([]string, len(results), len(results))
+	ids := make([]string, len(results))
 	for index, result := range results {
 		ids[index] = result.ID
 	}
@@ -67,7 +67,7 @@ func (ds *searcherImpl) resultsToSearchResults(results []search.Result) ([]*v1.S
 }
 
 func convertMany(secrets []*storage.ListSecret, results []search.Result) []*v1.SearchResult {
-	outputResults := make([]*v1.SearchResult, len(secrets), len(secrets))
+	outputResults := make([]*v1.SearchResult, len(secrets))
 	for index, sar := range secrets {
 		outputResults[index] = convertOne(sar, &results[index])
 	}

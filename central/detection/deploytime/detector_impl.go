@@ -83,6 +83,9 @@ func (d *detectorImpl) RemovePolicy(policyID string) error {
 
 func (d *detectorImpl) matchWithEmptyImageIDs(p *storage.Policy, matcher searchbasedpolicies.Matcher, deployment *storage.Deployment) ([]*storage.Alert_Violation, error) {
 	deploymentIndex, deployment, err := tempDeploymentIndexer(deployment)
+	if err != nil {
+		return nil, err
+	}
 	violations, err := matcher.MatchOne(deploymentIndex, deployment.GetId())
 	if err != nil {
 		return nil, err

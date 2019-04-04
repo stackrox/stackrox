@@ -6,6 +6,8 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+//lint:file-ignore ST1008 We do want to return errors as the first value here.
+
 // Error is an alias for the builtin `error` interface. It is needed to trick the linter into
 // not complaining about error not being the last return value.
 type Error = error
@@ -170,7 +172,7 @@ func (s *ErrorSignal) WaitWithTimeout(timeout time.Duration) (Error, bool) {
 
 // WaitWithDeadline waits for this signal to be triggered or the deadline to exceed.
 func (s *ErrorSignal) WaitWithDeadline(deadline time.Time) (Error, bool) {
-	return s.WaitWithTimeout(deadline.Sub(time.Now()))
+	return s.WaitWithTimeout(time.Until(deadline))
 }
 
 // Wait waits indefinitely for this signal to be triggered, and returns the stored error.

@@ -50,6 +50,8 @@ func verifyNoAlertForWhitelist(t *testing.T) {
 	latestPolicy, err := service.GetPolicy(ctx, &v1.ResourceByID{
 		Id: resp.GetPolicies()[0].GetId(),
 	})
+	cancel()
+	require.NoError(t, err)
 
 	latestPolicy.Whitelists = []*storage.Whitelist{
 		{
@@ -88,6 +90,8 @@ func verifyAlertForWhitelistRemoval(t *testing.T) {
 	latestPolicy, err := service.GetPolicy(ctx, &v1.ResourceByID{
 		Id: resp.GetPolicies()[0].GetId(),
 	})
+	cancel()
+	require.NoError(t, err)
 
 	latestPolicy.Whitelists = nil
 	ctx, cancel = context.WithTimeout(context.Background(), time.Minute)

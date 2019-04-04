@@ -86,7 +86,6 @@ func (s *scrapeImpl) acceptStart(started *central.ScrapeStarted) {
 	if started.GetErrorMessage() != "" {
 		s.stopped.SignalWithError(fmt.Errorf("failed to start: %s", started.GetErrorMessage()))
 	}
-	return
 }
 
 func (s *scrapeImpl) acceptComplianceReturn(cr *compliance.ComplianceReturn) {

@@ -228,7 +228,6 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
-	return
 }
 
 func wireOrJSONMuxer(grpcServer *grpc.Server, httpHandler http.Handler) http.Handler {

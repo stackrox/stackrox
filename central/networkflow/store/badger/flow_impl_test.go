@@ -111,11 +111,13 @@ func (suite *FlowStoreTestSuite) TestStore() {
 
 	var actualFlows []*storage.NetworkFlow
 	actualFlows, _, err = suite.tested.GetAllFlows(nil)
+	suite.NoError(err)
 	suite.ElementsMatch(actualFlows, flows[1:])
 
 	err = suite.tested.UpsertFlows(flows, timestamp.Now())
 	suite.NoError(err, "upsert should succeed")
 
 	actualFlows, _, err = suite.tested.GetAllFlows(nil)
+	suite.NoError(err)
 	suite.ElementsMatch(actualFlows, flows)
 }

@@ -31,7 +31,7 @@ func (suite *ClairSuite) SetupSuite() {
 		features, _ := mock.GetTestFeatures()
 		bytes, _ := json.Marshal(&clairV1.LayerEnvelope{Layer: &clairV1.Layer{Features: features}})
 		w.WriteHeader(http.StatusOK)
-		_, err := fmt.Fprintf(w, string(bytes))
+		_, err := fmt.Fprint(w, string(bytes))
 		suite.NoError(err)
 	})
 	// Handle namespace endpoint

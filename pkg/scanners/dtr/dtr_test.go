@@ -55,7 +55,7 @@ func (suite *DTRSuite) SetupSuite() {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		_, err := fmt.Fprintf(w, scanResultPayload)
+		_, err := fmt.Fprint(w, scanResultPayload)
 		suite.NoError(err)
 	})
 	masterRouter.HandleFunc("/api/v0/imagescan/repositories/docker/nginx/1.11", func(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +64,7 @@ func (suite *DTRSuite) SetupSuite() {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		_, err := fmt.Fprintf(w, emptyScan)
+		_, err := fmt.Fprint(w, emptyScan)
 		suite.NoError(err)
 	})
 

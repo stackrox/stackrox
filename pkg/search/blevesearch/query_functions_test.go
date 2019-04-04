@@ -42,13 +42,13 @@ func TestNewStringQuery(t *testing.T) {
 			q, err := newStringQuery(v1.SearchCategory_DEPLOYMENTS, "field", c.query)
 			require.Equal(t, c.hasError, err != nil)
 			if q != nil {
-				switch q.(type) {
+				switch typedQ := q.(type) {
 				case *MatchPhrasePrefixQuery:
-					assert.Equal(t, c.expectedString, q.(*MatchPhrasePrefixQuery).MatchPhrasePrefix)
+					assert.Equal(t, c.expectedString, typedQ.MatchPhrasePrefix)
 				case *query.BooleanQuery:
-					assert.Equal(t, c.expectedString, q.(*query.BooleanQuery).MustNot.(*query.DisjunctionQuery).Disjuncts[0].(*MatchPhrasePrefixQuery).MatchPhrasePrefix)
+					assert.Equal(t, c.expectedString, typedQ.MustNot.(*query.DisjunctionQuery).Disjuncts[0].(*MatchPhrasePrefixQuery).MatchPhrasePrefix)
 				case *query.RegexpQuery:
-					assert.Equal(t, c.expectedString, q.(*query.RegexpQuery).Regexp)
+					assert.Equal(t, c.expectedString, typedQ.Regexp)
 				default:
 					t.Fatalf("Type '%s' not handled for query %q", reflect.TypeOf(q), c.query)
 				}

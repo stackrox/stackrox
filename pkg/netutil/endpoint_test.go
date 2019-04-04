@@ -22,7 +22,7 @@ func makeEndpoints(host, zone, port string) []string {
 		return result
 	}
 
-	if strings.IndexRune(hostZone, ':') == -1 {
+	if !strings.ContainsRune(hostZone, ':') {
 		result = append(result, fmt.Sprintf("%s:%s", hostZone, port))
 	}
 	result = append(result, fmt.Sprintf("[%s]:%s", hostZone, port))

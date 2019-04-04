@@ -466,5 +466,4 @@ func waitForTerminationSignal() {
 	reprocessor.Singleton().Stop()
 	globaldb.Close()
 	log.Infof("Central terminated")
-	return
 }

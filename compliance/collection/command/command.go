@@ -102,7 +102,6 @@ func getCommandLine(pid int) (string, error) {
 }
 
 func newArg(k, v string) *compliance.CommandLine_Args {
-	k = strings.TrimLeft(k, "--")
 	k = strings.TrimLeft(k, "-")
 	return &compliance.CommandLine_Args{
 		Key:   k,

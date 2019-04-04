@@ -257,9 +257,12 @@ func (s *MessageCrudTestSuite) TestDeleteBatch() {
 		s.NoError(s.crud.Upsert(a))
 	}
 
-	s.NoError(s.crud.DeleteBatch([]string{"deleteBatchId1", "deleteBatchId2"}))
+	ids := []string{"deleteBatchId1", "deleteBatchId2"}
+	s.NoError(s.crud.DeleteBatch(ids))
 
-	retrievedAlerts, err := s.crud.ReadBatch([]string{"deleteId1", "deleteId2"})
-	s.Error(err, "messages should not exist")
-	s.Equal(0, len(retrievedAlerts), "all alerts should be deleted")
+	for _, id := range ids {
+		alert, err := s.crud.Read(id)
+		s.NoError(err)
+		s.Nil(alert)
+	}
 }

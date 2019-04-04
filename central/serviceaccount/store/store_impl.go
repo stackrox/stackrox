@@ -21,10 +21,7 @@ func hasServiceAccount(tx *bolt.Tx, id string) bool {
 	bucket := tx.Bucket(serviceAccountBucket)
 
 	bytes := bucket.Get([]byte(id))
-	if bytes == nil {
-		return false
-	}
-	return true
+	return bytes != nil
 }
 
 // writeServiceAccount writes a service account within a transaction.

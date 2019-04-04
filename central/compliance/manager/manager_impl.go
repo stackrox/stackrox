@@ -253,7 +253,7 @@ func (m *manager) runLoopSingle() {
 
 	var nextRunTimer *time.Timer
 	if !nextRunTime.IsZero() {
-		nextRunTimer = time.NewTimer(nextRunTime.Sub(time.Now()))
+		nextRunTimer = time.NewTimer(time.Until(nextRunTime))
 	}
 
 	select {

@@ -39,7 +39,7 @@ func WaitWithTimeout(w Waitable, timeout time.Duration) bool {
 // WaitWithDeadline waits for the given Waitable until a specified deadline. It returns false if the deadline expired
 // before the condition was fulfilled, true otherwise.
 func WaitWithDeadline(w Waitable, deadline time.Time) bool {
-	timeout := deadline.Sub(time.Now())
+	timeout := time.Until(deadline)
 	return WaitWithTimeout(w, timeout)
 }
 

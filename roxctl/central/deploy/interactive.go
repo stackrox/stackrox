@@ -120,7 +120,7 @@ func processFlag(f *pflag.Flag) (string, string) {
 }
 
 func choseCommand(prompt string, c *cobra.Command) (args []string) {
-	for true {
+	for {
 		cmdString, err := readUserInput(prompt)
 		if err != nil {
 			printlnToStderr("\nCould not read user input. Did you specify '-i' in the Docker run command?")
@@ -134,7 +134,6 @@ func choseCommand(prompt string, c *cobra.Command) (args []string) {
 		}
 		printlnToStderr("'%s' is not a valid option. Please try again.", cmdString)
 	}
-	return
 }
 
 type flagGroup struct {

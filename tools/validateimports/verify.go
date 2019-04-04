@@ -74,6 +74,9 @@ func getRoot(packageName string) (root string, valid bool) {
 // getImports parses the given Go file, returning its imports
 func getImports(path string) ([]*ast.ImportSpec, error) {
 	fileContents, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
 	fileSet := token.NewFileSet()
 	parsed, err := parser.ParseFile(fileSet, path, fileContents, parser.ImportsOnly)
 	if err != nil {
@@ -83,9 +86,7 @@ func getImports(path string) ([]*ast.ImportSpec, error) {
 
 	impSpecs := make([]*ast.ImportSpec, 0)
 	for _, impSection := range impSections {
-		for _, impSpec := range impSection {
-			impSpecs = append(impSpecs, impSpec)
-		}
+		impSpecs = append(impSpecs, impSection...)
 	}
 	return impSpecs, nil
 }
