@@ -234,23 +234,16 @@ func Command() *cobra.Command {
 	return c
 }
 
-func markFlagAsHidden(cmd *cobra.Command, flagName string) error {
-	if err := cmd.PersistentFlags().MarkHidden(flagName); err == nil {
-		return nil
-	}
+func markFlagAsHidden(cmd *cobra.Command, flagName string) {
+	_ = cmd.PersistentFlags().MarkHidden(flagName)
 	for _, c := range cmd.Commands() {
-		if err := markFlagAsHidden(c, flagName); err == nil {
-			return nil
-		}
+		markFlagAsHidden(c, flagName)
 	}
-	return fmt.Errorf("Could not find flag with name %q", flagName)
 }
 
 func runInteractive(cmd *cobra.Command) error {
 	for _, f := range flagsHiddenWhenInteractive {
-		if err := markFlagAsHidden(cmd, f); err != nil {
-			return err
-		}
+		markFlagAsHidden(cmd, f)
 	}
 	isInteractive = true
 	// Overwrite os.Args because cobra uses them

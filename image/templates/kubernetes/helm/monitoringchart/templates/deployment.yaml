@@ -20,6 +20,10 @@ spec:
       labels:
         app: monitoring
     spec:
+      {{if .Values.nodeSelector -}}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end}}
       serviceAccount: monitoring
       containers:
       - name: influxdb
