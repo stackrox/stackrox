@@ -1109,20 +1109,8 @@ jobs:
       - *storeQATestResults
       - *storeQASpockReports
 
-      - *restoreUI
-      - *determineWhetherToRunUIDevServer
-      - *runUIDevServer
-      - *waitForUIDevServer
-      - *runUIE2E
-      - *collectImbuedUILogs
-      - *storeImbuedUILogs
-
       - *collectK8sLogs
       - *storeK8sLogs
-
-      - *storeCypressResults
-      - *storeCypressScreenshots
-      - *storeCypressVideos
 
       - run:
           name: Pack openshift volume
