@@ -47,7 +47,7 @@ class IntegrationsPage extends Component {
         modalOpen: false,
         selectedSource: '',
         selectedType: '',
-        selectedVisibleType: ''
+        selectedLabel: ''
     };
 
     getEntities = (source, type) => {
@@ -84,7 +84,7 @@ class IntegrationsPage extends Component {
             modalOpen: true,
             selectedSource: integrationCategory.source,
             selectedType: integrationCategory.type,
-            selectedVisibleType: integrationCategory.visibleType
+            selectedLabel: integrationCategory.label
         });
     };
 
@@ -94,7 +94,7 @@ class IntegrationsPage extends Component {
             modalOpen: false,
             selectedSource: '',
             selectedType: '',
-            selectedVisibleType: ''
+            selectedLabel: ''
         });
     };
 
@@ -137,7 +137,7 @@ class IntegrationsPage extends Component {
     }
 
     renderIntegrationModal() {
-        const { modalOpen, selectedSource, selectedType, selectedVisibleType } = this.state;
+        const { modalOpen, selectedSource, selectedType, selectedLabel } = this.state;
         if (!modalOpen) return null;
 
         if (selectedSource === 'clusters') {
@@ -154,7 +154,7 @@ class IntegrationsPage extends Component {
                 integrations={integrations}
                 source={selectedSource}
                 type={selectedType}
-                visibleType={selectedVisibleType}
+                label={selectedLabel}
                 onRequestClose={this.fetchEntitiesAndCloseModal}
             />
         );

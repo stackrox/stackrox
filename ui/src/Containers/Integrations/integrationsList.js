@@ -28,7 +28,6 @@ const integrationsList = {
     imageIntegrations: [
         {
             label: 'StackRox Scanner',
-            visibleType: 'scanner',
             type: 'clairify',
             categories: 'Scanner',
             source: 'imageIntegrations',
@@ -138,7 +137,7 @@ const integrationsList = {
             image: slack
         },
         {
-            label: 'Generic',
+            label: 'Generic Webhook',
             type: 'generic',
             source: 'notifiers',
             image: logo
