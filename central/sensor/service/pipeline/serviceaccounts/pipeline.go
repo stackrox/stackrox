@@ -4,7 +4,9 @@ import (
 	"fmt"
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -27,22 +29,26 @@ var (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(clusterDataStore.Singleton(), datastore.Singleton())
+	return NewPipeline(clusterDataStore.Singleton(), deploymentDataStore.Singleton(), datastore.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline for service accounts
-func NewPipeline(clusters clusterDataStore.DataStore, serviceaccounts datastore.DataStore) pipeline.Fragment {
+func NewPipeline(clusters clusterDataStore.DataStore, deployments deploymentDataStore.DataStore, serviceaccounts datastore.DataStore) pipeline.Fragment {
 	return &pipelineImpl{
 		clusters:        clusters,
+		deployments:     deployments,
 		serviceaccounts: serviceaccounts,
 		reconcileStore:  reconciliation.NewStore(),
+		riskReprocessor: reprocessor.Singleton(),
 	}
 }
 
 type pipelineImpl struct {
 	clusters        clusterDataStore.DataStore
+	deployments     deploymentDataStore.DataStore
 	serviceaccounts datastore.DataStore
 	reconcileStore  reconciliation.Store
+	riskReprocessor reprocessor.Loop
 }
 
 func (s *pipelineImpl) Reconcile(clusterID string) error {
@@ -118,6 +124,23 @@ func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, sa *sto
 	if err := s.persistServiceAccount(action, sa); err != nil {
 		return err
 	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, sa.ClusterId).
+		AddExactMatches(search.Namespace, sa.Namespace).
+		AddExactMatches(search.ServiceAccountName, sa.Name).ProtoQuery()
+
+	deployments, err := s.deployments.SearchListDeployments(q)
+	if err != nil {
+		log.Errorf("error searching for deployments with service account %q", sa.GetName())
+		return err
+	}
+
+	deploymentIDs := make([]string, len(deployments))
+	for _, d := range deployments {
+		deploymentIDs = append(deploymentIDs, d.GetId())
+	}
+	// Reprocess risk
+	s.riskReprocessor.ReprocessRiskForDeployments(deploymentIDs...)
 
 	return nil
 }

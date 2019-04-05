@@ -86,7 +86,8 @@ func TestConvert(t *testing.T) {
 					Replicas: &[]int32{15}[0],
 					Template: v1.PodTemplateSpec{
 						Spec: v1.PodSpec{
-							ServiceAccountName: "sensor",
+							ServiceAccountName:           "sensor",
+							AutomountServiceAccountToken: &[]bool{true}[0],
 							ImagePullSecrets: []v1.LocalObjectReference{
 								{
 									Name: "pull-secret1",
@@ -229,21 +230,23 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						Spec: v1.PodSpec{
-							NodeName: "mynode",
+							NodeName:                     "mynode",
+							AutomountServiceAccountToken: &[]bool{true}[0],
 						},
 					},
 				},
 			},
 			expectedDeployment: &storage.Deployment{
-				Id:               "FooID",
-				Name:             "deployment",
-				Namespace:        "namespace",
-				NamespaceId:      "FAKENSID",
-				Type:             kubernetes.Deployment,
-				Version:          "100",
-				Replicas:         15,
-				ServiceAccount:   "sensor",
-				ImagePullSecrets: []string{"pull-secret1", "pull-secret2"},
+				Id:                           "FooID",
+				Name:                         "deployment",
+				Namespace:                    "namespace",
+				NamespaceId:                  "FAKENSID",
+				Type:                         kubernetes.Deployment,
+				Version:                      "100",
+				Replicas:                     15,
+				ServiceAccount:               "sensor",
+				ImagePullSecrets:             []string{"pull-secret1", "pull-secret2"},
+				AutomountServiceAccountToken: true,
 				Labels: map[string]string{
 					"key":      "value",
 					"question": "answer",

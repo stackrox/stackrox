@@ -9,7 +9,11 @@ import (
 
 func getMockDeployment() *storage.Deployment {
 	return &storage.Deployment{
-		ClusterId: "cluster",
+		Name:                         "mock-deployment",
+		ServiceAccount:               "service-account",
+		ClusterId:                    "cluster",
+		Namespace:                    "namespace",
+		AutomountServiceAccountToken: true,
 		Ports: []*storage.PortConfig{
 			{
 				Name:          "Port1",

@@ -3,7 +3,9 @@ package risk
 import (
 	"github.com/stackrox/rox/central/risk/getters"
 	"github.com/stackrox/rox/central/risk/multipliers"
+	"github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -21,7 +23,7 @@ type Scorer interface {
 
 // NewScorer returns a new scorer that encompasses both static and user defined multipliers
 func NewScorer(alertGetter getters.AlertGetter) Scorer {
-	return &scoreImpl{
+	scoreImpl := &scoreImpl{
 		// These multipliers are intentionally ordered based on the order that we want them to be displayed in.
 		// Order aligns with the maximum output multiplier value, which would make sense to correlate
 		// with how important a specific multiplier is.
@@ -37,4 +39,11 @@ func NewScorer(alertGetter getters.AlertGetter) Scorer {
 		},
 		UserDefinedMultipliers: make(map[string]multipliers.Multiplier),
 	}
+
+	if features.K8sRBAC.Enabled() {
+		scoreImpl.ConfiguredMultipliers = append(scoreImpl.ConfiguredMultipliers,
+			multipliers.NewSecretAutomount(datastore.Singleton()))
+	}
+
+	return scoreImpl
 }

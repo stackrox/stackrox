@@ -109,9 +109,10 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 				LabelSelector: &storage.LabelSelector{
 					MatchLabels: map[string]string{},
 				},
-				UpdatedAt:        &timestamp.Timestamp{Seconds: 1000},
-				ImagePullSecrets: []string{},
-				Tolerations:      []*storage.Toleration{},
+				UpdatedAt:                    &timestamp.Timestamp{Seconds: 1000},
+				ImagePullSecrets:             []string{},
+				Tolerations:                  []*storage.Toleration{},
+				AutomountServiceAccountToken: true,
 				Containers: []*storage.Container{
 					{
 						Id:   "FooID:container1",

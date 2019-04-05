@@ -37,7 +37,7 @@ func (*serviceAccountDispatcher) ProcessEvent(obj interface{}, action central.Re
 			Namespace:        serviceAccount.GetNamespace(),
 			ClusterName:      serviceAccount.GetClusterName(),
 			CreatedAt:        protoconv.ConvertTimeToTimestamp(serviceAccount.GetCreationTimestamp().Time),
-			AutomountToken:   false,
+			AutomountToken:   true,
 			Labels:           serviceAccount.GetLabels(),
 			Annotations:      serviceAccount.GetAnnotations(),
 			Secrets:          serviceAccountSecrets,

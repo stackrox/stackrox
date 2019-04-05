@@ -194,6 +194,11 @@ func (w *deploymentWrap) populateNonStaticFields(obj interface{}, action central
 
 	w.PodLabels = podLabels
 	w.LabelSelector = labelSel
+	w.AutomountServiceAccountToken = true
+	if podSpec.AutomountServiceAccountToken != nil {
+		w.AutomountServiceAccountToken = *podSpec.AutomountServiceAccountToken
+	}
+
 	w.populateNamespaceID(namespaceStore)
 
 	if labelSelector == nil {

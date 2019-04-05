@@ -265,6 +265,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.ContainerRuntime(0)))
 	utils.Must(builder.AddType("Deployment", []string{
 		"annotations: [Label!]!",
+		"automountServiceAccountToken: Boolean!",
 		"clusterId: String!",
 		"clusterName: String!",
 		"containers: [Container]!",
@@ -2744,6 +2745,12 @@ func (resolver *deploymentResolver) Annotations() labels {
 	resolver.ensureData()
 	value := resolver.data.GetAnnotations()
 	return labelsResolver(value)
+}
+
+func (resolver *deploymentResolver) AutomountServiceAccountToken() bool {
+	resolver.ensureData()
+	value := resolver.data.GetAutomountServiceAccountToken()
+	return value
 }
 
 func (resolver *deploymentResolver) ClusterId() string {
