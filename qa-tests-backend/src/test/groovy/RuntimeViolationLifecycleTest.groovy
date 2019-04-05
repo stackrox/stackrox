@@ -30,8 +30,7 @@ class RuntimeViolationLifecycleTest extends BaseSpecification  {
     }
 
     def deleteAndWaitForSR(Deployment deployment) {
-        orchestrator.deleteDeployment(deployment)
-        orchestrator.waitForDeploymentDeletion(deployment)
+        orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
 
         // Wait until the deployment disappears from StackRox.
         long sleepTime = 0

@@ -48,8 +48,7 @@ class ReconciliationTest extends BaseSpecification {
         assert NetworkPolicyService.waitForNetworkPolicy(networkPolicyID)
 
         def sensorDeployment = new Deployment().setNamespace("stackrox").setName("sensor")
-        orchestrator.deleteDeployment(sensorDeployment)
-        orchestrator.waitForDeploymentDeletion(sensorDeployment)
+        orchestrator.deleteAndWaitForDeploymentDeletion(sensorDeployment)
 
         // Delete objects from k8s
         orchestrator.identity {

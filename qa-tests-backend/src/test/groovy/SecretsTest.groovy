@@ -54,7 +54,7 @@ class SecretsTest extends BaseSpecification {
 
         cleanup:
         "Remove Secret #secretName and Deployment #deploymentName"
-        orchestrator.deleteDeployment(deployment)
+        orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
         orchestrator.deleteSecret(secretName)
     }
 
@@ -74,8 +74,7 @@ class SecretsTest extends BaseSpecification {
 
         and:
         "Delete the binding deployment"
-        orchestrator.deleteDeployment(deployment)
-        orchestrator.waitForDeploymentDeletion(deployment)
+        orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
 
         then:
         "Verify the binding deployment is gone from the secret"
@@ -113,8 +112,7 @@ class SecretsTest extends BaseSpecification {
 
         and:
         "Delete this deployment and create another deployment binding with the secret name with different name"
-        orchestrator.deleteDeployment(deployment)
-        orchestrator.waitForDeploymentDeletion(deployment)
+        orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
 
         String deploymentSecName = "depwithsecretssec"
         Deployment deploymentSec = renderDeployment(deploymentSecName, secretName)
@@ -128,7 +126,7 @@ class SecretsTest extends BaseSpecification {
 
         cleanup:
         "Remove Deployment #deploymentName and Secret #secretName"
-        orchestrator.deleteDeployment(deploymentSec)
+        orchestrator.deleteAndWaitForDeploymentDeletion(deploymentSec)
         orchestrator.deleteSecret(secretName)
     }
 
@@ -150,10 +148,7 @@ class SecretsTest extends BaseSpecification {
 
         and:
         "Delete this deployment and create another deployment binding with the secret name with different name"
-        orchestrator.deleteDeployment(deploymentOne)
-        orchestrator.waitForDeploymentDeletion(deploymentOne)
-        orchestrator.deleteDeployment(deploymentTwo)
-        orchestrator.waitForDeploymentDeletion(deploymentTwo)
+        orchestrator.deleteAndWaitForDeploymentDeletion(deploymentOne, deploymentTwo)
 
         deploymentOne = renderDeployment(deploymentNameOne, secretNameTwo)
         deploymentTwo = renderDeployment(deploymentNameTwo, secretNameOne)
@@ -170,8 +165,7 @@ class SecretsTest extends BaseSpecification {
 
         cleanup:
         "Remove Deployment and Secret"
-        orchestrator.deleteDeployment(deploymentOne)
-        orchestrator.deleteDeployment(deploymentTwo)
+        orchestrator.deleteAndWaitForDeploymentDeletion(deploymentOne, deploymentTwo)
         orchestrator.deleteSecret(secretNameOne)
         orchestrator.deleteSecret(secretNameTwo)
     }

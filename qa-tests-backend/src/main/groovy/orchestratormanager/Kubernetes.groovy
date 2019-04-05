@@ -149,6 +149,15 @@ class Kubernetes implements OrchestratorMain {
         println "Timed out waiting for deployment ${deploy.name} to be deleted"
     }
 
+    def deleteAndWaitForDeploymentDeletion(Deployment... deployments) {
+        for (Deployment deployment : deployments) {
+            this.deleteDeployment(deployment)
+        }
+        for (Deployment deployment : deployments) {
+            this.waitForDeploymentDeletion(deployment)
+        }
+    }
+
     def deleteDeployment(Deployment deployment) {
         if (deployment.exposeAsService) {
             this.deleteService(deployment.name, deployment.namespace)
