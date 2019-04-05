@@ -23,7 +23,21 @@ all: deps style test image
 ## Style ##
 ###########
 .PHONY: style
-style: fmt imports lint staticcheck vet roxvet blanks validateimports no-large-files storage-protos-compatible ui-lint qa-tests-style
+style: fmt imports lint vet roxvet blanks validateimports no-large-files storage-protos-compatible ui-lint qa-tests-style
+
+# staticcheck is useful, but extremely computationally intensive on some people's machines.
+# Therefore, to allow people to continue running `make style`, staticcheck is not run along with
+# the other style targets by default, when running locally.
+# It is always run in CI.
+# To run it locally along with the other style targets, you can `export RUN_STATIC_CHECK=true`.
+# If you want to run just staticcheck, you can, of course, just `make staticcheck`.
+ifdef CI
+style: staticcheck
+endif
+
+ifdef RUN_STATIC_CHECK
+style: staticcheck
+endif
 
 .PHONY: qa-tests-style
 qa-tests-style:
