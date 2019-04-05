@@ -44,8 +44,8 @@ const (
 )
 
 var (
-	// defaultDestination is the default logging destination, which is currently os.Stdout
-	defaultDestination io.Writer = os.Stdout
+	// defaultDestination is the default logging destination, which is currently os.Stderr
+	defaultDestination io.Writer = os.Stderr
 	//all registered loggers thus far
 	allLoggers = []*weakLoggerRef(nil)
 	// numGCdLoggers is the total numbers of loggers whose (former) weak references are present in allLoggers but have
@@ -165,7 +165,7 @@ func init() {
 
 	logFile, err := os.OpenFile(loggingPath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 	if err == nil {
-		defaultDestination = io.MultiWriter(os.Stdout, logFile)
+		defaultDestination = io.MultiWriter(defaultDestination, logFile)
 	}
 
 	rootLogger = createLogger("root logger", 0)
