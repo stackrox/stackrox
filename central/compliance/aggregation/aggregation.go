@@ -158,7 +158,12 @@ func (a *aggregatorImpl) Aggregate(queryString string, groupBy []v1.ComplianceAg
 	}
 	querySpecifiedFields := getSpecifiedFieldsFromQuery(query)
 
-	standardIDs, clusterIDs, err := a.getRunParameters(query, querySpecifiedFields)
+	standardIDs, err := a.getStandardsToRun(query, querySpecifiedFields)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	clusterIDs, clusterQueryWasApplicable, err := a.getClustersToRun(query, querySpecifiedFields)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -173,6 +178,10 @@ func (a *aggregatorImpl) Aggregate(queryString string, groupBy []v1.ComplianceAg
 	mask, err := a.getCheckMask(query, querySpecifiedFields)
 	if err != nil {
 		return nil, nil, nil, err
+	}
+
+	if clusterQueryWasApplicable {
+		mask[getMaskIndex(v1.ComplianceAggregation_CLUSTER)] = set.NewStringSet(clusterIDs...)
 	}
 
 	results, domainMap := a.getAggregatedResults(groupBy, unit, validResults, mask)
@@ -200,11 +209,22 @@ func getMaskIndex(s v1.ComplianceAggregation_Scope) int {
 }
 
 func isValidCheck(mask [numScopes]set.StringSet, fc flatCheck) bool {
+	var failedOnEmpty, hadMatch bool
 	for i := range mask {
 		scope := v1.ComplianceAggregation_Scope(i) + minScope
-		if fc.values[scope] != "" && mask[i].IsInitialized() && !mask[i].Contains(fc.values[scope]) {
-			return false
+		if mask[i].IsInitialized() {
+			if !mask[i].Contains(fc.values[scope]) {
+				if fc.values[scope] == "" {
+					failedOnEmpty = true
+					continue
+				}
+				return false
+			}
+			hadMatch = true
 		}
+	}
+	if failedOnEmpty && !hadMatch {
+		return false
 	}
 	return true
 }
@@ -390,18 +410,18 @@ func (a *aggregatorImpl) getResultsFromScope(scope v1.ComplianceAggregation_Scop
 }
 
 func (a *aggregatorImpl) addSetToMaskIfOptionsApplicable(scope v1.ComplianceAggregation_Scope, mask *[numScopes]set.StringSet,
-	query *v1.Query, querySpecifiedFields []string) (wasApplicable bool, err error) {
+	query *v1.Query, querySpecifiedFields []string) error {
 
 	results, wasApplicable, err := a.getResultsFromScope(scope, query, querySpecifiedFields)
 	if err != nil {
-		return
+		return err
 	}
 	if !wasApplicable {
-		return
+		return nil
 	}
 
 	mask[getMaskIndex(scope)] = search.ResultsToIDSet(results)
-	return
+	return nil
 }
 
 // getCheckMask returns an array of ComplianceAggregation scopes that contains a set of IDs that are allowed
@@ -409,28 +429,17 @@ func (a *aggregatorImpl) addSetToMaskIfOptionsApplicable(scope v1.ComplianceAggr
 func (a *aggregatorImpl) getCheckMask(query *v1.Query, querySpecifiedFields []string) ([numScopes]set.StringSet, error) {
 	var mask [numScopes]set.StringSet
 
-	nodeWasApplicable, err := a.addSetToMaskIfOptionsApplicable(v1.ComplianceAggregation_NODE, &mask, query, querySpecifiedFields)
+	err := a.addSetToMaskIfOptionsApplicable(v1.ComplianceAggregation_NODE, &mask, query, querySpecifiedFields)
 	if err != nil {
 		return mask, err
 	}
 
-	namespaceWasApplicable, err := a.addSetToMaskIfOptionsApplicable(v1.ComplianceAggregation_NAMESPACE, &mask, query, querySpecifiedFields)
+	err = a.addSetToMaskIfOptionsApplicable(v1.ComplianceAggregation_NAMESPACE, &mask, query, querySpecifiedFields)
 	if err != nil {
 		return mask, err
 	}
 
-	// This makes node and namespace options mutually exclusive. Otherwise, we will get all node results
-	// if users query for namespace and vice-versa. By explicitly setting the mask to an empty set,
-	// we make sure no ids are returned.
-	if !nodeWasApplicable && namespaceWasApplicable {
-		mask[getMaskIndex(v1.ComplianceAggregation_NODE)] = set.NewStringSet()
-	}
-
-	if !namespaceWasApplicable && nodeWasApplicable {
-		mask[getMaskIndex(v1.ComplianceAggregation_NAMESPACE)] = set.NewStringSet()
-	}
-
-	_, err = a.addSetToMaskIfOptionsApplicable(v1.ComplianceAggregation_CONTROL, &mask, query, querySpecifiedFields)
+	err = a.addSetToMaskIfOptionsApplicable(v1.ComplianceAggregation_CONTROL, &mask, query, querySpecifiedFields)
 	if err != nil {
 		return mask, err
 	}
@@ -438,40 +447,40 @@ func (a *aggregatorImpl) getCheckMask(query *v1.Query, querySpecifiedFields []st
 	return mask, nil
 }
 
-// getRunParameters returns the standard IDs and the cluster IDs for the query
-func (a *aggregatorImpl) getRunParameters(query *v1.Query, querySpecifiedFields []string) (standardIDs, clusterIDs []string, err error) {
+func (a *aggregatorImpl) getStandardsToRun(query *v1.Query, querySpecifiedFields []string) ([]string, error) {
 	results, wasApplicable, err := a.getResultsFromScope(v1.ComplianceAggregation_STANDARD, query, querySpecifiedFields)
 	if err != nil {
-		return
+		return nil, err
 	}
 	if wasApplicable {
-		standardIDs = search.ResultsToIDs(results)
-	} else {
-		var stds []*v1.ComplianceStandardMetadata
-		stds, err = a.standards.Standards()
-		if err != nil {
-			return
-		}
-		for _, s := range stds {
-			standardIDs = append(standardIDs, s.GetId())
-		}
+		return search.ResultsToIDs(results), nil
 	}
-
-	results, wasApplicable, err = a.getResultsFromScope(v1.ComplianceAggregation_CLUSTER, query, querySpecifiedFields)
+	stds, err := a.standards.Standards()
 	if err != nil {
-		return
+		return nil, err
+	}
+	standardIDs := make([]string, 0, len(stds))
+	for _, s := range stds {
+		standardIDs = append(standardIDs, s.GetId())
+	}
+	return standardIDs, nil
+}
+
+func (a *aggregatorImpl) getClustersToRun(query *v1.Query, querySpecifiedFields []string) ([]string, bool, error) {
+	results, wasApplicable, err := a.getResultsFromScope(v1.ComplianceAggregation_CLUSTER, query, querySpecifiedFields)
+	if err != nil {
+		return nil, false, err
 	}
 	if wasApplicable {
-		clusterIDs = search.ResultsToIDs(results)
-	} else {
-		var clusters []*storage.Cluster
-		clusters, err = a.clusters.GetClusters()
-		if err != nil {
-			return
-		}
-		for _, c := range clusters {
-			clusterIDs = append(clusterIDs, c.GetId())
-		}
+		return search.ResultsToIDs(results), true, nil
 	}
-	return
+	clusters, err := a.clusters.GetClusters()
+	if err != nil {
+		return nil, false, err
+	}
+	clusterIDs := make([]string, 0, len(clusters))
+	for _, c := range clusters {
+		clusterIDs = append(clusterIDs, c.GetId())
+	}
+	return clusterIDs, false, nil
 }

@@ -200,6 +200,7 @@ func TestGetAggregatedResults(t *testing.T) {
 		passPerResult int32
 		failPerResult int32
 		numResults    int
+		mask          [numScopes]set.StringSet
 	}{
 		{
 			unit:          v1.ComplianceAggregation_CLUSTER,
@@ -283,6 +284,16 @@ func TestGetAggregatedResults(t *testing.T) {
 			passPerResult: 14,
 			numResults:    2,
 		},
+		{
+			groupBy:       []v1.ComplianceAggregation_Scope{v1.ComplianceAggregation_CLUSTER},
+			unit:          v1.ComplianceAggregation_CHECK,
+			failPerResult: 2,
+			passPerResult: 4,
+			numResults:    1,
+			mask: [numScopes]set.StringSet{
+				v1.ComplianceAggregation_NAMESPACE - minScope: set.NewStringSet(qualifiedNamespaceID("cluster1", "namespace1")),
+			},
+		},
 	}
 	runResults := []*storage.ComplianceRunResults{
 		mockRunResult("cluster1", "standard1"),
@@ -296,7 +307,7 @@ func TestGetAggregatedResults(t *testing.T) {
 			ag := &aggregatorImpl{
 				standards: mockStandardsRepo{},
 			}
-			results, _ := ag.getAggregatedResults(c.groupBy, c.unit, runResults, [numScopes]set.StringSet{})
+			results, _ := ag.getAggregatedResults(c.groupBy, c.unit, runResults, c.mask)
 			require.Equal(t, c.numResults, len(results))
 			for _, r := range results {
 				assert.Equal(t, c.passPerResult, r.NumPassing)
@@ -381,5 +392,127 @@ func TestDomainAttribution(t *testing.T) {
 		mappedDomain := domainMap[results[i]].GetNodes()
 		_, ok := mappedDomain[nodeID]
 		assert.True(t, ok)
+	}
+}
+
+/*
+
+Test Cases illustrated by test below
+
+Search Cluster A
+
+      Cluster    Namespace    Deployment    Node
+        A            ""           ""         "" - EXPECT
+        A            B            C          "" - EXPECT
+        A            ""           ""         D  - EXPECT
+
+Mask   [A]        [B, B1]       [C, C1]    [D, D1]
+
+
+Search Namespace B
+
+      Cluster    Namespace    Deployment    Node
+        A            ""           ""         "" - DONT EXPECT
+        A            B            C          "" - EXPECT
+        A            ""           ""         D  - DONT EXPECT
+
+Mask  <nil>        [B, B1]       [C, C1]    <nil>
+
+*/
+
+func TestIsValidCheck(t *testing.T) {
+	type check struct {
+		fc     flatCheck
+		result bool
+	}
+
+	var cases = []struct {
+		mask   map[v1.ComplianceAggregation_Scope]set.StringSet
+		checks []check
+	}{
+		{
+			mask: map[v1.ComplianceAggregation_Scope]set.StringSet{
+				v1.ComplianceAggregation_CLUSTER:    set.NewStringSet("A"),
+				v1.ComplianceAggregation_NAMESPACE:  set.NewStringSet("B"),
+				v1.ComplianceAggregation_DEPLOYMENT: set.NewStringSet("C"),
+				v1.ComplianceAggregation_NODE:       set.NewStringSet("D"),
+			},
+			checks: []check{
+				{
+					fc: flatCheck{
+						values: map[v1.ComplianceAggregation_Scope]string{
+							v1.ComplianceAggregation_CLUSTER: "A",
+						},
+					},
+					result: true,
+				},
+				{
+					fc: flatCheck{
+						values: map[v1.ComplianceAggregation_Scope]string{
+							v1.ComplianceAggregation_CLUSTER:    "A",
+							v1.ComplianceAggregation_NAMESPACE:  "B",
+							v1.ComplianceAggregation_DEPLOYMENT: "C",
+						},
+					},
+					result: true,
+				},
+				{
+					fc: flatCheck{
+						values: map[v1.ComplianceAggregation_Scope]string{
+							v1.ComplianceAggregation_CLUSTER: "A",
+							v1.ComplianceAggregation_NODE:    "D",
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			mask: map[v1.ComplianceAggregation_Scope]set.StringSet{
+				v1.ComplianceAggregation_NAMESPACE:  set.NewStringSet("B"),
+				v1.ComplianceAggregation_DEPLOYMENT: set.NewStringSet("C"),
+			},
+			checks: []check{
+				{
+					fc: flatCheck{
+						values: map[v1.ComplianceAggregation_Scope]string{
+							v1.ComplianceAggregation_CLUSTER: "A",
+						},
+					},
+					result: false,
+				},
+				{
+					fc: flatCheck{
+						values: map[v1.ComplianceAggregation_Scope]string{
+							v1.ComplianceAggregation_CLUSTER:    "A",
+							v1.ComplianceAggregation_NAMESPACE:  "B",
+							v1.ComplianceAggregation_DEPLOYMENT: "C",
+						},
+					},
+					result: true,
+				},
+				{
+					fc: flatCheck{
+						values: map[v1.ComplianceAggregation_Scope]string{
+							v1.ComplianceAggregation_CLUSTER: "A",
+							v1.ComplianceAggregation_NODE:    "D",
+						},
+					},
+					result: false,
+				},
+			},
+		},
+	}
+	for _, testCase := range cases {
+		// testCase mask to actual mask
+		testMask := [numScopes]set.StringSet{}
+		for k, v := range testCase.mask {
+			testMask[getMaskIndex(k)] = v
+		}
+		for _, c := range testCase.checks {
+			t.Run("aggregation", func(t *testing.T) {
+				assert.Equal(t, c.result, isValidCheck(testMask, c.fc))
+			})
+		}
 	}
 }
