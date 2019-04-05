@@ -86,15 +86,14 @@ class Panel extends Component {
                 <div className="border-b border-base-400" />
                 <div className="flex flex-col items-center w-full">
                     {lifecycles.map(key => (
-                        <div key={key}>
-                            <Tile
-                                lifecycle={key}
-                                enabled={this.lifecycleStageEnabled(key)}
-                                applied={this.hasEnforcementForLifecycle(key)}
-                                enforcement={lifecycleTileMap[key]}
-                                onOffAction={this.toggleStage(key)}
-                            />
-                        </div>
+                        <Tile
+                            key={key}
+                            lifecycle={key}
+                            enabled={this.lifecycleStageEnabled(key)}
+                            applied={this.hasEnforcementForLifecycle(key)}
+                            enforcement={lifecycleTileMap[key]}
+                            onOffAction={this.toggleStage(key)}
+                        />
                     ))}
                 </div>
             </div>
