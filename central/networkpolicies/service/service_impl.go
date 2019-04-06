@@ -427,31 +427,6 @@ func (s *serviceImpl) getDeployments(clusterID, query string) (deployments []*st
 	return
 }
 
-func (s *serviceImpl) getDeploymentIDs(clusterID, query string) (deploymentIDs []string, err error) {
-	clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-
-	q := clusterQuery
-	if query != "" {
-		q, err = search.ParseRawQuery(query)
-		if err != nil {
-			return
-		}
-		q = search.ConjunctionQuery(q, clusterQuery)
-	}
-
-	var results []*v1.SearchResult
-	results, err = s.deployments.SearchDeployments(q)
-	if len(results) == 0 {
-		return
-	}
-
-	deploymentIDs = make([]string, 0, len(results))
-	for _, result := range results {
-		deploymentIDs = append(deploymentIDs, result.GetId())
-	}
-	return
-}
-
 func (s *serviceImpl) getNetworkPoliciesInSimulation(clusterID string, modification *storage.NetworkPolicyModification) ([]*v1.NetworkPolicyInSimulation, error) {
 	// Confirm that any input yamls are valid. Do this check first since it is the cheapest.
 	additionalPolicies, err := compileValidateYaml(modification.GetApplyYaml())

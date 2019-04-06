@@ -56,32 +56,6 @@ func rabbitMQBeamSMPProcess() *storage.ProcessIndicator {
 	}
 }
 
-func rabbitMQErlExecProcess() *storage.ProcessIndicator {
-	return &storage.ProcessIndicator{
-		Id:    uuid.NewV4().String(),
-		PodId: rabbitMQPodID,
-		Signal: &storage.ProcessSignal{
-			ContainerId:  rabbitMQContainerID,
-			Name:         "erlexec",
-			Args:         fmt.Sprintf("-sname epmd-starter-%d -noshell -eval halt().", rand.Intn(int(math.Pow10(9)))),
-			ExecFilePath: "/usr/lib/erlang/erts-9.3.3.3/bin/erlexec",
-		},
-	}
-}
-
-func rabbitMQErlProcess() *storage.ProcessIndicator {
-	return &storage.ProcessIndicator{
-		Id:    uuid.NewV4().String(),
-		PodId: rabbitMQPodID,
-		Signal: &storage.ProcessSignal{
-			ContainerId:  rabbitMQContainerID,
-			Name:         "erl",
-			Args:         fmt.Sprintf("/usr/lib/erlang/erts-9.3.3.3/bin/erl -sname epmd-starter-%d -noshell -eval halt().", rand.Intn(int(math.Pow10(9)))),
-			ExecFilePath: "/usr/lib/erlang/erts-9.3.3.3/bin/erl",
-		},
-	}
-}
-
 func processToIDAndArgs(process *storage.ProcessIndicator) processindicator.IDAndArgs {
 	return processindicator.IDAndArgs{
 		ID:   process.GetId(),

@@ -7,11 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	// DefaultRegistry defaults to dockerhub
-	defaultRegistry = "https://registry-1.docker.io" // variable so that it could be potentially changed
-)
-
 func TestGetMetadataIntegration(t *testing.T) {
 	dockerHubClient, err := NewDockerRegistry(&storage.ImageIntegration{
 		IntegrationConfig: &storage.ImageIntegration_Docker{

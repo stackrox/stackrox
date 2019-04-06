@@ -212,13 +212,6 @@ func (r *Registry) GetCISKubernetesStandardID() (string, error) {
 	return "", errors.New("Unable to find CIS Kubernetes standard")
 }
 
-func (r *Registry) controlByID(id string) *Control {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
-
-	return r.controlsByID[id]
-}
-
 // SearchStandards searches across standards
 func (r *Registry) SearchStandards(q *v1.Query) ([]search.Result, error) {
 	return r.indexer.SearchStandards(q)

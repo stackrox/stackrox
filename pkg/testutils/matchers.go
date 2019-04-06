@@ -19,7 +19,6 @@ var (
 type predMatcher struct {
 	desc    string
 	inTy    reflect.Type
-	outTy   reflect.Type
 	checker reflect.Value
 }
 

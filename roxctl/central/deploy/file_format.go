@@ -11,11 +11,6 @@ type fileFormatWrapper struct {
 	DeploymentFormat *v1.DeploymentFormat
 }
 
-var deploymentFormatMap = map[string]v1.DeploymentFormat{
-	"kubectl": v1.DeploymentFormat_KUBECTL,
-	"helm":    v1.DeploymentFormat_HELM,
-}
-
 func (f *fileFormatWrapper) String() string {
 	return strings.ToLower(f.DeploymentFormat.String())
 }

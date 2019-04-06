@@ -57,7 +57,7 @@ $(STATICCHECK_BIN):
 .PHONY: staticcheck
 staticcheck: $(STATICCHECK_BIN)
 	@echo "+ $@"
-	@staticcheck -checks=all,-ST1000,-U1000,-ST1005,-SA1019,-SA4001,-ST1016 ./...
+	@$(BASE_DIR)/tools/staticcheck-wrap.sh ./...
 
 .PHONY: fmt
 fmt:

@@ -114,10 +114,6 @@ func (suite *DefaultPoliciesTestSuite) mustIndexDepAndImages(deployment *storage
 	}
 }
 
-func wrapAlertViolations(slice []*storage.Alert_Violation) searchbasedpolicies.Violations {
-	return searchbasedpolicies.Violations{AlertViolations: slice}
-}
-
 func imageWithComponents(components []*storage.ImageScanComponent) *storage.Image {
 	return &storage.Image{
 		Id:   uuid.NewV4().String(),
@@ -181,7 +177,6 @@ func (suite *DefaultPoliciesTestSuite) mustAddIndicator(deploymentID, name, args
 
 type testCase struct {
 	policyName         string
-	policy             *storage.Policy
 	expectedViolations map[string]searchbasedpolicies.Violations
 
 	// If shouldNotMatch is specified (which is the case for policies that check for the absence of something), we verify that

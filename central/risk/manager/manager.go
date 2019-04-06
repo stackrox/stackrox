@@ -4,12 +4,10 @@ import (
 	"time"
 
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
-	imageIntegrationDS "github.com/stackrox/rox/central/imageintegration/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	multiplierDS "github.com/stackrox/rox/central/multiplier/store"
 	"github.com/stackrox/rox/central/risk"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoutils"
 )
@@ -27,12 +25,10 @@ type Manager interface {
 }
 
 type managerImpl struct {
-	deploymentStorage       deploymentDS.DataStore
-	imageIntegrationStorage imageIntegrationDS.DataStore
-	multiplierStorage       multiplierDS.Store
+	deploymentStorage deploymentDS.DataStore
+	multiplierStorage multiplierDS.Store
 
-	imageEnricher enricher.ImageEnricher
-	scorer        risk.Scorer
+	scorer risk.Scorer
 }
 
 // New returns a new manager

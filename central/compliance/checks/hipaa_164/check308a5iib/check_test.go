@@ -114,33 +114,6 @@ func (s *suiteImpl) cluster() *storage.Cluster {
 	}
 }
 
-func (s *suiteImpl) networkPolicies() []*storage.NetworkPolicy {
-	return []*storage.NetworkPolicy{
-		{
-			Id: uuid.NewV4().String(),
-			Spec: &storage.NetworkPolicySpec{
-				PolicyTypes: []storage.NetworkPolicyType{
-					storage.NetworkPolicyType_INGRESS_NETWORK_POLICY_TYPE,
-				},
-				Ingress: []*storage.NetworkPolicyIngressRule{
-					{},
-				},
-			},
-		},
-		{
-			Id: uuid.NewV4().String(),
-			Spec: &storage.NetworkPolicySpec{
-				PolicyTypes: []storage.NetworkPolicyType{
-					storage.NetworkPolicyType_EGRESS_NETWORK_POLICY_TYPE,
-				},
-				Egress: []*storage.NetworkPolicyEgressRule{
-					{},
-				},
-			},
-		},
-	}
-}
-
 func (s *suiteImpl) policies() map[string]*storage.Policy {
 	policiesMap := make(map[string]*storage.Policy)
 	policies := []*storage.Policy{
@@ -180,12 +153,4 @@ func (s *suiteImpl) nodes() []*storage.Node {
 			Id: uuid.NewV4().String(),
 		},
 	}
-}
-
-func toMap(in []*storage.NetworkPolicy) map[string]*storage.NetworkPolicy {
-	merp := make(map[string]*storage.NetworkPolicy, len(in))
-	for _, np := range in {
-		merp[np.GetId()] = np
-	}
-	return merp
 }

@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	"github.com/stackrox/rox/sensor/common/metrics"
 )
@@ -21,10 +20,6 @@ import (
 const (
 	// Wait at least this long before determining that an unresolvable IP is "outside of the cluster".
 	clusterEntityResolutionWaitPeriod = 10 * time.Second
-)
-
-var (
-	internetUUID = uuid.Nil
 )
 
 type hostConnections struct {

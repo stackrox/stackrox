@@ -44,8 +44,7 @@ type applyTx struct {
 	networkingClient networkingV1Client.NetworkingV1Interface
 	timestamp        string
 
-	rollbackActions  []rollbackAction
-	undoModification storage.NetworkPolicyModification
+	rollbackActions []rollbackAction
 }
 
 func (t *applyTx) Do(newOrUpdated []*networkingV1.NetworkPolicy, toDelete map[k8sutil.NSObjRef]struct{}) error {

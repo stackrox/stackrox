@@ -26,10 +26,6 @@ func newDedupingQueue() *dedupingQueue {
 	}
 }
 
-func (q *dedupingQueue) notEmpty() concurrency.WaitableChan {
-	return q.notEmptySig.WaitC()
-}
-
 func (q *dedupingQueue) pullBlocking(abort concurrency.Waitable) *central.MsgFromSensor {
 	var msg *central.MsgFromSensor
 	for msg == nil {

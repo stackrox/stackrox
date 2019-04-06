@@ -57,16 +57,12 @@ type registryImpl struct {
 	deploymentHandler *deploymentHandler
 	rbacHandler       *rbacHandler
 
-	namespaceDispatcher          *namespaceDispatcher
-	serviceDispatcher            *serviceDispatcher
-	secretDispatcher             *secretDispatcher
-	networkPolicyDispatcher      *networkPolicyDispatcher
-	nodeDispatcher               *nodeDispatcher
-	serviceAccountDispatcher     *serviceAccountDispatcher
-	roleDispatcher               *roleDispatcher
-	clusterRoleDispatcher        *clusterRoleDispatcher
-	roleBindingDispatcher        *roleBindingDispatcher
-	clusterRoleBindingDispatcher *clusterRoleBindingDispatcher
+	namespaceDispatcher      *namespaceDispatcher
+	serviceDispatcher        *serviceDispatcher
+	secretDispatcher         *secretDispatcher
+	networkPolicyDispatcher  *networkPolicyDispatcher
+	nodeDispatcher           *nodeDispatcher
+	serviceAccountDispatcher *serviceAccountDispatcher
 
 	registryLock sync.Mutex
 }

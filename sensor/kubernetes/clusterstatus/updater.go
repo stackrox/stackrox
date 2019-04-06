@@ -41,23 +41,6 @@ func (u *updaterImpl) sendMessage(msg *central.ClusterStatusUpdate) bool {
 	}
 }
 
-func (u *updaterImpl) sendDeploymentEnvUpdateMessage() {
-	environments := u.deploymentEnvs.AsSlice()
-
-	msg := &central.ClusterStatusUpdate{
-		Msg: &central.ClusterStatusUpdate_DeploymentEnvUpdate{
-			DeploymentEnvUpdate: &central.DeploymentEnvironmentUpdate{
-				Environments: environments,
-			},
-		},
-	}
-
-	select {
-	case u.updates <- msg:
-	case <-u.stopSig.Done():
-	}
-}
-
 func (u *updaterImpl) run() {
 	clusterMetadata := u.getClusterMetadata()
 	cloudProviderMetadata := u.getCloudProviderMetadata()

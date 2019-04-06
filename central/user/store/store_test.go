@@ -3,7 +3,6 @@ package store
 import (
 	"testing"
 
-	bolt "github.com/etcd-io/bbolt"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
 )
@@ -15,8 +14,6 @@ func TestUserStore(t *testing.T) {
 
 type UserStoreTestSuite struct {
 	suite.Suite
-
-	db *bolt.DB
 
 	sto Store
 }

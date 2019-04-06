@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/central/compliance"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"gopkg.in/robfig/cron.v2"
 )
@@ -44,12 +43,6 @@ func (s *scheduleInstance) ToProto() *v1.ComplianceRunScheduleInfo {
 	}
 }
 
-func (s *scheduleInstance) isSuspended() bool {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
-	return s.spec.GetSuspended()
-}
-
 func (s *scheduleInstance) clusterAndStandard() compliance.ClusterStandardPair {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -78,10 +71,6 @@ func (s *scheduleInstance) checkAndUpdate(now time.Time) bool {
 
 	s.updateNextTimeNoLock()
 	return true
-}
-
-func (s *scheduleInstance) updateNextTime() {
-	concurrency.WithLock(&s.mutex, s.updateNextTimeNoLock)
 }
 
 func (s *scheduleInstance) update(spec *storage.ComplianceRunSchedule) error {

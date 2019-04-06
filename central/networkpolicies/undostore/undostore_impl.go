@@ -17,17 +17,6 @@ type undoStore struct {
 	db *bolt.DB
 }
 
-func (s *undoStore) upsertNetworkPolicy(np *storage.NetworkPolicy) error {
-	return s.db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(undoBucket)
-		bytes, err := proto.Marshal(np)
-		if err != nil {
-			return err
-		}
-		return bucket.Put([]byte(np.GetId()), bytes)
-	})
-}
-
 // GetNetworkPolicy returns network policy with given id.
 func (s *undoStore) GetUndoRecord(clusterID string) (*storage.NetworkPolicyApplicationUndoRecord, bool, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "NetworkPolicyApplicationUndoRecord")

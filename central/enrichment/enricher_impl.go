@@ -1,7 +1,6 @@
 package enrichment
 
 import (
-	"github.com/stackrox/rox/central/risk"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/enricher"
 )
@@ -9,7 +8,6 @@ import (
 // enricherImpl enriches images with data from registries and scanners.
 type enricherImpl struct {
 	imageEnricher enricher.ImageEnricher
-	scorer        risk.Scorer
 }
 
 // EnrichDeployment enriches a deployment with data from registries and scanners.

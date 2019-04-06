@@ -58,14 +58,6 @@ func (ss *serviceStore) getMatchingServices(namespace string, labels map[string]
 	return
 }
 
-func (ss *serviceStore) getNodePortServices() []*serviceWrap {
-	result := make([]*serviceWrap, 0, len(ss.nodePortServices))
-	for _, svc := range ss.nodePortServices {
-		result = append(result, svc)
-	}
-	return result
-}
-
 func (ss *serviceStore) getService(namespace string, uid types.UID) *serviceWrap {
 	return ss.services[namespace][uid]
 }

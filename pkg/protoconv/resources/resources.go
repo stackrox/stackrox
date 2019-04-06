@@ -4,14 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"sort"
 
 	ptypes "github.com/gogo/protobuf/types"
 	openshift_appsv1 "github.com/openshift/api/apps/v1"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/images/types"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/logging"
@@ -215,42 +212,6 @@ func (w *DeploymentWrap) populateReplicas(spec reflect.Value) {
 	}
 }
 
-func (w *DeploymentWrap) populateDataFromPods(pods ...*v1.Pod) {
-	w.populateImageShas(pods...)
-}
-
-func (w *DeploymentWrap) populateImageShas(pods ...*v1.Pod) {
-	// All containers have a container status
-	// The downside to this is that if different pods have different versions then we will miss that fact that pods are running
-	// different versions and clobber it. I've added a log to illustrate the clobbering so we can see how often it happens
-
-	// Sort the w.Deployment.Containers by name and p.Status.ContainerStatuses by name
-	// This is because the order is not guaranteed
-	sort.SliceStable(w.Deployment.Containers, func(i, j int) bool {
-		return w.Deployment.GetContainers()[i].Name < w.Deployment.GetContainers()[j].Name
-	})
-	for _, p := range pods {
-		sort.SliceStable(p.Status.ContainerStatuses, func(i, j int) bool {
-			return p.Status.ContainerStatuses[i].Name < p.Status.ContainerStatuses[j].Name
-		})
-		for i, c := range p.Status.ContainerStatuses {
-			if i >= len(w.Deployment.Containers) {
-				// This should not happened, but could happen if w.Deployment.Containers and container status are out of sync
-				break
-			}
-			if sha := imageUtils.ExtractImageSha(c.ImageID); sha != "" {
-				sha = types.NewDigest(sha).Digest()
-				// Logging to see that we are clobbering a value from an old sha
-				currentSHA := w.Deployment.GetContainers()[i].GetImage().GetId()
-				if currentSHA != "" && currentSHA != sha {
-					log.Warnf("Clobbering SHA '%s' found for image '%s' with SHA '%s'", currentSHA, c.Image, sha)
-				}
-				w.Deployment.Containers[i].Image.Id = types.NewDigest(sha).Digest()
-			}
-		}
-	}
-}
-
 func (w *DeploymentWrap) populateContainerConfigs(podSpec v1.PodSpec) {
 	for i, c := range podSpec.Containers {
 		config := &storage.ContainerConfig{
@@ -431,15 +392,5 @@ func (w *DeploymentWrap) populatePorts(podSpec v1.PodSpec) {
 			w.Deployment.Containers[i].Ports = append(w.Deployment.Containers[i].Ports, portConfig)
 			w.Ports = append(w.Ports, portConfig)
 		}
-	}
-}
-
-func (w *DeploymentWrap) toEvent(action central.ResourceAction) *central.SensorEvent {
-	return &central.SensorEvent{
-		Id:     w.GetId(),
-		Action: action,
-		Resource: &central.SensorEvent_Deployment{
-			Deployment: w.Deployment,
-		},
 	}
 }

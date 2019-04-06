@@ -7,12 +7,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
-)
-
-var (
-	clusterID = uuid.NewV4()
 )
 
 type adjs []string

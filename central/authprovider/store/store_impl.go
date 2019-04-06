@@ -20,20 +20,6 @@ type storeImpl struct {
 	*bolt.DB
 }
 
-func (b *storeImpl) getAuthProvider(id string, bucket *bolt.Bucket) (authProvider *storage.AuthProvider, exists bool, err error) {
-	authProvider = new(storage.AuthProvider)
-	val := bucket.Get([]byte(id))
-	if val == nil {
-		return
-	}
-	exists = true
-	err = proto.Unmarshal(val, authProvider)
-	if err != nil {
-		return
-	}
-	return
-}
-
 // GetAuthProviders retrieves authProviders from bolt
 func (b *storeImpl) GetAllAuthProviders() ([]*storage.AuthProvider, error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "AuthProvider")

@@ -189,7 +189,9 @@ func outputZip(config renderer.Config) error {
 		fmt.Fprintln(os.Stderr)
 	}
 
-	config.WriteInstructions(os.Stderr)
+	if err := config.WriteInstructions(os.Stderr); err != nil {
+		return err
+	}
 	return nil
 }
 

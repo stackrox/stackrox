@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoreflect"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/enumregistry"
-	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
@@ -35,7 +34,6 @@ var (
 type searchWalker struct {
 	category v1.SearchCategory
 	fields   map[search.FieldLabel]*v1.SearchField
-	options  set.StringSet
 }
 
 // Walk iterates over the obj and creates a search.Map object from the found struct tags

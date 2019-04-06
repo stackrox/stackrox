@@ -261,15 +261,6 @@ func RunSearchRequest(category v1.SearchCategory, q *v1.Query, index bleve.Index
 	return runQuery(ctx, bleveQuery, index, highlightContext)
 }
 
-func getSearchSort(sf *v1.SearchField, reversed bool) search.SearchSort {
-	return &search.SortField{
-		Field:   sf.GetFieldPath(),
-		Desc:    reversed,
-		Type:    search.SortFieldAsString,
-		Missing: search.SortFieldMissingLast,
-	}
-}
-
 func getSortOrder(pagination *v1.Pagination, optionsMap searchPkg.OptionsMap) ([]search.SearchSort, error) {
 	so := pagination.GetSortOption()
 	if so == nil {

@@ -956,8 +956,6 @@ type patchAlertTests struct {
 
 	mockCtrl     *gomock.Controller
 	notifierMock *notifierMocks.MockProcessor
-
-	fakeResourceByIDRequest *v1.ResourceByID
 }
 
 func (s *patchAlertTests) SetupTest() {

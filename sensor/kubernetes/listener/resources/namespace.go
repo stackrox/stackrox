@@ -5,7 +5,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoconv"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 // NamespaceDeletionListener allows components to react to the deletion of namespaces.
@@ -17,8 +16,6 @@ type NamespaceDeletionListener interface {
 type namespaceDispatcher struct {
 	nsStore           *namespaceStore
 	deletionListeners []NamespaceDeletionListener
-
-	k8sClient kubernetes.Clientset
 }
 
 // newNamespaceDispatcher creates and returns a new namespace handler.

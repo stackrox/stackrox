@@ -17,12 +17,8 @@ import (
 const (
 	nginxDeploymentName     = `nginx`
 	expectedLatestTagPolicy = `Latest tag`
-	expectedPort22Policy    = `Secure Shell (ssh) Port Exposed`
 
 	waitTimeout = 2 * time.Minute
-
-	alpineDeploymentName = `alpine`
-	alpineImageSha       = `7df6db5aa61ae9480f52f0b3a06a140ab98d427f86d8d5de0bedab9b8df6b1c0`
 )
 
 var (
@@ -126,22 +122,6 @@ func waitForTermination(t *testing.T, deploymentName string) {
 			t.Fatalf("Timed out waiting for deployment %s to stop", deploymentName)
 		}
 	}
-}
-
-func setupAlpineDeployment(t *testing.T) {
-	cmd := exec.Command(`kubectl`, `run`, alpineDeploymentName, `--image=alpine:3.7@sha256:`+alpineImageSha, `--port=22`, `--command=true`, `--`, `sleep`, `1000`)
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
-
-	waitForDeployment(t, alpineDeploymentName)
-}
-
-func teardownAlpineDeployment(t *testing.T) {
-	cmd := exec.Command(`kubectl`, `delete`, `deployment`, alpineDeploymentName, `--ignore-not-found=true`)
-	output, err := cmd.CombinedOutput()
-	require.NoError(t, err, string(output))
-
-	waitForTermination(t, alpineDeploymentName)
 }
 
 func setupNginxLatestTagDeployment(t *testing.T) {

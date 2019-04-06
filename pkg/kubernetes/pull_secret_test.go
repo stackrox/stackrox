@@ -9,7 +9,6 @@ import (
 func TestResolvedRegistry(t *testing.T) {
 
 	cases := []struct {
-		name     string
 		image    string
 		expected string
 	}{

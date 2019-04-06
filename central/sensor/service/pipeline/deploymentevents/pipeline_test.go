@@ -1,7 +1,6 @@
 package deploymentevents
 
 import (
-	"context"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -21,7 +20,6 @@ func TestPipeline(t *testing.T) {
 type PipelineTestSuite struct {
 	suite.Suite
 
-	ctx         context.Context
 	clusters    *clusterMocks.MockDataStore
 	deployments *deploymentMocks.MockDataStore
 	images      *imageMocks.MockDataStore

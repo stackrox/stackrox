@@ -9,13 +9,6 @@ type cofiniteSet struct {
 	invert bool
 }
 
-var (
-	emptySet     = cofiniteSet{}
-	universalSet = cofiniteSet{
-		invert: true,
-	}
-)
-
 func makeCofiniteSet(invert bool, values ...string) cofiniteSet {
 	return cofiniteSet{
 		invert: invert,

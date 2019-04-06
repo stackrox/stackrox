@@ -32,10 +32,6 @@ func newComplianceDomain(cluster *storage.Cluster, nodes []*storage.Node, deploy
 	}
 }
 
-func (d *complianceDomain) clusterTarget() clusterTarget {
-	return d.cluster
-}
-
 func (d *complianceDomain) Cluster() ComplianceTarget {
 	return d.cluster
 }

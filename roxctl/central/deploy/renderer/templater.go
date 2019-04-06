@@ -226,14 +226,22 @@ func generateMonitoringImage(mainImage string, monitoringImage string) (string, 
 }
 
 func wrapFiles(files []*zip.File, c *Config) ([]*zip.File, error) {
-	files = append(files, zip.NewFile("README", []byte(standardizeWhitespace(Deployers[c.ClusterType].Instructions(*c))), 0))
+	instructions, err := generateReadme(c)
+	if err != nil {
+		return nil, err
+	}
+	files = append(files, zip.NewFile("README", []byte(instructions), 0))
 	return files, nil
 }
 
 // WriteInstructions writes the instructions for the configured cluster
 // to the provided writer.
-func (c Config) WriteInstructions(w io.Writer) {
-	fmt.Fprint(w, standardizeWhitespace(Deployers[c.ClusterType].Instructions(c)))
+func (c Config) WriteInstructions(w io.Writer) error {
+	instructions, err := generateReadme(&c)
+	if err != nil {
+		return err
+	}
+	fmt.Fprint(w, standardizeWhitespace(instructions))
 
 	if c.PasswordAuto {
 		fmt.Fprintln(w)
@@ -245,6 +253,7 @@ func (c Config) WriteInstructions(w io.Writer) {
 		fmt.Fprintln(w, "Use the following auto-generated password for accessing monitoring (also stored in the 'monitoring/password' file):")
 		fmt.Fprintf(w, " %s\n", c.K8sConfig.Monitoring.Password)
 	}
+	return nil
 }
 
 func standardizeWhitespace(instructions string) string {

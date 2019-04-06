@@ -1,7 +1,6 @@
 package secrets
 
 import (
-	"context"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -20,7 +19,6 @@ func TestPipeline(t *testing.T) {
 type PipelineTestSuite struct {
 	suite.Suite
 
-	ctx      context.Context
 	clusters *clusterMocks.MockDataStore
 	secrets  *secretMocks.MockDataStore
 

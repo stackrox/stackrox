@@ -3,7 +3,6 @@ package tenable
 import (
 	"fmt"
 
-	manifestV2 "github.com/docker/distribution/manifest/schema2"
 	"github.com/heroku/docker-registry-client/registry"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
@@ -33,23 +32,6 @@ type tenableRegistry struct {
 
 	config    *storage.TenableConfig
 	transport *transports.PersistentTokenTransport
-}
-
-type client interface {
-	ManifestV2(repository, reference string) (*manifestV2.DeserializedManifest, error)
-	Repositories() ([]string, error)
-}
-
-type nilClient struct {
-	error error
-}
-
-func (n nilClient) ManifestV2(repository, reference string) (*manifestV2.DeserializedManifest, error) {
-	return nil, n.error
-}
-
-func (n nilClient) Repositories() ([]string, error) {
-	return nil, n.error
 }
 
 func validate(config *storage.TenableConfig) error {

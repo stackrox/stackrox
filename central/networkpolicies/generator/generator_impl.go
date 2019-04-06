@@ -27,13 +27,6 @@ func isGeneratedPolicy(policy *storage.NetworkPolicy) bool {
 	return ok
 }
 
-type annotatedNode struct {
-	node       *v1.NetworkNode
-	deployment *storage.Deployment
-	incoming   []*annotatedNode
-	flowStore.FlowStore
-}
-
 type generator struct {
 	networkPolicyStore store.Store
 	deploymentStore    datastore.DataStore
