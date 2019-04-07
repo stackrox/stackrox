@@ -62,8 +62,12 @@ class SummaryTest extends BaseSpecification {
     def "Verify namespace details"() {
         given:
         "fetch the list of namespace"
-        List<NamespaceServiceOuterClass.Namespace> stackroxNamespaces = NamespaceService.getNamespaces()
+
         List<Namespace> orchNamespaces = orchestrator.getNamespaceDetails()
+        Namespace orchQANamespace = orchNamespaces.find { it.name == "qa" }.collect().first()
+        NamespaceService.waitForNamespace(orchQANamespace.uid)
+
+        List<NamespaceServiceOuterClass.Namespace> stackroxNamespaces = NamespaceService.getNamespaces()
 
         expect:
         "verify Node Details"
