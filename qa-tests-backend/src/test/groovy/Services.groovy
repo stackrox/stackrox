@@ -136,24 +136,19 @@ class Services extends BaseService {
         return getViolationsHelper("Deployment Id:${deploymentID}+Policy:${policyName}", policyName, timeoutSeconds)
     }
 
-    static String addGenericDockerRegistry() {
-        return getIntegrationClient().postImageIntegration(
-                        ImageIntegration.newBuilder()
-                                    .setName("dockerhub")
-                                    .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
-                                    .setType("docker")
-                                    .setDocker(
-                                    ImageIntegrationOuterClass.DockerConfig.newBuilder()
-                                                .setUsername("")
-                                                .setPassword("")
-                                                .setEndpoint("registry-1.docker.io")
-                                                .setInsecure(false)
-                                                .build()
-                        )
-                                    .build()
-            )
-                        .getId()
-      }
+    static createImageIntegration(ImageIntegration integration) {
+        Timer t = new Timer(15, 3)
+        while (t.IsValid()) {
+            try {
+                ImageIntegration createdIntegration = getIntegrationClient().postImageIntegration(integration)
+                return createdIntegration.getId()
+            } catch (Exception e) {
+                println "Unable to create image integration ${integration.name}: ${e.message}"
+            }
+        }
+        println ("Unable to create image integration")
+        return ""
+    }
 
     static String addDockerTrustedRegistry(boolean includeScanner = true) {
         ImageIntegration.Builder builder = ImageIntegration.newBuilder()
@@ -170,58 +165,8 @@ class Services extends BaseService {
         if (includeScanner) {
             builder.addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER)
         }
-        return getIntegrationClient().postImageIntegration(builder.build()).getId()
+        return createImageIntegration(builder.build())
     }
-
-    static String addClairifyScanner(String clairifyEndpoint) {
-        def success = false
-        ImageIntegration integration = null
-        def start = System.currentTimeMillis()
-        while (!success && System.currentTimeMillis() - start < 30000) {
-            try {
-                integration = getIntegrationClient().postImageIntegration(
-                        ImageIntegration.newBuilder()
-                                .setName("clairify")
-                                .setType("clairify")
-                                .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER)
-                                .setClairify(ImageIntegrationOuterClass.ClairifyConfig.newBuilder()
-                                        .setEndpoint(clairifyEndpoint)
-                                        .build()
-                                )
-                                .build()
-                        )
-                success = true
-            } catch (Exception e) {
-                if (e.toString().contains("INTERNAL: notifying of update errors:")) {
-                    def id = getIntegrationClient().getImageIntegrations().integrationsList.find {
-                        it.name == "clairify"
-                    }?.id
-                    if (id) {
-                        getIntegrationClient().deleteImageIntegration(
-                                ResourceByID.newBuilder().setId(id).build()
-                        )
-                    }
-                } else {
-                    println "Failed to create integration: ${e.toString()}"
-                }
-                sleep 3000
-            }
-        }
-        return integration?.id
-      }
-
-    static deleteClairifyScanner(String clairifyId) {
-        try {
-            getIntegrationClient().deleteImageIntegration(
-                    ResourceByID.newBuilder()
-                            .setId(clairifyId)
-                            .build()
-            )
-        } catch (Exception e) {
-            println "Failed to delete integration: ${e.toString()}"
-            return false
-        }
-      }
 
     static deleteImageIntegration(String integrationId) {
         try {
@@ -468,54 +413,37 @@ class Services extends BaseService {
     static String addAzureACRRegistry() {
         String azurePassword = System.getenv("AZURE_REGISTRY_PASSWORD")
 
-        try {
-            String azureID = getIntegrationClient().postImageIntegration(
-                    ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                            .setName("azure")
-                            .setType("azure")
-                            .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
-                            .setDocker(
-                            ImageIntegrationOuterClass.DockerConfig.newBuilder()
-                                    .setEndpoint("stackroxacr.azurecr.io")
-                                    .setUsername("3e30919c-a552-4b1f-a67a-c68f8b32dad8")
-                                    .setPassword(azurePassword)
-                                    .build()
-                    ).build()
-            )
-                    .getId()
-            return azureID
-        } catch (Exception e) {
-            println e.toString()
-        }
-
-        return ""
+        ImageIntegration integration =  ImageIntegration.newBuilder()
+                .setName("azure")
+                .setType("azure")
+                .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
+                .setDocker(
+                ImageIntegrationOuterClass.DockerConfig.newBuilder()
+                        .setEndpoint("stackroxacr.azurecr.io")
+                        .setUsername("3e30919c-a552-4b1f-a67a-c68f8b32dad8")
+                        .setPassword(azurePassword)
+                        .build()
+        ).build()
+        return createImageIntegration(integration)
     }
 
     static String addGcrRegistryAndScanner() {
         String serviceAccount = System.getenv("GOOGLE_CREDENTIALS_GCR_SCANNER")
-        String gcrId = ""
 
-        try {
-            gcrId = getIntegrationClient().postImageIntegration(
-                ImageIntegrationOuterClass.ImageIntegration.newBuilder()
-                    .setName("gcr")
-                    .setType("google")
-                    .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
-                    .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER)
-                        .setGoogle(
-                        ImageIntegrationOuterClass.GoogleConfig.newBuilder()
-                                .setEndpoint("us.gcr.io")
-                                .setProject("stackrox-ci")
-                                .setServiceAccount(serviceAccount)
-                                .build()
-                ).build()
-            )
-            .getId()
-        } catch (Exception e) {
-            println e.toString()
-        }
+        ImageIntegration integration = ImageIntegration.newBuilder()
+                .setName("gcr")
+                .setType("google")
+                .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.REGISTRY)
+                .addCategories(ImageIntegrationOuterClass.ImageIntegrationCategory.SCANNER)
+                .setGoogle(
+                ImageIntegrationOuterClass.GoogleConfig.newBuilder()
+                        .setEndpoint("us.gcr.io")
+                        .setProject("stackrox-ci")
+                        .setServiceAccount(serviceAccount)
+                        .build()
+        ).build()
 
-        return gcrId
+        return createImageIntegration(integration)
     }
 
     static deleteGcrRegistryAndScanner(String gcrId) {
