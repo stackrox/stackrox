@@ -162,7 +162,17 @@ class Kubernetes implements OrchestratorMain {
         if (deployment.exposeAsService) {
             this.deleteService(deployment.name, deployment.namespace)
         }
-        this.deployments.inNamespace(deployment.namespace).withName(deployment.name).delete()
+        // Retry deletion due to race condition in sdk and controller
+        // See https://github.com/fabric8io/kubernetes-client/issues/1477
+        Timer t = new Timer(10, 1)
+        while (t.IsValid()) {
+            try {
+                this.deployments.inNamespace(deployment.namespace).withName(deployment.name).delete()
+                break
+            } catch (KubernetesClientException ex) {
+                println "Failed to delete deployment: ${ex.status.message}"
+            }
+        }
         println "removing the deployment: ${deployment.name}"
     }
 
