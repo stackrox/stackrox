@@ -7,7 +7,6 @@ import services.ClusterService
 import services.NamespaceService
 import services.NodeService
 import services.SummaryService
-import io.stackrox.proto.api.v1.SummaryServiceOuterClass
 import io.stackrox.proto.storage.NodeOuterClass.Node
 
 class SummaryTest extends BaseSpecification {
@@ -16,14 +15,20 @@ class SummaryTest extends BaseSpecification {
     def "Verify TopNav counts for Nodes, Deployments, and Secrets"() {
         expect:
         "Counts API should match orchestrator details"
-        def deployments = orchestrator.getDeploymentCount() +
+
+        def start = System.currentTimeMillis()
+        // Groovy doesn't have do-while loops, so simulating one here.
+        def first = true
+        def counts
+        def deployments
+        while (first ||
+            (counts.numDeployments != deployments.size() && (System.currentTimeMillis() - start) < (60 * 1000))) {
+            first = false
+
+            counts = SummaryService.getCounts()
+            deployments = orchestrator.getDeploymentCount() +
                 orchestrator.getDaemonSetCount() +
                 orchestrator.getStaticPodCount()
-
-        SummaryServiceOuterClass.SummaryCountsResponse counts = SummaryService.getCounts()
-        def start = System.currentTimeMillis()
-        while (counts.numDeployments != deployments.size() && (System.currentTimeMillis() - start) < (60 * 1000)) {
-            counts = SummaryService.getCounts()
         }
 
         def deploymentNames = Services.getDeployments()*.name
