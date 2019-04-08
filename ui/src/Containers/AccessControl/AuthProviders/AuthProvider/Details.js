@@ -23,7 +23,7 @@ const Details = props => {
 
     if (!name) return null;
     const title = `1. ${name} Configuration`;
-    const propsTitle = `2. Assign StackRox Roles to your ${name} address`;
+    const propsTitle = `2. Assign StackRox Roles to your ${name} users`;
     const fields = formDescriptor[type];
     return (
         <div className="w-full justify-between overflow-auto p-4">

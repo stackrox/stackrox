@@ -73,24 +73,31 @@ class Form extends Component {
                     </CollapsibleCard>
                     <div className="mt-4">
                         <CollapsibleCard
-                            title={`2. Assign StackRox Roles to your (${
-                                initialValues.type
-                            }) attributes`}
+                            title={`2. Assign StackRox Roles to your ${initialValues.name} users`}
                             titleClassName="border-b px-1 border-warning-300 leading-normal cursor-pointer flex justify-between items-center bg-warning-200 hover:border-warning-400"
                         >
-                            <div className="w-full p-4 pb-0">
-                                <Field
-                                    label="Default Role"
-                                    type="select"
-                                    jsonPath="defaultRole"
-                                    options={roles}
+                            <div className="p-2">
+                                <div className="w-full p-2">
+                                    <Field
+                                        label="Default Role"
+                                        type="select"
+                                        jsonPath="defaultRole"
+                                        options={roles}
+                                    />
+                                    <p className="pb-2">
+                                        The default role is granted when a user signs in with{' '}
+                                        {initialValues.name}, but doesn&lsquo;t match any rules.
+                                    </p>
+                                    <p className="pb-2">
+                                        To give users different roles, add rules.
+                                    </p>
+                                </div>
+                                <FieldArray
+                                    name="groups"
+                                    component={this.renderRuleGroupsComponent}
+                                    initialValues={initialValues}
                                 />
                             </div>
-                            <FieldArray
-                                name="groups"
-                                component={this.renderRuleGroupsComponent}
-                                initialValues={initialValues}
-                            />
                         </CollapsibleCard>
                     </div>
                 </form>

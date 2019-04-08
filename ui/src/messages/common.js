@@ -30,7 +30,7 @@ const common = Object.freeze({
     accessControl: {
         NO_ACCESS: 'No Access',
         READ_ACCESS: 'Read Access',
-        READ_WRITE_ACCESS: 'Read + Write Access'
+        READ_WRITE_ACCESS: 'Read and Write Access'
     },
     resourceLabels: {
         CLUSTER: 'cluster',
