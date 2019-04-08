@@ -3,9 +3,8 @@ import PropTypes from 'prop-types';
 import PageHeader from 'Components/PageHeader';
 import ScanButton from 'Containers/Compliance/ScanButton';
 import ExportButton from 'Components/ExportButton';
-import ClustersTile from './tiles/ClustersTile';
-import NamespacesTile from './tiles/NamespacesTile';
-import NodesTile from './tiles/NodesTile';
+import entityTypes from 'constants/entityTypes';
+import Tile from './Tile';
 
 const ComplianceDashboardHeader = props => (
     <PageHeader
@@ -16,13 +15,16 @@ const ComplianceDashboardHeader = props => (
     >
         <div className="flex flex-1 justify-end">
             <div>
-                <ClustersTile />
+                <Tile entityType={entityTypes.CLUSTER} />
             </div>
             <div className="ml-3">
-                <NamespacesTile />
+                <Tile entityType={entityTypes.NAMESPACE} />
             </div>
             <div className="ml-3">
-                <NodesTile />
+                <Tile entityType={entityTypes.NODE} />
+            </div>
+            <div className="ml-3">
+                <Tile entityType={entityTypes.DEPLOYMENT} />
             </div>
             <div className="ml-3 border-l border-base-100 mr-3 opacity-50" />
             <div className="flex">

@@ -19,16 +19,55 @@ export const SEARCH = gql`
 `;
 
 export const SEARCH_WITH_CONTROLS = gql`
-    query searchWithControls($categories: [SearchCategory!], $query: String!) {
-        search: globalSearch(categories: $categories, query: $query) {
-            category
-            id
-            location
-            name
-            score
+    query searchWithControls($query: String!) {
+        deploymentResults: aggregatedResults(
+            groupBy: [DEPLOYMENT, CONTROL]
+            unit: CONTROL
+            where: $query
+        ) {
+            results {
+                aggregationKeys {
+                    id
+                    scope
+                }
+                numFailing
+                numPassing
+                unit
+            }
         }
 
-        aggregatedResults: aggregatedResults(groupBy: [CONTROL], unit: CONTROL, where: $query) {
+        namespaceResults: aggregatedResults(
+            groupBy: [NAMESPACE, CONTROL]
+            unit: CONTROL
+            where: $query
+        ) {
+            results {
+                aggregationKeys {
+                    id
+                    scope
+                }
+                numFailing
+                numPassing
+                unit
+            }
+        }
+
+        clusterResults: aggregatedResults(
+            groupBy: [CLUSTER, CONTROL]
+            unit: CONTROL
+            where: $query
+        ) {
+            results {
+                aggregationKeys {
+                    id
+                    scope
+                }
+                numFailing
+                numPassing
+                unit
+            }
+        }
+        nodeResults: aggregatedResults(groupBy: [NODE], unit: CONTROL, where: $query) {
             results {
                 aggregationKeys {
                     id

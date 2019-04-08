@@ -35,6 +35,10 @@ export const AGGREGATED_RESULTS = gql`
                 name
             }
         }
+        deployments {
+            id
+            name
+        }
     }
 `;
 

@@ -7,20 +7,28 @@ import ScanButton from 'Containers/Compliance/ScanButton';
 import ExportButton from 'Components/ExportButton';
 import entityTypes from 'constants/entityTypes';
 import pluralize from 'pluralize';
+import toLower from 'lodash/toLower';
 
-const EntityHeader = ({ entityType, listEntityType, entity, searchComponent, headerText }) => {
-    const header = headerText || (entity.name ? entity.name : 'Loading...');
-    const subHeader = entityType;
+const EntityHeader = ({
+    entityType,
+    listEntityType,
+    entityName,
+    entityId,
+    searchComponent,
+    headerText
+}) => {
+    const header = headerText || (entityName || 'Loading...');
+    const subHeader = toLower(entityType);
     const exportFilename = listEntityType
-        ? `${pluralize(listEntityType)} ACROSS ${entityType} "${entity.name.toUpperCase()}"`
-        : `${entityType} "${entity.id}"`;
+        ? `${pluralize(listEntityType)} ACROSS ${entityType} "${entityName.toUpperCase()}"`
+        : `${entityType} "${entityId}"`;
     const pdfId = listEntityType ? 'capture-list' : 'capture-dashboard';
 
-    const scanCluster = entityType === entityTypes.CLUSTER ? entity.id : null;
-    const scanStandard = entityType === entityTypes.STANDARD ? entity.id : null;
+    const scanCluster = entityType === entityTypes.CLUSTER ? entityId : null;
+    const scanStandard = entityType === entityTypes.STANDARD ? entityId : null;
 
     return (
-        <PageHeader header={header} subHeader={subHeader}>
+        <PageHeader classes="bg-base-100" header={header} subHeader={subHeader}>
             {searchComponent}
             <div className="flex flex-1 justify-end">
                 <div className="flex">
@@ -36,7 +44,7 @@ const EntityHeader = ({ entityType, listEntityType, entity, searchComponent, hea
                             <ExportButton
                                 fileName={exportFilename}
                                 type={entityType}
-                                id={entity.id}
+                                id={entityId}
                                 pdfId={pdfId}
                             />
                         </>
@@ -50,10 +58,8 @@ const EntityHeader = ({ entityType, listEntityType, entity, searchComponent, hea
 EntityHeader.propTypes = {
     entityType: PropTypes.string,
     listEntityType: PropTypes.string,
-    entity: PropTypes.shape({
-        name: PropTypes.string,
-        id: PropTypes.string
-    }),
+    entityName: PropTypes.string,
+    entityId: PropTypes.string,
     searchComponent: PropTypes.node,
     headerText: PropTypes.string
 };
@@ -61,10 +67,8 @@ EntityHeader.propTypes = {
 EntityHeader.defaultProps = {
     entityType: '',
     listEntityType: '',
-    entity: {
-        name: '',
-        id: ''
-    },
+    entityName: '',
+    entityId: '',
     searchComponent: null,
     headerText: null
 };

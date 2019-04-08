@@ -10,6 +10,7 @@ import entityTypes, { resourceTypes } from 'constants/entityTypes';
 import NamespacePage from '../Entity/Namespace';
 import ClusterPage from '../Entity/Cluster';
 import NodePage from '../Entity/Node';
+import DeploymentPage from '../Entity/Deployment';
 
 const ComplianceListSidePanel = ({
     entityType,
@@ -36,6 +37,8 @@ const ComplianceListSidePanel = ({
                 return <NamespacePage namespaceId={entityId} sidePanelMode />;
             case resourceTypes.CLUSTER:
                 return <ClusterPage clusterId={entityId} sidePanelMode />;
+            case resourceTypes.DEPLOYMENT:
+                return <DeploymentPage deploymentId={entityId} sidePanelMode />;
             default:
                 return null;
         }

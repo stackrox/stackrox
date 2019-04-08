@@ -57,7 +57,7 @@ class ComplianceList extends Component {
         }
 
         return (
-            <div className="flex flex-1 overflow-y-auto">
+            <div className="flex flex-1 overflow-y-auto h-full">
                 <ListTable
                     selectedRow={selectedRow}
                     entityType={entityType}

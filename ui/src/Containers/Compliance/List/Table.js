@@ -17,7 +17,12 @@ import TableGroup from 'Components/TableGroup';
 import entityToColumns from 'constants/tableColumns';
 import Query from 'Components/ThrowingQuery';
 import NoResultsMessage from 'Components/NoResultsMessage';
-import { CLUSTERS_LIST_QUERY, NAMESPACES_LIST_QUERY, NODES_QUERY } from 'queries/table';
+import {
+    CLUSTERS_LIST_QUERY,
+    NAMESPACES_LIST_QUERY,
+    NODES_QUERY,
+    DEPLOYMENTS_QUERY
+} from 'queries/table';
 import { LIST_STANDARD } from 'queries/standard';
 import queryService from 'modules/queryService';
 import orderBy from 'lodash/orderBy';
@@ -33,6 +38,8 @@ function getQuery(entityType) {
             return NAMESPACES_LIST_QUERY;
         case entityTypes.NODE:
             return NODES_QUERY;
+        case entityTypes.DEPLOYMENT:
+            return DEPLOYMENTS_QUERY;
         default:
             return null;
     }
@@ -74,8 +81,9 @@ function formatResourceData(data, resourceType) {
         const entityMetaData = entity.metadata || {};
 
         entityMap[curEntity] = entityMap[curEntity] || {
-            name: entity.name || entity.metadata.name,
+            name: entity.name || (entity.metadata && entity.metadata.name),
             cluster: entity.clusterName || entityMetaData.clusterName || entity.name,
+            namespace: entity.namespace,
             id: curEntity,
             overall: {
                 numPassing: 0,

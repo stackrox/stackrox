@@ -1,13 +1,9 @@
 import qs from 'qs';
 import pageTypes from 'constants/pageTypes';
-import { resourceTypes, standardTypes } from 'constants/entityTypes';
+import { standardTypes } from 'constants/entityTypes';
 import contextTypes from 'constants/contextTypes';
 import { generatePath } from 'react-router-dom';
 import { nestedCompliancePaths, resourceTypesToUrl, riskPath, secretsPath } from '../routePaths';
-
-function isResource(type) {
-    return Object.values(resourceTypes).includes(type);
-}
 
 function getEntityTypeKeyFromValue(entityTypeValue) {
     const match = Object.entries(resourceTypesToUrl).find(entry => entry[1] === entityTypeValue);
@@ -22,7 +18,6 @@ function getEntityTypeFromMatch(match) {
 }
 
 function getPath(context, pageType, urlParams) {
-    const isResourceType = urlParams.entityType ? isResource(urlParams.entityType) : false;
     const { entityType } = urlParams;
     const pathMap = {
         [contextTypes.COMPLIANCE]: {
@@ -55,10 +50,10 @@ function getPath(context, pageType, urlParams) {
         params.deploymentId = params.entityId;
     }
 
-    if (isResourceType) {
+    if (urlParams.entityType && !standardTypes[urlParams.entityType])
         params.entityType = resourceTypesToUrl[params.entityType];
-        params.listEntityType = resourceTypesToUrl[params.listEntityType];
-    }
+
+    if (urlParams.listEntityType) params.listEntityType = resourceTypesToUrl[params.listEntityType];
 
     return generatePath(path, params);
 }

@@ -11,30 +11,50 @@ import ControlRelatedResourceList from 'Containers/Compliance/widgets/ControlRel
 import URLService from 'modules/URLService';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
+import ComplianceList from 'Containers/Compliance/List/List';
+import Loader from 'Components/Loader';
+import ResourceTabs from 'Components/ResourceTabs';
 import Header from './Header';
 
+function processData(data) {
+    if (!data || !data.results) return {};
+    return { control: data.results, standards: data.complianceStandards };
+}
+
 const ControlPage = ({ match, location, controlId, sidePanelMode }) => {
-    const urlParams = URLService.getParams(match, location);
+    const params = URLService.getParams(match, location);
+    const entityId = controlId || params.controlId;
+    const listEntityType = URLService.getEntityTypeKeyFromValue(params.listEntityType);
 
     return (
-        <Query query={QUERY} variables={{ id: controlId || urlParams.controlId }}>
-            {({ data }) => {
-                const { results: control, complianceStandards: standards } = data;
+        <Query query={QUERY} variables={{ id: entityId }}>
+            {({ data, loading }) => {
+                if (loading) return <Loader />;
+                const controlData = processData(data);
+                const { control, standards } = controlData;
+
                 if (isEmpty(control)) return null;
                 const standard = standards.find(item => item.id === control.standardId);
                 const { name, standardId, interpretationText, description } = control;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 const standardName = standard ? standard.name : '';
-                return (
-                    <section className="flex flex-col h-full w-full">
-                        {!sidePanelMode && (
-                            <Header
-                                entityType={entityTypes.CONTROL}
-                                listEntityType={null}
-                                entity={control}
-                                headerText={`${standardLabels[standardId]} ${name}`}
+                let contents;
+
+                if (listEntityType && !sidePanelMode) {
+                    const listQuery = {
+                        control: name
+                    };
+                    contents = (
+                        <section id="capture-list" className="flex flex-1 overflow-y-auto h-full">
+                            <ComplianceList
+                                entityType={listEntityType}
+                                query={listQuery}
+                                className={pdfClassName}
                             />
-                        )}
+                        </section>
+                    );
+                } else {
+                    contents = (
                         <div
                             className={`flex-1 relative bg-base-200 overflow-auto ${
                                 !sidePanelMode ? `p-6` : `p-4`
@@ -64,7 +84,7 @@ const ControlPage = ({ match, location, controlId, sidePanelMode }) => {
                                         </div>
                                     </Widget>
                                 )}
-                                {!sidePanelMode && (
+                                {sidePanelMode && (
                                     <>
                                         <ControlRelatedResourceList
                                             listEntityType={entityTypes.CLUSTER}
@@ -87,10 +107,45 @@ const ControlPage = ({ match, location, controlId, sidePanelMode }) => {
                                             standard={standardName}
                                             className={pdfClassName}
                                         />
+                                        <ControlRelatedResourceList
+                                            listEntityType={entityTypes.DEPLOYMENT}
+                                            pageEntityType={entityTypes.CONTROL}
+                                            pageEntity={control}
+                                            standard={standardName}
+                                            className={pdfClassName}
+                                        />
                                     </>
                                 )}
                             </div>
                         </div>
+                    );
+                }
+
+                return (
+                    <section className="flex flex-col h-full w-full">
+                        {!sidePanelMode && (
+                            <>
+                                <Header
+                                    entityType={entityTypes.CONTROL}
+                                    listEntityType={null}
+                                    entity={control}
+                                    headerText={`${standardLabels[standardId]} ${name}`}
+                                />
+                                <ResourceTabs
+                                    entityId={entityId}
+                                    entityType={entityTypes.CONTROL}
+                                    standardId={standardId}
+                                    resourceTabs={[
+                                        entityTypes.NAMESPACE,
+                                        entityTypes.NODE,
+                                        entityTypes.DEPLOYMENT,
+                                        entityTypes.CLUSTER
+                                    ]}
+                                />
+                            </>
+                        )}
+
+                        {contents}
                     </section>
                 );
             }}

@@ -76,3 +76,28 @@ export const NODES_QUERY = gql`
         }
     }
 `;
+
+export const DEPLOYMENTS_QUERY = gql`
+    query deploymentsList($where: String) {
+        results: aggregatedResults(groupBy: [DEPLOYMENT, STANDARD], unit: CONTROL, where: $where) {
+            results {
+                aggregationKeys {
+                    id
+                    scope
+                }
+                keys {
+                    ... on Deployment {
+                        name
+                        id
+                        namespace
+                        clusterName
+                    }
+
+                    __typename
+                }
+                numPassing
+                numFailing
+            }
+        }
+    }
+`;

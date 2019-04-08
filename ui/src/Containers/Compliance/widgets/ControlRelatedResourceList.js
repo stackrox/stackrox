@@ -48,6 +48,8 @@ const ControlRelatedEntitiesList = ({
                     ),
                 []
             );
+        } else if (listEntityType === entityTypes.DEPLOYMENT) {
+            options = data.deployments;
         }
 
         function getEntityName(id) {
@@ -103,7 +105,7 @@ const ControlRelatedEntitiesList = ({
     const variables = {
         groupBy: [pageEntityType, listEntityType],
         unit: entityTypes.CONTROL,
-        where: queryService.objectToWhereClause({ [pageEntityType]: pageEntity.name })
+        where: queryService.objectToWhereClause({ [`${pageEntityType} ID`]: pageEntity.id })
     };
 
     return (

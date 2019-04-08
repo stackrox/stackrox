@@ -150,6 +150,49 @@ const namespaceColumns = [
     }
 ];
 
+const deploymentColumns = [
+    {
+        accessor: 'id',
+        Header: 'id',
+        headerClassName: 'hidden',
+        className: 'hidden'
+    },
+    {
+        accessor: 'name',
+        Header: 'Name',
+        Cell: ({ original }) => getNameCell(original.name)
+    },
+    {
+        accessor: 'cluster',
+        Header: 'Cluster Name',
+        Cell: ({ original }) => getNameCell(original.cluster)
+    },
+    {
+        accessor: 'namespace',
+        Header: 'Namespace',
+        Cell: ({ original }) => getNameCell(original.namespace)
+    },
+    {
+        accessor: standardTypes.HIPAA_164,
+        Header: 'HIPAA',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.HIPAA_164)
+    },
+    {
+        accessor: standardTypes.NIST_800_190,
+        Header: 'NIST',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.NIST_800_190)
+    },
+    {
+        accessor: standardTypes.PCI_DSS_3_2,
+        Header: 'PCI',
+        Cell: ({ original }) => getColumnValue(original, standardTypes.PCI_DSS_3_2)
+    },
+    {
+        accessor: 'overall.average',
+        Header: 'Overall'
+    }
+];
+
 const controlColumns = [
     {
         accessor: 'id',
@@ -182,6 +225,7 @@ const entityToColumns = {
     [standardTypes.CIS_Docker_v1_1_0]: getStandardColumns('CIS Docker'),
     [resourceTypes.NODE]: nodeColumns,
     [resourceTypes.NAMESPACE]: namespaceColumns,
+    [resourceTypes.DEPLOYMENT]: deploymentColumns,
     [standardEntityTypes.CONTROL]: controlColumns
 };
 

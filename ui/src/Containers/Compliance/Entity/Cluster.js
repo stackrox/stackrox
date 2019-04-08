@@ -30,6 +30,7 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
             {({ loading, data }) => {
                 if (loading) return <Loader />;
                 const cluster = processData(data);
+                const { name, id } = cluster;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
                 if (listEntityType && !sidePanelMode) {
@@ -38,7 +39,7 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
                         groupBy: listEntityType === entityTypes.CONTROL ? entityTypes.STANDARD : ''
                     };
                     contents = (
-                        <section id="capture-list">
+                        <section id="capture-list" className="flex flex-1 overflow-y-auto h-full">
                             <ComplianceList
                                 entityType={listEntityType}
                                 query={listQuery}
@@ -68,47 +69,47 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
                                     <div className="s-full pb-5">
                                         <EntityCompliance
                                             entityType={entityTypes.CLUSTER}
-                                            entityId={cluster.id}
-                                            entityName={cluster.name}
-                                            clusterName={cluster.name}
+                                            entityId={id}
+                                            entityName={name}
+                                            clusterName={name}
                                         />
                                     </div>
                                     <div className="s-full">
-                                        <ClusterVersion clusterId={cluster.id} />
+                                        <ClusterVersion clusterId={id} />
                                     </div>
                                 </div>
                                 <ComplianceByStandard
                                     standardType={entityTypes.PCI_DSS_3_2}
-                                    entityName={cluster.name}
-                                    entityId={cluster.id}
+                                    entityName={name}
+                                    entityId={id}
                                     entityType={entityTypes.CLUSTER}
                                     className={pdfClassName}
                                 />
                                 <ComplianceByStandard
                                     standardType={entityTypes.NIST_800_190}
-                                    entityName={cluster.name}
-                                    entityId={cluster.id}
+                                    entityName={name}
+                                    entityId={id}
                                     entityType={entityTypes.CLUSTER}
                                     className={pdfClassName}
                                 />
                                 <ComplianceByStandard
                                     standardType={entityTypes.HIPAA_164}
-                                    entityName={cluster.name}
-                                    entityId={cluster.id}
+                                    entityName={name}
+                                    entityId={id}
                                     entityType={entityTypes.CLUSTER}
                                     className={pdfClassName}
                                 />
                                 <ComplianceByStandard
                                     standardType={entityTypes.CIS_Kubernetes_v1_2_0}
-                                    entityName={cluster.name}
-                                    entityId={cluster.id}
+                                    entityName={name}
+                                    entityId={id}
                                     entityType={entityTypes.CLUSTER}
                                     className={pdfClassName}
                                 />
                                 <ComplianceByStandard
                                     standardType={entityTypes.CIS_Docker_v1_1_0}
-                                    entityName={cluster.name}
-                                    entityId={cluster.id}
+                                    entityName={name}
+                                    entityId={id}
                                     entityType={entityTypes.CLUSTER}
                                     className={pdfClassName}
                                 />
@@ -153,7 +154,8 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
                                 <Header
                                     entityType={entityTypes.CLUSTER}
                                     listEntityType={listEntityType}
-                                    entity={cluster}
+                                    entityName={name}
+                                    entityId={id}
                                 />
                                 <ResourceTabs
                                     entityId={entityId}
@@ -161,7 +163,8 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
                                     resourceTabs={[
                                         entityTypes.CONTROL,
                                         entityTypes.NAMESPACE,
-                                        entityTypes.NODE
+                                        entityTypes.NODE,
+                                        entityTypes.DEPLOYMENT
                                     ]}
                                 />
                             </>

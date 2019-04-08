@@ -26,7 +26,10 @@ import ComplianceList from 'Containers/Compliance/List/List';
 import Header from './Header';
 
 function processData(data) {
-    if (!data || !data.node) return {};
+    if (!data || !data.node)
+        return {
+            name: ''
+        };
 
     const result = { ...data.node };
     const [ipAddress] = result.internalIpAddresses;
@@ -57,7 +60,8 @@ const NodePage = ({ match, location, nodeId, sidePanelMode }) => {
                     ipAddress,
                     joinedAtDate,
                     joinedAtTime,
-                    kernelVersion
+                    kernelVersion,
+                    labels
                 } = node;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
@@ -67,8 +71,8 @@ const NodePage = ({ match, location, nodeId, sidePanelMode }) => {
                         groupBy: listEntityType === entityTypes.CONTROL ? entityTypes.STANDARD : ''
                     };
                     contents = (
-                        <section id="capture-list">
-                            <ComplianceList entityType={listEntityType} query={listQuery} />;
+                        <section id="capture-list" className="flex flex-1 overflow-y-auto h-full">
+                            <ComplianceList entityType={listEntityType} query={listQuery} />
                         </section>
                     );
                 } else {
@@ -158,12 +162,9 @@ const NodePage = ({ match, location, nodeId, sidePanelMode }) => {
 
                                 <Widget
                                     className={`sx-2 ${pdfClassName}`}
-                                    header={`${node.labels.length} ${pluralize(
-                                        'Label',
-                                        node.labels.length
-                                    )}`}
+                                    header={`${labels.length} ${pluralize('Label', labels.length)}`}
                                 >
-                                    <Labels labels={node.labels} />
+                                    <Labels labels={labels} />
                                 </Widget>
                                 <ComplianceByStandard
                                     standardType={entityTypes.NIST_800_190}
@@ -198,7 +199,8 @@ const NodePage = ({ match, location, nodeId, sidePanelMode }) => {
                                 <Header
                                     entityType={entityTypes.NODE}
                                     listEntityType={listEntityType}
-                                    entity={node}
+                                    entityName={name}
+                                    entityId={id}
                                 />
                                 <ResourceTabs
                                     entityId={id}
