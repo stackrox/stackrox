@@ -37,8 +37,12 @@ const DashboardTile = ({ entityType }) => {
         <Query query={QUERY} action="list">
             {({ loading, data }) => {
                 let value = 0;
-                if (!loading && data.results && Array.isArray(data.results)) {
-                    value = data.results.length;
+                if (!loading && data && data.results && Array.isArray(data.results)) {
+                    if (entityType === entityTypes.NODE) {
+                        value = data.results.reduce((acc, curr) => acc + curr.nodes.length, 0);
+                    } else {
+                        value = data.results.length;
+                    }
                 }
                 return (
                     <TileLink
