@@ -60,7 +60,7 @@ class SuccessView extends Component {
         } else if (!hasToDelete && hasApplyYaml) {
             displayYaml = applyYaml;
         } else {
-            displayYaml = '(empty policy generated)';
+            displayYaml = 'No policies need to be created or deleted.';
         }
 
         return (
@@ -93,13 +93,13 @@ class SuccessView extends Component {
         let successMessage;
         const { modificationSource } = this.props;
         if (modificationSource === 'UPLOAD') {
-            successMessage = 'YAML uploaded successfully';
+            successMessage = 'Policies processed';
         }
         if (modificationSource === 'GENERATED') {
-            successMessage = `YAML generated successfully from ${timeWindowMessage}`;
+            successMessage = `Policies generated from ${timeWindowMessage}`;
         }
         if (modificationSource === 'ACTIVE') {
-            successMessage = 'Active YAML';
+            successMessage = 'Viewing active policies';
         }
         if (modificationSource === 'UNDO') {
             successMessage = 'Viewing modification that will undo last applied change';

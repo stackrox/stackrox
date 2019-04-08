@@ -2,7 +2,7 @@ export const url = '/main/network';
 
 export const selectors = {
     network: 'nav.left-navigation li:contains("Network") a',
-    simulatorSuccessMessage: 'div:contains("YAML uploaded successfully")',
+    simulatorSuccessMessage: 'div:contains("Policies processed")',
     panels: {
         creatorPanel: '[data-test-id="network-creator-panel"]',
         uploadPanel: '[data-test-id="upload-yaml-panel"]'
