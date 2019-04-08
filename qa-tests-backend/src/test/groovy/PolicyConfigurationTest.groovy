@@ -1,4 +1,5 @@
 import static Services.waitForViolation
+import common.Constants
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyFields
 import io.stackrox.proto.storage.PolicyOuterClass.ImageNamePolicy
@@ -10,9 +11,11 @@ import io.stackrox.proto.storage.PolicyOuterClass.KeyValuePolicy
 import io.stackrox.proto.storage.PolicyOuterClass.NumericalPolicy
 import io.stackrox.proto.storage.PolicyOuterClass.Comparator
 import io.stackrox.proto.storage.PolicyOuterClass.VolumePolicy
+import io.stackrox.proto.storage.ScopeOuterClass.Scope
 import groups.BAT
 import objects.Deployment
 import org.junit.experimental.categories.Category
+import services.ClusterService
 import services.CreatePolicyService
 import spock.lang.Unroll
 
@@ -340,5 +343,158 @@ class PolicyConfigurationTest extends BaseSpecification {
                            .setVolumePolicy(VolumePolicy.newBuilder()
                            .setType("Directory").build()))
                           .build() | DEPLOYMENTNGINX*/
+    }
+
+    @Unroll
+    @Category(BAT)
+    def "Verify policy scopes are triggered appropriately: #policyName"() {
+        when:
+        "Create a Policy"
+        String policyID = CreatePolicyService.createNewPolicy(policy)
+        assert policyID != null
+
+        and:
+        "Create deployments"
+        orchestrator.batchCreateDeployments(violatedDeployments + nonViolatedDeployments)
+
+        then:
+        "Verify Violation #policyName is/is not triggered based on scope"
+        violatedDeployments.each {
+            assert waitForViolation(it.name, policy.getName(), 30)
+        }
+        nonViolatedDeployments.each {
+            assert !waitForViolation(it.name, policy.getName(), 5)
+        }
+
+        cleanup:
+        "Remove Policy #policyName"
+        policyID == null ?: CreatePolicyService.deletePolicy(policyID)
+        violatedDeployments.each {
+            it.deploymentUid == null ?: orchestrator.deleteDeployment(it)
+        }
+        nonViolatedDeployments.each {
+            it.deploymentUid == null ?: orchestrator.deleteDeployment(it)
+        }
+
+        where:
+        "Data inputs are :"
+        policyName   | policy | violatedDeployments | nonViolatedDeployments
+        "LabelScope" |
+                Policy.newBuilder()
+                        .setName("Test Label Scope")
+                        .setDescription("Test Label Scope")
+                        .setRationale("Test Label Scope")
+                        .addLifecycleStages(LifecycleStage.DEPLOY)
+                        .addCategories("DevOps Best Practices")
+                        .setDisabled(false)
+                        .setSeverityValue(2)
+                        .setFields(PolicyFields.newBuilder()
+                                .setImageName(ImageNamePolicy.newBuilder()
+                                        .setTag("latest").build()
+                                ).build()
+                        )
+                        .addScope(Scope.newBuilder()
+                                .setLabel(Scope.Label.newBuilder()
+                                        .setKey("app")
+                                        .setValue("qa-test").build()
+                                ).build()
+                        ).build()     |
+                [new Deployment()
+                        .setName("label-scope-violation")
+                        .addLabel("app", "qa-test")
+                        .setImage("nginx:latest"),]  |
+                [new Deployment()
+                        .setName("label-scope-non-violation")
+                        .setImage("nginx:latest"),]
+        "NamespaceScope" |
+                Policy.newBuilder()
+                        .setName("Test Namespace Scope")
+                        .setDescription("Test Namespace Scope")
+                        .setRationale("Test Namespace Scope")
+                        .addLifecycleStages(LifecycleStage.DEPLOY)
+                        .addCategories("DevOps Best Practices")
+                        .setDisabled(false)
+                        .setSeverityValue(2)
+                        .setFields(PolicyFields.newBuilder()
+                                .setImageName(ImageNamePolicy.newBuilder()
+                                        .setTag("latest").build()
+                                ).build()
+                        )
+                        .addScope(Scope.newBuilder()
+                                .setNamespace(Constants.ORCHESTRATOR_NAMESPACE).build()
+                        ).build()     |
+                [new Deployment()
+                        .setName("namespace-scope-violation")
+                        .setImage("nginx:latest"),]  |
+                [new Deployment()
+                        .setName("namespace-scope-non-violation")
+                        .setNamespace("default")
+                        .setImage("nginx:latest"),]
+        "ClusterNamespaceLabelScope" |
+                Policy.newBuilder()
+                        .setName("Test All Scopes in One")
+                        .setDescription("Test All Scopes in One")
+                        .setRationale("Test All Scopes in One")
+                        .addLifecycleStages(LifecycleStage.DEPLOY)
+                        .addCategories("DevOps Best Practices")
+                        .setDisabled(false)
+                        .setSeverityValue(2)
+                        .setFields(PolicyFields.newBuilder()
+                                .setImageName(ImageNamePolicy.newBuilder()
+                                        .setTag("latest").build()
+                                ).build()
+                        )
+                        .addScope(Scope.newBuilder()
+                                .setCluster(ClusterService.getClusterId())
+                                .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
+                                .setLabel(Scope.Label.newBuilder()
+                                        .setKey("app")
+                                        .setValue("qa-test").build()
+                                ).build()
+                        ).build()     |
+                [new Deployment()
+                        .setName("all-scope-violation")
+                        .addLabel("app", "qa-test")
+                        .setImage("nginx:latest"),]  |
+                [new Deployment()
+                        .setName("all-scope-non-violation")
+                        .setNamespace("default")
+                        .addLabel("app", "qa-test")
+                        .setImage("nginx:latest"),]
+        "MultipleScopes" |
+                Policy.newBuilder()
+                        .setName("Test Multiple Scopes")
+                        .setDescription("Test Multiple Scopes")
+                        .setRationale("Test Multiple Scopes")
+                        .addLifecycleStages(LifecycleStage.DEPLOY)
+                        .addCategories("DevOps Best Practices")
+                        .setDisabled(false)
+                        .setSeverityValue(2)
+                        .setFields(PolicyFields.newBuilder()
+                                .setImageName(ImageNamePolicy.newBuilder()
+                                        .setTag("latest").build()
+                                ).build()
+                        )
+                        .addScope(Scope.newBuilder()
+                                .setNamespace(Constants.ORCHESTRATOR_NAMESPACE).build()
+                        )
+                        .addScope(Scope.newBuilder()
+                                .setLabel(Scope.Label.newBuilder()
+                                        .setKey("app")
+                                        .setValue("qa-test").build()
+                                ).build()
+                        ).build()     |
+                [new Deployment()
+                        .setName("multiple-scope-violation")
+                        .setImage("nginx:latest"),
+                 new Deployment()
+                         .setName("multiple-scope-violation2")
+                         .setNamespace("default")
+                         .addLabel("app", "qa-test")
+                         .setImage("nginx:latest"),]  |
+                [new Deployment()
+                         .setName("multiple-scope-non-violation")
+                         .setNamespace("default")
+                         .setImage("nginx:latest"),]
     }
 }
