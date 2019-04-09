@@ -25,7 +25,7 @@ main() {
     fi
 
     echo "Waiting for collectors to start"
-    until [ "$(kubectl -n stackrox get po --selector 'service=collector' | tail -n +2 | awk '{print $3}' | grep Running | wc -l)" -eq "$(kubectl get nodes | tail -n +2 | wc -l)" ]; do
+    until [ "$(kubectl -n stackrox get ds/collector | tail -n +2 | awk '{print $2}')" -eq "$(kubectl -n stackrox get ds/collector | tail -n +2 | awk '{print $4}')" ]; do
         echo -n .
         sleep 1
     done
