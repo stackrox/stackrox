@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option cc_enable_arenas = true;
+option java_package = "io.stackrox.proto.storage";
+
+import "google/protobuf/timestamp.proto";
+import "protobuf/gogoproto/gogo.proto";
+
+package storage;
+
+message ProcessWhitelist {
+    string id = 1;
+    string container_name = 2;
+    string deployment_id = 3;
+    repeated Process processes = 4;
+    ProcessWhitelistMetadata metadata = 5;
+    google.protobuf.Timestamp created = 6;
+    google.protobuf.Timestamp user_locked_timestamp = 7;
+    google.protobuf.Timestamp stack_rox_locked_timestamp = 8;
+    google.protobuf.Timestamp last_update = 9;
+}
+
+message Process {
+    string name = 1 [(gogoproto.moretags) = "search:\"Process Name\""];
+    bool auto = 2;
+}
+
+message ProcessWhitelistMetadata {
+
+}

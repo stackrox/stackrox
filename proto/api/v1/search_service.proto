@@ -27,6 +27,7 @@ enum SearchCategory {
     SERVICE_ACCOUNTS         = 14;
     ROLES                    = 15;
     ROLEBINDINGS             = 16;
+    PROCESS_WHITELISTS       = 17;
 }
 
 // TODO(cgorman) collapse these into Go code and not proto
