@@ -21,7 +21,6 @@ spec:
         app: sensor
     spec:
       securityContext:
-        runAsNonRoot: true
         runAsUser: 4000
         fsGroup: 4000
       {{if eq .ClusterType "KUBERNETES_CLUSTER"}}
@@ -45,6 +44,7 @@ spec:
             memory: "1000Mi"
             cpu: "500m"
         securityContext:
+          runAsNonRoot: true
           readOnlyRootFilesystem: true
         env:
         - name: {{.PublicEndpointEnv}}
@@ -85,8 +85,7 @@ spec:
             memory: "100Mi"
             cpu: "100m"
         securityContext:
-          capabilities:
-            drop: ["NET_RAW"]
+          runAsNonRoot: true
           readOnlyRootFilesystem: true
         volumeMounts:
           - name: varlog
