@@ -37,12 +37,15 @@ func validate(ecr *storage.ECRConfig) error {
 	if ecr.GetRegistryId() == "" {
 		errorList.AddString("Registry ID must be specified")
 	}
-	if ecr.GetAccessKeyId() == "" {
-		errorList.AddString("Access Key ID must be specified")
+	if !ecr.GetUseIam() {
+		if ecr.GetAccessKeyId() == "" {
+			errorList.AddString("Access Key ID must be specified if not using IAM")
+		}
+		if ecr.GetSecretAccessKey() == "" {
+			errorList.AddString("Secret Access Key must be specified if not using IAM")
+		}
 	}
-	if ecr.GetSecretAccessKey() == "" {
-		errorList.AddString("Secret Access Key must be specified")
-	}
+
 	if ecr.GetRegion() == "" {
 		errorList.AddString("Region must be specified")
 	}
@@ -130,11 +133,19 @@ func newRegistry(integration *storage.ImageIntegration) (*ecr, error) {
 
 	endpoint := fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com", conf.GetRegistryId(), conf.GetRegion())
 
-	creds := credentials.NewStaticCredentials(conf.GetAccessKeyId(), conf.GetSecretAccessKey(), "")
-	sess, err := session.NewSession(&aws.Config{
-		Region:      aws.String(conf.GetRegion()),
-		Credentials: creds,
-	})
+	var err error
+	var sess *session.Session
+	if conf.GetUseIam() {
+		sess, err = session.NewSession(&aws.Config{
+			Region: aws.String(conf.GetRegion()),
+		})
+	} else {
+		creds := credentials.NewStaticCredentials(conf.GetAccessKeyId(), conf.GetSecretAccessKey(), "")
+		sess, err = session.NewSession(&aws.Config{
+			Region:      aws.String(conf.GetRegion()),
+			Credentials: creds,
+		})
+	}
 	if err != nil {
 		return nil, err
 	}

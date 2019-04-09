@@ -650,13 +650,19 @@ const formDescriptors = {
                 placeholder: 'us-west-2'
             },
             {
-                label: 'Access Key ID',
+                label: 'Use Container IAM Role',
+                jsonpath: 'ecr.useIam',
+                type: 'checkbox',
+                placeholder: ''
+            },
+            {
+                label: 'Access Key ID (required if not using IAM)',
                 jsonpath: 'ecr.accessKeyId',
                 type: 'password',
                 placeholder: ''
             },
             {
-                label: 'Secret Access Key',
+                label: 'Secret Access Key (required if not using IAM)',
                 jsonpath: 'ecr.secretAccessKey',
                 type: 'password',
                 placeholder: ''
