@@ -472,7 +472,13 @@ jobs:
 
       - run:
           name: Login to RedHat registry
-          command: docker login -u "$REDHAT_REGISTRY_USERNAME" -p "$REDHAT_REGISTRY_PASSWORD" https://registry.redhat.io
+          command: |
+            for i in {1..10}; do
+              if docker login -u "$REDHAT_REGISTRY_USERNAME" -p "$REDHAT_REGISTRY_PASSWORD" https://registry.redhat.io; then
+                break
+              fi
+              sleep 2
+            done
 
       - run:
           name: Build main image for RHEL
