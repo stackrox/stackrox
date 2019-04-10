@@ -26,8 +26,8 @@ type DispatcherRegistry interface {
 	ForServices() Dispatcher
 	ForServiceAccounts() Dispatcher
 	ForRoles() Dispatcher
-	ForClusterRoles() Dispatcher
 	ForRoleBindings() Dispatcher
+	ForClusterRoles() Dispatcher
 	ForClusterRoleBindings() Dispatcher
 }
 
@@ -38,12 +38,15 @@ func NewDispatcherRegistry(podLister v1Listers.PodLister, entityStore *clusteren
 	nodeStore := newNodeStore()
 	nsStore := newNamespaceStore()
 	endpointManager := newEndpointManager(serviceStore, deploymentStore, nodeStore, entityStore)
-	rbacStore := newRBACStore()
+	rbacUpdater := newRBACUpdater()
 
 	return &registryImpl{
 		deploymentHandler: newDeploymentHandler(serviceStore, deploymentStore, endpointManager, nsStore, roxMetadata, podLister),
-		rbacHandler:       newRBACHandler(rbacStore),
 
+		roleDispatcher:           newRoleDispatcher(rbacUpdater),
+		bindingDispatcher:        newBindingDispatcher(rbacUpdater),
+		clusterRoleDispatcher:    newClusterRoleDispatcher(rbacUpdater),
+		clusterBindingDispatcher: newClusterBindingDispatcher(rbacUpdater),
 		namespaceDispatcher:      newNamespaceDispatcher(nsStore, serviceStore, deploymentStore),
 		serviceDispatcher:        newServiceDispatcher(serviceStore, deploymentStore, endpointManager),
 		secretDispatcher:         newSecretDispatcher(),
@@ -55,8 +58,11 @@ func NewDispatcherRegistry(podLister v1Listers.PodLister, entityStore *clusteren
 
 type registryImpl struct {
 	deploymentHandler *deploymentHandler
-	rbacHandler       *rbacHandler
 
+	roleDispatcher           *roleDispatcher
+	bindingDispatcher        *bindingDispatcher
+	clusterRoleDispatcher    *clusterRoleDispatcher
+	clusterBindingDispatcher *clusterBindingDispatcher
 	namespaceDispatcher      *namespaceDispatcher
 	serviceDispatcher        *serviceDispatcher
 	secretDispatcher         *secretDispatcher
@@ -96,19 +102,19 @@ func (d *registryImpl) ForServiceAccounts() Dispatcher {
 }
 
 func (d *registryImpl) ForRoles() Dispatcher {
-	return d.newExclusive(newRoleDispatcher(d.rbacHandler))
-}
-
-func (d *registryImpl) ForClusterRoles() Dispatcher {
-	return d.newExclusive(newClusterRoleDispatcher(d.rbacHandler))
+	return d.newExclusive(d.roleDispatcher)
 }
 
 func (d *registryImpl) ForRoleBindings() Dispatcher {
-	return d.newExclusive(newRoleBindingDispatcher(d.rbacHandler))
+	return d.newExclusive(d.bindingDispatcher)
+}
+
+func (d *registryImpl) ForClusterRoles() Dispatcher {
+	return d.newExclusive(d.clusterRoleDispatcher)
 }
 
 func (d *registryImpl) ForClusterRoleBindings() Dispatcher {
-	return d.newExclusive(newClusterRoleBindingDispatcher(d.rbacHandler))
+	return d.newExclusive(d.clusterBindingDispatcher)
 }
 
 // Wraps the input dispatcher so that only a single dispatcher returned from the registry can be run at a time.
