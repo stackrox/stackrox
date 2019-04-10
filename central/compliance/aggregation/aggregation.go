@@ -10,6 +10,8 @@ import (
 	"github.com/stackrox/rox/central/compliance/standards"
 	standardsIndex "github.com/stackrox/rox/central/compliance/standards/index"
 	complianceStore "github.com/stackrox/rox/central/compliance/store"
+	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
+	deploymentMappings "github.com/stackrox/rox/central/deployment/index/mappings"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
 	namespaceMappings "github.com/stackrox/rox/central/namespace/index/mappings"
 	nodeStore "github.com/stackrox/rox/central/node/globalstore"
@@ -51,22 +53,25 @@ func New(compliance complianceStore.Store,
 	standards standards.Repository,
 	clusters clusterDatastore.DataStore,
 	namespaces namespaceStore.DataStore,
-	nodes nodeStore.GlobalStore) Aggregator {
+	nodes nodeStore.GlobalStore,
+	deployments deploymentStore.DataStore) Aggregator {
 	return &aggregatorImpl{
-		compliance: compliance,
-		standards:  standards,
-		clusters:   clusters,
-		namespaces: namespaces,
-		nodes:      nodes,
+		compliance:  compliance,
+		standards:   standards,
+		clusters:    clusters,
+		namespaces:  namespaces,
+		nodes:       nodes,
+		deployments: deployments,
 	}
 }
 
 type aggregatorImpl struct {
-	compliance complianceStore.Store
-	standards  standards.Repository
-	clusters   clusterDatastore.DataStore
-	namespaces namespaceStore.DataStore
-	nodes      nodeStore.GlobalStore
+	compliance  complianceStore.Store
+	standards   standards.Repository
+	clusters    clusterDatastore.DataStore
+	namespaces  namespaceStore.DataStore
+	nodes       nodeStore.GlobalStore
+	deployments deploymentStore.DataStore
 }
 
 func (a *aggregatorImpl) Search(q *v1.Query) ([]search.Result, error) {
@@ -391,6 +396,10 @@ func (a *aggregatorImpl) getSearchFuncs() map[v1.ComplianceAggregation_Scope]sea
 			searchFunc: a.standards.SearchControls,
 			optionsMap: standardsIndex.ControlOptions,
 		},
+		v1.ComplianceAggregation_DEPLOYMENT: {
+			searchFunc: a.deployments.Search,
+			optionsMap: deploymentMappings.OptionsMap,
+		},
 	}
 }
 
@@ -440,6 +449,11 @@ func (a *aggregatorImpl) getCheckMask(query *v1.Query, querySpecifiedFields []st
 	}
 
 	err = a.addSetToMaskIfOptionsApplicable(v1.ComplianceAggregation_CONTROL, &mask, query, querySpecifiedFields)
+	if err != nil {
+		return mask, err
+	}
+
+	err = a.addSetToMaskIfOptionsApplicable(v1.ComplianceAggregation_DEPLOYMENT, &mask, query, querySpecifiedFields)
 	if err != nil {
 		return mask, err
 	}

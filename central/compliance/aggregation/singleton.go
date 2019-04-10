@@ -4,6 +4,7 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/standards"
 	complianceStore "github.com/stackrox/rox/central/compliance/store"
+	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeStore "github.com/stackrox/rox/central/node/globalstore"
 	"github.com/stackrox/rox/pkg/sync"
@@ -21,6 +22,7 @@ func initialize() {
 		clusterDatastore.Singleton(),
 		namespaceStore.Singleton(),
 		nodeStore.Singleton(),
+		deploymentDatastore.Singleton(),
 	)
 }
 
