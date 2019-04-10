@@ -45,7 +45,10 @@ const ControlPage = ({ match, location, controlId, sidePanelMode }) => {
                         control: name
                     };
                     contents = (
-                        <section id="capture-list" className="flex flex-1 overflow-y-auto h-full">
+                        <section
+                            id="capture-list"
+                            className="flex flex-col flex-1 overflow-y-auto h-full"
+                        >
                             <ComplianceList
                                 entityType={listEntityType}
                                 query={listQuery}
