@@ -106,13 +106,13 @@ class DeploymentNetworkFlows extends Component {
 
         const { deploymentEdges } = this.props;
         if (!deploymentEdges.length)
-            return <NoResultsMessage message="No results found. Please refine your search." />;
+            return <NoResultsMessage message="No deployment network flows" />;
         return (
             <Table
                 rows={deploymentEdges}
                 columns={columns}
                 onRowClick={this.highlightNode}
-                noDataText="No results found. Please refine your search."
+                noDataText="No deployment network flows"
                 page={this.state.page}
                 idAttribute="data.target"
                 selectedRowId={this.state.selectedNode && this.state.selectedNode.id}

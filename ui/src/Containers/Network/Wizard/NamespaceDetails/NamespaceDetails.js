@@ -115,14 +115,13 @@ class NamespaceDetails extends Component {
 
         const { namespace } = this.props;
         const rows = namespace.deployments;
-        if (!rows.length)
-            return <NoResultsMessage message="No results found. Please refine your search." />;
+        if (!rows.length) return <NoResultsMessage message="No namespace deployments" />;
         return (
             <Table
                 rows={rows}
                 columns={columns}
                 onRowClick={this.highlightNode}
-                noDataText="No results found. Please refine your search."
+                noDataText="No namespace deployments"
                 page={this.state.page}
                 idAttribute="data.id"
                 selectedRowId={this.state.selectedNode && this.state.selectedNode.id}
