@@ -10,7 +10,7 @@ const ReduxToggleField = ({ name, disabled, reverse }) => {
 
     return (
         <div className="mb-2">
-            <div className={`${classNames} inline-block align-middle`}>
+            <div className={`${classNames} mr-0 inline-block align-middle`}>
                 <Field
                     key={name}
                     id={name}

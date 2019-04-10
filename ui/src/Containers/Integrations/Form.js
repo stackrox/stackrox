@@ -13,7 +13,7 @@ import ReduxSelectField from 'Components/forms/ReduxSelectField';
 import ReduxTextField from 'Components/forms/ReduxTextField';
 import ReduxTextAreaField from 'Components/forms/ReduxTextAreaField';
 import ReduxPasswordField from 'Components/forms/ReduxPasswordField';
-import ReduxCheckboxField from 'Components/forms/ReduxCheckboxField';
+import ReduxToggleField from 'Components/forms/ReduxToggleField';
 import ReduxMultiSelectField from 'Components/forms/ReduxMultiSelectField';
 import ReduxNumericInputField from 'Components/forms/ReduxNumericInputField';
 
@@ -92,9 +92,9 @@ class Form extends Component {
                         value={field.default}
                     />
                 );
-            case 'checkbox':
+            case 'toggle':
                 return (
-                    <ReduxCheckboxField
+                    <ReduxToggleField
                         name={field.jsonpath}
                         disabled={disabled}
                         placeholder={field.placeholder}
@@ -156,14 +156,12 @@ class Form extends Component {
                             if (field.type === 'html') {
                                 return field.html;
                             }
+                            const width = field.type === 'toggle' ? 'w-full' : 'w-2/3';
+                            const align = field.type !== 'list' ? 'items-center' : 'pt-2';
                             return (
                                 // eslint-disable-next-line jsx-a11y/label-has-for
                                 <div className="flex mt-4" htmlFor={field.key} key={field.label}>
-                                    <div
-                                        className={`mr-4 flex w-2/3 capitalize ${
-                                            field.type !== 'list' ? 'items-center' : 'pt-2'
-                                        }`}
-                                    >
+                                    <div className={`mr-4 flex ${width} capitalize ${align}`}>
                                         {field.label}
                                     </div>
                                     {this.renderFormField(field)}

@@ -146,7 +146,7 @@ const formDescriptors = {
             {
                 label: 'Skip TLS Verification',
                 jsonpath: 'generic.skipTLSVerify',
-                type: 'checkbox'
+                type: 'toggle'
             },
             {
                 label: 'CA Cert (optional)',
@@ -273,13 +273,13 @@ const formDescriptors = {
             {
                 label: 'Connect Without TLS (Unencrypted)',
                 jsonpath: 'email.disableTLS',
-                type: 'checkbox',
+                type: 'toggle',
                 placeholder: ''
             },
             {
                 label: 'Enable STARTTLS',
                 jsonpath: 'email.useSTARTTLS',
-                type: 'checkbox',
+                type: 'toggle',
                 placeholder: ''
             }
         ],
@@ -351,7 +351,7 @@ const formDescriptors = {
             {
                 label: 'Disable TLS Certificate Validation (Insecure)',
                 jsonpath: 'splunk.insecure',
-                type: 'checkbox',
+                type: 'toggle',
                 placeholder: ''
             }
         ],
@@ -436,7 +436,7 @@ const formDescriptors = {
             {
                 label: 'Disable TLS Certificate Validation (Insecure)',
                 jsonpath: 'docker.insecure',
-                type: 'checkbox',
+                type: 'toggle',
                 placeholder: ''
             }
         ],
@@ -478,7 +478,7 @@ const formDescriptors = {
             {
                 label: 'Disable TLS Certificate Validation (Insecure)',
                 jsonpath: 'dtr.insecure',
-                type: 'checkbox',
+                type: 'toggle',
                 placeholder: ''
             }
         ],
@@ -652,7 +652,7 @@ const formDescriptors = {
             {
                 label: 'Use Container IAM Role',
                 jsonpath: 'ecr.useIam',
-                type: 'checkbox',
+                type: 'toggle',
                 placeholder: ''
             },
             {
@@ -703,7 +703,7 @@ const formDescriptors = {
             {
                 label: 'Disable TLS Certificate Validation (Insecure)',
                 jsonpath: 'docker.insecure',
-                type: 'checkbox',
+                type: 'toggle',
                 placeholder: ''
             }
         ],

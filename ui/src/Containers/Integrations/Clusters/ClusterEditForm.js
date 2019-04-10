@@ -5,7 +5,7 @@ import { reduxForm } from 'redux-form';
 import { clusterFormId, clusterTypes } from 'reducers/clusters';
 import FormField from 'Components/FormField';
 import ReduxTextField from 'Components/forms/ReduxTextField';
-import ReduxCheckboxField from 'Components/forms/ReduxCheckboxField';
+import ReduxToggleField from 'Components/forms/ReduxToggleField';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
@@ -69,6 +69,18 @@ const MonitoringEndpointFormField = () => (
     </FormField>
 );
 
+const InlineToggleField = ({ label, name }) => (
+    <div className="flex" htmlFor={name} key={name}>
+        <div className="flex w-full capitalize items-center">{label}</div>
+        <ReduxToggleField name={name} />
+    </div>
+);
+
+InlineToggleField.propTypes = {
+    label: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired
+};
+
 const K8sFields = () => (
     <React.Fragment>
         <CommonFields />
@@ -77,9 +89,7 @@ const K8sFields = () => (
         <MonitoringEndpointFormField />
         <RuntimeSupportFormField />
         <StackRoxCollectorImageFormField />
-        <FormField label="Enable Admission Controller">
-            <ReduxCheckboxField name="admissionController" />
-        </FormField>
+        <InlineToggleField label="Enable Admission Controller" name="admissionController" />
     </React.Fragment>
 );
 
