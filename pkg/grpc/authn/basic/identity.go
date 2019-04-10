@@ -62,6 +62,5 @@ type Identity interface {
 	AsExternalUser() *tokens.ExternalUserClaim
 
 	// isBasicAuthIdentity is a marker method.
-	//lint:ignore U1000 This is used as a marker method, and is okay.
 	isBasicAuthIdentity()
 }

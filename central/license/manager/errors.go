@@ -32,6 +32,7 @@ func (expiredError) Status() v1.LicenseInfo_Status {
 	return v1.LicenseInfo_EXPIRED
 }
 
+//lint:ignore U1000 This will be used soon.
 type revokedError string
 
 func (e revokedError) Error() string {
