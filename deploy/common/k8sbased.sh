@@ -98,6 +98,11 @@ function launch_central {
     echo "Successfully deployed Central!"
     echo "Access the UI at: https://${API_ENDPOINT}"
     setup_auth0 "${API_ENDPOINT}"
+
+    if [[ -n "$CI" ]]; then
+        echo "Sleep for 1 minute to allow for GKE stabilization"
+        sleep 60
+    fi
 }
 
 function launch_sensor {
