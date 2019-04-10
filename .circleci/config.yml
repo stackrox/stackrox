@@ -473,12 +473,34 @@ jobs:
       - run:
           name: Login to RedHat registry
           command: |
+            success="false"
             for i in {1..10}; do
               if docker login -u "$REDHAT_REGISTRY_USERNAME" -p "$REDHAT_REGISTRY_PASSWORD" https://registry.redhat.io; then
+                success="true"
                 break
               fi
-              sleep 2
+              sleep $(( 2 ** i ))
             done
+
+            if [[ $success == "false" ]]; then
+              echo "Failed to login to RHEL registry"
+              exit 1
+            fi
+
+            success="false"
+            for i in {1..10}; do
+              if docker pull registry.redhat.io/rhel7:7.6-151.1550575774; then
+                success="true"
+                break
+              fi
+              sleep $(( 2 ** i ))
+            done
+
+            if [[ $success == "false" ]]; then
+              echo "Failed to pull RHEL image"
+              exit 1
+            fi
+
 
       - run:
           name: Build main image for RHEL
