@@ -1,6 +1,7 @@
 package concurrency
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/stackrox/rox/pkg/sync"
@@ -73,6 +74,11 @@ func (s *ErrorSignal) Reset() bool {
 // Signal triggers the signal, storing a `nil` error.
 func (s *ErrorSignal) Signal() bool {
 	return s.SignalWithError(nil)
+}
+
+// SignalWithErrorf is a wrapper around SignalWithError and fmt.Errorf.
+func (s *ErrorSignal) SignalWithErrorf(format string, args ...interface{}) bool {
+	return s.SignalWithError(fmt.Errorf(format, args...))
 }
 
 // SignalWithError triggers the signal and stores the given error. It returns true if the signal was in

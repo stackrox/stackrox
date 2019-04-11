@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/orchestrators"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/clusterstatus"
 	"github.com/stackrox/rox/sensor/common/compliance"
@@ -226,12 +227,18 @@ func (s *Sensor) registerAPIServices() {
 
 // Function does not complete until central is pingable.
 func (s *Sensor) waitUntilCentralIsReady(conn *grpc.ClientConn) {
+	const maxRetries = 15
 	pingService := v1.NewPingServiceClient(conn)
-	err := pingWithTimeout(pingService)
-	for err != nil {
-		log.Infof("Ping to Central failed: %s. Retrying...", err)
-		time.Sleep(2 * time.Second)
-		err = pingWithTimeout(pingService)
+	err := retry.WithRetry(func() error {
+		return pingWithTimeout(pingService)
+	},
+		retry.Tries(maxRetries),
+		retry.OnFailedAttempts(func(err error) {
+			log.Infof("Ping to Central failed: %s. Retrying...", err)
+			time.Sleep(2 * time.Second)
+		}))
+	if err != nil {
+		s.stoppedSig.SignalWithErrorf("ping to central failed after %d retries: %v", maxRetries, err)
 	}
 }
 
