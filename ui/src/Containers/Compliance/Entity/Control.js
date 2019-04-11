@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import isEmpty from 'lodash/isEmpty';
 import { standardLabels } from 'messages/standards';
-import entityTypes from 'constants/entityTypes';
+import entityTypes, { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import Widget from 'Components/Widget';
 import Query from 'Components/ThrowingQuery';
 import { CONTROL_QUERY as QUERY } from 'queries/controls';
@@ -15,6 +15,7 @@ import ComplianceList from 'Containers/Compliance/List/List';
 import Loader from 'Components/Loader';
 import ResourceTabs from 'Components/ResourceTabs';
 import Header from './Header';
+import SearchInput from '../SearchInput';
 
 function processData(data) {
     if (!data || !data.results) return {};
@@ -41,8 +42,10 @@ const ControlPage = ({ match, location, controlId, sidePanelMode }) => {
                 let contents;
 
                 if (listEntityType && !sidePanelMode) {
+                    const queryParams = { ...params.query };
+                    queryParams.control = name;
                     const listQuery = {
-                        control: name
+                        ...queryParams
                     };
                     contents = (
                         <section
@@ -124,30 +127,34 @@ const ControlPage = ({ match, location, controlId, sidePanelMode }) => {
                     );
                 }
 
+                const searchComponent = listEntityType ? (
+                    <SearchInput categories={[searchCategoryTypes[listEntityType]]} />
+                ) : null;
+
                 return (
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
-                            <>
-                                <Header
-                                    entityType={entityTypes.CONTROL}
-                                    listEntityType={null}
-                                    entity={control}
-                                    headerText={`${standardLabels[standardId]} ${name}`}
-                                />
-                                <ResourceTabs
-                                    entityId={entityId}
-                                    entityType={entityTypes.CONTROL}
-                                    standardId={standardId}
-                                    resourceTabs={[
-                                        entityTypes.NAMESPACE,
-                                        entityTypes.NODE,
-                                        entityTypes.DEPLOYMENT,
-                                        entityTypes.CLUSTER
-                                    ]}
-                                />
-                            </>
+                            <ResourceTabs
+                                entityId={entityId}
+                                entityType={entityTypes.CONTROL}
+                                standardId={standardId}
+                                resourceTabs={[
+                                    entityTypes.NAMESPACE,
+                                    entityTypes.NODE,
+                                    entityTypes.DEPLOYMENT,
+                                    entityTypes.CLUSTER
+                                ]}
+                            />
                         )}
-
+                        {!sidePanelMode && (
+                            <Header
+                                searchComponent={searchComponent}
+                                entityType={entityTypes.CONTROL}
+                                listEntityType={null}
+                                entity={control}
+                                headerText={`${standardLabels[standardId]} ${name}`}
+                            />
+                        )}
                         {contents}
                     </section>
                 );

@@ -1,7 +1,7 @@
 import React from 'react';
 import ComplianceByStandard from 'Containers/Compliance/widgets/ComplianceByStandard';
 import PropTypes from 'prop-types';
-import entityTypes from 'constants/entityTypes';
+import entityTypes, { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import Query from 'Components/ThrowingQuery';
 import Labels from 'Containers/Compliance/widgets/Labels';
@@ -18,6 +18,7 @@ import ComplianceList from 'Containers/Compliance/List/List';
 import ResourceTabs from 'Components/ResourceTabs';
 import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
 import Header from './Header';
+import SearchInput from '../SearchInput';
 
 const NamespacePage = ({ match, location, namespaceId, sidePanelMode }) => {
     const params = URLService.getParams(match, location);
@@ -50,9 +51,11 @@ const NamespacePage = ({ match, location, namespaceId, sidePanelMode }) => {
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
                 if (listEntityType && !sidePanelMode) {
+                    const queryParams = { ...params.query };
+                    queryParams.Namespace = namespace.name;
                     const listQuery = {
-                        Namespace: name,
-                        groupBy: listEntityType === entityTypes.CONTROL ? entityTypes.STANDARD : ''
+                        groupBy: listEntityType === entityTypes.CONTROL ? entityTypes.STANDARD : '',
+                        ...queryParams
                     };
                     contents = (
                         <section
@@ -161,24 +164,28 @@ const NamespacePage = ({ match, location, namespaceId, sidePanelMode }) => {
                     );
                 }
 
+                const searchComponent = listEntityType ? (
+                    <SearchInput categories={[searchCategoryTypes[listEntityType]]} />
+                ) : null;
+
                 return (
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
-                            <>
-                                <Header
-                                    entityType={entityTypes.NAMESPACE}
-                                    listEntityType={listEntityType}
-                                    entityName={name}
-                                    entityId={id}
-                                />
-                                <ResourceTabs
-                                    entityId={id}
-                                    entityType={entityTypes.NAMESPACE}
-                                    resourceTabs={[entityTypes.CONTROL, entityTypes.DEPLOYMENT]}
-                                />
-                            </>
+                            <ResourceTabs
+                                entityId={id}
+                                entityType={entityTypes.NAMESPACE}
+                                resourceTabs={[entityTypes.CONTROL, entityTypes.DEPLOYMENT]}
+                            />
                         )}
-
+                        {!sidePanelMode && (
+                            <Header
+                                searchComponent={searchComponent}
+                                entityType={entityTypes.NAMESPACE}
+                                listEntityType={listEntityType}
+                                entityName={name}
+                                entityId={id}
+                            />
+                        )}
                         {contents}
                     </section>
                 );

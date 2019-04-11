@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import entityTypes from 'constants/entityTypes';
+import entityTypes, { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
 import ClusterVersion from 'Containers/Compliance/widgets/ClusterVersion';
@@ -14,6 +14,7 @@ import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 import ResourceTabs from 'Components/ResourceTabs';
 import Header from './Header';
+import SearchInput from '../SearchInput';
 
 function processData(data) {
     if (!data || !data.results) return {};
@@ -34,9 +35,11 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
                 if (listEntityType && !sidePanelMode) {
+                    const queryParams = { ...params.query };
+                    queryParams['Cluster Id'] = entityId;
                     const listQuery = {
-                        'Cluster Id': entityId,
-                        groupBy: listEntityType === entityTypes.CONTROL ? entityTypes.STANDARD : ''
+                        groupBy: listEntityType === entityTypes.CONTROL ? entityTypes.STANDARD : '',
+                        ...queryParams
                     };
                     contents = (
                         <section
@@ -150,29 +153,34 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
                         </div>
                     );
                 }
+
+                const searchComponent = listEntityType ? (
+                    <SearchInput categories={[searchCategoryTypes[listEntityType]]} />
+                ) : null;
+
                 return (
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
-                            <>
-                                <Header
-                                    entityType={entityTypes.CLUSTER}
-                                    listEntityType={listEntityType}
-                                    entityName={name}
-                                    entityId={id}
-                                />
-                                <ResourceTabs
-                                    entityId={entityId}
-                                    entityType={entityTypes.CLUSTER}
-                                    resourceTabs={[
-                                        entityTypes.CONTROL,
-                                        entityTypes.NAMESPACE,
-                                        entityTypes.NODE,
-                                        entityTypes.DEPLOYMENT
-                                    ]}
-                                />
-                            </>
+                            <ResourceTabs
+                                entityId={entityId}
+                                entityType={entityTypes.CLUSTER}
+                                resourceTabs={[
+                                    entityTypes.CONTROL,
+                                    entityTypes.NAMESPACE,
+                                    entityTypes.NODE,
+                                    entityTypes.DEPLOYMENT
+                                ]}
+                            />
                         )}
-
+                        {!sidePanelMode && (
+                            <Header
+                                searchComponent={searchComponent}
+                                entityType={entityTypes.CLUSTER}
+                                listEntityType={listEntityType}
+                                entityName={name}
+                                entityId={id}
+                            />
+                        )}
                         {contents}
                     </section>
                 );

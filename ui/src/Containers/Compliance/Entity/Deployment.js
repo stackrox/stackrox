@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import entityTypes from 'constants/entityTypes';
+import entityTypes, { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import { DEPLOYMENT_QUERY } from 'queries/deployment';
 import Widget from 'Components/Widget';
 import Query from 'Components/ThrowingQuery';
@@ -21,6 +21,7 @@ import contextTypes from 'constants/contextTypes';
 
 import pageTypes from 'constants/pageTypes';
 import Header from './Header';
+import SearchInput from '../SearchInput';
 
 function processData(data) {
     if (!data || !data.deployment) return {};
@@ -51,9 +52,11 @@ const DeploymentPage = ({ match, location, deploymentId, sidePanelMode }) => {
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
                 if (listEntityType && !sidePanelMode) {
+                    const queryParams = { ...params.query };
+                    queryParams.deployment = name;
                     const listQuery = {
-                        deployment: name,
-                        groupBy: listEntityType === entityTypes.CONTROL ? entityTypes.STANDARD : ''
+                        groupBy: listEntityType === entityTypes.CONTROL ? entityTypes.STANDARD : '',
+                        ...queryParams
                     };
                     contents = (
                         <section
@@ -150,52 +153,33 @@ const DeploymentPage = ({ match, location, deploymentId, sidePanelMode }) => {
                                     entityType={entityTypes.DEPLOYMENT}
                                     className={pdfClassName}
                                 />
-                                {sidePanelMode && (
-                                    <>
-                                        {/* <div
-                                            className={`grid sx-2 sy-1 md:grid-auto-fit md:grid-dense ${pdfClassName}`}
-                                            style={{ '--min-tile-width': '50%' }}
-                                        >
-                                            <div className="md:pr-3 pt-3">
-                                                <ResourceCount
-                                                    entityType={entityTypes.DEPLOYMENT}
-                                                    relatedToResourceType={entityTypes.DEPLOYMENT}
-                                                    relatedToResource={namespace}
-                                                />
-                                            </div>
-                                            <div className="md:pl-3 pt-3">
-                                                <ResourceCount
-                                                    entityType={entityTypes.SECRET}
-                                                    relatedToResourceType={entityTypes.DEPLOYMENT}
-                                                    relatedToResource={namespace}
-                                                />
-                                            </div>
-                                        </div> */}
-                                    </>
-                                )}
                             </div>
                         </div>
                     );
                 }
 
+                const searchComponent = listEntityType ? (
+                    <SearchInput categories={[searchCategoryTypes[listEntityType]]} />
+                ) : null;
+
                 return (
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
-                            <>
-                                <Header
-                                    entityType={entityTypes.DEPLOYMENT}
-                                    listEntityType={listEntityType}
-                                    entityName={name}
-                                    entityId={id}
-                                />
-                                <ResourceTabs
-                                    entityId={id}
-                                    entityType={entityTypes.DEPLOYMENT}
-                                    resourceTabs={[entityTypes.CONTROL]}
-                                />
-                            </>
+                            <ResourceTabs
+                                entityId={id}
+                                entityType={entityTypes.DEPLOYMENT}
+                                resourceTabs={[entityTypes.CONTROL]}
+                            />
                         )}
-
+                        {!sidePanelMode && (
+                            <Header
+                                searchComponent={searchComponent}
+                                entityType={entityTypes.DEPLOYMENT}
+                                listEntityType={listEntityType}
+                                entityName={name}
+                                entityId={id}
+                            />
+                        )}
                         {contents}
                     </section>
                 );

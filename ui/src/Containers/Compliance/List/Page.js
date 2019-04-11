@@ -9,7 +9,7 @@ import CollapsibleBanner from 'Components/CollapsibleBanner/CollapsibleBanner';
 import ComplianceAcrossEntities from 'Containers/Compliance/widgets/ComplianceAcrossEntities';
 import ControlsMostFailed from 'Containers/Compliance/widgets/ControlsMostFailed';
 import ComplianceList from 'Containers/Compliance/List/List';
-import SearchInput from './SearchInput';
+import SearchInput from '../SearchInput';
 import Header from './Header';
 
 const ComplianceListPage = ({ match, location }) => {
@@ -27,7 +27,11 @@ const ComplianceListPage = ({ match, location }) => {
 
     return (
         <section className="flex flex-col h-full relative" id="capture-list">
-            <Header searchComponent={<SearchInput categories={['COMPLIANCE']} />} />
+            <Header
+                searchComponent={
+                    <SearchInput categories={['COMPLIANCE']} shouldAddComplianceState />
+                }
+            />
             <CollapsibleBanner className="pdf-page">
                 <ComplianceAcrossEntities entityType={entityType} query={query} groupBy={groupBy} />
                 <ControlsMostFailed entityType={entityType} query={query} showEmpty />
