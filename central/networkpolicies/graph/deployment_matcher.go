@@ -73,6 +73,10 @@ func egressNetworkPolicySelectorAppliesToDeployment(d *storage.Deployment, np *s
 	// If there is a rule with an IPBlock that is not nil, then we can assume that they have some sort of internet access
 	// This isn't exactly full proof, but probably a pretty decent indicator
 	for _, rule := range spec.GetEgress() {
+		// An empty list of peers means `allow all`.
+		if len(rule.GetTo()) == 0 {
+			return true, true
+		}
 		for _, to := range rule.GetTo() {
 			if to.IpBlock != nil {
 				return true, true

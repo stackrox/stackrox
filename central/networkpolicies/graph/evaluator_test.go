@@ -965,7 +965,7 @@ func TestEvaluateClusters(t *testing.T) {
 				getExamplePolicy("web-deny-external-egress"),
 			},
 			nodes: []*v1.NetworkNode{
-				mockNode("d1", "default", false, true, false, "web-deny-external-egress"),
+				mockNode("d1", "default", true, true, false, "web-deny-external-egress"),
 				mockNode("d2", "default", true, true, true),
 				mockNode("d3", "stackrox", true, true, true),
 			},
