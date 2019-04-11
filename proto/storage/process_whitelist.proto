@@ -9,6 +9,7 @@ import "protobuf/gogoproto/gogo.proto";
 
 package storage;
 
+// @protolock:skip
 message ProcessWhitelist {
     string id = 1;
     string container_name = 2;
@@ -21,11 +22,13 @@ message ProcessWhitelist {
     google.protobuf.Timestamp last_update = 9;
 }
 
+// @protolock:skip
 message Process {
     string name = 1 [(gogoproto.moretags) = "search:\"Process Name\""];
     bool auto = 2;
 }
 
+// @protolock:skip
 message ProcessWhitelistMetadata {
 
 }
