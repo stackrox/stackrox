@@ -71,6 +71,8 @@ func (c *controller) ApplyNetworkPolicies(ctx context.Context, mod *storage.Netw
 	select {
 	case <-ctx.Done():
 		return nil, errors.Wrap(ctx.Err(), "context error")
+	case <-c.stopSig.Done():
+		return nil, errors.Wrap(c.stopSig.Err(), "lost connection to sensor")
 	case resp = <-retC:
 	}
 

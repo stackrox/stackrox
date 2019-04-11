@@ -217,6 +217,9 @@ func (t *applyTx) deleteNetworkPolicy(namespace, name string) error {
 	t.annotateAndLabel(deleted)
 	deleted.Annotations[deletedAnnotationKey] = deletedAnnotationValue
 	deleted.Annotations[originalNameAnnotationKey] = existing.Name
+	if deleted.Spec.PodSelector.MatchLabels == nil {
+		deleted.Spec.PodSelector.MatchLabels = make(map[string]string)
+	}
 	deleted.Spec.PodSelector.MatchLabels[disablePolicyLabelKey] = disablePolicyLabelValue
 	deleted.Name = ""
 	deleted.ResourceVersion = ""
