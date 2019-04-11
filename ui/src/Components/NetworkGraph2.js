@@ -351,13 +351,8 @@ const NetworkGraph = ({
     function zoomToFit() {
         if (!cy) return;
         cy.current.fit([], GRAPH_PADDING);
-        const curFitZoom = cy.current.zoom();
-        const curMinZoom = cy.current.minZoom();
-        if (curFitZoom >= MIN_ZOOM) {
-            let newMinZoom = curFitZoom;
-            if (curMinZoom !== MIN_ZOOM) newMinZoom = Math.min(curFitZoom, curMinZoom);
-            cy.current.minZoom(newMinZoom);
-        }
+        const newMinZoom = Math.min(cy.current.zoom(), cy.current.minZoom());
+        cy.current.minZoom(newMinZoom);
     }
 
     function zoomIn() {
