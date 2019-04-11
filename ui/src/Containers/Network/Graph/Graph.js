@@ -75,7 +75,7 @@ class Graph extends Component {
     };
 
     renderGraph = nodes => {
-        // If we have more than 700 nodes, display a message instead of the graph.
+        // If we have more than 1000 nodes, display a message instead of the graph.
         if (nodes.length > 1000) {
             // hopefully a temporal solution
             return (

@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { actions as graphActions } from 'reducers/network/graph';
 
+import GraphLoader from 'Containers/Network/Graph/Overlays/GraphLoader';
+
 import Cytoscape from 'cytoscape';
 import CytoscapeComponent from 'react-cytoscapejs';
 import coseBilkentPlugin from 'cytoscape-cose-bilkent';
@@ -430,11 +432,19 @@ const NetworkGraph = ({
     useEffect(setGraphRef, []);
     useEffect(runLayout, [nodes.length]);
 
+    const normalizedElements = CytoscapeComponent.normalizeElements(elements);
+
+    const loader = !normalizedElements && (
+        <div className="absolute flex h-full items-center justify-center pin-t w-full pointer-events-none">
+            <GraphLoader isLoading />
+        </div>
+    );
+
     return (
         <div className="h-full w-full relative">
             <div id="cytoscapeContainer" className="w-full h-full">
                 <CytoscapeComponent
-                    elements={CytoscapeComponent.normalizeElements(elements)}
+                    elements={normalizedElements}
                     layout={layout}
                     stylesheet={style}
                     cy={configureCY}
@@ -443,6 +453,7 @@ const NetworkGraph = ({
                     style={{ width: '100%', height: '100%' }}
                 />
             </div>
+            {loader}
         </div>
     );
 };
