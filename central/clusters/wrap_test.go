@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/defaultimages"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/assert"
@@ -44,7 +45,7 @@ func TestGenerateCollectorImage(t *testing.T) {
 			assert.NoError(t, err)
 			outputImg, err := utils.GenerateImageFromString(c.expectedImage)
 			assert.NoError(t, err, "You wrote a bad test and your expected image string didn't parse")
-			assert.Equal(t, outputImg.GetName(), generateCollectorImageFromMainImage(inputImg.GetName(), c.collectorTag))
+			assert.Equal(t, outputImg.GetName(), defaultimages.GenerateNamedImageFromMainImage(inputImg.GetName(), c.collectorTag, defaultimages.Collector))
 		})
 	}
 }

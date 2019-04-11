@@ -6,6 +6,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/defaultimages"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -111,18 +112,31 @@ func (suite *renderSuite) testWithMonitoring(t *testing.T, c Config) {
 	suite.NoError(err)
 	suite.Empty(c.K8sConfig.Monitoring.Endpoint)
 
+	defaultMonitoringImage := fmt.Sprintf("docker.io/stackrox/%s:%s", defaultimages.Monitoring, c.K8sConfig.MainImageTag)
 	c.K8sConfig.Monitoring.Type = OnPrem
 	c.K8sConfig.Monitoring.Endpoint = "monitoring.stackrox:443"
 	_, err = suite.Render(c)
 	suite.NoError(err)
+	suite.Equal(defaultMonitoringImage, c.K8sConfig.Monitoring.Image)
 
 	c.K8sConfig.Monitoring.LoadBalancerType = v1.LoadBalancerType_NODE_PORT
 	_, err = suite.Render(c)
 	suite.NoError(err)
+	suite.Equal(defaultMonitoringImage, c.K8sConfig.Monitoring.Image)
 
 	c.K8sConfig.Monitoring.LoadBalancerType = v1.LoadBalancerType_LOAD_BALANCER
 	_, err = suite.Render(c)
 	suite.NoError(err)
+	suite.Equal(defaultMonitoringImage, c.K8sConfig.Monitoring.Image)
+
+	originalMain := c.K8sConfig.MainImage
+	alternateMain := fmt.Sprintf("%s/main:%s", defaultimages.ProdRedHatRegistry, c.K8sConfig.MainImageTag)
+	alternateMonitoring := fmt.Sprintf("%s/monitoring:%s", defaultimages.ProdMainRegistry, c.K8sConfig.MainImageTag)
+	c.K8sConfig.MainImage = alternateMain
+	_, err = suite.Render(c)
+	suite.NoError(err)
+	suite.Equal(alternateMonitoring, c.K8sConfig.Monitoring.Image)
+	c.K8sConfig.MainImage = originalMain
 
 	alternateImage := "some.other.repo/monitoring"
 	c.K8sConfig.MonitoringImage = alternateImage

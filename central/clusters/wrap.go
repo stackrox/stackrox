@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"path"
 	"path/filepath"
-	"strings"
 	"text/template"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/defaultimages"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -22,9 +22,6 @@ import (
 
 const (
 	defaultMonitoringPort = 8186
-	prodMainRegistry      = "stackrox.io"
-	prodRedHatRegistry    = "registry.connect.redhat.com"
-	prodCollectorRegistry = "collector.stackrox.io"
 )
 
 var (
@@ -62,28 +59,6 @@ func executeTemplate(temp *template.Template, fields map[string]interface{}) ([]
 	return buf.Bytes(), nil
 }
 
-func generateCollectorImageFromMainImage(mainImageName *storage.ImageName, tag string) *storage.ImageName {
-	// Populate the tag
-	collectorName := &storage.ImageName{
-		Tag: tag,
-	}
-	// Populate Registry
-	collectorName.Registry = mainImageName.GetRegistry()
-	if mainImageName.GetRegistry() == prodMainRegistry || mainImageName.GetRegistry() == prodRedHatRegistry {
-		collectorName.Registry = prodCollectorRegistry
-	}
-	// Populate Remote
-	// This handles the case where there is no namespace. e.g. stackrox.io/collector:latest
-	if slashIdx := strings.Index(mainImageName.GetRemote(), "/"); slashIdx == -1 {
-		collectorName.Remote = "collector"
-	} else {
-		collectorName.Remote = mainImageName.GetRemote()[:slashIdx] + "/collector"
-	}
-	// Populate FullName
-	utils.NormalizeImageFullNameNoSha(collectorName)
-	return collectorName
-}
-
 func generateCollectorImageNameFromString(collectorImage, tag string) (*storage.ImageName, error) {
 	image, _, err := utils.GenerateImageNameFromString(collectorImage)
 	if err != nil {
@@ -103,7 +78,7 @@ func generateCollectorImageName(mainImageName *storage.ImageName, collectorImage
 			return nil, err
 		}
 	} else {
-		collectorImageName = generateCollectorImageFromMainImage(mainImageName, collectorVersion)
+		collectorImageName = defaultimages.GenerateNamedImageFromMainImage(mainImageName, collectorVersion, defaultimages.Collector)
 	}
 	return collectorImageName, nil
 }

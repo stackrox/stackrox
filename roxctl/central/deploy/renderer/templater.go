@@ -11,9 +11,9 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image"
+	"github.com/stackrox/rox/pkg/defaultimages"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
-	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/zip"
@@ -216,13 +216,13 @@ func generateMonitoringImage(mainImage string, monitoringImage string) (string, 
 		}
 		return monitoringImage, nil
 	}
-	img := types.Wrapper{Image: utils.GenerateImageFromStringIgnoringError(mainImage)}
-	remote := img.Namespace() + "/monitoring"
-	// This handles the case where there is no namespace. e.g. stackrox.io/collector:latest
-	if img.Repo() == "" {
-		remote = "monitoring"
+	img, err := utils.GenerateImageFromString(mainImage)
+	if err != nil {
+		return "", err
 	}
-	return fmt.Sprintf("%s/%s:%s", img.GetName().GetRegistry(), remote, img.GetName().GetTag()), nil
+	imgName := img.GetName()
+	monitoringImageName := defaultimages.GenerateNamedImageFromMainImage(imgName, imgName.GetTag(), defaultimages.Monitoring)
+	return monitoringImageName.FullName, nil
 }
 
 func wrapFiles(files []*zip.File, c *Config) ([]*zip.File, error) {
