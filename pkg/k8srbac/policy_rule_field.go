@@ -15,8 +15,6 @@ type PolicyRuleField interface {
 	Merge(to, from *storage.PolicyRule)
 	Equals(first, second *storage.PolicyRule) bool
 	Grants(first, second *storage.PolicyRule) bool
-
-	Granters(second *storage.PolicyRule) [][]string
 }
 
 // Accessor accesses a field value in a rule.
@@ -87,12 +85,6 @@ func (f *policyRuleField) Grants(first, second *storage.PolicyRule) bool {
 		}
 	}
 	return true
-}
-
-// Granters returns a list of needed field values to grant the values in the input rule.
-// Fir a base field, that means a single option, one which holds all of the input rule's value for the field.
-func (f *policyRuleField) Granters(rule *storage.PolicyRule) [][]string {
-	return [][]string{f.accessor(rule)}
 }
 
 func (f *policyRuleField) hasValue(rule *storage.PolicyRule, value string) bool {

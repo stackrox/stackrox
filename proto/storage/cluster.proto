@@ -41,8 +41,9 @@ message ProviderMetadata {
 }
 
 message OrchestratorMetadata {
-    string                    version    = 1;
-    google.protobuf.Timestamp build_date = 2;
+    string                    version      = 1;
+    google.protobuf.Timestamp build_date   = 2;
+    repeated string           api_versions = 3;
 }
 
 enum CollectionMethod {

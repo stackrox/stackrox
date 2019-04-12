@@ -8,7 +8,7 @@ import (
 )
 
 func TestFieldSetMerge(t *testing.T) {
-	set := NewPolicyRuleFieldSet(APIGroupsField(), ResourcesField(), VerbsField())
+	set := NewPolicyRuleFieldSet(CoreFields()...)
 	cases := []struct {
 		name     string
 		to       *storage.PolicyRule
@@ -169,7 +169,7 @@ func TestFieldSetMerge(t *testing.T) {
 }
 
 func TestFieldSetEquals(t *testing.T) {
-	set := NewPolicyRuleFieldSet(APIGroupsField(), ResourcesField(), VerbsField())
+	set := NewPolicyRuleFieldSet(CoreFields()...)
 	cases := []struct {
 		name     string
 		first    *storage.PolicyRule
@@ -198,6 +198,125 @@ func TestFieldSetEquals(t *testing.T) {
 				},
 				Resources: []string{
 					"pods",
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Same value with names",
+			first: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				Resources: []string{
+					"pods",
+				},
+				ResourceNames: []string{
+					"robsPod",
+				},
+			},
+			second: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				Resources: []string{
+					"pods",
+				},
+				ResourceNames: []string{
+					"robsPod",
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Same value with different names",
+			first: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				Resources: []string{
+					"pods",
+				},
+				ResourceNames: []string{
+					"robsPod",
+				},
+			},
+			second: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				Resources: []string{
+					"pods",
+				},
+				ResourceNames: []string{
+					"tomsPod",
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Same value with missing name",
+			first: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				Resources: []string{
+					"pods",
+				},
+			},
+			second: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				Resources: []string{
+					"pods",
+				},
+				ResourceNames: []string{
+					"tomsPod",
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Same NonResourceUrl",
+			first: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				NonResourceUrls: []string{
+					"pods/*",
+				},
+			},
+			second: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				NonResourceUrls: []string{
+					"pods/*",
 				},
 			},
 			expected: true,
@@ -293,13 +412,97 @@ func TestFieldSetEquals(t *testing.T) {
 }
 
 func TestFieldSetGrants(t *testing.T) {
-	set := NewPolicyRuleFieldSet(APIGroupsField(), ResourcesField(), VerbsField())
+	set := NewPolicyRuleFieldSet(CoreFields()...)
 	cases := []struct {
 		name     string
 		first    *storage.PolicyRule
 		second   *storage.PolicyRule
 		expected bool
 	}{
+		{
+			name: "Matching",
+			first: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				Resources: []string{
+					"pods",
+				},
+			},
+			second: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				Resources: []string{
+					"pods",
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Matching resources but different resource names",
+			first: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				Resources: []string{
+					"pods",
+				},
+				ResourceNames: []string{
+					"robsPod",
+				},
+			},
+			second: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				Resources: []string{
+					"pods",
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Matching resources and second has resource name",
+			first: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				Resources: []string{
+					"pods",
+				},
+			},
+			second: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				Resources: []string{
+					"pods",
+				},
+				ResourceNames: []string{
+					"robsPod",
+				},
+			},
+			expected: true,
+		},
 		{
 			name: "Wildcarded second",
 			first: &storage.PolicyRule{
@@ -381,6 +584,121 @@ func TestFieldSetGrants(t *testing.T) {
 			expected: true,
 		},
 		{
+			name: "Wildcard resource with name",
+			first: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				Resources: []string{
+					"*",
+				},
+				ResourceNames: []string{
+					"derp",
+				},
+			},
+			second: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				Resources: []string{
+					"pods",
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Wildcard resource with matching name",
+			first: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				Resources: []string{
+					"*",
+				},
+				ResourceNames: []string{
+					"derp",
+				},
+			},
+			second: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				Resources: []string{
+					"pods",
+				},
+				ResourceNames: []string{
+					"derp",
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Globbed resource url",
+			first: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				NonResourceUrls: []string{
+					"deployments/*",
+					"pods/*",
+				},
+			},
+			second: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				NonResourceUrls: []string{
+					"pods/cpus",
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Globbed deeper resource url",
+			first: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				NonResourceUrls: []string{
+					"pods/cpus/disks/*",
+					"pods/cpus/*",
+				},
+			},
+			second: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+				},
+				ApiGroups: []string{
+					"custom",
+				},
+				NonResourceUrls: []string{
+					"pods/cpus", // Needs to be a sub-path to match
+				},
+			},
+			expected: false,
+		},
+		{
 			name: "Included verb",
 			first: &storage.PolicyRule{
 				Verbs: []string{
@@ -412,126 +730,6 @@ func TestFieldSetGrants(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			assert.Equal(t, c.expected, set.Grants(c.first, c.second))
-		})
-	}
-}
-
-func TestFieldSetGranters(t *testing.T) {
-	set := NewPolicyRuleFieldSet(VerbsField(), APIGroupsField(), ResourcesField())
-	cases := []struct {
-		name     string
-		input    *storage.PolicyRule
-		expected []*storage.PolicyRule
-	}{
-		{
-			name: "Wildcarded second",
-			input: &storage.PolicyRule{
-				Verbs: []string{
-					"Get",
-				},
-				ApiGroups: []string{
-					"custom",
-				},
-				Resources: []string{
-					"pods",
-				},
-			},
-			expected: []*storage.PolicyRule{
-				{
-					Verbs: []string{
-						"Get",
-					},
-					ApiGroups: []string{
-						"custom",
-					},
-					Resources: []string{
-						"pods",
-					},
-				},
-				{
-					Verbs: []string{
-						"*",
-					},
-					ApiGroups: []string{
-						"custom",
-					},
-					Resources: []string{
-						"pods",
-					},
-				},
-				{
-					Verbs: []string{
-						"Get",
-					},
-					ApiGroups: []string{
-						"*",
-					},
-					Resources: []string{
-						"pods",
-					},
-				},
-				{
-					Verbs: []string{
-						"*",
-					},
-					ApiGroups: []string{
-						"*",
-					},
-					Resources: []string{
-						"pods",
-					},
-				},
-				{
-					Verbs: []string{
-						"Get",
-					},
-					ApiGroups: []string{
-						"custom",
-					},
-					Resources: []string{
-						"*",
-					},
-				},
-				{
-					Verbs: []string{
-						"*",
-					},
-					ApiGroups: []string{
-						"custom",
-					},
-					Resources: []string{
-						"*",
-					},
-				},
-				{
-					Verbs: []string{
-						"Get",
-					},
-					ApiGroups: []string{
-						"*",
-					},
-					Resources: []string{
-						"*",
-					},
-				},
-				{
-					Verbs: []string{
-						"*",
-					},
-					ApiGroups: []string{
-						"*",
-					},
-					Resources: []string{
-						"*",
-					},
-				},
-			},
-		},
-	}
-
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expected, set.Granters(c.input))
 		})
 	}
 }

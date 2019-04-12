@@ -6,7 +6,7 @@ import (
 
 // Evaluator evaluates the policy rules that apply to different object types.
 type Evaluator interface {
-	ForSubject(subject *storage.Subject) []*storage.PolicyRule
+	ForSubject(subject *storage.Subject) PolicyRuleSet
 }
 
 // NewEvaluator returns a new instance of an Evaluator.
@@ -21,15 +21,15 @@ type evaluator struct {
 }
 
 // ForSubject returns the PolicyRules that apply to a subject based on the evaluator's roles and bindings.
-func (e *evaluator) ForSubject(subject *storage.Subject) []*storage.PolicyRule {
+func (e *evaluator) ForSubject(subject *storage.Subject) PolicyRuleSet {
 	// Collect all of the rules for all of the roles that bind the deployment to a role.
-	policyRuleSet := NewPolicyRuleSet()
+	policyRuleSet := NewPolicyRuleSet(CoreFields()...)
 	for subjectSet, role := range e.bindings {
 		if subjectSet.Contains(subject) {
 			policyRuleSet.Add(role.GetRules()...)
 		}
 	}
-	return policyRuleSet.ToSlice()
+	return policyRuleSet
 }
 
 // Static helper functions.

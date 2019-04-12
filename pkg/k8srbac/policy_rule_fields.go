@@ -46,11 +46,41 @@ func VerbsField() PolicyRuleField {
 	)
 }
 
+// NonResourceURLsField is the non resource urls field of a PolicyRule.
+func NonResourceURLsField() PolicyRuleField {
+	return NewGlobable(
+		NewPolicyRuleField(
+			func(rule *storage.PolicyRule) []string {
+				return rule.GetNonResourceUrls()
+			},
+			func(value []string, rule *storage.PolicyRule) {
+				rule.NonResourceUrls = value
+			},
+		),
+	)
+}
+
+// ResourceNamesField is the resource names field of a PolicyRule.
+func ResourceNamesField() PolicyRuleField {
+	return NewBlankable(
+		NewPolicyRuleField(
+			func(rule *storage.PolicyRule) []string {
+				return rule.GetResourceNames()
+			},
+			func(value []string, rule *storage.PolicyRule) {
+				rule.ResourceNames = value
+			},
+		),
+	)
+}
+
 // CoreFields is a helper that returns the fields we usually use.
 func CoreFields() []PolicyRuleField {
 	return []PolicyRuleField{
 		APIGroupsField(),
 		ResourcesField(),
 		VerbsField(),
+		NonResourceURLsField(),
+		ResourceNamesField(),
 	}
 }

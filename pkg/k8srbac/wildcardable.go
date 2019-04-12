@@ -7,7 +7,6 @@ import (
 const wildcard = "*"
 
 // Wildcardable is a fields whos 'all values' state can be represented by a wildcard: *.
-// To use this, you need to input the set of all possible values.
 type Wildcardable interface {
 	PolicyRuleField
 
@@ -57,15 +56,6 @@ func (w *wildcardable) Grants(first, second *storage.PolicyRule) bool {
 		return true
 	}
 	return w.underlying.Grants(first, second)
-}
-
-// Granters returns a list of needed field values to grant the values in the input rule.
-// Fir a base field, that means a single option, one which holds all of the input rule's value for the field.
-func (w *wildcardable) Granters(rule *storage.PolicyRule) [][]string {
-	if w.IsWildcarded(rule) {
-		return [][]string{{wildcard}}
-	}
-	return append(w.underlying.Granters(rule), []string{wildcard})
 }
 
 // IsWildcarded returns if the field is wildcarded in the input rule.

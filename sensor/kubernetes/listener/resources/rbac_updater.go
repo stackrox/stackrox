@@ -302,9 +302,11 @@ func getPolicyRules(k8sRules []v1.PolicyRule) []*storage.PolicyRule {
 	var rules []*storage.PolicyRule
 	for _, rule := range k8sRules {
 		rules = append(rules, &storage.PolicyRule{
-			Verbs:     rule.Verbs,
-			Resources: rule.Resources,
-			ApiGroups: rule.APIGroups,
+			Verbs:           rule.Verbs,
+			Resources:       rule.Resources,
+			ApiGroups:       rule.APIGroups,
+			ResourceNames:   rule.ResourceNames,
+			NonResourceUrls: rule.NonResourceURLs,
 		})
 	}
 	return rules

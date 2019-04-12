@@ -52,9 +52,11 @@ message K8sRoleBinding {
 // Properties of an individual rules that grant permissions to resources.
 //////////////////////////////////////////
 message PolicyRule {
-    repeated string verbs           = 1;
-    repeated string api_groups      = 2;
-    repeated string resources       = 3;
+    repeated string verbs             = 1;
+    repeated string api_groups        = 2;
+    repeated string resources         = 3;
+    repeated string non_resource_urls = 4;
+    repeated string resource_names    = 5;
 }
 
 // Properties of an individual subjects who are granted roles via role bindings.

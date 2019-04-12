@@ -95,6 +95,6 @@ func TestFindsRoleswithoutBindings(t *testing.T) {
 		},
 	}
 
-	evaluator := NewEvaluator(inputRoles, inputBindings)
-	assert.Equal(t, expected, evaluator.ForSubject(inputSubject))
+	eval := NewEvaluator(inputRoles, inputBindings)
+	assert.Equal(t, expected, eval.ForSubject(inputSubject).ToSlice())
 }

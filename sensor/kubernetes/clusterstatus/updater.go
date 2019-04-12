@@ -1,6 +1,7 @@
 package clusterstatus
 
 import (
+	"sort"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/clusterstatus"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -102,9 +104,23 @@ func (u *updaterImpl) getClusterMetadata() *storage.OrchestratorMetadata {
 	}
 
 	return &storage.OrchestratorMetadata{
-		Version:   serverVersion.GitVersion,
-		BuildDate: protoconv.ConvertTimeToTimestamp(buildDate),
+		Version:     serverVersion.GitVersion,
+		BuildDate:   protoconv.ConvertTimeToTimestamp(buildDate),
+		ApiVersions: u.getAPIVersions(),
 	}
+}
+
+// API versions exists as the fields in the kube client.
+func (u *updaterImpl) getAPIVersions() []string {
+	groupList, err := u.client.Discovery().ServerGroups()
+	if err != nil {
+		log.Errorf("unable to fetch api-versions: %s", err)
+		return nil
+	}
+
+	apiVersions := metav1.ExtractGroupVersions(groupList)
+	sort.Strings(apiVersions)
+	return apiVersions
 }
 
 func (u *updaterImpl) getCloudProviderMetadata() *storage.ProviderMetadata {

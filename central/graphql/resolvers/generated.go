@@ -489,6 +489,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"value: Float!",
 	}))
 	utils.Must(builder.AddType("OrchestratorMetadata", []string{
+		"apiVersions: [String!]!",
 		"buildDate: Time",
 		"version: String!",
 	}))
@@ -4425,6 +4426,11 @@ func (resolver *Resolver) wrapOrchestratorMetadatas(values []*storage.Orchestrat
 		output[i] = &orchestratorMetadataResolver{resolver, v}
 	}
 	return output, nil
+}
+
+func (resolver *orchestratorMetadataResolver) ApiVersions() []string {
+	value := resolver.data.GetApiVersions()
+	return value
 }
 
 func (resolver *orchestratorMetadataResolver) BuildDate() (*graphql.Time, error) {
