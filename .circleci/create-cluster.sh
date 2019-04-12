@@ -17,6 +17,7 @@ create-cluster() {
   echo "Creating ${NUM_NODES} node cluster with image type \"${GCP_IMAGE_TYPE}\""
 
   zones=$(gcloud compute zones list --filter="region=$REGION" | grep UP | cut -f1 -d' ')
+  success=0
   for zone in $zones; do
       echo "Trying zone $zone"
       gcloud config set compute/zone "${zone}"
@@ -32,11 +33,17 @@ create-cluster() {
           --tags="stackrox-ci,stackrox-ci-${CIRCLE_JOB}" \
           "prevent-ci-${CIRCLE_BUILD_NUM}"
       then
+          success=1
           break
       else
           gcloud container clusters delete "prevent-ci-${CIRCLE_BUILD_NUM}"
       fi
   done
+
+  if [[ "${success}" == "0" ]]; then
+      echo "Cluster creation failed"
+      return 1
+  fi
 
   # Sleep to ensure that GKE has actually started to create the deployments/pods
   sleep 10
