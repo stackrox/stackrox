@@ -161,6 +161,10 @@ spec:
         service: collector
         app: collector
       namespace: stackrox
+      {{if eq .CollectionMethod "EBPF"}}
+      annotations:
+        container.apparmor.security.beta.kubernetes.io/collector: unconfined
+      {{- end}}
     spec:
       serviceAccount: collector
       containers:
@@ -185,7 +189,14 @@ spec:
           capabilities:
             drop:
             - NET_RAW
+          {{if eq .CollectionMethod "EBPF"}}
+            add:
+            - SYS_ADMIN
+            - SYS_PTRACE
+            - SYS_RESOURCE
+          {{- else}}
           privileged: true
+          {{- end}}
           readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /host/var/run/docker.sock
