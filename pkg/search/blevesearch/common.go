@@ -304,8 +304,8 @@ func runBleveQuery(ctx context, query query.Query, index bleve.Index, highlightC
 }
 
 // runQuery runs the actual query and then collapses the results into a simpler format
-func runQuery(ctx context, query query.Query, index bleve.Index, highlightCtx highlightContext, fields ...string) ([]searchPkg.Result, error) {
-	searchResult, err := runBleveQuery(ctx, query, index, highlightCtx, false, fields...)
+func runQuery(ctx context, q query.Query, index bleve.Index, highlightCtx highlightContext, fields ...string) ([]searchPkg.Result, error) {
+	searchResult, err := runBleveQuery(ctx, q, index, highlightCtx, false, fields...)
 	if err != nil {
 		return nil, err
 	}

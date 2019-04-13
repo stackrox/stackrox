@@ -340,6 +340,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("Image", []string{
 		"id: ID!",
+		"lastUpdated: Time",
 		"metadata: ImageMetadata",
 		"name: ImageName",
 		"scan: ImageScan",
@@ -3322,6 +3323,14 @@ func (resolver *imageResolver) Id() graphql.ID {
 		value = resolver.list.GetId()
 	}
 	return graphql.ID(value)
+}
+
+func (resolver *imageResolver) LastUpdated() (*graphql.Time, error) {
+	value := resolver.data.GetLastUpdated()
+	if resolver.data == nil {
+		value = resolver.list.GetLastUpdated()
+	}
+	return timestamp(value)
 }
 
 func (resolver *imageResolver) Metadata() (*imageMetadataResolver, error) {

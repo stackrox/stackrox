@@ -14,6 +14,7 @@ message Image {
 
     ImageMetadata metadata  = 2;
     ImageScan     scan      = 3;
+    google.protobuf.Timestamp last_updated = 5 [(gogoproto.moretags) = "search:\"Last Updated,hidden\""];
 }
 
 message ImageScan {
@@ -131,4 +132,5 @@ message ListImage {
         int32 fixable_cves            = 5;
     }
     google.protobuf.Timestamp created = 6;
+    google.protobuf.Timestamp last_updated = 8;
 }

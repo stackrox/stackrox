@@ -25,6 +25,8 @@ type DataStore interface {
 	GetImage(sha string) (*storage.Image, bool, error)
 	GetImagesBatch(shas []string) ([]*storage.Image, error)
 	UpsertImage(image *storage.Image) error
+
+	DeleteImages(ids ...string) error
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.

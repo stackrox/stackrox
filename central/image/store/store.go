@@ -23,7 +23,7 @@ type Store interface {
 	GetImagesBatch(shas []string) ([]*storage.Image, error)
 
 	UpsertImage(image *storage.Image) error
-	DeleteImage(sha string) error
+	DeleteImage(id string) error
 }
 
 // New returns a new Store instance using the provided bolt DB instance.

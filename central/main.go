@@ -56,6 +56,7 @@ import (
 	pingService "github.com/stackrox/rox/central/ping/service"
 	policyService "github.com/stackrox/rox/central/policy/service"
 	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
+	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/mapper"
@@ -183,6 +184,7 @@ func (defaultFactory) StartServices() {
 		log.Panicf("could not start compliance manager: %v", err)
 	}
 	reprocessor.Singleton().Start()
+	pruning.Singleton().Start()
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
@@ -446,6 +448,9 @@ func waitForTerminationSignal() {
 	sig := <-signalsC
 	log.Infof("Caught %s signal", sig)
 	reprocessor.Singleton().Stop()
+	log.Infof("Stopped reprocessor loop")
+	pruning.Singleton().Stop()
+	log.Infof("Stopped garbage collector")
 	globaldb.Close()
 	log.Infof("Central terminated")
 }

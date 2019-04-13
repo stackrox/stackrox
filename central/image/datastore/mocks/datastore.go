@@ -48,6 +48,22 @@ func (mr *MockDataStoreMockRecorder) CountImages() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountImages", reflect.TypeOf((*MockDataStore)(nil).CountImages))
 }
 
+// DeleteImages mocks base method
+func (m *MockDataStore) DeleteImages(arg0 ...string) error {
+	varargs := []interface{}{}
+	for _, a := range arg0 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteImages", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteImages indicates an expected call of DeleteImages
+func (mr *MockDataStoreMockRecorder) DeleteImages(arg0 ...interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteImages", reflect.TypeOf((*MockDataStore)(nil).DeleteImages), arg0...)
+}
+
 // GetImage mocks base method
 func (m *MockDataStore) GetImage(arg0 string) (*storage.Image, bool, error) {
 	ret := m.ctrl.Call(m, "GetImage", arg0)

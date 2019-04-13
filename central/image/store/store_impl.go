@@ -6,6 +6,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	protoTypes "github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
@@ -110,6 +111,7 @@ func (b *storeImpl) GetImagesBatch(shas []string) (images []*storage.Image, err 
 func (b *storeImpl) UpsertImage(image *storage.Image) error {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Upsert, "Image")
 
+	image.LastUpdated = protoTypes.TimestampNow()
 	return b.db.Update(func(tx *bolt.Tx) error {
 		err := writeImage(tx, image)
 		if err != nil {
@@ -141,9 +143,10 @@ func idForSha(sha string) string {
 
 func convertImageToListImage(i *storage.Image) *storage.ListImage {
 	listImage := &storage.ListImage{
-		Id:      i.GetId(),
-		Name:    i.GetName().GetFullName(),
-		Created: i.GetMetadata().GetV1().GetCreated(),
+		Id:          i.GetId(),
+		Name:        i.GetName().GetFullName(),
+		Created:     i.GetMetadata().GetV1().GetCreated(),
+		LastUpdated: i.GetLastUpdated(),
 	}
 
 	if i.GetScan() != nil {

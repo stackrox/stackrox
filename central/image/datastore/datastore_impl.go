@@ -6,9 +6,15 @@ import (
 	"github.com/stackrox/rox/central/image/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 type datastoreImpl struct {
@@ -98,6 +104,20 @@ func (ds *datastoreImpl) UpsertImage(image *storage.Image) error {
 		return err
 	}
 	return ds.indexer.AddImage(image)
+}
+
+func (ds *datastoreImpl) DeleteImages(ids ...string) error {
+	errorList := errorhelpers.NewErrorList("deleting images")
+	for _, id := range ids {
+		if err := ds.storage.DeleteImage(id); err != nil {
+			errorList.AddError(err)
+			continue
+		}
+		if err := ds.indexer.DeleteImage(id); err != nil {
+			errorList.AddError(err)
+		}
+	}
+	return errorList.ToError()
 }
 
 // merge adds the most up to date data from the two inputs to the first input.

@@ -46,6 +46,7 @@ var (
 	ImageEntrypoint              = newFieldLabel("Image Entrypoint")
 	ImageVolumes                 = newFieldLabel("Image Volumes")
 	FixedBy                      = newFieldLabel("Fixed By")
+	LastUpdatedTime              = newFieldLabel("Last Updated")
 
 	AddCapabilities        = newFieldLabel("Add Capabilities")
 	Annotation             = newFieldLabel("Annotation")
