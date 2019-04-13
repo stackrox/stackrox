@@ -29,6 +29,8 @@ import (
 	detectionService "github.com/stackrox/rox/central/detection/service"
 	developmentService "github.com/stackrox/rox/central/development/service"
 	"github.com/stackrox/rox/central/docs"
+	_ "github.com/stackrox/rox/central/externalbackups/plugins/all" // Import all of the external backup plugins
+	backupService "github.com/stackrox/rox/central/externalbackups/service"
 	"github.com/stackrox/rox/central/globaldb"
 	globaldbHandlers "github.com/stackrox/rox/central/globaldb/handlers"
 	graphqlHandler "github.com/stackrox/rox/central/graphql/handler"
@@ -71,7 +73,6 @@ import (
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
@@ -192,6 +193,7 @@ func (defaultFactory) ServicesToRegister(registry authproviders.Registry) []pkgG
 		authService.New(),
 		apiTokenService.Singleton(),
 		authproviderService.New(registry),
+		backupService.Singleton(),
 		clusterService.Singleton(),
 		complianceService.Singleton(),
 		complianceManagerService.Singleton(),
@@ -294,16 +296,6 @@ func startGRPCServer(factory serviceFactory) {
 	go watchdog(startedSig, grpcServerWatchdogTimeout)
 }
 
-// allResourcesViewPermissions returns a slice containing view permissions for all resource types.
-func allResourcesViewPermissions() []*v1.Permission {
-	resourceLst := resources.ListAll()
-	result := make([]*v1.Permission, len(resourceLst))
-	for i, resource := range resourceLst {
-		result[i] = permissions.View(resource)
-	}
-	return result
-}
-
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
 	integrations := make(map[int]iiStore.DelayedIntegration, len(integrationsInput))
 	for k, v := range integrationsInput {
@@ -345,16 +337,6 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 	log.Debugf("All dynamic integrations registered, exiting")
 }
 
-// allResourcesViewPermissions returns a slice containing view permissions for all resource types.
-func allResourcesModifyPermissions() []*v1.Permission {
-	resourceLst := resources.ListAll()
-	result := make([]*v1.Permission, len(resourceLst))
-	for i, resource := range resourceLst {
-		result[i] = permissions.Modify(resource)
-	}
-	return result
-}
-
 func uiDefaultRoute() routes.CustomRoute {
 	return routes.CustomRoute{
 		Route:         "/",
@@ -382,19 +364,19 @@ func (defaultFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
 		},
 		{
 			Route:         "/db/backup",
-			Authorizer:    authzUser.With(allResourcesViewPermissions()...),
+			Authorizer:    authzUser.With(resources.AllResourcesViewPermissions()...),
 			ServerHandler: globaldbHandlers.BackupDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB()),
 			Compression:   true,
 		},
 		{
 			Route:         "/db/export",
-			Authorizer:    authzUser.With(allResourcesViewPermissions()...),
+			Authorizer:    authzUser.With(resources.AllResourcesViewPermissions()...),
 			ServerHandler: globaldbHandlers.ExportDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB()),
 			Compression:   true,
 		},
 		{
 			Route:         "/db/restore",
-			Authorizer:    authzUser.With(allResourcesModifyPermissions()...),
+			Authorizer:    authzUser.With(resources.AllResourcesModifyPermissions()...),
 			ServerHandler: globaldbHandlers.RestoreDB(globaldb.GetGlobalDB(), globaldb.GetGlobalBadgerDB()),
 		},
 		{

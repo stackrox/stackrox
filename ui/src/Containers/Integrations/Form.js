@@ -6,7 +6,6 @@ import { actions } from 'reducers/integrations';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { reduxForm, formValueSelector, FieldArray } from 'redux-form';
 import * as Icon from 'react-feather';
-
 import Panel from 'Components/Panel';
 import PanelButton from 'Components/PanelButton';
 import ReduxSelectField from 'Components/forms/ReduxSelectField';
@@ -16,16 +15,22 @@ import ReduxPasswordField from 'Components/forms/ReduxPasswordField';
 import ReduxToggleField from 'Components/forms/ReduxToggleField';
 import ReduxMultiSelectField from 'Components/forms/ReduxMultiSelectField';
 import ReduxNumericInputField from 'Components/forms/ReduxNumericInputField';
-
 import formDescriptors from 'Containers/Integrations/formDescriptors';
+import Schedule from './Schedule';
 
 class Form extends Component {
     static propTypes = {
         initialValues: PropTypes.shape({
+            id: PropTypes.string,
             name: PropTypes.string
         }),
-        source: PropTypes.oneOf(['imageIntegrations', 'notifiers', 'authProviders', 'clusters'])
-            .isRequired,
+        source: PropTypes.oneOf([
+            'imageIntegrations',
+            'notifiers',
+            'authProviders',
+            'clusters',
+            'backups'
+        ]).isRequired,
         type: PropTypes.string.isRequired,
         formFields: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
         formData: PropTypes.shape({
@@ -33,7 +38,8 @@ class Form extends Component {
         }).isRequired,
         onClose: PropTypes.func.isRequired,
         testIntegration: PropTypes.func.isRequired,
-        saveIntegration: PropTypes.func.isRequired
+        saveIntegration: PropTypes.func.isRequired,
+        triggerBackup: PropTypes.func.isRequired
     };
 
     static defaultProps = {
@@ -43,6 +49,10 @@ class Form extends Component {
     onTest = () => {
         const data = this.addDefaultFormValues();
         this.props.testIntegration(this.props.source, data);
+    };
+
+    onBackup = () => {
+        this.props.triggerBackup(this.props.initialValues.id);
     };
 
     onSubmit = () => {
@@ -140,6 +150,8 @@ class Form extends Component {
                 );
             case 'list':
                 return <FieldArray name={field.jsonpath} component={field.listRender} />;
+            case 'schedule':
+                return <Schedule data={field.jsonpath} />;
             default:
                 throw new Error(`Unknown field type: ${field.type}`);
         }
@@ -186,6 +198,16 @@ class Form extends Component {
                     className="btn btn-success"
                     onClick={this.onSubmit}
                 />
+                {this.props.source === 'backups' &&
+                    this.props.initialValues &&
+                    this.props.initialValues.id && (
+                        <PanelButton
+                            icon={<Icon.Check className="h-4 w-4" />}
+                            text="Trigger Backup"
+                            className="btn btn-base"
+                            onClick={this.onBackup}
+                        />
+                    )}
                 {this.props.source !== 'authProviders' && (
                     <PanelButton
                         icon={<Icon.Check className="h-4 w-4" />}
@@ -231,7 +253,9 @@ const mapStateToProps = createStructuredSelector({
 const mapDispatchToProps = dispatch => ({
     saveIntegration: (source, sourceType, integration) =>
         dispatch(actions.saveIntegration.request({ source, sourceType, integration })),
-    testIntegration: (source, integration) => dispatch(actions.testIntegration(source, integration))
+    testIntegration: (source, integration) =>
+        dispatch(actions.testIntegration(source, integration)),
+    triggerBackup: (source, id) => dispatch(actions.triggerBackup(source, id))
 });
 
 export default reduxForm({ form: 'integrationForm' })(

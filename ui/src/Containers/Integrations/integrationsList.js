@@ -14,6 +14,7 @@ import openshift from 'images/openshift.svg';
 import quay from 'images/quay.svg';
 import slack from 'images/slack.svg';
 import splunk from 'images/splunk.svg';
+import s3 from 'images/s3.svg';
 import pagerduty from 'images/pagerduty.svg';
 
 const integrationsList = {
@@ -171,6 +172,14 @@ const integrationsList = {
             type: 'pagerduty',
             source: 'notifiers',
             image: pagerduty
+        }
+    ],
+    backups: [
+        {
+            label: 'S3',
+            type: 's3',
+            source: 'backups',
+            image: s3
         }
     ]
 };

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+package storage;
+
+message Schedule {
+    message DailyInterval {}
+    message WeeklyInterval {
+        int32 day = 1;
+    }
+
+    string time_of_day = 1;
+    string timezone    = 2;
+
+    oneof Interval {
+        DailyInterval  daily   = 3;
+        WeeklyInterval weekly  = 4;
+    }
+
+}

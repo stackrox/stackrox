@@ -11,10 +11,11 @@ describe('Integrations Sagas', () => {
     it('should fetch image integrations and notifiers when location changes to integrations', () => {
         const imageIntegrations = { integrations: ['int1'] };
         const notifiers = { notifiers: ['notifier1'] };
-
+        const backups = { backups: ['backup1'] };
         return expectSaga(saga)
             .provide([
                 [call(fetchIntegration, ['imageIntegrations']), { response: imageIntegrations }],
+                [call(fetchIntegration, ['backups']), { response: backups }],
                 [call(fetchIntegration, ['notifiers']), { response: notifiers }]
             ])
             .put(actions.fetchImageIntegrations.success(imageIntegrations))
@@ -42,14 +43,15 @@ describe('Integrations Sagas', () => {
     it("shouldn't fetch image integrations / notifiers when location changes to violations, dashboard, etc.", () => {
         const fetchImageIntegrationsMock = jest.fn();
         const fetchNotifiersMock = jest.fn();
-
+        const fetchBackupsMock = jest.fn();
         return expectSaga(saga)
             .provide([
                 [
                     call(fetchIntegration, ['imageIntegrations']),
                     dynamic(fetchImageIntegrationsMock)
                 ],
-                [call(fetchIntegration, ['notifiers']), dynamic(fetchNotifiersMock)]
+                [call(fetchIntegration, ['notifiers']), dynamic(fetchNotifiersMock)],
+                [call(fetchIntegration, ['backups']), dynamic(fetchBackupsMock)]
             ])
             .dispatch(createLocationChange('/main/violations'))
             .dispatch(createLocationChange('/main/compliance'))
@@ -58,6 +60,7 @@ describe('Integrations Sagas', () => {
             .then(() => {
                 expect(fetchImageIntegrationsMock.mock.calls.length).toBe(0);
                 expect(fetchNotifiersMock.mock.calls.length).toBe(0);
+                expect(fetchBackupsMock.mock.calls.length).toBe(0);
             });
     });
 });

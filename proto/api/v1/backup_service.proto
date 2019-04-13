@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/common.proto";
+import "api/v1/empty.proto";
+import "storage/external_backup.proto";
+
+package v1;
+
+message GetExternalBackupsResponse {
+    repeated storage.ExternalBackup external_backups = 1;
+}
+
+service ExternalBackupService {
+    rpc GetExternalBackup (ResourceByID) returns (storage.ExternalBackup) {
+        option (google.api.http) = {
+            get: "/v1/externalbackups/{id}"
+        };
+    }
+
+    rpc GetExternalBackups (Empty) returns (GetExternalBackupsResponse) {
+        option (google.api.http) = {
+            get: "/v1/externalbackups"
+        };
+    }
+
+    rpc PostExternalBackup (storage.ExternalBackup) returns (storage.ExternalBackup) {
+        option (google.api.http) = {
+            post: "/v1/externalbackups"
+            body: "*"
+        };
+    }
+
+    rpc PutExternalBackup (storage.ExternalBackup) returns (storage.ExternalBackup) {
+        option (google.api.http) = {
+            put: "/v1/externalbackups/{id}"
+            body: "*"
+        };
+    }
+
+    rpc TestExternalBackup (storage.ExternalBackup) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v1/externalbackups/test"
+            body: "*"
+        };
+    }
+
+    rpc DeleteExternalBackup (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            delete: "/v1/externalbackups/{id}"
+        };
+    }
+
+    rpc TriggerExternalBackup (ResourceByID) returns (Empty) {
+        option (google.api.http) = {
+            post: "/v1/externalbackups/{id}"
+        };
+    }
+
+}

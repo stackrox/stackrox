@@ -138,7 +138,7 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:de17997fdba5b694eb3528204adba0f089ebd2ceef54a346ad2313e6ca138df5"
+  digest = "1:69cca28d703b3a559106ab8170eda78120636475af5f02c534c0225eb3c7dac4"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -160,23 +160,30 @@
     "aws/session",
     "aws/signer/v4",
     "internal/ini",
+    "internal/s3err",
     "internal/sdkio",
     "internal/sdkrand",
     "internal/sdkuri",
     "internal/shareddefaults",
     "private/protocol",
+    "private/protocol/eventstream",
+    "private/protocol/eventstream/eventstreamapi",
     "private/protocol/json/jsonutil",
     "private/protocol/jsonrpc",
     "private/protocol/query",
     "private/protocol/query/queryutil",
     "private/protocol/rest",
+    "private/protocol/restxml",
     "private/protocol/xml/xmlutil",
     "service/ecr",
+    "service/s3",
+    "service/s3/s3iface",
+    "service/s3/s3manager",
     "service/sts",
   ]
   pruneopts = "NUT"
-  revision = "c4e0e593d5f18b478f17ff0e86b56d41a70ced2d"
-  version = "v1.16.2"
+  revision = "97ab38e1626747eaa660ff7e5e7d3f1a37172b36"
+  version = "v1.19.9"
 
 [[projects]]
   digest = "1:f4298c81d8a94ab68d9e387eaf6e653387df5da17702f06c6d8718a7a8e549d0"
@@ -1881,6 +1888,8 @@
     "github.com/aws/aws-sdk-go/aws/ec2metadata",
     "github.com/aws/aws-sdk-go/aws/session",
     "github.com/aws/aws-sdk-go/service/ecr",
+    "github.com/aws/aws-sdk-go/service/s3",
+    "github.com/aws/aws-sdk-go/service/s3/s3manager",
     "github.com/blevesearch/bleve",
     "github.com/blevesearch/bleve/analysis",
     "github.com/blevesearch/bleve/analysis/analyzer/custom",

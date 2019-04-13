@@ -18,7 +18,8 @@ class IntegrationTable extends Component {
     static propTypes = {
         integrations: PropTypes.arrayOf(PropTypes.object).isRequired,
 
-        source: PropTypes.oneOf(['imageIntegrations', 'notifiers', 'authProviders']).isRequired,
+        source: PropTypes.oneOf(['backups', 'imageIntegrations', 'notifiers', 'authProviders'])
+            .isRequired,
 
         type: PropTypes.string.isRequired,
         label: PropTypes.string.isRequired,

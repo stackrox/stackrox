@@ -783,6 +783,57 @@ const formDescriptors = {
                 placeholder: ''
             }
         ]
+    },
+    backups: {
+        s3: [
+            {
+                label: 'Integration Name',
+                jsonpath: 'name',
+                type: 'text',
+                placeholder: 'AWS S3'
+            },
+            {
+                label: 'Schedule',
+                jsonpath: 'schedule',
+                type: 'schedule'
+            },
+            {
+                label: 'Backups To Retain',
+                jsonpath: 'backupsToKeep',
+                type: 'number',
+                placeholder: '5'
+            },
+            {
+                label: 'Bucket',
+                jsonpath: 's3.bucket',
+                type: 'text',
+                placeholder: 'stackrox-backups'
+            },
+            {
+                label: 'Region',
+                jsonpath: 's3.region',
+                type: 'text',
+                placeholder: 'us-west-2'
+            },
+            {
+                label: 'Use Container IAM Role',
+                jsonpath: 's3.useIam',
+                type: 'toggle',
+                placeholder: ''
+            },
+            {
+                label: 'Access Key ID (required if not using IAM)',
+                jsonpath: 's3.accessKeyId',
+                type: 'password',
+                placeholder: ''
+            },
+            {
+                label: 'Secret Access Key (required if not using IAM)',
+                jsonpath: 's3.secretAccessKey',
+                type: 'password',
+                placeholder: ''
+            }
+        ]
     }
 };
 

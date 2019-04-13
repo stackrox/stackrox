@@ -16,7 +16,8 @@ import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 const SOURCE_LABELS = Object.freeze({
     authProviders: 'authentication provider',
     imageIntegrations: 'image integrations',
-    notifiers: 'plugin'
+    notifiers: 'plugin',
+    backups: 'backups'
 });
 
 class IntegrationModal extends Component {
@@ -26,7 +27,8 @@ class IntegrationModal extends Component {
                 type: PropTypes.string
             })
         ).isRequired,
-        source: PropTypes.oneOf(['imageIntegrations', 'notifiers', 'authProviders']).isRequired,
+        source: PropTypes.oneOf(['imageIntegrations', 'notifiers', 'authProviders', 'backups'])
+            .isRequired,
         type: PropTypes.string.isRequired,
         label: PropTypes.string.isRequired,
         onRequestClose: PropTypes.func.isRequired,

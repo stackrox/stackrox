@@ -824,7 +824,7 @@ dependencies:
     license: Apache-2.0
     files:
       LICENSE.txt: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
-      NOTICE.txt: d64678da511cc3c76e1b20cd7074c102a62de0685d486eba144e3ff7b3ee60f3
+      NOTICE.txt: a6e830174d62dafad3a718384772ea1f4c0e27989f050932dc442a5e3ddad080
     attribution:
       - 2017 Amazon.com, Inc. or its affiliates.
       - 2014-2015 Stripe, Inc.

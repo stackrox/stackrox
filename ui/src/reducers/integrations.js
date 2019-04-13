@@ -7,6 +7,8 @@ import { createFetchingActionTypes, createFetchingActions } from 'utils/fetching
 
 export const types = {
     FETCH_NOTIFIERS: createFetchingActionTypes('notifiers/FETCH_NOTIFIERS'),
+    FETCH_BACKUPS: createFetchingActionTypes('backups/FETCH_BACKUPS'),
+    TRIGGER_BACKUP: 'integrations/TRIGGER_BACKUP',
     FETCH_IMAGE_INTEGRATIONS: createFetchingActionTypes(
         'imageIntegrations/FETCH_IMAGE_INTEGRATIONS'
     ),
@@ -20,6 +22,7 @@ export const types = {
 
 export const actions = {
     fetchNotifiers: createFetchingActions(types.FETCH_NOTIFIERS),
+    fetchBackups: createFetchingActions(types.FETCH_BACKUPS),
     fetchImageIntegrations: createFetchingActions(types.FETCH_IMAGE_INTEGRATIONS),
     testIntegration: (source, integration) => ({
         type: types.TEST_INTEGRATION,
@@ -32,6 +35,10 @@ export const actions = {
         sourceType,
         ids
     }),
+    triggerBackup: id => ({
+        type: types.TRIGGER_BACKUP,
+        id
+    }),
     saveIntegration: createFetchingActions(types.SAVE_INTEGRATION),
     setCreateState: state => ({
         type: types.SET_CREATE_STATE,
@@ -40,6 +47,15 @@ export const actions = {
 };
 
 // Reducers
+
+const backups = (state = [], action) => {
+    if (action.type === types.FETCH_BACKUPS.SUCCESS) {
+        return isEqual(action.response.externalBackups, state)
+            ? state
+            : action.response.externalBackups;
+    }
+    return state;
+};
 
 const notifiers = (state = [], action) => {
     if (action.type === types.FETCH_NOTIFIERS.SUCCESS) {
@@ -61,6 +77,7 @@ const isCreating = (state = false, action) => {
 };
 
 const reducer = combineReducers({
+    backups,
     notifiers,
     imageIntegrations,
     isCreating
@@ -68,11 +85,13 @@ const reducer = combineReducers({
 
 // Selectors
 
+const getBackups = state => state.backups;
 const getNotifiers = state => state.notifiers;
 const getImageIntegrations = state => state.imageIntegrations;
 const getCreationState = state => state.isCreating;
 
 export const selectors = {
+    getBackups,
     getNotifiers,
     getImageIntegrations,
     getCreationState

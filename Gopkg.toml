@@ -168,7 +168,7 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
 
 [[constraint]]
   name = "github.com/aws/aws-sdk-go"
-  version = "v1.15.15"
+  version = "v1.19.9"
 
 [[constraint]]
   name = "github.com/tkuchiki/go-timezone"

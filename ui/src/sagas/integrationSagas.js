@@ -13,6 +13,7 @@ import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 
 const fetchIntegrationsActionMap = {
     authProviders: authActions.fetchAuthProviders.request(),
+    backups: actions.fetchBackups.request(),
     imageIntegrations: actions.fetchImageIntegrations.request(),
     notifiers: actions.fetchNotifiers.request(),
     clusters: clusterActions.fetchClusters.request(),
@@ -30,6 +31,10 @@ function* fetchIntegrationWrapper(source, action) {
     }
 }
 
+function* getBackups() {
+    yield call(fetchIntegrationWrapper, 'backups', actions.fetchBackups);
+}
+
 function* getNotifiers() {
     yield call(fetchIntegrationWrapper, 'notifiers', actions.fetchNotifiers);
 }
@@ -39,7 +44,7 @@ function* getImageIntegrations() {
 }
 
 function* watchLocation() {
-    const effects = [getImageIntegrations, getNotifiers].map(fetchFunc =>
+    const effects = [getImageIntegrations, getNotifiers, getBackups].map(fetchFunc =>
         takeEveryNewlyMatchedLocation(integrationsPath, fetchFunc)
     );
     yield all([
@@ -52,16 +57,21 @@ function* watchLocation() {
 function* watchFetchRequest() {
     while (true) {
         const action = yield take([
+            types.FETCH_BACKUPS.REQUEST,
             types.FETCH_IMAGE_INTEGRATIONS.REQUEST,
             types.FETCH_NOTIFIERS.REQUEST
         ]);
         switch (action.type) {
+            case types.FETCH_BACKUPS.REQUEST:
+                yield fork(getBackups);
+                break;
             case types.FETCH_NOTIFIERS.REQUEST:
                 yield fork(getNotifiers);
                 break;
             case types.FETCH_IMAGE_INTEGRATIONS.REQUEST:
                 yield fork(getImageIntegrations);
                 break;
+
             default:
                 throw new Error(`Unknown action type ${action.type}`);
         }
@@ -131,6 +141,22 @@ function* testIntegration(action) {
     }
 }
 
+function* triggerBackup(action) {
+    const { id } = action;
+    try {
+        yield call(service.triggerBackup, id);
+        yield put(notificationActions.addNotification('Backup was successful'));
+        yield put(notificationActions.removeOldestNotification());
+    } catch (error) {
+        if (error.response) {
+            yield put(notificationActions.addNotification(error.response.data.error));
+            yield put(notificationActions.removeOldestNotification());
+        } else {
+            Raven.captureException(error);
+        }
+    }
+}
+
 function* watchSaveRequest() {
     yield takeLatest(types.SAVE_INTEGRATION.REQUEST, saveIntegration);
 }
@@ -143,12 +169,17 @@ function* watchDeleteRequest() {
     yield takeLatest(types.DELETE_INTEGRATIONS, deleteIntegrations);
 }
 
+function* watchBackupRequest() {
+    yield takeLatest(types.TRIGGER_BACKUP, triggerBackup);
+}
+
 export default function* integrations() {
     yield all([
         fork(watchLocation),
         fork(watchFetchRequest),
         fork(watchSaveRequest),
         fork(watchTestRequest),
-        fork(watchDeleteRequest)
+        fork(watchDeleteRequest),
+        fork(watchBackupRequest)
     ]);
 }

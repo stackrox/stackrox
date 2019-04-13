@@ -2,7 +2,8 @@ import axios from './instance';
 
 const sourceMap = {
     imageIntegrations: '/v1/imageintegrations',
-    notifiers: '/v1/notifiers'
+    notifiers: '/v1/notifiers',
+    backups: '/v1/externalbackups'
 };
 
 /**
@@ -60,4 +61,13 @@ export function deleteIntegration(source, id) {
  */
 export function deleteIntegrations(source, ids = []) {
     return Promise.all(ids.map(id => deleteIntegration(source, id)));
+}
+
+/**
+ * Triggers a DB backup
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function triggerBackup(id) {
+    return axios.post(`${sourceMap.backups}/${id}`);
 }

@@ -2,6 +2,7 @@
 package resources
 
 import (
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
@@ -11,6 +12,7 @@ var (
 	APIToken              = newResource("APIToken")
 	Alert                 = newResource("Alert")
 	AuthProvider          = newResource("AuthProvider")
+	BackupPlugins         = newResource("BackupPlugins")
 	Cluster               = newResource("Cluster")
 	Compliance            = newResource("Compliance")
 	ComplianceRunSchedule = newResource("ComplianceRunSchedule")
@@ -52,4 +54,24 @@ func ListAll() []permissions.Resource {
 	return allResources.AsSortedSlice(func(i, j permissions.Resource) bool {
 		return i < j
 	})
+}
+
+// AllResourcesViewPermissions returns a slice containing view permissions for all resource types.
+func AllResourcesViewPermissions() []*v1.Permission {
+	resourceLst := ListAll()
+	result := make([]*v1.Permission, len(resourceLst))
+	for i, resource := range resourceLst {
+		result[i] = permissions.View(resource)
+	}
+	return result
+}
+
+// AllResourcesModifyPermissions returns a slice containing view permissions for all resource types.
+func AllResourcesModifyPermissions() []*v1.Permission {
+	resourceLst := ListAll()
+	result := make([]*v1.Permission, len(resourceLst))
+	for i, resource := range resourceLst {
+		result[i] = permissions.Modify(resource)
+	}
+	return result
 }

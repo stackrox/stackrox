@@ -33,11 +33,17 @@ class IntegrationsPage extends Component {
                 role: PropTypes.string.isRequired
             })
         ).isRequired,
+        backups: PropTypes.arrayOf(
+            PropTypes.shape({
+                name: PropTypes.string.isRequired
+            })
+        ).isRequired,
         clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
         notifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
         imageIntegrations: PropTypes.arrayOf(PropTypes.object).isRequired,
         fetchAuthProviders: PropTypes.func.isRequired,
         fetchAPITokens: PropTypes.func.isRequired,
+        fetchBackups: PropTypes.func.isRequired,
         fetchNotifiers: PropTypes.func.isRequired,
         fetchImageIntegrations: PropTypes.func.isRequired,
         fetchClusters: PropTypes.func.isRequired
@@ -67,6 +73,9 @@ class IntegrationsPage extends Component {
                 break;
             case 'clusters':
                 this.props.fetchClusters();
+                break;
+            case 'backups':
+                this.props.fetchBackups();
                 break;
             default:
                 throw new Error(`Unknown source ${source}`);
@@ -111,6 +120,8 @@ class IntegrationsPage extends Component {
                 return this.props.authProviders.filter(typeLowerMatches);
             case 'notifiers':
                 return this.props.notifiers.filter(typeLowerMatches);
+            case 'backups':
+                return this.props.backups.filter(typeLowerMatches);
             case 'imageIntegrations':
                 return this.props.imageIntegrations.filter(typeLowerMatches);
             default:
@@ -179,6 +190,7 @@ class IntegrationsPage extends Component {
         const orchestrators = this.renderIntegrationTiles('orchestrators');
         const plugins = this.renderIntegrationTiles('plugins');
         const authProviders = this.renderIntegrationTiles('authProviders');
+        const backups = this.renderIntegrationTiles('backups');
         return (
             <div className="h-full flex flex-col md:w-full bg-base-200">
                 <div className="flex flex-no-shrink">
@@ -216,6 +228,15 @@ class IntegrationsPage extends Component {
 
                     <section className="mb-6">
                         <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
+                            External Backups
+                        </h2>
+                        <div className="flex flex-col items-center w-full">
+                            <div className="flex flex-wrap w-full -mx-6 p-3">{backups}</div>
+                        </div>
+                    </section>
+
+                    <section className="mb-6">
+                        <h2 className="bg-base-200 border-b border-primary-400 font-700 mx-4 pin-t px-3 py-4 sticky text-base text-base-600 tracking-wide  uppercase z-1">
                             Authentication Tokens
                         </h2>
                         <div className="flex flex-col items-center w-full">
@@ -234,12 +255,14 @@ const mapStateToProps = createStructuredSelector({
     apiTokens: selectors.getAPITokens,
     clusters: selectors.getClusters,
     notifiers: selectors.getNotifiers,
-    imageIntegrations: selectors.getImageIntegrations
+    imageIntegrations: selectors.getImageIntegrations,
+    backups: selectors.getBackups
 });
 
 const mapDispatchToProps = dispatch => ({
     fetchAuthProviders: () => dispatch(authActions.fetchAuthProviders.request()),
     fetchAPITokens: () => dispatch(apiTokenActions.fetchAPITokens.request()),
+    fetchBackups: () => dispatch(integrationActions.fetchBackups.request()),
     fetchNotifiers: () => dispatch(integrationActions.fetchNotifiers.request()),
     fetchImageIntegrations: () => dispatch(integrationActions.fetchImageIntegrations.request()),
     fetchRegistries: () => dispatch(integrationActions.fetchRegistries.request()),

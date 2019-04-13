@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+import "storage/schedule.proto";
+
+import "protobuf/gogoproto/gogo.proto";
+
+package storage;
+
+message ExternalBackup {
+    string           id              = 1;
+    string           name            = 2;
+    string           type            = 3;
+    storage.Schedule schedule        = 4;
+    int32            backups_to_keep = 5;
+
+    oneof Config {
+        S3Config       s3       = 6;
+    }
+}
+
+message S3Config {
+    string bucket            = 1;
+    bool   use_iam           = 2;
+    string access_key_id     = 3;
+    string secret_access_key = 4 [(gogoproto.moretags) = "scrub:\"always\""];
+    string region            = 5;
+}

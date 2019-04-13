@@ -120,6 +120,25 @@ const tableColumnDescriptor = Object.freeze({
             { accessor: 'anchore.endpoint', Header: 'Endpoint' },
             { accessor: 'anchore.username', Header: 'Username' }
         ]
+    },
+    backups: {
+        s3: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 's3.bucket', Header: 'Bucket' },
+            {
+                id: 'schedule',
+                accessor: data => {
+                    const { schedule } = data;
+                    if (schedule.weekly) {
+                        return `Weekly on ${schedule.weekly.dayOfWeek} @ ${schedule.timeOfDay} ${
+                            schedule.timezone
+                        }`;
+                    }
+                    return `Daily @ ${schedule.timeOfDay} ${schedule.timezone}`;
+                },
+                Header: 'Schedule'
+            }
+        ]
     }
 });
 

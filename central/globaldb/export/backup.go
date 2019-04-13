@@ -138,6 +138,7 @@ func backupBadger(db *badger.DB, out io.Writer) error {
 // Backup backs up the given databases (optionally removing secrets) and writes a ZIP archive to the given writer.
 func Backup(boltDB *bolt.DB, badgerDB *badger.DB, out io.Writer, scrubSecrets bool) error {
 	zipWriter := zip.NewWriter(out)
+	defer utils.IgnoreError(zipWriter.Close)
 	boltWriter, err := zipWriter.Create(boltFileName)
 	if err != nil {
 		return err
