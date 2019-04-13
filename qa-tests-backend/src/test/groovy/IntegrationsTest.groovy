@@ -210,7 +210,7 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         "the integration is tested"
 
         NotifierOuterClass.Notifier notifier = Services.getWebhookIntegrationConfiguration(
-                enableTLS, caCert, skipTLSVerification)
+                enableTLS, caCert, skipTLSVerification, auditLoggingEnabled)
 
         then :
         "the API should return an empty message or an error, depending on the config"
@@ -219,20 +219,24 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         where:
         "data"
 
-        enableTLS | caCert | skipTLSVerification | shouldSucceed
+        enableTLS | caCert | skipTLSVerification | auditLoggingEnabled | shouldSucceed
 
-        false | ""         | false               | true
-        true  | ""         | true                | true
-        true  | CA_CERT    | false               | true
-        true  | ""         | false               | false
+        false | ""         | false               | false | true
+        true  | ""         | true                | false | true
+        true  | CA_CERT    | false               | false | true
+        true  | ""         | false               | false | false
+        false | ""         | false               | true | true
+        true  | ""         | true                | true | true
+        true  | CA_CERT    | false               | true | true
+        true  | ""         | false               | true | false
     }
 
     @Category(BAT)
-    def "Verify Generic Integration Values"() {
+    def "Verify Generic Integration Values With Audit Off"() {
         when:
         "the integration is created"
         NotifierOuterClass.Notifier notifier = Services.getWebhookIntegrationConfiguration(
-                false, "", false)
+                false, "", false, false)
         String notifierId = Services.addNotifier(notifier)
 
         def policy = Services.getPolicyByName("Latest tag")
@@ -262,6 +266,59 @@ ObOdSTZUQI4TZOXOpJCpa97CnqroNi7RrT05JOfoe/DPmhoJmF4AUrnd/YUb8pgF
         assert generic["data"]["fieldkey"] == "fieldvalue"
         assert generic["data"]["alert"]["policy"]["name"] == "Latest tag"
         assert generic["data"]["alert"]["deployment"]["name"] == BUSYBOX
+
+        cleanup:
+        if (notifier != null) {
+            Services.deleteNotifier(notifierId)
+        }
+        if (deployment != null) {
+            orchestrator.deleteDeployment(deployment)
+        }
+    }
+
+    @Category(BAT)
+    def "Verify Generic Integration Values With Audit On"() {
+        when:
+        "the integration is created"
+        NotifierOuterClass.Notifier notifier = Services.getWebhookIntegrationConfiguration(
+                false, "", false, true)
+        String notifierId = Services.addNotifier(notifier)
+
+        def policy = Services.getPolicyByName("Latest tag")
+        def updatedPolicy = PolicyOuterClass.Policy.newBuilder(policy).addNotifiers(notifierId).build()
+        Services.updatePolicy(updatedPolicy)
+
+        Deployment  deployment =
+                new Deployment()
+                        .setName(BUSYBOX)
+                        .setImage("busybox")
+                        .setCommand(["sleep", "8000"])
+
+        orchestrator.createDeployment(deployment)
+
+        then:
+        "We should check to make sure we got a value"
+        assert Services.waitForViolation(BUSYBOX, "Latest tag", 30)
+
+        def get = new URL("http://localhost:8080").openConnection()
+        def jsonSlurper = new JsonSlurper()
+        def object = jsonSlurper.parseText(get.getInputStream().getText())
+
+        for (def generic : object) {
+            if (generic["data"]["audit"] == null) {
+                continue
+            }
+            if (generic["data"]["audit"]["policy"] == null) {
+                continue
+            }
+
+            assert generic["headers"]["Headerkey"] == ["headervalue"]
+            assert generic["headers"]["Content-Type"] == ["application/json"]
+            assert generic["headers"]["Authorization"] == ["Basic YWRtaW46YWRtaW4="]
+            assert generic["data"]["fieldkey"] == "fieldvalue"
+            assert generic["data"]["audit"]["policy"]["name"] == "Latest tag"
+            assert generic["data"]["audit"]["deployment"]["name"] == BUSYBOX
+        }
 
         cleanup:
         if (notifier != null) {

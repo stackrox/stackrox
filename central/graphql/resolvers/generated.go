@@ -312,6 +312,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"token: String!",
 	}))
 	utils.Must(builder.AddType("Generic", []string{
+		"auditLoggingEnabled: Boolean!",
 		"caCert: String!",
 		"endpoint: String!",
 		"extraFields: [KeyValuePair]!",
@@ -698,6 +699,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Severity(0)))
 	utils.Must(builder.AddType("Splunk", []string{
+		"auditLoggingEnabled: Boolean!",
 		"httpEndpoint: String!",
 		"httpToken: String!",
 		"insecure: Boolean!",
@@ -3094,6 +3096,11 @@ func (resolver *Resolver) wrapGenerics(values []*storage.Generic, err error) ([]
 		output[i] = &genericResolver{resolver, v}
 	}
 	return output, nil
+}
+
+func (resolver *genericResolver) AuditLoggingEnabled() bool {
+	value := resolver.data.GetAuditLoggingEnabled()
+	return value
 }
 
 func (resolver *genericResolver) CaCert() string {
@@ -5937,6 +5944,11 @@ func (resolver *Resolver) wrapSplunks(values []*storage.Splunk, err error) ([]*s
 		output[i] = &splunkResolver{resolver, v}
 	}
 	return output, nil
+}
+
+func (resolver *splunkResolver) AuditLoggingEnabled() bool {
+	value := resolver.data.GetAuditLoggingEnabled()
+	return value
 }
 
 func (resolver *splunkResolver) HttpEndpoint() string {

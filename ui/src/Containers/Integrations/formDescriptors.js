@@ -149,6 +149,11 @@ const formDescriptors = {
                 type: 'toggle'
             },
             {
+                label: 'Enable Audit Logging',
+                jsonpath: 'generic.auditLoggingEnabled',
+                type: 'toggle'
+            },
+            {
                 label: 'CA Cert (optional)',
                 jsonpath: 'generic.caCert',
                 type: 'textarea',
@@ -353,6 +358,11 @@ const formDescriptors = {
                 jsonpath: 'splunk.insecure',
                 type: 'toggle',
                 placeholder: ''
+            },
+            {
+                label: 'Enable Audit Logging',
+                jsonpath: 'splunk.auditLoggingEnabled',
+                type: 'toggle'
             }
         ],
         pagerduty: [

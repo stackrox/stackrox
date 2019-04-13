@@ -516,11 +516,12 @@ class Services extends BaseService {
     }
 
     static Notifier getWebhookIntegrationConfiguration(Boolean enableTLS, String caCert,
-                                                       Boolean skipTLSVerification)  {
+                                                       Boolean skipTLSVerification, Boolean auditLoggingEnabled)  {
         NotifierOuterClass.GenericOrBuilder genericBuilder =  NotifierOuterClass.Generic.newBuilder()
                 .setEndpoint("http://webhookserver.stackrox:8080")
                 .setCaCert(caCert)
                 .setSkipTLSVerify(skipTLSVerification)
+                .setAuditLoggingEnabled(auditLoggingEnabled)
                 .setUsername("admin")
                 .setPassword("admin")
                 .addHeaders(

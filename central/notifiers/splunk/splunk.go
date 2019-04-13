@@ -103,6 +103,9 @@ func getSplunkEvent(msg proto.Message) (*wrapper.SplunkEvent, error) {
 }
 
 func (s *splunk) SendAuditMessage(msg *v1.Audit_Message) error {
+	if !s.GetSplunk().GetAuditLoggingEnabled() {
+		return nil
+	}
 	return s.sendHTTPPayload(msg)
 }
 
@@ -176,12 +179,14 @@ func newSplunk(notifier *storage.Notifier) (*splunk, error) {
 	if conf.GetTruncate() == 0 {
 		truncate = splunkHECDefaultDataLimit
 	}
+
 	return &splunk{
 		conf.HttpToken,
 		endpoint,
 		conf.GetInsecure(),
 		int(truncate),
-		notifier}, nil
+		notifier,
+	}, nil
 }
 
 func validate(conf *storage.Splunk) error {

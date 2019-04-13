@@ -51,10 +51,11 @@ message Email {
 }
 
 message Splunk {
-    string http_token    = 1 [(gogoproto.moretags) = "scrub:\"always\""];
-    string http_endpoint = 2;
-    bool insecure        = 3;
-    int64 truncate       = 4;
+    string http_token          = 1 [(gogoproto.moretags) = "scrub:\"always\""];
+    string http_endpoint       = 2;
+    bool insecure              = 3;
+    int64 truncate             = 4;
+    bool audit_logging_enabled = 5;
 }
 
 message PagerDuty {
@@ -69,4 +70,5 @@ message Generic {
     string password                    = 5 [(gogoproto.moretags) = "scrub:\"always\""];
     repeated KeyValuePair headers      = 6;
     repeated KeyValuePair extra_fields = 7;
+    bool audit_logging_enabled         = 8;
 }

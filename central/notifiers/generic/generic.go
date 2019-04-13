@@ -33,6 +33,7 @@ const (
 	timeout = 5 * time.Second
 
 	alertMessageKey         = "alert"
+	auditMessageKey         = "audit"
 	networkPolicyMessageKey = "networkpolicy"
 )
 
@@ -97,6 +98,7 @@ func getExtraFieldJSON(fields []*storage.KeyValuePair) (string, error) {
 
 func newGeneric(notifier *storage.Notifier) (*generic, error) {
 	genericConfig, ok := notifier.Config.(*storage.Notifier_Generic)
+
 	if !ok {
 		return nil, validateConfig(&storage.Generic{})
 	}
@@ -202,6 +204,13 @@ func (g *generic) postMessage(message proto.Message, msgKey string) error {
 		return fmt.Errorf("Generic error response: %d %s", resp.StatusCode, string(body))
 	}
 	return nil
+}
+
+func (g *generic) SendAuditMessage(msg *v1.Audit_Message) error {
+	if !g.GetGeneric().GetAuditLoggingEnabled() {
+		return nil
+	}
+	return g.postMessage(msg, auditMessageKey)
 }
 
 func init() {
