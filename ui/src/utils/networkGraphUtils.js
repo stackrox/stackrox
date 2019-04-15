@@ -98,7 +98,8 @@ export const getLinks = (nodes, networkFlowMapping) => {
         if (!node.entity || node.entity.type !== 'DEPLOYMENT') {
             return;
         }
-        const { id: srcDeploymentId } = node.entity;
+        const { id: srcDeploymentId, deployment: srcDeployment } = node.entity;
+        const sourceNS = srcDeployment && srcDeployment.namespace;
 
         // For nodes that are egress non-isolated, add outgoing edges to ingress non-isolated nodes, as long as the pair
         // of nodes is not fully non-isolated. This is a compromise to make the non-isolation highlight only apply in
@@ -115,12 +116,17 @@ export const getLinks = (nodes, networkFlowMapping) => {
                 ) {
                     return;
                 }
-                const { id: tgtDeploymentId, deployment } = targetNode.entity;
+
+                const { id: tgtDeploymentId, deployment: tgtDeployment } = targetNode.entity;
+                const targetNS = tgtDeployment && tgtDeployment.namespace;
                 const link = {
                     source: srcDeploymentId,
                     target: tgtDeploymentId,
-                    targetName: deployment.name
+                    targetName: tgtDeployment.name,
+                    sourceNS,
+                    targetNS
                 };
+
                 link.isActive = !!networkFlowMapping[`${srcDeploymentId}--${tgtDeploymentId}`];
                 // Do not draw implicit links between fully non-isolated nodes unless the connection is active.
                 const isImplicit = node.nonIsolatedIngress && targetNode.nonIsolatedEgress;
@@ -135,12 +141,15 @@ export const getLinks = (nodes, networkFlowMapping) => {
             if (!tgtNode || !tgtNode.entity || tgtNode.entity.type !== 'DEPLOYMENT') {
                 return;
             }
-            const { id: tgtDeploymentId, deployment } = tgtNode.entity;
+            const { id: tgtDeploymentId, deployment: tgtDeployment } = tgtNode.entity;
+            const targetNS = tgtDeployment && tgtDeployment.namespace;
             const link = {
                 source: srcDeploymentId,
                 target: tgtDeploymentId,
                 sourceName: node.entity.deployment.name,
-                targetName: deployment.name
+                targetName: tgtDeployment.name,
+                sourceNS,
+                targetNS
             };
             link.isActive = !!networkFlowMapping[`${srcDeploymentId}--${tgtDeploymentId}`];
             filteredLinks.push(link);

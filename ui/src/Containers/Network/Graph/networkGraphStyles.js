@@ -1,3 +1,5 @@
+import { TEXT_MAX_WIDTH, NODE_WIDTH } from 'constants/networkGraph';
+
 const hoverColor = '#92bae5';
 const nonIsolatedColor = 'hsla(2, 78%, 71%, 1)';
 const activeColor = 'hsla(214, 74%, 68%, 1)';
@@ -5,14 +7,14 @@ const labelColor = 'hsla(231, 22%, 49%, 1)';
 
 const styles = [
     {
-        selector: ':parent > node',
+        selector: ':parent > node.deployment',
         style: {
             'background-color': 'hsla(229, 24%, 59%, 1)',
-            width: 10,
-            height: 10,
+            width: NODE_WIDTH,
+            height: NODE_WIDTH,
             label: 'data(name)',
             'font-size': '8px',
-            'text-max-width': '35px',
+            'text-max-width': TEXT_MAX_WIDTH,
             'text-wrap': 'ellipsis',
             'text-margin-y': '5px',
             'text-valign': 'bottom',
@@ -22,6 +24,15 @@ const styles = [
             color: labelColor
         }
     },
+    {
+        selector: 'node.nsEdge',
+        style: {
+            width: 1,
+            height: 1,
+            'background-color': 'white'
+        }
+    },
+
     {
         selector: 'node.nsHovered',
         style: {
@@ -83,7 +94,8 @@ const styles = [
             'text-outline-opacity': 1,
             'text-outline-color': 'white',
             'font-weight': 600,
-            label: 'data(name)'
+            label: 'data(name)',
+            padding: 0
         }
     },
 
@@ -95,18 +107,34 @@ const styles = [
             'line-color': 'hsla(230, 68%, 87%, 1)'
         }
     },
-    {
-        selector: 'edge.node',
-        style: {
-            'curve-style': 'unbundled-bezier'
-        }
-    },
 
     {
         selector: 'edge.namespace',
         style: {
-            'curve-style': 'straight',
+            'curve-style': 'taxi',
+            'edge-distances': 'node-position',
+            'taxi-turn-min-distance': '10px',
             label: 'data(count)'
+        }
+    },
+    {
+        selector: 'edge.taxi-vertical',
+        style: {
+            'taxi-direction': 'vertical'
+        }
+    },
+    {
+        selector: 'edge.taxi-horizontal',
+        style: {
+            'taxi-direction': 'horizontal'
+        }
+    },
+
+    {
+        selector: 'edge.inner',
+        style: {
+            'curve-style': 'straight',
+            'target-endpoint': 'inside-to-node'
         }
     },
 
@@ -114,6 +142,14 @@ const styles = [
         selector: 'node.selected',
         style: {
             'background-color': 'red'
+        }
+    },
+
+    {
+        selector: 'edge.active',
+        style: {
+            'line-style': 'solid',
+            'line-color': 'hsla(229°, 76%, 87%, 1)'
         }
     },
 

@@ -88,3 +88,8 @@ export const NODE_LINK_WIDTH = 0.002;
 export const NODE_DASH_ARRAY = 0.02;
 export const NODE_DASH_OFFSET = 0;
 export const NODE_DASH_RATIO = 0.65;
+
+// Cytoscape
+export const TEXT_MAX_WIDTH = 30;
+export const NODE_WIDTH = 20;
+export const NODE_PADDING = 20;

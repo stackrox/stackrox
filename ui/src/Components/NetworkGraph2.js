@@ -7,19 +7,15 @@ import GraphLoader from 'Containers/Network/Graph/Overlays/GraphLoader';
 
 import Cytoscape from 'cytoscape';
 import CytoscapeComponent from 'react-cytoscapejs';
-import coseBilkentPlugin from 'cytoscape-cose-bilkent';
 import popper from 'cytoscape-popper';
 import Tippy from 'tippy.js';
-import { uniq, debounce } from 'lodash';
+import { uniq, debounce, throttle } from 'lodash';
 
-import { coseBilkent as layout } from 'Containers/Network/Graph/networkGraphLayouts';
+import { edgeGridLayout, getParentPositions } from 'Containers/Network/Graph/networkGraphLayouts';
 import filterModes from 'Containers/Network/Graph/filterModes';
 import style from 'Containers/Network/Graph/networkGraphStyles';
 import { getLinks, nonIsolated } from 'utils/networkGraphUtils';
 import { MAX_ZOOM, MIN_ZOOM, ZOOM_STEP, GRAPH_PADDING } from 'constants/cytoscapeGraph';
-
-Cytoscape.use(coseBilkentPlugin);
-Cytoscape.use(popper);
 
 function getClasses(map) {
     return Object.entries(map)
@@ -27,7 +23,11 @@ function getClasses(map) {
         .map(entry => entry[0])
         .join(' ');
 }
-let timeStamp = 0;
+
+Cytoscape.use(popper);
+Cytoscape('layout', 'edgeGridLayout', edgeGridLayout);
+Cytoscape.use(edgeGridLayout);
+
 const NetworkGraph = ({
     nodes,
     networkFlowMapping,
@@ -41,6 +41,8 @@ const NetworkGraph = ({
     const [selectedNode, setSelectedNode] = useState();
     const [hoveredNode, setHoveredNode] = useState();
     const [firstRenderFinished, setFirstRenderFinished] = useState(false);
+    const nodeSideMapRef = useRef({});
+    const nodeSideMap = nodeSideMapRef.current;
     const cy = useRef();
     const tippy = useRef();
     const namespacesWithDeployments = {};
@@ -50,6 +52,8 @@ const NetworkGraph = ({
         isActive: filterState !== filterModes.active && datum.internetAccess
     }));
 
+    const links = getLinks(data, networkFlowMapping);
+
     function makePopperDiv(text) {
         const div = document.createElement('div');
         div.classList.add('popper');
@@ -58,21 +62,11 @@ const NetworkGraph = ({
         return div;
     }
 
-    // function createEdgePopper(elm, text) {
-    //     const popperElm = elm.popper({
-    //         content: makePopperDiv(text),
-    //         popper: {
-    //             removeOnDestroy: true
-    //         }
-    //     });
-    //     const updatePopper = () => popperElm.scheduleUpdate();
-
-    //     elm.connectedNodes().on('position', updatePopper);
-    //     elm.connectedNodes()
-    //         .parent()
-    //         .on('position', updatePopper);
-    //     cy.on('pan zoom resize', updatePopper);
-    // }
+    function getSideMap(source, target) {
+        return nodeSideMap && nodeSideMap[source] && nodeSideMap[source][target]
+            ? nodeSideMap[source][target]
+            : null;
+    }
 
     function createTippy(elm, text) {
         if (!elm) return;
@@ -89,125 +83,123 @@ const NetworkGraph = ({
         tippy.current.show();
     }
 
-    const namespaceMap = {};
-    function getNamespace(nodeId) {
-        if (!nodeId) return null;
+    function getNSEdges(nodeId) {
+        const delimiter = '**__**';
 
-        if (namespaceMap[nodeId]) return namespaceMap[nodeId];
+        const filteredLinks = links.filter(
+            ({ source, target, isActive, sourceNS, targetNS }) =>
+                (!nodeId || source === nodeId || target === nodeId) &&
+                (filterState !== filterModes.active || isActive) &&
+                sourceNS &&
+                targetNS &&
+                sourceNS !== targetNS
+        );
 
-        const match = data.find(datum => {
-            if (datum && datum.entity) return datum.entity.id === nodeId;
-            return false;
+        const sourceTargetMap = {};
+        const activeLinkMap = filteredLinks.reduce((acc, curr) => {
+            const { sourceNS, targetNS, isActive } = curr;
+            const key = [sourceNS, targetNS].sort().join(delimiter);
+            if (isActive) acc[key] = true;
+            return acc;
+        }, {});
+
+        const counts = filteredLinks.reduce((acc, curr) => {
+            const sourceTargetKey = [curr.source, curr.target].sort().join(delimiter);
+            if (sourceTargetMap[sourceTargetKey]) {
+                return acc;
+            }
+
+            sourceTargetMap[sourceTargetKey] = true;
+            const key = [curr.sourceNS, curr.targetNS].sort().join(delimiter);
+            acc[key] = acc[key] ? acc[key] + 1 : 1;
+            return acc;
+        }, {});
+
+        return Object.keys(counts).map(key => {
+            const [sourceId, targetId] = key.split(delimiter);
+            const count = counts[key];
+            const isActive = activeLinkMap[key];
+            const activeClass = filterState !== filterModes.allowed && isActive ? 'active' : '';
+            const { source, target, sourceSide } = getSideMap(sourceId, targetId) || {
+                sourceId,
+                targetId
+            };
+            const taxiDirClass = ['top', 'bottom'].includes(sourceSide)
+                ? 'taxi-vertical'
+                : 'taxi-horizontal';
+
+            return {
+                data: {
+                    source,
+                    target,
+                    count
+                },
+                classes: `namespace ${activeClass} ${taxiDirClass}`
+            };
         });
-
-        if (!match || !match.entity.deployment) return null;
-
-        namespaceMap[nodeId] = match.entity.deployment.namespace;
-        return match.entity.deployment.namespace;
     }
 
     function getEdgesFromNode(nodeId) {
-        const links = getLinks(data, networkFlowMapping);
-
         const edgeMap = {};
-        const allEdges = [];
+        const edges = [];
 
-        // Get all edges
         links.forEach(linkItem => {
-            const { source, target, isActive } = linkItem;
-            let modifiedLinkItem = null;
+            const { source, target, isActive, sourceNS, targetNS } = linkItem;
+            const nodeIsSource = nodeId === source;
+            const nodeIsTarget = nodeId === source;
             if (
-                (!nodeId || source === nodeId || target === nodeId) &&
+                (nodeIsSource || nodeIsTarget) &&
                 (filterState !== filterModes.active || isActive)
             ) {
-                let sourceNS = getNamespace(source);
-                let targetNS = getNamespace(target);
-                const temp = sourceNS;
-                if (source === nodeId) {
-                    modifiedLinkItem = Object.assign({}, linkItem);
-                }
+                const activeClass = filterState !== filterModes.allowed && isActive ? 'active' : '';
 
-                if (target === nodeId) {
-                    sourceNS = targetNS;
-                    targetNS = temp;
-                    modifiedLinkItem = Object.assign(
-                        {},
-                        {
-                            source: nodeId,
-                            target: source,
-                            targetName: linkItem.sourceName,
-                            sourceName: linkItem.targetName
+                // If same namespace, draw line between the two nodes
+                if (sourceNS === targetNS) {
+                    edges.push({
+                        data: {
+                            sourceNS,
+                            targetNS,
+                            ...linkItem
+                        },
+                        classes: `node ${activeClass}`
+                    });
+                } else {
+                    // make sure both nodes have edges drawn to the nearest side of their NS
+                    const id = [source, target].sort().join('--');
+                    if (!edgeMap[id]) {
+                        let sourceNSSide = sourceNS;
+                        let targetNSSide = targetNS;
+                        const sideMap = getSideMap(sourceNS, targetNS);
+                        if (sideMap) {
+                            sourceNSSide = sideMap.source;
+                            targetNSSide = sideMap.target;
                         }
-                    );
-                }
 
-                const edge = {
-                    data: {
-                        sourceNS,
-                        targetNS,
-                        ...modifiedLinkItem
-                    },
-                    classes: `node ${
-                        filterState !== filterModes.allowed && isActive ? 'active' : ''
-                    }`
-                };
-                const id = [source, target].sort().join('--');
-                if (!edgeMap[id]) allEdges.push(edge);
-                edgeMap[id] = true;
+                        // Edge from source to it's namespace
+                        edges.push({
+                            data: {
+                                source,
+                                target: sourceNSSide
+                            },
+                            classes: `node inner ${activeClass}`
+                        });
+
+                        // Edge from target to its namespace
+                        edges.push({
+                            data: {
+                                source: target,
+                                target: targetNSSide
+                            },
+                            classes: `node inner ${activeClass}`
+                        });
+
+                        edgeMap[id] = true;
+                    }
+                }
             }
         });
 
-        // Get namespace counts
-        const NSEdgeCounts = allEdges
-            .filter(edge => edge.data.sourceNS !== edge.data.targetNS)
-            .reduce((acc, curr) => {
-                const { sourceNS, targetNS } = curr.data;
-                const id = [sourceNS, targetNS].sort().join(',');
-                if (!acc[id]) acc[id] = 1;
-                else acc[id] += 1;
-                return acc;
-            }, {});
-
-        // Create NS Edges with count
-        const NSEdges = Object.keys(NSEdgeCounts).map(NSId => {
-            const [source, target] = NSId.split(',');
-            const count = NSEdgeCounts[NSId];
-            const modifiedData = {
-                source,
-                target,
-                count
-            };
-
-            allEdges.forEach(edge => {
-                if (edge.data.source === nodeId) {
-                    Object.assign(modifiedData, {
-                        source: edge.data.sourceNS,
-                        target: edge.data.targetNS,
-                        targetNS: edge.data.targetNS,
-                        targetId: edge.data.target,
-                        targetName: edge.data.targetName
-                    });
-                }
-
-                if (edge.data.target === nodeId) {
-                    Object.assign(modifiedData, {
-                        source: edge.data.targetNS,
-                        target: edge.data.sourceNS,
-                        targetId: edge.data.source,
-                        targetNS: edge.data.sourceNS,
-                        targetName: edge.data.sourceName
-                    });
-                }
-            });
-            return {
-                data: modifiedData,
-                classes: `namespace`
-            };
-        });
-
-        // remove inter namespace edges
-        const nodeEdges = allEdges.filter(edge => edge.data.sourceNS === edge.data.targetNS);
-        return [...nodeEdges, ...NSEdges];
+        return edges;
     }
 
     function getDeploymentsList() {
@@ -221,7 +213,8 @@ const NetworkGraph = ({
             const classes = getClasses({
                 active: datum.isActive,
                 selected: isSelected,
-                nonIsolated: isNonIsolated
+                nonIsolated: isNonIsolated,
+                deployment: true
             });
 
             return {
@@ -272,6 +265,21 @@ const NetworkGraph = ({
             };
         });
 
+        const namespaceEdgeNodes = namespaceList.reduce((acc, namespace) => {
+            const nsName = namespace.data.id;
+            const set = ['top', 'left', 'right', 'bottom'];
+
+            const newNodes = set.map(side => ({
+                data: {
+                    id: `${nsName}_${side}`,
+                    parent: nsName,
+                    side
+                },
+                classes: 'nsEdge'
+            }));
+            return acc.concat(newNodes);
+        }, []);
+
         namespaceList.forEach(namespace => {
             deploymentList.forEach(deployment => {
                 if (!namespacesWithDeployments[namespace.data.id]) {
@@ -283,23 +291,25 @@ const NetworkGraph = ({
             });
         });
 
-        return [...namespaceList, ...deploymentList];
+        return [...namespaceList, ...deploymentList, ...namespaceEdgeNodes];
     }
 
     function getEdges() {
-        if (hoveredNode || selectedNode) {
-            const node = selectedNode || hoveredNode;
-            return getEdgesFromNode(node.id);
+        const node = hoveredNode || selectedNode;
+        let allEdges = getNSEdges(node && node.id);
+        if (node) {
+            allEdges = allEdges.concat(getEdgesFromNode(node.id));
         }
 
-        return [];
+        return allEdges;
     }
 
     function nodeHoverHandler(ev) {
-        setHoveredNode(ev.target.data());
-        const { name, parent, id } = ev.target.data();
+        const { name, parent, id, side } = ev.target.data();
         const isChild = !!parent;
-        if (!cy || !isChild) return;
+        if (!cy || !isChild || side) return;
+
+        setHoveredNode(ev.target.data());
         const nodeElm = cy.current.getElementById(id);
         createTippy(nodeElm, name);
     }
@@ -313,25 +323,24 @@ const NetworkGraph = ({
     }
 
     function clickHandler(ev) {
-        const currTimeStamp = new Date().getSeconds();
-        // prevent handler from being called multiple times
-        if (currTimeStamp - timeStamp === 0) {
-            return;
-        }
-        timeStamp = currTimeStamp;
+        const { target } = ev;
+        const evData = target.data && target.data();
+        const id = evData && evData.id;
+        const isParent = target.isParent && target.isParent();
+        const isEdge = target.isEdge && target.isEdge();
+
         // Canvas or Selected node click: clear selection
-        if (
-            !ev.target.data ||
-            (selectedNode && ev.target.data() && ev.target.data().id === selectedNode.id)
-        ) {
+        if (!evData || (selectedNode && evData && id === selectedNode.id)) {
             setSelectedNode();
             onClickOutside();
             return;
         }
 
-        // Parent Click: Do nothing
-        if (ev.target.isParent()) {
-            const { id } = ev.target.data();
+        // Edge click
+        if (isEdge) return;
+
+        // Parent Click
+        if (isParent) {
             if (id) {
                 onNamespaceClick({ id, deployments: namespacesWithDeployments[id] || [] });
                 setSelectedNode();
@@ -340,10 +349,12 @@ const NetworkGraph = ({
         }
 
         // Node click: select node
-        const node = ev.target.data();
-        setSelectedNode(node);
-        onNodeClick(node);
-        if (!ev.target.isParent()) {
+        if (target.isNode()) {
+            setSelectedNode(evData);
+            onNodeClick(evData);
+        }
+
+        if (!isParent) {
             setSelectedNamespace(null);
         }
     }
@@ -377,15 +388,108 @@ const NetworkGraph = ({
         return { nodes: getNodes(), edges: getEdges() };
     }
 
+    // Calculate which namespace box side combinations are shortest and store them
+    function calculateNodeSideMap(changedNodeId) {
+        if (!cy.current) return;
+
+        // Get a map of all the side nodes per namespace
+        const namespaces = cy.current.nodes(':parent');
+        const sideNodesPerParent = namespaces.reduce((acc, namespace) => {
+            const { id } = namespace.data(); // to
+
+            const sideNodes = cy.current.nodes(`[parent="${id}"][side]`);
+
+            const nodesInfo = sideNodes.map(node => {
+                const { x, y } = node.position();
+                const { side } = node.data();
+                return {
+                    node,
+                    side,
+                    id: node.id(),
+                    x,
+                    y
+                };
+            });
+            return { ...acc, [id]: nodesInfo };
+        }, {});
+
+        const distances = {};
+
+        function getDistance(sourceSideNode, targetSideNode) {
+            const key = [sourceSideNode.id, targetSideNode.id].sort().join('**__**');
+            const cachedDistance = distances[key];
+            if (cachedDistance) return cachedDistance;
+            const dX = Math.abs(sourceSideNode.x - targetSideNode.x);
+            const dY = Math.abs(sourceSideNode.y - targetSideNode.y);
+            const distance = Math.sqrt(dX * dX + dY * dY);
+            distances[key] = distance;
+            return distance;
+        }
+        // for each namespace, go through each other namespace
+        namespaces.forEach((sourceNS, i) => {
+            const sourceName = sourceNS.data().id;
+            const sourceSideNodes = sideNodesPerParent[sourceName];
+            nodeSideMap[sourceName] = nodeSideMap[sourceName] || {};
+            const sourceMap = nodeSideMap[sourceName];
+
+            namespaces.forEach((targetNS, j) => {
+                const targetName = targetNS.data().id;
+
+                if (i === j || (changedNodeId && ![sourceName, targetName].includes(changedNodeId)))
+                    return;
+
+                const targetSideNodes = sideNodesPerParent[targetName];
+                let shortest;
+                // check distances between every combination of side nodes to find shortest
+                sourceSideNodes.forEach(sourceSideNode => {
+                    const sourceSide = sourceSideNode.side;
+                    const targetSideNode = targetSideNodes.find(tgtNode => {
+                        const { side } = tgtNode;
+                        if (sourceSide === 'top') return side === 'bottom';
+                        if (sourceSide === 'bottom') return side === 'top';
+                        if (sourceSide === 'left') return side === 'right';
+                        if (sourceSide === 'right') return side === 'left';
+                        return false;
+                    });
+
+                    const distance = getDistance(sourceSideNode, targetSideNode);
+                    if (!shortest || shortest.distance > distance) {
+                        shortest = {
+                            source: sourceSideNode.id,
+                            target: targetSideNode.id,
+                            sourceSide: sourceSideNode.side,
+                            targetSide: targetSideNode.side,
+                            distance
+                        };
+                    }
+                });
+                sourceMap[targetName] = shortest;
+            });
+        });
+    }
+
+    function handleDrag(ev) {
+        let changedNodeId;
+        if (ev && ev.target) changedNodeId = ev.target.data().id;
+
+        calculateNodeSideMap(changedNodeId);
+        const newEdges = getEdges();
+
+        cy.current.remove('edge');
+        cy.current.add(newEdges);
+    }
+
     function configureCY(cyInstance) {
         cy.current = cyInstance;
         cy.current
-            .on('click', null, clickHandler)
+            .off('click mouseover mouseout mousedown drag')
+            .on('click', clickHandler)
             .on('mouseover', 'node', debounce(nodeHoverHandler, 100))
             .on('mouseout', 'node', nodeMouseOutHandler)
             .on('mouseout mousedown', 'node', () => {
                 if (tippy.current) tippy.current.destroy();
             })
+            .on('drag', throttle(handleDrag, 100))
             .ready(() => {
                 if (firstRenderFinished) return;
                 setFirstRenderFinished(true);
@@ -394,9 +498,8 @@ const NetworkGraph = ({
     }
 
     const elements = getElements();
-
     // Effects
-    function handleWindowResize() {
+    function setWindowResize() {
         window.addEventListener('resize', debounce(() => zoomToFit, 100));
 
         const cleanup = () => {
@@ -420,12 +523,32 @@ const NetworkGraph = ({
 
     function runLayout() {
         if (!cy.current) return;
-        cy.current.layout(layout).run();
+        const CY = cy.current;
+        const NSPositions = getParentPositions(CY.nodes(), { x: 100, y: 0 }); // all nodes, padding
+
+        NSPositions.forEach(position => {
+            const { id, x, y } = position;
+            CY.layout({
+                name: 'edgeGridLayout',
+                parentPadding: { bottom: 10, top: 5, left: 5, right: 5 },
+                position: { x, y },
+                eles: CY.nodes(`[parent="${id}"]`)
+            }).run();
+        });
+        CY.fit(null, 50);
     }
 
-    useEffect(handleWindowResize, []);
+    function grabifyNamespaces() {
+        if (!cy.current) return;
+        const CY = cy.current;
+        CY.nodes(`[parent]`).ungrabify();
+    }
+
+    useEffect(setWindowResize, []);
     useEffect(setGraphRef, []);
     useEffect(runLayout, [nodes.length]);
+    useEffect(grabifyNamespaces);
+    useEffect(calculateNodeSideMap);
 
     const normalizedElements = CytoscapeComponent.normalizeElements(elements);
 
@@ -440,7 +563,7 @@ const NetworkGraph = ({
             <div id="cytoscapeContainer" className="w-full h-full">
                 <CytoscapeComponent
                     elements={normalizedElements}
-                    layout={layout}
+                    layout={{ name: 'grid' }}
                     stylesheet={style}
                     cy={configureCY}
                     minZoom={MIN_ZOOM}

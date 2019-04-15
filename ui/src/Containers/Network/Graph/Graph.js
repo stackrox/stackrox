@@ -76,7 +76,7 @@ class Graph extends Component {
 
     renderGraph = nodes => {
         // If we have more than 1000 nodes, display a message instead of the graph.
-        if (nodes.length > 1000) {
+        if (nodes.length > 1200) {
             // hopefully a temporal solution
             return (
                 <NoResultsMessage message="There are too many deployments to render on the graph. Please refine your search to a set of namespaces or deployments to display." />
