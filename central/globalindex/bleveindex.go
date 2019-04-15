@@ -22,6 +22,7 @@ import (
 	nodeMapping "github.com/stackrox/rox/central/node/index/mappings"
 	policyMapping "github.com/stackrox/rox/central/policy/index/mappings"
 	processIndicatorMapping "github.com/stackrox/rox/central/processindicator/index/mappings"
+	processWhitelistMapping "github.com/stackrox/rox/central/processwhitelist/index/mappings"
 	secretOptions "github.com/stackrox/rox/central/secret/search/options"
 	serviceAccountOptions "github.com/stackrox/rox/central/serviceaccount/search/options"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -66,6 +67,7 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 		v1.SearchCategory_CLUSTERS:            clusterMapping.OptionsMap,
 		v1.SearchCategory_NAMESPACES:          namespaceMapping.OptionsMap,
 		v1.SearchCategory_NODES:               nodeMapping.OptionsMap,
+		v1.SearchCategory_PROCESS_WHITELISTS:  processWhitelistMapping.OptionsMap,
 	}
 
 	if features.K8sRBAC.Enabled() {
@@ -133,6 +135,13 @@ func initializeIndices(mossPath string) (bleve.Index, error) {
 	return globalIndex, nil
 }
 
+func getDefaultDocMapping() *mapping.DocumentMapping {
+	return &mapping.DocumentMapping{
+		Enabled: false,
+		Dynamic: false,
+	}
+}
+
 func getIndexMapping() mapping.IndexMapping {
 	indexMapping := bleve.NewIndexMapping()
 	utils.Must(indexMapping.AddCustomAnalyzer("single_term", singleTermAnalyzer()))
@@ -141,6 +150,7 @@ func getIndexMapping() mapping.IndexMapping {
 	indexMapping.IndexDynamic = false
 	indexMapping.StoreDynamic = false
 	indexMapping.TypeField = "Type"
+	indexMapping.DefaultMapping = getDefaultDocMapping()
 
 	for category, optMap := range GetEntityOptionsMap() {
 		indexMapping.AddDocumentMapping(category.String(), blevesearch.DocumentMappingFromOptionsMap(optMap.Original()))
