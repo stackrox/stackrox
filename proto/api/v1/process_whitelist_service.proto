@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+option go_package = "v1";
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "storage/process_whitelist.proto";
+import "api/v1/empty.proto";
+
+package v1;
+
+message GetProcessWhitelistByIdRequest {
+    string whitelist_id = 1;
+}
+
+message UpdateProcessWhitelistsRequest {
+    repeated string whitelist_ids        = 1;
+    repeated string add_process_names    = 2;
+    repeated string remove_process_names = 3;
+}
+
+message ProcessWhitelistsResponse {
+    repeated storage.ProcessWhitelist whitelists = 1;
+}
+
+message ProcessWhitelistUpdateError {
+    string error = 1;
+    string id    = 2;
+}
+
+message UpdateProcessWhitelistsResponse {
+    repeated storage.ProcessWhitelist    whitelists = 1;
+    repeated ProcessWhitelistUpdateError errors     = 2;
+}
+
+message LockProcessWhitelistsRequest {
+    repeated string whitelist_ids = 1;
+    bool     locked               = 2;
+}
+
+// ProcessWhitelistService APIs can be used to manage process whitelists.
+service ProcessWhitelistService {
+    // GetProcessWhitelists returns all process whitelists.
+    rpc GetProcessWhitelists (Empty) returns (ProcessWhitelistsResponse) {
+        option (google.api.http) = {
+                get: "/v1/processwhitelists"
+            };
+    }
+
+    // GetProcessWhitelistById returns the single process whitelist referenced by the given ID.
+    rpc GetProcessWhitelist (GetProcessWhitelistByIdRequest) returns (storage.ProcessWhitelist) {
+        option (google.api.http) = {
+                get: "/v1/processwhitelists/id/{whitelist_id}"
+            };
+    }
+
+    // AddToProcessWhitelists adds a list of process names to each of a list of process whitelists
+    rpc UpdateProcessWhitelists (UpdateProcessWhitelistsRequest) returns (UpdateProcessWhitelistsResponse) {
+        option (google.api.http) = {
+                put: "/v1/processwhitelists"
+                body: "*"
+            };
+    }
+
+    // LockProcessWhitelists accepts a list of whitelist IDs, locks those whitelists, and returns the updated whitelist objects
+    rpc LockProcessWhitelists (LockProcessWhitelistsRequest) returns (UpdateProcessWhitelistsResponse) {
+        option (google.api.http) = {
+                put: "/v1/processwhitelists/lock"
+                body: "*"
+            };
+    }
+}

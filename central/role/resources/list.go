@@ -33,6 +33,7 @@ var (
 	NetworkPolicy         = newResource("NetworkPolicy")
 	NetworkGraph          = newResource("NetworkGraph")
 	Policy                = newResource("Policy")
+	ProcessWhitelist      = newResource("ProcessWhitelist")
 	Role                  = newResource("Role")
 	Secret                = newResource("Secret")
 	ServiceAccount        = newResource("ServiceAccount")

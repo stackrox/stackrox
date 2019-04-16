@@ -56,6 +56,7 @@ import (
 	pingService "github.com/stackrox/rox/central/ping/service"
 	policyService "github.com/stackrox/rox/central/policy/service"
 	processIndicatorService "github.com/stackrox/rox/central/processindicator/service"
+	processWhitelistService "github.com/stackrox/rox/central/processwhitelist/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	"github.com/stackrox/rox/central/reprocessor"
@@ -231,6 +232,10 @@ func (defaultFactory) ServicesToRegister(registry authproviders.Registry) []pkgG
 
 	if env.DevelopmentBuild.Setting() == "true" {
 		servicesToRegister = append(servicesToRegister, developmentService.Singleton())
+	}
+
+	if features.ProcessWhitelist.Enabled() {
+		servicesToRegister = append(servicesToRegister, processWhitelistService.Singleton())
 	}
 	return servicesToRegister
 }

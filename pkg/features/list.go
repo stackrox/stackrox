@@ -19,4 +19,7 @@ var (
 
 	// CentralTLSSecretLoader will read secrets from the orchestrator to configure TLS.
 	CentralTLSSecretLoader = registerFeature("Enable Central TLS secret loading from orchestrator", "ROX_CENTRAL_TLS", false)
+
+	// ProcessWhitelist will enable the process whitelist API
+	ProcessWhitelist = registerFeature("Enable Process Whitelist API", "ROX_PROCESS_WHITELIST", false)
 )

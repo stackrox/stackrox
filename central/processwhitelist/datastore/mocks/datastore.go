@@ -60,19 +60,6 @@ func (mr *MockDataStoreMockRecorder) GetProcessWhitelist(arg0 interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessWhitelist", reflect.TypeOf((*MockDataStore)(nil).GetProcessWhitelist), arg0)
 }
 
-// GetProcessWhitelistByNames mocks base method
-func (m *MockDataStore) GetProcessWhitelistByNames(arg0, arg1 string) (*storage.ProcessWhitelist, error) {
-	ret := m.ctrl.Call(m, "GetProcessWhitelistByNames", arg0, arg1)
-	ret0, _ := ret[0].(*storage.ProcessWhitelist)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetProcessWhitelistByNames indicates an expected call of GetProcessWhitelistByNames
-func (mr *MockDataStoreMockRecorder) GetProcessWhitelistByNames(arg0, arg1 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProcessWhitelistByNames", reflect.TypeOf((*MockDataStore)(nil).GetProcessWhitelistByNames), arg0, arg1)
-}
-
 // GetProcessWhitelists mocks base method
 func (m *MockDataStore) GetProcessWhitelists() ([]*storage.ProcessWhitelist, error) {
 	ret := m.ctrl.Call(m, "GetProcessWhitelists")
@@ -98,6 +85,19 @@ func (mr *MockDataStoreMockRecorder) RemoveProcessWhitelist(arg0 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessWhitelist", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessWhitelist), arg0)
 }
 
+// RoxLockProcessWhitelist mocks base method
+func (m *MockDataStore) RoxLockProcessWhitelist(arg0 string, arg1 bool) (*storage.ProcessWhitelist, error) {
+	ret := m.ctrl.Call(m, "RoxLockProcessWhitelist", arg0, arg1)
+	ret0, _ := ret[0].(*storage.ProcessWhitelist)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RoxLockProcessWhitelist indicates an expected call of RoxLockProcessWhitelist
+func (mr *MockDataStoreMockRecorder) RoxLockProcessWhitelist(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RoxLockProcessWhitelist", reflect.TypeOf((*MockDataStore)(nil).RoxLockProcessWhitelist), arg0, arg1)
+}
+
 // SearchRawProcessWhitelists mocks base method
 func (m *MockDataStore) SearchRawProcessWhitelists(arg0 *v1.Query) ([]*storage.ProcessWhitelist, error) {
 	ret := m.ctrl.Call(m, "SearchRawProcessWhitelists", arg0)
@@ -109,4 +109,30 @@ func (m *MockDataStore) SearchRawProcessWhitelists(arg0 *v1.Query) ([]*storage.P
 // SearchRawProcessWhitelists indicates an expected call of SearchRawProcessWhitelists
 func (mr *MockDataStoreMockRecorder) SearchRawProcessWhitelists(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawProcessWhitelists", reflect.TypeOf((*MockDataStore)(nil).SearchRawProcessWhitelists), arg0)
+}
+
+// UpdateProcessWhitelist mocks base method
+func (m *MockDataStore) UpdateProcessWhitelist(arg0 string, arg1, arg2 []string) (*storage.ProcessWhitelist, error) {
+	ret := m.ctrl.Call(m, "UpdateProcessWhitelist", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*storage.ProcessWhitelist)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateProcessWhitelist indicates an expected call of UpdateProcessWhitelist
+func (mr *MockDataStoreMockRecorder) UpdateProcessWhitelist(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProcessWhitelist", reflect.TypeOf((*MockDataStore)(nil).UpdateProcessWhitelist), arg0, arg1, arg2)
+}
+
+// UserLockProcessWhitelist mocks base method
+func (m *MockDataStore) UserLockProcessWhitelist(arg0 string, arg1 bool) (*storage.ProcessWhitelist, error) {
+	ret := m.ctrl.Call(m, "UserLockProcessWhitelist", arg0, arg1)
+	ret0, _ := ret[0].(*storage.ProcessWhitelist)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UserLockProcessWhitelist indicates an expected call of UserLockProcessWhitelist
+func (mr *MockDataStoreMockRecorder) UserLockProcessWhitelist(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserLockProcessWhitelist", reflect.TypeOf((*MockDataStore)(nil).UserLockProcessWhitelist), arg0, arg1)
 }
