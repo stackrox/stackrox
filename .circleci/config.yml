@@ -594,17 +594,27 @@ jobs:
     resource_class: large
     steps:
       - checkout
-      - setup_remote_docker
 
       - *restoreDep
-      - *restoreGradle
-      - *restoreUI
-
       - *setupBazel
 
       - run:
           name: Run integration tests
-          command: make integration-unit-tests
+          # Retry a few times if the tests fail since they can be flaky.
+          command: |
+            success=0
+            max_tries=5
+            for i in $(seq 1 "${max_tries}"); do
+              if make integration-unit-tests; then
+                success=1
+                break
+              fi
+              echo "Retrying (failed ${i} times)"
+            done
+            if [[ "${success}" == 0 ]]; then
+              echo "Failed after ${max_tries} tries"
+              exit 1
+            fi
 
   k8s-tests:
     <<: *defaults
