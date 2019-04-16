@@ -21,7 +21,7 @@ create-cluster() {
   for zone in $zones; do
       echo "Trying zone $zone"
       gcloud config set compute/zone "${zone}"
-      if gcloud container clusters create \
+      timeout 420 gcloud container clusters create \
           --machine-type n1-standard-2 \
           --num-nodes "${NUM_NODES}" \
           --create-subnetwork range=/28 \
@@ -32,12 +32,17 @@ create-cluster() {
           --image-type ${GCP_IMAGE_TYPE} \
           --tags="stackrox-ci,stackrox-ci-${CIRCLE_JOB}" \
           "prevent-ci-${CIRCLE_BUILD_NUM}"
+      status="$?"
+      if [[ "${status}" == 0 ]];
       then
           success=1
           break
-      else
-          gcloud container clusters delete "prevent-ci-${CIRCLE_BUILD_NUM}"
+      elif [[ "${status}" == 124 ]];
+      then
+          echo >&2 "gcloud command timed out. Trying another zone..."
       fi
+      echo >&2 "Deleting the cluster"
+      gcloud container clusters delete "prevent-ci-${CIRCLE_BUILD_NUM}" --async
   done
 
   if [[ "${success}" == "0" ]]; then
