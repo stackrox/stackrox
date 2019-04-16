@@ -56,6 +56,7 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 	}
 
 	hostConnections, sequenceID := s.manager.RegisterCollector(hostname)
+	defer s.manager.UnregisterCollector(hostname, sequenceID)
 
 	for stream.Context().Err() == nil {
 		msg, err := stream.Recv()

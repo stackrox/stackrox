@@ -20,12 +20,20 @@ import (
 const (
 	// Wait at least this long before determining that an unresolvable IP is "outside of the cluster".
 	clusterEntityResolutionWaitPeriod = 10 * time.Second
+
+	connectionDeletionGracePeriod = 5 * time.Minute
 )
 
 type hostConnections struct {
 	connections        map[connection]*connStatus
 	lastKnownTimestamp timestamp.MicroTS
-	sequenceID         int64
+
+	// connectionsSequenceID is the sequence ID of the current active connections state
+	connectionsSequenceID int64
+	// currentSequenceID is the sequence ID of the most recent `Register` call
+	currentSequenceID int64
+
+	pendingDeletion *time.Timer
 
 	mutex sync.Mutex
 }
@@ -129,6 +137,11 @@ func (m *networkFlowManager) currentEnrichedConns() map[networkConnIndicator]tim
 
 	enrichedConnections := make(map[networkConnIndicator]timestamp.MicroTS)
 	for conn, status := range conns {
+		isFresh := timestamp.Now().ElapsedSince(status.firstSeen) < clusterEntityResolutionWaitPeriod
+		if !isFresh {
+			status.used = true
+		}
+
 		container, ok := m.clusterEntities.LookupByContainerID(conn.containerID)
 		if !ok {
 			log.Debugf("Unable to fetch deployment information for container %s: no deployment found", conn.containerID)
@@ -137,10 +150,9 @@ func (m *networkFlowManager) currentEnrichedConns() map[networkConnIndicator]tim
 
 		lookupResults := m.clusterEntities.LookupByEndpoint(conn.remote)
 		if len(lookupResults) == 0 {
-			if timestamp.Now().ElapsedSince(status.firstSeen) < clusterEntityResolutionWaitPeriod {
+			if isFresh {
 				continue
 			}
-			status.used = true
 
 			var port uint16
 			if conn.incoming {
@@ -222,33 +234,35 @@ func computeUpdateMessage(current map[networkConnIndicator]timestamp.MicroTS, pr
 
 func (m *networkFlowManager) getAllConnections() map[connection]*connStatus {
 	// Phase 1: get a snapshot of all *hostConnections.
-	m.connectionsByHostMutex.Lock()
-	allHostConns := make([]*hostConnections, 0, len(m.connectionsByHost))
-	for _, hostConns := range m.connectionsByHost {
-		allHostConns = append(allHostConns, hostConns)
-	}
-	m.connectionsByHostMutex.Unlock()
+	var allHostConns []*hostConnections
+	concurrency.WithLock(&m.connectionsByHostMutex, func() {
+		allHostConns = make([]*hostConnections, 0, len(m.connectionsByHost))
+		for _, hostConns := range m.connectionsByHost {
+			allHostConns = append(allHostConns, hostConns)
+		}
+	})
 
 	// Phase 2: Merge all connections from all *hostConnections into a single map. This two-phase approach avoids
 	// holding two locks simultaneously.
 	allConnections := make(map[connection]*connStatus)
 	for _, hostConns := range allHostConns {
-		hostConns.mutex.Lock()
-		for conn, status := range hostConns.connections {
-			allConnections[conn] = status
-			if status.lastSeen != timestamp.InfiniteFuture && status.used {
-				delete(hostConns.connections, conn) // connection not active, no longer needed
+		concurrency.WithLock(&hostConns.mutex, func() {
+			for conn, status := range hostConns.connections {
+				allConnections[conn] = status
+				if status.lastSeen != timestamp.InfiniteFuture && status.used {
+					delete(hostConns.connections, conn) // connection not active, no longer needed
+				}
 			}
-		}
-		hostConns.mutex.Unlock()
+		})
 	}
 
 	return allConnections
 }
 
 func (m *networkFlowManager) RegisterCollector(hostname string) (HostNetworkInfo, int64) {
-
 	m.connectionsByHostMutex.Lock()
+	defer m.connectionsByHostMutex.Unlock()
+
 	conns := m.connectionsByHost[hostname]
 
 	if conns == nil {
@@ -258,13 +272,65 @@ func (m *networkFlowManager) RegisterCollector(hostname string) (HostNetworkInfo
 		m.connectionsByHost[hostname] = conns
 	}
 
-	m.connectionsByHostMutex.Unlock()
+	conns.mutex.Lock()
+	defer conns.mutex.Unlock()
+
+	if conns.pendingDeletion != nil {
+		// Note that we don't need to check the return value, since `deleteHostConnections` needs to acquire
+		// m.connectionsByHostMutex. It can therefore only proceed once this function returns, in which case it will be
+		// a no-op due to `pendingDeletion` being `nil`.
+		conns.pendingDeletion.Stop()
+		conns.pendingDeletion = nil
+	}
+
+	conns.currentSequenceID++
+
+	return conns, conns.currentSequenceID
+}
+
+func (m *networkFlowManager) deleteHostConnections(hostname string) {
+	m.connectionsByHostMutex.Lock()
+	defer m.connectionsByHostMutex.Unlock()
+
+	conns := m.connectionsByHost[hostname]
+	if conns == nil {
+		return
+	}
 
 	conns.mutex.Lock()
-	seqID := conns.sequenceID + 1
-	conns.mutex.Unlock()
+	defer conns.mutex.Unlock()
 
-	return conns, seqID
+	if conns.pendingDeletion == nil {
+		return
+	}
+
+	delete(m.connectionsByHost, hostname)
+}
+
+func (m *networkFlowManager) UnregisterCollector(hostname string, sequenceID int64) {
+	m.connectionsByHostMutex.Lock()
+	defer m.connectionsByHostMutex.Unlock()
+
+	conns := m.connectionsByHost[hostname]
+	if conns == nil {
+		return
+	}
+
+	conns.mutex.Lock()
+	defer conns.mutex.Unlock()
+	if conns.currentSequenceID != sequenceID {
+		// Skip deletion if there has been a more recent Register call than the corresponding Unregister call
+		return
+	}
+
+	if conns.pendingDeletion != nil {
+		// Cancel any pending deletions there might be. See `RegisterCollector` on why we do not need to check for the
+		// return value of Stop.
+		conns.pendingDeletion.Stop()
+	}
+	conns.pendingDeletion = time.AfterFunc(connectionDeletionGracePeriod, func() {
+		m.deleteHostConnections(hostname)
+	})
 }
 
 func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, sequenceID int64) error {
@@ -276,16 +342,16 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
 
-	if sequenceID < h.sequenceID {
+	if sequenceID != h.currentSequenceID {
 		return errors.New("replaced by newer connection")
-	} else if sequenceID > h.sequenceID {
+	} else if sequenceID != h.connectionsSequenceID {
 		// This is the first message of the new connection.
 		for _, status := range h.connections {
 			// Mark all connections as closed this is the first update
 			// after a connection went down and came back up again.
 			status.lastSeen = h.lastKnownTimestamp
 		}
-		h.sequenceID = sequenceID
+		h.connectionsSequenceID = sequenceID
 	}
 
 	for c, t := range updatedConnections {

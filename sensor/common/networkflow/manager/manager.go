@@ -16,6 +16,7 @@ type Manager interface {
 	Start()
 	Stop()
 	FlowUpdates() <-chan *central.NetworkFlowUpdate
+	UnregisterCollector(hostname string, sequenceID int64)
 	RegisterCollector(hostname string) (HostNetworkInfo, int64)
 }
 
