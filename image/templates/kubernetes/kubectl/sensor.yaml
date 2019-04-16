@@ -206,10 +206,10 @@ spec:
           readOnly: true
         - mountPath: /module
           name: tmpfs-module
-        {{if eq .CollectionMethod "EBPF"}}
         - mountPath: /host/etc
           name: etc-ro
           readOnly: true
+        {{if eq .CollectionMethod "EBPF"}}
         - mountPath: /host/sys/kernel/debug/tracing/events
           name: sys-kernel-debug-tracing-events-ro
           readOnly: true
@@ -270,10 +270,10 @@ spec:
       - emptyDir:
           medium: Memory
         name: tmpfs-module
-      {{if eq .CollectionMethod "EBPF"}}
       - hostPath: 
           path: /etc
         name: etc-ro
+      {{if eq .CollectionMethod "EBPF"}}
       - hostPath: 
           path: /sys/kernel/debug/tracing/events
         name: sys-kernel-debug-tracing-events-ro
