@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.Secret
 import io.fabric8.kubernetes.api.model.SecretVolumeSource
 import io.fabric8.kubernetes.api.model.SecurityContext
 import io.fabric8.kubernetes.api.model.Service
+import io.fabric8.kubernetes.api.model.ServiceAccount
 import io.fabric8.kubernetes.api.model.ServiceList
 import io.fabric8.kubernetes.api.model.ServicePort
 import io.fabric8.kubernetes.api.model.ServiceSpec
@@ -39,6 +40,10 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyBuilder
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyEgressRuleBuilder
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilder
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding
+import io.fabric8.kubernetes.api.model.rbac.Role
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.KubernetesClientException
@@ -655,6 +660,55 @@ class Kubernetes implements OrchestratorMain {
                     networkPolicyCount: getNetworkPolicyCount(it.metadata.name)
             )
         }
+    }
+
+    /*
+        Service Accounts
+     */
+
+    List<ServiceAccount> getServiceAccounts() {
+        return client.serviceAccounts().inAnyNamespace().list().items
+    }
+
+    def createServiceAccount(String name, String namespace = this.namespace) {
+        ServiceAccount sa  = new ServiceAccount(metadata: new ObjectMeta(name: name, namespace: namespace))
+        client.serviceAccounts().inNamespace(namespace).createOrReplace(sa)
+    }
+
+    def deleteServiceAccount(String name, String namespace = this.namespace) {
+        client.serviceAccounts().inNamespace(namespace).withName(name).delete()
+    }
+
+    /*
+        Roles
+     */
+
+    List<Role> getRoles() {
+        return client.rbac().roles().inAnyNamespace().list().items
+    }
+
+    /*
+        RoleBindings
+     */
+
+    List<RoleBinding> getRoleBindings() {
+        return client.rbac().roleBindings().inAnyNamespace().list().items
+    }
+
+    /*
+        ClusterRoles
+     */
+
+    List<ClusterRole> getClusterRoles() {
+        return client.rbac().clusterRoles().inAnyNamespace().list().items
+    }
+
+    /*
+        ClusterRoleBindings
+     */
+
+    List<ClusterRoleBinding> getClusterRoleBindings() {
+        return client.rbac().clusterRoleBindings().inAnyNamespace().list().items
     }
 
     /*

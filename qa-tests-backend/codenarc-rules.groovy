@@ -191,7 +191,7 @@ ruleset {
     SpaceAfterWhile 
     SpaceAroundClosureArrow 
     // SpaceAroundMapEntryColon
-    SpaceAroundOperator 
+    // SpaceAroundOperator
     SpaceBeforeClosingBrace 
     SpaceBeforeOpeningBrace 
     TrailingWhitespace 

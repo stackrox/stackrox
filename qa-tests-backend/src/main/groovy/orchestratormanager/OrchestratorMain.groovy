@@ -1,5 +1,10 @@
 package orchestratormanager
 
+import io.fabric8.kubernetes.api.model.ServiceAccount
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding
+import io.fabric8.kubernetes.api.model.rbac.Role
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding
 import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
 import objects.DaemonSet
 import objects.Deployment
@@ -75,6 +80,23 @@ interface OrchestratorMain {
 
     //Namespaces
     List<Namespace> getNamespaceDetails()
+
+    //Service Accounts
+    List<ServiceAccount> getServiceAccounts()
+    def createServiceAccount(String name, String namespace)
+    def deleteServiceAccount(String name, String namespace)
+
+    //Roles
+    List<Role> getRoles()
+
+    //RoleBindings
+    List<RoleBinding> getRoleBindings()
+
+    //ClusterRoles
+    List<ClusterRole> getClusterRoles()
+
+    //ClusterRoleBindings
+    List<ClusterRoleBinding> getClusterRoleBindings()
 
     //Misc
     def createClairifyDeployment()
