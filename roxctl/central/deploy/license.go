@@ -21,7 +21,7 @@ func (licenseVar) Type() string {
 }
 
 func (v licenseVar) String() string {
-	if v.data == nil {
+	if v.data == nil || len(*v.data) == 0 {
 		return ""
 	}
 	return "<license data>"
