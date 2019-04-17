@@ -10,8 +10,13 @@ import PageHeader from 'Components/PageHeader';
 import LicenseExpiration from './widgets/LicenseExpiration';
 import UpgradeSupport from './widgets/UpgradeSupport';
 
+const customerIDFromLicenseInfo = licenseInfo => {
+    if (!licenseInfo || !licenseInfo.license) return '';
+    return licenseInfo.license.metadata.licensedForId;
+};
+
 const Page = ({ license }) => {
-    const customerID = license ? license.license.metadata.licensedForId : '';
+    const customerID = customerIDFromLicenseInfo(license);
     const header = `License: ${licenseType}`;
     const subHeader = `Customer ID: #${customerID}`;
     return (

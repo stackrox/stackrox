@@ -27,6 +27,9 @@ message LicenseInfo {
 
 message AddLicenseRequest {
     string license_key = 1;
+
+    // Indicates whether the license represented by this key should be made the active license.
+    bool activate      = 2;
 }
 
 message AddLicenseResponse {

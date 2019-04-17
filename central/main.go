@@ -75,6 +75,7 @@ import (
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
@@ -122,22 +123,25 @@ func main() {
 		log.Errorf("Failed to remove backup DB: %v", err)
 	}
 
-	if features.LicenseEnforcement.Enabled() {
-		licenseMgr := licenseSingletons.ManagerSingleton()
-		initialLicense, err := licenseMgr.Initialize(licenseEnforcer.New())
-		if err != nil {
-			log.Fatalf("Could not initialize license manager: %v", err)
-		}
-		if initialLicense == nil {
-			log.Error("*** No valid license found")
-			log.Error("*** ")
-			log.Error("*** Server starting in limited mode until license activated")
-			go startLimitedModeServer()
-			waitForTerminationSignal()
-			return
-		}
+	var licenseStatus v1.Metadata_LicenseStatus
+	licenseMgr := licenseSingletons.ManagerSingleton()
+	initialLicense, err := licenseMgr.Initialize(licenseEnforcer.New(&licenseStatus))
+	if err != nil {
+		log.Fatalf("Could not initialize license manager: %v", err)
 	}
-	go startMainServer()
+
+	if initialLicense == nil {
+		licenseStatus = v1.Metadata_NONE_OR_INVALID
+		log.Error("*** No valid license found")
+		log.Error("*** ")
+		log.Error("*** Server starting in limited mode until license activated")
+		go startLimitedModeServer(&licenseStatus)
+		waitForTerminationSignal()
+		return
+	}
+
+	licenseStatus = v1.Metadata_VALID
+	go startMainServer(&licenseStatus)
 
 	waitForTerminationSignal()
 }
@@ -150,12 +154,13 @@ func ensureDB() {
 }
 
 type invalidLicenseFactory struct {
+	licenseStatus *v1.Metadata_LicenseStatus
 }
 
-func (invalidLicenseFactory) ServicesToRegister(authproviders.Registry) []pkgGRPC.APIService {
+func (f invalidLicenseFactory) ServicesToRegister(authproviders.Registry) []pkgGRPC.APIService {
 	return []pkgGRPC.APIService{
-		licenseService.New(true, licenseSingletons.ManagerSingleton()),
-		metadataService.New(),
+		licenseService.New(f.licenseStatus, licenseSingletons.ManagerSingleton()),
+		metadataService.New(f.licenseStatus),
 		pingService.Singleton(), // required for dev scripts & health checking
 	}
 }
@@ -168,8 +173,10 @@ func (invalidLicenseFactory) CustomRoutes() (customRoutes []routes.CustomRoute) 
 	return []routes.CustomRoute{uiDefaultRoute()}
 }
 
-func startLimitedModeServer() {
-	startGRPCServer(invalidLicenseFactory{})
+func startLimitedModeServer(licenseStatus *v1.Metadata_LicenseStatus) {
+	startGRPCServer(invalidLicenseFactory{
+		licenseStatus: licenseStatus,
+	})
 }
 
 type serviceFactory interface {
@@ -178,7 +185,9 @@ type serviceFactory interface {
 	StartServices()
 }
 
-type defaultFactory struct{}
+type defaultFactory struct {
+	licenseStatus *v1.Metadata_LicenseStatus
+}
 
 func (defaultFactory) StartServices() {
 	if err := complianceManager.Singleton().Start(); err != nil {
@@ -190,7 +199,7 @@ func (defaultFactory) StartServices() {
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
 }
 
-func (defaultFactory) ServicesToRegister(registry authproviders.Registry) []pkgGRPC.APIService {
+func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pkgGRPC.APIService {
 	servicesToRegister := []pkgGRPC.APIService{
 		alertService.Singleton(),
 		authService.New(),
@@ -206,7 +215,7 @@ func (defaultFactory) ServicesToRegister(registry authproviders.Registry) []pkgG
 		groupService.Singleton(),
 		imageService.Singleton(),
 		iiService.Singleton(),
-		metadataService.New(),
+		metadataService.New(f.licenseStatus),
 		namespaceService.Singleton(),
 		networkFlowService.Singleton(),
 		networkPolicyService.Singleton(),
@@ -224,10 +233,7 @@ func (defaultFactory) ServicesToRegister(registry authproviders.Registry) []pkgG
 		summaryService.Singleton(),
 		userService.Singleton(),
 		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton()),
-	}
-
-	if features.LicenseEnforcement.Enabled() {
-		servicesToRegister = append(servicesToRegister, licenseService.New(false, licenseSingletons.ManagerSingleton()))
+		licenseService.New(f.licenseStatus, licenseSingletons.ManagerSingleton()),
 	}
 
 	if env.DevelopmentBuild.Setting() == "true" {
@@ -240,8 +246,10 @@ func (defaultFactory) ServicesToRegister(registry authproviders.Registry) []pkgG
 	return servicesToRegister
 }
 
-func startMainServer() {
-	startGRPCServer(defaultFactory{})
+func startMainServer(licenseStatus *v1.Metadata_LicenseStatus) {
+	startGRPCServer(defaultFactory{
+		licenseStatus: licenseStatus,
+	})
 }
 
 func watchdog(signal *concurrency.Signal, timeout time.Duration) {

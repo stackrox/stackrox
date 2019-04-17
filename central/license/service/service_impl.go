@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"sync/atomic"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/license/manager"
@@ -30,15 +31,15 @@ var (
 )
 
 type service struct {
-	lockdownMode bool
+	licenseStatus *v1.Metadata_LicenseStatus
 
 	licenseMgr manager.LicenseManager
 }
 
-func newService(lockdownMode bool, licenseMgr manager.LicenseManager) *service {
+func newService(licenseStatus *v1.Metadata_LicenseStatus, licenseMgr manager.LicenseManager) *service {
 	return &service{
-		lockdownMode: lockdownMode,
-		licenseMgr:   licenseMgr,
+		licenseStatus: licenseStatus,
+		licenseMgr:    licenseMgr,
 	}
 }
 
@@ -51,7 +52,7 @@ func (s *service) RegisterServiceHandler(ctx context.Context, mux *runtime.Serve
 }
 
 func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	if s.lockdownMode {
+	if v1.Metadata_LicenseStatus(atomic.LoadInt32((*int32)(s.licenseStatus))) == v1.Metadata_NONE_OR_INVALID {
 		return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
 	}
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
@@ -85,7 +86,7 @@ func (s *service) AddLicense(ctx context.Context, req *v1.AddLicenseRequest) (*v
 		return nil, status.Error(codes.InvalidArgument, "must provide a non-empty license key")
 	}
 
-	licenseInfo, err := s.licenseMgr.AddLicenseKey(req.GetLicenseKey())
+	licenseInfo, err := s.licenseMgr.AddLicenseKey(req.GetLicenseKey(), req.GetActivate())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to add license key: %v", err)
 	}

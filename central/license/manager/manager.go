@@ -20,7 +20,7 @@ type LicenseManager interface {
 	GetActiveLicense() *licenseproto.License
 	GetAllLicenses() []*v1.LicenseInfo
 
-	AddLicenseKey(licenseKey string) (*v1.LicenseInfo, error)
+	AddLicenseKey(licenseKey string, activate bool) (*v1.LicenseInfo, error)
 	SelectLicense(licenseID string) (*v1.LicenseInfo, error)
 }
 

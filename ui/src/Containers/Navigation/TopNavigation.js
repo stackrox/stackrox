@@ -160,9 +160,7 @@ class TopNavigation extends Component {
                 <div className="flex">
                     {this.renderSearchButton()}
                     {this.renderCLIDownloadButton()}
-                    {process.env.REACT_APP_ROX_LICENSE_ENFORCEMENT === 'true'
-                        ? this.renderNavBarMenu()
-                        : this.renderLogoutButton()}
+                    {this.renderNavBarMenu()}
                 </div>
             </nav>
         );

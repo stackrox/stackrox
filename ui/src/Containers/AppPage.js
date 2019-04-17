@@ -11,9 +11,7 @@ import LicenseStartUpScreen from 'Containers/License/StartUpScreen';
 const AppPage = () => (
     <Switch>
         <ProtectedRoute path={mainPath} component={MainPage} />
-        {process.env.REACT_APP_ROX_LICENSE_ENFORCEMENT === 'true' && (
-            <Route path={licenseStartUpPath} component={LicenseStartUpScreen} />
-        )}
+        <Route path={licenseStartUpPath} component={LicenseStartUpScreen} />
         <Route path={loginPath} component={LoginPage} />
         <Route path={authResponsePrefix} component={LoadingSection} />
         <Redirect from="/" to={mainPath} />

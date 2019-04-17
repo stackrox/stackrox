@@ -3,16 +3,16 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
-import { actions, LICENSE_UPLOAD_STATUS } from 'reducers/license';
+import { actions, LICENSE_STATUS } from 'reducers/license';
 import { getUploadResponseMessage } from 'Containers/License/helpers';
 
 import UploadButton from 'Components/UploadButton';
 import Dialog from 'Components/Dialog';
 
-const UploadLicense = ({ licenseUploadStatus, activateLicense }) => {
-    const defaultDialogState = !!licenseUploadStatus;
+const UploadLicense = ({ licenseUploadStatus, activateLicense, isStartUpScreen }) => {
+    const defaultDialogState = licenseUploadStatus ? !!licenseUploadStatus.status : false;
     const defaultVerifyingLicenseState = licenseUploadStatus
-        ? licenseUploadStatus === LICENSE_UPLOAD_STATUS.VERIFYINGs
+        ? licenseUploadStatus.status === LICENSE_STATUS.VERIFYING
         : false;
 
     const [dialogMessage, setDialogMessage] = useState(
@@ -23,9 +23,9 @@ const UploadLicense = ({ licenseUploadStatus, activateLicense }) => {
 
     useEffect(
         () => {
-            if (licenseUploadStatus !== LICENSE_UPLOAD_STATUS.VERIFYING) {
-                verifyLicense(false);
+            if (licenseUploadStatus && licenseUploadStatus.status !== LICENSE_STATUS.VERIFYING) {
                 setDialogMessage(getUploadResponseMessage(licenseUploadStatus));
+                verifyLicense(false);
             }
         },
         [licenseUploadStatus]
@@ -48,33 +48,35 @@ const UploadLicense = ({ licenseUploadStatus, activateLicense }) => {
                 text="Upload New License Key"
                 onChange={onUploadHandler}
             />
-            <Dialog
-                isOpen={isDialogOpen}
-                text={dialogMessage.text}
-                cancelText="Ok"
-                onCancel={onDialogCancel}
-                isLoading={isVerifyingLicense}
-                loadingText="Verifying License Key"
-            />
+            {!isStartUpScreen && (
+                <Dialog
+                    isOpen={isDialogOpen}
+                    text={dialogMessage.text}
+                    cancelText="Ok"
+                    onCancel={onDialogCancel}
+                    isLoading={isVerifyingLicense}
+                    loadingText="Verifying License Key"
+                />
+            )}
         </>
     );
 };
 
 UploadLicense.propTypes = {
-    licenseUploadStatus: PropTypes.string,
-    activateLicense: PropTypes.func.isRequired
-};
-
-UploadLicense.defaultProps = {
-    licenseUploadStatus: null
+    licenseUploadStatus: PropTypes.shape({
+        status: PropTypes.string,
+        message: PropTypes.string
+    }),
+    activateLicense: PropTypes.func.isRequired,
+    isStartUpScreen: PropTypes.bool
 };
 
 const mapStateToProps = createStructuredSelector({
     licenseUploadStatus: selectors.getLicenseUploadStatus
 });
-
 const mapDispatchToProps = {
-    activateLicense: actions.activateLicense
+    activateLicense: actions.activateLicense,
+    isStartUpScreen: false
 };
 
 export default connect(

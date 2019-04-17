@@ -69,7 +69,11 @@ const versionString = metadata => {
 class LeftNavigation extends Component {
     static propTypes = {
         location: ReactRouterPropTypes.location.isRequired,
-        metadata: PropTypes.shape({ version: PropTypes.string, releaseBuild: PropTypes.bool })
+        metadata: PropTypes.shape({
+            version: PropTypes.string,
+            releaseBuild: PropTypes.bool,
+            licenseStatus: PropTypes.string
+        })
     };
 
     static defaultProps = {

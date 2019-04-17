@@ -9,9 +9,17 @@ import "api/v1/empty.proto";
 package v1;
 
 message Metadata {
+    enum LicenseStatus {
+        NONE_OR_INVALID = 0;
+        RESTARTING = 1;
+        VALID = 2;
+    }
+
     string version      = 1;
     string build_flavor = 2;
     bool release_build  = 3;
+
+    LicenseStatus license_status = 4;
 }
 
 service MetadataService {

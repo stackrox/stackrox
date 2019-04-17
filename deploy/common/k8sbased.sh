@@ -37,20 +37,16 @@ function launch_central {
     local unzip_dir="${k8s_dir}/central-deploy/"
     rm -rf "${unzip_dir}"
     if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
-        if [[ "${ROX_LICENSE_ENFORCEMENT}" == true ]]; then
-            EXTRA_ARGS+=(--license "${k8s_dir}/../common/dev-license.lic")
-        fi
-       rm -rf central-bundle "${k8s_dir}/central-bundle"
-       roxctl central generate ${ORCH} ${EXTRA_ARGS[@]} --output-dir="central-bundle" --monitoring-password=stackrox \
-           -i "${MAIN_IMAGE}" --scanner-image "${SCANNER_IMAGE}" --monitoring-persistence-type="${STORAGE}" "${STORAGE}"
-       cp -R central-bundle/ "${unzip_dir}/"
-       rm -rf central-bundle
+        EXTRA_ARGS+=(--license "${k8s_dir}/../common/dev-license.lic")
+        rm -rf central-bundle "${k8s_dir}/central-bundle"
+        roxctl central generate ${ORCH} ${EXTRA_ARGS[@]} --output-dir="central-bundle" --monitoring-password=stackrox \
+            -i "${MAIN_IMAGE}" --scanner-image "${SCANNER_IMAGE}" --monitoring-persistence-type="${STORAGE}" "${STORAGE}"
+        cp -R central-bundle/ "${unzip_dir}/"
+        rm -rf central-bundle
     else
-        if [[ "${ROX_LICENSE_ENFORCEMENT}" == true ]]; then
-            EXTRA_ARGS+=(--license "/input/dev-license.lic")
-        fi
-       docker run --rm --volume "${k8s_dir}/../common/dev-license.lic":/input/dev-license.lic --env-file <(env | grep '^ROX_') "$MAIN_IMAGE" central generate ${ORCH} ${EXTRA_ARGS[@]} \
-        --monitoring-password=stackrox -i "${MAIN_IMAGE}" --monitoring-persistence-type="${STORAGE}" "${STORAGE}" > "${k8s_dir}/central.zip"
+        EXTRA_ARGS+=(--license "/input/dev-license.lic")
+        docker run --rm --volume "${k8s_dir}/../common/dev-license.lic":/input/dev-license.lic --env-file <(env | grep '^ROX_') "$MAIN_IMAGE" central generate ${ORCH} ${EXTRA_ARGS[@]} \
+            --monitoring-password=stackrox -i "${MAIN_IMAGE}" --monitoring-persistence-type="${STORAGE}" "${STORAGE}" > "${k8s_dir}/central.zip"
         unzip "${k8s_dir}/central.zip" -d "${unzip_dir}"
     fi
 

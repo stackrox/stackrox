@@ -19,5 +19,9 @@ export function fetchLicenses() {
  * @returns {Promise<Object, Error>}
  */
 export function addLicense(data) {
-    return axios.post(`${url}/add`, data);
+    const payload = {
+        activate: true,
+        ...data
+    };
+    return axios.post(`${url}/add`, payload).then(response => response.data);
 }

@@ -140,11 +140,12 @@ func (m *manager) populateLicenseFromSecretNoLock() {
 		return
 	}
 	deploymentEnvsByClusterID := m.deploymentEnvsMgr.GetDeploymentEnvironmentsByClusterID()
-	info := m.addLicenseNoLock(deploymentEnvsByClusterID, license)
-	if info.GetStatus() == v1.LicenseInfo_VALID {
+	_, err = m.addLicenseNoLock(deploymentEnvsByClusterID, license, false)
+	status, statusReason := statusFromError(err)
+	if status == v1.LicenseInfo_VALID {
 		log.Infof("License successfully imported from orchestrator secret")
 	} else {
-		log.Errorf("Imported license but not valid: %s: %s", info.GetStatus(), info.GetStatusReason())
+		log.Errorf("Imported license but not valid: %s: %s", status, statusReason)
 	}
 }
 
@@ -388,9 +389,11 @@ func (m *manager) GetAllLicenses() []*v1.LicenseInfo {
 	deploymentEnvsByClusterID := m.deploymentEnvsMgr.GetDeploymentEnvironmentsByClusterID()
 
 	concurrency.WithRLock(&m.mutex, func() {
+		log.Debugf("GetAllLicenses, active license is %v", m.activeLicense)
 		allLicenses = make([]*v1.LicenseInfo, 0, len(m.licenses))
 
 		for _, license := range m.licenses {
+			log.Debugf("Processing license %v", license)
 			allLicenses = append(allLicenses, m.getLicenseInfoNoLock(license, deploymentEnvsByClusterID))
 		}
 	})
@@ -402,16 +405,16 @@ func (m *manager) GetAllLicenses() []*v1.LicenseInfo {
 	return allLicenses
 }
 
-func (m *manager) AddLicenseKey(licenseKey string) (*v1.LicenseInfo, error) {
+func (m *manager) AddLicenseKey(licenseKey string, activate bool) (*v1.LicenseInfo, error) {
 	license, err := m.decodeLicenseKey(licenseKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "decoding license key")
 	}
 
-	return m.addLicense(license), nil
+	return m.addLicense(license, activate)
 }
 
-func (m *manager) addLicense(license *licenseData) *v1.LicenseInfo {
+func (m *manager) addLicense(license *licenseData, activate bool) (*v1.LicenseInfo, error) {
 	defer m.interrupt()
 
 	deploymentEnvsByClusterID := m.deploymentEnvsMgr.GetDeploymentEnvironmentsByClusterID()
@@ -419,20 +422,25 @@ func (m *manager) addLicense(license *licenseData) *v1.LicenseInfo {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	return m.addLicenseNoLock(deploymentEnvsByClusterID, license)
+	return m.addLicenseNoLock(deploymentEnvsByClusterID, license, activate)
 }
 
-func (m *manager) addLicenseNoLock(deploymentEnvsByClusterID map[string][]string, license *licenseData) *v1.LicenseInfo {
+func (m *manager) addLicenseNoLock(deploymentEnvsByClusterID map[string][]string, license *licenseData, activate bool) (*v1.LicenseInfo, error) {
+	// We accept licenses that violate constraints (the environment might change), but not those that are expired.
+	licenseErr := m.checkLicenseIsUsable(license, deploymentEnvsByClusterID)
+	if status, _ := statusFromError(licenseErr); status == v1.LicenseInfo_EXPIRED {
+		return nil, licenseErr
+	}
 
 	m.licenses[license.licenseProto.GetMetadata().GetId()] = license
 	m.dirty[license] = struct{}{}
 
-	if m.activeLicense == nil && m.checkLicenseIsUsable(license, deploymentEnvsByClusterID) == nil {
+	if licenseErr == nil && (m.activeLicense == nil || activate) {
 		newLicenseInfo, _, _ := m.makeLicenseActiveNoLock(license, deploymentEnvsByClusterID)
-		return newLicenseInfo
+		return newLicenseInfo, nil
 	}
 
-	return m.getLicenseInfoNoLock(license, deploymentEnvsByClusterID)
+	return m.getLicenseInfoNoLock(license, deploymentEnvsByClusterID), nil
 }
 
 func (m *manager) decodeLicenseKey(licenseKey string) (*licenseData, error) {

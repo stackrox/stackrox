@@ -1,6 +1,8 @@
 package service
 
 import (
+	"sync/atomic"
+
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
@@ -11,7 +13,9 @@ import (
 )
 
 // Service is the struct that manages the Metadata API
-type serviceImpl struct{}
+type serviceImpl struct {
+	licenseStatus *v1.Metadata_LicenseStatus
+}
 
 // RegisterServiceServer registers this service with the given gRPC Server.
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
@@ -31,8 +35,9 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 // GetMetadata returns the metadata for Rox.
 func (s *serviceImpl) GetMetadata(context.Context, *v1.Empty) (*v1.Metadata, error) {
 	return &v1.Metadata{
-		Version:      version.GetMainVersion(),
-		BuildFlavor:  buildinfo.BuildFlavor,
-		ReleaseBuild: buildinfo.ReleaseBuild,
+		Version:       version.GetMainVersion(),
+		BuildFlavor:   buildinfo.BuildFlavor,
+		ReleaseBuild:  buildinfo.ReleaseBuild,
+		LicenseStatus: v1.Metadata_LicenseStatus(atomic.LoadInt32((*int32)(s.licenseStatus))),
 	}, nil
 }

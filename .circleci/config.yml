@@ -105,9 +105,6 @@ deployGKE: &deployGKE
     name: Deploy to remote cluster
     command: |
       kubectl create clusterrolebinding temporary-admin --clusterrole=cluster-admin --user circleci-rox@stackrox-ci.iam.gserviceaccount.com
-      if [[ -n "$CIRCLE_TAG" ]]; then
-        export ROX_LICENSE_ENFORCEMENT=false
-      fi
       ./deploy/k8s/deploy.sh
       kubectl delete clusterrolebinding temporary-admin
 
@@ -889,6 +886,16 @@ jobs:
 
       - *waitForAPI
       - run:
+          name: Install license key
+          command: |
+            LICENSE_KEY="$(cat ./deploy/common/dev-license.lic)"
+            curl -sk "https://${API_HOSTNAME}:${API_PORT}/v1/licenses/add" -X POST -d @- < <(
+              jq -r -n '{"licenseKey": $key}' --arg key "$LICENSE_KEY")
+            sleep 3
+
+      - *waitForAPI
+
+      - run:
           name: Run upgrade tests
           command: |
             export CLUSTER=K8S
@@ -1110,9 +1117,6 @@ jobs:
       - run:
           name: Deploy to remote cluster
           command: |
-            if [[ -n "$CIRCLE_TAG" ]]; then
-              export ROX_LICENSE_ENFORCEMENT=false
-            fi
             ./deploy/openshift/deploy.sh
             oc -n stackrox get all
 
@@ -1286,9 +1290,6 @@ jobs:
       - run:
           name: Deploy to remote cluster
           command: |
-            if [[ -n "$CIRCLE_TAG" ]]; then
-              export ROX_LICENSE_ENFORCEMENT=false
-            fi
             ./deploy/k8s/deploy.sh
             kubectl -n stackrox get all
 

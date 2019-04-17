@@ -21,6 +21,8 @@ type Service interface {
 }
 
 // New returns a new instance of service.
-func New() Service {
-	return &serviceImpl{}
+func New(licenseStatus *v1.Metadata_LicenseStatus) Service {
+	return &serviceImpl{
+		licenseStatus: licenseStatus,
+	}
 }

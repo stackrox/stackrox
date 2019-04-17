@@ -23,7 +23,7 @@ function* getUserPermissions() {
         const result = yield call(fetchUserRolePermissions);
         yield put(rolesActions.fetchUserRolePermissions.success(result.response));
     } catch (error) {
-        yield put(rolesActions.fetchUserRolePermissions.error());
+        // do nothing
     }
 }
 

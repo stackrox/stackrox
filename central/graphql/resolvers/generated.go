@@ -412,9 +412,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.LifecycleStage(0)))
 	utils.Must(builder.AddType("Metadata", []string{
 		"buildFlavor: String!",
+		"licenseStatus: Metadata_LicenseStatus!",
 		"releaseBuild: Boolean!",
 		"version: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(v1.Metadata_LicenseStatus(0)))
 	utils.Must(builder.AddType("Namespace", []string{
 		"metadata: NamespaceMetadata",
 		"numDeployments: Int!",
@@ -3899,6 +3901,11 @@ func (resolver *metadataResolver) BuildFlavor() string {
 	return value
 }
 
+func (resolver *metadataResolver) LicenseStatus() string {
+	value := resolver.data.GetLicenseStatus()
+	return value.String()
+}
+
 func (resolver *metadataResolver) ReleaseBuild() bool {
 	value := resolver.data.GetReleaseBuild()
 	return value
@@ -3907,6 +3914,24 @@ func (resolver *metadataResolver) ReleaseBuild() bool {
 func (resolver *metadataResolver) Version() string {
 	value := resolver.data.GetVersion()
 	return value
+}
+
+func toMetadata_LicenseStatus(value *string) v1.Metadata_LicenseStatus {
+	if value != nil {
+		return v1.Metadata_LicenseStatus(v1.Metadata_LicenseStatus_value[*value])
+	}
+	return v1.Metadata_LicenseStatus(0)
+}
+
+func toMetadata_LicenseStatuses(values *[]string) []v1.Metadata_LicenseStatus {
+	if values == nil {
+		return nil
+	}
+	output := make([]v1.Metadata_LicenseStatus, len(*values))
+	for i, v := range *values {
+		output[i] = toMetadata_LicenseStatus(&v)
+	}
+	return output
 }
 
 type namespaceResolver struct {

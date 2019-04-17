@@ -29,19 +29,40 @@ export function* getLicenses() {
 }
 
 function* addNewLicense(data) {
+    let errorMessage = 'There was an error uploading the license';
+    const successMessage = 'The license was successfully added';
+
     try {
         yield put(actions.setLicenseUploadStatus(LICENSE_UPLOAD_STATUS.VERIFYING));
-        yield call(addLicense, data);
-        yield put(actions.setLicenseUploadStatus(LICENSE_UPLOAD_STATUS.VALID));
+        const response = yield call(addLicense, data);
+        if (
+            response.accepted &&
+            response.license.active &&
+            response.license.status === LICENSE_STATUS.VALID
+        ) {
+            yield put(actions.setLicenseUploadStatus(LICENSE_UPLOAD_STATUS.VALID, successMessage));
+            return;
+        }
+
+        // debugger;
+
+        errorMessage = response.accepted
+            ? 'The license was accepted, but is not being used at the moment'
+            : 'The license was rejected';
+
+        if (response.license.statusReason) {
+            errorMessage += `: ${response.license.statusReason}`;
+        }
     } catch (error) {
-        yield put(actions.setLicenseUploadStatus(LICENSE_UPLOAD_STATUS.INVALID));
         if (error.response) {
-            yield put(notificationActions.addNotification(error.response.data.error));
-            yield put(notificationActions.removeOldestNotification());
+            errorMessage += `: ${error.response.data.error}`;
         } else {
             Raven.captureException(error);
         }
     }
+    yield put(actions.setLicenseUploadStatus(LICENSE_UPLOAD_STATUS.INVALID, errorMessage));
+    yield put(notificationActions.addNotification(errorMessage));
+    yield put(notificationActions.removeOldestNotification());
 }
 
 function* checkLicenseStatus(location) {
@@ -88,7 +109,6 @@ function* watchMetadataLicenseStatus() {
 }
 
 export default function* license() {
-    if (process.env.REACT_APP_ROX_LICENSE_ENFORCEMENT !== 'true') return;
     yield fork(watchFetchLicense);
     yield fork(watchMetadataLicenseStatus);
     const action = yield take(locationActionTypes.LOCATION_CHANGE);
