@@ -104,7 +104,7 @@ setupLicense: &setupLicense
   run:
     name: Creating License Key
     command: |
-      ROX_LICENSE_KEY="$(.circleci/license/generate-license-key.sh)"
+      ROX_LICENSE_KEY="$(licenses/ci.sh)"
       echo "export ROX_LICENSE_KEY=${ROX_LICENSE_KEY}" >>"${BASH_ENV}"
 
 createGKE: &createGKE

@@ -1,0 +1,23 @@
+generators:
+- name: qa
+  key:
+    keyResourceId: "projects/stackrox-dev/locations/global/keyRings/licensing-qa/cryptoKeys/qa-license-signer/cryptoKeyVersions/1"
+  limit:
+    maxDuration: 1209600000000000
+    allowOffline: true
+    allowNoNodeLimit: true
+    allowNoBuildFlavorRestriction: true
+    deploymentEnvironments:
+      - gcp/ultra-current-825
+      - azure/66c57ff5-f49f-4510-ae04-e26d3ad2ee63
+      - aws/051999192406
+- name: ci
+  key:
+    keyResourceId: "projects/stackrox-dev/locations/global/keyRings/licensing-ci/cryptoKeys/ci-license-signer/cryptoKeyVersions/1"
+  limit:
+    maxDuration: 21600000000000
+    allowOffline: true
+    maxNodeLimit: 10
+    allowNoBuildFlavorRestriction: true
+    deploymentEnvironments:
+      - gcp/stackrox-ci
