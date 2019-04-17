@@ -28,6 +28,11 @@ function launch_central {
     else
         EXTRA_ARGS+=("--monitoring-lb-type=$MONITORING_LOAD_BALANCER")
     fi
+
+    if [ -n "${OUTPUT_FORMAT}" ]; then
+        EXTRA_ARGS+=("--output-format=${OUTPUT_FORMAT}")
+    fi
+
     EXTRA_ARGS+=("--lb-type=$LOAD_BALANCER")
     local unzip_dir="${k8s_dir}/central-deploy/"
     rm -rf "${unzip_dir}"
@@ -36,7 +41,7 @@ function launch_central {
             EXTRA_ARGS+=(--license "${k8s_dir}/../common/dev-license.lic")
         fi
        rm -rf central-bundle "${k8s_dir}/central-bundle"
-       roxctl central generate ${ORCH} ${EXTRA_ARGS[@]} --output-dir="central-bundle" --output-format="${OUTPUT_FORMAT}" --monitoring-password=stackrox \
+       roxctl central generate ${ORCH} ${EXTRA_ARGS[@]} --output-dir="central-bundle" --monitoring-password=stackrox \
            -i "${MAIN_IMAGE}" --scanner-image "${SCANNER_IMAGE}" --monitoring-persistence-type="${STORAGE}" "${STORAGE}"
        cp -R central-bundle/ "${unzip_dir}/"
        rm -rf central-bundle
@@ -44,7 +49,7 @@ function launch_central {
         if [[ "${ROX_LICENSE_ENFORCEMENT}" == true ]]; then
             EXTRA_ARGS+=(--license "/input/dev-license.lic")
         fi
-       docker run --rm --volume "${k8s_dir}/../common/dev-license.lic":/input/dev-license.lic --env-file <(env | grep '^ROX_') "$MAIN_IMAGE" central generate ${ORCH} ${EXTRA_ARGS[@]} --output-format="${OUTPUT_FORMAT}" \
+       docker run --rm --volume "${k8s_dir}/../common/dev-license.lic":/input/dev-license.lic --env-file <(env | grep '^ROX_') "$MAIN_IMAGE" central generate ${ORCH} ${EXTRA_ARGS[@]} \
         --monitoring-password=stackrox -i "${MAIN_IMAGE}" --monitoring-persistence-type="${STORAGE}" "${STORAGE}" > "${k8s_dir}/central.zip"
         unzip "${k8s_dir}/central.zip" -d "${unzip_dir}"
     fi

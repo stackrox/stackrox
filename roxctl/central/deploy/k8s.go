@@ -65,7 +65,6 @@ func k8sBasedOrchestrator(k8sConfig *renderer.K8sConfig, shortName, longName str
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
 
 	// Adds k8s specific flags
-	flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", "the deployment tool to use (kubectl, helm)", "central")
 	flagWrap.StringVarP(&k8sConfig.MainImage, "main-image", "i", defaults.MainImage(), "main image to use", "central")
 
 	// Monitoring Flags
@@ -106,6 +105,8 @@ func k8s() *cobra.Command {
 	flagWrap := &persistentFlagsWrapper{FlagSet: c.PersistentFlags()}
 
 	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.LoadBalancerType}, "lb-type", "the method of exposing Central (lb, np, none)", "central")
+
+	flagWrap.Var(&fileFormatWrapper{DeploymentFormat: &k8sConfig.DeploymentFormat}, "output-format", "the deployment tool to use (kubectl, helm)", "central")
 
 	flagWrap.Var(&loadBalancerWrapper{LoadBalancerType: &k8sConfig.Monitoring.LoadBalancerType}, "monitoring-lb-type", "the method of exposing Monitoring (lb, np, none)", "monitoring")
 
