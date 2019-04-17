@@ -18,12 +18,12 @@ enum SubjectKind {
 // Properties of an individual k8s Role or ClusterRole.
 //////////////////////////////////////////
 message K8sRole {
-    string id                               = 1 [(gogoproto.moretags) = "search:\"Role ID,store,hidden\""];
-    string name                             = 2 [(gogoproto.moretags) = "search:\"Role,store\""];
-    string namespace                        = 3 [(gogoproto.moretags) = "search:\"Namespace,store\""];
-    string cluster_id                       = 4 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
-    string cluster_name                     = 5 [(gogoproto.moretags) = "search:\"Cluster,store\""];
-    bool cluster_scope                      = 6;
+    string id                               = 1 [(gogoproto.moretags) = "search:\"Role ID,hidden\""];
+    string name                             = 2 [(gogoproto.moretags) = "search:\"Role\""];
+    string namespace                        = 3 [(gogoproto.moretags) = "search:\"Namespace\""];
+    string cluster_id                       = 4 [(gogoproto.moretags) = "search:\"Cluster ID,hidden\""];
+    string cluster_name                     = 5 [(gogoproto.moretags) = "search:\"Cluster\""];
+    bool cluster_scope                      = 6 [(gogoproto.moretags) = "search:\"Cluster Scope\""];
     map<string, string> labels              = 7 [(gogoproto.moretags) = "search:\"Label\""];
     map<string, string> annotations         = 8 [(gogoproto.moretags) = "search:\"Annotation\""];
     google.protobuf.Timestamp created_at    = 9;
@@ -34,16 +34,15 @@ message K8sRole {
 // Properties of an individual k8s RoleBinding or ClusterRoleBinding.
 //////////////////////////////////////////
 message K8sRoleBinding {
-    string id                               = 1 [(gogoproto.moretags) = "search:\"Binding ID,store,hidden\""];
-    string name                             = 2 [(gogoproto.moretags) = "search:\"Binding,store\""];
-    string namespace                        = 3 [(gogoproto.moretags) = "search:\"Namespace,store\""];
-    string cluster_id                       = 4 [(gogoproto.moretags) = "search:\"Cluster ID,store,hidden\""];
-    string cluster_name                     = 5 [(gogoproto.moretags) = "search:\"Cluster,store\""];
-    bool cluster_scope                      = 6;
+    string id                               = 1 [(gogoproto.moretags) = "search:\"Role Binding ID,hidden\""];
+    string name                             = 2 [(gogoproto.moretags) = "search:\"Role Binding\""];
+    string namespace                        = 3 [(gogoproto.moretags) = "search:\"Namespace\""];
+    string cluster_id                       = 4 [(gogoproto.moretags) = "search:\"Cluster ID,hidden\""];
+    string cluster_name                     = 5 [(gogoproto.moretags) = "search:\"Cluster\""];
+    bool cluster_scope                      = 6 [(gogoproto.moretags) = "search:\"Cluster Scope\""];
     map<string, string> labels              = 7 [(gogoproto.moretags) = "search:\"Label\""];
     map<string, string> annotations         = 8 [(gogoproto.moretags) = "search:\"Annotation\""];
     google.protobuf.Timestamp created_at    = 9;
-
     repeated Subject subjects               = 10;
     string role_id                          = 11;
 }

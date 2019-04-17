@@ -4,11 +4,12 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stretchr/testify/assert"
 )
 
 var defaultLabelMap = map[string]string{
-	defaultLabel.Key: defaultLabel.Value,
+	k8srbac.DefaultLabel.Key: k8srbac.DefaultLabel.Value,
 }
 
 func TestFindsRoleswithoutBindings(t *testing.T) {

@@ -6,7 +6,9 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	search "github.com/stackrox/rox/pkg/search"
 	reflect "reflect"
 )
 
@@ -43,6 +45,19 @@ func (m *MockIndexer) RemoveRoleBinding(arg0 string) error {
 // RemoveRoleBinding indicates an expected call of RemoveRoleBinding
 func (mr *MockIndexerMockRecorder) RemoveRoleBinding(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveRoleBinding", reflect.TypeOf((*MockIndexer)(nil).RemoveRoleBinding), arg0)
+}
+
+// Search mocks base method
+func (m *MockIndexer) Search(arg0 *v1.Query) ([]search.Result, error) {
+	ret := m.ctrl.Call(m, "Search", arg0)
+	ret0, _ := ret[0].([]search.Result)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search
+func (mr *MockIndexerMockRecorder) Search(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockIndexer)(nil).Search), arg0)
 }
 
 // UpsertRoleBinding mocks base method

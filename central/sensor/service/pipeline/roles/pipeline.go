@@ -6,6 +6,7 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -29,28 +30,38 @@ func GetPipeline() pipeline.Fragment {
 // NewPipeline returns a new instance of Pipeline for k8s role
 func NewPipeline(clusters clusterDatastore.DataStore, roles datastore.DataStore) pipeline.Fragment {
 	return &pipelineImpl{
-		clusters:       clusters,
-		roles:          roles,
-		reconcileStore: reconciliation.NewStore(),
+		clusters:        clusters,
+		roles:           roles,
+		reconcileStore:  reconciliation.NewStore(),
+		riskReprocessor: reprocessor.Singleton(),
 	}
 }
 
 type pipelineImpl struct {
-	clusters       clusterDatastore.DataStore
-	roles          datastore.DataStore
-	reconcileStore reconciliation.Store
+	clusters        clusterDatastore.DataStore
+	roles           datastore.DataStore
+	reconcileStore  reconciliation.Store
+	riskReprocessor reprocessor.Loop
 }
 
 func (s *pipelineImpl) Reconcile(clusterID string) error {
+
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	results, err := s.roles.Search(query)
 	if err != nil {
 		return err
 	}
 
-	return reconciliation.Perform(s.reconcileStore, search.ResultsToIDSet(results), "k8sroles", func(id string) error {
+	err = reconciliation.Perform(s.reconcileStore, search.ResultsToIDSet(results), "k8sroles", func(id string) error {
 		return s.runRemovePipeline(central.ResourceAction_REMOVE_RESOURCE, &storage.K8SRole{Id: id})
 	})
+
+	if err != nil {
+		return err
+	}
+
+	s.riskReprocessor.ReprocessRisk()
+	return nil
 }
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {

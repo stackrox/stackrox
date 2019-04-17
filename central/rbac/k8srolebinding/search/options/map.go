@@ -6,5 +6,5 @@ import (
 	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
-// Map is the map of indexed fields in secret and relationship objects.
-var Map = blevesearch.Walk(v1.SearchCategory_ROLEBINDINGS, "k8srolebinding", (*storage.K8SRole)(nil))
+// Map is the map of indexed fields in k8s rolebindings objects.
+var Map = blevesearch.Walk(v1.SearchCategory_ROLEBINDINGS, "k8srolebinding", (*storage.K8SRoleBinding)(nil))

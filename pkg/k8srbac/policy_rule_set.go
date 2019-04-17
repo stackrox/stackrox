@@ -2,12 +2,14 @@ package k8srbac
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 // PolicyRuleSet representss a combined set of PolicyRules.
 type PolicyRuleSet interface {
 	Add(prs ...*storage.PolicyRule)
 	Grants(prs ...*storage.PolicyRule) bool
+	GetPermissionMap() map[string]set.StringSet
 	ToSlice() []*storage.PolicyRule
 }
 
@@ -48,6 +50,32 @@ func (p *policyRuleSet) ToSlice() []*storage.PolicyRule {
 	return p.granted
 }
 
+// GetPermissionSet returns a map of verbs and corresponding resources in the policy rule set
+func (p *policyRuleSet) GetPermissionMap() map[string]set.StringSet {
+	permissionSet := make(map[string]set.StringSet)
+	for _, rule := range p.granted {
+		for _, verb := range rule.GetVerbs() {
+			if !permissionSet[verb].IsInitialized() {
+				permissionSet[verb] = set.NewStringSet()
+			}
+
+			if permissionSet[verb].Contains("*") {
+				continue
+			}
+
+			for _, resource := range rule.GetResources() {
+				if resource == "*" {
+					permissionSet[verb] = set.NewStringSet(resource)
+					break
+				} else {
+					permissionSet[verb].Add(resource)
+				}
+			}
+		}
+	}
+	return permissionSet
+}
+
 func (p *policyRuleSet) add(pr *storage.PolicyRule) {
 	if p.grants(pr) {
 		return // already granted
@@ -58,8 +86,10 @@ func (p *policyRuleSet) add(pr *storage.PolicyRule) {
 	if p.tryMerge(pr) {
 		return // combined with existing rule to expand permissions
 	}
+
 	// Needs to be appended as a new rule.
 	p.granted = append(p.granted, pr)
+
 }
 
 func (p *policyRuleSet) grants(pr *storage.PolicyRule) bool {

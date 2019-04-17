@@ -20,8 +20,9 @@ var (
 
 func initialize() {
 	store := store.New(globaldb.GetGlobalDB())
+	index := index.New(globalindex.GetGlobalIndex())
 	var err error
-	ad, err = New(store, index.New(globalindex.GetGlobalIndex()), search.New(store, globalindex.GetGlobalIndex()))
+	ad, err = New(store, index, search.New(store, index))
 	if err != nil {
 		log.Panicf("Failed to initialize secrets datastore: %s", err)
 	}

@@ -1,0 +1,204 @@
+package utils
+
+import (
+	"testing"
+
+	"github.com/golang/mock/gomock"
+	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
+	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestIsClusterAdmin(t *testing.T) {
+	cases := []struct {
+		name          string
+		inputRoles    []*storage.K8SRole
+		inputBindings []*storage.K8SRoleBinding
+		inputSubject  *storage.Subject
+		expected      bool
+	}{
+		{
+			name: "Cluster admin true",
+			inputRoles: []*storage.K8SRole{
+				{
+					Id:           "role1",
+					Name:         "cluster-admin",
+					ClusterScope: true,
+					ClusterId:    "cluster",
+				},
+			},
+			inputBindings: []*storage.K8SRoleBinding{
+				{
+					RoleId: "role1",
+					Subjects: []*storage.Subject{
+						{
+							Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+							Name: "admin",
+						},
+					},
+					ClusterScope: true,
+					ClusterId:    "cluster",
+				},
+			},
+			inputSubject: &storage.Subject{
+				Name: "admin",
+				Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+			},
+			expected: true,
+		},
+
+		{
+			name: "Cluster admin false",
+			inputRoles: []*storage.K8SRole{
+				{
+					Id:           "role1",
+					Name:         "not-cluster-admin",
+					ClusterId:    "cluster",
+					ClusterScope: true,
+					Rules: []*storage.PolicyRule{
+						{
+							Verbs: []string{
+								"Get",
+							},
+							ApiGroups: []string{
+								"custom",
+							},
+							Resources: []string{
+								"pods",
+							},
+						},
+					},
+				},
+			},
+			inputBindings: []*storage.K8SRoleBinding{
+				{
+					RoleId:    "role1",
+					ClusterId: "cluster",
+					Subjects: []*storage.Subject{
+						{
+							Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+							Name: "not-admin",
+						},
+					},
+					ClusterScope: true,
+				},
+			},
+			inputSubject: &storage.Subject{
+				Name: "not-admin",
+				Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+			},
+			expected: false,
+		},
+	}
+
+	mockCtrl := gomock.NewController(t)
+	mockBindingDatastore := bindingMocks.NewMockDataStore(mockCtrl)
+	mockRoleDatastore := roleMocks.NewMockDataStore(mockCtrl)
+
+	clusterScopeQuery := search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, "cluster").
+		AddBools(search.ClusterScope, true).ProtoQuery()
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			mockBindingDatastore.EXPECT().SearchRawRoleBindings(clusterScopeQuery).Return(c.inputBindings, nil).AnyTimes()
+			mockRoleDatastore.EXPECT().GetRole("role1").Return(c.inputRoles[0], true, nil).AnyTimes()
+
+			evaluator := NewClusterPermissionEvaluator("cluster", mockRoleDatastore, mockBindingDatastore)
+			assert.Equal(t, evaluator.IsClusterAdmin(c.inputSubject), c.expected)
+		})
+	}
+
+}
+
+func TestClusterPermissionsForSubject(t *testing.T) {
+	cases := []struct {
+		name          string
+		inputRoles    []*storage.K8SRole
+		inputBindings []*storage.K8SRoleBinding
+		inputSubject  *storage.Subject
+		expected      []*storage.PolicyRule
+	}{
+
+		{
+			name: "get all pods",
+			inputRoles: []*storage.K8SRole{
+				{
+					Id:           "role1",
+					Name:         "get-pods-role",
+					ClusterId:    "cluster",
+					ClusterScope: true,
+					Rules: []*storage.PolicyRule{
+						{
+							Verbs: []string{
+								"get",
+							},
+							ApiGroups: []string{
+								"",
+							},
+							Resources: []string{
+								"pods",
+							},
+						},
+					},
+				},
+			},
+			inputBindings: []*storage.K8SRoleBinding{
+				{
+					RoleId:    "role1",
+					ClusterId: "cluster",
+					Subjects: []*storage.Subject{
+						{
+							Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+							Name: "subject",
+						},
+					},
+					ClusterScope: true,
+				},
+				{
+					RoleId:    "role1",
+					ClusterId: "cluster",
+					Subjects: []*storage.Subject{
+						{
+							Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+							Name: "not-admin",
+						},
+					},
+					ClusterScope: true,
+				},
+			},
+			inputSubject: &storage.Subject{
+				Name: "subject",
+				Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+			},
+			expected: []*storage.PolicyRule{
+				{
+					Verbs:     []string{"get"},
+					Resources: []string{"pods"},
+					ApiGroups: []string{""},
+				},
+			},
+		},
+	}
+
+	mockCtrl := gomock.NewController(t)
+	mockBindingDatastore := bindingMocks.NewMockDataStore(mockCtrl)
+	mockRoleDatastore := roleMocks.NewMockDataStore(mockCtrl)
+
+	clusterScopeQuery := search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, "cluster").
+		AddBools(search.ClusterScope, true).ProtoQuery()
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			mockBindingDatastore.EXPECT().SearchRawRoleBindings(clusterScopeQuery).Return(c.inputBindings, nil).AnyTimes()
+			mockRoleDatastore.EXPECT().GetRole("role1").Return(c.inputRoles[0], true, nil).AnyTimes()
+
+			evaluator := NewClusterPermissionEvaluator("cluster", mockRoleDatastore, mockBindingDatastore)
+			assert.Equal(t, c.expected, evaluator.ForSubject(c.inputSubject).ToSlice())
+		})
+	}
+
+}

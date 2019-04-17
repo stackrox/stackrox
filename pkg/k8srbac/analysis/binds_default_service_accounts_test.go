@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,7 +16,7 @@ func TestFindsBindingsForDefaultServiceAccounts(t *testing.T) {
 			Subjects: []*storage.Subject{
 				{
 					Kind: storage.SubjectKind_SERVICE_ACCOUNT,
-					Name: defaultServiceAccountName,
+					Name: k8srbac.DefaultServiceAccountName,
 				},
 			},
 		},
@@ -24,7 +25,7 @@ func TestFindsBindingsForDefaultServiceAccounts(t *testing.T) {
 			Subjects: []*storage.Subject{
 				{
 					Kind: storage.SubjectKind_SERVICE_ACCOUNT,
-					Name: defaultServiceAccountName,
+					Name: k8srbac.DefaultServiceAccountName,
 				},
 			},
 		},

@@ -6,6 +6,7 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -29,28 +30,38 @@ func GetPipeline() pipeline.Fragment {
 // NewPipeline returns a new instance of Pipeline for k8s role bindings
 func NewPipeline(clusters clusterDatastore.DataStore, bindings datastore.DataStore) pipeline.Fragment {
 	return &pipelineImpl{
-		clusters:       clusters,
-		bindings:       bindings,
-		reconcileStore: reconciliation.NewStore(),
+		clusters:        clusters,
+		bindings:        bindings,
+		reconcileStore:  reconciliation.NewStore(),
+		riskReprocessor: reprocessor.Singleton(),
 	}
 }
 
 type pipelineImpl struct {
-	clusters       clusterDatastore.DataStore
-	bindings       datastore.DataStore
-	reconcileStore reconciliation.Store
+	clusters        clusterDatastore.DataStore
+	bindings        datastore.DataStore
+	reconcileStore  reconciliation.Store
+	riskReprocessor reprocessor.Loop
 }
 
 func (s *pipelineImpl) Reconcile(clusterID string) error {
+
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 	results, err := s.bindings.Search(query)
 	if err != nil {
 		return err
 	}
 
-	return reconciliation.Perform(s.reconcileStore, search.ResultsToIDSet(results), "k8srolebindings", func(id string) error {
+	err = reconciliation.Perform(s.reconcileStore, search.ResultsToIDSet(results), "k8srolebindings", func(id string) error {
 		return s.runRemovePipeline(central.ResourceAction_REMOVE_RESOURCE, &storage.K8SRoleBinding{Id: id})
 	})
+
+	if err != nil {
+		return err
+	}
+
+	s.riskReprocessor.ReprocessRisk()
+	return nil
 }
 
 func (s *pipelineImpl) Match(msg *central.MsgFromSensor) bool {
@@ -135,12 +146,12 @@ func (s *pipelineImpl) enrichCluster(binding *storage.K8SRoleBinding) error {
 	return nil
 }
 
-func (s *pipelineImpl) persistRoleBinding(action central.ResourceAction, role *storage.K8SRoleBinding) error {
+func (s *pipelineImpl) persistRoleBinding(action central.ResourceAction, binding *storage.K8SRoleBinding) error {
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE:
-		return s.bindings.UpsertRoleBinding(role)
+		return s.bindings.UpsertRoleBinding(binding)
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.bindings.RemoveRoleBinding(role.GetId())
+		return s.bindings.RemoveRoleBinding(binding.GetId())
 	default:
 		return fmt.Errorf("Event action '%s' for k8s role binding does not exist", action)
 	}

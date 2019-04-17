@@ -6,7 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// SubjectSet holds a deduplicating set of Subjects.
+// SubjectSet holds a deduplicated set of Subjects.
 type SubjectSet interface {
 	Add(subs ...*storage.Subject)
 	Contains(sub ...*storage.Subject) bool

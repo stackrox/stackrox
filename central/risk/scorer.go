@@ -1,9 +1,12 @@
 package risk
 
 import (
+	roleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	bindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	saStore "github.com/stackrox/rox/central/serviceaccount/datastore"
+
 	"github.com/stackrox/rox/central/risk/getters"
 	"github.com/stackrox/rox/central/risk/multipliers"
-	"github.com/stackrox/rox/central/serviceaccount/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
@@ -42,7 +45,7 @@ func NewScorer(alertGetter getters.AlertGetter) Scorer {
 
 	if features.K8sRBAC.Enabled() {
 		scoreImpl.ConfiguredMultipliers = append(scoreImpl.ConfiguredMultipliers,
-			multipliers.NewSecretAutomount(datastore.Singleton()))
+			multipliers.NewSAPermissionsMultiplier(roleStore.Singleton(), bindingStore.Singleton(), saStore.Singleton()))
 	}
 
 	return scoreImpl

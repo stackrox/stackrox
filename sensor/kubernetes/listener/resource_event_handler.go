@@ -24,6 +24,12 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 
 	namespaceInformer := sif.Core().V1().Namespaces().Informer()
 	secretInformer := sif.Core().V1().Secrets().Informer()
+	saInformer := sif.Core().V1().ServiceAccounts().Informer()
+
+	roleInformer := sif.Rbac().V1().Roles().Informer()
+	clusterRoleInformer := sif.Rbac().V1().ClusterRoles().Informer()
+	roleBindingInformer := sif.Rbac().V1().RoleBindings().Informer()
+	clusterRoleBindingInformer := sif.Rbac().V1().ClusterRoleBindings().Informer()
 
 	wg := &concurrency.WaitGroup{}
 
@@ -31,11 +37,19 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 	handle(namespaceInformer, dispatchers.ForNamespaces(), output, nil, wg, stopSignal)
 	handle(podInformer.Informer(), dispatchers.ForDeployments(kubernetes.Pod), output, &treatCreatesAsUpdates, wg, stopSignal)
 	handle(secretInformer, dispatchers.ForSecrets(), output, nil, wg, stopSignal)
+	handle(saInformer, dispatchers.ForServiceAccounts(), output, nil, wg, stopSignal)
+
+	// RBAC dispatchers handles multiple sets of data
+	handle(roleInformer, dispatchers.ForRoles(), output, nil, wg, stopSignal)
+	handle(clusterRoleInformer, dispatchers.ForClusterRoles(), output, nil, wg, stopSignal)
+	handle(roleBindingInformer, dispatchers.ForRoleBindings(), output, nil, wg, stopSignal)
+	handle(clusterRoleBindingInformer, dispatchers.ForClusterRoleBindings(), output, nil, wg, stopSignal)
 
 	sif.Start(stopSignal.Done())
 
-	// Run the pod and namespace informers first since other handlers rely on their outputs.
-	informersToSync := []cache.SharedInformer{podInformer.Informer(), namespaceInformer, secretInformer}
+	// Run the pod and namespace and rbac object informers first since other handlers rely on their outputs.
+	informersToSync := []cache.SharedInformer{podInformer.Informer(), namespaceInformer, secretInformer,
+		saInformer, roleInformer, clusterRoleInformer, roleBindingInformer, clusterRoleBindingInformer}
 	syncFuncs := make([]cache.InformerSynced, len(informersToSync))
 	for i, informer := range informersToSync {
 		syncFuncs[i] = informer.HasSynced
@@ -46,13 +60,6 @@ func handleAllEvents(sif informers.SharedInformerFactory, osf externalversions.S
 	handle(sif.Networking().V1().NetworkPolicies().Informer(), dispatchers.ForNetworkPolicies(), output, nil, wg, stopSignal)
 	handle(sif.Core().V1().Nodes().Informer(), dispatchers.ForNodes(), output, nil, wg, stopSignal)
 	handle(sif.Core().V1().Services().Informer(), dispatchers.ForServices(), output, nil, wg, stopSignal)
-	handle(sif.Core().V1().ServiceAccounts().Informer(), dispatchers.ForServiceAccounts(), output, nil, wg, stopSignal)
-
-	// RBAC dispatchers handles multiple sets of data
-	handle(sif.Rbac().V1().Roles().Informer(), dispatchers.ForRoles(), output, nil, wg, stopSignal)
-	handle(sif.Rbac().V1().ClusterRoles().Informer(), dispatchers.ForClusterRoles(), output, nil, wg, stopSignal)
-	handle(sif.Rbac().V1().RoleBindings().Informer(), dispatchers.ForRoleBindings(), output, nil, wg, stopSignal)
-	handle(sif.Rbac().V1().ClusterRoleBindings().Informer(), dispatchers.ForClusterRoleBindings(), output, nil, wg, stopSignal)
 
 	// Deployment types.
 	handle(sif.Extensions().V1beta1().DaemonSets().Informer(), dispatchers.ForDeployments(kubernetes.DaemonSet), output, &treatCreatesAsUpdates, wg, stopSignal)

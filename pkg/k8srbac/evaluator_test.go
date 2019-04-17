@@ -7,6 +7,150 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestFindsBindingsForClusterAdmin(t *testing.T) {
+	inputRoles := []*storage.K8SRole{
+		{
+			Id:           "role1",
+			Name:         clusterAdmin,
+			ClusterScope: true,
+		},
+		{
+			Id:           "role2",
+			Name:         "some other name",
+			ClusterScope: true,
+		},
+		{
+			Id:           "role3",
+			Name:         "effective admin",
+			ClusterScope: true,
+			Rules: []*storage.PolicyRule{
+				{
+					ApiGroups: []string{
+						"",
+					},
+					Resources: []string{
+						"*",
+					},
+					Verbs: []string{
+						"*",
+					},
+				},
+			},
+		},
+		{
+			Id:           "role4",
+			Name:         "another effective admin",
+			ClusterScope: true,
+			Rules: []*storage.PolicyRule{
+				{
+					ApiGroups: []string{
+						"*",
+					},
+					Resources: []string{
+						"*",
+					},
+					Verbs: []string{
+						"*",
+					},
+				},
+			},
+		},
+		{
+			Id:           "role5",
+			Name:         "can get anything",
+			ClusterScope: true,
+			Rules: []*storage.PolicyRule{
+				{
+					ApiGroups: []string{
+						"*",
+					},
+					Resources: []string{
+						"*",
+					},
+					Verbs: []string{
+						"Get",
+					},
+				},
+			},
+		},
+	}
+	inputBindings := []*storage.K8SRoleBinding{
+		{
+			RoleId: "role1",
+			Labels: map[string]string{
+				"kubernetes.io/bootstrapping": "rbac-defaults",
+			}, // Default binding, should be ignored
+			Subjects: []*storage.Subject{
+				{
+					Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+					Name: DefaultServiceAccountName,
+				},
+			},
+		},
+		{
+			RoleId: "role1",
+			Subjects: []*storage.Subject{
+				{
+					Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+					Name: "admin",
+				},
+			},
+		},
+		{
+			RoleId: "role2",
+			Subjects: []*storage.Subject{
+				{
+					Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+					Name: "some non admin account",
+				},
+			},
+		},
+		{
+			RoleId: "role3",
+			Subjects: []*storage.Subject{
+				{
+					Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+					Name: "effective admin",
+				},
+			},
+		},
+		{
+			RoleId: "role4",
+			Subjects: []*storage.Subject{
+				{
+					Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+					Name: "another effective admin",
+				},
+			},
+		},
+		{
+			RoleId: "role5",
+			Subjects: []*storage.Subject{
+				{
+					Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+					Name: "analyst",
+				},
+			},
+		},
+	}
+	expected := []*storage.Subject{
+		{
+			Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+			Name: "admin",
+		},
+		{
+			Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+			Name: "another effective admin",
+		},
+		{
+			Kind: storage.SubjectKind_SERVICE_ACCOUNT,
+			Name: "effective admin",
+		},
+	}
+
+	assert.Equal(t, expected, getSubjectsGrantedClusterAdmin(inputRoles, inputBindings))
+}
+
 func TestFindsRoleswithoutBindings(t *testing.T) {
 	inputRoles := []*storage.K8SRole{
 		{
@@ -82,11 +226,13 @@ func TestFindsRoleswithoutBindings(t *testing.T) {
 			},
 		},
 	}
+
 	inputSubject := &storage.Subject{
 		Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
 		Namespace: "stackrox",
 		Name:      "robot",
 	}
+
 	expected := []*storage.PolicyRule{
 		{
 			ApiGroups: []string{""},
@@ -95,6 +241,6 @@ func TestFindsRoleswithoutBindings(t *testing.T) {
 		},
 	}
 
-	eval := NewEvaluator(inputRoles, inputBindings)
-	assert.Equal(t, expected, eval.ForSubject(inputSubject).ToSlice())
+	evaluator := NewEvaluator(inputRoles, inputBindings)
+	assert.Equal(t, expected, evaluator.ForSubject(inputSubject).ToSlice())
 }

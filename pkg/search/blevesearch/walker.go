@@ -28,6 +28,8 @@ var (
 		"ServiceAccount":   v1.SearchCategory_SERVICE_ACCOUNTS,
 		"Alert":            v1.SearchCategory_ALERTS,
 		"Policy":           v1.SearchCategory_POLICIES,
+		"Role":             v1.SearchCategory_ROLES,
+		"Role Binding":     v1.SearchCategory_ROLEBINDINGS,
 	}
 )
 

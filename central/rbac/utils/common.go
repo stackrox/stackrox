@@ -1,0 +1,26 @@
+package utils
+
+import (
+	"github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/set"
+)
+
+func getRolesForBindings(roleStore datastore.DataStore, bindings []*storage.K8SRoleBinding) []*storage.K8SRole {
+	roleIDs := set.NewStringSet()
+	for _, binding := range bindings {
+		roleID := binding.GetRoleId()
+		if roleID != "" {
+			roleIDs.Add(roleID)
+		}
+	}
+
+	roles := make([]*storage.K8SRole, 0, roleIDs.Cardinality())
+	for _, roleID := range roleIDs.AsSlice() {
+		role, exists, err := roleStore.GetRole(roleID)
+		if exists && err == nil {
+			roles = append(roles, role)
+		}
+	}
+	return roles
+}

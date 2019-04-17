@@ -261,6 +261,58 @@ func TestDeduplicatesPolicyRulesCorrectly(t *testing.T) {
 				},
 			},
 		},
+
+		{
+			name: "boo",
+			input: []*storage.PolicyRule{
+				{
+					Verbs: []string{
+						"get",
+					},
+					ApiGroups: []string{
+						"",
+					},
+					Resources: []string{
+						"*",
+					},
+				},
+				{
+					Verbs: []string{
+						"create",
+					},
+					ApiGroups: []string{
+						"",
+					},
+					Resources: []string{
+						"deployments",
+					},
+				},
+			},
+			expected: []*storage.PolicyRule{
+				{
+					Verbs: []string{
+						"get",
+					},
+					ApiGroups: []string{
+						"",
+					},
+					Resources: []string{
+						"*",
+					},
+				},
+				{
+					Verbs: []string{
+						"create",
+					},
+					ApiGroups: []string{
+						"",
+					},
+					Resources: []string{
+						"deployments",
+					},
+				},
+			},
+		},
 	}
 
 	for _, c := range cases {
@@ -643,6 +695,47 @@ func TestChecksPolicyRuleContentsCorrectly(t *testing.T) {
 			},
 			expected: true,
 		},
+		{
+			name: "Doesn't match multiple wildcards",
+			initial: []*storage.PolicyRule{
+				{
+					Verbs: []string{
+						"*",
+					},
+					ApiGroups: []string{
+						"custom",
+					},
+					Resources: []string{
+						"deployments",
+					},
+				},
+				{
+					Verbs: []string{
+						"*",
+					},
+					ApiGroups: []string{
+						"*",
+					},
+					Resources: []string{
+						"pods",
+					},
+				},
+			},
+			grants: &storage.PolicyRule{
+				Verbs: []string{
+					"Get",
+					"Put",
+				},
+				ApiGroups: []string{
+					"custom2",
+				},
+				Resources: []string{
+					"deployments",
+				},
+			},
+			expected: false,
+		},
+
 		{
 			name: "Doesn't match multiple wildcards",
 			initial: []*storage.PolicyRule{

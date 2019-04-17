@@ -19,7 +19,7 @@ func getRedundantRoleBindings(roleBindings []*storage.K8SRoleBinding) map[*stora
 	// Build a subject set for each of the role bindings.
 	bindingsToSubjects := make(map[*storage.K8SRoleBinding]k8srbac.SubjectSet, len(roleBindings))
 	for _, binding := range roleBindings {
-		if !IsDefaultRoleBinding(binding) {
+		if !k8srbac.IsDefaultRoleBinding(binding) {
 			bindingsToSubjects[binding] = k8srbac.NewSubjectSet(binding.GetSubjects()...)
 		}
 	}
@@ -28,13 +28,13 @@ func getRedundantRoleBindings(roleBindings []*storage.K8SRoleBinding) map[*stora
 	redundants := make(map[*storage.K8SRoleBinding]*MatchingRoleBindings)
 	for sourceIndex, source := range roleBindings {
 		sourceSet := bindingsToSubjects[source]
-		if sourceSet == nil || IsDefaultRoleBinding(source) {
+		if sourceSet == nil || k8srbac.IsDefaultRoleBinding(source) {
 			continue
 		}
 
 		for _, target := range roleBindings[sourceIndex+1:] {
 			targetSet := bindingsToSubjects[target]
-			if targetSet == nil || IsDefaultRoleBinding(target) || target.GetRoleId() != source.GetRoleId() {
+			if targetSet == nil || k8srbac.IsDefaultRoleBinding(target) || target.GetRoleId() != source.GetRoleId() {
 				continue
 			}
 

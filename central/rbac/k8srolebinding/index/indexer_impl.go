@@ -5,10 +5,13 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/rbac/k8srolebinding/search/options"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/batcher"
 	ops "github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/blevesearch"
 )
 
 const batchSize = 5000
@@ -25,6 +28,10 @@ func wrap(binding *storage.K8SRoleBinding) *roleBindingWrapper {
 
 type indexerImpl struct {
 	index bleve.Index
+}
+
+func (i *indexerImpl) Search(q *v1.Query) ([]search.Result, error) {
+	return blevesearch.RunSearchRequest(v1.SearchCategory_ROLEBINDINGS, q, i.index, options.Map)
 }
 
 func (i *indexerImpl) UpsertRoleBinding(binding *storage.K8SRoleBinding) error {

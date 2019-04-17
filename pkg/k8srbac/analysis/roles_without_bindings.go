@@ -2,6 +2,7 @@ package analysis
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -15,7 +16,7 @@ func getRolesWithoutBindings(roles []*storage.K8SRole, roleBindings []*storage.K
 
 	var rolesWithoutRef []*storage.K8SRole
 	for _, role := range roles {
-		if !IsDefaultRole(role) && !referencedRoles.Contains(role.GetId()) {
+		if !k8srbac.IsDefaultRole(role) && !referencedRoles.Contains(role.GetId()) {
 			rolesWithoutRef = append(rolesWithoutRef, role)
 		}
 	}

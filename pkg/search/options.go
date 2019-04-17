@@ -13,11 +13,11 @@ type FieldLabel string
 var (
 	FieldLabelSet = set.NewStringSet()
 
-	Cluster   = newFieldLabel("Cluster")
-	ClusterID = newFieldLabel("Cluster ID")
-	Namespace = newFieldLabel("Namespace")
-	Label     = newFieldLabel("Label")
-	PodLabel  = newFieldLabel("Pod Label")
+	Cluster      = newFieldLabel("Cluster")
+	ClusterID    = newFieldLabel("Cluster ID")
+	ClusterScope = newFieldLabel("Cluster Scope")
+	Label        = newFieldLabel("Label")
+	PodLabel     = newFieldLabel("Pod Label")
 
 	PolicyID       = newFieldLabel("Policy ID")
 	Enforcement    = newFieldLabel("Enforcement")
@@ -120,6 +120,7 @@ var (
 
 	// Namespace Search Fields
 	NamespaceID = newFieldLabel("Namespace ID")
+	Namespace   = newFieldLabel("Namespace")
 
 	// Role Search Fields
 	RoleID   = newFieldLabel("Role ID")

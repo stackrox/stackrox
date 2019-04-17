@@ -1,7 +1,7 @@
 package search
 
 import (
-	"github.com/blevesearch/bleve"
+	"github.com/stackrox/rox/central/rbac/k8srolebinding/index"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +22,7 @@ type Searcher interface {
 }
 
 // New returns a new instance of Searcher for the given storage and index.
-func New(storage store.Store, index bleve.Index) Searcher {
+func New(storage store.Store, index index.Indexer) Searcher {
 	return &searcherImpl{
 		storage: storage,
 		index:   index,
