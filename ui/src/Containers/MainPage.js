@@ -116,7 +116,11 @@ class MainPage extends Component {
                     <ProtectedRoute path={accessControlPath} component={AsyncAccessControlPage} />
                     <ProtectedRoute path={apidocsPath} component={AsyncApiDocsPage} />
                     {process.env.REACT_APP_ROX_LICENSE_ENFORCEMENT === 'true' && (
-                        <ProtectedRoute path={licensePath} component={AsyncLicensePage} />
+                        <ProtectedRoute
+                            path={licensePath}
+                            component={AsyncLicensePage}
+                            requiredPermission="Licenses"
+                        />
                     )}
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
