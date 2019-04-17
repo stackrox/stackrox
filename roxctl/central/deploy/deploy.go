@@ -49,20 +49,26 @@ func generateJWTSigningKey(fileMap map[string][]byte) error {
 	return nil
 }
 
-func generateMTLSFiles(fileMap map[string][]byte) (cert, key []byte, err error) {
+func generateMTLSFiles(fileMap map[string][]byte) (caCert, caKey []byte, err error) {
 	// Add MTLS files
 	req := csr.CertificateRequest{
 		CN:         "StackRox Certificate Authority",
 		KeyRequest: csr.NewBasicKeyRequest(),
 	}
-	cert, _, key, err = initca.New(&req)
+	caCert, _, caKey, err = initca.New(&req)
 	if err != nil {
-		err = errors.Wrap(err, "could not generate keypair")
-		return
+		return nil, nil, errors.Wrap(err, "could not generate keypair")
 	}
-	fileMap["ca.pem"] = cert
-	fileMap["ca-key.pem"] = key
-	return
+	fileMap["ca.pem"] = caCert
+	fileMap["ca-key.pem"] = caKey
+
+	cert, err := mtls.IssueNewCertFromCA(mtls.CentralSubject, caCert, caKey)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "could not issue central cert")
+	}
+	fileMap["cert.pem"] = cert.CertPEM
+	fileMap["key.pem"] = cert.KeyPEM
+	return caCert, caKey, nil
 }
 
 func generateMonitoringFiles(fileMap map[string][]byte, caCert, caKey []byte) error {

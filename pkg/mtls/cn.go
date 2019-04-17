@@ -18,7 +18,7 @@ type Identity struct {
 	Expiry  time.Time
 }
 
-// IdentityFromCert returns an mTLS identity for the given certificate.
+// IdentityFromCert returns an mTLS (mutual TLS) identity for the given certificate.
 func IdentityFromCert(cert requestinfo.CertInfo) Identity {
 	return Identity{
 		Subject: SubjectFromCommonName(cert.Subject.CommonName),

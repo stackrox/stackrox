@@ -52,6 +52,8 @@ secrets:
       ca.pem: {{index .SecretsBase64Map "ca.pem"}}
       ca-key.pem: {{index .SecretsBase64Map "ca-key.pem"}}
       jwt-key.der: {{index .SecretsBase64Map "jwt-key.der"}}
+      cert.pem: {{index .SecretsBase64Map "cert.pem"}}
+      key.pem: {{index .SecretsBase64Map "key.pem"}}
 
   {{if ne (index .SecretsBase64Map "htpasswd") ""}}
   htpasswd:

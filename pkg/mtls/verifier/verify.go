@@ -5,12 +5,35 @@ import (
 	"crypto/x509"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/mtls"
 )
 
 // A TLSConfigurer instantiates the appropriate TLS config for your environment.
 type TLSConfigurer interface {
 	TLSConfig() (*tls.Config, error)
+}
+
+// FirstWorkingConfigurer is a TLS configurer that takes the TLS config from the first working
+// TLS configurer contained in the wrapped slice.
+type FirstWorkingConfigurer []TLSConfigurer
+
+// TLSConfig returns the config from the first TLS configurer in the wrapped slice that returned a
+// non-error result.
+func (c FirstWorkingConfigurer) TLSConfig() (*tls.Config, error) {
+	if len(c) == 0 {
+		return nil, errors.New("no TLS configurer specified")
+	}
+
+	errs := errorhelpers.NewErrorList("determining TLS configuration")
+	for _, configurer := range c {
+		cfg, err := configurer.TLSConfig()
+		if err == nil {
+			return cfg, nil
+		}
+		errs.AddError(err)
+	}
+	return nil, errs.ToError()
 }
 
 // A CA issues itself a certificate and serves it.

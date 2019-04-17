@@ -292,7 +292,7 @@ func startGRPCServer(factory serviceFactory) {
 
 	config := pkgGRPC.Config{
 		CustomRoutes:       factory.CustomRoutes(),
-		TLS:                verifier.CA{},
+		TLS:                verifier.FirstWorkingConfigurer{verifier.NonCA{}, verifier.CA{}},
 		IdentityExtractors: idExtractors,
 		AuthProviders:      registry,
 	}
