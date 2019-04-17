@@ -118,7 +118,7 @@ func (suite *PipelineTestSuite) TestPersistDeploymentRemove() {
 	events[0].Action = central.ResourceAction_REMOVE_RESOURCE
 
 	// Expect that our enforcement generator is called with expected data.
-	suite.deployments.EXPECT().RemoveDeployment(events[0].GetDeployment().GetId()).Return(nil)
+	suite.deployments.EXPECT().RemoveDeployment("", events[0].GetDeployment().GetId()).Return(nil)
 
 	// Call function.
 	tested := &persistDeploymentImpl{

@@ -22,6 +22,10 @@ type flowStoreImpl struct {
 
 var updatedTSKey = []byte("\x00")
 
+func (s *flowStoreImpl) RemoveFlowsForDeployment(id string) error {
+	panic("implement me")
+}
+
 // GetAllFlows returns all the flows in the store.
 func (s *flowStoreImpl) GetAllFlows(since *types.Timestamp) (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
 	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")

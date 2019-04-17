@@ -29,7 +29,7 @@ func (s *persistDeploymentImpl) do(action central.ResourceAction, deployment *st
 			return err
 		}
 	case central.ResourceAction_REMOVE_RESOURCE:
-		if err := s.deployments.RemoveDeployment(deployment.GetId()); err != nil {
+		if err := s.deployments.RemoveDeployment(deployment.GetClusterId(), deployment.GetId()); err != nil {
 			log.Errorf("unable to remove deployment %s: %s", deployment.GetId(), err)
 			return err
 		}

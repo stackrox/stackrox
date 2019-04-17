@@ -94,7 +94,7 @@ func TestAutocomplete(t *testing.T) {
 	deploymentName2.Labels = map[string]string{"hello": "hi", "hey": "ho"}
 	require.NoError(t, deploymentIndexer.AddDeployment(deploymentName2))
 
-	ds := deploymentDatastore.New(nil, deploymentIndexer, nil, nil)
+	ds := deploymentDatastore.New(nil, deploymentIndexer, nil, nil, nil)
 
 	service := NewBuilder().
 		WithAlertStore(alertMocks.NewMockDataStore(mockCtrl)).

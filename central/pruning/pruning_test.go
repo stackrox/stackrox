@@ -67,7 +67,7 @@ func generateDataStructures(t *testing.T) (imageStore.Store, imageIndexer.Indexe
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
 	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any()).Return((error)(nil))
 
-	deployments := deploymentDatastore.New(deploymentStore, deploymentIndexer, deploymentSearcher, mockProcessDataStore)
+	deployments := deploymentDatastore.New(deploymentStore, deploymentIndexer, deploymentSearcher, mockProcessDataStore, nil)
 	return imageStore, imageIndexer, images, deployments
 }
 

@@ -65,3 +65,17 @@ func DeletePrefixRange(txn *badger.Txn, keyPrefix []byte) error {
 	}
 	return nil
 }
+
+// Count gets the number of keys with a specific prefix
+func Count(txn *badger.Txn, keyPrefix []byte) int {
+	itOpts := badger.DefaultIteratorOptions
+	itOpts.PrefetchValues = false
+
+	var count int
+	it := txn.NewIterator(itOpts)
+	defer it.Close()
+	for it.Seek(keyPrefix); it.ValidForPrefix(keyPrefix); it.Next() {
+		count++
+	}
+	return count
+}

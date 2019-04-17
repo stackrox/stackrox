@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/search"
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/globaldb"
+	flowStore "github.com/stackrox/rox/central/networkflow/store"
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -32,16 +33,17 @@ type DataStore interface {
 	UpsertDeployment(deployment *storage.Deployment) error
 	// UpdateDeployment updates a deployment, erroring out if it doesn't exist.
 	UpdateDeployment(deployment *storage.Deployment) error
-	RemoveDeployment(id string) error
+	RemoveDeployment(clusterID, id string) error
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.
-func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, processDataStore processDataStore.DataStore) DataStore {
+func New(storage store.Store, indexer index.Indexer, searcher search.Searcher, processDataStore processDataStore.DataStore, networkFlowStore flowStore.ClusterStore) DataStore {
 	return &datastoreImpl{
 		deploymentStore:    storage,
 		deploymentIndexer:  indexer,
 		deploymentSearcher: searcher,
 		processDataStore:   processDataStore,
+		networkFlowStore:   networkFlowStore,
 		keyedMutex:         concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 	}
 }

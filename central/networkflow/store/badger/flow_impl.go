@@ -26,18 +26,21 @@ type flowStoreImpl struct {
 	keyPrefix []byte
 }
 
-var updatedTSKey = []byte("\x00")
+var (
+	updatedTSKey = []byte("\x00")
+	idSeparator  = []byte(":")
+)
 
 // GetAllFlows returns all the flows in the store.
 func (s *flowStoreImpl) GetAllFlows(since *types.Timestamp) (flows []*storage.NetworkFlow, ts types.Timestamp, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
+	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.GetAll, "NetworkFlow")
 	flows, ts, err = s.readAllFlows(since)
 	return flows, ts, err
 }
 
 // GetFlow returns the flow for the source and destination, or nil if none exists.
 func (s *flowStoreImpl) GetFlow(props *storage.NetworkFlowProperties) (flow *storage.NetworkFlow, err error) {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Get, "NetworkFlow")
+	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Get, "NetworkFlow")
 
 	id := s.getID(flow.GetProps())
 
@@ -70,7 +73,8 @@ func (s *flowStoreImpl) UpsertFlows(flows []*storage.NetworkFlow, lastUpdatedTS 
 		kvs = append(kvs, bolthelper.KV{Key: k, Value: v})
 	}
 
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.UpsertAll, "NetworkFlow")
+	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.UpsertAll, "NetworkFlow")
+	defer badgerhelper.UpdateBadgerPrefixSizeMetric(s.db, globalPrefix, "NetworkFlow")
 
 	_, err = badgerhelper.PutAllBatched(s.db, kvs, batchSize)
 	return err
@@ -78,7 +82,8 @@ func (s *flowStoreImpl) UpsertFlows(flows []*storage.NetworkFlow, lastUpdatedTS 
 
 // RemoveFlow removes an flow from the store if it is present.
 func (s *flowStoreImpl) RemoveFlow(props *storage.NetworkFlowProperties) error {
-	defer metrics.SetBoltOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
+	defer metrics.SetBadgerOperationDurationTime(time.Now(), ops.Remove, "NetworkFlow")
+	defer badgerhelper.UpdateBadgerPrefixSizeMetric(s.db, globalPrefix, "NetworkFlow")
 
 	id := s.getID(props)
 
@@ -87,8 +92,31 @@ func (s *flowStoreImpl) RemoveFlow(props *storage.NetworkFlowProperties) error {
 	})
 }
 
+func (s *flowStoreImpl) RemoveFlowsForDeployment(id string) error {
+	defer badgerhelper.UpdateBadgerPrefixSizeMetric(s.db, globalPrefix, "NetworkFlow")
+	idBytes := []byte(id)
+	return s.db.Update(func(tx *badger.Txn) error {
+		return badgerhelper.ForEachOverKeySet(tx, s.keyPrefix, badgerhelper.ForEachOptions{StripKeyPrefix: true, IteratorOptions: &badger.IteratorOptions{PrefetchValues: false}},
+			func(k []byte) error {
+				if bytes.Equal(k, updatedTSKey) {
+					return nil
+				}
+				srcID, dstID := s.getDeploymentIDsFromKey(k)
+				if bytes.Equal(idBytes, srcID) || bytes.Equal(idBytes, dstID) {
+					return tx.Delete(append(s.keyPrefix, k...))
+				}
+				return nil
+			})
+	})
+}
+
 func (s *flowStoreImpl) getID(props *storage.NetworkFlowProperties) []byte {
 	return append(s.keyPrefix, []byte(fmt.Sprintf("%x:%s:%x:%s:%x:%x", props.GetSrcEntity().GetType(), props.GetSrcEntity().GetId(), props.GetDstEntity().GetType(), props.GetDstEntity().GetId(), props.GetDstPort(), props.GetL4Protocol()))...)
+}
+
+func (s *flowStoreImpl) getDeploymentIDsFromKey(id []byte) ([]byte, []byte) {
+	bytesSlices := bytes.Split(id, idSeparator)
+	return bytesSlices[1], bytesSlices[3]
 }
 
 func (s *flowStoreImpl) readAllFlows(since *types.Timestamp) (flows []*storage.NetworkFlow, lastUpdateTS types.Timestamp, err error) {

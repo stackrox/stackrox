@@ -137,7 +137,7 @@ func (ds *datastoreImpl) postRemoveCluster(cluster *storage.Cluster) {
 			}
 		}
 
-		err = ds.dds.RemoveDeployment(deployment.GetId())
+		err = ds.dds.RemoveDeployment(cluster.GetId(), deployment.GetId())
 		if err != nil {
 			log.Errorf("failed to remove deployment %s in deleted cluster: %v", deployment.GetId(), err)
 		}

@@ -103,15 +103,15 @@ func (mr *MockDataStoreMockRecorder) ListDeployments() *gomock.Call {
 }
 
 // RemoveDeployment mocks base method
-func (m *MockDataStore) RemoveDeployment(arg0 string) error {
-	ret := m.ctrl.Call(m, "RemoveDeployment", arg0)
+func (m *MockDataStore) RemoveDeployment(arg0, arg1 string) error {
+	ret := m.ctrl.Call(m, "RemoveDeployment", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveDeployment indicates an expected call of RemoveDeployment
-func (mr *MockDataStoreMockRecorder) RemoveDeployment(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveDeployment", reflect.TypeOf((*MockDataStore)(nil).RemoveDeployment), arg0)
+func (mr *MockDataStoreMockRecorder) RemoveDeployment(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveDeployment", reflect.TypeOf((*MockDataStore)(nil).RemoveDeployment), arg0, arg1)
 }
 
 // Search mocks base method

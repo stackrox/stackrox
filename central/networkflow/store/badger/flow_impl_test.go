@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/badgerhelper"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -120,4 +121,24 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	actualFlows, _, err = suite.tested.GetAllFlows(nil)
 	suite.NoError(err)
 	suite.ElementsMatch(actualFlows, flows)
+}
+
+func TestGetDeploymentIDsFromKey(t *testing.T) {
+	s := &flowStoreImpl{}
+	id := s.getID(&storage.NetworkFlowProperties{
+		SrcEntity: &storage.NetworkEntityInfo{
+			Type: storage.NetworkEntityInfo_DEPLOYMENT,
+			Id:   "id1",
+		},
+		DstEntity: &storage.NetworkEntityInfo{
+			Type: storage.NetworkEntityInfo_INTERNET,
+			Id:   "id2",
+		},
+		DstPort:    8080,
+		L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+	})
+
+	id1, id2 := s.getDeploymentIDsFromKey(id)
+	assert.Equal(t, []byte("id1"), id1)
+	assert.Equal(t, []byte("id2"), id2)
 }

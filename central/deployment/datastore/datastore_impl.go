@@ -5,6 +5,7 @@ import (
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	deploymentSearch "github.com/stackrox/rox/central/deployment/search"
 	deploymentStore "github.com/stackrox/rox/central/deployment/store"
+	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,6 +18,8 @@ type datastoreImpl struct {
 	deploymentStore    deploymentStore.Store
 	deploymentIndexer  deploymentIndex.Indexer
 	deploymentSearcher deploymentSearch.Searcher
+
+	networkFlowStore networkFlowStore.ClusterStore
 
 	processDataStore processDataStore.DataStore
 	keyedMutex       *concurrency.KeyedMutex
@@ -105,14 +108,20 @@ func (ds *datastoreImpl) UpdateDeployment(deployment *storage.Deployment) error 
 }
 
 // RemoveDeployment removes an alert from the deploymentStore and the deploymentIndexer
-func (ds *datastoreImpl) RemoveDeployment(id string) error {
+func (ds *datastoreImpl) RemoveDeployment(clusterID, id string) error {
 	ds.keyedMutex.Lock(id)
 	defer ds.keyedMutex.Unlock(id)
+
 	if err := ds.deploymentStore.RemoveDeployment(id); err != nil {
 		return err
 	}
 	if err := ds.deploymentIndexer.DeleteDeployment(id); err != nil {
 		return err
 	}
-	return ds.processDataStore.RemoveProcessIndicatorsByDeployment(id)
+
+	if err := ds.processDataStore.RemoveProcessIndicatorsByDeployment(id); err != nil {
+		return err
+	}
+	flowStore := ds.networkFlowStore.GetFlowStore(clusterID)
+	return flowStore.RemoveFlowsForDeployment(id)
 }

@@ -74,6 +74,18 @@ func (mr *MockFlowStoreMockRecorder) RemoveFlow(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFlow", reflect.TypeOf((*MockFlowStore)(nil).RemoveFlow), arg0)
 }
 
+// RemoveFlowsForDeployment mocks base method
+func (m *MockFlowStore) RemoveFlowsForDeployment(arg0 string) error {
+	ret := m.ctrl.Call(m, "RemoveFlowsForDeployment", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveFlowsForDeployment indicates an expected call of RemoveFlowsForDeployment
+func (mr *MockFlowStoreMockRecorder) RemoveFlowsForDeployment(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFlowsForDeployment", reflect.TypeOf((*MockFlowStore)(nil).RemoveFlowsForDeployment), arg0)
+}
+
 // UpsertFlows mocks base method
 func (m *MockFlowStore) UpsertFlows(arg0 []*storage.NetworkFlow, arg1 timestamp.MicroTS) error {
 	ret := m.ctrl.Call(m, "UpsertFlows", arg0, arg1)

@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/deployment/store"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
+	flowStore "github.com/stackrox/rox/central/networkflow/store/singleton"
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -32,7 +33,7 @@ func initialize() {
 		log.Panicf("Failed to load deployment index %s", err)
 	}
 
-	ad = New(storage, indexer, searcher, processDataStore.Singleton())
+	ad = New(storage, indexer, searcher, processDataStore.Singleton(), flowStore.Singleton())
 }
 
 // Singleton provides the interface for non-service external interaction.

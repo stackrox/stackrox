@@ -14,4 +14,6 @@ type FlowStore interface {
 
 	UpsertFlows(flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
 	RemoveFlow(props *storage.NetworkFlowProperties) error
+
+	RemoveFlowsForDeployment(id string) error
 }
