@@ -1,11 +1,12 @@
 package timestamp
 
 import (
+	"strconv"
 	"time"
 )
 
 var (
-	buildTimestampRFC3339 string
+	buildTimestampUnixSecs string
 
 	// BuildTimestamp is the time when this binary was built.
 	BuildTimestamp time.Time
@@ -13,7 +14,15 @@ var (
 	BuildTimestampParsingErr error
 )
 
+func parseUnixSecsString(str string) (time.Time, error) {
+	unixSecs, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.Unix(unixSecs, 0), nil
+}
+
 func init() {
 	// Data might not be available when, e.g., running tests via Goland.
-	BuildTimestamp, BuildTimestampParsingErr = time.Parse(time.RFC3339, buildTimestampRFC3339)
+	BuildTimestamp, BuildTimestampParsingErr = parseUnixSecsString(buildTimestampUnixSecs)
 }

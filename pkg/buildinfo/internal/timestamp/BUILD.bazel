@@ -9,6 +9,7 @@ go_library(
     importpath = "github.com/stackrox/rox/pkg/buildinfo/internal/timestamp",
     visibility = ["//visibility:public"],
     x_defs = {
-        "buildTimestampRFC3339": "{BUILD_TIMESTAMP}",
+        # BUILD_TIMESTAMP is a bazel builtin, cf. https://docs.bazel.build/versions/master/user-manual.html#workspace_status
+        "buildTimestampUnixSecs": "{BUILD_TIMESTAMP}",
     },
 )

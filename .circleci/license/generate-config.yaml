@@ -1,0 +1,11 @@
+generators:
+- name: ci-key
+  key:
+    keyResourceId: "projects/stackrox-dev/locations/global/keyRings/licensing-ci/cryptoKeys/ci-license-signer/cryptoKeyVersions/1"
+  limit:
+    maxDuration: 21600000000000
+    allowOffline: true
+    maxNodeLimit: 10
+    allowNoBuildFlavorRestriction: true
+    deploymentEnvironments:
+      - gcp/stackrox-ci

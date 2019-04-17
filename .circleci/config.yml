@@ -6,13 +6,21 @@ defaults: &defaults
         password: $DOCKER_IO_PASSWORD
   working_directory: /go/src/github.com/stackrox/rox
 
-setupBazel: &setupBazel
+setupGoogleAppCreds: &setupGoogleAppCreds
   run:
-    name: Setup Bazel cache access and bazel.rc
+    name: Setup GCloud Service Account
     command: |
       touch /tmp/gcp.json
       chmod 0600 /tmp/gcp.json
       echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" >/tmp/gcp.json
+      echo >>"$BASH_ENV" 'export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json'
+      gcloud auth activate-service-account --key-file /tmp/gcp.json
+      gcloud auth list
+
+setupBazel: &setupBazel
+  run:
+    name: Setup Bazel cache access and bazel.rc
+    command: |
       cp tools/ci-bazel.rc .bazelrc
 
 depCacheKey: &depCacheKey 'v1-rox-go-pkg-dep-{{ checksum "Gopkg.lock" }}'
@@ -91,6 +99,13 @@ setupGCP: &setupGCP
       gcloud config set compute/region us-central1
       gcloud config unset compute/zone
       gcloud config set core/disable_prompts True
+
+setupLicense: &setupLicense
+  run:
+    name: Creating License Key
+    command: |
+      ROX_LICENSE_KEY="$(.circleci/license/generate-license-key.sh)"
+      echo "export ROX_LICENSE_KEY=${ROX_LICENSE_KEY}" >>"${BASH_ENV}"
 
 createGKE: &createGKE
   run:
@@ -352,6 +367,7 @@ jobs:
     steps:
       - checkout
       - *restoreDep
+      - *setupGoogleAppCreds
       - *setupBazel
       - run:
           name: Build the CLI
@@ -375,6 +391,7 @@ jobs:
     steps:
       - checkout
       - *restoreDep
+      - *setupGoogleAppCreds
       - *setupBazel
 
       - run:
@@ -521,6 +538,7 @@ jobs:
       - *refreshAlpineBaseImage
 
       - *restoreDep
+      - *setupGoogleAppCreds
       - *setupBazel
 
       - run:
@@ -548,6 +566,7 @@ jobs:
       - *restoreGradle
       - *restoreUI
 
+      - *setupGoogleAppCreds
       - *setupBazel
 
       - run:
@@ -593,6 +612,8 @@ jobs:
       - checkout
 
       - *restoreDep
+
+      - *setupGoogleAppCreds
       - *setupBazel
 
       - run:
@@ -642,6 +663,8 @@ jobs:
           name: Export Trusted CA file
           command: echo "export TRUSTED_CA_FILE=$(pwd)/tests/bad-ca/superfish.pem" >> "${BASH_ENV}"
 
+      - *setupGoogleAppCreds
+      - *setupLicense
       - *deployGKE
       - *setupCIMonitoring
       - *waitForAPI
@@ -701,6 +724,8 @@ jobs:
       - *setupRoxctl
       - *setupGCP
       - *createGKE
+      - *setupGoogleAppCreds
+      - *setupLicense
       - *deployGKE
       - *setupCIMonitoring
       - *waitForAPI
@@ -769,6 +794,8 @@ jobs:
       - *setupRoxctl
       - *setupGCP
       - *createGKE
+      - *setupGoogleAppCreds
+      - *setupLicense
       - *deployGKE
       - *setupCIMonitoring
       - *waitForAPI
@@ -1114,6 +1141,9 @@ jobs:
 
             ./scripts/ci/openshift-gcr-secrets.sh
 
+      - *setupGoogleAppCreds
+      - *setupLicense
+
       - run:
           name: Deploy to remote cluster
           command: |
@@ -1286,6 +1316,9 @@ jobs:
               export REGISTRY_PASSWORD=$DOCKER_IO_PASSWORD
               export REGISTRY_USERNAME=$DOCKER_IO_USERNAME
             EOF
+
+      - *setupGoogleAppCreds
+      - *setupLicense
 
       - run:
           name: Deploy to remote cluster
