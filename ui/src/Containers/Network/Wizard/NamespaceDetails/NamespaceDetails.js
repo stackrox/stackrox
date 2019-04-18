@@ -12,8 +12,11 @@ import Loader from 'Components/Loader';
 import TablePagination from 'Components/TablePagination';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Table, { rtTrActionsClassName } from 'Components/Table';
+import { filterModes, filterLabels } from 'Containers/Network/Graph/filterModes';
+
 import Tooltip from 'rc-tooltip';
 import * as Icon from 'react-feather';
+import { capitalize } from 'lodash';
 
 import wizardStages from '../wizardStages';
 
@@ -29,7 +32,8 @@ class NamespaceDetails extends Component {
             selectedNode: PropTypes.shape({}),
             onNodeClick: PropTypes.func,
             getNodeData: PropTypes.func
-        })
+        }),
+        filterState: PropTypes.number.isRequired
     };
 
     static defaultProps = {
@@ -93,6 +97,10 @@ class NamespaceDetails extends Component {
     };
 
     renderTable() {
+        const { namespace, filterState } = this.props;
+        const filterStateString =
+            filterState !== filterModes.all ? capitalize(filterLabels[filterState]) : 'Network';
+
         const columns = [
             {
                 Header: 'Deployment',
@@ -100,9 +108,11 @@ class NamespaceDetails extends Component {
                 Cell: ({ value }) => <span>{value}</span>
             },
             {
-                Header: 'Network Flows',
+                Header: `${filterStateString} Flows`,
                 accessor: 'data.edges',
-                Cell: ({ value }) => <span>{value.length}</span>,
+                Cell: ({ value }) => (
+                    <span>{value.filter(({ data }) => data.destNodeId).length}</span>
+                ),
                 sortMethod: sortValue
             },
             {
@@ -112,8 +122,6 @@ class NamespaceDetails extends Component {
                 Cell: ({ original }) => this.renderRowActionButtons(original)
             }
         ];
-
-        const { namespace } = this.props;
         const rows = namespace.deployments;
         if (!rows.length) return <NoResultsMessage message="No namespace deployments" />;
         return (
@@ -167,7 +175,8 @@ const mapStateToProps = createStructuredSelector({
     namespace: selectors.getSelectedNamespace,
     isFetchingNamespace: state =>
         selectors.getLoadingStatus(state, deploymentTypes.FETCH_DEPLOYMENTS),
-    networkGraphRef: selectors.getNetworkGraphRef
+    networkGraphRef: selectors.getNetworkGraphRef,
+    filterState: selectors.getNetworkGraphFilterMode
 });
 
 const mapDispatchToProps = {

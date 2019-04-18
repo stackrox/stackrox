@@ -1,67 +1,47 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { createStructuredSelector } from 'reselect';
 import { connect } from 'react-redux';
 import { selectors } from 'reducers';
+import { actions as graphActions } from 'reducers/network/graph';
+
 import Panel from 'Components/Panel';
 import TablePagination from 'Components/TablePagination';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import Table, { rtTrActionsClassName } from 'Components/Table';
-import { actions as graphActions } from 'reducers/network/graph';
+import { filterModes, filterLabels } from 'Containers/Network/Graph/filterModes';
 import Tooltip from 'rc-tooltip';
 import * as Icon from 'react-feather';
 
-class DeploymentNetworkFlows extends Component {
-    static propTypes = {
-        deploymentEdges: PropTypes.arrayOf(PropTypes.shape({})),
-        networkGraphRef: PropTypes.shape({
-            setSelectedNode: PropTypes.func,
-            getNodeData: PropTypes.func,
-            onNodeClick: PropTypes.func
-        })
-    };
+const DeploymentNetworkFlows = ({ deploymentEdges, networkGraphRef, filterState }) => {
+    const [selectedNode, setSelectedNode] = useState(null);
+    const [page, setPage] = useState(0);
 
-    static defaultProps = {
-        deploymentEdges: [],
-        networkGraphRef: null
-    };
+    function getNodeData(data) {
+        const { getNodeData: getNodeDataFromRef } = networkGraphRef;
+        const node = getNodeDataFromRef(data.destNodeId);
+        return node && node[0] && node[0].data;
+    }
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            page: 0,
-            selectedNode: null
+    function highlightNode({ data }) {
+        const node = getNodeData(data);
+        if (node) {
+            networkGraphRef.setSelectedNode(node);
+            setSelectedNode(node);
+        }
+    }
+
+    function navigate({ data }) {
+        return () => {
+            const { onNodeClick } = networkGraphRef;
+            const node = getNodeData(data);
+            if (node) {
+                onNodeClick(node);
+            }
         };
     }
 
-    getNodeData = data => {
-        const { getNodeData } = this.props.networkGraphRef;
-        const node = getNodeData(data.targetId || data.target);
-        return node && node[0] && node[0].data;
-    };
-
-    highlightNode = ({ data }) => {
-        const { networkGraphRef } = this.props;
-        const node = this.getNodeData(data);
-        if (node) {
-            networkGraphRef.setSelectedNode(node);
-            this.setState({ selectedNode: node });
-        }
-    };
-
-    navigate = ({ data }) => () => {
-        const { onNodeClick } = this.props.networkGraphRef;
-        const node = this.getNodeData(data);
-        if (node) {
-            onNodeClick(node);
-        }
-    };
-
-    setTablePage = newPage => {
-        this.setState({ page: newPage });
-    };
-
-    renderRowActionButtons = node => {
+    function renderRowActionButtons(node) {
         const enableIconColor = 'text-primary-600';
         const enableIconHoverColor = 'text-primary-700';
         return (
@@ -75,66 +55,70 @@ class DeploymentNetworkFlows extends Component {
                     <button
                         type="button"
                         className={`p-1 px-4 hover:bg-primary-200 ${enableIconColor} hover:${enableIconHoverColor}`}
-                        onClick={this.navigate(node)}
+                        onClick={navigate(node)}
                     >
                         <Icon.ArrowUpRight className="mt-1 h-4 w-4" />
                     </button>
                 </Tooltip>
             </div>
         );
-    };
+    }
 
-    renderTable() {
+    function renderTable() {
+        const filterStateString = filterState !== filterModes.all ? filterLabels[filterState] : '';
         const columns = [
             {
                 Header: 'Deployment',
-                accessor: 'data.targetName',
+                accessor: 'data.destNodeName',
+                // eslint-disable-next-line react/prop-types
                 Cell: ({ value }) => <span>{value}</span>
             },
             {
                 Header: 'Namespace',
-                accessor: 'data.targetNS',
+                accessor: 'data.destNodeNS',
+                // eslint-disable-next-line react/prop-types
                 Cell: ({ value }) => <span>{value}</span>
+            },
+            {
+                Header: 'Flow',
+                accessor: 'data.isActive',
+                show: filterState === filterModes.all,
+                // eslint-disable-next-line react/prop-types
+                Cell: ({ value }) => <span>{value ? 'active' : 'allowed'}</span>
             },
             {
                 accessor: '',
                 headerClassName: 'hidden',
                 className: rtTrActionsClassName,
-                Cell: ({ original }) => this.renderRowActionButtons(original)
+                Cell: ({ original }) => renderRowActionButtons(original)
             }
         ];
-
-        const { deploymentEdges } = this.props;
         if (!deploymentEdges.length)
-            return <NoResultsMessage message="No deployment network flows" />;
+            return <NoResultsMessage message={`No ${filterStateString} deployment flows`} />;
         return (
             <Table
                 rows={deploymentEdges}
                 columns={columns}
-                onRowClick={this.highlightNode}
-                noDataText="No deployment network flows"
-                page={this.state.page}
-                idAttribute="data.target"
-                selectedRowId={this.state.selectedNode && this.state.selectedNode.id}
+                onRowClick={highlightNode}
+                noDataText={`No ${filterStateString} deployment flows`}
+                page={page}
+                idAttribute="data.destNodeId"
+                selectedRowId={selectedNode && selectedNode.id}
             />
         );
     }
 
-    renderOverview() {
-        const { deploymentEdges } = this.props;
+    function renderOverview() {
+        const filterStateString = filterState !== filterModes.all ? filterLabels[filterState] : '';
         if (!deploymentEdges.length)
-            return <NoResultsMessage message="No deployment network flows" />;
+            return <NoResultsMessage message={`No ${filterStateString} deployment flows`} />;
         const paginationComponent = (
-            <TablePagination
-                page={this.state.page}
-                dataLength={deploymentEdges.length}
-                setPage={this.setTablePage}
-            />
+            <TablePagination page={page} dataLength={deploymentEdges.length} setPage={setPage} />
         );
-        const subHeaderText = `${deploymentEdges.length} Network Flow${
+        const subHeaderText = `${deploymentEdges.length} ${filterStateString} Flow${
             deploymentEdges.length === 1 ? '' : 's'
         }`;
-        const content = <div>{this.renderTable()}</div>;
+        const content = <div>{renderTable()}</div>;
 
         return (
             <Panel
@@ -147,13 +131,27 @@ class DeploymentNetworkFlows extends Component {
         );
     }
 
-    render() {
-        return <div className="w-full h-full">{this.renderOverview()}</div>;
-    }
-}
+    return <div className="w-full h-full">{renderOverview()}</div>;
+};
+
+DeploymentNetworkFlows.propTypes = {
+    deploymentEdges: PropTypes.arrayOf(PropTypes.shape({})),
+    networkGraphRef: PropTypes.shape({
+        setSelectedNode: PropTypes.func,
+        getNodeData: PropTypes.func,
+        onNodeClick: PropTypes.func
+    }),
+    filterState: PropTypes.number.isRequired
+};
+
+DeploymentNetworkFlows.defaultProps = {
+    deploymentEdges: [],
+    networkGraphRef: null
+};
 
 const mapStateToProps = createStructuredSelector({
-    networkGraphRef: selectors.getNetworkGraphRef
+    networkGraphRef: selectors.getNetworkGraphRef,
+    filterState: selectors.getNetworkGraphFilterMode
 });
 
 const mapDispatchToProps = {

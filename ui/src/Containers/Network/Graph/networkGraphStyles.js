@@ -1,52 +1,122 @@
-import { TEXT_MAX_WIDTH, NODE_WIDTH } from 'constants/networkGraph';
+import { NS_FONT_SIZE, TEXT_MAX_WIDTH, NODE_WIDTH } from 'constants/cytoscapeGraph';
 
-const hoverColor = '#92bae5';
-const nonIsolatedColor = 'hsla(2, 78%, 71%, 1)';
+export const nonIsolatedColor = 'hsla(2, 78%, 71%, 1)';
 const activeColor = 'hsla(214, 74%, 68%, 1)';
+const hoveredActiveColor = 'hsla(214, 74%, 58%, 1)';
+const selectedActiveColor = 'hsla(214, 74%, 48%, 1)';
 const labelColor = 'hsla(231, 22%, 49%, 1)';
+const NSEdgeColor = 'hsla(231, 40%, 74%, 1.00)';
+const inactiveColor = 'hsla(229, 24%, 59%, 1)';
+const inactiveNSColor = 'hsla(229, 24%, 80%, 1)';
+const hoveredColor = 'hsla(229, 24%, 70%, 1)';
+const selectedColor = 'hsla(229, 24%, 60%, 1)';
 
+const deploymentStyle = {
+    width: NODE_WIDTH,
+    height: NODE_WIDTH,
+    label: 'data(name)',
+    'font-size': '6px',
+    'text-max-width': TEXT_MAX_WIDTH,
+    'text-wrap': 'ellipsis',
+    'text-margin-y': '5px',
+    'text-valign': 'bottom',
+    'font-weight': 'bold',
+    'font-family': 'Open Sans',
+    'min-zoomed-font-size': '20px',
+    color: labelColor,
+    'z-compound-depth': 'top'
+};
+
+// Note: there is no specificity in cytoscape style
+// the order of the styles in this array matters
 const styles = [
+    {
+        selector: ':parent',
+        style: {
+            'background-color': '#fff',
+            'border-width': '1.5px',
+            'border-color': inactiveNSColor,
+            shape: 'roundrectangle',
+            'compound-sizing-wrt-labels': 'exclude',
+            'font-family': 'stackrox, Open Sans',
+            'text-margin-y': '8px',
+            'text-valign': 'bottom',
+            'font-size': NS_FONT_SIZE,
+            color: labelColor,
+            'font-weight': 700,
+            label: 'data(name)',
+            padding: '0px',
+            'text-transform': 'uppercase',
+            'z-compound-depth': 'top'
+        }
+    },
     {
         selector: ':parent > node.deployment',
         style: {
-            'background-color': 'hsla(229, 24%, 59%, 1)',
-            width: NODE_WIDTH,
-            height: NODE_WIDTH,
-            label: 'data(name)',
-            'font-size': '8px',
-            'text-max-width': TEXT_MAX_WIDTH,
-            'text-wrap': 'ellipsis',
-            'text-margin-y': '5px',
-            'text-valign': 'bottom',
-            'font-weight': 'bold',
-            'font-family': 'Open Sans',
-            'min-zoomed-font-size': '20px',
-            color: labelColor
+            'background-color': inactiveColor,
+            ...deploymentStyle
         }
     },
-    {
-        selector: 'node.nsEdge',
-        style: {
-            width: 1,
-            height: 1,
-            'background-color': 'white'
-        }
-    },
-
     {
         selector: 'node.nsHovered',
         style: {
-            'background-color': hoverColor,
+            opacity: 1,
             'border-style': 'solid',
-            'border-width': '1px',
-            'border-color': hoverColor
+            'border-color': hoveredColor,
+            'overlay-padding': '3px',
+            'overlay-color': 'hsla(227, 85%, 70%, 1)',
+            'overlay-opacity': 0.05,
+            'z-compound-depth': 'auto'
         }
     },
     {
         selector: 'node.nsSelected',
         style: {
-            'background-color': activeColor,
+            opacity: 1,
             'border-style': 'solid',
+            'border-color': selectedColor,
+            'overlay-padding': '3px',
+            'overlay-color': 'hsla(227, 85%, 60%, 1)',
+            'overlay-opacity': 0.05,
+            'z-compound-depth': 'auto'
+        }
+    },
+    {
+        selector: 'node.nsActive',
+        style: {
+            'border-style': 'dashed',
+            'border-color': activeColor
+        }
+    },
+    {
+        selector: 'node.nsActive.nsHovered',
+        style: {
+            opacity: 1,
+            'border-style': 'dashed',
+            'border-color': hoveredActiveColor,
+            'overlay-padding': '3px',
+            'overlay-color': 'hsla(227, 85%, 60%, 1)',
+            'overlay-opacity': 0.1,
+            'z-compound-depth': 'auto'
+        }
+    },
+    {
+        selector: 'node.nsActive.nsSelected',
+        style: {
+            opacity: 1,
+            'border-style': 'dashed',
+            'border-color': selectedActiveColor,
+            'overlay-padding': '3px',
+            'overlay-color': 'hsla(227, 85%, 50%, 1)',
+            'overlay-opacity': 0.1,
+            'z-compound-depth': 'auto'
+        }
+    },
+    {
+        selector: 'node.active',
+        style: {
+            'background-color': activeColor,
+            'border-style': 'double',
             'border-width': '1px',
             'border-color': activeColor
         }
@@ -61,60 +131,72 @@ const styles = [
         }
     },
     {
-        selector: 'node.active',
+        selector: 'node.hovered',
         style: {
-            'background-color': activeColor,
-            'border-style': 'double',
-            'border-width': '1px',
-            'border-color': activeColor
+            opacity: 1,
+            'overlay-padding': '3px',
+            'overlay-color': 'hsla(227, 85%, 60%, 1)',
+            'overlay-opacity': 0.1
         }
     },
     {
-        selector: 'node.nsActive',
+        selector: 'node.selected',
         style: {
-            'background-color': activeColor,
-            'border-style': 'dashed',
-            'border-width': '2px',
-            'border-color': activeColor
+            opacity: 1,
+            'overlay-padding': '3px',
+            'overlay-color': 'hsla(227, 85%, 50%, 1)',
+            'overlay-opacity': 0.1
         }
     },
-
     {
-        selector: ':parent',
+        selector: ':parent > node.background',
         style: {
-            'background-color': '#fff',
-            shape: 'roundrectangle',
-            'compound-sizing-wrt-labels': 'include',
-            'font-family': 'stackrox, Open Sans',
-            'text-margin-y': '8px',
-            'text-valign': 'bottom',
-            'font-size': '18px',
-            color: labelColor,
-            'text-outline-width': 1,
-            'text-outline-opacity': 1,
-            'text-outline-color': 'white',
-            'font-weight': 600,
-            label: 'data(name)',
-            padding: 0
+            ...deploymentStyle
         }
     },
-
+    {
+        selector: ':parent.background',
+        style: {
+            opacity: 0.5,
+            'z-compound-depth': 'auto'
+        }
+    },
+    {
+        selector: ':parent > node.nsEdge',
+        style: {
+            width: 0.5,
+            height: 0.5,
+            padding: '0px',
+            'background-color': 'white'
+        }
+    },
     {
         selector: 'edge',
         style: {
-            width: 2,
-            'line-style': 'dotted',
-            'line-color': 'hsla(230, 68%, 87%, 1)'
+            width: 1,
+            'line-style': 'dashed',
+            'line-color': 'hsla(231, 74%, 82%, 1.00)'
         }
     },
-
     {
         selector: 'edge.namespace',
         style: {
-            'curve-style': 'taxi',
+            'curve-style': 'unbundled-bezier',
+            'line-color': NSEdgeColor,
             'edge-distances': 'node-position',
-            'taxi-turn-min-distance': '10px',
-            label: 'data(count)'
+            // 'taxi-turn-min-distance': '10px',
+            label: 'data(count)',
+            'font-size': '8px',
+            color: NSEdgeColor,
+            'font-weight': 500,
+            'text-background-opacity': 1,
+            'text-background-color': 'white',
+            'text-background-shape': 'roundrectangle',
+            'text-background-padding': '3px',
+            'text-border-opacity': 1,
+            'text-border-color': 'hsla(230, 51%, 75%, 1.00)',
+            'text-border-width': 1,
+            width: 3
         }
     },
     {
@@ -129,35 +211,36 @@ const styles = [
             'taxi-direction': 'horizontal'
         }
     },
-
     {
         selector: 'edge.inner',
         style: {
-            'curve-style': 'straight',
-            'target-endpoint': 'inside-to-node'
+            'curve-style': 'haystack',
+            'line-style': 'dashed',
+            'target-endpoint': 'inside-to-node',
+            'z-index': 1000,
+            'z-index-compare': 'manual'
         }
     },
-
-    {
-        selector: 'node.selected',
-        style: {
-            'background-color': 'red'
-        }
-    },
-
     {
         selector: 'edge.active',
         style: {
             'line-style': 'solid',
-            'line-color': 'hsla(229°, 76%, 87%, 1)'
+            'line-color': 'hsla(229, 76%, 87%, 1)',
+            'z-compound-depth': 'top'
         }
     },
-
     {
-        selector: 'edge.active',
+        selector: 'edge.nonIsolated',
         style: {
-            'line-style': 'solid',
-            'line-color': 'hsla(229°, 76%, 87%, 1)'
+            display: 'none'
+        }
+    },
+    {
+        selector: ':active',
+        style: {
+            'overlay-padding': '3px',
+            'overlay-color': 'hsla(227, 85%, 50%, 1)',
+            'overlay-opacity': 0.1
         }
     }
 ];

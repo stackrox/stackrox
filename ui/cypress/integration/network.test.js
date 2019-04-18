@@ -48,7 +48,7 @@ describe('Network page', () => {
         cy.get(networkPageSelectors.legend.items)
             .eq(2)
             .children()
-            .should('have.attr', 'alt', 'non-isolated-deployment-allowed');
+            .should('have.class', 'icon-node');
         cy.get(networkPageSelectors.legend.items)
             .eq(3)
             .children()

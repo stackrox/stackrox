@@ -13,7 +13,7 @@ import NetworkGraph from 'Components/NetworkGraph';
 import NetworkGraph2 from 'Components/NetworkGraph2';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import wizardStages from '../Wizard/wizardStages';
-import filterModes from './filterModes';
+import { filterModes } from './filterModes';
 import Filters from './Overlays/Filters';
 import Legend from './Overlays/Legend';
 
@@ -75,8 +75,8 @@ class Graph extends Component {
     };
 
     renderGraph = nodes => {
-        // If we have more than 1000 nodes, display a message instead of the graph.
-        if (nodes.length > 1200) {
+        // If we have more than 1100 nodes, display a message instead of the graph.
+        if (nodes.length > 1100) {
             // hopefully a temporal solution
             return (
                 <NoResultsMessage message="There are too many deployments to render on the graph. Please refine your search to a set of namespaces or deployments to display." />
@@ -140,9 +140,8 @@ class Graph extends Component {
         const networkGraphStateClass = networkGraphState === 'ERROR' ? 'error' : 'success';
 
         // Rendering.
-        const width = this.props.wizardOpen ? 'w-2/3' : 'w-full';
         return (
-            <div className={`${simulatorMode} ${networkGraphStateClass} ${width} h-full`}>
+            <div className={`${simulatorMode} ${networkGraphStateClass} w-full h-full`}>
                 {this.renderGraph(nodes)}
                 <Filters />
                 <Legend />

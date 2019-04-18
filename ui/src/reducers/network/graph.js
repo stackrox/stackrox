@@ -5,7 +5,7 @@ import { LOCATION_CHANGE } from 'react-router-redux';
 import { types as backendTypes } from 'reducers/network/backend';
 import { types as searchTypes } from 'reducers/network/search';
 
-import filterModes from 'Containers/Network/Graph/filterModes';
+import { filterModes } from 'Containers/Network/Graph/filterModes';
 
 export const networkGraphClusters = {
     KUBERNETES_CLUSTER: true,

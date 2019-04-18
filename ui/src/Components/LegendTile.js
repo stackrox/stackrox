@@ -8,6 +8,7 @@ import namespace from 'images/legend-icons/namespace.svg';
 import namespaceAllowed from 'images/legend-icons/namespace-allowed.svg';
 import namespaceConnection from 'images/legend-icons/namespace-connection.svg';
 import * as constants from 'constants/networkGraph';
+import * as cytoConstants from 'Containers/Network/Graph/networkGraphStyles';
 
 const svgMapping = {
     'active-connection': deploymentActiveConnection,
@@ -20,6 +21,9 @@ const svgMapping = {
 
 const fontIconMapping = {
     deployment: <i className="icon-node text-3xl" style={{ color: constants.NODE_COLOR }} />,
+    'non-isolated-deployment-allowed': (
+        <i className="icon-node text-3xl" style={{ color: cytoConstants.nonIsolatedColor }} />
+    ),
     'deployment-allowed-connections': (
         <span className="text-center text-3xl relative">
             <i

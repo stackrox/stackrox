@@ -5,7 +5,7 @@ import { createSelector, createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions as graphActions } from 'reducers/network/graph';
 
-import filterModes from '../filterModes';
+import { filterModes, filterLabels } from '../filterModes';
 import wizardStages from '../../Wizard/wizardStages';
 
 const baseButtonClassName =
@@ -45,7 +45,7 @@ class Filters extends Component {
                     ${filterMode === filterModes.allowed && 'border-r-0'}`}
                         onClick={this.handleChange(filterModes.active)}
                     >
-                        Active
+                        {`${filterLabels[filterModes.active]}`}
                     </button>
                     <button
                         type="button"
@@ -57,7 +57,7 @@ class Filters extends Component {
                         }`}
                         onClick={this.handleChange(filterModes.allowed)}
                     >
-                        Allowed
+                        {`${filterLabels[filterModes.allowed]}`}
                     </button>
                     <button
                         type="button"
@@ -68,7 +68,7 @@ class Filters extends Component {
                     ${filterMode === filterModes.allowed && 'border-l-0'}`}
                         onClick={this.handleChange(filterModes.all)}
                     >
-                        All
+                        {`${filterLabels[filterModes.all]}`}
                     </button>
                 </div>
             </div>

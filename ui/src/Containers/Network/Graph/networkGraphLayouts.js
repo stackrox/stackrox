@@ -1,7 +1,14 @@
-import { TEXT_MAX_WIDTH, NODE_WIDTH, NODE_PADDING } from 'constants/networkGraph';
+import {
+    TEXT_MAX_WIDTH,
+    NODE_WIDTH,
+    NODE_PADDING,
+    SIDE_NODE_PADDING
+} from 'constants/cytoscapeGraph';
 
-const nodeWidth = TEXT_MAX_WIDTH + NODE_PADDING;
+const nodeWidth = TEXT_MAX_WIDTH + NODE_WIDTH;
 const nodeHeight = NODE_WIDTH + NODE_PADDING;
+
+const avgNSDimensions = { width: [], height: [] };
 
 // Gets dimension metadata for a parent node given # of nodes
 function getParentDimensions(nodeCount) {
@@ -9,6 +16,8 @@ function getParentDimensions(nodeCount) {
     const rows = Math.ceil(nodeCount / cols);
     const width = cols * nodeWidth;
     const height = rows * nodeHeight;
+    avgNSDimensions.width.push(width);
+    if (!Number.isNaN(height)) avgNSDimensions.height.push(height);
     return {
         width,
         height,
@@ -19,7 +28,9 @@ function getParentDimensions(nodeCount) {
 
 // Gets positions and dimensions for all parent nodes
 export function getParentPositions(nodes, padding) {
-    const NSNames = nodes.filter(node => !node.data().parent).map(parent => parent.data().id);
+    const NSNames = nodes
+        .filter(node => !node.data().parent && node.data().name)
+        .map(parent => parent.data().id);
 
     // Get namespace dimensions sorted by width
     const namespaces = NSNames.map(id => {
@@ -32,19 +43,31 @@ export function getParentPositions(nodes, padding) {
     }).sort((a, b) => b.cols - a.cols);
 
     // lay out namespaces
-    let x = 0;
     let y = 0;
+    let rowNum = 0;
+    let colNum = 0;
+    const maxNSWidth = Math.max(...avgNSDimensions.width);
+    const maxRowWidth = Math.floor(Math.sqrt(namespaces.length) + 1) * maxNSWidth;
     return namespaces.map(NS => {
         const { id, width, height } = NS;
+        const newX = (maxNSWidth + padding.x) * colNum;
         const result = {
             id,
-            x,
+            x: newX,
             y,
             width,
             height
         };
-        x += width + padding.x;
-        y += height + padding.y;
+
+        if (maxRowWidth < newX) {
+            // if newX is past maxRowWidth, reset to new row
+            y += height + padding.y;
+            rowNum += 1;
+            colNum = rowNum % 2 ? 1 : 0;
+        } else {
+            colNum += 2;
+        }
+
         return result;
     });
 }
@@ -107,21 +130,21 @@ edgeGridLayout.prototype.run = function() {
             case 'top':
                 return {
                     x: midWidth,
-                    y: position.y - parentPadding.top
+                    y: position.y - parentPadding.top - SIDE_NODE_PADDING
                 };
             case 'bottom':
                 return {
                     x: midWidth,
-                    y: position.y + height + parentPadding.bottom
+                    y: position.y + height + parentPadding.bottom + SIDE_NODE_PADDING
                 };
             case 'left':
                 return {
-                    x: position.x - parentPadding.left,
+                    x: position.x - parentPadding.left - SIDE_NODE_PADDING,
                     y: midHeight
                 };
             case 'right':
                 return {
-                    x: position.x + width + parentPadding.right,
+                    x: position.x + width + parentPadding.right + SIDE_NODE_PADDING,
                     y: midHeight
                 };
             default:

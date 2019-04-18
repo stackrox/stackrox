@@ -1,3 +1,10 @@
+// Cytoscape
+export const NS_FONT_SIZE = 8;
+export const TEXT_MAX_WIDTH = 30;
+export const NODE_WIDTH = 8;
+export const NODE_PADDING = 20;
+export const SIDE_NODE_PADDING = 10;
+
 export const GRAPH_PADDING = 50;
 
 // Cytoscape Zoom Constants

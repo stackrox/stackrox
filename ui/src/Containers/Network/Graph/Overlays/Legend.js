@@ -51,7 +51,7 @@ class Legend extends Component {
                         <LegendTile
                             name="non-isolated-deployment-allowed"
                             tooltip="Non-isolated deployment (all connections allowed)"
-                            type="svg"
+                            type="font"
                         />
                     </div>
                     <div className="flex border-b border-base-400">

@@ -9,13 +9,19 @@ import Cytoscape from 'cytoscape';
 import CytoscapeComponent from 'react-cytoscapejs';
 import popper from 'cytoscape-popper';
 import Tippy from 'tippy.js';
-import { uniq, debounce, throttle } from 'lodash';
+import { uniq, throttle } from 'lodash';
 
 import { edgeGridLayout, getParentPositions } from 'Containers/Network/Graph/networkGraphLayouts';
-import filterModes from 'Containers/Network/Graph/filterModes';
+import { filterModes } from 'Containers/Network/Graph/filterModes';
 import style from 'Containers/Network/Graph/networkGraphStyles';
 import { getLinks, nonIsolated } from 'utils/networkGraphUtils';
-import { MAX_ZOOM, MIN_ZOOM, ZOOM_STEP, GRAPH_PADDING } from 'constants/cytoscapeGraph';
+import {
+    NS_FONT_SIZE,
+    MAX_ZOOM,
+    MIN_ZOOM,
+    ZOOM_STEP,
+    GRAPH_PADDING
+} from 'constants/cytoscapeGraph';
 
 function getClasses(map) {
     return Object.entries(map)
@@ -42,7 +48,9 @@ const NetworkGraph = ({
     const [hoveredNode, setHoveredNode] = useState();
     const [firstRenderFinished, setFirstRenderFinished] = useState(false);
     const nodeSideMapRef = useRef({});
+    const zoomFontMapRef = useRef({});
     const nodeSideMap = nodeSideMapRef.current;
+    const zoomFontMap = zoomFontMapRef.current;
     const cy = useRef();
     const tippy = useRef();
     const namespacesWithDeployments = {};
@@ -88,7 +96,11 @@ const NetworkGraph = ({
 
         const filteredLinks = links.filter(
             ({ source, target, isActive, sourceNS, targetNS }) =>
-                (!nodeId || source === nodeId || target === nodeId) &&
+                (!nodeId ||
+                    source === nodeId ||
+                    target === nodeId ||
+                    sourceNS === nodeId ||
+                    targetNS === nodeId) &&
                 (filterState !== filterModes.active || isActive) &&
                 sourceNS &&
                 targetNS &&
@@ -139,34 +151,40 @@ const NetworkGraph = ({
         });
     }
 
-    function getEdgesFromNode(nodeId) {
+    function getEdgesFromNode(nodeId, isNonIsolatedNode) {
         const edgeMap = {};
         const edges = [];
-
+        if (isNonIsolatedNode && filterState !== filterModes.all) return edges;
         links.forEach(linkItem => {
-            const { source, target, isActive, sourceNS, targetNS } = linkItem;
+            const { source, sourceNS, sourceName } = linkItem;
+            const { target, targetNS, targetName, isActive } = linkItem;
             const nodeIsSource = nodeId === source;
-            const nodeIsTarget = nodeId === source;
+            const nodeIsTarget = nodeId === target;
+            // destination node info needed for network flow tab
+            const destNodeId = nodeIsSource ? target : source;
+            const destNodeNS = nodeIsSource ? targetNS : sourceNS;
+            const destNodeName = nodeIsSource ? targetName : sourceName;
             if (
                 (nodeIsSource || nodeIsTarget) &&
                 (filterState !== filterModes.active || isActive)
             ) {
                 const activeClass = filterState !== filterModes.allowed && isActive ? 'active' : '';
-
-                // If same namespace, draw line between the two nodes
-                if (sourceNS === targetNS) {
-                    edges.push({
-                        data: {
-                            sourceNS,
-                            targetNS,
-                            ...linkItem
-                        },
-                        classes: `node ${activeClass}`
-                    });
-                } else {
-                    // make sure both nodes have edges drawn to the nearest side of their NS
-                    const id = [source, target].sort().join('--');
-                    if (!edgeMap[id]) {
+                const nonIsolatedClass = isNonIsolatedNode && !isActive ? 'nonIsolated' : '';
+                const id = [source, target].sort().join('--');
+                if (!edgeMap[id]) {
+                    // If same namespace, draw line between the two nodes
+                    if (sourceNS === targetNS) {
+                        edges.push({
+                            data: {
+                                destNodeId,
+                                destNodeNS,
+                                destNodeName,
+                                ...linkItem
+                            },
+                            classes: `edge ${activeClass} ${nonIsolatedClass}`
+                        });
+                    } else {
+                        // make sure both nodes have edges drawn to the nearest side of their NS
                         let sourceNSSide = sourceNS;
                         let targetNSSide = targetNS;
                         const sideMap = getSideMap(sourceNS, targetNS);
@@ -181,20 +199,23 @@ const NetworkGraph = ({
                                 source,
                                 target: sourceNSSide
                             },
-                            classes: `node inner ${activeClass}`
+                            classes: `edge inner ${activeClass} ${nonIsolatedClass}`
                         });
 
                         // Edge from target to its namespace
                         edges.push({
                             data: {
                                 source: target,
-                                target: targetNSSide
+                                target: targetNSSide,
+                                destNodeId,
+                                destNodeName,
+                                destNodeNS,
+                                isActive
                             },
-                            classes: `node inner ${activeClass}`
+                            classes: `edge inner ${activeClass} ${nonIsolatedClass}`
                         });
-
-                        edgeMap[id] = true;
                     }
+                    edgeMap[id] = true;
                 }
             }
         });
@@ -207,27 +228,35 @@ const NetworkGraph = ({
         const deploymentList = filteredData.map(datum => {
             const { entity, ...datumProps } = datum;
             const { deployment, ...entityProps } = entity;
-            const { namespace: parent, ...deploymentProps } = deployment;
-            const isSelected = selectedNode && selectedNode.id === entity.id;
+            const { namespace, ...deploymentProps } = deployment;
+            const isSelected = !!(selectedNode && selectedNode.id === entity.id);
+            const isHovered = !!(hoveredNode && hoveredNode.id === entity.id);
+            const isBackground =
+                !(selectedNode === undefined && hoveredNode === undefined) &&
+                !isHovered &&
+                !isSelected;
             const isNonIsolated = nonIsolated(datum);
             const classes = getClasses({
                 active: datum.isActive,
                 selected: isSelected,
-                nonIsolated: isNonIsolated,
-                deployment: true
+                deployment: true,
+                hovered: isHovered,
+                background: isBackground,
+                nonIsolated: isNonIsolated
             });
 
-            return {
+            const deploymentNode = {
                 data: {
                     ...datumProps,
                     ...entityProps,
                     ...deploymentProps,
-                    parent,
+                    parent: namespace,
                     edges: getEdgesFromNode(entityProps.id),
                     deploymentId: entityProps.id
                 },
                 classes
             };
+            return deploymentNode;
         });
         return deploymentList;
     }
@@ -252,16 +281,29 @@ const NetworkGraph = ({
             filteredData.map(datum => datum.entity.deployment.namespace)
         ).map(namespace => {
             const active = activeNamespaces.includes(namespace);
-            const hoveredClassName = hoveredNode && hoveredNode.id === namespace ? 'nsHovered' : '';
-            const namespaceClassName =
-                selectedNode && selectedNode.parent === namespace ? 'nsSelected' : hoveredClassName;
+            const isHovered =
+                hoveredNode && (hoveredNode.id === namespace || hoveredNode.parent === namespace);
+            const isSelected =
+                selectedNode &&
+                (selectedNode.id === namespace || selectedNode.parent === namespace);
+            const isBackground =
+                !(selectedNode === undefined && hoveredNode === undefined) &&
+                !isHovered &&
+                !isSelected;
+            const classes = getClasses({
+                nsActive: active,
+                nsSelected: isSelected,
+                nsHovered: isHovered,
+                background: isBackground
+            });
+
             return {
                 data: {
                     id: namespace,
                     name: `${active ? '\ue901' : ''} ${namespace}`,
                     active
                 },
-                classes: active ? 'nsActive' : namespaceClassName
+                classes
             };
         });
 
@@ -298,23 +340,38 @@ const NetworkGraph = ({
         const node = hoveredNode || selectedNode;
         let allEdges = getNSEdges(node && node.id);
         if (node) {
-            allEdges = allEdges.concat(getEdgesFromNode(node.id));
+            allEdges = allEdges.concat(getEdgesFromNode(node.id, nonIsolated(node)));
         }
-
         return allEdges;
     }
 
     function nodeHoverHandler(ev) {
-        const { name, parent, id, side } = ev.target.data();
+        const node = ev.target.data();
+        const { id, name, parent, side } = node;
         const isChild = !!parent;
-        if (!cy || !isChild || side) return;
+        if (!cy || side) return;
 
-        setHoveredNode(ev.target.data());
+        setHoveredNode(node);
         const nodeElm = cy.current.getElementById(id);
-        createTippy(nodeElm, name);
+        if (isChild) {
+            // if deployment, show tooltip
+            createTippy(nodeElm, name);
+        } else {
+            // if namespace, highlight deployments in namespace
+            const children = nodeElm.descendants();
+            children.removeClass('background');
+        }
     }
 
     function nodeMouseOutHandler() {
+        if (hoveredNode && selectedNode && hoveredNode.id !== selectedNode.id) {
+            // if mousing out from a node but there is another selected node, dim nodes again
+            const nodeElm = cy.current.getElementById(hoveredNode.id);
+            if (nodeElm.isParent()) {
+                const children = nodeElm.descendants('[!side]');
+                children.addClass('background');
+            }
+        }
         setHoveredNode();
     }
 
@@ -336,14 +393,14 @@ const NetworkGraph = ({
             return;
         }
 
-        // Edge click
-        if (isEdge) return;
+        // Edge click or edge node click
+        if (isEdge || evData.side) return;
 
         // Parent Click
         if (isParent) {
             if (id) {
                 onNamespaceClick({ id, deployments: namespacesWithDeployments[id] || [] });
-                setSelectedNode();
+                setSelectedNode(evData);
             }
             return;
         }
@@ -359,11 +416,28 @@ const NetworkGraph = ({
         }
     }
 
+    function zoomHandler() {
+        if (!cy || !cy.current) return;
+
+        // to dynamically set the font size of namespace labels
+        const zoomConstant = 20;
+        const curZoomLevel = Math.round(cy.current.zoom() * zoomConstant);
+        if (!zoomFontMap[curZoomLevel]) {
+            zoomFontMap[curZoomLevel] = Math.max(
+                (NS_FONT_SIZE / curZoomLevel) * zoomConstant,
+                NS_FONT_SIZE
+            );
+        }
+        cy.current.nodes(':parent').style('font-size', zoomFontMap[curZoomLevel]);
+        cy.current.edges('.namespace').style('font-size', zoomFontMap[curZoomLevel]);
+    }
+
     function zoomToFit() {
         if (!cy) return;
         cy.current.fit([], GRAPH_PADDING);
         const newMinZoom = Math.min(cy.current.zoom(), cy.current.minZoom());
         cy.current.minZoom(newMinZoom);
+        zoomHandler();
     }
 
     function zoomIn() {
@@ -484,12 +558,13 @@ const NetworkGraph = ({
         cy.current
             .off('click mouseover mouseout mousedown drag')
             .on('click', clickHandler)
-            .on('mouseover', 'node', debounce(nodeHoverHandler, 100))
+            .on('mouseover', 'node', throttle(nodeHoverHandler, 100))
             .on('mouseout', 'node', nodeMouseOutHandler)
             .on('mouseout mousedown', 'node', () => {
                 if (tippy.current) tippy.current.destroy();
             })
             .on('drag', throttle(handleDrag, 100))
+            .on('zoom', zoomHandler)
             .ready(() => {
                 if (firstRenderFinished) return;
                 setFirstRenderFinished(true);
@@ -500,7 +575,7 @@ const NetworkGraph = ({
     const elements = getElements();
     // Effects
     function setWindowResize() {
-        window.addEventListener('resize', debounce(() => zoomToFit, 100));
+        window.addEventListener('resize', throttle(() => zoomToFit, 100));
 
         const cleanup = () => {
             window.removeEventListener('resize');
@@ -524,13 +599,13 @@ const NetworkGraph = ({
     function runLayout() {
         if (!cy.current) return;
         const CY = cy.current;
-        const NSPositions = getParentPositions(CY.nodes(), { x: 100, y: 0 }); // all nodes, padding
+        const NSPositions = getParentPositions(CY.nodes(), { x: 100, y: 100 }); // all nodes, padding
 
         NSPositions.forEach(position => {
             const { id, x, y } = position;
             CY.layout({
                 name: 'edgeGridLayout',
-                parentPadding: { bottom: 10, top: 5, left: 5, right: 5 },
+                parentPadding: { bottom: 5, top: 0, left: 0, right: 0 },
                 position: { x, y },
                 eles: CY.nodes(`[parent="${id}"]`)
             }).run();

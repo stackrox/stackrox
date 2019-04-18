@@ -116,11 +116,11 @@ export const getLinks = (nodes, networkFlowMapping) => {
                 ) {
                     return;
                 }
-
                 const { id: tgtDeploymentId, deployment: tgtDeployment } = targetNode.entity;
                 const targetNS = tgtDeployment && tgtDeployment.namespace;
                 const link = {
                     source: srcDeploymentId,
+                    sourceName: srcDeployment.name,
                     target: tgtDeploymentId,
                     targetName: tgtDeployment.name,
                     sourceNS,
