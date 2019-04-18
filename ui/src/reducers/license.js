@@ -19,9 +19,7 @@ export const LICENSE_UPLOAD_STATUS = Object.freeze({
 export const types = {
     FETCH_LICENSES: createFetchingActionTypes('license/FETCH_LICENSES'),
     SET_LICENSE_UPLOAD_STATUS: 'license/SET_LICENSE_UPLOAD_STATUS',
-    ACTIVATE_LICENSE: 'license/ACTIVATE_LICENSE',
-    SHOW_LICENSE_REMINDER: 'license/SHOW_LICENSE_REMINDER',
-    DISMISS_LICENSE_REMINDER: 'license/DISMISS_LICENSE_REMINDER'
+    ACTIVATE_LICENSE: 'license/ACTIVATE_LICENSE'
 };
 
 // Actions
@@ -38,12 +36,6 @@ export const actions = {
     activateLicense: licenseKey => ({
         type: types.ACTIVATE_LICENSE,
         licenseKey
-    }),
-    showLicenseReminder: () => ({
-        type: types.SHOW_LICENSE_REMINDER
-    }),
-    dismissLicenseReminder: () => ({
-        type: types.DISMISS_LICENSE_REMINDER
     })
 };
 
@@ -75,16 +67,6 @@ const license = (state = null, action) => {
     return state;
 };
 
-const showLicenseReminder = (state = false, action) => {
-    if (action.type === types.SHOW_LICENSE_REMINDER) {
-        return true;
-    }
-    if (action.type === types.DISMISS_LICENSE_REMINDER) {
-        return false;
-    }
-    return state;
-};
-
 const licenseUploadStatus = (state = null, action) => {
     if (action.type === types.SET_LICENSE_UPLOAD_STATUS) {
         return isEqual(action.data, state) ? state : action.data;
@@ -94,7 +76,6 @@ const licenseUploadStatus = (state = null, action) => {
 
 const reducer = combineReducers({
     license,
-    showLicenseReminder,
     licenseUploadStatus
 });
 
@@ -111,13 +92,11 @@ const getLicenseStatus = state => {
     if (!state.license) return null;
     return state.license.status;
 };
-const shouldShowLicenseReminder = state => state.showLicenseReminder;
 const getLicenseUploadStatus = state => state.licenseUploadStatus;
 
 export const selectors = {
     getLicense,
     getLicenseExpirationDate,
     getLicenseStatus,
-    shouldShowLicenseReminder,
     getLicenseUploadStatus
 };

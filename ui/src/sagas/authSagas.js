@@ -14,7 +14,6 @@ import { actions, types, AUTH_STATUS } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
 import { types as locationActionTypes } from 'reducers/routes';
 import { actions as notificationActions } from 'reducers/notifications';
-import { actions as licenseActions } from 'reducers/license';
 import { actions as rolesActions } from 'reducers/roles';
 import { getLicenses } from 'sagas/licenseSagas';
 
@@ -154,7 +153,6 @@ function* dispatchAuthResponse(type, location) {
     }
 
     // When the user logs in, we should show the license reminder if it will expire soon
-    yield put(licenseActions.showLicenseReminder());
     yield fork(getLicenses);
     yield fork(getUserPermissions);
 
