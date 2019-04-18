@@ -152,7 +152,6 @@ function* dispatchAuthResponse(type, location) {
         yield put(actions.handleIdpError(result));
     }
 
-    // When the user logs in, we should show the license reminder if it will expire soon
     yield fork(getLicenses);
     yield fork(getUserPermissions);
 

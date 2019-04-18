@@ -1,5 +1,6 @@
 import { stackroxSupport } from 'messages/common';
 import { LICENSE_STATUS } from 'reducers/license';
+import { distanceInWordsToNow, differenceInDays } from 'date-fns';
 
 export const invalidText =
     'Your StackRox license key is invalid. In order to use StackRox, please obtain and install a new valid license key.';
@@ -28,10 +29,6 @@ export const getUploadResponseMessage = data => {
             message.text = 'Restarting';
             message.type = 'info';
             return message;
-        // case LICENSE_STATUS.NONE_OR_INVALID:
-        //     message.text = expiredText;
-        //     message.type = 'error';
-        //     return message;
         case LICENSE_STATUS.NONE_OR_INVALID:
             message.text = invalidText;
             message.type = 'error';
@@ -47,11 +44,6 @@ export const getLicenseStatusMessage = licenseStatus => {
         type: 'info'
     };
     switch (licenseStatus) {
-        // case LICENSE_STATUS.EXPIRED:
-        // case LICENSE_STATUS.REVOKED:
-        //     message.text = expiredText;
-        //     message.type = 'error';
-        //     return message;''
         case LICENSE_STATUS.VALID:
             message.text = validText;
             message.type = 'info';
@@ -68,4 +60,24 @@ export const getLicenseStatusMessage = licenseStatus => {
             message = null;
             return message;
     }
+};
+
+export const createExpirationMessage = expirationDate => {
+    const daysLeft = differenceInDays(expirationDate, new Date());
+    const message = `Your license will expire in ${distanceInWordsToNow(
+        expirationDate
+    )}. Upload a new license key to renew your account.`;
+    let type;
+
+    if (daysLeft > 3 && daysLeft <= 14) {
+        type = 'warn';
+    } else if (daysLeft <= 3) {
+        type = 'error';
+    } else {
+        return null;
+    }
+    return {
+        message,
+        type
+    };
 };

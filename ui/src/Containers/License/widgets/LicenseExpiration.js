@@ -1,29 +1,19 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { format, distanceInWordsToNow, differenceInDays } from 'date-fns';
+import { format, distanceInWordsToNow } from 'date-fns';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
+import { createExpirationMessage } from 'Containers/License/helpers';
 
 import * as Icon from 'react-feather';
 import Widget from 'Components/Widget';
 import Message from 'Components/Message';
 import UploadLicense from 'Containers/License/UploadLicense';
 
-const getExpirationMessage = expirationDate => {
-    const message = `Your license will expire in ${distanceInWordsToNow(
-        expirationDate
-    )}. Upload a new license key to renew your account.`;
-    const type = differenceInDays(expirationDate, new Date()) < 3 ? 'error' : 'warn';
-    return {
-        message,
-        type
-    };
-};
-
 const LicenseExpiration = ({ expirationDate, hasReadWritePermission }) => {
     const canUploadLicense = hasReadWritePermission('Licenses');
-    const expirationMessage = getExpirationMessage(expirationDate);
+    const expirationMessage = createExpirationMessage(expirationDate);
     return (
         <Widget header="License Expiration">
             <div className="py-4 px-6 w-full">

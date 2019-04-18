@@ -5,8 +5,8 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { withRouter } from 'react-router-dom';
+import { createExpirationMessage } from 'Containers/License/helpers';
 import {
-    distanceInWordsToNow,
     differenceInDays,
     differenceInHours,
     differenceInMinutes,
@@ -34,30 +34,10 @@ const getDelay = expirationDate => {
     return null;
 };
 
-const getExpirationMessage = expirationDate => {
-    const daysLeft = differenceInDays(expirationDate, new Date());
-    const message = `Your license will expire in ${distanceInWordsToNow(
-        expirationDate
-    )}. Upload a new license key to renew your account.`;
-    let type;
-
-    if (daysLeft > 3 && daysLeft <= 14) {
-        type = 'warn';
-    } else if (daysLeft <= 3) {
-        type = 'error';
-    } else {
-        return null;
-    }
-    return {
-        message,
-        type
-    };
-};
-
 const LicenseReminder = ({ expirationDate, history }) => {
     const [showReminder, setReminder] = useState(true);
     const [expirationMessage, setExpirationMessage] = useState(
-        getExpirationMessage(expirationDate)
+        createExpirationMessage(expirationDate)
     );
 
     if (!showReminder) return null;
@@ -70,7 +50,7 @@ const LicenseReminder = ({ expirationDate, history }) => {
         let timerID;
         if (delay) {
             timerID = setInterval(
-                () => setExpirationMessage(getExpirationMessage(expirationDate)),
+                () => setExpirationMessage(createExpirationMessage(expirationDate)),
                 delay
             );
         } else {
