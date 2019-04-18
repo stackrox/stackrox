@@ -19,11 +19,6 @@ class IntegrationsPage extends Component {
     static propTypes = {
         authProviders: PropTypes.arrayOf(
             PropTypes.shape({
-                config: PropTypes.shape({
-                    client_id: PropTypes.string.isRequired,
-                    issuer: PropTypes.string.isRequired,
-                    mode: PropTypes.string.isRequired
-                }),
                 name: PropTypes.string.isRequired
             })
         ).isRequired,

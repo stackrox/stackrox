@@ -1,4 +1,5 @@
 import React from 'react';
+import { times, daysOfWeek } from './Schedule';
 
 const tableColumnDescriptor = Object.freeze({
     authProviders: {
@@ -130,11 +131,11 @@ const tableColumnDescriptor = Object.freeze({
                 accessor: data => {
                     const { schedule } = data;
                     if (schedule.weekly) {
-                        return `Weekly on ${schedule.weekly.dayOfWeek} @ ${schedule.timeOfDay} ${
-                            schedule.timezone
-                        }`;
+                        return `Weekly on ${daysOfWeek[schedule.weekly.day]} @ ${
+                            times[schedule.hour]
+                        } UTC`;
                     }
-                    return `Daily @ ${schedule.timeOfDay} ${schedule.timezone}`;
+                    return `Daily @ ${times[schedule.hour]} UTC`;
                 },
                 Header: 'Schedule'
             }

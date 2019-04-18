@@ -48,6 +48,8 @@ func validate(conf *storage.S3Config) error {
 		if conf.GetSecretAccessKey() == "" {
 			errorList.AddString("Secret Access Key must be specified")
 		}
+	} else if conf.GetAccessKeyId() != "" || conf.GetSecretAccessKey() != "" {
+		errorList.AddStrings("IAM and access/secret key use are mutually exclusive. Only specify one")
 	}
 	if conf.GetRegion() == "" {
 		errorList.AddString("Region must be specified")

@@ -115,7 +115,8 @@ function withAdjustedBehavior(SelectComponent) {
         // tranforms value from a single value to a format that react-select expects
         transformValue = (getOptionValue, options, value, optionValue) => {
             if (optionValue) return optionValue;
-            if (!value) return null;
+            // We want to allow `false` and `0`, so can't just do if (!value)
+            if (value === null || value === undefined || value === '') return null;
 
             const allOptions = options.concat(this.state.createdOptions);
 

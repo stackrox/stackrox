@@ -1,46 +1,34 @@
 package schedule
 
 import (
+	"errors"
 	"fmt"
-	"time"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/tkuchiki/go-timezone"
 )
-
-const (
-	timeLayout = "15:04PM"
-)
-
-const secondsToHours = 60 * 60
 
 // ConvertToCronTab validates and converts storage.Schedule to crontab format
 func ConvertToCronTab(schedule *storage.Schedule) (string, error) {
-	timeOfDay, err := time.Parse(timeLayout, schedule.GetTimeOfDay())
-	if err != nil {
-		return "", err
+	if schedule.GetHour() < 0 || schedule.GetHour() > 23 {
+		return "", errors.New("Schedule hour must be within 0-23")
+	}
+	if schedule.GetMinute() < 0 || schedule.GetMinute() > 60 {
+		return "", errors.New("Schedule hour must be within 0-59")
 	}
 
-	offset, err := timezone.GetOffset(schedule.GetTimezone(), false)
-	if err != nil {
-		return "", err
-	}
+	hours := schedule.GetHour()
+	minutes := schedule.GetMinute()
 
-	// The addition and the mod guarantees that the hours will be positive
-	hours := (timeOfDay.Hour() + 24 + offset/secondsToHours) % 24
-	minutes := timeOfDay.Minute()
-
-	switch val := schedule.Interval.(type) {
-	case *storage.Schedule_Weekly:
-		weekDay := val.Weekly.Day
+	switch schedule.GetIntervalType() {
+	case storage.Schedule_WEEKLY:
+		weekDay := schedule.GetWeekly().GetDay()
 		if weekDay < 0 || weekDay > 6 {
 			return "", fmt.Errorf("weekday of %d is invalid. Must be between 0 and 6", weekDay)
 		}
 		return fmt.Sprintf("%d %d * * %d", minutes, hours, weekDay), nil
-	case *storage.Schedule_Daily:
+	case storage.Schedule_DAILY:
 		return fmt.Sprintf("%d %d * * *", minutes, hours), nil
 	default:
-		// Default to daily
-		return fmt.Sprintf("%d %d * * *", minutes, hours), nil
+		return "", errors.New("Interval must be daily or weekly")
 	}
 }

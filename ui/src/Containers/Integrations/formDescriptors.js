@@ -793,15 +793,15 @@ const formDescriptors = {
                 placeholder: 'AWS S3'
             },
             {
-                label: 'Schedule',
-                jsonpath: 'schedule',
-                type: 'schedule'
-            },
-            {
                 label: 'Backups To Retain',
                 jsonpath: 'backupsToKeep',
                 type: 'number',
                 placeholder: '5'
+            },
+            {
+                label: 'Schedule',
+                jsonpath: 'schedule',
+                type: 'schedule'
             },
             {
                 label: 'Bucket',

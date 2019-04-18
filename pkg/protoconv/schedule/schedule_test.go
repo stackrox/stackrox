@@ -8,14 +8,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newSchedule(tod string, tz string, weekday int32) *storage.Schedule {
+func newSchedule(minute int32, hour int32, weekday int32) *storage.Schedule {
 	var sched storage.Schedule
 
-	sched.TimeOfDay = tod
-	sched.Timezone = tz
+	sched.Hour = hour
+	sched.Minute = minute
 	if weekday == -1 {
-		sched.Interval = &storage.Schedule_Daily{Daily: &storage.Schedule_DailyInterval{}}
+		sched.IntervalType = storage.Schedule_DAILY
 	} else {
+		sched.IntervalType = storage.Schedule_WEEKLY
 		sched.Interval = &storage.Schedule_Weekly{Weekly: &storage.Schedule_WeeklyInterval{Day: weekday}}
 	}
 	return &sched
@@ -30,39 +31,35 @@ func TestSchedule(t *testing.T) {
 	}{
 		{
 			testname: "Valid Time UTC Daily",
-			schedule: newSchedule("12:00PM", "UTC", -1),
-			result:   "0 12 * * *",
-		},
-		{
-			testname: "Valid Time PST Daily",
-			schedule: newSchedule("12:00PM", "PST", -1),
-			result:   "0 4 * * *",
+			schedule: newSchedule(12, 12, -1),
+			result:   "12 12 * * *",
 		},
 		{
 			testname: "Valid Time UTC Weekly",
-			schedule: newSchedule("12:00PM", "UTC", 2),
-			result:   "0 12 * * 2",
+			schedule: newSchedule(34, 12, 2),
+			result:   "34 12 * * 2",
 		},
 		{
-			testname: "Valid Time PST Weekly",
-			schedule: newSchedule("12:00PM", "PST", 2),
-			result:   "0 4 * * 2",
-		},
-		{
-			testname:    "Invalid Time",
-			schedule:    newSchedule("12:00", "UTC", 0),
-			result:      "",
-			expectError: true,
-		},
-		{
-			testname:    "Invalid Timezone",
-			schedule:    newSchedule("12:00", "BLA", 0),
+			testname:    "Invalid Hour",
+			schedule:    newSchedule(0, -1, 0),
 			result:      "",
 			expectError: true,
 		},
 		{
 			testname:    "Invalid weekday",
-			schedule:    newSchedule("12:00", "BLA", 7),
+			schedule:    newSchedule(0, 0, 7),
+			result:      "",
+			expectError: true,
+		},
+		{
+			testname:    "Negative minute",
+			schedule:    newSchedule(-5, 6, -1),
+			result:      "",
+			expectError: true,
+		},
+		{
+			testname:    "Large minute",
+			schedule:    newSchedule(66, 6, -1),
 			result:      "",
 			expectError: true,
 		},

@@ -195,7 +195,7 @@ class Form extends Component {
                 <PanelButton
                     icon={<Icon.Save className="h-4 w-4" />}
                     text={this.isEditMode() ? 'Save' : 'Create'}
-                    className="btn btn-success"
+                    className="btn btn-success mx-1"
                     onClick={this.onSubmit}
                 />
                 {this.props.source === 'backups' &&
@@ -204,7 +204,7 @@ class Form extends Component {
                         <PanelButton
                             icon={<Icon.Check className="h-4 w-4" />}
                             text="Trigger Backup"
-                            className="btn btn-base"
+                            className="btn btn-base mx-1"
                             onClick={this.onBackup}
                         />
                     )}
@@ -212,7 +212,7 @@ class Form extends Component {
                     <PanelButton
                         icon={<Icon.Check className="h-4 w-4" />}
                         text="Test"
-                        className="btn btn-base"
+                        className="btn btn-base mx-1"
                         onClick={this.onTest}
                     />
                 )}

@@ -6,16 +6,21 @@ option java_package = "io.stackrox.proto.storage";
 package storage;
 
 message Schedule {
-    message DailyInterval {}
+    enum IntervalType {
+        UNSET  = 0;
+        DAILY  = 1;
+        WEEKLY = 2;
+    }
+
     message WeeklyInterval {
         int32 day = 1;
     }
 
-    string time_of_day = 1;
-    string timezone    = 2;
+    IntervalType interval_type = 1;
+    int32 hour                 = 2;
+    int32 minute               = 3;
 
     oneof Interval {
-        DailyInterval  daily   = 3;
         WeeklyInterval weekly  = 4;
     }
 
