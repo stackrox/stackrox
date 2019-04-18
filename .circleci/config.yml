@@ -153,12 +153,13 @@ waitForAPI: &waitForAPI
         export API_HOSTNAME=$(./scripts/k8s/get-lb-ip.sh)
         export API_PORT=443
       fi
-      export PING_URL="https://${API_HOSTNAME}:${API_PORT}/v1/ping"
-      echo "PING_URL is set to ${PING_URL}"
+      export METADATA_URL="https://${API_HOSTNAME}:${API_PORT}/v1/metadata"
+      echo "METADATA_URL is set to ${METADATA_URL}"
       set +e
       SUCCESS=0
       for i in $(seq 1 25); do
-        if [[ "$(curl -sk --connect-timeout 5 --max-time 10 "${PING_URL}" | jq '.status' -r)" == "ok" ]]; then
+        metadata="$(curl -sk --connect-timeout 5 --max-time 10 "${METADATA_URL}")"
+        if [[ $? -eq 0 && "$(jq '.licenseStatus' -r <<<"$metadata")" != "RESTARTING" ]]; then
           SUCCESS=1
           break
         fi
@@ -911,13 +912,16 @@ jobs:
             fi
       - *restoreGradle
 
+      - *setupGoogleAppCreds
+      - *setupLicense
+
       - *waitForAPI
+
       - run:
           name: Install license key
           command: |
-            LICENSE_KEY="$(cat ./deploy/common/dev-license.lic)"
             curl -sk "https://${API_HOSTNAME}:${API_PORT}/v1/licenses/add" -X POST -d @- < <(
-              jq -r -n '{"licenseKey": $key}' --arg key "$LICENSE_KEY")
+              jq -r -n '{"licenseKey": $key}' --arg key "$ROX_LICENSE_KEY")
             sleep 3
 
       - *waitForAPI

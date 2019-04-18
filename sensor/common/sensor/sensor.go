@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -225,29 +226,37 @@ func (s *Sensor) registerAPIServices() {
 	log.Info("API services registered")
 }
 
-// Function does not complete until central is pingable.
+// waitUntilCentralIsReady blocks until central responds with a valid license status on its metadata API,
+// or until the retry budget is exhausted (in which case the sensor is marked as stopped and the program
+// will exit).
 func (s *Sensor) waitUntilCentralIsReady(conn *grpc.ClientConn) {
 	const maxRetries = 15
-	pingService := v1.NewPingServiceClient(conn)
+	metadataService := v1.NewMetadataServiceClient(conn)
 	err := retry.WithRetry(func() error {
-		return pingWithTimeout(pingService)
+		return pollMetadataWithTimeout(metadataService)
 	},
 		retry.Tries(maxRetries),
 		retry.OnFailedAttempts(func(err error) {
-			log.Infof("Ping to Central failed: %s. Retrying...", err)
+			log.Infof("Check Central status failed: %s. Retrying...", err)
 			time.Sleep(2 * time.Second)
 		}))
 	if err != nil {
-		s.stoppedSig.SignalWithErrorf("ping to central failed after %d retries: %v", maxRetries, err)
+		s.stoppedSig.SignalWithErrorf("checking central status failed after %d retries: %v", maxRetries, err)
 	}
 }
 
 // Ping a service with a timeout of 10 seconds.
-func pingWithTimeout(svc v1.PingServiceClient) (err error) {
+func pollMetadataWithTimeout(svc v1.MetadataServiceClient) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	_, err = svc.Ping(ctx, &v1.Empty{})
-	return
+	md, err := svc.GetMetadata(ctx, &v1.Empty{})
+	if err != nil {
+		return err
+	}
+	if md.GetLicenseStatus() != v1.Metadata_VALID {
+		return errors.Errorf("central license status is not VALID but %v", md.GetLicenseStatus())
+	}
+	return nil
 }
 
 func (s *Sensor) communicationWithCentral() {
