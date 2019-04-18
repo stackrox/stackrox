@@ -3,7 +3,7 @@ import {
     NODE_WIDTH,
     NODE_PADDING,
     SIDE_NODE_PADDING
-} from 'constants/cytoscapeGraph';
+} from 'constants/networkGraph';
 
 const nodeWidth = TEXT_MAX_WIDTH + NODE_WIDTH;
 const nodeHeight = NODE_WIDTH + NODE_PADDING;

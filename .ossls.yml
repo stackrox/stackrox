@@ -159,17 +159,6 @@ dependencies:
     attribution:
      - Cytoscape Consortium
 
-  ui/node_modules/d3:
-    url: https://github.com/d3/d3
-    license: BSD-3-Clause
-    files:
-      LICENSE: 7a3cb0e5055874e67db9aa2d5fe26de23204fa994ffbad198901ffe9c812a717
-      package.json:
-        author: afe0674b41e36f1cdb4a5485171b5f6a02ae7d5147173442ffb09a9a88439ad2
-        license: f15ff9073b9028a1ec2bc0f18cc3e3ed6df570ab3197b5597d8932ccb30e6d6b
-    attribution:
-      - 2010-2017 Mike Bostock
-
   ui/node_modules/date-fns:
     url: https://github.com/date-fns/date-fns
     license: MIT
@@ -772,38 +761,6 @@ dependencies:
         license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
     attribution:
       - 2017 atomiks
-
-  ui/node_modules/three:
-    url: https://github.com/mrdoob/three.js
-    license: MIT
-    files:
-      LICENSE: 551f06ddc3dc36b56610aa23db680826ba9d9a02e8f89f7bec05d7fa27401a2b
-      package.json:
-        author: d7304c2b6b6d0b9ffb28a49687d4d38e784304fac55740e6a9a78332cbcb8c5a
-        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
-    attribution:
-      - 2010-2018 three.js authors
-
-  ui/node_modules/three-orbit-controls:
-    url: https://github.com/mattdesl/three-orbit-controls
-    license: MIT
-    files:
-      package.json:
-        author: def5fa622a09bc0902df1817f24952ee41a1d09cf01ccc7cab5ff76c45d06b95
-        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
-    attribution:
-      - Matt DesLauriers
-
-  ui/node_modules/three.meshline:
-    url: https://github.com/spite/THREE.MeshLine
-    license: MIT
-    files:
-      LICENSE: 8c450172d956f22a2b3d58e71319833ac4419b5e0f7a5e882cd67ce9888def81
-      package.json:
-        author: 1d19aa53523e02e939eca09dfcf900cb35831c1db110474958677d3f0c475063
-        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
-    attribution:
-      - 2016 Jaume Sanchez
 
   vendor/cloud.google.com/go:
     url: https://github.com/googleapis/google-cloud-go

@@ -10,7 +10,6 @@ import { actions as wizardActions } from 'reducers/network/wizard';
 import { actions as deploymentActions } from 'reducers/deployments';
 
 import NetworkGraph from 'Components/NetworkGraph';
-import NetworkGraph2 from 'Components/NetworkGraph2';
 import NoResultsMessage from 'Components/NoResultsMessage';
 import wizardStages from '../Wizard/wizardStages';
 import { filterModes } from './filterModes';
@@ -43,9 +42,7 @@ class Graph extends Component {
         openWizard: PropTypes.func.isRequired,
         closeWizard: PropTypes.func.isRequired,
 
-        isLoading: PropTypes.bool.isRequired,
-        setNetworkGraphLoading: PropTypes.func.isRequired,
-        setNetworkGraphRef: PropTypes.func.isRequired
+        isLoading: PropTypes.bool.isRequired
     };
 
     static defaultProps = {
@@ -82,38 +79,16 @@ class Graph extends Component {
                 <NoResultsMessage message="There are too many deployments to render on the graph. Please refine your search to a set of namespaces or deployments to display." />
             );
         }
-        const {
-            filterState,
-            networkFlowMapping,
-            networkFlowGraphUpdateKey,
-            isLoading,
-            setNetworkGraphLoading
-        } = this.props;
-        const filteredNetworkFlowMapping =
-            filterState === filterModes.allowed ? {} : networkFlowMapping;
-        if (process.env.NODE_ENV === 'development') {
-            return (
-                <NetworkGraph2
-                    updateKey={this.props.networkFlowGraphUpdateKey}
-                    nodes={nodes}
-                    networkFlowMapping={this.props.networkFlowMapping}
-                    onNodeClick={this.onNodeClick}
-                    onNamespaceClick={this.onNamespaceClick}
-                    onClickOutside={this.props.closeWizard}
-                    filterState={filterState}
-                />
-            );
-        }
+        const { filterState } = this.props;
         return (
             <NetworkGraph
-                ref={this.props.setNetworkGraphRef}
-                updateKey={networkFlowGraphUpdateKey}
+                updateKey={this.props.networkFlowGraphUpdateKey}
                 nodes={nodes}
-                networkFlowMapping={filteredNetworkFlowMapping}
+                networkFlowMapping={this.props.networkFlowMapping}
                 onNodeClick={this.onNodeClick}
+                onNamespaceClick={this.onNamespaceClick}
+                onClickOutside={this.props.closeWizard}
                 filterState={filterState}
-                setNetworkGraphLoading={setNetworkGraphLoading}
-                isLoading={isLoading}
             />
         );
     };

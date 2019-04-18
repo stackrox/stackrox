@@ -12,6 +12,9 @@ lint
 /build
 index.css
 
+# IDE
+/.vscode
+
 # misc
 .DS_Store
 .env.local

@@ -85,7 +85,8 @@ export default reducer;
 
 const getLicense = state => state.license;
 const getLicenseExpirationDate = state => {
-    if (!state.license || !state.license.license.restrictions) return null;
+    if (!state.license || !state.license.license || !state.license.license.restrictions)
+        return null;
     return state.license.license.restrictions.notValidAfter;
 };
 const getLicenseStatus = state => {

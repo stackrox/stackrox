@@ -26,15 +26,14 @@ function Details(props) {
     }
 
     const { deployment, selectedNode } = props;
-    const envGraphPanelTabs = [{ text: 'Details' }, { text: 'Network Policies' }];
-    let deploymentEdges = [];
-
-    if (process.env.NODE_ENV === 'development') {
-        envGraphPanelTabs.push({ text: 'Network Flows' });
-        deploymentEdges = selectedNode.edges.filter(
-            ({ data }) => data.destNodeNS && data.destNodeName && data.source !== data.target
-        );
-    }
+    const envGraphPanelTabs = [
+        { text: 'Details' },
+        { text: 'Network Policies' },
+        { text: 'Network Flows' }
+    ];
+    const deploymentEdges = selectedNode.edges.filter(
+        ({ data }) => data.destNodeNS && data.destNodeName && data.source !== data.target
+    );
     const content = props.isFetchingNode ? (
         <Loader />
     ) : (
@@ -49,13 +48,11 @@ function Details(props) {
                     <NetworkPoliciesDetails />
                 </div>
             </TabContent>
-            {process.env.NODE_ENV === 'development' && (
-                <TabContent>
-                    <div className="flex flex-1 flex-col h-full">
-                        <DeploymentNetworkFlows deploymentEdges={deploymentEdges} />
-                    </div>
-                </TabContent>
-            )}
+            <TabContent>
+                <div className="flex flex-1 flex-col h-full">
+                    <DeploymentNetworkFlows deploymentEdges={deploymentEdges} />
+                </div>
+            </TabContent>
         </Tabs>
     );
 

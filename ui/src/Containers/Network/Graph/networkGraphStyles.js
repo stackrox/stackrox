@@ -1,15 +1,4 @@
-import { NS_FONT_SIZE, TEXT_MAX_WIDTH, NODE_WIDTH } from 'constants/cytoscapeGraph';
-
-export const nonIsolatedColor = 'hsla(2, 78%, 71%, 1)';
-const activeColor = 'hsla(214, 74%, 68%, 1)';
-const hoveredActiveColor = 'hsla(214, 74%, 58%, 1)';
-const selectedActiveColor = 'hsla(214, 74%, 48%, 1)';
-const labelColor = 'hsla(231, 22%, 49%, 1)';
-const NSEdgeColor = 'hsla(231, 40%, 74%, 1.00)';
-const inactiveColor = 'hsla(229, 24%, 59%, 1)';
-const inactiveNSColor = 'hsla(229, 24%, 80%, 1)';
-const hoveredColor = 'hsla(229, 24%, 70%, 1)';
-const selectedColor = 'hsla(229, 24%, 60%, 1)';
+import { NS_FONT_SIZE, TEXT_MAX_WIDTH, NODE_WIDTH, COLORS } from 'constants/networkGraph';
 
 const deploymentStyle = {
     width: NODE_WIDTH,
@@ -23,7 +12,7 @@ const deploymentStyle = {
     'font-weight': 'bold',
     'font-family': 'Open Sans',
     'min-zoomed-font-size': '20px',
-    color: labelColor,
+    color: COLORS.label,
     'z-compound-depth': 'top'
 };
 
@@ -35,14 +24,14 @@ const styles = [
         style: {
             'background-color': '#fff',
             'border-width': '1.5px',
-            'border-color': inactiveNSColor,
+            'border-color': COLORS.inactiveNS,
             shape: 'roundrectangle',
             'compound-sizing-wrt-labels': 'exclude',
             'font-family': 'stackrox, Open Sans',
             'text-margin-y': '8px',
             'text-valign': 'bottom',
             'font-size': NS_FONT_SIZE,
-            color: labelColor,
+            color: COLORS.label,
             'font-weight': 700,
             label: 'data(name)',
             padding: '0px',
@@ -53,7 +42,7 @@ const styles = [
     {
         selector: ':parent > node.deployment',
         style: {
-            'background-color': inactiveColor,
+            'background-color': COLORS.inactive,
             ...deploymentStyle
         }
     },
@@ -62,7 +51,7 @@ const styles = [
         style: {
             opacity: 1,
             'border-style': 'solid',
-            'border-color': hoveredColor,
+            'border-color': COLORS.hovered,
             'overlay-padding': '3px',
             'overlay-color': 'hsla(227, 85%, 70%, 1)',
             'overlay-opacity': 0.05,
@@ -74,7 +63,7 @@ const styles = [
         style: {
             opacity: 1,
             'border-style': 'solid',
-            'border-color': selectedColor,
+            'border-color': COLORS.selected,
             'overlay-padding': '3px',
             'overlay-color': 'hsla(227, 85%, 60%, 1)',
             'overlay-opacity': 0.05,
@@ -85,7 +74,7 @@ const styles = [
         selector: 'node.nsActive',
         style: {
             'border-style': 'dashed',
-            'border-color': activeColor
+            'border-color': COLORS.active
         }
     },
     {
@@ -93,7 +82,7 @@ const styles = [
         style: {
             opacity: 1,
             'border-style': 'dashed',
-            'border-color': hoveredActiveColor,
+            'border-color': COLORS.hoveredActive,
             'overlay-padding': '3px',
             'overlay-color': 'hsla(227, 85%, 60%, 1)',
             'overlay-opacity': 0.1,
@@ -105,7 +94,7 @@ const styles = [
         style: {
             opacity: 1,
             'border-style': 'dashed',
-            'border-color': selectedActiveColor,
+            'border-color': COLORS.selectedActive,
             'overlay-padding': '3px',
             'overlay-color': 'hsla(227, 85%, 50%, 1)',
             'overlay-opacity': 0.1,
@@ -115,19 +104,19 @@ const styles = [
     {
         selector: 'node.active',
         style: {
-            'background-color': activeColor,
+            'background-color': COLORS.active,
             'border-style': 'double',
             'border-width': '1px',
-            'border-color': activeColor
+            'border-color': COLORS.active
         }
     },
     {
         selector: 'node.nonIsolated',
         style: {
-            'background-color': nonIsolatedColor,
+            'background-color': COLORS.nonIsolated,
             'border-style': 'double',
             'border-width': '1px',
-            'border-color': nonIsolatedColor
+            'border-color': COLORS.nonIsolated
         }
     },
     {
@@ -182,12 +171,12 @@ const styles = [
         selector: 'edge.namespace',
         style: {
             'curve-style': 'unbundled-bezier',
-            'line-color': NSEdgeColor,
+            'line-color': COLORS.NSEdge,
             'edge-distances': 'node-position',
             // 'taxi-turn-min-distance': '10px',
             label: 'data(count)',
             'font-size': '8px',
-            color: NSEdgeColor,
+            color: COLORS.NSEdge,
             'font-weight': 500,
             'text-background-opacity': 1,
             'text-background-color': 'white',
