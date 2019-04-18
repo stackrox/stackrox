@@ -21,3 +21,13 @@ generators:
     allowNoBuildFlavorRestriction: true
     deploymentEnvironments:
       - gcp/stackrox-ci
+- name: dev
+  key:
+    keyResourceId: "projects/stackrox-dev/locations/us-west2/keyRings/licensing-dev/cryptoKeys/dev-license/cryptoKeyVersions/2"
+  limit:
+    maxDuration: 1382400000000000
+    allowOffline: true
+    maxNodeLimit: 50
+    buildFlavors:
+      - development
+    allowNoDeploymentEnvironmentRestriction: true
