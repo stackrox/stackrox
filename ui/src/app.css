@@ -1098,8 +1098,8 @@ h6 {
     height: 0;
     border-top: 8px solid transparent;
     border-bottom: 8px solid transparent;
-
     border-right: 8px solid var(--primary-800);
+    left: -8px;
 }
 
 .table-group {

@@ -45,6 +45,11 @@ describe('General sanity checks', () => {
         cy.visit('/');
         cy.get(selectors.navLinks.apidocs).as('apidocs');
         cy.get('@apidocs').click();
-        cy.url().should('contain', 'apidocs');
+        cy.get(selectors.navLinks.apiDocsMenuLinks).as('apiDocsLinks');
+        cy.get('@apiDocsLinks').should($lis => {
+            expect($lis).to.have.length(2);
+            expect($lis.eq(0)).to.contain('Documentation');
+            expect($lis.eq(1)).to.contain('API Reference');
+        });
     });
 });

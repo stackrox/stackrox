@@ -484,6 +484,17 @@ dependencies:
       - Pomax
       - Andarist
 
+  ui/node_modules/react-popper:
+      url: https://github.com/FezVrasta/react-popper
+      license: MIT
+      files:
+        LICENSE: 7014499d17cdf2c417cb18e3507eccb718420d83342e8d8661e76ee0b6413700
+        package.json:
+          author: 8b8de6608187172371f671563da3a68284f3de1fa9a7d3e23fba941b153a6c97
+          license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+      attribution:
+        - 2015 React Popper authors
+
   ui/node_modules/react-redux:
     url: https://github.com/reduxjs/react-redux
     license: MIT

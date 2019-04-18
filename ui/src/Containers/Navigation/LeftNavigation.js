@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+
 import * as Icon from 'react-feather';
 import { connect } from 'react-redux';
 import { withRouter, NavLink as Link } from 'react-router-dom';
@@ -6,10 +7,9 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { createStructuredSelector } from 'reselect';
 import find from 'lodash/find';
 import PropTypes from 'prop-types';
-
 import { selectors } from 'reducers';
-
 import NavigationPanel from './NavigationPanel';
+import ApiDocsNavigation from './ApiDocsNavigation';
 
 const linkClassName =
     'flex flex-col font-condensed font-700 border-primary-900 text-primary-400 px-3 no-underline justify-center h-18 hover:bg-base-700 items-center border-b';
@@ -178,18 +178,7 @@ class LeftNavigation extends Component {
             className="flex flex-col flex-none text-center text-xs font-700"
             data-test-id="nav-footer"
         >
-            <Link
-                to="/main/apidocs"
-                className={`${linkClassName} border-t`}
-                onClick={this.closePanel()}
-            >
-                <div className="text-center pb-1">
-                    <Icon.HelpCircle className={`${iconClassName} text-primary-400`} />
-                </div>
-                <div className="text-center text-base-100 font-condensed uppercase text-sm tracking-wide">
-                    API Docs
-                </div>
-            </Link>
+            <ApiDocsNavigation onClick={this.closePanel()} />
             <span className="left-navigation p-3 text-primary-400 word-break-all">
                 {versionString(this.props.metadata)}
             </span>
