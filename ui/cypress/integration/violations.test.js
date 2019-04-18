@@ -37,6 +37,14 @@ describe('Violations page', () => {
         );
     };
 
+    const mockPatchAlerts = () => {
+        cy.route({
+            method: 'PATCH',
+            url: '/v1/alerts/*',
+            response: {}
+        }).as('patchAlerts');
+    };
+
     const mockGetPolicy = () => {
         cy.route({
             method: 'GET',
@@ -151,6 +159,7 @@ describe('Violations page', () => {
     // Excluding this test because it's causing issues. Will include it again once it's fixed in a different PR
     xit('should whitelist the deployment', () => {
         mockWhitelistDeployment();
+        mockPatchAlerts();
         mockGetPolicy();
         cy.get(ViolationsPageSelectors.lastTableRow)
             .find('[type="checkbox"]')
@@ -159,7 +168,6 @@ describe('Violations page', () => {
             .first()
             .click();
         cy.get('.ReactModal__Content .btn.btn-success').click();
-
         cy.wait('@getPolicy');
         cy.visit('/main/violations');
         cy.wait('@alertsWithWhitelistedDeployments');
