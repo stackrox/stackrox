@@ -21,6 +21,7 @@ generators:
     allowNoBuildFlavorRestriction: true
     deploymentEnvironments:
       - gcp/stackrox-ci
+      - aws/051999192406
 - name: dev
   key:
     keyResourceId: "projects/stackrox-dev/locations/us-west2/keyRings/licensing-dev/cryptoKeys/dev-license/cryptoKeyVersions/2"

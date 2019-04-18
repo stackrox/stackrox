@@ -29,7 +29,7 @@ func init() {
 				AllowOffline:                  true,
 				MaxNodeLimit:                  10,
 				AllowNoBuildFlavorRestriction: true,
-				DeploymentEnvironments:        []string{"gcp/stackrox-ci"},
+				DeploymentEnvironments:        []string{"gcp/stackrox-ci", "aws/051999192406"},
 			}),
 	)
 }

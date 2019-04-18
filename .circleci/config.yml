@@ -881,7 +881,9 @@ jobs:
           name: Restore DB
           command: |
             roxctl -e "${API_HOSTNAME}:${API_PORT}" -p "${ROX_PASSWORD}" central db restore \
-              --file ./qa-tests-backend/artifacts/upgrade-tests/v2.4.16.4/stackrox_db_2019_03_01_03_48_45.zip
+              --file ./qa-tests-backend/artifacts/upgrade-tests/v2.4.16.4/stackrox_db_2019_03_01_03_48_45.zip \
+              --timeout 1m
+
       - run:
           name: Do the upgrade
           command: |
@@ -962,6 +964,8 @@ jobs:
       - *setupGCP
       - *createGKE
       - *setupHelm
+      - *setupGoogleAppCreds
+      - *setupLicense
 
       - run:
           name: Launch Central only

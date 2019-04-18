@@ -3,6 +3,6 @@
     "allowOffline": true,
     "maxNodes": 10,
     "noBuildFlavorRestriction": true,
-    "deploymentEnvironments": ["gcp/stackrox-ci"]
+    "deploymentEnvironments": ["gcp/stackrox-ci", "aws/051999192406"]
   }
 }
