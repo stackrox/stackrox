@@ -43,6 +43,8 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	nodes := nodeMocks.NewMockGlobalStore(suite.mockCtrl)
 	secrets := secretMocks.NewMockDataStore(suite.mockCtrl)
 
+	nodes.EXPECT().GetAllClusterNodeStores().AnyTimes().Return(nil, nil)
+
 	suite.clusters.EXPECT().GetClusters().Return(([]*storage.Cluster)(nil), nil)
 	suite.indexer.EXPECT().AddClusters(nil).Return(nil)
 

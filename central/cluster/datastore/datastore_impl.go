@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
@@ -144,7 +145,7 @@ func (ds *datastoreImpl) postRemoveCluster(cluster *storage.Cluster) {
 	}
 
 	// Remove nodes associated with this cluster
-	if err := ds.ns.RemoveClusterNodeStore(cluster.GetId()); err != nil {
+	if err := ds.ns.RemoveClusterNodeStores(cluster.GetId()); err != nil {
 		log.Errorf("failed to remove nodes for cluster %s: %v", cluster.GetId(), err)
 	}
 
@@ -202,4 +203,36 @@ func (ds *datastoreImpl) markAlertsStale(alerts []*storage.Alert) error {
 		}
 	}
 	return errorList.ToError()
+}
+
+func (ds *datastoreImpl) cleanUpNodeStore() {
+	if err := ds.doCleanUpNodeStore(); err != nil {
+		log.Errorf("Error cleaning up cluster node stores: %v", err)
+	}
+}
+
+func (ds *datastoreImpl) doCleanUpNodeStore() error {
+	clusterNodeStores, err := ds.ns.GetAllClusterNodeStores()
+	if err != nil {
+		return errors.Wrap(err, "retrieving per-cluster node stores")
+	}
+
+	if len(clusterNodeStores) == 0 {
+		return nil
+	}
+
+	clusterIDsInNodeStore := set.NewStringSet()
+	for clusterID := range clusterNodeStores {
+		clusterIDsInNodeStore.Add(clusterID)
+	}
+
+	clusters, err := ds.GetClusters()
+	if err != nil {
+		return errors.Wrap(err, "retrieving clusters")
+	}
+	for _, cluster := range clusters {
+		clusterIDsInNodeStore.Remove(cluster.GetId())
+	}
+
+	return ds.ns.RemoveClusterNodeStores(clusterIDsInNodeStore.AsSlice()...)
 }

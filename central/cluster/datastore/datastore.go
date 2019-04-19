@@ -60,5 +60,6 @@ func New(
 	if err := ds.buildIndex(); err != nil {
 		return ds, err
 	}
+	go ds.cleanUpNodeStore()
 	return ds, nil
 }

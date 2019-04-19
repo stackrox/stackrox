@@ -62,12 +62,12 @@ func (s *globalStoreImpl) buildIndex() error {
 	return nil
 }
 
-func (s *globalStoreImpl) getAllClusterNodeStores() ([]store.Store, error) {
-	var stores []store.Store
+func (s *globalStoreImpl) GetAllClusterNodeStores() (map[string]store.Store, error) {
+	stores := make(map[string]store.Store)
 	err := s.bucketRef.View(func(b *bolt.Bucket) error {
 		return b.ForEach(func(k, _ []byte) error {
 			crud := protoCrud.NewMessageCrudForBucket(bolthelper.NestedRef(s.bucketRef, k), key, alloc)
-			stores = append(stores, datastore.New(store.New(crud), s.indexer))
+			stores[string(k)] = datastore.New(store.New(crud), s.indexer)
 			return nil
 		})
 	})
@@ -89,11 +89,18 @@ func (s *globalStoreImpl) GetClusterNodeStore(clusterID string) (store.Store, er
 	return datastore.New(store.New(crud), s.indexer), nil
 }
 
-func (s *globalStoreImpl) RemoveClusterNodeStore(clusterID string) error {
-	key := []byte(clusterID)
+func (s *globalStoreImpl) RemoveClusterNodeStores(clusterIDs ...string) error {
+	if len(clusterIDs) == 0 {
+		return nil
+	}
 	return s.bucketRef.Update(func(b *bolt.Bucket) error {
-		if b.Bucket(key) != nil {
-			return b.DeleteBucket(key)
+		for _, clusterID := range clusterIDs {
+			key := []byte(clusterID)
+			if b.Bucket(key) != nil {
+				if err := b.DeleteBucket(key); err != nil {
+					return err
+				}
+			}
 		}
 		return nil
 	})
@@ -112,7 +119,7 @@ func (s *globalStoreImpl) CountAllNodes() (int, error) {
 
 // SearchResults returns any node matches to the query
 func (s *globalStoreImpl) SearchResults(q *v1.Query) ([]*v1.SearchResult, error) {
-	stores, err := s.getAllClusterNodeStores()
+	stores, err := s.GetAllClusterNodeStores()
 	if err != nil {
 		return nil, err
 	}

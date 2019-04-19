@@ -13,8 +13,9 @@ import (
 
 // GlobalStore stores the nodes for all clusters.
 type GlobalStore interface {
+	GetAllClusterNodeStores() (map[string]store.Store, error)
 	GetClusterNodeStore(clusterID string) (store.Store, error)
-	RemoveClusterNodeStore(clusterID string) error
+	RemoveClusterNodeStores(clusterIDs ...string) error
 
 	CountAllNodes() (int, error)
 

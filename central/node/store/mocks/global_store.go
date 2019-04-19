@@ -59,14 +59,14 @@ func (mr *MockGlobalStoreMockRecorder) GetClusterNodeStore(arg0 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusterNodeStore", reflect.TypeOf((*MockGlobalStore)(nil).GetClusterNodeStore), arg0)
 }
 
-// RemoveClusterNodeStore mocks base method
+// RemoveClusterNodeStores mocks base method
 func (m *MockGlobalStore) RemoveClusterNodeStore(arg0 string) error {
-	ret := m.ctrl.Call(m, "RemoveClusterNodeStore", arg0)
+	ret := m.ctrl.Call(m, "RemoveClusterNodeStores", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RemoveClusterNodeStore indicates an expected call of RemoveClusterNodeStore
+// RemoveClusterNodeStores indicates an expected call of RemoveClusterNodeStores
 func (mr *MockGlobalStoreMockRecorder) RemoveClusterNodeStore(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveClusterNodeStore", reflect.TypeOf((*MockGlobalStore)(nil).RemoveClusterNodeStore), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveClusterNodeStores", reflect.TypeOf((*MockGlobalStore)(nil).RemoveClusterNodeStore), arg0)
 }
