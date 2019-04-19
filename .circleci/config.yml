@@ -326,6 +326,17 @@ checkOpenshiftLabel: &checkOpenshiftLabel
         circleci step halt
       fi
 
+checkKopsLabel: &checkKopsLabel
+  run:
+    name: Determine whether to run kops tests
+    command: |
+      set +e
+      .circleci/pr_has_label.sh ci-kops-tests
+      if [ $? -eq 1 ]; then
+        echo "Skipping tests because we're on a PR. Apply the ci-kops-tests label to your PR if you want to run them."
+        circleci step halt
+      fi
+
 checkScaleLabel: &checkScaleLabel
   run:
     name: Determine whether to run Scale tests
@@ -1221,6 +1232,7 @@ jobs:
       - KOPS_AUTOMATION_VERSION: 0.2.6
     steps:
       - checkout
+      - *checkKopsLabel
 
       - run:
           name: Login to Docker Hub
@@ -1290,6 +1302,8 @@ jobs:
 
     steps:
       - checkout
+      - *checkKopsLabel
+
       - setup_remote_docker
 
       - run:
@@ -1613,8 +1627,6 @@ workflows:
               - /.*/
       - provision-kops:
           filters:
-            branches:
-              ignore: /.*/
             tags:
               only: /.*/
       - kops-tests:
@@ -1622,8 +1634,6 @@ workflows:
             - build
             - provision-kops
           filters:
-            branches:
-              ignore: /.*/
             tags:
               only: /.*/
       - oss-audit:
