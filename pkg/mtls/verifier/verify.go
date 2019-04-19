@@ -76,7 +76,7 @@ func (CA) TLSConfig() (*tls.Config, error) {
 }
 
 // TLSConfig initializes a server configuration that requires client TLS
-// authentication based on the Certificate Authority we are using.
+// authentication based on a single certificate in the filesystem.
 func (NonCA) TLSConfig() (*tls.Config, error) {
 	serverTLSCert, err := mtls.LeafCertificateFromFile()
 	if err != nil {
