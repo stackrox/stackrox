@@ -1,12 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
+import { Redirect, Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { LICENSE_STATUS } from 'reducers/license';
 
-import { getUploadResponseMessage, getLicenseStatusMessage } from 'Containers/License/helpers';
+import { getLicenseStatusMessage } from 'Containers/License/helpers';
 import { dashboardPath } from 'routePaths';
 import logoPlatform from 'images/logo-platform.svg';
 
@@ -14,28 +14,30 @@ import MessageBanner from 'Components/MessageBanner';
 import LoadingSection from 'Components/LoadingSection';
 import UploadLicense from 'Containers/License/UploadLicense';
 
-const getDefaultBannerText = licenseStatus => {
+const getDefaultBannerText = (licenseUploadStatus, licenseStatus) => {
     // if we have an upload status, show that
-    if (licenseStatus) {
-        return getUploadResponseMessage(licenseStatus);
+    if (licenseUploadStatus) {
+        const { status, message } = licenseUploadStatus;
+        return getLicenseStatusMessage(status, message);
     }
     // if we haven't uploaded, show what the license status is currently
-    return getLicenseStatusMessage(licenseStatus);
+    return getLicenseStatusMessage(licenseStatus, null);
 };
 
-const StartUpScreen = ({ licenseStatus }) => {
+const StartUpScreen = ({ licenseStatus, licenseUploadStatus }) => {
     const fetchingLicense = licenseStatus === LICENSE_STATUS.RESTARTING;
 
-    // debugger;
+    if (licenseStatus === LICENSE_STATUS.VALID) {
+        return <Redirect to="/" />;
+    }
 
     if (fetchingLicense) {
         return <LoadingSection message="Verifying License..." />;
     }
 
-    // debugger;
     const hasLicense = licenseStatus === LICENSE_STATUS.VALID;
 
-    const bannerMessage = getDefaultBannerText(licenseStatus);
+    const bannerMessage = getDefaultBannerText(licenseUploadStatus, licenseStatus);
 
     const message = (
         <div className="flex flex-col items-center bg-base-100 w-2/5 md:w-3/5 xl:w-2/5 relative overflow-hidden rounded-t">
@@ -87,7 +89,8 @@ StartUpScreen.defaultProps = {
 };
 
 const mapStateToProps = createStructuredSelector({
-    licenseStatus: selectors.getLicenseStatus
+    licenseStatus: selectors.getLicenseStatus,
+    licenseUploadStatus: selectors.getLicenseUploadStatus
 });
 
 export default connect(

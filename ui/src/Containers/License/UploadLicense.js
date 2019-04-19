@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions, LICENSE_STATUS } from 'reducers/license';
-import { getUploadResponseMessage } from 'Containers/License/helpers';
+import { getLicenseStatusMessage } from 'Containers/License/helpers';
 
 import UploadButton from 'Components/UploadButton';
 import Dialog from 'Components/Dialog';
@@ -15,16 +15,17 @@ const UploadLicense = ({ licenseUploadStatus, activateLicense, isStartUpScreen }
         ? licenseUploadStatus.status === LICENSE_STATUS.VERIFYING
         : false;
 
-    const [dialogMessage, setDialogMessage] = useState(
-        getUploadResponseMessage(licenseUploadStatus)
-    );
+    const status = licenseUploadStatus ? licenseUploadStatus.status : null;
+    const message = licenseUploadStatus ? licenseUploadStatus.message : null;
+
+    const [dialogMessage, setDialogMessage] = useState(getLicenseStatusMessage(status, message));
     const [isDialogOpen, openDialog] = useState(defaultDialogState);
     const [isVerifyingLicense, verifyLicense] = useState(defaultVerifyingLicenseState);
 
     useEffect(
         () => {
             if (licenseUploadStatus && licenseUploadStatus.status !== LICENSE_STATUS.VERIFYING) {
-                setDialogMessage(getUploadResponseMessage(licenseUploadStatus));
+                setDialogMessage(getLicenseStatusMessage(status, message));
                 verifyLicense(false);
             }
         },
@@ -51,7 +52,7 @@ const UploadLicense = ({ licenseUploadStatus, activateLicense, isStartUpScreen }
             {!isStartUpScreen && (
                 <Dialog
                     isOpen={isDialogOpen}
-                    text={dialogMessage.text}
+                    text={dialogMessage ? dialogMessage.text : ''}
                     cancelText="Ok"
                     onCancel={onDialogCancel}
                     isLoading={isVerifyingLicense}

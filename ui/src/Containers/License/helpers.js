@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { stackroxSupport } from 'messages/common';
-import { LICENSE_STATUS } from 'reducers/license';
+import { LICENSE_STATUS, LICENSE_UPLOAD_STATUS } from 'reducers/license';
 import { licensePath } from 'routePaths';
 import { distanceInWordsToNow, differenceInDays } from 'date-fns';
 
@@ -12,57 +12,31 @@ export const expiredText = `Your license key has expired. Please upload a new li
 } to renew  your StackRox Kubernetes Security  Platform license.`;
 export const validText = 'Your StackRox license has been renewed';
 
-export const getUploadResponseMessage = data => {
-    const message = {
+export const getLicenseStatusMessage = (status, message) => {
+    const result = {
         text: '',
         type: 'info'
     };
-    if (!data) return message;
-    if (data.message) {
-        message.text = data.message;
-        message.type = 'error';
-        return message;
-    }
-    switch (data) {
+    if (!status && !message) return null;
+    switch (status) {
+        case LICENSE_UPLOAD_STATUS.VERIFYING:
+            result.text = 'Verifying...';
+            result.type = 'info';
+            break;
         case LICENSE_STATUS.VALID:
-            message.text = validText;
-            message.type = 'info';
-            return message;
+            result.text = message || validText;
+            result.type = 'info';
+            break;
         case LICENSE_STATUS.RESTARTING:
-            message.text = 'Restarting';
-            message.type = 'info';
-            return message;
-        case LICENSE_STATUS.NONE_OR_INVALID:
-            message.text = invalidText;
-            message.type = 'error';
-            return message;
+            result.text = 'Restarting...';
+            result.type = 'info';
+            break;
         default:
-            return message;
+            result.text = message || invalidText;
+            result.type = 'error';
+            break;
     }
-};
-
-export const getLicenseStatusMessage = licenseStatus => {
-    let message = {
-        text: '',
-        type: 'info'
-    };
-    switch (licenseStatus) {
-        case LICENSE_STATUS.VALID:
-            message.text = validText;
-            message.type = 'info';
-            return message;
-        case LICENSE_STATUS.RESTARTING:
-            message.text = 'Restarting';
-            message.type = 'info';
-            return message;
-        case LICENSE_STATUS.NONE_OR_INVALID:
-            message.text = invalidText;
-            message.type = 'error';
-            return message;
-        default:
-            message = null;
-            return message;
-    }
+    return result;
 };
 
 const getExpirationMessageType = expirationDate => {
