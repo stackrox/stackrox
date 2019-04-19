@@ -9,7 +9,7 @@ const messageClasses = {
     info: `${className} bg-info-300 text-info-800`
 };
 
-function MessageBanner({ message, type, showCancel, onCancel }) {
+function MessageBanner({ component, message, type, showCancel, onCancel }) {
     const [isBannerShowing, showBanner] = useState(true);
     function onClickHandler() {
         showBanner(false);
@@ -18,7 +18,7 @@ function MessageBanner({ message, type, showCancel, onCancel }) {
     return (
         isBannerShowing && (
             <div className={messageClasses[type]}>
-                <div className="flex flex-1 justify-center">{message}</div>
+                <div className="flex flex-1 justify-center">{component || message}</div>
                 {showCancel && (
                     <Icon.X className="h-6 w-6 cursor-pointer" onClick={onClickHandler} />
                 )}
@@ -28,13 +28,16 @@ function MessageBanner({ message, type, showCancel, onCancel }) {
 }
 
 MessageBanner.defaultProps = {
+    component: null,
+    message: null,
     type: 'info',
     showCancel: false,
     onCancel: null
 };
 
 MessageBanner.propTypes = {
-    message: PropTypes.string.isRequired,
+    component: PropTypes.element,
+    message: PropTypes.string,
     type: PropTypes.oneOf(['warn', 'error', 'info']),
     showCancel: PropTypes.bool,
     onCancel: PropTypes.func

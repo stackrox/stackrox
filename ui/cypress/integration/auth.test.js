@@ -37,7 +37,7 @@ describe('Authentication', () => {
         cy.route('POST', api.logs, {}).as('logs');
     };
 
-    it('should redirect user to login page, authenticate and redirect to the requested page', () => {
+    xit('should redirect user to login page, authenticate and redirect to the requested page', () => {
         stubAPIs();
         setupAuth(dashboardURL);
         cy.server();
@@ -54,7 +54,7 @@ describe('Authentication', () => {
         cy.url().should('contain', dashboardURL);
     });
 
-    it('should allow authenticated user to enter', () => {
+    xit('should allow authenticated user to enter', () => {
         localStorage.setItem('access_token', 'my-token'); // simulate authenticated user
         stubAPIs();
         setupAuth(dashboardURL);

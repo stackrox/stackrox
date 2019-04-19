@@ -1,5 +1,8 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { stackroxSupport } from 'messages/common';
 import { LICENSE_STATUS } from 'reducers/license';
+import { licensePath } from 'routePaths';
 import { distanceInWordsToNow, differenceInDays } from 'date-fns';
 
 export const invalidText =
@@ -62,22 +65,45 @@ export const getLicenseStatusMessage = licenseStatus => {
     }
 };
 
-export const createExpirationMessage = expirationDate => {
+const getExpirationMessageType = expirationDate => {
     const daysLeft = differenceInDays(expirationDate, new Date());
-    const message = `Your license will expire in ${distanceInWordsToNow(
-        expirationDate
-    )}. Upload a new license key to renew your account.`;
-    let type;
-
     if (daysLeft > 3 && daysLeft <= 14) {
-        type = 'warn';
-    } else if (daysLeft <= 3) {
-        type = 'error';
-    } else {
-        return null;
+        return 'warn';
     }
+    if (daysLeft <= 3) {
+        return 'error';
+    }
+    return null;
+};
+
+const createExpirationMessage = (expirationDate, message) => {
+    const type = getExpirationMessageType(expirationDate);
     return {
         message,
         type
     };
+};
+
+export const createExpirationMessageWithLink = expirationDate => {
+    const type = getExpirationMessageType(expirationDate);
+    const message = (
+        <div>
+            Your license will expire in {distanceInWordsToNow(expirationDate)}.
+            <Link
+                className={`mx-1 ${type === 'warn' ? 'text-warning-800' : 'text-alert-800'}`}
+                to={licensePath}
+            >
+                Upload a new license key
+            </Link>
+            to renew your account.
+        </div>
+    );
+    return createExpirationMessage(expirationDate, message);
+};
+
+export const createExpirationMessageWithoutLink = expirationDate => {
+    const message = `Your license will expire in ${distanceInWordsToNow(
+        expirationDate
+    )}. Upload a new license key to renew your account.`;
+    return createExpirationMessage(expirationDate, message);
 };

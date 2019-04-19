@@ -5,7 +5,10 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { withRouter } from 'react-router-dom';
-import { createExpirationMessage } from 'Containers/License/helpers';
+import {
+    createExpirationMessageWithLink,
+    createExpirationMessageWithoutLink
+} from 'Containers/License/helpers';
 import {
     differenceInDays,
     differenceInHours,
@@ -34,16 +37,15 @@ const getDelay = expirationDate => {
     return null;
 };
 
-const LicenseReminder = ({ expirationDate, history }) => {
+const LicenseReminder = ({ expirationDate, history, hasReadPermission }) => {
+    const createExpirationMessage = hasReadPermission('Licenses')
+        ? createExpirationMessageWithLink
+        : createExpirationMessageWithoutLink;
+
     const [showReminder, setReminder] = useState(true);
     const [expirationMessage, setExpirationMessage] = useState(
         createExpirationMessage(expirationDate)
     );
-
-    if (!showReminder) return null;
-    if (!expirationMessage) return null;
-
-    const onCancelHandler = () => () => setReminder(false);
 
     useEffect(() => {
         const delay = getDelay(expirationDate);
@@ -61,11 +63,16 @@ const LicenseReminder = ({ expirationDate, history }) => {
         };
     });
 
+    if (!showReminder) return null;
+    if (!expirationMessage) return null;
+
+    const onCancelHandler = () => () => setReminder(false);
+
     const { type, message } = expirationMessage;
     return (
         <MessageBanner
             type={type}
-            message={message}
+            component={message}
             showCancel={type === 'warn'}
             onCancel={onCancelHandler()}
         />
@@ -74,7 +81,8 @@ const LicenseReminder = ({ expirationDate, history }) => {
 
 LicenseReminder.propTypes = {
     expirationDate: PropTypes.string,
-    history: ReactRouterPropTypes.history
+    history: ReactRouterPropTypes.history,
+    hasReadPermission: PropTypes.bool.isRequired
 };
 
 LicenseReminder.defaultProps = {
@@ -83,7 +91,8 @@ LicenseReminder.defaultProps = {
 };
 
 const mapStateToProps = createStructuredSelector({
-    expirationDate: selectors.getLicenseExpirationDate
+    expirationDate: selectors.getLicenseExpirationDate,
+    hasReadPermission: selectors.hasReadPermission
 });
 
 export default connect(

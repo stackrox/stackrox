@@ -115,7 +115,11 @@ class MainPage extends Component {
                     <ProtectedRoute path={secretsPath} component={AsyncSecretsPage} />
                     <ProtectedRoute path={accessControlPath} component={AsyncAccessControlPage} />
                     <ProtectedRoute path={apidocsPath} component={AsyncApiDocsPage} />
-                    <ProtectedRoute path={licensePath} component={AsyncLicensePage} />
+                    <ProtectedRoute
+                        path={licensePath}
+                        component={AsyncLicensePage}
+                        requiredPermission="Licenses"
+                    />
                     <Redirect from={mainPath} to={dashboardPath} />
                 </Switch>
                 {this.renderPDFLoader()}

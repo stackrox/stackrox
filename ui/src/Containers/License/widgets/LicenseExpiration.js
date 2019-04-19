@@ -4,7 +4,7 @@ import { format, distanceInWordsToNow } from 'date-fns';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
-import { createExpirationMessage } from 'Containers/License/helpers';
+import { createExpirationMessageWithoutLink } from 'Containers/License/helpers';
 
 import * as Icon from 'react-feather';
 import Widget from 'Components/Widget';
@@ -13,7 +13,7 @@ import UploadLicense from 'Containers/License/UploadLicense';
 
 const LicenseExpiration = ({ expirationDate, hasReadWritePermission }) => {
     const canUploadLicense = hasReadWritePermission('Licenses');
-    const expirationMessage = createExpirationMessage(expirationDate);
+    const expirationMessage = createExpirationMessageWithoutLink(expirationDate);
     return (
         <Widget header="License Expiration">
             <div className="py-4 px-6 w-full">
