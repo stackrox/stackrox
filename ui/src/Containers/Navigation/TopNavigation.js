@@ -130,11 +130,7 @@ class TopNavigation extends Component {
     };
 
     renderNavBarMenu = () => {
-        const NavItem = () => (
-            <div className="px-4">
-                <Icon.MoreHorizontal className="h-4 w-4" />
-            </div>
-        );
+        const NavItem = () => <Icon.MoreHorizontal className="mx-4 h-4 w-4 pointer-events-none" />;
         const options = [{ label: 'Logout', onClick: () => this.props.logout() }];
         if (this.props.hasReadPermission('Licenses')) {
             options.unshift({ label: 'Product License', link: '/main/license' });
