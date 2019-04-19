@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/namespaces"
 	networkPolicyConversion "github.com/stackrox/rox/pkg/protoconv/networkpolicy"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -536,6 +537,12 @@ func compileValidateYaml(simulationYaml string) ([]*storage.NetworkPolicy, error
 	for _, policy := range policies {
 		if policy.GetNamespace() == "" {
 			return nil, fmt.Errorf("yamls tested against must apply to a namespace")
+		}
+		if policy.GetNamespace() == namespaces.StackRox {
+			return nil, fmt.Errorf("network policies cannot be applied to %s namespace", namespaces.StackRox)
+		}
+		if policy.GetNamespace() == namespaces.KubeSystem {
+			return nil, fmt.Errorf("network policies cannot be applied to %s namespace", namespaces.KubeSystem)
 		}
 	}
 
