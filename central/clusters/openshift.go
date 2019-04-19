@@ -35,5 +35,5 @@ func (o *openshift) Render(c Wrap, _ []byte) ([]*zip.File, error) {
 		filenames = append(filenames, monitoringFilenames...)
 	}
 
-	return renderFilenames(filenames, fields, "/data/assets/docker-auth.sh")
+	return renderFilenames(filenames, fields, dockerAuthFile)
 }

@@ -46,5 +46,5 @@ func (k *kubernetes) Render(c Wrap, ca []byte) ([]*zip.File, error) {
 		filenames = append(filenames, admissionController)
 	}
 
-	return renderFilenames(filenames, fields, "assets/docker-auth.sh")
+	return renderFilenames(filenames, fields, dockerAuthFile)
 }
