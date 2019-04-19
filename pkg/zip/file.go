@@ -1,9 +1,5 @@
 package zip
 
-import (
-	"io/ioutil"
-)
-
 // FileFlags store metadata about a file in a zip archive.
 type FileFlags uint32
 
@@ -28,13 +24,4 @@ func NewFile(name string, content []byte, flags FileFlags) *File {
 		Content: content,
 		Flags:   flags,
 	}
-}
-
-// NewFromFile creates a zip.File from an existing file.
-func NewFromFile(srcFilename, tgtFilename string, flags FileFlags) (*File, error) {
-	contents, err := ioutil.ReadFile(srcFilename)
-	if err != nil {
-		return nil, err
-	}
-	return NewFile(tgtFilename, contents, flags), nil
 }

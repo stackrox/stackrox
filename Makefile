@@ -101,6 +101,10 @@ roxvet:
 	@go install $(BASE_DIR)/tools/roxvet
 	@go vet -vettool "$$(go env GOPATH)/bin/roxvet" $(shell go list -e ./... | grep -v -e 'stackrox/rox/image')
 
+.PHONY: keys
+keys:
+	@echo "+ $@"
+	go generate github.com/stackrox/rox/central/encdata
 
 PROTOLOCK_BIN := $(GOPATH)/bin/protolock
 $(PROTOLOCK_BIN):
@@ -215,7 +219,7 @@ clean-proto-generated-srcs:
 
 # volatile-generated-srcs are all generated sources that are NOT committed
 .PHONY: volatile-generated-srcs
-volatile-generated-srcs: proto-generated-srcs go-packr-srcs
+volatile-generated-srcs: proto-generated-srcs go-packr-srcs keys
 
 .PHONY: generated-srcs
 generated-srcs: volatile-generated-srcs go-generated-srcs
@@ -395,16 +399,22 @@ main-image-rhel: all-builds
 # it assumes the caller has taken care of the dependencies, and does not
 # declare its dependencies explicitly.
 .PHONY: docker-build-main-image
-docker-build-main-image: copy-binaries-to-image-dir
+docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image
 	docker build -t stackrox/main:$(TAG) image/
 	@echo "Built main image with tag: $(TAG)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 
 .PHONY: docker-build-main-image-rhel
-docker-build-main-image-rhel: copy-binaries-to-image-dir
+docker-build-main-image-rhel: copy-binaries-to-image-dir docker-build-data-image
 	docker build -t stackrox/main-rhel:$(TAG) --file image/Dockerfile_rhel --label version=$(TAG) --label release=$(TAG) image/
 	@echo "Built main image for RHEL with tag: $(TAG)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
+
+.PHONY: docker-build-data-image
+docker-build-data-image:
+	test -f $(CURDIR)/image/keys/data-key
+	test -f $(CURDIR)/image/keys/data-iv
+	docker build -t stackrox-data:latest image/ --file image/stackrox-data.Dockerfile
 
 .PHONY: copy-binaries-to-image-dir
 copy-binaries-to-image-dir:

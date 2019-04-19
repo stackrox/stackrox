@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"os/signal"
@@ -29,6 +30,7 @@ import (
 	detectionService "github.com/stackrox/rox/central/detection/service"
 	developmentService "github.com/stackrox/rox/central/development/service"
 	"github.com/stackrox/rox/central/docs"
+	"github.com/stackrox/rox/central/encdata"
 	_ "github.com/stackrox/rox/central/externalbackups/plugins/all" // Import all of the external backup plugins
 	backupService "github.com/stackrox/rox/central/externalbackups/service"
 	"github.com/stackrox/rox/central/globaldb"
@@ -139,6 +141,15 @@ func main() {
 		waitForTerminationSignal()
 		return
 	}
+
+	log.Info("Extracting StackRox data ...")
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+
+	if err := encdata.ExtractData(ctx); err != nil {
+		log.Fatalf("Could not extract data: %v", err)
+	}
+	log.Info("Successfully extracted StackRox data")
 
 	licenseStatus = v1.Metadata_VALID
 	go startMainServer(&licenseStatus)

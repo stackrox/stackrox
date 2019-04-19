@@ -1,23 +1,57 @@
 package image
 
 import (
+	"path/filepath"
 	"strings"
 	"text/template"
 
 	"github.com/gobuffalo/packd"
 	"github.com/gobuffalo/packr"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/version"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 )
 
+const templatePath = "templates"
+
 // These are the go based files from packr
 var (
 	K8sBox       = packr.NewBox("./templates/kubernetes")
 	OpenshiftBox = packr.NewBox("./templates/openshift")
 	AssetBox     = packr.NewBox("./assets")
+
+	allBoxes = []*packr.Box{
+		&K8sBox,
+		&OpenshiftBox,
+		&AssetBox,
+	}
 )
+
+// LoadFileContents resolves a given file's contents across all boxes.
+func LoadFileContents(filename string) (string, error) {
+	for _, box := range allBoxes {
+		boxPath := strings.TrimRight(strings.TrimPrefix(box.Path, "./"), "/") + "/"
+		if strings.HasPrefix(filename, boxPath) {
+			relativeFilename := strings.TrimPrefix(filename, boxPath)
+			return box.FindString(relativeFilename)
+		}
+	}
+	return "", errors.Errorf("file %q could not be located in any box", filename)
+}
+
+// ReadFileAndTemplate reads and renders the template for the file
+func ReadFileAndTemplate(path string) (*template.Template, error) {
+	templatePath := filepath.Join(templatePath, path)
+	contents, err := LoadFileContents(templatePath)
+	if err != nil {
+		return nil, err
+	}
+
+	tpl := template.New(templatePath)
+	return tpl.Parse(contents)
+}
 
 // GetCentralChart returns the Helm chart for Central
 func GetCentralChart() *chart.Chart {

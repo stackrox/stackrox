@@ -7,12 +7,12 @@ import (
 	"text/template"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/image"
 	"github.com/stackrox/rox/pkg/defaultimages"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/netutil"
-	"github.com/stackrox/rox/pkg/templates"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/zip"
@@ -135,7 +135,7 @@ func fieldsFromWrap(c Wrap) (map[string]interface{}, error) {
 func renderFilenames(filenames []string, c map[string]interface{}, staticFilenames ...string) ([]*zip.File, error) {
 	var files []*zip.File
 	for _, f := range filenames {
-		t, err := templates.ReadFileAndTemplate(f)
+		t, err := image.ReadFileAndTemplate(f)
 		if err != nil {
 			return nil, err
 		}
@@ -154,10 +154,11 @@ func renderFilenames(filenames []string, c map[string]interface{}, staticFilenam
 		if path.Ext(staticFilename) == ".sh" {
 			flags |= zip.Executable
 		}
-		f, err := zip.NewFromFile(staticFilename, path.Base(staticFilename), flags)
+		contents, err := image.LoadFileContents(staticFilename)
 		if err != nil {
 			return nil, err
 		}
+		f := zip.NewFile(path.Base(staticFilename), []byte(contents), flags)
 		files = append(files, f)
 	}
 	return files, nil

@@ -1,16 +1,11 @@
+FROM stackrox-data:latest AS data
+
 FROM alpine:3.9
 LABEL "com.vendor"="StackRox (support@stackrox.com)"
 
 # Pulled from https://github.com/connorgorman/telegraf/releases with the slimmed down version of telegraf
 RUN wget -O telegraf https://github.com/connorgorman/telegraf/releases/download/1.8.0%2B49-slim/telegraf && \
     chmod +x /telegraf
-
-# If you change this URL you must also change it in image/Dockerfile_rhel
-RUN wget -O product-docs.tgz https://storage.googleapis.com/doc-bundles/03c318a8759d13e8ed7611bccd6618dde60d768a345ff3c0a870e60c53bcfbe9/0.0.0-82-gc16cd000.tgz && \
-    tar xzf product-docs.tgz && \
-    mv public /product-docs && \
-    ls /product-docs/index.html && \
-    rm product-docs.tgz
 
 RUN apk update && \
     apk add --no-cache \
@@ -23,21 +18,17 @@ RUN apk update && \
 
 ENV PATH="/stackrox:$PATH"
 
-COPY ./policies/ /data/policies
-COPY ./templates/ /data/templates
 COPY ./central-entrypoint.sh /stackrox/
 COPY ./bin/migrator /stackrox/
 COPY ./bin/central /stackrox/
-COPY ./bin/compliance /stackrox/compliance
+COPY ./bin/compliance /stackrox/
 COPY ./bin/roxctl* /assets/downloads/cli/
 COPY ./bin/kubernetes-sensor /stackrox/
 COPY ./static-bin/* /stackrox/
 COPY ./ui/build  /ui/
-COPY ./docs/api/v1/swagger.json /docs/api/v1/swagger.json
+COPY --from=data /stackrox-data.tgze /stackrox/
 
 COPY ./NOTICE.txt /
-
-COPY ./assets /data/assets
 
 EXPOSE 8443
 
@@ -62,3 +53,6 @@ VOLUME /var/log/stackrox
 # /tmp needs to be a read-write filesystem.
 RUN chown -R 4000 /tmp
 VOLUME /tmp
+
+RUN mkdir -p /stackrox/data && chown -R 4000 /stackrox/data
+VOLUME /stackrox/data

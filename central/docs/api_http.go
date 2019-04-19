@@ -28,7 +28,7 @@ func Swagger() http.Handler {
 }
 
 func swaggerForRequest(req *http.Request) ([]byte, error) {
-	b, err := ioutil.ReadFile("/docs/api/v1/swagger.json")
+	b, err := ioutil.ReadFile("/stackrox/data/docs/api/v1/swagger.json")
 	if err != nil {
 		return nil, errors.Wrap(err, "could not load swagger file")
 	}

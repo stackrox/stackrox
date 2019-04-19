@@ -1,6 +1,6 @@
 defaults: &defaults
   docker:
-    - image: docker.io/stackrox/apollo-ci:0.1.11-26-g6be53d6963
+    - image: docker.io/stackrox/apollo-ci:0.1.11-27-g9547aa803c
       auth:
         username: $DOCKER_IO_USERNAME
         password: $DOCKER_IO_PASSWORD
@@ -438,6 +438,7 @@ jobs:
             - bazel-bin/compliance/collection/linux_amd64_pure_stripped/collection
             - image/NOTICE.txt # Required license notice
             - image/docs # This will go into the image as generated docs.
+            - image/keys
             - deps # Used to speed up k8s-tests
             - generated # Used to speed up k8s-tests
             - vendor # Used to speed up k8s-tests
