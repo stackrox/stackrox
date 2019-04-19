@@ -28,4 +28,5 @@ var Registry = []searchbasedpolicies.PolicyQueryBuilder{
 	resourcePolicy,
 	builders.ProcessQueryBuilder{},
 	builders.ReadOnlyRootFSQueryBuilder{},
+	builders.PortExposureQueryBuilder{},
 }

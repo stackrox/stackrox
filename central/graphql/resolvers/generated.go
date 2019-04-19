@@ -531,6 +531,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"fixedBy: String!",
 		"imageName: ImageNamePolicy",
 		"lineRule: DockerfileLineRuleField",
+		"portExposurePolicy: PortExposurePolicy",
 		"portPolicy: PortPolicy",
 		"processPolicy: ProcessPolicy",
 		"requiredAnnotation: KeyValuePolicy",
@@ -557,6 +558,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"servicePort: Int!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.PortConfig_ExposureLevel(0)))
+	utils.Must(builder.AddType("PortExposurePolicy", []string{
+		"exposureLevels: [PortConfig_ExposureLevel!]!",
+	}))
 	utils.Must(builder.AddType("PortPolicy", []string{
 		"port: Int!",
 		"protocol: String!",
@@ -4698,6 +4702,11 @@ func (resolver *policyFieldsResolver) LineRule() (*dockerfileLineRuleFieldResolv
 	return resolver.root.wrapDockerfileLineRuleField(value, true, nil)
 }
 
+func (resolver *policyFieldsResolver) PortExposurePolicy() (*portExposurePolicyResolver, error) {
+	value := resolver.data.GetPortExposurePolicy()
+	return resolver.root.wrapPortExposurePolicy(value, true, nil)
+}
+
 func (resolver *policyFieldsResolver) PortPolicy() (*portPolicyResolver, error) {
 	value := resolver.data.GetPortPolicy()
 	return resolver.root.wrapPortPolicy(value, true, nil)
@@ -4860,6 +4869,34 @@ func toPortConfig_ExposureLevels(values *[]string) []storage.PortConfig_Exposure
 		output[i] = toPortConfig_ExposureLevel(&v)
 	}
 	return output
+}
+
+type portExposurePolicyResolver struct {
+	root *Resolver
+	data *storage.PortExposurePolicy
+}
+
+func (resolver *Resolver) wrapPortExposurePolicy(value *storage.PortExposurePolicy, ok bool, err error) (*portExposurePolicyResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &portExposurePolicyResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapPortExposurePolicies(values []*storage.PortExposurePolicy, err error) ([]*portExposurePolicyResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*portExposurePolicyResolver, len(values))
+	for i, v := range values {
+		output[i] = &portExposurePolicyResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *portExposurePolicyResolver) ExposureLevels() []string {
+	value := resolver.data.GetExposureLevels()
+	return stringSlice(value)
 }
 
 type portPolicyResolver struct {

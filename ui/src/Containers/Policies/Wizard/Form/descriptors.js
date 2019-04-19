@@ -1,4 +1,4 @@
-import { lifecycleStageLabels } from 'messages/common';
+import { lifecycleStageLabels, portExposureLabels } from 'messages/common';
 
 const equalityOptions = [
     { label: 'Is greater than', value: 'GREATER_THAN' },
@@ -538,6 +538,19 @@ const policyConfigurationDescriptor = [
         jsonpath: 'fields.processPolicy.uid',
         type: 'text',
         placeholder: '0',
+        required: false,
+        default: false
+    },
+    {
+        label: 'Port Exposure',
+        jsonpath: 'fields.portExposurePolicy.exposureLevels',
+        type: 'multiselect',
+        options: Object.keys(portExposureLabels)
+            .filter(key => key !== 'INTERNAL')
+            .map(key => ({
+                label: portExposureLabels[key],
+                value: key
+            })),
         required: false,
         default: false
     }

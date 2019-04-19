@@ -7,6 +7,7 @@ import "google/protobuf/timestamp.proto";
 import "storage/scope.proto";
 import "storage/image.proto";
 import "protobuf/gogoproto/gogo.proto";
+import "storage/deployment.proto";
 
 package storage;
 
@@ -110,6 +111,8 @@ message PolicyFields {
         bool read_only_root_fs = 25;
     }
     string fixed_by = 26;
+
+    PortExposurePolicy port_exposure_policy = 27;
 }
 
 message Component {
@@ -173,6 +176,10 @@ message ImageNamePolicy {
     string registry        = 1; // e.g. docker.io
     string remote          = 2; // e.g. stackrox/container-summarizer
     string tag             = 3; // e.g. latest
+}
+
+message PortExposurePolicy {
+    repeated PortConfig.ExposureLevel exposure_levels = 1;
 }
 
 message Whitelist {

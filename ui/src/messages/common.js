@@ -46,6 +46,12 @@ const common = Object.freeze({
             withDashes: '1-650-489-6769'
         },
         email: 'support@stackrox.com'
+    },
+    portExposureLabels: {
+        EXTERNAL: 'LoadBalancer',
+        NODE: 'NodePort',
+        HOST: 'HostPort',
+        INTERNAL: 'ClusterIP'
     }
 });
 

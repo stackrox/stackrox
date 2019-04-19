@@ -1,4 +1,4 @@
-import { lifecycleStageLabels, enforcementActionLabels } from 'messages/common';
+import { enforcementActionLabels, lifecycleStageLabels, portExposureLabels } from 'messages/common';
 
 const comparatorOp = {
     GREATER_THAN: '>',
@@ -263,6 +263,13 @@ const fieldsMap = {
             const ancestor = d.ancestor ? `and has ancestor matching "${d.ancestor}"` : '';
             const uid = d.uid ? `with uid ${d.uid}` : ``;
             return `${name} ${args} ${ancestor} ${uid}`;
+        }
+    },
+    portExposurePolicy: {
+        label: 'Port Exposure',
+        formatValue: d => {
+            const output = d.exposureLevels.map(element => portExposureLabels[element]);
+            return output.join(', ');
         }
     }
 };
