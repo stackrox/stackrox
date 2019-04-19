@@ -5,6 +5,7 @@ import { LICENSE_STATUS, LICENSE_UPLOAD_STATUS } from 'reducers/license';
 import { licensePath } from 'routePaths';
 import { distanceInWordsToNow, differenceInDays } from 'date-fns';
 
+export const noneText = 'In order to use StackRox, please obtain and install a valid license key.';
 export const invalidText =
     'Your StackRox license key is invalid. In order to use StackRox, please obtain and install a new valid license key.';
 export const expiredText = `Your license key has expired. Please upload a new license key, or contact our customer success team over email or by calling ${
@@ -30,6 +31,14 @@ export const getLicenseStatusMessage = (status, message) => {
         case LICENSE_STATUS.RESTARTING:
             result.text = 'Restarting...';
             result.type = 'info';
+            break;
+        case LICENSE_STATUS.NONE:
+            result.text = noneText;
+            result.type = 'warn';
+            break;
+        case LICENSE_STATUS.EXPIRED:
+            result.text = expiredText;
+            result.type = 'warn';
             break;
         default:
             result.text = message || invalidText;

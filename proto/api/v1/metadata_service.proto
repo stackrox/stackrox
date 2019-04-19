@@ -10,9 +10,11 @@ package v1;
 
 message Metadata {
     enum LicenseStatus {
-        NONE_OR_INVALID = 0;
-        RESTARTING = 1;
-        VALID = 2;
+        NONE = 0;
+        INVALID = 1;
+        EXPIRED = 2;
+        RESTARTING = 3;
+        VALID = 4;
     }
 
     string version      = 1;

@@ -77,7 +77,6 @@ import (
 	summaryService "github.com/stackrox/rox/central/summary/service"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
-	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
@@ -125,19 +124,19 @@ func main() {
 		log.Errorf("Failed to remove backup DB: %v", err)
 	}
 
-	var licenseStatus v1.Metadata_LicenseStatus
+	var restartingFlag concurrency.Flag
+
 	licenseMgr := licenseSingletons.ManagerSingleton()
-	initialLicense, err := licenseMgr.Initialize(licenseEnforcer.New(&licenseStatus))
+	initialLicense, err := licenseMgr.Initialize(licenseEnforcer.New(&restartingFlag))
 	if err != nil {
 		log.Fatalf("Could not initialize license manager: %v", err)
 	}
 
 	if initialLicense == nil {
-		licenseStatus = v1.Metadata_NONE_OR_INVALID
 		log.Error("*** No valid license found")
 		log.Error("*** ")
 		log.Error("*** Server starting in limited mode until license activated")
-		go startLimitedModeServer(&licenseStatus)
+		go startLimitedModeServer(&restartingFlag)
 		waitForTerminationSignal()
 		return
 	}
@@ -151,8 +150,7 @@ func main() {
 	}
 	log.Info("Successfully extracted StackRox data")
 
-	licenseStatus = v1.Metadata_VALID
-	go startMainServer(&licenseStatus)
+	go startMainServer(&restartingFlag)
 
 	waitForTerminationSignal()
 }
@@ -165,13 +163,13 @@ func ensureDB() {
 }
 
 type invalidLicenseFactory struct {
-	licenseStatus *v1.Metadata_LicenseStatus
+	restartingFlag *concurrency.Flag
 }
 
 func (f invalidLicenseFactory) ServicesToRegister(authproviders.Registry) []pkgGRPC.APIService {
 	return []pkgGRPC.APIService{
-		licenseService.New(f.licenseStatus, licenseSingletons.ManagerSingleton()),
-		metadataService.New(f.licenseStatus),
+		licenseService.New(true, licenseSingletons.ManagerSingleton()),
+		metadataService.New(f.restartingFlag, licenseSingletons.ManagerSingleton()),
 		pingService.Singleton(), // required for dev scripts & health checking
 	}
 }
@@ -184,9 +182,9 @@ func (invalidLicenseFactory) CustomRoutes() (customRoutes []routes.CustomRoute) 
 	return []routes.CustomRoute{uiDefaultRoute()}
 }
 
-func startLimitedModeServer(licenseStatus *v1.Metadata_LicenseStatus) {
+func startLimitedModeServer(restartingFlag *concurrency.Flag) {
 	startGRPCServer(invalidLicenseFactory{
-		licenseStatus: licenseStatus,
+		restartingFlag: restartingFlag,
 	})
 }
 
@@ -197,7 +195,7 @@ type serviceFactory interface {
 }
 
 type defaultFactory struct {
-	licenseStatus *v1.Metadata_LicenseStatus
+	restartingFlag *concurrency.Flag
 }
 
 func (defaultFactory) StartServices() {
@@ -226,7 +224,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		groupService.Singleton(),
 		imageService.Singleton(),
 		iiService.Singleton(),
-		metadataService.New(f.licenseStatus),
+		metadataService.New(f.restartingFlag, licenseSingletons.ManagerSingleton()),
 		namespaceService.Singleton(),
 		networkFlowService.Singleton(),
 		networkPolicyService.Singleton(),
@@ -244,7 +242,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		summaryService.Singleton(),
 		userService.Singleton(),
 		sensorService.New(connection.ManagerSingleton(), all.Singleton(), clusterDataStore.Singleton()),
-		licenseService.New(f.licenseStatus, licenseSingletons.ManagerSingleton()),
+		licenseService.New(false, licenseSingletons.ManagerSingleton()),
 	}
 
 	if env.DevelopmentBuild.Setting() == "true" {
@@ -257,9 +255,9 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 	return servicesToRegister
 }
 
-func startMainServer(licenseStatus *v1.Metadata_LicenseStatus) {
+func startMainServer(restartingFlag *concurrency.Flag) {
 	startGRPCServer(defaultFactory{
-		licenseStatus: licenseStatus,
+		restartingFlag: restartingFlag,
 	})
 }
 

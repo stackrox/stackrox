@@ -3,7 +3,9 @@ import { combineReducers } from 'redux';
 import { createFetchingActionTypes, createFetchingActions } from 'utils/fetchingReduxRoutines';
 
 export const METADATA_LICENSE_STATUS = {
-    NONE_OR_INVALID: 'NONE_OR_INVALID',
+    NONE: 'NONE',
+    INVALID: 'INVALID',
+    EXPIRED: 'EXPIRED',
     RESTARTING: 'RESTARTING',
     VALID: 'VALID'
 };

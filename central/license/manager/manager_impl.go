@@ -32,6 +32,19 @@ var (
 	log = logging.LoggerForModule()
 )
 
+func licenseStatusToMetadataStatus(status v1.LicenseInfo_Status) v1.Metadata_LicenseStatus {
+	switch status {
+	case v1.LicenseInfo_UNKNOWN:
+		return v1.Metadata_NONE
+	case v1.LicenseInfo_VALID:
+		return v1.Metadata_VALID
+	case v1.LicenseInfo_EXPIRED:
+		return v1.Metadata_EXPIRED
+	default:
+		return v1.Metadata_INVALID
+	}
+}
+
 type licenseData struct {
 	licenseProto                  *licenseproto.License
 	notValidBefore, notValidAfter time.Time
@@ -62,6 +75,8 @@ type manager struct {
 	listener LicenseEventListener
 
 	deploymentEnvsMgr deploymentenvs.Manager
+
+	licenseStatus v1.Metadata_LicenseStatus
 }
 
 func newManager(store store.Store, validator validator.Validator, deploymentEnvsMgr deploymentenvs.Manager) *manager {
@@ -235,6 +250,7 @@ func (m *manager) checkLicensesNoLock() time.Time {
 	if m.activeLicense != nil {
 		err := m.checkLicenseIsUsable(m.activeLicense, deploymentEnvsByClusterID)
 		if err == nil {
+			m.licenseStatus = v1.Metadata_VALID
 			return m.activeLicense.notValidAfter
 		}
 
@@ -246,12 +262,15 @@ func (m *manager) checkLicensesNoLock() time.Time {
 	// Otherwise, if `makeLicenseActiveNoLock` does not succeed because the license has become invalid (e.g., just
 	// expired), we might not deactive the old license.
 	for {
-		newActiveLicense, nextEventTS := m.chooseUsableLicenseNoLock(deploymentEnvsByClusterID)
+		newActiveLicense, invalidStatus, nextEventTS := m.chooseUsableLicenseNoLock(deploymentEnvsByClusterID)
 
 		_, _, licenseChanged := m.makeLicenseActiveNoLock(newActiveLicense, deploymentEnvsByClusterID)
 		if licenseChanged || newActiveLicense == nil {
 			if newActiveLicense != nil {
 				log.Infof("Automatically selected new license %s, valid until %v", newActiveLicense.licenseProto.GetMetadata().GetId(), newActiveLicense.notValidAfter)
+				m.licenseStatus = v1.Metadata_VALID
+			} else {
+				m.licenseStatus = invalidStatus
 			}
 			return nextEventTS
 		}
@@ -261,11 +280,14 @@ func (m *manager) checkLicensesNoLock() time.Time {
 // chooseUsableLicenseNoLock returns the "best" available license, or nil if no usable license is available. The
 // second return value indicates the timestamp when we should next check for an available license (this could either
 // be the expiration time of the chosen license, or the next time a license that is not yet valid becomes valid).
-func (m *manager) chooseUsableLicenseNoLock(deploymentEnvsByClusterID map[string][]string) (*licenseData, time.Time) {
+func (m *manager) chooseUsableLicenseNoLock(deploymentEnvsByClusterID map[string][]string) (*licenseData, v1.Metadata_LicenseStatus, time.Time) {
 	var bestCandidate *licenseData
 
 	var nextActivationTS time.Time
 	now := time.Now()
+
+	// invalidStatus is the most precise metadata license status of any invalid license.
+	invalidStatus := v1.Metadata_NONE
 
 	for _, license := range m.licenses {
 		// Calculate the nearest `notValidBefore` timestamp that is in the future, regardless of why the license
@@ -275,6 +297,11 @@ func (m *manager) chooseUsableLicenseNoLock(deploymentEnvsByClusterID map[string
 		}
 
 		if err := m.checkLicenseIsUsable(license, deploymentEnvsByClusterID); err != nil {
+			licenseStatus, _ := statusFromError(err)
+			thisStatus := licenseStatusToMetadataStatus(licenseStatus)
+			if thisStatus > invalidStatus {
+				invalidStatus = thisStatus
+			}
 			continue
 		}
 
@@ -285,9 +312,9 @@ func (m *manager) chooseUsableLicenseNoLock(deploymentEnvsByClusterID map[string
 	}
 
 	if bestCandidate != nil {
-		return bestCandidate, bestCandidate.notValidAfter
+		return bestCandidate, invalidStatus, bestCandidate.notValidAfter
 	}
-	return nil, nextActivationTS
+	return nil, invalidStatus, nextActivationTS
 }
 
 func (m *manager) getLicenseInfoNoLock(license *licenseData, deploymentEnvsByClusterID map[string][]string) *v1.LicenseInfo {
@@ -435,12 +462,19 @@ func (m *manager) addLicenseNoLock(deploymentEnvsByClusterID map[string][]string
 	m.licenses[license.licenseProto.GetMetadata().GetId()] = license
 	m.dirty[license] = struct{}{}
 
+	var newLicenseInfo *v1.LicenseInfo
 	if licenseErr == nil && (m.activeLicense == nil || activate) {
-		newLicenseInfo, _, _ := m.makeLicenseActiveNoLock(license, deploymentEnvsByClusterID)
-		return newLicenseInfo, nil
+		newLicenseInfo, _, _ = m.makeLicenseActiveNoLock(license, deploymentEnvsByClusterID)
+	} else {
+		newLicenseInfo = m.getLicenseInfoNoLock(license, deploymentEnvsByClusterID)
 	}
 
-	return m.getLicenseInfoNoLock(license, deploymentEnvsByClusterID), nil
+	mdStatusFromLicense := licenseStatusToMetadataStatus(newLicenseInfo.GetStatus())
+	if mdStatusFromLicense > m.licenseStatus {
+		m.licenseStatus = mdStatusFromLicense
+	}
+
+	return newLicenseInfo, nil
 }
 
 func (m *manager) decodeLicenseKey(licenseKey string) (*licenseData, error) {
@@ -512,4 +546,11 @@ func (m *manager) SelectLicense(id string) (*v1.LicenseInfo, error) {
 
 	newLicenseInfo, _, _ := m.makeLicenseActiveNoLock(license, deploymentEnvsByClusterID)
 	return newLicenseInfo, nil
+}
+
+func (m *manager) GetLicenseStatus() v1.Metadata_LicenseStatus {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	return m.licenseStatus
 }

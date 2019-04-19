@@ -51,6 +51,7 @@ const license = (state = null, action) => {
             ...state,
             status: licenseStatus
         };
+
         return isEqual(newState, state) ? state : newState;
     }
     if (action.type === types.FETCH_LICENSES.SUCCESS) {

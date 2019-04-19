@@ -22,6 +22,8 @@ type LicenseManager interface {
 
 	AddLicenseKey(licenseKey string, activate bool) (*v1.LicenseInfo, error)
 	SelectLicense(licenseID string) (*v1.LicenseInfo, error)
+
+	GetLicenseStatus() v1.Metadata_LicenseStatus
 }
 
 // New creates and returns a new license manager, using the given license key store and validator.

@@ -1,11 +1,11 @@
 package service
 
 import (
-	"sync/atomic"
-
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/central/license/manager"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/version"
 	"golang.org/x/net/context"
@@ -14,7 +14,8 @@ import (
 
 // Service is the struct that manages the Metadata API
 type serviceImpl struct {
-	licenseStatus *v1.Metadata_LicenseStatus
+	restarting *concurrency.Flag
+	licenseMgr manager.LicenseManager
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -34,10 +35,16 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetMetadata returns the metadata for Rox.
 func (s *serviceImpl) GetMetadata(context.Context, *v1.Empty) (*v1.Metadata, error) {
+	var status v1.Metadata_LicenseStatus
+	if s.restarting.Get() {
+		status = v1.Metadata_RESTARTING
+	} else {
+		status = s.licenseMgr.GetLicenseStatus()
+	}
 	return &v1.Metadata{
 		Version:       version.GetMainVersion(),
 		BuildFlavor:   buildinfo.BuildFlavor,
 		ReleaseBuild:  buildinfo.ReleaseBuild,
-		LicenseStatus: v1.Metadata_LicenseStatus(atomic.LoadInt32((*int32)(s.licenseStatus))),
+		LicenseStatus: status,
 	}, nil
 }

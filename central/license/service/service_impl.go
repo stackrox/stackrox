@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"sync/atomic"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/license/manager"
@@ -31,15 +30,15 @@ var (
 )
 
 type service struct {
-	licenseStatus *v1.Metadata_LicenseStatus
+	lockdownMode bool
 
 	licenseMgr manager.LicenseManager
 }
 
-func newService(licenseStatus *v1.Metadata_LicenseStatus, licenseMgr manager.LicenseManager) *service {
+func newService(lockdownMode bool, licenseMgr manager.LicenseManager) *service {
 	return &service{
-		licenseStatus: licenseStatus,
-		licenseMgr:    licenseMgr,
+		lockdownMode: lockdownMode,
+		licenseMgr:   licenseMgr,
 	}
 }
 
@@ -52,7 +51,7 @@ func (s *service) RegisterServiceHandler(ctx context.Context, mux *runtime.Serve
 }
 
 func (s *service) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	if v1.Metadata_LicenseStatus(atomic.LoadInt32((*int32)(s.licenseStatus))) == v1.Metadata_NONE_OR_INVALID {
+	if s.lockdownMode {
 		return ctx, allow.Anonymous().Authorized(ctx, fullMethodName)
 	}
 	return ctx, authorizer.Authorized(ctx, fullMethodName)

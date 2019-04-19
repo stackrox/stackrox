@@ -2,7 +2,6 @@ package enforcer
 
 import (
 	"os"
-	"sync/atomic"
 	"time"
 
 	"github.com/stackrox/rox/central/globaldb"
@@ -27,17 +26,17 @@ var (
 )
 
 // New creates a new license enforcement event listener.
-func New(licenseStatus *v1.Metadata_LicenseStatus) manager.LicenseEventListener {
+func New(restartingFlag *concurrency.Flag) manager.LicenseEventListener {
 	return &enforcer{
-		licenseStatus: licenseStatus,
+		restartingFlag: restartingFlag,
 	}
 }
 
 type enforcer struct {
-	licenseStatus          *v1.Metadata_LicenseStatus
 	licenseMgr             manager.LicenseManager
 	initialLicenseWasValid bool
 	restartTimer           *time.Timer
+	restartingFlag         *concurrency.Flag
 }
 
 func (e *enforcer) OnInitialize(mgr manager.LicenseManager, initialLicense *licenseproto.License) {
@@ -60,17 +59,13 @@ func (e *enforcer) OnActiveLicenseChanged(newLicenseInfo, oldLicenseInfo *v1.Lic
 			log.Infof("No valid license is available. Central will restart in %v for the change to take effect", enforcementTimeBuffer)
 		}
 		e.restartTimer = time.AfterFunc(enforcementTimeBuffer, e.enforce)
-		atomic.StoreInt32((*int32)(e.licenseStatus), int32(v1.Metadata_RESTARTING))
+		e.restartingFlag.Set(true)
 	} else if e.restartTimer != nil {
 		if e.restartTimer.Stop() {
 			log.Info("Restart was aborted.")
 		}
 		e.restartTimer = nil
-		if e.initialLicenseWasValid {
-			atomic.StoreInt32((*int32)(e.licenseStatus), int32(v1.Metadata_VALID))
-		} else {
-			atomic.StoreInt32((*int32)(e.licenseStatus), int32(v1.Metadata_NONE_OR_INVALID))
-		}
+		e.restartingFlag.Set(false)
 	}
 }
 

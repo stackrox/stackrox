@@ -61,6 +61,7 @@ func (s *managerTestSuite) TestInitializeEmpty() {
 	s.mockListener.EXPECT().OnInitialize(s.mgr, gomock.Nil())
 	activeLicense, err := s.mgr.Initialize(s.mockListener)
 	s.Nil(activeLicense)
+	s.Equal(v1.Metadata_NONE, s.mgr.GetLicenseStatus())
 	s.NoError(err)
 }
 
@@ -114,6 +115,7 @@ func (s *managerTestSuite) TestInitializeWithValidAndSelected() {
 	s.NoError(err)
 
 	s.Equal("license2", activeLicense.GetMetadata().GetId())
+	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 }
 
 func (s *managerTestSuite) TestInitializeWithInvalidSelected() {
@@ -182,6 +184,7 @@ func (s *managerTestSuite) TestInitializeWithInvalidSelected() {
 	s.NoError(err)
 
 	s.Equal("license2", activeLicense.GetMetadata().GetId())
+	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 }
 
 func (s *managerTestSuite) TestInitializeWithNoneSelected() {
@@ -243,6 +246,7 @@ func (s *managerTestSuite) TestInitializeWithNoneSelected() {
 	s.NoError(err)
 
 	s.Equal("license2", activeLicense.GetMetadata().GetId())
+	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 }
 
 func (s *managerTestSuite) TestLicenseSwitchOnExpiration() {
@@ -295,6 +299,7 @@ func (s *managerTestSuite) TestLicenseSwitchOnExpiration() {
 	s.NoError(err)
 
 	s.Equal("license1", activeLicense.GetMetadata().GetId())
+	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 
 	s.mockListener.EXPECT().OnActiveLicenseChanged(
 		testutils.PredMatcher("new license is license 2 and valid", func(l *v1.LicenseInfo) bool {
@@ -326,6 +331,8 @@ func (s *managerTestSuite) TestLicenseSwitchOnExpiration() {
 
 	newActiveLicense := s.mgr.GetActiveLicense()
 	s.Equal("license2", newActiveLicense.GetMetadata().GetId())
+
+	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 }
 
 func (s *managerTestSuite) TestLicenseSwitchOffOnExpiration() {
@@ -379,6 +386,7 @@ func (s *managerTestSuite) TestLicenseSwitchOffOnExpiration() {
 	s.NoError(err)
 
 	s.Equal("license1", activeLicense.GetMetadata().GetId())
+	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 
 	s.mockListener.EXPECT().OnActiveLicenseChanged(
 		nil,
@@ -400,6 +408,7 @@ func (s *managerTestSuite) TestLicenseSwitchOffOnExpiration() {
 
 	newActiveLicense := s.mgr.GetActiveLicense()
 	s.Nil(newActiveLicense)
+	s.Equal(v1.Metadata_EXPIRED, s.mgr.GetLicenseStatus())
 }
 
 func (s *managerTestSuite) TestLicenseActivatedWhenValid() {
@@ -430,6 +439,7 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValid() {
 	activeLicense, err := s.mgr.Initialize(s.mockListener)
 	s.NoError(err)
 	s.Nil(activeLicense)
+	s.Equal(v1.Metadata_INVALID, s.mgr.GetLicenseStatus())
 
 	s.mockListener.EXPECT().OnActiveLicenseChanged(
 		testutils.PredMatcher("new license is license 1 and is valid", func(l *v1.LicenseInfo) bool {
@@ -451,6 +461,7 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValid() {
 
 	newActiveLicense := s.mgr.GetActiveLicense()
 	s.Equal("license1", newActiveLicense.GetMetadata().GetId())
+	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 }
 
 func (s *managerTestSuite) TestLicenseActivatedWhenValidAdded() {
@@ -475,6 +486,7 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValidAdded() {
 	activeLicense, err := s.mgr.Initialize(s.mockListener)
 	s.NoError(err)
 	s.Nil(activeLicense)
+	s.Equal(v1.Metadata_NONE, s.mgr.GetLicenseStatus())
 
 	s.mockListener.EXPECT().OnActiveLicenseChanged(
 		testutils.PredMatcher("new license is license 1 and is valid", func(l *v1.LicenseInfo) bool {
@@ -500,6 +512,7 @@ func (s *managerTestSuite) TestLicenseActivatedWhenValidAdded() {
 
 	newActiveLicense := s.mgr.GetActiveLicense()
 	s.Equal(addedLicense.GetLicense(), newActiveLicense)
+	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 }
 
 func (s *managerTestSuite) TestLicenseNotReplacedWithActivateFalse() {
@@ -533,6 +546,7 @@ func (s *managerTestSuite) TestLicenseNotReplacedWithActivateFalse() {
 	s.NoError(err)
 
 	s.Equal("license1", activeLicense.GetMetadata().GetId())
+	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 
 	license2 := &licenseproto.License{
 		Metadata: &licenseproto.License_Metadata{
@@ -564,6 +578,7 @@ func (s *managerTestSuite) TestLicenseNotReplacedWithActivateFalse() {
 
 	activeLicense = s.mgr.GetActiveLicense()
 	s.Equal("license1", activeLicense.GetMetadata().GetId())
+	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 }
 
 func (s *managerTestSuite) TestLicenseIsReplacedWithActivateTrue() {
@@ -597,6 +612,7 @@ func (s *managerTestSuite) TestLicenseIsReplacedWithActivateTrue() {
 	s.NoError(err)
 
 	s.Equal("license1", activeLicense.GetMetadata().GetId())
+	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 
 	license2 := &licenseproto.License{
 		Metadata: &licenseproto.License_Metadata{
@@ -647,6 +663,7 @@ func (s *managerTestSuite) TestLicenseIsReplacedWithActivateTrue() {
 
 	activeLicense = s.mgr.GetActiveLicense()
 	s.Equal("license2", activeLicense.GetMetadata().GetId())
+	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 }
 
 func (s *managerTestSuite) TestLicenseActivatedAfterAdded() {
@@ -671,6 +688,7 @@ func (s *managerTestSuite) TestLicenseActivatedAfterAdded() {
 	activeLicense, err := s.mgr.Initialize(s.mockListener)
 	s.NoError(err)
 	s.Nil(activeLicense)
+	s.Equal(v1.Metadata_NONE, s.mgr.GetLicenseStatus())
 
 	s.mockStore.EXPECT().UpsertLicenseKeys([]*storage.StoredLicenseKey{
 		{
@@ -685,6 +703,7 @@ func (s *managerTestSuite) TestLicenseActivatedAfterAdded() {
 
 	s.Equal("license1", addedLicense.GetLicense().GetMetadata().GetId())
 	s.Equal(v1.LicenseInfo_NOT_YET_VALID, addedLicense.GetStatus())
+	s.Equal(v1.Metadata_INVALID, s.mgr.GetLicenseStatus())
 
 	newActiveLicense := s.mgr.GetActiveLicense()
 	s.Nil(newActiveLicense)
@@ -710,6 +729,7 @@ func (s *managerTestSuite) TestLicenseActivatedAfterAdded() {
 
 	newActiveLicense = s.mgr.GetActiveLicense()
 	s.Equal("license1", newActiveLicense.GetMetadata().GetId())
+	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 }
 
 func (s *managerTestSuite) TestLicenseExpiredAfterAdded() {
@@ -734,6 +754,7 @@ func (s *managerTestSuite) TestLicenseExpiredAfterAdded() {
 	activeLicense, err := s.mgr.Initialize(s.mockListener)
 	s.NoError(err)
 	s.Nil(activeLicense)
+	s.Equal(v1.Metadata_NONE, s.mgr.GetLicenseStatus())
 
 	s.mockListener.EXPECT().OnActiveLicenseChanged(
 		testutils.PredMatcher("new license is license 1 and is valid", func(l *v1.LicenseInfo) bool {
@@ -761,6 +782,7 @@ func (s *managerTestSuite) TestLicenseExpiredAfterAdded() {
 
 	newActiveLicense := s.mgr.GetActiveLicense()
 	s.Equal(addedLicense.GetLicense(), newActiveLicense)
+	s.Equal(v1.Metadata_VALID, s.mgr.GetLicenseStatus())
 
 	s.mockListener.EXPECT().OnActiveLicenseChanged(
 		nil,
@@ -783,4 +805,5 @@ func (s *managerTestSuite) TestLicenseExpiredAfterAdded() {
 
 	newActiveLicense = s.mgr.GetActiveLicense()
 	s.Nil(newActiveLicense)
+	s.Equal(v1.Metadata_EXPIRED, s.mgr.GetLicenseStatus())
 }
