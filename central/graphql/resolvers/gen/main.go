@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/stackrox/rox/central/graphql/generator"
+	"github.com/stackrox/rox/central/graphql/generator/codegen"
 	_ "github.com/stackrox/rox/generated/api/v1"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -45,7 +46,7 @@ var (
 
 func main() {
 	w := &bytes.Buffer{}
-	generator.GenerateResolvers(walkParameters, w)
+	codegen.GenerateResolvers(walkParameters, w)
 	err := ioutil.WriteFile("generated.go", w.Bytes(), 0644)
 	if err != nil {
 		panic(err)

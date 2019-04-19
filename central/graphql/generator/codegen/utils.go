@@ -1,6 +1,7 @@
-package generator
+package codegen
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -37,4 +38,9 @@ func plural(s string) string {
 		return s + "es"
 	}
 	return s + "s"
+}
+
+func importedName(p reflect.Type) string {
+	split := strings.Split(p.PkgPath(), "/")
+	return fmt.Sprintf("%s.%s", split[len(split)-1], p.Name())
 }

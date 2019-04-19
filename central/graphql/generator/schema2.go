@@ -3,9 +3,13 @@ package generator
 import (
 	"bytes"
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 	"text/template"
+
+	"github.com/stackrox/rox/pkg/protoreflect"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -211,4 +215,18 @@ func (s *schemaBuilderImpl) Render() (string, error) {
 		return "", err
 	}
 	return buf.String(), nil
+}
+
+// RegisterProtoEnum is a utility method used by the generated code to output enums
+func RegisterProtoEnum(builder SchemaBuilder, typ reflect.Type) {
+	enumDesc, err := protoreflect.GetEnumDescriptor(reflect.Zero(typ).Interface().(protoreflect.ProtoEnum))
+	if err != nil {
+		panic(err)
+	}
+
+	values := make([]string, 0, len(enumDesc.GetValue()))
+	for _, valueDesc := range enumDesc.GetValue() {
+		values = append(values, valueDesc.GetName())
+	}
+	utils.Must(builder.AddEnumType(typ.Name(), values))
 }

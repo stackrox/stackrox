@@ -1,4 +1,4 @@
-package generator
+package codegen
 
 import (
 	"bytes"
@@ -10,6 +10,7 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/proto"
+	"github.com/stackrox/rox/central/graphql/generator"
 )
 
 var timestampType = reflect.TypeOf((*types.Timestamp)(nil))
@@ -161,11 +162,6 @@ func (resolver *{{lower $td.Data.Name}}{{$ud.Name}}Resolver) To{{$ut.Type.Elem.N
 	"time":         `timestamp(value)`,
 }
 
-func importedName(p reflect.Type) string {
-	split := strings.Split(p.PkgPath(), "/")
-	return fmt.Sprintf("%s.%s", split[len(split)-1], p.Name())
-}
-
 func listName(td typeData) string {
 	split := strings.Split(td.Package, "/")
 	return fmt.Sprintf("%s.List%s", split[len(split)-1], td.Name)
@@ -249,7 +245,7 @@ func listField(td schemaEntry, field fieldData) bool {
 }
 
 // GenerateResolvers produces go code for resolvers for all the types found by the typewalk.
-func GenerateResolvers(parameters TypeWalkParameters, writer io.Writer) {
+func GenerateResolvers(parameters generator.TypeWalkParameters, writer io.Writer) {
 	data := typeWalk(
 		parameters.IncludedTypes,
 		[]reflect.Type{

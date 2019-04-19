@@ -1,12 +1,9 @@
-package generator
+package codegen
 
 import (
 	"fmt"
 	"reflect"
-	"sort"
 	"strings"
-
-	"github.com/golang/protobuf/proto"
 )
 
 type schemaEntry struct {
@@ -109,20 +106,4 @@ func schemaExpand(p reflect.Type) string {
 		return inner
 	}
 	return ""
-}
-
-// RegisterProtoEnum is a utility method used by the generated code to output enums
-func RegisterProtoEnum(builder SchemaBuilder, typ reflect.Type) {
-	m := proto.EnumValueMap(importedName(typ))
-	values := make([]string, 0, len(m))
-	for k := range m {
-		values = append(values, k)
-	}
-	sort.Slice(values, func(i, j int) bool {
-		return m[values[i]] < m[values[j]]
-	})
-	err := builder.AddEnumType(typ.Name(), values)
-	if err != nil {
-		panic(err)
-	}
 }
