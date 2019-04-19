@@ -55,13 +55,13 @@ class ProtectedRoute extends Component {
             authStatus,
             devOnly,
             requiredPermission,
-            hasReadPermission,
+            shouldHaveReadPermission,
             ...rest
         } = this.props;
 
         if (devOnly && process.env.NODE_ENV !== 'development') return null;
 
-        if (requiredPermission && !hasReadPermission(requiredPermission))
+        if (requiredPermission && !shouldHaveReadPermission(requiredPermission))
             return <Redirect to="/" />;
 
         return <Route {...rest} render={this.renderRoute} />;
@@ -70,7 +70,7 @@ class ProtectedRoute extends Component {
 
 const mapStateToProps = createStructuredSelector({
     authStatus: selectors.getAuthStatus,
-    hasReadPermission: selectors.hasReadPermission
+    shouldHaveReadPermission: selectors.shouldHaveReadPermission
 });
 
 export default connect(mapStateToProps)(ProtectedRoute);

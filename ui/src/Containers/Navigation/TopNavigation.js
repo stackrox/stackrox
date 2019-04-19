@@ -45,7 +45,7 @@ class TopNavigation extends Component {
             numImages: PropTypes.string,
             numSecrets: PropTypes.string
         }),
-        hasReadPermission: PropTypes.func.isRequired
+        shouldHaveReadPermission: PropTypes.func.isRequired
     };
 
     static defaultProps = {
@@ -132,7 +132,7 @@ class TopNavigation extends Component {
     renderNavBarMenu = () => {
         const NavItem = () => <Icon.MoreHorizontal className="mx-4 h-4 w-4 pointer-events-none" />;
         const options = [{ label: 'Logout', onClick: () => this.props.logout() }];
-        if (this.props.hasReadPermission('Licenses')) {
+        if (this.props.shouldHaveReadPermission('Licenses')) {
             options.unshift({ label: 'Product License', link: '/main/license' });
         }
         return (
@@ -166,7 +166,7 @@ class TopNavigation extends Component {
 const mapStateToProps = createStructuredSelector({
     summaryCounts: selectors.getSummaryCounts,
     authStatus: selectors.getAuthStatus,
-    hasReadPermission: selectors.hasReadPermission
+    shouldHaveReadPermission: selectors.shouldHaveReadPermission
 });
 
 const mapDispatchToProps = dispatch => ({

@@ -37,14 +37,19 @@ const getDelay = expirationDate => {
     return null;
 };
 
-const LicenseReminder = ({ expirationDate, history, hasReadPermission }) => {
-    const createExpirationMessage = hasReadPermission('Licenses')
+const LicenseReminder = ({ expirationDate, history, shouldHaveReadPermission }) => {
+    const createExpirationMessage = shouldHaveReadPermission('Licenses')
         ? createExpirationMessageWithLink
         : createExpirationMessageWithoutLink;
 
     const [showReminder, setReminder] = useState(true);
-    const [expirationMessage, setExpirationMessage] = useState(
-        createExpirationMessage(expirationDate)
+    const [expirationMessage, setExpirationMessage] = useState(null);
+
+    useEffect(
+        () => {
+            setExpirationMessage(createExpirationMessage(expirationDate));
+        },
+        [expirationDate]
     );
 
     useEffect(() => {
@@ -61,7 +66,7 @@ const LicenseReminder = ({ expirationDate, history, hasReadPermission }) => {
         return function cleanup() {
             clearInterval(timerID);
         };
-    });
+    }, []);
 
     if (!showReminder) return null;
     if (!expirationMessage) return null;
@@ -82,7 +87,7 @@ const LicenseReminder = ({ expirationDate, history, hasReadPermission }) => {
 LicenseReminder.propTypes = {
     expirationDate: PropTypes.string,
     history: ReactRouterPropTypes.history,
-    hasReadPermission: PropTypes.bool.isRequired
+    shouldHaveReadPermission: PropTypes.func.isRequired
 };
 
 LicenseReminder.defaultProps = {
@@ -92,7 +97,7 @@ LicenseReminder.defaultProps = {
 
 const mapStateToProps = createStructuredSelector({
     expirationDate: selectors.getLicenseExpirationDate,
-    hasReadPermission: selectors.hasReadPermission
+    shouldHaveReadPermission: selectors.shouldHaveReadPermission
 });
 
 export default connect(

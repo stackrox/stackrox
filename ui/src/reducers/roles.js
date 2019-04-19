@@ -77,11 +77,11 @@ const getAccessForPermission = (state, permission) => {
     return access;
 };
 
-const hasReadPermission = state => permission => {
+const shouldHaveReadPermission = state => permission => {
     const access = getAccessForPermission(state, permission);
     return access === ACCESS_LEVEL.READ_WRITE_ACCESS || access === ACCESS_LEVEL.READ_ACCESS;
 };
-const hasReadWritePermission = state => permission => {
+const shouldHaveReadWritePermission = state => permission => {
     const access = getAccessForPermission(state, permission);
     return access === ACCESS_LEVEL.READ_WRITE_ACCESS;
 };
@@ -89,8 +89,8 @@ const hasReadWritePermission = state => permission => {
 export const selectors = {
     getRoles,
     getSelectedRole,
-    hasReadPermission,
-    hasReadWritePermission
+    shouldHaveReadPermission,
+    shouldHaveReadWritePermission
 };
 
 export default reducer;

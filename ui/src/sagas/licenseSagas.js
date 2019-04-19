@@ -40,11 +40,10 @@ function* addNewLicense(data) {
             response.license.active &&
             response.license.status === LICENSE_STATUS.VALID
         ) {
+            yield fork(getLicenses);
             yield put(actions.setLicenseUploadStatus(LICENSE_UPLOAD_STATUS.VALID, successMessage));
             return;
         }
-
-        // debugger;
 
         errorMessage = response.accepted
             ? 'The license was accepted, but is not being used at the moment'
