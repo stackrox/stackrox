@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
 // Command defines the db backup command
@@ -21,7 +23,7 @@ func Command() *cobra.Command {
 			if file == "" {
 				return fmt.Errorf("file to restore from must be specified")
 			}
-			return restore(file)
+			return restore(file, flags.Timeout(c))
 		},
 	}
 
@@ -29,7 +31,7 @@ func Command() *cobra.Command {
 	return c
 }
 
-func restore(file string) error {
+func restore(file string, timeout time.Duration) error {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return err
@@ -40,7 +42,7 @@ func restore(file string) error {
 		return err
 	}
 	common.AddAuthToRequest(req)
-	client := common.GetHTTPClient()
+	client := common.GetHTTPClient(timeout)
 	resp, err := client.Do(req)
 	if err != nil {
 		return err

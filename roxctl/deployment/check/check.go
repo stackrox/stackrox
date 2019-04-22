@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -30,11 +31,11 @@ func Command() *cobra.Command {
 		Use:   "check",
 		Short: "Check images for build time policy violations.",
 		Long:  "Check images for build time policy violations.",
-		RunE: func(*cobra.Command, []string) error {
+		RunE: func(c *cobra.Command, _ []string) error {
 			if file == "" {
 				return fmt.Errorf("--file must be set")
 			}
-			return checkDeployment(file, json)
+			return checkDeployment(file, json, flags.Timeout(c))
 		},
 	}
 
@@ -43,14 +44,14 @@ func Command() *cobra.Command {
 	return c
 }
 
-func checkDeployment(file string, json bool) error {
+func checkDeployment(file string, json bool, timeout time.Duration) error {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return err
 	}
 
 	// Get the violated policies for the input data.
-	alerts, err := getAlerts(string(data))
+	alerts, err := getAlerts(string(data), timeout)
 	if err != nil {
 		return err
 	}
@@ -76,7 +77,7 @@ func checkDeployment(file string, json bool) error {
 }
 
 // Get the alerts for the command line inputs.
-func getAlerts(yaml string) ([]*storage.Alert, error) {
+func getAlerts(yaml string, timeout time.Duration) ([]*storage.Alert, error) {
 	// Create the connection to the central detection service.
 	conn, err := common.GetGRPCConnection()
 	if err != nil {
@@ -87,7 +88,7 @@ func getAlerts(yaml string) ([]*storage.Alert, error) {
 	}()
 	service := v1.NewDetectionServiceClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), flags.Timeout())
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	// Call detection and return the returned alerts.
 	response, err := service.DetectDeployTimeFromYAML(ctx, &v1.DeployYAMLDetectionRequest{Yaml: yaml})

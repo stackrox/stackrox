@@ -45,11 +45,12 @@ func LogLevelCommand() *cobra.Command {
 		Use:   "log",
 		Short: `"log" to get current log level; "log --level=<level>" to set log level`,
 		Long:  `"log" to get current log level; "log --level=<level>" to set log level`,
-		RunE: func(*cobra.Command, []string) error {
+		RunE: func(c *cobra.Command, _ []string) error {
+			timeout := flags.Timeout(c)
 			if level == "" {
-				return getLogLevel(modules)
+				return getLogLevel(modules, timeout)
 			}
-			return setLogLevel(level, modules)
+			return setLogLevel(level, modules, timeout)
 		},
 	}
 	c.Flags().StringVarP(&level, "level", "l", "",
@@ -58,7 +59,7 @@ func LogLevelCommand() *cobra.Command {
 	return c
 }
 
-func getLogLevel(modules []string) error {
+func getLogLevel(modules []string, timeout time.Duration) error {
 	conn, err := common.GetGRPCConnection()
 	if err != nil {
 		return err
@@ -67,7 +68,7 @@ func getLogLevel(modules []string) error {
 		_ = conn.Close()
 	}()
 
-	ctx, cancel := context.WithTimeout(context.Background(), flags.Timeout())
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	client := v1.NewDebugServiceClient(conn)
@@ -98,7 +99,7 @@ func printGetLogLevelResponse(r *v1.LogLevelResponse) {
 	}
 }
 
-func setLogLevel(level string, modules []string) error {
+func setLogLevel(level string, modules []string, timeout time.Duration) error {
 	conn, err := common.GetGRPCConnection()
 	if err != nil {
 		return err
@@ -108,7 +109,7 @@ func setLogLevel(level string, modules []string) error {
 	}()
 
 	client := v1.NewDebugServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	_, err = client.SetLogLevel(ctx, &v1.LogLevelRequest{Level: level, Modules: modules})

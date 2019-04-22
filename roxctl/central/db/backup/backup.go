@@ -7,10 +7,12 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/common"
+	"github.com/stackrox/rox/roxctl/common/flags"
 )
 
 // Command defines the db backup command
@@ -21,7 +23,7 @@ func Command() *cobra.Command {
 		Long:         "Save a snapshot of the DB as a backup.",
 		SilenceUsage: true,
 		RunE: func(c *cobra.Command, _ []string) error {
-			return getBackup()
+			return getBackup(flags.Timeout(c))
 		},
 	}
 
@@ -37,14 +39,14 @@ func parseFilenameFromHeader(header http.Header) (string, error) {
 	return strings.Trim(data, `"`), nil
 }
 
-func getBackup() error {
+func getBackup(timeout time.Duration) error {
 	req, err := http.NewRequest("GET", common.GetURL("/db/backup"), nil)
 	if err != nil {
 		return err
 	}
 	common.AddAuthToRequest(req)
 
-	client := common.GetHTTPClient()
+	client := common.GetHTTPClient(timeout)
 	resp, err := client.Do(req)
 	if err != nil {
 		return err

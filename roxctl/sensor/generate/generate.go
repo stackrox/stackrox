@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -19,7 +20,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/docker"
 	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/defaults"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -42,21 +42,21 @@ func printf(val string, args ...interface{}) {
 	}
 }
 
-func fullClusterCreation() error {
+func fullClusterCreation(timeout time.Duration) error {
 	conn, err := common.GetGRPCConnection()
 	if err != nil {
 		return err
 	}
 	service := v1.NewClustersServiceClient(conn)
 
-	id, err := createCluster(service)
+	id, err := createCluster(service, timeout)
 	// If the error is not explicitly AlreadyExists or it is AlreadyExists AND continueIfExists isn't set
 	// then return an error
 
 	if err != nil {
 		if status.Code(err) == codes.AlreadyExists && continueIfExists {
 			// Need to get the clusters and get the one with the name
-			ctx, cancel := context.WithTimeout(context.Background(), flags.Timeout())
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()
 			clusterResponse, err := service.GetClusters(ctx, &v1.Empty{})
 			if err != nil {
@@ -75,7 +75,7 @@ func fullClusterCreation() error {
 		}
 	}
 
-	if err := getBundle(id); err != nil {
+	if err := getBundle(id, timeout); err != nil {
 		return errors.Wrap(err, "error getting cluster zip file")
 	}
 	return nil
@@ -105,8 +105,8 @@ func Command() *cobra.Command {
 	return c
 }
 
-func createCluster(svc v1.ClustersServiceClient) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), flags.Timeout())
+func createCluster(svc v1.ClustersServiceClient, timeout time.Duration) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	// Call detection and return the returned alerts.
 	response, err := svc.PostCluster(ctx, &cluster)
@@ -153,9 +153,9 @@ func writeZipToFolder(zipName string) error {
 	return nil
 }
 
-func getBundle(id string) error {
+func getBundle(id string, timeout time.Duration) error {
 	url := common.GetURL("/api/extensions/clusters/zip")
-	client := common.GetHTTPClientWithTimeout(flags.Timeout())
+	client := common.GetHTTPClient(timeout)
 	body, _ := json.Marshal(&zipPost{ID: id})
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {

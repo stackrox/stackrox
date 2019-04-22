@@ -34,8 +34,8 @@ func GetGRPCConnection() (*grpc.ClientConn, error) {
 	return clientconn.GRPCConnectionWithBasicAuth(endpoint, serverName, basic.DefaultUsername, flags.Password())
 }
 
-// GetHTTPClientWithTimeout gets a client with the correct config
-func GetHTTPClientWithTimeout(timeout time.Duration) *http.Client {
+// GetHTTPClient gets a client with the correct config
+func GetHTTPClient(timeout time.Duration) *http.Client {
 	client := &http.Client{
 		Timeout: timeout,
 		Transport: &http.Transport{
@@ -45,11 +45,6 @@ func GetHTTPClientWithTimeout(timeout time.Duration) *http.Client {
 		},
 	}
 	return client
-}
-
-// GetHTTPClient returns an http client using the timeout set by the flag.
-func GetHTTPClient() *http.Client {
-	return GetHTTPClientWithTimeout(flags.Timeout())
 }
 
 // AddAuthToRequest adds the correct auth to the request
