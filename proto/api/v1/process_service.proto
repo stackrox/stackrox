@@ -31,6 +31,17 @@ message GetGroupedProcessesResponse {
     repeated ProcessNameGroup groups = 3;
 }
 
+message ProcessNameAndContainerNameGroup {
+    string                name           = 1;
+    string                container_name = 2;
+    uint32                times_executed = 3;
+    repeated ProcessGroup groups         = 4;
+}
+
+message GetGroupedProcessesWithContainerResponse {
+    repeated ProcessNameAndContainerNameGroup groups = 3;
+}
+
 // ProcessService APIs can be used to list processes executed in deployments.
 service ProcessService {
 
@@ -45,6 +56,13 @@ service ProcessService {
     rpc GetGroupedProcessByDeployment (GetProcessesByDeploymentRequest) returns (GetGroupedProcessesResponse) {
         option (google.api.http) = {
             get: "/v1/processes/deployment/{deployment_id}/grouped"
+        };
+    }
+
+    // GetGroupedProcessByDeploymentAndContainer returns all the processes executed grouped by deployment and container.
+    rpc GetGroupedProcessByDeploymentAndContainer (GetProcessesByDeploymentRequest) returns (GetGroupedProcessesWithContainerResponse) {
+        option (google.api.http) = {
+            get: "/v1/processes/deployment/{deployment_id}/grouped/container"
         };
     }
 

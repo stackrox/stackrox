@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -82,20 +83,73 @@ func sortIndicators(indicators []*storage.ProcessIndicator) {
 	})
 }
 
+// IndicatorsToGroupedResponsesWithContainer rearranges process indicator storage items into API process name/container
+// name group items.
+func indicatorsToGroupedResponsesWithContainer(indicators []*storage.ProcessIndicator) []*v1.ProcessNameAndContainerNameGroup {
+	type groupKey struct {
+		processName   string
+		containerName string
+	}
+	processGroups := make(map[groupKey]map[string][]*storage.ProcessIndicator)
+	processNameToContainers := make(map[groupKey]set.StringSet)
+	for _, i := range indicators {
+		fullProcessName := i.GetSignal().GetExecFilePath()
+		containerName := i.ContainerName
+		groupKey := groupKey{fullProcessName, containerName}
+		groupMap, ok := processGroups[groupKey]
+		if !ok {
+			groupMap = make(map[string][]*storage.ProcessIndicator)
+			processGroups[groupKey] = groupMap
+			processNameToContainers[groupKey] = set.NewStringSet()
+		}
+		groupMap[i.GetSignal().GetArgs()] = append(groupMap[i.GetSignal().GetArgs()], i)
+		processNameToContainers[groupKey].Add(i.GetSignal().GetContainerId())
+	}
+
+	groups := make([]*v1.ProcessNameAndContainerNameGroup, 0, len(processGroups))
+	for groupKey, groupMap := range processGroups {
+		processGroups := make([]*v1.ProcessGroup, 0, len(groupMap))
+		for args, indicators := range groupMap {
+			sortIndicators(indicators)
+			processGroups = append(processGroups, &v1.ProcessGroup{Args: args, Signals: indicators})
+		}
+		sort.SliceStable(processGroups, func(i, j int) bool { return processGroups[i].GetArgs() < processGroups[j].GetArgs() })
+		groups = append(groups, &v1.ProcessNameAndContainerNameGroup{
+			Name:          groupKey.processName,
+			ContainerName: groupKey.containerName,
+			Groups:        processGroups,
+			TimesExecuted: uint32(processNameToContainers[groupKey].Cardinality()),
+		})
+	}
+	sort.SliceStable(groups, func(i, j int) bool { return groups[i].Name < groups[j].Name })
+	return groups
+}
+
+func (s *serviceImpl) GetGroupedProcessByDeploymentAndContainer(_ context.Context, req *v1.GetProcessesByDeploymentRequest) (*v1.GetGroupedProcessesWithContainerResponse, error) {
+	indicators, err := s.validateGetProcesses(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.GetGroupedProcessesWithContainerResponse{
+		Groups: indicatorsToGroupedResponsesWithContainer(indicators),
+	}, nil
+}
+
 // IndicatorsToGroupedResponses rearranges process indicator storage items into API process name group items.
 func IndicatorsToGroupedResponses(indicators []*storage.ProcessIndicator) []*v1.ProcessNameGroup {
 	processGroups := make(map[string]map[string][]*storage.ProcessIndicator)
-	processNameToContainers := make(map[string]map[string]struct{})
+	processNameToContainers := make(map[string]set.StringSet)
 	for _, i := range indicators {
 		fullProcessName := i.GetSignal().GetExecFilePath()
 		nameMap, ok := processGroups[fullProcessName]
 		if !ok {
 			nameMap = make(map[string][]*storage.ProcessIndicator)
 			processGroups[fullProcessName] = nameMap
-			processNameToContainers[fullProcessName] = make(map[string]struct{})
+			processNameToContainers[fullProcessName] = set.NewStringSet()
 		}
 		nameMap[i.GetSignal().GetArgs()] = append(nameMap[i.GetSignal().GetArgs()], i)
-		processNameToContainers[fullProcessName][i.GetSignal().GetContainerId()] = struct{}{}
+		processNameToContainers[fullProcessName].Add(i.GetSignal().GetContainerId())
 	}
 
 	groups := make([]*v1.ProcessNameGroup, 0, len(processGroups))
@@ -109,7 +163,7 @@ func IndicatorsToGroupedResponses(indicators []*storage.ProcessIndicator) []*v1.
 		groups = append(groups, &v1.ProcessNameGroup{
 			Name:          name,
 			Groups:        processGroups,
-			TimesExecuted: uint32(len(processNameToContainers[name])),
+			TimesExecuted: uint32(processNameToContainers[name].Cardinality()),
 		})
 	}
 	sort.SliceStable(groups, func(i, j int) bool { return groups[i].Name < groups[j].Name })
@@ -117,6 +171,17 @@ func IndicatorsToGroupedResponses(indicators []*storage.ProcessIndicator) []*v1.
 }
 
 func (s *serviceImpl) GetGroupedProcessByDeployment(_ context.Context, req *v1.GetProcessesByDeploymentRequest) (*v1.GetGroupedProcessesResponse, error) {
+	indicators, err := s.validateGetProcesses(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return &v1.GetGroupedProcessesResponse{
+		Groups: IndicatorsToGroupedResponses(indicators),
+	}, nil
+}
+
+func (s *serviceImpl) validateGetProcesses(req *v1.GetProcessesByDeploymentRequest) ([]*storage.ProcessIndicator, error) {
 	if req.GetDeploymentId() == "" {
 		return nil, status.Error(codes.Internal, "Deployment ID must be specified when retrieving processes")
 	}
@@ -129,7 +194,5 @@ func (s *serviceImpl) GetGroupedProcessByDeployment(_ context.Context, req *v1.G
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &v1.GetGroupedProcessesResponse{
-		Groups: IndicatorsToGroupedResponses(indicators),
-	}, nil
+	return indicators, nil
 }
