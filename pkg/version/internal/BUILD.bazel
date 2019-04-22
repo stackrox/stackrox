@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["version_data.go"],
+    importpath = "github.com/stackrox/rox/pkg/version/internal",
+    visibility = ["//visibility:public"],
+    x_defs = {
+        "MainVersion": "{STABLE_MAIN_VERSION}",
+        "CollectorVersion": "{STABLE_COLLECTOR_VERSION}",
+        "ScannerVersion": "{STABLE_SCANNER_VERSION}",
+    },
+)

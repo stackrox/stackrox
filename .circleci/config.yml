@@ -1646,6 +1646,7 @@ workflows:
       - mark-collector-release:
           requires:
             - build
+            - unit-tests
           filters:
             branches:
               ignore: /.*/
@@ -1654,6 +1655,7 @@ workflows:
       - push-release:
           requires:
             - build
+            - unit-tests
           filters:
             branches:
               ignore: /.*/

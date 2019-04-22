@@ -2,17 +2,12 @@ package version
 
 import (
 	"github.com/stackrox/rox/pkg/env"
-)
-
-var (
-	mainVersion      string
-	collectorVersion string
-	scannerVersion   string
+	"github.com/stackrox/rox/pkg/version/internal"
 )
 
 // GetMainVersion returns the tag of Prevent
 func GetMainVersion() string {
-	return mainVersion
+	return internal.MainVersion
 }
 
 // GetCollectorVersion returns the current collector tag
@@ -20,10 +15,10 @@ func GetCollectorVersion() string {
 	if env.CollectorVersion.Setting() != "" {
 		return env.CollectorVersion.Setting()
 	}
-	return collectorVersion
+	return internal.CollectorVersion
 }
 
 // GetScannerVersion returns the current scanner tag
 func GetScannerVersion() string {
-	return scannerVersion
+	return internal.ScannerVersion
 }

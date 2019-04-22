@@ -1,12 +1,13 @@
 ROX_PROJECT=apollo
 TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
-TAG=$(shell git describe --tags --abbrev=10 --dirty)
+TAG=$(shell git describe --tags --abbrev=10 --dirty --long)
 
 RELEASE_GOTAGS := release
 ifdef CI
 ifneq ($(CIRCLE_TAG),)
 GOTAGS := $(RELEASE_GOTAGS)
+TAG := $(CIRCLE_TAG)
 endif
 endif
 
@@ -320,6 +321,8 @@ gendocs: $(GENERATED_API_DOCS)
 swagger-docs: $(MERGED_API_SWAGGER_SPEC)
 	@echo "+ $@"
 
+BAZEL_TEST_PATTERNS ?= //...
+
 .PHONY: bazel-test
 bazel-test: gazelle
 	-rm vendor/github.com/coreos/pkg/BUILD
@@ -328,9 +331,10 @@ bazel-test: gazelle
 	@# Be careful if you add action_env arguments; their values can invalidate cached
 	@# test results. See https://github.com/bazelbuild/bazel/issues/2574#issuecomment-320006871.
 	bazel coverage $(BAZEL_BASE_FLAGS) $(RACE) \
+	    --instrumentation_filter=//... \
 	    --test_output=errors \
 	    -- \
-	    //... -proto/... -tests/... -vendor/...
+	    $(BAZEL_TEST_PATTERNS) -proto/... -tests/... -vendor/...
 
 
 .PHONY: ui-build
@@ -477,7 +481,7 @@ clean-image:
 .PHONY: tag
 tag:
 ifdef COMMIT
-	@git describe $(COMMIT) --tags --abbrev=10
+	@git describe $(COMMIT) --tags --abbrev=10 --long
 else
 	@echo $(TAG)
 endif

@@ -1,0 +1,5 @@
+**/*.go
+**/BUILD.bazel
+**/.gitignore
+.dockerignore
+Dockerfile

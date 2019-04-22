@@ -28,8 +28,6 @@ combined_coverage.dat
 bazel-*
 BUILD.bazel
 !/BUILD.bazel
-!/image/policies/BUILD.bazel-*
-!/pkg/version/BUILD.bazel
 
 # Miscellaneous
 *.g4
