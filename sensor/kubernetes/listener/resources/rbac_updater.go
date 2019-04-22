@@ -250,51 +250,59 @@ func (rs *rbacUpdaterImpl) removeBindingFromMaps(ref v1.RoleRef, roxBinding *sto
 
 func toRoxRole(role *v1.Role) *storage.K8SRole {
 	return &storage.K8SRole{
-		Id:           string(role.GetUID()),
-		Name:         role.GetName(),
-		Namespace:    role.GetNamespace(),
-		ClusterName:  role.GetClusterName(),
-		ClusterScope: false,
-		CreatedAt:    protoconv.ConvertTimeToTimestamp(role.GetCreationTimestamp().Time),
-		Rules:        getPolicyRules(role.Rules),
+		Id:          string(role.GetUID()),
+		Name:        role.GetName(),
+		Namespace:   role.GetNamespace(),
+		ClusterName: role.GetClusterName(),
+		Labels:      role.GetLabels(),
+		Annotations: role.GetAnnotations(),
+		ClusterRole: false,
+		CreatedAt:   protoconv.ConvertTimeToTimestamp(role.GetCreationTimestamp().Time),
+		Rules:       getPolicyRules(role.Rules),
 	}
 }
 
 func toRoxClusterRole(role *v1.ClusterRole) *storage.K8SRole {
 	return &storage.K8SRole{
-		Id:           string(role.GetUID()),
-		Name:         role.GetName(),
-		Namespace:    role.GetNamespace(),
-		ClusterName:  role.GetClusterName(),
-		ClusterScope: true,
-		CreatedAt:    protoconv.ConvertTimeToTimestamp(role.GetCreationTimestamp().Time),
-		Rules:        getPolicyRules(role.Rules),
+		Id:          string(role.GetUID()),
+		Name:        role.GetName(),
+		Namespace:   role.GetNamespace(),
+		ClusterName: role.GetClusterName(),
+		Labels:      role.GetLabels(),
+		Annotations: role.GetAnnotations(),
+		ClusterRole: true,
+		CreatedAt:   protoconv.ConvertTimeToTimestamp(role.GetCreationTimestamp().Time),
+		Rules:       getPolicyRules(role.Rules),
 	}
 }
 
 func toRoxRoleBinding(roleID string, roleBinding *v1.RoleBinding) *storage.K8SRoleBinding {
 	return &storage.K8SRoleBinding{
-		Id:           string(roleBinding.GetUID()),
-		Name:         roleBinding.GetName(),
-		Namespace:    roleBinding.GetNamespace(),
-		ClusterName:  roleBinding.GetClusterName(),
-		ClusterScope: false,
-		CreatedAt:    protoconv.ConvertTimeToTimestamp(roleBinding.GetCreationTimestamp().Time),
-		Subjects:     getSubjects(roleBinding.Subjects),
-		RoleId:       roleID,
+		Id:          string(roleBinding.GetUID()),
+		Name:        roleBinding.GetName(),
+		Namespace:   roleBinding.GetNamespace(),
+		ClusterName: roleBinding.GetClusterName(),
+		Labels:      roleBinding.GetLabels(),
+		Annotations: roleBinding.GetAnnotations(),
+		ClusterRole: false,
+		CreatedAt:   protoconv.ConvertTimeToTimestamp(roleBinding.GetCreationTimestamp().Time),
+		Subjects:    getSubjects(roleBinding.Subjects),
+		RoleId:      roleID,
 	}
 }
 
 func toRoxClusterRoleBinding(roleID string, clusterRoleBinding *v1.ClusterRoleBinding) *storage.K8SRoleBinding {
 	return &storage.K8SRoleBinding{
-		Id:           string(clusterRoleBinding.GetUID()),
-		Name:         clusterRoleBinding.GetName(),
-		Namespace:    clusterRoleBinding.GetNamespace(),
-		ClusterName:  clusterRoleBinding.GetClusterName(),
-		ClusterScope: true,
-		CreatedAt:    protoconv.ConvertTimeToTimestamp(clusterRoleBinding.GetCreationTimestamp().Time),
-		Subjects:     getSubjects(clusterRoleBinding.Subjects),
-		RoleId:       roleID,
+		Id:          string(clusterRoleBinding.GetUID()),
+		Name:        clusterRoleBinding.GetName(),
+		Namespace:   clusterRoleBinding.GetNamespace(),
+		ClusterName: clusterRoleBinding.GetClusterName(),
+		Labels:      clusterRoleBinding.GetLabels(),
+		Annotations: clusterRoleBinding.GetAnnotations(),
+		ClusterRole: true,
+		CreatedAt:   protoconv.ConvertTimeToTimestamp(clusterRoleBinding.GetCreationTimestamp().Time),
+		Subjects:    getSubjects(clusterRoleBinding.Subjects),
+		RoleId:      roleID,
 	}
 }
 

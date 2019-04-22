@@ -28,6 +28,7 @@ enum SearchCategory {
     ROLES                    = 15;
     ROLEBINDINGS             = 16;
     PROCESS_WHITELISTS       = 17;
+    SUBJECTS                 = 18;
 }
 
 // TODO(cgorman) collapse these into Go code and not proto

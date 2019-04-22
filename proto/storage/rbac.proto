@@ -23,30 +23,13 @@ message K8sRole {
     string namespace                        = 3 [(gogoproto.moretags) = "search:\"Namespace\""];
     string cluster_id                       = 4 [(gogoproto.moretags) = "search:\"Cluster ID,hidden\""];
     string cluster_name                     = 5 [(gogoproto.moretags) = "search:\"Cluster\""];
-    bool cluster_scope                      = 6 [(gogoproto.moretags) = "search:\"Cluster Scope\""];
+    bool cluster_role                       = 6 [(gogoproto.moretags) = "search:\"Cluster Role\""];
     map<string, string> labels              = 7 [(gogoproto.moretags) = "search:\"Label\""];
     map<string, string> annotations         = 8 [(gogoproto.moretags) = "search:\"Annotation\""];
     google.protobuf.Timestamp created_at    = 9;
 
     repeated PolicyRule rules               = 10;
 }
-
-// Properties of an individual k8s RoleBinding or ClusterRoleBinding.
-//////////////////////////////////////////
-message K8sRoleBinding {
-    string id                               = 1 [(gogoproto.moretags) = "search:\"Role Binding ID,hidden\""];
-    string name                             = 2 [(gogoproto.moretags) = "search:\"Role Binding\""];
-    string namespace                        = 3 [(gogoproto.moretags) = "search:\"Namespace\""];
-    string cluster_id                       = 4 [(gogoproto.moretags) = "search:\"Cluster ID,hidden\""];
-    string cluster_name                     = 5 [(gogoproto.moretags) = "search:\"Cluster\""];
-    bool cluster_scope                      = 6 [(gogoproto.moretags) = "search:\"Cluster Scope\""];
-    map<string, string> labels              = 7 [(gogoproto.moretags) = "search:\"Label\""];
-    map<string, string> annotations         = 8 [(gogoproto.moretags) = "search:\"Annotation\""];
-    google.protobuf.Timestamp created_at    = 9;
-    repeated Subject subjects               = 10;
-    string role_id                          = 11;
-}
-
 
 // Properties of an individual rules that grant permissions to resources.
 //////////////////////////////////////////
@@ -58,10 +41,27 @@ message PolicyRule {
     repeated string resource_names    = 5;
 }
 
+// Properties of an individual k8s RoleBinding or ClusterRoleBinding.
+//////////////////////////////////////////
+message K8sRoleBinding {
+    string id                               = 1 [(gogoproto.moretags) = "search:\"Role Binding ID,hidden\""];
+    string name                             = 2 [(gogoproto.moretags) = "search:\"Role Binding\""];
+    string namespace                        = 3 [(gogoproto.moretags) = "search:\"Namespace\""];
+    string cluster_id                       = 4 [(gogoproto.moretags) = "search:\"Cluster ID,hidden\""];
+    string cluster_name                     = 5 [(gogoproto.moretags) = "search:\"Cluster\""];
+    bool cluster_role                       = 6 [(gogoproto.moretags) = "search:\"Cluster Role\""];
+    map<string, string> labels              = 7 [(gogoproto.moretags) = "search:\"Label\""];
+    map<string, string> annotations         = 8 [(gogoproto.moretags) = "search:\"Annotation\""];
+    google.protobuf.Timestamp created_at    = 9;
+
+    repeated Subject subjects               = 10;
+    string role_id                          = 11;
+}
+
 // Properties of an individual subjects who are granted roles via role bindings.
 //////////////////////////////////////////
 message Subject {
-    SubjectKind kind    = 1;
-    string name         = 2;
+    SubjectKind kind    = 1 [(gogoproto.moretags) = "search:\"Subject Kind\""];
+    string name         = 2 [(gogoproto.moretags) = "search:\"Subject\""];
     string namespace    = 3;
 }

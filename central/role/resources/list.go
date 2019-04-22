@@ -41,6 +41,7 @@ var (
 	User                  = newResource("User")
 	K8sRole               = newResource("K8sRole")
 	K8sRoleBinding        = newResource("K8sRoleBinding")
+	K8sSubject            = newResource("K8sSubject")
 
 	allResources = permissions.NewResourceSet()
 )

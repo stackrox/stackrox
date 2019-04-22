@@ -72,8 +72,8 @@ func TestNamespacePermissionsForSubject(t *testing.T) {
 							Namespace: "namespace",
 						},
 					},
-					ClusterScope: false,
-					Namespace:    "namespace",
+					ClusterRole: false,
+					Namespace:   "namespace",
 				},
 				{
 					Id:        "binding2",
@@ -86,8 +86,8 @@ func TestNamespacePermissionsForSubject(t *testing.T) {
 							Namespace: "namespace",
 						},
 					},
-					ClusterScope: false,
-					Namespace:    "namespace",
+					ClusterRole: false,
+					Namespace:   "namespace",
 				},
 			},
 			inputSubject: &storage.Subject{
@@ -112,7 +112,7 @@ func TestNamespacePermissionsForSubject(t *testing.T) {
 	namespaceScopeQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
 		AddExactMatches(search.Namespace, "namespace").
-		AddBools(search.ClusterScope, false).ProtoQuery()
+		AddBools(search.ClusterRole, false).ProtoQuery()
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

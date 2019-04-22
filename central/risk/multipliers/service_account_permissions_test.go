@@ -49,9 +49,9 @@ func TestPermissionScore(t *testing.T) {
 			},
 			roles: []*storage.K8SRole{
 				{
-					Id:           "role1",
-					Name:         "effective admin",
-					ClusterScope: true,
+					Id:          "role1",
+					Name:        "effective admin",
+					ClusterRole: true,
 					Rules: []*storage.PolicyRule{
 						{
 							ApiGroups: []string{
@@ -77,7 +77,7 @@ func TestPermissionScore(t *testing.T) {
 							Namespace: "namespace",
 						},
 					},
-					ClusterScope: true,
+					ClusterRole: true,
 				},
 			},
 			expected: &storage.Risk_Result{
@@ -101,9 +101,9 @@ func TestPermissionScore(t *testing.T) {
 			},
 			roles: []*storage.K8SRole{
 				{
-					Id:           "role1",
-					Name:         "can get anything",
-					ClusterScope: true,
+					Id:          "role1",
+					Name:        "can get anything",
+					ClusterRole: true,
 					Rules: []*storage.PolicyRule{
 						{
 							ApiGroups: []string{
@@ -129,7 +129,7 @@ func TestPermissionScore(t *testing.T) {
 							Namespace: "namespace",
 						},
 					},
-					ClusterScope: true,
+					ClusterRole: true,
 				},
 			},
 			expected: &storage.Risk_Result{
@@ -153,9 +153,9 @@ func TestPermissionScore(t *testing.T) {
 			},
 			roles: []*storage.K8SRole{
 				{
-					Id:           "role2",
-					Name:         "can get anything, create deployments",
-					ClusterScope: true,
+					Id:          "role2",
+					Name:        "can get anything, create deployments",
+					ClusterRole: true,
 					Rules: []*storage.PolicyRule{
 						{
 							ApiGroups: []string{
@@ -192,7 +192,7 @@ func TestPermissionScore(t *testing.T) {
 							Namespace: "namespace",
 						},
 					},
-					ClusterScope: true,
+					ClusterRole: true,
 				},
 			},
 			expected: &storage.Risk_Result{
@@ -224,14 +224,14 @@ func TestPermissionScore(t *testing.T) {
 
 			clusterScopeQuery := search.NewQueryBuilder().
 				AddExactMatches(search.ClusterID, deployment.GetClusterId()).
-				AddBools(search.ClusterScope, true).ProtoQuery()
+				AddBools(search.ClusterRole, true).ProtoQuery()
 
 			mockBindingDatastore.EXPECT().SearchRawRoleBindings(clusterScopeQuery).Return(c.bindings, nil).AnyTimes()
 
 			namespaceScopeQuery := search.NewQueryBuilder().
 				AddExactMatches(search.ClusterID, deployment.GetClusterId()).
 				AddExactMatches(search.Namespace, deployment.GetNamespace()).
-				AddBools(search.ClusterScope, false).ProtoQuery()
+				AddBools(search.ClusterRole, false).ProtoQuery()
 
 			mockBindingDatastore.EXPECT().SearchRawRoleBindings(namespaceScopeQuery).Return([]*storage.K8SRoleBinding{}, nil).AnyTimes()
 

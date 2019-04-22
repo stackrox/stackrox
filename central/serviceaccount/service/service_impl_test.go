@@ -36,17 +36,17 @@ var (
 	}
 
 	role = &storage.K8SRole{
-		Id:           "role1",
-		Name:         "role1",
-		ClusterId:    "cluster",
-		Namespace:    "namespace",
-		ClusterScope: false,
+		Id:          "role1",
+		Name:        "role1",
+		ClusterId:   "cluster",
+		Namespace:   "namespace",
+		ClusterRole: false,
 	}
 	clusterRole = &storage.K8SRole{
-		Id:           "role2",
-		Name:         "role2",
-		ClusterId:    "cluster",
-		ClusterScope: true,
+		Id:          "role2",
+		Name:        "role2",
+		ClusterId:   "cluster",
+		ClusterRole: true,
 	}
 
 	rolebinding = &storage.K8SRoleBinding{
@@ -58,9 +58,9 @@ var (
 				Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
 			},
 		},
-		ClusterScope: false,
-		Namespace:    "namespace",
-		Id:           "binding1",
+		ClusterRole: false,
+		Namespace:   "namespace",
+		Id:          "binding1",
 	}
 
 	clusterRoleBinding = &storage.K8SRoleBinding{
@@ -72,8 +72,8 @@ var (
 				Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
 			},
 		},
-		ClusterScope: true,
-		Id:           "binding2",
+		ClusterRole: true,
+		Id:          "binding2",
 	}
 
 	namespaceMetadata = &storage.NamespaceMetadata{
@@ -192,14 +192,14 @@ func (suite *ServiceAccountServiceTestSuite) setupMocks() {
 
 	clusterScopeQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
-		AddBools(search.ClusterScope, true).ProtoQuery()
+		AddBools(search.ClusterRole, true).ProtoQuery()
 	suite.mockBindingStore.EXPECT().SearchRawRoleBindings(clusterScopeQuery).AnyTimes().
 		Return([]*storage.K8SRoleBinding{clusterRoleBinding}, nil)
 
 	namespaceScopeQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
 		AddExactMatches(search.Namespace, "namespace").
-		AddBools(search.ClusterScope, false).ProtoQuery()
+		AddBools(search.ClusterRole, false).ProtoQuery()
 	suite.mockBindingStore.EXPECT().SearchRawRoleBindings(namespaceScopeQuery).AnyTimes().
 		Return([]*storage.K8SRoleBinding{rolebinding}, nil)
 

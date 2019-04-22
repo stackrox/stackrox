@@ -123,12 +123,17 @@ var (
 	Namespace   = newFieldLabel("Namespace")
 
 	// Role Search Fields
-	RoleID   = newFieldLabel("Role ID")
-	RoleName = newFieldLabel("Role")
+	RoleID      = newFieldLabel("Role ID")
+	RoleName    = newFieldLabel("Role")
+	ClusterRole = newFieldLabel("Cluster Role")
 
 	// Role Binding Search Fields
 	RoleBindingID   = newFieldLabel("Role Binding ID")
 	RoleBindingName = newFieldLabel("Role Binding")
+
+	// Subject search fields
+	SubjectKind = newFieldLabel("Subject Kind")
+	SubjectName = newFieldLabel("Subject")
 )
 
 func newFieldLabel(s string) FieldLabel {

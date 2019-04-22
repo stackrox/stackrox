@@ -73,6 +73,8 @@ func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
 	}
 
 	if features.K8sRBAC.Enabled() {
+		entityOptionsMap[v1.SearchCategory_ROLES] = roleOptions.Map
+		entityOptionsMap[v1.SearchCategory_ROLEBINDINGS] = roleBindingOptions.Map
 		entityOptionsMap[v1.SearchCategory_SERVICE_ACCOUNTS] = serviceAccountOptions.Map
 		entityOptionsMap[v1.SearchCategory_ROLES] = roleOptions.Map
 		entityOptionsMap[v1.SearchCategory_ROLEBINDINGS] = roleBindingOptions.Map

@@ -33,12 +33,27 @@ message GetRoleBindingResponse {
     storage.K8sRoleBinding binding = 1;
 }
 
+// A list of k8s subjects (users and groups only, for service accounts, try the service account service)
+// Next Tag: 2
+message ListSubjectsResponse {
+    repeated SubjectAndRoles subject_and_roles = 1;
+}
+
+message SubjectAndRoles {
+    storage.Subject subject                      = 1;
+    repeated storage.K8sRole roles               = 2;
+}
+
+message GetSubjectResponse {
+    storage.Subject subject                         = 1;
+    repeated storage.K8sRole cluster_roles          = 2;
+    repeated ScopedRoles scoped_roles               = 3;
+}
 
 message ScopedRoles {
     string namespace                  = 1;
     repeated storage.K8sRole roles    = 2;
 }
-
 
 service RbacService {
 
@@ -63,6 +78,20 @@ service RbacService {
     rpc ListRoleBindings (RawQuery) returns (ListRoleBindingsResponse) {
         option (google.api.http) = {
             get: "/v1/rbac/bindings"
+        };
+    }
+
+    // Subjects served from this API are Groups and Users only.
+    // Id in this case is the Name field, since for users and groups, that is unique, and subjects do not have IDs.
+    rpc GetSubject (ResourceByID) returns (GetSubjectResponse) {
+        option (google.api.http) = {
+            get: "/v1/rbac/subject/{id}"
+        };
+    }
+
+    rpc ListSubjects (RawQuery) returns (ListSubjectsResponse) {
+        option (google.api.http) = {
+            get: "/v1/rbac/subjects"
         };
     }
 }

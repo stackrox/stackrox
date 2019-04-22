@@ -52,7 +52,7 @@ func (c *clusterPermissionEvaluator) getBindingsAndRoles() ([]*storage.K8SRoleBi
 
 	q := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, c.clusterID).
-		AddBools(search.ClusterScope, true).ProtoQuery()
+		AddBools(search.ClusterRole, true).ProtoQuery()
 	clusterRoleBindings, err := c.bindingsStore.SearchRawRoleBindings(q)
 
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	rolesDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingsDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	bindingOptions "github.com/stackrox/rox/central/rbac/k8srolebinding/search/options"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,6 +29,10 @@ var (
 		user.With(permissions.View(resources.K8sRoleBinding)): {
 			"/v1.RbacService/GetRoleBinding",
 			"/v1.RbacService/ListRoleBindings",
+		},
+		user.With(permissions.View(resources.K8sSubject)): {
+			"/v1.RbacService/GetSubject",
+			"/v1.RbacService/ListSubjects",
 		},
 	})
 )
@@ -73,6 +78,8 @@ func (s *serviceImpl) ListRoles(ctx context.Context, rawQuery *v1.RawQuery) (*v1
 	if rawQuery.GetQuery() == "" {
 		roles, err = s.roles.ListRoles()
 	} else {
+		// TODO: Link policy rule fields? I.E. if query has Verbs:Get,Resource:Pods, we want the two linked so only
+		// roles that can get pods are returned, not roles that can get anything, and can do any operation on Pods.
 		var q *v1.Query
 		q, err = search.ParseRawQueryOrEmpty(rawQuery.GetQuery())
 		if err != nil {
@@ -119,4 +126,41 @@ func (s *serviceImpl) ListRoleBindings(ctx context.Context, rawQuery *v1.RawQuer
 	}
 
 	return &v1.ListRoleBindingsResponse{Bindings: bindings}, nil
+}
+
+// GetSubject returns the subject with the input ID (the unique subject name).
+func (s *serviceImpl) GetSubject(ctx context.Context, request *v1.ResourceByID) (*v1.GetSubjectResponse, error) {
+	bindings, err := s.bindings.ListRoleBindings()
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	roles, err := s.roles.ListRoles()
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return getSubject(request.GetId(), roles, bindings)
+}
+
+// ListSubjects returns all of the subjects granted roles that match the input query.
+func (s *serviceImpl) ListSubjects(ctx context.Context, rawQuery *v1.RawQuery) (*v1.ListSubjectsResponse, error) {
+	// Keep only binding specific fields in the query.
+	bindingQuery := &v1.RawQuery{
+		Query: search.FilterFields(rawQuery.GetQuery(), func(field string) bool {
+			_, isBindingField := bindingOptions.Map.Get(field)
+			return isBindingField
+		}),
+	}
+	bindingsSearch, err := s.ListRoleBindings(ctx, bindingQuery)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	// Use all roles (filtered bindings will do what we need).
+	roleSearch, err := s.ListRoles(ctx, &v1.RawQuery{})
+	if err != nil {
+		return nil, err
+	}
+
+	// List all of the subjects.
+	return listSubjects(rawQuery, roleSearch.GetRoles(), bindingsSearch.GetBindings())
 }

@@ -47,7 +47,7 @@ func (c *namespacePermissionEvaluator) getBindingsAndRoles() ([]*storage.K8SRole
 	q := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, c.clusterID).
 		AddExactMatches(search.Namespace, c.namespace).
-		AddBools(search.ClusterScope, false).ProtoQuery()
+		AddBools(search.ClusterRole, false).ProtoQuery()
 	rolebindings, err := c.bindingsStore.SearchRawRoleBindings(q)
 
 	if err != nil {

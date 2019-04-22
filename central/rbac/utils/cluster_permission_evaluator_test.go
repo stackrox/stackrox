@@ -23,10 +23,10 @@ func TestIsClusterAdmin(t *testing.T) {
 			name: "Cluster admin true",
 			inputRoles: []*storage.K8SRole{
 				{
-					Id:           "role1",
-					Name:         "cluster-admin",
-					ClusterScope: true,
-					ClusterId:    "cluster",
+					Id:          "role1",
+					Name:        "cluster-admin",
+					ClusterRole: true,
+					ClusterId:   "cluster",
 				},
 			},
 			inputBindings: []*storage.K8SRoleBinding{
@@ -38,8 +38,8 @@ func TestIsClusterAdmin(t *testing.T) {
 							Name: "admin",
 						},
 					},
-					ClusterScope: true,
-					ClusterId:    "cluster",
+					ClusterRole: true,
+					ClusterId:   "cluster",
 				},
 			},
 			inputSubject: &storage.Subject{
@@ -53,10 +53,10 @@ func TestIsClusterAdmin(t *testing.T) {
 			name: "Cluster admin false",
 			inputRoles: []*storage.K8SRole{
 				{
-					Id:           "role1",
-					Name:         "not-cluster-admin",
-					ClusterId:    "cluster",
-					ClusterScope: true,
+					Id:          "role1",
+					Name:        "not-cluster-admin",
+					ClusterId:   "cluster",
+					ClusterRole: true,
 					Rules: []*storage.PolicyRule{
 						{
 							Verbs: []string{
@@ -82,7 +82,7 @@ func TestIsClusterAdmin(t *testing.T) {
 							Name: "not-admin",
 						},
 					},
-					ClusterScope: true,
+					ClusterRole: true,
 				},
 			},
 			inputSubject: &storage.Subject{
@@ -99,7 +99,7 @@ func TestIsClusterAdmin(t *testing.T) {
 
 	clusterScopeQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
-		AddBools(search.ClusterScope, true).ProtoQuery()
+		AddBools(search.ClusterRole, true).ProtoQuery()
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -126,10 +126,10 @@ func TestClusterPermissionsForSubject(t *testing.T) {
 			name: "get all pods",
 			inputRoles: []*storage.K8SRole{
 				{
-					Id:           "role1",
-					Name:         "get-pods-role",
-					ClusterId:    "cluster",
-					ClusterScope: true,
+					Id:          "role1",
+					Name:        "get-pods-role",
+					ClusterId:   "cluster",
+					ClusterRole: true,
 					Rules: []*storage.PolicyRule{
 						{
 							Verbs: []string{
@@ -155,7 +155,7 @@ func TestClusterPermissionsForSubject(t *testing.T) {
 							Name: "subject",
 						},
 					},
-					ClusterScope: true,
+					ClusterRole: true,
 				},
 				{
 					RoleId:    "role1",
@@ -166,7 +166,7 @@ func TestClusterPermissionsForSubject(t *testing.T) {
 							Name: "not-admin",
 						},
 					},
-					ClusterScope: true,
+					ClusterRole: true,
 				},
 			},
 			inputSubject: &storage.Subject{
@@ -189,7 +189,7 @@ func TestClusterPermissionsForSubject(t *testing.T) {
 
 	clusterScopeQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
-		AddBools(search.ClusterScope, true).ProtoQuery()
+		AddBools(search.ClusterRole, true).ProtoQuery()
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

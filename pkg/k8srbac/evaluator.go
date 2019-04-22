@@ -79,7 +79,7 @@ func getSubjectsGrantedClusterAdmin(roles []*storage.K8SRole, roleBindings []*st
 	for _, role := range roles {
 		if role.GetName() == clusterAdmin {
 			clusterAdminRoleIDs.Add(role.GetId())
-		} else if role.GetClusterScope() && grantsAllCoreAPIAccess(role) {
+		} else if role.GetClusterRole() && grantsAllCoreAPIAccess(role) {
 			clusterAdminRoleIDs.Add(role.GetId())
 		}
 	}

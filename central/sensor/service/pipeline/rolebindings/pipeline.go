@@ -83,9 +83,11 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
 		return s.runRemovePipeline(event.GetAction(), binding)
-	default:
+	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE:
 		s.reconcileStore.Add(event.GetId())
 		return s.runGeneralPipeline(event.GetAction(), binding)
+	default:
+		return fmt.Errorf("Event action '%s' for k8s role binding does not exist", event.GetAction())
 	}
 }
 
@@ -97,7 +99,7 @@ func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, event *s
 	}
 
 	// Add/Update/Remove the k8s role binding from persistence depending on the event action.
-	if err := s.persistRoleBinding(action, event); err != nil {
+	if err := s.bindings.RemoveRoleBinding(event.GetId()); err != nil {
 		return err
 	}
 
@@ -114,7 +116,7 @@ func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, binding
 		return err
 	}
 
-	if err := s.persistRoleBinding(action, binding); err != nil {
+	if err := s.bindings.UpsertRoleBinding(binding); err != nil {
 		return err
 	}
 
@@ -144,17 +146,6 @@ func (s *pipelineImpl) enrichCluster(binding *storage.K8SRoleBinding) error {
 		binding.ClusterName = cluster.GetName()
 	}
 	return nil
-}
-
-func (s *pipelineImpl) persistRoleBinding(action central.ResourceAction, binding *storage.K8SRoleBinding) error {
-	switch action {
-	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE:
-		return s.bindings.UpsertRoleBinding(binding)
-	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.bindings.RemoveRoleBinding(binding.GetId())
-	default:
-		return fmt.Errorf("Event action '%s' for k8s role binding does not exist", action)
-	}
 }
 
 func (s *pipelineImpl) OnFinish(clusterID string) {}

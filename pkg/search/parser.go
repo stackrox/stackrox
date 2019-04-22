@@ -12,6 +12,26 @@ var (
 	log = logging.LoggerForModule()
 )
 
+// FilterFields uses a predicate to filter our fields from a raw query based on the field key.
+func FilterFields(query string, pred func(field string) bool) string {
+	if query == "" {
+		return query
+	}
+	pairs := strings.Split(query, "+")
+	pairsToKeep := make([]string, 0, len(pairs))
+	for _, pair := range pairs {
+		key, _, valid := parsePair(pair, false)
+		if !valid {
+			continue
+		}
+		if !pred(key) {
+			continue
+		}
+		pairsToKeep = append(pairsToKeep, pair)
+	}
+	return strings.Join(pairsToKeep, "+")
+}
+
 // ParseRawQueryOrEmpty is a convenience wrapper around ParseRawQuery which returns the empty
 // proto query instead of erroring out if an empty string is passed.
 func ParseRawQueryOrEmpty(query string) (*v1.Query, error) {
@@ -47,7 +67,7 @@ func parseRawQuery(query string, isAutocompleteQuery bool) (*v1.Query, error) {
 		if i == len(pairs)-1 && isAutocompleteQuery {
 			queries = append(queries, queryFromFieldValues(key, strings.Split(commaSeparatedValues, ","), true))
 		} else {
-			queries = append(queries, queryFromKeyValue(key, commaSeparatedValues))
+			queries = append(queries, queryFromFieldValues(key, strings.Split(commaSeparatedValues, ","), false))
 		}
 	}
 
@@ -57,12 +77,6 @@ func parseRawQuery(query string, isAutocompleteQuery bool) (*v1.Query, error) {
 	}
 
 	return ConjunctionQuery(queries...), nil
-}
-
-func queryFromKeyValue(key, commaSeparatedValues string) *v1.Query {
-	valueSlice := strings.Split(commaSeparatedValues, ",")
-
-	return queryFromFieldValues(key, valueSlice, false)
 }
 
 // Extracts "key", "value1,value2" from a string in the format key:value1,value2
