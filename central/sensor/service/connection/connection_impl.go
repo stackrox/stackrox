@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"golang.org/x/time/rate"
+	"google.golang.org/grpc/metadata"
 )
 
 var (
@@ -149,6 +150,10 @@ func (c *sensorConnection) handleMessage(msg *central.MsgFromSensor) error {
 }
 
 func (c *sensorConnection) Run(server central.SensorService_CommunicateServer) error {
+	if err := server.SendHeader(metadata.MD{}); err != nil {
+		return errors.Wrap(err, "sending initial metadata")
+	}
+
 	go c.runSend(server)
 	go c.handleMessages()
 	c.runRecv(server)

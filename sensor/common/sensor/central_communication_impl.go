@@ -19,8 +19,8 @@ type centralCommunicationImpl struct {
 	stoppedC concurrency.ErrorSignal
 }
 
-func (s *centralCommunicationImpl) Start(conn *grpc.ClientConn) {
-	go s.sendEvents(central.NewSensorServiceClient(conn), s.receiver.Stop, s.sender.Stop)
+func (s *centralCommunicationImpl) Start(conn *grpc.ClientConn, centralReachable *concurrency.Flag) {
+	go s.sendEvents(central.NewSensorServiceClient(conn), centralReachable, s.receiver.Stop, s.sender.Stop)
 }
 
 func (s *centralCommunicationImpl) Stop(err error) {
@@ -31,7 +31,7 @@ func (s *centralCommunicationImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 	return &s.stoppedC
 }
 
-func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, onStops ...func(error)) {
+func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, onStops ...func(error)) {
 	defer func() {
 		s.stoppedC.SignalWithError(s.stopC.Err())
 		runAll(s.stopC.Err(), onStops...)
@@ -44,12 +44,21 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		s.stopC.SignalWithError(errors.Wrap(err, "opening stream"))
 		return
 	}
+	_, err = stream.Header()
+	if err != nil {
+		s.stopC.SignalWithError(errors.Wrap(err, "receiving initial metadata"))
+		return
+	}
+
 	defer func() {
 		if err := stream.CloseSend(); err != nil {
 			log.Errorf("Failed to close stream cleanly: %v", err)
 		}
 	}()
 	log.Infof("Established connection to Central.")
+
+	centralReachable.Set(true)
+	defer centralReachable.Set(false)
 
 	// Start receiving and sending with central.
 	////////////////////////////////////////////

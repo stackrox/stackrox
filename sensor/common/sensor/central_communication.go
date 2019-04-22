@@ -14,7 +14,7 @@ import (
 
 // CentralCommunication interface allows you to start and stop the consumption/production loops.
 type CentralCommunication interface {
-	Start(centralConn *grpc.ClientConn)
+	Start(centralConn *grpc.ClientConn, centralReachable *concurrency.Flag)
 
 	Stop(error)
 	Stopped() concurrency.ReadOnlyErrorSignal

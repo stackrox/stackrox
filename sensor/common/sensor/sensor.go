@@ -167,11 +167,10 @@ func (s *Sensor) Start() {
 
 	// Wait for central so we can initiate our GRPC connection to send sensor events.
 	s.waitUntilCentralIsReady(s.centralConnection)
-	centralReachable.Set(true)
 
 	// If everything is brought up correctly, start the sensor.
 	if s.listener != nil && s.enforcer != nil {
-		go s.communicationWithCentral()
+		go s.communicationWithCentral(&centralReachable)
 	}
 
 	if s.orchestrator != nil {
@@ -259,10 +258,10 @@ func pollMetadataWithTimeout(svc v1.MetadataServiceClient) error {
 	return nil
 }
 
-func (s *Sensor) communicationWithCentral() {
+func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
 	s.centralCommunication = NewCentralCommunication(s.commandHandler, s.enforcer, s.listener, signalService.Singleton(),
 		s.networkConnManager, s.networkPoliciesCommandHandler, s.clusterStatusUpdater)
-	s.centralCommunication.Start(s.centralConnection)
+	s.centralCommunication.Start(s.centralConnection, centralReachable)
 
 	if err := s.centralCommunication.Stopped().Wait(); err != nil {
 		log.Errorf("Sensor reported an error: %v", err)
