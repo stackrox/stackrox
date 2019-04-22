@@ -38,9 +38,10 @@ class Header extends Component {
                 subHeader={subHeader}
                 className="w-2/3 bg-primary-200 "
             >
+                <ClusterSelect />
                 <SearchInput
                     id="network"
-                    className="w-full"
+                    className="w-full pl-2"
                     searchOptions={this.props.searchOptions}
                     searchModifiers={this.props.searchModifiers}
                     searchSuggestions={this.props.searchSuggestions}
@@ -49,7 +50,6 @@ class Header extends Component {
                     setSearchSuggestions={this.props.setSearchSuggestions}
                     onSearch={this.onSearch}
                 />
-                <ClusterSelect />
                 <TimeWindowSelector />
                 <SimulatorButton />
             </PageHeader>

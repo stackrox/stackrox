@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
@@ -9,44 +9,42 @@ import { actions as pageActions } from 'reducers/network/page';
 
 import Select from 'Components/ReactSelect';
 
-class ClusterSelect extends Component {
-    static propTypes = {
-        clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
-        selectedClusterId: PropTypes.string,
-        selectClusterId: PropTypes.func.isRequired,
-        fetchClusters: PropTypes.func.isRequired,
-        closeSidePanel: PropTypes.func.isRequired
-    };
-
-    static defaultProps = {
-        selectedClusterId: ''
-    };
-
-    changeCluster = clusterId => {
-        this.props.selectClusterId(clusterId);
-        this.props.closeSidePanel();
-    };
-
-    render() {
-        if (!this.props.clusters.length) return null;
-        // network policies are only applicable on k8s-based clusters
-        const options = this.props.clusters
-            .filter(cluster => networkGraphClusters[cluster.type])
-            .map(cluster => ({
-                value: cluster.id,
-                label: cluster.name
-            }));
-        const clustersProps = {
-            className: 'min-w-64 ml-2',
-            options,
-            value: this.props.selectedClusterId,
-            placeholder: 'Select a cluster',
-            onChange: this.changeCluster,
-            autoFocus: true
-        };
-        return <Select {...clustersProps} />;
+const ClusterSelect = ({ selectClusterId, closeSidePanel, clusters, selectedClusterId }) => {
+    function changeCluster(clusterId) {
+        selectClusterId(clusterId);
+        closeSidePanel();
     }
-}
+
+    if (!clusters.length) return null;
+    // network policies are only applicable on k8s-based clusters
+    const options = clusters
+        .filter(cluster => networkGraphClusters[cluster.type])
+        .map(cluster => ({
+            value: cluster.id,
+            label: cluster.name
+        }));
+    const clustersProps = {
+        className: 'min-w-48',
+        options,
+        value: selectedClusterId,
+        placeholder: 'Select a cluster',
+        onChange: changeCluster,
+        autoFocus: true
+    };
+    return <Select {...clustersProps} />;
+};
+
+ClusterSelect.propTypes = {
+    clusters: PropTypes.arrayOf(PropTypes.object).isRequired,
+    selectedClusterId: PropTypes.string,
+    selectClusterId: PropTypes.func.isRequired,
+    fetchClusters: PropTypes.func.isRequired,
+    closeSidePanel: PropTypes.func.isRequired
+};
+
+ClusterSelect.defaultProps = {
+    selectedClusterId: ''
+};
 
 const mapStateToProps = createStructuredSelector({
     clusters: selectors.getClusters,

@@ -416,7 +416,7 @@ const NetworkGraph = ({
 
     function zoomToFit() {
         if (!cy) return;
-        cy.current.fit([], GRAPH_PADDING);
+        cy.current.fit(null, GRAPH_PADDING);
         const newMinZoom = Math.min(cy.current.zoom(), cy.current.minZoom());
         cy.current.minZoom(newMinZoom);
         zoomHandler();
@@ -592,7 +592,7 @@ const NetworkGraph = ({
                 eles: CY.nodes(`[parent="${id}"]`)
             }).run();
         });
-        CY.fit(null, 50);
+        CY.fit(null, GRAPH_PADDING);
     }
 
     function grabifyNamespaces() {

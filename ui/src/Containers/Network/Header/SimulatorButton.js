@@ -29,16 +29,16 @@ class SimulatorButton extends Component {
     render() {
         const className = this.props.creatingOrSimulating
             ? 'bg-success-200 border-success-500 hover:border-success-600 hover:text-success-600 text-success-500'
-            : 'bg-base-200 hover:border-base-300 hover:text-base-600 border-base-200 text-base-500';
+            : 'bg-base-200 hover:border-base-400 hover:text-base-700 border-base-300';
         const iconColor = this.props.creatingOrSimulating ? '#53c6a9' : '#d2d5ed';
         return (
             <button
                 type="button"
                 data-test-id={`simulator-button-${this.props.creatingOrSimulating ? 'on' : 'off'}`}
-                className={`flex-no-shrink border-2 rounded-sm text-sm ml-2 pl-2 pr-2 h-9 ${className}`}
+                className={`flex-no-shrink border-2 rounded-sm text-sm pl-2 pr-2 h-10 ${className}`}
                 onClick={this.toggleSimulation}
             >
-                <span className="pr-1">Simulate Network Policy</span>
+                <span className="pr-2">Network Policy Simulator</span>
                 <Icon.Circle className="h-2 w-2" fill={iconColor} stroke={iconColor} />
             </button>
         );

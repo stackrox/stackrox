@@ -50,10 +50,12 @@ class Graph extends Component {
     };
 
     shouldComponentUpdate(nextProps) {
+        const { networkFlowGraphUpdateKey, filterState, isLoading, wizardOpen } = this.props;
         return (
-            nextProps.networkFlowGraphUpdateKey !== this.props.networkFlowGraphUpdateKey ||
-            nextProps.filterState !== this.props.filterState ||
-            nextProps.isLoading !== this.props.isLoading
+            nextProps.networkFlowGraphUpdateKey !== networkFlowGraphUpdateKey ||
+            nextProps.filterState !== filterState ||
+            nextProps.isLoading !== isLoading ||
+            nextProps.wizardOpen !== wizardOpen
         );
     }
 
@@ -79,28 +81,30 @@ class Graph extends Component {
                 <NoResultsMessage message="There are too many deployments to render on the graph. Please refine your search to a set of namespaces or deployments to display." />
             );
         }
-        const { filterState } = this.props;
+        const { networkFlowGraphUpdateKey, networkFlowMapping } = this.props;
+        const { closeWizard, filterState } = this.props;
         return (
             <NetworkGraph
-                updateKey={this.props.networkFlowGraphUpdateKey}
+                updateKey={networkFlowGraphUpdateKey}
                 nodes={nodes}
-                networkFlowMapping={this.props.networkFlowMapping}
+                networkFlowMapping={networkFlowMapping}
                 onNodeClick={this.onNodeClick}
                 onNamespaceClick={this.onNamespaceClick}
-                onClickOutside={this.props.closeWizard}
+                onClickOutside={closeWizard}
                 filterState={filterState}
             />
         );
     };
 
     render() {
+        const { wizardOpen, wizardStage, filterState } = this.props;
         // Simulator styling.
         const simulatorOn =
-            this.props.wizardOpen && this.props.wizardStage === wizardStages.simulator;
+            wizardOpen &&
+            (wizardStage === wizardStages.simulator || wizardStage === wizardStages.creator);
         const simulatorMode = simulatorOn ? 'simulator-mode' : '';
 
         // Graph nodes and styling.
-        const { filterState } = this.props;
         let nodes;
         let networkGraphState;
         if (filterState === filterModes.active) {

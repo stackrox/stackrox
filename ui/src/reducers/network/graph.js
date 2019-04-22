@@ -12,6 +12,8 @@ export const networkGraphClusters = {
     OPENSHIFT_CLUSTER: true
 };
 
+let networkFlowGraphEnabled = false;
+
 // Action types
 
 export const types = {
@@ -137,20 +139,28 @@ const selectedNetworkClusterId = (state = null, action) => {
     return state;
 };
 
-const networkFlowGraphUpdateKey = (state = { shouldUpdate: true, key: 0 }, action) => {
+const networkFlowGraphUpdateKey = (state = { key: 0 }, action) => {
     const { type, payload, options } = action;
 
     if (type === LOCATION_CHANGE && payload.pathname.startsWith('/main/network')) {
-        return { shouldUpdate: true, key: state.key + 1 };
+        return { key: state.key + 1 };
     }
     if (type === searchTypes.SET_SEARCH_OPTIONS) {
         const { length } = options;
-        if (!length) return { shouldUpdate: true, key: state.key + 1 };
-        if (length && !action.options[length - 1].type)
-            return { shouldUpdate: true, key: state.key };
+        if (!length) return { key: state.key + 1 };
+        if (length && !action.options[length - 1].type) return { key: state.key };
     }
-    if (type === backendTypes.FETCH_NETWORK_POLICY_GRAPH.SUCCESS) {
-        return { shouldUpdate: true, key: state.key + 1 };
+    if (
+        type === backendTypes.FETCH_NETWORK_POLICY_GRAPH.SUCCESS ||
+        type === backendTypes.FETCH_NETWORK_FLOW_GRAPH.SUCCESS
+    ) {
+        if (type === backendTypes.FETCH_NETWORK_FLOW_GRAPH.SUCCESS) {
+            networkFlowGraphEnabled = true;
+            return { key: state.key + 1 };
+        }
+        if (type === backendTypes.FETCH_NETWORK_POLICY_GRAPH.SUCCESS && !networkFlowGraphEnabled) {
+            return { key: state.key + 1 };
+        }
     }
     return state;
 };

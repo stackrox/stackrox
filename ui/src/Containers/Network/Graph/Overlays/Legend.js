@@ -1,105 +1,100 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import * as Icon from 'react-feather';
 
 import LegendTile from 'Components/LegendTile';
 
-class Legend extends Component {
-    state = {
-        isOpen: true
-    };
+const LegendContent = ({ isOpen, toggleLegend }) => {
+    if (!isOpen) return null;
+    return (
+        <React.Fragment>
+            <div className="flex justify-between border-b border-base-400 p-2 uppercase items-center">
+                Legend
+                <button type="button" className="flex" onClick={toggleLegend}>
+                    <Icon.X className="h-3 w-3" />
+                </button>
+            </div>
+            <div className="bg-primary-100">
+                <div className="flex border-b border-base-400">
+                    <LegendTile name="deployment" tooltip="Deployment" type="font" />
+                    <LegendTile
+                        name="deployment-allowed-connections"
+                        tooltip="Deployment with allowed external connections"
+                        type="font"
+                    />
+                    <LegendTile
+                        name="non-isolated-deployment-allowed"
+                        tooltip="Non-isolated deployment (all connections allowed)"
+                        type="font"
+                    />
+                </div>
+                <div className="flex border-b border-base-400">
+                    <LegendTile name="namespace" tooltip="Namespace" type="svg" />
+                    <LegendTile
+                        name="namespace-allowed-connection"
+                        tooltip="Namespace with allowed external connections"
+                        type="svg"
+                    />
+                    <LegendTile
+                        name="namespace-connection"
+                        tooltip="Namespace connection"
+                        type="svg"
+                    />
+                </div>
+                <div className="flex border-b border-base-400">
+                    <LegendTile name="active-connection" tooltip="Active connection" type="svg" />
+                    <LegendTile name="allowed-connection" tooltip="Allowed connection" type="svg" />
+                    <LegendTile
+                        name="namespace-egress-ingress"
+                        tooltip="Namespace external egress/ingress traffic"
+                        type="font"
+                    />
+                </div>
+            </div>
+        </React.Fragment>
+    );
+};
 
-    handleKeyUp = e => (e.key === 'Enter' ? this.toggleLegend() : null);
+LegendContent.propTypes = {
+    isOpen: PropTypes.bool.isRequired,
+    toggleLegend: PropTypes.func.isRequired
+};
 
-    toggleLegend = () => {
-        const { isOpen } = this.state;
-        this.setState({ isOpen: !isOpen });
-    };
+const Legend = () => {
+    const [isOpen, toggleOpen] = useState(true);
 
-    renderLegendButton = () => {
-        if (this.state.isOpen) return null;
+    function toggleLegend() {
+        toggleOpen(!isOpen);
+    }
+
+    function handleKeyUp(e) {
+        return e.key === 'Enter' ? toggleLegend(!isOpen) : null;
+    }
+
+    function renderLegendButton() {
+        if (isOpen) return null;
         return (
             <div
                 role="button"
                 className="uppercase p-2 hover:bg-base-200 hover:text-primary-700 cursor-pointer"
-                onClick={this.toggleLegend}
-                onKeyUp={this.handleKeyUp}
+                onClick={toggleLegend}
+                onKeyUp={handleKeyUp}
                 tabIndex="0"
             >
                 Legend
             </div>
         );
-    };
-
-    renderLegendContent = () => {
-        if (!this.state.isOpen) return null;
-        return (
-            <React.Fragment>
-                <div className="flex justify-between border-b border-base-400 p-2 uppercase items-center">
-                    Legend
-                    <button type="button" className="flex" onClick={this.toggleLegend}>
-                        <Icon.X className="h-3 w-3" />
-                    </button>
-                </div>
-                <div className="bg-primary-100">
-                    <div className="flex border-b border-base-400">
-                        <LegendTile name="deployment" tooltip="Deployment" type="font" />
-                        <LegendTile
-                            name="deployment-allowed-connections"
-                            tooltip="Deployment with allowed external connections"
-                            type="font"
-                        />
-                        <LegendTile
-                            name="non-isolated-deployment-allowed"
-                            tooltip="Non-isolated deployment (all connections allowed)"
-                            type="font"
-                        />
-                    </div>
-                    <div className="flex border-b border-base-400">
-                        <LegendTile name="namespace" tooltip="Namespace" type="svg" />
-                        <LegendTile
-                            name="namespace-allowed-connection"
-                            tooltip="Namespace with allowed external connections"
-                            type="svg"
-                        />
-                        <LegendTile
-                            name="namespace-connection"
-                            tooltip="Namespace connection"
-                            type="svg"
-                        />
-                    </div>
-                    <div className="flex border-b border-base-400">
-                        <LegendTile
-                            name="active-connection"
-                            tooltip="Active connection"
-                            type="svg"
-                        />
-                        <LegendTile
-                            name="allowed-connection"
-                            tooltip="Allowed connection"
-                            type="svg"
-                        />
-                        <LegendTile
-                            name="namespace-egress-ingress"
-                            tooltip="Namespace external egress/ingress traffic"
-                            type="font"
-                        />
-                    </div>
-                </div>
-            </React.Fragment>
-        );
-    };
-
-    render() {
-        return (
-            <div
-                data-test-id="legend"
-                className="env-graph-legend absolute pin-b pin-l mb-2 ml-2 bg-base-100 text-base-500 text-sm font-700 border-base-400 border-2 rounded-sm z-10"
-            >
-                {this.renderLegendButton()}
-                {this.renderLegendContent()}
-            </div>
-        );
     }
-}
+
+    return (
+        <div
+            data-test-id="legend"
+            className="env-graph-legend absolute pin-b pin-l mb-2 ml-2 bg-base-100 text-base-500 text-sm font-700 border-base-400 border-2 rounded-sm z-10"
+        >
+            {renderLegendButton()}
+            <LegendContent isOpen={isOpen} toggleLegend={toggleLegend} />
+        </div>
+    );
+};
 
 export default Legend;

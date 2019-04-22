@@ -5,12 +5,15 @@ import { createSelector, createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import wizardStages from './Wizard/wizardStages';
 
-function SimulationBorder(props) {
-    if (!props.wizardOpen || props.wizardStage !== wizardStages.simulator) {
+function SimulationBorder({ wizardOpen, wizardStage, modificationState }) {
+    if (
+        !wizardOpen ||
+        (wizardStage !== wizardStages.simulator && wizardStage !== wizardStages.creator)
+    ) {
         return null;
     }
 
-    const colorType = props.modificationState === 'ERROR' ? 'alert' : 'success';
+    const colorType = modificationState === 'ERROR' ? 'alert' : 'success';
     return (
         <div
             className={`absolute pin-t pin-l bg-${colorType}-600 text-base-100 font-600 uppercase p-2 z-1`}
