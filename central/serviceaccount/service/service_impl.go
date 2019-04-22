@@ -4,8 +4,13 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
+	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
+	roleDatastore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	bindingDatastore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	"github.com/stackrox/rox/central/rbac/utils"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/serviceaccount/datastore"
+	saDatastore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -29,7 +34,11 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
-	storage datastore.DataStore
+	serviceAccounts saDatastore.DataStore
+	bindings        bindingDatastore.DataStore
+	roles           roleDatastore.DataStore
+	deployments     deploymentStore.DataStore
+	namespaces      namespaceStore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -49,15 +58,27 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetServiceAccount returns the service account for the id.
 func (s *serviceImpl) GetServiceAccount(ctx context.Context, request *v1.ResourceByID) (*v1.GetServiceAccountResponse, error) {
-	sa, exists, err := s.storage.GetServiceAccount(request.GetId())
+	sa, exists, err := s.serviceAccounts.GetServiceAccount(request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if !exists {
 		return nil, status.Errorf(codes.NotFound, "service account with id '%s' does not exist", request.GetId())
 	}
+
+	clusterRoles, scopedRoles, err := s.getRoles(sa)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return &v1.GetServiceAccountResponse{
-		ServiceAccount: sa,
+		SaAndRole: &v1.ServiceAccountAndRoles{
+			ServiceAccount:          sa,
+			ClusterRoles:            clusterRoles,
+			ScopedRoles:             scopedRoles,
+			DeploymentRelationships: s.getDeploymentRelationships(sa),
+		},
 	}, nil
 }
 
@@ -66,19 +87,96 @@ func (s *serviceImpl) ListServiceAccounts(ctx context.Context, rawQuery *v1.RawQ
 	var serviceAccounts []*storage.ServiceAccount
 	var err error
 	if rawQuery.GetQuery() == "" {
-		serviceAccounts, err = s.storage.ListServiceAccounts()
+		serviceAccounts, err = s.serviceAccounts.ListServiceAccounts()
 	} else {
 		var q *v1.Query
 		q, err = search.ParseRawQueryOrEmpty(rawQuery.GetQuery())
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		serviceAccounts, err = s.storage.SearchRawServiceAccounts(q)
+		serviceAccounts, err = s.serviceAccounts.SearchRawServiceAccounts(q)
 	}
 
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to retrieve service accounts: %s", err)
 	}
 
-	return &v1.ListServiceAccountResponse{ServiceAccounts: serviceAccounts}, nil
+	if len(serviceAccounts) == 0 {
+		return nil, nil
+	}
+
+	var saAndRoles []*v1.ServiceAccountAndRoles
+	for _, sa := range serviceAccounts {
+		clusterRoles, scopedRoles, err := s.getRoles(sa)
+
+		if err != nil {
+			return nil, err
+		}
+
+		saAndRoles = append(saAndRoles, &v1.ServiceAccountAndRoles{
+			ServiceAccount:          sa,
+			ClusterRoles:            clusterRoles,
+			ScopedRoles:             scopedRoles,
+			DeploymentRelationships: s.getDeploymentRelationships(sa),
+		})
+
+	}
+	return &v1.ListServiceAccountResponse{
+		SaAndRoles: saAndRoles,
+	}, nil
+}
+
+func (s *serviceImpl) getDeploymentRelationships(sa *storage.ServiceAccount) []*v1.SADeploymentRelationship {
+	psr := search.NewQueryBuilder().
+		AddExactMatches(search.ClusterID, sa.GetClusterId()).
+		AddExactMatches(search.Namespace, sa.GetNamespace()).
+		AddExactMatches(search.ServiceAccountName, sa.GetName()).
+		ProtoQuery()
+
+	deploymentResults, err := s.deployments.SearchListDeployments(psr)
+	if err != nil {
+		return nil
+	}
+
+	var deployments []*v1.SADeploymentRelationship
+	for _, r := range deploymentResults {
+		deployments = append(deployments, &v1.SADeploymentRelationship{
+			Id:   r.Id,
+			Name: r.Name,
+		})
+	}
+
+	return deployments
+}
+
+func (s *serviceImpl) getRoles(sa *storage.ServiceAccount) ([]*storage.K8SRole, []*v1.ScopedRoles, error) {
+	subject := &storage.Subject{
+		Name:      sa.GetName(),
+		Namespace: sa.GetNamespace(),
+		Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
+	}
+
+	clusterEvaluator := utils.NewClusterPermissionEvaluator(sa.GetClusterId(), s.roles, s.bindings)
+	clusterRoles := clusterEvaluator.RolesForSubject(subject)
+
+	namespaceQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, sa.ClusterId).ProtoQuery()
+	namespaces, err := s.namespaces.SearchNamespaces(namespaceQuery)
+	if err != nil {
+		return clusterRoles, nil, err
+	}
+
+	scopedRoles := make([]*v1.ScopedRoles, 0)
+	for _, namespace := range namespaces {
+		namespaceEvaluator := utils.NewNamespacePermissionEvaluator(sa.ClusterId, namespace.GetName(), s.roles, s.bindings)
+		namespaceRoles := namespaceEvaluator.RolesForSubject(subject)
+
+		if len(namespaceRoles) != 0 {
+			scopedRoles = append(scopedRoles, &v1.ScopedRoles{
+				Namespace: namespace.GetName(),
+				Roles:     namespaceRoles,
+			})
+		}
+	}
+
+	return clusterRoles, scopedRoles, nil
 }

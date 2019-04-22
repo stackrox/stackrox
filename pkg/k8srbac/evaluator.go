@@ -11,6 +11,7 @@ const clusterAdmin = "cluster-admin"
 type Evaluator interface {
 	ForSubject(subject *storage.Subject) PolicyRuleSet
 	IsClusterAdmin(subject *storage.Subject) bool
+	RolesForSubject(subject *storage.Subject) []*storage.K8SRole
 }
 
 // NewEvaluator returns a new instance of an Evaluator.
@@ -49,6 +50,18 @@ func (e *evaluator) IsClusterAdmin(subject *storage.Subject) bool {
 		}
 	}
 	return false
+}
+
+// RolesForSubject returns the roles assigned to the subject based on the evaluator's bindings
+func (e *evaluator) RolesForSubject(subject *storage.Subject) []*storage.K8SRole {
+	// Collect all of the rules for all of the roles that bind the deployment to a role.
+	roles := make([]*storage.K8SRole, 0)
+	for subjectSet, role := range e.bindings {
+		if subjectSet.Contains(subject) {
+			roles = append(roles, role)
+		}
+	}
+	return roles
 }
 
 // Static helper functions.

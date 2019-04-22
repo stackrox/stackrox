@@ -41,6 +41,13 @@ func (c *clusterPermissionEvaluator) IsClusterAdmin(subject *storage.Subject) bo
 	return evaluator.IsClusterAdmin(subject)
 }
 
+// RolesForSubject returns the roles assigned to the subject based on the evaluator's bindings
+func (c *clusterPermissionEvaluator) RolesForSubject(subject *storage.Subject) []*storage.K8SRole {
+	clusterRoleBindings, roles := c.getBindingsAndRoles()
+	evaluator := k8srbac.NewEvaluator(roles, clusterRoleBindings)
+	return evaluator.RolesForSubject(subject)
+}
+
 func (c *clusterPermissionEvaluator) getBindingsAndRoles() ([]*storage.K8SRoleBinding, []*storage.K8SRole) {
 
 	q := search.NewQueryBuilder().

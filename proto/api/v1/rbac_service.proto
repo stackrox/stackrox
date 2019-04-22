@@ -34,6 +34,12 @@ message GetRoleBindingResponse {
 }
 
 
+message ScopedRoles {
+    string namespace                  = 1;
+    repeated storage.K8sRole roles    = 2;
+}
+
+
 service RbacService {
 
     rpc GetRole (ResourceByID) returns (GetRoleResponse) {

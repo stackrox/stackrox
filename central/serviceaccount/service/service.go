@@ -3,7 +3,11 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/serviceaccount/datastore"
+	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
+	namespaceStore "github.com/stackrox/rox/central/namespace/datastore"
+	roleDatastore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	bindingDatastore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	saDatastore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 )
@@ -18,8 +22,12 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DB and index.
-func New(serviceAccounts datastore.DataStore) Service {
+func New(serviceAccounts saDatastore.DataStore, rolebindings bindingDatastore.DataStore, roles roleDatastore.DataStore, deployments deploymentStore.DataStore, namespaces namespaceStore.DataStore) Service {
 	return &serviceImpl{
-		storage: serviceAccounts,
+		serviceAccounts: serviceAccounts,
+		bindings:        rolebindings,
+		roles:           roles,
+		deployments:     deployments,
+		namespaces:      namespaces,
 	}
 }
