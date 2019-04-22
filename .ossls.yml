@@ -1185,3 +1185,11 @@ dependencies:
       LICENSE: b05939968b4f187656525630fd5485ac939e7dcf2353737408bd59f82c932f1d
     attribution:
     - StackRox
+
+  vendor/github.com/fullsailor/pkcs7:
+    url: "https://github.com/fullsailor/pkcs7"
+    license: MIT
+    files:
+      LICENSE: d01c6d371866b3c7a1a7e20994d88d2ce83f22974ec6d3596a6125b44495813d
+    attribution:
+      - Andrew Smith

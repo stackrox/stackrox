@@ -1,6 +1,8 @@
 package clusterstatus
 
 import (
+	"context"
+	"fmt"
 	"sort"
 	"time"
 
@@ -45,7 +47,7 @@ func (u *updaterImpl) sendMessage(msg *central.ClusterStatusUpdate) bool {
 
 func (u *updaterImpl) run() {
 	clusterMetadata := u.getClusterMetadata()
-	cloudProviderMetadata := u.getCloudProviderMetadata()
+	cloudProviderMetadata := u.getCloudProviderMetadata(context.Background())
 
 	updateMessage := &central.ClusterStatusUpdate{
 		Msg: &central.ClusterStatusUpdate_Status{
@@ -62,6 +64,10 @@ func (u *updaterImpl) run() {
 	}
 
 	deploymentEnvFromMD := getDeploymentEnvFromProviderMetadata(cloudProviderMetadata)
+	if !cloudProviderMetadata.GetVerified() {
+		// Prepend a `~` sign if the deployment environment is not verified.
+		deploymentEnvFromMD = fmt.Sprintf("~%s", deploymentEnvFromMD)
+	}
 
 	// If we get the deployment environment from the cloud provider metadata, be happy with that - send the message
 	// and just return.
@@ -123,8 +129,8 @@ func (u *updaterImpl) getAPIVersions() []string {
 	return apiVersions
 }
 
-func (u *updaterImpl) getCloudProviderMetadata() *storage.ProviderMetadata {
-	m := providers.GetMetadata()
+func (u *updaterImpl) getCloudProviderMetadata(ctx context.Context) *storage.ProviderMetadata {
+	m := providers.GetMetadata(ctx)
 	if m == nil {
 		log.Infof("No Cloud Provider metadata is found")
 	}

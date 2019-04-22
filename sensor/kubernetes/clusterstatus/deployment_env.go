@@ -16,6 +16,9 @@ func getDeploymentEnvFromProviderMetadata(metadata *storage.ProviderMetadata) st
 	if awsAccountID := metadata.GetAws().GetAccountId(); awsAccountID != "" {
 		return fmt.Sprintf("aws/%s", awsAccountID)
 	}
+	if azureSubscriptionID := metadata.GetAzure().GetSubscriptionId(); azureSubscriptionID != "" {
+		return fmt.Sprintf("azure/%s", azureSubscriptionID)
+	}
 	return ""
 }
 

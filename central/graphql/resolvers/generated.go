@@ -602,6 +602,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("ProviderMetadata", []string{
 		"region: String!",
+		"verified: Boolean!",
 		"zone: String!",
 		"provider: ProviderMetadataProvider",
 	}))
@@ -5197,6 +5198,11 @@ func (resolver *Resolver) wrapProviderMetadatas(values []*storage.ProviderMetada
 
 func (resolver *providerMetadataResolver) Region() string {
 	value := resolver.data.GetRegion()
+	return value
+}
+
+func (resolver *providerMetadataResolver) Verified() bool {
+	value := resolver.data.GetVerified()
 	return value
 }
 

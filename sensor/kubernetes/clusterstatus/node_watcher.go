@@ -1,6 +1,8 @@
 package clusterstatus
 
 import (
+	"fmt"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/informers"
@@ -58,6 +60,12 @@ func (w *nodeWatcher) onChange(newObj, oldObj interface{}) {
 	changed := w.deploymentEnvs.Replace(newDeploymentEnv, oldDeploymentEnv)
 	if !changed {
 		return
+	}
+
+	// Prepend a `~` sign to all deployment environments as they are not verified.
+	deploymentEnvs := w.deploymentEnvs.AsSlice()
+	for i, env := range deploymentEnvs {
+		deploymentEnvs[i] = fmt.Sprintf("~%s", env)
 	}
 
 	updateMsg := &central.ClusterStatusUpdate{

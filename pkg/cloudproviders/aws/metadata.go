@@ -1,48 +1,40 @@
 package aws
 
 import (
-	"net/http"
-	"time"
+	"context"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/ec2metadata"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/stackrox/rox/generated/storage"
-)
-
-const (
-	timeout = 5 * time.Second
+	"github.com/stackrox/rox/pkg/errorhelpers"
 )
 
 // GetMetadata tries to obtain the AWS instance metadata.
 // If not on AWS, returns nil, nil.
-func GetMetadata() (*storage.ProviderMetadata, error) {
-	sess, err := session.NewSession()
-	if err != nil {
-		return nil, err
+func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
+	var verified bool
+
+	errs := errorhelpers.NewErrorList("retrieving AWS EC2 metadata")
+	doc, err := getIdentityDocFromPKCS7(ctx)
+	errs.AddError(err)
+	if doc != nil {
+		verified = true
+	} else {
+		doc, err = getInstanceIdentityDocFromAPI(ctx)
+		verified = false
+		errs.AddError(err)
 	}
 
-	mdClient := ec2metadata.New(sess, &aws.Config{
-		HTTPClient: &http.Client{
-			Timeout: timeout,
-		},
-	})
-	if !mdClient.Available() {
-		return nil, nil
-	}
-
-	identityDoc, err := mdClient.GetInstanceIdentityDocument()
-	if err != nil {
-		return nil, err
+	if doc == nil {
+		return nil, errs.ToError()
 	}
 
 	return &storage.ProviderMetadata{
-		Region: identityDoc.Region,
-		Zone:   identityDoc.AvailabilityZone,
+		Region: doc.Region,
+		Zone:   doc.AvailabilityZone,
 		Provider: &storage.ProviderMetadata_Aws{
 			Aws: &storage.AWSProviderMetadata{
-				AccountId: identityDoc.AccountID,
+				AccountId: doc.AccountID,
 			},
 		},
+		Verified: verified,
 	}, nil
 }

@@ -38,6 +38,8 @@ message ProviderMetadata {
         AWSProviderMetadata aws       = 4;
         AzureProviderMetadata azure   = 5;
     }
+
+    bool verified = 15;
 }
 
 message OrchestratorMetadata {

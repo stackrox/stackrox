@@ -58,7 +58,7 @@ func validate(google *storage.GoogleConfig) error {
 		errorList.AddString("Service account must be specified for Google Container Analysis")
 	}
 	if google.GetProject() == "" {
-		errorList.AddString("Project must be specified for Google Container Analysis")
+		errorList.AddString("ProjectID must be specified for Google Container Analysis")
 	}
 	return errorList.ToError()
 }

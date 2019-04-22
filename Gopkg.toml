@@ -218,3 +218,8 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
 [[constraint]]
   name = "github.com/stackrox/anchore-client"
   revision = "608e0af2c0b40eeebf71c6c5d24f04de64510bf6"
+
+[[constraint]]
+  name = "github.com/fullsailor/pkcs7"
+  source = "https://github.com/misberner/pkcs7.git"
+  revision = "a48bf0f78dea7977a5bfcc5b0ffab3cbed62f01a"

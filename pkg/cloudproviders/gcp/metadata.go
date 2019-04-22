@@ -1,18 +1,19 @@
 package gcp
 
 import (
-	"net/http"
+	"context"
 	"strings"
-	"time"
 
 	"cloud.google.com/go/compute/metadata"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
-const (
-	timeout = 5 * time.Second
-)
+type gcpMetadata struct {
+	ProjectID string
+	Zone      string
+}
 
 var (
 	log = logging.LoggerForModule()
@@ -25,23 +26,31 @@ func isNotDefinedError(err error) bool {
 
 // GetMetadata returns the cluster metadata if on GCP or an error
 // If not on GCP, then returns nil, nil.
-func GetMetadata() (*storage.ProviderMetadata, error) {
+func GetMetadata(ctx context.Context) (*storage.ProviderMetadata, error) {
 	if !metadata.OnGCE() {
 		return nil, nil
 	}
 
-	client := &http.Client{
-		Timeout: timeout,
-	}
-	c := metadata.NewClient(client)
+	c := metadata.NewClient(httpClient)
 
-	zone, err := c.Zone()
-	if err != nil {
-		return nil, err
+	var verified bool
+	errs := errorhelpers.NewErrorList("retrieving GCE metadata")
+	md, err := getMetadataFromIdentityToken(ctx)
+	errs.AddError(err)
+	if md != nil {
+		verified = true
+	} else {
+		md, err = getMetadataFromAPI(c)
+		verified = false
+		errs.AddError(err)
+	}
+
+	if md == nil {
+		return nil, errs.ToError()
 	}
 
 	var region string
-	regionSlice := strings.Split(zone, "-")
+	regionSlice := strings.Split(md.Zone, "-")
 	if len(regionSlice) > 1 {
 		region = strings.Join(regionSlice[:len(regionSlice)-1], "-")
 	}
@@ -52,19 +61,15 @@ func GetMetadata() (*storage.ProviderMetadata, error) {
 		return nil, err
 	}
 
-	project, err := c.ProjectID()
-	if err != nil {
-		return nil, err
-	}
-
 	return &storage.ProviderMetadata{
 		Region: region,
-		Zone:   zone,
+		Zone:   md.Zone,
 		Provider: &storage.ProviderMetadata_Google{
 			Google: &storage.GoogleProviderMetadata{
-				Project:     project,
+				Project:     md.ProjectID,
 				ClusterName: clusterName,
 			},
 		},
+		Verified: verified,
 	}, nil
 }

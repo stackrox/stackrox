@@ -1,6 +1,7 @@
 package azure
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,7 +10,7 @@ import (
 func TestGetMetadata_NotOnAzure(t *testing.T) {
 	t.Parallel()
 
-	_, err := GetMetadata()
+	_, err := GetMetadata(context.TODO())
 	// We might not get metadata info, but we should not get an error.
 	assert.NoError(t, err)
 }
