@@ -331,10 +331,12 @@ checkKopsLabel: &checkKopsLabel
     name: Determine whether to run kops tests
     command: |
       set +e
-      .circleci/pr_has_label.sh ci-kops-tests
-      if [ $? -eq 1 ]; then
-        echo "Skipping tests because we're on a PR. Apply the ci-kops-tests label to your PR if you want to run them."
-        circleci step halt
+      if [ -z "${CIRCLE_TAG}" ]; then
+        .circleci/pr_has_label.sh ci-kops-tests
+        if [ $? -ne 0 ]; then
+          echo "Skipping tests because we're not on a PR OR the PR doesn't have the ci-kops-tests label. Apply the ci-kops-tests label to your PR if you want to run them."
+          circleci step halt
+        fi
       fi
 
 checkScaleLabel: &checkScaleLabel
