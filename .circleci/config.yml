@@ -1041,7 +1041,7 @@ jobs:
   provision-openshift:
     machine: true
     environment:
-      - OPENSHIFT_AUTOMATION_VERSION: 0.4.0
+      - OPENSHIFT_AUTOMATION_VERSION: 0.4.1-1-g1e9c69d
     steps:
       - checkout
       - *checkOpenshiftLabel
@@ -1113,7 +1113,7 @@ jobs:
   openshift-tests:
     <<: *defaults
     environment:
-      - OPENSHIFT_AUTOMATION_VERSION: 0.4.0
+      - OPENSHIFT_AUTOMATION_VERSION: 0.4.1-1-g1e9c69d
       - LOCAL_PORT: 8000
       - RUNTIME_SUPPORT: kernel-module
       - MONITORING_SUPPORT: true
