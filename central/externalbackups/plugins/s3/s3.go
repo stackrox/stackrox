@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -107,7 +108,7 @@ func sortS3Objects(objects []*awsS3.Object) {
 func (s *s3) pruneBackupsIfNecessary() error {
 	objects, err := s.svc.ListObjects(&awsS3.ListObjectsInput{
 		Bucket: aws.String(s.integration.GetS3().GetBucket()),
-		Prefix: aws.String("backup"),
+		Prefix: aws.String(s.prefixKey("backup")),
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to list objects for s3 bucket")
@@ -131,16 +132,21 @@ func (s *s3) pruneBackupsIfNecessary() error {
 	return nil
 }
 
+func (s *s3) prefixKey(key string) string {
+	return filepath.Join(s.integration.GetS3().GetObjectPrefix(), key)
+}
+
 func (s *s3) Backup(reader io.Reader) error {
 	formattedTime := time.Now().Format("2006-01-02T15:04:05")
 	key := fmt.Sprintf("backup_%s.zip", formattedTime)
+	formattedKey := s.prefixKey(key)
 	ui := &s3manager.UploadInput{
 		Bucket: aws.String(s.integration.GetS3().GetBucket()),
-		Key:    aws.String(key),
+		Key:    aws.String(formattedKey),
 		Body:   reader,
 	}
 	if err := s.send(backupMaxTimeout, ui); err != nil {
-		return err
+		return errors.Wrapf(err, "error creating backup in bucket %q with key %q", s.integration.GetS3().GetBucket(), formattedKey)
 	}
 	return s.pruneBackupsIfNecessary()
 }
@@ -148,12 +154,23 @@ func (s *s3) Backup(reader io.Reader) error {
 func (s *s3) Restore() error { return nil }
 
 func (s *s3) Test() error {
+	formattedKey := s.prefixKey("test")
 	ui := &s3manager.UploadInput{
 		Bucket: aws.String(s.integration.GetS3().GetBucket()),
-		Key:    aws.String("test"),
+		Key:    aws.String(formattedKey),
 		Body:   strings.NewReader("This is a test of the StackRox integration with this bucket"),
 	}
-	return s.send(testMaxTimeout, ui)
+	if err := s.send(testMaxTimeout, ui); err != nil {
+		return errors.Wrapf(err, "error creating test object %q in bucket %q", formattedKey, s.integration.GetS3().GetBucket())
+	}
+	_, err := s.svc.DeleteObject(&awsS3.DeleteObjectInput{
+		Bucket: aws.String(s.integration.GetS3().GetBucket()),
+		Key:    aws.String(formattedKey),
+	})
+	if err != nil {
+		return errors.Wrapf(err, "failed to remove test object %q from bucket %q", formattedKey, s.integration.GetS3().GetBucket())
+	}
+	return nil
 }
 
 func init() {

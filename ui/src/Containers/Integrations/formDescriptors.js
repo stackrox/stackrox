@@ -810,6 +810,12 @@ const formDescriptors = {
                 placeholder: 'stackrox-backups'
             },
             {
+                label: 'Object Prefix (Optional)',
+                jsonpath: 's3.objectPrefix',
+                type: 'text',
+                placeholder: ''
+            },
+            {
                 label: 'Region',
                 jsonpath: 's3.region',
                 type: 'text',
