@@ -35,6 +35,23 @@ function* pollVersion() {
     }
 }
 
+export function* pollUntilCentralRestarts() {
+    const action = actions.initialFetchMetadata;
+    let continuePolling = true;
+    while (continuePolling) {
+        try {
+            const result = yield call(fetchVersionAndSendTo, action);
+            const { licenseStatus } = result;
+            if (licenseStatus !== METADATA_LICENSE_STATUS.RESTARTING) {
+                continuePolling = false;
+            }
+        } catch (error) {
+            continuePolling = false;
+        }
+        delay(1000);
+    }
+}
+
 export default function* metadata() {
     yield fork(pollVersion);
 }

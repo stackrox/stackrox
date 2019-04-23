@@ -11,6 +11,7 @@ import { types as locationActionTypes } from 'reducers/routes';
 import { fetchLicenses, addLicense } from 'services/LicenseService';
 import { actions as notificationActions } from 'reducers/notifications';
 import { types as metadataTypes } from 'reducers/metadata';
+import { pollUntilCentralRestarts } from 'sagas/metadataSagas';
 
 export const storeRequestedLocation = location => store.set('license_requested_location', location);
 export const getAndClearRequestedLocation = () => {
@@ -40,6 +41,7 @@ function* addNewLicense(data) {
             response.license.active &&
             response.license.status === LICENSE_STATUS.VALID
         ) {
+            yield call(pollUntilCentralRestarts);
             yield fork(getLicenses);
             yield put(actions.setLicenseUploadStatus(LICENSE_UPLOAD_STATUS.VALID, successMessage));
             return;
