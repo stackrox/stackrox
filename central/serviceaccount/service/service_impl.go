@@ -105,7 +105,7 @@ func (s *serviceImpl) ListServiceAccounts(ctx context.Context, rawQuery *v1.RawQ
 		return nil, nil
 	}
 
-	var saAndRoles []*v1.ServiceAccountAndRoles
+	saAndRoles := make([]*v1.ServiceAccountAndRoles, 0, len(serviceAccounts))
 	for _, sa := range serviceAccounts {
 		clusterRoles, scopedRoles, err := s.getRoles(sa)
 
@@ -138,7 +138,7 @@ func (s *serviceImpl) getDeploymentRelationships(sa *storage.ServiceAccount) []*
 		return nil
 	}
 
-	var deployments []*v1.SADeploymentRelationship
+	deployments := make([]*v1.SADeploymentRelationship, 0, len(deploymentResults))
 	for _, r := range deploymentResults {
 		deployments = append(deployments, &v1.SADeploymentRelationship{
 			Id:   r.Id,

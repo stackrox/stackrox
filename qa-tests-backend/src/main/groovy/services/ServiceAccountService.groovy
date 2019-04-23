@@ -12,7 +12,7 @@ class ServiceAccountService extends BaseService {
     }
 
     static getServiceAccounts(RawQuery query = RawQuery.newBuilder().build()) {
-        return getServiceAccountService().listServiceAccounts(query).getSaAndRoles()
+        return getServiceAccountService().listServiceAccounts(query).getSaAndRolesList()
     }
 
     static getServiceAccountDetails(String id) {

@@ -1,5 +1,5 @@
 import common.Constants
-import io.stackrox.proto.storage.ServiceAccountOuterClass
+import io.stackrox.proto.api.v1.ServiceAccountServiceOuterClass
 import services.ServiceAccountService
 import spock.lang.Stepwise
 import util.Timer
@@ -20,7 +20,8 @@ class K8sRbacTest extends BaseSpecification {
 
         // Make sure the qa namespace SA exists before running the test. That SA should be the most recent added.
         // This will ensure scrapping is complete if this test spec is run first
-        while (t.IsValid() && !stackroxSAs.find { it.namespace == Constants.ORCHESTRATOR_NAMESPACE }) {
+        while (t.IsValid() &&
+                !stackroxSAs.find { it.serviceAccount.getNamespace() == Constants.ORCHESTRATOR_NAMESPACE }) {
             stackroxSAs = ServiceAccountService.getServiceAccounts()
         }
 
@@ -28,7 +29,8 @@ class K8sRbacTest extends BaseSpecification {
         assert t.IsValid()
 
         stackroxSAs.size() == orchestratorSAs.size()
-        for (ServiceAccountOuterClass.ServiceAccount sa : stackroxSAs) {
+        for (ServiceAccountServiceOuterClass.ServiceAccountAndRoles s : stackroxSAs) {
+            def sa = s.serviceAccount
             println "Looking for SR Service Account: ${sa}"
             assert orchestratorSAs.find {
                 it.metadata.name == sa.name &&
@@ -40,7 +42,7 @@ class K8sRbacTest extends BaseSpecification {
                     it.secrets*.name == sa.secretsList &&
                     it.imagePullSecrets*.name == sa.imagePullSecretsList
             }
-            assert ServiceAccountService.getServiceAccountDetails(sa.id) == sa
+            assert ServiceAccountService.getServiceAccountDetails(sa.id).getServiceAccount() == sa
         }
     }
 
