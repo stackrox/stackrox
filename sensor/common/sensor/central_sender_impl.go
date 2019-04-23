@@ -50,6 +50,12 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream)
 	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "total")
 
+	// NB: The centralSenderImpl reserves the right to perform arbitrary reads and writes on the returned objects.
+	// The providers that send the messages below are responsible for making sure that once they send events here,
+	// they do not use the objects again in any way, since that can result in a race condition caused by concurrent
+	// reads and writes.
+	// Ideally, if you're going to continue to hold a reference to the object, you want to proto.Clone it before
+	// sending it to this function.
 	for {
 		var msg *central.MsgFromSensor
 

@@ -4,6 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
 	"k8s.io/apimachinery/pkg/types"
@@ -97,7 +98,7 @@ func (h *resourceEventHandlerImpl) sendResourceEvent(obj interface{}, action cen
 
 func (h *resourceEventHandlerImpl) sendEvents(evWraps ...*central.SensorEvent) {
 	for _, evWrap := range evWraps {
-		h.output <- evWrap
+		h.output <- protoutils.CloneCentralSensorEvent(evWrap)
 	}
 }
 
