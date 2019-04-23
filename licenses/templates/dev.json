@@ -1,7 +1,5 @@
 {
   "restrictions": {
-    "notValidBefore": "2019-04-16T00:00:00Z",
-    "notValidAfter": "2019-04-25T00:00:00Z",
     "allowOffline": true,
     "maxNodes": 50,
     "buildFlavors": ["development"],
