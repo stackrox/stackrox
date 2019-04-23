@@ -6,6 +6,8 @@
 # The "services" secondary range is for ClusterIP services ("--services-ipv4-cidr").
 # See https://cloud.google.com/kubernetes-engine/docs/how-to/alias-ips#cluster_sizing.
 
+CLUSTER_NAME="${CLUSTER_NAME:-prevent-ci-${CIRCLE_BUILD_NUM}}"
+
 create-cluster() {
   REGION=us-central1
   NUM_NODES="${NUM_NODES:-4}"
@@ -31,7 +33,8 @@ create-cluster() {
           --enable-network-policy \
           --image-type ${GCP_IMAGE_TYPE} \
           --tags="stackrox-ci,stackrox-ci-${CIRCLE_JOB}" \
-          "prevent-ci-${CIRCLE_BUILD_NUM}"
+          --labels="stackrox-ci=true,stackrox-ci-job=${CIRCLE_JOB},stackrox-ci-workflow=${CIRCLE_WORKFLOW_ID}" \
+          "${CLUSTER_NAME}"
       status="$?"
       if [[ "${status}" == 0 ]];
       then
@@ -42,35 +45,34 @@ create-cluster() {
           echo >&2 "gcloud command timed out. Trying another zone..."
       fi
       echo >&2 "Deleting the cluster"
-      gcloud container clusters delete "prevent-ci-${CIRCLE_BUILD_NUM}" --async
+      gcloud container clusters delete "${CLUSTER_NAME}" --async
   done
 
   if [[ "${success}" == "0" ]]; then
       echo "Cluster creation failed"
       return 1
   fi
+}
 
-  # Sleep to ensure that GKE has actually started to create the deployments/pods
-  sleep 10
+wait-for-cluster() {
+  while [[ $(kubectl -n kube-system get pod | tail +2 | wc -l) -lt 2 ]]; do
+  	echo "Still waiting for kubernetes to create initial kube-system pods"
+  	sleep 1
+  done
 
   GRACE_PERIOD=30
-  CURRENT_GRACE_PERIOD=0
   while true; do
-    NUMSTARTING=$(kubectl -n kube-system get pod -o json | jq '(.items[].status.containerStatuses // [])[].ready' | grep false | wc -l | awk '{print $1}')
-    if [[ "${NUMSTARTING}" == "0" ]]; then
-      if (( CURRENT_GRACE_PERIOD >= GRACE_PERIOD )); then
+    NUMSTARTING=$(kubectl -n kube-system get pod -o json | jq '[(.items[].status.containerStatuses // [])[].ready | select(. | not)] | length')
+    if (( NUMSTARTING == 0 )); then
+      LAST_START_TS="$(kubectl -n kube-system get pod -o json | jq '[(.items[].status.containerStatuses // [])[].state.running.startedAt | fromdate] | max')"
+      CURR_TS="$(date '+%s')"
+      REMAINING_GRACE_PERIOD=$((LAST_START_TS + GRACE_PERIOD - CURR_TS))
+      if (( REMAINING_GRACE_PERIOD <= 0 )); then
         break
       fi
-      sleep 5
-
-      CURRENT_GRACE_PERIOD=$((CURRENT_GRACE_PERIOD + 5))
-      echo "Current grace period set to ${CURRENT_GRACE_PERIOD}".
-
-      continue
+      echo "Waiting for another $REMAINING_GRACE_PERIOD seconds for kube-system pods to stabilize"
+      sleep "$REMAINING_GRACE_PERIOD"
     fi
-
-    # Reset the grace period if we find a pod that is not started
-    CURRENT_GRACE_PERIOD=0
 
     echo "Waiting for ${NUMSTARTING} kube-system containers to be initialized"
     sleep 10

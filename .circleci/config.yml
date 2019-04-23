@@ -78,40 +78,12 @@ setupRoxctl: &setupRoxctl
     command: |
       cp bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl $GOPATH/bin/roxctl
 
-setupGCP: &setupGCP
-  run:
-    name: Setup deployment env
-    command: |
-      docker login -u "$DOCKER_IO_USERNAME" -p "$DOCKER_IO_PASSWORD"
-      cat >>"$BASH_ENV" <<EOF
-        export REGISTRY_USERNAME="$DOCKER_IO_USERNAME"
-        export REGISTRY_PASSWORD="$DOCKER_IO_PASSWORD"
-        export MAIN_IMAGE_TAG="$(make tag)"
-        export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json
-      EOF
-      if .circleci/pr_has_label.sh ci-run-against-rhel; then
-        echo 'export MAIN_IMAGE_REPO=stackrox/main-rhel' >> "${BASH_ENV}"
-      fi
-
-      gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
-      gcloud auth list
-      gcloud config set project stackrox-ci
-      gcloud config set compute/region us-central1
-      gcloud config unset compute/zone
-      gcloud config set core/disable_prompts True
-
 setupLicense: &setupLicense
   run:
     name: Creating License Key
     command: |
       ROX_LICENSE_KEY="$(licenses/ci.sh)"
       echo "export ROX_LICENSE_KEY=${ROX_LICENSE_KEY}" >>"${BASH_ENV}"
-
-createGKE: &createGKE
-  run:
-    name: Create GKE cluster
-    command: |
-      source .circleci/create-cluster.sh && create-cluster
 
 # See https://stackoverflow.com/a/46316672 for why we have to use user/pass.
 # This step requires the GCP IAM permission "Kubernetes Engine Admin".
@@ -124,7 +96,7 @@ deployGKE: &deployGKE
       kubectl delete clusterrolebinding temporary-admin
 
       source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
-      cat >>"$BASH_ENV" <<EOF
+      cat >>"$BASH_ENV" \<<EOF
         export ROX_USERNAME="$ROX_USERNAME"
         export ROX_PASSWORD="$ROX_PASSWORD"
       EOF
@@ -159,7 +131,7 @@ waitForAPI: &waitForAPI
       SUCCESS=0
       for i in $(seq 1 25); do
         metadata="$(curl -sk --connect-timeout 5 --max-time 10 "${METADATA_URL}")"
-        if [[ $? -eq 0 && "$(jq '.licenseStatus' -r <<<"$metadata")" != "RESTARTING" ]]; then
+        if [[ $? -eq 0 && "$(jq '.licenseStatus' -r \<<<"$metadata")" != "RESTARTING" ]]; then
           SUCCESS=1
           break
         fi
@@ -170,7 +142,7 @@ waitForAPI: &waitForAPI
         echo "Failed to connect to Central"
         exit 1
       fi
-      cat >>"$BASH_ENV" <<EOF
+      cat >>"$BASH_ENV" \<<EOF
         export API_HOSTNAME="$API_HOSTNAME"
         export API_PORT="$API_PORT"
         export API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
@@ -260,15 +232,6 @@ storeImbuedUILogs: &storeImbuedUILogs
     destination: imbued-ui-logs
 
 
-teardownGKE: &teardownGKE
-  run:
-    name: Tear down GKE cluster
-    command: |
-      ./scripts/ci/cleanup-deployment.sh || true
-
-      gcloud container clusters delete "prevent-ci-${CIRCLE_BUILD_NUM}" --async
-    when: always
-
 collectK8sLogs: &collectK8sLogs
   run:
     name: Collect k8s logs
@@ -350,8 +313,162 @@ checkScaleLabel: &checkScaleLabel
         circleci step halt
       fi
 
-version: 2
+version: 2.1
+
+commands:
+  check-k8s-tests-label:
+    steps:
+      - run:
+          name: Determine whether to run K8s tests
+          command: |
+            if .circleci/pr_has_label.sh ci-no-k8s-tests; then
+              echo "Skipping tests because of the presence of the ci-no-k8s-tests label..."
+              circleci step halt
+            fi
+
+  check-qa-tests-label:
+    steps:
+      - run:
+          name: Determine whether to skip QA tests
+          command: |
+            if .circleci/pr_has_label.sh ci-no-qa-tests; then
+              echo "Skipping tests because of the presence of the ci-no-qa-tests label..."
+              circleci step halt
+            fi
+
+  setup-gcp:
+    parameters:
+      docker-login:
+        type: boolean
+        default: true
+
+    steps:
+      - run:
+          name: Setup deployment env
+          command: |
+            <<# parameters.docker-login >>
+            docker login -u "$DOCKER_IO_USERNAME" -p "$DOCKER_IO_PASSWORD"
+            <</ parameters.docker-login >>
+            cat >>"$BASH_ENV" \<<EOF
+              export REGISTRY_USERNAME="$DOCKER_IO_USERNAME"
+              export REGISTRY_PASSWORD="$DOCKER_IO_PASSWORD"
+              export MAIN_IMAGE_TAG="$(make tag)"
+              export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json
+            EOF
+            if .circleci/pr_has_label.sh ci-run-against-rhel; then
+              echo 'export MAIN_IMAGE_REPO=stackrox/main-rhel' >> "${BASH_ENV}"
+            fi
+
+            gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
+            gcloud auth list
+            gcloud config set project stackrox-ci
+            gcloud config set compute/region us-central1
+            gcloud config unset compute/zone
+            gcloud config set core/disable_prompts True
+
+  create-gke:
+    parameters:
+      wait:
+        type: boolean
+        default: true
+
+    steps:
+      - run:
+          name: Create GKE cluster
+          command: |
+            source .circleci/create-cluster.sh && create-cluster
+            <<# parameters.wait >>
+            wait-for-cluster
+            <</ parameters.wait >>
+
+  teardown-gke:
+    steps:
+      - run:
+          name: Tear down GKE cluster
+          command: |
+            ./scripts/ci/cleanup-deployment.sh || true
+
+            CLUSTER_NAME="${CLUSTER_NAME:-prevent-ci-${CIRCLE_JOB}}"
+            gcloud container clusters delete "$CLUSTER_NAME" --async
+
+          when: always
+
+  provision-gke-cluster:
+    parameters:
+      cluster-id:
+        type: string
+
+    steps:
+      - *restoreDep
+      - run:
+          name: Run `make vet`
+          command: make vet-active-tags
+
+      - setup-gcp:
+          docker-login: false
+
+      - run:
+          name: Assign cluster name
+          command: |
+            CLUSTER_NAME="rox-ci-<< parameters.cluster-id >>-${CIRCLE_BUILD_NUM}"
+            echo "export CLUSTER_NAME=$CLUSTER_NAME" >>"$BASH_ENV"
+            echo "Assigned cluster name is $CLUSTER_NAME"
+
+      - create-gke:
+          wait: false
+
+      - run:
+          name: Save kube config
+          command: |
+            CONFIG_DIR="/go/src/github.com/stackrox/rox/.ci-clusters/<< parameters.cluster-id >>"
+            mkdir -p "$CONFIG_DIR"
+            cp "${KUBECONFIG:-${HOME}/.kube/config}" "${CONFIG_DIR}/config"
+            echo "$CLUSTER_NAME" >>"${CONFIG_DIR}/name"
+            gcloud config get-value compute/zone >>"${CONFIG_DIR}/zone"
+
+      - persist_to_workspace:
+          root: /go/src/github.com/stackrox/rox
+          paths:
+            - .ci-clusters/<< parameters.cluster-id >>
+
+  attach-gke-cluster:
+    parameters:
+      cluster-id:
+        type: string
+
+    steps:
+      - run:
+          name: Restore config for << parameters.cluster-id >> cluster
+          command: |
+            CONFIG_DIR="/go/src/github.com/stackrox/rox/.ci-clusters/<< parameters.cluster-id >>"
+            KUBECONFIG="${CONFIG_DIR}/config"
+            [[ -f "$KUBECONFIG" ]]
+            CLUSTER_NAME="$(cat "${CONFIG_DIR}/name")"
+            [[ -n "$CLUSTER_NAME" ]]
+            ZONE="$(cat "${CONFIG_DIR}/zone")"
+            [[ -n "$ZONE" ]]
+            gcloud config set compute/zone "$ZONE"
+            echo "Restored config for cluster ${CLUSTER_NAME}"
+
+            cat >>"$BASH_ENV" \<<EOF
+              export KUBECONFIG="$KUBECONFIG"
+              export CLUSTER_NAME="$CLUSTER_NAME"
+            EOF
+
+      - run:
+          name: Waiting for << parameters.cluster-id >> cluster to stabilize
+          command: |
+            source .circleci/create-cluster.sh && wait-for-cluster
+
 jobs:
+
+  provision-cluster-k8s-tests:
+    <<: *defaults
+    steps:
+      - checkout
+      - check-k8s-tests-label
+      - provision-gke-cluster:
+          cluster-id: k8s-tests
 
   pre-build-ui:
     <<: *defaults
@@ -363,7 +480,7 @@ jobs:
           name: Build UI
           command: make -C ui build
 
-      - save-cache:
+      - save_cache:
           key: *uiCacheKey
           paths:
             - ui/node_modules
@@ -387,7 +504,7 @@ jobs:
           name: Build the CLI
           command: make cli
 
-      - save-cache:
+      - save_cache:
           key: *depCacheKey
           paths:
             - /go/pkg/dep
@@ -467,7 +584,7 @@ jobs:
             docker login -u $DOCKER_IO_USERNAME -p $DOCKER_IO_PASSWORD docker.io
             docker push "stackrox/main:$(make tag)" | cat
 
-      - save-cache:
+      - save_cache:
           key: *depCacheKey
           paths:
             - /go/pkg/dep
@@ -658,22 +775,18 @@ jobs:
     steps:
       - checkout
 
-      - run:
-          name: Determine whether to skip tests
-          command: |
-            if .circleci/pr_has_label.sh ci-no-k8s-tests; then
-              echo "Skipping tests because of the presence of the ci-no-k8s-tests label..."
-              circleci step halt
-            fi
-
-      - setup_remote_docker
+      - check-k8s-tests-label
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
 
       - *setupRoxctl
-      - *setupGCP
-      - *createGKE
+      - setup_remote_docker
+      - setup-gcp
+
+      - attach-gke-cluster:
+          cluster-id: k8s-tests
+
       - run:
           name: Export Trusted CA file
           command: echo "export TRUSTED_CA_FILE=$(pwd)/tests/bad-ca/superfish.pem" >> "${BASH_ENV}"
@@ -703,11 +816,19 @@ jobs:
       - *collectK8sLogs
       - *storeK8sLogs
 
-      - *teardownGKE
+      - teardown-gke
 
       - *storeCypressResults
       - *storeCypressScreenshots
       - *storeCypressVideos
+
+  provision-cluster-qa-tests:
+    <<: *defaults
+    steps:
+      - checkout
+      - check-qa-tests-label
+      - provision-gke-cluster:
+          cluster-id: qa-tests
 
   qa-tests:
     <<: *defaults
@@ -723,13 +844,7 @@ jobs:
     steps:
       - checkout
 
-      - run:
-          name: Determine whether to skip tests
-          command: |
-            if .circleci/pr_has_label.sh ci-no-qa-tests; then
-              echo "Skipping tests because of the presence of the ci-no-qa-tests label..."
-              circleci step halt
-            fi
+      - check-qa-tests-label
 
       - setup_remote_docker
 
@@ -737,8 +852,9 @@ jobs:
           at: /go/src/github.com/stackrox/rox
 
       - *setupRoxctl
-      - *setupGCP
-      - *createGKE
+      - setup-gcp
+      - attach-gke-cluster:
+          cluster-id: qa-tests
       - *setupGoogleAppCreds
       - *setupLicense
       - *deployGKE
@@ -765,7 +881,7 @@ jobs:
               make -C qa-tests-backend bat-test
             fi
 
-      - save-cache:
+      - save_cache:
           key: *gradleCacheKey
           paths:
           - ~/.gradle/caches/
@@ -776,7 +892,19 @@ jobs:
       - *collectK8sLogs
       - *storeK8sLogs
 
-      - *teardownGKE
+      - teardown-gke
+
+
+  provision-cluster-qa-tests-cos-ebpf:
+    <<: *defaults
+    environment:
+      - GCP_IMAGE_TYPE: "COS"
+
+    steps:
+      - checkout
+      - check-qa-tests-label
+      - provision-gke-cluster:
+          cluster-id: qa-tests-cos-ebpf
 
   qa-tests-cos-ebpf:
     <<: *defaults
@@ -793,13 +921,7 @@ jobs:
     steps:
       - checkout
 
-      - run:
-          name: Determine whether to skip tests
-          command: |
-            if .circleci/pr_has_label.sh ci-no-qa-tests; then
-              echo "Skipping tests because of the presence of the ci-no-qa-tests label..."
-              circleci step halt
-            fi
+      - check-qa-tests-label
 
       - setup_remote_docker
 
@@ -807,8 +929,9 @@ jobs:
           at: /go/src/github.com/stackrox/rox
 
       - *setupRoxctl
-      - *setupGCP
-      - *createGKE
+      - setup-gcp
+      - attach-gke-cluster:
+          cluster-id: qa-tests-cos-ebpf
       - *setupGoogleAppCreds
       - *setupLicense
       - *deployGKE
@@ -835,7 +958,7 @@ jobs:
               make -C qa-tests-backend runtime-test
             fi
 
-      - save-cache:
+      - save_cache:
           key: *gradleCacheKey
           paths:
           - ~/.gradle/caches/
@@ -846,7 +969,14 @@ jobs:
       - *collectK8sLogs
       - *storeK8sLogs
 
-      - *teardownGKE
+      - teardown-gke
+
+  provision-cluster-upgrade-test:
+    <<: *defaults
+    steps:
+      - checkout
+      - provision-gke-cluster:
+          cluster-id: upgrade-test
 
   upgrade-test:
     <<: *defaults
@@ -861,15 +991,17 @@ jobs:
           at: /go/src/github.com/stackrox/rox
 
       - *setupRoxctl
-      - *setupGCP
-      - *createGKE
+      - setup-gcp
+      - attach-gke-cluster:
+          cluster-id: upgrade-test
+
       - run:
           name: Checkout 2.4.16.4
           command: git checkout 2.4.16.4
       - run:
           name: Launch Central only
           command: |
-            cat >>"$BASH_ENV" <<EOF
+            cat >>"$BASH_ENV" \<<EOF
               export MAIN_IMAGE_TAG="$(make tag)"
             EOF
             ./deploy/k8s/central.sh
@@ -882,7 +1014,7 @@ jobs:
             fi
 
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
-            cat >>"$BASH_ENV" <<EOF
+            cat >>"$BASH_ENV" \<<EOF
               export ROX_USERNAME="$ROX_USERNAME"
               export ROX_PASSWORD="$ROX_PASSWORD"
             EOF
@@ -956,7 +1088,15 @@ jobs:
       - *collectK8sLogs
       - *storeK8sLogs
 
-      - *teardownGKE
+      - teardown-gke
+
+  provision-cluster-scale:
+    <<: *defaults
+    steps:
+      - checkout
+      - *checkScaleLabel
+      - provision-gke-cluster:
+          cluster-id: scale-test
 
   scale:
     <<: *defaults
@@ -975,8 +1115,10 @@ jobs:
           at: /go/src/github.com/stackrox/rox
 
       - *setupRoxctl
-      - *setupGCP
-      - *createGKE
+      - setup-gcp
+      - attach-gke-cluster:
+          cluster-id: scale-test
+
       - *setupHelm
       - *setupGoogleAppCreds
       - *setupLicense
@@ -987,7 +1129,7 @@ jobs:
             ./deploy/k8s/central.sh
 
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
-            cat >>"$BASH_ENV" <<EOF
+            cat >>"$BASH_ENV" \<<EOF
               export ROX_USERNAME="$ROX_USERNAME"
               export ROX_PASSWORD="$ROX_PASSWORD"
             EOF
@@ -1037,7 +1179,7 @@ jobs:
 
       - *collectK8sLogs
       - *storeK8sLogs
-      - *teardownGKE
+      - teardown-gke
 
 
   provision-openshift:
@@ -1148,7 +1290,7 @@ jobs:
       - run:
           name: Configure Deployment Environment
           command: |
-            cat >>"$BASH_ENV" <<EOF
+            cat >>"$BASH_ENV" \<<EOF
               export KUBECONFIG=$PWD/openshift/config
               export CLAIRIFY_IMAGE_TAG=0.5.2
               export OPENSHIFT_HOST=$(cat openshift/master)
@@ -1173,7 +1315,7 @@ jobs:
             oc -n stackrox get all
 
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/openshift/
-            cat >>"$BASH_ENV" <<EOF
+            cat >>"$BASH_ENV" \<<EOF
               export ROX_USERNAME="$ROX_USERNAME"
               export ROX_PASSWORD="$ROX_PASSWORD"
             EOF
@@ -1332,7 +1474,7 @@ jobs:
       - run:
           name: Configure Deployment Environment
           command: |
-            cat >>"$BASH_ENV" <<EOF
+            cat >>"$BASH_ENV" \<<EOF
               export KUBECONFIG=$PWD/kops/kube.yaml
               export CLAIRIFY_IMAGE_TAG=0.5.4
               export KOPS_HOST=$(cat kops/master)
@@ -1352,7 +1494,7 @@ jobs:
             kubectl -n stackrox get all
 
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
-            cat >>"$BASH_ENV" <<EOF
+            cat >>"$BASH_ENV" \<<EOF
               export ROX_USERNAME="$ROX_USERNAME"
               export ROX_PASSWORD="$ROX_PASSWORD"
             EOF
@@ -1575,11 +1717,20 @@ workflows:
           filters:
             tags:
               only: /.*/
+      - provision-cluster-k8s-tests:
+          filters:
+            tags:
+              only: /.*/
       - k8s-tests:
           requires:
             - build
             - build-rhel
             - build-scale-monitoring-and-mock-server
+            - provision-cluster-k8s-tests
+          filters:
+            tags:
+              only: /.*/
+      - provision-cluster-qa-tests:
           filters:
             tags:
               only: /.*/
@@ -1588,6 +1739,11 @@ workflows:
             - build
             - build-rhel
             - build-scale-monitoring-and-mock-server
+            - provision-cluster-qa-tests
+          filters:
+            tags:
+              only: /.*/
+      - provision-cluster-qa-tests-cos-ebpf:
           filters:
             tags:
               only: /.*/
@@ -1596,6 +1752,11 @@ workflows:
             - build
             - build-rhel
             - build-scale-monitoring-and-mock-server
+            - provision-cluster-qa-tests-cos-ebpf
+          filters:
+            tags:
+              only: /.*/
+      - provision-cluster-upgrade-test:
           filters:
             tags:
               only: /.*/
@@ -1604,6 +1765,11 @@ workflows:
             - build
             - build-rhel
             - build-scale-monitoring-and-mock-server
+            - provision-cluster-upgrade-test
+          filters:
+            tags:
+              only: /.*/
+      - provision-cluster-scale:
           filters:
             tags:
               only: /.*/
@@ -1612,6 +1778,7 @@ workflows:
             - build
             - build-rhel
             - build-scale-monitoring-and-mock-server
+            - provision-cluster-scale
           filters:
             tags:
               only: /.*/

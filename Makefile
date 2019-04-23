@@ -125,10 +125,13 @@ lint:
 	@echo "+ $@"
 	@set -e; echo $(FORMATTING_FILES) | xargs -n 1 dirname | sort | uniq | while IFS='' read -r dir || [ -n "$$dir" ]; do golint -set_exit_status "$$dir"/*.go ; done
 
-.PHONY: vet
-vet:
+.PHONY: vet-active-tags
+vet-active-tags: deps volatile-generated-srcs
 	@echo "+ $@"
 	@$(BASE_DIR)/tools/go-vet.sh -tags "$(subst $(comma),$(space),$(GOTAGS))" $(shell go list -e ./... | grep -v generated | grep -v vendor)
+
+.PHONY: vet
+vet: vet-active-tags
 ifdef CI
 	@echo "+ $@ ($(RELEASE_GOTAGS))"
 	@$(BASE_DIR)/tools/go-vet.sh -tags "$(subst $(comma),$(space),$(RELEASE_GOTAGS))" $(shell go list -e ./... | grep -v generated | grep -v vendor)
