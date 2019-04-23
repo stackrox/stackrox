@@ -1,8 +1,18 @@
 package deploymentenvs
 
 import (
+	"context"
+	"time"
+
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/deploymentenvs"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/providers"
 	"github.com/stackrox/rox/pkg/sync"
+)
+
+const (
+	fetchMetadataTimeout = 30 * time.Second
 )
 
 var (
@@ -12,16 +22,20 @@ var (
 type manager struct {
 	mutex sync.RWMutex
 
+	hasCentralDeploymentEnv   concurrency.Signal
 	deploymentEnvsByClusterID map[string][]string
 
 	listeners map[Listener]struct{}
 }
 
 func newManager() *manager {
-	return &manager{
+	m := &manager{
 		deploymentEnvsByClusterID: make(map[string][]string),
 		listeners:                 make(map[Listener]struct{}),
+		hasCentralDeploymentEnv:   concurrency.NewSignal(),
 	}
+	go m.fetchCentralDeploymentEnvs()
+	return m
 }
 
 func (m *manager) RegisterListener(listener Listener) {
@@ -36,6 +50,20 @@ func (m *manager) UnregisterListener(listener Listener) {
 	defer m.mutex.Unlock()
 
 	delete(m.listeners, listener)
+}
+
+func (m *manager) fetchCentralDeploymentEnvs() {
+	ctx, cancel := context.WithTimeout(context.Background(), fetchMetadataTimeout)
+	defer cancel()
+
+	providerMetadata := providers.GetMetadata(ctx)
+	centralDeploymentEnv := deploymentenvs.GetDeploymentEnvFromProviderMetadata(providerMetadata)
+
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	m.deploymentEnvsByClusterID[CentralClusterID] = []string{centralDeploymentEnv}
+	m.hasCentralDeploymentEnv.Signal()
 }
 
 func (m *manager) UpdateDeploymentEnvironments(clusterID string, deploymentEnvs []string) {
@@ -60,7 +88,13 @@ func (m *manager) MarkClusterInactive(clusterID string) {
 	}
 }
 
-func (m *manager) GetDeploymentEnvironmentsByClusterID() map[string][]string {
+func (m *manager) GetDeploymentEnvironmentsByClusterID(block bool) map[string][]string {
+	if block {
+		m.hasCentralDeploymentEnv.Wait()
+	} else if !m.hasCentralDeploymentEnv.IsDone() {
+		return nil
+	}
+
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 

@@ -77,15 +77,15 @@ func (m *MockManager) EXPECT() *MockManagerMockRecorder {
 }
 
 // GetDeploymentEnvironmentsByClusterID mocks base method
-func (m *MockManager) GetDeploymentEnvironmentsByClusterID() map[string][]string {
-	ret := m.ctrl.Call(m, "GetDeploymentEnvironmentsByClusterID")
+func (m *MockManager) GetDeploymentEnvironmentsByClusterID(arg0 bool) map[string][]string {
+	ret := m.ctrl.Call(m, "GetDeploymentEnvironmentsByClusterID", arg0)
 	ret0, _ := ret[0].(map[string][]string)
 	return ret0
 }
 
 // GetDeploymentEnvironmentsByClusterID indicates an expected call of GetDeploymentEnvironmentsByClusterID
-func (mr *MockManagerMockRecorder) GetDeploymentEnvironmentsByClusterID() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeploymentEnvironmentsByClusterID", reflect.TypeOf((*MockManager)(nil).GetDeploymentEnvironmentsByClusterID))
+func (mr *MockManagerMockRecorder) GetDeploymentEnvironmentsByClusterID(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeploymentEnvironmentsByClusterID", reflect.TypeOf((*MockManager)(nil).GetDeploymentEnvironmentsByClusterID), arg0)
 }
 
 // MarkClusterInactive mocks base method

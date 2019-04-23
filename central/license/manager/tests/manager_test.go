@@ -47,7 +47,7 @@ func (s *managerTestSuite) SetupTest() {
 	s.mgr = manager.New(s.mockStore, s.mockValidator, s.mockDeploymentEnvsMgr)
 
 	s.mockDeploymentEnvsMgr.EXPECT().RegisterListener(gomock.Any()).Times(1)
-	s.mockDeploymentEnvsMgr.EXPECT().GetDeploymentEnvironmentsByClusterID().AnyTimes().Return(map[string][]string{})
+	s.mockDeploymentEnvsMgr.EXPECT().GetDeploymentEnvironmentsByClusterID(gomock.Any()).AnyTimes().Return(map[string][]string{})
 }
 
 func (s *managerTestSuite) TearDownTest() {

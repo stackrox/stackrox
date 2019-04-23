@@ -2,13 +2,13 @@ package clusterstatus
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/deploymentenvs"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/providers"
@@ -63,11 +63,7 @@ func (u *updaterImpl) run() {
 		return
 	}
 
-	deploymentEnvFromMD := getDeploymentEnvFromProviderMetadata(cloudProviderMetadata)
-	if !cloudProviderMetadata.GetVerified() {
-		// Prepend a `~` sign if the deployment environment is not verified.
-		deploymentEnvFromMD = fmt.Sprintf("~%s", deploymentEnvFromMD)
-	}
+	deploymentEnvFromMD := deploymentenvs.GetDeploymentEnvFromProviderMetadata(cloudProviderMetadata)
 
 	// If we get the deployment environment from the cloud provider metadata, be happy with that - send the message
 	// and just return.

@@ -23,6 +23,10 @@ func checkDeploymentEnvironmentRestrictions(restr *licenseproto.License_Restrict
 		return nil
 	}
 
+	if deploymentEnvsByClusterID == nil {
+		return errors.New("no deployment environment data available yet (this is a temporary condition)")
+	}
+
 	allowedDeploymentEnvs := set.NewStringSet(restr.GetDeploymentEnvironments()...)
 
 	for clusterID, envs := range deploymentEnvsByClusterID {

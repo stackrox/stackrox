@@ -5,22 +5,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/stackrox/rox/generated/storage"
 	v1 "k8s.io/api/core/v1"
 )
-
-func getDeploymentEnvFromProviderMetadata(metadata *storage.ProviderMetadata) string {
-	if gcpProject := metadata.GetGoogle().GetProject(); gcpProject != "" {
-		return fmt.Sprintf("gcp/%s", gcpProject)
-	}
-	if awsAccountID := metadata.GetAws().GetAccountId(); awsAccountID != "" {
-		return fmt.Sprintf("aws/%s", awsAccountID)
-	}
-	if azureSubscriptionID := metadata.GetAzure().GetSubscriptionId(); azureSubscriptionID != "" {
-		return fmt.Sprintf("azure/%s", azureSubscriptionID)
-	}
-	return ""
-}
 
 // getDeploymentEnvFromNode extracts a "deployment environment" (such as "docker-for-desktop" or "gcp/<project>") from a
 // node.
