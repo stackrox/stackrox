@@ -12,14 +12,14 @@ class ServiceAccountService extends BaseService {
     }
 
     static getServiceAccounts(RawQuery query = RawQuery.newBuilder().build()) {
-        return getServiceAccountService().listServiceAccounts(query).serviceAccountsList
+        return getServiceAccountService().listServiceAccounts(query).getSaAndRoles()
     }
 
     static getServiceAccountDetails(String id) {
         try {
             return getServiceAccountService().getServiceAccount(
                     Common.ResourceByID.newBuilder().setId(id).build()
-            ).serviceAccount
+            ).getSaAndRole()
         } catch (Exception e) {
             println "Error fetching service account: ${e.toString()}"
         }
@@ -30,7 +30,10 @@ class ServiceAccountService extends BaseService {
         while (t.IsValid()) {
             println "Waiting for Service Account"
             def serviceAccounts = getServiceAccounts()
-            def sa = serviceAccounts.find { it.name == name && it.namespace == namespace }
+            def sa = serviceAccounts.find {
+                it.getServiceAccount().name == name &&
+                    it.getServiceAccount().namespace == namespace
+            }
 
             if (sa) {
                 return true
@@ -45,8 +48,10 @@ class ServiceAccountService extends BaseService {
         while (t.IsValid()) {
             println "Waiting for Service Account removed"
             def serviceAccounts = getServiceAccounts()
-            def sa = serviceAccounts.find { it.name == name && it.namespace == namespace }
-
+            def sa = serviceAccounts.find {
+                it.getServiceAccount().name == name &&
+                        it.getServiceAccount().namespace == namespace
+            }
             if (!sa) {
                 return true
             }
