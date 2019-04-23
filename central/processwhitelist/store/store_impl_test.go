@@ -73,7 +73,7 @@ func (suite *ProcessWhitelistStoreTestSuite) TestAddGetDeleteWhitelist() {
 func (suite *ProcessWhitelistStoreTestSuite) TestUpdateWhitelist() {
 	whitelist := suite.createAndStore()
 
-	whitelist.Processes = []*storage.Process{fixtures.GetWhitelistProcess("JosephRules")}
+	whitelist.Elements = []*storage.WhitelistElement{fixtures.GetWhitelistElement("JosephRules")}
 	err := suite.store.UpdateWhitelist(whitelist)
 	suite.NoError(err)
 

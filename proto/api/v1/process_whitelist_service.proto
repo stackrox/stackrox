@@ -9,12 +9,12 @@ import "api/v1/empty.proto";
 
 package v1;
 
-message GetProcessWhitelistByIdRequest {
-    string whitelist_id = 1;
+message GetProcessWhitelistRequest {
+    storage.ProcessWhitelistKey key = 1;
 }
 
 message UpdateProcessWhitelistsRequest {
-    repeated string whitelist_ids        = 1;
+    repeated storage.ProcessWhitelistKey keys = 1;
     repeated string add_process_names    = 2;
     repeated string remove_process_names = 3;
 }
@@ -25,7 +25,7 @@ message ProcessWhitelistsResponse {
 
 message ProcessWhitelistUpdateError {
     string error = 1;
-    string id    = 2;
+    storage.ProcessWhitelistKey key   = 2;
 }
 
 message UpdateProcessWhitelistsResponse {
@@ -34,7 +34,7 @@ message UpdateProcessWhitelistsResponse {
 }
 
 message LockProcessWhitelistsRequest {
-    repeated string whitelist_ids = 1;
+    repeated storage.ProcessWhitelistKey keys = 1;
     bool     locked               = 2;
 }
 
@@ -48,9 +48,9 @@ service ProcessWhitelistService {
     }
 
     // GetProcessWhitelistById returns the single process whitelist referenced by the given ID.
-    rpc GetProcessWhitelist (GetProcessWhitelistByIdRequest) returns (storage.ProcessWhitelist) {
+    rpc GetProcessWhitelist (GetProcessWhitelistRequest) returns (storage.ProcessWhitelist) {
         option (google.api.http) = {
-                get: "/v1/processwhitelists/id/{whitelist_id}"
+                get: "/v1/processwhitelists/key"
             };
     }
 

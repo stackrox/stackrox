@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/processwhitelist/datastore"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/sync"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -55,36 +57,46 @@ func (s *serviceImpl) GetProcessWhitelists(context.Context, *v1.Empty) (*v1.Proc
 	return &v1.ProcessWhitelistsResponse{Whitelists: whitelists}, nil
 }
 
-func (s *serviceImpl) GetProcessWhitelist(ctx context.Context, request *v1.GetProcessWhitelistByIdRequest) (*storage.ProcessWhitelist, error) {
-	if request.GetWhitelistId() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Id must be specified when requesting a process whitelist")
+func validateKeyNotEmpty(key *storage.ProcessWhitelistKey) error {
+	if stringutils.AtLeastOneEmpty(
+		key.GetDeploymentId(),
+		key.GetContainerName(),
+	) {
+		return errors.New("Invalid key: must specify both deployment id and container name")
 	}
-	whitelist, err := s.dataStore.GetProcessWhitelist(request.GetWhitelistId())
+	return nil
+}
+
+func (s *serviceImpl) GetProcessWhitelist(ctx context.Context, request *v1.GetProcessWhitelistRequest) (*storage.ProcessWhitelist, error) {
+	if err := validateKeyNotEmpty(request.GetKey()); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	whitelist, err := s.dataStore.GetProcessWhitelist(request.GetKey())
 	if err != nil {
 		return nil, err
 	}
 	if whitelist == nil {
-		return nil, status.Errorf(codes.NotFound, "No process whitelist with id %q found", request.GetWhitelistId())
+		return nil, status.Errorf(codes.NotFound, "No process whitelist with key %+v found", request.GetKey())
 	}
 	return whitelist, nil
 }
 
-func parallelizeUpdate(ids []string, parallelFunc func(string) (*storage.ProcessWhitelist, error)) *v1.UpdateProcessWhitelistsResponse {
+func parallelizeUpdate(keys []*storage.ProcessWhitelistKey, parallelFunc func(*storage.ProcessWhitelistKey) (*storage.ProcessWhitelist, error)) *v1.UpdateProcessWhitelistsResponse {
 	wg := sync.WaitGroup{}
-	chanLen := len(ids)
+	chanLen := len(keys)
 	successChan := make(chan *storage.ProcessWhitelist, chanLen)
 	errorChan := make(chan *v1.ProcessWhitelistUpdateError, chanLen)
-	for _, id := range ids {
+	for _, key := range keys {
 		wg.Add(1)
-		go func(wlID string) {
+		go func(wlKey *storage.ProcessWhitelistKey) {
 			defer wg.Done()
-			whitelist, err := parallelFunc(wlID)
+			whitelist, err := parallelFunc(wlKey)
 			if err != nil {
-				errorChan <- &v1.ProcessWhitelistUpdateError{Error: err.Error(), Id: wlID}
+				errorChan <- &v1.ProcessWhitelistUpdateError{Error: err.Error(), Key: wlKey}
 				return
 			}
 			successChan <- whitelist
-		}(id)
+		}(key)
 	}
 	wg.Wait()
 	close(successChan)
@@ -103,15 +115,15 @@ func parallelizeUpdate(ids []string, parallelFunc func(string) (*storage.Process
 }
 
 func (s *serviceImpl) UpdateProcessWhitelists(ctx context.Context, request *v1.UpdateProcessWhitelistsRequest) (*v1.UpdateProcessWhitelistsResponse, error) {
-	updateFunc := func(wlID string) (*storage.ProcessWhitelist, error) {
-		return s.dataStore.UpdateProcessWhitelist(wlID, request.GetAddProcessNames(), request.GetRemoveProcessNames())
+	updateFunc := func(key *storage.ProcessWhitelistKey) (*storage.ProcessWhitelist, error) {
+		return s.dataStore.UpdateProcessWhitelist(key, request.GetAddProcessNames(), request.GetRemoveProcessNames())
 	}
-	return parallelizeUpdate(request.WhitelistIds, updateFunc), nil
+	return parallelizeUpdate(request.GetKeys(), updateFunc), nil
 }
 
 func (s *serviceImpl) LockProcessWhitelists(ctx context.Context, request *v1.LockProcessWhitelistsRequest) (*v1.UpdateProcessWhitelistsResponse, error) {
-	updateFunc := func(wlID string) (*storage.ProcessWhitelist, error) {
-		return s.dataStore.UserLockProcessWhitelist(wlID, request.GetLocked())
+	updateFunc := func(key *storage.ProcessWhitelistKey) (*storage.ProcessWhitelist, error) {
+		return s.dataStore.UserLockProcessWhitelist(key, request.GetLocked())
 	}
-	return parallelizeUpdate(request.GetWhitelistIds(), updateFunc), nil
+	return parallelizeUpdate(request.GetKeys(), updateFunc), nil
 }

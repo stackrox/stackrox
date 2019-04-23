@@ -1,7 +1,6 @@
 package fixtures
 
 import (
-	"fmt"
 	"time"
 
 	ptypes "github.com/gogo/protobuf/types"
@@ -14,31 +13,43 @@ import (
 // GetProcessWhitelist returns an empty process whitelist with a random container name and deployment ID
 func GetProcessWhitelist() *storage.ProcessWhitelist {
 	createStamp, _ := ptypes.TimestampProto(time.Now())
-	id := uuid.NewV4().String()
 	processName := uuid.NewV4().String()
-	process := &storage.Process{
-		Name: processName,
+	process := &storage.WhitelistElement{
+		Element: &storage.WhitelistElement_ProcessName{
+			ProcessName: processName,
+		},
 		Auto: true,
 	}
 	return &storage.ProcessWhitelist{
-		ContainerName: id[:16],
-		DeploymentId:  id[16:],
-		Processes:     []*storage.Process{process},
-		Created:       createStamp,
+		Elements: []*storage.WhitelistElement{process},
+		Created:  createStamp,
 	}
 }
 
 // GetProcessWhitelistWithID returns a whitelist with the ID filled out
 func GetProcessWhitelistWithID() *storage.ProcessWhitelist {
-	whitelist := GetProcessWhitelist()
-	whitelist.Id = fmt.Sprintf("%s/%s", whitelist.DeploymentId, whitelist.ContainerName)
+	whitelist := GetProcessWhitelistWithKey()
+	whitelist.Id = uuid.NewV4().String()
 	return whitelist
 }
 
-// GetWhitelistProcess returns a *storage.Process with a given name
-func GetWhitelistProcess(name string) *storage.Process {
-	return &storage.Process{
-		Name: name,
+// GetProcessWhitelistWithKey returns a whitelist and its key.
+func GetProcessWhitelistWithKey() *storage.ProcessWhitelist {
+	key := &storage.ProcessWhitelistKey{
+		DeploymentId:  uuid.NewV4().String(),
+		ContainerName: uuid.NewV4().String(),
+	}
+	whitelist := GetProcessWhitelist()
+	whitelist.Key = key
+	return whitelist
+}
+
+// GetWhitelistElement returns a *storage.WhitelistElement with a given process name
+func GetWhitelistElement(processName string) *storage.WhitelistElement {
+	return &storage.WhitelistElement{
+		Element: &storage.WhitelistElement_ProcessName{
+			ProcessName: processName,
+		},
 		Auto: true,
 	}
 }

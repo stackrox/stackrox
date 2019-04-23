@@ -10,25 +10,28 @@ import "protobuf/gogoproto/gogo.proto";
 package storage;
 
 // @protolock:skip
+message ProcessWhitelistKey {
+    // The idea is for the keys to be flexible.
+    // Only certain combinations of these will be supported.
+    string deployment_id     = 1;
+    string container_name    = 2;
+}
+
+// @protolock:skip
 message ProcessWhitelist {
-    string id = 1;
-    string container_name = 2;
-    string deployment_id = 3;
-    repeated Process processes = 4;
-    ProcessWhitelistMetadata metadata = 5;
-    google.protobuf.Timestamp created = 6;
-    google.protobuf.Timestamp user_locked_timestamp = 7;
-    google.protobuf.Timestamp stack_rox_locked_timestamp = 8;
-    google.protobuf.Timestamp last_update = 9;
+    string id  = 1;
+    ProcessWhitelistKey key = 2;
+    repeated WhitelistElement elements = 3;
+    google.protobuf.Timestamp created = 4;
+    google.protobuf.Timestamp user_locked_timestamp = 5;
+    google.protobuf.Timestamp stack_rox_locked_timestamp = 6;
+    google.protobuf.Timestamp last_update = 7;
 }
 
 // @protolock:skip
-message Process {
-    string name = 1 [(gogoproto.moretags) = "search:\"Process Name\""];
+message WhitelistElement {
+    oneof element {
+        string process_name = 1 [(gogoproto.moretags) = "search:\"Process Name\""];
+    }
     bool auto = 2;
-}
-
-// @protolock:skip
-message ProcessWhitelistMetadata {
-
 }

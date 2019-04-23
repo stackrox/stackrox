@@ -37,8 +37,8 @@ func (suite *ProcessWhitelistIndexTestSuite) TearDownTest() {
 
 func (suite *ProcessWhitelistIndexTestSuite) getAndStoreWhitelist() *storage.ProcessWhitelist {
 	whitelist := fixtures.GetProcessWhitelistWithID()
-	suite.NotNil(whitelist.GetProcesses())
-	suite.Equal(1, len(whitelist.GetProcesses()), "The fixture should return a whitelist with exactly one process in it or this test should change")
+	suite.NotNil(whitelist.GetElements())
+	suite.Len(whitelist.GetElements(), 1, "The fixture should return a whitelist with exactly one process in it or this test should change")
 	err := suite.indexer.AddWhitelist(whitelist)
 	suite.NoError(err)
 	return whitelist
@@ -80,7 +80,7 @@ func (suite *ProcessWhitelistIndexTestSuite) TestAddSearchDeleteWhitelist() {
 	whitelist := suite.getAndStoreWhitelist()
 	suite.getAndStoreWhitelist() // Don't find this one
 
-	q := search.NewQueryBuilder().AddStrings(search.ProcessName, whitelist.Processes[0].GetName()).ProtoQuery()
+	q := search.NewQueryBuilder().AddStrings(search.ProcessName, whitelist.Elements[0].GetProcessName()).ProtoQuery()
 	results, err := suite.search(q, 1)
 	suite.NoError(err)
 	suite.Equal(whitelist.GetId(), results[0].ID)

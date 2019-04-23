@@ -12,8 +12,8 @@ var processWhitelistBucket = []byte("processWhitelists")
 //go:generate mockgen-wrapper Store
 type Store interface {
 	GetWhitelist(id string) (*storage.ProcessWhitelist, error)
-	GetWhitelists() ([]*storage.ProcessWhitelist, error)
 	AddWhitelist(whitelist *storage.ProcessWhitelist) error
+	GetWhitelists() ([]*storage.ProcessWhitelist, error)
 	UpdateWhitelist(whitelist *storage.ProcessWhitelist) error
 	DeleteWhitelist(id string) (bool, error)
 }

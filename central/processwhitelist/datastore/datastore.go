@@ -11,17 +11,16 @@ import (
 )
 
 // DataStore wraps storage, indexer, and searcher for ProcessWhitelists.
-//go:generate mockgen-wrapper DataStore
 type DataStore interface {
 	SearchRawProcessWhitelists(q *v1.Query) ([]*storage.ProcessWhitelist, error)
 
-	GetProcessWhitelist(id string) (*storage.ProcessWhitelist, error)
+	GetProcessWhitelist(key *storage.ProcessWhitelistKey) (*storage.ProcessWhitelist, error)
 	GetProcessWhitelists() ([]*storage.ProcessWhitelist, error)
 	AddProcessWhitelist(whitelist *storage.ProcessWhitelist) (string, error)
-	RemoveProcessWhitelist(id string) error
-	UpdateProcessWhitelist(id string, addNames []string, removeNames []string) (*storage.ProcessWhitelist, error)
-	UserLockProcessWhitelist(id string, locked bool) (*storage.ProcessWhitelist, error)
-	RoxLockProcessWhitelist(id string, locked bool) (*storage.ProcessWhitelist, error)
+	RemoveProcessWhitelist(key *storage.ProcessWhitelistKey) error
+	UpdateProcessWhitelist(key *storage.ProcessWhitelistKey, addNames []string, removeNames []string) (*storage.ProcessWhitelist, error)
+	UserLockProcessWhitelist(key *storage.ProcessWhitelistKey, locked bool) (*storage.ProcessWhitelist, error)
+	RoxLockProcessWhitelist(key *storage.ProcessWhitelistKey, locked bool) (*storage.ProcessWhitelist, error)
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.

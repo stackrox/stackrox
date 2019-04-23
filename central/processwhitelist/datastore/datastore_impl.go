@@ -1,8 +1,6 @@
 package datastore
 
 import (
-	"fmt"
-
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/processwhitelist/index"
@@ -20,15 +18,15 @@ type datastoreImpl struct {
 	whitelistLock *concurrency.KeyedMutex
 }
 
-func makeID(deploymentID, containerName string) string {
-	return fmt.Sprintf("%s/%s", deploymentID, containerName)
-}
-
 func (ds *datastoreImpl) SearchRawProcessWhitelists(q *v1.Query) ([]*storage.ProcessWhitelist, error) {
 	return ds.searcher.SearchRawProcessWhitelists(q)
 }
 
-func (ds *datastoreImpl) GetProcessWhitelist(id string) (*storage.ProcessWhitelist, error) {
+func (ds *datastoreImpl) GetProcessWhitelist(key *storage.ProcessWhitelistKey) (*storage.ProcessWhitelist, error) {
+	id, err := keyToID(key)
+	if err != nil {
+		return nil, err
+	}
 	return ds.storage.GetWhitelist(id)
 }
 
@@ -37,7 +35,10 @@ func (ds *datastoreImpl) GetProcessWhitelists() ([]*storage.ProcessWhitelist, er
 }
 
 func (ds *datastoreImpl) AddProcessWhitelist(whitelist *storage.ProcessWhitelist) (string, error) {
-	id := makeID(whitelist.GetDeploymentId(), whitelist.GetContainerName())
+	id, err := keyToID(whitelist.GetKey())
+	if err != nil {
+		return "", err
+	}
 	whitelist.Id = id
 	ds.whitelistLock.Lock(id)
 	defer ds.whitelistLock.Unlock(id)
@@ -55,7 +56,11 @@ func (ds *datastoreImpl) AddProcessWhitelist(whitelist *storage.ProcessWhitelist
 	return id, nil
 }
 
-func (ds *datastoreImpl) RemoveProcessWhitelist(id string) error {
+func (ds *datastoreImpl) RemoveProcessWhitelist(key *storage.ProcessWhitelistKey) error {
+	id, err := keyToID(key)
+	if err != nil {
+		return err
+	}
 	ds.whitelistLock.Lock(id)
 	defer ds.whitelistLock.Unlock(id)
 	if err := ds.indexer.DeleteWhitelist(id); err != nil {
@@ -78,7 +83,12 @@ func (ds *datastoreImpl) getWhitelistForUpdate(id string) (*storage.ProcessWhite
 	return whitelist, nil
 }
 
-func (ds *datastoreImpl) UpdateProcessWhitelist(id string, addNames []string, removeNames []string) (*storage.ProcessWhitelist, error) {
+func (ds *datastoreImpl) UpdateProcessWhitelist(key *storage.ProcessWhitelistKey, addNames []string, removeNames []string) (*storage.ProcessWhitelist, error) {
+	id, err := keyToID(key)
+	if err != nil {
+		return nil, err
+	}
+
 	ds.whitelistLock.Lock(id)
 	defer ds.whitelistLock.Unlock(id)
 
@@ -87,24 +97,24 @@ func (ds *datastoreImpl) UpdateProcessWhitelist(id string, addNames []string, re
 		return nil, err
 	}
 
-	whitelistMap := make(map[string]*storage.Process, len(whitelist.Processes))
-	for _, process := range whitelist.Processes {
-		whitelistMap[process.Name] = process
+	whitelistMap := make(map[string]*storage.WhitelistElement, len(whitelist.Elements))
+	for _, element := range whitelist.Elements {
+		whitelistMap[element.GetProcessName()] = element
 	}
 
 	for _, addName := range addNames {
 		existing, ok := whitelistMap[addName]
 		if !ok || existing.Auto {
-			whitelistMap[addName] = &storage.Process{Name: addName, Auto: false}
+			whitelistMap[addName] = &storage.WhitelistElement{Element: &storage.WhitelistElement_ProcessName{ProcessName: addName}, Auto: false}
 		}
 	}
 
 	for _, removeName := range removeNames {
 		delete(whitelistMap, removeName)
 	}
-	whitelist.Processes = make([]*storage.Process, 0, len(whitelistMap))
+	whitelist.Elements = make([]*storage.WhitelistElement, 0, len(whitelistMap))
 	for _, process := range whitelistMap {
-		whitelist.Processes = append(whitelist.Processes, process)
+		whitelist.Elements = append(whitelist.Elements, process)
 	}
 
 	err = ds.storage.UpdateWhitelist(whitelist)
@@ -119,7 +129,11 @@ func (ds *datastoreImpl) UpdateProcessWhitelist(id string, addNames []string, re
 	return whitelist, nil
 }
 
-func (ds *datastoreImpl) UserLockProcessWhitelist(id string, locked bool) (*storage.ProcessWhitelist, error) {
+func (ds *datastoreImpl) UserLockProcessWhitelist(key *storage.ProcessWhitelistKey, locked bool) (*storage.ProcessWhitelist, error) {
+	id, err := keyToID(key)
+	if err != nil {
+		return nil, err
+	}
 	ds.whitelistLock.Lock(id)
 	defer ds.whitelistLock.Unlock(id)
 
@@ -141,7 +155,11 @@ func (ds *datastoreImpl) UserLockProcessWhitelist(id string, locked bool) (*stor
 	return whitelist, nil
 }
 
-func (ds *datastoreImpl) RoxLockProcessWhitelist(id string, locked bool) (*storage.ProcessWhitelist, error) {
+func (ds *datastoreImpl) RoxLockProcessWhitelist(key *storage.ProcessWhitelistKey, locked bool) (*storage.ProcessWhitelist, error) {
+	id, err := keyToID(key)
+	if err != nil {
+		return nil, err
+	}
 	ds.whitelistLock.Lock(id)
 	defer ds.whitelistLock.Unlock(id)
 

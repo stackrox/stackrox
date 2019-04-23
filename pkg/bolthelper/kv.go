@@ -23,5 +23,10 @@ func PutAll(b *bolt.Bucket, kvs ...KV) error {
 
 // Exists checks if the key exists in the bucket
 func Exists(b *bolt.Bucket, id string) bool {
-	return b.Get([]byte(id)) != nil
+	return ExistsBytes(b, []byte(id))
+}
+
+// ExistsBytes checks if they key (passed as []byte) exists in the bucket
+func ExistsBytes(b *bolt.Bucket, id []byte) bool {
+	return b.Get(id) != nil
 }

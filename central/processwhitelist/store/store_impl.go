@@ -61,61 +61,59 @@ func (b *storeImpl) GetWhitelists() ([]*storage.ProcessWhitelist, error) {
 	return whitelists, err
 }
 
-func storeWhitelist(whitelist *storage.ProcessWhitelist, bucket *bolt.Bucket) error {
+func storeWhitelist(id []byte, whitelist *storage.ProcessWhitelist, bucket *bolt.Bucket) error {
+	whitelist.Id = string(id)
 	bytes, err := proto.Marshal(whitelist)
 	if err != nil {
 		return err
 	}
-	return bucket.Put([]byte(whitelist.GetId()), bytes)
+	return bucket.Put(id, bytes)
 }
 
-func addWhitelist(whitelist *storage.ProcessWhitelist, tx *bolt.Tx) error {
+func addWhitelist(id []byte, whitelist *storage.ProcessWhitelist, tx *bolt.Tx) error {
 	bucket := tx.Bucket(processWhitelistBucket)
-	exists := bolthelper.Exists(bucket, whitelist.GetId())
-	if exists {
-		return errors.New(fmt.Sprintf("whitelist %s already exists", whitelist.GetId()))
+	if exists := bolthelper.ExistsBytes(bucket, id); exists {
+		return errors.New(fmt.Sprintf("whitelist %s already exists", string(id)))
 	}
-	return storeWhitelist(whitelist, bucket)
+	return storeWhitelist(id, whitelist, bucket)
 }
 
 func (b *storeImpl) AddWhitelist(whitelist *storage.ProcessWhitelist) error {
 	if whitelist.GetId() == "" {
-		return fmt.Errorf("tried to store a whitelist with no ID.  Deployment ID: %q, Container Name: %q", whitelist.DeploymentId, whitelist.ContainerName)
+		return fmt.Errorf("whitelist doesn't have an id; key was %+v", whitelist.GetKey())
 	}
 	return b.Update(func(tx *bolt.Tx) error {
-		return addWhitelist(whitelist, tx)
+		return addWhitelist([]byte(whitelist.GetId()), whitelist, tx)
 	})
 }
 
-func updateWhitelist(whitelist *storage.ProcessWhitelist, tx *bolt.Tx) error {
+func updateWhitelist(id []byte, whitelist *storage.ProcessWhitelist, tx *bolt.Tx) error {
 	bucket := tx.Bucket(processWhitelistBucket)
-	exists := bolthelper.Exists(bucket, whitelist.GetId())
-	if !exists {
-		return errors.New(fmt.Sprintf("updating non-existant whitelist %s", whitelist.GetId()))
+	if exists := bolthelper.ExistsBytes(bucket, id); !exists {
+		return fmt.Errorf("updating non-existent whitelist: %s", string(id))
 	}
-	return storeWhitelist(whitelist, bucket)
+	return storeWhitelist(id, whitelist, bucket)
 }
 
 func (b *storeImpl) UpdateWhitelist(whitelist *storage.ProcessWhitelist) error {
 	return b.Update(func(tx *bolt.Tx) error {
-		return updateWhitelist(whitelist, tx)
+		return updateWhitelist([]byte(whitelist.GetId()), whitelist, tx)
 	})
 }
 
-func (b *storeImpl) deleteWhitelist(tx *bolt.Tx, id string) (bool, error) {
+func (b *storeImpl) deleteWhitelist(tx *bolt.Tx, id []byte) (bool, error) {
 	bucket := tx.Bucket(processWhitelistBucket)
-	if exists := bolthelper.Exists(bucket, id); !exists {
+	if exists := bolthelper.ExistsBytes(bucket, id); !exists {
 		return false, nil
 	}
-	key := []byte(id)
-	return true, bucket.Delete(key)
+	return true, bucket.Delete(id)
 }
 
 func (b *storeImpl) DeleteWhitelist(id string) (bool, error) {
 	var exists bool
 	err := b.Update(func(tx *bolt.Tx) error {
 		var err error
-		exists, err = b.deleteWhitelist(tx, id)
+		exists, err = b.deleteWhitelist(tx, []byte(id))
 		return err
 	})
 
