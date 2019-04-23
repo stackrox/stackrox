@@ -90,6 +90,7 @@ func (b *storeImpl) removeListDeployment(tx *bolt.Tx, id string) error {
 func convertDeploymentToDeploymentList(d *storage.Deployment) *storage.ListDeployment {
 	return &storage.ListDeployment{
 		Id:        d.GetId(),
+		Hash:      d.GetHash(),
 		Name:      d.GetName(),
 		Cluster:   d.GetClusterName(),
 		ClusterId: d.GetClusterId(),

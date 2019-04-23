@@ -21,6 +21,7 @@ message Deployment {
     string id                                  = 1 [(gogoproto.moretags) = "search:\"Deployment ID,store,hidden\""];
     string name                                = 2 [(gogoproto.moretags) = "search:\"Deployment,store\""];
     string version                             = 3;
+    uint64 hash                                = 26;
     string type                                = 4 [(gogoproto.moretags) = "search:\"Deployment Type\""];
     string namespace                           = 5 [(gogoproto.moretags) = "search:\"Namespace,store\""];
     string namespace_id                        = 23 [(gogoproto.moretags) = "search:\"Namespace ID\""];
@@ -179,8 +180,10 @@ message Risk {
     repeated Result results = 2;
 }
 
+// Next available tag: 9
 message ListDeployment {
     string                    id         = 1;
+    uint64                    hash       = 8;
     string                    name       = 2;
     string                    cluster    = 3;
     string                    cluster_id = 4;

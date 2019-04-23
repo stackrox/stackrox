@@ -1193,3 +1193,11 @@ dependencies:
       LICENSE: d01c6d371866b3c7a1a7e20994d88d2ce83f22974ec6d3596a6125b44495813d
     attribution:
       - Andrew Smith
+
+  vendor/github.com/mitchellh/hashstructure:
+    url: "https://github.com/mitchellh/hashstructure"
+    license: MIT
+    files:
+      LICENSE: f48b778b7fccb6650f915cf4527c941a9578f8876a2911d035c4e44641a916be
+    attribution:
+      - Mitchell Hashimoto

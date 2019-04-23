@@ -952,6 +952,13 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:e34decedbcec12332c5836d16a6838f864e0b43c5b4f9aa9d9a85101015f87c2"
+  name = "github.com/mitchellh/hashstructure"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "a38c50148365edc8df43c1580c48fb2b3a1e9cd7"
+
+[[projects]]
   digest = "1:2f42fa12d6911c7b7659738758631bec870b7e9b4c6be5444f963cdcfccc191f"
   name = "github.com/modern-go/concurrent"
   packages = ["."]
@@ -1974,6 +1981,7 @@
     "github.com/mailru/easyjson/jwriter",
     "github.com/mauricelam/genny/generic",
     "github.com/mitchellh/go-wordwrap",
+    "github.com/mitchellh/hashstructure",
     "github.com/opencontainers/go-digest",
     "github.com/openshift/api/apps/v1",
     "github.com/openshift/client-go/apps/clientset/versioned",

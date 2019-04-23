@@ -223,3 +223,7 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
   name = "github.com/fullsailor/pkcs7"
   source = "https://github.com/misberner/pkcs7.git"
   revision = "a48bf0f78dea7977a5bfcc5b0ffab3cbed62f01a"
+
+[[constraint]]
+  name = "github.com/mitchellh/hashstructure"
+  revision = "a38c50148365edc8df43c1580c48fb2b3a1e9cd7"

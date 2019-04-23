@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/gogo/protobuf/proto"
+	"github.com/mitchellh/hashstructure"
+	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection/lifecycle"
@@ -149,6 +151,25 @@ func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, deploym
 	if err := s.validateInput.do(deployment); err != nil {
 		return nil, err
 	}
+
+	deployment.Hash = 0
+	hash, err := hashstructure.Hash(deployment, &hashstructure.HashOptions{})
+	if err != nil {
+		err = errors.Wrapf(err, "Could not hash deployment %q", deployment.GetName())
+		log.Error(err)
+		return nil, err
+	}
+
+	// Check if this deployment needs to be processed based on hash
+	listDeployment, exists, err := s.deployments.ListDeployment(deployment.GetId())
+	if err != nil {
+		return nil, err
+	}
+	// No need to process if it already exists and the hash is the same
+	if exists && listDeployment.GetHash() == hash {
+		return nil, nil
+	}
+	deployment.Hash = hash
 
 	// Fill in cluster information.
 	if err := s.clusterEnrichment.do(deployment); err != nil {
