@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { stackroxSupport } from 'messages/common';
 import { LICENSE_STATUS, LICENSE_UPLOAD_STATUS } from 'reducers/license';
 import { licensePath } from 'routePaths';
-import { distanceInWordsToNow, differenceInDays } from 'date-fns';
+import { distanceInWordsStrict, differenceInDays } from 'date-fns';
 
 export const noneText = 'In order to use StackRox, please obtain and install a valid license key.';
 export const invalidText =
@@ -71,7 +71,7 @@ export const createExpirationMessageWithLink = expirationDate => {
     const type = getExpirationMessageType(expirationDate);
     const message = (
         <div>
-            Your license will expire in {distanceInWordsToNow(expirationDate)}.
+            Your license will expire in {distanceInWordsStrict(expirationDate, new Date())}.
             <Link
                 className={`mx-1 ${type === 'warn' ? 'text-warning-800' : 'text-alert-800'}`}
                 to={licensePath}
@@ -85,8 +85,9 @@ export const createExpirationMessageWithLink = expirationDate => {
 };
 
 export const createExpirationMessageWithoutLink = expirationDate => {
-    const message = `Your license will expire in ${distanceInWordsToNow(
-        expirationDate
+    const message = `Your license will expire in ${distanceInWordsStrict(
+        expirationDate,
+        new Date()
     )}. Upload a new license key to renew your account.`;
     return createExpirationMessage(expirationDate, message);
 };
