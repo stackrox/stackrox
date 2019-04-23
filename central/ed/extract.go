@@ -1,4 +1,7 @@
-package encdata
+// Package ed allows accessing encrypted data.
+// The name is "obfuscated" to make it harder for somebody to figure out what is
+// going on here.
+package ed
 
 import (
 	"context"
@@ -26,20 +29,21 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// PrefixExtractedDir prefixes the directory where the extracted + decrypted data is put to
+// PED (PrefixExtractedDir) prefixes the directory where the extracted + decrypted data is put to
 // the (relative) subPath passed in.
-func PrefixExtractedDir(subPath string) string {
+func PED(subPath string) string {
 	return path.Join(targetDir, subPath)
 }
 
-func writeDecrypted(inFile *os.File, out io.WriteCloser) error {
+// wd stands for writeDecrypted.
+func wd(inFile *os.File, out io.WriteCloser) error {
 	defer utils.IgnoreError(out.Close)
 
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(k())
 	if err != nil {
 		return errors.Wrap(err, "creating AES cipher")
 	}
-	decrypter := cipher.NewCBCDecrypter(block, iv)
+	decrypter := cipher.NewCBCDecrypter(block, i())
 
 	size, err := inFile.Seek(0, 2)
 	if err != nil {
@@ -85,7 +89,8 @@ func runCommand(cmd *exec.Cmd, errC chan<- error) {
 	errC <- err
 }
 
-func extractEncrypted(ctx context.Context, inputPath string, outputDir string) error {
+// eE stands for extractEncrypted.
+func eE(ctx context.Context, inputPath string, outputDir string) error {
 	inFile, err := os.Open(inputPath)
 	if err != nil {
 		return err
@@ -103,7 +108,7 @@ func extractEncrypted(ctx context.Context, inputPath string, outputDir string) e
 	errC := make(chan error, 1)
 	go runCommand(tarCmd, errC)
 
-	writeErr := writeDecrypted(inFile, tarInput)
+	writeErr := wd(inFile, tarInput)
 
 	var processErr error
 	select {
@@ -124,14 +129,14 @@ func extractEncrypted(ctx context.Context, inputPath string, outputDir string) e
 	return err
 }
 
-// ExtractData extracts encrypted stackrox data to /stackrox/data
-func ExtractData(ctx context.Context) error {
+// ED (ExtractData) extracts encrypted stackrox data to /stackrox/data
+func ED(ctx context.Context) error {
 	markerFile := path.Join(targetDir, ".extracted")
 	if _, err := os.Stat(markerFile); err == nil {
 		return nil
 	}
 
-	if err := extractEncrypted(ctx, dataFile, targetDir); err != nil {
+	if err := eE(ctx, dataFile, targetDir); err != nil {
 		return err
 	}
 
@@ -144,4 +149,4 @@ func ExtractData(ctx context.Context) error {
 	return nil
 }
 
-//go:generate ./generate-keys.sh
+//go:generate go run github.com/stackrox/rox/central/ed/codegen

@@ -30,7 +30,7 @@ import (
 	detectionService "github.com/stackrox/rox/central/detection/service"
 	developmentService "github.com/stackrox/rox/central/development/service"
 	"github.com/stackrox/rox/central/docs"
-	"github.com/stackrox/rox/central/encdata"
+	"github.com/stackrox/rox/central/ed"
 	_ "github.com/stackrox/rox/central/externalbackups/plugins/all" // Import all of the external backup plugins
 	backupService "github.com/stackrox/rox/central/externalbackups/service"
 	"github.com/stackrox/rox/central/globaldb"
@@ -145,7 +145,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
-	if err := encdata.ExtractData(ctx); err != nil {
+	if err := ed.ED(ctx); err != nil {
 		log.Fatalf("Could not extract data: %v", err)
 	}
 	log.Info("Successfully extracted StackRox data")

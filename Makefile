@@ -105,7 +105,7 @@ roxvet:
 .PHONY: keys
 keys:
 	@echo "+ $@"
-	go generate github.com/stackrox/rox/central/encdata
+	go generate github.com/stackrox/rox/central/ed
 
 PROTOLOCK_BIN := $(GOPATH)/bin/protolock
 $(PROTOLOCK_BIN):
