@@ -5,10 +5,10 @@ metadata:
   namespace: {{.Values.namespace}}
 spec:
   ports:
-  - name: clair-http
+  - name: http-clair
     port: 6060
     targetPort: 6060
-  - name: clairify-http
+  - name: http-clairify
     port: 8080
     targetPort: 8080
   selector:

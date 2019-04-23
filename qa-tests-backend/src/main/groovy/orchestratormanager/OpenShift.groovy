@@ -176,12 +176,12 @@ class OpenShift extends Kubernetes {
                 spec: new ServiceSpec(
                         ports: [
                                 new ServicePort(
-                                        name: "clair-http",
+                                        name: "http-clair",
                                         port: 6060,
                                         targetPort: new IntOrString(6060)
                                 ),
                                 new ServicePort(
-                                        name: "clairify-http",
+                                        name: "http-clairify",
                                         port: 8080,
                                         targetPort: new IntOrString(8080)
                                 )
