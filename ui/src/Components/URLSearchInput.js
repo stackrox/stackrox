@@ -46,7 +46,7 @@ export const Option = ({ children, ...rest }) => {
 export const ValueContainer = ({ ...props }) => (
     <React.Fragment>
         <span className="text-base-500 flex h-full items-center pl-2 pr-1 pointer-events-none">
-            <Icon.Search color="currentColor" size={18} />
+            <Icon.Filter color="currentColor" size={18} />
         </span>
         <components.ValueContainer {...props} />
     </React.Fragment>
