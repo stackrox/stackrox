@@ -26,7 +26,7 @@ func init() {
 			validator.SigningKeyRestrictions{
 				EarliestNotValidBefore:        buildinfo.BuildTimestamp(),
 				LatestNotValidAfter:           buildinfo.BuildTimestamp().Add(90 * 24 * time.Hour),
-				MaxDuration:                   14 * 24 * time.Hour,
+				MaxDuration:                   30 * 24 * time.Hour,
 				AllowOffline:                  true,
 				MaxNodeLimit:                  50,
 				AllowNoBuildFlavorRestriction: true,

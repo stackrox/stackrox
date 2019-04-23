@@ -34,3 +34,15 @@ generators:
     buildFlavors:
       - development
     allowNoDeploymentEnvironmentRestriction: true
+- name: demo
+  key:
+    keyResourceId: "projects/stackrox-dev/locations/global/keyRings/licensing-demos/cryptoKeys/demo-license-signer/cryptoKeyVersions/1"
+  limit:
+    maxDuration: 2592000000000000
+    allowOffline: true
+    maxNodeLimit: 50
+    allowNoBuildFlavorRestriction: true
+    deploymentEnvironments:
+      - gcp/ultra-current-825
+      - azure/66c57ff5-f49f-4510-ae04-e26d3ad2ee63
+      - aws/051999192406
