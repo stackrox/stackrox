@@ -63,12 +63,9 @@ const processSunburstData = (data, type) => {
         };
         return mapping;
     };
-    const filterByNonZero = ({ numPassing, numFailing }) => numPassing + numFailing > 0;
 
-    const groupStatsMapping = data.results.results.filter(filterByNonZero).reduce(statsReducer, {});
-    const controlStatsMapping = data.checks.results
-        .filter(filterByNonZero)
-        .reduce(statsReducer, {});
+    const groupStatsMapping = data.results.results.reduce(statsReducer, {});
+    const controlStatsMapping = data.checks.results.reduce(statsReducer, {});
 
     const { groups, controls } = data.complianceStandards.filter(datum => datum.id === type)[0];
 

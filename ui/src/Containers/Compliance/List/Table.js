@@ -119,50 +119,46 @@ function formatStandardData(data) {
         if (scope === 'CATEGORY') categoryKeyIndex = idx;
         if (scope !== 'CATEGORY' && scope !== 'CONTROL') groupByKeyIndex = idx;
     });
-    data.results.results
-        .filter(datum => datum.numFailing + datum.numPassing)
-        .forEach(({ keys, numPassing, numFailing }) => {
-            const groupKey = groupByKeyIndex === null ? categoryKeyIndex : groupByKeyIndex;
-            const {
-                id: standard,
-                name,
-                clusterName,
-                description: groupDescription,
-                metadata,
-                __typename
-            } = keys[groupKey];
-            // the check below is to address ROX-1420
-            if (__typename !== '') {
-                let groupName = name || standardLabels[standard];
-                if (__typename === 'Node') {
-                    groupName = `${clusterName}/${name}`;
-                } else if (__typename === 'Namespace') {
-                    groupName = `${metadata.clusterName}/${metadata.name}`;
-                }
-                if (!groups[groupName]) {
-                    const groupId = parseInt(groupName, 10) || groupName;
-                    groups[groupName] = {
-                        groupId,
-                        name: `${groupName} ${groupDescription ? `- ${groupDescription}` : ''}`,
-                        rows: []
-                    };
-                }
-                if (controlKeyIndex) {
-                    const { id, name: controlName, description, standardId } = keys[
-                        controlKeyIndex
-                    ];
-                    groups[groupName].rows.push({
-                        id,
-                        description,
-                        standardId,
-                        standard: standardLabels[standardId],
-                        control: controlName,
-                        compliance: complianceRate(numPassing, numFailing),
-                        group: groupName
-                    });
-                }
+    data.results.results.forEach(({ keys, numPassing, numFailing }) => {
+        const groupKey = groupByKeyIndex === null ? categoryKeyIndex : groupByKeyIndex;
+        const {
+            id: standard,
+            name,
+            clusterName,
+            description: groupDescription,
+            metadata,
+            __typename
+        } = keys[groupKey];
+        // the check below is to address ROX-1420
+        if (__typename !== '') {
+            let groupName = name || standardLabels[standard];
+            if (__typename === 'Node') {
+                groupName = `${clusterName}/${name}`;
+            } else if (__typename === 'Namespace') {
+                groupName = `${metadata.clusterName}/${metadata.name}`;
             }
-        });
+            if (!groups[groupName]) {
+                const groupId = parseInt(groupName, 10) || groupName;
+                groups[groupName] = {
+                    groupId,
+                    name: `${groupName} ${groupDescription ? `- ${groupDescription}` : ''}`,
+                    rows: []
+                };
+            }
+            if (controlKeyIndex) {
+                const { id, name: controlName, description, standardId } = keys[controlKeyIndex];
+                groups[groupName].rows.push({
+                    id,
+                    description,
+                    standardId,
+                    standard: standardLabels[standardId],
+                    control: controlName,
+                    compliance: complianceRate(numPassing, numFailing),
+                    group: groupName
+                });
+            }
+        }
+    });
     Object.keys(groups).forEach(group => {
         formattedData.results.push(groups[group]);
         formattedData.totalRows += groups[group].rows.length;
