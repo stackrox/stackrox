@@ -3,7 +3,6 @@ package ui
 import (
 	"net/http"
 
-	"github.com/NYTimes/gziphandler"
 	"github.com/stackrox/rox/central/ed"
 )
 
@@ -22,5 +21,15 @@ func Mux() http.Handler {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, ed.PED("ui/index.html"))
 	})
-	return gziphandler.GzipHandler(mux)
+	return mux
+}
+
+// RestrictedModeMux returns a HTTP handler that serves a static "you need a license to use this product"
+// message.
+func RestrictedModeMux() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "/stackrox/ui/index.html")
+	})
+	return mux
 }
