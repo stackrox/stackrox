@@ -25,7 +25,6 @@ COPY ./bin/compliance /stackrox/
 COPY ./bin/roxctl* /assets/downloads/cli/
 COPY ./bin/kubernetes-sensor /stackrox/
 COPY ./static-bin/* /stackrox/
-COPY ./ui/build  /ui/
 COPY --from=data /stackrox-data.tgze /stackrox/
 
 COPY ./NOTICE.txt /

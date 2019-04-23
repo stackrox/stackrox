@@ -75,6 +75,7 @@ import (
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
 	siStore "github.com/stackrox/rox/central/serviceidentities/store"
 	summaryService "github.com/stackrox/rox/central/summary/service"
+	"github.com/stackrox/rox/central/ui"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
@@ -96,7 +97,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
-	"github.com/stackrox/rox/pkg/ui"
 )
 
 var (
@@ -175,11 +175,10 @@ func (f invalidLicenseFactory) ServicesToRegister(authproviders.Registry) []pkgG
 }
 
 func (invalidLicenseFactory) StartServices() {
-
 }
 
-func (invalidLicenseFactory) CustomRoutes() (customRoutes []routes.CustomRoute) {
-	return []routes.CustomRoute{uiDefaultRoute()}
+func (invalidLicenseFactory) CustomRoutes() []routes.CustomRoute {
+	return nil
 }
 
 func startLimitedModeServer(restartingFlag *concurrency.Flag) {

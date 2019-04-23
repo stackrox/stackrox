@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/roxctl/central/db"
 	"github.com/stackrox/rox/roxctl/central/deploy"
+	"github.com/stackrox/rox/roxctl/central/license"
 	"github.com/stackrox/rox/roxctl/debug"
 )
 
@@ -18,8 +19,11 @@ func Command() *cobra.Command {
 		},
 	}
 
-	c.AddCommand(deploy.Command())
-	c.AddCommand(db.Command())
-	c.AddCommand(debug.Command())
+	c.AddCommand(
+		deploy.Command(),
+		db.Command(),
+		debug.Command(),
+		license.Command(),
+	)
 	return c
 }

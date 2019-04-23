@@ -15,15 +15,22 @@ import (
 )
 
 const (
-	dataFile  = `/stackrox/stackrox-data.tgze`
-	targetDir = `/stackrox/data`
+	dataFile = `/stackrox/stackrox-data.tgze`
 
 	readBlockSize = 4096
+
+	targetDir = `/stackrox/data`
 )
 
 var (
 	log = logging.LoggerForModule()
 )
+
+// PrefixExtractedDir prefixes the directory where the extracted + decrypted data is put to
+// the (relative) subPath passed in.
+func PrefixExtractedDir(subPath string) string {
+	return path.Join(targetDir, subPath)
+}
 
 func writeDecrypted(inFile *os.File, out io.WriteCloser) error {
 	defer utils.IgnoreError(out.Close)

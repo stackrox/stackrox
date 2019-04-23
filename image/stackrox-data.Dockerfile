@@ -18,6 +18,7 @@ RUN apk update && \
 
 COPY ./policies/files /stackrox-data/policies/files
 COPY ./docs/api/v1/swagger.json /stackrox-data/docs/api/v1/swagger.json
+COPY ./ui/build /stackrox-data/ui/
 
 COPY ./keys /tmp/keys
 
