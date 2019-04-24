@@ -4,13 +4,16 @@ import (
 	"context"
 	"sort"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
+	whitelistStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -34,6 +37,7 @@ var (
 type serviceImpl struct {
 	processIndicators processIndicatorStore.DataStore
 	deployments       deploymentStore.DataStore
+	whitelists        whitelistStore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -83,6 +87,47 @@ func sortIndicators(indicators []*storage.ProcessIndicator) {
 	})
 }
 
+func (s *serviceImpl) setSuspicious(groupedIndicators []*v1.ProcessNameAndContainerNameGroup, deploymentID string) error {
+	whitelists := make(map[string]*set.StringSet)
+	for _, group := range groupedIndicators {
+		whitelist, ok := whitelists[group.GetContainerName()]
+		if !ok {
+			var err error
+			whitelist, err = s.getWhitelist(deploymentID, group.GetContainerName())
+			if err != nil {
+				return err
+			}
+			whitelists[group.GetContainerName()] = whitelist
+		}
+		group.Suspicious = whitelist != nil && !whitelist.Contains(group.Name)
+	}
+	return nil
+}
+
+func (s *serviceImpl) getWhitelist(deploymentID string, containerName string) (*set.StringSet, error) {
+	key := &storage.ProcessWhitelistKey{DeploymentId: deploymentID, ContainerName: containerName}
+	whitelist, err := s.whitelists.GetProcessWhitelist(key)
+	if err != nil {
+		return nil, err
+	}
+	if whitelist == nil {
+		return nil, nil
+	}
+	now := types.TimestampNow()
+	roxLockTimestamp := whitelist.GetStackRoxLockedTimestamp()
+	roxUnlocked := roxLockTimestamp == nil || now.Compare(roxLockTimestamp) < 0
+	userLockTimestamp := whitelist.GetUserLockedTimestamp()
+	userUnlocked := userLockTimestamp == nil || now.Compare(userLockTimestamp) < 0
+	if roxUnlocked && userUnlocked {
+		return nil, nil
+	}
+	whitelistSet := set.NewStringSet()
+	for _, element := range whitelist.GetElements() {
+		whitelistSet.Add(element.GetProcessName())
+	}
+	return &whitelistSet, nil
+}
+
 // IndicatorsToGroupedResponsesWithContainer rearranges process indicator storage items into API process name/container
 // name group items.
 func indicatorsToGroupedResponsesWithContainer(indicators []*storage.ProcessIndicator) []*v1.ProcessNameAndContainerNameGroup {
@@ -119,6 +164,7 @@ func indicatorsToGroupedResponsesWithContainer(indicators []*storage.ProcessIndi
 			ContainerName: groupKey.containerName,
 			Groups:        processGroups,
 			TimesExecuted: uint32(processNameToContainers[groupKey].Cardinality()),
+			Suspicious:    false,
 		})
 	}
 	sort.SliceStable(groups, func(i, j int) bool { return groups[i].Name < groups[j].Name })
@@ -131,9 +177,14 @@ func (s *serviceImpl) GetGroupedProcessByDeploymentAndContainer(_ context.Contex
 		return nil, err
 	}
 
-	return &v1.GetGroupedProcessesWithContainerResponse{
-		Groups: indicatorsToGroupedResponsesWithContainer(indicators),
-	}, nil
+	groupedIndicators := indicatorsToGroupedResponsesWithContainer(indicators)
+	if features.ProcessWhitelist.Enabled() {
+		err = s.setSuspicious(groupedIndicators, req.GetDeploymentId())
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &v1.GetGroupedProcessesWithContainerResponse{Groups: groupedIndicators}, nil
 }
 
 // IndicatorsToGroupedResponses rearranges process indicator storage items into API process name group items.

@@ -3,8 +3,12 @@ package service
 import (
 	"testing"
 
+	"github.com/gogo/protobuf/types"
+	"github.com/golang/mock/gomock"
+	"github.com/stackrox/rox/central/processwhitelist/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -245,6 +249,104 @@ func TestIndicatorsToGroupedResponses(t *testing.T) {
 			assert.Equal(t, c.nameGroups, testResults)
 			testResultsWithContainer := indicatorsToGroupedResponsesWithContainer(c.indicators)
 			assert.Equal(t, c.nameContainerGroups, testResultsWithContainer)
+		})
+	}
+}
+
+func TestWhitelistCheck(t *testing.T) {
+	var cases = []struct {
+		name               string
+		nameContainerGroup *v1.ProcessNameAndContainerNameGroup
+		whitelistElements  []*storage.WhitelistElement
+		whitelistExists    bool
+		whitelistLocked    bool
+		expectedSuspicious bool
+	}{
+		{
+			name: "On the whitelist",
+			nameContainerGroup: &v1.ProcessNameAndContainerNameGroup{
+				Name:          "Name One",
+				ContainerName: "Container One",
+			},
+			whitelistElements:  []*storage.WhitelistElement{fixtures.GetWhitelistElement("Name One")},
+			whitelistExists:    true,
+			whitelistLocked:    true,
+			expectedSuspicious: false,
+		},
+		{
+			name: "Not on the whitelist",
+			nameContainerGroup: &v1.ProcessNameAndContainerNameGroup{
+				Name:          "Name Two",
+				ContainerName: "Container One",
+			},
+			whitelistElements:  []*storage.WhitelistElement{fixtures.GetWhitelistElement("Name One")},
+			whitelistExists:    true,
+			whitelistLocked:    true,
+			expectedSuspicious: true,
+		},
+		{
+			name: "No whitelist",
+			nameContainerGroup: &v1.ProcessNameAndContainerNameGroup{
+				Name:          "Name One",
+				ContainerName: "Container One",
+			},
+			whitelistExists:    false,
+			expectedSuspicious: false,
+		},
+		{
+			name: "Unlocked whitelist",
+			nameContainerGroup: &v1.ProcessNameAndContainerNameGroup{
+				Name:          "Name Two",
+				ContainerName: "Container One",
+			},
+			whitelistElements:  []*storage.WhitelistElement{fixtures.GetWhitelistElement("Name One")},
+			whitelistExists:    true,
+			whitelistLocked:    false,
+			expectedSuspicious: false,
+		},
+		{
+			name: "Empty locked whitelist",
+			nameContainerGroup: &v1.ProcessNameAndContainerNameGroup{
+				Name:          "Name One",
+				ContainerName: "Container One",
+			},
+			whitelistElements:  []*storage.WhitelistElement{},
+			whitelistExists:    true,
+			whitelistLocked:    true,
+			expectedSuspicious: true,
+		},
+		{
+			name: "Empty unlocked whitelist",
+			nameContainerGroup: &v1.ProcessNameAndContainerNameGroup{
+				Name:          "Name One",
+				ContainerName: "Container One",
+			},
+			whitelistElements:  []*storage.WhitelistElement{},
+			whitelistExists:    true,
+			whitelistLocked:    false,
+			expectedSuspicious: false,
+		},
+	}
+	mockCtrl := gomock.NewController(t)
+	whitelists := mocks.NewMockDataStore(mockCtrl)
+	service := serviceImpl{whitelists: whitelists}
+	testDeploymentID := "Test"
+	testStart := types.TimestampNow()
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var whitelist *storage.ProcessWhitelist
+			if c.whitelistExists {
+				whitelist = fixtures.GetProcessWhitelist()
+				whitelist.Elements = c.whitelistElements
+				if c.whitelistLocked {
+					whitelist.UserLockedTimestamp = testStart
+				}
+			}
+			key := &storage.ProcessWhitelistKey{DeploymentId: testDeploymentID, ContainerName: c.nameContainerGroup.ContainerName}
+			whitelists.EXPECT().GetProcessWhitelist(key).Return(whitelist, nil)
+			err := service.setSuspicious([]*v1.ProcessNameAndContainerNameGroup{c.nameContainerGroup}, testDeploymentID)
+			assert.NoError(t, err)
+			assert.Equal(t, c.expectedSuspicious, c.nameContainerGroup.Suspicious)
 		})
 	}
 }

@@ -36,6 +36,7 @@ message ProcessNameAndContainerNameGroup {
     string                container_name = 2;
     uint32                times_executed = 3;
     repeated ProcessGroup groups         = 4;
+    bool                  suspicious     = 5;
 }
 
 message GetGroupedProcessesWithContainerResponse {
