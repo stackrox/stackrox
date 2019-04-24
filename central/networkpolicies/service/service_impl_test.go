@@ -71,19 +71,6 @@ spec:
   ingress: []
 `
 
-const forbiddenYAML = `
-kind: NetworkPolicy
-apiVersion: networking.k8s.io/v1
-metadata:
-  name: stackrox-deny-all-egress
-  namespace: stackrox
-spec:
-  policyTypes:
-  - Egress
-  podSelector: {}
-  egress: []
-`
-
 func TestNetworkPolicyService(t *testing.T) {
 	suite.Run(t, new(ServiceTestSuite))
 }
@@ -154,23 +141,6 @@ func (suite *ServiceTestSuite) TestRejectsYamlWithoutNamespace() {
 	}
 	_, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
 	suite.Error(err, "expected graph generation to fail since input yaml has no namespace")
-}
-
-func (suite *ServiceTestSuite) TestRejectsYamlWithStackRoxNamespace() {
-	// Mock that cluster exists.
-	cluster := &storage.Cluster{Id: fakeClusterID}
-	suite.clusters.EXPECT().GetCluster(fakeClusterID).
-		Return(cluster, true, nil)
-
-	// Make the request to the service and check that it did not err.
-	request := &v1.SimulateNetworkGraphRequest{
-		ClusterId: fakeClusterID,
-		Modification: &storage.NetworkPolicyModification{
-			ApplyYaml: forbiddenYAML,
-		},
-	}
-	_, err := suite.tested.SimulateNetworkGraph((context.Context)(nil), request)
-	suite.Error(err, "expected graph generation to fail since input yaml has 'stackrox' namespace")
 }
 
 func (suite *ServiceTestSuite) TestGetNetworkGraph() {

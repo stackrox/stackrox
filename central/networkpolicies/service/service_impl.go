@@ -254,6 +254,12 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 		return nil, err
 	}
 
+	//Confirm that network policies in restricted namespaces are not changed
+	err = validateNoForbiddenModification(networkPoliciesInSimulation)
+	if err != nil {
+		return nil, err
+	}
+
 	// Get the deployments we want to check connectivity between.
 	deployments, err := s.getDeployments(request.GetClusterId(), request.GetQuery())
 	if err != nil {
@@ -429,7 +435,6 @@ func (s *serviceImpl) getDeployments(clusterID, query string) (deployments []*st
 }
 
 func (s *serviceImpl) getNetworkPoliciesInSimulation(clusterID string, modification *storage.NetworkPolicyModification) ([]*v1.NetworkPolicyInSimulation, error) {
-	// Confirm that any input yamls are valid. Do this check first since it is the cheapest.
 	additionalPolicies, err := compileValidateYaml(modification.GetApplyYaml())
 	if err != nil {
 		return nil, err
@@ -538,13 +543,49 @@ func compileValidateYaml(simulationYaml string) ([]*storage.NetworkPolicy, error
 		if policy.GetNamespace() == "" {
 			return nil, fmt.Errorf("yamls tested against must apply to a namespace")
 		}
-		if policy.GetNamespace() == namespaces.StackRox {
-			return nil, fmt.Errorf("network policies cannot be applied to %s namespace", namespaces.StackRox)
-		}
-		if policy.GetNamespace() == namespaces.KubeSystem {
-			return nil, fmt.Errorf("network policies cannot be applied to %s namespace", namespaces.KubeSystem)
-		}
 	}
 
 	return policies, nil
+}
+
+// validateNoForbiddenModification verifies whether network policy changes are not applied to 'stackrox' and 'kube-system' namespace
+func validateNoForbiddenModification(networkPoliciesInSimulation []*v1.NetworkPolicyInSimulation) error {
+	for _, policyInSim := range networkPoliciesInSimulation {
+		policyNamespace := policyInSim.GetOldPolicy().GetNamespace()
+		if policyNamespace == "" {
+			policyNamespace = policyInSim.GetPolicy().GetNamespace()
+		}
+
+		if policyNamespace != namespaces.StackRox && policyNamespace != namespaces.KubeSystem {
+			continue
+		}
+
+		if policyInSim.GetStatus() == v1.NetworkPolicyInSimulation_UNCHANGED {
+			continue
+		}
+
+		policyName := policyInSim.GetPolicy().GetName()
+		if policyInSim.GetStatus() != v1.NetworkPolicyInSimulation_MODIFIED {
+			if policyInSim.GetStatus() != v1.NetworkPolicyInSimulation_ADDED {
+				policyName = policyInSim.GetOldPolicy().GetName()
+			}
+			return errors.Errorf("%q cannot be applied since network policy change in '%q' namespace is forbidden", policyName, policyNamespace)
+		}
+
+		err := validateNoPolicyDiff(policyInSim.GetPolicy(), policyInSim.GetOldPolicy())
+		if err != nil {
+			return errors.Errorf("%q cannot be applied since network policy change in '%q' namespace is forbidden", policyName, policyNamespace)
+		}
+	}
+
+	return nil
+}
+
+// validateNoPolicyDiff returns an error if the YAML of two network policies is different
+func validateNoPolicyDiff(applyPolicy *storage.NetworkPolicy, currPolicy *storage.NetworkPolicy) error {
+	if applyPolicy.GetYaml() != currPolicy.GetYaml() {
+		return errors.New("network policies do not match")
+	}
+
+	return nil
 }
