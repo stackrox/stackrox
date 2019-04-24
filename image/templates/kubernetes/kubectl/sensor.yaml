@@ -173,7 +173,9 @@ spec:
         imagePullPolicy: Always
         env:
         - name: COLLECTOR_CONFIG
-          value: '{"useEbpf":{{eq .CollectionMethod "EBPF"}},"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"},"syscalls":["accept","connect","execve","fork","clone","close","shutdown","socket"]}'
+          value: '{"tlsConfig":{"caCertPath":"/var/run/secrets/stackrox.io/certs/ca.pem","clientCertPath":"/var/run/secrets/stackrox.io/certs/cert.pem","clientKeyPath":"/var/run/secrets/stackrox.io/certs/key.pem"}}'
+        - name: COLLECTION_METHOD
+          value: {{ .CollectionMethod }}
         - name: GRPC_SERVER
           value: sensor.stackrox:443
         - name: MODULE_DOWNLOAD_BASE_URL
