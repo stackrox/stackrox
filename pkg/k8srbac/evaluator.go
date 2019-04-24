@@ -14,6 +14,47 @@ type Evaluator interface {
 	RolesForSubject(subject *storage.Subject) []*storage.K8SRole
 }
 
+// NewCombinedEvaluator returns an evaluator that combines the output rules of the two input evaluators.
+func NewCombinedEvaluator(e1 Evaluator, e2 Evaluator) Evaluator {
+	return &combinedEvaluator{
+		e1: e1,
+		e2: e2,
+	}
+}
+
+type combinedEvaluator struct {
+	e1 Evaluator
+	e2 Evaluator
+}
+
+func (e *combinedEvaluator) ForSubject(subject *storage.Subject) PolicyRuleSet {
+	ps1 := e.e1.ForSubject(subject)
+	ps1.Add(e.e2.ForSubject(subject).ToSlice()...)
+	return ps1
+}
+
+func (e *combinedEvaluator) IsClusterAdmin(subject *storage.Subject) bool {
+	return e.e1.IsClusterAdmin(subject) || e.e2.IsClusterAdmin(subject)
+}
+
+func (e *combinedEvaluator) RolesForSubject(subject *storage.Subject) []*storage.K8SRole {
+	rolesFromE1 := e.e1.RolesForSubject(subject)
+	rolesAdded := set.NewStringSet()
+	allRoles := make([]*storage.K8SRole, 0, len(rolesFromE1))
+	for _, role := range rolesFromE1 {
+		allRoles = append(allRoles, role)
+		rolesAdded.Add(role.GetId())
+	}
+
+	rolesFromE2 := e.e2.RolesForSubject(subject)
+	for _, role := range rolesFromE2 {
+		if !rolesAdded.Contains(role.GetId()) {
+			allRoles = append(allRoles, role)
+		}
+	}
+	return allRoles
+}
+
 // NewEvaluator returns a new instance of an Evaluator.
 func NewEvaluator(roles []*storage.K8SRole, bindings []*storage.K8SRoleBinding) Evaluator {
 	return &evaluator{

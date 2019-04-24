@@ -19,4 +19,10 @@ import (
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check61"
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check62"
 	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check656"
+	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check71"
+	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check713"
+	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check722"
+	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check723"
+	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check811"
+	_ "github.com/stackrox/rox/central/compliance/checks/pcidss32/check85"
 )

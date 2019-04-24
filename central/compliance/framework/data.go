@@ -28,6 +28,8 @@ type ComplianceDataRepository interface {
 	NetworkFlows() []*storage.NetworkFlow
 	PolicyCategories() map[string]set.StringSet
 	Notifiers() []*storage.Notifier
+	K8sRoles() []*storage.K8SRole
+	K8sRoleBindings() []*storage.K8SRoleBinding
 	CISDockerTriggered() bool
 	CISKubernetesTriggered() bool
 

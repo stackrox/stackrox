@@ -42,6 +42,16 @@ var hipaa164 = Standard{
 					Description: `Implement procedures for the authorization and/or supervision of workforce members who work with electronic protected health information or in locations where it might be accessed`,
 				},
 				{
+					ID:          "308_a_3_ii_b",
+					Name:        "308.a.3.ii.b",
+					Description: `Implement procedures to determine that the access of a workforce member to electronic protected health information is appropriate.`,
+				},
+				{
+					ID:          "308_a_4",
+					Name:        "308.a.4",
+					Description: "Information Access Management",
+				},
+				{
 					ID:          "308_a_4_ii_b",
 					Name:        "308.a.4.ii.b",
 					Description: "Information Access Management",
@@ -95,6 +105,11 @@ var hipaa164 = Standard{
 					ID:          "312_e",
 					Name:        "312.e",
 					Description: "Implement technical security measures to guard against unauthorized access to electronic protected health information that is being transmitted over an electronic communications network.",
+				},
+				{
+					ID:          "312_e_1",
+					Name:        "312.e.1",
+					Description: "Implement technical security measures to guard against unauthorized access to electronic protected health information that is being transmitted over an electronic communications network.",
 				},
 			},
 		},

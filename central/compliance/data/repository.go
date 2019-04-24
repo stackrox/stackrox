@@ -29,6 +29,8 @@ type repository struct {
 	processIndicators     []*storage.ProcessIndicator
 	networkFlows          []*storage.NetworkFlow
 	notifiers             []*storage.Notifier
+	roles                 []*storage.K8SRole
+	bindings              []*storage.K8SRoleBinding
 	cisDockerRunCheck     bool
 	cisKubernetesRunCheck bool
 	categoryToPolicies    map[string]set.StringSet // maps categories to policy set
@@ -82,6 +84,14 @@ func (r *repository) NetworkFlows() []*storage.NetworkFlow {
 
 func (r *repository) Notifiers() []*storage.Notifier {
 	return r.notifiers
+}
+
+func (r *repository) K8sRoles() []*storage.K8SRole {
+	return r.roles
+}
+
+func (r *repository) K8sRoleBindings() []*storage.K8SRoleBinding {
+	return r.bindings
 }
 
 func (r *repository) Alerts() []*storage.ListAlert {
@@ -222,6 +232,16 @@ func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[s
 	}
 
 	r.notifiers, err = f.notifierStore.GetNotifiers(&v1.GetNotifiersRequest{})
+	if err != nil {
+		return err
+	}
+
+	r.roles, err = f.roleDataStore.ListRoles()
+	if err != nil {
+		return err
+	}
+
+	r.bindings, err = f.bindingDataStore.ListRoleBindings()
 	if err != nil {
 		return err
 	}

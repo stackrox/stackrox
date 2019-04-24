@@ -6,17 +6,16 @@ import (
 
 // GetSubjectForDeployment returns the subject represented by a deployment.
 func GetSubjectForDeployment(deployment *storage.Deployment) *storage.Subject {
+	var serviceAccount string
 	if deployment.GetServiceAccount() == "" {
-		return &storage.Subject{
-			Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
-			Name:      DefaultServiceAccountName,
-			Namespace: deployment.GetNamespace(),
-		}
+		serviceAccount = "default"
+	} else {
+		serviceAccount = deployment.GetServiceAccount()
 	}
 
 	return &storage.Subject{
 		Kind:      storage.SubjectKind_SERVICE_ACCOUNT,
-		Name:      deployment.GetServiceAccount(),
+		Name:      serviceAccount,
 		Namespace: deployment.GetNamespace(),
 	}
 }

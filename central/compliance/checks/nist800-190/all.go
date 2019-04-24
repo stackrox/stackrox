@@ -7,6 +7,8 @@ import (
 	_ "github.com/stackrox/rox/central/compliance/checks/nist800-190/check414"
 	_ "github.com/stackrox/rox/central/compliance/checks/nist800-190/check421"
 	_ "github.com/stackrox/rox/central/compliance/checks/nist800-190/check422"
+	_ "github.com/stackrox/rox/central/compliance/checks/nist800-190/check431"
+	_ "github.com/stackrox/rox/central/compliance/checks/nist800-190/check432"
 	_ "github.com/stackrox/rox/central/compliance/checks/nist800-190/check433"
 	_ "github.com/stackrox/rox/central/compliance/checks/nist800-190/check435"
 	_ "github.com/stackrox/rox/central/compliance/checks/nist800-190/check442"

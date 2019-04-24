@@ -14,6 +14,8 @@ import (
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	policiesStore "github.com/stackrox/rox/central/policy/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
+	k8sRoleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	k8sBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 )
 
@@ -34,6 +36,8 @@ type factory struct {
 	notifierStore         notifierStore.Store
 	complianceStore       complianceStore.Store
 	standardsRepo         standards.Repository
+	roleDataStore         k8sRoleDataStore.DataStore
+	bindingDataStore      k8sBindingDataStore.DataStore
 }
 
 // NewDefaultFactory creates a new RepositoryFactory using the default instances for accessing data.
@@ -50,6 +54,8 @@ func NewDefaultFactory() RepositoryFactory {
 		notifierStore:         notifierStore.Singleton(),
 		complianceStore:       complianceStore.Singleton(),
 		standardsRepo:         standards.RegistrySingleton(),
+		roleDataStore:         k8sRoleDataStore.Singleton(),
+		bindingDataStore:      k8sBindingDataStore.Singleton(),
 	}
 }
 

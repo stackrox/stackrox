@@ -132,6 +132,30 @@ func (mr *MockComplianceDataRepositoryMockRecorder) Images() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Images", reflect.TypeOf((*MockComplianceDataRepository)(nil).Images))
 }
 
+// K8sRoleBindings mocks base method
+func (m *MockComplianceDataRepository) K8sRoleBindings() []*storage.K8SRoleBinding {
+	ret := m.ctrl.Call(m, "K8sRoleBindings")
+	ret0, _ := ret[0].([]*storage.K8SRoleBinding)
+	return ret0
+}
+
+// K8sRoleBindings indicates an expected call of K8sRoleBindings
+func (mr *MockComplianceDataRepositoryMockRecorder) K8sRoleBindings() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "K8sRoleBindings", reflect.TypeOf((*MockComplianceDataRepository)(nil).K8sRoleBindings))
+}
+
+// K8sRoles mocks base method
+func (m *MockComplianceDataRepository) K8sRoles() []*storage.K8SRole {
+	ret := m.ctrl.Call(m, "K8sRoles")
+	ret0, _ := ret[0].([]*storage.K8SRole)
+	return ret0
+}
+
+// K8sRoles indicates an expected call of K8sRoles
+func (mr *MockComplianceDataRepositoryMockRecorder) K8sRoles() *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "K8sRoles", reflect.TypeOf((*MockComplianceDataRepository)(nil).K8sRoles))
+}
+
 // NetworkFlows mocks base method
 func (m *MockComplianceDataRepository) NetworkFlows() []*storage.NetworkFlow {
 	ret := m.ctrl.Call(m, "NetworkFlows")
