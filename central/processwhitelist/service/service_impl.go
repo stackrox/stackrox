@@ -81,6 +81,17 @@ func (s *serviceImpl) GetProcessWhitelist(ctx context.Context, request *v1.GetPr
 	return whitelist, nil
 }
 
+func applyParallelFunc(parallelFunc func(*storage.ProcessWhitelistKey) (*storage.ProcessWhitelist, error), key *storage.ProcessWhitelistKey,
+	successChan chan<- *storage.ProcessWhitelist, errorChan chan<- *v1.ProcessWhitelistUpdateError, wg *sync.WaitGroup) {
+	defer wg.Done()
+	whitelist, err := parallelFunc(key)
+	if err != nil {
+		errorChan <- &v1.ProcessWhitelistUpdateError{Error: err.Error(), Key: key}
+		return
+	}
+	successChan <- whitelist
+}
+
 func parallelizeUpdate(keys []*storage.ProcessWhitelistKey, parallelFunc func(*storage.ProcessWhitelistKey) (*storage.ProcessWhitelist, error)) *v1.UpdateProcessWhitelistsResponse {
 	wg := sync.WaitGroup{}
 	chanLen := len(keys)
@@ -88,15 +99,7 @@ func parallelizeUpdate(keys []*storage.ProcessWhitelistKey, parallelFunc func(*s
 	errorChan := make(chan *v1.ProcessWhitelistUpdateError, chanLen)
 	for _, key := range keys {
 		wg.Add(1)
-		go func(wlKey *storage.ProcessWhitelistKey) {
-			defer wg.Done()
-			whitelist, err := parallelFunc(wlKey)
-			if err != nil {
-				errorChan <- &v1.ProcessWhitelistUpdateError{Error: err.Error(), Key: wlKey}
-				return
-			}
-			successChan <- whitelist
-		}(key)
+		go applyParallelFunc(parallelFunc, key, successChan, errorChan, &wg)
 	}
 	wg.Wait()
 	close(successChan)
