@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/central/namespace"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
@@ -21,6 +22,7 @@ func init() {
 		schema.AddExtraResolver("Cluster", `node(node: ID!): Node`),
 		schema.AddExtraResolver("Cluster", `namespaces: [Namespace!]!`),
 		schema.AddExtraResolver("Cluster", `namespace(name: String!): Namespace`),
+		schema.AddExtraResolver("Cluster", "complianceResults: [ControlResult!]!"),
 	)
 }
 
@@ -101,4 +103,19 @@ func (resolver *clusterResolver) Namespace(ctx context.Context, args struct{ Nam
 		ClusterID: graphql.ID(resolver.data.GetId()),
 		Name:      args.Name,
 	})
+}
+
+func (resolver *clusterResolver) ComplianceResults(ctx context.Context) ([]*controlResultResolver, error) {
+	if err := readCompliance(ctx); err != nil {
+		return nil, err
+	}
+	data, err := resolver.root.ComplianceDataStore.GetLatestRunResultsBatch([]string{resolver.data.GetId()}, allStandards(resolver.root.ComplianceStandardStore), store.RequireMessageStrings)
+	if err != nil {
+		return nil, err
+	}
+	output := newBulkControlResults()
+	output.addClusterData(resolver.root, data, nil)
+	output.addDeploymentData(resolver.root, data, nil)
+	output.addNodeData(resolver.root, data, nil)
+	return *output, nil
 }

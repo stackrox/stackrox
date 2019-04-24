@@ -4,7 +4,10 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
+	"github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/central/namespace"
+	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
@@ -14,6 +17,7 @@ func init() {
 		schema.AddQuery("namespaces: [Namespace!]!"),
 		schema.AddQuery("namespace(id: ID!): Namespace"),
 		schema.AddQuery("namespaceByClusterIDAndName(clusterID: ID!, name: String!): Namespace"),
+		schema.AddExtraResolver("Namespace", "complianceResults: [ControlResult!]!"),
 	)
 }
 
@@ -38,10 +42,27 @@ type clusterIDAndNameQuery struct {
 	Name      string
 }
 
-// NamespaceByClusterIDAndName returns a GrapQL resolver for the (unique) namespace specified by this query.
+// NamespaceByClusterIDAndName returns a GraphQL resolver for the (unique) namespace specified by this query.
 func (resolver *Resolver) NamespaceByClusterIDAndName(ctx context.Context, args clusterIDAndNameQuery) (*namespaceResolver, error) {
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
 	}
 	return resolver.wrapNamespace(namespace.ResolveByClusterIDAndName(string(args.ClusterID), args.Name, resolver.NamespaceDataStore, resolver.DeploymentDataStore, resolver.SecretsDataStore, resolver.NetworkPoliciesStore))
+}
+
+func (resolver *namespaceResolver) ComplianceResults(ctx context.Context) ([]*controlResultResolver, error) {
+	if err := readCompliance(ctx); err != nil {
+		return nil, err
+	}
+	data, err := resolver.root.ComplianceDataStore.GetLatestRunResultsBatch([]string{resolver.data.GetMetadata().GetClusterId()}, allStandards(resolver.root.ComplianceStandardStore), store.RequireMessageStrings)
+	if err != nil {
+		return nil, err
+	}
+	output := newBulkControlResults()
+	nsID := resolver.data.GetMetadata().GetId()
+	output.addDeploymentData(resolver.root, data, func(d *storage.Deployment, _ *v1.ComplianceControl) bool {
+		return d.GetNamespaceId() == nsID
+	})
+
+	return *output, nil
 }
