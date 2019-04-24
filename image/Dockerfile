@@ -1,4 +1,5 @@
-FROM stackrox-data:latest AS data
+ARG DATA_IMAGE_TAG=latest
+FROM stackrox-data:$DATA_IMAGE_TAG AS data
 
 FROM alpine:3.9
 LABEL "com.vendor"="StackRox (support@stackrox.com)"

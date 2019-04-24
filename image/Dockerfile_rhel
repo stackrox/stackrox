@@ -1,4 +1,5 @@
-FROM stackrox-data:latest AS data
+ARG DATA_IMAGE_TAG=latest
+FROM stackrox-data:$DATA_IMAGE_TAG AS data
 
 FROM registry.redhat.io/rhel7:7.6-151.1550575774
 

@@ -407,13 +407,13 @@ main-image-rhel: all-builds
 # declare its dependencies explicitly.
 .PHONY: docker-build-main-image
 docker-build-main-image: copy-binaries-to-image-dir docker-build-data-image
-	docker build -t stackrox/main:$(TAG) image/
+	docker build -t stackrox/main:$(TAG) --build-arg DATA_IMAGE_TAG=$(TAG) image/
 	@echo "Built main image with tag: $(TAG)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 
 .PHONY: docker-build-main-image-rhel
 docker-build-main-image-rhel: copy-binaries-to-image-dir docker-build-data-image
-	docker build -t stackrox/main-rhel:$(TAG) --file image/Dockerfile_rhel --label version=$(TAG) --label release=$(TAG) image/
+	docker build -t stackrox/main-rhel:$(TAG) --file image/Dockerfile_rhel --label version=$(TAG) --label release=$(TAG) --build-arg DATA_IMAGE_TAG=$(TAG) image/
 	@echo "Built main image for RHEL with tag: $(TAG)"
 	@echo "You may wish to:       export MAIN_IMAGE_TAG=$(TAG)"
 
@@ -421,7 +421,7 @@ docker-build-main-image-rhel: copy-binaries-to-image-dir docker-build-data-image
 docker-build-data-image:
 	test -f $(CURDIR)/image/keys/data-key
 	test -f $(CURDIR)/image/keys/data-iv
-	docker build -t stackrox-data:latest image/ --file image/stackrox-data.Dockerfile
+	docker build -t stackrox-data:$(TAG) image/ --file image/stackrox-data.Dockerfile
 
 .PHONY: copy-binaries-to-image-dir
 copy-binaries-to-image-dir:
