@@ -1,4 +1,8 @@
 import static Services.waitForViolation
+import io.stackrox.proto.storage.DeploymentOuterClass
+import io.stackrox.proto.storage.PolicyOuterClass
+import objects.Service
+
 import common.Constants
 import io.stackrox.proto.storage.PolicyOuterClass.Policy
 import io.stackrox.proto.storage.PolicyOuterClass.PolicyFields
@@ -22,6 +26,12 @@ import spock.lang.Unroll
 class PolicyConfigurationTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX = "deploymentnginx"
     static final private String STRUTS = "qadefpolstruts"
+    static final private String DEPLOYMENTNGINX_LB = "deploymentnginx-lb"
+    static final private String DEPLOYMENTNGINX_NP = "deploymentnginx-np"
+
+    static final private  List<DeploymentOuterClass.PortConfig.ExposureLevel> EXPOSURE_VALUES =
+             [DeploymentOuterClass.PortConfig.ExposureLevel.NODE,
+              DeploymentOuterClass.PortConfig.ExposureLevel.EXTERNAL]
     static final private List<Deployment> DEPLOYMENTS = [
             new Deployment()
                     .setName(DEPLOYMENTNGINX)
@@ -40,19 +50,38 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .setName(STRUTS)
                     .setImage("apollo-dtr.rox.systems/legacy-apps/struts-app:latest")
                     .addLabel("app", "test"),
+            new Deployment()
+                    .setName(DEPLOYMENTNGINX_LB)
+                    .setImage("nginx:1.7.9")
+                    .addPort(22, "TCP")
+                    .addAnnotation("test", "annotation")
+                    .setEnv(["CLUSTER_NAME": "main"])
+                    .addLabel("app", "test")
+                    .setCreateLoadBalancer(true).setExposeAsService(true),
+            new Deployment()
+                    .setName(DEPLOYMENTNGINX_NP)
+                    .setImage("nginx:1.7.9")
+                    .addPort(22, "TCP")
+                    .addAnnotation("test", "annotation")
+                    .setEnv(["CLUSTER_NAME": "main"])
+                    .addLabel("app", "test"),
     ]
+    static final private Service NPSERVICE = new Service(DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_NP })
+            .setType(Service.Type.NODEPORT)
 
     def setupSpec() {
         orchestrator.batchCreateDeployments(DEPLOYMENTS)
         for (Deployment deploymentId : DEPLOYMENTS) {
             assert Services.waitForDeployment(deploymentId)
         }
+        orchestrator.createService(NPSERVICE)
     }
 
     def cleanupSpec() {
         for (Deployment deployment : DEPLOYMENTS) {
             orchestrator.deleteDeployment(deployment)
         }
+        orchestrator.deleteService(NPSERVICE.name, NPSERVICE.namespace)
     }
 
     @Unroll
@@ -192,6 +221,32 @@ class PolicyConfigurationTest extends BaseSpecification {
                         .setPortPolicy(PortPolicy.newBuilder()
                         .setPort(22).build()))
                         .build()            | DEPLOYMENTNGINX
+        "Port Exposure through Load Balancer"                     |
+                Policy.newBuilder()
+                        .setName("TestPortExposurePolicy")
+                        .setDescription("Testportexposure")
+                        .setRationale("Testportexposure")
+                        .addLifecycleStages(LifecycleStage.DEPLOY)
+                        .addCategories("DevOps Best Practices")
+                        .setDisabled(false)
+                        .setSeverityValue(2)
+                        .setFields(PolicyFields.newBuilder()
+                                .setPortExposurePolicy(PolicyOuterClass.PortExposurePolicy.newBuilder()
+                                        .addAllExposureLevels(EXPOSURE_VALUES)))
+                        .build() |          DEPLOYMENTNGINX_LB
+        "Port Exposure by  Node Port"                     |
+                Policy.newBuilder()
+                        .setName("TestPortExposurePolicy")
+                        .setDescription("Testportexposure")
+                        .setRationale("Testportexposure")
+                        .addLifecycleStages(LifecycleStage.DEPLOY)
+                        .addCategories("DevOps Best Practices")
+                        .setDisabled(false)
+                        .setSeverityValue(2)
+                        .setFields(PolicyFields.newBuilder()
+                                .setPortExposurePolicy(PolicyOuterClass.PortExposurePolicy.newBuilder()
+                                        .addAllExposureLevels(EXPOSURE_VALUES)))
+                        .build() |          DEPLOYMENTNGINX_NP
 
         "Required Label"           |
                 Policy.newBuilder()
