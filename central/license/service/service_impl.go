@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/license/manager"
 	"github.com/stackrox/rox/central/role/resources"
@@ -25,6 +26,9 @@ var (
 		},
 		user.With(permissions.Modify(resources.Licenses)): {
 			"/v1.LicenseService/AddLicense",
+		},
+		user.With(): {
+			"/v1.LicenseService/GetActiveLicenseExpiration",
 		},
 	})
 )
@@ -93,5 +97,21 @@ func (s *service) AddLicense(ctx context.Context, req *v1.AddLicenseRequest) (*v
 	return &v1.AddLicenseResponse{
 		License:  licenseInfo,
 		Accepted: true,
+	}, nil
+}
+
+func (s *service) GetActiveLicenseExpiration(ctx context.Context, _ *v1.Empty) (*v1.GetActiveLicenseExpirationResponse, error) {
+	if s.lockdownMode {
+		return nil, status.Errorf(codes.Unavailable, "this API is not available without an active license")
+	}
+
+	activeLicense := s.licenseMgr.GetActiveLicense()
+	expirationTS := activeLicense.GetRestrictions().GetNotValidAfter()
+	if expirationTS == nil {
+		expirationTS = types.TimestampNow()
+	}
+
+	return &v1.GetActiveLicenseExpirationResponse{
+		ExpirationTime: expirationTS,
 	}, nil
 }
