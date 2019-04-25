@@ -59,16 +59,16 @@ const getExpirationMessageType = expirationDate => {
     return null;
 };
 
-const createExpirationMessage = (expirationDate, message) => {
-    const type = getExpirationMessageType(expirationDate);
-    return {
-        message,
-        type
-    };
-};
+const createExpirationMessage = (message, type) => ({
+    message,
+    type
+});
 
 export const createExpirationMessageWithLink = expirationDate => {
     const type = getExpirationMessageType(expirationDate);
+    if (!type) {
+        return null;
+    }
     const message = (
         <div>
             Your license will expire in {distanceInWordsStrict(expirationDate, new Date())}.
@@ -81,13 +81,17 @@ export const createExpirationMessageWithLink = expirationDate => {
             to renew your account.
         </div>
     );
-    return createExpirationMessage(expirationDate, message);
+    return createExpirationMessage(message, type);
 };
 
 export const createExpirationMessageWithoutLink = expirationDate => {
+    const type = getExpirationMessageType(expirationDate);
+    if (!type) {
+        return null;
+    }
     const message = `Your license will expire in ${distanceInWordsStrict(
         expirationDate,
         new Date()
     )}. Upload a new license key to renew your account.`;
-    return createExpirationMessage(expirationDate, message);
+    return createExpirationMessage(message, type);
 };
