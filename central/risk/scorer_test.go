@@ -5,14 +5,24 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
+	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	"github.com/stackrox/rox/central/risk/getters"
 	"github.com/stackrox/rox/central/risk/multipliers"
+	saMocks "github.com/stackrox/rox/central/serviceaccount/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestScore(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	mockRoles := roleMocks.NewMockDataStore(mockCtrl)
+	mockBindings := bindingMocks.NewMockDataStore(mockCtrl)
+	mockServiceAccounts := saMocks.NewMockDataStore(mockCtrl)
+
 	deployment := getMockDeployment()
 	scorer := NewScorer(&getters.MockAlertsGetter{
 		Alerts: []*storage.ListAlert{
@@ -24,7 +34,7 @@ func TestScore(t *testing.T) {
 				},
 			},
 		},
-	})
+	}, mockRoles, mockBindings, mockServiceAccounts)
 
 	// Without user defined function
 	expectedRiskScore := 9.016
@@ -69,6 +79,11 @@ func TestScore(t *testing.T) {
 			Score: 1.25,
 		},
 	}
+
+	if features.K8sRBAC.Enabled() {
+		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(gomock.Any()).Return(nil, nil)
+	}
+
 	actualRisk := scorer.Score(deployment)
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
@@ -110,9 +125,16 @@ func TestScore(t *testing.T) {
 			Score: 1.0,
 		},
 	}...)
+
+	if features.K8sRBAC.Enabled() {
+		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(gomock.Any()).Return(nil, nil)
+	}
+
 	actualRisk = scorer.Score(deployment)
 	assert.Equal(t, expectedRiskResults, actualRisk.GetResults())
 	assert.InDelta(t, expectedRiskScore, actualRisk.GetScore(), 0.0001)
+
+	mockCtrl.Finish()
 }
 
 func getMockDeployment() *storage.Deployment {

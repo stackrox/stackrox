@@ -25,7 +25,7 @@ type Scorer interface {
 }
 
 // NewScorer returns a new scorer that encompasses both static and user defined multipliers
-func NewScorer(alertGetter getters.AlertGetter) Scorer {
+func NewScorer(alertGetter getters.AlertGetter, roles roleStore.DataStore, bindings bindingStore.DataStore, serviceAccounts saStore.DataStore) Scorer {
 	scoreImpl := &scoreImpl{
 		// These multipliers are intentionally ordered based on the order that we want them to be displayed in.
 		// Order aligns with the maximum output multiplier value, which would make sense to correlate
@@ -45,7 +45,7 @@ func NewScorer(alertGetter getters.AlertGetter) Scorer {
 
 	if features.K8sRBAC.Enabled() {
 		scoreImpl.ConfiguredMultipliers = append(scoreImpl.ConfiguredMultipliers,
-			multipliers.NewSAPermissionsMultiplier(roleStore.Singleton(), bindingStore.Singleton(), saStore.Singleton()))
+			multipliers.NewSAPermissionsMultiplier(roles, bindings, serviceAccounts))
 	}
 
 	return scoreImpl
