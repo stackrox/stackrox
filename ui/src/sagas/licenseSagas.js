@@ -26,6 +26,7 @@ export function* getLicenses() {
         yield put(actions.fetchLicenses.success(result.response));
     } catch (error) {
         // do nothing
+        Raven.captureException(error);
     }
 }
 

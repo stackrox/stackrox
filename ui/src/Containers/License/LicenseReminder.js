@@ -38,6 +38,9 @@ const getDelay = expirationDate => {
 };
 
 const LicenseReminder = ({ expirationDate, history, shouldHaveReadPermission }) => {
+    if (!shouldHaveReadPermission('Licenses')) {
+        return null;
+    }
     const createExpirationMessage = shouldHaveReadPermission('Licenses')
         ? createExpirationMessageWithLink
         : createExpirationMessageWithoutLink;

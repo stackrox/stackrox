@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Redirect, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
@@ -25,17 +25,13 @@ const getDefaultBannerText = (licenseUploadStatus, licenseStatus) => {
 };
 
 const StartUpScreen = ({ licenseStatus, licenseUploadStatus }) => {
-    const fetchingLicense = licenseStatus === LICENSE_STATUS.RESTARTING;
+    const hasLicense = licenseStatus === LICENSE_STATUS.VALID;
 
-    if (licenseStatus === LICENSE_STATUS.VALID) {
-        return <Redirect to="/" />;
-    }
+    const fetchingLicense = licenseStatus === LICENSE_STATUS.RESTARTING;
 
     if (fetchingLicense) {
         return <LoadingSection message="Verifying License..." />;
     }
-
-    const hasLicense = licenseStatus === LICENSE_STATUS.VALID;
 
     const bannerMessage = getDefaultBannerText(licenseUploadStatus, licenseStatus);
 
