@@ -31,7 +31,6 @@ enum SearchCategory {
     SUBJECTS                 = 18;
 }
 
-// TODO(cgorman) collapse these into Go code and not proto
 enum SearchDataType {
     SEARCH_BOOL     = 0;
     SEARCH_NUMERIC  = 1;

@@ -91,3 +91,13 @@ func (suite *ProcessWhitelistIndexTestSuite) TestAddSearchDeleteWhitelist() {
 	suite.NoError(err)
 	suite.Equal(0, len(results))
 }
+
+func (suite *ProcessWhitelistIndexTestSuite) TestSearchByDeploymentID() {
+	whitelist := suite.getAndStoreWhitelist()
+	suite.getAndStoreWhitelist() // Don't find this one
+
+	q := search.NewQueryBuilder().AddStrings(search.DeploymentID, whitelist.GetKey().GetDeploymentId()).ProtoQuery()
+	results, err := suite.search(q, 1)
+	suite.NoError(err)
+	suite.Equal(whitelist.GetId(), results[0].ID)
+}

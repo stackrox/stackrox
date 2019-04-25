@@ -13,7 +13,7 @@ package storage;
 message ProcessWhitelistKey {
     // The idea is for the keys to be flexible.
     // Only certain combinations of these will be supported.
-    string deployment_id     = 1;
+    string deployment_id     = 1[(gogoproto.moretags) = "search:\"Deployment ID,hidden\""];
     string container_name    = 2;
 }
 
