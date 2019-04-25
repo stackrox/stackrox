@@ -9,6 +9,7 @@ import (
 	"github.com/cloudflare/cfssl/certinfo"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/uuid"
 	v1 "k8s.io/api/core/v1"
@@ -181,6 +182,7 @@ func (*secretDispatcher) ProcessEvent(obj interface{}, action central.ResourceAc
 		return nil
 	}
 
+	kubernetes.RemoveAppliedAnnotation(secret.GetAnnotations())
 	protoSecret := &storage.Secret{
 		Id:          string(secret.GetUID()),
 		Name:        secret.GetName(),
