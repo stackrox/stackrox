@@ -76,22 +76,27 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	}
 	var err error
 
-	err = suite.tested.UpsertFlows(flows, timestamp.Now())
+	updateTS := timestamp.Now() - 1000000
+	err = suite.tested.UpsertFlows(flows, updateTS)
 	suite.NoError(err, "upsert should succeed on first insert")
 
-	readFlows, _, err := suite.tested.GetAllFlows(nil)
+	readFlows, readUpdateTS, err := suite.tested.GetAllFlows(nil)
 	suite.Require().NoError(err)
 	suite.ElementsMatch(readFlows, flows)
+	suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
 
-	readFlows, _, err = suite.tested.GetAllFlows(protoconv.ConvertTimeToTimestamp(t2))
+	readFlows, readUpdateTS, err = suite.tested.GetAllFlows(protoconv.ConvertTimeToTimestamp(t2))
 	suite.Require().NoError(err)
 	suite.ElementsMatch(readFlows, flows[1:])
+	suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
 
-	readFlows, _, err = suite.tested.GetAllFlows(protoconv.ConvertTimeToTimestamp(time.Now()))
+	readFlows, readUpdateTS, err = suite.tested.GetAllFlows(protoconv.ConvertTimeToTimestamp(time.Now()))
 	suite.Require().NoError(err)
 	suite.ElementsMatch(readFlows, flows[2:])
+	suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
 
-	err = suite.tested.UpsertFlows(flows, timestamp.Now())
+	updateTS += 1337
+	err = suite.tested.UpsertFlows(flows, updateTS)
 	suite.NoError(err, "upsert should succeed on second insert")
 
 	err = suite.tested.RemoveFlow(&storage.NetworkFlowProperties{
@@ -111,16 +116,19 @@ func (suite *FlowStoreTestSuite) TestStore() {
 	suite.NoError(err, "remove should succeed when not present")
 
 	var actualFlows []*storage.NetworkFlow
-	actualFlows, _, err = suite.tested.GetAllFlows(nil)
+	actualFlows, readUpdateTS, err = suite.tested.GetAllFlows(nil)
 	suite.NoError(err)
 	suite.ElementsMatch(actualFlows, flows[1:])
+	suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
 
-	err = suite.tested.UpsertFlows(flows, timestamp.Now())
+	updateTS += 42
+	err = suite.tested.UpsertFlows(flows, updateTS)
 	suite.NoError(err, "upsert should succeed")
 
-	actualFlows, _, err = suite.tested.GetAllFlows(nil)
+	actualFlows, readUpdateTS, err = suite.tested.GetAllFlows(nil)
 	suite.NoError(err)
 	suite.ElementsMatch(actualFlows, flows)
+	suite.Equal(updateTS, timestamp.FromProtobuf(&readUpdateTS))
 }
 
 func TestGetDeploymentIDsFromKey(t *testing.T) {

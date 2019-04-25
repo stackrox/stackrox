@@ -14,6 +14,8 @@ import (
 )
 
 func TestOptions(t *testing.T) {
+	t.Parallel()
+
 	conn := testutils.GRPCConnectionToCentral(t)
 
 	service := v1.NewSearchServiceClient(conn)

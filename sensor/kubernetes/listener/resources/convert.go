@@ -289,6 +289,7 @@ func (w *deploymentWrap) getPods(topLevelName string, labelSelector *metav1.Labe
 }
 
 func (w *deploymentWrap) populateDataFromPods(pods ...*v1.Pod) {
+	w.pods = pods
 	w.populateImageShas(pods...)
 	w.populateContainerInstances(pods...)
 }

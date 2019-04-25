@@ -38,11 +38,16 @@ func (s *flowStoreUpdaterImpl) addExistingNonTerminatedFlows(updatedFlows map[ne
 		return err
 	}
 
+	closeTS := timestamp.FromProtobuf(&lastUpdateTS)
+	if closeTS == 0 {
+		closeTS = timestamp.Now()
+	}
+
 	// Add non-terminated flows with the latest time in the store.
 	// This will terminate the flow if it is not present in the incoming newFlows.
 	for _, flow := range existingFlows {
 		if flow.GetLastSeenTimestamp() == nil {
-			updatedFlows[fromProto(flow.GetProps())] = timestamp.FromProtobuf(&lastUpdateTS)
+			updatedFlows[fromProto(flow.GetProps())] = closeTS
 		}
 	}
 	return nil

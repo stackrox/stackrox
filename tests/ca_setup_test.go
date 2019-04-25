@@ -12,6 +12,8 @@ import (
 )
 
 func TestCASetup(t *testing.T) {
+	t.Parallel()
+
 	conn := testutils.GRPCConnectionToCentral(t)
 
 	service := central.NewDevelopmentServiceClient(conn)

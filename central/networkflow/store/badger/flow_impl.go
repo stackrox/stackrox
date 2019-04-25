@@ -62,7 +62,7 @@ func (s *flowStoreImpl) UpsertFlows(flows []*storage.NetworkFlow, lastUpdatedTS 
 	}
 
 	kvs := make([]bolthelper.KV, 0, len(flows)+1)
-	kvs = append(kvs, bolthelper.KV{Key: updatedTSKey, Value: tsData})
+	kvs = append(kvs, bolthelper.KV{Key: s.getFullKey(updatedTSKey), Value: tsData})
 
 	for _, flow := range flows {
 		k := s.getID(flow.GetProps())
@@ -110,8 +110,15 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(id string) error {
 	})
 }
 
+func (s *flowStoreImpl) getFullKey(localKey []byte) []byte {
+	result := make([]byte, 0, len(s.keyPrefix)+len(localKey))
+	result = append(result, s.keyPrefix...)
+	result = append(result, localKey...)
+	return result
+}
+
 func (s *flowStoreImpl) getID(props *storage.NetworkFlowProperties) []byte {
-	return append(s.keyPrefix, []byte(fmt.Sprintf("%x:%s:%x:%s:%x:%x", props.GetSrcEntity().GetType(), props.GetSrcEntity().GetId(), props.GetDstEntity().GetType(), props.GetDstEntity().GetId(), props.GetDstPort(), props.GetL4Protocol()))...)
+	return s.getFullKey([]byte(fmt.Sprintf("%x:%s:%x:%s:%x:%x", props.GetSrcEntity().GetType(), props.GetSrcEntity().GetId(), props.GetDstEntity().GetType(), props.GetDstEntity().GetId(), props.GetDstPort(), props.GetL4Protocol())))
 }
 
 func (s *flowStoreImpl) getDeploymentIDsFromKey(id []byte) ([]byte, []byte) {
@@ -120,6 +127,9 @@ func (s *flowStoreImpl) getDeploymentIDsFromKey(id []byte) ([]byte, []byte) {
 }
 
 func (s *flowStoreImpl) readAllFlows(since *types.Timestamp) (flows []*storage.NetworkFlow, lastUpdateTS types.Timestamp, err error) {
+	// The entry for this should be present, but make sure we have a sane default if it is not
+	lastUpdateTS = *types.TimestampNow()
+
 	err = s.db.View(func(txn *badger.Txn) error {
 		return badgerhelper.ForEachWithPrefix(txn, s.keyPrefix, badgerhelper.ForEachOptions{StripKeyPrefix: true},
 			func(k, v []byte) error {
