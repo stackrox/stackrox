@@ -51,6 +51,7 @@ func newLoopWithDuration(connManager connection.Manager, tickerDuration time.Dur
 		shortChan:      make(chan struct{}),
 
 		connManager: connManager,
+		throttler:   newThrottle(time.Second),
 	}
 }
 
@@ -62,10 +63,11 @@ type loopImpl struct {
 	stopped        concurrency.Signal
 
 	connManager connection.Manager
+	throttler   throttle
 }
 
 func (l *loopImpl) ReprocessRisk() {
-	l.sendRisk()
+	l.throttler.run(func() { l.sendRisk() })
 }
 
 func (l *loopImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
@@ -112,6 +114,7 @@ func (l *loopImpl) sendRisk(deploymentIDs ...string) {
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_ReprocessDeployments{
 			ReprocessDeployments: &central.ReprocessDeployments{
+				DeploymentIds: deploymentIDs,
 				Target: &central.ReprocessDeployments_Risk{
 					Risk: &central.ReprocessDeployments_RiskTarget{},
 				},
