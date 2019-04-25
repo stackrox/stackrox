@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions } from 'reducers/auth';
+import Dialog from 'Components/Dialog';
 
 import SideBar from 'Containers/AccessControl/SideBar';
 import Select from 'Containers/AccessControl/AuthProviders/Select';
@@ -26,6 +27,13 @@ class AuthProviders extends Component {
         selectedAuthProvider: null,
         isEditing: false
     };
+
+    constructor(props) {
+        super(props);
+        this.state = {
+            providerToDelete: null
+        };
+    }
 
     onSave = data => {
         const { saveAuthProvider } = this.props;
@@ -55,8 +63,26 @@ class AuthProviders extends Component {
     };
 
     onDelete = authProvider => {
-        this.props.deleteAuthProvider(authProvider.id);
+        this.setState({
+            providerToDelete: authProvider
+        });
+    };
+
+    deleteProvider = () => {
+        const providerId = this.state.providerToDelete && this.state.providerToDelete.id;
+        if (!providerId) return;
+
+        this.props.deleteAuthProvider(providerId);
         this.props.setAuthProviderEditingState(false);
+        this.setState({
+            providerToDelete: null
+        });
+    };
+
+    onCancelDeleteProvider = () => {
+        this.setState({
+            providerToDelete: null
+        });
     };
 
     renderSideBar = () => {
@@ -78,6 +104,8 @@ class AuthProviders extends Component {
 
     render() {
         const { selectedAuthProvider, groups } = this.props;
+        const providerToDelete = this.state.providerToDelete && this.state.providerToDelete.name;
+
         const className = this.props.isEditing
             ? 'before before:absolute before:h-full before:opacity-50 before:bg-secondary-900 before:w-full before:z-10'
             : '';
@@ -96,6 +124,13 @@ class AuthProviders extends Component {
                         groups={groups}
                     />
                 </div>
+                <Dialog
+                    isOpen={!!providerToDelete}
+                    text={`Deleting "${providerToDelete}" will cause users to be logged out. Are you sure you want to delete "${providerToDelete}"?`}
+                    onConfirm={this.deleteProvider}
+                    onCancel={this.onCancelDeleteProvider}
+                    confirmText="Delete"
+                />
             </section>
         );
     }

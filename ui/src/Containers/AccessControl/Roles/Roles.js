@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import { createStructuredSelector, createSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions } from 'reducers/roles';
+import Dialog from 'Components/Dialog';
 
 import SideBar from 'Containers/AccessControl/SideBar';
 import Permissions from 'Containers/AccessControl/Roles/Permissions/Permissions';
@@ -60,8 +61,18 @@ class Roles extends Component {
     };
 
     onDelete = role => {
-        this.props.deleteRole(role.name);
-        this.setState({ isEditing: false });
+        this.setState({
+            roleToDelete: role
+        });
+    };
+
+    deleteRole = () => {
+        const roleName = this.state.roleToDelete && this.state.roleToDelete.name;
+        this.props.deleteRole(roleName);
+        this.setState({
+            isEditing: false,
+            roleToDelete: null
+        });
     };
 
     renderAddRoleButton = () => (
@@ -73,6 +84,12 @@ class Roles extends Component {
             Add New Role
         </button>
     );
+
+    onCancelDeleteRole = () => {
+        this.setState({
+            roleToDelete: null
+        });
+    };
 
     renderSideBar = () => {
         const header = 'StackRox Roles';
@@ -93,6 +110,7 @@ class Roles extends Component {
 
     render() {
         const { selectedRole } = this.props;
+        const roleToDelete = this.state.roleToDelete && this.state.roleToDelete.name;
         const className = this.state.isEditing
             ? 'before before:absolute before:h-full before:opacity-50 before:bg-secondary-900 before:w-full before:z-10'
             : '';
@@ -110,6 +128,13 @@ class Roles extends Component {
                         onCancel={this.onCancel}
                     />
                 </div>
+                <Dialog
+                    isOpen={!!this.state.roleToDelete}
+                    text={`Deleting "${roleToDelete}" may cause users to lose access. Are you sure you want to delete "${roleToDelete}"?`}
+                    onConfirm={this.deleteRole}
+                    onCancel={this.onCancelDeleteRole}
+                    confirmText="Delete"
+                />
             </section>
         );
     }
