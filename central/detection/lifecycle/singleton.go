@@ -19,9 +19,17 @@ var (
 )
 
 func initialize() {
-	manager = NewManager(enrichment.Singleton(), deploytime.SingletonDetector(), runtime.SingletonDetector(),
-		deploymentDatastore.Singleton(), processDatastore.Singleton(), imageDataStore.Singleton(), alertmanager.Singleton(),
-		riskManager.Singleton(), reprocessor.Singleton())
+	manager = NewManager(
+		enrichment.Singleton(),
+		deploytime.SingletonDetector(),
+		runtime.SingletonDetector(),
+		deploymentDatastore.Singleton(),
+		processDatastore.Singleton(),
+		imageDataStore.Singleton(),
+		alertmanager.Singleton(),
+		riskManager.Singleton(),
+		reprocessor.Singleton(),
+	)
 }
 
 // SingletonManager returns the manager instance.

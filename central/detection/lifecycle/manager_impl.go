@@ -205,7 +205,7 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 
 	// Add policy to set.
 	if policies.AppliesAtDeployTime(policy) {
-		if err := m.deploytimeDetector.UpsertPolicy(policy); err != nil {
+		if err := m.deploytimeDetector.PolicySet().UpsertPolicy(policy); err != nil {
 			return errors.Wrapf(err, "adding policy %s to deploy time detector", policy.GetName())
 		}
 		deployTimeAlerts, err := m.deploytimeDetector.AlertsForPolicy(policy.GetId())
@@ -214,14 +214,14 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 		}
 		presentAlerts = append(presentAlerts, deployTimeAlerts...)
 	} else {
-		err := m.deploytimeDetector.RemovePolicy(policy.GetId())
+		err := m.deploytimeDetector.PolicySet().RemovePolicy(policy.GetId())
 		if err != nil {
 			return errors.Wrapf(err, "removing policy %s from deploy time detector", policy.GetName())
 		}
 	}
 
 	if policies.AppliesAtRunTime(policy) {
-		if err := m.runtimeDetector.UpsertPolicy(policy); err != nil {
+		if err := m.runtimeDetector.PolicySet().UpsertPolicy(policy); err != nil {
 			return errors.Wrapf(err, "adding policy %s to runtime detector", policy.GetName())
 		}
 		runTimeAlerts, err := m.runtimeDetector.AlertsForPolicy(policy.GetId())
@@ -230,7 +230,7 @@ func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 		}
 		presentAlerts = append(presentAlerts, runTimeAlerts...)
 	} else {
-		err := m.runtimeDetector.RemovePolicy(policy.GetId())
+		err := m.runtimeDetector.PolicySet().RemovePolicy(policy.GetId())
 		if err != nil {
 			return errors.Wrapf(err, "removing policy %s from runtime detector", policy.GetName())
 		}
@@ -247,10 +247,10 @@ func (m *managerImpl) DeploymentRemoved(deployment *storage.Deployment) error {
 }
 
 func (m *managerImpl) RemovePolicy(policyID string) error {
-	if err := m.deploytimeDetector.RemovePolicy(policyID); err != nil {
+	if err := m.deploytimeDetector.PolicySet().RemovePolicy(policyID); err != nil {
 		return err
 	}
-	if err := m.runtimeDetector.RemovePolicy(policyID); err != nil {
+	if err := m.runtimeDetector.PolicySet().RemovePolicy(policyID); err != nil {
 		return err
 	}
 	_, err := m.alertManager.AlertAndNotify(nil, alertmanager.WithPolicyID(policyID))

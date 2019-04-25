@@ -8,12 +8,10 @@ import (
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	"github.com/stackrox/rox/central/deployment/index/mappings"
-	imageDetection "github.com/stackrox/rox/central/detection/image"
+	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/policy/datastore"
-	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
@@ -67,10 +65,10 @@ type serviceImpl struct {
 	policies    datastore.DataStore
 	clusters    clusterDataStore.DataStore
 	deployments deploymentDataStore.DataStore
-	processes   processDataStore.DataStore
 	reprocessor reprocessor.Loop
 
-	buildTimePolicies imageDetection.PolicySet
+	buildTimePolicies detection.PolicySet
+	testMatchBuilder  matcher.Builder
 	lifecycleManager  lifecycle.Manager
 	processor         notifierProcessor.Processor
 	metadataCache     expiringcache.Cache
@@ -247,7 +245,7 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *storage.Policy)
 	}
 
 	var resp v1.DryRunResponse
-	searchBasedMatcher, err := matcher.ForPolicy(request, mappings.OptionsMap, s.processes)
+	searchBasedMatcher, err := s.testMatchBuilder.ForPolicy(request)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("couldn't construct matcher: %s", err))
 	}

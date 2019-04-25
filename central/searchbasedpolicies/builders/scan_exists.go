@@ -27,7 +27,7 @@ func (s ScanExistsQueryBuilder) Query(fields *storage.PolicyFields, optionsMap m
 
 	q = search.NewQueryBuilder().AddNullField(search.ImageScanTime).ProtoQuery()
 
-	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) searchbasedpolicies.Violations {
+	v = func(result search.Result) searchbasedpolicies.Violations {
 		return searchbasedpolicies.Violations{AlertViolations: []*storage.Alert_Violation{{Message: "Image has not been scanned"}}}
 	}
 	return

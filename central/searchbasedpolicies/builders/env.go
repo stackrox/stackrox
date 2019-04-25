@@ -37,7 +37,7 @@ func (e EnvQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sear
 		[]search.FieldLabel{search.EnvironmentKey, search.EnvironmentValue},
 		[]string{keyQuery, valueQuery}).ProtoQuery()
 
-	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) searchbasedpolicies.Violations {
+	v = func(result search.Result) searchbasedpolicies.Violations {
 		keyMatches := result.Matches[keySearchField.GetFieldPath()]
 		valueMatches := result.Matches[valueSearchField.GetFieldPath()]
 		if len(keyMatches) == 0 || len(valueMatches) == 0 {

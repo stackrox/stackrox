@@ -1,12 +1,15 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/store/mocks"
+	matcherMocks "github.com/stackrox/rox/central/searchbasedpolicies/matcher/mocks"
+	sbpMocks "github.com/stackrox/rox/central/searchbasedpolicies/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -18,9 +21,10 @@ func TestPolicyValidator(t *testing.T) {
 
 type PolicyValidatorTestSuite struct {
 	suite.Suite
-	validator *policyValidator
-	nStorage  *notifierMocks.MockStore
-	cStorage  *clusterMocks.MockDataStore
+	validator      *policyValidator
+	nStorage       *notifierMocks.MockStore
+	cStorage       *clusterMocks.MockDataStore
+	matcherBuilder *matcherMocks.MockBuilder
 
 	mockCtrl *gomock.Controller
 }
@@ -29,7 +33,9 @@ func (suite *PolicyValidatorTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.nStorage = notifierMocks.NewMockStore(suite.mockCtrl)
 	suite.cStorage = clusterMocks.NewMockDataStore(suite.mockCtrl)
-	suite.validator = newPolicyValidator(suite.nStorage, suite.cStorage)
+	suite.matcherBuilder = matcherMocks.NewMockBuilder(suite.mockCtrl)
+
+	suite.validator = newPolicyValidator(suite.nStorage, suite.cStorage, suite.matcherBuilder, suite.matcherBuilder)
 }
 
 func (suite *PolicyValidatorTestSuite) TearDownTest() {
@@ -307,6 +313,12 @@ func (suite *PolicyValidatorTestSuite) TestValidateLifeCycle() {
 	for _, c := range testCases {
 		suite.T().Run(c.description, func(t *testing.T) {
 			c.p.Name = "BLAHBLAH"
+			if c.errExpected {
+				suite.matcherBuilder.EXPECT().ForPolicy(c.p).Return(nil, errors.New("fail to build matcher"))
+			} else {
+				suite.matcherBuilder.EXPECT().ForPolicy(c.p).Return(sbpMocks.NewMockMatcher(suite.mockCtrl), nil)
+			}
+
 			err := suite.validator.validateCompilableForLifecycle(c.p)
 			if c.errExpected {
 				assert.Error(t, err)

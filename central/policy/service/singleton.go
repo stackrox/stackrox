@@ -9,8 +9,8 @@ import (
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/policy/datastore"
-	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
+	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -25,9 +25,10 @@ func initialize() {
 		clusterDataStore.Singleton(),
 		deploymentDataStore.Singleton(),
 		notifierStore.Singleton(),
-		processIndicatorDataStore.Singleton(),
 		reprocessor.Singleton(),
 		buildTimeDetection.SingletonPolicySet(),
+		matcher.DeploymentBuilderSingleton(),
+		matcher.ImageBuilderSingleton(),
 		lifecycle.SingletonManager(),
 		notifierProcessor.Singleton(),
 		enrichment.ImageMetadataCacheSingleton(),

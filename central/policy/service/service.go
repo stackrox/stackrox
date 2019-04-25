@@ -3,13 +3,13 @@ package service
 import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	imageDetection "github.com/stackrox/rox/central/detection/image"
+	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/policy/datastore"
-	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
+	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -30,9 +30,10 @@ func New(policies datastore.DataStore,
 	clusters clusterDataStore.DataStore,
 	deployments deploymentDataStore.DataStore,
 	notifiers notifierStore.Store,
-	processes processIndicatorDataStore.DataStore,
 	reprocessor reprocessor.Loop,
-	buildTimePolicies imageDetection.PolicySet,
+	buildTimePolicies detection.PolicySet,
+	deploymentMatcherBuilder matcher.Builder,
+	imageMatcherBuilder matcher.Builder,
 	manager lifecycle.Manager,
 	processor notifierProcessor.Processor,
 	metadataCache expiringcache.Cache,
@@ -41,10 +42,10 @@ func New(policies datastore.DataStore,
 		policies:    policies,
 		clusters:    clusters,
 		deployments: deployments,
-		processes:   processes,
 		reprocessor: reprocessor,
 
 		buildTimePolicies: buildTimePolicies,
+		testMatchBuilder:  deploymentMatcherBuilder,
 		lifecycleManager:  manager,
 
 		processor: processor,
@@ -52,6 +53,6 @@ func New(policies datastore.DataStore,
 		metadataCache: metadataCache,
 		scanCache:     scanCache,
 
-		validator: newPolicyValidator(notifiers, clusters),
+		validator: newPolicyValidator(notifiers, clusters, deploymentMatcherBuilder, imageMatcherBuilder),
 	}
 }

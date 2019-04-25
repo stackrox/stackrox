@@ -15,6 +15,7 @@ import (
 
 // ProcessQueryBuilder builds queries for process name field.
 type ProcessQueryBuilder struct {
+	ProcessGetter searchbasedpolicies.ProcessIndicatorGetter
 }
 
 func allEmpty(strs ...string) bool {
@@ -96,19 +97,19 @@ func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[
 
 	q = search.NewQueryBuilder().AddLinkedFieldsWithHighlightValues(fieldLabels, queryStrings, highlights).ProtoQuery()
 
-	v = func(result search.Result, processGetter searchbasedpolicies.ProcessIndicatorGetter) searchbasedpolicies.Violations {
+	v = func(result search.Result) searchbasedpolicies.Violations {
 		matches := result.Matches[processIDSearchField.GetFieldPath()]
 		if len(result.Matches[processIDSearchField.GetFieldPath()]) == 0 {
 			log.Errorf("ID %s matched process query, but couldn't find the matching id", result.ID)
 			return searchbasedpolicies.Violations{}
 		}
-		if processGetter == nil {
+		if p.ProcessGetter == nil {
 			log.Errorf("Ran process policy %+v but had a nil process getter.", fields)
 			return searchbasedpolicies.Violations{}
 		}
 		processes := make([]*storage.ProcessIndicator, 0, len(matches))
 		for _, processID := range matches {
-			process, exists, err := processGetter.GetProcessIndicator(processID)
+			process, exists, err := p.ProcessGetter.GetProcessIndicator(processID)
 			if err != nil {
 				log.Errorf("Error retrieving process with id %s from store", processID)
 				continue

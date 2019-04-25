@@ -1,8 +1,9 @@
 package buildtime
 
 import (
-	"github.com/stackrox/rox/central/detection/image"
+	"github.com/stackrox/rox/central/detection"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
+	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -10,7 +11,7 @@ import (
 var (
 	once sync.Once
 
-	policySet image.PolicySet
+	policySet detection.PolicySet
 	detector  Detector
 )
 
@@ -21,13 +22,13 @@ func SingletonDetector() Detector {
 }
 
 // SingletonPolicySet returns the singleton instance of a PolicySet.
-func SingletonPolicySet() image.PolicySet {
+func SingletonPolicySet() detection.PolicySet {
 	once.Do(initialize)
 	return policySet
 }
 
 func initialize() {
-	policySet = image.NewPolicySet(policyDataStore.Singleton())
+	policySet = detection.NewPolicySet(policyDataStore.Singleton(), detection.NewPolicyCompiler(matcher.ImageBuilderSingleton()))
 	policies, err := policyDataStore.Singleton().GetPolicies()
 	if err != nil {
 		panic(err)

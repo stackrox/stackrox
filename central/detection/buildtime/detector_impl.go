@@ -1,14 +1,11 @@
 package buildtime
 
 import (
-	"strings"
-
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/detection/image"
+	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/image/index"
-	"github.com/stackrox/rox/central/searchbasedpolicies"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -20,21 +17,7 @@ const (
 )
 
 type detectorImpl struct {
-	policySet image.PolicySet
-}
-
-func matchesImageWhitelist(image string, whitelists []*storage.Whitelist) bool {
-	for _, w := range whitelists {
-		if w.GetImage() == nil {
-			continue
-		}
-		// The rationale for using a prefix is that it is the easiet way in the current format
-		// to support whitelisting registries, registry/remote, etc
-		if strings.HasPrefix(image, w.GetImage().GetName()) {
-			return true
-		}
-	}
-	return false
+	policySet detection.PolicySet
 }
 
 // Detect runs detection on an image, returning any generated alerts.
@@ -56,23 +39,23 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 	}
 
 	var alerts []*storage.Alert
-	err = d.policySet.ForEach(func(p *storage.Policy, matcher searchbasedpolicies.Matcher) error {
-		if p.GetDisabled() {
+	err = d.policySet.ForEach(detection.FunctionAsExecutor(func(compiled detection.CompiledPolicy) error {
+		if compiled.Policy().GetDisabled() {
 			return nil
 		}
-		if matchesImageWhitelist(image.GetName().GetFullName(), p.GetWhitelists()) {
+		if !compiled.AppliesTo(image) {
 			return nil
 		}
-		violations, err := matcher.MatchOne(tempIndexer, types.NewDigest(image.GetId()).Digest())
+		violations, err := compiled.Matcher().MatchOne(tempIndexer, types.NewDigest(image.GetId()).Digest())
 		if err != nil {
-			return errors.Wrapf(err, "matching against policy %s", p.GetName())
+			return errors.Wrapf(err, "matching against policy %s", compiled.Policy().GetName())
 		}
 		alertViolations := violations.AlertViolations
 		if len(alertViolations) > 0 {
-			alerts = append(alerts, policyAndViolationsToAlert(p, alertViolations))
+			alerts = append(alerts, policyAndViolationsToAlert(compiled.Policy(), alertViolations))
 		}
 		return nil
-	})
+	}))
 	if err != nil {
 		return nil, err
 	}

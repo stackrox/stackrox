@@ -4,7 +4,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-// Compiler is a function that takes in a policy and returns a prefdicte that returns TRUE if the policy should
+// Compiler is a function that takes in a policy and returns a predicate that returns TRUE if the policy should
 // be evaluated on the input.
 type compiler func(*storage.Policy) (Predicate, error)
 

@@ -86,7 +86,7 @@ func (r RegexQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[se
 		q = search.NewQueryBuilder().AddLinkedFieldsHighlighted(fieldLabels, fieldValues).ProtoQuery()
 	}
 
-	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) searchbasedpolicies.Violations {
+	v = func(result search.Result) searchbasedpolicies.Violations {
 		violations := searchbasedpolicies.Violations{}
 		for _, presentFieldValue := range presentFieldValues {
 			for _, match := range result.Matches[presentFieldValue.searchField.GetFieldPath()] {

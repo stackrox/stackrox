@@ -50,7 +50,7 @@ func getSearchFieldNotStored(fieldLabel search.FieldLabel, optionsMap map[search
 }
 
 func violationPrinterForField(fieldPath string, matchToMessage func(match string) string) searchbasedpolicies.ViolationPrinter {
-	return func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) searchbasedpolicies.Violations {
+	return func(result search.Result) searchbasedpolicies.Violations {
 		matches := result.Matches[fieldPath]
 		if len(matches) == 0 {
 			return searchbasedpolicies.Violations{}
@@ -82,10 +82,10 @@ func printKeyValuePolicy(kvp *storage.KeyValuePolicy) string {
 }
 
 func concatenatingPrinter(printers []searchbasedpolicies.ViolationPrinter) searchbasedpolicies.ViolationPrinter {
-	return func(result search.Result, getter searchbasedpolicies.ProcessIndicatorGetter) searchbasedpolicies.Violations {
+	return func(result search.Result) searchbasedpolicies.Violations {
 		concatenated := searchbasedpolicies.Violations{}
 		for _, p := range printers {
-			violation := p(result, getter)
+			violation := p(result)
 			// Only one process violation will be present.
 			if violation.ProcessViolation != nil {
 				concatenated.ProcessViolation = violation.ProcessViolation

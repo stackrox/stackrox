@@ -23,7 +23,7 @@ type Violations struct {
 }
 
 // A ViolationPrinter knows how to print violation messages from a search result.
-type ViolationPrinter func(search.Result, ProcessIndicatorGetter) Violations
+type ViolationPrinter func(search.Result) Violations
 
 // A ProcessIndicatorGetter knows how to retrieve process indicators given its id.
 type ProcessIndicatorGetter interface {
@@ -31,6 +31,7 @@ type ProcessIndicatorGetter interface {
 }
 
 // Matcher matches objects against a policy.
+//go:generate mockgen-wrapper Matcher
 type Matcher interface {
 	// Match matches the policy against all objects, returning a map from object ID to violations.
 	Match(searcher search.Searcher) (map[string]Violations, error)

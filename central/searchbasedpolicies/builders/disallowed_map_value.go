@@ -42,7 +42,7 @@ func (r DisallowedMapValueQueryBuilder) Query(fields *storage.PolicyFields, opti
 	}
 	q = search.NewQueryBuilder().AddMapQuery(r.FieldLabel, keyValuePolicy.GetKey(), valueQuery).ProtoQuery()
 
-	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) searchbasedpolicies.Violations {
+	v = func(result search.Result) searchbasedpolicies.Violations {
 		return searchbasedpolicies.Violations{
 			AlertViolations: []*storage.Alert_Violation{
 				{Message: fmt.Sprintf("Disallowed %s found (%s)", r.FieldName, printKeyValuePolicy(keyValuePolicy))},

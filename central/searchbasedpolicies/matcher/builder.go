@@ -11,8 +11,27 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// ForPolicy returns a matcher for the given policy.
-func ForPolicy(policy *storage.Policy, optionsMap search.OptionsMap, processGetter searchbasedpolicies.ProcessIndicatorGetter) (searchbasedpolicies.Matcher, error) {
+// Builder builds matchers.
+//go:generate mockgen-wrapper Builder
+type Builder interface {
+	ForPolicy(policy *storage.Policy) (searchbasedpolicies.Matcher, error)
+}
+
+// NewBuilder returns a new MatcherBuilder instance using the input registry.
+func NewBuilder(registry fields.Registry, optionsMap search.OptionsMap) Builder {
+	return &builderImpl{
+		registry:   registry,
+		optionsMap: optionsMap,
+	}
+}
+
+type builderImpl struct {
+	registry   fields.Registry
+	optionsMap search.OptionsMap
+}
+
+// ForPolicy returns a matcher for the given policy and options.
+func (mb *builderImpl) ForPolicy(policy *storage.Policy) (searchbasedpolicies.Matcher, error) {
 	if policy.GetName() == "" {
 		return nil, fmt.Errorf("policy %+v doesn't have a name", policy)
 	}
@@ -20,8 +39,8 @@ func ForPolicy(policy *storage.Policy, optionsMap search.OptionsMap, processGett
 		return nil, fmt.Errorf("policy %+v has no fields specified", policy)
 	}
 
-	qb := builders.NewConjunctionQueryBuilder(fields.Registry...)
-	q, v, err := qb.Query(policy.GetFields(), optionsMap.Original())
+	qb := builders.NewConjunctionQueryBuilder(mb.registry...)
+	q, v, err := qb.Query(policy.GetFields(), mb.optionsMap.Original())
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to construct matcher for policy %s: qb: %s", policy.GetName(), qb.Name())
 	}
@@ -35,6 +54,5 @@ func ForPolicy(policy *storage.Policy, optionsMap search.OptionsMap, processGett
 		q:                q,
 		violationPrinter: v,
 		policyName:       policy.GetName(),
-		processGetter:    processGetter,
 	}, nil
 }

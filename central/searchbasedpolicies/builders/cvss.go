@@ -48,7 +48,7 @@ func (c CVSSQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sea
 	}
 
 	q = search.NewQueryBuilder().AddLinkedFieldsHighlighted(linkedFields, linkedValues).ProtoQuery()
-	v = func(result search.Result, _ searchbasedpolicies.ProcessIndicatorGetter) searchbasedpolicies.Violations {
+	v = func(result search.Result) searchbasedpolicies.Violations {
 		cvssMatches := result.Matches[cvssSearchField.GetFieldPath()]
 		cveMatches := result.Matches[cveSearchField.GetFieldPath()]
 		fixedByMatches := result.Matches[cveFixedByField.GetFieldPath()]

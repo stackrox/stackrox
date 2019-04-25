@@ -10,16 +10,14 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/buildtime"
-	"github.com/stackrox/rox/central/detection/deployment"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/searchbasedpolicies"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/compiledpolicies/deployment/predicate"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -55,7 +53,7 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
-	policySet          deployment.PolicySet
+	policySet          detection.PolicySet
 	imageEnricher      enricher.ImageEnricher
 	deploymentEnricher enrichment.Enricher
 	buildTimeDetector  buildtime.Detector
@@ -250,13 +248,13 @@ func (s *serviceImpl) DetectDeployTime(ctx context.Context, req *apiV1.DeployDet
 	// If we have enforcement only, then check if any of the policies need enforcement. If not, then just exit with no alerts generated
 	if req.GetEnforcementOnly() {
 		var evaluationRequired bool
-		_ = s.policySet.ForEach(func(p *storage.Policy, _ searchbasedpolicies.Matcher, _ predicate.Predicate) error {
-			if isDeployTimeEnforcement(p.GetEnforcementActions()) {
+		_ = s.policySet.ForEach(detection.FunctionAsExecutor(func(compiled detection.CompiledPolicy) error {
+			if isDeployTimeEnforcement(compiled.Policy().GetEnforcementActions()) {
 				evaluationRequired = true
 				return errors.New("not a real error, just early exits this foreach")
 			}
 			return nil
-		})
+		}))
 		if !evaluationRequired {
 			return &apiV1.DeployDetectionResponse{
 				Runs: []*apiV1.DeployDetectionResponse_Run{

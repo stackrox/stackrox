@@ -8,8 +8,6 @@ import (
 	mapset "github.com/deckarep/golang-set"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	deploymentMappings "github.com/stackrox/rox/central/deployment/index/mappings"
-	imageMappings "github.com/stackrox/rox/central/image/index/mappings"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,19 +15,24 @@ import (
 	"github.com/stackrox/rox/pkg/policies"
 )
 
-func newPolicyValidator(notifierStorage notifierStore.Store, clusterStorage clusterDataStore.DataStore) *policyValidator {
+func newPolicyValidator(notifierStorage notifierStore.Store, clusterStorage clusterDataStore.DataStore, deploymentMatcherBuilder, imageMatcherBuilder matcher.Builder) *policyValidator {
 	return &policyValidator{
-		notifierStorage:      notifierStorage,
-		clusterStorage:       clusterStorage,
-		nameValidator:        regexp.MustCompile(`^[^\n\r\$]{5,64}$`),
-		descriptionValidator: regexp.MustCompile(`^[^\$]{1,256}$`),
+		notifierStorage:          notifierStorage,
+		clusterStorage:           clusterStorage,
+		deploymentMatcherBuilder: deploymentMatcherBuilder,
+		imageMatcherBuilder:      imageMatcherBuilder,
+		nameValidator:            regexp.MustCompile(`^[^\n\r\$]{5,64}$`),
+		descriptionValidator:     regexp.MustCompile(`^[^\$]{1,256}$`),
 	}
 }
 
 // policyValidator validates the incoming policy.
 type policyValidator struct {
-	notifierStorage      notifierStore.Store
-	clusterStorage       clusterDataStore.DataStore
+	notifierStorage          notifierStore.Store
+	clusterStorage           clusterDataStore.DataStore
+	deploymentMatcherBuilder matcher.Builder
+	imageMatcherBuilder      matcher.Builder
+
 	nameValidator        *regexp.Regexp
 	descriptionValidator *regexp.Regexp
 }
@@ -70,13 +73,13 @@ func (s *policyValidator) validateCompilableForLifecycle(policy *storage.Policy)
 
 	errorList := errorhelpers.NewErrorList("error validating lifecycle stage")
 	if policies.AppliesAtBuildTime(policy) {
-		errorList.AddError(compilesForBuildTime(policy))
+		errorList.AddError(s.compilesForBuildTime(policy))
 	}
 	if policies.AppliesAtDeployTime(policy) {
-		errorList.AddError(compilesForDeployTime(policy))
+		errorList.AddError(s.compilesForDeployTime(policy))
 	}
 	if policies.AppliesAtRunTime(policy) {
-		errorList.AddError(compilesForRunTime(policy))
+		errorList.AddError(s.compilesForRunTime(policy))
 	}
 	return errorList.ToError()
 }
@@ -216,8 +219,8 @@ func (s *policyValidator) validateScope(scope *storage.Scope) error {
 	return nil
 }
 
-func compilesForBuildTime(policy *storage.Policy) error {
-	m, err := matcher.ForPolicy(policy, imageMappings.OptionsMap, nil)
+func (s *policyValidator) compilesForBuildTime(policy *storage.Policy) error {
+	m, err := s.imageMatcherBuilder.ForPolicy(policy)
 	if err != nil {
 		return errors.Wrap(err, "policy configuration is invalid for build time")
 	}
@@ -227,8 +230,8 @@ func compilesForBuildTime(policy *storage.Policy) error {
 	return nil
 }
 
-func compilesForDeployTime(policy *storage.Policy) error {
-	m, err := matcher.ForPolicy(policy, deploymentMappings.OptionsMap, nil)
+func (s *policyValidator) compilesForDeployTime(policy *storage.Policy) error {
+	m, err := s.deploymentMatcherBuilder.ForPolicy(policy)
 	if err != nil {
 		return errors.Wrap(err, "policy configuration is invalid for deploy time")
 	}
@@ -241,8 +244,8 @@ func compilesForDeployTime(policy *storage.Policy) error {
 	return nil
 }
 
-func compilesForRunTime(policy *storage.Policy) error {
-	m, err := matcher.ForPolicy(policy, deploymentMappings.OptionsMap, nil)
+func (s *policyValidator) compilesForRunTime(policy *storage.Policy) error {
+	m, err := s.deploymentMatcherBuilder.ForPolicy(policy)
 	if err != nil {
 		return errors.Wrap(err, "policy configuration is invalid for run time")
 	}

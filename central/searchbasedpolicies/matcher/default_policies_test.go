@@ -14,12 +14,12 @@ import (
 	deploymentMappings "github.com/stackrox/rox/central/deployment/index/mappings"
 	"github.com/stackrox/rox/central/globalindex"
 	imageIndex "github.com/stackrox/rox/central/image/index"
-	imageMappings "github.com/stackrox/rox/central/image/index/mappings"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	processIndicatorIndex "github.com/stackrox/rox/central/processindicator/index"
 	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/store"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
+	"github.com/stackrox/rox/central/searchbasedpolicies/fields"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/image/policies"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -56,6 +56,7 @@ type DefaultPoliciesTestSuite struct {
 	deploymentIndexer deploymentIndex.Indexer
 	imageIndexer      imageIndex.Indexer
 	processDataStore  processIndicatorDataStore.DataStore
+	matcherBuilder    Builder
 
 	defaultPolicies map[string]*storage.Policy
 }
@@ -75,6 +76,7 @@ func (suite *DefaultPoliciesTestSuite) SetupTest() {
 	processSearcher, err := processIndicatorSearch.New(processStore, processIndexer)
 	suite.Require().NoError(err)
 	suite.processDataStore = processIndicatorDataStore.New(processStore, processIndexer, processSearcher, nil)
+	suite.matcherBuilder = NewBuilder(fields.NewRegistry(suite.processDataStore), deploymentMappings.OptionsMap)
 
 	defaults.PoliciesPath = policies.Directory()
 
@@ -946,7 +948,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	for _, c := range deploymentTestCases {
 		p := suite.MustGetPolicy(c.policyName)
 		suite.T().Run(fmt.Sprintf("%s (on deployments)", c.policyName), func(t *testing.T) {
-			m, err := ForPolicy(p, deploymentMappings.OptionsMap, suite.processDataStore)
+			m, err := suite.matcherBuilder.ForPolicy(p)
 			require.NoError(t, err)
 			matches, err := m.Match(suite.deploymentIndexer)
 			require.NoError(t, err)
@@ -1218,7 +1220,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	for _, c := range imageTestCases {
 		p := suite.MustGetPolicy(c.policyName)
 		suite.T().Run(fmt.Sprintf("%s (on images)", c.policyName), func(t *testing.T) {
-			m, err := ForPolicy(p, imageMappings.OptionsMap, nil)
+			m, err := suite.matcherBuilder.ForPolicy(p)
 			require.NoError(t, err)
 			matches, err := m.Match(suite.imageIndexer)
 			require.NoError(t, err)
