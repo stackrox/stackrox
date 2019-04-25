@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/license"
@@ -16,6 +17,12 @@ var (
 const (
 	// LicenseUsage provides usage information for license flags defined by the struct in this package.
 	LicenseUsage = "license data or filename (default: none, - to read stdin)"
+
+	// minSignatureBytes is the minimum number of bytes for the base64-decoded part right of the dot
+	// in a license key or filename string in order for us to assume it actually is a license key.
+	// We use ECDSA256/384 signing keys, so the minimum length for a DER-encoded signature is actually
+	// 72 bytes, but 32 bytes should be more than enough to distinguish it from file names.
+	minSignatureBytes = 32
 )
 
 // LicenseVar represents a set-table variable for the license file.
@@ -37,8 +44,8 @@ func (v LicenseVar) String() string {
 }
 
 func isValidLicense(val string) bool {
-	_, _, err := license.ParseLicenseKey(val)
-	return err == nil
+	_, sig, err := license.ParseLicenseKey(val)
+	return err == nil && len(sig) >= minSignatureBytes
 }
 
 func readLicenseFromStdin() ([]byte, error) {
@@ -70,21 +77,24 @@ func (v *LicenseVar) Set(val string) error {
 	var err error
 	if isValidLicense(val) {
 		data = []byte(val)
-	} else if val == "-" {
-		data, err = readLicenseFromStdin()
-		if err != nil {
-			return err
-		}
 	} else {
-		data, err = tryReadLicenseFromFile(val)
-		if err != nil {
-			return err
+		// An `@` character (which is not a valid base64 encoded character) may be used to circumvent
+		// autodetection and mark the argument as a file name (or stdin reference).
+		val = strings.TrimPrefix(val, "@")
+		if val == "-" {
+			data, err = readLicenseFromStdin()
+		} else {
+			data, err = tryReadLicenseFromFile(val)
 		}
 	}
 
+	if err != nil {
+		return err
+	}
 	if data == nil {
 		return errInvalidLicense
 	}
+
 	*v.Data = data
 	return nil
 }
