@@ -41,7 +41,7 @@ class Wizard extends Component {
                 header={header}
                 buttons={<Buttons />}
                 onClose={this.onClose}
-                className="w-1/2 bg-primary-200"
+                className="bg-primary-200 w-1/2"
             >
                 <div className="bg-primary-100 w-full">
                     <div className="h-full bg-base-200">

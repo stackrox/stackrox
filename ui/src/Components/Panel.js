@@ -3,13 +3,13 @@ import PropTypes from 'prop-types';
 import 'rc-tooltip/assets/bootstrap.css';
 import CloseButton from './CloseButton';
 
-export const headerClassName = 'flex w-full h-12 word-break';
+export const headerClassName = 'flex w-full word-break';
 
 const Panel = props => {
     const titleClassName = props.isUpperCase ? 'uppercase' : 'capitalize';
     const headerText = (
         <div
-            className={`flex flex-1 text-base-600 items-center tracking-wide pl-4 pt-1 leading-normal font-700 ${titleClassName}`}
+            className={`m-1 flex flex-1 text-base-600 items-center tracking-wide leading-normal font-700 lg:ml-2 lg:mr-2 ${titleClassName}`}
             data-test-id="panel-header"
         >
             {props.header}
@@ -27,10 +27,14 @@ const Panel = props => {
                             {props.leftButtons}
                         </div>
                     )}
-                    {props.headerTextComponent ? props.headerTextComponent : headerText}
-                    <div className="panel-actions relative flex items-center mr-2">
-                        {props.buttons}
+
+                    <div className="mr-2 ml-2 mb-1 lg:ml-0 lg:mr-0 lg:mb-0 lg:flex pt-1 justify-center flex-grow">
+                        {props.headerTextComponent ? props.headerTextComponent : headerText}
+                        <div className="panel-actions relative flex items-center">
+                            {props.buttons}
+                        </div>
                     </div>
+
                     {props.headerComponents && (
                         <div className="flex items-center pr-3 relative">
                             {props.headerComponents}
