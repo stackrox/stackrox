@@ -5,6 +5,7 @@ import (
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
+	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -75,6 +76,8 @@ func addWhitelist(id []byte, whitelist *storage.ProcessWhitelist, tx *bolt.Tx) e
 	if exists := bolthelper.ExistsBytes(bucket, id); exists {
 		return errors.New(fmt.Sprintf("whitelist %s already exists", string(id)))
 	}
+	whitelist.Created = types.TimestampNow()
+	whitelist.LastUpdate = whitelist.GetCreated()
 	return storeWhitelist(id, whitelist, bucket)
 }
 
@@ -92,6 +95,7 @@ func updateWhitelist(id []byte, whitelist *storage.ProcessWhitelist, tx *bolt.Tx
 	if exists := bolthelper.ExistsBytes(bucket, id); !exists {
 		return fmt.Errorf("updating non-existent whitelist: %s", string(id))
 	}
+	whitelist.LastUpdate = types.TimestampNow()
 	return storeWhitelist(id, whitelist, bucket)
 }
 

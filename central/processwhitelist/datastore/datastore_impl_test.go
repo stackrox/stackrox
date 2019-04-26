@@ -127,7 +127,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestLockAndUnlockWhitelist() {
 	suite.Nil(updatedWhitelist.GetUserLockedTimestamp())
 	gotWhitelist, err = suite.datastore.GetProcessWhitelist(key)
 	suite.NoError(err)
-	suite.Equal(whitelist, gotWhitelist)
+	suite.Equal(updatedWhitelist, gotWhitelist)
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) TestRoxLockAndUnlockWhitelist() {
@@ -146,7 +146,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestRoxLockAndUnlockWhitelist()
 	suite.Nil(updatedWhitelist.GetStackRoxLockedTimestamp())
 	gotWhitelist, err = suite.datastore.GetProcessWhitelist(key)
 	suite.NoError(err)
-	suite.Equal(whitelist, gotWhitelist)
+	suite.Equal(updatedWhitelist, gotWhitelist)
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) TestChangeAutoToManual() {

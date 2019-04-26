@@ -48,6 +48,8 @@ func (suite *ProcessWhitelistStoreTestSuite) createAndStore() *storage.ProcessWh
 	suite.NotNil(whitelist)
 	err := suite.store.AddWhitelist(whitelist)
 	suite.NoError(err)
+	suite.NotNil(whitelist.Created)
+	suite.Equal(whitelist.GetCreated(), whitelist.GetLastUpdate())
 	return whitelist
 }
 
@@ -76,6 +78,8 @@ func (suite *ProcessWhitelistStoreTestSuite) TestUpdateWhitelist() {
 	whitelist.Elements = []*storage.WhitelistElement{fixtures.GetWhitelistElement("JosephRules")}
 	err := suite.store.UpdateWhitelist(whitelist)
 	suite.NoError(err)
+	// Last update time should have been set but if the test runs fast enough it won't change.
+	suite.True(whitelist.GetLastUpdate().Compare(whitelist.GetCreated()) >= 0)
 
 	suite.getAndCompare(whitelist)
 }
