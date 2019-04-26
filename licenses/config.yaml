@@ -3,7 +3,7 @@ generators:
   key:
     keyResourceId: "projects/stackrox-dev/locations/global/keyRings/licensing-qa/cryptoKeys/qa-license-signer/cryptoKeyVersions/1"
   limit:
-    maxDuration: 1209600000000000
+    maxDuration: 1382400000000000
     allowOffline: true
     allowNoNodeLimit: true
     allowNoBuildFlavorRestriction: true

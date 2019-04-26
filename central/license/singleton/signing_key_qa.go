@@ -24,9 +24,9 @@ func init() {
 				0xbe, 0x82, 0xbe, 0x67, 0xab, 0xc0, 0xbd,
 			},
 			validator.SigningKeyRestrictions{
-				EarliestNotValidBefore:        buildinfo.BuildTimestamp(),
+				EarliestNotValidBefore:        buildinfo.BuildTimestamp().Add(-7 * 24 * time.Hour),
 				LatestNotValidAfter:           buildinfo.BuildTimestamp().Add(30 * 24 * time.Hour),
-				MaxDuration:                   15 * 24 * time.Hour,
+				MaxDuration:                   16 * 24 * time.Hour,
 				AllowOffline:                  true,
 				AllowNoNodeLimit:              true,
 				AllowNoBuildFlavorRestriction: true,
