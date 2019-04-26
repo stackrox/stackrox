@@ -14,6 +14,7 @@ import (
 // proto definition for an explanation of the individual fields.
 type SigningKeyRestrictions struct {
 	EarliestNotValidBefore time.Time
+	LatestNotValidBefore   time.Time
 	LatestNotValidAfter    time.Time
 
 	MaxDuration time.Duration
@@ -48,6 +49,11 @@ func (r *SigningKeyRestrictions) Check(licenseRestrictions *licenseproto.License
 	if !r.EarliestNotValidBefore.IsZero() {
 		if notValidBefore.Before(r.EarliestNotValidBefore) {
 			errs.AddStringf("license NotValidBefore of %v is earlier than earliest allowed NotValidBefore %v of signing key", notValidBefore, r.EarliestNotValidBefore)
+		}
+	}
+	if !r.LatestNotValidBefore.IsZero() {
+		if notValidBefore.After(r.LatestNotValidBefore) {
+			errs.AddStringf("license NotValidBefore of %v is later than latest allowed NotValidBefore %v of signing key", notValidBefore, r.LatestNotValidBefore)
 		}
 	}
 	if !r.LatestNotValidAfter.IsZero() {

@@ -57,6 +57,17 @@ func (s *signingKeyRestrictionsTestSuite) TestViolateNotValidBefore() {
 	s.NoError(s.keyRestrictions.Check(s.licenseRestrictions))
 }
 
+func (s *signingKeyRestrictionsTestSuite) TestViolateLatestNotValidBefore() {
+	s.keyRestrictions.LatestNotValidBefore = time.Date(2018, 5, 13, 0, 0, 0, 0, time.UTC)
+	s.licenseRestrictions.NotValidBefore.Seconds += 11 * 86400
+	s.licenseRestrictions.NotValidAfter.Seconds += 11 * 86400
+
+	s.Error(s.keyRestrictions.Check(s.licenseRestrictions))
+
+	s.keyRestrictions.LatestNotValidBefore = time.Time{}
+	s.NoError(s.keyRestrictions.Check(s.licenseRestrictions))
+}
+
 func (s *signingKeyRestrictionsTestSuite) TestViolateNotValidAfter() {
 	s.licenseRestrictions.NotValidBefore.Seconds += 365 * 86400
 	s.licenseRestrictions.NotValidAfter.Seconds += 365 * 86400

@@ -26,12 +26,14 @@ func init() {
 				0x51, 0x34, 0x8a, 0x70, 0xbf, 0x18, 0x0a, 0xb7, 0xf3, 0x4b, 0x6e, 0xff,
 			},
 			validator.SigningKeyRestrictions{
-				EarliestNotValidBefore:                  timeutil.MustParse(time.RFC3339, "2019-04-17T00:00:00Z"),
-				LatestNotValidAfter:                     timeutil.MustParse(time.RFC3339, "2021-04-30T00:00:00Z"),
-				MaxDuration:                             370 * 24 * time.Hour,
+				EarliestNotValidBefore: timeutil.MustParse(time.RFC3339, "2018-05-01T00:00:00Z"),
+				LatestNotValidBefore:   timeutil.MustParse(time.RFC3339, "2020-04-30T00:00:00Z"),
+				LatestNotValidAfter:    timeutil.MustParse(time.RFC3339, "2023-04-30T00:00:00Z"),
+				// Max license duration is 3 years, add 10 days as leeway to cover leap years or general imprecision etc.
+				MaxDuration:                             (3*365 + 10) * 24 * time.Hour,
 				AllowOffline:                            true,
 				AllowNoNodeLimit:                        true,
-				BuildFlavors:                            []string{"release"},
+				AllowNoBuildFlavorRestriction:           true,
 				AllowNoDeploymentEnvironmentRestriction: true,
 			}),
 	)

@@ -46,3 +46,14 @@ generators:
       - gcp/ultra-current-825
       - azure/66c57ff5-f49f-4510-ae04-e26d3ad2ee63
       - aws/051999192406
+- name: prod
+  key:
+    keyResourceId: "projects/stackrox-licensing/locations/global/keyRings/production-key-ring/cryptoKeys/production-key/cryptoKeyVersions/1"
+  limit:
+    earliestNotValidBefore: "2018-05-01T00:00:00Z"
+    latestNotValidAfter: "2023-04-30T00:00:00Z"
+    allowOffline: true
+    maxDuration: 94780800000000000
+    allowNoNodeLimit: true
+    allowNoBuildFlavorRestriction: true
+    allowNoDeploymentEnvironmentRestriction: true
