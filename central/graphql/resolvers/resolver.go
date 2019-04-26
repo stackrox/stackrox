@@ -27,6 +27,8 @@ import (
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
+	k8sroleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
+	k8srolebindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	roleStore "github.com/stackrox/rox/central/role/store"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
@@ -57,6 +59,8 @@ type Resolver struct {
 	NotifierStore               notifierStore.Store
 	PolicyDataStore             policyDatastore.DataStore
 	ProcessIndicatorStore       processIndicatorStore.DataStore
+	K8sRoleStore                k8sroleStore.DataStore
+	K8sRoleBindingStore         k8srolebindingStore.DataStore
 	RoleStore                   roleStore.Store
 	SecretsDataStore            secretDataStore.DataStore
 	ServiceAccountsDataStore    serviceAccountDataStore.DataStore
@@ -84,6 +88,8 @@ func New() *Resolver {
 		NotifierStore:               notifierStore.Singleton(),
 		PolicyDataStore:             policyDatastore.Singleton(),
 		ProcessIndicatorStore:       processIndicatorStore.Singleton(),
+		K8sRoleStore:                k8sroleStore.Singleton(),
+		K8sRoleBindingStore:         k8srolebindingStore.Singleton(),
 		RoleStore:                   roleStore.Singleton(),
 		SecretsDataStore:            secretDataStore.Singleton(),
 		ServiceAccountsDataStore:    serviceAccountDataStore.Singleton(),
@@ -108,6 +114,9 @@ var (
 	readNodes                  = readAuth(resources.Node)
 	readNotifiers              = readAuth(resources.Notifier)
 	readPolicies               = readAuth(resources.Policy)
+	readK8sRoles               = readAuth(resources.K8sRole)
+	readK8sRoleBindings        = readAuth(resources.K8sRoleBinding)
+	readK8sSubjects            = readAuth(resources.K8sSubject)
 	readRoles                  = readAuth(resources.Role)
 	readSecrets                = readAuth(resources.Secret)
 	readServiceAccounts        = readAuth(resources.ServiceAccount)

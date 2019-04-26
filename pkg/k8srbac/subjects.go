@@ -19,3 +19,19 @@ func GetSubjectForDeployment(deployment *storage.Deployment) *storage.Subject {
 		Namespace: deployment.GetNamespace(),
 	}
 }
+
+// GetAllSubjects get the subjects of the specified types in the referenced in a set of bindings.
+func GetAllSubjects(bindings []*storage.K8SRoleBinding, kinds ...storage.SubjectKind) []*storage.Subject {
+	subjectsSet := NewSubjectSet()
+	for _, binding := range bindings {
+		for _, subject := range binding.GetSubjects() {
+			for _, kind := range kinds {
+				if subject.GetKind() == kind {
+					subjectsSet.Add(subject)
+					break
+				}
+			}
+		}
+	}
+	return subjectsSet.ToSlice()
+}

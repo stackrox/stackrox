@@ -385,6 +385,31 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"url: String!",
 		"username: String!",
 	}))
+	utils.Must(builder.AddType("K8SRole", []string{
+		"annotations: [Label!]!",
+		"clusterId: String!",
+		"clusterName: String!",
+		"clusterRole: Boolean!",
+		"createdAt: Time",
+		"id: ID!",
+		"labels: [Label!]!",
+		"name: String!",
+		"namespace: String!",
+		"rules: [PolicyRule]!",
+	}))
+	utils.Must(builder.AddType("K8SRoleBinding", []string{
+		"annotations: [Label!]!",
+		"clusterId: String!",
+		"clusterName: String!",
+		"clusterRole: Boolean!",
+		"createdAt: Time",
+		"id: ID!",
+		"labels: [Label!]!",
+		"name: String!",
+		"namespace: String!",
+		"roleId: String!",
+		"subjects: [Subject]!",
+	}))
 	utils.Must(builder.AddType("KeyValuePair", []string{
 		"key: String!",
 		"value: String!",
@@ -538,6 +563,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"requiredLabel: KeyValuePolicy",
 		"user: String!",
 		"volumePolicy: VolumePolicy",
+	}))
+	utils.Must(builder.AddType("PolicyRule", []string{
+		"apiGroups: [String!]!",
+		"nonResourceUrls: [String!]!",
+		"resourceNames: [String!]!",
+		"resources: [String!]!",
+		"verbs: [String!]!",
 	}))
 	utils.Must(builder.AddType("PortConfig", []string{
 		"containerPort: Int!",
@@ -705,6 +737,19 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"type: String!",
 		"user: String!",
 	}))
+	utils.Must(builder.AddType("ServiceAccount", []string{
+		"annotations: [Label!]!",
+		"automountToken: Boolean!",
+		"clusterId: String!",
+		"clusterName: String!",
+		"createdAt: Time",
+		"id: ID!",
+		"imagePullSecrets: [String!]!",
+		"labels: [Label!]!",
+		"name: String!",
+		"namespace: String!",
+		"secrets: [String!]!",
+	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Severity(0)))
 	utils.Must(builder.AddType("Splunk", []string{
 		"auditLoggingEnabled: Boolean!",
@@ -713,6 +758,12 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"insecure: Boolean!",
 		"truncate: Int!",
 	}))
+	utils.Must(builder.AddType("Subject", []string{
+		"kind: SubjectKind!",
+		"name: String!",
+		"namespace: String!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.SubjectKind(0)))
 	utils.Must(builder.AddType("Taint", []string{
 		"key: String!",
 		"taintEffect: TaintEffect!",
@@ -3649,6 +3700,157 @@ func (resolver *jiraResolver) Username() string {
 	return value
 }
 
+type k8SRoleResolver struct {
+	root *Resolver
+	data *storage.K8SRole
+}
+
+func (resolver *Resolver) wrapK8SRole(value *storage.K8SRole, ok bool, err error) (*k8SRoleResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &k8SRoleResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapK8SRoles(values []*storage.K8SRole, err error) ([]*k8SRoleResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*k8SRoleResolver, len(values))
+	for i, v := range values {
+		output[i] = &k8SRoleResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *k8SRoleResolver) Annotations() labels {
+	value := resolver.data.GetAnnotations()
+	return labelsResolver(value)
+}
+
+func (resolver *k8SRoleResolver) ClusterId() string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *k8SRoleResolver) ClusterName() string {
+	value := resolver.data.GetClusterName()
+	return value
+}
+
+func (resolver *k8SRoleResolver) ClusterRole() bool {
+	value := resolver.data.GetClusterRole()
+	return value
+}
+
+func (resolver *k8SRoleResolver) CreatedAt() (*graphql.Time, error) {
+	value := resolver.data.GetCreatedAt()
+	return timestamp(value)
+}
+
+func (resolver *k8SRoleResolver) Id() graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *k8SRoleResolver) Labels() labels {
+	value := resolver.data.GetLabels()
+	return labelsResolver(value)
+}
+
+func (resolver *k8SRoleResolver) Name() string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *k8SRoleResolver) Namespace() string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *k8SRoleResolver) Rules() ([]*policyRuleResolver, error) {
+	value := resolver.data.GetRules()
+	return resolver.root.wrapPolicyRules(value, nil)
+}
+
+type k8SRoleBindingResolver struct {
+	root *Resolver
+	data *storage.K8SRoleBinding
+}
+
+func (resolver *Resolver) wrapK8SRoleBinding(value *storage.K8SRoleBinding, ok bool, err error) (*k8SRoleBindingResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &k8SRoleBindingResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapK8SRoleBindings(values []*storage.K8SRoleBinding, err error) ([]*k8SRoleBindingResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*k8SRoleBindingResolver, len(values))
+	for i, v := range values {
+		output[i] = &k8SRoleBindingResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *k8SRoleBindingResolver) Annotations() labels {
+	value := resolver.data.GetAnnotations()
+	return labelsResolver(value)
+}
+
+func (resolver *k8SRoleBindingResolver) ClusterId() string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *k8SRoleBindingResolver) ClusterName() string {
+	value := resolver.data.GetClusterName()
+	return value
+}
+
+func (resolver *k8SRoleBindingResolver) ClusterRole() bool {
+	value := resolver.data.GetClusterRole()
+	return value
+}
+
+func (resolver *k8SRoleBindingResolver) CreatedAt() (*graphql.Time, error) {
+	value := resolver.data.GetCreatedAt()
+	return timestamp(value)
+}
+
+func (resolver *k8SRoleBindingResolver) Id() graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *k8SRoleBindingResolver) Labels() labels {
+	value := resolver.data.GetLabels()
+	return labelsResolver(value)
+}
+
+func (resolver *k8SRoleBindingResolver) Name() string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *k8SRoleBindingResolver) Namespace() string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *k8SRoleBindingResolver) RoleId() string {
+	value := resolver.data.GetRoleId()
+	return value
+}
+
+func (resolver *k8SRoleBindingResolver) Subjects() ([]*subjectResolver, error) {
+	value := resolver.data.GetSubjects()
+	return resolver.root.wrapSubjects(value, nil)
+}
+
 type keyValuePairResolver struct {
 	root *Resolver
 	data *storage.KeyValuePair
@@ -4736,6 +4938,54 @@ func (resolver *policyFieldsResolver) User() string {
 func (resolver *policyFieldsResolver) VolumePolicy() (*volumePolicyResolver, error) {
 	value := resolver.data.GetVolumePolicy()
 	return resolver.root.wrapVolumePolicy(value, true, nil)
+}
+
+type policyRuleResolver struct {
+	root *Resolver
+	data *storage.PolicyRule
+}
+
+func (resolver *Resolver) wrapPolicyRule(value *storage.PolicyRule, ok bool, err error) (*policyRuleResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &policyRuleResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapPolicyRules(values []*storage.PolicyRule, err error) ([]*policyRuleResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*policyRuleResolver, len(values))
+	for i, v := range values {
+		output[i] = &policyRuleResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *policyRuleResolver) ApiGroups() []string {
+	value := resolver.data.GetApiGroups()
+	return value
+}
+
+func (resolver *policyRuleResolver) NonResourceUrls() []string {
+	value := resolver.data.GetNonResourceUrls()
+	return value
+}
+
+func (resolver *policyRuleResolver) ResourceNames() []string {
+	value := resolver.data.GetResourceNames()
+	return value
+}
+
+func (resolver *policyRuleResolver) Resources() []string {
+	value := resolver.data.GetResources()
+	return value
+}
+
+func (resolver *policyRuleResolver) Verbs() []string {
+	value := resolver.data.GetVerbs()
+	return value
 }
 
 type portConfigResolver struct {
@@ -5982,6 +6232,84 @@ func (resolver *securityContext_SELinuxResolver) User() string {
 	return value
 }
 
+type serviceAccountResolver struct {
+	root *Resolver
+	data *storage.ServiceAccount
+}
+
+func (resolver *Resolver) wrapServiceAccount(value *storage.ServiceAccount, ok bool, err error) (*serviceAccountResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &serviceAccountResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapServiceAccounts(values []*storage.ServiceAccount, err error) ([]*serviceAccountResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*serviceAccountResolver, len(values))
+	for i, v := range values {
+		output[i] = &serviceAccountResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *serviceAccountResolver) Annotations() labels {
+	value := resolver.data.GetAnnotations()
+	return labelsResolver(value)
+}
+
+func (resolver *serviceAccountResolver) AutomountToken() bool {
+	value := resolver.data.GetAutomountToken()
+	return value
+}
+
+func (resolver *serviceAccountResolver) ClusterId() string {
+	value := resolver.data.GetClusterId()
+	return value
+}
+
+func (resolver *serviceAccountResolver) ClusterName() string {
+	value := resolver.data.GetClusterName()
+	return value
+}
+
+func (resolver *serviceAccountResolver) CreatedAt() (*graphql.Time, error) {
+	value := resolver.data.GetCreatedAt()
+	return timestamp(value)
+}
+
+func (resolver *serviceAccountResolver) Id() graphql.ID {
+	value := resolver.data.GetId()
+	return graphql.ID(value)
+}
+
+func (resolver *serviceAccountResolver) ImagePullSecrets() []string {
+	value := resolver.data.GetImagePullSecrets()
+	return value
+}
+
+func (resolver *serviceAccountResolver) Labels() labels {
+	value := resolver.data.GetLabels()
+	return labelsResolver(value)
+}
+
+func (resolver *serviceAccountResolver) Name() string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *serviceAccountResolver) Namespace() string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func (resolver *serviceAccountResolver) Secrets() []string {
+	value := resolver.data.GetSecrets()
+	return value
+}
+
 func toSeverity(value *string) storage.Severity {
 	if value != nil {
 		return storage.Severity(storage.Severity_value[*value])
@@ -6046,6 +6374,62 @@ func (resolver *splunkResolver) Insecure() bool {
 func (resolver *splunkResolver) Truncate() int32 {
 	value := resolver.data.GetTruncate()
 	return int32(value)
+}
+
+type subjectResolver struct {
+	root *Resolver
+	data *storage.Subject
+}
+
+func (resolver *Resolver) wrapSubject(value *storage.Subject, ok bool, err error) (*subjectResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &subjectResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapSubjects(values []*storage.Subject, err error) ([]*subjectResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*subjectResolver, len(values))
+	for i, v := range values {
+		output[i] = &subjectResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *subjectResolver) Kind() string {
+	value := resolver.data.GetKind()
+	return value.String()
+}
+
+func (resolver *subjectResolver) Name() string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *subjectResolver) Namespace() string {
+	value := resolver.data.GetNamespace()
+	return value
+}
+
+func toSubjectKind(value *string) storage.SubjectKind {
+	if value != nil {
+		return storage.SubjectKind(storage.SubjectKind_value[*value])
+	}
+	return storage.SubjectKind(0)
+}
+
+func toSubjectKinds(values *[]string) []storage.SubjectKind {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.SubjectKind, len(*values))
+	for i, v := range *values {
+		output[i] = toSubjectKind(&v)
+	}
+	return output
 }
 
 type taintResolver struct {

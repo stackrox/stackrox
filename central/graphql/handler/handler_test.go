@@ -16,6 +16,8 @@ import (
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	processMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
+	k8sroleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
+	k8srolebindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,10 +31,12 @@ var (
 )
 
 type mocks struct {
-	cluster    *clusterMocks.MockDataStore
-	deployment *deploymentMocks.MockDataStore
-	process    *processMocks.MockDataStore
-	resolver   *resolvers.Resolver
+	cluster        *clusterMocks.MockDataStore
+	deployment     *deploymentMocks.MockDataStore
+	process        *processMocks.MockDataStore
+	k8srole        *k8sroleMocks.MockDataStore
+	k8srolebinding *k8srolebindingMocks.MockDataStore
+	resolver       *resolvers.Resolver
 }
 
 func mockResolver(t *testing.T) mocks {
@@ -40,18 +44,24 @@ func mockResolver(t *testing.T) mocks {
 	cluster := clusterMocks.NewMockDataStore(ctrl)
 	deployment := deploymentMocks.NewMockDataStore(ctrl)
 	process := processMocks.NewMockDataStore(ctrl)
+	k8srole := k8sroleMocks.NewMockDataStore(ctrl)
+	k8srolebinding := k8srolebindingMocks.NewMockDataStore(ctrl)
 
 	resolver := &resolvers.Resolver{
 		ClusterDataStore:      cluster,
 		DeploymentDataStore:   deployment,
 		ProcessIndicatorStore: process,
+		K8sRoleBindingStore:   k8srolebinding,
+		K8sRoleStore:          k8srole,
 	}
 
 	return mocks{
-		cluster:    cluster,
-		deployment: deployment,
-		resolver:   resolver,
-		process:    process,
+		cluster:        cluster,
+		deployment:     deployment,
+		resolver:       resolver,
+		process:        process,
+		k8srole:        k8srole,
+		k8srolebinding: k8srolebinding,
 	}
 }
 

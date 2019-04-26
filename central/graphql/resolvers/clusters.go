@@ -23,6 +23,8 @@ func init() {
 		schema.AddExtraResolver("Cluster", `namespaces: [Namespace!]!`),
 		schema.AddExtraResolver("Cluster", `namespace(name: String!): Namespace`),
 		schema.AddExtraResolver("Cluster", "complianceResults: [ControlResult!]!"),
+		schema.AddExtraResolver("Cluster", `k8sroles: [K8SRole!]!`),
+		schema.AddExtraResolver("Cluster", `k8srole(role: ID!): K8SRole`),
 	)
 }
 
@@ -118,4 +120,36 @@ func (resolver *clusterResolver) ComplianceResults(ctx context.Context) ([]*cont
 	output.addDeploymentData(resolver.root, data, nil)
 	output.addNodeData(resolver.root, data, nil)
 	return *output, nil
+}
+
+// K8sRoles returns GraphQL resolvers for all k8s roles
+func (resolver *clusterResolver) K8sRoles(ctx context.Context) ([]*k8SRoleResolver, error) {
+	if err := readK8sRoles(ctx); err != nil {
+		return nil, err
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+	return resolver.root.wrapK8SRoles(resolver.root.K8sRoleStore.SearchRawRoles(q))
+}
+
+// K8sRole returns clusterResolver GraphQL resolver for a given k8s role
+func (resolver *clusterResolver) K8sRole(ctx context.Context, args struct{ Role graphql.ID }) (*k8SRoleResolver, error) {
+	if err := readK8sRoles(ctx); err != nil {
+		return nil, err
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).
+		AddExactMatches(search.RoleID, string(args.Role)).ProtoQuery()
+
+	roles, err := resolver.root.K8sRoleStore.SearchRawRoles(q)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(roles) == 0 {
+		return nil, nil
+	}
+
+	return resolver.root.wrapK8SRole(roles[0], true, nil)
 }

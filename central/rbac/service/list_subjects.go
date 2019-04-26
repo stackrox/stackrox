@@ -43,7 +43,7 @@ func listSubjects(rawQuery *v1.RawQuery, roles []*storage.K8SRole, bindings []*s
 
 // Filter subjects referenced in a set of bindings with a raw search query.
 func getFilteredSubjects(rawQuery *v1.RawQuery, bindings []*storage.K8SRoleBinding) ([]*storage.Subject, error) {
-	subjectsToFilter := getAllSubjects(bindings)
+	subjectsToFilter := k8srbac.GetAllSubjects(bindings, storage.SubjectKind_USER, storage.SubjectKind_GROUP)
 	if len(subjectsToFilter) == 0 {
 		return nil, nil
 	}
@@ -94,20 +94,6 @@ func getFilteredSubjects(rawQuery *v1.RawQuery, bindings []*storage.K8SRoleBindi
 		subjectsToUse = append(subjectsToUse, subjectsByName[result.ID])
 	}
 	return subjectsToUse, nil
-}
-
-// Get all of the subjects referenced in a set of bindings.
-func getAllSubjects(bindings []*storage.K8SRoleBinding) []*storage.Subject {
-	subjectsSet := k8srbac.NewSubjectSet()
-	for _, binding := range bindings {
-		for _, subject := range binding.GetSubjects() {
-			if subject.GetKind() != storage.SubjectKind_USER && subject.GetKind() != storage.SubjectKind_GROUP {
-				continue
-			}
-			subjectsSet.Add(subject)
-		}
-	}
-	return subjectsSet.ToSlice()
 }
 
 // Utils to temporarily index subjects.

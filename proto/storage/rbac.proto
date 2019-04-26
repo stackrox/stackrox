@@ -55,7 +55,7 @@ message K8sRoleBinding {
     google.protobuf.Timestamp created_at    = 9;
 
     repeated Subject subjects               = 10;
-    string role_id                          = 11;
+    string role_id                          = 11 [(gogoproto.moretags) = "search:\"Role ID\""];
 }
 
 // Properties of an individual subjects who are granted roles via role bindings.

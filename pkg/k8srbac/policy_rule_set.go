@@ -5,11 +5,14 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-// PolicyRuleSet representss a combined set of PolicyRules.
+// PolicyRuleSet represents a combined set of PolicyRules.
 type PolicyRuleSet interface {
 	Add(prs ...*storage.PolicyRule)
 	Grants(prs ...*storage.PolicyRule) bool
 	GetPermissionMap() map[string]set.StringSet
+	VerbSet() set.StringSet
+	ResourceSet() set.StringSet
+	NonResourceURLSet() set.StringSet
 	ToSlice() []*storage.PolicyRule
 }
 
@@ -32,7 +35,7 @@ func (p *policyRuleSet) Add(prs ...*storage.PolicyRule) {
 	}
 }
 
-// GrantsAll returns if the set of PolicyRules grants all necessary permissions for the given list of policy rules.
+// Grants returns if the set of PolicyRules grants all necessary permissions for the given list of policy rules.
 func (p *policyRuleSet) Grants(prs ...*storage.PolicyRule) bool {
 	for _, pr := range prs {
 		if !p.grants(pr) {
@@ -40,6 +43,39 @@ func (p *policyRuleSet) Grants(prs ...*storage.PolicyRule) bool {
 		}
 	}
 	return true
+}
+
+// VerbSet returns if the set of verbs granted by the given list of policy rules
+func (p *policyRuleSet) VerbSet() set.StringSet {
+	verbs := set.NewStringSet()
+	for _, rule := range p.granted {
+		for _, verb := range rule.GetVerbs() {
+			verbs.Add(verb)
+		}
+	}
+	return verbs
+}
+
+// ResourceSet returns the set of resources that permissions have been  granted to by the given list of policy rules
+func (p *policyRuleSet) ResourceSet() set.StringSet {
+	resources := set.NewStringSet()
+	for _, rule := range p.granted {
+		for _, resource := range rule.GetResources() {
+			resources.Add(resource)
+		}
+	}
+	return resources
+}
+
+// NonResourceURLSet returns the set of non resource URLs that permissions have been granted to by the given list of policy rules
+func (p *policyRuleSet) NonResourceURLSet() set.StringSet {
+	nonResourceURLs := set.NewStringSet()
+	for _, rule := range p.granted {
+		for _, url := range rule.GetNonResourceUrls() {
+			nonResourceURLs.Add(url)
+		}
+	}
+	return nonResourceURLs
 }
 
 // ToSlice returns a sorted list of policy rules with the rules broken up by apiGroup and resource.

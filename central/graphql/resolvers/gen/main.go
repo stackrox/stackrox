@@ -40,6 +40,10 @@ var (
 			reflect.TypeOf((*storage.TokenMetadata)(nil)),
 			reflect.TypeOf((*v1.GenerateTokenResponse)(nil)),
 			reflect.TypeOf((*v1.GetComplianceRunStatusesResponse)(nil)),
+			reflect.TypeOf((*storage.K8SRole)(nil)),
+			reflect.TypeOf((*storage.K8SRoleBinding)(nil)),
+			reflect.TypeOf((*storage.ServiceAccount)(nil)),
+			reflect.TypeOf((*storage.Subject)(nil)),
 		},
 	}
 )
