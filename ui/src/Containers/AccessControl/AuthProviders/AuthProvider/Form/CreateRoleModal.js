@@ -7,7 +7,7 @@ import { actions } from 'reducers/roles';
 import Modal from 'Components/Modal';
 import Form from 'Containers/AccessControl/Roles/Permissions/Form';
 import SaveButton from 'Containers/AccessControl/SaveButton';
-import { defaultPermissions } from 'constants/accessControl';
+import { defaultNewRolePermissions } from 'constants/accessControl';
 
 class CreateRoleModal extends Component {
     static propTypes = {
@@ -32,7 +32,7 @@ class CreateRoleModal extends Component {
                         <div className="border-b border-base-300 flex flex-col">
                             <Form
                                 onSubmit={this.saveRoleHandler}
-                                initialValues={{ resourceToAccess: defaultPermissions }}
+                                initialValues={{ resourceToAccess: defaultNewRolePermissions }}
                             />
                         </div>
                         <SaveButton className="min-h-10 w-1/4 mx-auto m-3" formName="role-form" />
