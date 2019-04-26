@@ -15,8 +15,10 @@ func GetProcessWhitelist() *storage.ProcessWhitelist {
 	createStamp, _ := ptypes.TimestampProto(time.Now())
 	processName := uuid.NewV4().String()
 	process := &storage.WhitelistElement{
-		Element: &storage.WhitelistElement_ProcessName{
-			ProcessName: processName,
+		Element: &storage.WhitelistItem{
+			Item: &storage.WhitelistItem_ProcessName{
+				ProcessName: processName,
+			},
 		},
 		Auto: true,
 	}
@@ -47,9 +49,20 @@ func GetProcessWhitelistWithKey() *storage.ProcessWhitelist {
 // GetWhitelistElement returns a *storage.WhitelistElement with a given process name
 func GetWhitelistElement(processName string) *storage.WhitelistElement {
 	return &storage.WhitelistElement{
-		Element: &storage.WhitelistElement_ProcessName{
-			ProcessName: processName,
+		Element: &storage.WhitelistItem{
+			Item: &storage.WhitelistItem_ProcessName{
+				ProcessName: processName,
+			},
 		},
 		Auto: true,
 	}
+}
+
+// MakeElements turns a list of strings into a list of storage objects for more convenient test
+func MakeElements(strings []string) []*storage.WhitelistItem {
+	elements := make([]*storage.WhitelistItem, 0, len(strings))
+	for _, stringName := range strings {
+		elements = append(elements, &storage.WhitelistItem{Item: &storage.WhitelistItem_ProcessName{ProcessName: stringName}})
+	}
+	return elements
 }

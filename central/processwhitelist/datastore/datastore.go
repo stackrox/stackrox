@@ -19,7 +19,8 @@ type DataStore interface {
 	GetProcessWhitelists() ([]*storage.ProcessWhitelist, error)
 	AddProcessWhitelist(whitelist *storage.ProcessWhitelist) (string, error)
 	RemoveProcessWhitelist(key *storage.ProcessWhitelistKey) error
-	UpdateProcessWhitelist(key *storage.ProcessWhitelistKey, addNames []string, removeNames []string) (*storage.ProcessWhitelist, error)
+	UpdateProcessWhitelistElements(key *storage.ProcessWhitelistKey, addElements []*storage.WhitelistItem, removeElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error)
+	UpsertProcessWhitelist(key *storage.ProcessWhitelistKey, addElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error)
 	UserLockProcessWhitelist(key *storage.ProcessWhitelistKey, locked bool) (*storage.ProcessWhitelist, error)
 	RoxLockProcessWhitelist(key *storage.ProcessWhitelistKey, locked bool) (*storage.ProcessWhitelist, error)
 }

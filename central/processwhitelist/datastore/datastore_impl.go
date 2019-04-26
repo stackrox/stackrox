@@ -39,9 +39,13 @@ func (ds *datastoreImpl) AddProcessWhitelist(whitelist *storage.ProcessWhitelist
 	if err != nil {
 		return "", err
 	}
-	whitelist.Id = id
 	ds.whitelistLock.Lock(id)
 	defer ds.whitelistLock.Unlock(id)
+	return ds.addProcessWhitelistUnlocked(id, whitelist)
+}
+
+func (ds *datastoreImpl) addProcessWhitelistUnlocked(id string, whitelist *storage.ProcessWhitelist) (string, error) {
+	whitelist.Id = id
 	if err := ds.storage.AddWhitelist(whitelist); err != nil {
 		return id, errors.Wrapf(err, "inserting whitelist %q into store", whitelist.GetId())
 	}
@@ -83,7 +87,45 @@ func (ds *datastoreImpl) getWhitelistForUpdate(id string) (*storage.ProcessWhite
 	return whitelist, nil
 }
 
-func (ds *datastoreImpl) UpdateProcessWhitelist(key *storage.ProcessWhitelistKey, addNames []string, removeNames []string) (*storage.ProcessWhitelist, error) {
+func (ds *datastoreImpl) updateProcessWhitelistElementsUnlocked(whitelist *storage.ProcessWhitelist, addElements []*storage.WhitelistItem, removeElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error) {
+	whitelistMap := make(map[string]*storage.WhitelistElement, len(whitelist.Elements))
+	for _, listItem := range whitelist.Elements {
+		whitelistMap[listItem.GetElement().GetProcessName()] = listItem
+	}
+
+	for _, element := range addElements {
+		existing, ok := whitelistMap[element.GetProcessName()]
+		if !ok || existing.Auto {
+			whitelistMap[element.GetProcessName()] = &storage.WhitelistElement{
+				Element: &storage.WhitelistItem{
+					Item: &storage.WhitelistItem_ProcessName{ProcessName: element.GetProcessName()},
+				},
+				Auto: auto,
+			}
+		}
+	}
+
+	for _, removeElement := range removeElements {
+		delete(whitelistMap, removeElement.GetProcessName())
+	}
+	whitelist.Elements = make([]*storage.WhitelistElement, 0, len(whitelistMap))
+	for _, process := range whitelistMap {
+		whitelist.Elements = append(whitelist.Elements, process)
+	}
+
+	err := ds.storage.UpdateWhitelist(whitelist)
+	if err != nil {
+		return nil, err
+	}
+	err = ds.indexer.AddWhitelist(whitelist)
+	if err != nil {
+		return nil, err
+	}
+
+	return whitelist, nil
+}
+
+func (ds *datastoreImpl) UpdateProcessWhitelistElements(key *storage.ProcessWhitelistKey, addElements []*storage.WhitelistItem, removeElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error) {
 	id, err := keyToID(key)
 	if err != nil {
 		return nil, err
@@ -96,36 +138,42 @@ func (ds *datastoreImpl) UpdateProcessWhitelist(key *storage.ProcessWhitelistKey
 	if err != nil {
 		return nil, err
 	}
+	return ds.updateProcessWhitelistElementsUnlocked(whitelist, addElements, removeElements, auto)
+}
 
-	whitelistMap := make(map[string]*storage.WhitelistElement, len(whitelist.Elements))
-	for _, element := range whitelist.Elements {
-		whitelistMap[element.GetProcessName()] = element
-	}
-
-	for _, addName := range addNames {
-		existing, ok := whitelistMap[addName]
-		if !ok || existing.Auto {
-			whitelistMap[addName] = &storage.WhitelistElement{Element: &storage.WhitelistElement_ProcessName{ProcessName: addName}, Auto: false}
-		}
-	}
-
-	for _, removeName := range removeNames {
-		delete(whitelistMap, removeName)
-	}
-	whitelist.Elements = make([]*storage.WhitelistElement, 0, len(whitelistMap))
-	for _, process := range whitelistMap {
-		whitelist.Elements = append(whitelist.Elements, process)
-	}
-
-	err = ds.storage.UpdateWhitelist(whitelist)
-	if err != nil {
-		return nil, err
-	}
-	err = ds.indexer.AddWhitelist(whitelist)
+func (ds *datastoreImpl) UpsertProcessWhitelist(key *storage.ProcessWhitelistKey, addElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error) {
+	id, err := keyToID(key)
 	if err != nil {
 		return nil, err
 	}
 
+	ds.whitelistLock.Lock(id)
+	defer ds.whitelistLock.Unlock(id)
+
+	whitelist, err := ds.GetProcessWhitelist(key)
+	if err != nil {
+		return nil, err
+	}
+
+	if whitelist != nil {
+		return ds.updateProcessWhitelistElementsUnlocked(whitelist, addElements, nil, auto)
+	}
+
+	timestamp := types.TimestampNow()
+	var elements []*storage.WhitelistElement
+	for _, element := range addElements {
+		elements = append(elements, &storage.WhitelistElement{Element: &storage.WhitelistItem{Item: &storage.WhitelistItem_ProcessName{ProcessName: element.GetProcessName()}}, Auto: auto})
+	}
+	whitelist = &storage.ProcessWhitelist{
+		Id:         id,
+		Elements:   elements,
+		Created:    timestamp,
+		LastUpdate: timestamp,
+	}
+	_, err = ds.addProcessWhitelistUnlocked(id, whitelist)
+	if err != nil {
+		return nil, err
+	}
 	return whitelist, nil
 }
 

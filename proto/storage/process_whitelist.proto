@@ -30,8 +30,13 @@ message ProcessWhitelist {
 
 // @protolock:skip
 message WhitelistElement {
-    oneof element {
+    WhitelistItem element = 1;
+    bool          auto    = 2;
+}
+
+// @protolock:skip
+message WhitelistItem {
+    oneof item {
         string process_name = 1 [(gogoproto.moretags) = "search:\"Process Name\""];
     }
-    bool auto = 2;
 }

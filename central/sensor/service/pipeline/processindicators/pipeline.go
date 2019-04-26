@@ -5,10 +5,13 @@ import (
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
+	"github.com/stackrox/rox/central/processwhitelist"
+	whitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 )
@@ -19,13 +22,14 @@ var (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(processDataStore.Singleton(), datastore.Singleton(), lifecycle.SingletonManager())
+	return NewPipeline(processDataStore.Singleton(), whitelistDataStore.Singleton(), datastore.Singleton(), lifecycle.SingletonManager())
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(indicators processDataStore.DataStore, deployments datastore.DataStore, manager lifecycle.Manager) pipeline.Fragment {
+func NewPipeline(indicators processDataStore.DataStore, whitelists whitelistDataStore.DataStore, deployments datastore.DataStore, manager lifecycle.Manager) pipeline.Fragment {
 	return &pipelineImpl{
 		indicators:  indicators,
+		whitelists:  whitelists,
 		manager:     manager,
 		deployments: deployments,
 	}
@@ -33,6 +37,7 @@ func NewPipeline(indicators processDataStore.DataStore, deployments datastore.Da
 
 type pipelineImpl struct {
 	indicators  processDataStore.DataStore
+	whitelists  whitelistDataStore.DataStore
 	deployments datastore.DataStore
 	manager     lifecycle.Manager
 }
@@ -59,8 +64,49 @@ func (s *pipelineImpl) Run(_ string, msg *central.MsgFromSensor, injector common
 	}
 }
 
+func (s *pipelineImpl) CheckWhitelist(indicator *storage.ProcessIndicator) error {
+	key := &storage.ProcessWhitelistKey{
+		DeploymentId:  indicator.DeploymentId,
+		ContainerName: indicator.ContainerName,
+	}
+
+	// TODO joseph what to do if whitelist doesn't exist?  Always create for now?
+	whitelist, err := s.whitelists.GetProcessWhitelist(key)
+	if err != nil {
+		return err
+	}
+
+	insertableElement := &storage.WhitelistItem{Item: &storage.WhitelistItem_ProcessName{ProcessName: indicator.GetSignal().GetExecFilePath()}}
+	if whitelist == nil {
+		_, err := s.whitelists.UpsertProcessWhitelist(key, []*storage.WhitelistItem{insertableElement}, true)
+		return err
+	}
+
+	for _, element := range whitelist.GetElements() {
+		if element.GetElement().GetProcessName() == insertableElement.GetProcessName() {
+			return nil
+		}
+	}
+	if processwhitelist.IsLocked(whitelist.GetUserLockedTimestamp()) {
+		// TODO joseph create an alert
+		return nil
+	}
+	if processwhitelist.IsLocked(whitelist.GetStackRoxLockedTimestamp()) {
+		// TODO joseph create risk
+		return nil
+	}
+	_, err = s.whitelists.UpdateProcessWhitelistElements(key, []*storage.WhitelistItem{insertableElement}, nil, true)
+	return err
+}
+
 // Run runs the pipeline template on the input and returns the output.
 func (s *pipelineImpl) process(indicator *storage.ProcessIndicator, injector common.MessageInjector) error {
+	if features.ProcessWhitelist.Enabled() {
+		err := s.CheckWhitelist(indicator)
+		if err != nil {
+			log.Error(err)
+		}
+	}
 	return s.manager.IndicatorAdded(indicator, injector)
 }
 

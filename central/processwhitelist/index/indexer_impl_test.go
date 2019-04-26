@@ -80,7 +80,7 @@ func (suite *ProcessWhitelistIndexTestSuite) TestAddSearchDeleteWhitelist() {
 	whitelist := suite.getAndStoreWhitelist()
 	suite.getAndStoreWhitelist() // Don't find this one
 
-	q := search.NewQueryBuilder().AddStrings(search.ProcessName, whitelist.Elements[0].GetProcessName()).ProtoQuery()
+	q := search.NewQueryBuilder().AddStrings(search.ProcessName, whitelist.Elements[0].GetElement().GetProcessName()).ProtoQuery()
 	results, err := suite.search(q, 1)
 	suite.NoError(err)
 	suite.Equal(whitelist.GetId(), results[0].ID)

@@ -54,6 +54,7 @@ func emptyDB(t *testing.T, ds datastore.DataStore) {
 		assert.NoError(t, ds.RemoveProcessWhitelist(whitelist.GetKey()))
 	}
 }
+
 func TestGetProcessWhitelists(t *testing.T) {
 	db, ds, service := setupTest(t)
 	defer testutils.TearDownDB(db)
@@ -164,7 +165,7 @@ func TestUpdateProcessWhitelist(t *testing.T) {
 		whitelist.Elements = make([]*storage.WhitelistElement, 0, len(stockProcesses))
 		for _, stockProcess := range stockProcesses {
 			whitelist.Elements = append(whitelist.Elements, &storage.WhitelistElement{
-				Element: &storage.WhitelistElement_ProcessName{ProcessName: stockProcess},
+				Element: &storage.WhitelistItem{Item: &storage.WhitelistItem_ProcessName{ProcessName: stockProcess}},
 			})
 		}
 		whitelistCollection[index] = whitelist
@@ -247,9 +248,9 @@ func TestUpdateProcessWhitelist(t *testing.T) {
 			defer emptyDB(t, ds)
 
 			request := &v1.UpdateProcessWhitelistsRequest{
-				Keys:               c.toUpdate,
-				AddProcessNames:    c.toAdd,
-				RemoveProcessNames: c.toRemove,
+				Keys:           c.toUpdate,
+				AddElements:    fixtures.MakeElements(c.toAdd),
+				RemoveElements: fixtures.MakeElements(c.toRemove),
 			}
 			response, err := service.UpdateProcessWhitelists((context.Context)(nil), request)
 			assert.NoError(t, err)
@@ -258,7 +259,7 @@ func TestUpdateProcessWhitelist(t *testing.T) {
 				successKeys = append(successKeys, wl.GetKey())
 				processes := set.NewStringSet()
 				for _, process := range wl.Elements {
-					processes.Add(process.GetProcessName())
+					processes.Add(process.GetElement().GetProcessName())
 				}
 				for _, add := range c.toAdd {
 					assert.True(t, processes.Contains(add))

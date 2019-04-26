@@ -4,10 +4,10 @@ import (
 	"context"
 	"sort"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
+	"github.com/stackrox/rox/central/processwhitelist"
 	whitelistStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -90,21 +90,21 @@ func sortIndicators(indicators []*storage.ProcessIndicator) {
 func (s *serviceImpl) setSuspicious(groupedIndicators []*v1.ProcessNameAndContainerNameGroup, deploymentID string) error {
 	whitelists := make(map[string]*set.StringSet)
 	for _, group := range groupedIndicators {
-		whitelist, ok := whitelists[group.GetContainerName()]
+		elementSet, ok := whitelists[group.GetContainerName()]
 		if !ok {
 			var err error
-			whitelist, err = s.getWhitelist(deploymentID, group.GetContainerName())
+			elementSet, err = s.getElementSet(deploymentID, group.GetContainerName())
 			if err != nil {
 				return err
 			}
-			whitelists[group.GetContainerName()] = whitelist
+			whitelists[group.GetContainerName()] = elementSet
 		}
-		group.Suspicious = whitelist != nil && !whitelist.Contains(group.Name)
+		group.Suspicious = elementSet != nil && !elementSet.Contains(group.Name)
 	}
 	return nil
 }
 
-func (s *serviceImpl) getWhitelist(deploymentID string, containerName string) (*set.StringSet, error) {
+func (s *serviceImpl) getElementSet(deploymentID string, containerName string) (*set.StringSet, error) {
 	key := &storage.ProcessWhitelistKey{DeploymentId: deploymentID, ContainerName: containerName}
 	whitelist, err := s.whitelists.GetProcessWhitelist(key)
 	if err != nil {
@@ -113,17 +113,14 @@ func (s *serviceImpl) getWhitelist(deploymentID string, containerName string) (*
 	if whitelist == nil {
 		return nil, nil
 	}
-	now := types.TimestampNow()
-	roxLockTimestamp := whitelist.GetStackRoxLockedTimestamp()
-	roxUnlocked := roxLockTimestamp == nil || now.Compare(roxLockTimestamp) < 0
-	userLockTimestamp := whitelist.GetUserLockedTimestamp()
-	userUnlocked := userLockTimestamp == nil || now.Compare(userLockTimestamp) < 0
-	if roxUnlocked && userUnlocked {
+	roxLocked := processwhitelist.IsLocked(whitelist.GetStackRoxLockedTimestamp())
+	userLocked := processwhitelist.IsLocked(whitelist.GetUserLockedTimestamp())
+	if !roxLocked && !userLocked {
 		return nil, nil
 	}
 	whitelistSet := set.NewStringSet()
 	for _, element := range whitelist.GetElements() {
-		whitelistSet.Add(element.GetProcessName())
+		whitelistSet.Add(element.GetElement().GetProcessName())
 	}
 	return &whitelistSet, nil
 }

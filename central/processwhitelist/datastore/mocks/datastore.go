@@ -111,17 +111,30 @@ func (mr *MockDataStoreMockRecorder) SearchRawProcessWhitelists(arg0 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawProcessWhitelists", reflect.TypeOf((*MockDataStore)(nil).SearchRawProcessWhitelists), arg0)
 }
 
-// UpdateProcessWhitelist mocks base method
-func (m *MockDataStore) UpdateProcessWhitelist(arg0 *storage.ProcessWhitelistKey, arg1, arg2 []string) (*storage.ProcessWhitelist, error) {
-	ret := m.ctrl.Call(m, "UpdateProcessWhitelist", arg0, arg1, arg2)
+// UpdateProcessWhitelistElements mocks base method
+func (m *MockDataStore) UpdateProcessWhitelistElements(arg0 *storage.ProcessWhitelistKey, arg1, arg2 []*storage.WhitelistItem, arg3 bool) (*storage.ProcessWhitelist, error) {
+	ret := m.ctrl.Call(m, "UpdateProcessWhitelistElements", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*storage.ProcessWhitelist)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// UpdateProcessWhitelist indicates an expected call of UpdateProcessWhitelist
-func (mr *MockDataStoreMockRecorder) UpdateProcessWhitelist(arg0, arg1, arg2 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProcessWhitelist", reflect.TypeOf((*MockDataStore)(nil).UpdateProcessWhitelist), arg0, arg1, arg2)
+// UpdateProcessWhitelistElements indicates an expected call of UpdateProcessWhitelistElements
+func (mr *MockDataStoreMockRecorder) UpdateProcessWhitelistElements(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProcessWhitelistElements", reflect.TypeOf((*MockDataStore)(nil).UpdateProcessWhitelistElements), arg0, arg1, arg2, arg3)
+}
+
+// UpsertProcessWhitelist mocks base method
+func (m *MockDataStore) UpsertProcessWhitelist(arg0 *storage.ProcessWhitelistKey, arg1 []*storage.WhitelistItem, arg2 bool) (*storage.ProcessWhitelist, error) {
+	ret := m.ctrl.Call(m, "UpsertProcessWhitelist", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*storage.ProcessWhitelist)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpsertProcessWhitelist indicates an expected call of UpsertProcessWhitelist
+func (mr *MockDataStoreMockRecorder) UpsertProcessWhitelist(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertProcessWhitelist", reflect.TypeOf((*MockDataStore)(nil).UpsertProcessWhitelist), arg0, arg1, arg2)
 }
 
 // UserLockProcessWhitelist mocks base method

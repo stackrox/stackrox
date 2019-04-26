@@ -14,9 +14,9 @@ message GetProcessWhitelistRequest {
 }
 
 message UpdateProcessWhitelistsRequest {
-    repeated storage.ProcessWhitelistKey keys = 1;
-    repeated string add_process_names    = 2;
-    repeated string remove_process_names = 3;
+    repeated storage.ProcessWhitelistKey keys         = 1;
+    repeated storage.WhitelistItem    add_elements    = 2;
+    repeated storage.WhitelistItem    remove_elements = 3;
 }
 
 message ProcessWhitelistsResponse {
@@ -24,7 +24,7 @@ message ProcessWhitelistsResponse {
 }
 
 message ProcessWhitelistUpdateError {
-    string error = 1;
+    string                      error = 1;
     storage.ProcessWhitelistKey key   = 2;
 }
 
@@ -34,8 +34,8 @@ message UpdateProcessWhitelistsResponse {
 }
 
 message LockProcessWhitelistsRequest {
-    repeated storage.ProcessWhitelistKey keys = 1;
-    bool     locked               = 2;
+    repeated storage.ProcessWhitelistKey keys   = 1;
+    bool                                 locked = 2;
 }
 
 // ProcessWhitelistService APIs can be used to manage process whitelists.

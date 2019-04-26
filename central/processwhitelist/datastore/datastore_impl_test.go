@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -76,6 +77,20 @@ func (suite *ProcessWhitelistDataStoreTestSuite) testGetAll(allExpected []*stora
 	for _, expected := range allExpected {
 		suite.Contains(allWhitelists, expected)
 	}
+}
+
+func (suite *ProcessWhitelistDataStoreTestSuite) testUpdate(key *storage.ProcessWhitelistKey, addProcesses []string, removeProcesses []string, auto bool, expectedResults set.StringSet) *storage.ProcessWhitelist {
+	updated, err := suite.datastore.UpdateProcessWhitelistElements(key, fixtures.MakeElements(addProcesses), fixtures.MakeElements(removeProcesses), auto)
+	suite.NoError(err)
+	suite.NotNil(updated)
+	suite.NotNil(updated.Elements)
+	suite.Equal(expectedResults.Cardinality(), len(updated.Elements))
+	actualResults := set.NewStringSet()
+	for _, process := range updated.Elements {
+		actualResults.Add(process.GetElement().GetProcessName())
+	}
+	suite.Equal(expectedResults, actualResults)
+	return updated
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) TestGetById() {
@@ -149,23 +164,32 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestRoxLockAndUnlockWhitelist()
 	suite.Equal(updatedWhitelist, gotWhitelist)
 }
 
-func (suite *ProcessWhitelistDataStoreTestSuite) TestChangeAutoToManual() {
-	whitelist := fixtures.GetProcessWhitelist()
+func (suite *ProcessWhitelistDataStoreTestSuite) TestUpdateProcessWhitelist() {
+	whitelist := fixtures.GetProcessWhitelistWithKey()
+	whitelist.Elements = nil // Fixture gives a single process but we want to test updates
 	suite.NotNil(whitelist)
-	suite.NotNil(whitelist.Elements)
-	suite.Equal(1, len(whitelist.Elements))
-	processName := whitelist.Elements[0].GetProcessName()
-	whitelist.Elements[0].Auto = true
-	whitelist.Key = &storage.ProcessWhitelistKey{DeploymentId: "blah", ContainerName: "blah2"}
+	key := whitelist.GetKey()
 	id, err := suite.datastore.AddProcessWhitelist(whitelist)
 	suite.NoError(err)
 	suite.NotNil(id)
 
-	updated, err := suite.datastore.UpdateProcessWhitelist(whitelist.GetKey(), []string{processName}, nil)
-	suite.NoError(err)
-	suite.NotNil(updated)
-	suite.NotNil(updated.Elements)
-	suite.Equal(1, len(updated.Elements))
-	suite.Equal(processName, updated.Elements[0].GetProcessName())
+	processName := []string{"Some process name"}
+	processNameSet := set.NewStringSet(processName...)
+	otherProcess := []string{"Some other process"}
+	otherProcessSet := set.NewStringSet(otherProcess...)
+	updated := suite.testUpdate(key, processName, nil, true, processNameSet)
+	suite.True(updated.Elements[0].Auto)
+
+	updated = suite.testUpdate(key, processName, nil, false, processNameSet)
 	suite.False(updated.Elements[0].Auto)
+
+	updated = suite.testUpdate(key, otherProcess, processName, true, otherProcessSet)
+	suite.True(updated.Elements[0].Auto)
+
+	multiAdd := []string{"a", "b", "c"}
+	multiAddExpected := set.NewStringSet(multiAdd...)
+	updated = suite.testUpdate(key, multiAdd, otherProcess, false, multiAddExpected)
+	for _, process := range updated.Elements {
+		suite.False(process.Auto)
+	}
 }
