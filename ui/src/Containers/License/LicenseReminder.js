@@ -72,7 +72,7 @@ const LicenseReminder = ({ expirationDate, history, shouldHaveReadPermission }) 
     }, []);
 
     if (!showReminder) return null;
-    if (!expirationMessage) return null;
+    if (!expirationMessage || expirationMessage.type === 'info') return null;
 
     const onCancelHandler = () => () => setReminder(false);
 

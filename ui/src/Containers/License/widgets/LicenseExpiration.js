@@ -14,6 +14,7 @@ import UploadLicense from 'Containers/License/UploadLicense';
 const LicenseExpiration = ({ expirationDate, shouldHaveReadWritePermission }) => {
     const canUploadLicense = shouldHaveReadWritePermission('Licenses');
     const expirationMessage = createExpirationMessageWithoutLink(expirationDate);
+
     return (
         <Widget header="License Expiration">
             <div className="py-4 px-6 w-full">
@@ -27,7 +28,12 @@ const LicenseExpiration = ({ expirationDate, shouldHaveReadWritePermission }) =>
                     </div>
                 </div>
                 <div className="text-center">
-                    <Message type={expirationMessage.type} message={expirationMessage.message} />
+                    {expirationMessage && (
+                        <Message
+                            type={expirationMessage.type}
+                            message={expirationMessage.message}
+                        />
+                    )}
                     {canUploadLicense && <UploadLicense />}
                 </div>
             </div>

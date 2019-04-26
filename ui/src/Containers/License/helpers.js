@@ -50,13 +50,9 @@ export const getLicenseStatusMessage = (status, message) => {
 
 const getExpirationMessageType = expirationDate => {
     const daysLeft = differenceInDays(expirationDate, new Date());
-    if (daysLeft > 3 && daysLeft <= 14) {
-        return 'warn';
-    }
-    if (daysLeft <= 3) {
-        return 'error';
-    }
-    return null;
+    if (daysLeft > 14) return 'info';
+    if (daysLeft > 3) return 'warn';
+    return 'error';
 };
 
 const createExpirationMessage = (message, type) => ({
