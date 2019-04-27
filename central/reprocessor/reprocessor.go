@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/throttle"
 )
 
 var (
@@ -51,7 +52,7 @@ func newLoopWithDuration(connManager connection.Manager, tickerDuration time.Dur
 		shortChan:      make(chan struct{}),
 
 		connManager: connManager,
-		throttler:   newThrottle(time.Second),
+		throttler:   throttle.NewDropThrottle(time.Second),
 	}
 }
 
@@ -63,11 +64,11 @@ type loopImpl struct {
 	stopped        concurrency.Signal
 
 	connManager connection.Manager
-	throttler   throttle
+	throttler   throttle.DropThrottle
 }
 
 func (l *loopImpl) ReprocessRisk() {
-	l.throttler.run(func() { l.sendRisk() })
+	l.throttler.Run(func() { l.sendRisk() })
 }
 
 func (l *loopImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
