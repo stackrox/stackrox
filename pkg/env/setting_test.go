@@ -55,3 +55,17 @@ func TestWithDefaultAndAllowEmpty(t *testing.T) {
 	a.NoError(os.Setenv(name, ""))
 	a.Empty(s.Setting())
 }
+
+func TestDurationSetting(t *testing.T) {
+	a := assert.New(t)
+
+	name := newRandomName()
+	s := registerDurationSetting(name, time.Minute)
+
+	a.Equal(time.Minute, s.DurationSetting())
+	a.Equal("1m0s", s.Setting())
+
+	a.NoError(os.Setenv(name, "1h"))
+	a.Equal(time.Hour, s.DurationSetting())
+	a.Equal("1h0m0s", s.Setting())
+}

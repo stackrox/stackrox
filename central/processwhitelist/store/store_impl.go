@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"time"
 
 	bolt "github.com/etcd-io/bbolt"
 	"github.com/gogo/protobuf/proto"
@@ -9,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -78,6 +80,11 @@ func addWhitelist(id []byte, whitelist *storage.ProcessWhitelist, tx *bolt.Tx) e
 	}
 	whitelist.Created = types.TimestampNow()
 	whitelist.LastUpdate = whitelist.GetCreated()
+	genDuration := env.WhitelistGenerationDuration.DurationSetting()
+	lockTimestamp, err := types.TimestampProto(time.Now().Add(genDuration))
+	if err == nil {
+		whitelist.StackRoxLockedTimestamp = lockTimestamp
+	}
 	return storeWhitelist(id, whitelist, bucket)
 }
 

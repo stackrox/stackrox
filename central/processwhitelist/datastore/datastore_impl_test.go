@@ -3,6 +3,7 @@ package datastore
 import (
 	"testing"
 
+	"github.com/gogo/protobuf/types"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processwhitelist/index"
 	whitelistSearch "github.com/stackrox/rox/central/processwhitelist/search"
@@ -148,17 +149,22 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestLockAndUnlockWhitelist() {
 func (suite *ProcessWhitelistDataStoreTestSuite) TestRoxLockAndUnlockWhitelist() {
 	whitelist := suite.createAndStoreWhitelistWithRandomKey()
 	key := whitelist.GetKey()
-	suite.Nil(whitelist.GetStackRoxLockedTimestamp())
-	updatedWhitelist, err := suite.datastore.RoxLockProcessWhitelist(key, true)
+	suite.NotNil(whitelist.GetStackRoxLockedTimestamp())
+	// Test that current time is before the StackRox locked time
+	suite.True(types.TimestampNow().Compare(whitelist.GetStackRoxLockedTimestamp()) < 0)
+
+	updatedWhitelist, err := suite.datastore.RoxLockProcessWhitelist(key, false)
 	suite.NoError(err)
-	suite.NotNil(updatedWhitelist.GetStackRoxLockedTimestamp())
+	suite.Nil(updatedWhitelist.GetStackRoxLockedTimestamp())
 	gotWhitelist, err := suite.datastore.GetProcessWhitelist(key)
 	suite.NoError(err)
 	suite.Equal(updatedWhitelist, gotWhitelist)
 
-	updatedWhitelist, err = suite.datastore.RoxLockProcessWhitelist(key, false)
+	updatedWhitelist, err = suite.datastore.RoxLockProcessWhitelist(key, true)
 	suite.NoError(err)
-	suite.Nil(updatedWhitelist.GetStackRoxLockedTimestamp())
+	suite.NotNil(updatedWhitelist.GetStackRoxLockedTimestamp())
+	// Test that current time is after or equal to the StackRox locked time.
+	suite.True(types.TimestampNow().Compare(updatedWhitelist.GetStackRoxLockedTimestamp()) >= 0)
 	gotWhitelist, err = suite.datastore.GetProcessWhitelist(key)
 	suite.NoError(err)
 	suite.Equal(updatedWhitelist, gotWhitelist)
