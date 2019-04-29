@@ -60,7 +60,7 @@ enum LifecycleStage {
     RUNTIME   = 2;
 }
 
-// Next Available Tag: 26
+// Next Available Tag: 29
 message PolicyFields {
     ImageNamePolicy image_name          = 1;
 
@@ -113,6 +113,8 @@ message PolicyFields {
     string fixed_by = 26;
 
     PortExposurePolicy port_exposure_policy = 27;
+
+    PermissionPolicy permission_policy = 28;
 }
 
 message Component {
@@ -170,6 +172,20 @@ enum Comparator {
 message PortPolicy {
     int32 port          = 1;
     string protocol     = 2;
+}
+
+// K8S RBAC Permission level configuration.
+message PermissionPolicy {
+    PermissionLevel permission_level = 1;
+}
+
+enum PermissionLevel {
+    UNSET = 0;
+    NONE = 1;
+    DEFAULT = 2;
+    ELEVATED_IN_NAMESPACE = 3;
+    ELEVATED_CLUSTER_WIDE = 4;
+    CLUSTER_ADMIN = 5;
 }
 
 message ImageNamePolicy {

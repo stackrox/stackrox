@@ -525,6 +525,10 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("PagerDuty", []string{
 		"apiKey: String!",
 	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.PermissionLevel(0)))
+	utils.Must(builder.AddType("PermissionPolicy", []string{
+		"permissionLevel: PermissionLevel!",
+	}))
 	utils.Must(builder.AddType("Policy", []string{
 		"categories: [String!]!",
 		"description: String!",
@@ -556,6 +560,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"fixedBy: String!",
 		"imageName: ImageNamePolicy",
 		"lineRule: DockerfileLineRuleField",
+		"permissionPolicy: PermissionPolicy",
 		"portExposurePolicy: PortExposurePolicy",
 		"portPolicy: PortPolicy",
 		"processPolicy: ProcessPolicy",
@@ -4719,6 +4724,52 @@ func (resolver *pagerDutyResolver) ApiKey() string {
 	return value
 }
 
+func toPermissionLevel(value *string) storage.PermissionLevel {
+	if value != nil {
+		return storage.PermissionLevel(storage.PermissionLevel_value[*value])
+	}
+	return storage.PermissionLevel(0)
+}
+
+func toPermissionLevels(values *[]string) []storage.PermissionLevel {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.PermissionLevel, len(*values))
+	for i, v := range *values {
+		output[i] = toPermissionLevel(&v)
+	}
+	return output
+}
+
+type permissionPolicyResolver struct {
+	root *Resolver
+	data *storage.PermissionPolicy
+}
+
+func (resolver *Resolver) wrapPermissionPolicy(value *storage.PermissionPolicy, ok bool, err error) (*permissionPolicyResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &permissionPolicyResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapPermissionPolicies(values []*storage.PermissionPolicy, err error) ([]*permissionPolicyResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*permissionPolicyResolver, len(values))
+	for i, v := range values {
+		output[i] = &permissionPolicyResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *permissionPolicyResolver) PermissionLevel() string {
+	value := resolver.data.GetPermissionLevel()
+	return value.String()
+}
+
 type policyResolver struct {
 	root *Resolver
 	data *storage.Policy
@@ -4903,6 +4954,11 @@ func (resolver *policyFieldsResolver) ImageName() (*imageNamePolicyResolver, err
 func (resolver *policyFieldsResolver) LineRule() (*dockerfileLineRuleFieldResolver, error) {
 	value := resolver.data.GetLineRule()
 	return resolver.root.wrapDockerfileLineRuleField(value, true, nil)
+}
+
+func (resolver *policyFieldsResolver) PermissionPolicy() (*permissionPolicyResolver, error) {
+	value := resolver.data.GetPermissionPolicy()
+	return resolver.root.wrapPermissionPolicy(value, true, nil)
 }
 
 func (resolver *policyFieldsResolver) PortExposurePolicy() (*portExposurePolicyResolver, error) {
