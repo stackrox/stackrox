@@ -35,12 +35,17 @@ func GetProcessWhitelistWithID() *storage.ProcessWhitelist {
 	return whitelist
 }
 
-// GetProcessWhitelistWithKey returns a whitelist and its key.
-func GetProcessWhitelistWithKey() *storage.ProcessWhitelist {
-	key := &storage.ProcessWhitelistKey{
+// GetWhitelistKey returns a random valid ProcessWhitelistKey
+func GetWhitelistKey() *storage.ProcessWhitelistKey {
+	return &storage.ProcessWhitelistKey{
 		DeploymentId:  uuid.NewV4().String(),
 		ContainerName: uuid.NewV4().String(),
 	}
+}
+
+// GetProcessWhitelistWithKey returns a whitelist and its key.
+func GetProcessWhitelistWithKey() *storage.ProcessWhitelist {
+	key := GetWhitelistKey()
 	whitelist := GetProcessWhitelist()
 	whitelist.Key = key
 	return whitelist

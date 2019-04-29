@@ -199,3 +199,26 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestUpdateProcessWhitelist() {
 		suite.False(process.Auto)
 	}
 }
+
+func (suite *ProcessWhitelistDataStoreTestSuite) TestUpsertProcessWhitelist() {
+	key := fixtures.GetWhitelistKey()
+	firstProcess := "Joseph Rules"
+	newItem := []*storage.WhitelistItem{{Item: &storage.WhitelistItem_ProcessName{ProcessName: firstProcess}}}
+	whitelist, err := suite.datastore.UpsertProcessWhitelist(key, newItem, true)
+	suite.NoError(err)
+	suite.Equal(1, len(whitelist.GetElements()))
+	suite.Equal(firstProcess, whitelist.GetElements()[0].GetElement().GetProcessName())
+	suite.Equal(key, whitelist.GetKey())
+
+	secondProcess := "Joseph is the Best"
+	newItem = []*storage.WhitelistItem{{Item: &storage.WhitelistItem_ProcessName{ProcessName: secondProcess}}}
+	whitelist, err = suite.datastore.UpsertProcessWhitelist(key, newItem, true)
+	suite.NoError(err)
+	suite.Equal(2, len(whitelist.GetElements()))
+	processNames := make([]string, 0, 2)
+	for _, element := range whitelist.GetElements() {
+		processNames = append(processNames, element.GetElement().GetProcessName())
+	}
+	suite.ElementsMatch([]string{firstProcess, secondProcess}, processNames)
+	suite.Equal(key, whitelist.GetKey())
+}

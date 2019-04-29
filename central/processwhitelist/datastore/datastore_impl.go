@@ -166,6 +166,7 @@ func (ds *datastoreImpl) UpsertProcessWhitelist(key *storage.ProcessWhitelistKey
 	}
 	whitelist = &storage.ProcessWhitelist{
 		Id:         id,
+		Key:        key,
 		Elements:   elements,
 		Created:    timestamp,
 		LastUpdate: timestamp,
