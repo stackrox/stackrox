@@ -2,8 +2,8 @@ defaults: &defaults
   docker:
     - image: docker.io/stackrox/apollo-ci:0.1.11-27-g9547aa803c
       auth:
-        username: $DOCKER_IO_USERNAME
-        password: $DOCKER_IO_PASSWORD
+        username: $DOCKER_IO_PULL_USERNAME
+        password: $DOCKER_IO_PULL_PASSWORD
   working_directory: /go/src/github.com/stackrox/rox
 
 setupGoogleAppCreds: &setupGoogleAppCreds
@@ -347,11 +347,11 @@ commands:
           name: Setup deployment env
           command: |
             <<# parameters.docker-login >>
-            docker login -u "$DOCKER_IO_USERNAME" -p "$DOCKER_IO_PASSWORD"
+            docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
             <</ parameters.docker-login >>
             cat >>"$BASH_ENV" \<<EOF
-              export REGISTRY_USERNAME="$DOCKER_IO_USERNAME"
-              export REGISTRY_PASSWORD="$DOCKER_IO_PASSWORD"
+              export REGISTRY_USERNAME="$DOCKER_IO_PULL_USERNAME"
+              export REGISTRY_PASSWORD="$DOCKER_IO_PULL_PASSWORD"
               export MAIN_IMAGE_TAG="$(make tag)"
               export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json
             EOF
@@ -581,8 +581,8 @@ jobs:
       - run:
           name: Push new Docker image
           command: |
-            docker login -u $DOCKER_IO_USERNAME -p $DOCKER_IO_PASSWORD docker.io
-            docker push "stackrox/main:$(make tag)" | cat
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
+            docker push "docker.io/stackrox/main:$(make tag)" | cat
 
       - save_cache:
           key: *depCacheKey
@@ -655,10 +655,10 @@ jobs:
       - run:
           name: Push new image
           command: |
-            docker login -u "$DOCKER_IO_USERNAME" -p "$DOCKER_IO_PASSWORD" docker.io
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
 
             TAG="$(make tag)"
-            docker push "stackrox/main-rhel:${TAG}" | cat
+            docker push "docker.io/stackrox/main-rhel:${TAG}" | cat
 
   build-scale-monitoring-and-mock-server:
     <<: *defaults
@@ -680,12 +680,12 @@ jobs:
       - run:
           name: Push new Docker image
           command: |
-            docker login -u $DOCKER_IO_USERNAME -p $DOCKER_IO_PASSWORD docker.io
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
 
             TAG=$(make tag)
 
             for img in scale grpc-server monitoring; do
-              docker push "stackrox/${img}:${TAG}" | cat
+              docker push "docker.io/stackrox/${img}:${TAG}" | cat
             done
 
   unit-tests:
@@ -1192,7 +1192,7 @@ jobs:
 
       - run:
           name: Login to Docker Hub
-          command: docker login -u "$DOCKER_IO_USERNAME" -p "$DOCKER_IO_PASSWORD"
+          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
 
       - run:
           name: Install kubectl
@@ -1272,7 +1272,7 @@ jobs:
 
       - run:
           name: Login to Docker Hub
-          command: docker login -u "$DOCKER_IO_USERNAME" -p "$DOCKER_IO_PASSWORD"
+          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -1296,8 +1296,8 @@ jobs:
               export OPENSHIFT_HOST=$(cat openshift/master)
               export ROX_IMAGE_REGISTRY=docker.io
               export MAIN_IMAGE_TAG=$(make tag)
-              export REGISTRY_PASSWORD=$DOCKER_IO_PASSWORD
-              export REGISTRY_USERNAME=$DOCKER_IO_USERNAME
+              export REGISTRY_PASSWORD=$DOCKER_IO_PULL_PASSWORD
+              export REGISTRY_USERNAME=$DOCKER_IO_PULL_USERNAME
             EOF
             if .circleci/pr_has_label.sh ci-run-against-rhel; then
               echo 'export MAIN_IMAGE_REPO=stackrox/main-rhel' >> "${BASH_ENV}"
@@ -1381,7 +1381,7 @@ jobs:
 
       - run:
           name: Login to Docker Hub
-          command: docker login -u "$DOCKER_IO_USERNAME" -p "$DOCKER_IO_PASSWORD"
+          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
 
       - run:
           name: Install kubectl
@@ -1453,7 +1453,7 @@ jobs:
 
       - run:
           name: Login to Docker Hub
-          command: docker login -u "$DOCKER_IO_USERNAME" -p "$DOCKER_IO_PASSWORD"
+          command: docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
 
       - attach_workspace:
           at: /go/src/github.com/stackrox/rox
@@ -1480,8 +1480,8 @@ jobs:
               export KOPS_HOST=$(cat kops/master)
               export ROX_IMAGE_REGISTRY=docker.io
               export MAIN_IMAGE_TAG=$(make tag)
-              export REGISTRY_PASSWORD=$DOCKER_IO_PASSWORD
-              export REGISTRY_USERNAME=$DOCKER_IO_USERNAME
+              export REGISTRY_PASSWORD=$DOCKER_IO_PULL_PASSWORD
+              export REGISTRY_USERNAME=$DOCKER_IO_PULL_USERNAME
             EOF
 
       - *setupGoogleAppCreds
@@ -1631,9 +1631,9 @@ jobs:
       - run:
           name: Push image into stackrox.io
           command: |
-            docker login -u "$DOCKER_IO_USERNAME" -p "$DOCKER_IO_PASSWORD" docker.io
-            docker login -u "$STACKROX_IO_USERNAME" -p "$STACKROX_IO_PASSWORD" stackrox.io
-            docker login -u "$STACKROX_IO_USERNAME" -p "$STACKROX_IO_PASSWORD" collector.stackrox.io
+            docker login -u "$DOCKER_IO_PUSH_USERNAME" -p "$DOCKER_IO_PUSH_PASSWORD" docker.io
+            docker login -u "$STACKROX_IO_PUSH_USERNAME" -p "$STACKROX_IO_PUSH_PASSWORD" stackrox.io
+            docker login -u "$STACKROX_IO_PUSH_USERNAME" -p "$STACKROX_IO_PUSH_PASSWORD" collector.stackrox.io
 
             MAIN_TAG=$(make tag)
             COLLECTOR_TAG=$(make collector-tag)
@@ -1674,18 +1674,22 @@ workflows:
   build_all:
     jobs:
       - pre-build-ui:
+          context: docker-io-pull
           filters:
             tags:
               only: /.*/
       - pre-build-cli:
+          context: docker-io-pull
           filters:
             tags:
               only: /.*/
       - pre-build-go-binaries:
+          context: docker-io-pull
           filters:
             tags:
               only: /.*/
       - build:
+          context: docker-io-push
           requires:
             - pre-build-ui
             - pre-build-cli
@@ -1694,6 +1698,7 @@ workflows:
             tags:
               only: /.*/
       - build-rhel:
+          context: docker-io-push
           requires:
             - pre-build-ui
             - pre-build-cli
@@ -1702,26 +1707,32 @@ workflows:
             tags:
               only: /.*/
       - build-scale-monitoring-and-mock-server:
+          context: docker-io-push
           filters:
             tags:
               only: /.*/
       - unit-tests:
+          context: docker-io-pull
           filters:
             tags:
               only: /.*/
       - style-checks:
+          context: docker-io-pull
           filters:
             tags:
               only: /.*/
       - integration-unit-tests:
+          context: docker-io-pull
           filters:
             tags:
               only: /.*/
       - provision-cluster-k8s-tests:
+          context: docker-io-pull
           filters:
             tags:
               only: /.*/
       - k8s-tests:
+          context: docker-io-pull
           requires:
             - build
             - build-rhel
@@ -1731,10 +1742,12 @@ workflows:
             tags:
               only: /.*/
       - provision-cluster-qa-tests:
+          context: docker-io-pull
           filters:
             tags:
               only: /.*/
       - qa-tests:
+          context: docker-io-pull
           requires:
             - build
             - build-rhel
@@ -1744,10 +1757,12 @@ workflows:
             tags:
               only: /.*/
       - provision-cluster-qa-tests-cos-ebpf:
+          context: docker-io-pull
           filters:
             tags:
               only: /.*/
       - qa-tests-cos-ebpf:
+          context: docker-io-pull
           requires:
             - build
             - build-rhel
@@ -1757,10 +1772,12 @@ workflows:
             tags:
               only: /.*/
       - provision-cluster-upgrade-test:
+          context: docker-io-pull
           filters:
             tags:
               only: /.*/
       - upgrade-test:
+          context: docker-io-pull
           requires:
             - build
             - build-rhel
@@ -1770,10 +1787,12 @@ workflows:
             tags:
               only: /.*/
       - provision-cluster-scale:
+          context: docker-io-pull
           filters:
             tags:
               only: /.*/
       - scale:
+          context: docker-io-pull
           requires:
             - build
             - build-rhel
@@ -1783,11 +1802,13 @@ workflows:
             tags:
               only: /.*/
       - provision-openshift:
+          context: docker-io-pull
           filters:
             tags:
               only:
               - /.*/
       - openshift-tests:
+          context: docker-io-pull
           requires:
             - build
             - provision-openshift
@@ -1796,10 +1817,12 @@ workflows:
               only:
               - /.*/
       - provision-kops:
+          context: docker-io-pull
           filters:
             tags:
               only: /.*/
       - kops-tests:
+          context: docker-io-pull
           requires:
             - build
             - provision-kops
@@ -1807,12 +1830,14 @@ workflows:
             tags:
               only: /.*/
       - oss-audit:
+          context: docker-io-pull
           filters:
             tags:
               only: /.*/
       # Push release only on tags.
       # Skip tags that end in -rc.#
       - mark-collector-release:
+          context: docker-io-pull
           requires:
             - build
             - unit-tests
@@ -1822,6 +1847,7 @@ workflows:
             tags:
               only: /^(?!.*-rc\.\d+$).*$/
       - push-release:
+          context: docker-io-and-stackrox-io-push
           requires:
             - build
             - unit-tests
