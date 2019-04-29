@@ -1,8 +1,8 @@
 package features
 
 var (
-	// NetworkPolicyGenerator is the feature flag for enabling the network policy generator.
-	NetworkPolicyGenerator = registerFeature("Network Policy Generator", "ROX_NETWORK_POLICY_GENERATOR", true)
+	// AuditLogging is used to enable the audit logging interceptor
+	AuditLogging = registerFeature("Enables Audit logging", "ROX_AUDIT_LOGGING", true)
 
 	// PerformDeploymentReconciliation controls whether we actually do the reconciliation.
 	// It exists while we stabilize the feature.

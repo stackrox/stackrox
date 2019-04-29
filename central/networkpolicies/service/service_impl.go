@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errorhelpers"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -194,9 +193,6 @@ func (s *serviceImpl) GetNetworkGraphEpoch(context.Context, *v1.Empty) (*v1.Netw
 }
 
 func (s *serviceImpl) ApplyNetworkPolicy(ctx context.Context, request *v1.ApplyNetworkPolicyYamlRequest) (*v1.Empty, error) {
-	if !features.NetworkPolicyGenerator.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "not implemented")
-	}
 	if request.GetModification().GetApplyYaml() == "" && len(request.GetModification().GetToDelete()) == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "Modification must have contents")
 	}
@@ -365,10 +361,6 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 }
 
 func (s *serviceImpl) GenerateNetworkPolicies(ctx context.Context, req *v1.GenerateNetworkPoliciesRequest) (*v1.GenerateNetworkPoliciesResponse, error) {
-	if s.policyGenerator == nil || !features.NetworkPolicyGenerator.Enabled() {
-		return nil, status.Error(codes.Unimplemented, "not implemented")
-	}
-
 	// Default to `none` delete existing mode.
 	if req.DeleteExisting == v1.GenerateNetworkPoliciesRequest_UNKNOWN {
 		req.DeleteExisting = v1.GenerateNetworkPoliciesRequest_NONE
@@ -402,10 +394,6 @@ func (s *serviceImpl) GenerateNetworkPolicies(ctx context.Context, req *v1.Gener
 }
 
 func (s *serviceImpl) GetUndoModification(ctx context.Context, req *v1.GetUndoModificationRequest) (*v1.GetUndoModificationResponse, error) {
-	if !features.NetworkPolicyGenerator.Enabled() || s.undoStore == nil {
-		return nil, status.Error(codes.Unimplemented, "not implemented")
-	}
-
 	undoRecord, exists, err := s.undoStore.GetUndoRecord(req.GetClusterId())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "could not query undo store: %v", err)
