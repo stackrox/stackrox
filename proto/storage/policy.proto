@@ -113,8 +113,8 @@ message PolicyFields {
     string fixed_by = 26;
 
     PortExposurePolicy port_exposure_policy = 27;
-
     PermissionPolicy permission_policy = 28;
+    HostMountPolicy host_mount_policy = 29;
 }
 
 message Component {
@@ -140,6 +140,12 @@ message VolumePolicy {
         bool read_only  = 4;
     }
     string type         = 5;
+}
+
+message HostMountPolicy {
+    oneof set_read_only {
+        bool read_only  = 1;
+    }
 }
 
 message ProcessPolicy {

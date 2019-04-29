@@ -36,5 +36,6 @@ func NewRegistry(processIndicators datastore.DataStore) Registry {
 		},
 		builders.ReadOnlyRootFSQueryBuilder{},
 		builders.PortExposureQueryBuilder{},
+		builders.HostMountQueryBuilder{},
 	}
 }

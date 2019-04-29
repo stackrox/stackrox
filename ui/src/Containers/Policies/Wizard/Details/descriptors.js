@@ -224,6 +224,7 @@ const fieldsMap = {
             if (d.destination) {
                 output.push(`Dest: ${d.destination}`);
             }
+            output.push(d.readOnly ? 'Writable: No' : 'Writable: Yes');
             return output.join(', ');
         }
     },
@@ -271,6 +272,10 @@ const fieldsMap = {
             const output = d.exposureLevels.map(element => portExposureLabels[element]);
             return output.join(', ');
         }
+    },
+    hostMountPolicy: {
+        label: 'Host Mount Policy',
+        formatValue: d => (d.readOnly ? 'Not Enabled' : 'Writable: Yes')
     }
 };
 

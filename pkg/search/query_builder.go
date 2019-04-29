@@ -3,11 +3,12 @@ package search
 import (
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/conv"
+	"github.com/stackrox/rox/pkg/generic"
 )
 
 const (
@@ -214,10 +215,7 @@ func (qb *QueryBuilder) AddBoolsHighlighted(k FieldLabel, bools ...bool) *QueryB
 
 // AddBools adds a string key and a bool value pair.
 func (qb *QueryBuilder) AddBools(k FieldLabel, v ...bool) *QueryBuilder {
-	bools := make([]string, 0, len(v))
-	for _, b := range v {
-		bools = append(bools, strconv.FormatBool(b))
-	}
+	bools := conv.FormatBool(v...)
 
 	qb.fieldsToValues[k] = append(qb.fieldsToValues[k], bools...)
 	return qb
@@ -231,6 +229,33 @@ func (qb *QueryBuilder) AddNumericField(k FieldLabel, comparator storage.Compara
 // AddNumericFieldHighlighted is a convenience wrapper to AddNumericField and MarkHighlighted.
 func (qb *QueryBuilder) AddNumericFieldHighlighted(k FieldLabel, comparator storage.Comparator, value float32) *QueryBuilder {
 	return qb.AddNumericField(k, comparator, value).MarkHighlighted(k)
+}
+
+// AddGenericTypeLinkedFields allows you to add linked fields of different types.
+func (qb *QueryBuilder) AddGenericTypeLinkedFields(fields []FieldLabel, values []interface{}) *QueryBuilder {
+	strValues := make([]string, 0, len(values))
+	for _, value := range values {
+		strValues = append(strValues, generic.String(value))
+	}
+	return qb.addLinkedFields(fields, strValues, false)
+}
+
+// AddGenericTypeLinkedFieldsHighligted allows you to add linked fields of different types and MarkHighlighted.
+func (qb *QueryBuilder) AddGenericTypeLinkedFieldsHighligted(fields []FieldLabel, values []interface{}) *QueryBuilder {
+	strValues := make([]string, 0, len(values))
+	for _, value := range values {
+		strValues = append(strValues, generic.String(value))
+	}
+	return qb.addLinkedFields(fields, strValues, true)
+}
+
+// AddGenericTypeLinkedFieldsWithHighligtedValues allows you to add linked fields of different types and specify granuarly which ones you want highlights for.
+func (qb *QueryBuilder) AddGenericTypeLinkedFieldsWithHighligtedValues(fields []FieldLabel, values []interface{}, highlighted []bool) *QueryBuilder {
+	strValues := make([]string, 0, len(values))
+	for _, value := range values {
+		strValues = append(strValues, generic.String(value))
+	}
+	return qb.AddLinkedFieldsWithHighlightValues(fields, strValues, highlighted)
 }
 
 // Query returns the string version of the query.

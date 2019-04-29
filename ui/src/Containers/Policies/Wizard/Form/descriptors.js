@@ -458,6 +458,14 @@ const policyConfigurationDescriptor = [
         default: false
     },
     {
+        label: 'Writable Volume',
+        jsonpath: 'fields.volumePolicy.readOnly',
+        type: 'toggle',
+        required: false,
+        default: false,
+        reverse: true
+    },
+    {
         label: 'Protocol',
         jsonpath: 'fields.portPolicy.protocol',
         type: 'text',
@@ -553,6 +561,14 @@ const policyConfigurationDescriptor = [
             })),
         required: false,
         default: false
+    },
+    {
+        label: 'Writable Host Mount',
+        jsonpath: 'fields.hostMountPolicy.readOnly',
+        type: 'toggle',
+        required: false,
+        default: false,
+        reverse: true
     }
 ];
 

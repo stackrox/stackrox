@@ -338,6 +338,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"key: String!",
 		"value: String!",
 	}))
+	utils.Must(builder.AddType("HostMountPolicy", []string{
+	}))
 	utils.Must(builder.AddType("Image", []string{
 		"id: ID!",
 		"lastUpdated: Time",
@@ -558,6 +560,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"dropCapabilities: [String!]!",
 		"env: KeyValuePolicy",
 		"fixedBy: String!",
+		"hostMountPolicy: HostMountPolicy",
 		"imageName: ImageNamePolicy",
 		"lineRule: DockerfileLineRuleField",
 		"permissionPolicy: PermissionPolicy",
@@ -3339,6 +3342,29 @@ func (resolver *groupPropertiesResolver) Value() string {
 	return value
 }
 
+type hostMountPolicyResolver struct {
+	root *Resolver
+	data *storage.HostMountPolicy
+}
+
+func (resolver *Resolver) wrapHostMountPolicy(value *storage.HostMountPolicy, ok bool, err error) (*hostMountPolicyResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &hostMountPolicyResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapHostMountPolicies(values []*storage.HostMountPolicy, err error) ([]*hostMountPolicyResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*hostMountPolicyResolver, len(values))
+	for i, v := range values {
+		output[i] = &hostMountPolicyResolver{resolver, v}
+	}
+	return output, nil
+}
+
 type imageResolver struct {
 	root *Resolver
 	data *storage.Image
@@ -4944,6 +4970,11 @@ func (resolver *policyFieldsResolver) Env() (*keyValuePolicyResolver, error) {
 func (resolver *policyFieldsResolver) FixedBy() string {
 	value := resolver.data.GetFixedBy()
 	return value
+}
+
+func (resolver *policyFieldsResolver) HostMountPolicy() (*hostMountPolicyResolver, error) {
+	value := resolver.data.GetHostMountPolicy()
+	return resolver.root.wrapHostMountPolicy(value, true, nil)
 }
 
 func (resolver *policyFieldsResolver) ImageName() (*imageNamePolicyResolver, error) {
