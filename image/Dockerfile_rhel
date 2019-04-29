@@ -1,7 +1,8 @@
 ARG DATA_IMAGE_TAG=latest
 FROM stackrox-data:$DATA_IMAGE_TAG AS data
 
-FROM registry.redhat.io/rhel7:7.6-151.1550575774
+# For list of tags, ref: https://access.redhat.com/containers/?tab=tags#/registry.access.redhat.com/rhel7
+FROM registry.redhat.io/rhel7:7.6
 
 LABEL name="stackrox.io/main"
 LABEL vendor="StackRox (support@stackrox.com)"
