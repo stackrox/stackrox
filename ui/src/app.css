@@ -1157,3 +1157,11 @@ h6 {
     top: 50%;
     left: 50%;
 }
+
+
+/** Tippy tooltip **/
+.tippy-popper .tippy-tooltip {
+  border: 2px solid  var(--base-800);
+  background-color: var(--base-700);
+  opacity: 0.8 !important;
+}

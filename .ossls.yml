@@ -593,6 +593,16 @@ dependencies:
     attribution:
       - 2016 Tanner Linsley
 
+  ui/node_modules/react-tippy:
+      url: https://github.com/tvkhoa/react-tippy
+      license: MIT
+      files:
+        package.json:
+          author: 66727bc9de5ccc945d5df64b152f18e5b197be355fc7a51596903ece459a41ab
+          license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+      attribution:
+        - Khoa Thai
+
   ui/node_modules/react-toastify:
     url: https://github.com/fkhadra/react-toastify
     license: MIT

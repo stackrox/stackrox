@@ -58,6 +58,7 @@
         "react-slick": "^0.21.0",
         "react-spinners": "^0.4.5",
         "react-table": "^6.8.6",
+        "react-tippy": "^1.2.3",
         "react-toastify": "^3.4.3",
         "react-transition-group": "^2.5.0",
         "react-truncate": "^2.4.0",

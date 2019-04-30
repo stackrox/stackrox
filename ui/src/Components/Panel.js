@@ -1,60 +1,118 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
+import { Tooltip } from 'react-tippy';
+import { throttle } from 'lodash';
 import 'rc-tooltip/assets/bootstrap.css';
 import CloseButton from './CloseButton';
 
-export const headerClassName = 'flex w-full word-break';
+export const headerClassName = 'flex w-full';
 
-const Panel = props => {
-    const titleClassName = props.isUpperCase ? 'uppercase' : 'capitalize';
-    const headerText = (
-        <div
-            className={`m-1 flex flex-1 text-base-600 items-center tracking-wide leading-normal font-700 lg:ml-2 lg:mr-2 ${titleClassName}`}
-            data-test-id="panel-header"
-        >
-            {props.header}
+const TooltipDiv = ({ header, isUpperCase }) => {
+    const titleClassName = isUpperCase ? 'uppercase' : 'capitalize';
+    const tooltipContent = <span className="text-sm">{header}</span>;
+
+    const parentRef = useRef(null);
+    const tooltipRef = useRef(null);
+    const [allowTooltip, setAllowTooltip] = useState(false);
+    let content = (
+        <div ref={tooltipRef} className="flex-none">
+            {header}
         </div>
     );
+    const tooltipFn = () => {
+        setAllowTooltip(false);
+        if (
+            parentRef.current &&
+            tooltipRef.current &&
+            parentRef.current.offsetWidth <= tooltipRef.current.offsetWidth
+        ) {
+            setAllowTooltip(true);
+        }
+    };
+
+    function setWindowResize() {
+        window.addEventListener('resize', throttle(tooltipFn, 100));
+
+        const cleanup = () => {
+            window.removeEventListener('resize');
+        };
+
+        return cleanup;
+    }
+
+    if (allowTooltip) {
+        content = (
+            <Tooltip
+                useContext
+                position="top"
+                trigger="mouseenter"
+                arrow
+                html={tooltipContent}
+                className="truncate"
+            >
+                <div ref={tooltipRef} className="truncate flex-none">
+                    {header}
+                </div>
+            </Tooltip>
+        );
+    }
+    useEffect(tooltipFn, [header]);
+    useEffect(setWindowResize, []);
     return (
         <div
-            className={`flex flex-col h-full border-r border-base-400 min-w-0 ${props.className}`}
-            data-test-id="panel"
+            ref={parentRef}
+            className={`overflow-hidden m-1 flex flex-1 text-base-600 items-center tracking-wide leading-normal font-700 lg:ml-2 lg:mr-2 ${titleClassName}`}
+            data-test-id="panel-header"
         >
-            <div className="border-b border-base-400">
-                <div className={props.headerClassName}>
-                    {props.leftButtons && (
-                        <div className="flex items-center pr-3 relative border-base-400 border-r hover:bg-primary-300 hover:border-primary-300">
-                            {props.leftButtons}
-                        </div>
-                    )}
-
-                    <div className="mr-2 ml-2 mb-1 lg:ml-0 lg:mr-0 lg:mb-0 lg:flex pt-1 justify-center flex-grow">
-                        {props.headerTextComponent ? props.headerTextComponent : headerText}
-                        <div className="panel-actions relative flex items-center">
-                            {props.buttons}
-                        </div>
-                    </div>
-
-                    {props.headerComponents && (
-                        <div className="flex items-center pr-3 relative">
-                            {props.headerComponents}
-                        </div>
-                    )}
-                    {props.onClose && (
-                        <CloseButton
-                            onClose={props.onClose}
-                            className={props.closeButtonClassName}
-                            iconColor={props.closeButtonIconColor}
-                        />
-                    )}
-                </div>
-            </div>
-            <div className={`flex h-full overflow-y-auto ${props.bodyClassName}`}>
-                {props.children}
-            </div>
+            {content}
         </div>
     );
 };
+
+TooltipDiv.propTypes = {
+    header: PropTypes.string,
+    isUpperCase: PropTypes.bool
+};
+
+TooltipDiv.defaultProps = {
+    header: ' ',
+    isUpperCase: true
+};
+
+const Panel = props => (
+    <div
+        className={`flex flex-col h-full border-r border-base-400 min-w-0 ${props.className}`}
+        data-test-id="panel"
+    >
+        <div className="border-b border-base-400 flex-no-wrap">
+            <div className={props.headerClassName}>
+                {props.leftButtons && (
+                    <div className="flex items-center pr-3 relative border-base-400 border-r hover:bg-primary-300 hover:border-primary-300">
+                        {props.leftButtons}
+                    </div>
+                )}
+                {props.headerTextComponent ? (
+                    props.headerTextComponent
+                ) : (
+                    <TooltipDiv header={props.header} isUpperCase={props.isUpperCase} />
+                )}
+                <div className="panel-actions relative flex items-center">{props.buttons}</div>
+
+                {props.headerComponents && (
+                    <div className="flex items-center pr-3 relative">{props.headerComponents}</div>
+                )}
+                {props.onClose && (
+                    <CloseButton
+                        onClose={props.onClose}
+                        className={props.closeButtonClassName}
+                        iconColor={props.closeButtonIconColor}
+                    />
+                )}
+            </div>
+        </div>
+        <div className={`flex h-full overflow-y-auto ${props.bodyClassName}`}>{props.children}</div>
+    </div>
+);
 
 Panel.propTypes = {
     header: PropTypes.string,
