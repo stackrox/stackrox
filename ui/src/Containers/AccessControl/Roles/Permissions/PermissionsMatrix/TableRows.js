@@ -7,28 +7,30 @@ import AccessField from 'Containers/AccessControl/Roles/Permissions/PermissionsM
 const TableRows = props => {
     const { resourceToAccess, name, isEditing } = props;
     if (!resourceToAccess) return null;
-    return Object.keys(resourceToAccess).map(resourceName => {
-        if (isEditing) {
+    return Object.keys(resourceToAccess)
+        .sort()
+        .map(resourceName => {
+            if (isEditing) {
+                return (
+                    <Field
+                        key={`${name}.${resourceName}`}
+                        name={`${name}.${resourceName}`}
+                        resourceName={resourceName}
+                        resourceToAccess={resourceToAccess}
+                        isEditing={isEditing}
+                        component={AccessField}
+                    />
+                );
+            }
             return (
-                <Field
+                <AccessField
                     key={`${name}.${resourceName}`}
-                    name={`${name}.${resourceName}`}
                     resourceName={resourceName}
                     resourceToAccess={resourceToAccess}
                     isEditing={isEditing}
-                    component={AccessField}
                 />
             );
-        }
-        return (
-            <AccessField
-                key={`${name}.${resourceName}`}
-                resourceName={resourceName}
-                resourceToAccess={resourceToAccess}
-                isEditing={isEditing}
-            />
-        );
-    });
+        });
 };
 
 TableRows.propTypes = {

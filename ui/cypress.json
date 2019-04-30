@@ -1,5 +1,7 @@
 {
     "baseUrl": "https://localhost:3000",
     "chromeWebSecurity": false,
-    "ignoreTestFiles": [ "**/constants/**/*", "**/helpers/**/*" ]
+    "ignoreTestFiles": [ "**/constants/**/*", "**/helpers/**/*" ],
+    "viewportWidth": 1440,
+    "viewportHeight": 725
 }
