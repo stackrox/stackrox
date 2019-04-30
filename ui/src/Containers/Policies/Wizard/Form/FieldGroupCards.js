@@ -37,7 +37,6 @@ class FieldGroupCards extends Component {
             );
             if (field) fieldToAdd = field;
         });
-        this.props.change(fieldToAdd.jsonpath, fieldToAdd.default);
         this.setState(prevState => ({ fields: prevState.fields.concat(fieldToAdd.jsonpath) }));
     };
 
