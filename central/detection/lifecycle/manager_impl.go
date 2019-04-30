@@ -14,12 +14,15 @@ import (
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	"github.com/stackrox/rox/central/processwhitelist"
+	whitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/set"
@@ -42,6 +45,7 @@ type managerImpl struct {
 
 	deploymentDataStore deploymentDatastore.DataStore
 	processesDataStore  processIndicatorDatastore.DataStore
+	whitelists          whitelistDataStore.DataStore
 	imageDataStore      imageDatastore.DataStore
 
 	queuedIndicators map[string]indicatorWithInjector
@@ -149,9 +153,51 @@ func (m *managerImpl) addToQueue(indicator *storage.ProcessIndicator, injector c
 	}
 }
 
+func (m *managerImpl) checkWhitelist(indicator *storage.ProcessIndicator) error {
+	key := &storage.ProcessWhitelistKey{
+		DeploymentId:  indicator.DeploymentId,
+		ContainerName: indicator.ContainerName,
+	}
+
+	// TODO joseph what to do if whitelist doesn't exist?  Always create for now?
+	whitelist, err := m.whitelists.GetProcessWhitelist(key)
+	if err != nil {
+		return err
+	}
+
+	insertableElement := &storage.WhitelistItem{Item: &storage.WhitelistItem_ProcessName{ProcessName: indicator.GetSignal().GetExecFilePath()}}
+	if whitelist == nil {
+		_, err := m.whitelists.UpsertProcessWhitelist(key, []*storage.WhitelistItem{insertableElement}, true)
+		return err
+	}
+
+	for _, element := range whitelist.GetElements() {
+		if element.GetElement().GetProcessName() == insertableElement.GetProcessName() {
+			return nil
+		}
+	}
+	if processwhitelist.IsLocked(whitelist.GetUserLockedTimestamp()) {
+		// TODO joseph create an alert
+		return nil
+	}
+	if processwhitelist.IsLocked(whitelist.GetStackRoxLockedTimestamp()) {
+		// TODO joseph create risk
+		return nil
+	}
+	_, err = m.whitelists.UpdateProcessWhitelistElements(key, []*storage.WhitelistItem{insertableElement}, nil, true)
+	return err
+}
+
 func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator, injector common.MessageInjector) error {
 	if indicator.GetId() == "" {
 		return fmt.Errorf("invalid indicator received: %s, id was empty", proto.MarshalTextString(indicator))
+	}
+
+	if features.ProcessWhitelist.Enabled() {
+		err := m.checkWhitelist(indicator)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 
 	m.addToQueue(indicator, injector)

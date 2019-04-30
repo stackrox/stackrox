@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/enrichment"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
+	whitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/pkg/sync"
@@ -25,6 +26,7 @@ func initialize() {
 		runtime.SingletonDetector(),
 		deploymentDatastore.Singleton(),
 		processDatastore.Singleton(),
+		whitelistDataStore.Singleton(),
 		imageDataStore.Singleton(),
 		alertmanager.Singleton(),
 		riskManager.Singleton(),

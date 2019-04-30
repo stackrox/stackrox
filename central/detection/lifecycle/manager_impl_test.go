@@ -1,4 +1,4 @@
-package processindicators
+package lifecycle
 
 import (
 	"math/rand"
@@ -14,28 +14,27 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestPipeline(t *testing.T) {
-	suite.Run(t, new(PipelineTestSuite))
+func TestManager(t *testing.T) {
+	suite.Run(t, new(ManagerTestSuite))
 }
 
-type PipelineTestSuite struct {
+type ManagerTestSuite struct {
 	suite.Suite
 
 	whitelists *mocks.MockDataStore
-	pipeline   pipelineImpl
+	manager    *managerImpl
 
 	mockCtrl *gomock.Controller
 }
 
-func (suite *PipelineTestSuite) SetupTest() {
+func (suite *ManagerTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.whitelists = mocks.NewMockDataStore(suite.mockCtrl)
-
-	suite.pipeline = pipelineImpl{whitelists: suite.whitelists}
+	suite.manager = &managerImpl{whitelists: suite.whitelists}
 }
 
-func (suite *PipelineTestSuite) TearDownTest() {
+func (suite *ManagerTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
 }
 
@@ -68,42 +67,42 @@ func makeIndicator() (*storage.ProcessWhitelistKey, *storage.ProcessIndicator) {
 	return key, indicator
 }
 
-func (suite *PipelineTestSuite) TestWhitelistNotFound() {
+func (suite *ManagerTestSuite) TestWhitelistNotFound() {
 	key, indicator := makeIndicator()
 	elements := fixtures.MakeElements([]string{indicator.Signal.GetExecFilePath()})
 	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(nil, nil)
 	suite.whitelists.EXPECT().UpsertProcessWhitelist(key, elements, true).Return(nil, nil)
-	err := suite.pipeline.CheckWhitelist(indicator)
+	err := suite.manager.checkWhitelist(indicator)
 	suite.NoError(err)
 
 	expectedError := errors.Errorf("Expected error")
 	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(nil, expectedError)
-	err = suite.pipeline.CheckWhitelist(indicator)
+	err = suite.manager.checkWhitelist(indicator)
 	suite.Equal(expectedError, err)
 
 	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(nil, nil)
 	suite.whitelists.EXPECT().UpsertProcessWhitelist(key, elements, true).Return(nil, expectedError)
-	err = suite.pipeline.CheckWhitelist(indicator)
+	err = suite.manager.checkWhitelist(indicator)
 	suite.Equal(expectedError, err)
 }
 
-func (suite *PipelineTestSuite) TestWhitelistShouldBeUpdated() {
+func (suite *ManagerTestSuite) TestWhitelistShouldBeUpdated() {
 	key, indicator := makeIndicator()
 	whitelist := &storage.ProcessWhitelist{}
 	elements := fixtures.MakeElements([]string{indicator.Signal.GetExecFilePath()})
 	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(whitelist, nil)
 	suite.whitelists.EXPECT().UpdateProcessWhitelistElements(key, elements, nil, true).Return(nil, nil)
-	err := suite.pipeline.CheckWhitelist(indicator)
+	err := suite.manager.checkWhitelist(indicator)
 	suite.NoError(err)
 
 	expectedError := errors.Errorf("Expected error")
 	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(whitelist, nil)
 	suite.whitelists.EXPECT().UpdateProcessWhitelistElements(key, elements, nil, true).Return(nil, expectedError)
-	err = suite.pipeline.CheckWhitelist(indicator)
+	err = suite.manager.checkWhitelist(indicator)
 	suite.Equal(expectedError, err)
 }
 
-func (suite *PipelineTestSuite) TestWhitelistShouldPass() {
+func (suite *ManagerTestSuite) TestWhitelistShouldPass() {
 	key, indicator := makeIndicator()
 	element := &storage.WhitelistElement{
 		Element: &storage.WhitelistItem{
@@ -113,6 +112,6 @@ func (suite *PipelineTestSuite) TestWhitelistShouldPass() {
 	}
 	whitelist := &storage.ProcessWhitelist{Elements: []*storage.WhitelistElement{element}}
 	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(whitelist, nil)
-	err := suite.pipeline.CheckWhitelist(indicator)
+	err := suite.manager.checkWhitelist(indicator)
 	suite.NoError(err)
 }
