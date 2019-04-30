@@ -25,6 +25,8 @@ func init() {
 		schema.AddExtraResolver("Cluster", "complianceResults: [ControlResult!]!"),
 		schema.AddExtraResolver("Cluster", `k8sroles: [K8SRole!]!`),
 		schema.AddExtraResolver("Cluster", `k8srole(role: ID!): K8SRole`),
+		schema.AddExtraResolver("Cluster", `serviceAccounts: [ServiceAccount!]!`),
+		schema.AddExtraResolver("Cluster", `serviceAccount(sa: ID!): ServiceAccount`),
 	)
 }
 
@@ -152,4 +154,36 @@ func (resolver *clusterResolver) K8sRole(ctx context.Context, args struct{ Role 
 	}
 
 	return resolver.root.wrapK8SRole(roles[0], true, nil)
+}
+
+// ServiceAccounts returns GraphQL resolvers for all service accounts in this cluster
+func (resolver *clusterResolver) ServiceAccounts(ctx context.Context) ([]*serviceAccountResolver, error) {
+	if err := readServiceAccounts(ctx); err != nil {
+		return nil, err
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+	return resolver.root.wrapServiceAccounts(resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(q))
+}
+
+// ServiceAccount returns clusterResolver GraphQL resolver for a given service account
+func (resolver *clusterResolver) ServiceAccount(ctx context.Context, args struct{ Sa graphql.ID }) (*serviceAccountResolver, error) {
+	if err := readK8sRoles(ctx); err != nil {
+		return nil, err
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).
+		AddExactMatches(search.RoleID, string(args.Sa)).ProtoQuery()
+
+	serviceAccounts, err := resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(q)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(serviceAccounts) == 0 {
+		return nil, nil
+	}
+
+	return resolver.root.wrapServiceAccount(serviceAccounts[0], true, nil)
 }

@@ -28,14 +28,3 @@ func GetNonResourceURLsForRole(role *storage.K8SRole) set.StringSet {
 
 	return policyRuleSet.NonResourceURLSet()
 }
-
-// GetBindingsForRole returns the set of bindings (clusterrolebindings and rolebindings) that have the given role as a roleref
-func GetBindingsForRole(role *storage.K8SRole, bindings []*storage.K8SRoleBinding) []*storage.K8SRoleBinding {
-	bindingsForRole := make([]*storage.K8SRoleBinding, 0)
-	for _, binding := range bindings {
-		if binding.GetRoleId() == role.GetId() {
-			bindingsForRole = append(bindingsForRole, binding)
-		}
-	}
-	return bindingsForRole
-}
