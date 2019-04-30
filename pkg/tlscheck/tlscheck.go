@@ -20,6 +20,10 @@ const (
 // CheckTLS checks if the address is using TLS
 func CheckTLS(origAddr string) (bool, error) {
 	addr := urlfmt.TrimHTTPPrefixes(origAddr)
+	if addrSplits := strings.SplitN(addr, "/", 2); len(addrSplits) > 0 {
+		addr = addrSplits[0]
+	}
+
 	host, _, port, err := netutil.ParseEndpoint(addr)
 	if err != nil {
 		return false, err
