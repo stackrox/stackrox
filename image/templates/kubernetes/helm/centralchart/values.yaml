@@ -22,7 +22,7 @@ persistence:
 {{- else if .External}}
   name: {{.External.Name}}
   type: pv
-  storageClass: {{.K8sConfig.Monitoring.External.StorageClass}}
+  storageClass: {{.External.StorageClass}}
   value:
     persistentVolumeClaim:
       claimName: {{.External.Name}}
