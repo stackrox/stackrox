@@ -48,6 +48,7 @@ func (m *manager) HandleConnection(clusterID string, pf pipeline.Factory, server
 	}
 
 	err = conn.Run(server)
+	log.Warnf("Connection to server in cluster %s terminated: %v", clusterID, err)
 
 	concurrency.WithLock(&m.connectionsByClusterIDMutex, func() {
 		currentConn := m.connectionsByClusterID[clusterID]
