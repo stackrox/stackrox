@@ -184,7 +184,11 @@ func (w *DeploymentWrap) populateContainers(podSpec v1.PodSpec) {
 }
 
 func (w *DeploymentWrap) populateServiceAccount(podSpec v1.PodSpec) {
-	w.ServiceAccount = podSpec.ServiceAccountName
+	if podSpec.ServiceAccountName == "" {
+		w.ServiceAccount = "default"
+	} else {
+		w.ServiceAccount = podSpec.ServiceAccountName
+	}
 }
 
 func (w *DeploymentWrap) populateImagePullSecrets(podSpec v1.PodSpec) {

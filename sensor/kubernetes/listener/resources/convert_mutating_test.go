@@ -112,6 +112,7 @@ func TestConvertDifferentContainerNumbers(t *testing.T) {
 				UpdatedAt:                    &timestamp.Timestamp{Seconds: 1000},
 				ImagePullSecrets:             []string{},
 				Tolerations:                  []*storage.Toleration{},
+				ServiceAccount:               "default",
 				AutomountServiceAccountToken: true,
 				Containers: []*storage.Container{
 					{
