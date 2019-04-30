@@ -293,6 +293,9 @@ func (m *managerImpl) DeploymentRemoved(deployment *storage.Deployment) error {
 }
 
 func (m *managerImpl) RemovePolicy(policyID string) error {
+	// Asynchronously update all deployments' risk after processing.
+	defer m.reprocessor.ReprocessRisk()
+
 	if err := m.deploytimeDetector.PolicySet().RemovePolicy(policyID); err != nil {
 		return err
 	}
