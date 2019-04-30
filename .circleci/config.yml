@@ -97,8 +97,8 @@ deployGKE: &deployGKE
 
       source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
       cat >>"$BASH_ENV" \<<EOF
-        export ROX_USERNAME="$ROX_USERNAME"
-        export ROX_PASSWORD="$ROX_PASSWORD"
+        export ROX_USERNAME='$ROX_USERNAME'
+        export ROX_PASSWORD='$ROX_PASSWORD'
       EOF
 
 setupCIMonitoring: &setupCIMonitoring
@@ -143,9 +143,9 @@ waitForAPI: &waitForAPI
         exit 1
       fi
       cat >>"$BASH_ENV" \<<EOF
-        export API_HOSTNAME="$API_HOSTNAME"
-        export API_PORT="$API_PORT"
-        export API_ENDPOINT="${API_HOSTNAME}:${API_PORT}"
+        export API_HOSTNAME='$API_HOSTNAME'
+        export API_PORT='$API_PORT'
+        export API_ENDPOINT='${API_HOSTNAME}:${API_PORT}'
       EOF
 
 waitForSensorK8s: &waitForSensorK8s
@@ -350,9 +350,9 @@ commands:
             docker login -u "$DOCKER_IO_PULL_USERNAME" -p "$DOCKER_IO_PULL_PASSWORD"
             <</ parameters.docker-login >>
             cat >>"$BASH_ENV" \<<EOF
-              export REGISTRY_USERNAME="$DOCKER_IO_PULL_USERNAME"
-              export REGISTRY_PASSWORD="$DOCKER_IO_PULL_PASSWORD"
-              export MAIN_IMAGE_TAG="$(make tag)"
+              export REGISTRY_USERNAME='$DOCKER_IO_PULL_USERNAME'
+              export REGISTRY_PASSWORD='$DOCKER_IO_PULL_PASSWORD'
+              export MAIN_IMAGE_TAG='$(make tag)'
               export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp.json
             EOF
             if .circleci/pr_has_label.sh ci-run-against-rhel; then
@@ -451,8 +451,8 @@ commands:
             echo "Restored config for cluster ${CLUSTER_NAME}"
 
             cat >>"$BASH_ENV" \<<EOF
-              export KUBECONFIG="$KUBECONFIG"
-              export CLUSTER_NAME="$CLUSTER_NAME"
+              export KUBECONFIG='$KUBECONFIG'
+              export CLUSTER_NAME='$CLUSTER_NAME'
             EOF
 
       - run:
@@ -1002,7 +1002,7 @@ jobs:
           name: Launch Central only
           command: |
             cat >>"$BASH_ENV" \<<EOF
-              export MAIN_IMAGE_TAG="$(make tag)"
+              export MAIN_IMAGE_TAG='$(make tag)'
             EOF
             ./deploy/k8s/central.sh
 
@@ -1015,8 +1015,8 @@ jobs:
 
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
             cat >>"$BASH_ENV" \<<EOF
-              export ROX_USERNAME="$ROX_USERNAME"
-              export ROX_PASSWORD="$ROX_PASSWORD"
+              export ROX_USERNAME='$ROX_USERNAME'
+              export ROX_PASSWORD='$ROX_PASSWORD'
             EOF
       - run:
           name: Checkout current commit again
@@ -1130,8 +1130,8 @@ jobs:
 
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
             cat >>"$BASH_ENV" \<<EOF
-              export ROX_USERNAME="$ROX_USERNAME"
-              export ROX_PASSWORD="$ROX_PASSWORD"
+              export ROX_USERNAME='$ROX_USERNAME'
+              export ROX_PASSWORD='$ROX_PASSWORD'
             EOF
 
       - *setupCIMonitoring
@@ -1291,13 +1291,13 @@ jobs:
           name: Configure Deployment Environment
           command: |
             cat >>"$BASH_ENV" \<<EOF
-              export KUBECONFIG=$PWD/openshift/config
+              export KUBECONFIG='$PWD/openshift/config'
               export CLAIRIFY_IMAGE_TAG=0.5.2
-              export OPENSHIFT_HOST=$(cat openshift/master)
+              export OPENSHIFT_HOST='$(cat openshift/master)'
               export ROX_IMAGE_REGISTRY=docker.io
-              export MAIN_IMAGE_TAG=$(make tag)
-              export REGISTRY_PASSWORD=$DOCKER_IO_PULL_PASSWORD
-              export REGISTRY_USERNAME=$DOCKER_IO_PULL_USERNAME
+              export MAIN_IMAGE_TAG='$(make tag)'
+              export REGISTRY_PASSWORD='$DOCKER_IO_PULL_PASSWORD'
+              export REGISTRY_USERNAME='$DOCKER_IO_PULL_USERNAME'
             EOF
             if .circleci/pr_has_label.sh ci-run-against-rhel; then
               echo 'export MAIN_IMAGE_REPO=stackrox/main-rhel' >> "${BASH_ENV}"
@@ -1316,8 +1316,8 @@ jobs:
 
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/openshift/
             cat >>"$BASH_ENV" \<<EOF
-              export ROX_USERNAME="$ROX_USERNAME"
-              export ROX_PASSWORD="$ROX_PASSWORD"
+              export ROX_USERNAME='$ROX_USERNAME'
+              export ROX_PASSWORD='$ROX_PASSWORD'
             EOF
 
       - *setupCIMonitoring
@@ -1475,13 +1475,13 @@ jobs:
           name: Configure Deployment Environment
           command: |
             cat >>"$BASH_ENV" \<<EOF
-              export KUBECONFIG=$PWD/kops/kube.yaml
+              export KUBECONFIG='$PWD/kops/kube.yaml'
               export CLAIRIFY_IMAGE_TAG=0.5.4
-              export KOPS_HOST=$(cat kops/master)
+              export KOPS_HOST='$(cat kops/master)'
               export ROX_IMAGE_REGISTRY=docker.io
-              export MAIN_IMAGE_TAG=$(make tag)
-              export REGISTRY_PASSWORD=$DOCKER_IO_PULL_PASSWORD
-              export REGISTRY_USERNAME=$DOCKER_IO_PULL_USERNAME
+              export MAIN_IMAGE_TAG='$(make tag)'
+              export REGISTRY_PASSWORD='$DOCKER_IO_PULL_PASSWORD'
+              export REGISTRY_USERNAME='$DOCKER_IO_PULL_USERNAME'
             EOF
 
       - *setupGoogleAppCreds
@@ -1495,8 +1495,8 @@ jobs:
 
             source ./scripts/k8s/export-basic-auth-creds.sh ./deploy/k8s/
             cat >>"$BASH_ENV" \<<EOF
-              export ROX_USERNAME="$ROX_USERNAME"
-              export ROX_PASSWORD="$ROX_PASSWORD"
+              export ROX_USERNAME='$ROX_USERNAME'
+              export ROX_PASSWORD='$ROX_PASSWORD'
             EOF
 
       - *setupCIMonitoring
