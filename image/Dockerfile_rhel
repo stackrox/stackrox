@@ -6,8 +6,8 @@ FROM registry.redhat.io/rhel7:7.6
 
 LABEL name="stackrox.io/main"
 LABEL vendor="StackRox (support@stackrox.com)"
-LABEL summary="The StackRox Kubernetes platform"
-LABEL description="This image contains everything required to operate the StackRox Kubernetes platform."
+LABEL summary="The StackRox Kubernetes Security Platform"
+LABEL description="This image contains everything required to operate the StackRox Kubernetes Security Platform."
 
 # Telegraf (for monitoring)
 RUN curl -L https://github.com/connorgorman/telegraf/releases/download/1.8.0%2B49-slim/telegraf -o /telegraf && chmod +x /telegraf
