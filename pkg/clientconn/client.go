@@ -81,7 +81,7 @@ func keepAliveDialOption() grpc.DialOption {
 	// Ping every minute of inactivity, and wait 30 seconds. Do this even when no streams are open (though
 	// one should always be open with central.)
 	params := keepalive.ClientParameters{
-		Time:                1 * time.Minute,
+		Time:                10 * time.Second,
 		Timeout:             30 * time.Second,
 		PermitWithoutStream: true,
 	}

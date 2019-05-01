@@ -75,7 +75,7 @@ required = ["golang.org/x/tools/go/ast/astutil", "golang.org/x/tools/go/analysis
 
 [[constraint]]
   name = "google.golang.org/grpc"
-  version = "1.7.2"
+  version = "1.20.1"
 
 [[constraint]]
   name = "gopkg.in/robfig/cron.v2"

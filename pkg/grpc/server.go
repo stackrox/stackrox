@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/NYTimes/gziphandler"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -26,6 +27,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 )
 
 const (
@@ -193,6 +195,13 @@ func (a *apiImpl) run(startedSig *concurrency.Signal) {
 			grpc_middleware.ChainUnaryServer(a.unaryInterceptors()...),
 		),
 		grpc.MaxRecvMsgSize(maxMsgSize),
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			Time: 40 * time.Second,
+		}),
+		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+			MinTime:             5 * time.Second,
+			PermitWithoutStream: true,
+		}),
 	)
 
 	for _, service := range a.apiServices {
