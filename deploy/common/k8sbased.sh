@@ -34,6 +34,9 @@ function launch_central {
     fi
 
     EXTRA_ARGS+=("--lb-type=$LOAD_BALANCER")
+
+    pkill -f "$ORCH_CMD"'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
+    pkill -9 -f "$ORCH_CMD"'.*port-forward.*' || true
     local unzip_dir="${k8s_dir}/central-deploy/"
     rm -rf "${unzip_dir}"
     if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
