@@ -294,6 +294,9 @@ class DefaultPoliciesTest extends BaseSpecification {
                 "Image apollo-dtr.rox.systems/legacy-apps/struts-app:latest contains 206 components" | null
 
         "Image Freshness"                 | 1.5f     | null | null
+
+        "RBAC Configuration"              | 1.0f     |
+                "Deployment is configured to automatically mount a token for service account \"default\"" | null
     }
 
     @Category(BAT)
