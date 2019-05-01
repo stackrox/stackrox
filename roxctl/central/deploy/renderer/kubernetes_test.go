@@ -107,6 +107,13 @@ func (suite *renderSuite) TestRenderMultiple() {
 	}
 }
 
+func (suite *renderSuite) TestRenderWithBadImage() {
+	conf := getBaseConfig()
+	conf.K8sConfig.ScannerImage = "invalid-image#!@$"
+	_, err := suite.Render(conf)
+	suite.Error(err)
+}
+
 func (suite *renderSuite) testWithMonitoring(t *testing.T, c Config) {
 	_, err := suite.Render(c)
 	suite.NoError(err)

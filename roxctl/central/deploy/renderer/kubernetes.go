@@ -67,7 +67,9 @@ func (k *kubernetes) Render(c Config) ([]*zip.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	injectImageTags(&c)
+	if err := injectImageTags(&c); err != nil {
+		return nil, err
+	}
 	monitoringImage, err := generateMonitoringImage(c.K8sConfig.MainImage, c.K8sConfig.MonitoringImage)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error parsing monitoring image: ")
@@ -131,7 +133,23 @@ func (k *kubernetes) Instructions(c Config) string {
 	return string(data)
 }
 
-func injectImageTags(c *Config) {
-	c.K8sConfig.ScannerImageTag = utils.GenerateImageFromStringIgnoringError(c.K8sConfig.ScannerImage).GetName().GetTag()
-	c.K8sConfig.MainImageTag = utils.GenerateImageFromStringIgnoringError(c.K8sConfig.MainImage).GetName().GetTag()
+func getTag(imageStr string) (string, error) {
+	imageName, err := utils.GenerateImageFromString(imageStr)
+	if err != nil {
+		return "", err
+	}
+	return imageName.GetName().GetTag(), nil
+}
+
+func injectImageTags(c *Config) error {
+	var err error
+	c.K8sConfig.ScannerImageTag, err = getTag(c.K8sConfig.ScannerImage)
+	if err != nil {
+		return err
+	}
+	c.K8sConfig.MainImageTag, err = getTag(c.K8sConfig.MainImage)
+	if err != nil {
+		return err
+	}
+	return nil
 }
