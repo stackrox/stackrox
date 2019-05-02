@@ -1,6 +1,6 @@
-# StackRox Platform Web Application (UI)
+# StackRox Kubernetes Security Platform Web Application (UI)
 
-This sub-project contains Web UI (SPA) for StackRox Platform.
+This sub-project contains Web UI (SPA) for StackRox Kubernetes Security Platform.
 This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).
 
 ## Development
