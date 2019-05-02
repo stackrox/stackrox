@@ -20,7 +20,6 @@ interface OrchestratorMain {
     //Deployments
     io.fabric8.kubernetes.api.model.apps.Deployment getOrchestratorDeployment(String ns, String name)
     def createOrchestratorDeployment(io.fabric8.kubernetes.api.model.apps.Deployment dep)
-
     def createDeploymentNoWait(Deployment deployment)
     def createDeployment(Deployment deployment)
     def batchCreateDeployments(List<Deployment> deployments)
@@ -99,6 +98,7 @@ interface OrchestratorMain {
     List<ClusterRoleBinding> getClusterRoleBindings()
 
     //Misc
+    def execInContainer(Deployment deployment, String cmd)
     def createClairifyDeployment()
     String getClairifyEndpoint()
     String generateYaml(Object orchestratorObject)

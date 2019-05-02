@@ -44,20 +44,30 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRole
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding
 import io.fabric8.kubernetes.api.model.rbac.Role
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding
+import io.fabric8.kubernetes.client.Callback
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.KubernetesClientException
+import io.fabric8.kubernetes.client.dsl.ExecListener
+import io.fabric8.kubernetes.client.dsl.ExecWatch
 import io.fabric8.kubernetes.client.dsl.MixedOperation
 import io.fabric8.kubernetes.client.dsl.Resource
 import io.fabric8.kubernetes.client.dsl.ScalableResource
+import io.fabric8.kubernetes.client.utils.BlockingInputStreamPumper
 import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
 import objects.DaemonSet
 import objects.Deployment
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Node
+import okhttp3.Response
 import util.Timer
 
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
 
 class Kubernetes implements OrchestratorMain {
@@ -715,6 +725,40 @@ class Kubernetes implements OrchestratorMain {
         Misc/Helper Methods
     */
 
+    def execInContainer(Deployment deployment, String cmd) {
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(20)
+        try {
+            CountDownLatch latch = new CountDownLatch(1)
+            ExecWatch watch =
+                    client.pods().inNamespace(deployment.namespace).withName(deployment.pods.get(0).name)
+                            .redirectingOutput().usingListener(new ExecListener() {
+            @Override
+            void onOpen(Response response) {
+            }
+
+            @Override
+            void onFailure(Throwable t, Response response) {
+                latch.countDown()
+            }
+
+            @Override
+            void onClose(int code, String reason) {
+                latch.countDown()
+            }
+            }).exec(cmd.split(" "))
+            BlockingInputStreamPumper pump = new BlockingInputStreamPumper(watch.getOutput(), new SystemOutCallback())
+            Future<String> outPumpFuture = executorService.submit(pump, "Done")
+            executorService.scheduleAtFixedRate(new FutureChecker("Exec", cmd, outPumpFuture), 0, 2, TimeUnit.SECONDS)
+
+            latch.await(30, TimeUnit.SECONDS)
+            watch.close()
+            pump.close()
+        } catch (Exception e) {
+            println "Error exec'ing in pod: ${e.toString()}"
+        }
+        executorService.shutdown()
+    }
+
     def createClairifyDeployment() {
         //create clairify service
         Service clairifyService = new Service(
@@ -1192,5 +1236,31 @@ class Kubernetes implements OrchestratorMain {
         }
         println "K8s did not detect that namespace ${ns} was deleted"
         return false
+    }
+
+    private static class SystemOutCallback implements Callback<byte[]> {
+        @Override
+        void call(byte[] data) {
+            System.out.print(new String(data))
+        }
+    }
+
+    private static class FutureChecker implements Runnable {
+        private final String name
+        private final String cmd
+        private final Future<String> future
+
+        private FutureChecker(String name, String cmd, Future<String> future) {
+            this.name = name
+            this.cmd = cmd
+            this.future = future
+        }
+
+        @Override
+        void run() {
+            if (!future.isDone()) {
+                System.out.println(name + ":[" + cmd + "] is not done yet")
+            }
+        }
     }
 }
