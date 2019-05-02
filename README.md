@@ -3,10 +3,11 @@
 
 # StackRox Kubernetes Security Platform
 
-The StackRox Kubernetes Security Platform performs a risk analysis of the container
-environment, delivers visibility and runtime alerts, and provides recommendations
-to proactively improve security by hardening the environment. StackRox
-integrates with every stage of container lifecycle: build, deploy and runtime.
+The StackRox Kubernetes Security Platform performs a risk analysis of the
+container environment, delivers visibility and runtime alerts, and provides
+recommendations to proactively improve security by hardening the environment.
+StackRox integrates with every stage of container lifecycle: build, deploy and
+runtime.
 
 Note: the StackRox platform is built on the foundation of the product formerly
 known as Prevent, which itself was called Mitigate and Apollo. You may find
