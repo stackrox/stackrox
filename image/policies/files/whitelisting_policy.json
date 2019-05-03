@@ -1,0 +1,17 @@
+{
+  "id": "89cae2e6-0cb7-4329-8692-c2c3717c1237",
+  "name": "Unauthorized Process Execution",
+  "description": "This policy generates a violation for any process execution that is not explicitly allowed by a locked process whitelist for a given container specification within a Kubernetes deployment.",
+  "severity": "HIGH_SEVERITY",
+  "lifecycle_stages": [
+    "RUNTIME"
+  ],
+  "categories": [
+    "Anomalous Activity"
+  ],
+  "fields": {
+    "whitelist_enabled": true
+  },
+  "rationale": "A locked process whitelist communicates high confidence that execution of a non-whitelisted process positively indicates malicious activity.",
+  "remediation": "Evaluate this process execution for malicious intent, examine other accessible resources for abnormal activity, then kill the pod in which this process executed."
+}

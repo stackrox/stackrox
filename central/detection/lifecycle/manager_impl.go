@@ -107,6 +107,29 @@ func (m *managerImpl) flushIndicatorQueue() {
 		return
 	}
 
+	if features.ProcessWhitelist.Enabled() {
+		deploymentToMatchingIndicators := make(map[string][]*storage.ProcessIndicator)
+		for _, ind := range indicatorSlice {
+			userWhitelist, _, err := m.checkWhitelist(ind)
+			if err != nil {
+				log.Errorf("error checking whitelist for indicator: %v - %+v", err, ind)
+				continue
+			}
+			if userWhitelist {
+				deploymentToMatchingIndicators[ind.GetDeploymentId()] = append(deploymentToMatchingIndicators[ind.GetDeploymentId()], ind)
+			}
+		}
+		if len(deploymentToMatchingIndicators) > 0 {
+			// Compute whitelist alerts here
+			whitelistAlerts, err := m.getWhitelistAlerts(deploymentToMatchingIndicators)
+			if err != nil {
+				log.Errorf("failed to get whitelist alerts: %v", err)
+				return
+			}
+			newAlerts = append(newAlerts, whitelistAlerts...)
+		}
+	}
+
 	modified, err := m.alertManager.AlertAndNotify(newAlerts, alertmanager.WithLifecycleStage(storage.LifecycleStage_RUNTIME), alertmanager.WithDeploymentIDs(deploymentIDs...))
 	if err != nil {
 		log.Errorf("Couldn't alert and notify: %s", err)
@@ -153,7 +176,15 @@ func (m *managerImpl) addToQueue(indicator *storage.ProcessIndicator, injector c
 	}
 }
 
-func (m *managerImpl) checkWhitelist(indicator *storage.ProcessIndicator) error {
+func (m *managerImpl) getWhitelistAlerts(deploymentsToIndicators map[string][]*storage.ProcessIndicator) ([]*storage.Alert, error) {
+	whitelistExecutor := newWhitelistExecutor(m.deploymentDataStore, deploymentsToIndicators)
+	if err := m.runtimeDetector.PolicySet().ForEach(whitelistExecutor); err != nil {
+		return nil, err
+	}
+	return whitelistExecutor.alerts, nil
+}
+
+func (m *managerImpl) checkWhitelist(indicator *storage.ProcessIndicator) (userWhitelist bool, roxWhitelist bool, err error) {
 	key := &storage.ProcessWhitelistKey{
 		DeploymentId:  indicator.DeploymentId,
 		ContainerName: indicator.ContainerName,
@@ -162,42 +193,32 @@ func (m *managerImpl) checkWhitelist(indicator *storage.ProcessIndicator) error 
 	// TODO joseph what to do if whitelist doesn't exist?  Always create for now?
 	whitelist, err := m.whitelists.GetProcessWhitelist(key)
 	if err != nil {
-		return err
+		return
 	}
 
 	insertableElement := &storage.WhitelistItem{Item: &storage.WhitelistItem_ProcessName{ProcessName: indicator.GetSignal().GetExecFilePath()}}
 	if whitelist == nil {
-		_, err := m.whitelists.UpsertProcessWhitelist(key, []*storage.WhitelistItem{insertableElement}, true)
-		return err
+		_, err = m.whitelists.UpsertProcessWhitelist(key, []*storage.WhitelistItem{insertableElement}, true)
+		return
 	}
 
 	for _, element := range whitelist.GetElements() {
 		if element.GetElement().GetProcessName() == insertableElement.GetProcessName() {
-			return nil
+			return
 		}
 	}
-	if processwhitelist.IsLocked(whitelist.GetUserLockedTimestamp()) {
-		// TODO joseph create an alert
-		return nil
-	}
-	if processwhitelist.IsLocked(whitelist.GetStackRoxLockedTimestamp()) {
-		// TODO joseph create risk
-		return nil
+	userWhitelist = processwhitelist.IsLocked(whitelist.GetUserLockedTimestamp())
+	roxWhitelist = processwhitelist.IsLocked(whitelist.GetStackRoxLockedTimestamp())
+	if userWhitelist || roxWhitelist {
+		return
 	}
 	_, err = m.whitelists.UpdateProcessWhitelistElements(key, []*storage.WhitelistItem{insertableElement}, nil, true)
-	return err
+	return
 }
 
 func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator, injector common.MessageInjector) error {
 	if indicator.GetId() == "" {
 		return fmt.Errorf("invalid indicator received: %s, id was empty", proto.MarshalTextString(indicator))
-	}
-
-	if features.ProcessWhitelist.Enabled() {
-		err := m.checkWhitelist(indicator)
-		if err != nil {
-			log.Error(err)
-		}
 	}
 
 	m.addToQueue(indicator, injector)

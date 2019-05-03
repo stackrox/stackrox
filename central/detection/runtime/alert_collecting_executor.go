@@ -41,7 +41,15 @@ func (d *alertCollectingExecutorImpl) ClearAlerts() {
 	d.alerts = nil
 }
 
+// IsProcessWhitelistPolicy returns if the whitelist enabled field is set to true
+func IsProcessWhitelistPolicy(compiled detection.CompiledPolicy) bool {
+	return compiled.Policy().GetFields().GetWhitelistEnabled()
+}
+
 func (d *alertCollectingExecutorImpl) Execute(compiled detection.CompiledPolicy) error {
+	if IsProcessWhitelistPolicy(compiled) {
+		return nil
+	}
 	var err error
 	var violationsByDeployment map[string]searchbasedpolicies.Violations
 	if len(d.deploymentIDs) == 0 {
@@ -66,13 +74,13 @@ func (d *alertCollectingExecutorImpl) Execute(compiled detection.CompiledPolicy)
 		if !compiled.AppliesTo(dep) {
 			continue
 		}
-		d.alerts = append(d.alerts, policyDeploymentAndViolationsToAlert(compiled.Policy(), dep, violations))
+		d.alerts = append(d.alerts, PolicyDeploymentAndViolationsToAlert(compiled.Policy(), dep, violations))
 	}
 	return nil
 }
 
 // PolicyDeploymentAndViolationsToAlert constructs an alert.
-func policyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *storage.Deployment, violations searchbasedpolicies.Violations) *storage.Alert {
+func PolicyDeploymentAndViolationsToAlert(policy *storage.Policy, deployment *storage.Deployment, violations searchbasedpolicies.Violations) *storage.Alert {
 	if len(violations.AlertViolations) == 0 && violations.ProcessViolation == nil {
 		return nil
 	}

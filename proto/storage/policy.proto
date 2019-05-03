@@ -115,6 +115,9 @@ message PolicyFields {
     PortExposurePolicy port_exposure_policy = 27;
     PermissionPolicy permission_policy = 28;
     HostMountPolicy host_mount_policy = 29;
+    oneof set_whitelist {
+        bool whitelist_enabled = 30;
+    }
 }
 
 message Component {

@@ -72,17 +72,17 @@ func (suite *ManagerTestSuite) TestWhitelistNotFound() {
 	elements := fixtures.MakeElements([]string{indicator.Signal.GetExecFilePath()})
 	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(nil, nil)
 	suite.whitelists.EXPECT().UpsertProcessWhitelist(key, elements, true).Return(nil, nil)
-	err := suite.manager.checkWhitelist(indicator)
+	_, _, err := suite.manager.checkWhitelist(indicator)
 	suite.NoError(err)
 
 	expectedError := errors.Errorf("Expected error")
 	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(nil, expectedError)
-	err = suite.manager.checkWhitelist(indicator)
+	_, _, err = suite.manager.checkWhitelist(indicator)
 	suite.Equal(expectedError, err)
 
 	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(nil, nil)
 	suite.whitelists.EXPECT().UpsertProcessWhitelist(key, elements, true).Return(nil, expectedError)
-	err = suite.manager.checkWhitelist(indicator)
+	_, _, err = suite.manager.checkWhitelist(indicator)
 	suite.Equal(expectedError, err)
 }
 
@@ -92,13 +92,13 @@ func (suite *ManagerTestSuite) TestWhitelistShouldBeUpdated() {
 	elements := fixtures.MakeElements([]string{indicator.Signal.GetExecFilePath()})
 	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(whitelist, nil)
 	suite.whitelists.EXPECT().UpdateProcessWhitelistElements(key, elements, nil, true).Return(nil, nil)
-	err := suite.manager.checkWhitelist(indicator)
+	_, _, err := suite.manager.checkWhitelist(indicator)
 	suite.NoError(err)
 
 	expectedError := errors.Errorf("Expected error")
 	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(whitelist, nil)
 	suite.whitelists.EXPECT().UpdateProcessWhitelistElements(key, elements, nil, true).Return(nil, expectedError)
-	err = suite.manager.checkWhitelist(indicator)
+	_, _, err = suite.manager.checkWhitelist(indicator)
 	suite.Equal(expectedError, err)
 }
 
@@ -112,6 +112,6 @@ func (suite *ManagerTestSuite) TestWhitelistShouldPass() {
 	}
 	whitelist := &storage.ProcessWhitelist{Elements: []*storage.WhitelistElement{element}}
 	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(whitelist, nil)
-	err := suite.manager.checkWhitelist(indicator)
+	_, _, err := suite.manager.checkWhitelist(indicator)
 	suite.NoError(err)
 }
