@@ -1,26 +1,18 @@
-import React, { Component } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import Table, { defaultHeaderClassName } from 'Components/Table';
 import { sortValue } from 'sorters/sorters';
 
 import VulnsTable from './VulnsTable';
 
-class CVETable extends Component {
-    static propTypes = {
-        components: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
-        containsFixableCVEs: PropTypes.bool
-    };
-
-    static defaultProps = {
-        containsFixableCVEs: false
-    };
-
-    getColumns = () => {
+const CVETable = props => {
+    function getColumns() {
         const columns = [
             {
                 expander: true,
                 headerClassName: `w-1/8 ${defaultHeaderClassName} pointer-events-none bg-primary-200`,
                 className: 'w-1/8 pointer-events-none flex items-center justify-end',
+                // eslint-disable-next-line react/prop-types
                 Expander: ({ isExpanded, ...rest }) => {
                     if (rest.original.vulns.length === 0) return '';
                     const className = 'rt-expander w-1 pt-2 pointer-events-auto';
@@ -32,7 +24,8 @@ class CVETable extends Component {
                 accessor: 'name',
                 headerClassName:
                     'pl-3 font-600 text-left border-b border-base-300 border-r-0 bg-primary-200',
-                Cell: ci => <div>{ci.value}</div>
+                // eslint-disable-next-line react/prop-types
+                Cell: ({ value }) => <div>{value}</div>
             },
             {
                 Header: 'Version',
@@ -50,7 +43,7 @@ class CVETable extends Component {
             }
         ];
 
-        if (this.props.containsFixableCVEs) {
+        if (props.containsFixableCVEs) {
             columns.push({
                 Header: 'Fixable',
                 className: 'w-1/8 pr-4 flex items-center justify-end',
@@ -61,37 +54,49 @@ class CVETable extends Component {
             });
         }
         return columns;
-    };
+    }
 
-    renderVulnsTable = ({ original }) => {
+    // eslint-disable-next-line react/prop-types
+    function renderVulnsTable({ original }) {
         const { vulns } = original;
         if (vulns.length === 0) return null;
-        return <VulnsTable vulns={vulns} containsFixableCVEs={this.props.containsFixableCVEs} />;
-    };
-
-    render() {
-        const { components, ...rest } = this.props;
-        const columns = this.getColumns();
-        return (
-            <Table
-                defaultPageSize={components.length}
-                className="cve-table"
-                rows={components}
-                columns={columns}
-                SubComponent={this.renderVulnsTable}
-                defaultSorted={[
-                    {
-                        id: 'vulns.length',
-                        desc: true
-                    },
-                    {
-                        id: 'name'
-                    }
-                ]}
-                {...rest}
-            />
-        );
+        return <VulnsTable vulns={vulns} containsFixableCVEs={props.containsFixableCVEs} />;
     }
-}
+
+    const { scan, ...rest } = props;
+    const columns = getColumns();
+    if (!scan) return <div className="p-3">No scanner setup for this registry</div>;
+    const { components } = scan;
+    return (
+        <Table
+            defaultPageSize={components.length}
+            className="cve-table"
+            rows={components}
+            columns={columns}
+            SubComponent={renderVulnsTable}
+            defaultSorted={[
+                {
+                    id: 'vulns.length',
+                    desc: true
+                },
+                {
+                    id: 'name'
+                }
+            ]}
+            {...rest}
+        />
+    );
+};
+
+CVETable.propTypes = {
+    scan: PropTypes.shape({
+        components: PropTypes.arrayOf(PropTypes.shape({})).isRequired
+    }).isRequired,
+    containsFixableCVEs: PropTypes.bool
+};
+
+CVETable.defaultProps = {
+    containsFixableCVEs: false
+};
 
 export default CVETable;

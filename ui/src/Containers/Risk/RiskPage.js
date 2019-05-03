@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import ReactRouterPropTypes from 'react-router-prop-types';
 import { connect } from 'react-redux';
@@ -7,8 +7,6 @@ import { createSelector, createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
 import { actions as deploymentsActions } from 'reducers/deployments';
 
-import NoResultsMessage from 'Components/NoResultsMessage';
-import Table from 'Components/Table';
 import PageHeader from 'Components/PageHeader';
 import SearchInput from 'Components/SearchInput';
 import Panel from 'Components/Panel';
@@ -17,135 +15,66 @@ import Loader from 'Components/Loader';
 import TabContent from 'Components/TabContent';
 import TablePagination from 'Components/TablePagination';
 
-import { sortValue, sortDate } from 'sorters/sorters';
-import dateFns from 'date-fns';
-import dateTimeFormat from 'constants/dateTimeFormat';
 import RiskDetails from './RiskDetails';
 import DeploymentDetails from './DeploymentDetails';
 import ProcessDetails from './ProcessDetails';
+import RiskTable from './RiskTable';
 
-class RiskPage extends Component {
-    static propTypes = {
-        deployments: PropTypes.arrayOf(PropTypes.object).isRequired,
-        selectedDeployment: PropTypes.shape({
-            id: PropTypes.string.isRequired
-        }),
-        processGroup: PropTypes.shape({}),
-        searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
-        searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
-        searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
-        setSearchOptions: PropTypes.func.isRequired,
-        setSearchModifiers: PropTypes.func.isRequired,
-        setSearchSuggestions: PropTypes.func.isRequired,
-        isViewFiltered: PropTypes.bool.isRequired,
-        history: ReactRouterPropTypes.history.isRequired,
-        location: ReactRouterPropTypes.location.isRequired
-    };
+const RiskPage = ({
+    history,
+    location,
+    deployments,
+    selectedDeployment,
+    searchOptions,
+    processGroup,
+    isViewFiltered,
+    searchModifiers,
+    searchSuggestions,
+    setSearchOptions,
+    setSearchModifiers,
+    setSearchSuggestions
+}) => {
+    const [page, setPage] = useState(0);
 
-    static defaultProps = {
-        selectedDeployment: null,
-        processGroup: {}
-    };
-
-    constructor(props) {
-        super(props);
-        this.state = {
-            page: 0
-        };
+    function onSearch(options) {
+        if (options.length && !options[options.length - 1].type) {
+            history.push('/main/risk');
+        }
     }
 
-    onSearch = searchOptions => {
-        if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
-            this.props.history.push('/main/risk');
-        }
-    };
-
-    setTablePage = newPage => {
-        this.setState({ page: newPage });
-    };
-
-    updateSelectedDeployment = deployment => {
+    function updateSelectedDeployment(deployment) {
         const urlSuffix = deployment && deployment.id ? `/${deployment.id}` : '';
-        this.props.history.push({
+        history.push({
             pathname: `/main/risk${urlSuffix}`,
-            search: this.props.location.search
+            search: location.search
         });
-    };
+    }
 
-    renderPanel = () => {
-        const { length } = this.props.deployments;
+    function renderPanel() {
+        const { length } = deployments;
         const paginationComponent = (
-            <TablePagination
-                page={this.state.page}
-                dataLength={length}
-                setPage={this.setTablePage}
-            />
+            <TablePagination page={page} dataLength={length} setPage={setPage} />
         );
-        const isFiltering = this.props.searchOptions.length;
+        const isFiltering = searchOptions.length;
         const headerText = `${length} Deployment${length === 1 ? '' : 's'} ${
             isFiltering ? 'Matched' : ''
         }`;
         return (
             <Panel header={headerText} headerComponents={paginationComponent}>
-                <div className="w-full">{this.renderTable()}</div>
+                <div className="w-full">
+                    <RiskTable
+                        rows={deployments}
+                        selectedDeployment={selectedDeployment}
+                        processGroup={processGroup}
+                        page={page}
+                    />
+                </div>
             </Panel>
-        );
-    };
-
-    renderTable() {
-        const columns = [
-            {
-                Header: 'Name',
-                accessor: 'name',
-                Cell: ({ value }) => <span>{value}</span>
-            },
-            {
-                id: 'updated',
-                Header: 'Updated',
-                accessor: 'updatedAt',
-                Cell: ({ value }) => <span>{dateFns.format(value, dateTimeFormat)}</span>,
-                sortMethod: sortDate
-            },
-            {
-                Header: 'Cluster',
-                accessor: 'cluster',
-                Cell: ({ value }) => <span>{value}</span>
-            },
-            {
-                Header: 'Namespace',
-                accessor: 'namespace',
-                Cell: ({ value }) => <span>{value}</span>
-            },
-            {
-                Header: 'Priority',
-                accessor: 'priority',
-                Cell: ({ value }) => <span>{value}</span>,
-                sortMethod: sortValue
-            }
-        ];
-
-        const { deployments, selectedDeployment } = this.props;
-        const rows = deployments;
-        const id = selectedDeployment && selectedDeployment.id;
-        if (!rows.length)
-            return <NoResultsMessage message="No results found. Please refine your search." />;
-        return (
-            <Table
-                rows={rows}
-                columns={columns}
-                onRowClick={this.updateSelectedDeployment}
-                selectedRowId={id}
-                noDataText="No results found. Please refine your search."
-                page={this.state.page}
-            />
         );
     }
 
-    renderSidePanel = () => {
-        const { selectedDeployment } = this.props;
+    function renderSidePanel() {
         if (!selectedDeployment) return null;
-
-        const { processGroup } = this.props;
 
         const riskPanelTabs = [{ text: 'Risk Indicators' }, { text: 'Deployment Details' }];
         if (processGroup.groups !== undefined && processGroup.groups.length !== 0) {
@@ -181,44 +110,64 @@ class RiskPage extends Component {
             <Panel
                 header={selectedDeployment.name}
                 className="bg-primary-200 z-10 w-full h-full absolute pin-r pin-t md:w-1/2 min-w-72 md:relative"
-                onClose={this.updateSelectedDeployment}
+                onClose={updateSelectedDeployment}
             >
                 {content}
             </Panel>
         );
-    };
-
-    render() {
-        const subHeader = this.props.isViewFiltered ? 'Filtered view' : 'Default view';
-        const defaultOption = this.props.searchModifiers.find(x => x.value === 'Deployment:');
-        return (
-            <section className="flex flex-1 flex-col h-full">
-                <div className="flex flex-1 flex-col">
-                    <PageHeader header="Risk" subHeader={subHeader}>
-                        <SearchInput
-                            className="w-full"
-                            searchOptions={this.props.searchOptions}
-                            searchModifiers={this.props.searchModifiers}
-                            searchSuggestions={this.props.searchSuggestions}
-                            setSearchOptions={this.props.setSearchOptions}
-                            setSearchModifiers={this.props.setSearchModifiers}
-                            setSearchSuggestions={this.props.setSearchSuggestions}
-                            onSearch={this.onSearch}
-                            defaultOption={defaultOption}
-                            autoCompleteCategories={['DEPLOYMENTS']}
-                        />
-                    </PageHeader>
-                    <div className="flex flex-1 relative">
-                        <div className="rounded-sm shadow border-primary-300 bg-base-100 w-full overflow-hidden">
-                            {this.renderPanel()}
-                        </div>
-                        {this.renderSidePanel()}
-                    </div>
-                </div>
-            </section>
-        );
     }
-}
+
+    const subHeader = isViewFiltered ? 'Filtered view' : 'Default view';
+    const defaultOption = searchModifiers.find(x => x.value === 'Deployment:');
+    return (
+        <section className="flex flex-1 flex-col h-full">
+            <div className="flex flex-1 flex-col">
+                <PageHeader header="Risk" subHeader={subHeader}>
+                    <SearchInput
+                        className="w-full"
+                        searchOptions={searchOptions}
+                        searchModifiers={searchModifiers}
+                        searchSuggestions={searchSuggestions}
+                        setSearchOptions={setSearchOptions}
+                        setSearchModifiers={setSearchModifiers}
+                        setSearchSuggestions={setSearchSuggestions}
+                        onSearch={onSearch}
+                        defaultOption={defaultOption}
+                        autoCompleteCategories={['DEPLOYMENTS']}
+                    />
+                </PageHeader>
+                <div className="flex flex-1 relative">
+                    <div className="rounded-sm shadow border-primary-300 bg-base-100 w-full overflow-hidden">
+                        {renderPanel()}
+                    </div>
+                    {renderSidePanel()}
+                </div>
+            </div>
+        </section>
+    );
+};
+
+RiskPage.propTypes = {
+    deployments: PropTypes.arrayOf(PropTypes.object).isRequired,
+    selectedDeployment: PropTypes.shape({
+        id: PropTypes.string.isRequired
+    }),
+    processGroup: PropTypes.shape({}),
+    searchOptions: PropTypes.arrayOf(PropTypes.object).isRequired,
+    searchModifiers: PropTypes.arrayOf(PropTypes.object).isRequired,
+    searchSuggestions: PropTypes.arrayOf(PropTypes.object).isRequired,
+    setSearchOptions: PropTypes.func.isRequired,
+    setSearchModifiers: PropTypes.func.isRequired,
+    setSearchSuggestions: PropTypes.func.isRequired,
+    isViewFiltered: PropTypes.bool.isRequired,
+    history: ReactRouterPropTypes.history.isRequired,
+    location: ReactRouterPropTypes.location.isRequired
+};
+
+RiskPage.defaultProps = {
+    selectedDeployment: null,
+    processGroup: {}
+};
 
 const isViewFiltered = createSelector(
     [selectors.getDeploymentsSearchOptions],

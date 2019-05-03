@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import entityTypes, { standardTypes } from 'constants/entityTypes';
 import { standardLabels } from 'messages/standards';
@@ -108,7 +108,7 @@ function formatResourceData(data, resourceType) {
 }
 
 function formatStandardData(data) {
-    if (!data.results || data.results.results.length === 0) return null;
+    if (!data.results || !data.results.results || data.results.results.length === 0) return null;
     const formattedData = { results: [], totalRows: 0 };
     const groups = {};
     let controlKeyIndex = null;
@@ -228,38 +228,21 @@ const createPDFTable = (tableData, entityType, query, pdfId) => {
     }
 };
 
-class ListTable extends Component {
-    static propTypes = {
-        searchComponent: PropTypes.node,
-        entityType: PropTypes.string,
-        query: PropTypes.shape({}),
-        selectedRow: PropTypes.shape({}),
-        updateSelectedRow: PropTypes.func.isRequired,
-        pdfId: PropTypes.string
-    };
-
-    static defaultProps = {
-        searchComponent: null,
-        selectedRow: null,
-        pdfId: null,
-        entityType: null,
-        query: null
-    };
-
-    constructor(props) {
-        super(props);
-        this.state = {
-            page: 0
-        };
-    }
-
-    setTablePage = page => this.setState({ page });
+const ListTable = ({
+    searchComponent,
+    entityType,
+    query,
+    selectedRow,
+    updateSelectedRow,
+    pdfId
+}) => {
+    const [page, setPage] = useState(0);
 
     // This is a client-side implementation of filtering by the "Compliance State" Search Option
-    filterByComplianceState = (data, query, isControlList) => {
+    function filterByComplianceState(data, filterQuery, isControlList) {
         const complianceStateKey = SEARCH_OPTIONS.COMPLIANCE.STATE;
-        if (!query[complianceStateKey]) return data.results;
-        const val = query[complianceStateKey].toLowerCase();
+        if (!filterQuery[complianceStateKey]) return data.results;
+        const val = filterQuery[complianceStateKey].toLowerCase();
         const isPassing = val === 'pass';
         const isFailing = val === 'fail';
         const { results } = data;
@@ -297,112 +280,110 @@ class ListTable extends Component {
                 return acc;
             }, null);
         });
-    };
+    }
 
-    getTotalRows = (data, isStandard) => {
+    function getTotalRows(data, isStandard) {
         if (!isStandard) {
             return data.length;
         }
         return data.reduce((acc, group) => acc + group.rows.length, 0);
-    };
-
-    render() {
-        const {
-            searchComponent,
-            entityType,
-            query,
-            selectedRow,
-            updateSelectedRow,
-            pdfId
-        } = this.props;
-        const { standardId } = query;
-        const { page } = this.state;
-        const gqlQuery = getQuery(entityType);
-        const variables = getVariables(entityType, query);
-        const isControlList = entityType === entityTypes.CONTROL;
-        const formatData = isControlList ? formatStandardData : formatResourceData;
-        const tableColumns = entityToColumns[standardId || entityType];
-        return (
-            <Query query={gqlQuery} variables={variables}>
-                {({ loading, data }) => {
-                    let tableData;
-                    let contents = <Loader />;
-                    let headerComponent;
-                    let headerText;
-                    if (!loading || (data && data.results)) {
-                        const formattedData = formatData(data, entityType);
-                        if (!formattedData)
-                            return (
-                                <NoResultsMessage message="No compliance data available. Please run a scan." />
-                            );
-
-                        tableData = this.filterByComplianceState(
-                            formattedData,
-                            query,
-                            isControlList
-                        );
-
-                        if (tableData.length) {
-                            createPDFTable(tableData, entityType, query, pdfId);
-                        }
-                        const totalRows = this.getTotalRows(tableData, isControlList);
-                        const { groupBy } = query;
-
-                        const groupedByText = groupBy
-                            ? `across ${tableData.length} ${pluralize(groupBy, tableData.length)}`
-                            : '';
-                        headerText = `${totalRows} ${pluralize(
-                            entityType,
-                            totalRows
-                        )} ${groupedByText}`;
-
-                        contents = isControlList ? (
-                            <TableGroup
-                                groups={tableData}
-                                totalRows={totalRows}
-                                tableColumns={tableColumns}
-                                onRowClick={updateSelectedRow}
-                                entityType={entityType}
-                                idAttribute="id"
-                                selectedRowId={selectedRow ? selectedRow.id : null}
-                            />
-                        ) : (
-                            <Table
-                                rows={tableData}
-                                columns={tableColumns}
-                                onRowClick={updateSelectedRow}
-                                idAttribute="id"
-                                selectedRowId={selectedRow ? selectedRow.id : null}
-                                noDataText="No results found. Please refine your search."
-                                page={page}
-                                defaultSorted={[
-                                    {
-                                        id: 'name',
-                                        desc: false
-                                    }
-                                ]}
-                            />
-                        );
-                        headerComponent = (
-                            <>
-                                <div className="flex flex-1 justify-start">{searchComponent}</div>
-                                <TablePagination
-                                    page={page}
-                                    dataLength={totalRows}
-                                    setPage={this.setTablePage}
-                                />
-                            </>
-                        );
-                    }
-                    return (
-                        <Panel header={headerText} headerComponents={headerComponent}>
-                            {contents}
-                        </Panel>
-                    );
-                }}
-            </Query>
-        );
     }
-}
+
+    const { standardId } = query;
+    const gqlQuery = getQuery(entityType);
+    const variables = getVariables(entityType, query);
+    const isControlList = entityType === entityTypes.CONTROL;
+    const formatData = isControlList ? formatStandardData : formatResourceData;
+    const tableColumns = entityToColumns[standardId || entityType];
+    return (
+        <Query query={gqlQuery} variables={variables}>
+            {({ loading, data }) => {
+                let tableData;
+                let contents = <Loader />;
+                let headerComponent;
+                let headerText;
+                if (!loading || (data && data.results)) {
+                    const formattedData = formatData(data, entityType);
+                    if (!formattedData)
+                        return (
+                            <NoResultsMessage message="No compliance data available. Please run a scan." />
+                        );
+
+                    tableData = filterByComplianceState(formattedData, query, isControlList);
+
+                    if (tableData.length) {
+                        createPDFTable(tableData, entityType, query, pdfId);
+                    }
+                    const totalRows = getTotalRows(tableData, isControlList);
+                    const { groupBy } = query;
+
+                    const groupedByText = groupBy
+                        ? `across ${tableData.length} ${pluralize(groupBy, tableData.length)}`
+                        : '';
+                    headerText = `${totalRows} ${pluralize(
+                        entityType,
+                        totalRows
+                    )} ${groupedByText}`;
+
+                    contents = isControlList ? (
+                        <TableGroup
+                            groups={tableData}
+                            totalRows={totalRows}
+                            tableColumns={tableColumns}
+                            onRowClick={updateSelectedRow}
+                            entityType={entityType}
+                            idAttribute="id"
+                            selectedRowId={selectedRow ? selectedRow.id : null}
+                        />
+                    ) : (
+                        <Table
+                            rows={tableData}
+                            columns={tableColumns}
+                            onRowClick={updateSelectedRow}
+                            idAttribute="id"
+                            selectedRowId={selectedRow ? selectedRow.id : null}
+                            noDataText="No results found. Please refine your search."
+                            page={page}
+                            defaultSorted={[
+                                {
+                                    id: 'name',
+                                    desc: false
+                                }
+                            ]}
+                        />
+                    );
+                    headerComponent = (
+                        <>
+                            <div className="flex flex-1 justify-start">{searchComponent}</div>
+                            <TablePagination page={page} dataLength={totalRows} setPage={setPage} />
+                        </>
+                    );
+                }
+                return (
+                    <Panel header={headerText} headerComponents={headerComponent}>
+                        {contents}
+                    </Panel>
+                );
+            }}
+        </Query>
+    );
+};
+
+ListTable.propTypes = {
+    searchComponent: PropTypes.node,
+    entityType: PropTypes.string,
+    query: PropTypes.shape({}),
+    selectedRow: PropTypes.shape({}),
+    updateSelectedRow: PropTypes.func.isRequired,
+    pdfId: PropTypes.string
+};
+
+ListTable.defaultProps = {
+    searchComponent: null,
+    selectedRow: null,
+    pdfId: null,
+    entityType: null,
+    query: null
+};
 
 export default ListTable;

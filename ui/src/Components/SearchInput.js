@@ -12,7 +12,7 @@ import {
     noOptionsMessage,
     createOptionPosition,
     inputMatchesTopOption
-} from 'Components/URLSearchInput';
+} from 'Components/URLSearchInputWithAutocomplete';
 
 import { actions as searchAutoCompleteActions } from 'reducers/searchAutocomplete';
 import { selectors } from 'reducers';
@@ -40,7 +40,8 @@ class SearchInput extends Component {
         autoCompleteResults: PropTypes.arrayOf(PropTypes.string),
         sendAutoCompleteRequest: PropTypes.func,
         clearAutoComplete: PropTypes.func,
-        autoCompleteCategories: PropTypes.arrayOf(PropTypes.string)
+        autoCompleteCategories: PropTypes.arrayOf(PropTypes.string),
+        setAllSearchOptions: PropTypes.func.isRequired
     };
 
     static defaultProps = {
@@ -62,12 +63,12 @@ class SearchInput extends Component {
     }
 
     sendAutoCompleteRequest = (searchOptions, input) => {
+        this.props.setAllSearchOptions(searchOptions);
+
         // Don't populate autocomplete if the text box is totally empty,
         // since we want people to see just the chips in that case.
         if (!searchOptions.length && !input.length) {
-            if (this.props.clearAutoComplete) {
-                this.props.clearAutoComplete();
-            }
+            if (this.props.clearAutoComplete) this.props.clearAutoComplete();
             return;
         }
 
@@ -88,9 +89,7 @@ class SearchInput extends Component {
 
     updateAutoCompleteState = input => {
         if (!this.queryIsPossiblyBeingTyped()) {
-            if (this.props.clearAutoComplete) {
-                this.props.clearAutoComplete();
-            }
+            if (this.props.clearAutoComplete) this.props.clearAutoComplete();
             return;
         }
         this.sendAutoCompleteRequest(this.props.searchOptions, input);
@@ -211,7 +210,8 @@ const mapStateToProps = createStructuredSelector({
 
 const mapDispatchToProps = {
     sendAutoCompleteRequest: searchAutoCompleteActions.sendAutoCompleteRequest,
-    clearAutoComplete: searchAutoCompleteActions.clearAutoComplete
+    clearAutoComplete: searchAutoCompleteActions.clearAutoComplete,
+    setAllSearchOptions: searchAutoCompleteActions.setAllSearchOptions
 };
 
 export default connect(
