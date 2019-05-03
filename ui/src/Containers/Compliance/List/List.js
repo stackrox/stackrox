@@ -8,12 +8,14 @@ import SidePanel from './SidePanel';
 
 class ComplianceList extends Component {
     static propTypes = {
+        searchComponent: PropTypes.node,
         entityType: PropTypes.string.isRequired,
         query: PropTypes.shape({}),
         location: ReactRouterPropTypes.location.isRequired
     };
 
     static defaultProps = {
+        searchComponent: null,
         query: null
     };
 
@@ -38,7 +40,7 @@ class ComplianceList extends Component {
 
     render() {
         const { selectedRow } = this.state;
-        const { entityType, query } = this.props;
+        const { searchComponent, entityType, query } = this.props;
 
         let sidePanel;
         if (selectedRow) {
@@ -59,6 +61,7 @@ class ComplianceList extends Component {
         return (
             <div className="flex flex-1 overflow-y-auto h-full">
                 <ListTable
+                    searchComponent={searchComponent}
                     selectedRow={selectedRow}
                     entityType={entityType}
                     query={query}

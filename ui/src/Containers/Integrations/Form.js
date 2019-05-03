@@ -221,7 +221,7 @@ class Form extends Component {
 
         return (
             <div className="flex flex-1">
-                <Panel header={header} onClose={this.props.onClose} buttons={buttons}>
+                <Panel header={header} onClose={this.props.onClose} headerComponents={buttons}>
                     {this.renderForm()}
                 </Panel>
             </div>

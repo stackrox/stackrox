@@ -211,7 +211,7 @@ class APITokensModal extends Component {
                 ? `${selectionCount} API Token${selectionCount === 1 ? '' : 's'} Selected`
                 : `${tokenCount} API Token${tokenCount === 1 ? '' : 's'}`;
         return (
-            <Panel header={headerText} buttons={this.renderPanelButtons()}>
+            <Panel header={headerText} headerComponents={this.renderPanelButtons()}>
                 {this.showModalView()}
             </Panel>
         );
@@ -235,7 +235,7 @@ class APITokensModal extends Component {
         );
 
         return (
-            <Panel header="Generate API Token" onClose={this.closeForm} buttons={buttons}>
+            <Panel header="Generate API Token" onClose={this.closeForm} headerComponents={buttons}>
                 <APITokenForm />
             </Panel>
         );

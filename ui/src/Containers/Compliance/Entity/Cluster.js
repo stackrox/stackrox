@@ -34,6 +34,11 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
                 const { name, id } = cluster;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
+
+                const searchComponent = listEntityType ? (
+                    <SearchInput categories={[searchCategoryTypes[listEntityType]]} />
+                ) : null;
+
                 if (listEntityType && !sidePanelMode) {
                     const queryParams = { ...params.query };
                     queryParams['Cluster Id'] = entityId;
@@ -47,6 +52,7 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
                             className="flex flex-col flex-1 overflow-y-auto h-full"
                         >
                             <ComplianceList
+                                searchComponent={searchComponent}
                                 entityType={listEntityType}
                                 query={listQuery}
                                 className={pdfClassName}
@@ -154,32 +160,27 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
                     );
                 }
 
-                const searchComponent = listEntityType ? (
-                    <SearchInput categories={[searchCategoryTypes[listEntityType]]} />
-                ) : null;
-
                 return (
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
-                            <ResourceTabs
-                                entityId={entityId}
-                                entityType={entityTypes.CLUSTER}
-                                resourceTabs={[
-                                    entityTypes.CONTROL,
-                                    entityTypes.NAMESPACE,
-                                    entityTypes.NODE,
-                                    entityTypes.DEPLOYMENT
-                                ]}
-                            />
-                        )}
-                        {!sidePanelMode && (
-                            <Header
-                                searchComponent={searchComponent}
-                                entityType={entityTypes.CLUSTER}
-                                listEntityType={listEntityType}
-                                entityName={name}
-                                entityId={id}
-                            />
+                            <>
+                                <Header
+                                    entityType={entityTypes.CLUSTER}
+                                    listEntityType={listEntityType}
+                                    entityName={name}
+                                    entityId={id}
+                                />
+                                <ResourceTabs
+                                    entityId={entityId}
+                                    entityType={entityTypes.CLUSTER}
+                                    resourceTabs={[
+                                        entityTypes.CONTROL,
+                                        entityTypes.NAMESPACE,
+                                        entityTypes.NODE,
+                                        entityTypes.DEPLOYMENT
+                                    ]}
+                                />
+                            </>
                         )}
                         {contents}
                     </section>

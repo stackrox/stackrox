@@ -51,6 +51,11 @@ const DeploymentPage = ({ match, location, deploymentId, sidePanelMode }) => {
                 } = deployment;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
+
+                const searchComponent = listEntityType ? (
+                    <SearchInput categories={[searchCategoryTypes[listEntityType]]} />
+                ) : null;
+
                 if (listEntityType && !sidePanelMode) {
                     const queryParams = { ...params.query };
                     queryParams.deployment = name;
@@ -63,7 +68,11 @@ const DeploymentPage = ({ match, location, deploymentId, sidePanelMode }) => {
                             id="capture-list"
                             className="flex flex-col flex-1 overflow-y-auto h-full"
                         >
-                            <ComplianceList entityType={listEntityType} query={listQuery} />
+                            <ComplianceList
+                                searchComponent={searchComponent}
+                                entityType={listEntityType}
+                                query={listQuery}
+                            />
                         </section>
                     );
                 } else {
@@ -158,27 +167,22 @@ const DeploymentPage = ({ match, location, deploymentId, sidePanelMode }) => {
                     );
                 }
 
-                const searchComponent = listEntityType ? (
-                    <SearchInput categories={[searchCategoryTypes[listEntityType]]} />
-                ) : null;
-
                 return (
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
-                            <ResourceTabs
-                                entityId={id}
-                                entityType={entityTypes.DEPLOYMENT}
-                                resourceTabs={[entityTypes.CONTROL]}
-                            />
-                        )}
-                        {!sidePanelMode && (
-                            <Header
-                                searchComponent={searchComponent}
-                                entityType={entityTypes.DEPLOYMENT}
-                                listEntityType={listEntityType}
-                                entityName={name}
-                                entityId={id}
-                            />
+                            <>
+                                <Header
+                                    entityType={entityTypes.DEPLOYMENT}
+                                    listEntityType={listEntityType}
+                                    entityName={name}
+                                    entityId={id}
+                                />
+                                <ResourceTabs
+                                    entityId={id}
+                                    entityType={entityTypes.DEPLOYMENT}
+                                    resourceTabs={[entityTypes.CONTROL]}
+                                />
+                            </>
                         )}
                         {contents}
                     </section>

@@ -210,7 +210,7 @@ class ClustersModal extends Component {
         );
         return (
             <div className="flex flex-1">
-                <Panel header={headerText} buttons={buttons}>
+                <Panel header={headerText} headerComponents={buttons}>
                     {this.showModalView()}
                 </Panel>
             </div>

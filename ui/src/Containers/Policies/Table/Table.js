@@ -43,12 +43,15 @@ class Table extends Component {
         if (!this.props.policies.length)
             return <NoResultsMessage message="No results found. Please refine your search." />;
 
+        const headerComponents = (
+            <>
+                <Buttons />
+                {this.pagination(this.props.policies, this.props.page)}
+            </>
+        );
+
         return (
-            <Panel
-                header={this.getTableHeaderText()}
-                buttons={<Buttons />}
-                headerComponents={this.pagination(this.props.policies, this.props.page)}
-            >
+            <Panel header={this.getTableHeaderText()} headerComponents={headerComponents}>
                 <TableContents />
             </Panel>
         );

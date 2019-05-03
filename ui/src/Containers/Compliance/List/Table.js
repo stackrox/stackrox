@@ -230,6 +230,7 @@ const createPDFTable = (tableData, entityType, query, pdfId) => {
 
 class ListTable extends Component {
     static propTypes = {
+        searchComponent: PropTypes.node,
         entityType: PropTypes.string,
         query: PropTypes.shape({}),
         selectedRow: PropTypes.shape({}),
@@ -238,6 +239,7 @@ class ListTable extends Component {
     };
 
     static defaultProps = {
+        searchComponent: null,
         selectedRow: null,
         pdfId: null,
         entityType: null,
@@ -305,7 +307,14 @@ class ListTable extends Component {
     };
 
     render() {
-        const { entityType, query, selectedRow, updateSelectedRow, pdfId } = this.props;
+        const {
+            searchComponent,
+            entityType,
+            query,
+            selectedRow,
+            updateSelectedRow,
+            pdfId
+        } = this.props;
         const { standardId } = query;
         const { page } = this.state;
         const gqlQuery = getQuery(entityType);
@@ -318,7 +327,7 @@ class ListTable extends Component {
                 {({ loading, data }) => {
                     let tableData;
                     let contents = <Loader />;
-                    let paginationComponent;
+                    let headerComponent;
                     let headerText;
                     if (!loading || (data && data.results)) {
                         const formattedData = formatData(data, entityType);
@@ -374,16 +383,19 @@ class ListTable extends Component {
                                 ]}
                             />
                         );
-                        paginationComponent = (
-                            <TablePagination
-                                page={page}
-                                dataLength={totalRows}
-                                setPage={this.setTablePage}
-                            />
+                        headerComponent = (
+                            <>
+                                <div className="flex flex-1 justify-start">{searchComponent}</div>
+                                <TablePagination
+                                    page={page}
+                                    dataLength={totalRows}
+                                    setPage={this.setTablePage}
+                                />
+                            </>
                         );
                     }
                     return (
-                        <Panel header={headerText} headerComponents={paginationComponent}>
+                        <Panel header={headerText} headerComponents={headerComponent}>
                             {contents}
                         </Panel>
                     );

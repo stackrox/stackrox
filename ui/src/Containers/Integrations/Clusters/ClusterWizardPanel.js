@@ -88,7 +88,7 @@ class ClusterWizardPanel extends Component {
             <div className="w-full">
                 <Panel
                     header={clusterName || 'New Cluster'}
-                    buttons={this.renderPanelButtons()}
+                    headerComponents={this.renderPanelButtons()}
                     className="h-full w-full"
                     onClose={onFinish}
                 >

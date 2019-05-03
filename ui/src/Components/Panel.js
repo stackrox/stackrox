@@ -61,7 +61,7 @@ const TooltipDiv = ({ header, isUpperCase }) => {
     return (
         <div
             ref={parentRef}
-            className={`overflow-hidden m-1 flex flex-1 text-base-600 items-center tracking-wide leading-normal font-700 lg:ml-2 lg:mr-2 ${titleClassName}`}
+            className={`overflow-hidden mx-4 flex text-base-600 items-center tracking-wide leading-normal font-700 ${titleClassName}`}
             data-test-id="panel-header"
         >
             {content}
@@ -81,10 +81,10 @@ TooltipDiv.defaultProps = {
 
 const Panel = props => (
     <div
-        className={`flex flex-col h-full border-r border-base-400 min-w-0 ${props.className}`}
+        className={`flex flex-col h-full border-r border-base-400 ${props.className}`}
         data-test-id="panel"
     >
-        <div className="border-b border-base-400 flex-no-wrap">
+        <div className="py-2 border-b border-base-400 flex-no-wrap">
             <div className={props.headerClassName}>
                 {props.leftButtons && (
                     <div className="flex items-center pr-3 relative border-base-400 border-r hover:bg-primary-300 hover:border-primary-300">
@@ -96,18 +96,17 @@ const Panel = props => (
                 ) : (
                     <TooltipDiv header={props.header} isUpperCase={props.isUpperCase} />
                 )}
-                <div className="panel-actions relative flex items-center">{props.buttons}</div>
 
-                {props.headerComponents && (
-                    <div className="flex items-center pr-3 relative">{props.headerComponents}</div>
-                )}
-                {props.onClose && (
-                    <CloseButton
-                        onClose={props.onClose}
-                        className={props.closeButtonClassName}
-                        iconColor={props.closeButtonIconColor}
-                    />
-                )}
+                <div className="flex flex-1 items-center justify-end pl-3 relative">
+                    {props.headerComponents && props.headerComponents}
+                    {props.onClose && (
+                        <CloseButton
+                            onClose={props.onClose}
+                            className={props.closeButtonClassName}
+                            iconColor={props.closeButtonIconColor}
+                        />
+                    )}
+                </div>
             </div>
         </div>
         <div className={`flex h-full overflow-y-auto ${props.bodyClassName}`}>{props.children}</div>
@@ -119,7 +118,6 @@ Panel.propTypes = {
     headerTextComponent: PropTypes.element,
     headerClassName: PropTypes.string,
     bodyClassName: PropTypes.string,
-    buttons: PropTypes.node,
     className: PropTypes.string,
     children: PropTypes.node.isRequired,
     onClose: PropTypes.func,
@@ -135,7 +133,6 @@ Panel.defaultProps = {
     headerTextComponent: null,
     headerClassName,
     bodyClassName: null,
-    buttons: null,
     className: 'w-full',
     onClose: null,
     closeButtonClassName: '',

@@ -39,7 +39,7 @@ class Wizard extends Component {
         return (
             <Panel
                 header={header}
-                buttons={<Buttons />}
+                headerComponents={<Buttons />}
                 onClose={this.onClose}
                 className="bg-primary-200 w-1/2"
             >

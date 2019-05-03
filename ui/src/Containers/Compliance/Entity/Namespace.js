@@ -50,6 +50,11 @@ const NamespacePage = ({ match, location, namespaceId, sidePanelMode }) => {
                 const { name, id, clusterName, labels, numNetworkPolicies } = namespace;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
                 let contents;
+
+                const searchComponent = listEntityType ? (
+                    <SearchInput categories={[searchCategoryTypes[listEntityType]]} />
+                ) : null;
+
                 if (listEntityType && !sidePanelMode) {
                     const queryParams = { ...params.query };
                     queryParams.Namespace = namespace.name;
@@ -62,7 +67,11 @@ const NamespacePage = ({ match, location, namespaceId, sidePanelMode }) => {
                             id="capture-list"
                             className="flex flex-col flex-1 overflow-y-auto h-full"
                         >
-                            <ComplianceList entityType={listEntityType} query={listQuery} />
+                            <ComplianceList
+                                searchComponent={searchComponent}
+                                entityType={listEntityType}
+                                query={listQuery}
+                            />
                         </section>
                     );
                 } else {
@@ -164,27 +173,22 @@ const NamespacePage = ({ match, location, namespaceId, sidePanelMode }) => {
                     );
                 }
 
-                const searchComponent = listEntityType ? (
-                    <SearchInput categories={[searchCategoryTypes[listEntityType]]} />
-                ) : null;
-
                 return (
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
-                            <ResourceTabs
-                                entityId={id}
-                                entityType={entityTypes.NAMESPACE}
-                                resourceTabs={[entityTypes.CONTROL, entityTypes.DEPLOYMENT]}
-                            />
-                        )}
-                        {!sidePanelMode && (
-                            <Header
-                                searchComponent={searchComponent}
-                                entityType={entityTypes.NAMESPACE}
-                                listEntityType={listEntityType}
-                                entityName={name}
-                                entityId={id}
-                            />
+                            <>
+                                <Header
+                                    entityType={entityTypes.NAMESPACE}
+                                    listEntityType={listEntityType}
+                                    entityName={name}
+                                    entityId={id}
+                                />
+                                <ResourceTabs
+                                    entityId={id}
+                                    entityType={entityTypes.NAMESPACE}
+                                    resourceTabs={[entityTypes.CONTROL, entityTypes.DEPLOYMENT]}
+                                />
+                            </>
                         )}
                         {contents}
                     </section>

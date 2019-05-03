@@ -43,7 +43,11 @@ class Creator extends Component {
                 data-test-id="network-creator-panel"
                 className="h-full w-full shadow-md bg-base-200"
             >
-                <Panel header={header} onClose={this.props.onClose} buttons={<ViewActive />}>
+                <Panel
+                    header={header}
+                    onClose={this.props.onClose}
+                    headerComponents={<ViewActive />}
+                >
                     <div className="flex h-full w-full flex-col p-4 pb-0">
                         <Generate />
                         {this.renderOr()}

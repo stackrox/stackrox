@@ -274,15 +274,14 @@ class ViolationsPage extends Component {
             </React.Fragment>
         );
         const { length } = Object.keys(violations);
-        const paginationComponent = (
-            <TablePagination page={page} dataLength={length} setPage={this.setTablePage} />
+        const headerComponents = (
+            <>
+                {panelButtons}
+                <TablePagination page={page} dataLength={length} setPage={this.setTablePage} />
+            </>
         );
         return (
-            <Panel
-                header={this.getTableHeaderText()}
-                buttons={panelButtons}
-                headerComponents={paginationComponent}
-            >
+            <Panel header={this.getTableHeaderText()} headerComponents={headerComponents}>
                 <div className="w-full">{this.renderSelectTable()}</div>
             </Panel>
         );

@@ -213,7 +213,7 @@ class IntegrationTable extends Component {
                 : `${integrationsCount} ${label} Integration${integrationsCount === 1 ? '' : 's'}`;
         return (
             <div className="flex flex-1">
-                <Panel header={headerText} buttons={this.getPanelButtons()}>
+                <Panel header={headerText} headerComponents={this.getPanelButtons()}>
                     {this.renderTableContent()}
                 </Panel>
             </div>

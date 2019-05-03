@@ -41,6 +41,10 @@ const ControlPage = ({ match, location, controlId, sidePanelMode }) => {
                 const standardName = standard ? standard.name : '';
                 let contents;
 
+                const searchComponent = listEntityType ? (
+                    <SearchInput categories={[searchCategoryTypes[listEntityType]]} />
+                ) : null;
+
                 if (listEntityType && !sidePanelMode) {
                     const queryParams = { ...params.query };
                     queryParams.control = name;
@@ -53,6 +57,7 @@ const ControlPage = ({ match, location, controlId, sidePanelMode }) => {
                             className="flex flex-col flex-1 overflow-y-auto h-full"
                         >
                             <ComplianceList
+                                searchComponent={searchComponent}
                                 entityType={listEntityType}
                                 query={listQuery}
                                 className={pdfClassName}
@@ -127,33 +132,28 @@ const ControlPage = ({ match, location, controlId, sidePanelMode }) => {
                     );
                 }
 
-                const searchComponent = listEntityType ? (
-                    <SearchInput categories={[searchCategoryTypes[listEntityType]]} />
-                ) : null;
-
                 return (
                     <section className="flex flex-col h-full w-full">
                         {!sidePanelMode && (
-                            <ResourceTabs
-                                entityId={entityId}
-                                entityType={entityTypes.CONTROL}
-                                standardId={standardId}
-                                resourceTabs={[
-                                    entityTypes.NAMESPACE,
-                                    entityTypes.NODE,
-                                    entityTypes.DEPLOYMENT,
-                                    entityTypes.CLUSTER
-                                ]}
-                            />
-                        )}
-                        {!sidePanelMode && (
-                            <Header
-                                searchComponent={searchComponent}
-                                entityType={entityTypes.CONTROL}
-                                listEntityType={null}
-                                entity={control}
-                                headerText={`${standardLabels[standardId]} ${name}`}
-                            />
+                            <>
+                                <Header
+                                    entityType={entityTypes.CONTROL}
+                                    listEntityType={null}
+                                    entity={control}
+                                    headerText={`${standardLabels[standardId]} ${name}`}
+                                />
+                                <ResourceTabs
+                                    entityId={entityId}
+                                    entityType={entityTypes.CONTROL}
+                                    standardId={standardId}
+                                    resourceTabs={[
+                                        entityTypes.NAMESPACE,
+                                        entityTypes.NODE,
+                                        entityTypes.DEPLOYMENT,
+                                        entityTypes.CLUSTER
+                                    ]}
+                                />
+                            </>
                         )}
                         {contents}
                     </section>
