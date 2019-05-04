@@ -18,7 +18,8 @@ export const secretTypeEnumMapping = {
     RSA_PRIVATE_KEY: 'RSA Private Key',
     DSA_PRIVATE_KEY: 'DSA Private Key',
     CERT_PRIVATE_KEY: 'Certificate Private Key',
-    ENCRYPTED_PRIVATE_KEY: 'Encrypted Private Key'
+    ENCRYPTED_PRIVATE_KEY: 'Encrypted Private Key',
+    IMAGE_PULL_SECRET: 'Image Pull Secret'
 };
 
 const secretDetailsMap = {
@@ -66,6 +67,10 @@ const secretFileDetailsMap = {
     type: { label: 'Type', formatValue: d => secretTypeEnumMapping[d] }
 };
 
+const imagePullSecretMap = {
+    username: { label: 'Username' }
+};
+
 const getDeploymentRelationships = secret => {
     if (secret.relationship) {
         const relationships = secret.relationship.deploymentRelationships;
@@ -104,6 +109,19 @@ const renderCert = cert => (
     </div>
 );
 
+const renderImagePullSecret = imagePullSecret => (
+    <div className="w-full h-full font-500">
+        {imagePullSecret.registries.map(registry => (
+            <div>
+                <span className="font-700 pt-3 block">{registry.name}</span>
+                <div className="w-full h-full pl-5 font-500">
+                    <KeyValuePairs data={registry} keyValueMap={imagePullSecretMap} />
+                </div>
+            </div>
+        ))}
+    </div>
+);
+
 const renderFileCard = file => (
     <div className="px-3 pt-5 w-full">
         <div className="bg-base-100 shadow text-primary-600 tracking-wide">
@@ -111,6 +129,7 @@ const renderFileCard = file => (
                 <div className="w-full h-full p-3 font-500">
                     <KeyValuePairs data={file} keyValueMap={secretFileDetailsMap} />
                     {file.cert && renderCert(file.cert)}
+                    {file.imagePullSecret && renderImagePullSecret(file.imagePullSecret)}
                 </div>
             </CollapsibleCard>
         </div>

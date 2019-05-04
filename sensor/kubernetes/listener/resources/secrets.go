@@ -131,6 +131,7 @@ func dockerConfigToImageIntegration(registry string, dce credentialprovider.Dock
 
 func getImageIntegrationSensorEvents(secret *v1.Secret) []*central.SensorEvent {
 	var dockerConfig credentialprovider.DockerConfig
+	protoSecret := getProtoSecret(secret)
 	switch secret.Type {
 	case v1.SecretTypeDockercfg:
 		data, ok := secret.Data[v1.DockerConfigKey]
@@ -141,6 +142,10 @@ func getImageIntegrationSensorEvents(secret *v1.Secret) []*central.SensorEvent {
 			log.Error(err)
 			return nil
 		}
+		protoSecret.Files = append(protoSecret.Files, &storage.SecretDataFile{
+			Name: v1.DockerConfigKey,
+			Type: storage.SecretType_IMAGE_PULL_SECRET,
+		})
 	case v1.SecretTypeDockerConfigJson:
 		data, ok := secret.Data[v1.DockerConfigJsonKey]
 		if !ok {
@@ -152,10 +157,20 @@ func getImageIntegrationSensorEvents(secret *v1.Secret) []*central.SensorEvent {
 			return nil
 		}
 		dockerConfig = dockerConfigJSON.Auths
+		protoSecret.Files = append(protoSecret.Files, &storage.SecretDataFile{
+			Name: v1.DockerConfigKey,
+			Type: storage.SecretType_IMAGE_PULL_SECRET,
+		})
 	default:
 		return nil
 	}
+
+	metadata := &storage.SecretDataFile_ImagePullSecret{
+		ImagePullSecret: &storage.ImagePullSecret{},
+	}
+
 	sensorEvents := make([]*central.SensorEvent, 0, len(dockerConfig))
+	registries := make([]*storage.ImagePullSecret_Registry, 0, len(dockerConfig))
 	for registry, dce := range dockerConfig {
 		ii := dockerConfigToImageIntegration(registry, dce)
 		sensorEvents = append(sensorEvents, &central.SensorEvent{
@@ -165,8 +180,38 @@ func getImageIntegrationSensorEvents(secret *v1.Secret) []*central.SensorEvent {
 				ImageIntegration: ii,
 			},
 		})
+
+		registries = append(registries, &storage.ImagePullSecret_Registry{
+			Name:     registry,
+			Username: dce.Username,
+		})
 	}
-	return sensorEvents
+	metadata.ImagePullSecret.Registries = registries
+	protoSecret.Files[0].Metadata = metadata
+
+	return append(sensorEvents, secretToSensorEvent(central.ResourceAction_UPDATE_RESOURCE, protoSecret))
+}
+
+func getProtoSecret(secret *v1.Secret) *storage.Secret {
+	kubernetes.RemoveAppliedAnnotation(secret.GetAnnotations())
+	return &storage.Secret{
+		Id:          string(secret.GetUID()),
+		Name:        secret.GetName(),
+		Namespace:   secret.GetNamespace(),
+		Labels:      secret.GetLabels(),
+		Annotations: secret.GetAnnotations(),
+		CreatedAt:   protoconv.ConvertTimeToTimestamp(secret.GetCreationTimestamp().Time),
+	}
+}
+
+func secretToSensorEvent(action central.ResourceAction, secret *storage.Secret) *central.SensorEvent {
+	return &central.SensorEvent{
+		Id:     string(secret.GetId()),
+		Action: action,
+		Resource: &central.SensorEvent_Secret{
+			Secret: secret,
+		},
+	}
 }
 
 // Process processes a secret resource event, and returns the sensor events to emit in response.
@@ -182,24 +227,9 @@ func (*secretDispatcher) ProcessEvent(obj interface{}, action central.ResourceAc
 		return nil
 	}
 
-	kubernetes.RemoveAppliedAnnotation(secret.GetAnnotations())
-	protoSecret := &storage.Secret{
-		Id:          string(secret.GetUID()),
-		Name:        secret.GetName(),
-		Namespace:   secret.GetNamespace(),
-		Labels:      secret.GetLabels(),
-		Annotations: secret.GetAnnotations(),
-		CreatedAt:   protoconv.ConvertTimeToTimestamp(secret.GetCreationTimestamp().Time),
-	}
-
+	protoSecret := getProtoSecret(secret)
 	populateTypeData(protoSecret, secret.Data)
 	return []*central.SensorEvent{
-		{
-			Id:     string(secret.GetUID()),
-			Action: action,
-			Resource: &central.SensorEvent_Secret{
-				Secret: protoSecret,
-			},
-		},
+		secretToSensorEvent(action, protoSecret),
 	}
 }

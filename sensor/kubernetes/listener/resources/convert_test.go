@@ -299,6 +299,12 @@ func TestConvert(t *testing.T) {
 								Name: "private_key",
 								Path: "/var/secrets",
 							},
+							{
+								Name: "pull-secret1",
+							},
+							{
+								Name: "pull-secret2",
+							},
 						},
 						SecurityContext: &storage.SecurityContext{
 							Selinux: &storage.SecurityContext_SELinux{
@@ -360,6 +366,14 @@ func TestConvert(t *testing.T) {
 								Remote:   "stackrox/policy-engine",
 								Tag:      "1.3",
 								FullName: "docker.io/stackrox/policy-engine:1.3",
+							},
+						},
+						Secrets: []*storage.EmbeddedSecret{
+							{
+								Name: "pull-secret1",
+							},
+							{
+								Name: "pull-secret2",
 							},
 						},
 						SecurityContext: &storage.SecurityContext{

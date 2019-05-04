@@ -95,7 +95,6 @@ message ContainerInstanceID {
     string node                        = 3;
 }
 
-
 message EmbeddedSecret {
     string name = 1 [(gogoproto.moretags) = "search:\"Secret\""];
     string path = 2 [(gogoproto.moretags) = "search:\"Secret Path\""];

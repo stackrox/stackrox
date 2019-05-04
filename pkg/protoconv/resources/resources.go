@@ -355,12 +355,19 @@ func (w *DeploymentWrap) populateVolumesAndSecrets(podSpec v1.PodSpec) {
 				})
 				continue
 			}
+
 			w.Deployment.Containers[i].Volumes = append(w.Deployment.Containers[i].Volumes, &storage.Volume{
 				Name:        v.Name,
 				Source:      sourceVolume.Source(),
 				Destination: v.MountPath,
 				ReadOnly:    v.ReadOnly,
 				Type:        sourceVolume.Type(),
+			})
+		}
+
+		for _, s := range podSpec.ImagePullSecrets {
+			w.Deployment.Containers[i].Secrets = append(w.Deployment.Containers[i].Secrets, &storage.EmbeddedSecret{
+				Name: s.Name,
 			})
 		}
 	}

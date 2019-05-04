@@ -103,6 +103,7 @@ var (
 	// Secret search fields
 	SecretType       = newFieldLabel("Secret Type")
 	SecretExpiration = newFieldLabel("Cert Expiration")
+	SecretRegistry   = newFieldLabel("Image Pull Secret Registry")
 
 	// Compliance search fields
 	Standard   = newFieldLabel("Standard")
@@ -134,6 +135,9 @@ var (
 	// Subject search fields
 	SubjectKind = newFieldLabel("Subject Kind")
 	SubjectName = newFieldLabel("Subject")
+
+	// General
+	CreatedTime = newFieldLabel("Created Time")
 )
 
 func newFieldLabel(s string) FieldLabel {

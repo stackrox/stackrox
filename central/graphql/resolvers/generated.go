@@ -371,6 +371,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"remote: String!",
 		"tag: String!",
 	}))
+	utils.Must(builder.AddType("ImagePullSecret", []string{
+		"registries: [ImagePullSecret_Registry]!",
+	}))
+	utils.Must(builder.AddType("ImagePullSecret_Registry", []string{
+		"name: String!",
+		"username: String!",
+	}))
 	utils.Must(builder.AddType("ImageScan", []string{
 		"components: [ImageScanComponent]!",
 		"scanTime: Time",
@@ -721,6 +728,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddUnionType("SecretDataFileMetadata", []string{
 		"Cert",
+		"ImagePullSecret",
 	}))
 	utils.Must(builder.AddType("SecretDeploymentRelationship", []string{
 		"id: ID!",
@@ -3612,6 +3620,67 @@ func (resolver *imageNamePolicyResolver) Tag() string {
 	return value
 }
 
+type imagePullSecretResolver struct {
+	root *Resolver
+	data *storage.ImagePullSecret
+}
+
+func (resolver *Resolver) wrapImagePullSecret(value *storage.ImagePullSecret, ok bool, err error) (*imagePullSecretResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imagePullSecretResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapImagePullSecrets(values []*storage.ImagePullSecret, err error) ([]*imagePullSecretResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imagePullSecretResolver, len(values))
+	for i, v := range values {
+		output[i] = &imagePullSecretResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *imagePullSecretResolver) Registries() ([]*imagePullSecret_RegistryResolver, error) {
+	value := resolver.data.GetRegistries()
+	return resolver.root.wrapImagePullSecret_Registries(value, nil)
+}
+
+type imagePullSecret_RegistryResolver struct {
+	root *Resolver
+	data *storage.ImagePullSecret_Registry
+}
+
+func (resolver *Resolver) wrapImagePullSecret_Registry(value *storage.ImagePullSecret_Registry, ok bool, err error) (*imagePullSecret_RegistryResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &imagePullSecret_RegistryResolver{resolver, value}, nil
+}
+
+func (resolver *Resolver) wrapImagePullSecret_Registries(values []*storage.ImagePullSecret_Registry, err error) ([]*imagePullSecret_RegistryResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*imagePullSecret_RegistryResolver, len(values))
+	for i, v := range values {
+		output[i] = &imagePullSecret_RegistryResolver{resolver, v}
+	}
+	return output, nil
+}
+
+func (resolver *imagePullSecret_RegistryResolver) Name() string {
+	value := resolver.data.GetName()
+	return value
+}
+
+func (resolver *imagePullSecret_RegistryResolver) Username() string {
+	value := resolver.data.GetUsername()
+	return value
+}
+
 type imageScanResolver struct {
 	root *Resolver
 	data *storage.ImageScan
@@ -6135,6 +6204,14 @@ func (resolver *secretDataFileMetadataResolver) ToCert() (*certResolver, bool) {
 	value := resolver.resolver.data.GetCert()
 	if value != nil {
 		return &certResolver{resolver.resolver.root, value}, true
+	}
+	return nil, false
+}
+
+func (resolver *secretDataFileMetadataResolver) ToImagePullSecret() (*imagePullSecretResolver, bool) {
+	value := resolver.resolver.data.GetImagePullSecret()
+	if value != nil {
+		return &imagePullSecretResolver{resolver.resolver.root, value}, true
 	}
 	return nil, false
 }
