@@ -146,9 +146,9 @@ class ViolationsPage extends Component {
         this.clearSelection();
     };
 
-    resolveAlertHandler = alertId => e => {
+    resolveAlertHandler = (alertId, whitelist) => e => {
         e.stopPropagation();
-        this.props.resolveAlerts([alertId]);
+        this.props.resolveAlerts([alertId], whitelist);
     };
 
     whitelistDeployments = () => {
@@ -204,21 +204,38 @@ class ViolationsPage extends Component {
                 className="flex border-2 border-r-2 border-base-400 bg-base-100 shadow"
             >
                 {isRuntimeAlert && (
-                    <Tooltip
-                        placement="top"
-                        mouseLeaveDelay={0}
-                        overlay={<div>Mark as resolved</div>}
-                        overlayClassName="pointer-events-none"
-                    >
-                        <button
-                            type="button"
-                            data-test-id="resolve-button"
-                            className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700"
-                            onClick={this.resolveAlertHandler(alert.id)}
+                    <div className="flex">
+                        <Tooltip
+                            placement="top"
+                            mouseLeaveDelay={0}
+                            overlay={<div>Whitelist and resolve</div>}
+                            overlayClassName="pointer-events-none"
                         >
-                            <Icon.Check className="mt-1 h-4 w-4" />
-                        </button>
-                    </Tooltip>
+                            <button
+                                type="button"
+                                data-test-id="resolve-button"
+                                className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700"
+                                onClick={this.resolveAlertHandler(alert.id, true)}
+                            >
+                                <Icon.BellOff className="mt-1 h-4 w-4" />
+                            </button>
+                        </Tooltip>
+                        <Tooltip
+                            placement="top"
+                            mouseLeaveDelay={0}
+                            overlay={<div>Mark as resolved</div>}
+                            overlayClassName="pointer-events-none"
+                        >
+                            <button
+                                type="button"
+                                data-test-id="resolve-button"
+                                className="p-1 px-4 hover:bg-primary-200 text-primary-600 hover:text-primary-700 border-l-2 border-base-400"
+                                onClick={this.resolveAlertHandler(alert.id, false)}
+                            >
+                                <Icon.Check className="mt-1 h-4 w-4" />
+                            </button>
+                        </Tooltip>
+                    </div>
                 )}
                 <Tooltip
                     placement="top"
@@ -478,7 +495,8 @@ const mapStateToProps = createStructuredSelector({
 
 const mapDispatchToProps = (dispatch, props) => ({
     whitelistDeployment: alertId => dispatch(alertActions.whitelistDeployment.request(alertId)),
-    resolveAlerts: alertIds => dispatch(alertActions.resolveAlerts(alertIds)),
+    resolveAlerts: (alertIds, whitelist) =>
+        dispatch(alertActions.resolveAlerts(alertIds, whitelist)),
     setSearchOptions: searchOptions => {
         if (searchOptions.length && !searchOptions[searchOptions.length - 1].type) {
             props.history.push('/main/violations');

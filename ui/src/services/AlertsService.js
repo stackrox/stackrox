@@ -67,8 +67,11 @@ export function fetchAlertsByTimeseries(filters) {
  * @param {!string} alertId
  * @returns {Promise<AxiosResponse, Error>}
  */
-export function resolveAlert(alertId) {
-    return axios.patch(`${baseUrl}/${alertId}/resolve`);
+export function resolveAlert(alertId, whitelist = false) {
+    const request = {
+        whitelist
+    };
+    return axios.patch(`${baseUrl}/${alertId}/resolve`, request);
 }
 
 /**
@@ -77,6 +80,6 @@ export function resolveAlert(alertId) {
  * @param {string[]} alertIds
  * @returns {Promise<AxiosResponse, Error>}
  */
-export function resolveAlerts(alertIds = []) {
-    return Promise.all(alertIds.map(id => resolveAlert(id)));
+export function resolveAlerts(alertIds = [], whitelist = false) {
+    return Promise.all(alertIds.map(id => resolveAlert(id, whitelist)));
 }

@@ -156,10 +156,10 @@ function* sendWhitelistDeployment({ params: alertId }) {
     }
 }
 
-function* resolveAlerts({ alertIds }) {
+function* resolveAlerts({ alertIds, whitelist }) {
     try {
         yield fork(cancelPolling);
-        yield call(service.resolveAlerts, alertIds);
+        yield call(service.resolveAlerts, alertIds, whitelist);
         yield fork(pollAlerts);
     } catch (error) {
         yield put(notificationActions.addNotification(error.response.data.error));

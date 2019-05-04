@@ -21,7 +21,8 @@ message ListAlertsRequest {
 }
 
 message ResolveAlertRequest {
-    string id = 1;
+    string id      = 1;
+    bool whitelist = 2;
 }
 
 message SnoozeAlertRequest {

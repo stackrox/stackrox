@@ -9,6 +9,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/alert/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	whitelistDatastore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -54,8 +55,9 @@ var (
 
 // serviceImpl is a thin facade over a domain layer that handles CRUD use cases on Alert objects from API clients.
 type serviceImpl struct {
-	dataStore datastore.DataStore
-	notifier  notifierProcessor.Processor
+	dataStore  datastore.DataStore
+	notifier   notifierProcessor.Processor
+	whitelists whitelistDatastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -143,6 +145,28 @@ func (s *serviceImpl) ResolveAlert(_ context.Context, req *v1.ResolveAlertReques
 	if !exists {
 		return nil, status.Errorf(codes.NotFound, "alert with id '%s' does not exist", req.GetId())
 	}
+
+	if req.GetWhitelist() {
+		// This isn't great as it assumes a single whitelist key
+		itemMap := make(map[string][]*storage.WhitelistItem)
+		for _, process := range alert.GetProcessViolation().GetProcesses() {
+			itemMap[process.GetContainerName()] = append(itemMap[process.GetContainerName()], &storage.WhitelistItem{
+				Item: &storage.WhitelistItem_ProcessName{
+					ProcessName: process.GetSignal().GetName(),
+				},
+			})
+		}
+		for containerName, items := range itemMap {
+			key := &storage.ProcessWhitelistKey{
+				DeploymentId:  alert.GetDeployment().GetId(),
+				ContainerName: containerName,
+			}
+			if _, err := s.whitelists.UpdateProcessWhitelistElements(key, items, nil, false); err != nil {
+				return nil, status.Error(codes.Internal, err.Error())
+			}
+		}
+	}
+
 	alert.SnoozeTill = nil
 	alert.State = storage.ViolationState_RESOLVED
 	err = s.dataStore.UpdateAlert(alert)

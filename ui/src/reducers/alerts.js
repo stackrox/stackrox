@@ -47,7 +47,7 @@ export const actions = {
     fetchAlertCountsByCluster: createFetchingActions(types.FETCH_ALERT_COUNTS_BY_CLUSTER),
     fetchAlertsByTimeseries: createFetchingActions(types.FETCH_ALERTS_BY_TIMESERIES),
     whitelistDeployment: createFetchingActions(types.WHITELIST_DEPLOYMENT),
-    resolveAlerts: alertIds => ({ type: types.RESOLVE_ALERTS, alertIds }),
+    resolveAlerts: (alertIds, whitelist) => ({ type: types.RESOLVE_ALERTS, alertIds, whitelist }),
     ...getSearchActions('alerts')
 };
 
