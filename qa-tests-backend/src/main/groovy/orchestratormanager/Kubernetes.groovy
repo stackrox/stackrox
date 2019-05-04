@@ -565,8 +565,7 @@ class Kubernetes implements OrchestratorMain {
 
     def getSecretCount(String ns = null) {
         return client.secrets().inNamespace(ns).list().getItems().findAll {
-            !it.type.startsWith("kubernetes.io/docker") &&
-                    !it.type.startsWith("kubernetes.io/service-account-token")
+            !it.type.startsWith("kubernetes.io/service-account-token")
         }.size()
     }
 
