@@ -1,9 +1,9 @@
 package services
 
-import common.Constants
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.SearchServiceOuterClass.RawQuery
 import io.stackrox.proto.api.v1.ServiceAccountServiceGrpc
+import objects.K8sServiceAccount
 import util.Timer
 
 class ServiceAccountService extends BaseService {
@@ -25,14 +25,14 @@ class ServiceAccountService extends BaseService {
         }
     }
 
-    static boolean waitForServiceAccount(String name, String namespace = Constants.ORCHESTRATOR_NAMESPACE) {
+    static boolean waitForServiceAccount(K8sServiceAccount serviceAccount) {
         Timer t = new Timer(30, 3)
         while (t.IsValid()) {
             println "Waiting for Service Account"
             def serviceAccounts = getServiceAccounts()
             def sa = serviceAccounts.find {
-                it.getServiceAccount().name == name &&
-                    it.getServiceAccount().namespace == namespace
+                it.getServiceAccount().name == serviceAccount.name &&
+                    it.getServiceAccount().namespace == serviceAccount.namespace
             }
 
             if (sa) {
@@ -43,14 +43,14 @@ class ServiceAccountService extends BaseService {
         return false
     }
 
-    static boolean waitForServiceAccountRemoved(String name, String namespace = Constants.ORCHESTRATOR_NAMESPACE) {
+    static boolean waitForServiceAccountRemoved(K8sServiceAccount serviceAccount) {
         Timer t = new Timer(30, 3)
         while (t.IsValid()) {
             println "Waiting for Service Account removed"
             def serviceAccounts = getServiceAccounts()
             def sa = serviceAccounts.find {
-                it.getServiceAccount().name == name &&
-                        it.getServiceAccount().namespace == namespace
+                it.getServiceAccount().name == serviceAccount.name &&
+                        it.getServiceAccount().namespace == serviceAccount.namespace
             }
             if (!sa) {
                 return true

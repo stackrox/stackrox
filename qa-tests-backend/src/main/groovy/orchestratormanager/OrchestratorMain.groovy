@@ -1,13 +1,12 @@
 package orchestratormanager
 
-import io.fabric8.kubernetes.api.model.ServiceAccount
-import io.fabric8.kubernetes.api.model.rbac.ClusterRole
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding
-import io.fabric8.kubernetes.api.model.rbac.Role
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding
 import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
 import objects.DaemonSet
 import objects.Deployment
+import objects.K8sRole
+import objects.K8sServiceAccount
 import objects.Namespace
 import objects.NetworkPolicy
 import objects.Node
@@ -81,18 +80,22 @@ interface OrchestratorMain {
     List<Namespace> getNamespaceDetails()
 
     //Service Accounts
-    List<ServiceAccount> getServiceAccounts()
-    def createServiceAccount(String name, String namespace)
-    def deleteServiceAccount(String name, String namespace)
+    List<K8sServiceAccount> getServiceAccounts()
+    def createServiceAccount(K8sServiceAccount serviceAccount)
+    def deleteServiceAccount(K8sServiceAccount serviceAccount)
 
     //Roles
-    List<Role> getRoles()
+    List<K8sRole> getRoles()
+    def createRole(K8sRole role)
+    def deleteRole(K8sRole role)
 
     //RoleBindings
     List<RoleBinding> getRoleBindings()
 
     //ClusterRoles
-    List<ClusterRole> getClusterRoles()
+    List<K8sRole> getClusterRoles()
+    def createClusterRole(K8sRole role)
+    def deleteClusterRole(K8sRole role)
 
     //ClusterRoleBindings
     List<ClusterRoleBinding> getClusterRoleBindings()

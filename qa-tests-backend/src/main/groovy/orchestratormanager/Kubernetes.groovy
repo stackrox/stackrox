@@ -42,6 +42,7 @@ import io.fabric8.kubernetes.api.model.networking.NetworkPolicyIngressRuleBuilde
 import io.fabric8.kubernetes.api.model.networking.NetworkPolicyPeerBuilder
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding
+import io.fabric8.kubernetes.api.model.rbac.PolicyRule
 import io.fabric8.kubernetes.api.model.rbac.Role
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding
 import io.fabric8.kubernetes.client.Callback
@@ -57,6 +58,9 @@ import io.fabric8.kubernetes.client.utils.BlockingInputStreamPumper
 import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
 import objects.DaemonSet
 import objects.Deployment
+import objects.K8sPolicyRule
+import objects.K8sRole
+import objects.K8sServiceAccount
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Node
@@ -676,24 +680,88 @@ class Kubernetes implements OrchestratorMain {
      */
 
     List<ServiceAccount> getServiceAccounts() {
-        return client.serviceAccounts().inAnyNamespace().list().items
+        def serviceAccounts = []
+        client.serviceAccounts().inAnyNamespace().list().items.each {
+            serviceAccounts.add(new K8sServiceAccount(
+                    name: it.metadata.name,
+                    namespace: it.metadata.namespace,
+                    labels: it.metadata.labels ? it.metadata.labels : [:],
+                    annotations: it.metadata.annotations ? it.metadata.annotations : [:],
+                    secrets: it.secrets*.name,
+                    imagePullSecrets: it.imagePullSecrets*.name
+            ))
+        }
+        return serviceAccounts
     }
 
-    def createServiceAccount(String name, String namespace = this.namespace) {
-        ServiceAccount sa  = new ServiceAccount(metadata: new ObjectMeta(name: name, namespace: namespace))
-        client.serviceAccounts().inNamespace(namespace).createOrReplace(sa)
+    def createServiceAccount(K8sServiceAccount serviceAccount) {
+        ServiceAccount sa  = new ServiceAccount(
+                metadata: new ObjectMeta(
+                        name: serviceAccount.name,
+                        namespace: serviceAccount.namespace,
+                        labels: serviceAccount.labels,
+                        annotations: serviceAccount.annotations
+                ),
+                secrets: serviceAccount.secrets,
+                imagePullSecrets: serviceAccount.imagePullSecrets
+        )
+        client.serviceAccounts().inNamespace(sa.metadata.namespace).createOrReplace(sa)
     }
 
-    def deleteServiceAccount(String name, String namespace = this.namespace) {
-        client.serviceAccounts().inNamespace(namespace).withName(name).delete()
+    def deleteServiceAccount(K8sServiceAccount serviceAccount) {
+        client.serviceAccounts().inNamespace(serviceAccount.namespace).withName(serviceAccount.name).delete()
     }
 
     /*
         Roles
      */
 
-    List<Role> getRoles() {
-        return client.rbac().roles().inAnyNamespace().list().items
+    List<K8sRole> getRoles() {
+        def roles = []
+        client.rbac().roles().inAnyNamespace().list().items.each {
+            roles.add(new K8sRole(
+                    name: it.metadata.name,
+                    namespace: it.metadata.namespace,
+                    clusterRole: false,
+                    labels: it.metadata.labels ? it.metadata.labels : [:],
+                    annotations: it.metadata.annotations ? it.metadata.annotations : [:],
+                    rules: it.rules.collect {
+                        new K8sPolicyRule(
+                                verbs: it.verbs,
+                                apiGroups: it.apiGroups,
+                                resources: it.resources,
+                                nonResourceUrls: it.nonResourceURLs,
+                                resourceNames: it.resourceNames
+                        )
+                    }
+            ))
+        }
+        return roles
+    }
+
+    def createRole(K8sRole role) {
+        Role r = new Role(
+                metadata: new ObjectMeta(
+                        name: role.name,
+                        namespace: role.namespace,
+                        labels: role.labels,
+                        annotations: role.annotations
+                ),
+                rules: role.rules.collect {
+                    new PolicyRule(
+                            verbs: it.verbs,
+                            apiGroups: it.apiGroups,
+                            resources: it.resoures,
+                            nonResourceURLs: it.nonResourceUrls,
+                            resourceNames: it.resourceNames
+                    )
+                }
+        )
+        client.rbac().roles().inNamespace(role.namespace).createOrReplace(r)
+    }
+
+    def deleteRole(K8sRole role) {
+        client.rbac().roles().inNamespace(role.namespace).withName(role.name).delete()
     }
 
     /*
@@ -708,8 +776,51 @@ class Kubernetes implements OrchestratorMain {
         ClusterRoles
      */
 
-    List<ClusterRole> getClusterRoles() {
-        return client.rbac().clusterRoles().inAnyNamespace().list().items
+    List<K8sRole> getClusterRoles() {
+        def clusterRoles = []
+        client.rbac().clusterRoles().inAnyNamespace().list().items.each {
+            clusterRoles.add(new K8sRole(
+                    name: it.metadata.name,
+                    namespace: "",
+                    clusterRole: true,
+                    labels: it.metadata.labels ? it.metadata.labels : [:],
+                    annotations: it.metadata.annotations ? it.metadata.annotations : [:],
+                    rules: it.rules.collect {
+                        new K8sPolicyRule(
+                                verbs: it.verbs,
+                                apiGroups: it.apiGroups,
+                                resources: it.resources,
+                                nonResourceUrls: it.nonResourceURLs,
+                                resourceNames: it.resourceNames
+                        )
+                    }
+            ))
+        }
+        return clusterRoles
+    }
+
+    def createClusterRole(K8sRole role) {
+        ClusterRole r = new ClusterRole(
+                metadata: new ObjectMeta(
+                        name: role.name,
+                        labels: role.labels,
+                        annotations: role.annotations
+                ),
+                rules: role.rules.collect {
+                    new PolicyRule(
+                            verbs: it.verbs,
+                            apiGroups: it.apiGroups,
+                            resources: it.resoures,
+                            nonResourceURLs: it.nonResourceUrls,
+                            resourceNames: it.resourceNames
+                    )
+                }
+        )
+        client.rbac().clusterRoles().createOrReplace(r)
+    }
+
+    def deleteClusterRole(K8sRole role) {
+        client.rbac().clusterRoles().withName(role.name).delete()
     }
 
     /*

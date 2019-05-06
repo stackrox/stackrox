@@ -1,5 +1,10 @@
 import common.Constants
 import io.stackrox.proto.api.v1.ServiceAccountServiceOuterClass
+import io.stackrox.proto.storage.Rbac
+import objects.K8sPolicyRule
+import objects.K8sRole
+import objects.K8sServiceAccount
+import services.RbacService
 import services.ServiceAccountService
 import spock.lang.Stepwise
 import util.Timer
@@ -7,6 +12,20 @@ import util.Timer
 @Stepwise
 class K8sRbacTest extends BaseSpecification {
     private static final String SERVICE_ACCOUNT_NAME = "test-service-account"
+    private static final String ROLE_NAME = "test-role"
+    private static final String CLUSTER_ROLE_NAME = "test-cluster-role"
+
+    private static final K8sServiceAccount NEW_SA = new K8sServiceAccount(
+            name: SERVICE_ACCOUNT_NAME,
+            namespace: Constants.ORCHESTRATOR_NAMESPACE)
+    private static final K8sRole NEW_ROLE = new K8sRole(name: ROLE_NAME, namespace: Constants.ORCHESTRATOR_NAMESPACE)
+    private static final K8sRole NEW_CLUSTER_ROLE = new K8sRole(name: CLUSTER_ROLE_NAME, clusterRole: true)
+
+    def cleanupSpec() {
+        orchestrator.deleteServiceAccount(NEW_SA)
+        orchestrator.deleteRole(NEW_ROLE)
+        orchestrator.deleteClusterRole(NEW_CLUSTER_ROLE)
+    }
 
     def "Verify scraped service accounts"() {
         given:
@@ -33,14 +52,14 @@ class K8sRbacTest extends BaseSpecification {
             def sa = s.serviceAccount
             println "Looking for SR Service Account: ${sa}"
             assert orchestratorSAs.find {
-                it.metadata.name == sa.name &&
-                    it.metadata.namespace == sa.namespace &&
-                    it.metadata.labels == null ?: it.metadata.labels == sa.labelsMap &&
-                    it.metadata.annotations == null ?: it.metadata.annotations == sa.annotationsMap &&
-                    it.automountServiceAccountToken == null ? sa.automountToken :
-                        it.automountServiceAccountToken == sa.automountToken &&
-                    it.secrets*.name == sa.secretsList &&
-                    it.imagePullSecrets*.name == sa.imagePullSecretsList
+                it.name == sa.name &&
+                    it.namespace == sa.namespace &&
+                    it.labels == null ?: it.labels == sa.labelsMap &&
+                    it.annotations == null ?: it.annotations == sa.annotationsMap &&
+                    it.automountToken == null ? sa.automountToken :
+                        it.automountToken == sa.automountToken &&
+                    it.secrets == sa.secretsList &&
+                    it.imagePullSecrets == sa.imagePullSecretsList
             }
             assert ServiceAccountService.getServiceAccountDetails(sa.id).getServiceAccount() == sa
         }
@@ -49,20 +68,93 @@ class K8sRbacTest extends BaseSpecification {
     def "Add Service Account and verify it gets scraped"() {
         given:
         "create a new service account"
-        orchestrator.createServiceAccount(SERVICE_ACCOUNT_NAME)
+        orchestrator.createServiceAccount(NEW_SA)
 
         expect:
         "SR should detect the new service account"
-        ServiceAccountService.waitForServiceAccount(SERVICE_ACCOUNT_NAME)
+        ServiceAccountService.waitForServiceAccount(NEW_SA)
     }
 
     def "Remove Service Account and verify it is removed"() {
         given:
         "delete the created service account"
-        orchestrator.deleteServiceAccount(SERVICE_ACCOUNT_NAME)
+        orchestrator.deleteServiceAccount(NEW_SA)
 
         expect:
         "SR should not show the service account"
-        ServiceAccountService.waitForServiceAccountRemoved(SERVICE_ACCOUNT_NAME)
+        ServiceAccountService.waitForServiceAccountRemoved(NEW_SA)
+    }
+
+    def "Verify scraped roles"() {
+        given:
+        "list of roles from the orchestrator"
+        def orchestratorRoles = orchestrator.getRoles() + orchestrator.getClusterRoles()
+
+        expect:
+        "SR should have the same service accounts"
+        def stackroxRoles = RbacService.getRoles()
+
+        stackroxRoles.size() == orchestratorRoles.size()
+        for (Rbac.K8sRole r : stackroxRoles) {
+            println "Looking for SR Role: ${r.name} (${r.namespace})"
+            K8sRole role =  orchestratorRoles.find {
+                it.name == r.name &&
+                        it.clusterRole == r.clusterRole &&
+                        it.namespace == r.namespace
+            }
+            assert role
+            assert role.labels == r.labelsMap
+            assert role.annotations == r.annotationsMap
+            for (int i = 0; i < role.rules.size(); i++) {
+                def oRule = role.rules.get(i) as K8sPolicyRule
+                def sRule = r.rulesList.get(i) as Rbac.PolicyRule
+                assert oRule.verbs == sRule.verbsList &&
+                        oRule.apiGroups == sRule.apiGroupsList &&
+                        oRule.resources == sRule.resourcesList &&
+                        oRule.nonResourceUrls == sRule.nonResourceUrlsList &&
+                        oRule.resourceNames == sRule.resourceNamesList
+            }
+            assert RbacService.getRole(r.id) == r
+        }
+    }
+
+    def "Add Role and verify it gets scraped"() {
+        given:
+        "create a new role"
+        orchestrator.createRole(NEW_ROLE)
+
+        expect:
+        "SR should detect the new service account"
+        RbacService.waitForRole(NEW_ROLE)
+    }
+
+    def "Remove Role and verify it is removed"() {
+        given:
+        "delete the created service account"
+        orchestrator.deleteRole(NEW_ROLE)
+
+        expect:
+        "SR should not show the service account"
+        RbacService.waitForRoleRemoved(NEW_ROLE)
+    }
+
+    def "Add Cluster Role and verify it gets scraped"() {
+        given:
+        "create a new role"
+        orchestrator.createClusterRole(NEW_CLUSTER_ROLE)
+
+        expect:
+        "SR should detect the new service account"
+        RbacService.waitForRole(NEW_CLUSTER_ROLE)
+    }
+
+    def "Remove Cluster Role and verify it is removed"() {
+        given:
+        "delete the created service account"
+        orchestrator.deleteClusterRole(NEW_CLUSTER_ROLE)
+
+        expect:
+        "SR should not show the service account"
+        RbacService.waitForRoleRemoved(NEW_CLUSTER_ROLE)
     }
 }
