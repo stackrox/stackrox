@@ -2,7 +2,7 @@
  * Application route paths constants.
  */
 
-import { standardTypes, resourceTypes, standardEntityTypes } from 'constants/entityTypes';
+import { resourceTypes, standardEntityTypes } from 'constants/entityTypes';
 
 export const mainPath = '/main';
 export const loginPath = '/login';
@@ -33,15 +33,14 @@ export const resourceTypesToUrl = {
 };
 
 export const compliancePath = `${mainPath}/compliance`;
-const standardsMatcher = `(${Object.values(standardTypes).join('|')})`;
 const resourceMatcher = `(${Object.values(resourceTypesToUrl).join('|')})`;
 
 export const nestedCompliancePaths = {
     DASHBOARD: `${compliancePath}/`,
     LIST: `${compliancePath}/:entityType`,
-    CONTROL: `${compliancePath}/:standardId${standardsMatcher}/:controlId/:listEntityType${resourceMatcher}?`,
-    CLUSTER: `${compliancePath}/clusters/:entityId/:listEntityType${resourceMatcher}?`,
-    NAMESPACE: `${compliancePath}/namespaces/:entityId/:listEntityType${resourceMatcher}?`,
-    DEPLOYMENT: `${compliancePath}/deployments/:entityId/:listEntityType${resourceMatcher}?`,
-    NODE: `${compliancePath}/nodes/:entityId/:listEntityType${resourceMatcher}?`
+    CONTROL: `${compliancePath}/controls/:controlId/:listEntityType${resourceMatcher}?`,
+    CLUSTER: `${compliancePath}/:entityType(clusters)/:entityId/:listEntityType${resourceMatcher}?`,
+    NAMESPACE: `${compliancePath}/:entityType(namespaces)/:entityId/:listEntityType${resourceMatcher}?`,
+    DEPLOYMENT: `${compliancePath}/:entityType(deployments)/:entityId/:listEntityType${resourceMatcher}?`,
+    NODE: `${compliancePath}/:entityType(nodes)/:entityId/:listEntityType${resourceMatcher}?`
 };

@@ -6,13 +6,7 @@ export const url = {
         clusters: `${baseURL}/clusters`,
         namespaces: `${baseURL}/namespaces`,
         nodes: `${baseURL}/nodes`,
-        standards: {
-            CIS_Docker_v1_1_0: `${baseURL}/CIS_Docker_v1_1_0`,
-            CIS_Kubernetes_v1_2_0: `${baseURL}/CIS_Kubernetes_v1_2_0`,
-            HIPAA_164: `${baseURL}/HIPAA_164`,
-            NIST_800_190: `${baseURL}/NIST_800_190`,
-            PCI_DSS_3_2: `${baseURL}/PCI_DSS_3_2`
-        }
+        controls: `${baseURL}/controls`
     }
 };
 

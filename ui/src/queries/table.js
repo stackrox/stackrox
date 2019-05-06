@@ -101,3 +101,104 @@ export const DEPLOYMENTS_QUERY = gql`
         }
     }
 `;
+
+const evidenceFragment = gql`
+    fragment allData on ControlResult {
+        control {
+            id
+            groupId
+            name
+            description
+            standardId
+        }
+        resource {
+            __typename
+            ... on Deployment {
+                id
+                clusterName
+                namespace
+                type
+                namespace
+                name
+            }
+            ... on Cluster {
+                id
+                name
+            }
+            ... on Node {
+                id
+                clusterName
+                name
+            }
+        }
+        value {
+            overallState
+            evidence {
+                message
+                state
+            }
+        }
+    }
+`;
+
+export const COMPLIANCE_DATA_ON_CLUSTERS = gql`
+    query complianceDataOnClusters {
+        results: clusters {
+            id
+            complianceResults {
+                ...allData
+            }
+        }
+    }
+    ${evidenceFragment}
+`;
+
+export const COMPLIANCE_DATA_ON_CLUSTER = gql`
+    query complianceDataOnCluster($id: ID!) {
+        result: cluster(id: $id) {
+            id
+            complianceResults {
+                ...allData
+            }
+        }
+    }
+    ${evidenceFragment}
+`;
+
+export const COMPLIANCE_DATA_ON_NAMESPACE = gql`
+    query complianceDataOnNamespace($id: ID!) {
+        result: namespace(id: $id) {
+            metadata {
+                id
+            }
+            complianceResults {
+                ...allData
+            }
+        }
+    }
+    ${evidenceFragment}
+`;
+
+export const COMPLIANCE_DATA_ON_NODE = gql`
+    query complianceDataOnNode($id: ID!) {
+        result: node(id: $id) {
+            id
+            complianceResults {
+                ...allData
+            }
+        }
+    }
+    ${evidenceFragment}
+`;
+
+export const COMPLIANCE_DATA_ON_DEPLOYMENT = gql`
+    query complianceDataOnDeployment($id: ID!) {
+        result: deployment(id: $id) {
+            id
+            complianceResults {
+                ...allData
+            }
+        }
+    }
+    ${evidenceFragment}
+`;

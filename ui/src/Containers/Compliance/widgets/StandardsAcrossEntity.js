@@ -45,9 +45,10 @@ function processData(data, type) {
         const { passing, total } = standardsMapping[standardId];
         const percentagePassing = Math.round((passing / total) * 100) || 0;
         const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
-            entityType: standard.id,
+            entityType: entityTypes.CONTROL,
             query: {
-                groupBy: type
+                groupBy: type,
+                Standard: standard.id
             }
         });
         const dataPoint = {

@@ -25,6 +25,14 @@ const ComplianceListPage = ({ match, location }) => {
         entityType = entityTypes.CONTROL;
     }
 
+    const collapsibleBanner =
+        entityTypes.CONTROL === entityType ? null : (
+            <CollapsibleBanner className="pdf-page">
+                <ComplianceAcrossEntities entityType={entityType} query={query} groupBy={groupBy} />
+                <ControlsMostFailed entityType={entityType} query={query} showEmpty />
+            </CollapsibleBanner>
+        );
+
     return (
         <section className="flex flex-col h-full relative" id="capture-list">
             <Header
@@ -32,10 +40,7 @@ const ComplianceListPage = ({ match, location }) => {
                     <SearchInput categories={['COMPLIANCE']} shouldAddComplianceState />
                 }
             />
-            <CollapsibleBanner className="pdf-page">
-                <ComplianceAcrossEntities entityType={entityType} query={query} groupBy={groupBy} />
-                <ControlsMostFailed entityType={entityType} query={query} showEmpty />
-            </CollapsibleBanner>
+            {collapsibleBanner}
             <ComplianceList entityType={entityType} query={query} />
         </section>
     );

@@ -122,15 +122,16 @@ const processSunburstData = (data, type) => {
 const getNumControls = sunburstData =>
     sunburstData.reduce((acc, curr) => acc + curr.children.length, 0);
 
-const getParams = standardType => ({
-    entityType: standardType,
+const getParams = standardName => ({
+    entityType: entityTypes.CONTROL,
     query: {
-        groupBy: entityTypes.CATEGORY
+        Standard: standardName
     }
 });
 
 const createURLLink = (entityType, standardType, entityName) => {
-    const linkParams = getParams(standardType);
+    const standardName = standardLabels[standardType];
+    const linkParams = getParams(standardName);
     if (entityName) {
         const entityKey = capitalize(entityType);
         linkParams.query[entityKey] = entityName;
@@ -175,7 +176,8 @@ const ComplianceByStandard = ({ standardType, entityName, entityType, entityId, 
                             link: link.url
                         }
                     ];
-                    const linkToParams = getParams(standardType);
+                    const standardName = standardLabels[standardType];
+                    const linkToParams = getParams(standardName);
                     const linkTo = URLService.getLinkTo(
                         contextTypes.COMPLIANCE,
                         pageTypes.LIST,

@@ -37,7 +37,7 @@ const ResourceTabs = ({ entityType, entityId, standardId, resourceTabs, match })
                 const count = getResourceCountFromResults(type, data);
                 if (count > 0)
                     tabData.push({
-                        title: `${count} ${pluralize(resourceLabels[type], count)}`,
+                        title: `${pluralize(resourceLabels[type], count)}`,
                         link: getLinkToListType(type)
                     });
             });

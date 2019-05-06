@@ -36,9 +36,15 @@ export function getResourceCountFromResults(type, data) {
     const index = getIndicesFromAggregatedResults(source, type)[type];
     if (!index && index !== 0) return 0;
 
-    return uniq(
-        source
-            .filter(datum => datum.numFailing + datum.numPassing)
-            .map(datum => datum.aggregationKeys[index].id)
-    ).length;
+    let result;
+
+    if (type === entityTypes.CONTROL) {
+        result = source;
+    } else {
+        result = source.filter(datum => datum.numFailing + datum.numPassing);
+    }
+
+    result = uniq(result.map(datum => datum.aggregationKeys[index].id));
+
+    return result.length;
 }
