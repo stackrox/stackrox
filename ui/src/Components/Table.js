@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import ReactTable from 'react-table';
 import ReactTablePropTypes from 'react-table/lib/propTypes';
 import flattenObject from 'utils/flattenObject';
+import { Tooltip } from 'react-tippy';
+import * as Icon from 'react-feather';
 
 export const defaultHeaderClassName =
     'px-2 py-4 pb-3 font-700 text-base-600 hover:bg-primary-200 hover:z-1 hover:text-primary-700 select-none relative text-left border-r-0 leading-normal';
@@ -12,6 +14,18 @@ export const wrapClassName = 'whitespace-normal overflow-visible';
 export const rtTrActionsClassName =
     'rt-tr-actions hidden pin-r p-0 mr-2 w-auto text-left self-center';
 export const pageSize = 50;
+const headerTooltipContent = (
+    <div>
+        <div className="text-sm flex justify-between pb-1">
+            <span>Sort Asc/Desc</span>
+            <span>
+                <Icon.ArrowUp className="h-2 w-2" />
+                <Icon.ArrowDown className="h-2 w-2" />
+            </span>
+        </div>
+        <div className="border-t border-base-100 text-xs pt-1">(hold shift to multi-sort)</div>
+    </div>
+);
 
 class Table extends Component {
     static propTypes = {
@@ -76,14 +90,22 @@ class Table extends Component {
 
     getHeaderClassName = column => column.headerClassName || defaultHeaderClassName;
 
+    renderTooltip = headerText => () => (
+        <Tooltip useContext position="top" trigger="mouseenter" arrow html={headerTooltipContent}>
+            <div className="table-header-text">{headerText}</div>
+        </Tooltip>
+    );
+
     render() {
         const { rows, columns, ...rest } = this.props;
-        columns.forEach(column =>
+        columns.forEach(column => {
+            const headerText = column.Header;
             Object.assign(column, {
                 className: this.getColumnClassName(column),
-                headerClassName: this.getHeaderClassName(column)
-            })
-        );
+                headerClassName: this.getHeaderClassName(column),
+                Header: this.renderTooltip(headerText)
+            });
+        });
         return (
             <ReactTable
                 ref={this.props.setTableRef}
