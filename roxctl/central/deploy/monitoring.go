@@ -1,6 +1,7 @@
 package deploy
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/stackrox/rox/pkg/logging"
@@ -28,10 +29,9 @@ func (m *monitoringWrapper) String() string {
 func (m *monitoringWrapper) Set(input string) error {
 	val, ok := monitoringMap[strings.ToLower(input)]
 	if !ok {
-		*m.Monitoring = renderer.MonitoringType(renderer.OnPrem)
-	} else {
-		*m.Monitoring = val
+		return fmt.Errorf("invalid monitoring type: %v", input)
 	}
+	*m.Monitoring = val
 	return nil
 }
 

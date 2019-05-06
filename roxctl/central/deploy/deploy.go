@@ -34,10 +34,7 @@ func init() {
 }
 
 var (
-	isInteractive              bool
-	flagsHiddenWhenInteractive = []string{
-		"monitoring-persistence-type",
-	}
+	isInteractive bool
 )
 
 func generateJWTSigningKey(fileMap map[string][]byte) error {
@@ -241,17 +238,7 @@ func Command() *cobra.Command {
 	return c
 }
 
-func markFlagAsHidden(cmd *cobra.Command, flagName string) {
-	_ = cmd.PersistentFlags().MarkHidden(flagName)
-	for _, c := range cmd.Commands() {
-		markFlagAsHidden(c, flagName)
-	}
-}
-
 func runInteractive(cmd *cobra.Command) error {
-	for _, f := range flagsHiddenWhenInteractive {
-		markFlagAsHidden(cmd, f)
-	}
 	isInteractive = true
 	// Overwrite os.Args because cobra uses them
 	os.Args = walkTree(cmd)

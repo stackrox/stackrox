@@ -11,43 +11,17 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/stackrox/rox/pkg/docker"
+	"github.com/stackrox/rox/pkg/sliceutils"
 )
 
 const (
 	categoryAnnotation = "category"
-	groupAnnotation    = "group"
-
-	subgroupAnnotation = "subgroup"
+	groupAnnotationKey = "group"
 )
 
-func getFlagGroupMap() map[string]*flagGroup {
-	return map[string]*flagGroup{
-		"central": {
-			name:       "central",
-			optional:   false,
-			groupOrder: 0,
-		},
-		"scanner": {
-			name:       "scanner",
-			optional:   false,
-			groupOrder: 1,
-		},
-		"monitoring": {
-			name:        "monitoring",
-			optional:    true,
-			groupOrder:  2,
-			groupPrompt: "Would you like to run the monitoring stack?",
-			cmdLineSpec: "--monitoring-type=none",
-
-			subgroupPrompt: "Enter persistence type for monitoring (hostpath, pvc, none):",
-			subgroup: map[string][]*pflag.Flag{
-				"none": {},
-			},
-			subgroupCmdLineSpecTemplate: "--monitoring-persistence-type=%s",
-		},
-	}
-}
+var (
+	orderedFlagGroupNames = []string{"central", "scanner", "monitoring"}
+)
 
 func readUserInput(prompt string) (string, error) {
 	printToStderr(prompt)
@@ -75,18 +49,6 @@ func readUserInputFromFlag(f *pflag.Flag) (string, error) {
 		return f.Value.String(), nil
 	}
 	return text, nil
-}
-
-func promptUserForSection(prompt string) (bool, error) {
-	prompt += " [y/N] "
-	text, err := readUserInput(prompt)
-	if err != nil {
-		return false, err
-	}
-	if text == "" {
-		return false, nil
-	}
-	return strings.ToLower(text) == "y", nil
 }
 
 func readUserString(f *pflag.Flag) string {
@@ -136,156 +98,133 @@ func choseCommand(prompt string, c *cobra.Command) (args []string) {
 	}
 }
 
-type flagGroup struct {
-	name        string
-	optional    bool
-	groupOrder  int
-	groupPrompt string
-	flags       []*pflag.Flag
-	cmdLineSpec string
-
-	subgroupPrompt              string
-	subgroup                    map[string][]*pflag.Flag
-	subgroupCmdLineSpecTemplate string
+type flagWrap struct {
+	*pflag.Flag
+	childFlags map[string][]flagWrap
 }
 
-func getFirstFromStringSliceOrEmpty(s []string) string {
-	if len(s) == 0 {
-		return ""
+func addChild(child *pflag.Flag, flags []flagWrap, path []string) {
+	flagName, flagValue := parseKeyValueAnnotation(path[0])
+	var foundFlag *flagWrap
+	for _, flag := range flags {
+		if flag.Name == flagName {
+			foundFlag = &flag
+			break
+		}
 	}
-	return s[0]
+	if foundFlag == nil {
+		panic(fmt.Sprintf("Couldn't find flag matching annotation: %+v", path))
+	}
+	if len(path) > 1 {
+		addChild(child, foundFlag.childFlags[flagValue], path[1:])
+		return
+	}
+	foundFlag.childFlags[flagValue] = append(foundFlag.childFlags[flagValue], wrapFlag(child))
+}
+
+func wrapFlag(flag *pflag.Flag) flagWrap {
+	return flagWrap{
+		Flag:       flag,
+		childFlags: make(map[string][]flagWrap),
+	}
+}
+
+type flagGroup struct {
+	name  string
+	flags []flagWrap
+}
+
+func parseKeyValueAnnotation(annotation string) (flagName, flagValue string) {
+	splitString := strings.Split(annotation, "=")
+	return splitString[0], splitString[1]
+}
+
+func (f *flagGroup) addFlag(flag *pflag.Flag) {
+	if annotations := flag.Annotations[groupAnnotationKey]; len(annotations) > 1 {
+		addChild(flag, f.flags, annotations[1:])
+		return
+	}
+	f.flags = append(f.flags, wrapFlag(flag))
+}
+
+func getOrCreateGroup(groups map[string]*flagGroup, groupAnnotation []string) *flagGroup {
+	var rootGroupName string
+	if len(groupAnnotation) > 0 {
+		rootGroupName = groupAnnotation[0]
+	}
+	group, ok := groups[rootGroupName]
+	if !ok {
+		group = &flagGroup{name: rootGroupName}
+		groups[rootGroupName] = group
+	}
+	return group
 }
 
 func flagGroups(flags []*pflag.Flag) []*flagGroup {
 	groups := make(map[string]*flagGroup)
-	// Iterate over the flags to get the groups
-	flagGroupMap := getFlagGroupMap()
-	for _, f := range flags {
-		name := getFirstFromStringSliceOrEmpty(f.Annotations[groupAnnotation])
-		// Check global flag group
-		group, ok := flagGroupMap[name]
-		if !ok {
-			var ok bool
-			// Check per function group
-			if group, ok = groups[name]; !ok {
-				group = &flagGroup{}
-			}
-		}
-
-		if _, ok := f.Annotations[subgroupAnnotation]; !ok {
-			groups[name] = group
-			group.flags = append(group.flags, f)
-		}
-	}
-	// Iterate over the flags against to attach the subgroup
-	for _, f := range flags {
-		subgroup := getFirstFromStringSliceOrEmpty(f.Annotations[subgroupAnnotation])
-		if subgroup == "" {
-			continue
-		}
-		name := getFirstFromStringSliceOrEmpty(f.Annotations[groupAnnotation])
-		if name == "" {
-			panic(fmt.Sprintf("Invalid annotations on flags. Flag %s with subgroup %s must have a valid group assigned", f.Name, subgroup))
-		}
-		group := groups[name]
-		group.subgroup[subgroup] = append(group.subgroup[subgroup], f)
-	}
-
-	var groupList []*flagGroup
-	for _, g := range groups {
-		groupList = append(groupList, g)
-	}
-	sort.SliceStable(groupList, func(i, j int) bool {
-		return groupList[i].groupOrder < groupList[j].groupOrder
+	sort.Slice(flags, func(i, j int) bool {
+		return len(flags[i].Annotations[groupAnnotationKey]) < len(flags[j].Annotations[groupAnnotationKey])
 	})
-	return groupList
+	for _, flag := range flags {
+		group := getOrCreateGroup(groups, flag.Annotations[groupAnnotationKey])
+		group.addFlag(flag)
+	}
+	groupsSlice := make([]*flagGroup, 0, len(groups))
+	for _, group := range groups {
+		groupsSlice = append(groupsSlice, group)
+	}
+	sort.Slice(groupsSlice, func(i, j int) bool {
+		iPos := sliceutils.StringFind(orderedFlagGroupNames, groupsSlice[i].name)
+		jPos := sliceutils.StringFind(orderedFlagGroupNames, groupsSlice[j].name)
+		// If they're both not in the list of ordered flag groups, just sort alphabetically.
+		if iPos == -1 && jPos == -1 {
+			return groupsSlice[i].name < groupsSlice[j].name
+		}
+		return iPos < jPos
+	})
+	return groupsSlice
+}
+
+func processFlagWraps(fws []flagWrap) (args []string) {
+	for _, fw := range fws {
+		if fw.Hidden {
+			return
+		}
+		for {
+			if value, commandline := processFlag(fw.Flag); fw.NoOptDefVal == "" {
+				// Verify flag parsing
+				if err := fw.Value.Set(value); err != nil {
+					printlnToStderr(err.Error())
+					continue
+				}
+				args = append(args, commandline)
+				if childFlags, exists := fw.childFlags[value]; exists {
+					args = append(args, processFlagWraps(childFlags)...)
+				}
+			}
+			break
+		}
+	}
+	return
 }
 
 func walkTree(c *cobra.Command) (args []string) {
 	args = []string{c.Name()}
-	var allFlags []*pflag.Flag
-	c.PersistentFlags().VisitAll(func(f *pflag.Flag) {
-		if f.Hidden {
-			return
-		}
-		allFlags = append(allFlags, f)
-	})
-	c.Flags().VisitAll(func(f *pflag.Flag) {
-		if f.Hidden {
-			return
-		}
-		allFlags = append(allFlags, f)
-	})
 
-	// Sort and group flags by their annotations. Take into account if flag section is optional. If so, then prompt for if they want that section
-	for _, fg := range flagGroups(allFlags) {
-		if fg.optional {
-			// prompt if they want that section
-			wanted, err := promptUserForSection(fg.groupPrompt)
-			if err != nil {
-				log.Fatalf("Error prompting for section: %v", err)
-			}
-			if !wanted {
-				if fg.cmdLineSpec != "" {
-					args = append(args, fg.cmdLineSpec)
-				}
-				continue
-			}
+	var allFlags []*pflag.Flag
+	flagAppender := func(f *pflag.Flag) {
+		if f.Hidden {
+			return
 		}
-		for _, flag := range fg.flags {
-			if flag.Hidden {
-				continue
-			}
-			for {
-				if value, commandline := processFlag(flag); flag.NoOptDefVal == "" {
-					// Verify flag parsing
-					if err := flag.Value.Set(value); err != nil {
-						printlnToStderr(err.Error())
-						continue
-					}
-					args = append(args, commandline)
-				}
-				break
-			}
-		}
-		if fg.subgroup != nil {
-			input, err := readUserInput(fg.subgroupPrompt)
-			if err != nil {
-				if docker.IsContainerized() {
-					printToStderr("\nCould not read user input. Did you specify '-i' in the Docker run command?\n")
-				} else {
-					printToStderr("\nError reading user input: %v", err)
-				}
-				os.Exit(1)
-			}
-			var subgroupFlags []*pflag.Flag
-			for {
-				var ok bool
-				subgroupFlags, ok = fg.subgroup[input]
-				if ok {
-					// Currently the only subgroup is monitoring persistence
-					if fg.subgroupCmdLineSpecTemplate != "" {
-						args = append(args, fmt.Sprintf(fg.subgroupCmdLineSpecTemplate, input))
-					}
-					break
-				}
-				printToStderr(fmt.Sprintf("\n%q is not a valid option", input))
-				input, err = readUserInput(fg.subgroupPrompt)
-				if err != nil {
-					if docker.IsContainerized() {
-						printToStderr("\nCould not read user input. Did you specify '-i' in the Docker run command?\n")
-					} else {
-						printToStderr("\nError reading user input: %v", err)
-					}
-					os.Exit(1)
-				}
-			}
-			for _, f := range subgroupFlags {
-				if val, flag := processFlag(f); val != "" {
-					args = append(args, flag)
-				}
-			}
-		}
+		allFlags = append(allFlags, f)
+	}
+	c.PersistentFlags().VisitAll(flagAppender)
+	c.Flags().VisitAll(flagAppender)
+
+	flagGroups := flagGroups(allFlags)
+
+	for _, fg := range flagGroups {
+		args = append(args, processFlagWraps(fg.flags)...)
 	}
 
 	// group commands by their annotation categories
