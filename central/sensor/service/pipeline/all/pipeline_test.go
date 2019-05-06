@@ -1,7 +1,7 @@
 package all
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -36,20 +36,21 @@ func (suite *PipelineTestSuite) TearDownTest() {
 }
 
 func (suite *PipelineTestSuite) TestCallsMatchingPipeline() {
-	expectedError := fmt.Errorf("this is expected")
 	msg := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{},
 	}
 
 	suite.depMock.EXPECT().Match(msg).Return(true)
-	suite.depMock.EXPECT().Run("clusterID", msg, nil).Return(expectedError)
+	suite.depMock.EXPECT().Run("clusterID", msg, nil).Return(errors.New("some error"))
 
 	err := suite.tested.Run(msg, nil)
-	suite.Equal(expectedError, err, "expected the error")
+	suite.Error(err, "expected the error")
 }
 
 func (suite *PipelineTestSuite) TestHandlesNoMatchingPipeline() {
-	msg := &central.MsgFromSensor{}
+	msg := &central.MsgFromSensor{
+		Msg: &central.MsgFromSensor_Event{},
+	}
 
 	suite.depMock.EXPECT().Match(msg).Return(false)
 

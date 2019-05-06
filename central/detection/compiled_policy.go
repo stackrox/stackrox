@@ -72,7 +72,7 @@ type Predicate interface {
 	AppliesTo(interface{}) bool
 }
 
-// Predicate for deployments
+// Predicate for deployments.
 type deploymentPredicate struct {
 	predicate predicate.Predicate
 }

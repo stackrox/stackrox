@@ -10,7 +10,8 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// PolicySet is a set of policies.
+// PolicySet is a set of policies.'
+//go:generate mockgen-wrapper PolicySet
 type PolicySet interface {
 	Compiler() PolicyCompiler
 
@@ -18,6 +19,7 @@ type PolicySet interface {
 	ForEach(pt PolicyExecutor) error
 
 	UpsertPolicy(*storage.Policy) error
+	Recompile(policyID string) error
 	RemovePolicy(policyID string) error
 	RemoveNotifier(notifierID string) error
 }

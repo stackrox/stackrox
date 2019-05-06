@@ -60,6 +60,25 @@ func (p *setImpl) UpsertPolicy(policy *storage.Policy) error {
 	return nil
 }
 
+func (p *setImpl) Recompile(policyID string) error {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	olcCompiled, exists := p.policyIDToCompiled[policyID]
+	if !exists {
+		return fmt.Errorf("policy %s does not exist to recompile", policyID)
+	}
+
+	newCompiled, err := p.compiler.CompilePolicy(olcCompiled.Policy())
+	if err != nil {
+		log.Errorf("unable to compile policy: %s", err)
+		return err
+	}
+
+	p.policyIDToCompiled[newCompiled.Policy().GetId()] = newCompiled
+	return nil
+}
+
 // RemovePolicy removes a policy from the set.
 func (p *setImpl) RemovePolicy(policyID string) error {
 	p.lock.Lock()

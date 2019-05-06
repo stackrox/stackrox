@@ -41,22 +41,20 @@ func (s *pipelineImpl) Run(msg *central.MsgFromSensor, injector common.MessageIn
 		}
 		return errList.ToError()
 	}
-	var matchingFragment pipeline.Fragment
+	defer metrics.SetSensorEventRunDuration(time.Now(), common.GetMessageType(msg))
+
+	var matchCount int
+	errorList := errorhelpers.NewErrorList("error processing message from sensor")
 	for _, fragment := range s.fragments {
 		if fragment.Match(msg) {
-			if matchingFragment == nil {
-				matchingFragment = fragment
-			} else {
-				return fmt.Errorf("multiple pipeline fragments matched: %s", proto.MarshalTextString(msg))
-			}
+			matchCount = matchCount + 1
+			errorList.AddError(fragment.Run(s.clusterID, msg, injector))
 		}
 	}
-
-	if matchingFragment == nil {
+	if matchCount == 0 {
 		return fmt.Errorf("no pipeline present to process message: %s", proto.MarshalTextString(msg))
 	}
-	defer metrics.SetSensorEventRunDuration(time.Now(), common.GetMessageType(msg))
-	return matchingFragment.Run(s.clusterID, msg, injector)
+	return errorList.ToError()
 }
 
 func (s *pipelineImpl) OnFinish(clusterID string) {
