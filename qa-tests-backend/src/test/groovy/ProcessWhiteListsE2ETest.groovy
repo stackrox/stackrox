@@ -3,6 +3,7 @@ import groups.BAT
 import io.stackrox.proto.storage.ProcessWhitelistOuterClass
 import objects.Deployment
 import org.junit.Assume
+
 import org.junit.experimental.categories.Category
 import services.ProcessWhitelistService
 import spock.lang.Unroll
@@ -39,11 +40,12 @@ class ProcessWhiteListsE2ETest extends BaseSpecification {
     @Category(BAT)
     def "Verify  whitelist processes for the given key before and after locking "() {
         Assume.assumeTrue(Constants.RUN_PROCESS_WHITELIST_TESTS)
-
         when:
         "get process whitelists is called for a key"
         ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
                 getProcessWhitelist(deploymentId, container_name)
+
+        assert (whitelist != null)
 
         then:
         "Verify  whitelisted processes for a given key before and after calling lock whitelists"
