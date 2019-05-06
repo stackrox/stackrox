@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -123,7 +122,7 @@ func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[
 			return searchbasedpolicies.Violations{}
 		}
 		sort.Slice(processes, func(i, j int) bool {
-			return protoconv.CompareProtoTimestamps(processes[i].GetSignal().GetTime(), processes[j].GetSignal().GetTime()) < 0
+			return processes[i].GetSignal().GetTime().Compare(processes[j].GetSignal().GetTime()) < 0
 		})
 
 		v := &storage.Alert_ProcessViolation{Processes: processes}

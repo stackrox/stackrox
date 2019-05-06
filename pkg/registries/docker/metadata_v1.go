@@ -65,7 +65,7 @@ func (r *Registry) populateV1DataFromManifest(manifest *schema1.SignedManifest, 
 			return nil, errors.Wrap(err, "Failed unmarshalling v1 capability")
 		}
 		layer := convertImageToDockerFileLine(&v1Image)
-		if protoconv.CompareProtoTimestamps(layer.Created, latest.Created) == 1 {
+		if layer.Created.Compare(latest.Created) == 1 {
 			latest = *layer
 		}
 		layers = append(layers, layer)

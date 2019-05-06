@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protoconv"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -123,10 +122,10 @@ func (ds *datastoreImpl) DeleteImages(ids ...string) error {
 // merge adds the most up to date data from the two inputs to the first input.
 func merge(mergeTo *storage.Image, mergeWith *storage.Image) {
 	// If the image currently in the DB has more up to date info, swap it out.
-	if protoconv.CompareProtoTimestamps(mergeWith.GetMetadata().GetV1().GetCreated(), mergeTo.GetMetadata().GetV1().GetCreated()) > 0 {
+	if mergeWith.GetMetadata().GetV1().GetCreated().Compare(mergeTo.GetMetadata().GetV1().GetCreated()) > 0 {
 		mergeTo.Metadata = mergeWith.GetMetadata()
 	}
-	if protoconv.CompareProtoTimestamps(mergeWith.GetScan().GetScanTime(), mergeTo.GetScan().GetScanTime()) > 0 {
+	if mergeWith.GetScan().GetScanTime().Compare(mergeTo.GetScan().GetScanTime()) > 0 {
 		mergeTo.Scan = mergeWith.GetScan()
 	}
 }

@@ -108,7 +108,7 @@ func readAllFlows(bucket *bolt.Bucket, since *types.Timestamp) (flows []*storage
 		}
 
 		if since != nil && flow.LastSeenTimestamp != nil {
-			if protoconv.CompareProtoTimestamps(flow.LastSeenTimestamp, since) < 0 {
+			if flow.LastSeenTimestamp.Compare(since) < 0 {
 				return nil
 			}
 		}

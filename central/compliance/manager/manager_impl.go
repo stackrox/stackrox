@@ -19,7 +19,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
@@ -407,7 +406,7 @@ func (m *manager) GetSchedule(id string) (*v1.ComplianceRunScheduleInfo, error) 
 }
 
 func runMatches(request *v1.GetRecentComplianceRunsRequest, runProto *v1.ComplianceRun) bool {
-	if request.GetSince() != nil && protoconv.CompareProtoTimestamps(runProto.GetStartTime(), request.GetSince()) < 0 {
+	if request.GetSince() != nil && runProto.GetStartTime().Compare(request.GetSince()) < 0 {
 		return false
 	}
 	if request.GetClusterIdOpt() != nil && runProto.GetClusterId() != request.GetClusterId() {

@@ -64,7 +64,7 @@ func (s *undoStore) UpsertUndoRecord(clusterID string, record *storage.NetworkPo
 		if prevVal != nil {
 			var prevRecord storage.NetworkPolicyApplicationUndoRecord
 			if err := proto.Unmarshal(prevVal, &prevRecord); err == nil {
-				if protoconv.CompareProtoTimestamps(record.GetApplyTimestamp(), prevRecord.GetApplyTimestamp()) < 0 {
+				if record.GetApplyTimestamp().Compare(prevRecord.GetApplyTimestamp()) < 0 {
 					return fmt.Errorf("apply timestamp of record to store (%v) is older than that of existing record (%v)",
 						protoconv.ConvertTimestampToTimeOrDefault(record.GetApplyTimestamp(), time.Time{}),
 						protoconv.ConvertTimestampToTimeOrDefault(prevRecord.GetApplyTimestamp(), time.Time{}))

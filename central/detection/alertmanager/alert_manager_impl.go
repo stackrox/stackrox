@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -92,7 +91,7 @@ func getMostRecentProcessTimestampInAlerts(alerts ...*storage.Alert) (ts *ptypes
 			continue
 		}
 		lastTimeStampInViolation := lastTimestamp(processes)
-		if protoconv.CompareProtoTimestamps(ts, lastTimeStampInViolation) < 0 {
+		if ts.Compare(lastTimeStampInViolation) < 0 {
 			ts = lastTimeStampInViolation
 		}
 	}
@@ -131,7 +130,7 @@ func (d *alertManagerImpl) trimResolvedProcessesFromRuntimeAlert(alert *storage.
 	if len(processes) > 0 {
 		filtered := processes[:0]
 		for _, process := range processes {
-			if protoconv.CompareProtoTimestamps(process.GetSignal().GetTime(), mostRecentResolvedTimestamp) > 0 {
+			if process.GetSignal().GetTime().Compare(mostRecentResolvedTimestamp) > 0 {
 				newProcessFound = true
 				filtered = append(filtered, process)
 			}
@@ -165,7 +164,7 @@ func mergeProcessesFromOldIntoNew(old, newAlert *storage.Alert) (newAlertHasNewP
 	// De-dupe processes using timestamps.
 	timestamp := lastTimestamp(oldProcessViolation.GetProcesses())
 	for _, process := range newAlert.GetProcessViolation().GetProcesses() {
-		if protoconv.CompareProtoTimestamps(process.GetSignal().GetTime(), timestamp) > 0 {
+		if process.GetSignal().GetTime().Compare(timestamp) > 0 {
 			newAlertHasNewProcesses = true
 			newProcessesSlice = append(newProcessesSlice, process)
 		}

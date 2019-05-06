@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -100,7 +99,7 @@ func (s *service) DeleteRunSchedule(ctx context.Context, req *v1.DeleteComplianc
 func (s *service) GetRecentRuns(ctx context.Context, req *v1.GetRecentComplianceRunsRequest) (*v1.GetRecentComplianceRunsResponse, error) {
 	runs := s.manager.GetRecentRuns(req)
 	sort.Slice(runs, func(i, j int) bool {
-		return protoconv.CompareProtoTimestamps(runs[i].StartTime, runs[j].StartTime) < 0
+		return runs[i].StartTime.Compare(runs[j].StartTime) < 0
 	})
 
 	return &v1.GetRecentComplianceRunsResponse{

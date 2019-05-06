@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"google.golang.org/grpc"
@@ -82,8 +81,7 @@ func (s *serviceImpl) GetProcessesByDeployment(_ context.Context, req *v1.GetPro
 
 func sortIndicators(indicators []*storage.ProcessIndicator) {
 	sort.SliceStable(indicators, func(i, j int) bool {
-		i1, i2 := indicators[i], indicators[j]
-		return protoconv.CompareProtoTimestamps(i1.GetSignal().GetTime(), i2.GetSignal().GetTime()) == -1
+		return indicators[i].GetSignal().GetTime().Compare(indicators[j].GetSignal().GetTime()) == -1
 	})
 }
 
