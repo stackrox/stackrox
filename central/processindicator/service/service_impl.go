@@ -30,6 +30,9 @@ var (
 			"/v1.ProcessService/GetProcessesByDeployment",
 			"/v1.ProcessService/GetGroupedProcessByDeployment",
 		},
+		user.With(permissions.View(resources.Indicator), permissions.View(resources.ProcessWhitelist)): {
+			"/v1.ProcessService/GetGroupedProcessByDeploymentAndContainer",
+		},
 	})
 )
 
