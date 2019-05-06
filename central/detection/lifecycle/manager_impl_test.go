@@ -7,7 +7,8 @@ import (
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/processwhitelist/datastore/mocks"
+	processWhitelistDataStoreMocks "github.com/stackrox/rox/central/processwhitelist/datastore/mocks"
+	reprocessorMocks "github.com/stackrox/rox/central/reprocessor/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -21,8 +22,9 @@ func TestManager(t *testing.T) {
 type ManagerTestSuite struct {
 	suite.Suite
 
-	whitelists *mocks.MockDataStore
-	manager    *managerImpl
+	whitelists  *processWhitelistDataStoreMocks.MockDataStore
+	reprocessor *reprocessorMocks.MockLoop
+	manager     *managerImpl
 
 	mockCtrl *gomock.Controller
 }
@@ -30,8 +32,9 @@ type ManagerTestSuite struct {
 func (suite *ManagerTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 
-	suite.whitelists = mocks.NewMockDataStore(suite.mockCtrl)
-	suite.manager = &managerImpl{whitelists: suite.whitelists}
+	suite.whitelists = processWhitelistDataStoreMocks.NewMockDataStore(suite.mockCtrl)
+	suite.reprocessor = reprocessorMocks.NewMockLoop(suite.mockCtrl)
+	suite.manager = &managerImpl{whitelists: suite.whitelists, reprocessor: suite.reprocessor}
 }
 
 func (suite *ManagerTestSuite) TearDownTest() {
@@ -69,7 +72,7 @@ func makeIndicator() (*storage.ProcessWhitelistKey, *storage.ProcessIndicator) {
 
 func (suite *ManagerTestSuite) TestWhitelistNotFound() {
 	key, indicator := makeIndicator()
-	elements := fixtures.MakeElements([]string{indicator.Signal.GetExecFilePath()})
+	elements := fixtures.MakeWhitelistItems(indicator.Signal.GetName())
 	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(nil, nil)
 	suite.whitelists.EXPECT().UpsertProcessWhitelist(key, elements, true).Return(nil, nil)
 	_, _, err := suite.manager.checkWhitelist(indicator)
@@ -89,9 +92,10 @@ func (suite *ManagerTestSuite) TestWhitelistNotFound() {
 func (suite *ManagerTestSuite) TestWhitelistShouldBeUpdated() {
 	key, indicator := makeIndicator()
 	whitelist := &storage.ProcessWhitelist{}
-	elements := fixtures.MakeElements([]string{indicator.Signal.GetExecFilePath()})
+	elements := fixtures.MakeWhitelistItems(indicator.Signal.GetName())
 	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(whitelist, nil)
 	suite.whitelists.EXPECT().UpdateProcessWhitelistElements(key, elements, nil, true).Return(nil, nil)
+	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
 	_, _, err := suite.manager.checkWhitelist(indicator)
 	suite.NoError(err)
 
@@ -104,13 +108,7 @@ func (suite *ManagerTestSuite) TestWhitelistShouldBeUpdated() {
 
 func (suite *ManagerTestSuite) TestWhitelistShouldPass() {
 	key, indicator := makeIndicator()
-	element := &storage.WhitelistElement{
-		Element: &storage.WhitelistItem{
-			Item: &storage.WhitelistItem_ProcessName{ProcessName: indicator.Signal.GetExecFilePath()},
-		},
-		Auto: true,
-	}
-	whitelist := &storage.ProcessWhitelist{Elements: []*storage.WhitelistElement{element}}
+	whitelist := &storage.ProcessWhitelist{Elements: fixtures.MakeWhitelistElements(indicator.Signal.GetName())}
 	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(whitelist, nil)
 	_, _, err := suite.manager.checkWhitelist(indicator)
 	suite.NoError(err)

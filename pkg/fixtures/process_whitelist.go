@@ -63,11 +63,22 @@ func GetWhitelistElement(processName string) *storage.WhitelistElement {
 	}
 }
 
-// MakeElements turns a list of strings into a list of storage objects for more convenient test
-func MakeElements(strings []string) []*storage.WhitelistItem {
+// MakeWhitelistItems turns a list of strings into a list of storage objects for more convenient test
+func MakeWhitelistItems(strings ...string) []*storage.WhitelistItem {
 	elements := make([]*storage.WhitelistItem, 0, len(strings))
 	for _, stringName := range strings {
 		elements = append(elements, &storage.WhitelistItem{Item: &storage.WhitelistItem_ProcessName{ProcessName: stringName}})
+	}
+	return elements
+}
+
+// MakeWhitelistElements turns a list of strings into a list of storage objects for more convenient test
+func MakeWhitelistElements(strings ...string) []*storage.WhitelistElement {
+	items := MakeWhitelistItems(strings...)
+
+	elements := make([]*storage.WhitelistElement, 0, len(items))
+	for _, item := range items {
+		elements = append(elements, &storage.WhitelistElement{Element: item})
 	}
 	return elements
 }

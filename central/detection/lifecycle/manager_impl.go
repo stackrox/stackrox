@@ -196,7 +196,7 @@ func (m *managerImpl) checkWhitelist(indicator *storage.ProcessIndicator) (userW
 		return
 	}
 
-	insertableElement := &storage.WhitelistItem{Item: &storage.WhitelistItem_ProcessName{ProcessName: indicator.GetSignal().GetExecFilePath()}}
+	insertableElement := &storage.WhitelistItem{Item: &storage.WhitelistItem_ProcessName{ProcessName: indicator.GetSignal().GetName()}}
 	if whitelist == nil {
 		_, err = m.whitelists.UpsertProcessWhitelist(key, []*storage.WhitelistItem{insertableElement}, true)
 		return
@@ -207,12 +207,16 @@ func (m *managerImpl) checkWhitelist(indicator *storage.ProcessIndicator) (userW
 			return
 		}
 	}
-	userWhitelist = processwhitelist.IsLocked(whitelist.GetUserLockedTimestamp())
-	roxWhitelist = processwhitelist.IsLocked(whitelist.GetStackRoxLockedTimestamp())
+	userWhitelist = processwhitelist.IsUserLocked(whitelist)
+	roxWhitelist = processwhitelist.IsRoxLocked(whitelist)
 	if userWhitelist || roxWhitelist {
 		return
 	}
 	_, err = m.whitelists.UpdateProcessWhitelistElements(key, []*storage.WhitelistItem{insertableElement}, nil, true)
+	if err != nil {
+		return
+	}
+	m.reprocessor.ReprocessRiskForDeployments(indicator.GetDeploymentId())
 	return
 }
 

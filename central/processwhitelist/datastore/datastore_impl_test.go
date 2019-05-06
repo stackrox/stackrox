@@ -81,7 +81,7 @@ func (suite *ProcessWhitelistDataStoreTestSuite) testGetAll(allExpected []*stora
 }
 
 func (suite *ProcessWhitelistDataStoreTestSuite) testUpdate(key *storage.ProcessWhitelistKey, addProcesses []string, removeProcesses []string, auto bool, expectedResults set.StringSet) *storage.ProcessWhitelist {
-	updated, err := suite.datastore.UpdateProcessWhitelistElements(key, fixtures.MakeElements(addProcesses), fixtures.MakeElements(removeProcesses), auto)
+	updated, err := suite.datastore.UpdateProcessWhitelistElements(key, fixtures.MakeWhitelistItems(addProcesses...), fixtures.MakeWhitelistItems(removeProcesses...), auto)
 	suite.NoError(err)
 	suite.NotNil(updated)
 	suite.NotNil(updated.Elements)

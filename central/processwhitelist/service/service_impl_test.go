@@ -249,8 +249,8 @@ func TestUpdateProcessWhitelist(t *testing.T) {
 
 			request := &v1.UpdateProcessWhitelistsRequest{
 				Keys:           c.toUpdate,
-				AddElements:    fixtures.MakeElements(c.toAdd),
-				RemoveElements: fixtures.MakeElements(c.toRemove),
+				AddElements:    fixtures.MakeWhitelistItems(c.toAdd...),
+				RemoveElements: fixtures.MakeWhitelistItems(c.toRemove...),
 			}
 			response, err := service.UpdateProcessWhitelists((context.Context)(nil), request)
 			assert.NoError(t, err)

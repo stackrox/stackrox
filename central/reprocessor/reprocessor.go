@@ -27,6 +27,7 @@ func Singleton() Loop {
 }
 
 // Loop combines periodically (every hour) runs enrichment and detection.
+//go:generate mockgen-wrapper Loop
 type Loop interface {
 	Start()
 	ShortCircuit()

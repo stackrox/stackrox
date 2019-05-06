@@ -25,7 +25,7 @@ type Scorer interface {
 }
 
 // NewScorer returns a new scorer that encompasses both static and user defined multipliers
-func NewScorer(alertGetter getters.AlertGetter, roles roleStore.DataStore, bindings bindingStore.DataStore, serviceAccounts saStore.DataStore) Scorer {
+func NewScorer(alertGetter getters.AlertGetter, indicatorGetter getters.ProcessIndicators, whitelistGetter getters.ProcessWhitelists, roles roleStore.DataStore, bindings bindingStore.DataStore, serviceAccounts saStore.DataStore) Scorer {
 	scoreImpl := &scoreImpl{
 		// These multipliers are intentionally ordered based on the order that we want them to be displayed in.
 		// Order aligns with the maximum output multiplier value, which would make sense to correlate
@@ -33,6 +33,7 @@ func NewScorer(alertGetter getters.AlertGetter, roles roleStore.DataStore, bindi
 		// DO NOT REORDER WITHOUT THOUGHT.
 		ConfiguredMultipliers: []multipliers.Multiplier{
 			multipliers.NewViolations(alertGetter),
+			multipliers.NewProcessWhitelists(whitelistGetter, indicatorGetter),
 			multipliers.NewVulnerabilities(),
 			multipliers.NewServiceConfig(),
 			multipliers.NewReachability(),

@@ -108,19 +108,7 @@ func (s *serviceImpl) getElementSet(deploymentID string, containerName string) (
 	if err != nil {
 		return nil, err
 	}
-	if whitelist == nil {
-		return nil, nil
-	}
-	roxLocked := processwhitelist.IsLocked(whitelist.GetStackRoxLockedTimestamp())
-	userLocked := processwhitelist.IsLocked(whitelist.GetUserLockedTimestamp())
-	if !roxLocked && !userLocked {
-		return nil, nil
-	}
-	whitelistSet := set.NewStringSet()
-	for _, element := range whitelist.GetElements() {
-		whitelistSet.Add(element.GetElement().GetProcessName())
-	}
-	return &whitelistSet, nil
+	return processwhitelist.Processes(whitelist, processwhitelist.RoxOrUserLocked), nil
 }
 
 // IndicatorsToGroupedResponsesWithContainer rearranges process indicator storage items into API process name/container

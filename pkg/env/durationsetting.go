@@ -29,7 +29,7 @@ func (d *DurationSetting) Setting() string {
 
 // DurationSetting returns the Duration object represented by the environment variable
 func (d *DurationSetting) DurationSetting() time.Duration {
-	val, _ := os.LookupEnv(d.envVar)
+	val := os.Getenv(d.envVar)
 	if val != "" {
 		dur, err := time.ParseDuration(val)
 		if err == nil {

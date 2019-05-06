@@ -55,3 +55,12 @@ func ConvertTimeToTimestampOrNil(goTime time.Time) *gogoTimestamp.Timestamp {
 	}
 	return t
 }
+
+// MustConvertTimeToTimestamp converts golang time to proto timestamp and panics if it fails.
+func MustConvertTimeToTimestamp(goTime time.Time) *gogoTimestamp.Timestamp {
+	t, err := gogoTimestamp.TimestampProto(goTime)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}

@@ -33,6 +33,7 @@ func getMockDeployment() *storage.Deployment {
 		},
 		Containers: []*storage.Container{
 			{
+				Name: "containerName",
 				Volumes: []*storage.Volume{
 					{
 						Name:     "readonly",
@@ -93,6 +94,7 @@ func getMockDeployment() *storage.Deployment {
 				},
 			},
 			{
+				Name: "Container2",
 				Image: &storage.Image{
 					Metadata: &storage.ImageMetadata{
 						V1: &storage.V1Metadata{

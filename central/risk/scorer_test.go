@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	processIndicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
+	processWhitelistMocks "github.com/stackrox/rox/central/processwhitelist/datastore/mocks"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
 	bindingMocks "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore/mocks"
 	"github.com/stackrox/rox/central/risk/getters"
@@ -22,6 +24,8 @@ func TestScore(t *testing.T) {
 	mockRoles := roleMocks.NewMockDataStore(mockCtrl)
 	mockBindings := bindingMocks.NewMockDataStore(mockCtrl)
 	mockServiceAccounts := saMocks.NewMockDataStore(mockCtrl)
+	mockIndicators := processIndicatorMocks.NewMockDataStore(mockCtrl)
+	mockWhitelists := processWhitelistMocks.NewMockDataStore(mockCtrl)
 
 	deployment := getMockDeployment()
 	scorer := NewScorer(&getters.MockAlertsGetter{
@@ -34,7 +38,10 @@ func TestScore(t *testing.T) {
 				},
 			},
 		},
-	}, mockRoles, mockBindings, mockServiceAccounts)
+	}, mockIndicators, mockWhitelists, mockRoles, mockBindings, mockServiceAccounts)
+
+	mockWhitelists.EXPECT().GetProcessWhitelist(gomock.Any()).MaxTimes(4).Return(nil, nil)
+	mockIndicators.EXPECT().SearchRawProcessIndicators(gomock.Any()).MaxTimes(2).Return(nil, nil)
 
 	// Without user defined function
 	expectedRiskScore := 9.016
@@ -139,6 +146,7 @@ func TestScore(t *testing.T) {
 
 func getMockDeployment() *storage.Deployment {
 	return &storage.Deployment{
+		Id:        "DeploymentID",
 		ClusterId: "cluster",
 		Ports: []*storage.PortConfig{
 			{
@@ -206,6 +214,7 @@ func getMockDeployment() *storage.Deployment {
 				},
 			},
 			{
+				Name: "second",
 				Volumes: []*storage.Volume{
 					{
 						Name: "rw volume",
