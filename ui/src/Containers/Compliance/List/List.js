@@ -57,6 +57,7 @@ class ComplianceList extends Component {
                     clearSelectedRow={this.clearSelectedRow}
                     linkText={linkText}
                     standardId={standardId}
+                    controlResult={selectedRow}
                 />
             );
         }

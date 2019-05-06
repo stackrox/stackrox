@@ -14,6 +14,7 @@ import { withRouter } from 'react-router-dom';
 import ComplianceList from 'Containers/Compliance/List/List';
 import Loader from 'Components/Loader';
 import ResourceTabs from 'Components/ResourceTabs';
+import ControlAssessment from 'Containers/Compliance/widgets/ControlAssessment';
 import Header from './Header';
 import SearchInput from '../SearchInput';
 
@@ -22,7 +23,7 @@ function processData(data) {
     return { control: data.results, standards: data.complianceStandards };
 }
 
-const ControlPage = ({ match, location, controlId, sidePanelMode }) => {
+const ControlPage = ({ match, location, controlId, sidePanelMode, controlResult }) => {
     const params = URLService.getParams(match, location);
     const entityId = controlId || params.controlId;
     const listEntityType = URLService.getEntityTypeKeyFromValue(params.listEntityType);
@@ -97,6 +98,10 @@ const ControlPage = ({ match, location, controlId, sidePanelMode }) => {
                                 )}
                                 {sidePanelMode && (
                                     <>
+                                        <ControlAssessment
+                                            className="sx-2"
+                                            controlResult={controlResult}
+                                        />
                                         <ControlRelatedResourceList
                                             listEntityType={entityTypes.CLUSTER}
                                             pageEntityType={entityTypes.CONTROL}
@@ -167,12 +172,14 @@ ControlPage.propTypes = {
     sidePanelMode: PropTypes.bool,
     match: ReactRouterPropTypes.match.isRequired,
     location: ReactRouterPropTypes.location.isRequired,
-    controlId: PropTypes.string
+    controlId: PropTypes.string,
+    controlResult: PropTypes.shape({})
 };
 
 ControlPage.defaultProps = {
     sidePanelMode: false,
-    controlId: null
+    controlId: null,
+    controlResult: null
 };
 
 export default withRouter(ControlPage);
