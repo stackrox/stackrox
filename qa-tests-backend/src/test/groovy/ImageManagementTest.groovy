@@ -29,7 +29,7 @@ class ImageManagementTest extends BaseSpecification {
     def "Verify CI/CD Integration Endpoint - #policy - #imageRegistry"() {
         when:
         "Update Policy to build time"
-        def startStages = Services.updatePolicyLifecycleStage(policy, [LifecycleStage.BUILD,])
+        def startStages = Services.updatePolicyLifecycleStage(policy, [LifecycleStage.BUILD, LifecycleStage.DEPLOY])
 
         and:
         "Request Image Scan"
@@ -65,7 +65,7 @@ class ImageManagementTest extends BaseSpecification {
     def "Verify CI/CD Integration Endpoint Whitelists - #policy"() {
         when:
         "Update Policy to build time and mark policy whitelist"
-        def startStages = Services.updatePolicyLifecycleStage(policy, [LifecycleStage.BUILD,])
+        def startStages = Services.updatePolicyLifecycleStage(policy, [LifecycleStage.BUILD, LifecycleStage.DEPLOY])
         Services.updatePolicyImageWhitelist(policy, whitelists)
 
         and:

@@ -404,7 +404,7 @@ class Enforcement extends BaseSpecification {
         "Apply policy at Build time"
         def startlifeCycle = Services.updatePolicyLifecycleStage(
                 LATEST_TAG,
-                [LifecycleStage.BUILD,]
+                [LifecycleStage.BUILD, LifecycleStage.DEPLOY]
         )
         "Add node constraint enforcement to an existing policy"
         def startEnforcements = Services.updatePolicyEnforcement(

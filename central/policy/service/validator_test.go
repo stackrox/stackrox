@@ -498,12 +498,41 @@ func (suite *PolicyValidatorTestSuite) TestValidateWhitelists() {
 		Deployment: deployment,
 	}
 	policy = &storage.Policy{
+		LifecycleStages: []storage.LifecycleStage{
+			storage.LifecycleStage_DEPLOY,
+		},
 		Whitelists: []*storage.Whitelist{
 			deploymentWhitelist,
 		},
 	}
 	err = suite.validator.validateWhitelists(policy)
 	suite.NoError(err, "valid to whitelist by deployment name")
+
+	imageWhitelist := &storage.Whitelist{
+		Container: &storage.Whitelist_Container{
+			ImageName: &storage.ImageName{
+				Registry: "stackrox.io",
+			},
+		},
+	}
+	policy = &storage.Policy{
+		LifecycleStages: []storage.LifecycleStage{
+			storage.LifecycleStage_BUILD,
+		},
+		Whitelists: []*storage.Whitelist{
+			imageWhitelist,
+		},
+	}
+	err = suite.validator.validateWhitelists(policy)
+	suite.NoError(err, "valid to whitelist by image registry")
+
+	policy = &storage.Policy{
+		Whitelists: []*storage.Whitelist{
+			imageWhitelist,
+		},
+	}
+	err = suite.validator.validateWhitelists(policy)
+	suite.Error(err, "not valid to whitelist by image registry since build time lifecycle isn't present")
 
 	emptyWhitelist := &storage.Whitelist{}
 	policy = &storage.Policy{
@@ -513,5 +542,4 @@ func (suite *PolicyValidatorTestSuite) TestValidateWhitelists() {
 	}
 	err = suite.validator.validateWhitelists(policy)
 	suite.Error(err, "whitelist requires either container or deployment configuration")
-
 }

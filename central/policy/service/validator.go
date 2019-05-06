@@ -158,24 +158,30 @@ func (s *policyValidator) validateScopes(policy *storage.Policy) error {
 
 func (s *policyValidator) validateWhitelists(policy *storage.Policy) error {
 	for _, whitelist := range policy.GetWhitelists() {
-		if err := s.validateWhitelist(whitelist); err != nil {
+		if err := s.validateWhitelist(policy, whitelist); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *policyValidator) validateWhitelist(whitelist *storage.Whitelist) error {
+func (s *policyValidator) validateWhitelist(policy *storage.Policy, whitelist *storage.Whitelist) error {
 	// TODO(cgorman) once we have real whitelist support in UI, add validation for whitelist name
 	if whitelist.GetContainer() == nil && whitelist.GetDeployment() == nil && whitelist.GetImage() == nil {
 		return errors.New("all whitelists must have some criteria to match on")
 	}
 	if whitelist.GetContainer() != nil {
+		if !policies.AppliesAtBuildTime(policy) {
+			return errors.New("whitelisting an image is only valid during the BUILD lifecycle")
+		}
 		if err := s.validateContainerWhitelist(whitelist); err != nil {
 			return err
 		}
 	}
 	if whitelist.GetDeployment() != nil {
+		if !policies.AppliesAtDeployTime(policy) && !policies.AppliesAtRunTime(policy) {
+			return errors.New("whitelisting a deployment is only valid during the DEPLOY and RUNTIME lifecycles")
+		}
 		if err := s.validateDeploymentWhitelist(whitelist); err != nil {
 			return err
 		}
