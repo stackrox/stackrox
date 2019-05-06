@@ -67,6 +67,15 @@ func (k *kubernetes) Render(c Config) ([]*zip.File, error) {
 	if err != nil {
 		return nil, err
 	}
+	c.K8sConfig.ScannerRegistry, err = kubernetesPkg.GetResolvedRegistry(c.K8sConfig.ScannerImage)
+	if err != nil {
+		return nil, err
+	}
+	if c.K8sConfig.Registry != c.K8sConfig.ScannerRegistry {
+		c.K8sConfig.ScannerSecretName = "stackrox-scanner"
+	} else {
+		c.K8sConfig.ScannerSecretName = "stackrox"
+	}
 	if err := injectImageTags(&c); err != nil {
 		return nil, err
 	}
@@ -116,7 +125,9 @@ const kubectlInstructionTemplate = instructionPrefix + `{{if not .K8sConfig.Moni
     - Run central/scripts/setup.sh
     - Run {{.K8sConfig.Command}} create -R -f central
   - Deploy Scanner
-    - If you want to run the StackRox scanner, run {{.K8sConfig.Command}} create -R -f scanner
+    - If you want to run the StackRox scanner
+    - Run scanner/scripts/setup.sh
+    - Run {{.K8sConfig.Command}} create -R -f scanner
 `
 
 func (k *kubernetes) Instructions(c Config) string {

@@ -145,6 +145,10 @@ type K8sConfig struct {
 	// k8s fields
 	Registry string
 
+	ScannerRegistry string
+	// If the scanner registry is different from the central registry get a separate secret
+	ScannerSecretName string
+
 	// These variables are not prompted for by Cobra, but are set based on
 	// provided inputs for use in templating.
 	MainImageTag    string

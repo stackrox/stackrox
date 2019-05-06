@@ -4,3 +4,5 @@ clusterType: {{.ClusterType.String}}
 namespace: stackrox
 
 image: {{.K8sConfig.ScannerImage}}
+
+scannerSecretName: {{.K8sConfig.ScannerSecretName}}
