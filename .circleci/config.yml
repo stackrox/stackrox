@@ -1217,7 +1217,7 @@ jobs:
             docker run --rm -t \
               -v $PWD/openshift:/data \
               -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
-              stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION create "${CIRCLE_SHA1:0:7}"
+              stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION create "${CIRCLE_WORKFLOW_ID:0:7}"
 
       - store_artifacts:
           path: openshift
@@ -1252,7 +1252,7 @@ jobs:
             docker run --rm -t \
               -v $PWD/openshift:/data \
               -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
-              stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION destroy "${CIRCLE_SHA1:0:7}"
+              stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: on_fail
 
 
@@ -1371,7 +1371,7 @@ jobs:
             docker run --rm -t \
               --volumes-from openshift \
               -e GOOGLE_CREDENTIALS="$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX" \
-              stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION destroy "${CIRCLE_SHA1:0:7}"
+              stackrox/openshift-automation:terraform-$OPENSHIFT_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: always
 
   provision-kops:
@@ -1403,7 +1403,7 @@ jobs:
             docker run --rm -t \
               -v $PWD/kops:/data \
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              stackrox/kops-automation:$KOPS_AUTOMATION_VERSION create "${CIRCLE_SHA1:0:7}"
+              stackrox/kops-automation:$KOPS_AUTOMATION_VERSION create "${CIRCLE_WORKFLOW_ID:0:7}"
 
       - run:
           name: Add /etc/hosts entry
@@ -1433,7 +1433,7 @@ jobs:
             docker run --rm -t \
               -v $PWD/kops:/data \
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              stackrox/kops-automation:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_SHA1:0:7}"
+              stackrox/kops-automation:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: on_fail
 
 
@@ -1550,7 +1550,7 @@ jobs:
             docker run --rm -t \
               -v $PWD/kops:/data \
               -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-              stackrox/kops-automation:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_SHA1:0:7}"
+              stackrox/kops-automation:$KOPS_AUTOMATION_VERSION destroy "${CIRCLE_WORKFLOW_ID:0:7}"
           when: always
 
   oss-audit:
