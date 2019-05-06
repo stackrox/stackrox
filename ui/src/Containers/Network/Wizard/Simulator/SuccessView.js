@@ -108,7 +108,7 @@ class SuccessView extends Component {
         return (
             <div className="flex flex-col w-full h-full space-between">
                 <section className="flex flex-col bg-base-100 shadow text-base-600 border border-base-200 m-3 mt-4 overflow-hidden h-full">
-                    <Message type="info" message={successMessage} />
+                    <Message type="success" message={successMessage} />
                     <div className="flex relative h-full border-t border-r border-base-300">
                         {this.renderTabs()}
                         <div className="absolute pin-r pin-t h-9 z-10">

@@ -17,6 +17,7 @@ import ResourceTabs from 'Components/ResourceTabs';
 import ControlAssessment from 'Containers/Compliance/widgets/ControlAssessment';
 import Header from './Header';
 import SearchInput from '../SearchInput';
+import EntitiesAssessed from '../widgets/EntitiesAssessed';
 
 function processData(data) {
     if (!data || !data.results) return {};
@@ -99,7 +100,11 @@ const ControlPage = ({ match, location, controlId, sidePanelMode, controlResult 
                                 {sidePanelMode && (
                                     <>
                                         <ControlAssessment
-                                            className="sx-2"
+                                            className={`sx-2 ${pdfClassName}`}
+                                            controlResult={controlResult}
+                                        />
+                                        <EntitiesAssessed
+                                            className={`sx-2 ${pdfClassName}`}
                                             controlResult={controlResult}
                                         />
                                         <ControlRelatedResourceList

@@ -52,7 +52,7 @@ export const NAMESPACES_LIST_QUERY = gql`
     }
 `;
 
-export const NODES_QUERY = gql`
+export const NODES_LIST_QUERY = gql`
     query nodesList($where: String) {
         results: aggregatedResults(groupBy: [NODE, STANDARD], unit: CONTROL, where: $where) {
             results {
@@ -77,7 +77,7 @@ export const NODES_QUERY = gql`
     }
 `;
 
-export const DEPLOYMENTS_QUERY = gql`
+export const DEPLOYMENTS_LIST_QUERY = gql`
     query deploymentsList($where: String) {
         results: aggregatedResults(groupBy: [DEPLOYMENT, STANDARD], unit: CONTROL, where: $where) {
             results {

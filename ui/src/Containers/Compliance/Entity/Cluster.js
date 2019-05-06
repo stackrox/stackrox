@@ -23,6 +23,7 @@ function processData(data) {
 
 const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
     const params = URLService.getParams(match, location);
+
     const entityId = clusterId || params.entityId;
     const listEntityType = URLService.getEntityTypeKeyFromValue(params.listEntityType);
 
