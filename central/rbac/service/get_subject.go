@@ -4,14 +4,12 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func getSubject(subjectName string, roles []*storage.K8SRole, bindings []*storage.K8SRoleBinding) (*v1.GetSubjectResponse, error) {
 	// Find the subject we want from the list of bindings.
-	subjectToReturn, err := getSubjectToReturn(subjectName, bindings)
-	if err != nil {
+	subjectToReturn, exists, err := k8srbac.GetSubject(subjectName, bindings)
+	if !exists || err != nil {
 		return nil, err
 	}
 
@@ -45,21 +43,4 @@ func getSubject(subjectName string, roles []*storage.K8SRole, bindings []*storag
 		ClusterRoles: clusterRoles,
 		ScopedRoles:  namespacedRoles,
 	}, nil
-}
-
-func getSubjectToReturn(subjectName string, bindings []*storage.K8SRoleBinding) (*storage.Subject, error) {
-	// Find the subject we want.
-	for _, binding := range bindings {
-		for _, subject := range binding.GetSubjects() {
-			// We only want to look for a user or a group.
-			if subject.GetKind() != storage.SubjectKind_USER && subject.GetKind() != storage.SubjectKind_GROUP {
-				continue
-			}
-			// Must have matching name (names are unique for groups and users).
-			if subject.GetName() == subjectName {
-				return subject, nil
-			}
-		}
-	}
-	return nil, status.Errorf(codes.NotFound, "subject not found: %s", subjectName)
 }

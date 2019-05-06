@@ -6,6 +6,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/compliance/store"
 	"github.com/stackrox/rox/central/namespace"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -13,6 +15,7 @@ import (
 func init() {
 	schema := getBuilder()
 	utils.Must(
+		schema.AddType("SubjectWithClusterID", []string{"clusterID: String!", "subject: Subject!"}),
 		schema.AddQuery("clusters: [Cluster!]!"),
 		schema.AddQuery("cluster(id: ID!): Cluster"),
 
@@ -27,6 +30,8 @@ func init() {
 		schema.AddExtraResolver("Cluster", `k8srole(role: ID!): K8SRole`),
 		schema.AddExtraResolver("Cluster", `serviceAccounts: [ServiceAccount!]!`),
 		schema.AddExtraResolver("Cluster", `serviceAccount(sa: ID!): ServiceAccount`),
+		schema.AddExtraResolver("Cluster", `subjects: [SubjectWithClusterID!]!`),
+		schema.AddExtraResolver("Cluster", `subject(name: String!): SubjectWithClusterID!`),
 	)
 }
 
@@ -186,4 +191,60 @@ func (resolver *clusterResolver) ServiceAccount(ctx context.Context, args struct
 	}
 
 	return resolver.root.wrapServiceAccount(serviceAccounts[0], true, nil)
+}
+
+// Subjects returns GraphQL resolvers for all subjects in this cluster
+func (resolver *clusterResolver) Subjects(ctx context.Context) ([]*subjectWithClusterIDResolver, error) {
+	if err := readK8sSubjects(ctx); err != nil {
+		return nil, err
+	}
+
+	if err := readK8sRoleBindings(ctx); err != nil {
+		return nil, err
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(q)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(bindings) == 0 {
+		return nil, nil
+	}
+
+	subjectResolvers, err := resolver.root.wrapSubjects(k8srbac.GetAllSubjects(bindings,
+		storage.SubjectKind_USER, storage.SubjectKind_GROUP), nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return wrapSubjects(resolver.data.GetId(), subjectResolvers), nil
+}
+
+// ServiceAccount returns clusterResolver GraphQL resolver for a given service account
+func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name string }) (*subjectWithClusterIDResolver, error) {
+	if err := readK8sRoles(ctx); err != nil {
+		return nil, err
+	}
+
+	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
+	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(q)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(bindings) == 0 {
+		return nil, nil
+	}
+
+	subject, err := resolver.root.wrapSubject(k8srbac.GetSubject(args.Name, bindings))
+	if err != nil {
+		return nil, err
+	}
+
+	return wrapSubject(resolver.data.GetId(), subject), nil
 }

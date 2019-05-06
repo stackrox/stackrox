@@ -2,9 +2,9 @@ package resolvers
 
 import (
 	"context"
-	"sort"
 
-	utils2 "github.com/stackrox/rox/central/rbac/utils"
+	"github.com/graph-gophers/graphql-go"
+	rbacUtils "github.com/stackrox/rox/central/rbac/utils"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/search"
@@ -20,59 +20,8 @@ func init() {
 		schema.AddExtraResolver("ServiceAccount", `roles: [K8SRole!]!`),
 		schema.AddExtraResolver("ServiceAccount", `scopedPermissions: [ScopedPermissions!]!`),
 		schema.AddExtraResolver("ServiceAccount", `deployments: [Deployment!]!`),
+		schema.AddExtraResolver("ServiceAccount", `saNamespace: Namespace!`),
 	)
-}
-
-type stringListEntryResolver struct {
-	key    string
-	values set.StringSet
-}
-
-type scopedPermissionsResolver struct {
-	scope       string
-	permissions []*stringListEntryResolver
-}
-
-func (resolver *stringListEntryResolver) Key(ctx context.Context) string {
-	return resolver.key
-}
-
-func (resolver *stringListEntryResolver) Values(ctx context.Context) []string {
-	return resolver.values.AsSlice()
-}
-
-func wrapStringListEntries(values map[string]set.StringSet) []*stringListEntryResolver {
-	if len(values) == 0 {
-		return nil
-	}
-
-	output := make([]*stringListEntryResolver, 0, len(values))
-	for i, v := range values {
-		output = append(output, &stringListEntryResolver{i, v})
-	}
-
-	return output
-}
-
-func (resolver *scopedPermissionsResolver) Scope(ctx context.Context) string {
-	return resolver.scope
-}
-
-func (resolver *scopedPermissionsResolver) Permissions(ctx context.Context) []*stringListEntryResolver {
-	return resolver.permissions
-}
-
-func (resolver *serviceAccountResolver) wrapPermissions(values map[string]map[string]set.StringSet) []*scopedPermissionsResolver {
-	if len(values) == 0 {
-		return nil
-	}
-	output := make([]*scopedPermissionsResolver, 0, len(values))
-	for scope, permissions := range values {
-		output = append(output, &scopedPermissionsResolver{scope, wrapStringListEntries(permissions)})
-	}
-
-	sort.SliceStable(output, func(i, j int) bool { return output[i].scope < output[j].scope })
-	return output
 }
 
 func (resolver *serviceAccountResolver) Roles(ctx context.Context) ([]*k8SRoleResolver, error) {
@@ -151,7 +100,7 @@ func (resolver *serviceAccountResolver) ScopedPermissions(ctx context.Context) (
 		}
 	}
 
-	return resolver.wrapPermissions(permissionScopeMap), nil
+	return wrapPermissions(permissionScopeMap), nil
 }
 
 func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[string]k8srbac.Evaluator, error) {
@@ -159,7 +108,7 @@ func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[
 	saClusterID := resolver.data.GetClusterId()
 
 	evaluators["Cluster"] =
-		utils2.NewClusterPermissionEvaluator(saClusterID,
+		rbacUtils.NewClusterPermissionEvaluator(saClusterID,
 			resolver.root.K8sRoleStore, resolver.root.K8sRoleBindingStore)
 
 	namespaces, err := resolver.root.Namespaces(ctx)
@@ -168,9 +117,21 @@ func (resolver *serviceAccountResolver) getEvaluators(ctx context.Context) (map[
 	}
 	for _, namespace := range namespaces {
 		namespaceName := namespace.data.GetMetadata().GetName()
-		evaluators[namespaceName] = utils2.NewNamespacePermissionEvaluator(saClusterID,
+		evaluators[namespaceName] = rbacUtils.NewNamespacePermissionEvaluator(saClusterID,
 			namespaceName, resolver.root.K8sRoleStore, resolver.root.K8sRoleBindingStore)
 	}
 
 	return evaluators, nil
+}
+
+// SaNamespace returns the namespace of the service account
+func (resolver *serviceAccountResolver) SaNamespace(ctx context.Context) (*namespaceResolver, error) {
+	sa := resolver.data
+	r, err := resolver.root.NamespaceByClusterIDAndName(ctx, clusterIDAndNameQuery{graphql.ID(sa.GetClusterId()), sa.GetNamespace()})
+
+	if err != nil {
+		return resolver.root.wrapNamespace(r.data, false, err)
+	}
+
+	return resolver.root.wrapNamespace(r.data, true, err)
 }
