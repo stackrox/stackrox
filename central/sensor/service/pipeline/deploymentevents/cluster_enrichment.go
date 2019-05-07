@@ -1,6 +1,8 @@
 package deploymentevents
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -18,7 +20,7 @@ type clusterEnrichmentImpl struct {
 func (s *clusterEnrichmentImpl) do(d *storage.Deployment) error {
 	d.ClusterName = ""
 
-	cluster, clusterExists, err := s.clusters.GetCluster(d.ClusterId)
+	cluster, clusterExists, err := s.clusters.GetCluster(context.TODO(), d.ClusterId)
 	switch {
 	case err != nil:
 		log.Warnf("Couldn't get name of cluster: %s", err)

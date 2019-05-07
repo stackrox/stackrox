@@ -74,7 +74,7 @@ type pipelineImpl struct {
 
 func (s *pipelineImpl) Reconcile(clusterID string) error {
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	results, err := s.deployments.Search(query)
+	results, err := s.deployments.Search(context.TODO(), query)
 	if err != nil {
 		return err
 	}
@@ -161,7 +161,7 @@ func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, deploym
 	}
 
 	// Check if this deployment needs to be processed based on hash
-	listDeployment, exists, err := s.deployments.ListDeployment(deployment.GetId())
+	listDeployment, exists, err := s.deployments.ListDeployment(context.TODO(), deployment.GetId())
 	if err != nil {
 		return nil, err
 	}

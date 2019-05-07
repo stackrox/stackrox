@@ -40,7 +40,7 @@ func (resolver *Resolver) Cluster(ctx context.Context, args struct{ graphql.ID }
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
-	return resolver.wrapCluster(resolver.ClusterDataStore.GetCluster(string(args.ID)))
+	return resolver.wrapCluster(resolver.ClusterDataStore.GetCluster(ctx, string(args.ID)))
 }
 
 // Clusters returns GraphQL resolvers for all clusters
@@ -48,7 +48,7 @@ func (resolver *Resolver) Clusters(ctx context.Context) ([]*clusterResolver, err
 	if err := readClusters(ctx); err != nil {
 		return nil, err
 	}
-	return resolver.wrapClusters(resolver.ClusterDataStore.GetClusters())
+	return resolver.wrapClusters(resolver.ClusterDataStore.GetClusters(ctx))
 }
 
 // Alerts returns GraphQL resolvers for all alerts on this cluster
@@ -58,7 +58,7 @@ func (resolver *clusterResolver) Alerts(ctx context.Context) ([]*alertResolver, 
 	}
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, resolver.data.GetId()).ProtoQuery()
 	return resolver.root.wrapAlerts(
-		resolver.root.ViolationsDataStore.SearchRawAlerts(query))
+		resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, query))
 }
 
 // Deployments returns GraphQL resolvers for all deployments in this cluster
@@ -68,7 +68,7 @@ func (resolver *clusterResolver) Deployments(ctx context.Context) ([]*deployment
 	}
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, resolver.data.GetId()).ProtoQuery()
 	return resolver.root.wrapDeployments(
-		resolver.root.DeploymentDataStore.SearchRawDeployments(query))
+		resolver.root.DeploymentDataStore.SearchRawDeployments(ctx, query))
 }
 
 // Nodes returns all nodes on the cluster
@@ -76,7 +76,7 @@ func (resolver *clusterResolver) Nodes(ctx context.Context) ([]*nodeResolver, er
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-	store, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(resolver.data.GetId())
+	store, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(ctx, resolver.data.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (resolver *clusterResolver) Node(ctx context.Context, args struct{ Node gra
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-	store, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(resolver.data.GetId())
+	store, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(ctx, resolver.data.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (resolver *clusterResolver) Namespaces(ctx context.Context) ([]*namespaceRe
 	if err := readNamespaces(ctx); err != nil {
 		return nil, err
 	}
-	return resolver.root.wrapNamespaces(namespace.ResolveByClusterID(resolver.data.GetId(),
+	return resolver.root.wrapNamespaces(namespace.ResolveByClusterID(ctx, resolver.data.GetId(),
 		resolver.root.NamespaceDataStore, resolver.root.DeploymentDataStore, resolver.root.SecretsDataStore,
 		resolver.root.NetworkPoliciesStore))
 }
@@ -136,7 +136,7 @@ func (resolver *clusterResolver) K8sRoles(ctx context.Context) ([]*k8SRoleResolv
 	}
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
-	return resolver.root.wrapK8SRoles(resolver.root.K8sRoleStore.SearchRawRoles(q))
+	return resolver.root.wrapK8SRoles(resolver.root.K8sRoleStore.SearchRawRoles(ctx, q))
 }
 
 // K8sRole returns clusterResolver GraphQL resolver for a given k8s role
@@ -148,7 +148,7 @@ func (resolver *clusterResolver) K8sRole(ctx context.Context, args struct{ Role 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).
 		AddExactMatches(search.RoleID, string(args.Role)).ProtoQuery()
 
-	roles, err := resolver.root.K8sRoleStore.SearchRawRoles(q)
+	roles, err := resolver.root.K8sRoleStore.SearchRawRoles(ctx, q)
 
 	if err != nil {
 		return nil, err
@@ -168,7 +168,7 @@ func (resolver *clusterResolver) ServiceAccounts(ctx context.Context) ([]*servic
 	}
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
-	return resolver.root.wrapServiceAccounts(resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(q))
+	return resolver.root.wrapServiceAccounts(resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, q))
 }
 
 // ServiceAccount returns clusterResolver GraphQL resolver for a given service account
@@ -180,7 +180,7 @@ func (resolver *clusterResolver) ServiceAccount(ctx context.Context, args struct
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).
 		AddExactMatches(search.RoleID, string(args.Sa)).ProtoQuery()
 
-	serviceAccounts, err := resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(q)
+	serviceAccounts, err := resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, q)
 
 	if err != nil {
 		return nil, err
@@ -204,7 +204,7 @@ func (resolver *clusterResolver) Subjects(ctx context.Context) ([]*subjectWithCl
 	}
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
-	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(q)
+	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
 
 	if err != nil {
 		return nil, err
@@ -231,7 +231,7 @@ func (resolver *clusterResolver) Subject(ctx context.Context, args struct{ Name 
 	}
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetId()).ProtoQuery()
-	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(q)
+	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
 
 	if err != nil {
 		return nil, err

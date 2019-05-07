@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/image/index"
 	"github.com/stackrox/rox/central/image/search"
 	"github.com/stackrox/rox/central/image/store"
@@ -24,11 +26,11 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
-func (ds *datastoreImpl) Search(q *v1.Query) ([]searchPkg.Result, error) {
+func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
 	return ds.indexer.Search(q)
 }
 
-func (ds *datastoreImpl) SearchImages(q *v1.Query) ([]*v1.SearchResult, error) {
+func (ds *datastoreImpl) SearchImages(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
@@ -36,27 +38,27 @@ func (ds *datastoreImpl) SearchImages(q *v1.Query) ([]*v1.SearchResult, error) {
 }
 
 // SearchRawImages delegates to the underlying searcher.
-func (ds *datastoreImpl) SearchRawImages(q *v1.Query) ([]*storage.Image, error) {
+func (ds *datastoreImpl) SearchRawImages(ctx context.Context, q *v1.Query) ([]*storage.Image, error) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
 	return ds.searcher.SearchRawImages(q)
 }
 
-func (ds *datastoreImpl) SearchListImages(q *v1.Query) ([]*storage.ListImage, error) {
+func (ds *datastoreImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*storage.ListImage, error) {
 	return ds.searcher.SearchListImages(q)
 }
 
-func (ds *datastoreImpl) ListImage(sha string) (*storage.ListImage, bool, error) {
+func (ds *datastoreImpl) ListImage(ctx context.Context, sha string) (*storage.ListImage, bool, error) {
 	return ds.storage.ListImage(sha)
 }
 
-func (ds *datastoreImpl) ListImages() ([]*storage.ListImage, error) {
+func (ds *datastoreImpl) ListImages(ctx context.Context) ([]*storage.ListImage, error) {
 	return ds.storage.ListImages()
 }
 
 // GetImages delegates to the underlying store.
-func (ds *datastoreImpl) GetImages() ([]*storage.Image, error) {
+func (ds *datastoreImpl) GetImages(ctx context.Context) ([]*storage.Image, error) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
@@ -64,7 +66,7 @@ func (ds *datastoreImpl) GetImages() ([]*storage.Image, error) {
 }
 
 // CountImages delegates to the underlying store.
-func (ds *datastoreImpl) CountImages() (int, error) {
+func (ds *datastoreImpl) CountImages(ctx context.Context) (int, error) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
@@ -72,7 +74,7 @@ func (ds *datastoreImpl) CountImages() (int, error) {
 }
 
 // GetImage delegates to the underlying store.
-func (ds *datastoreImpl) GetImage(sha string) (*storage.Image, bool, error) {
+func (ds *datastoreImpl) GetImage(ctx context.Context, sha string) (*storage.Image, bool, error) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
@@ -80,7 +82,7 @@ func (ds *datastoreImpl) GetImage(sha string) (*storage.Image, bool, error) {
 }
 
 // GetImagesBatch delegates to the underlying store.
-func (ds *datastoreImpl) GetImagesBatch(shas []string) ([]*storage.Image, error) {
+func (ds *datastoreImpl) GetImagesBatch(ctx context.Context, shas []string) ([]*storage.Image, error) {
 	ds.lock.RLock()
 	defer ds.lock.RUnlock()
 
@@ -88,7 +90,7 @@ func (ds *datastoreImpl) GetImagesBatch(shas []string) ([]*storage.Image, error)
 }
 
 // UpsertImage dedupes the image with the underlying storage and adds the image to the index.
-func (ds *datastoreImpl) UpsertImage(image *storage.Image) error {
+func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) error {
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
@@ -105,7 +107,7 @@ func (ds *datastoreImpl) UpsertImage(image *storage.Image) error {
 	return ds.indexer.AddImage(image)
 }
 
-func (ds *datastoreImpl) DeleteImages(ids ...string) error {
+func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error {
 	errorList := errorhelpers.NewErrorList("deleting images")
 	for _, id := range ids {
 		if err := ds.storage.DeleteImage(id); err != nil {

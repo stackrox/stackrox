@@ -54,7 +54,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetImage returns an image with given sha if it exists.
 func (s *serviceImpl) GetImage(ctx context.Context, request *v1.ResourceByID) (*storage.Image, error) {
-	image, exists, err := s.datastore.GetImage(request.GetId())
+	image, exists, err := s.datastore.GetImage(ctx, request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -70,14 +70,14 @@ func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1
 	var err error
 	var images []*storage.ListImage
 	if request.GetQuery() == "" {
-		images, err = s.datastore.ListImages()
+		images, err = s.datastore.ListImages(ctx)
 	} else {
 		var parsedQuery *v1.Query
 		parsedQuery, err = search.ParseRawQuery(request.GetQuery())
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		images, err = s.datastore.SearchListImages(parsedQuery)
+		images, err = s.datastore.SearchListImages(ctx, parsedQuery)
 	}
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())

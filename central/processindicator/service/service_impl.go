@@ -58,18 +58,18 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetDeployment returns the deployment with given id.
-func (s *serviceImpl) GetProcessesByDeployment(_ context.Context, req *v1.GetProcessesByDeploymentRequest) (*v1.GetProcessesResponse, error) {
+func (s *serviceImpl) GetProcessesByDeployment(ctx context.Context, req *v1.GetProcessesByDeploymentRequest) (*v1.GetProcessesResponse, error) {
 	if req.GetDeploymentId() == "" {
 		return nil, status.Error(codes.Internal, "Deployment ID must be specified when retrieving processes")
 	}
-	_, exists, err := s.deployments.GetDeployment(req.GetDeploymentId())
+	_, exists, err := s.deployments.GetDeployment(ctx, req.GetDeploymentId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if !exists {
 		return nil, status.Errorf(codes.NotFound, "deployment with id '%s' does not exist", req.GetDeploymentId())
 	}
-	indicators, err := s.processIndicators.SearchRawProcessIndicators(
+	indicators, err := s.processIndicators.SearchRawProcessIndicators(ctx,
 		search.NewQueryBuilder().
 			AddExactMatches(search.DeploymentID, req.GetDeploymentId()).
 			ProtoQuery(),
@@ -88,13 +88,13 @@ func sortIndicators(indicators []*storage.ProcessIndicator) {
 	})
 }
 
-func (s *serviceImpl) setSuspicious(groupedIndicators []*v1.ProcessNameAndContainerNameGroup, deploymentID string) error {
+func (s *serviceImpl) setSuspicious(ctx context.Context, groupedIndicators []*v1.ProcessNameAndContainerNameGroup, deploymentID string) error {
 	whitelists := make(map[string]*set.StringSet)
 	for _, group := range groupedIndicators {
 		elementSet, ok := whitelists[group.GetContainerName()]
 		if !ok {
 			var err error
-			elementSet, err = s.getElementSet(deploymentID, group.GetContainerName())
+			elementSet, err = s.getElementSet(ctx, deploymentID, group.GetContainerName())
 			if err != nil {
 				return err
 			}
@@ -105,9 +105,9 @@ func (s *serviceImpl) setSuspicious(groupedIndicators []*v1.ProcessNameAndContai
 	return nil
 }
 
-func (s *serviceImpl) getElementSet(deploymentID string, containerName string) (*set.StringSet, error) {
+func (s *serviceImpl) getElementSet(ctx context.Context, deploymentID string, containerName string) (*set.StringSet, error) {
 	key := &storage.ProcessWhitelistKey{DeploymentId: deploymentID, ContainerName: containerName}
-	whitelist, err := s.whitelists.GetProcessWhitelist(key)
+	whitelist, err := s.whitelists.GetProcessWhitelist(ctx, key)
 	if err != nil {
 		return nil, err
 	}
@@ -157,15 +157,15 @@ func indicatorsToGroupedResponsesWithContainer(indicators []*storage.ProcessIndi
 	return groups
 }
 
-func (s *serviceImpl) GetGroupedProcessByDeploymentAndContainer(_ context.Context, req *v1.GetProcessesByDeploymentRequest) (*v1.GetGroupedProcessesWithContainerResponse, error) {
-	indicators, err := s.validateGetProcesses(req)
+func (s *serviceImpl) GetGroupedProcessByDeploymentAndContainer(ctx context.Context, req *v1.GetProcessesByDeploymentRequest) (*v1.GetGroupedProcessesWithContainerResponse, error) {
+	indicators, err := s.validateGetProcesses(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
 	groupedIndicators := indicatorsToGroupedResponsesWithContainer(indicators)
 	if features.ProcessWhitelist.Enabled() {
-		err = s.setSuspicious(groupedIndicators, req.GetDeploymentId())
+		err = s.setSuspicious(ctx, groupedIndicators, req.GetDeploymentId())
 		if err != nil {
 			return nil, err
 		}
@@ -207,8 +207,8 @@ func IndicatorsToGroupedResponses(indicators []*storage.ProcessIndicator) []*v1.
 	return groups
 }
 
-func (s *serviceImpl) GetGroupedProcessByDeployment(_ context.Context, req *v1.GetProcessesByDeploymentRequest) (*v1.GetGroupedProcessesResponse, error) {
-	indicators, err := s.validateGetProcesses(req)
+func (s *serviceImpl) GetGroupedProcessByDeployment(ctx context.Context, req *v1.GetProcessesByDeploymentRequest) (*v1.GetGroupedProcessesResponse, error) {
+	indicators, err := s.validateGetProcesses(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -218,11 +218,11 @@ func (s *serviceImpl) GetGroupedProcessByDeployment(_ context.Context, req *v1.G
 	}, nil
 }
 
-func (s *serviceImpl) validateGetProcesses(req *v1.GetProcessesByDeploymentRequest) ([]*storage.ProcessIndicator, error) {
+func (s *serviceImpl) validateGetProcesses(ctx context.Context, req *v1.GetProcessesByDeploymentRequest) ([]*storage.ProcessIndicator, error) {
 	if req.GetDeploymentId() == "" {
 		return nil, status.Error(codes.Internal, "Deployment ID must be specified when retrieving processes")
 	}
-	indicators, err := s.processIndicators.SearchRawProcessIndicators(
+	indicators, err := s.processIndicators.SearchRawProcessIndicators(ctx,
 		search.NewQueryBuilder().
 			AddExactMatches(search.DeploymentID, req.GetDeploymentId()).
 			ProtoQuery(),

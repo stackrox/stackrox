@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/deployment/index"
 	"github.com/stackrox/rox/central/deployment/search"
 	"github.com/stackrox/rox/central/deployment/store"
@@ -16,24 +18,24 @@ import (
 // DataStore is an intermediary to AlertStorage.
 //go:generate mockgen-wrapper DataStore
 type DataStore interface {
-	Search(q *v1.Query) ([]pkgSearch.Result, error)
-	SearchDeployments(q *v1.Query) ([]*v1.SearchResult, error)
-	SearchRawDeployments(q *v1.Query) ([]*storage.Deployment, error)
-	SearchListDeployments(q *v1.Query) ([]*storage.ListDeployment, error)
+	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
+	SearchDeployments(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
+	SearchRawDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error)
+	SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error)
 
-	ListDeployment(id string) (*storage.ListDeployment, bool, error)
-	ListDeployments() ([]*storage.ListDeployment, error)
+	ListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error)
+	ListDeployments(ctx context.Context) ([]*storage.ListDeployment, error)
 
-	GetDeployment(id string) (*storage.Deployment, bool, error)
-	GetDeployments() ([]*storage.Deployment, error)
-	CountDeployments() (int, error)
+	GetDeployment(ctx context.Context, id string) (*storage.Deployment, bool, error)
+	GetDeployments(ctx context.Context) ([]*storage.Deployment, error)
+	CountDeployments(ctx context.Context) (int, error)
 	// UpsertDeployment adds or updates a deployment. It should only be called the caller
 	// is okay with inserting the passed deployment if it doesn't already exist in the store.
 	// If you only want to update a deployment if it exists, call UpdateDeployment below.
-	UpsertDeployment(deployment *storage.Deployment) error
+	UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error
 	// UpdateDeployment updates a deployment, erroring out if it doesn't exist.
-	UpdateDeployment(deployment *storage.Deployment) error
-	RemoveDeployment(clusterID, id string) error
+	UpdateDeployment(ctx context.Context, deployment *storage.Deployment) error
+	RemoveDeployment(ctx context.Context, clusterID, id string) error
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.

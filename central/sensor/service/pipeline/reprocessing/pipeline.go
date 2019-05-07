@@ -1,6 +1,8 @@
 package reprocessing
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/enrichanddetect"
 	countMetrics "github.com/stackrox/rox/central/metrics"
@@ -51,7 +53,7 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, injecto
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.DeploymentReprocess)
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).AddExactMatches(search.DeploymentID, msg.GetReprocessDeployments().GetDeploymentIds()...).ProtoQuery()
-	deployments, err := s.deployments.SearchRawDeployments(q)
+	deployments, err := s.deployments.SearchRawDeployments(context.TODO(), q)
 	if err != nil {
 		return err
 	}

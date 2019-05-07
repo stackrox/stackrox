@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/rbac/k8srole/index"
 	"github.com/stackrox/rox/central/rbac/k8srole/search"
 	"github.com/stackrox/rox/central/rbac/k8srole/store"
@@ -16,7 +18,7 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
-func (d *datastoreImpl) ListRoles() ([]*storage.K8SRole, error) {
+func (d *datastoreImpl) ListRoles(ctx context.Context) ([]*storage.K8SRole, error) {
 	return d.storage.ListAllRoles()
 }
 
@@ -29,36 +31,36 @@ func (d *datastoreImpl) buildIndex() error {
 	return d.indexer.UpsertRoles(roles...)
 }
 
-func (d *datastoreImpl) GetRole(id string) (*storage.K8SRole, bool, error) {
+func (d *datastoreImpl) GetRole(ctx context.Context, id string) (*storage.K8SRole, bool, error) {
 	return d.storage.GetRole(id)
 }
 
-func (d *datastoreImpl) SearchRoles(q *v1.Query) ([]*v1.SearchResult, error) {
+func (d *datastoreImpl) SearchRoles(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	return d.searcher.SearchRoles(q)
 }
 
-func (d *datastoreImpl) SearchRawRoles(request *v1.Query) ([]*storage.K8SRole, error) {
+func (d *datastoreImpl) SearchRawRoles(ctx context.Context, request *v1.Query) ([]*storage.K8SRole, error) {
 	return d.searcher.SearchRawRoles(request)
 }
 
-func (d *datastoreImpl) CountRoles() (int, error) {
+func (d *datastoreImpl) CountRoles(ctx context.Context) (int, error) {
 	return d.storage.CountRoles()
 }
 
-func (d *datastoreImpl) UpsertRole(request *storage.K8SRole) error {
+func (d *datastoreImpl) UpsertRole(ctx context.Context, request *storage.K8SRole) error {
 	if err := d.storage.UpsertRole(request); err != nil {
 		return err
 	}
 	return d.indexer.UpsertRole(request)
 }
 
-func (d *datastoreImpl) RemoveRole(id string) error {
+func (d *datastoreImpl) RemoveRole(ctx context.Context, id string) error {
 	if err := d.storage.RemoveRole(id); err != nil {
 		return err
 	}
 	return d.indexer.RemoveRole(id)
 }
 
-func (d *datastoreImpl) Search(q *v1.Query) ([]searchPkg.Result, error) {
+func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
 	return d.searcher.Search(q)
 }

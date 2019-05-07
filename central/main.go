@@ -329,7 +329,7 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 	ds := iiDatastore.Singleton()
 	for len(integrations) > 0 {
 		for idx, integration := range integrations {
-			_, exists, _ := ds.GetImageIntegration(integration.Integration.GetId())
+			_, exists, _ := ds.GetImageIntegration(context.TODO(), integration.Integration.GetId())
 			if exists {
 				delete(integrations, idx)
 				continue
@@ -342,7 +342,7 @@ func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration)
 			// manually add it and get the error message.
 			err := imageintegration.ToNotify().NotifyUpdated(integration.Integration)
 			if err == nil {
-				err = ds.UpdateImageIntegration(integration.Integration)
+				err = ds.UpdateImageIntegration(context.TODO(), integration.Integration)
 				if err != nil {
 					// so, we added the integration to the set but we weren't able to save it.
 					// This is ok -- the image scanner will "work" and after a restart we'll try to save it again.

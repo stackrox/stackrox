@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"context"
 	"time"
 
 	"github.com/pkg/errors"
@@ -26,23 +27,23 @@ type datastoreImpl struct {
 	stopSig, stoppedSig concurrency.Signal
 }
 
-func (ds *datastoreImpl) Search(q *v1.Query) ([]pkgSearch.Result, error) {
+func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
 	return ds.indexer.Search(q)
 }
 
-func (ds *datastoreImpl) SearchRawProcessIndicators(q *v1.Query) ([]*storage.ProcessIndicator, error) {
+func (ds *datastoreImpl) SearchRawProcessIndicators(ctx context.Context, q *v1.Query) ([]*storage.ProcessIndicator, error) {
 	return ds.searcher.SearchRawProcessIndicators(q)
 }
 
-func (ds *datastoreImpl) GetProcessIndicator(id string) (*storage.ProcessIndicator, bool, error) {
+func (ds *datastoreImpl) GetProcessIndicator(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error) {
 	return ds.storage.GetProcessIndicator(id)
 }
 
-func (ds *datastoreImpl) GetProcessIndicators() ([]*storage.ProcessIndicator, error) {
+func (ds *datastoreImpl) GetProcessIndicators(ctx context.Context) ([]*storage.ProcessIndicator, error) {
 	return ds.storage.GetProcessIndicators()
 }
 
-func (ds *datastoreImpl) AddProcessIndicators(indicators ...*storage.ProcessIndicator) error {
+func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ...*storage.ProcessIndicator) error {
 	removedIndicators, err := ds.storage.AddProcessIndicators(indicators...)
 	if err != nil {
 		return err
@@ -74,7 +75,7 @@ func (ds *datastoreImpl) AddProcessIndicators(indicators ...*storage.ProcessIndi
 	return ds.indexer.AddProcessIndicators(filteredIndicators)
 }
 
-func (ds *datastoreImpl) AddProcessIndicator(i *storage.ProcessIndicator) error {
+func (ds *datastoreImpl) AddProcessIndicator(ctx context.Context, i *storage.ProcessIndicator) error {
 	removedIndicator, err := ds.storage.AddProcessIndicator(i)
 	if err != nil {
 		return errors.Wrap(err, "adding indicator to bolt")
@@ -90,7 +91,7 @@ func (ds *datastoreImpl) AddProcessIndicator(i *storage.ProcessIndicator) error 
 	return nil
 }
 
-func (ds *datastoreImpl) RemoveProcessIndicator(id string) error {
+func (ds *datastoreImpl) RemoveProcessIndicator(ctx context.Context, id string) error {
 	if err := ds.storage.RemoveProcessIndicator(id); err != nil {
 		return err
 	}
@@ -114,16 +115,16 @@ func (ds *datastoreImpl) removeIndicators(ids []string) error {
 	return ds.indexer.DeleteProcessIndicators(ids...)
 }
 
-func (ds *datastoreImpl) RemoveProcessIndicatorsByDeployment(id string) error {
+func (ds *datastoreImpl) RemoveProcessIndicatorsByDeployment(ctx context.Context, id string) error {
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, id).ProtoQuery()
-	results, err := ds.Search(q)
+	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return err
 	}
 	return ds.removeMatchingIndicators(results)
 }
 
-func (ds *datastoreImpl) RemoveProcessIndicatorsOfStaleContainers(deploymentID string, currentContainerIDs []string) error {
+func (ds *datastoreImpl) RemoveProcessIndicatorsOfStaleContainers(ctx context.Context, deploymentID string, currentContainerIDs []string) error {
 	queries := make([]*v1.Query, 0, len(currentContainerIDs)+1)
 	queries = append(queries, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery())
 
@@ -131,7 +132,7 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsOfStaleContainers(deploymentID s
 		queries = append(queries, pkgSearch.NewQueryBuilder().AddStrings(pkgSearch.ContainerID, pkgSearch.NegateQueryString(containerID)).ProtoQuery())
 	}
 
-	results, err := ds.Search(pkgSearch.ConjunctionQuery(queries...))
+	results, err := ds.Search(ctx, pkgSearch.ConjunctionQuery(queries...))
 	if err != nil {
 		return err
 	}

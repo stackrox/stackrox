@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"context"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -51,7 +52,7 @@ func (suite *SecretDataStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *SecretDataStoreTestSuite) assertSearchResults(q *v1.Query, s *storage.Secret) {
-	results, err := suite.datastore.SearchSecrets(q)
+	results, err := suite.datastore.SearchSecrets(context.TODO(), q)
 	suite.Require().NoError(err)
 	if s != nil {
 		suite.Len(results, 1)
@@ -60,7 +61,7 @@ func (suite *SecretDataStoreTestSuite) assertSearchResults(q *v1.Query, s *stora
 		suite.Len(results, 0)
 	}
 
-	secrets, err := suite.datastore.SearchListSecrets(q)
+	secrets, err := suite.datastore.SearchListSecrets(context.TODO(), q)
 	suite.Require().NoError(err)
 	if s != nil {
 		suite.Len(secrets, 1)
@@ -73,15 +74,15 @@ func (suite *SecretDataStoreTestSuite) assertSearchResults(q *v1.Query, s *stora
 
 func (suite *SecretDataStoreTestSuite) TestSecretsDataStore() {
 	secret := fixtures.GetSecret()
-	err := suite.datastore.UpsertSecret(secret)
+	err := suite.datastore.UpsertSecret(context.TODO(), secret)
 	suite.Require().NoError(err)
 
-	foundSecret, found, err := suite.datastore.GetSecret(secret.GetId())
+	foundSecret, found, err := suite.datastore.GetSecret(context.TODO(), secret.GetId())
 	suite.Require().NoError(err)
 	suite.True(found)
 	suite.Equal(secret, foundSecret)
 
-	_, found, err = suite.datastore.GetSecret("NONEXISTENT")
+	_, found, err = suite.datastore.GetSecret(context.TODO(), "NONEXISTENT")
 	suite.Require().NoError(err)
 	suite.False(found)
 
@@ -91,10 +92,10 @@ func (suite *SecretDataStoreTestSuite) TestSecretsDataStore() {
 	invalidQ := search.NewQueryBuilder().AddStrings(search.Cluster, "NONEXISTENT").ProtoQuery()
 	suite.assertSearchResults(invalidQ, nil)
 
-	err = suite.datastore.RemoveSecret(secret.GetId())
+	err = suite.datastore.RemoveSecret(context.TODO(), secret.GetId())
 	suite.Require().NoError(err)
 
-	_, found, err = suite.datastore.GetSecret(secret.GetId())
+	_, found, err = suite.datastore.GetSecret(context.TODO(), secret.GetId())
 	suite.Require().NoError(err)
 	suite.False(found)
 

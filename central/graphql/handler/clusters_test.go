@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetClusters(t *testing.T) {
 	mocks := mockResolver(t)
-	mocks.cluster.EXPECT().GetClusters().Return([]*storage.Cluster{
+	mocks.cluster.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{
 		{
 			Id:   fakeClusterID,
 			Name: "fake cluster",
@@ -25,7 +26,7 @@ func TestGetClusters(t *testing.T) {
 
 func TestGetCluster(t *testing.T) {
 	mocks := mockResolver(t)
-	mocks.cluster.EXPECT().GetCluster(fakeClusterID).Return(&storage.Cluster{
+	mocks.cluster.EXPECT().GetCluster(gomock.Any(), fakeClusterID).Return(&storage.Cluster{
 		Id:   fakeClusterID,
 		Name: "fake cluster",
 		Type: storage.ClusterType_KUBERNETES_CLUSTER,

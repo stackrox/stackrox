@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/imageintegration/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -12,12 +14,12 @@ type datastoreImpl struct {
 }
 
 // GetImageIntegration is pass-through to the underlying store.
-func (ds *datastoreImpl) GetImageIntegration(id string) (*storage.ImageIntegration, bool, error) {
+func (ds *datastoreImpl) GetImageIntegration(ctx context.Context, id string) (*storage.ImageIntegration, bool, error) {
 	return ds.storage.GetImageIntegration(id)
 }
 
 // GetImageIntegrations provides an in memory layer on top of the underlying DB based storage.
-func (ds *datastoreImpl) GetImageIntegrations(request *v1.GetImageIntegrationsRequest) ([]*storage.ImageIntegration, error) {
+func (ds *datastoreImpl) GetImageIntegrations(ctx context.Context, request *v1.GetImageIntegrationsRequest) ([]*storage.ImageIntegration, error) {
 	integrations, err := ds.storage.GetImageIntegrations()
 	if err != nil {
 		return nil, err
@@ -38,16 +40,16 @@ func (ds *datastoreImpl) GetImageIntegrations(request *v1.GetImageIntegrationsRe
 }
 
 // AddImageIntegration is pass-through to the underlying store.
-func (ds *datastoreImpl) AddImageIntegration(integration *storage.ImageIntegration) (string, error) {
+func (ds *datastoreImpl) AddImageIntegration(ctx context.Context, integration *storage.ImageIntegration) (string, error) {
 	return ds.storage.AddImageIntegration(integration)
 }
 
 // UpdateImageIntegration is pass-through to the underlying store.
-func (ds *datastoreImpl) UpdateImageIntegration(integration *storage.ImageIntegration) error {
+func (ds *datastoreImpl) UpdateImageIntegration(ctx context.Context, integration *storage.ImageIntegration) error {
 	return ds.storage.UpdateImageIntegration(integration)
 }
 
 // RemoveImageIntegration is pass-through to the underlying store.
-func (ds *datastoreImpl) RemoveImageIntegration(id string) error {
+func (ds *datastoreImpl) RemoveImageIntegration(ctx context.Context, id string) error {
 	return ds.storage.RemoveImageIntegration(id)
 }

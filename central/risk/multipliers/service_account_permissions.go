@@ -1,6 +1,7 @@
 package multipliers
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -133,7 +134,7 @@ func (c *saPermissionsMultiplier) tokenAutomounted(deployment *storage.Deploymen
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, deployment.GetClusterId()).
 		AddExactMatches(search.Namespace, deployment.GetNamespace()).
 		AddExactMatches(search.ServiceAccountName, saName).ProtoQuery()
-	serviceAccounts, err := c.serviceAccountStore.SearchRawServiceAccounts(q)
+	serviceAccounts, err := c.serviceAccountStore.SearchRawServiceAccounts(context.TODO(), q)
 
 	if err != nil {
 		log.Errorf("error searching for service account %q for deployment %q: %v", saName, deployment.GetName(), err)

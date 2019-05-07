@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"context"
 	"testing"
 
 	bolt "github.com/etcd-io/bbolt"
@@ -52,7 +53,7 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrations() {
 func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsFiltering() {
 	// Remove the default integrations
 	for _, i := range store.DefaultImageIntegrations {
-		suite.NoError(suite.datastore.RemoveImageIntegration(i.GetId()))
+		suite.NoError(suite.datastore.RemoveImageIntegration(context.TODO(), i.GetId()))
 	}
 
 	integrations := []*storage.ImageIntegration{
@@ -76,12 +77,12 @@ func (suite *ImageIntegrationDataStoreTestSuite) TestIntegrationsFiltering() {
 
 	// Test Add
 	for _, r := range integrations {
-		id, err := suite.datastore.AddImageIntegration(r)
+		id, err := suite.datastore.AddImageIntegration(context.TODO(), r)
 		suite.NoError(err)
 		suite.NotEmpty(id)
 	}
 
-	actualIntegrations, err := suite.datastore.GetImageIntegrations(&v1.GetImageIntegrationsRequest{})
+	actualIntegrations, err := suite.datastore.GetImageIntegrations(context.TODO(), &v1.GetImageIntegrationsRequest{})
 	suite.NoError(err)
 	suite.ElementsMatch(integrations, actualIntegrations)
 }
@@ -113,7 +114,7 @@ func testIntegrations(t *testing.T, insertStorage store.Store, retrievalStorage 
 		assert.NotEmpty(t, id)
 	}
 	for _, r := range integrations {
-		got, exists, err := retrievalStorage.GetImageIntegration(r.GetId())
+		got, exists, err := retrievalStorage.GetImageIntegration(context.TODO(), r.GetId())
 		assert.NoError(t, err)
 		assert.True(t, exists)
 		assert.Equal(t, got, r)
@@ -129,7 +130,7 @@ func testIntegrations(t *testing.T, insertStorage store.Store, retrievalStorage 
 	}
 
 	for _, r := range integrations {
-		got, exists, err := retrievalStorage.GetImageIntegration(r.GetId())
+		got, exists, err := retrievalStorage.GetImageIntegration(context.TODO(), r.GetId())
 		assert.NoError(t, err)
 		assert.True(t, exists)
 		assert.Equal(t, got, r)
@@ -141,7 +142,7 @@ func testIntegrations(t *testing.T, insertStorage store.Store, retrievalStorage 
 	}
 
 	for _, r := range integrations {
-		_, exists, err := retrievalStorage.GetImageIntegration(r.GetId())
+		_, exists, err := retrievalStorage.GetImageIntegration(context.TODO(), r.GetId())
 		assert.NoError(t, err)
 		assert.False(t, exists)
 	}

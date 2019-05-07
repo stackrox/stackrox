@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/alert/index"
 	"github.com/stackrox/rox/central/alert/search"
 	"github.com/stackrox/rox/central/alert/store"
@@ -14,19 +16,19 @@ import (
 // DataStore is a transaction script with methods that provide the domain logic for CRUD uses cases for Alert objects.
 //go:generate mockgen-wrapper DataStore
 type DataStore interface {
-	Search(q *v1.Query) ([]searchPkg.Result, error)
-	SearchAlerts(q *v1.Query) ([]*v1.SearchResult, error)
-	SearchRawAlerts(q *v1.Query) ([]*storage.Alert, error)
-	SearchListAlerts(q *v1.Query) ([]*storage.ListAlert, error)
+	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
+	SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
+	SearchRawAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error)
+	SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error)
 
-	ListAlerts(request *v1.ListAlertsRequest) ([]*storage.ListAlert, error)
+	ListAlerts(ctx context.Context, request *v1.ListAlertsRequest) ([]*storage.ListAlert, error)
 
-	GetAlertStore() ([]*storage.ListAlert, error)
-	GetAlert(id string) (*storage.Alert, bool, error)
-	CountAlerts() (int, error)
-	AddAlert(alert *storage.Alert) error
-	UpdateAlert(alert *storage.Alert) error
-	MarkAlertStale(id string) error
+	GetAlertStore(ctx context.Context) ([]*storage.ListAlert, error)
+	GetAlert(ctx context.Context, id string) (*storage.Alert, bool, error)
+	CountAlerts(ctx context.Context) (int, error)
+	AddAlert(ctx context.Context, alert *storage.Alert) error
+	UpdateAlert(ctx context.Context, alert *storage.Alert) error
+	MarkAlertStale(ctx context.Context, id string) error
 }
 
 // New returns a new soleInstance of DataStore using the input store, indexer, and searcher.

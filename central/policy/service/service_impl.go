@@ -97,7 +97,7 @@ func (s *serviceImpl) GetPolicy(ctx context.Context, request *v1.ResourceByID) (
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Policy id must be provided")
 	}
-	policy, exists, err := s.policies.GetPolicy(request.GetId())
+	policy, exists, err := s.policies.GetPolicy(ctx, request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -129,7 +129,7 @@ func convertPoliciesToListPolicies(policies []*storage.Policy) []*storage.ListPo
 func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*v1.ListPoliciesResponse, error) {
 	resp := new(v1.ListPoliciesResponse)
 	if request.GetQuery() == "" {
-		policies, err := s.policies.GetPolicies()
+		policies, err := s.policies.GetPolicies(ctx)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -139,7 +139,7 @@ func (s *serviceImpl) ListPolicies(ctx context.Context, request *v1.RawQuery) (*
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		policies, err := s.policies.SearchRawPolicies(parsedQuery)
+		policies, err := s.policies.SearchRawPolicies(ctx, parsedQuery)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -158,7 +158,7 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *storage.Policy) (
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	id, err := s.policies.AddPolicy(request)
+	id, err := s.policies.AddPolicy(ctx, request)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func (s *serviceImpl) PutPolicy(ctx context.Context, request *storage.Policy) (*
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	if err := s.policies.UpdatePolicy(request); err != nil {
+	if err := s.policies.UpdatePolicy(ctx, request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -188,7 +188,7 @@ func (s *serviceImpl) PutPolicy(ctx context.Context, request *storage.Policy) (*
 
 // PatchPolicy patches a current policy in the system.
 func (s *serviceImpl) PatchPolicy(ctx context.Context, request *v1.PatchPolicyRequest) (*v1.Empty, error) {
-	policy, exists, err := s.policies.GetPolicy(request.GetId())
+	policy, exists, err := s.policies.GetPolicy(ctx, request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -207,7 +207,7 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 		return nil, status.Error(codes.InvalidArgument, "A policy id must be specified to delete a Policy")
 	}
 
-	policy, exists, err := s.policies.GetPolicy(request.GetId())
+	policy, exists, err := s.policies.GetPolicy(ctx, request.GetId())
 	if err != nil {
 		return nil, err
 	} else if !exists {
@@ -217,7 +217,7 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 	if err := s.removeActivePolicy(policy); err != nil {
 		return nil, err
 	}
-	if err := s.policies.RemovePolicy(request.GetId()); err != nil {
+	if err := s.policies.RemovePolicy(ctx, request.GetId()); err != nil {
 		return nil, err
 	}
 	return &v1.Empty{}, nil
@@ -250,7 +250,7 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *storage.Policy)
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("couldn't construct matcher: %s", err))
 	}
 
-	violationsPerDeployment, err := searchBasedMatcher.Match(s.deployments)
+	violationsPerDeployment, err := searchBasedMatcher.Match(ctx, s.deployments)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed policy matching: %s", err))
 	}
@@ -259,7 +259,7 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *storage.Policy)
 		if len(violations.AlertViolations) == 0 && violations.ProcessViolation == nil {
 			continue
 		}
-		deployment, exists, err := s.deployments.GetDeployment(deploymentID)
+		deployment, exists, err := s.deployments.GetDeployment(ctx, deploymentID)
 		if err != nil {
 			return nil, status.Error(codes.Internal, fmt.Sprintf("retrieving deployment '%s': %s", deploymentID, err))
 		}
@@ -284,8 +284,8 @@ func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *storage.Policy)
 }
 
 // GetPolicyCategories returns the categories of all policies.
-func (s *serviceImpl) GetPolicyCategories(context.Context, *v1.Empty) (*v1.PolicyCategoriesResponse, error) {
-	categorySet, err := s.getPolicyCategorySet()
+func (s *serviceImpl) GetPolicyCategories(ctx context.Context, _ *v1.Empty) (*v1.PolicyCategoriesResponse, error) {
+	categorySet, err := s.getPolicyCategorySet(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -303,7 +303,7 @@ func (s *serviceImpl) RenamePolicyCategory(ctx context.Context, request *v1.Rena
 		return &v1.Empty{}, nil
 	}
 
-	if err := s.policies.RenamePolicyCategory(request); err != nil {
+	if err := s.policies.RenamePolicyCategory(ctx, request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -312,7 +312,7 @@ func (s *serviceImpl) RenamePolicyCategory(ctx context.Context, request *v1.Rena
 
 // DeletePolicyCategory removes all usage of the category in policies. Policies may end up with no configured category.
 func (s *serviceImpl) DeletePolicyCategory(ctx context.Context, request *v1.DeletePolicyCategoryRequest) (*v1.Empty, error) {
-	categorySet, err := s.getPolicyCategorySet()
+	categorySet, err := s.getPolicyCategorySet(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -321,15 +321,15 @@ func (s *serviceImpl) DeletePolicyCategory(ctx context.Context, request *v1.Dele
 		return nil, status.Errorf(codes.NotFound, "Policy Category %s does not exist", request.GetCategory())
 	}
 
-	if err := s.policies.DeletePolicyCategory(request); err != nil {
+	if err := s.policies.DeletePolicyCategory(ctx, request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) getPolicyCategorySet() (categorySet set.StringSet, err error) {
-	policies, err := s.policies.GetPolicies()
+func (s *serviceImpl) getPolicyCategorySet(ctx context.Context) (categorySet set.StringSet, err error) {
+	policies, err := s.policies.GetPolicies(ctx)
 	if err != nil {
 		return
 	}

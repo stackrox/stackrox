@@ -77,6 +77,8 @@ func (m *managerImpl) flushQueuePeriodically() {
 }
 
 func (m *managerImpl) flushIndicatorQueue() {
+	ctx := context.TODO()
+
 	// This is a potentially long-running operation, and we don't want to have a pile of goroutines queueing up on
 	// this lock.
 	if !m.flushProcessingLock.MaybeLock() {
@@ -96,7 +98,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 	}
 
 	// Index the process indicators in batch
-	if err := m.processesDataStore.AddProcessIndicators(indicatorSlice...); err != nil {
+	if err := m.processesDataStore.AddProcessIndicators(ctx, indicatorSlice...); err != nil {
 		log.Errorf("Error adding process indicators: %v", err)
 	}
 
@@ -140,7 +142,7 @@ func (m *managerImpl) flushIndicatorQueue() {
 	containersSet := containersToKill(newAlerts, copiedQueue)
 	for _, indicatorInfo := range containersSet {
 		info := indicatorInfo.indicator
-		deployment, exists, err := m.deploymentDataStore.GetDeployment(info.GetDeploymentId())
+		deployment, exists, err := m.deploymentDataStore.GetDeployment(ctx, info.GetDeploymentId())
 		if err != nil {
 			log.Errorf("Couldn't enforce on deployment %s: failed to retrieve: %s", info.GetDeploymentId(), err)
 			continue
@@ -185,20 +187,22 @@ func (m *managerImpl) getWhitelistAlerts(deploymentsToIndicators map[string][]*s
 }
 
 func (m *managerImpl) checkWhitelist(indicator *storage.ProcessIndicator) (userWhitelist bool, roxWhitelist bool, err error) {
+	ctx := context.TODO()
+
 	key := &storage.ProcessWhitelistKey{
 		DeploymentId:  indicator.DeploymentId,
 		ContainerName: indicator.ContainerName,
 	}
 
 	// TODO joseph what to do if whitelist doesn't exist?  Always create for now?
-	whitelist, err := m.whitelists.GetProcessWhitelist(key)
+	whitelist, err := m.whitelists.GetProcessWhitelist(ctx, key)
 	if err != nil {
 		return
 	}
 
 	insertableElement := &storage.WhitelistItem{Item: &storage.WhitelistItem_ProcessName{ProcessName: indicator.GetSignal().GetName()}}
 	if whitelist == nil {
-		_, err = m.whitelists.UpsertProcessWhitelist(key, []*storage.WhitelistItem{insertableElement}, true)
+		_, err = m.whitelists.UpsertProcessWhitelist(ctx, key, []*storage.WhitelistItem{insertableElement}, true)
 		return
 	}
 
@@ -212,7 +216,7 @@ func (m *managerImpl) checkWhitelist(indicator *storage.ProcessIndicator) (userW
 	if userWhitelist || roxWhitelist {
 		return
 	}
-	_, err = m.whitelists.UpdateProcessWhitelistElements(key, []*storage.WhitelistItem{insertableElement}, nil, true)
+	_, err = m.whitelists.UpdateProcessWhitelistElements(ctx, key, []*storage.WhitelistItem{insertableElement}, nil, true)
 	if err != nil {
 		return
 	}
@@ -234,6 +238,8 @@ func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator, inject
 }
 
 func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string, storage.EnforcementAction, error) {
+	ctx := context.TODO()
+
 	// Attempt to enrich the image before detection.
 	updatedImages, updated, err := m.enricher.EnrichDeployment(enricher.EnrichmentContext{NoExternalMetadata: false}, deployment)
 	if err != nil {
@@ -241,11 +247,11 @@ func (m *managerImpl) DeploymentUpdated(deployment *storage.Deployment) (string,
 	}
 	if updated {
 		for _, i := range updatedImages {
-			if err := m.imageDataStore.UpsertImage(i); err != nil {
+			if err := m.imageDataStore.UpsertImage(ctx, i); err != nil {
 				log.Errorf("Error persisting image %s: %s", i.GetName().GetFullName(), err)
 			}
 		}
-		if err := m.deploymentDataStore.UpdateDeployment(deployment); err != nil {
+		if err := m.deploymentDataStore.UpdateDeployment(ctx, deployment); err != nil {
 			log.Errorf("Error persisting deployment %s: %s", deployment.GetName(), err)
 		}
 	}

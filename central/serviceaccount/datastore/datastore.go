@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/serviceaccount/index"
 	"github.com/stackrox/rox/central/serviceaccount/search"
@@ -13,15 +15,15 @@ import (
 // DataStore is an intermediary to ServiceAccountStorage.
 //go:generate mockgen-wrapper DataStore
 type DataStore interface {
-	Search(q *v1.Query) ([]searchPkg.Result, error)
-	SearchRawServiceAccounts(q *v1.Query) ([]*storage.ServiceAccount, error)
-	SearchServiceAccounts(q *v1.Query) ([]*v1.SearchResult, error)
+	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
+	SearchRawServiceAccounts(ctx context.Context, q *v1.Query) ([]*storage.ServiceAccount, error)
+	SearchServiceAccounts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 
-	CountServiceAccounts() (int, error)
-	ListServiceAccounts() ([]*storage.ServiceAccount, error)
-	GetServiceAccount(id string) (*storage.ServiceAccount, bool, error)
-	UpsertServiceAccount(request *storage.ServiceAccount) error
-	RemoveServiceAccount(id string) error
+	CountServiceAccounts(ctx context.Context) (int, error)
+	ListServiceAccounts(ctx context.Context) ([]*storage.ServiceAccount, error)
+	GetServiceAccount(ctx context.Context, id string) (*storage.ServiceAccount, bool, error)
+	UpsertServiceAccount(ctx context.Context, request *storage.ServiceAccount) error
+	RemoveServiceAccount(ctx context.Context, id string) error
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.

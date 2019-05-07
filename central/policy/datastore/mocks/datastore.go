@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -36,46 +37,46 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // AddPolicy mocks base method
-func (m *MockDataStore) AddPolicy(arg0 *storage.Policy) (string, error) {
-	ret := m.ctrl.Call(m, "AddPolicy", arg0)
+func (m *MockDataStore) AddPolicy(arg0 context.Context, arg1 *storage.Policy) (string, error) {
+	ret := m.ctrl.Call(m, "AddPolicy", arg0, arg1)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // AddPolicy indicates an expected call of AddPolicy
-func (mr *MockDataStoreMockRecorder) AddPolicy(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPolicy", reflect.TypeOf((*MockDataStore)(nil).AddPolicy), arg0)
+func (mr *MockDataStoreMockRecorder) AddPolicy(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPolicy", reflect.TypeOf((*MockDataStore)(nil).AddPolicy), arg0, arg1)
 }
 
 // DeletePolicyCategory mocks base method
-func (m *MockDataStore) DeletePolicyCategory(arg0 *v1.DeletePolicyCategoryRequest) error {
-	ret := m.ctrl.Call(m, "DeletePolicyCategory", arg0)
+func (m *MockDataStore) DeletePolicyCategory(arg0 context.Context, arg1 *v1.DeletePolicyCategoryRequest) error {
+	ret := m.ctrl.Call(m, "DeletePolicyCategory", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeletePolicyCategory indicates an expected call of DeletePolicyCategory
-func (mr *MockDataStoreMockRecorder) DeletePolicyCategory(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePolicyCategory", reflect.TypeOf((*MockDataStore)(nil).DeletePolicyCategory), arg0)
+func (mr *MockDataStoreMockRecorder) DeletePolicyCategory(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePolicyCategory", reflect.TypeOf((*MockDataStore)(nil).DeletePolicyCategory), arg0, arg1)
 }
 
 // GetPolicies mocks base method
-func (m *MockDataStore) GetPolicies() ([]*storage.Policy, error) {
-	ret := m.ctrl.Call(m, "GetPolicies")
+func (m *MockDataStore) GetPolicies(arg0 context.Context) ([]*storage.Policy, error) {
+	ret := m.ctrl.Call(m, "GetPolicies", arg0)
 	ret0, _ := ret[0].([]*storage.Policy)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetPolicies indicates an expected call of GetPolicies
-func (mr *MockDataStoreMockRecorder) GetPolicies() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicies", reflect.TypeOf((*MockDataStore)(nil).GetPolicies))
+func (mr *MockDataStoreMockRecorder) GetPolicies(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicies", reflect.TypeOf((*MockDataStore)(nil).GetPolicies), arg0)
 }
 
 // GetPolicy mocks base method
-func (m *MockDataStore) GetPolicy(arg0 string) (*storage.Policy, bool, error) {
-	ret := m.ctrl.Call(m, "GetPolicy", arg0)
+func (m *MockDataStore) GetPolicy(arg0 context.Context, arg1 string) (*storage.Policy, bool, error) {
+	ret := m.ctrl.Call(m, "GetPolicy", arg0, arg1)
 	ret0, _ := ret[0].(*storage.Policy)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -83,13 +84,13 @@ func (m *MockDataStore) GetPolicy(arg0 string) (*storage.Policy, bool, error) {
 }
 
 // GetPolicy indicates an expected call of GetPolicy
-func (mr *MockDataStoreMockRecorder) GetPolicy(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicy", reflect.TypeOf((*MockDataStore)(nil).GetPolicy), arg0)
+func (mr *MockDataStoreMockRecorder) GetPolicy(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicy", reflect.TypeOf((*MockDataStore)(nil).GetPolicy), arg0, arg1)
 }
 
 // GetPolicyByName mocks base method
-func (m *MockDataStore) GetPolicyByName(arg0 string) (*storage.Policy, bool, error) {
-	ret := m.ctrl.Call(m, "GetPolicyByName", arg0)
+func (m *MockDataStore) GetPolicyByName(arg0 context.Context, arg1 string) (*storage.Policy, bool, error) {
+	ret := m.ctrl.Call(m, "GetPolicyByName", arg0, arg1)
 	ret0, _ := ret[0].(*storage.Policy)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -97,81 +98,81 @@ func (m *MockDataStore) GetPolicyByName(arg0 string) (*storage.Policy, bool, err
 }
 
 // GetPolicyByName indicates an expected call of GetPolicyByName
-func (mr *MockDataStoreMockRecorder) GetPolicyByName(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicyByName", reflect.TypeOf((*MockDataStore)(nil).GetPolicyByName), arg0)
+func (mr *MockDataStoreMockRecorder) GetPolicyByName(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPolicyByName", reflect.TypeOf((*MockDataStore)(nil).GetPolicyByName), arg0, arg1)
 }
 
 // RemovePolicy mocks base method
-func (m *MockDataStore) RemovePolicy(arg0 string) error {
-	ret := m.ctrl.Call(m, "RemovePolicy", arg0)
+func (m *MockDataStore) RemovePolicy(arg0 context.Context, arg1 string) error {
+	ret := m.ctrl.Call(m, "RemovePolicy", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemovePolicy indicates an expected call of RemovePolicy
-func (mr *MockDataStoreMockRecorder) RemovePolicy(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePolicy", reflect.TypeOf((*MockDataStore)(nil).RemovePolicy), arg0)
+func (mr *MockDataStoreMockRecorder) RemovePolicy(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePolicy", reflect.TypeOf((*MockDataStore)(nil).RemovePolicy), arg0, arg1)
 }
 
 // RenamePolicyCategory mocks base method
-func (m *MockDataStore) RenamePolicyCategory(arg0 *v1.RenamePolicyCategoryRequest) error {
-	ret := m.ctrl.Call(m, "RenamePolicyCategory", arg0)
+func (m *MockDataStore) RenamePolicyCategory(arg0 context.Context, arg1 *v1.RenamePolicyCategoryRequest) error {
+	ret := m.ctrl.Call(m, "RenamePolicyCategory", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RenamePolicyCategory indicates an expected call of RenamePolicyCategory
-func (mr *MockDataStoreMockRecorder) RenamePolicyCategory(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenamePolicyCategory", reflect.TypeOf((*MockDataStore)(nil).RenamePolicyCategory), arg0)
+func (mr *MockDataStoreMockRecorder) RenamePolicyCategory(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RenamePolicyCategory", reflect.TypeOf((*MockDataStore)(nil).RenamePolicyCategory), arg0, arg1)
 }
 
 // Search mocks base method
-func (m *MockDataStore) Search(arg0 *v1.Query) ([]search.Result, error) {
-	ret := m.ctrl.Call(m, "Search", arg0)
+func (m *MockDataStore) Search(arg0 context.Context, arg1 *v1.Query) ([]search.Result, error) {
+	ret := m.ctrl.Call(m, "Search", arg0, arg1)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Search indicates an expected call of Search
-func (mr *MockDataStoreMockRecorder) Search(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), arg0)
+func (mr *MockDataStoreMockRecorder) Search(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), arg0, arg1)
 }
 
 // SearchPolicies mocks base method
-func (m *MockDataStore) SearchPolicies(arg0 *v1.Query) ([]*v1.SearchResult, error) {
-	ret := m.ctrl.Call(m, "SearchPolicies", arg0)
+func (m *MockDataStore) SearchPolicies(arg0 context.Context, arg1 *v1.Query) ([]*v1.SearchResult, error) {
+	ret := m.ctrl.Call(m, "SearchPolicies", arg0, arg1)
 	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchPolicies indicates an expected call of SearchPolicies
-func (mr *MockDataStoreMockRecorder) SearchPolicies(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchPolicies", reflect.TypeOf((*MockDataStore)(nil).SearchPolicies), arg0)
+func (mr *MockDataStoreMockRecorder) SearchPolicies(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchPolicies", reflect.TypeOf((*MockDataStore)(nil).SearchPolicies), arg0, arg1)
 }
 
 // SearchRawPolicies mocks base method
-func (m *MockDataStore) SearchRawPolicies(arg0 *v1.Query) ([]*storage.Policy, error) {
-	ret := m.ctrl.Call(m, "SearchRawPolicies", arg0)
+func (m *MockDataStore) SearchRawPolicies(arg0 context.Context, arg1 *v1.Query) ([]*storage.Policy, error) {
+	ret := m.ctrl.Call(m, "SearchRawPolicies", arg0, arg1)
 	ret0, _ := ret[0].([]*storage.Policy)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchRawPolicies indicates an expected call of SearchRawPolicies
-func (mr *MockDataStoreMockRecorder) SearchRawPolicies(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawPolicies", reflect.TypeOf((*MockDataStore)(nil).SearchRawPolicies), arg0)
+func (mr *MockDataStoreMockRecorder) SearchRawPolicies(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawPolicies", reflect.TypeOf((*MockDataStore)(nil).SearchRawPolicies), arg0, arg1)
 }
 
 // UpdatePolicy mocks base method
-func (m *MockDataStore) UpdatePolicy(arg0 *storage.Policy) error {
-	ret := m.ctrl.Call(m, "UpdatePolicy", arg0)
+func (m *MockDataStore) UpdatePolicy(arg0 context.Context, arg1 *storage.Policy) error {
+	ret := m.ctrl.Call(m, "UpdatePolicy", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdatePolicy indicates an expected call of UpdatePolicy
-func (mr *MockDataStoreMockRecorder) UpdatePolicy(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePolicy", reflect.TypeOf((*MockDataStore)(nil).UpdatePolicy), arg0)
+func (mr *MockDataStoreMockRecorder) UpdatePolicy(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePolicy", reflect.TypeOf((*MockDataStore)(nil).UpdatePolicy), arg0, arg1)
 }

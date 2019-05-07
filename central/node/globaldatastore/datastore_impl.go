@@ -1,6 +1,7 @@
 package globaldatastore
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stackrox/rox/central/node/datastore"
@@ -47,7 +48,7 @@ func (s *globalDataStore) buildIndex() error {
 	return nil
 }
 
-func (s *globalDataStore) GetAllClusterNodeStores() (map[string]datastore.DataStore, error) {
+func (s *globalDataStore) GetAllClusterNodeStores(ctx context.Context) (map[string]datastore.DataStore, error) {
 	stores, err := s.globalStore.GetAllClusterNodeStores()
 	if err != nil {
 		return nil, err
@@ -61,21 +62,21 @@ func (s *globalDataStore) GetAllClusterNodeStores() (map[string]datastore.DataSt
 	return dataStores, nil
 }
 
-func (s *globalDataStore) GetClusterNodeStore(clusterID string) (datastore.DataStore, error) {
+func (s *globalDataStore) GetClusterNodeStore(ctx context.Context, clusterID string) (datastore.DataStore, error) {
 	return s.globalStore.GetClusterNodeStore(clusterID)
 }
 
-func (s *globalDataStore) RemoveClusterNodeStores(clusterIDs ...string) error {
+func (s *globalDataStore) RemoveClusterNodeStores(ctx context.Context, clusterIDs ...string) error {
 	return s.globalStore.RemoveClusterNodeStores(clusterIDs...)
 }
 
-func (s *globalDataStore) CountAllNodes() (int, error) {
+func (s *globalDataStore) CountAllNodes(ctx context.Context) (int, error) {
 	return s.globalStore.CountAllNodes()
 }
 
 // SearchResults returns any node matches to the query
-func (s *globalDataStore) SearchResults(q *v1.Query) ([]*v1.SearchResult, error) {
-	stores, err := s.GetAllClusterNodeStores()
+func (s *globalDataStore) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	stores, err := s.GetAllClusterNodeStores(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -109,6 +110,6 @@ func (s *globalDataStore) SearchResults(q *v1.Query) ([]*v1.SearchResult, error)
 }
 
 // Search returns any node matches to the query
-func (s *globalDataStore) Search(q *v1.Query) ([]search.Result, error) {
+func (s *globalDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	return s.indexer.Search(q)
 }

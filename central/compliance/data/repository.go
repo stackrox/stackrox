@@ -1,6 +1,7 @@
 package data
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stackrox/rox/central/compliance/framework"
@@ -185,6 +186,8 @@ func expandFile(parent *compliance.File) map[string]*compliance.File {
 }
 
 func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[string]*compliance.ComplianceReturn, f *factory) error {
+	ctx := context.TODO()
+
 	r.cluster = domain.Cluster().Cluster()
 	r.nodes = nodesByID(framework.Nodes(domain))
 
@@ -200,7 +203,7 @@ func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[s
 
 	r.networkGraph = f.networkGraphEvaluator.GetGraph(deployments, networkPolicies)
 
-	policies, err := f.policyStore.GetPolicies()
+	policies, err := f.policyStore.GetPolicies(ctx)
 	if err != nil {
 		return err
 	}
@@ -208,19 +211,19 @@ func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[s
 	r.policies = policiesByName(policies)
 	r.categoryToPolicies = policyCategories(policies)
 
-	r.images, err = f.imageStore.ListImages()
+	r.images, err = f.imageStore.ListImages(ctx)
 	if err != nil {
 		return err
 	}
 
-	r.imageIntegrations, err = f.imageIntegrationStore.GetImageIntegrations(
+	r.imageIntegrations, err = f.imageIntegrationStore.GetImageIntegrations(ctx,
 		&v1.GetImageIntegrationsRequest{},
 	)
 	if err != nil {
 		return err
 	}
 
-	r.processIndicators, err = f.processIndicatorStore.GetProcessIndicators()
+	r.processIndicators, err = f.processIndicatorStore.GetProcessIndicators(ctx)
 	if err != nil {
 		return err
 	}
@@ -236,17 +239,17 @@ func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[s
 		return err
 	}
 
-	r.roles, err = f.roleDataStore.ListRoles()
+	r.roles, err = f.roleDataStore.ListRoles(ctx)
 	if err != nil {
 		return err
 	}
 
-	r.bindings, err = f.bindingDataStore.ListRoleBindings()
+	r.bindings, err = f.bindingDataStore.ListRoleBindings(ctx)
 	if err != nil {
 		return err
 	}
 
-	r.alerts, err = f.alertStore.GetAlertStore()
+	r.alerts, err = f.alertStore.GetAlertStore(ctx)
 	if err != nil {
 		return err
 	}

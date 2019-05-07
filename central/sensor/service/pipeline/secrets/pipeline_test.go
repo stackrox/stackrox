@@ -38,8 +38,8 @@ func (suite *PipelineTestSuite) TearDownTest() {
 func (suite *PipelineTestSuite) TestRun() {
 	secret := fixtures.GetSecret()
 
-	suite.clusters.EXPECT().GetCluster("clusterid").Return(&storage.Cluster{Id: "clusterid", Name: "clustername"}, true, nil)
-	suite.secrets.EXPECT().UpsertSecret(secret).Return(nil)
+	suite.clusters.EXPECT().GetCluster(gomock.Any(), "clusterid").Return(&storage.Cluster{Id: "clusterid", Name: "clustername"}, true, nil)
+	suite.secrets.EXPECT().UpsertSecret(gomock.Any(), secret).Return(nil)
 
 	pipeline := NewPipeline(suite.clusters, suite.secrets)
 	msg := &central.MsgFromSensor{

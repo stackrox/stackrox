@@ -1,6 +1,7 @@
 package multipliers
 
 import (
+	"context"
 	"strings"
 
 	"github.com/stackrox/rox/central/processwhitelist"
@@ -68,6 +69,8 @@ func formatProcess(process *storage.ProcessIndicator) string {
 }
 
 func (p *processWhitelistMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
+	ctx := context.TODO()
+
 	scorer := newScorer()
 	riskResult := &storage.Risk_Result{
 		Name: processWhitelistHeading,
@@ -75,7 +78,7 @@ func (p *processWhitelistMultiplier) Score(deployment *storage.Deployment) *stor
 
 	containerNameToWhitelistedProcesses := make(map[string]set.StringSet)
 	for _, container := range deployment.GetContainers() {
-		whitelist, err := p.whitelistGetter.GetProcessWhitelist(&storage.ProcessWhitelistKey{
+		whitelist, err := p.whitelistGetter.GetProcessWhitelist(ctx, &storage.ProcessWhitelistKey{
 			DeploymentId:  deployment.GetId(),
 			ContainerName: container.GetName(),
 		})
@@ -92,7 +95,7 @@ func (p *processWhitelistMultiplier) Score(deployment *storage.Deployment) *stor
 		}
 	}
 
-	processes, err := p.indicatorGetter.SearchRawProcessIndicators(search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).ProtoQuery())
+	processes, err := p.indicatorGetter.SearchRawProcessIndicators(ctx, search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).ProtoQuery())
 	if err != nil {
 		log.Error(err)
 		return nil

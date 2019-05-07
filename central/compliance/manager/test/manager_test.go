@@ -49,7 +49,7 @@ func (s *managerTestSuite) TestExpandSelection_OneOne() {
 }
 
 func (s *managerTestSuite) TestExpandSelection_AllOne_OK() {
-	s.mockClusterStore.EXPECT().GetClusters().Return([]*storage.Cluster{
+	s.mockClusterStore.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{
 		{
 			Id: "cluster1",
 		},
@@ -66,7 +66,7 @@ func (s *managerTestSuite) TestExpandSelection_AllOne_OK() {
 }
 
 func (s *managerTestSuite) TestExpandSelection_AllOne_GetClustersError() {
-	s.mockClusterStore.EXPECT().GetClusters().Return(nil, errors.New("some error"))
+	s.mockClusterStore.EXPECT().GetClusters(gomock.Any()).Return(nil, errors.New("some error"))
 	_, err := s.manager.ExpandSelection(manager.Wildcard, "standard1")
 	s.Error(err)
 }
@@ -85,7 +85,7 @@ func (s *managerTestSuite) TestExpandSelection_OneAll_OK() {
 }
 
 func (s *managerTestSuite) TestExpandSelection_AllAll_OK() {
-	s.mockClusterStore.EXPECT().GetClusters().Return([]*storage.Cluster{
+	s.mockClusterStore.EXPECT().GetClusters(gomock.Any()).Return([]*storage.Cluster{
 		{Id: "cluster1"},
 		{Id: "cluster2"},
 	}, nil)

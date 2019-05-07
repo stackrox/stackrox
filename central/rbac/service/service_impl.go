@@ -60,7 +60,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetRole returns the k8s role for the id.
 func (s *serviceImpl) GetRole(ctx context.Context, request *v1.ResourceByID) (*v1.GetRoleResponse, error) {
-	role, exists, err := s.roles.GetRole(request.GetId())
+	role, exists, err := s.roles.GetRole(ctx, request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -76,7 +76,7 @@ func (s *serviceImpl) ListRoles(ctx context.Context, rawQuery *v1.RawQuery) (*v1
 	var roles []*storage.K8SRole
 	var err error
 	if rawQuery.GetQuery() == "" {
-		roles, err = s.roles.ListRoles()
+		roles, err = s.roles.ListRoles(ctx)
 	} else {
 		// TODO: Link policy rule fields? I.E. if query has Verbs:Get,Resource:Pods, we want the two linked so only
 		// roles that can get pods are returned, not roles that can get anything, and can do any operation on Pods.
@@ -85,7 +85,7 @@ func (s *serviceImpl) ListRoles(ctx context.Context, rawQuery *v1.RawQuery) (*v1
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		roles, err = s.roles.SearchRawRoles(q)
+		roles, err = s.roles.SearchRawRoles(ctx, q)
 	}
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to retrieve k8s roles: %v", err)
@@ -96,7 +96,7 @@ func (s *serviceImpl) ListRoles(ctx context.Context, rawQuery *v1.RawQuery) (*v1
 
 // GetRole returns the k8s role binding for the id.
 func (s *serviceImpl) GetRoleBinding(ctx context.Context, request *v1.ResourceByID) (*v1.GetRoleBindingResponse, error) {
-	binding, exists, err := s.bindings.GetRoleBinding(request.GetId())
+	binding, exists, err := s.bindings.GetRoleBinding(ctx, request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -112,14 +112,14 @@ func (s *serviceImpl) ListRoleBindings(ctx context.Context, rawQuery *v1.RawQuer
 	var bindings []*storage.K8SRoleBinding
 	var err error
 	if rawQuery.GetQuery() == "" {
-		bindings, err = s.bindings.ListRoleBindings()
+		bindings, err = s.bindings.ListRoleBindings(ctx)
 	} else {
 		var q *v1.Query
 		q, err = search.ParseRawQueryOrEmpty(rawQuery.GetQuery())
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		bindings, err = s.bindings.SearchRawRoleBindings(q)
+		bindings, err = s.bindings.SearchRawRoleBindings(ctx, q)
 	}
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to retrieve k8s role bindings: %v", err)
@@ -130,11 +130,11 @@ func (s *serviceImpl) ListRoleBindings(ctx context.Context, rawQuery *v1.RawQuer
 
 // GetSubject returns the subject with the input ID (the unique subject name).
 func (s *serviceImpl) GetSubject(ctx context.Context, request *v1.ResourceByID) (*v1.GetSubjectResponse, error) {
-	bindings, err := s.bindings.ListRoleBindings()
+	bindings, err := s.bindings.ListRoleBindings(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	roles, err := s.roles.ListRoles()
+	roles, err := s.roles.ListRoles(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

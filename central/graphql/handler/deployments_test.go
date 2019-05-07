@@ -14,10 +14,10 @@ func TestGetDeployment(t *testing.T) {
 	mocks := mockResolver(t)
 	testClusterID := "testClusterID"
 	testDeploymentID := "testDeploymentID"
-	mocks.deployment.EXPECT().GetDeployment(testDeploymentID).Return(&storage.Deployment{
+	mocks.deployment.EXPECT().GetDeployment(gomock.Any(), testDeploymentID).Return(&storage.Deployment{
 		Id: testDeploymentID, ClusterId: testClusterID, Name: "deployment name", Type: "deployment type",
 	}, true, nil)
-	mocks.cluster.EXPECT().GetCluster(testClusterID).Return(&storage.Cluster{
+	mocks.cluster.EXPECT().GetCluster(gomock.Any(), testClusterID).Return(&storage.Cluster{
 		Id: testClusterID, Name: "cluster name",
 	}, true, nil)
 
@@ -32,7 +32,7 @@ func TestGetDeployment(t *testing.T) {
 
 func TestGetDeployments(t *testing.T) {
 	mocks := mockResolver(t)
-	mocks.deployment.EXPECT().ListDeployments().Return([]*storage.ListDeployment{
+	mocks.deployment.EXPECT().ListDeployments(gomock.Any()).Return([]*storage.ListDeployment{
 		{
 			Id: "one", Name: "one name",
 		},
@@ -62,10 +62,10 @@ const processQuery = `query d($d:ID) {
 func TestGetDeploymentProcessGroup(t *testing.T) {
 	testDeploymentID := "deploymentId"
 	mocks := mockResolver(t)
-	mocks.deployment.EXPECT().GetDeployment(testDeploymentID).Return(&storage.Deployment{
+	mocks.deployment.EXPECT().GetDeployment(gomock.Any(), testDeploymentID).Return(&storage.Deployment{
 		Id: testDeploymentID,
 	}, true, nil)
-	mocks.process.EXPECT().SearchRawProcessIndicators(gomock.Any()).Return([]*storage.ProcessIndicator{
+	mocks.process.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Return([]*storage.ProcessIndicator{
 		{
 			Id:            "processId",
 			ContainerName: "container_name",

@@ -1,6 +1,8 @@
 package deploymentevents
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,19 +19,21 @@ type persistDeploymentImpl struct {
 }
 
 func (s *persistDeploymentImpl) do(action central.ResourceAction, deployment *storage.Deployment) error {
+	ctx := context.TODO()
+
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE:
-		if err := s.deployments.UpsertDeployment(deployment); err != nil {
+		if err := s.deployments.UpsertDeployment(ctx, deployment); err != nil {
 			log.Errorf("unable to add deployment %s: %s", deployment.GetId(), err)
 			return err
 		}
 	case central.ResourceAction_UPDATE_RESOURCE:
-		if err := s.deployments.UpsertDeployment(deployment); err != nil {
+		if err := s.deployments.UpsertDeployment(ctx, deployment); err != nil {
 			log.Errorf("unable to update deployment %s: %s", deployment.GetId(), err)
 			return err
 		}
 	case central.ResourceAction_REMOVE_RESOURCE:
-		if err := s.deployments.RemoveDeployment(deployment.GetClusterId(), deployment.GetId()); err != nil {
+		if err := s.deployments.RemoveDeployment(ctx, deployment.GetClusterId(), deployment.GetId()); err != nil {
 			log.Errorf("unable to remove deployment %s: %s", deployment.GetId(), err)
 			return err
 		}

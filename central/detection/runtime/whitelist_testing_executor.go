@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
 )
@@ -33,7 +35,7 @@ func (wte *whitelistTestingExecutorImpl) Execute(compiled detection.CompiledPoli
 		wte.result = true
 		return nil
 	}
-	dep, exists, err := wte.deployments.GetDeployment(wte.deploymentID)
+	dep, exists, err := wte.deployments.GetDeployment(context.TODO(), wte.deploymentID)
 	if err != nil {
 		return err
 	}

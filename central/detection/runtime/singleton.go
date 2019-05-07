@@ -1,6 +1,8 @@
 package runtime
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -30,7 +32,7 @@ func SingletonPolicySet() detection.PolicySet {
 
 func initialize() {
 	policySet = detection.NewPolicySet(policyDataStore.Singleton(), detection.NewPolicyCompiler(matcher.DeploymentBuilderSingleton()))
-	policies, err := policyDataStore.Singleton().GetPolicies()
+	policies, err := policyDataStore.Singleton().GetPolicies(context.TODO())
 	if err != nil {
 		panic(err)
 	}

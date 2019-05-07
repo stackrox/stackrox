@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -17,15 +18,15 @@ import (
 
 // DataStore provides storage and indexing functionality for namespaces.
 type DataStore interface {
-	GetNamespace(id string) (*storage.NamespaceMetadata, bool, error)
-	GetNamespaces() ([]*storage.NamespaceMetadata, error)
-	AddNamespace(*storage.NamespaceMetadata) error
-	UpdateNamespace(*storage.NamespaceMetadata) error
-	RemoveNamespace(id string) error
+	GetNamespace(ctx context.Context, id string) (*storage.NamespaceMetadata, bool, error)
+	GetNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error)
+	AddNamespace(context.Context, *storage.NamespaceMetadata) error
+	UpdateNamespace(context.Context, *storage.NamespaceMetadata) error
+	RemoveNamespace(ctx context.Context, id string) error
 
-	SearchResults(q *v1.Query) ([]*v1.SearchResult, error)
-	Search(q *v1.Query) ([]search.Result, error)
-	SearchNamespaces(q *v1.Query) ([]*storage.NamespaceMetadata, error)
+	SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
+	SearchNamespaces(ctx context.Context, q *v1.Query) ([]*storage.NamespaceMetadata, error)
 }
 
 // New returns a new DataStore instance using the provided store and indexer
@@ -49,7 +50,7 @@ type datastoreImpl struct {
 }
 
 func (b *datastoreImpl) buildIndex() error {
-	namespaces, err := b.GetNamespaces()
+	namespaces, err := b.store.GetNamespaces()
 	if err != nil {
 		return err
 	}
@@ -57,17 +58,17 @@ func (b *datastoreImpl) buildIndex() error {
 }
 
 // GetNamespace returns namespace with given id.
-func (b *datastoreImpl) GetNamespace(id string) (namespace *storage.NamespaceMetadata, exists bool, err error) {
+func (b *datastoreImpl) GetNamespace(ctx context.Context, id string) (namespace *storage.NamespaceMetadata, exists bool, err error) {
 	return b.store.GetNamespace(id)
 }
 
 // GetNamespaces retrieves namespaces matching the request from bolt
-func (b *datastoreImpl) GetNamespaces() ([]*storage.NamespaceMetadata, error) {
+func (b *datastoreImpl) GetNamespaces(ctx context.Context) ([]*storage.NamespaceMetadata, error) {
 	return b.store.GetNamespaces()
 }
 
 // AddNamespace adds a namespace to bolt
-func (b *datastoreImpl) AddNamespace(namespace *storage.NamespaceMetadata) error {
+func (b *datastoreImpl) AddNamespace(ctx context.Context, namespace *storage.NamespaceMetadata) error {
 	b.keyedMutex.Lock(namespace.GetId())
 	defer b.keyedMutex.Unlock(namespace.GetId())
 	if err := b.store.AddNamespace(namespace); err != nil {
@@ -77,7 +78,7 @@ func (b *datastoreImpl) AddNamespace(namespace *storage.NamespaceMetadata) error
 }
 
 // UpdateNamespace updates a namespace to bolt
-func (b *datastoreImpl) UpdateNamespace(namespace *storage.NamespaceMetadata) error {
+func (b *datastoreImpl) UpdateNamespace(ctx context.Context, namespace *storage.NamespaceMetadata) error {
 	b.keyedMutex.Lock(namespace.GetId())
 	defer b.keyedMutex.Unlock(namespace.GetId())
 	if err := b.store.UpdateNamespace(namespace); err != nil {
@@ -87,7 +88,7 @@ func (b *datastoreImpl) UpdateNamespace(namespace *storage.NamespaceMetadata) er
 }
 
 // RemoveNamespace removes a namespace.
-func (b *datastoreImpl) RemoveNamespace(id string) error {
+func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 	b.keyedMutex.Lock(id)
 	defer b.keyedMutex.Unlock(id)
 	if err := b.store.RemoveNamespace(id); err != nil {
@@ -96,12 +97,12 @@ func (b *datastoreImpl) RemoveNamespace(id string) error {
 	return b.indexer.DeleteNamespace(id)
 }
 
-func (b *datastoreImpl) Search(q *v1.Query) ([]search.Result, error) {
+func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	return b.indexer.Search(q)
 }
 
-func (b *datastoreImpl) SearchResults(q *v1.Query) ([]*v1.SearchResult, error) {
-	namespaces, results, err := b.searchNamespaces(q)
+func (b *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	namespaces, results, err := b.searchNamespaces(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +122,7 @@ func (b *datastoreImpl) SearchResults(q *v1.Query) ([]*v1.SearchResult, error) {
 	return searchResults, nil
 }
 
-func (b *datastoreImpl) searchNamespaces(q *v1.Query) ([]*storage.NamespaceMetadata, []search.Result, error) {
+func (b *datastoreImpl) searchNamespaces(ctx context.Context, q *v1.Query) ([]*storage.NamespaceMetadata, []search.Result, error) {
 	results, err := b.indexer.Search(q)
 	if err != nil {
 		return nil, nil, err
@@ -132,7 +133,7 @@ func (b *datastoreImpl) searchNamespaces(q *v1.Query) ([]*storage.NamespaceMetad
 	nsSlice := make([]*storage.NamespaceMetadata, 0, len(results))
 	resultSlice := make([]search.Result, 0, len(results))
 	for _, res := range results {
-		ns, exists, err := b.GetNamespace(res.ID)
+		ns, exists, err := b.GetNamespace(ctx, res.ID)
 		if err != nil {
 			return nil, resultSlice, errors.Wrapf(err, "retrieving namespace %q", res.ID)
 		}
@@ -147,7 +148,7 @@ func (b *datastoreImpl) searchNamespaces(q *v1.Query) ([]*storage.NamespaceMetad
 	return nsSlice, resultSlice, nil
 }
 
-func (b *datastoreImpl) SearchNamespaces(q *v1.Query) ([]*storage.NamespaceMetadata, error) {
-	namespaces, _, err := b.searchNamespaces(q)
+func (b *datastoreImpl) SearchNamespaces(ctx context.Context, q *v1.Query) ([]*storage.NamespaceMetadata, error) {
+	namespaces, _, err := b.searchNamespaces(ctx, q)
 	return namespaces, err
 }

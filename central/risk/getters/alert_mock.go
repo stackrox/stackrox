@@ -1,6 +1,8 @@
 package getters
 
 import (
+	"context"
+
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -13,7 +15,7 @@ type MockAlertsGetter struct {
 
 // ListAlerts supports a limited set of request parameters.
 // It only needs to be as specific as the production code.
-func (m MockAlertsGetter) ListAlerts(req *v1.ListAlertsRequest) (alerts []*storage.ListAlert, err error) {
+func (m MockAlertsGetter) ListAlerts(ctx context.Context, req *v1.ListAlertsRequest) (alerts []*storage.ListAlert, err error) {
 	q, err := search.ParseRawQuery(req.GetQuery())
 	if err != nil {
 		return nil, err

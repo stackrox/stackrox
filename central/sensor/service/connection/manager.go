@@ -1,6 +1,7 @@
 package connection
 
 import (
+	"context"
 	"time"
 
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -9,7 +10,7 @@ import (
 
 // CheckInRecorder updates the cluster contact time
 type CheckInRecorder interface {
-	UpdateClusterContactTime(clusterID string, time time.Time) error
+	UpdateClusterContactTime(ctx context.Context, clusterID string, time time.Time) error
 }
 
 // Manager is responsible for managing all active connections from sensors.

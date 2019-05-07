@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"testing"
@@ -117,7 +118,7 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorBatchAdd() {
 	suite.setupDataStoreNoPruning()
 
 	indicators, repeatIndicator := getIndicators()
-	suite.NoError(suite.datastore.AddProcessIndicators(append(indicators, repeatIndicator)...))
+	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), append(indicators, repeatIndicator)...))
 	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
 }
 
@@ -125,10 +126,10 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorBatchAddWithOldIndicator(
 	suite.setupDataStoreNoPruning()
 
 	indicators, repeatIndicator := getIndicators()
-	suite.NoError(suite.datastore.AddProcessIndicator(indicators[0]))
+	suite.NoError(suite.datastore.AddProcessIndicator(context.TODO(), indicators[0]))
 	suite.verifyIndicatorsAre(indicators[0])
 
-	suite.NoError(suite.datastore.AddProcessIndicators(indicators[1], repeatIndicator))
+	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), indicators[1], repeatIndicator))
 	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
 }
 
@@ -136,13 +137,13 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorAddOneByOne() {
 	suite.setupDataStoreNoPruning()
 
 	indicators, repeatIndicator := getIndicators()
-	suite.NoError(suite.datastore.AddProcessIndicators(indicators[0]))
+	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), indicators[0]))
 	suite.verifyIndicatorsAre(indicators[0])
 
-	suite.NoError(suite.datastore.AddProcessIndicators(indicators[1]))
+	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), indicators[1]))
 	suite.verifyIndicatorsAre(indicators...)
 
-	suite.NoError(suite.datastore.AddProcessIndicators(repeatIndicator))
+	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), repeatIndicator))
 	suite.verifyIndicatorsAre(indicators[1], repeatIndicator)
 }
 
@@ -167,10 +168,10 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByDeploymentID() {
 	suite.setupDataStoreNoPruning()
 
 	indicators := generateIndicators([]string{"d1", "d2"}, []string{"c1", "c2"})
-	suite.NoError(suite.datastore.AddProcessIndicators(indicators...))
+	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
-	suite.NoError(suite.datastore.RemoveProcessIndicatorsByDeployment("d1"))
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsByDeployment(context.TODO(), "d1"))
 	suite.verifyIndicatorsAre(generateIndicators([]string{"d2"}, []string{"c1", "c2"})...)
 }
 
@@ -178,10 +179,10 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByDeploymentIDAgai
 	suite.setupDataStoreNoPruning()
 
 	indicators := generateIndicators([]string{"d1", "d2", "d3"}, []string{"c1", "c2", "c3"})
-	suite.NoError(suite.datastore.AddProcessIndicators(indicators...))
+	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
-	suite.NoError(suite.datastore.RemoveProcessIndicatorsByDeployment("dnonexistent"))
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsByDeployment(context.TODO(), "dnonexistent"))
 	suite.verifyIndicatorsAre(indicators...)
 }
 
@@ -189,14 +190,14 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByContainerID() {
 	suite.setupDataStoreNoPruning()
 
 	indicators := generateIndicators([]string{"d1", "d2"}, []string{"c1", "c2"})
-	suite.NoError(suite.datastore.AddProcessIndicators(indicators...))
+	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
-	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers("d1", []string{"d1_c2"}))
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers(context.TODO(), "d1", []string{"d1_c2"}))
 	suite.verifyIndicatorsAre(
 		append(generateIndicators([]string{"d1"}, []string{"c2"}), generateIndicators([]string{"d2"}, []string{"c1", "c2"})...)...)
 
-	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers("d2", []string{"d2_c2"}))
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers(context.TODO(), "d2", []string{"d2_c2"}))
 	suite.verifyIndicatorsAre(generateIndicators([]string{"d1", "d2"}, []string{"c2"})...)
 }
 
@@ -204,10 +205,10 @@ func (suite *IndicatorDataStoreTestSuite) TestIndicatorRemovalByContainerIDAgain
 	suite.setupDataStoreNoPruning()
 
 	indicators := generateIndicators([]string{"d1", "d2"}, []string{"c1", "c2"})
-	suite.NoError(suite.datastore.AddProcessIndicators(indicators...))
+	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
-	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers("d1", nil))
+	suite.NoError(suite.datastore.RemoveProcessIndicatorsOfStaleContainers(context.TODO(), "d1", nil))
 	suite.verifyIndicatorsAre(generateIndicators([]string{"d2"}, []string{"c1", "c2"})...)
 }
 
@@ -251,7 +252,7 @@ func (suite *IndicatorDataStoreTestSuite) TestPruning() {
 		return true
 	})
 	suite.datastore = New(suite.storage, suite.indexer, suite.searcher, mockPrunerFactory)
-	suite.NoError(suite.datastore.AddProcessIndicators(indicators...))
+	suite.NoError(suite.datastore.AddProcessIndicators(context.TODO(), indicators...))
 	suite.verifyIndicatorsAre(indicators...)
 
 	mockPruner.EXPECT().Prune(m).Return(nil)

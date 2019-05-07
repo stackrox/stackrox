@@ -1,6 +1,7 @@
 package secrets
 
 import (
+	"context"
 	"fmt"
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -45,7 +46,7 @@ type pipelineImpl struct {
 
 func (s *pipelineImpl) Reconcile(clusterID string) error {
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	results, err := s.secrets.Search(query)
+	results, err := s.secrets.Search(context.TODO(), query)
 	if err != nil {
 		return err
 	}
@@ -119,7 +120,7 @@ func (s *pipelineImpl) validateInput(secret *storage.Secret) error {
 func (s *pipelineImpl) enrichCluster(secret *storage.Secret) error {
 	secret.ClusterName = ""
 
-	cluster, clusterExists, err := s.clusters.GetCluster(secret.GetClusterId())
+	cluster, clusterExists, err := s.clusters.GetCluster(context.TODO(), secret.GetClusterId())
 	switch {
 	case err != nil:
 		log.Warnf("Couldn't get name of cluster: %s", err)
@@ -134,9 +135,9 @@ func (s *pipelineImpl) enrichCluster(secret *storage.Secret) error {
 func (s *pipelineImpl) persistSecret(action central.ResourceAction, secret *storage.Secret) error {
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE:
-		return s.secrets.UpsertSecret(secret)
+		return s.secrets.UpsertSecret(context.TODO(), secret)
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.secrets.RemoveSecret(secret.GetId())
+		return s.secrets.RemoveSecret(context.TODO(), secret.GetId())
 	default:
 		return fmt.Errorf("Event action '%s' for secret does not exist", action)
 	}

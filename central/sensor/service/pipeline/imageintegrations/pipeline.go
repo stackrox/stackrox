@@ -1,6 +1,7 @@
 package imageintegrations
 
 import (
+	"context"
 	"fmt"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
@@ -108,7 +109,7 @@ func (s *pipelineImpl) getMatchingImageIntegration(auto *storage.ImageIntegratio
 func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.ImageIntegration)
 
-	cluster, exists, err := s.clusterDatastore.GetCluster(clusterID)
+	cluster, exists, err := s.clusterDatastore.GetCluster(context.TODO(), clusterID)
 	if err != nil {
 		return err
 	}
@@ -134,7 +135,7 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 	// Action is currently always update
 	// We should not overwrite image integrations that already have a username and password
 	// However, if they do not have a username and password, then we can add one that has a username and password
-	existingIntegrations, err := s.datastore.GetImageIntegrations(&v1.GetImageIntegrationsRequest{})
+	existingIntegrations, err := s.datastore.GetImageIntegrations(context.TODO(), &v1.GetImageIntegrationsRequest{})
 	if err != nil {
 		return err
 	}
@@ -148,7 +149,7 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 		if err := s.toNotify.NotifyUpdated(imageIntegration); err != nil {
 			return err
 		}
-		if _, err := s.datastore.AddImageIntegration(imageIntegration); err != nil {
+		if _, err := s.datastore.AddImageIntegration(context.TODO(), imageIntegration); err != nil {
 			return err
 		}
 		// Only when adding the integration the first time do we need to run processing
@@ -161,7 +162,7 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 		if err := s.toNotify.NotifyUpdated(imageIntegration); err != nil {
 			return err
 		}
-		if err := s.datastore.UpdateImageIntegration(imageIntegration); err != nil {
+		if err := s.datastore.UpdateImageIntegration(context.TODO(), imageIntegration); err != nil {
 			return err
 		}
 	}

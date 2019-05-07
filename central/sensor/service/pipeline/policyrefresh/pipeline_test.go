@@ -64,7 +64,7 @@ func (suite *PipelineTestSuite) TestUpdatesAllMatchingPolicies() {
 			},
 		},
 	}
-	suite.mockPolicies.EXPECT().GetPolicies().Return(policies, nil)
+	suite.mockPolicies.EXPECT().GetPolicies(gomock.Any()).Return(policies, nil)
 
 	// Expect manager to be updated.
 	suite.mockManager.EXPECT().RecompilePolicy(policies[0]).Return(nil)
@@ -92,7 +92,7 @@ func (suite *PipelineTestSuite) TestFiltersMatchingPolicies() {
 			},
 		},
 	}
-	suite.mockPolicies.EXPECT().GetPolicies().Return(policies, nil)
+	suite.mockPolicies.EXPECT().GetPolicies(gomock.Any()).Return(policies, nil)
 
 	// Expect manager and policy to not be updated since the RBAC field is not present in any policy.
 

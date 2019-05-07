@@ -1,6 +1,7 @@
 package connection
 
 import (
+	"context"
 	"time"
 
 	"github.com/pkg/errors"
@@ -69,7 +70,7 @@ func (c *sensorConnection) Stopped() concurrency.ReadOnlyErrorSignal {
 // Record the check-in if the rate limiter allows it.
 func (c *sensorConnection) recordCheckInRateLimited() {
 	if c.checkInRecordRateLimiter.Allow() {
-		err := c.checkInRecorder.UpdateClusterContactTime(c.clusterID, time.Now())
+		err := c.checkInRecorder.UpdateClusterContactTime(context.TODO(), c.clusterID, time.Now())
 		if err != nil {
 			log.Warnf("Could not record cluster contact: %v", err)
 		}

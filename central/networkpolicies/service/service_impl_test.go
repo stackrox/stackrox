@@ -115,7 +115,7 @@ func (suite *ServiceTestSuite) TestFailsIfClusterIsNotSet() {
 
 func (suite *ServiceTestSuite) TestFailsIfClusterDoesNotExist() {
 	// Mock that cluster exists.
-	suite.clusters.EXPECT().GetCluster(fakeClusterID).
+	suite.clusters.EXPECT().GetCluster(gomock.Any(), fakeClusterID).
 		Return((*storage.Cluster)(nil), false, nil)
 
 	// Make the request to the service and check that it did not err.
@@ -129,7 +129,7 @@ func (suite *ServiceTestSuite) TestFailsIfClusterDoesNotExist() {
 func (suite *ServiceTestSuite) TestRejectsYamlWithoutNamespace() {
 	// Mock that cluster exists.
 	cluster := &storage.Cluster{Id: fakeClusterID}
-	suite.clusters.EXPECT().GetCluster(fakeClusterID).
+	suite.clusters.EXPECT().GetCluster(gomock.Any(), fakeClusterID).
 		Return(cluster, true, nil)
 
 	// Make the request to the service and check that it did not err.
@@ -146,12 +146,12 @@ func (suite *ServiceTestSuite) TestRejectsYamlWithoutNamespace() {
 func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 	// Mock that cluster exists.
 	cluster := &storage.Cluster{Id: fakeClusterID}
-	suite.clusters.EXPECT().GetCluster(fakeClusterID).
+	suite.clusters.EXPECT().GetCluster(gomock.Any(), fakeClusterID).
 		Return(cluster, true, nil)
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*storage.Deployment, 0)
-	suite.deployments.EXPECT().SearchRawDeployments(deploymentSearchIsForCluster(fakeClusterID)).
+	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
 	// Mock that we have network policies in effect for the cluster.
@@ -180,12 +180,12 @@ func (suite *ServiceTestSuite) TestGetNetworkGraph() {
 func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 	// Mock that cluster exists.
 	cluster := &storage.Cluster{Id: fakeClusterID}
-	suite.clusters.EXPECT().GetCluster(fakeClusterID).
+	suite.clusters.EXPECT().GetCluster(gomock.Any(), fakeClusterID).
 		Return(cluster, true, nil)
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*storage.Deployment, 0)
-	suite.deployments.EXPECT().SearchRawDeployments(deploymentSearchIsForCluster(fakeClusterID)).
+	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
 	// Mock that we have network policies in effect for the cluster.
@@ -221,12 +221,12 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacement() {
 func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 	// Mock that cluster exists.
 	cluster := &storage.Cluster{Id: fakeClusterID}
-	suite.clusters.EXPECT().GetCluster(fakeClusterID).
+	suite.clusters.EXPECT().GetCluster(gomock.Any(), fakeClusterID).
 		Return(cluster, true, nil)
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*storage.Deployment, 0)
-	suite.deployments.EXPECT().SearchRawDeployments(deploymentSearchIsForCluster(fakeClusterID)).
+	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
 	// Mock that we have network policies in effect for the cluster.
@@ -260,12 +260,12 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithAddition() {
 func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 	// Mock that cluster exists.
 	cluster := &storage.Cluster{Id: fakeClusterID}
-	suite.clusters.EXPECT().GetCluster(fakeClusterID).
+	suite.clusters.EXPECT().GetCluster(gomock.Any(), fakeClusterID).
 		Return(cluster, true, nil)
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*storage.Deployment, 0)
-	suite.deployments.EXPECT().SearchRawDeployments(deploymentSearchIsForCluster(fakeClusterID)).
+	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
 	// Mock that we have network policies in effect for the cluster.
@@ -301,12 +301,12 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithReplacementAndAddition() {
 func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletion() {
 	// Mock that cluster exists.
 	cluster := &storage.Cluster{Id: fakeClusterID}
-	suite.clusters.EXPECT().GetCluster(fakeClusterID).
+	suite.clusters.EXPECT().GetCluster(gomock.Any(), fakeClusterID).
 		Return(cluster, true, nil)
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*storage.Deployment, 0)
-	suite.deployments.EXPECT().SearchRawDeployments(deploymentSearchIsForCluster(fakeClusterID)).
+	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
 	// Mock that we have network policies in effect for the cluster.
@@ -345,12 +345,12 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletion() {
 func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletionAndAdditionOfSame() {
 	// Mock that cluster exists.
 	cluster := &storage.Cluster{Id: fakeClusterID}
-	suite.clusters.EXPECT().GetCluster(fakeClusterID).
+	suite.clusters.EXPECT().GetCluster(gomock.Any(), fakeClusterID).
 		Return(cluster, true, nil)
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*storage.Deployment, 0)
-	suite.deployments.EXPECT().SearchRawDeployments(deploymentSearchIsForCluster(fakeClusterID)).
+	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
 	// Mock that we have network policies in effect for the cluster.
@@ -390,12 +390,12 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithDeletionAndAdditionOfSame(
 func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 	// Mock that cluster exists.
 	cluster := &storage.Cluster{Id: fakeClusterID}
-	suite.clusters.EXPECT().GetCluster(fakeClusterID).
+	suite.clusters.EXPECT().GetCluster(gomock.Any(), fakeClusterID).
 		Return(cluster, true, nil)
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*storage.Deployment, 0)
-	suite.deployments.EXPECT().SearchRawDeployments(deploymentSearchIsForCluster(fakeClusterID)).
+	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), deploymentSearchIsForCluster(fakeClusterID)).
 		Return(deps, nil)
 
 	// Mock that we have network policies in effect for the cluster.
@@ -429,7 +429,7 @@ func (suite *ServiceTestSuite) TestGetNetworkGraphWithOnlyAdditions() {
 func (suite *ServiceTestSuite) TestGetNetworkPoliciesWithoutDeploymentQuery() {
 	// Mock that cluster exists.
 	cluster := &storage.Cluster{Id: fakeClusterID}
-	suite.clusters.EXPECT().GetCluster(fakeClusterID).
+	suite.clusters.EXPECT().GetCluster(gomock.Any(), fakeClusterID).
 		Return(cluster, true, nil)
 
 	// Mock that we have network policies in effect for the cluster.
@@ -450,7 +450,7 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWithoutDeploymentQuery() {
 func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
 	// Mock that cluster exists.
 	cluster := &storage.Cluster{Id: fakeClusterID}
-	suite.clusters.EXPECT().GetCluster(fakeClusterID).
+	suite.clusters.EXPECT().GetCluster(gomock.Any(), fakeClusterID).
 		Return(cluster, true, nil)
 
 	// Mock that we have network policies in effect for the cluster.
@@ -460,7 +460,7 @@ func (suite *ServiceTestSuite) TestGetNetworkPoliciesWitDeploymentQuery() {
 
 	// Mock that we receive deployments for the cluster
 	deps := make([]*storage.Deployment, 0)
-	suite.deployments.EXPECT().SearchRawDeployments(testutils.PredMatcher("deployment search is for cluster", func(query *v1.Query) bool {
+	suite.deployments.EXPECT().SearchRawDeployments(gomock.Any(), testutils.PredMatcher("deployment search is for cluster", func(query *v1.Query) bool {
 		// Should be a conjunction with cluster and deployment id.
 		conj := query.GetConjunction()
 		if len(conj.GetQueries()) != 2 {

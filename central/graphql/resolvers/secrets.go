@@ -24,7 +24,7 @@ func (resolver *Resolver) Secret(ctx context.Context, arg struct{ graphql.ID }) 
 		return nil, err
 	}
 	return resolver.wrapSecret(
-		resolver.SecretsDataStore.GetSecret(string(arg.ID)))
+		resolver.SecretsDataStore.GetSecret(ctx, string(arg.ID)))
 }
 
 // Secrets gets a list of all secrets
@@ -37,13 +37,13 @@ func (resolver *Resolver) Secrets(ctx context.Context, args rawQuery) ([]*secret
 		return nil, err
 	}
 	if q != nil {
-		return resolver.wrapListSecrets(resolver.SecretsDataStore.SearchListSecrets(q))
+		return resolver.wrapListSecrets(resolver.SecretsDataStore.SearchListSecrets(ctx, q))
 	}
-	return resolver.wrapListSecrets(resolver.SecretsDataStore.ListSecrets())
+	return resolver.wrapListSecrets(resolver.SecretsDataStore.ListSecrets(ctx))
 }
 
-func (resolver *Resolver) getSecret(id string) *storage.Secret {
-	secret, ok, err := resolver.SecretsDataStore.GetSecret(id)
+func (resolver *Resolver) getSecret(ctx context.Context, id string) *storage.Secret {
+	secret, ok, err := resolver.SecretsDataStore.GetSecret(ctx, id)
 	if err != nil || !ok {
 		return nil
 	}
@@ -60,5 +60,5 @@ func (resolver *secretResolver) Deployments(ctx context.Context) ([]*deploymentR
 		AddExactMatches(search.SecretName, resolver.data.GetName()).
 		ProtoQuery()
 	return resolver.root.wrapListDeployments(
-		resolver.root.DeploymentDataStore.SearchListDeployments(psr))
+		resolver.root.DeploymentDataStore.SearchListDeployments(ctx, psr))
 }

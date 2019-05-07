@@ -1,6 +1,7 @@
 package namespaces
 
 import (
+	"context"
 	"fmt"
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -48,7 +49,7 @@ type pipelineImpl struct {
 
 func (s *pipelineImpl) Reconcile(clusterID string) error {
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	results, err := s.namespaces.Search(query)
+	results, err := s.namespaces.Search(context.TODO(), query)
 	if err != nil {
 		return err
 	}
@@ -123,7 +124,7 @@ func (s *pipelineImpl) validateInput(np *storage.NamespaceMetadata) error {
 func (s *pipelineImpl) enrichCluster(ns *storage.NamespaceMetadata) error {
 	ns.ClusterName = ""
 
-	cluster, clusterExists, err := s.clusters.GetCluster(ns.ClusterId)
+	cluster, clusterExists, err := s.clusters.GetCluster(context.TODO(), ns.ClusterId)
 	switch {
 	case err != nil:
 		log.Warnf("Couldn't get name of cluster: %s", err)
@@ -138,11 +139,11 @@ func (s *pipelineImpl) enrichCluster(ns *storage.NamespaceMetadata) error {
 func (s *pipelineImpl) persistNamespace(action central.ResourceAction, ns *storage.NamespaceMetadata) error {
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE:
-		return s.namespaces.AddNamespace(ns)
+		return s.namespaces.AddNamespace(context.TODO(), ns)
 	case central.ResourceAction_UPDATE_RESOURCE:
-		return s.namespaces.UpdateNamespace(ns)
+		return s.namespaces.UpdateNamespace(context.TODO(), ns)
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.namespaces.RemoveNamespace(ns.GetId())
+		return s.namespaces.RemoveNamespace(context.TODO(), ns.GetId())
 	default:
 		return fmt.Errorf("Event action '%s' for namespace does not exist", action)
 	}

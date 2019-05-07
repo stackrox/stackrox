@@ -78,7 +78,7 @@ func (s *serviceImpl) GetImageIntegration(ctx context.Context, request *v1.Resou
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Image integration id must be provided")
 	}
-	integration, exists, err := s.datastore.GetImageIntegration(request.GetId())
+	integration, exists, err := s.datastore.GetImageIntegration(ctx, request.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (s *serviceImpl) GetImageIntegration(ctx context.Context, request *v1.Resou
 
 // GetImageIntegrations retrieves all image integrations that matches the request filters
 func (s *serviceImpl) GetImageIntegrations(ctx context.Context, request *v1.GetImageIntegrationsRequest) (*v1.GetImageIntegrationsResponse, error) {
-	integrations, err := s.datastore.GetImageIntegrations(request)
+	integrations, err := s.datastore.GetImageIntegrations(ctx, request)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func sortCategories(categories []storage.ImageIntegrationCategory) {
 
 // PutImageIntegration updates an image integration in the system
 func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *storage.ImageIntegration) (*v1.Empty, error) {
-	err := s.validateIntegration(request)
+	err := s.validateIntegration(ctx, request)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (s *serviceImpl) PutImageIntegration(ctx context.Context, request *storage.
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	if err := s.datastore.UpdateImageIntegration(request); err != nil {
+	if err := s.datastore.UpdateImageIntegration(ctx, request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -146,7 +146,7 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new image integration")
 	}
 
-	err := s.validateIntegration(request)
+	err := s.validateIntegration(ctx, request)
 	if err != nil {
 		return nil, err
 	}
@@ -157,14 +157,14 @@ func (s *serviceImpl) PostImageIntegration(ctx context.Context, request *storage
 
 	sortCategories(request.Categories)
 
-	id, err := s.datastore.AddImageIntegration(request)
+	id, err := s.datastore.AddImageIntegration(ctx, request)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	request.Id = id
 
 	if err := s.toNotify.NotifyUpdated(request); err != nil {
-		_ = s.datastore.RemoveImageIntegration(request.Id)
+		_ = s.datastore.RemoveImageIntegration(ctx, request.Id)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -177,7 +177,7 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Image integration id must be provided")
 	}
-	if err := s.datastore.RemoveImageIntegration(request.GetId()); err != nil {
+	if err := s.datastore.RemoveImageIntegration(ctx, request.GetId()); err != nil {
 		return nil, err
 	}
 	if err := s.toNotify.NotifyRemoved(request.GetId()); err != nil {
@@ -188,7 +188,7 @@ func (s *serviceImpl) DeleteImageIntegration(ctx context.Context, request *v1.Re
 
 // TestImageIntegration tests to see if the config is setup properly
 func (s *serviceImpl) TestImageIntegration(ctx context.Context, request *storage.ImageIntegration) (*v1.Empty, error) {
-	err := s.validateIntegration(request)
+	err := s.validateIntegration(ctx, request)
 	if err != nil {
 		return nil, err
 	}
@@ -236,14 +236,14 @@ func (s *serviceImpl) testScannerIntegration(integration *storage.ImageIntegrati
 	return nil
 }
 
-func (s *serviceImpl) validateIntegration(request *storage.ImageIntegration) error {
+func (s *serviceImpl) validateIntegration(ctx context.Context, request *storage.ImageIntegration) error {
 	errorList := errorhelpers.NewErrorList("Validation")
 	if len(request.GetCategories()) == 0 {
 		errorList.AddStrings("integrations require a category")
 	}
 
 	clustersRequested := request.GetClusters()
-	existingClusters, err := s.clusterDatastore.GetClusters()
+	existingClusters, err := s.clusterDatastore.GetClusters(ctx)
 	if err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
@@ -259,7 +259,7 @@ func (s *serviceImpl) validateIntegration(request *storage.ImageIntegration) err
 		return errorList.ToError()
 	}
 
-	integrations, err := s.datastore.GetImageIntegrations(&v1.GetImageIntegrationsRequest{Name: request.GetName()})
+	integrations, err := s.datastore.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{Name: request.GetName()})
 	if err != nil {
 		return status.Errorf(codes.Internal, err.Error())
 	}

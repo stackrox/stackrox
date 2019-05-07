@@ -87,7 +87,7 @@ func (resolver *Resolver) SearchAutocomplete(ctx context.Context, args searchReq
 	if err := checkSearchAuth(ctx); err != nil {
 		return nil, err
 	}
-	return searchService.RunAutoComplete(args.Query, toSearchCategories(args.Categories), resolver.getAutoCompleteSearchers())
+	return searchService.RunAutoComplete(ctx, args.Query, toSearchCategories(args.Categories), resolver.getAutoCompleteSearchers())
 }
 
 // SearchOptions gets all search options available for the listed categories
@@ -105,6 +105,6 @@ func (resolver *Resolver) GlobalSearch(ctx context.Context, args searchRequest) 
 	if err := checkSearchAuth(ctx); err != nil {
 		return nil, err
 	}
-	results, _, err := searchService.GlobalSearch(args.Query, toSearchCategories(args.Categories), resolver.getSearchFuncs())
+	results, _, err := searchService.GlobalSearch(ctx, args.Query, toSearchCategories(args.Categories), resolver.getSearchFuncs())
 	return resolver.wrapSearchResults(results, err)
 }

@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/policy/index"
 	"github.com/stackrox/rox/central/policy/search"
@@ -14,19 +16,19 @@ import (
 // DataStore is an intermediary to PolicyStorage.
 //go:generate mockgen-wrapper DataStore
 type DataStore interface {
-	Search(q *v1.Query) ([]searchPkg.Result, error)
-	SearchPolicies(q *v1.Query) ([]*v1.SearchResult, error)
-	SearchRawPolicies(q *v1.Query) ([]*storage.Policy, error)
+	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
+	SearchPolicies(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
+	SearchRawPolicies(ctx context.Context, q *v1.Query) ([]*storage.Policy, error)
 
-	GetPolicy(id string) (*storage.Policy, bool, error)
-	GetPolicies() ([]*storage.Policy, error)
-	GetPolicyByName(name string) (*storage.Policy, bool, error)
+	GetPolicy(ctx context.Context, id string) (*storage.Policy, bool, error)
+	GetPolicies(ctx context.Context) ([]*storage.Policy, error)
+	GetPolicyByName(ctx context.Context, name string) (*storage.Policy, bool, error)
 
-	AddPolicy(*storage.Policy) (string, error)
-	UpdatePolicy(*storage.Policy) error
-	RemovePolicy(id string) error
-	RenamePolicyCategory(request *v1.RenamePolicyCategoryRequest) error
-	DeletePolicyCategory(request *v1.DeletePolicyCategoryRequest) error
+	AddPolicy(context.Context, *storage.Policy) (string, error)
+	UpdatePolicy(context.Context, *storage.Policy) error
+	RemovePolicy(ctx context.Context, id string) error
+	RenamePolicyCategory(ctx context.Context, request *v1.RenamePolicyCategoryRequest) error
+	DeletePolicyCategory(ctx context.Context, request *v1.DeletePolicyCategoryRequest) error
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.

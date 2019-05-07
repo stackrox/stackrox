@@ -118,7 +118,7 @@ func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNet
 	if request.GetClusterId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "cluster id is required")
 	}
-	_, exists, err := s.clusterStore.GetCluster(request.GetClusterId())
+	_, exists, err := s.clusterStore.GetCluster(ctx, request.GetClusterId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -135,7 +135,7 @@ func (s *serviceImpl) GetNetworkPolicies(ctx context.Context, request *v1.GetNet
 	// If there is a deployment query, filter the policies that apply to the deployments that match the query.
 	if request.GetDeploymentQuery() != "" {
 		// Get the deployments we want to check connectivity between.
-		deployments, err := s.getDeployments(request.GetClusterId(), request.GetDeploymentQuery())
+		deployments, err := s.getDeployments(ctx, request.GetClusterId(), request.GetDeploymentQuery())
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -162,7 +162,7 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetwor
 	}
 
 	// Check that the cluster exists. If not there is nothing to we can process.
-	_, exists, err := s.clusterStore.GetCluster(request.GetClusterId())
+	_, exists, err := s.clusterStore.GetCluster(ctx, request.GetClusterId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -177,7 +177,7 @@ func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.GetNetwor
 	}
 
 	// Get the deployments we want to check connectivity between.
-	deployments, err := s.getDeployments(request.GetClusterId(), request.GetQuery())
+	deployments, err := s.getDeployments(ctx, request.GetClusterId(), request.GetQuery())
 	if err != nil {
 		return nil, err
 	}
@@ -236,7 +236,7 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 	}
 
 	// Check that the cluster exists. If not there is nothing to we can process.
-	_, exists, err := s.clusterStore.GetCluster(request.GetClusterId())
+	_, exists, err := s.clusterStore.GetCluster(ctx, request.GetClusterId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -257,7 +257,7 @@ func (s *serviceImpl) SimulateNetworkGraph(ctx context.Context, request *v1.Simu
 	}
 
 	// Get the deployments we want to check connectivity between.
-	deployments, err := s.getDeployments(request.GetClusterId(), request.GetQuery())
+	deployments, err := s.getDeployments(ctx, request.GetClusterId(), request.GetQuery())
 	if err != nil {
 		return nil, err
 	}
@@ -316,7 +316,7 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 		return nil, status.Errorf(codes.InvalidArgument, "Modification must have contents")
 	}
 
-	cluster, exists, err := s.clusterStore.GetCluster(request.GetClusterId())
+	cluster, exists, err := s.clusterStore.GetCluster(ctx, request.GetClusterId())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to retrieve cluster: %s", err.Error())
 	}
@@ -366,7 +366,7 @@ func (s *serviceImpl) GenerateNetworkPolicies(ctx context.Context, req *v1.Gener
 		req.DeleteExisting = v1.GenerateNetworkPoliciesRequest_NONE
 	}
 
-	generated, toDelete, err := s.policyGenerator.Generate(req)
+	generated, toDelete, err := s.policyGenerator.Generate(ctx, req)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error generating network policies: %v", err)
 	}
@@ -406,7 +406,7 @@ func (s *serviceImpl) GetUndoModification(ctx context.Context, req *v1.GetUndoMo
 	}, nil
 }
 
-func (s *serviceImpl) getDeployments(clusterID, query string) (deployments []*storage.Deployment, err error) {
+func (s *serviceImpl) getDeployments(ctx context.Context, clusterID, query string) (deployments []*storage.Deployment, err error) {
 	clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 
 	q := clusterQuery
@@ -418,7 +418,7 @@ func (s *serviceImpl) getDeployments(clusterID, query string) (deployments []*st
 		q = search.ConjunctionQuery(q, clusterQuery)
 	}
 
-	deployments, err = s.deployments.SearchRawDeployments(q)
+	deployments, err = s.deployments.SearchRawDeployments(ctx, q)
 	return
 }
 

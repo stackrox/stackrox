@@ -1,6 +1,7 @@
 package builders
 
 import (
+	"context"
 	"fmt"
 	"sort"
 
@@ -96,7 +97,7 @@ func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[
 
 	q = search.NewQueryBuilder().AddLinkedFieldsWithHighlightValues(fieldLabels, queryStrings, highlights).ProtoQuery()
 
-	v = func(result search.Result) searchbasedpolicies.Violations {
+	v = func(ctx context.Context, result search.Result) searchbasedpolicies.Violations {
 		matches := result.Matches[processIDSearchField.GetFieldPath()]
 		if len(result.Matches[processIDSearchField.GetFieldPath()]) == 0 {
 			log.Errorf("ID %s matched process query, but couldn't find the matching id", result.ID)
@@ -108,7 +109,7 @@ func (p ProcessQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[
 		}
 		processes := make([]*storage.ProcessIndicator, 0, len(matches))
 		for _, processID := range matches {
-			process, exists, err := p.ProcessGetter.GetProcessIndicator(processID)
+			process, exists, err := p.ProcessGetter.GetProcessIndicator(ctx, processID)
 			if err != nil {
 				log.Errorf("Error retrieving process with id %s from store", processID)
 				continue

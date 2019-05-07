@@ -1,6 +1,7 @@
 package builders
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -51,7 +52,7 @@ func (r RequiredMapValueQueryBuilder) Query(fields *storage.PolicyFields, option
 		},
 	}
 
-	v = func(result search.Result) searchbasedpolicies.Violations {
+	v = func(_ context.Context, result search.Result) searchbasedpolicies.Violations {
 		return searchbasedpolicies.Violations{
 			AlertViolations: []*storage.Alert_Violation{
 				{Message: fmt.Sprintf("Required %s not found (%s)", r.FieldName, printKeyValuePolicy(keyValuePolicy))},

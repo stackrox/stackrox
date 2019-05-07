@@ -47,7 +47,7 @@ func (suite *RbacServiceTestSuite) TestGetRole() {
 		ClusterId: "cluster",
 		Namespace: "namespace",
 	}
-	suite.mockRoleStore.EXPECT().GetRole(roleID).Return(expectedRole, true, nil)
+	suite.mockRoleStore.EXPECT().GetRole(gomock.Any(), roleID).Return(expectedRole, true, nil)
 
 	response, err := suite.service.GetRole((context.Context)(nil), &v1.ResourceByID{Id: roleID})
 	suite.NoError(err)
@@ -58,7 +58,7 @@ func (suite *RbacServiceTestSuite) TestGetRole() {
 func (suite *RbacServiceTestSuite) TestGetRolesWithStoreRoleNotExists() {
 	roleID := "id1"
 
-	suite.mockRoleStore.EXPECT().GetRole(roleID).Return((*storage.K8SRole)(nil), false, nil)
+	suite.mockRoleStore.EXPECT().GetRole(gomock.Any(), roleID).Return((*storage.K8SRole)(nil), false, nil)
 
 	_, err := suite.service.GetRole((context.Context)(nil), &v1.ResourceByID{Id: roleID})
 	suite.Error(err)
@@ -69,7 +69,7 @@ func (suite *RbacServiceTestSuite) TestGetSecretsWithStoreSecretFailure() {
 	secretID := "id1"
 
 	expectedErr := fmt.Errorf("failure")
-	suite.mockRoleStore.EXPECT().GetRole(secretID).Return((*storage.K8SRole)(nil), true, expectedErr)
+	suite.mockRoleStore.EXPECT().GetRole(gomock.Any(), secretID).Return((*storage.K8SRole)(nil), true, expectedErr)
 
 	_, actualErr := suite.service.GetRole((context.Context)(nil), &v1.ResourceByID{Id: secretID})
 	suite.Error(actualErr)
@@ -81,7 +81,7 @@ func (suite *RbacServiceTestSuite) TestSearchRole() {
 		{Id: "id1"},
 	}
 
-	suite.mockRoleStore.EXPECT().ListRoles().Return(expectedReturns, nil)
+	suite.mockRoleStore.EXPECT().ListRoles(gomock.Any()).Return(expectedReturns, nil)
 
 	_, err := suite.service.ListRoles((context.Context)(nil), &v1.RawQuery{})
 	suite.NoError(err)
@@ -91,7 +91,7 @@ func (suite *RbacServiceTestSuite) TestSearchRole() {
 func (suite *RbacServiceTestSuite) TestSearchRoleFailure() {
 	expectedError := fmt.Errorf("failure")
 
-	suite.mockRoleStore.EXPECT().ListRoles().Return(([]*storage.K8SRole)(nil), expectedError)
+	suite.mockRoleStore.EXPECT().ListRoles(gomock.Any()).Return(([]*storage.K8SRole)(nil), expectedError)
 
 	_, actualErr := suite.service.ListRoles((context.Context)(nil), &v1.RawQuery{})
 	suite.True(strings.Contains(actualErr.Error(), expectedError.Error()))
@@ -107,7 +107,7 @@ func (suite *RbacServiceTestSuite) TestGetRoleBinding() {
 		ClusterId: "cluster",
 		Namespace: "namespace",
 	}
-	suite.mockBindingsStore.EXPECT().GetRoleBinding(bindingID).Return(expectedRoleBinding, true, nil)
+	suite.mockBindingsStore.EXPECT().GetRoleBinding(gomock.Any(), bindingID).Return(expectedRoleBinding, true, nil)
 
 	response, err := suite.service.GetRoleBinding((context.Context)(nil), &v1.ResourceByID{Id: bindingID})
 	suite.NoError(err)
@@ -118,7 +118,7 @@ func (suite *RbacServiceTestSuite) TestGetRoleBinding() {
 func (suite *RbacServiceTestSuite) TestGetRoleBindingsNotExists() {
 	bindingID := "id1"
 
-	suite.mockBindingsStore.EXPECT().GetRoleBinding(bindingID).Return((*storage.K8SRoleBinding)(nil), false, nil)
+	suite.mockBindingsStore.EXPECT().GetRoleBinding(gomock.Any(), bindingID).Return((*storage.K8SRoleBinding)(nil), false, nil)
 
 	_, err := suite.service.GetRoleBinding((context.Context)(nil), &v1.ResourceByID{Id: bindingID})
 	suite.Error(err)
@@ -129,7 +129,7 @@ func (suite *RbacServiceTestSuite) TestGetRoleBindingFailure() {
 	bindingID := "id1"
 
 	expectedErr := fmt.Errorf("failure")
-	suite.mockBindingsStore.EXPECT().GetRoleBinding(bindingID).Return((*storage.K8SRoleBinding)(nil), true, expectedErr)
+	suite.mockBindingsStore.EXPECT().GetRoleBinding(gomock.Any(), bindingID).Return((*storage.K8SRoleBinding)(nil), true, expectedErr)
 
 	_, actualErr := suite.service.GetRoleBinding((context.Context)(nil), &v1.ResourceByID{Id: bindingID})
 	suite.Error(actualErr)
@@ -141,7 +141,7 @@ func (suite *RbacServiceTestSuite) TestSearchRoleBinding() {
 		{Id: "id1"},
 	}
 
-	suite.mockBindingsStore.EXPECT().ListRoleBindings().Return(expectedReturns, nil)
+	suite.mockBindingsStore.EXPECT().ListRoleBindings(gomock.Any()).Return(expectedReturns, nil)
 
 	_, err := suite.service.ListRoleBindings((context.Context)(nil), &v1.RawQuery{})
 	suite.NoError(err)
@@ -151,7 +151,7 @@ func (suite *RbacServiceTestSuite) TestSearchRoleBinding() {
 func (suite *RbacServiceTestSuite) TestSearchRoleBindingFailure() {
 	expectedError := fmt.Errorf("failure")
 
-	suite.mockBindingsStore.EXPECT().ListRoleBindings().Return(([]*storage.K8SRoleBinding)(nil), expectedError)
+	suite.mockBindingsStore.EXPECT().ListRoleBindings(gomock.Any()).Return(([]*storage.K8SRoleBinding)(nil), expectedError)
 
 	_, actualErr := suite.service.ListRoleBindings((context.Context)(nil), &v1.RawQuery{})
 	suite.True(strings.Contains(actualErr.Error(), expectedError.Error()))

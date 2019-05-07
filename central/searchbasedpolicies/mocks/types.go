@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	searchbasedpolicies "github.com/stackrox/rox/central/searchbasedpolicies"
 	search "github.com/stackrox/rox/pkg/search"
@@ -35,22 +36,22 @@ func (m *MockMatcher) EXPECT() *MockMatcherMockRecorder {
 }
 
 // Match mocks base method
-func (m *MockMatcher) Match(arg0 search.Searcher) (map[string]searchbasedpolicies.Violations, error) {
-	ret := m.ctrl.Call(m, "Match", arg0)
+func (m *MockMatcher) Match(arg0 context.Context, arg1 search.Searcher) (map[string]searchbasedpolicies.Violations, error) {
+	ret := m.ctrl.Call(m, "Match", arg0, arg1)
 	ret0, _ := ret[0].(map[string]searchbasedpolicies.Violations)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Match indicates an expected call of Match
-func (mr *MockMatcherMockRecorder) Match(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Match", reflect.TypeOf((*MockMatcher)(nil).Match), arg0)
+func (mr *MockMatcherMockRecorder) Match(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Match", reflect.TypeOf((*MockMatcher)(nil).Match), arg0, arg1)
 }
 
 // MatchMany mocks base method
-func (m *MockMatcher) MatchMany(arg0 search.Searcher, arg1 ...string) (map[string]searchbasedpolicies.Violations, error) {
-	varargs := []interface{}{arg0}
-	for _, a := range arg1 {
+func (m *MockMatcher) MatchMany(arg0 context.Context, arg1 search.Searcher, arg2 ...string) (map[string]searchbasedpolicies.Violations, error) {
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "MatchMany", varargs...)
@@ -60,20 +61,20 @@ func (m *MockMatcher) MatchMany(arg0 search.Searcher, arg1 ...string) (map[strin
 }
 
 // MatchMany indicates an expected call of MatchMany
-func (mr *MockMatcherMockRecorder) MatchMany(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
-	varargs := append([]interface{}{arg0}, arg1...)
+func (mr *MockMatcherMockRecorder) MatchMany(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MatchMany", reflect.TypeOf((*MockMatcher)(nil).MatchMany), varargs...)
 }
 
 // MatchOne mocks base method
-func (m *MockMatcher) MatchOne(arg0 search.Searcher, arg1 string) (searchbasedpolicies.Violations, error) {
-	ret := m.ctrl.Call(m, "MatchOne", arg0, arg1)
+func (m *MockMatcher) MatchOne(arg0 context.Context, arg1 search.Searcher, arg2 string) (searchbasedpolicies.Violations, error) {
+	ret := m.ctrl.Call(m, "MatchOne", arg0, arg1, arg2)
 	ret0, _ := ret[0].(searchbasedpolicies.Violations)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // MatchOne indicates an expected call of MatchOne
-func (mr *MockMatcherMockRecorder) MatchOne(arg0, arg1 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MatchOne", reflect.TypeOf((*MockMatcher)(nil).MatchOne), arg0, arg1)
+func (mr *MockMatcherMockRecorder) MatchOne(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MatchOne", reflect.TypeOf((*MockMatcher)(nil).MatchOne), arg0, arg1, arg2)
 }

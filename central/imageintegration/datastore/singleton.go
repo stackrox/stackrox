@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/imageintegration"
 	"github.com/stackrox/rox/central/imageintegration/store"
@@ -21,7 +23,7 @@ func initialize() {
 
 	// Initialize the integration set with all present integrations.
 	toNotifyOfIntegrations := imageintegration.ToNotify()
-	integrations, err := ad.GetImageIntegrations(&v1.GetImageIntegrationsRequest{})
+	integrations, err := ad.GetImageIntegrations(context.TODO(), &v1.GetImageIntegrationsRequest{})
 	if err != nil {
 		log.Errorf("unable to use previous integrations: %s", err)
 	}

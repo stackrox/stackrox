@@ -1,6 +1,7 @@
 package networkpolicies
 
 import (
+	"context"
 	"fmt"
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -128,7 +129,7 @@ func (s *pipelineImpl) validateInput(np *storage.NetworkPolicy) error {
 func (s *pipelineImpl) enrichCluster(np *storage.NetworkPolicy) error {
 	np.ClusterName = ""
 
-	cluster, clusterExists, err := s.clusters.GetCluster(np.ClusterId)
+	cluster, clusterExists, err := s.clusters.GetCluster(context.TODO(), np.ClusterId)
 	switch {
 	case err != nil:
 		log.Warnf("Couldn't get name of cluster: %s", err)

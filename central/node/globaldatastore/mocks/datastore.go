@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	datastore "github.com/stackrox/rox/central/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -36,48 +37,48 @@ func (m *MockGlobalDataStore) EXPECT() *MockGlobalDataStoreMockRecorder {
 }
 
 // CountAllNodes mocks base method
-func (m *MockGlobalDataStore) CountAllNodes() (int, error) {
-	ret := m.ctrl.Call(m, "CountAllNodes")
+func (m *MockGlobalDataStore) CountAllNodes(arg0 context.Context) (int, error) {
+	ret := m.ctrl.Call(m, "CountAllNodes", arg0)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CountAllNodes indicates an expected call of CountAllNodes
-func (mr *MockGlobalDataStoreMockRecorder) CountAllNodes() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAllNodes", reflect.TypeOf((*MockGlobalDataStore)(nil).CountAllNodes))
+func (mr *MockGlobalDataStoreMockRecorder) CountAllNodes(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAllNodes", reflect.TypeOf((*MockGlobalDataStore)(nil).CountAllNodes), arg0)
 }
 
 // GetAllClusterNodeStores mocks base method
-func (m *MockGlobalDataStore) GetAllClusterNodeStores() (map[string]datastore.DataStore, error) {
-	ret := m.ctrl.Call(m, "GetAllClusterNodeStores")
+func (m *MockGlobalDataStore) GetAllClusterNodeStores(arg0 context.Context) (map[string]datastore.DataStore, error) {
+	ret := m.ctrl.Call(m, "GetAllClusterNodeStores", arg0)
 	ret0, _ := ret[0].(map[string]datastore.DataStore)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAllClusterNodeStores indicates an expected call of GetAllClusterNodeStores
-func (mr *MockGlobalDataStoreMockRecorder) GetAllClusterNodeStores() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllClusterNodeStores", reflect.TypeOf((*MockGlobalDataStore)(nil).GetAllClusterNodeStores))
+func (mr *MockGlobalDataStoreMockRecorder) GetAllClusterNodeStores(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllClusterNodeStores", reflect.TypeOf((*MockGlobalDataStore)(nil).GetAllClusterNodeStores), arg0)
 }
 
 // GetClusterNodeStore mocks base method
-func (m *MockGlobalDataStore) GetClusterNodeStore(arg0 string) (datastore.DataStore, error) {
-	ret := m.ctrl.Call(m, "GetClusterNodeStore", arg0)
+func (m *MockGlobalDataStore) GetClusterNodeStore(arg0 context.Context, arg1 string) (datastore.DataStore, error) {
+	ret := m.ctrl.Call(m, "GetClusterNodeStore", arg0, arg1)
 	ret0, _ := ret[0].(datastore.DataStore)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetClusterNodeStore indicates an expected call of GetClusterNodeStore
-func (mr *MockGlobalDataStoreMockRecorder) GetClusterNodeStore(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusterNodeStore", reflect.TypeOf((*MockGlobalDataStore)(nil).GetClusterNodeStore), arg0)
+func (mr *MockGlobalDataStoreMockRecorder) GetClusterNodeStore(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusterNodeStore", reflect.TypeOf((*MockGlobalDataStore)(nil).GetClusterNodeStore), arg0, arg1)
 }
 
 // RemoveClusterNodeStores mocks base method
-func (m *MockGlobalDataStore) RemoveClusterNodeStores(arg0 ...string) error {
-	varargs := []interface{}{}
-	for _, a := range arg0 {
+func (m *MockGlobalDataStore) RemoveClusterNodeStores(arg0 context.Context, arg1 ...string) error {
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "RemoveClusterNodeStores", varargs...)
@@ -86,32 +87,33 @@ func (m *MockGlobalDataStore) RemoveClusterNodeStores(arg0 ...string) error {
 }
 
 // RemoveClusterNodeStores indicates an expected call of RemoveClusterNodeStores
-func (mr *MockGlobalDataStoreMockRecorder) RemoveClusterNodeStores(arg0 ...interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveClusterNodeStores", reflect.TypeOf((*MockGlobalDataStore)(nil).RemoveClusterNodeStores), arg0...)
+func (mr *MockGlobalDataStoreMockRecorder) RemoveClusterNodeStores(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveClusterNodeStores", reflect.TypeOf((*MockGlobalDataStore)(nil).RemoveClusterNodeStores), varargs...)
 }
 
 // Search mocks base method
-func (m *MockGlobalDataStore) Search(arg0 *v1.Query) ([]search.Result, error) {
-	ret := m.ctrl.Call(m, "Search", arg0)
+func (m *MockGlobalDataStore) Search(arg0 context.Context, arg1 *v1.Query) ([]search.Result, error) {
+	ret := m.ctrl.Call(m, "Search", arg0, arg1)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Search indicates an expected call of Search
-func (mr *MockGlobalDataStoreMockRecorder) Search(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockGlobalDataStore)(nil).Search), arg0)
+func (mr *MockGlobalDataStoreMockRecorder) Search(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockGlobalDataStore)(nil).Search), arg0, arg1)
 }
 
 // SearchResults mocks base method
-func (m *MockGlobalDataStore) SearchResults(arg0 *v1.Query) ([]*v1.SearchResult, error) {
-	ret := m.ctrl.Call(m, "SearchResults", arg0)
+func (m *MockGlobalDataStore) SearchResults(arg0 context.Context, arg1 *v1.Query) ([]*v1.SearchResult, error) {
+	ret := m.ctrl.Call(m, "SearchResults", arg0, arg1)
 	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchResults indicates an expected call of SearchResults
-func (mr *MockGlobalDataStoreMockRecorder) SearchResults(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchResults", reflect.TypeOf((*MockGlobalDataStore)(nil).SearchResults), arg0)
+func (mr *MockGlobalDataStoreMockRecorder) SearchResults(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchResults", reflect.TypeOf((*MockGlobalDataStore)(nil).SearchResults), arg0, arg1)
 }

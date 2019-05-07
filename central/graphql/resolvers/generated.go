@@ -3,6 +3,7 @@
 package resolvers
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/graph-gophers/graphql-go"
@@ -877,7 +878,7 @@ func (resolver *Resolver) wrapAWSProviderMetadatas(values []*storage.AWSProvider
 	return output, nil
 }
 
-func (resolver *aWSProviderMetadataResolver) AccountId() string {
+func (resolver *aWSProviderMetadataResolver) AccountId(ctx context.Context) string {
 	value := resolver.data.GetAccountId()
 	return value
 }
@@ -935,31 +936,31 @@ func (resolver *Resolver) wrapListAlerts(values []*storage.ListAlert, err error)
 	return output, nil
 }
 
-func (resolver *alertResolver) ensureData() {
+func (resolver *alertResolver) ensureData(ctx context.Context) {
 	if resolver.data == nil {
-		resolver.data = resolver.root.getAlert(resolver.list.GetId())
+		resolver.data = resolver.root.getAlert(ctx, resolver.list.GetId())
 	}
 }
 
-func (resolver *alertResolver) Deployment() (*deploymentResolver, error) {
-	resolver.ensureData()
+func (resolver *alertResolver) Deployment(ctx context.Context) (*deploymentResolver, error) {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetDeployment()
 	return resolver.root.wrapDeployment(value, true, nil)
 }
 
-func (resolver *alertResolver) Enforcement() (*alert_EnforcementResolver, error) {
-	resolver.ensureData()
+func (resolver *alertResolver) Enforcement(ctx context.Context) (*alert_EnforcementResolver, error) {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetEnforcement()
 	return resolver.root.wrapAlert_Enforcement(value, true, nil)
 }
 
-func (resolver *alertResolver) FirstOccurred() (*graphql.Time, error) {
-	resolver.ensureData()
+func (resolver *alertResolver) FirstOccurred(ctx context.Context) (*graphql.Time, error) {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetFirstOccurred()
 	return timestamp(value)
 }
 
-func (resolver *alertResolver) Id() graphql.ID {
+func (resolver *alertResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	if resolver.data == nil {
 		value = resolver.list.GetId()
@@ -967,7 +968,7 @@ func (resolver *alertResolver) Id() graphql.ID {
 	return graphql.ID(value)
 }
 
-func (resolver *alertResolver) LifecycleStage() string {
+func (resolver *alertResolver) LifecycleStage(ctx context.Context) string {
 	value := resolver.data.GetLifecycleStage()
 	if resolver.data == nil {
 		value = resolver.list.GetLifecycleStage()
@@ -975,25 +976,25 @@ func (resolver *alertResolver) LifecycleStage() string {
 	return value.String()
 }
 
-func (resolver *alertResolver) Policy() (*policyResolver, error) {
-	resolver.ensureData()
+func (resolver *alertResolver) Policy(ctx context.Context) (*policyResolver, error) {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetPolicy()
 	return resolver.root.wrapPolicy(value, true, nil)
 }
 
-func (resolver *alertResolver) ProcessViolation() (*alert_ProcessViolationResolver, error) {
-	resolver.ensureData()
+func (resolver *alertResolver) ProcessViolation(ctx context.Context) (*alert_ProcessViolationResolver, error) {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetProcessViolation()
 	return resolver.root.wrapAlert_ProcessViolation(value, true, nil)
 }
 
-func (resolver *alertResolver) SnoozeTill() (*graphql.Time, error) {
-	resolver.ensureData()
+func (resolver *alertResolver) SnoozeTill(ctx context.Context) (*graphql.Time, error) {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetSnoozeTill()
 	return timestamp(value)
 }
 
-func (resolver *alertResolver) State() string {
+func (resolver *alertResolver) State(ctx context.Context) string {
 	value := resolver.data.GetState()
 	if resolver.data == nil {
 		value = resolver.list.GetState()
@@ -1001,7 +1002,7 @@ func (resolver *alertResolver) State() string {
 	return value.String()
 }
 
-func (resolver *alertResolver) Time() (*graphql.Time, error) {
+func (resolver *alertResolver) Time(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetTime()
 	if resolver.data == nil {
 		value = resolver.list.GetTime()
@@ -1009,8 +1010,8 @@ func (resolver *alertResolver) Time() (*graphql.Time, error) {
 	return timestamp(value)
 }
 
-func (resolver *alertResolver) Violations() ([]*alert_ViolationResolver, error) {
-	resolver.ensureData()
+func (resolver *alertResolver) Violations(ctx context.Context) ([]*alert_ViolationResolver, error) {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetViolations()
 	return resolver.root.wrapAlert_Violations(value, nil)
 }
@@ -1038,12 +1039,12 @@ func (resolver *Resolver) wrapAlert_Enforcements(values []*storage.Alert_Enforce
 	return output, nil
 }
 
-func (resolver *alert_EnforcementResolver) Action() string {
+func (resolver *alert_EnforcementResolver) Action(ctx context.Context) string {
 	value := resolver.data.GetAction()
 	return value.String()
 }
 
-func (resolver *alert_EnforcementResolver) Message() string {
+func (resolver *alert_EnforcementResolver) Message(ctx context.Context) string {
 	value := resolver.data.GetMessage()
 	return value
 }
@@ -1071,12 +1072,12 @@ func (resolver *Resolver) wrapAlert_ProcessViolations(values []*storage.Alert_Pr
 	return output, nil
 }
 
-func (resolver *alert_ProcessViolationResolver) Message() string {
+func (resolver *alert_ProcessViolationResolver) Message(ctx context.Context) string {
 	value := resolver.data.GetMessage()
 	return value
 }
 
-func (resolver *alert_ProcessViolationResolver) Processes() ([]*processIndicatorResolver, error) {
+func (resolver *alert_ProcessViolationResolver) Processes(ctx context.Context) ([]*processIndicatorResolver, error) {
 	value := resolver.data.GetProcesses()
 	return resolver.root.wrapProcessIndicators(value, nil)
 }
@@ -1104,12 +1105,12 @@ func (resolver *Resolver) wrapAlert_Violations(values []*storage.Alert_Violation
 	return output, nil
 }
 
-func (resolver *alert_ViolationResolver) Link() string {
+func (resolver *alert_ViolationResolver) Link(ctx context.Context) string {
 	value := resolver.data.GetLink()
 	return value
 }
 
-func (resolver *alert_ViolationResolver) Message() string {
+func (resolver *alert_ViolationResolver) Message(ctx context.Context) string {
 	value := resolver.data.GetMessage()
 	return value
 }
@@ -1137,7 +1138,7 @@ func (resolver *Resolver) wrapAzureProviderMetadatas(values []*storage.AzureProv
 	return output, nil
 }
 
-func (resolver *azureProviderMetadataResolver) SubscriptionId() string {
+func (resolver *azureProviderMetadataResolver) SubscriptionId(ctx context.Context) string {
 	value := resolver.data.GetSubscriptionId()
 	return value
 }
@@ -1165,12 +1166,12 @@ func (resolver *Resolver) wrapCSCCs(values []*storage.CSCC, err error) ([]*cSCCR
 	return output, nil
 }
 
-func (resolver *cSCCResolver) ServiceAccount() string {
+func (resolver *cSCCResolver) ServiceAccount(ctx context.Context) string {
 	value := resolver.data.GetServiceAccount()
 	return value
 }
 
-func (resolver *cSCCResolver) SourceId() string {
+func (resolver *cSCCResolver) SourceId(ctx context.Context) string {
 	value := resolver.data.GetSourceId()
 	return value
 }
@@ -1198,37 +1199,37 @@ func (resolver *Resolver) wrapCVSSV2s(values []*storage.CVSSV2, err error) ([]*c
 	return output, nil
 }
 
-func (resolver *cVSSV2Resolver) AccessComplexity() string {
+func (resolver *cVSSV2Resolver) AccessComplexity(ctx context.Context) string {
 	value := resolver.data.GetAccessComplexity()
 	return value.String()
 }
 
-func (resolver *cVSSV2Resolver) AttackVector() string {
+func (resolver *cVSSV2Resolver) AttackVector(ctx context.Context) string {
 	value := resolver.data.GetAttackVector()
 	return value.String()
 }
 
-func (resolver *cVSSV2Resolver) Authentication() string {
+func (resolver *cVSSV2Resolver) Authentication(ctx context.Context) string {
 	value := resolver.data.GetAuthentication()
 	return value.String()
 }
 
-func (resolver *cVSSV2Resolver) Availability() string {
+func (resolver *cVSSV2Resolver) Availability(ctx context.Context) string {
 	value := resolver.data.GetAvailability()
 	return value.String()
 }
 
-func (resolver *cVSSV2Resolver) Confidentiality() string {
+func (resolver *cVSSV2Resolver) Confidentiality(ctx context.Context) string {
 	value := resolver.data.GetConfidentiality()
 	return value.String()
 }
 
-func (resolver *cVSSV2Resolver) Integrity() string {
+func (resolver *cVSSV2Resolver) Integrity(ctx context.Context) string {
 	value := resolver.data.GetIntegrity()
 	return value.String()
 }
 
-func (resolver *cVSSV2Resolver) Vector() string {
+func (resolver *cVSSV2Resolver) Vector(ctx context.Context) string {
 	value := resolver.data.GetVector()
 	return value
 }
@@ -1328,32 +1329,32 @@ func (resolver *Resolver) wrapCerts(values []*storage.Cert, err error) ([]*certR
 	return output, nil
 }
 
-func (resolver *certResolver) Algorithm() string {
+func (resolver *certResolver) Algorithm(ctx context.Context) string {
 	value := resolver.data.GetAlgorithm()
 	return value
 }
 
-func (resolver *certResolver) EndDate() (*graphql.Time, error) {
+func (resolver *certResolver) EndDate(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetEndDate()
 	return timestamp(value)
 }
 
-func (resolver *certResolver) Issuer() (*certNameResolver, error) {
+func (resolver *certResolver) Issuer(ctx context.Context) (*certNameResolver, error) {
 	value := resolver.data.GetIssuer()
 	return resolver.root.wrapCertName(value, true, nil)
 }
 
-func (resolver *certResolver) Sans() []string {
+func (resolver *certResolver) Sans(ctx context.Context) []string {
 	value := resolver.data.GetSans()
 	return value
 }
 
-func (resolver *certResolver) StartDate() (*graphql.Time, error) {
+func (resolver *certResolver) StartDate(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetStartDate()
 	return timestamp(value)
 }
 
-func (resolver *certResolver) Subject() (*certNameResolver, error) {
+func (resolver *certResolver) Subject(ctx context.Context) (*certNameResolver, error) {
 	value := resolver.data.GetSubject()
 	return resolver.root.wrapCertName(value, true, nil)
 }
@@ -1381,47 +1382,47 @@ func (resolver *Resolver) wrapCertNames(values []*storage.CertName, err error) (
 	return output, nil
 }
 
-func (resolver *certNameResolver) CommonName() string {
+func (resolver *certNameResolver) CommonName(ctx context.Context) string {
 	value := resolver.data.GetCommonName()
 	return value
 }
 
-func (resolver *certNameResolver) Country() string {
+func (resolver *certNameResolver) Country(ctx context.Context) string {
 	value := resolver.data.GetCountry()
 	return value
 }
 
-func (resolver *certNameResolver) Locality() string {
+func (resolver *certNameResolver) Locality(ctx context.Context) string {
 	value := resolver.data.GetLocality()
 	return value
 }
 
-func (resolver *certNameResolver) Names() []string {
+func (resolver *certNameResolver) Names(ctx context.Context) []string {
 	value := resolver.data.GetNames()
 	return value
 }
 
-func (resolver *certNameResolver) Organization() string {
+func (resolver *certNameResolver) Organization(ctx context.Context) string {
 	value := resolver.data.GetOrganization()
 	return value
 }
 
-func (resolver *certNameResolver) OrganizationUnit() string {
+func (resolver *certNameResolver) OrganizationUnit(ctx context.Context) string {
 	value := resolver.data.GetOrganizationUnit()
 	return value
 }
 
-func (resolver *certNameResolver) PostalCode() string {
+func (resolver *certNameResolver) PostalCode(ctx context.Context) string {
 	value := resolver.data.GetPostalCode()
 	return value
 }
 
-func (resolver *certNameResolver) Province() string {
+func (resolver *certNameResolver) Province(ctx context.Context) string {
 	value := resolver.data.GetProvince()
 	return value
 }
 
-func (resolver *certNameResolver) StreetAddress() string {
+func (resolver *certNameResolver) StreetAddress(ctx context.Context) string {
 	value := resolver.data.GetStreetAddress()
 	return value
 }
@@ -1449,57 +1450,57 @@ func (resolver *Resolver) wrapClusters(values []*storage.Cluster, err error) ([]
 	return output, nil
 }
 
-func (resolver *clusterResolver) AdmissionController() bool {
+func (resolver *clusterResolver) AdmissionController(ctx context.Context) bool {
 	value := resolver.data.GetAdmissionController()
 	return value
 }
 
-func (resolver *clusterResolver) CentralApiEndpoint() string {
+func (resolver *clusterResolver) CentralApiEndpoint(ctx context.Context) string {
 	value := resolver.data.GetCentralApiEndpoint()
 	return value
 }
 
-func (resolver *clusterResolver) CollectionMethod() string {
+func (resolver *clusterResolver) CollectionMethod(ctx context.Context) string {
 	value := resolver.data.GetCollectionMethod()
 	return value.String()
 }
 
-func (resolver *clusterResolver) CollectorImage() string {
+func (resolver *clusterResolver) CollectorImage(ctx context.Context) string {
 	value := resolver.data.GetCollectorImage()
 	return value
 }
 
-func (resolver *clusterResolver) Id() graphql.ID {
+func (resolver *clusterResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *clusterResolver) MainImage() string {
+func (resolver *clusterResolver) MainImage(ctx context.Context) string {
 	value := resolver.data.GetMainImage()
 	return value
 }
 
-func (resolver *clusterResolver) MonitoringEndpoint() string {
+func (resolver *clusterResolver) MonitoringEndpoint(ctx context.Context) string {
 	value := resolver.data.GetMonitoringEndpoint()
 	return value
 }
 
-func (resolver *clusterResolver) Name() string {
+func (resolver *clusterResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *clusterResolver) RuntimeSupport() bool {
+func (resolver *clusterResolver) RuntimeSupport(ctx context.Context) bool {
 	value := resolver.data.GetRuntimeSupport()
 	return value
 }
 
-func (resolver *clusterResolver) Status() (*clusterStatusResolver, error) {
+func (resolver *clusterResolver) Status(ctx context.Context) (*clusterStatusResolver, error) {
 	value := resolver.data.GetStatus()
 	return resolver.root.wrapClusterStatus(value, true, nil)
 }
 
-func (resolver *clusterResolver) Type() string {
+func (resolver *clusterResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
 	return value.String()
 }
@@ -1527,22 +1528,22 @@ func (resolver *Resolver) wrapClusterStatuses(values []*storage.ClusterStatus, e
 	return output, nil
 }
 
-func (resolver *clusterStatusResolver) LastContact() (*graphql.Time, error) {
+func (resolver *clusterStatusResolver) LastContact(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetLastContact()
 	return timestamp(value)
 }
 
-func (resolver *clusterStatusResolver) OrchestratorMetadata() (*orchestratorMetadataResolver, error) {
+func (resolver *clusterStatusResolver) OrchestratorMetadata(ctx context.Context) (*orchestratorMetadataResolver, error) {
 	value := resolver.data.GetOrchestratorMetadata()
 	return resolver.root.wrapOrchestratorMetadata(value, true, nil)
 }
 
-func (resolver *clusterStatusResolver) ProviderMetadata() (*providerMetadataResolver, error) {
+func (resolver *clusterStatusResolver) ProviderMetadata(ctx context.Context) (*providerMetadataResolver, error) {
 	value := resolver.data.GetProviderMetadata()
 	return resolver.root.wrapProviderMetadata(value, true, nil)
 }
 
-func (resolver *clusterStatusResolver) SensorVersion() string {
+func (resolver *clusterStatusResolver) SensorVersion(ctx context.Context) string {
 	value := resolver.data.GetSensorVersion()
 	return value
 }
@@ -1624,12 +1625,12 @@ func (resolver *Resolver) wrapComplianceAggregation_AggregationKeies(values []*v
 	return output, nil
 }
 
-func (resolver *complianceAggregation_AggregationKeyResolver) Id() graphql.ID {
+func (resolver *complianceAggregation_AggregationKeyResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *complianceAggregation_AggregationKeyResolver) Scope() string {
+func (resolver *complianceAggregation_AggregationKeyResolver) Scope(ctx context.Context) string {
 	value := resolver.data.GetScope()
 	return value.String()
 }
@@ -1657,12 +1658,12 @@ func (resolver *Resolver) wrapComplianceAggregation_Responses(values []*v1.Compl
 	return output, nil
 }
 
-func (resolver *complianceAggregation_ResponseResolver) Results() ([]*complianceAggregation_ResultResolver, error) {
+func (resolver *complianceAggregation_ResponseResolver) Results(ctx context.Context) ([]*complianceAggregation_ResultResolver, error) {
 	value := resolver.data.GetResults()
 	return resolver.root.wrapComplianceAggregation_Results(value, nil)
 }
 
-func (resolver *complianceAggregation_ResponseResolver) Sources() ([]*complianceAggregation_SourceResolver, error) {
+func (resolver *complianceAggregation_ResponseResolver) Sources(ctx context.Context) ([]*complianceAggregation_SourceResolver, error) {
 	value := resolver.data.GetSources()
 	return resolver.root.wrapComplianceAggregation_Sources(value, nil)
 }
@@ -1690,22 +1691,22 @@ func (resolver *Resolver) wrapComplianceAggregation_Results(values []*v1.Complia
 	return output, nil
 }
 
-func (resolver *complianceAggregation_ResultResolver) AggregationKeys() ([]*complianceAggregation_AggregationKeyResolver, error) {
+func (resolver *complianceAggregation_ResultResolver) AggregationKeys(ctx context.Context) ([]*complianceAggregation_AggregationKeyResolver, error) {
 	value := resolver.data.GetAggregationKeys()
 	return resolver.root.wrapComplianceAggregation_AggregationKeies(value, nil)
 }
 
-func (resolver *complianceAggregation_ResultResolver) NumFailing() int32 {
+func (resolver *complianceAggregation_ResultResolver) NumFailing(ctx context.Context) int32 {
 	value := resolver.data.GetNumFailing()
 	return value
 }
 
-func (resolver *complianceAggregation_ResultResolver) NumPassing() int32 {
+func (resolver *complianceAggregation_ResultResolver) NumPassing(ctx context.Context) int32 {
 	value := resolver.data.GetNumPassing()
 	return value
 }
 
-func (resolver *complianceAggregation_ResultResolver) Unit() string {
+func (resolver *complianceAggregation_ResultResolver) Unit(ctx context.Context) string {
 	value := resolver.data.GetUnit()
 	return value.String()
 }
@@ -1751,22 +1752,22 @@ func (resolver *Resolver) wrapComplianceAggregation_Sources(values []*v1.Complia
 	return output, nil
 }
 
-func (resolver *complianceAggregation_SourceResolver) ClusterId() string {
+func (resolver *complianceAggregation_SourceResolver) ClusterId(ctx context.Context) string {
 	value := resolver.data.GetClusterId()
 	return value
 }
 
-func (resolver *complianceAggregation_SourceResolver) FailedRuns() ([]*complianceRunMetadataResolver, error) {
+func (resolver *complianceAggregation_SourceResolver) FailedRuns(ctx context.Context) ([]*complianceRunMetadataResolver, error) {
 	value := resolver.data.GetFailedRuns()
 	return resolver.root.wrapComplianceRunMetadatas(value, nil)
 }
 
-func (resolver *complianceAggregation_SourceResolver) StandardId() string {
+func (resolver *complianceAggregation_SourceResolver) StandardId(ctx context.Context) string {
 	value := resolver.data.GetStandardId()
 	return value
 }
 
-func (resolver *complianceAggregation_SourceResolver) SuccessfulRun() (*complianceRunMetadataResolver, error) {
+func (resolver *complianceAggregation_SourceResolver) SuccessfulRun(ctx context.Context) (*complianceRunMetadataResolver, error) {
 	value := resolver.data.GetSuccessfulRun()
 	return resolver.root.wrapComplianceRunMetadata(value, true, nil)
 }
@@ -1794,37 +1795,37 @@ func (resolver *Resolver) wrapComplianceControls(values []*v1.ComplianceControl,
 	return output, nil
 }
 
-func (resolver *complianceControlResolver) Description() string {
+func (resolver *complianceControlResolver) Description(ctx context.Context) string {
 	value := resolver.data.GetDescription()
 	return value
 }
 
-func (resolver *complianceControlResolver) GroupId() string {
+func (resolver *complianceControlResolver) GroupId(ctx context.Context) string {
 	value := resolver.data.GetGroupId()
 	return value
 }
 
-func (resolver *complianceControlResolver) Id() graphql.ID {
+func (resolver *complianceControlResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *complianceControlResolver) Implemented() bool {
+func (resolver *complianceControlResolver) Implemented(ctx context.Context) bool {
 	value := resolver.data.GetImplemented()
 	return value
 }
 
-func (resolver *complianceControlResolver) InterpretationText() string {
+func (resolver *complianceControlResolver) InterpretationText(ctx context.Context) string {
 	value := resolver.data.GetInterpretationText()
 	return value
 }
 
-func (resolver *complianceControlResolver) Name() string {
+func (resolver *complianceControlResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *complianceControlResolver) StandardId() string {
+func (resolver *complianceControlResolver) StandardId(ctx context.Context) string {
 	value := resolver.data.GetStandardId()
 	return value
 }
@@ -1852,27 +1853,27 @@ func (resolver *Resolver) wrapComplianceControlGroups(values []*v1.ComplianceCon
 	return output, nil
 }
 
-func (resolver *complianceControlGroupResolver) Description() string {
+func (resolver *complianceControlGroupResolver) Description(ctx context.Context) string {
 	value := resolver.data.GetDescription()
 	return value
 }
 
-func (resolver *complianceControlGroupResolver) Id() graphql.ID {
+func (resolver *complianceControlGroupResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *complianceControlGroupResolver) Name() string {
+func (resolver *complianceControlGroupResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *complianceControlGroupResolver) NumImplementedChecks() int32 {
+func (resolver *complianceControlGroupResolver) NumImplementedChecks(ctx context.Context) int32 {
 	value := resolver.data.GetNumImplementedChecks()
 	return value
 }
 
-func (resolver *complianceControlGroupResolver) StandardId() string {
+func (resolver *complianceControlGroupResolver) StandardId(ctx context.Context) string {
 	value := resolver.data.GetStandardId()
 	return value
 }
@@ -1900,17 +1901,17 @@ func (resolver *Resolver) wrapComplianceControlResults(values []*storage.Complia
 	return output, nil
 }
 
-func (resolver *complianceControlResultResolver) ControlId() string {
+func (resolver *complianceControlResultResolver) ControlId(ctx context.Context) string {
 	value := resolver.data.GetControlId()
 	return value
 }
 
-func (resolver *complianceControlResultResolver) Resource() (*complianceResourceResolver, error) {
+func (resolver *complianceControlResultResolver) Resource(ctx context.Context) (*complianceResourceResolver, error) {
 	value := resolver.data.GetResource()
 	return resolver.root.wrapComplianceResource(value, true, nil)
 }
 
-func (resolver *complianceControlResultResolver) Value() (*complianceResultValueResolver, error) {
+func (resolver *complianceControlResultResolver) Value(ctx context.Context) (*complianceResultValueResolver, error) {
 	value := resolver.data.GetValue()
 	return resolver.root.wrapComplianceResultValue(value, true, nil)
 }
@@ -2001,12 +2002,12 @@ func (resolver *Resolver) wrapComplianceResource_ClusterNames(values []*storage.
 	return output, nil
 }
 
-func (resolver *complianceResource_ClusterNameResolver) Id() graphql.ID {
+func (resolver *complianceResource_ClusterNameResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *complianceResource_ClusterNameResolver) Name() string {
+func (resolver *complianceResource_ClusterNameResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
@@ -2034,22 +2035,22 @@ func (resolver *Resolver) wrapComplianceResource_DeploymentNames(values []*stora
 	return output, nil
 }
 
-func (resolver *complianceResource_DeploymentNameResolver) Cluster() (*complianceResource_ClusterNameResolver, error) {
+func (resolver *complianceResource_DeploymentNameResolver) Cluster(ctx context.Context) (*complianceResource_ClusterNameResolver, error) {
 	value := resolver.data.GetCluster()
 	return resolver.root.wrapComplianceResource_ClusterName(value, true, nil)
 }
 
-func (resolver *complianceResource_DeploymentNameResolver) Id() graphql.ID {
+func (resolver *complianceResource_DeploymentNameResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *complianceResource_DeploymentNameResolver) Name() string {
+func (resolver *complianceResource_DeploymentNameResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *complianceResource_DeploymentNameResolver) Namespace() string {
+func (resolver *complianceResource_DeploymentNameResolver) Namespace(ctx context.Context) string {
 	value := resolver.data.GetNamespace()
 	return value
 }
@@ -2077,17 +2078,17 @@ func (resolver *Resolver) wrapComplianceResource_NodeNames(values []*storage.Com
 	return output, nil
 }
 
-func (resolver *complianceResource_NodeNameResolver) Cluster() (*complianceResource_ClusterNameResolver, error) {
+func (resolver *complianceResource_NodeNameResolver) Cluster(ctx context.Context) (*complianceResource_ClusterNameResolver, error) {
 	value := resolver.data.GetCluster()
 	return resolver.root.wrapComplianceResource_ClusterName(value, true, nil)
 }
 
-func (resolver *complianceResource_NodeNameResolver) Id() graphql.ID {
+func (resolver *complianceResource_NodeNameResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *complianceResource_NodeNameResolver) Name() string {
+func (resolver *complianceResource_NodeNameResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
@@ -2115,12 +2116,12 @@ func (resolver *Resolver) wrapComplianceResultValues(values []*storage.Complianc
 	return output, nil
 }
 
-func (resolver *complianceResultValueResolver) Evidence() ([]*complianceResultValue_EvidenceResolver, error) {
+func (resolver *complianceResultValueResolver) Evidence(ctx context.Context) ([]*complianceResultValue_EvidenceResolver, error) {
 	value := resolver.data.GetEvidence()
 	return resolver.root.wrapComplianceResultValue_Evidences(value, nil)
 }
 
-func (resolver *complianceResultValueResolver) OverallState() string {
+func (resolver *complianceResultValueResolver) OverallState(ctx context.Context) string {
 	value := resolver.data.GetOverallState()
 	return value.String()
 }
@@ -2148,17 +2149,17 @@ func (resolver *Resolver) wrapComplianceResultValue_Evidences(values []*storage.
 	return output, nil
 }
 
-func (resolver *complianceResultValue_EvidenceResolver) Message() string {
+func (resolver *complianceResultValue_EvidenceResolver) Message(ctx context.Context) string {
 	value := resolver.data.GetMessage()
 	return value
 }
 
-func (resolver *complianceResultValue_EvidenceResolver) MessageId() int32 {
+func (resolver *complianceResultValue_EvidenceResolver) MessageId(ctx context.Context) int32 {
 	value := resolver.data.GetMessageId()
 	return value
 }
 
-func (resolver *complianceResultValue_EvidenceResolver) State() string {
+func (resolver *complianceResultValue_EvidenceResolver) State(ctx context.Context) string {
 	value := resolver.data.GetState()
 	return value.String()
 }
@@ -2186,42 +2187,42 @@ func (resolver *Resolver) wrapComplianceRuns(values []*v1.ComplianceRun, err err
 	return output, nil
 }
 
-func (resolver *complianceRunResolver) ClusterId() string {
+func (resolver *complianceRunResolver) ClusterId(ctx context.Context) string {
 	value := resolver.data.GetClusterId()
 	return value
 }
 
-func (resolver *complianceRunResolver) ErrorMessage() string {
+func (resolver *complianceRunResolver) ErrorMessage(ctx context.Context) string {
 	value := resolver.data.GetErrorMessage()
 	return value
 }
 
-func (resolver *complianceRunResolver) FinishTime() (*graphql.Time, error) {
+func (resolver *complianceRunResolver) FinishTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetFinishTime()
 	return timestamp(value)
 }
 
-func (resolver *complianceRunResolver) Id() graphql.ID {
+func (resolver *complianceRunResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *complianceRunResolver) ScheduleId() string {
+func (resolver *complianceRunResolver) ScheduleId(ctx context.Context) string {
 	value := resolver.data.GetScheduleId()
 	return value
 }
 
-func (resolver *complianceRunResolver) StandardId() string {
+func (resolver *complianceRunResolver) StandardId(ctx context.Context) string {
 	value := resolver.data.GetStandardId()
 	return value
 }
 
-func (resolver *complianceRunResolver) StartTime() (*graphql.Time, error) {
+func (resolver *complianceRunResolver) StartTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetStartTime()
 	return timestamp(value)
 }
 
-func (resolver *complianceRunResolver) State() string {
+func (resolver *complianceRunResolver) State(ctx context.Context) string {
 	value := resolver.data.GetState()
 	return value.String()
 }
@@ -2249,37 +2250,37 @@ func (resolver *Resolver) wrapComplianceRunMetadatas(values []*storage.Complianc
 	return output, nil
 }
 
-func (resolver *complianceRunMetadataResolver) ClusterId() string {
+func (resolver *complianceRunMetadataResolver) ClusterId(ctx context.Context) string {
 	value := resolver.data.GetClusterId()
 	return value
 }
 
-func (resolver *complianceRunMetadataResolver) ErrorMessage() string {
+func (resolver *complianceRunMetadataResolver) ErrorMessage(ctx context.Context) string {
 	value := resolver.data.GetErrorMessage()
 	return value
 }
 
-func (resolver *complianceRunMetadataResolver) FinishTimestamp() (*graphql.Time, error) {
+func (resolver *complianceRunMetadataResolver) FinishTimestamp(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetFinishTimestamp()
 	return timestamp(value)
 }
 
-func (resolver *complianceRunMetadataResolver) RunId() string {
+func (resolver *complianceRunMetadataResolver) RunId(ctx context.Context) string {
 	value := resolver.data.GetRunId()
 	return value
 }
 
-func (resolver *complianceRunMetadataResolver) StandardId() string {
+func (resolver *complianceRunMetadataResolver) StandardId(ctx context.Context) string {
 	value := resolver.data.GetStandardId()
 	return value
 }
 
-func (resolver *complianceRunMetadataResolver) StartTimestamp() (*graphql.Time, error) {
+func (resolver *complianceRunMetadataResolver) StartTimestamp(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetStartTimestamp()
 	return timestamp(value)
 }
 
-func (resolver *complianceRunMetadataResolver) Success() bool {
+func (resolver *complianceRunMetadataResolver) Success(ctx context.Context) bool {
 	value := resolver.data.GetSuccess()
 	return value
 }
@@ -2307,27 +2308,27 @@ func (resolver *Resolver) wrapComplianceRunSchedules(values []*storage.Complianc
 	return output, nil
 }
 
-func (resolver *complianceRunScheduleResolver) ClusterId() string {
+func (resolver *complianceRunScheduleResolver) ClusterId(ctx context.Context) string {
 	value := resolver.data.GetClusterId()
 	return value
 }
 
-func (resolver *complianceRunScheduleResolver) CrontabSpec() string {
+func (resolver *complianceRunScheduleResolver) CrontabSpec(ctx context.Context) string {
 	value := resolver.data.GetCrontabSpec()
 	return value
 }
 
-func (resolver *complianceRunScheduleResolver) Id() graphql.ID {
+func (resolver *complianceRunScheduleResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *complianceRunScheduleResolver) StandardId() string {
+func (resolver *complianceRunScheduleResolver) StandardId(ctx context.Context) string {
 	value := resolver.data.GetStandardId()
 	return value
 }
 
-func (resolver *complianceRunScheduleResolver) Suspended() bool {
+func (resolver *complianceRunScheduleResolver) Suspended(ctx context.Context) bool {
 	value := resolver.data.GetSuspended()
 	return value
 }
@@ -2355,22 +2356,22 @@ func (resolver *Resolver) wrapComplianceRunScheduleInfos(values []*v1.Compliance
 	return output, nil
 }
 
-func (resolver *complianceRunScheduleInfoResolver) LastCompletedRun() (*complianceRunResolver, error) {
+func (resolver *complianceRunScheduleInfoResolver) LastCompletedRun(ctx context.Context) (*complianceRunResolver, error) {
 	value := resolver.data.GetLastCompletedRun()
 	return resolver.root.wrapComplianceRun(value, true, nil)
 }
 
-func (resolver *complianceRunScheduleInfoResolver) LastRun() (*complianceRunResolver, error) {
+func (resolver *complianceRunScheduleInfoResolver) LastRun(ctx context.Context) (*complianceRunResolver, error) {
 	value := resolver.data.GetLastRun()
 	return resolver.root.wrapComplianceRun(value, true, nil)
 }
 
-func (resolver *complianceRunScheduleInfoResolver) NextRunTime() (*graphql.Time, error) {
+func (resolver *complianceRunScheduleInfoResolver) NextRunTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetNextRunTime()
 	return timestamp(value)
 }
 
-func (resolver *complianceRunScheduleInfoResolver) Schedule() (*complianceRunScheduleResolver, error) {
+func (resolver *complianceRunScheduleInfoResolver) Schedule(ctx context.Context) (*complianceRunScheduleResolver, error) {
 	value := resolver.data.GetSchedule()
 	return resolver.root.wrapComplianceRunSchedule(value, true, nil)
 }
@@ -2416,17 +2417,17 @@ func (resolver *Resolver) wrapComplianceStandards(values []*v1.ComplianceStandar
 	return output, nil
 }
 
-func (resolver *complianceStandardResolver) Controls() ([]*complianceControlResolver, error) {
+func (resolver *complianceStandardResolver) Controls(ctx context.Context) ([]*complianceControlResolver, error) {
 	value := resolver.data.GetControls()
 	return resolver.root.wrapComplianceControls(value, nil)
 }
 
-func (resolver *complianceStandardResolver) Groups() ([]*complianceControlGroupResolver, error) {
+func (resolver *complianceStandardResolver) Groups(ctx context.Context) ([]*complianceControlGroupResolver, error) {
 	value := resolver.data.GetGroups()
 	return resolver.root.wrapComplianceControlGroups(value, nil)
 }
 
-func (resolver *complianceStandardResolver) Metadata() (*complianceStandardMetadataResolver, error) {
+func (resolver *complianceStandardResolver) Metadata(ctx context.Context) (*complianceStandardMetadataResolver, error) {
 	value := resolver.data.GetMetadata()
 	return resolver.root.wrapComplianceStandardMetadata(value, true, nil)
 }
@@ -2454,22 +2455,22 @@ func (resolver *Resolver) wrapComplianceStandardMetadatas(values []*v1.Complianc
 	return output, nil
 }
 
-func (resolver *complianceStandardMetadataResolver) Description() string {
+func (resolver *complianceStandardMetadataResolver) Description(ctx context.Context) string {
 	value := resolver.data.GetDescription()
 	return value
 }
 
-func (resolver *complianceStandardMetadataResolver) Id() graphql.ID {
+func (resolver *complianceStandardMetadataResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *complianceStandardMetadataResolver) Name() string {
+func (resolver *complianceStandardMetadataResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *complianceStandardMetadataResolver) NumImplementedChecks() int32 {
+func (resolver *complianceStandardMetadataResolver) NumImplementedChecks(ctx context.Context) int32 {
 	value := resolver.data.GetNumImplementedChecks()
 	return value
 }
@@ -2515,12 +2516,12 @@ func (resolver *Resolver) wrapComponents(values []*storage.Component, err error)
 	return output, nil
 }
 
-func (resolver *componentResolver) Name() string {
+func (resolver *componentResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *componentResolver) Version() string {
+func (resolver *componentResolver) Version(ctx context.Context) string {
 	value := resolver.data.GetVersion()
 	return value
 }
@@ -2548,52 +2549,52 @@ func (resolver *Resolver) wrapContainers(values []*storage.Container, err error)
 	return output, nil
 }
 
-func (resolver *containerResolver) Config() (*containerConfigResolver, error) {
+func (resolver *containerResolver) Config(ctx context.Context) (*containerConfigResolver, error) {
 	value := resolver.data.GetConfig()
 	return resolver.root.wrapContainerConfig(value, true, nil)
 }
 
-func (resolver *containerResolver) Id() graphql.ID {
+func (resolver *containerResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *containerResolver) Image() (*imageResolver, error) {
+func (resolver *containerResolver) Image(ctx context.Context) (*imageResolver, error) {
 	value := resolver.data.GetImage()
 	return resolver.root.wrapImage(value, true, nil)
 }
 
-func (resolver *containerResolver) Instances() ([]*containerInstanceResolver, error) {
+func (resolver *containerResolver) Instances(ctx context.Context) ([]*containerInstanceResolver, error) {
 	value := resolver.data.GetInstances()
 	return resolver.root.wrapContainerInstances(value, nil)
 }
 
-func (resolver *containerResolver) Name() string {
+func (resolver *containerResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *containerResolver) Ports() ([]*portConfigResolver, error) {
+func (resolver *containerResolver) Ports(ctx context.Context) ([]*portConfigResolver, error) {
 	value := resolver.data.GetPorts()
 	return resolver.root.wrapPortConfigs(value, nil)
 }
 
-func (resolver *containerResolver) Resources() (*resourcesResolver, error) {
+func (resolver *containerResolver) Resources(ctx context.Context) (*resourcesResolver, error) {
 	value := resolver.data.GetResources()
 	return resolver.root.wrapResources(value, true, nil)
 }
 
-func (resolver *containerResolver) Secrets() ([]*embeddedSecretResolver, error) {
+func (resolver *containerResolver) Secrets(ctx context.Context) ([]*embeddedSecretResolver, error) {
 	value := resolver.data.GetSecrets()
 	return resolver.root.wrapEmbeddedSecrets(value, nil)
 }
 
-func (resolver *containerResolver) SecurityContext() (*securityContextResolver, error) {
+func (resolver *containerResolver) SecurityContext(ctx context.Context) (*securityContextResolver, error) {
 	value := resolver.data.GetSecurityContext()
 	return resolver.root.wrapSecurityContext(value, true, nil)
 }
 
-func (resolver *containerResolver) Volumes() ([]*volumeResolver, error) {
+func (resolver *containerResolver) Volumes(ctx context.Context) ([]*volumeResolver, error) {
 	value := resolver.data.GetVolumes()
 	return resolver.root.wrapVolumes(value, nil)
 }
@@ -2621,32 +2622,32 @@ func (resolver *Resolver) wrapContainerConfigs(values []*storage.ContainerConfig
 	return output, nil
 }
 
-func (resolver *containerConfigResolver) Args() []string {
+func (resolver *containerConfigResolver) Args(ctx context.Context) []string {
 	value := resolver.data.GetArgs()
 	return value
 }
 
-func (resolver *containerConfigResolver) Command() []string {
+func (resolver *containerConfigResolver) Command(ctx context.Context) []string {
 	value := resolver.data.GetCommand()
 	return value
 }
 
-func (resolver *containerConfigResolver) Directory() string {
+func (resolver *containerConfigResolver) Directory(ctx context.Context) string {
 	value := resolver.data.GetDirectory()
 	return value
 }
 
-func (resolver *containerConfigResolver) Env() ([]*containerConfig_EnvironmentConfigResolver, error) {
+func (resolver *containerConfigResolver) Env(ctx context.Context) ([]*containerConfig_EnvironmentConfigResolver, error) {
 	value := resolver.data.GetEnv()
 	return resolver.root.wrapContainerConfig_EnvironmentConfigs(value, nil)
 }
 
-func (resolver *containerConfigResolver) Uid() int32 {
+func (resolver *containerConfigResolver) Uid(ctx context.Context) int32 {
 	value := resolver.data.GetUid()
 	return int32(value)
 }
 
-func (resolver *containerConfigResolver) User() string {
+func (resolver *containerConfigResolver) User(ctx context.Context) string {
 	value := resolver.data.GetUser()
 	return value
 }
@@ -2674,12 +2675,12 @@ func (resolver *Resolver) wrapContainerConfig_EnvironmentConfigs(values []*stora
 	return output, nil
 }
 
-func (resolver *containerConfig_EnvironmentConfigResolver) Key() string {
+func (resolver *containerConfig_EnvironmentConfigResolver) Key(ctx context.Context) string {
 	value := resolver.data.GetKey()
 	return value
 }
 
-func (resolver *containerConfig_EnvironmentConfigResolver) Value() string {
+func (resolver *containerConfig_EnvironmentConfigResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
 	return value
 }
@@ -2707,17 +2708,17 @@ func (resolver *Resolver) wrapContainerInstances(values []*storage.ContainerInst
 	return output, nil
 }
 
-func (resolver *containerInstanceResolver) ContainerIps() []string {
+func (resolver *containerInstanceResolver) ContainerIps(ctx context.Context) []string {
 	value := resolver.data.GetContainerIps()
 	return value
 }
 
-func (resolver *containerInstanceResolver) ContainingPodId() string {
+func (resolver *containerInstanceResolver) ContainingPodId(ctx context.Context) string {
 	value := resolver.data.GetContainingPodId()
 	return value
 }
 
-func (resolver *containerInstanceResolver) InstanceId() (*containerInstanceIDResolver, error) {
+func (resolver *containerInstanceResolver) InstanceId(ctx context.Context) (*containerInstanceIDResolver, error) {
 	value := resolver.data.GetInstanceId()
 	return resolver.root.wrapContainerInstanceID(value, true, nil)
 }
@@ -2745,17 +2746,17 @@ func (resolver *Resolver) wrapContainerInstanceIDs(values []*storage.ContainerIn
 	return output, nil
 }
 
-func (resolver *containerInstanceIDResolver) ContainerRuntime() string {
+func (resolver *containerInstanceIDResolver) ContainerRuntime(ctx context.Context) string {
 	value := resolver.data.GetContainerRuntime()
 	return value.String()
 }
 
-func (resolver *containerInstanceIDResolver) Id() graphql.ID {
+func (resolver *containerInstanceIDResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *containerInstanceIDResolver) Node() string {
+func (resolver *containerInstanceIDResolver) Node(ctx context.Context) string {
 	value := resolver.data.GetNode()
 	return value
 }
@@ -2813,25 +2814,25 @@ func (resolver *Resolver) wrapListDeployments(values []*storage.ListDeployment, 
 	return output, nil
 }
 
-func (resolver *deploymentResolver) ensureData() {
+func (resolver *deploymentResolver) ensureData(ctx context.Context) {
 	if resolver.data == nil {
-		resolver.data = resolver.root.getDeployment(resolver.list.GetId())
+		resolver.data = resolver.root.getDeployment(ctx, resolver.list.GetId())
 	}
 }
 
-func (resolver *deploymentResolver) Annotations() labels {
-	resolver.ensureData()
+func (resolver *deploymentResolver) Annotations(ctx context.Context) labels {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetAnnotations()
 	return labelsResolver(value)
 }
 
-func (resolver *deploymentResolver) AutomountServiceAccountToken() bool {
-	resolver.ensureData()
+func (resolver *deploymentResolver) AutomountServiceAccountToken(ctx context.Context) bool {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetAutomountServiceAccountToken()
 	return value
 }
 
-func (resolver *deploymentResolver) ClusterId() string {
+func (resolver *deploymentResolver) ClusterId(ctx context.Context) string {
 	value := resolver.data.GetClusterId()
 	if resolver.data == nil {
 		value = resolver.list.GetClusterId()
@@ -2839,25 +2840,25 @@ func (resolver *deploymentResolver) ClusterId() string {
 	return value
 }
 
-func (resolver *deploymentResolver) ClusterName() string {
-	resolver.ensureData()
+func (resolver *deploymentResolver) ClusterName(ctx context.Context) string {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetClusterName()
 	return value
 }
 
-func (resolver *deploymentResolver) Containers() ([]*containerResolver, error) {
-	resolver.ensureData()
+func (resolver *deploymentResolver) Containers(ctx context.Context) ([]*containerResolver, error) {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetContainers()
 	return resolver.root.wrapContainers(value, nil)
 }
 
-func (resolver *deploymentResolver) HostNetwork() bool {
-	resolver.ensureData()
+func (resolver *deploymentResolver) HostNetwork(ctx context.Context) bool {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetHostNetwork()
 	return value
 }
 
-func (resolver *deploymentResolver) Id() graphql.ID {
+func (resolver *deploymentResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	if resolver.data == nil {
 		value = resolver.list.GetId()
@@ -2865,31 +2866,31 @@ func (resolver *deploymentResolver) Id() graphql.ID {
 	return graphql.ID(value)
 }
 
-func (resolver *deploymentResolver) ImagePullSecrets() []string {
-	resolver.ensureData()
+func (resolver *deploymentResolver) ImagePullSecrets(ctx context.Context) []string {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetImagePullSecrets()
 	return value
 }
 
-func (resolver *deploymentResolver) Inactive() bool {
-	resolver.ensureData()
+func (resolver *deploymentResolver) Inactive(ctx context.Context) bool {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetInactive()
 	return value
 }
 
-func (resolver *deploymentResolver) LabelSelector() (*labelSelectorResolver, error) {
-	resolver.ensureData()
+func (resolver *deploymentResolver) LabelSelector(ctx context.Context) (*labelSelectorResolver, error) {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetLabelSelector()
 	return resolver.root.wrapLabelSelector(value, true, nil)
 }
 
-func (resolver *deploymentResolver) Labels() labels {
-	resolver.ensureData()
+func (resolver *deploymentResolver) Labels(ctx context.Context) labels {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetLabels()
 	return labelsResolver(value)
 }
 
-func (resolver *deploymentResolver) Name() string {
+func (resolver *deploymentResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	if resolver.data == nil {
 		value = resolver.list.GetName()
@@ -2897,7 +2898,7 @@ func (resolver *deploymentResolver) Name() string {
 	return value
 }
 
-func (resolver *deploymentResolver) Namespace() string {
+func (resolver *deploymentResolver) Namespace(ctx context.Context) string {
 	value := resolver.data.GetNamespace()
 	if resolver.data == nil {
 		value = resolver.list.GetNamespace()
@@ -2905,25 +2906,25 @@ func (resolver *deploymentResolver) Namespace() string {
 	return value
 }
 
-func (resolver *deploymentResolver) NamespaceId() string {
-	resolver.ensureData()
+func (resolver *deploymentResolver) NamespaceId(ctx context.Context) string {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetNamespaceId()
 	return value
 }
 
-func (resolver *deploymentResolver) PodLabels() labels {
-	resolver.ensureData()
+func (resolver *deploymentResolver) PodLabels(ctx context.Context) labels {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetPodLabels()
 	return labelsResolver(value)
 }
 
-func (resolver *deploymentResolver) Ports() ([]*portConfigResolver, error) {
-	resolver.ensureData()
+func (resolver *deploymentResolver) Ports(ctx context.Context) ([]*portConfigResolver, error) {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetPorts()
 	return resolver.root.wrapPortConfigs(value, nil)
 }
 
-func (resolver *deploymentResolver) Priority() int32 {
+func (resolver *deploymentResolver) Priority(ctx context.Context) int32 {
 	value := resolver.data.GetPriority()
 	if resolver.data == nil {
 		value = resolver.list.GetPriority()
@@ -2931,37 +2932,37 @@ func (resolver *deploymentResolver) Priority() int32 {
 	return int32(value)
 }
 
-func (resolver *deploymentResolver) Replicas() int32 {
-	resolver.ensureData()
+func (resolver *deploymentResolver) Replicas(ctx context.Context) int32 {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetReplicas()
 	return int32(value)
 }
 
-func (resolver *deploymentResolver) Risk() (*riskResolver, error) {
-	resolver.ensureData()
+func (resolver *deploymentResolver) Risk(ctx context.Context) (*riskResolver, error) {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetRisk()
 	return resolver.root.wrapRisk(value, true, nil)
 }
 
-func (resolver *deploymentResolver) ServiceAccount() string {
-	resolver.ensureData()
+func (resolver *deploymentResolver) ServiceAccount(ctx context.Context) string {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetServiceAccount()
 	return value
 }
 
-func (resolver *deploymentResolver) Tolerations() ([]*tolerationResolver, error) {
-	resolver.ensureData()
+func (resolver *deploymentResolver) Tolerations(ctx context.Context) ([]*tolerationResolver, error) {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetTolerations()
 	return resolver.root.wrapTolerations(value, nil)
 }
 
-func (resolver *deploymentResolver) Type() string {
-	resolver.ensureData()
+func (resolver *deploymentResolver) Type(ctx context.Context) string {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetType()
 	return value
 }
 
-func (resolver *deploymentResolver) UpdatedAt() (*graphql.Time, error) {
+func (resolver *deploymentResolver) UpdatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetUpdatedAt()
 	if resolver.data == nil {
 		value = resolver.list.GetUpdatedAt()
@@ -2969,8 +2970,8 @@ func (resolver *deploymentResolver) UpdatedAt() (*graphql.Time, error) {
 	return timestamp(value)
 }
 
-func (resolver *deploymentResolver) Version() string {
-	resolver.ensureData()
+func (resolver *deploymentResolver) Version(ctx context.Context) string {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetVersion()
 	return value
 }
@@ -2998,12 +2999,12 @@ func (resolver *Resolver) wrapDockerfileLineRuleFields(values []*storage.Dockerf
 	return output, nil
 }
 
-func (resolver *dockerfileLineRuleFieldResolver) Instruction() string {
+func (resolver *dockerfileLineRuleFieldResolver) Instruction(ctx context.Context) string {
 	value := resolver.data.GetInstruction()
 	return value
 }
 
-func (resolver *dockerfileLineRuleFieldResolver) Value() string {
+func (resolver *dockerfileLineRuleFieldResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
 	return value
 }
@@ -3031,37 +3032,37 @@ func (resolver *Resolver) wrapEmails(values []*storage.Email, err error) ([]*ema
 	return output, nil
 }
 
-func (resolver *emailResolver) DisableTLS() bool {
+func (resolver *emailResolver) DisableTLS(ctx context.Context) bool {
 	value := resolver.data.GetDisableTLS()
 	return value
 }
 
-func (resolver *emailResolver) From() string {
+func (resolver *emailResolver) From(ctx context.Context) string {
 	value := resolver.data.GetFrom()
 	return value
 }
 
-func (resolver *emailResolver) Password() string {
+func (resolver *emailResolver) Password(ctx context.Context) string {
 	value := resolver.data.GetPassword()
 	return value
 }
 
-func (resolver *emailResolver) Sender() string {
+func (resolver *emailResolver) Sender(ctx context.Context) string {
 	value := resolver.data.GetSender()
 	return value
 }
 
-func (resolver *emailResolver) Server() string {
+func (resolver *emailResolver) Server(ctx context.Context) string {
 	value := resolver.data.GetServer()
 	return value
 }
 
-func (resolver *emailResolver) UseSTARTTLS() bool {
+func (resolver *emailResolver) UseSTARTTLS(ctx context.Context) bool {
 	value := resolver.data.GetUseSTARTTLS()
 	return value
 }
 
-func (resolver *emailResolver) Username() string {
+func (resolver *emailResolver) Username(ctx context.Context) string {
 	value := resolver.data.GetUsername()
 	return value
 }
@@ -3089,12 +3090,12 @@ func (resolver *Resolver) wrapEmbeddedSecrets(values []*storage.EmbeddedSecret, 
 	return output, nil
 }
 
-func (resolver *embeddedSecretResolver) Name() string {
+func (resolver *embeddedSecretResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *embeddedSecretResolver) Path() string {
+func (resolver *embeddedSecretResolver) Path(ctx context.Context) string {
 	value := resolver.data.GetPath()
 	return value
 }
@@ -3140,12 +3141,12 @@ func (resolver *Resolver) wrapGenerateTokenResponses(values []*v1.GenerateTokenR
 	return output, nil
 }
 
-func (resolver *generateTokenResponseResolver) Metadata() (*tokenMetadataResolver, error) {
+func (resolver *generateTokenResponseResolver) Metadata(ctx context.Context) (*tokenMetadataResolver, error) {
 	value := resolver.data.GetMetadata()
 	return resolver.root.wrapTokenMetadata(value, true, nil)
 }
 
-func (resolver *generateTokenResponseResolver) Token() string {
+func (resolver *generateTokenResponseResolver) Token(ctx context.Context) string {
 	value := resolver.data.GetToken()
 	return value
 }
@@ -3173,42 +3174,42 @@ func (resolver *Resolver) wrapGenerics(values []*storage.Generic, err error) ([]
 	return output, nil
 }
 
-func (resolver *genericResolver) AuditLoggingEnabled() bool {
+func (resolver *genericResolver) AuditLoggingEnabled(ctx context.Context) bool {
 	value := resolver.data.GetAuditLoggingEnabled()
 	return value
 }
 
-func (resolver *genericResolver) CaCert() string {
+func (resolver *genericResolver) CaCert(ctx context.Context) string {
 	value := resolver.data.GetCaCert()
 	return value
 }
 
-func (resolver *genericResolver) Endpoint() string {
+func (resolver *genericResolver) Endpoint(ctx context.Context) string {
 	value := resolver.data.GetEndpoint()
 	return value
 }
 
-func (resolver *genericResolver) ExtraFields() ([]*keyValuePairResolver, error) {
+func (resolver *genericResolver) ExtraFields(ctx context.Context) ([]*keyValuePairResolver, error) {
 	value := resolver.data.GetExtraFields()
 	return resolver.root.wrapKeyValuePairs(value, nil)
 }
 
-func (resolver *genericResolver) Headers() ([]*keyValuePairResolver, error) {
+func (resolver *genericResolver) Headers(ctx context.Context) ([]*keyValuePairResolver, error) {
 	value := resolver.data.GetHeaders()
 	return resolver.root.wrapKeyValuePairs(value, nil)
 }
 
-func (resolver *genericResolver) Password() string {
+func (resolver *genericResolver) Password(ctx context.Context) string {
 	value := resolver.data.GetPassword()
 	return value
 }
 
-func (resolver *genericResolver) SkipTLSVerify() bool {
+func (resolver *genericResolver) SkipTLSVerify(ctx context.Context) bool {
 	value := resolver.data.GetSkipTLSVerify()
 	return value
 }
 
-func (resolver *genericResolver) Username() string {
+func (resolver *genericResolver) Username(ctx context.Context) string {
 	value := resolver.data.GetUsername()
 	return value
 }
@@ -3236,12 +3237,12 @@ func (resolver *Resolver) wrapGetComplianceRunStatusesResponses(values []*v1.Get
 	return output, nil
 }
 
-func (resolver *getComplianceRunStatusesResponseResolver) InvalidRunIds() []string {
+func (resolver *getComplianceRunStatusesResponseResolver) InvalidRunIds(ctx context.Context) []string {
 	value := resolver.data.GetInvalidRunIds()
 	return value
 }
 
-func (resolver *getComplianceRunStatusesResponseResolver) Runs() ([]*complianceRunResolver, error) {
+func (resolver *getComplianceRunStatusesResponseResolver) Runs(ctx context.Context) ([]*complianceRunResolver, error) {
 	value := resolver.data.GetRuns()
 	return resolver.root.wrapComplianceRuns(value, nil)
 }
@@ -3269,12 +3270,12 @@ func (resolver *Resolver) wrapGoogleProviderMetadatas(values []*storage.GooglePr
 	return output, nil
 }
 
-func (resolver *googleProviderMetadataResolver) ClusterName() string {
+func (resolver *googleProviderMetadataResolver) ClusterName(ctx context.Context) string {
 	value := resolver.data.GetClusterName()
 	return value
 }
 
-func (resolver *googleProviderMetadataResolver) Project() string {
+func (resolver *googleProviderMetadataResolver) Project(ctx context.Context) string {
 	value := resolver.data.GetProject()
 	return value
 }
@@ -3302,12 +3303,12 @@ func (resolver *Resolver) wrapGroups(values []*storage.Group, err error) ([]*gro
 	return output, nil
 }
 
-func (resolver *groupResolver) Props() (*groupPropertiesResolver, error) {
+func (resolver *groupResolver) Props(ctx context.Context) (*groupPropertiesResolver, error) {
 	value := resolver.data.GetProps()
 	return resolver.root.wrapGroupProperties(value, true, nil)
 }
 
-func (resolver *groupResolver) RoleName() string {
+func (resolver *groupResolver) RoleName(ctx context.Context) string {
 	value := resolver.data.GetRoleName()
 	return value
 }
@@ -3335,17 +3336,17 @@ func (resolver *Resolver) wrapGroupPropertieses(values []*storage.GroupPropertie
 	return output, nil
 }
 
-func (resolver *groupPropertiesResolver) AuthProviderId() string {
+func (resolver *groupPropertiesResolver) AuthProviderId(ctx context.Context) string {
 	value := resolver.data.GetAuthProviderId()
 	return value
 }
 
-func (resolver *groupPropertiesResolver) Key() string {
+func (resolver *groupPropertiesResolver) Key(ctx context.Context) string {
 	value := resolver.data.GetKey()
 	return value
 }
 
-func (resolver *groupPropertiesResolver) Value() string {
+func (resolver *groupPropertiesResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
 	return value
 }
@@ -3408,13 +3409,13 @@ func (resolver *Resolver) wrapListImages(values []*storage.ListImage, err error)
 	return output, nil
 }
 
-func (resolver *imageResolver) ensureData() {
+func (resolver *imageResolver) ensureData(ctx context.Context) {
 	if resolver.data == nil {
-		resolver.data = resolver.root.getImage(resolver.list.GetId())
+		resolver.data = resolver.root.getImage(ctx, resolver.list.GetId())
 	}
 }
 
-func (resolver *imageResolver) Id() graphql.ID {
+func (resolver *imageResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	if resolver.data == nil {
 		value = resolver.list.GetId()
@@ -3422,7 +3423,7 @@ func (resolver *imageResolver) Id() graphql.ID {
 	return graphql.ID(value)
 }
 
-func (resolver *imageResolver) LastUpdated() (*graphql.Time, error) {
+func (resolver *imageResolver) LastUpdated(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetLastUpdated()
 	if resolver.data == nil {
 		value = resolver.list.GetLastUpdated()
@@ -3430,20 +3431,20 @@ func (resolver *imageResolver) LastUpdated() (*graphql.Time, error) {
 	return timestamp(value)
 }
 
-func (resolver *imageResolver) Metadata() (*imageMetadataResolver, error) {
-	resolver.ensureData()
+func (resolver *imageResolver) Metadata(ctx context.Context) (*imageMetadataResolver, error) {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetMetadata()
 	return resolver.root.wrapImageMetadata(value, true, nil)
 }
 
-func (resolver *imageResolver) Name() (*imageNameResolver, error) {
-	resolver.ensureData()
+func (resolver *imageResolver) Name(ctx context.Context) (*imageNameResolver, error) {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetName()
 	return resolver.root.wrapImageName(value, true, nil)
 }
 
-func (resolver *imageResolver) Scan() (*imageScanResolver, error) {
-	resolver.ensureData()
+func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, error) {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetScan()
 	return resolver.root.wrapImageScan(value, true, nil)
 }
@@ -3471,32 +3472,32 @@ func (resolver *Resolver) wrapImageLayers(values []*storage.ImageLayer, err erro
 	return output, nil
 }
 
-func (resolver *imageLayerResolver) Author() string {
+func (resolver *imageLayerResolver) Author(ctx context.Context) string {
 	value := resolver.data.GetAuthor()
 	return value
 }
 
-func (resolver *imageLayerResolver) Components() ([]*imageScanComponentResolver, error) {
+func (resolver *imageLayerResolver) Components(ctx context.Context) ([]*imageScanComponentResolver, error) {
 	value := resolver.data.GetComponents()
 	return resolver.root.wrapImageScanComponents(value, nil)
 }
 
-func (resolver *imageLayerResolver) Created() (*graphql.Time, error) {
+func (resolver *imageLayerResolver) Created(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreated()
 	return timestamp(value)
 }
 
-func (resolver *imageLayerResolver) Empty() bool {
+func (resolver *imageLayerResolver) Empty(ctx context.Context) bool {
 	value := resolver.data.GetEmpty()
 	return value
 }
 
-func (resolver *imageLayerResolver) Instruction() string {
+func (resolver *imageLayerResolver) Instruction(ctx context.Context) string {
 	value := resolver.data.GetInstruction()
 	return value
 }
 
-func (resolver *imageLayerResolver) Value() string {
+func (resolver *imageLayerResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
 	return value
 }
@@ -3524,17 +3525,17 @@ func (resolver *Resolver) wrapImageMetadatas(values []*storage.ImageMetadata, er
 	return output, nil
 }
 
-func (resolver *imageMetadataResolver) LayerShas() []string {
+func (resolver *imageMetadataResolver) LayerShas(ctx context.Context) []string {
 	value := resolver.data.GetLayerShas()
 	return value
 }
 
-func (resolver *imageMetadataResolver) V1() (*v1MetadataResolver, error) {
+func (resolver *imageMetadataResolver) V1(ctx context.Context) (*v1MetadataResolver, error) {
 	value := resolver.data.GetV1()
 	return resolver.root.wrapV1Metadata(value, true, nil)
 }
 
-func (resolver *imageMetadataResolver) V2() (*v2MetadataResolver, error) {
+func (resolver *imageMetadataResolver) V2(ctx context.Context) (*v2MetadataResolver, error) {
 	value := resolver.data.GetV2()
 	return resolver.root.wrapV2Metadata(value, true, nil)
 }
@@ -3562,22 +3563,22 @@ func (resolver *Resolver) wrapImageNames(values []*storage.ImageName, err error)
 	return output, nil
 }
 
-func (resolver *imageNameResolver) FullName() string {
+func (resolver *imageNameResolver) FullName(ctx context.Context) string {
 	value := resolver.data.GetFullName()
 	return value
 }
 
-func (resolver *imageNameResolver) Registry() string {
+func (resolver *imageNameResolver) Registry(ctx context.Context) string {
 	value := resolver.data.GetRegistry()
 	return value
 }
 
-func (resolver *imageNameResolver) Remote() string {
+func (resolver *imageNameResolver) Remote(ctx context.Context) string {
 	value := resolver.data.GetRemote()
 	return value
 }
 
-func (resolver *imageNameResolver) Tag() string {
+func (resolver *imageNameResolver) Tag(ctx context.Context) string {
 	value := resolver.data.GetTag()
 	return value
 }
@@ -3605,17 +3606,17 @@ func (resolver *Resolver) wrapImageNamePolicies(values []*storage.ImageNamePolic
 	return output, nil
 }
 
-func (resolver *imageNamePolicyResolver) Registry() string {
+func (resolver *imageNamePolicyResolver) Registry(ctx context.Context) string {
 	value := resolver.data.GetRegistry()
 	return value
 }
 
-func (resolver *imageNamePolicyResolver) Remote() string {
+func (resolver *imageNamePolicyResolver) Remote(ctx context.Context) string {
 	value := resolver.data.GetRemote()
 	return value
 }
 
-func (resolver *imageNamePolicyResolver) Tag() string {
+func (resolver *imageNamePolicyResolver) Tag(ctx context.Context) string {
 	value := resolver.data.GetTag()
 	return value
 }
@@ -3643,7 +3644,7 @@ func (resolver *Resolver) wrapImagePullSecrets(values []*storage.ImagePullSecret
 	return output, nil
 }
 
-func (resolver *imagePullSecretResolver) Registries() ([]*imagePullSecret_RegistryResolver, error) {
+func (resolver *imagePullSecretResolver) Registries(ctx context.Context) ([]*imagePullSecret_RegistryResolver, error) {
 	value := resolver.data.GetRegistries()
 	return resolver.root.wrapImagePullSecret_Registries(value, nil)
 }
@@ -3671,12 +3672,12 @@ func (resolver *Resolver) wrapImagePullSecret_Registries(values []*storage.Image
 	return output, nil
 }
 
-func (resolver *imagePullSecret_RegistryResolver) Name() string {
+func (resolver *imagePullSecret_RegistryResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *imagePullSecret_RegistryResolver) Username() string {
+func (resolver *imagePullSecret_RegistryResolver) Username(ctx context.Context) string {
 	value := resolver.data.GetUsername()
 	return value
 }
@@ -3704,12 +3705,12 @@ func (resolver *Resolver) wrapImageScans(values []*storage.ImageScan, err error)
 	return output, nil
 }
 
-func (resolver *imageScanResolver) Components() ([]*imageScanComponentResolver, error) {
+func (resolver *imageScanResolver) Components(ctx context.Context) ([]*imageScanComponentResolver, error) {
 	value := resolver.data.GetComponents()
 	return resolver.root.wrapImageScanComponents(value, nil)
 }
 
-func (resolver *imageScanResolver) ScanTime() (*graphql.Time, error) {
+func (resolver *imageScanResolver) ScanTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetScanTime()
 	return timestamp(value)
 }
@@ -3737,22 +3738,22 @@ func (resolver *Resolver) wrapImageScanComponents(values []*storage.ImageScanCom
 	return output, nil
 }
 
-func (resolver *imageScanComponentResolver) License() (*licenseResolver, error) {
+func (resolver *imageScanComponentResolver) License(ctx context.Context) (*licenseResolver, error) {
 	value := resolver.data.GetLicense()
 	return resolver.root.wrapLicense(value, true, nil)
 }
 
-func (resolver *imageScanComponentResolver) Name() string {
+func (resolver *imageScanComponentResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *imageScanComponentResolver) Version() string {
+func (resolver *imageScanComponentResolver) Version(ctx context.Context) string {
 	value := resolver.data.GetVersion()
 	return value
 }
 
-func (resolver *imageScanComponentResolver) Vulns() ([]*vulnerabilityResolver, error) {
+func (resolver *imageScanComponentResolver) Vulns(ctx context.Context) ([]*vulnerabilityResolver, error) {
 	value := resolver.data.GetVulns()
 	return resolver.root.wrapVulnerabilities(value, nil)
 }
@@ -3780,22 +3781,22 @@ func (resolver *Resolver) wrapJiras(values []*storage.Jira, err error) ([]*jiraR
 	return output, nil
 }
 
-func (resolver *jiraResolver) IssueType() string {
+func (resolver *jiraResolver) IssueType(ctx context.Context) string {
 	value := resolver.data.GetIssueType()
 	return value
 }
 
-func (resolver *jiraResolver) Password() string {
+func (resolver *jiraResolver) Password(ctx context.Context) string {
 	value := resolver.data.GetPassword()
 	return value
 }
 
-func (resolver *jiraResolver) Url() string {
+func (resolver *jiraResolver) Url(ctx context.Context) string {
 	value := resolver.data.GetUrl()
 	return value
 }
 
-func (resolver *jiraResolver) Username() string {
+func (resolver *jiraResolver) Username(ctx context.Context) string {
 	value := resolver.data.GetUsername()
 	return value
 }
@@ -3823,52 +3824,52 @@ func (resolver *Resolver) wrapK8SRoles(values []*storage.K8SRole, err error) ([]
 	return output, nil
 }
 
-func (resolver *k8SRoleResolver) Annotations() labels {
+func (resolver *k8SRoleResolver) Annotations(ctx context.Context) labels {
 	value := resolver.data.GetAnnotations()
 	return labelsResolver(value)
 }
 
-func (resolver *k8SRoleResolver) ClusterId() string {
+func (resolver *k8SRoleResolver) ClusterId(ctx context.Context) string {
 	value := resolver.data.GetClusterId()
 	return value
 }
 
-func (resolver *k8SRoleResolver) ClusterName() string {
+func (resolver *k8SRoleResolver) ClusterName(ctx context.Context) string {
 	value := resolver.data.GetClusterName()
 	return value
 }
 
-func (resolver *k8SRoleResolver) ClusterRole() bool {
+func (resolver *k8SRoleResolver) ClusterRole(ctx context.Context) bool {
 	value := resolver.data.GetClusterRole()
 	return value
 }
 
-func (resolver *k8SRoleResolver) CreatedAt() (*graphql.Time, error) {
+func (resolver *k8SRoleResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
 	return timestamp(value)
 }
 
-func (resolver *k8SRoleResolver) Id() graphql.ID {
+func (resolver *k8SRoleResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *k8SRoleResolver) Labels() labels {
+func (resolver *k8SRoleResolver) Labels(ctx context.Context) labels {
 	value := resolver.data.GetLabels()
 	return labelsResolver(value)
 }
 
-func (resolver *k8SRoleResolver) Name() string {
+func (resolver *k8SRoleResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *k8SRoleResolver) Namespace() string {
+func (resolver *k8SRoleResolver) Namespace(ctx context.Context) string {
 	value := resolver.data.GetNamespace()
 	return value
 }
 
-func (resolver *k8SRoleResolver) Rules() ([]*policyRuleResolver, error) {
+func (resolver *k8SRoleResolver) Rules(ctx context.Context) ([]*policyRuleResolver, error) {
 	value := resolver.data.GetRules()
 	return resolver.root.wrapPolicyRules(value, nil)
 }
@@ -3896,57 +3897,57 @@ func (resolver *Resolver) wrapK8SRoleBindings(values []*storage.K8SRoleBinding, 
 	return output, nil
 }
 
-func (resolver *k8SRoleBindingResolver) Annotations() labels {
+func (resolver *k8SRoleBindingResolver) Annotations(ctx context.Context) labels {
 	value := resolver.data.GetAnnotations()
 	return labelsResolver(value)
 }
 
-func (resolver *k8SRoleBindingResolver) ClusterId() string {
+func (resolver *k8SRoleBindingResolver) ClusterId(ctx context.Context) string {
 	value := resolver.data.GetClusterId()
 	return value
 }
 
-func (resolver *k8SRoleBindingResolver) ClusterName() string {
+func (resolver *k8SRoleBindingResolver) ClusterName(ctx context.Context) string {
 	value := resolver.data.GetClusterName()
 	return value
 }
 
-func (resolver *k8SRoleBindingResolver) ClusterRole() bool {
+func (resolver *k8SRoleBindingResolver) ClusterRole(ctx context.Context) bool {
 	value := resolver.data.GetClusterRole()
 	return value
 }
 
-func (resolver *k8SRoleBindingResolver) CreatedAt() (*graphql.Time, error) {
+func (resolver *k8SRoleBindingResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
 	return timestamp(value)
 }
 
-func (resolver *k8SRoleBindingResolver) Id() graphql.ID {
+func (resolver *k8SRoleBindingResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *k8SRoleBindingResolver) Labels() labels {
+func (resolver *k8SRoleBindingResolver) Labels(ctx context.Context) labels {
 	value := resolver.data.GetLabels()
 	return labelsResolver(value)
 }
 
-func (resolver *k8SRoleBindingResolver) Name() string {
+func (resolver *k8SRoleBindingResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *k8SRoleBindingResolver) Namespace() string {
+func (resolver *k8SRoleBindingResolver) Namespace(ctx context.Context) string {
 	value := resolver.data.GetNamespace()
 	return value
 }
 
-func (resolver *k8SRoleBindingResolver) RoleId() string {
+func (resolver *k8SRoleBindingResolver) RoleId(ctx context.Context) string {
 	value := resolver.data.GetRoleId()
 	return value
 }
 
-func (resolver *k8SRoleBindingResolver) Subjects() ([]*subjectResolver, error) {
+func (resolver *k8SRoleBindingResolver) Subjects(ctx context.Context) ([]*subjectResolver, error) {
 	value := resolver.data.GetSubjects()
 	return resolver.root.wrapSubjects(value, nil)
 }
@@ -3974,12 +3975,12 @@ func (resolver *Resolver) wrapKeyValuePairs(values []*storage.KeyValuePair, err 
 	return output, nil
 }
 
-func (resolver *keyValuePairResolver) Key() string {
+func (resolver *keyValuePairResolver) Key(ctx context.Context) string {
 	value := resolver.data.GetKey()
 	return value
 }
 
-func (resolver *keyValuePairResolver) Value() string {
+func (resolver *keyValuePairResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
 	return value
 }
@@ -4007,12 +4008,12 @@ func (resolver *Resolver) wrapKeyValuePolicies(values []*storage.KeyValuePolicy,
 	return output, nil
 }
 
-func (resolver *keyValuePolicyResolver) Key() string {
+func (resolver *keyValuePolicyResolver) Key(ctx context.Context) string {
 	value := resolver.data.GetKey()
 	return value
 }
 
-func (resolver *keyValuePolicyResolver) Value() string {
+func (resolver *keyValuePolicyResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
 	return value
 }
@@ -4058,12 +4059,12 @@ func (resolver *Resolver) wrapLabelSelectors(values []*storage.LabelSelector, er
 	return output, nil
 }
 
-func (resolver *labelSelectorResolver) MatchLabels() labels {
+func (resolver *labelSelectorResolver) MatchLabels(ctx context.Context) labels {
 	value := resolver.data.GetMatchLabels()
 	return labelsResolver(value)
 }
 
-func (resolver *labelSelectorResolver) Requirements() ([]*labelSelector_RequirementResolver, error) {
+func (resolver *labelSelectorResolver) Requirements(ctx context.Context) ([]*labelSelector_RequirementResolver, error) {
 	value := resolver.data.GetRequirements()
 	return resolver.root.wrapLabelSelector_Requirements(value, nil)
 }
@@ -4109,17 +4110,17 @@ func (resolver *Resolver) wrapLabelSelector_Requirements(values []*storage.Label
 	return output, nil
 }
 
-func (resolver *labelSelector_RequirementResolver) Key() string {
+func (resolver *labelSelector_RequirementResolver) Key(ctx context.Context) string {
 	value := resolver.data.GetKey()
 	return value
 }
 
-func (resolver *labelSelector_RequirementResolver) Op() string {
+func (resolver *labelSelector_RequirementResolver) Op(ctx context.Context) string {
 	value := resolver.data.GetOp()
 	return value.String()
 }
 
-func (resolver *labelSelector_RequirementResolver) Values() []string {
+func (resolver *labelSelector_RequirementResolver) Values(ctx context.Context) []string {
 	value := resolver.data.GetValues()
 	return value
 }
@@ -4147,17 +4148,17 @@ func (resolver *Resolver) wrapLicenses(values []*storage.License, err error) ([]
 	return output, nil
 }
 
-func (resolver *licenseResolver) Name() string {
+func (resolver *licenseResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *licenseResolver) Type() string {
+func (resolver *licenseResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
 	return value
 }
 
-func (resolver *licenseResolver) Url() string {
+func (resolver *licenseResolver) Url(ctx context.Context) string {
 	value := resolver.data.GetUrl()
 	return value
 }
@@ -4203,22 +4204,22 @@ func (resolver *Resolver) wrapMetadatas(values []*v1.Metadata, err error) ([]*me
 	return output, nil
 }
 
-func (resolver *metadataResolver) BuildFlavor() string {
+func (resolver *metadataResolver) BuildFlavor(ctx context.Context) string {
 	value := resolver.data.GetBuildFlavor()
 	return value
 }
 
-func (resolver *metadataResolver) LicenseStatus() string {
+func (resolver *metadataResolver) LicenseStatus(ctx context.Context) string {
 	value := resolver.data.GetLicenseStatus()
 	return value.String()
 }
 
-func (resolver *metadataResolver) ReleaseBuild() bool {
+func (resolver *metadataResolver) ReleaseBuild(ctx context.Context) bool {
 	value := resolver.data.GetReleaseBuild()
 	return value
 }
 
-func (resolver *metadataResolver) Version() string {
+func (resolver *metadataResolver) Version(ctx context.Context) string {
 	value := resolver.data.GetVersion()
 	return value
 }
@@ -4264,22 +4265,22 @@ func (resolver *Resolver) wrapNamespaces(values []*v1.Namespace, err error) ([]*
 	return output, nil
 }
 
-func (resolver *namespaceResolver) Metadata() (*namespaceMetadataResolver, error) {
+func (resolver *namespaceResolver) Metadata(ctx context.Context) (*namespaceMetadataResolver, error) {
 	value := resolver.data.GetMetadata()
 	return resolver.root.wrapNamespaceMetadata(value, true, nil)
 }
 
-func (resolver *namespaceResolver) NumDeployments() int32 {
+func (resolver *namespaceResolver) NumDeployments(ctx context.Context) int32 {
 	value := resolver.data.GetNumDeployments()
 	return value
 }
 
-func (resolver *namespaceResolver) NumNetworkPolicies() int32 {
+func (resolver *namespaceResolver) NumNetworkPolicies(ctx context.Context) int32 {
 	value := resolver.data.GetNumNetworkPolicies()
 	return value
 }
 
-func (resolver *namespaceResolver) NumSecrets() int32 {
+func (resolver *namespaceResolver) NumSecrets(ctx context.Context) int32 {
 	value := resolver.data.GetNumSecrets()
 	return value
 }
@@ -4307,32 +4308,32 @@ func (resolver *Resolver) wrapNamespaceMetadatas(values []*storage.NamespaceMeta
 	return output, nil
 }
 
-func (resolver *namespaceMetadataResolver) ClusterId() string {
+func (resolver *namespaceMetadataResolver) ClusterId(ctx context.Context) string {
 	value := resolver.data.GetClusterId()
 	return value
 }
 
-func (resolver *namespaceMetadataResolver) ClusterName() string {
+func (resolver *namespaceMetadataResolver) ClusterName(ctx context.Context) string {
 	value := resolver.data.GetClusterName()
 	return value
 }
 
-func (resolver *namespaceMetadataResolver) CreationTime() (*graphql.Time, error) {
+func (resolver *namespaceMetadataResolver) CreationTime(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreationTime()
 	return timestamp(value)
 }
 
-func (resolver *namespaceMetadataResolver) Id() graphql.ID {
+func (resolver *namespaceMetadataResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *namespaceMetadataResolver) Labels() labels {
+func (resolver *namespaceMetadataResolver) Labels(ctx context.Context) labels {
 	value := resolver.data.GetLabels()
 	return labelsResolver(value)
 }
 
-func (resolver *namespaceMetadataResolver) Name() string {
+func (resolver *namespaceMetadataResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
@@ -4360,12 +4361,12 @@ func (resolver *Resolver) wrapNetworkEntityInfos(values []*storage.NetworkEntity
 	return output, nil
 }
 
-func (resolver *networkEntityInfoResolver) Id() graphql.ID {
+func (resolver *networkEntityInfoResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *networkEntityInfoResolver) Type() string {
+func (resolver *networkEntityInfoResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
 	return value.String()
 }
@@ -4409,17 +4410,17 @@ func (resolver *Resolver) wrapNetworkEntityInfo_Deployments(values []*storage.Ne
 	return output, nil
 }
 
-func (resolver *networkEntityInfo_DeploymentResolver) Cluster() string {
+func (resolver *networkEntityInfo_DeploymentResolver) Cluster(ctx context.Context) string {
 	value := resolver.data.GetCluster()
 	return value
 }
 
-func (resolver *networkEntityInfo_DeploymentResolver) Name() string {
+func (resolver *networkEntityInfo_DeploymentResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *networkEntityInfo_DeploymentResolver) Namespace() string {
+func (resolver *networkEntityInfo_DeploymentResolver) Namespace(ctx context.Context) string {
 	value := resolver.data.GetNamespace()
 	return value
 }
@@ -4465,12 +4466,12 @@ func (resolver *Resolver) wrapNetworkFlows(values []*storage.NetworkFlow, err er
 	return output, nil
 }
 
-func (resolver *networkFlowResolver) LastSeenTimestamp() (*graphql.Time, error) {
+func (resolver *networkFlowResolver) LastSeenTimestamp(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetLastSeenTimestamp()
 	return timestamp(value)
 }
 
-func (resolver *networkFlowResolver) Props() (*networkFlowPropertiesResolver, error) {
+func (resolver *networkFlowResolver) Props(ctx context.Context) (*networkFlowPropertiesResolver, error) {
 	value := resolver.data.GetProps()
 	return resolver.root.wrapNetworkFlowProperties(value, true, nil)
 }
@@ -4498,22 +4499,22 @@ func (resolver *Resolver) wrapNetworkFlowPropertieses(values []*storage.NetworkF
 	return output, nil
 }
 
-func (resolver *networkFlowPropertiesResolver) DstEntity() (*networkEntityInfoResolver, error) {
+func (resolver *networkFlowPropertiesResolver) DstEntity(ctx context.Context) (*networkEntityInfoResolver, error) {
 	value := resolver.data.GetDstEntity()
 	return resolver.root.wrapNetworkEntityInfo(value, true, nil)
 }
 
-func (resolver *networkFlowPropertiesResolver) DstPort() int32 {
+func (resolver *networkFlowPropertiesResolver) DstPort(ctx context.Context) int32 {
 	value := resolver.data.GetDstPort()
 	return int32(value)
 }
 
-func (resolver *networkFlowPropertiesResolver) L4Protocol() string {
+func (resolver *networkFlowPropertiesResolver) L4Protocol(ctx context.Context) string {
 	value := resolver.data.GetL4Protocol()
 	return value.String()
 }
 
-func (resolver *networkFlowPropertiesResolver) SrcEntity() (*networkEntityInfoResolver, error) {
+func (resolver *networkFlowPropertiesResolver) SrcEntity(ctx context.Context) (*networkEntityInfoResolver, error) {
 	value := resolver.data.GetSrcEntity()
 	return resolver.root.wrapNetworkEntityInfo(value, true, nil)
 }
@@ -4541,67 +4542,67 @@ func (resolver *Resolver) wrapNodes(values []*storage.Node, err error) ([]*nodeR
 	return output, nil
 }
 
-func (resolver *nodeResolver) Annotations() labels {
+func (resolver *nodeResolver) Annotations(ctx context.Context) labels {
 	value := resolver.data.GetAnnotations()
 	return labelsResolver(value)
 }
 
-func (resolver *nodeResolver) ClusterId() string {
+func (resolver *nodeResolver) ClusterId(ctx context.Context) string {
 	value := resolver.data.GetClusterId()
 	return value
 }
 
-func (resolver *nodeResolver) ClusterName() string {
+func (resolver *nodeResolver) ClusterName(ctx context.Context) string {
 	value := resolver.data.GetClusterName()
 	return value
 }
 
-func (resolver *nodeResolver) ContainerRuntimeVersion() string {
+func (resolver *nodeResolver) ContainerRuntimeVersion(ctx context.Context) string {
 	value := resolver.data.GetContainerRuntimeVersion()
 	return value
 }
 
-func (resolver *nodeResolver) ExternalIpAddresses() []string {
+func (resolver *nodeResolver) ExternalIpAddresses(ctx context.Context) []string {
 	value := resolver.data.GetExternalIpAddresses()
 	return value
 }
 
-func (resolver *nodeResolver) Id() graphql.ID {
+func (resolver *nodeResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *nodeResolver) InternalIpAddresses() []string {
+func (resolver *nodeResolver) InternalIpAddresses(ctx context.Context) []string {
 	value := resolver.data.GetInternalIpAddresses()
 	return value
 }
 
-func (resolver *nodeResolver) JoinedAt() (*graphql.Time, error) {
+func (resolver *nodeResolver) JoinedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetJoinedAt()
 	return timestamp(value)
 }
 
-func (resolver *nodeResolver) KernelVersion() string {
+func (resolver *nodeResolver) KernelVersion(ctx context.Context) string {
 	value := resolver.data.GetKernelVersion()
 	return value
 }
 
-func (resolver *nodeResolver) Labels() labels {
+func (resolver *nodeResolver) Labels(ctx context.Context) labels {
 	value := resolver.data.GetLabels()
 	return labelsResolver(value)
 }
 
-func (resolver *nodeResolver) Name() string {
+func (resolver *nodeResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *nodeResolver) OsImage() string {
+func (resolver *nodeResolver) OsImage(ctx context.Context) string {
 	value := resolver.data.GetOsImage()
 	return value
 }
 
-func (resolver *nodeResolver) Taints() ([]*taintResolver, error) {
+func (resolver *nodeResolver) Taints(ctx context.Context) ([]*taintResolver, error) {
 	value := resolver.data.GetTaints()
 	return resolver.root.wrapTaints(value, nil)
 }
@@ -4629,37 +4630,37 @@ func (resolver *Resolver) wrapNotifiers(values []*storage.Notifier, err error) (
 	return output, nil
 }
 
-func (resolver *notifierResolver) Enabled() bool {
+func (resolver *notifierResolver) Enabled(ctx context.Context) bool {
 	value := resolver.data.GetEnabled()
 	return value
 }
 
-func (resolver *notifierResolver) Id() graphql.ID {
+func (resolver *notifierResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *notifierResolver) LabelDefault() string {
+func (resolver *notifierResolver) LabelDefault(ctx context.Context) string {
 	value := resolver.data.GetLabelDefault()
 	return value
 }
 
-func (resolver *notifierResolver) LabelKey() string {
+func (resolver *notifierResolver) LabelKey(ctx context.Context) string {
 	value := resolver.data.GetLabelKey()
 	return value
 }
 
-func (resolver *notifierResolver) Name() string {
+func (resolver *notifierResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *notifierResolver) Type() string {
+func (resolver *notifierResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
 	return value
 }
 
-func (resolver *notifierResolver) UiEndpoint() string {
+func (resolver *notifierResolver) UiEndpoint(ctx context.Context) string {
 	value := resolver.data.GetUiEndpoint()
 	return value
 }
@@ -4743,12 +4744,12 @@ func (resolver *Resolver) wrapNumericalPolicies(values []*storage.NumericalPolic
 	return output, nil
 }
 
-func (resolver *numericalPolicyResolver) Op() string {
+func (resolver *numericalPolicyResolver) Op(ctx context.Context) string {
 	value := resolver.data.GetOp()
 	return value.String()
 }
 
-func (resolver *numericalPolicyResolver) Value() float64 {
+func (resolver *numericalPolicyResolver) Value(ctx context.Context) float64 {
 	value := resolver.data.GetValue()
 	return float64(value)
 }
@@ -4776,17 +4777,17 @@ func (resolver *Resolver) wrapOrchestratorMetadatas(values []*storage.Orchestrat
 	return output, nil
 }
 
-func (resolver *orchestratorMetadataResolver) ApiVersions() []string {
+func (resolver *orchestratorMetadataResolver) ApiVersions(ctx context.Context) []string {
 	value := resolver.data.GetApiVersions()
 	return value
 }
 
-func (resolver *orchestratorMetadataResolver) BuildDate() (*graphql.Time, error) {
+func (resolver *orchestratorMetadataResolver) BuildDate(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetBuildDate()
 	return timestamp(value)
 }
 
-func (resolver *orchestratorMetadataResolver) Version() string {
+func (resolver *orchestratorMetadataResolver) Version(ctx context.Context) string {
 	value := resolver.data.GetVersion()
 	return value
 }
@@ -4814,7 +4815,7 @@ func (resolver *Resolver) wrapPagerDuties(values []*storage.PagerDuty, err error
 	return output, nil
 }
 
-func (resolver *pagerDutyResolver) ApiKey() string {
+func (resolver *pagerDutyResolver) ApiKey(ctx context.Context) string {
 	value := resolver.data.GetApiKey()
 	return value
 }
@@ -4860,7 +4861,7 @@ func (resolver *Resolver) wrapPermissionPolicies(values []*storage.PermissionPol
 	return output, nil
 }
 
-func (resolver *permissionPolicyResolver) PermissionLevel() string {
+func (resolver *permissionPolicyResolver) PermissionLevel(ctx context.Context) string {
 	value := resolver.data.GetPermissionLevel()
 	return value.String()
 }
@@ -4888,72 +4889,72 @@ func (resolver *Resolver) wrapPolicies(values []*storage.Policy, err error) ([]*
 	return output, nil
 }
 
-func (resolver *policyResolver) Categories() []string {
+func (resolver *policyResolver) Categories(ctx context.Context) []string {
 	value := resolver.data.GetCategories()
 	return value
 }
 
-func (resolver *policyResolver) Description() string {
+func (resolver *policyResolver) Description(ctx context.Context) string {
 	value := resolver.data.GetDescription()
 	return value
 }
 
-func (resolver *policyResolver) Disabled() bool {
+func (resolver *policyResolver) Disabled(ctx context.Context) bool {
 	value := resolver.data.GetDisabled()
 	return value
 }
 
-func (resolver *policyResolver) EnforcementActions() []string {
+func (resolver *policyResolver) EnforcementActions(ctx context.Context) []string {
 	value := resolver.data.GetEnforcementActions()
 	return stringSlice(value)
 }
 
-func (resolver *policyResolver) Fields() (*policyFieldsResolver, error) {
+func (resolver *policyResolver) Fields(ctx context.Context) (*policyFieldsResolver, error) {
 	value := resolver.data.GetFields()
 	return resolver.root.wrapPolicyFields(value, true, nil)
 }
 
-func (resolver *policyResolver) Id() graphql.ID {
+func (resolver *policyResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *policyResolver) LifecycleStages() []string {
+func (resolver *policyResolver) LifecycleStages(ctx context.Context) []string {
 	value := resolver.data.GetLifecycleStages()
 	return stringSlice(value)
 }
 
-func (resolver *policyResolver) Name() string {
+func (resolver *policyResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *policyResolver) Notifiers() []string {
+func (resolver *policyResolver) Notifiers(ctx context.Context) []string {
 	value := resolver.data.GetNotifiers()
 	return value
 }
 
-func (resolver *policyResolver) Rationale() string {
+func (resolver *policyResolver) Rationale(ctx context.Context) string {
 	value := resolver.data.GetRationale()
 	return value
 }
 
-func (resolver *policyResolver) Remediation() string {
+func (resolver *policyResolver) Remediation(ctx context.Context) string {
 	value := resolver.data.GetRemediation()
 	return value
 }
 
-func (resolver *policyResolver) Scope() ([]*scopeResolver, error) {
+func (resolver *policyResolver) Scope(ctx context.Context) ([]*scopeResolver, error) {
 	value := resolver.data.GetScope()
 	return resolver.root.wrapScopes(value, nil)
 }
 
-func (resolver *policyResolver) Severity() string {
+func (resolver *policyResolver) Severity(ctx context.Context) string {
 	value := resolver.data.GetSeverity()
 	return value.String()
 }
 
-func (resolver *policyResolver) Whitelists() ([]*whitelistResolver, error) {
+func (resolver *policyResolver) Whitelists(ctx context.Context) ([]*whitelistResolver, error) {
 	value := resolver.data.GetWhitelists()
 	return resolver.root.wrapWhitelists(value, nil)
 }
@@ -4981,117 +4982,117 @@ func (resolver *Resolver) wrapPolicyFieldses(values []*storage.PolicyFields, err
 	return output, nil
 }
 
-func (resolver *policyFieldsResolver) AddCapabilities() []string {
+func (resolver *policyFieldsResolver) AddCapabilities(ctx context.Context) []string {
 	value := resolver.data.GetAddCapabilities()
 	return value
 }
 
-func (resolver *policyFieldsResolver) Args() string {
+func (resolver *policyFieldsResolver) Args(ctx context.Context) string {
 	value := resolver.data.GetArgs()
 	return value
 }
 
-func (resolver *policyFieldsResolver) Command() string {
+func (resolver *policyFieldsResolver) Command(ctx context.Context) string {
 	value := resolver.data.GetCommand()
 	return value
 }
 
-func (resolver *policyFieldsResolver) Component() (*componentResolver, error) {
+func (resolver *policyFieldsResolver) Component(ctx context.Context) (*componentResolver, error) {
 	value := resolver.data.GetComponent()
 	return resolver.root.wrapComponent(value, true, nil)
 }
 
-func (resolver *policyFieldsResolver) ContainerResourcePolicy() (*resourcePolicyResolver, error) {
+func (resolver *policyFieldsResolver) ContainerResourcePolicy(ctx context.Context) (*resourcePolicyResolver, error) {
 	value := resolver.data.GetContainerResourcePolicy()
 	return resolver.root.wrapResourcePolicy(value, true, nil)
 }
 
-func (resolver *policyFieldsResolver) Cve() string {
+func (resolver *policyFieldsResolver) Cve(ctx context.Context) string {
 	value := resolver.data.GetCve()
 	return value
 }
 
-func (resolver *policyFieldsResolver) Cvss() (*numericalPolicyResolver, error) {
+func (resolver *policyFieldsResolver) Cvss(ctx context.Context) (*numericalPolicyResolver, error) {
 	value := resolver.data.GetCvss()
 	return resolver.root.wrapNumericalPolicy(value, true, nil)
 }
 
-func (resolver *policyFieldsResolver) Directory() string {
+func (resolver *policyFieldsResolver) Directory(ctx context.Context) string {
 	value := resolver.data.GetDirectory()
 	return value
 }
 
-func (resolver *policyFieldsResolver) DisallowedAnnotation() (*keyValuePolicyResolver, error) {
+func (resolver *policyFieldsResolver) DisallowedAnnotation(ctx context.Context) (*keyValuePolicyResolver, error) {
 	value := resolver.data.GetDisallowedAnnotation()
 	return resolver.root.wrapKeyValuePolicy(value, true, nil)
 }
 
-func (resolver *policyFieldsResolver) DropCapabilities() []string {
+func (resolver *policyFieldsResolver) DropCapabilities(ctx context.Context) []string {
 	value := resolver.data.GetDropCapabilities()
 	return value
 }
 
-func (resolver *policyFieldsResolver) Env() (*keyValuePolicyResolver, error) {
+func (resolver *policyFieldsResolver) Env(ctx context.Context) (*keyValuePolicyResolver, error) {
 	value := resolver.data.GetEnv()
 	return resolver.root.wrapKeyValuePolicy(value, true, nil)
 }
 
-func (resolver *policyFieldsResolver) FixedBy() string {
+func (resolver *policyFieldsResolver) FixedBy(ctx context.Context) string {
 	value := resolver.data.GetFixedBy()
 	return value
 }
 
-func (resolver *policyFieldsResolver) HostMountPolicy() (*hostMountPolicyResolver, error) {
+func (resolver *policyFieldsResolver) HostMountPolicy(ctx context.Context) (*hostMountPolicyResolver, error) {
 	value := resolver.data.GetHostMountPolicy()
 	return resolver.root.wrapHostMountPolicy(value, true, nil)
 }
 
-func (resolver *policyFieldsResolver) ImageName() (*imageNamePolicyResolver, error) {
+func (resolver *policyFieldsResolver) ImageName(ctx context.Context) (*imageNamePolicyResolver, error) {
 	value := resolver.data.GetImageName()
 	return resolver.root.wrapImageNamePolicy(value, true, nil)
 }
 
-func (resolver *policyFieldsResolver) LineRule() (*dockerfileLineRuleFieldResolver, error) {
+func (resolver *policyFieldsResolver) LineRule(ctx context.Context) (*dockerfileLineRuleFieldResolver, error) {
 	value := resolver.data.GetLineRule()
 	return resolver.root.wrapDockerfileLineRuleField(value, true, nil)
 }
 
-func (resolver *policyFieldsResolver) PermissionPolicy() (*permissionPolicyResolver, error) {
+func (resolver *policyFieldsResolver) PermissionPolicy(ctx context.Context) (*permissionPolicyResolver, error) {
 	value := resolver.data.GetPermissionPolicy()
 	return resolver.root.wrapPermissionPolicy(value, true, nil)
 }
 
-func (resolver *policyFieldsResolver) PortExposurePolicy() (*portExposurePolicyResolver, error) {
+func (resolver *policyFieldsResolver) PortExposurePolicy(ctx context.Context) (*portExposurePolicyResolver, error) {
 	value := resolver.data.GetPortExposurePolicy()
 	return resolver.root.wrapPortExposurePolicy(value, true, nil)
 }
 
-func (resolver *policyFieldsResolver) PortPolicy() (*portPolicyResolver, error) {
+func (resolver *policyFieldsResolver) PortPolicy(ctx context.Context) (*portPolicyResolver, error) {
 	value := resolver.data.GetPortPolicy()
 	return resolver.root.wrapPortPolicy(value, true, nil)
 }
 
-func (resolver *policyFieldsResolver) ProcessPolicy() (*processPolicyResolver, error) {
+func (resolver *policyFieldsResolver) ProcessPolicy(ctx context.Context) (*processPolicyResolver, error) {
 	value := resolver.data.GetProcessPolicy()
 	return resolver.root.wrapProcessPolicy(value, true, nil)
 }
 
-func (resolver *policyFieldsResolver) RequiredAnnotation() (*keyValuePolicyResolver, error) {
+func (resolver *policyFieldsResolver) RequiredAnnotation(ctx context.Context) (*keyValuePolicyResolver, error) {
 	value := resolver.data.GetRequiredAnnotation()
 	return resolver.root.wrapKeyValuePolicy(value, true, nil)
 }
 
-func (resolver *policyFieldsResolver) RequiredLabel() (*keyValuePolicyResolver, error) {
+func (resolver *policyFieldsResolver) RequiredLabel(ctx context.Context) (*keyValuePolicyResolver, error) {
 	value := resolver.data.GetRequiredLabel()
 	return resolver.root.wrapKeyValuePolicy(value, true, nil)
 }
 
-func (resolver *policyFieldsResolver) User() string {
+func (resolver *policyFieldsResolver) User(ctx context.Context) string {
 	value := resolver.data.GetUser()
 	return value
 }
 
-func (resolver *policyFieldsResolver) VolumePolicy() (*volumePolicyResolver, error) {
+func (resolver *policyFieldsResolver) VolumePolicy(ctx context.Context) (*volumePolicyResolver, error) {
 	value := resolver.data.GetVolumePolicy()
 	return resolver.root.wrapVolumePolicy(value, true, nil)
 }
@@ -5119,27 +5120,27 @@ func (resolver *Resolver) wrapPolicyRules(values []*storage.PolicyRule, err erro
 	return output, nil
 }
 
-func (resolver *policyRuleResolver) ApiGroups() []string {
+func (resolver *policyRuleResolver) ApiGroups(ctx context.Context) []string {
 	value := resolver.data.GetApiGroups()
 	return value
 }
 
-func (resolver *policyRuleResolver) NonResourceUrls() []string {
+func (resolver *policyRuleResolver) NonResourceUrls(ctx context.Context) []string {
 	value := resolver.data.GetNonResourceUrls()
 	return value
 }
 
-func (resolver *policyRuleResolver) ResourceNames() []string {
+func (resolver *policyRuleResolver) ResourceNames(ctx context.Context) []string {
 	value := resolver.data.GetResourceNames()
 	return value
 }
 
-func (resolver *policyRuleResolver) Resources() []string {
+func (resolver *policyRuleResolver) Resources(ctx context.Context) []string {
 	value := resolver.data.GetResources()
 	return value
 }
 
-func (resolver *policyRuleResolver) Verbs() []string {
+func (resolver *policyRuleResolver) Verbs(ctx context.Context) []string {
 	value := resolver.data.GetVerbs()
 	return value
 }
@@ -5167,32 +5168,32 @@ func (resolver *Resolver) wrapPortConfigs(values []*storage.PortConfig, err erro
 	return output, nil
 }
 
-func (resolver *portConfigResolver) ContainerPort() int32 {
+func (resolver *portConfigResolver) ContainerPort(ctx context.Context) int32 {
 	value := resolver.data.GetContainerPort()
 	return value
 }
 
-func (resolver *portConfigResolver) ExposedPort() int32 {
+func (resolver *portConfigResolver) ExposedPort(ctx context.Context) int32 {
 	value := resolver.data.GetExposedPort()
 	return value
 }
 
-func (resolver *portConfigResolver) Exposure() string {
+func (resolver *portConfigResolver) Exposure(ctx context.Context) string {
 	value := resolver.data.GetExposure()
 	return value.String()
 }
 
-func (resolver *portConfigResolver) ExposureInfos() ([]*portConfig_ExposureInfoResolver, error) {
+func (resolver *portConfigResolver) ExposureInfos(ctx context.Context) ([]*portConfig_ExposureInfoResolver, error) {
 	value := resolver.data.GetExposureInfos()
 	return resolver.root.wrapPortConfig_ExposureInfos(value, nil)
 }
 
-func (resolver *portConfigResolver) Name() string {
+func (resolver *portConfigResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *portConfigResolver) Protocol() string {
+func (resolver *portConfigResolver) Protocol(ctx context.Context) string {
 	value := resolver.data.GetProtocol()
 	return value
 }
@@ -5220,42 +5221,42 @@ func (resolver *Resolver) wrapPortConfig_ExposureInfos(values []*storage.PortCon
 	return output, nil
 }
 
-func (resolver *portConfig_ExposureInfoResolver) ExternalHostnames() []string {
+func (resolver *portConfig_ExposureInfoResolver) ExternalHostnames(ctx context.Context) []string {
 	value := resolver.data.GetExternalHostnames()
 	return value
 }
 
-func (resolver *portConfig_ExposureInfoResolver) ExternalIps() []string {
+func (resolver *portConfig_ExposureInfoResolver) ExternalIps(ctx context.Context) []string {
 	value := resolver.data.GetExternalIps()
 	return value
 }
 
-func (resolver *portConfig_ExposureInfoResolver) Level() string {
+func (resolver *portConfig_ExposureInfoResolver) Level(ctx context.Context) string {
 	value := resolver.data.GetLevel()
 	return value.String()
 }
 
-func (resolver *portConfig_ExposureInfoResolver) NodePort() int32 {
+func (resolver *portConfig_ExposureInfoResolver) NodePort(ctx context.Context) int32 {
 	value := resolver.data.GetNodePort()
 	return value
 }
 
-func (resolver *portConfig_ExposureInfoResolver) ServiceClusterIp() string {
+func (resolver *portConfig_ExposureInfoResolver) ServiceClusterIp(ctx context.Context) string {
 	value := resolver.data.GetServiceClusterIp()
 	return value
 }
 
-func (resolver *portConfig_ExposureInfoResolver) ServiceId() string {
+func (resolver *portConfig_ExposureInfoResolver) ServiceId(ctx context.Context) string {
 	value := resolver.data.GetServiceId()
 	return value
 }
 
-func (resolver *portConfig_ExposureInfoResolver) ServiceName() string {
+func (resolver *portConfig_ExposureInfoResolver) ServiceName(ctx context.Context) string {
 	value := resolver.data.GetServiceName()
 	return value
 }
 
-func (resolver *portConfig_ExposureInfoResolver) ServicePort() int32 {
+func (resolver *portConfig_ExposureInfoResolver) ServicePort(ctx context.Context) int32 {
 	value := resolver.data.GetServicePort()
 	return value
 }
@@ -5301,7 +5302,7 @@ func (resolver *Resolver) wrapPortExposurePolicies(values []*storage.PortExposur
 	return output, nil
 }
 
-func (resolver *portExposurePolicyResolver) ExposureLevels() []string {
+func (resolver *portExposurePolicyResolver) ExposureLevels(ctx context.Context) []string {
 	value := resolver.data.GetExposureLevels()
 	return stringSlice(value)
 }
@@ -5329,12 +5330,12 @@ func (resolver *Resolver) wrapPortPolicies(values []*storage.PortPolicy, err err
 	return output, nil
 }
 
-func (resolver *portPolicyResolver) Port() int32 {
+func (resolver *portPolicyResolver) Port(ctx context.Context) int32 {
 	value := resolver.data.GetPort()
 	return value
 }
 
-func (resolver *portPolicyResolver) Protocol() string {
+func (resolver *portPolicyResolver) Protocol(ctx context.Context) string {
 	value := resolver.data.GetProtocol()
 	return value
 }
@@ -5362,12 +5363,12 @@ func (resolver *Resolver) wrapProcessGroups(values []*v1.ProcessGroup, err error
 	return output, nil
 }
 
-func (resolver *processGroupResolver) Args() string {
+func (resolver *processGroupResolver) Args(ctx context.Context) string {
 	value := resolver.data.GetArgs()
 	return value
 }
 
-func (resolver *processGroupResolver) Signals() ([]*processIndicatorResolver, error) {
+func (resolver *processGroupResolver) Signals(ctx context.Context) ([]*processIndicatorResolver, error) {
 	value := resolver.data.GetSignals()
 	return resolver.root.wrapProcessIndicators(value, nil)
 }
@@ -5395,32 +5396,32 @@ func (resolver *Resolver) wrapProcessIndicators(values []*storage.ProcessIndicat
 	return output, nil
 }
 
-func (resolver *processIndicatorResolver) ContainerName() string {
+func (resolver *processIndicatorResolver) ContainerName(ctx context.Context) string {
 	value := resolver.data.GetContainerName()
 	return value
 }
 
-func (resolver *processIndicatorResolver) DeploymentId() string {
+func (resolver *processIndicatorResolver) DeploymentId(ctx context.Context) string {
 	value := resolver.data.GetDeploymentId()
 	return value
 }
 
-func (resolver *processIndicatorResolver) EmitTimestamp() (*graphql.Time, error) {
+func (resolver *processIndicatorResolver) EmitTimestamp(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetEmitTimestamp()
 	return timestamp(value)
 }
 
-func (resolver *processIndicatorResolver) Id() graphql.ID {
+func (resolver *processIndicatorResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *processIndicatorResolver) PodId() string {
+func (resolver *processIndicatorResolver) PodId(ctx context.Context) string {
 	value := resolver.data.GetPodId()
 	return value
 }
 
-func (resolver *processIndicatorResolver) Signal() (*processSignalResolver, error) {
+func (resolver *processIndicatorResolver) Signal(ctx context.Context) (*processSignalResolver, error) {
 	value := resolver.data.GetSignal()
 	return resolver.root.wrapProcessSignal(value, true, nil)
 }
@@ -5448,17 +5449,17 @@ func (resolver *Resolver) wrapProcessNameGroups(values []*v1.ProcessNameGroup, e
 	return output, nil
 }
 
-func (resolver *processNameGroupResolver) Groups() ([]*processGroupResolver, error) {
+func (resolver *processNameGroupResolver) Groups(ctx context.Context) ([]*processGroupResolver, error) {
 	value := resolver.data.GetGroups()
 	return resolver.root.wrapProcessGroups(value, nil)
 }
 
-func (resolver *processNameGroupResolver) Name() string {
+func (resolver *processNameGroupResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *processNameGroupResolver) TimesExecuted() int32 {
+func (resolver *processNameGroupResolver) TimesExecuted(ctx context.Context) int32 {
 	value := resolver.data.GetTimesExecuted()
 	return int32(value)
 }
@@ -5486,22 +5487,22 @@ func (resolver *Resolver) wrapProcessPolicies(values []*storage.ProcessPolicy, e
 	return output, nil
 }
 
-func (resolver *processPolicyResolver) Ancestor() string {
+func (resolver *processPolicyResolver) Ancestor(ctx context.Context) string {
 	value := resolver.data.GetAncestor()
 	return value
 }
 
-func (resolver *processPolicyResolver) Args() string {
+func (resolver *processPolicyResolver) Args(ctx context.Context) string {
 	value := resolver.data.GetArgs()
 	return value
 }
 
-func (resolver *processPolicyResolver) Name() string {
+func (resolver *processPolicyResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *processPolicyResolver) Uid() string {
+func (resolver *processPolicyResolver) Uid(ctx context.Context) string {
 	value := resolver.data.GetUid()
 	return value
 }
@@ -5529,52 +5530,52 @@ func (resolver *Resolver) wrapProcessSignals(values []*storage.ProcessSignal, er
 	return output, nil
 }
 
-func (resolver *processSignalResolver) Args() string {
+func (resolver *processSignalResolver) Args(ctx context.Context) string {
 	value := resolver.data.GetArgs()
 	return value
 }
 
-func (resolver *processSignalResolver) ContainerId() string {
+func (resolver *processSignalResolver) ContainerId(ctx context.Context) string {
 	value := resolver.data.GetContainerId()
 	return value
 }
 
-func (resolver *processSignalResolver) ExecFilePath() string {
+func (resolver *processSignalResolver) ExecFilePath(ctx context.Context) string {
 	value := resolver.data.GetExecFilePath()
 	return value
 }
 
-func (resolver *processSignalResolver) Gid() int32 {
+func (resolver *processSignalResolver) Gid(ctx context.Context) int32 {
 	value := resolver.data.GetGid()
 	return int32(value)
 }
 
-func (resolver *processSignalResolver) Id() graphql.ID {
+func (resolver *processSignalResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *processSignalResolver) Lineage() []string {
+func (resolver *processSignalResolver) Lineage(ctx context.Context) []string {
 	value := resolver.data.GetLineage()
 	return value
 }
 
-func (resolver *processSignalResolver) Name() string {
+func (resolver *processSignalResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *processSignalResolver) Pid() int32 {
+func (resolver *processSignalResolver) Pid(ctx context.Context) int32 {
 	value := resolver.data.GetPid()
 	return int32(value)
 }
 
-func (resolver *processSignalResolver) Time() (*graphql.Time, error) {
+func (resolver *processSignalResolver) Time(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetTime()
 	return timestamp(value)
 }
 
-func (resolver *processSignalResolver) Uid() int32 {
+func (resolver *processSignalResolver) Uid(ctx context.Context) int32 {
 	value := resolver.data.GetUid()
 	return int32(value)
 }
@@ -5602,17 +5603,17 @@ func (resolver *Resolver) wrapProviderMetadatas(values []*storage.ProviderMetada
 	return output, nil
 }
 
-func (resolver *providerMetadataResolver) Region() string {
+func (resolver *providerMetadataResolver) Region(ctx context.Context) string {
 	value := resolver.data.GetRegion()
 	return value
 }
 
-func (resolver *providerMetadataResolver) Verified() bool {
+func (resolver *providerMetadataResolver) Verified(ctx context.Context) bool {
 	value := resolver.data.GetVerified()
 	return value
 }
 
-func (resolver *providerMetadataResolver) Zone() string {
+func (resolver *providerMetadataResolver) Zone(ctx context.Context) string {
 	value := resolver.data.GetZone()
 	return value
 }
@@ -5672,22 +5673,22 @@ func (resolver *Resolver) wrapResourcePolicies(values []*storage.ResourcePolicy,
 	return output, nil
 }
 
-func (resolver *resourcePolicyResolver) CpuResourceLimit() (*numericalPolicyResolver, error) {
+func (resolver *resourcePolicyResolver) CpuResourceLimit(ctx context.Context) (*numericalPolicyResolver, error) {
 	value := resolver.data.GetCpuResourceLimit()
 	return resolver.root.wrapNumericalPolicy(value, true, nil)
 }
 
-func (resolver *resourcePolicyResolver) CpuResourceRequest() (*numericalPolicyResolver, error) {
+func (resolver *resourcePolicyResolver) CpuResourceRequest(ctx context.Context) (*numericalPolicyResolver, error) {
 	value := resolver.data.GetCpuResourceRequest()
 	return resolver.root.wrapNumericalPolicy(value, true, nil)
 }
 
-func (resolver *resourcePolicyResolver) MemoryResourceLimit() (*numericalPolicyResolver, error) {
+func (resolver *resourcePolicyResolver) MemoryResourceLimit(ctx context.Context) (*numericalPolicyResolver, error) {
 	value := resolver.data.GetMemoryResourceLimit()
 	return resolver.root.wrapNumericalPolicy(value, true, nil)
 }
 
-func (resolver *resourcePolicyResolver) MemoryResourceRequest() (*numericalPolicyResolver, error) {
+func (resolver *resourcePolicyResolver) MemoryResourceRequest(ctx context.Context) (*numericalPolicyResolver, error) {
 	value := resolver.data.GetMemoryResourceRequest()
 	return resolver.root.wrapNumericalPolicy(value, true, nil)
 }
@@ -5715,22 +5716,22 @@ func (resolver *Resolver) wrapResourceses(values []*storage.Resources, err error
 	return output, nil
 }
 
-func (resolver *resourcesResolver) CpuCoresLimit() float64 {
+func (resolver *resourcesResolver) CpuCoresLimit(ctx context.Context) float64 {
 	value := resolver.data.GetCpuCoresLimit()
 	return float64(value)
 }
 
-func (resolver *resourcesResolver) CpuCoresRequest() float64 {
+func (resolver *resourcesResolver) CpuCoresRequest(ctx context.Context) float64 {
 	value := resolver.data.GetCpuCoresRequest()
 	return float64(value)
 }
 
-func (resolver *resourcesResolver) MemoryMbLimit() float64 {
+func (resolver *resourcesResolver) MemoryMbLimit(ctx context.Context) float64 {
 	value := resolver.data.GetMemoryMbLimit()
 	return float64(value)
 }
 
-func (resolver *resourcesResolver) MemoryMbRequest() float64 {
+func (resolver *resourcesResolver) MemoryMbRequest(ctx context.Context) float64 {
 	value := resolver.data.GetMemoryMbRequest()
 	return float64(value)
 }
@@ -5758,12 +5759,12 @@ func (resolver *Resolver) wrapRisks(values []*storage.Risk, err error) ([]*riskR
 	return output, nil
 }
 
-func (resolver *riskResolver) Results() ([]*risk_ResultResolver, error) {
+func (resolver *riskResolver) Results(ctx context.Context) ([]*risk_ResultResolver, error) {
 	value := resolver.data.GetResults()
 	return resolver.root.wrapRisk_Results(value, nil)
 }
 
-func (resolver *riskResolver) Score() float64 {
+func (resolver *riskResolver) Score(ctx context.Context) float64 {
 	value := resolver.data.GetScore()
 	return float64(value)
 }
@@ -5791,17 +5792,17 @@ func (resolver *Resolver) wrapRisk_Results(values []*storage.Risk_Result, err er
 	return output, nil
 }
 
-func (resolver *risk_ResultResolver) Factors() ([]*risk_Result_FactorResolver, error) {
+func (resolver *risk_ResultResolver) Factors(ctx context.Context) ([]*risk_Result_FactorResolver, error) {
 	value := resolver.data.GetFactors()
 	return resolver.root.wrapRisk_Result_Factors(value, nil)
 }
 
-func (resolver *risk_ResultResolver) Name() string {
+func (resolver *risk_ResultResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *risk_ResultResolver) Score() float64 {
+func (resolver *risk_ResultResolver) Score(ctx context.Context) float64 {
 	value := resolver.data.GetScore()
 	return float64(value)
 }
@@ -5829,12 +5830,12 @@ func (resolver *Resolver) wrapRisk_Result_Factors(values []*storage.Risk_Result_
 	return output, nil
 }
 
-func (resolver *risk_Result_FactorResolver) Message() string {
+func (resolver *risk_Result_FactorResolver) Message(ctx context.Context) string {
 	value := resolver.data.GetMessage()
 	return value
 }
 
-func (resolver *risk_Result_FactorResolver) Url() string {
+func (resolver *risk_Result_FactorResolver) Url(ctx context.Context) string {
 	value := resolver.data.GetUrl()
 	return value
 }
@@ -5862,12 +5863,12 @@ func (resolver *Resolver) wrapRoles(values []*storage.Role, err error) ([]*roleR
 	return output, nil
 }
 
-func (resolver *roleResolver) GlobalAccess() string {
+func (resolver *roleResolver) GlobalAccess(ctx context.Context) string {
 	value := resolver.data.GetGlobalAccess()
 	return value.String()
 }
 
-func (resolver *roleResolver) Name() string {
+func (resolver *roleResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
@@ -5895,17 +5896,17 @@ func (resolver *Resolver) wrapScopes(values []*storage.Scope, err error) ([]*sco
 	return output, nil
 }
 
-func (resolver *scopeResolver) Cluster() string {
+func (resolver *scopeResolver) Cluster(ctx context.Context) string {
 	value := resolver.data.GetCluster()
 	return value
 }
 
-func (resolver *scopeResolver) Label() (*scope_LabelResolver, error) {
+func (resolver *scopeResolver) Label(ctx context.Context) (*scope_LabelResolver, error) {
 	value := resolver.data.GetLabel()
 	return resolver.root.wrapScope_Label(value, true, nil)
 }
 
-func (resolver *scopeResolver) Namespace() string {
+func (resolver *scopeResolver) Namespace(ctx context.Context) string {
 	value := resolver.data.GetNamespace()
 	return value
 }
@@ -5933,12 +5934,12 @@ func (resolver *Resolver) wrapScope_Labels(values []*storage.Scope_Label, err er
 	return output, nil
 }
 
-func (resolver *scope_LabelResolver) Key() string {
+func (resolver *scope_LabelResolver) Key(ctx context.Context) string {
 	value := resolver.data.GetKey()
 	return value
 }
 
-func (resolver *scope_LabelResolver) Value() string {
+func (resolver *scope_LabelResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
 	return value
 }
@@ -5984,27 +5985,27 @@ func (resolver *Resolver) wrapSearchResults(values []*v1.SearchResult, err error
 	return output, nil
 }
 
-func (resolver *searchResultResolver) Category() string {
+func (resolver *searchResultResolver) Category(ctx context.Context) string {
 	value := resolver.data.GetCategory()
 	return value.String()
 }
 
-func (resolver *searchResultResolver) Id() graphql.ID {
+func (resolver *searchResultResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *searchResultResolver) Location() string {
+func (resolver *searchResultResolver) Location(ctx context.Context) string {
 	value := resolver.data.GetLocation()
 	return value
 }
 
-func (resolver *searchResultResolver) Name() string {
+func (resolver *searchResultResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *searchResultResolver) Score() float64 {
+func (resolver *searchResultResolver) Score(ctx context.Context) float64 {
 	value := resolver.data.GetScore()
 	return value
 }
@@ -6044,25 +6045,25 @@ func (resolver *Resolver) wrapListSecrets(values []*storage.ListSecret, err erro
 	return output, nil
 }
 
-func (resolver *secretResolver) ensureData() {
+func (resolver *secretResolver) ensureData(ctx context.Context) {
 	if resolver.data == nil {
-		resolver.data = resolver.root.getSecret(resolver.list.GetId())
+		resolver.data = resolver.root.getSecret(ctx, resolver.list.GetId())
 	}
 }
 
-func (resolver *secretResolver) Annotations() labels {
-	resolver.ensureData()
+func (resolver *secretResolver) Annotations(ctx context.Context) labels {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetAnnotations()
 	return labelsResolver(value)
 }
 
-func (resolver *secretResolver) ClusterId() string {
-	resolver.ensureData()
+func (resolver *secretResolver) ClusterId(ctx context.Context) string {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetClusterId()
 	return value
 }
 
-func (resolver *secretResolver) ClusterName() string {
+func (resolver *secretResolver) ClusterName(ctx context.Context) string {
 	value := resolver.data.GetClusterName()
 	if resolver.data == nil {
 		value = resolver.list.GetClusterName()
@@ -6070,7 +6071,7 @@ func (resolver *secretResolver) ClusterName() string {
 	return value
 }
 
-func (resolver *secretResolver) CreatedAt() (*graphql.Time, error) {
+func (resolver *secretResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
 	if resolver.data == nil {
 		value = resolver.list.GetCreatedAt()
@@ -6078,13 +6079,13 @@ func (resolver *secretResolver) CreatedAt() (*graphql.Time, error) {
 	return timestamp(value)
 }
 
-func (resolver *secretResolver) Files() ([]*secretDataFileResolver, error) {
-	resolver.ensureData()
+func (resolver *secretResolver) Files(ctx context.Context) ([]*secretDataFileResolver, error) {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetFiles()
 	return resolver.root.wrapSecretDataFiles(value, nil)
 }
 
-func (resolver *secretResolver) Id() graphql.ID {
+func (resolver *secretResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	if resolver.data == nil {
 		value = resolver.list.GetId()
@@ -6092,13 +6093,13 @@ func (resolver *secretResolver) Id() graphql.ID {
 	return graphql.ID(value)
 }
 
-func (resolver *secretResolver) Labels() labels {
-	resolver.ensureData()
+func (resolver *secretResolver) Labels(ctx context.Context) labels {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetLabels()
 	return labelsResolver(value)
 }
 
-func (resolver *secretResolver) Name() string {
+func (resolver *secretResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	if resolver.data == nil {
 		value = resolver.list.GetName()
@@ -6106,7 +6107,7 @@ func (resolver *secretResolver) Name() string {
 	return value
 }
 
-func (resolver *secretResolver) Namespace() string {
+func (resolver *secretResolver) Namespace(ctx context.Context) string {
 	value := resolver.data.GetNamespace()
 	if resolver.data == nil {
 		value = resolver.list.GetNamespace()
@@ -6114,14 +6115,14 @@ func (resolver *secretResolver) Namespace() string {
 	return value
 }
 
-func (resolver *secretResolver) Relationship() (*secretRelationshipResolver, error) {
-	resolver.ensureData()
+func (resolver *secretResolver) Relationship(ctx context.Context) (*secretRelationshipResolver, error) {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetRelationship()
 	return resolver.root.wrapSecretRelationship(value, true, nil)
 }
 
-func (resolver *secretResolver) Type() string {
-	resolver.ensureData()
+func (resolver *secretResolver) Type(ctx context.Context) string {
+	resolver.ensureData(ctx)
 	value := resolver.data.GetType()
 	return value
 }
@@ -6149,12 +6150,12 @@ func (resolver *Resolver) wrapSecretContainerRelationships(values []*storage.Sec
 	return output, nil
 }
 
-func (resolver *secretContainerRelationshipResolver) Id() graphql.ID {
+func (resolver *secretContainerRelationshipResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *secretContainerRelationshipResolver) Path() string {
+func (resolver *secretContainerRelationshipResolver) Path(ctx context.Context) string {
 	value := resolver.data.GetPath()
 	return value
 }
@@ -6182,12 +6183,12 @@ func (resolver *Resolver) wrapSecretDataFiles(values []*storage.SecretDataFile, 
 	return output, nil
 }
 
-func (resolver *secretDataFileResolver) Name() string {
+func (resolver *secretDataFileResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *secretDataFileResolver) Type() string {
+func (resolver *secretDataFileResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
 	return value.String()
 }
@@ -6239,12 +6240,12 @@ func (resolver *Resolver) wrapSecretDeploymentRelationships(values []*storage.Se
 	return output, nil
 }
 
-func (resolver *secretDeploymentRelationshipResolver) Id() graphql.ID {
+func (resolver *secretDeploymentRelationshipResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *secretDeploymentRelationshipResolver) Name() string {
+func (resolver *secretDeploymentRelationshipResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
@@ -6272,17 +6273,17 @@ func (resolver *Resolver) wrapSecretRelationships(values []*storage.SecretRelati
 	return output, nil
 }
 
-func (resolver *secretRelationshipResolver) ContainerRelationships() ([]*secretContainerRelationshipResolver, error) {
+func (resolver *secretRelationshipResolver) ContainerRelationships(ctx context.Context) ([]*secretContainerRelationshipResolver, error) {
 	value := resolver.data.GetContainerRelationships()
 	return resolver.root.wrapSecretContainerRelationships(value, nil)
 }
 
-func (resolver *secretRelationshipResolver) DeploymentRelationships() ([]*secretDeploymentRelationshipResolver, error) {
+func (resolver *secretRelationshipResolver) DeploymentRelationships(ctx context.Context) ([]*secretDeploymentRelationshipResolver, error) {
 	value := resolver.data.GetDeploymentRelationships()
 	return resolver.root.wrapSecretDeploymentRelationships(value, nil)
 }
 
-func (resolver *secretRelationshipResolver) Id() graphql.ID {
+func (resolver *secretRelationshipResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
@@ -6328,27 +6329,27 @@ func (resolver *Resolver) wrapSecurityContexts(values []*storage.SecurityContext
 	return output, nil
 }
 
-func (resolver *securityContextResolver) AddCapabilities() []string {
+func (resolver *securityContextResolver) AddCapabilities(ctx context.Context) []string {
 	value := resolver.data.GetAddCapabilities()
 	return value
 }
 
-func (resolver *securityContextResolver) DropCapabilities() []string {
+func (resolver *securityContextResolver) DropCapabilities(ctx context.Context) []string {
 	value := resolver.data.GetDropCapabilities()
 	return value
 }
 
-func (resolver *securityContextResolver) Privileged() bool {
+func (resolver *securityContextResolver) Privileged(ctx context.Context) bool {
 	value := resolver.data.GetPrivileged()
 	return value
 }
 
-func (resolver *securityContextResolver) ReadOnlyRootFilesystem() bool {
+func (resolver *securityContextResolver) ReadOnlyRootFilesystem(ctx context.Context) bool {
 	value := resolver.data.GetReadOnlyRootFilesystem()
 	return value
 }
 
-func (resolver *securityContextResolver) Selinux() (*securityContext_SELinuxResolver, error) {
+func (resolver *securityContextResolver) Selinux(ctx context.Context) (*securityContext_SELinuxResolver, error) {
 	value := resolver.data.GetSelinux()
 	return resolver.root.wrapSecurityContext_SELinux(value, true, nil)
 }
@@ -6376,22 +6377,22 @@ func (resolver *Resolver) wrapSecurityContext_SELinuxs(values []*storage.Securit
 	return output, nil
 }
 
-func (resolver *securityContext_SELinuxResolver) Level() string {
+func (resolver *securityContext_SELinuxResolver) Level(ctx context.Context) string {
 	value := resolver.data.GetLevel()
 	return value
 }
 
-func (resolver *securityContext_SELinuxResolver) Role() string {
+func (resolver *securityContext_SELinuxResolver) Role(ctx context.Context) string {
 	value := resolver.data.GetRole()
 	return value
 }
 
-func (resolver *securityContext_SELinuxResolver) Type() string {
+func (resolver *securityContext_SELinuxResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
 	return value
 }
 
-func (resolver *securityContext_SELinuxResolver) User() string {
+func (resolver *securityContext_SELinuxResolver) User(ctx context.Context) string {
 	value := resolver.data.GetUser()
 	return value
 }
@@ -6419,57 +6420,57 @@ func (resolver *Resolver) wrapServiceAccounts(values []*storage.ServiceAccount, 
 	return output, nil
 }
 
-func (resolver *serviceAccountResolver) Annotations() labels {
+func (resolver *serviceAccountResolver) Annotations(ctx context.Context) labels {
 	value := resolver.data.GetAnnotations()
 	return labelsResolver(value)
 }
 
-func (resolver *serviceAccountResolver) AutomountToken() bool {
+func (resolver *serviceAccountResolver) AutomountToken(ctx context.Context) bool {
 	value := resolver.data.GetAutomountToken()
 	return value
 }
 
-func (resolver *serviceAccountResolver) ClusterId() string {
+func (resolver *serviceAccountResolver) ClusterId(ctx context.Context) string {
 	value := resolver.data.GetClusterId()
 	return value
 }
 
-func (resolver *serviceAccountResolver) ClusterName() string {
+func (resolver *serviceAccountResolver) ClusterName(ctx context.Context) string {
 	value := resolver.data.GetClusterName()
 	return value
 }
 
-func (resolver *serviceAccountResolver) CreatedAt() (*graphql.Time, error) {
+func (resolver *serviceAccountResolver) CreatedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreatedAt()
 	return timestamp(value)
 }
 
-func (resolver *serviceAccountResolver) Id() graphql.ID {
+func (resolver *serviceAccountResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *serviceAccountResolver) ImagePullSecrets() []string {
+func (resolver *serviceAccountResolver) ImagePullSecrets(ctx context.Context) []string {
 	value := resolver.data.GetImagePullSecrets()
 	return value
 }
 
-func (resolver *serviceAccountResolver) Labels() labels {
+func (resolver *serviceAccountResolver) Labels(ctx context.Context) labels {
 	value := resolver.data.GetLabels()
 	return labelsResolver(value)
 }
 
-func (resolver *serviceAccountResolver) Name() string {
+func (resolver *serviceAccountResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *serviceAccountResolver) Namespace() string {
+func (resolver *serviceAccountResolver) Namespace(ctx context.Context) string {
 	value := resolver.data.GetNamespace()
 	return value
 }
 
-func (resolver *serviceAccountResolver) Secrets() []string {
+func (resolver *serviceAccountResolver) Secrets(ctx context.Context) []string {
 	value := resolver.data.GetSecrets()
 	return value
 }
@@ -6515,27 +6516,27 @@ func (resolver *Resolver) wrapSplunks(values []*storage.Splunk, err error) ([]*s
 	return output, nil
 }
 
-func (resolver *splunkResolver) AuditLoggingEnabled() bool {
+func (resolver *splunkResolver) AuditLoggingEnabled(ctx context.Context) bool {
 	value := resolver.data.GetAuditLoggingEnabled()
 	return value
 }
 
-func (resolver *splunkResolver) HttpEndpoint() string {
+func (resolver *splunkResolver) HttpEndpoint(ctx context.Context) string {
 	value := resolver.data.GetHttpEndpoint()
 	return value
 }
 
-func (resolver *splunkResolver) HttpToken() string {
+func (resolver *splunkResolver) HttpToken(ctx context.Context) string {
 	value := resolver.data.GetHttpToken()
 	return value
 }
 
-func (resolver *splunkResolver) Insecure() bool {
+func (resolver *splunkResolver) Insecure(ctx context.Context) bool {
 	value := resolver.data.GetInsecure()
 	return value
 }
 
-func (resolver *splunkResolver) Truncate() int32 {
+func (resolver *splunkResolver) Truncate(ctx context.Context) int32 {
 	value := resolver.data.GetTruncate()
 	return int32(value)
 }
@@ -6563,17 +6564,17 @@ func (resolver *Resolver) wrapSubjects(values []*storage.Subject, err error) ([]
 	return output, nil
 }
 
-func (resolver *subjectResolver) Kind() string {
+func (resolver *subjectResolver) Kind(ctx context.Context) string {
 	value := resolver.data.GetKind()
 	return value.String()
 }
 
-func (resolver *subjectResolver) Name() string {
+func (resolver *subjectResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *subjectResolver) Namespace() string {
+func (resolver *subjectResolver) Namespace(ctx context.Context) string {
 	value := resolver.data.GetNamespace()
 	return value
 }
@@ -6619,17 +6620,17 @@ func (resolver *Resolver) wrapTaints(values []*storage.Taint, err error) ([]*tai
 	return output, nil
 }
 
-func (resolver *taintResolver) Key() string {
+func (resolver *taintResolver) Key(ctx context.Context) string {
 	value := resolver.data.GetKey()
 	return value
 }
 
-func (resolver *taintResolver) TaintEffect() string {
+func (resolver *taintResolver) TaintEffect(ctx context.Context) string {
 	value := resolver.data.GetTaintEffect()
 	return value.String()
 }
 
-func (resolver *taintResolver) Value() string {
+func (resolver *taintResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
 	return value
 }
@@ -6675,32 +6676,32 @@ func (resolver *Resolver) wrapTokenMetadatas(values []*storage.TokenMetadata, er
 	return output, nil
 }
 
-func (resolver *tokenMetadataResolver) Expiration() (*graphql.Time, error) {
+func (resolver *tokenMetadataResolver) Expiration(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetExpiration()
 	return timestamp(value)
 }
 
-func (resolver *tokenMetadataResolver) Id() graphql.ID {
+func (resolver *tokenMetadataResolver) Id(ctx context.Context) graphql.ID {
 	value := resolver.data.GetId()
 	return graphql.ID(value)
 }
 
-func (resolver *tokenMetadataResolver) IssuedAt() (*graphql.Time, error) {
+func (resolver *tokenMetadataResolver) IssuedAt(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetIssuedAt()
 	return timestamp(value)
 }
 
-func (resolver *tokenMetadataResolver) Name() string {
+func (resolver *tokenMetadataResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *tokenMetadataResolver) Revoked() bool {
+func (resolver *tokenMetadataResolver) Revoked(ctx context.Context) bool {
 	value := resolver.data.GetRevoked()
 	return value
 }
 
-func (resolver *tokenMetadataResolver) Role() string {
+func (resolver *tokenMetadataResolver) Role(ctx context.Context) string {
 	value := resolver.data.GetRole()
 	return value
 }
@@ -6728,22 +6729,22 @@ func (resolver *Resolver) wrapTolerations(values []*storage.Toleration, err erro
 	return output, nil
 }
 
-func (resolver *tolerationResolver) Key() string {
+func (resolver *tolerationResolver) Key(ctx context.Context) string {
 	value := resolver.data.GetKey()
 	return value
 }
 
-func (resolver *tolerationResolver) Operator() string {
+func (resolver *tolerationResolver) Operator(ctx context.Context) string {
 	value := resolver.data.GetOperator()
 	return value.String()
 }
 
-func (resolver *tolerationResolver) TaintEffect() string {
+func (resolver *tolerationResolver) TaintEffect(ctx context.Context) string {
 	value := resolver.data.GetTaintEffect()
 	return value.String()
 }
 
-func (resolver *tolerationResolver) Value() string {
+func (resolver *tolerationResolver) Value(ctx context.Context) string {
 	value := resolver.data.GetValue()
 	return value
 }
@@ -6789,42 +6790,42 @@ func (resolver *Resolver) wrapV1Metadatas(values []*storage.V1Metadata, err erro
 	return output, nil
 }
 
-func (resolver *v1MetadataResolver) Author() string {
+func (resolver *v1MetadataResolver) Author(ctx context.Context) string {
 	value := resolver.data.GetAuthor()
 	return value
 }
 
-func (resolver *v1MetadataResolver) Command() []string {
+func (resolver *v1MetadataResolver) Command(ctx context.Context) []string {
 	value := resolver.data.GetCommand()
 	return value
 }
 
-func (resolver *v1MetadataResolver) Created() (*graphql.Time, error) {
+func (resolver *v1MetadataResolver) Created(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetCreated()
 	return timestamp(value)
 }
 
-func (resolver *v1MetadataResolver) Digest() string {
+func (resolver *v1MetadataResolver) Digest(ctx context.Context) string {
 	value := resolver.data.GetDigest()
 	return value
 }
 
-func (resolver *v1MetadataResolver) Entrypoint() []string {
+func (resolver *v1MetadataResolver) Entrypoint(ctx context.Context) []string {
 	value := resolver.data.GetEntrypoint()
 	return value
 }
 
-func (resolver *v1MetadataResolver) Layers() ([]*imageLayerResolver, error) {
+func (resolver *v1MetadataResolver) Layers(ctx context.Context) ([]*imageLayerResolver, error) {
 	value := resolver.data.GetLayers()
 	return resolver.root.wrapImageLayers(value, nil)
 }
 
-func (resolver *v1MetadataResolver) User() string {
+func (resolver *v1MetadataResolver) User(ctx context.Context) string {
 	value := resolver.data.GetUser()
 	return value
 }
 
-func (resolver *v1MetadataResolver) Volumes() []string {
+func (resolver *v1MetadataResolver) Volumes(ctx context.Context) []string {
 	value := resolver.data.GetVolumes()
 	return value
 }
@@ -6852,7 +6853,7 @@ func (resolver *Resolver) wrapV2Metadatas(values []*storage.V2Metadata, err erro
 	return output, nil
 }
 
-func (resolver *v2MetadataResolver) Digest() string {
+func (resolver *v2MetadataResolver) Digest(ctx context.Context) string {
 	value := resolver.data.GetDigest()
 	return value
 }
@@ -6898,27 +6899,27 @@ func (resolver *Resolver) wrapVolumes(values []*storage.Volume, err error) ([]*v
 	return output, nil
 }
 
-func (resolver *volumeResolver) Destination() string {
+func (resolver *volumeResolver) Destination(ctx context.Context) string {
 	value := resolver.data.GetDestination()
 	return value
 }
 
-func (resolver *volumeResolver) Name() string {
+func (resolver *volumeResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *volumeResolver) ReadOnly() bool {
+func (resolver *volumeResolver) ReadOnly(ctx context.Context) bool {
 	value := resolver.data.GetReadOnly()
 	return value
 }
 
-func (resolver *volumeResolver) Source() string {
+func (resolver *volumeResolver) Source(ctx context.Context) string {
 	value := resolver.data.GetSource()
 	return value
 }
 
-func (resolver *volumeResolver) Type() string {
+func (resolver *volumeResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
 	return value
 }
@@ -6946,22 +6947,22 @@ func (resolver *Resolver) wrapVolumePolicies(values []*storage.VolumePolicy, err
 	return output, nil
 }
 
-func (resolver *volumePolicyResolver) Destination() string {
+func (resolver *volumePolicyResolver) Destination(ctx context.Context) string {
 	value := resolver.data.GetDestination()
 	return value
 }
 
-func (resolver *volumePolicyResolver) Name() string {
+func (resolver *volumePolicyResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *volumePolicyResolver) Source() string {
+func (resolver *volumePolicyResolver) Source(ctx context.Context) string {
 	value := resolver.data.GetSource()
 	return value
 }
 
-func (resolver *volumePolicyResolver) Type() string {
+func (resolver *volumePolicyResolver) Type(ctx context.Context) string {
 	value := resolver.data.GetType()
 	return value
 }
@@ -6989,27 +6990,27 @@ func (resolver *Resolver) wrapVulnerabilities(values []*storage.Vulnerability, e
 	return output, nil
 }
 
-func (resolver *vulnerabilityResolver) Cve() string {
+func (resolver *vulnerabilityResolver) Cve(ctx context.Context) string {
 	value := resolver.data.GetCve()
 	return value
 }
 
-func (resolver *vulnerabilityResolver) Cvss() float64 {
+func (resolver *vulnerabilityResolver) Cvss(ctx context.Context) float64 {
 	value := resolver.data.GetCvss()
 	return float64(value)
 }
 
-func (resolver *vulnerabilityResolver) CvssV2() (*cVSSV2Resolver, error) {
+func (resolver *vulnerabilityResolver) CvssV2(ctx context.Context) (*cVSSV2Resolver, error) {
 	value := resolver.data.GetCvssV2()
 	return resolver.root.wrapCVSSV2(value, true, nil)
 }
 
-func (resolver *vulnerabilityResolver) Link() string {
+func (resolver *vulnerabilityResolver) Link(ctx context.Context) string {
 	value := resolver.data.GetLink()
 	return value
 }
 
-func (resolver *vulnerabilityResolver) Summary() string {
+func (resolver *vulnerabilityResolver) Summary(ctx context.Context) string {
 	value := resolver.data.GetSummary()
 	return value
 }
@@ -7037,27 +7038,27 @@ func (resolver *Resolver) wrapWhitelists(values []*storage.Whitelist, err error)
 	return output, nil
 }
 
-func (resolver *whitelistResolver) Container() (*whitelist_ContainerResolver, error) {
+func (resolver *whitelistResolver) Container(ctx context.Context) (*whitelist_ContainerResolver, error) {
 	value := resolver.data.GetContainer()
 	return resolver.root.wrapWhitelist_Container(value, true, nil)
 }
 
-func (resolver *whitelistResolver) Deployment() (*whitelist_DeploymentResolver, error) {
+func (resolver *whitelistResolver) Deployment(ctx context.Context) (*whitelist_DeploymentResolver, error) {
 	value := resolver.data.GetDeployment()
 	return resolver.root.wrapWhitelist_Deployment(value, true, nil)
 }
 
-func (resolver *whitelistResolver) Expiration() (*graphql.Time, error) {
+func (resolver *whitelistResolver) Expiration(ctx context.Context) (*graphql.Time, error) {
 	value := resolver.data.GetExpiration()
 	return timestamp(value)
 }
 
-func (resolver *whitelistResolver) Image() (*whitelist_ImageResolver, error) {
+func (resolver *whitelistResolver) Image(ctx context.Context) (*whitelist_ImageResolver, error) {
 	value := resolver.data.GetImage()
 	return resolver.root.wrapWhitelist_Image(value, true, nil)
 }
 
-func (resolver *whitelistResolver) Name() string {
+func (resolver *whitelistResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
@@ -7085,7 +7086,7 @@ func (resolver *Resolver) wrapWhitelist_Containers(values []*storage.Whitelist_C
 	return output, nil
 }
 
-func (resolver *whitelist_ContainerResolver) ImageName() (*imageNameResolver, error) {
+func (resolver *whitelist_ContainerResolver) ImageName(ctx context.Context) (*imageNameResolver, error) {
 	value := resolver.data.GetImageName()
 	return resolver.root.wrapImageName(value, true, nil)
 }
@@ -7113,12 +7114,12 @@ func (resolver *Resolver) wrapWhitelist_Deployments(values []*storage.Whitelist_
 	return output, nil
 }
 
-func (resolver *whitelist_DeploymentResolver) Name() string {
+func (resolver *whitelist_DeploymentResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }
 
-func (resolver *whitelist_DeploymentResolver) Scope() (*scopeResolver, error) {
+func (resolver *whitelist_DeploymentResolver) Scope(ctx context.Context) (*scopeResolver, error) {
 	value := resolver.data.GetScope()
 	return resolver.root.wrapScope(value, true, nil)
 }
@@ -7146,7 +7147,7 @@ func (resolver *Resolver) wrapWhitelist_Images(values []*storage.Whitelist_Image
 	return output, nil
 }
 
-func (resolver *whitelist_ImageResolver) Name() string {
+func (resolver *whitelist_ImageResolver) Name(ctx context.Context) string {
 	value := resolver.data.GetName()
 	return value
 }

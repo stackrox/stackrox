@@ -1,6 +1,7 @@
 package nodes
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
@@ -47,13 +48,15 @@ type pipelineImpl struct {
 }
 
 func (p *pipelineImpl) Reconcile(clusterID string) error {
+	ctx := context.TODO()
+
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	results, err := p.nodeStore.Search(query)
+	results, err := p.nodeStore.Search(ctx, query)
 	if err != nil {
 		return err
 	}
 
-	clusterStore, err := p.nodeStore.GetClusterNodeStore(clusterID)
+	clusterStore, err := p.nodeStore.GetClusterNodeStore(ctx, clusterID)
 	if err != nil {
 		return errors.Wrap(err, "getting cluster-local node store")
 	}
@@ -73,11 +76,13 @@ func (p *pipelineImpl) processRemove(store store.Store, n *storage.Node) error {
 
 // Run runs the pipeline template on the input and returns the output.
 func (p *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
+	ctx := context.TODO()
+
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.Node)
 
 	event := msg.GetEvent()
 
-	store, err := p.nodeStore.GetClusterNodeStore(clusterID)
+	store, err := p.nodeStore.GetClusterNodeStore(ctx, clusterID)
 	if err != nil {
 		return errors.Wrap(err, "getting cluster-local node store")
 	}
@@ -96,7 +101,7 @@ func (p *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 
 	node = proto.Clone(node).(*storage.Node)
 	node.ClusterId = clusterID
-	cluster, ok, err := p.clusterStore.GetCluster(clusterID)
+	cluster, ok, err := p.clusterStore.GetCluster(context.TODO(), clusterID)
 	if err == nil && ok {
 		node.ClusterName = cluster.GetName()
 	}

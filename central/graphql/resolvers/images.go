@@ -26,10 +26,10 @@ func (resolver *Resolver) Images(ctx context.Context, args rawQuery) ([]*imageRe
 		return nil, err
 	}
 	if q == nil {
-		return resolver.wrapImages(resolver.ImageDataStore.GetImages())
+		return resolver.wrapImages(resolver.ImageDataStore.GetImages(ctx))
 	}
 	return resolver.wrapListImages(
-		resolver.ImageDataStore.SearchListImages(q))
+		resolver.ImageDataStore.SearchListImages(ctx, q))
 }
 
 // Image returns a graphql resolver for the identified image, if it exists
@@ -38,11 +38,11 @@ func (resolver *Resolver) Image(ctx context.Context, args struct{ Sha graphql.ID
 		return nil, err
 	}
 	return resolver.wrapImage(
-		resolver.ImageDataStore.GetImage(string(args.Sha)))
+		resolver.ImageDataStore.GetImage(ctx, string(args.Sha)))
 }
 
-func (resolver *Resolver) getImage(id string) *storage.Image {
-	alert, ok, err := resolver.ImageDataStore.GetImage(id)
+func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Image {
+	alert, ok, err := resolver.ImageDataStore.GetImage(ctx, id)
 	if err != nil || !ok {
 		return nil
 	}

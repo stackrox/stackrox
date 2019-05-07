@@ -28,9 +28,9 @@ func (resolver *Resolver) Policies(ctx context.Context, args rawQuery) ([]*polic
 		return nil, err
 	}
 	if q == nil {
-		return resolver.wrapPolicies(resolver.PolicyDataStore.GetPolicies())
+		return resolver.wrapPolicies(resolver.PolicyDataStore.GetPolicies(ctx))
 	}
-	return resolver.wrapPolicies(resolver.PolicyDataStore.SearchRawPolicies(q))
+	return resolver.wrapPolicies(resolver.PolicyDataStore.SearchRawPolicies(ctx, q))
 }
 
 // Policy returns a GraphQL resolver for a given policy
@@ -38,7 +38,7 @@ func (resolver *Resolver) Policy(ctx context.Context, args struct{ *graphql.ID }
 	if err := readPolicies(ctx); err != nil {
 		return nil, err
 	}
-	return resolver.wrapPolicy(resolver.PolicyDataStore.GetPolicy(string(*args.ID)))
+	return resolver.wrapPolicy(resolver.PolicyDataStore.GetPolicy(ctx, string(*args.ID)))
 }
 
 // Alerts returns GraphQL resolvers for all alerts for this policy
@@ -48,5 +48,5 @@ func (resolver *policyResolver) Alerts(ctx context.Context) ([]*alertResolver, e
 	}
 	query := search.NewQueryBuilder().AddStrings(search.PolicyID, resolver.data.GetId()).ProtoQuery()
 	return resolver.root.wrapAlerts(
-		resolver.root.ViolationsDataStore.SearchRawAlerts(query))
+		resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, query))
 }

@@ -1,6 +1,8 @@
 package alertmanager
 
 import (
+	"context"
+
 	"github.com/gogo/protobuf/proto"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
@@ -51,7 +53,7 @@ func (d *alertManagerImpl) AlertAndNotify(currentAlerts []*storage.Alert, oldAle
 func (d *alertManagerImpl) updateBatch(alertsToMark []*storage.Alert) error {
 	errList := errorhelpers.NewErrorList("Error updating alerts: ")
 	for _, existingAlert := range alertsToMark {
-		errList.AddError(d.alerts.UpdateAlert(existingAlert))
+		errList.AddError(d.alerts.UpdateAlert(context.TODO(), existingAlert))
 	}
 	return errList.ToError()
 }
@@ -60,7 +62,7 @@ func (d *alertManagerImpl) updateBatch(alertsToMark []*storage.Alert) error {
 func (d *alertManagerImpl) markAlertsStale(alertsToMark []*storage.Alert) error {
 	errList := errorhelpers.NewErrorList("Error marking alerts as stale: ")
 	for _, existingAlert := range alertsToMark {
-		errList.AddError(d.alerts.MarkAlertStale(existingAlert.GetId()))
+		errList.AddError(d.alerts.MarkAlertStale(context.TODO(), existingAlert.GetId()))
 		if errList.ToError() == nil {
 			// run notifier for all the resolved alerts
 			d.notifier.ProcessAlert(existingAlert)
@@ -113,7 +115,7 @@ func (d *alertManagerImpl) trimResolvedProcessesFromRuntimeAlert(alert *storage.
 		AddExactMatches(search.PolicyID, alert.GetPolicy().GetId()).
 		ProtoQuery()
 
-	oldRunTimeAlerts, err := d.alerts.SearchRawAlerts(q)
+	oldRunTimeAlerts, err := d.alerts.SearchRawAlerts(context.TODO(), q)
 	// If there's an error, just log it, and assume there was no previously resolved alert.
 	if err != nil {
 		log.Errorf("Failed to retrieve resolved runtime alerts corresponding to %+v: %s", alert, err)
@@ -208,7 +210,7 @@ func (d *alertManagerImpl) mergeManyAlerts(presentAlerts []*storage.Alert, oldAl
 	for _, filter := range oldAlertFilters {
 		filter.apply(qb)
 	}
-	previousAlerts, err := d.alerts.SearchRawAlerts(qb.ProtoQuery())
+	previousAlerts, err := d.alerts.SearchRawAlerts(context.TODO(), qb.ProtoQuery())
 	if err != nil {
 		err = errors.Wrapf(err, "couldn't load previous alerts (query was %s)", qb.Query())
 		return

@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"context"
+
 	roleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	bindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -53,7 +55,7 @@ func (c *clusterPermissionEvaluator) getBindingsAndRoles() ([]*storage.K8SRoleBi
 	q := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, c.clusterID).
 		AddBools(search.ClusterRole, true).ProtoQuery()
-	clusterRoleBindings, err := c.bindingsStore.SearchRawRoleBindings(q)
+	clusterRoleBindings, err := c.bindingsStore.SearchRawRoleBindings(context.TODO(), q)
 
 	if err != nil {
 		log.Errorf("error searching for clusterrolebindings: %v", err)

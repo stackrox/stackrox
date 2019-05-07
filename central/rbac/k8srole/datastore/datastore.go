@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/rbac/k8srole/index"
 	"github.com/stackrox/rox/central/rbac/k8srole/search"
@@ -13,15 +15,15 @@ import (
 // DataStore is an intermediary to RoleStorage.
 //go:generate mockgen-wrapper DataStore
 type DataStore interface {
-	Search(q *v1.Query) ([]searchPkg.Result, error)
-	SearchRoles(q *v1.Query) ([]*v1.SearchResult, error)
-	SearchRawRoles(q *v1.Query) ([]*storage.K8SRole, error)
+	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
+	SearchRoles(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
+	SearchRawRoles(ctx context.Context, q *v1.Query) ([]*storage.K8SRole, error)
 
-	CountRoles() (int, error)
-	ListRoles() ([]*storage.K8SRole, error)
-	GetRole(id string) (*storage.K8SRole, bool, error)
-	UpsertRole(request *storage.K8SRole) error
-	RemoveRole(id string) error
+	CountRoles(ctx context.Context) (int, error)
+	ListRoles(ctx context.Context) ([]*storage.K8SRole, error)
+	GetRole(ctx context.Context, id string) (*storage.K8SRole, bool, error)
+	UpsertRole(ctx context.Context, request *storage.K8SRole) error
+	RemoveRole(ctx context.Context, id string) error
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.

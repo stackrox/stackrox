@@ -1,6 +1,8 @@
 package searchbasedpolicies
 
 import (
+	"context"
+
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
@@ -23,20 +25,20 @@ type Violations struct {
 }
 
 // A ViolationPrinter knows how to print violation messages from a search result.
-type ViolationPrinter func(search.Result) Violations
+type ViolationPrinter func(context.Context, search.Result) Violations
 
 // A ProcessIndicatorGetter knows how to retrieve process indicators given its id.
 type ProcessIndicatorGetter interface {
-	GetProcessIndicator(id string) (*storage.ProcessIndicator, bool, error)
+	GetProcessIndicator(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error)
 }
 
 // Matcher matches objects against a policy.
 //go:generate mockgen-wrapper Matcher
 type Matcher interface {
 	// Match matches the policy against all objects, returning a map from object ID to violations.
-	Match(searcher search.Searcher) (map[string]Violations, error)
+	Match(ctx context.Context, searcher search.Searcher) (map[string]Violations, error)
 	// MatchOne matches the policy against the object with the given id.
-	MatchOne(searcher search.Searcher, id string) (Violations, error)
+	MatchOne(ctx context.Context, searcher search.Searcher, id string) (Violations, error)
 	// MatchMany mathes the policy against just the objects with the given ids.
-	MatchMany(searcher search.Searcher, ids ...string) (map[string]Violations, error)
+	MatchMany(ctx context.Context, searcher search.Searcher, ids ...string) (map[string]Violations, error)
 }

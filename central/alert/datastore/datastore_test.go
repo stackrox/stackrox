@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -47,7 +48,7 @@ func (s *alertDataStoreTestSuite) SetupTest() {
 func (s *alertDataStoreTestSuite) TestSearchAlerts() {
 	s.searcher.EXPECT().SearchAlerts(&v1.Query{}).Return([]*v1.SearchResult{{Id: alerttest.FakeAlertID}}, errFake)
 
-	result, err := s.dataStore.SearchAlerts(&v1.Query{})
+	result, err := s.dataStore.SearchAlerts(context.TODO(), &v1.Query{})
 
 	s.Equal(errFake, err)
 	s.Equal([]*v1.SearchResult{{Id: alerttest.FakeAlertID}}, result)
@@ -56,7 +57,7 @@ func (s *alertDataStoreTestSuite) TestSearchAlerts() {
 func (s *alertDataStoreTestSuite) TestSearchRawAlerts() {
 	s.searcher.EXPECT().SearchRawAlerts(&v1.Query{}).Return([]*storage.Alert{{Id: alerttest.FakeAlertID}}, errFake)
 
-	result, err := s.dataStore.SearchRawAlerts(&v1.Query{})
+	result, err := s.dataStore.SearchRawAlerts(context.TODO(), &v1.Query{})
 
 	s.Equal(errFake, err)
 	s.Equal([]*storage.Alert{{Id: alerttest.FakeAlertID}}, result)
@@ -65,7 +66,7 @@ func (s *alertDataStoreTestSuite) TestSearchRawAlerts() {
 func (s *alertDataStoreTestSuite) TestSearchListAlerts() {
 	s.searcher.EXPECT().SearchListAlerts(&v1.Query{}).Return(alerttest.NewFakeListAlertSlice(), errFake)
 
-	result, err := s.dataStore.SearchListAlerts(&v1.Query{})
+	result, err := s.dataStore.SearchListAlerts(context.TODO(), &v1.Query{})
 
 	s.Equal(errFake, err)
 	s.Equal(alerttest.NewFakeListAlertSlice(), result)
@@ -75,7 +76,7 @@ func (s *alertDataStoreTestSuite) TestCountAlerts() {
 	expectedQ := search.NewQueryBuilder().AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()
 	s.searcher.EXPECT().SearchListAlerts(expectedQ).Return(alerttest.NewFakeListAlertSlice(), errFake)
 
-	result, err := s.dataStore.CountAlerts()
+	result, err := s.dataStore.CountAlerts(context.TODO())
 
 	s.Equal(errFake, err)
 	s.Equal(1, result)
@@ -85,7 +86,7 @@ func (s *alertDataStoreTestSuite) TestAddAlert() {
 	s.storage.EXPECT().AddAlert(alerttest.NewFakeAlert()).Return(nil)
 	s.indexer.EXPECT().AddAlert(alerttest.NewFakeAlert()).Return(errFake)
 
-	err := s.dataStore.AddAlert(alerttest.NewFakeAlert())
+	err := s.dataStore.AddAlert(context.TODO(), alerttest.NewFakeAlert())
 
 	s.Equal(errFake, err)
 }
@@ -93,7 +94,7 @@ func (s *alertDataStoreTestSuite) TestAddAlert() {
 func (s *alertDataStoreTestSuite) TestAddAlertWhenTheIndexerFails() {
 	s.storage.EXPECT().AddAlert(alerttest.NewFakeAlert()).Return(errFake)
 
-	err := s.dataStore.AddAlert(alerttest.NewFakeAlert())
+	err := s.dataStore.AddAlert(context.TODO(), alerttest.NewFakeAlert())
 
 	s.Equal(errFake, err)
 }
@@ -102,7 +103,7 @@ func (s *alertDataStoreTestSuite) TestUpdateAlert() {
 	s.storage.EXPECT().UpdateAlert(alerttest.NewFakeAlert()).Return(nil)
 	s.indexer.EXPECT().AddAlert(alerttest.NewFakeAlert()).Return(errFake)
 
-	err := s.dataStore.UpdateAlert(alerttest.NewFakeAlert())
+	err := s.dataStore.UpdateAlert(context.TODO(), alerttest.NewFakeAlert())
 
 	s.Equal(errFake, err)
 }
@@ -110,7 +111,7 @@ func (s *alertDataStoreTestSuite) TestUpdateAlert() {
 func (s *alertDataStoreTestSuite) TestUpdateAlertWhenTheIndexerFails() {
 	s.storage.EXPECT().UpdateAlert(alerttest.NewFakeAlert()).Return(errFake)
 
-	err := s.dataStore.UpdateAlert(alerttest.NewFakeAlert())
+	err := s.dataStore.UpdateAlert(context.TODO(), alerttest.NewFakeAlert())
 
 	s.Equal(errFake, err)
 }
@@ -122,7 +123,7 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStale() {
 	s.storage.EXPECT().UpdateAlert(gomock.Any()).Return(nil)
 	s.indexer.EXPECT().AddAlert(gomock.Any()).Return(nil)
 
-	err := s.dataStore.MarkAlertStale(alerttest.FakeAlertID)
+	err := s.dataStore.MarkAlertStale(context.TODO(), alerttest.FakeAlertID)
 	s.NoError(err)
 
 	s.Equal(storage.ViolationState_RESOLVED, fakeAlert.GetState())
@@ -133,7 +134,7 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStaleWhenStorageFails() {
 
 	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, false, errFake)
 
-	err := s.dataStore.MarkAlertStale(alerttest.FakeAlertID)
+	err := s.dataStore.MarkAlertStale(context.TODO(), alerttest.FakeAlertID)
 
 	s.Equal(errFake, err)
 }
@@ -143,7 +144,7 @@ func (s *alertDataStoreTestSuite) TestMarkAlertStaleWhenTheAlertWasNotFoundInSto
 
 	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, false, nil)
 
-	err := s.dataStore.MarkAlertStale(alerttest.FakeAlertID)
+	err := s.dataStore.MarkAlertStale(context.TODO(), alerttest.FakeAlertID)
 
 	s.EqualError(err, fmt.Sprintf("alert with id '%s' does not exist", alerttest.FakeAlertID))
 }

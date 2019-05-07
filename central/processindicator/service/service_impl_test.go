@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"testing"
 
 	"github.com/gogo/protobuf/types"
@@ -348,8 +349,8 @@ func TestWhitelistCheck(t *testing.T) {
 				}
 			}
 			key := &storage.ProcessWhitelistKey{DeploymentId: testDeploymentID, ContainerName: c.nameContainerGroup.ContainerName}
-			whitelists.EXPECT().GetProcessWhitelist(key).Return(whitelist, nil)
-			err := service.setSuspicious([]*v1.ProcessNameAndContainerNameGroup{c.nameContainerGroup}, testDeploymentID)
+			whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(whitelist, nil)
+			err := service.setSuspicious(context.TODO(), []*v1.ProcessNameAndContainerNameGroup{c.nameContainerGroup}, testDeploymentID)
 			assert.NoError(t, err)
 			assert.Equal(t, c.expectedSuspicious, c.nameContainerGroup.Suspicious)
 		})

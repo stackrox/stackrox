@@ -103,7 +103,7 @@ func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregated
 	groupBy := toComplianceAggregation_Scopes(args.GroupBy)
 	unit := toComplianceAggregation_Scope(&args.Unit)
 
-	validResults, sources, domainMap, err := resolver.ComplianceAggregator.Aggregate(where, groupBy, unit)
+	validResults, sources, domainMap, err := resolver.ComplianceAggregator.Aggregate(ctx, where, groupBy, unit)
 	if err != nil {
 		return nil, err
 	}
@@ -145,9 +145,9 @@ func (resolver *complianceDomainKeyResolver) ToDeployment() (deployment *deploym
 	return nil, false
 }
 
-func (resolver *complianceDomainKeyResolver) ToNamespace() (*namespaceResolver, bool) {
+func (resolver *complianceDomainKeyResolver) ToNamespace(ctx context.Context) (*namespaceResolver, bool) {
 	if resolver.key.GetScope() == v1.ComplianceAggregation_NAMESPACE {
-		receivedNS, found, err := namespace.ResolveByID(resolver.key.GetId(), resolver.root.NamespaceDataStore,
+		receivedNS, found, err := namespace.ResolveByID(ctx, resolver.key.GetId(), resolver.root.NamespaceDataStore,
 			resolver.root.DeploymentDataStore, resolver.root.SecretsDataStore, resolver.root.NetworkPoliciesStore)
 		if err == nil && found {
 			return &namespaceResolver{resolver.root, receivedNS}, true
@@ -367,8 +367,8 @@ func (resolver *controlResultResolver) Value(ctx context.Context) *complianceRes
 	}
 }
 
-func allClusters(resolver *Resolver) []string {
-	clusters, err := resolver.ClusterDataStore.GetClusters()
+func allClusters(ctx context.Context, resolver *Resolver) []string {
+	clusters, err := resolver.ClusterDataStore.GetClusters(ctx)
 	if err != nil {
 		return nil
 	}
@@ -383,7 +383,7 @@ func (resolver *complianceStandardMetadataResolver) ComplianceResults(ctx contex
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	data, err := resolver.root.ComplianceDataStore.GetLatestRunResultsBatch(allClusters(resolver.root), []string{resolver.data.GetId()}, store.RequireMessageStrings)
+	data, err := resolver.root.ComplianceDataStore.GetLatestRunResultsBatch(allClusters(ctx, resolver.root), []string{resolver.data.GetId()}, store.RequireMessageStrings)
 	if err != nil {
 		return nil, err
 	}
@@ -399,7 +399,7 @@ func (resolver *complianceControlResolver) ComplianceResults(ctx context.Context
 	if err := readCompliance(ctx); err != nil {
 		return nil, err
 	}
-	data, err := resolver.root.ComplianceDataStore.GetLatestRunResultsBatch(allClusters(resolver.root), []string{resolver.data.GetStandardId()}, store.RequireMessageStrings)
+	data, err := resolver.root.ComplianceDataStore.GetLatestRunResultsBatch(allClusters(ctx, resolver.root), []string{resolver.data.GetStandardId()}, store.RequireMessageStrings)
 	if err != nil {
 		return nil, err
 	}

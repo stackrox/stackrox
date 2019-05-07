@@ -1,6 +1,7 @@
 package deploytime
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
@@ -68,7 +69,7 @@ func (d *policyExecutor) getViolations(enforcement storage.EnforcementAction, ma
 	} else {
 		var violationsWrapper searchbasedpolicies.Violations
 		// Purposefully, use searcher for deployment check
-		violationsWrapper, err = matcher.MatchOne(d.searcher, d.deployment.GetId())
+		violationsWrapper, err = matcher.MatchOne(context.TODO(), d.searcher, d.deployment.GetId())
 		violations = violationsWrapper.AlertViolations
 	}
 	return violations, err
@@ -79,7 +80,7 @@ func matchWithEmptyImageIDs(matcher searchbasedpolicies.Matcher, deployment *sto
 	if err != nil {
 		return nil, err
 	}
-	violations, err := matcher.MatchOne(deploymentIndex, deployment.GetId())
+	violations, err := matcher.MatchOne(context.TODO(), deploymentIndex, deployment.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -115,5 +116,5 @@ func singleDeploymentSearcher(deployment *storage.Deployment) (search.Searcher, 
 	if err := deploymentIndex.AddDeployment(clonedDeployment); err != nil {
 		return nil, nil, err
 	}
-	return deploymentIndex, clonedDeployment, nil
+	return search.WrapContextLessSearcher(deploymentIndex), clonedDeployment, nil
 }

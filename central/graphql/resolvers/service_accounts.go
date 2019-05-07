@@ -33,14 +33,14 @@ func (resolver *serviceAccountResolver) Roles(ctx context.Context) ([]*k8SRoleRe
 	}
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).ProtoQuery()
-	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(q)
+	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
 
 	if err != nil {
 		return nil, err
 	}
 
 	q = search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).ProtoQuery()
-	roles, err := resolver.root.K8sRoleStore.SearchRawRoles(q)
+	roles, err := resolver.root.K8sRoleStore.SearchRawRoles(ctx, q)
 
 	if err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func (resolver *serviceAccountResolver) Deployments(ctx context.Context) ([]*dep
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
 		AddExactMatches(search.ServiceAccountName, resolver.data.GetName()).ProtoQuery()
-	deployments, err := resolver.root.DeploymentDataStore.SearchListDeployments(q)
+	deployments, err := resolver.root.DeploymentDataStore.SearchListDeployments(ctx, q)
 
 	if err != nil {
 		return nil, err

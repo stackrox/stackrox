@@ -66,7 +66,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetDeployment returns the deployment with given id.
 func (s *serviceImpl) GetDeployment(ctx context.Context, request *v1.ResourceByID) (*storage.Deployment, error) {
-	deployment, exists, err := s.datastore.GetDeployment(request.GetId())
+	deployment, exists, err := s.datastore.GetDeployment(ctx, request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -81,7 +81,7 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 	var deployments []*storage.ListDeployment
 	var err error
 	if request.GetQuery() == "" {
-		deployments, err = s.datastore.ListDeployments()
+		deployments, err = s.datastore.ListDeployments(ctx)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -90,7 +90,7 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		deployments, err = s.datastore.SearchListDeployments(parsedQuery)
+		deployments, err = s.datastore.SearchListDeployments(ctx, parsedQuery)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -104,8 +104,8 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 }
 
 // GetLabels returns label keys and values for current deployments.
-func (s *serviceImpl) GetLabels(context.Context, *v1.Empty) (*v1.DeploymentLabelsResponse, error) {
-	deployments, err := s.datastore.GetDeployments()
+func (s *serviceImpl) GetLabels(ctx context.Context, _ *v1.Empty) (*v1.DeploymentLabelsResponse, error) {
+	deployments, err := s.datastore.GetDeployments(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

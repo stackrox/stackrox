@@ -38,20 +38,20 @@ func setupTest(t *testing.T) (*bbolt.DB, datastore.DataStore, Service) {
 }
 
 func fillDB(t *testing.T, ds datastore.DataStore, whitelists []*storage.ProcessWhitelist) {
-	initialContents, err := ds.GetProcessWhitelists()
+	initialContents, err := ds.GetProcessWhitelists(context.TODO())
 	assert.NoError(t, err)
 	assert.Empty(t, initialContents, "initial db not empty, you have a test bug")
 	for _, whitelist := range whitelists {
-		_, err := ds.AddProcessWhitelist(whitelist)
+		_, err := ds.AddProcessWhitelist(context.TODO(), whitelist)
 		assert.NoError(t, err)
 	}
 }
 
 func emptyDB(t *testing.T, ds datastore.DataStore) {
-	whitelists, err := ds.GetProcessWhitelists()
+	whitelists, err := ds.GetProcessWhitelists(context.TODO())
 	assert.NoError(t, err)
 	for _, whitelist := range whitelists {
-		assert.NoError(t, ds.RemoveProcessWhitelist(whitelist.GetKey()))
+		assert.NoError(t, ds.RemoveProcessWhitelist(context.TODO(), whitelist.GetKey()))
 	}
 }
 

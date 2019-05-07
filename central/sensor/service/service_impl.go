@@ -63,7 +63,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 
 	clusterID := svc.GetId()
 
-	_, exists, err := s.clusters.GetCluster(clusterID)
+	_, exists, err := s.clusters.GetCluster(context.TODO(), clusterID)
 	if err != nil {
 		return status.Errorf(codes.Internal, "couldn't look-up cluster %q: %v", clusterID, err)
 	}

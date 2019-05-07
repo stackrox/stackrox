@@ -52,7 +52,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.NetworkGraphRequest) (*v1.NetworkGraph, error) {
+func (s *serviceImpl) GetNetworkGraph(ctx context.Context, request *v1.NetworkGraphRequest) (*v1.NetworkGraph, error) {
 	if request.GetClusterId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "cluster ID must be specified")
 	}
@@ -67,7 +67,7 @@ func (s *serviceImpl) GetNetworkGraph(context context.Context, request *v1.Netwo
 	}
 
 	// Get the deployments we want to check connectivity between.
-	deployments, err := s.getDeployments(request.GetClusterId(), request.GetQuery())
+	deployments, err := s.getDeployments(ctx, request.GetClusterId(), request.GetQuery())
 
 	if err != nil {
 		return nil, err
@@ -121,7 +121,7 @@ func filterNetworkFlowsByDeployments(flows []*storage.NetworkFlow, deployments [
 	return
 }
 
-func (s *serviceImpl) getDeployments(clusterID string, query string) (deployments []*storage.Deployment, err error) {
+func (s *serviceImpl) getDeployments(ctx context.Context, clusterID string, query string) (deployments []*storage.Deployment, err error) {
 	clusterQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
 
 	q := clusterQuery
@@ -133,6 +133,6 @@ func (s *serviceImpl) getDeployments(clusterID string, query string) (deployment
 		q = search.ConjunctionQuery(q, clusterQuery)
 	}
 
-	deployments, err = s.deployments.SearchRawDeployments(q)
+	deployments, err = s.deployments.SearchRawDeployments(ctx, q)
 	return
 }

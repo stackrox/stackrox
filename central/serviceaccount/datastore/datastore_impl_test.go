@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"context"
 	"testing"
 
 	"github.com/blevesearch/bleve"
@@ -52,7 +53,7 @@ func (suite *ServiceAccountDataStoreTestSuite) TearDownSuite() {
 }
 
 func (suite *ServiceAccountDataStoreTestSuite) assertSearchResults(q *v1.Query, s *storage.ServiceAccount) {
-	results, err := suite.datastore.SearchServiceAccounts(q)
+	results, err := suite.datastore.SearchServiceAccounts(context.TODO(), q)
 	suite.Require().NoError(err)
 	if s != nil {
 		suite.Len(results, 1)
@@ -68,15 +69,15 @@ func (suite *ServiceAccountDataStoreTestSuite) TestServiceAccountsDataStore() {
 	}
 
 	sa := fixtures.GetServiceAccount()
-	err := suite.datastore.UpsertServiceAccount(sa)
+	err := suite.datastore.UpsertServiceAccount(context.TODO(), sa)
 	suite.Require().NoError(err)
 
-	foundSA, found, err := suite.datastore.GetServiceAccount(sa.GetId())
+	foundSA, found, err := suite.datastore.GetServiceAccount(context.TODO(), sa.GetId())
 	suite.Require().NoError(err)
 	suite.True(found)
 	suite.Equal(sa, foundSA)
 
-	_, found, err = suite.datastore.GetServiceAccount("NONEXISTENT")
+	_, found, err = suite.datastore.GetServiceAccount(context.TODO(), "NONEXISTENT")
 	suite.Require().NoError(err)
 	suite.False(found)
 
@@ -86,10 +87,10 @@ func (suite *ServiceAccountDataStoreTestSuite) TestServiceAccountsDataStore() {
 	invalidQ := search.NewQueryBuilder().AddStrings(search.Cluster, "NONEXISTENT").ProtoQuery()
 	suite.assertSearchResults(invalidQ, nil)
 
-	err = suite.datastore.RemoveServiceAccount(sa.GetId())
+	err = suite.datastore.RemoveServiceAccount(context.TODO(), sa.GetId())
 	suite.Require().NoError(err)
 
-	_, found, err = suite.datastore.GetServiceAccount(sa.GetId())
+	_, found, err = suite.datastore.GetServiceAccount(context.TODO(), sa.GetId())
 	suite.Require().NoError(err)
 	suite.False(found)
 

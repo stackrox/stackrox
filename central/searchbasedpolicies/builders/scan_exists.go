@@ -1,6 +1,8 @@
 package builders
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -27,7 +29,7 @@ func (s ScanExistsQueryBuilder) Query(fields *storage.PolicyFields, optionsMap m
 
 	q = search.NewQueryBuilder().AddNullField(search.ImageScanTime).ProtoQuery()
 
-	v = func(result search.Result) searchbasedpolicies.Violations {
+	v = func(_ context.Context, result search.Result) searchbasedpolicies.Violations {
 		return searchbasedpolicies.Violations{AlertViolations: []*storage.Alert_Violation{{Message: "Image has not been scanned"}}}
 	}
 	return

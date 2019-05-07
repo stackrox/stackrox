@@ -1,6 +1,8 @@
 package generator
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/deployment/datastore"
 	nsDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	flowStore "github.com/stackrox/rox/central/networkflow/store"
@@ -11,7 +13,7 @@ import (
 
 // Generator encapsulates the logic of the network policy generator.
 type Generator interface {
-	Generate(req *v1.GenerateNetworkPoliciesRequest) (generated []*storage.NetworkPolicy, toDelete []*storage.NetworkPolicyReference, err error)
+	Generate(ctx context.Context, req *v1.GenerateNetworkPoliciesRequest) (generated []*storage.NetworkPolicy, toDelete []*storage.NetworkPolicyReference, err error)
 }
 
 // New creates and returns a new network policy generator.

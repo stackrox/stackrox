@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"context"
 	"time"
 
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
@@ -71,7 +72,7 @@ func (e *managerImpl) RemoveMultiplier(id string) {
 
 func (e *managerImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
 	for _, id := range deploymentIDs {
-		deployment, exists, err := e.deploymentStorage.GetDeployment(id)
+		deployment, exists, err := e.deploymentStorage.GetDeployment(context.TODO(), id)
 		if err != nil {
 			log.Errorf("Couldn't retrieve deployment %q: %v", id, err)
 			continue
@@ -89,7 +90,7 @@ func (e *managerImpl) ReprocessRiskForDeployments(deploymentIDs ...string) {
 
 // ReprocessRisk iterates over all of the deployments and reprocesses the risk for them
 func (e *managerImpl) ReprocessRisk() {
-	deployments, err := e.deploymentStorage.GetDeployments()
+	deployments, err := e.deploymentStorage.GetDeployments(context.TODO())
 	if err != nil {
 		log.Errorf("Error reprocessing risk: %s", err)
 		return
@@ -115,5 +116,5 @@ func (e *managerImpl) ReprocessDeploymentRisk(deployment *storage.Deployment) {
 func (e *managerImpl) addRiskToDeployment(deployment *storage.Deployment) error {
 	defer metrics.ObserveRiskProcessingDuration(time.Now())
 	deployment.Risk = e.scorer.Score(deployment)
-	return e.deploymentStorage.UpdateDeployment(deployment)
+	return e.deploymentStorage.UpdateDeployment(context.TODO(), deployment)
 }

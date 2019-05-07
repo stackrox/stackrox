@@ -77,7 +77,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetAlert returns the alert with given id.
 func (s *serviceImpl) GetAlert(ctx context.Context, request *v1.ResourceByID) (*storage.Alert, error) {
-	alert, exists, err := s.dataStore.GetAlert(request.GetId())
+	alert, exists, err := s.dataStore.GetAlert(ctx, request.GetId())
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -91,7 +91,7 @@ func (s *serviceImpl) GetAlert(ctx context.Context, request *v1.ResourceByID) (*
 
 // ListAlerts returns ListAlerts according to the request.
 func (s *serviceImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequest) (*v1.ListAlertsResponse, error) {
-	alerts, err := s.dataStore.ListAlerts(request)
+	alerts, err := s.dataStore.ListAlerts(ctx, request)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -100,7 +100,7 @@ func (s *serviceImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequ
 
 // GetAlertsGroup returns alerts according to the request, grouped by category and policy.
 func (s *serviceImpl) GetAlertsGroup(ctx context.Context, request *v1.ListAlertsRequest) (*v1.GetAlertsGroupResponse, error) {
-	alerts, err := s.dataStore.ListAlerts(request)
+	alerts, err := s.dataStore.ListAlerts(ctx, request)
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -113,7 +113,7 @@ func (s *serviceImpl) GetAlertsGroup(ctx context.Context, request *v1.ListAlerts
 // GetAlertsCounts returns alert counts by severity according to the request.
 // Counts can be grouped by policy category or cluster.
 func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlertsCountsRequest) (*v1.GetAlertsCountsResponse, error) {
-	alerts, err := s.dataStore.ListAlerts(request.GetRequest())
+	alerts, err := s.dataStore.ListAlerts(ctx, request.GetRequest())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -127,7 +127,7 @@ func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlerts
 
 // GetAlertTimeseries returns the timeseries format of the events based on the request parameters
 func (s *serviceImpl) GetAlertTimeseries(ctx context.Context, req *v1.ListAlertsRequest) (*v1.GetAlertTimeseriesResponse, error) {
-	alerts, err := s.dataStore.ListAlerts(req)
+	alerts, err := s.dataStore.ListAlerts(ctx, req)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -136,8 +136,8 @@ func (s *serviceImpl) GetAlertTimeseries(ctx context.Context, req *v1.ListAlerts
 	return response, nil
 }
 
-func (s *serviceImpl) ResolveAlert(_ context.Context, req *v1.ResolveAlertRequest) (*v1.Empty, error) {
-	alert, exists, err := s.dataStore.GetAlert(req.GetId())
+func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequest) (*v1.Empty, error) {
+	alert, exists, err := s.dataStore.GetAlert(ctx, req.GetId())
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -161,7 +161,7 @@ func (s *serviceImpl) ResolveAlert(_ context.Context, req *v1.ResolveAlertReques
 				DeploymentId:  alert.GetDeployment().GetId(),
 				ContainerName: containerName,
 			}
-			if _, err := s.whitelists.UpdateProcessWhitelistElements(key, items, nil, false); err != nil {
+			if _, err := s.whitelists.UpdateProcessWhitelistElements(ctx, key, items, nil, false); err != nil {
 				return nil, status.Error(codes.Internal, err.Error())
 			}
 		}
@@ -169,7 +169,7 @@ func (s *serviceImpl) ResolveAlert(_ context.Context, req *v1.ResolveAlertReques
 
 	alert.SnoozeTill = nil
 	alert.State = storage.ViolationState_RESOLVED
-	err = s.dataStore.UpdateAlert(alert)
+	err = s.dataStore.UpdateAlert(ctx, alert)
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -178,14 +178,14 @@ func (s *serviceImpl) ResolveAlert(_ context.Context, req *v1.ResolveAlertReques
 	return &v1.Empty{}, nil
 }
 
-func (s *serviceImpl) SnoozeAlert(_ context.Context, req *v1.SnoozeAlertRequest) (*v1.Empty, error) {
+func (s *serviceImpl) SnoozeAlert(ctx context.Context, req *v1.SnoozeAlertRequest) (*v1.Empty, error) {
 	if req.GetSnoozeTill() == nil {
 		return nil, status.Error(codes.InvalidArgument, "'snooze_till' cannot be nil")
 	}
 	if protoconv.ConvertTimestampToTimeOrNow(req.GetSnoozeTill()).Before(time.Now()) {
 		return nil, status.Error(codes.InvalidArgument, badSnoozeErrorMsg)
 	}
-	alert, exists, err := s.dataStore.GetAlert(req.GetId())
+	alert, exists, err := s.dataStore.GetAlert(ctx, req.GetId())
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -195,7 +195,7 @@ func (s *serviceImpl) SnoozeAlert(_ context.Context, req *v1.SnoozeAlertRequest)
 	}
 	alert.SnoozeTill = req.GetSnoozeTill()
 	alert.State = storage.ViolationState_SNOOZED
-	err = s.dataStore.UpdateAlert(alert)
+	err = s.dataStore.UpdateAlert(ctx, alert)
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())

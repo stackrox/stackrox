@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"context"
 	"sort"
 	"testing"
 
@@ -159,7 +160,7 @@ func (s *generatorTestSuite) TestGenerate() {
 		NetworkDataSince: ts,
 	}
 
-	s.mockDeploymentsStore.EXPECT().SearchRawDeployments(gomock.Any()).Return(
+	s.mockDeploymentsStore.EXPECT().SearchRawDeployments(gomock.Any(), gomock.Any()).Return(
 		[]*storage.Deployment{
 			{
 				Id:        "depA",
@@ -199,7 +200,7 @@ func (s *generatorTestSuite) TestGenerate() {
 			},
 		}, nil)
 
-	s.mockNamespaceStore.EXPECT().SearchNamespaces(gomock.Any()).Return(
+	s.mockNamespaceStore.EXPECT().SearchNamespaces(gomock.Any(), gomock.Any()).Return(
 		[]*storage.NamespaceMetadata{
 			{
 				Id:   "1",
@@ -310,7 +311,7 @@ func (s *generatorTestSuite) TestGenerate() {
 
 	s.mockGlobalFlowStore.EXPECT().GetFlowStore(gomock.Eq("mycluster")).Return(mockFlowStore)
 
-	generatedPolicies, toDelete, err := s.generator.Generate(req)
+	generatedPolicies, toDelete, err := s.generator.Generate(context.TODO(), req)
 	s.NoError(err)
 	s.Empty(toDelete)
 

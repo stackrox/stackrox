@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -117,7 +118,7 @@ func (m *manager) Stop() error {
 }
 
 func (m *manager) createDomain(clusterID string) (framework.ComplianceDomain, error) {
-	cluster, ok, err := m.clusterStore.GetCluster(clusterID)
+	cluster, ok, err := m.clusterStore.GetCluster(context.TODO(), clusterID)
 	if err == nil && !ok {
 		err = errors.New("cluster not found")
 	}
@@ -125,7 +126,7 @@ func (m *manager) createDomain(clusterID string) (framework.ComplianceDomain, er
 		return nil, errors.Wrapf(err, "could not get cluster with ID %q", clusterID)
 	}
 
-	clusterNodeStore, err := m.nodeStore.GetClusterNodeStore(clusterID)
+	clusterNodeStore, err := m.nodeStore.GetClusterNodeStore(context.TODO(), clusterID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not get node store for cluster %s", clusterID)
 	}
@@ -135,7 +136,7 @@ func (m *manager) createDomain(clusterID string) (framework.ComplianceDomain, er
 	}
 
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
-	deployments, err := m.deploymentStore.SearchRawDeployments(query)
+	deployments, err := m.deploymentStore.SearchRawDeployments(context.TODO(), query)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not get deployments for cluster %s", clusterID)
 	}
@@ -308,7 +309,7 @@ func (m *manager) AddSchedule(spec *storage.ComplianceRunSchedule) (*v1.Complian
 		return nil, errors.New("schedule to add must have an empty ID")
 	}
 
-	if _, ok, err := m.clusterStore.GetCluster(spec.GetClusterId()); !ok || err != nil {
+	if _, ok, err := m.clusterStore.GetCluster(context.TODO(), spec.GetClusterId()); !ok || err != nil {
 		if err == nil {
 			err = errors.New("no such cluster")
 		}
@@ -339,7 +340,7 @@ func (m *manager) UpdateSchedule(spec *storage.ComplianceRunSchedule) (*v1.Compl
 		return nil, errors.New("schedule to update must have a non-empty ID")
 	}
 
-	if _, ok, err := m.clusterStore.GetCluster(spec.GetClusterId()); !ok || err != nil {
+	if _, ok, err := m.clusterStore.GetCluster(context.TODO(), spec.GetClusterId()); !ok || err != nil {
 		if err == nil {
 			err = errors.New("no such cluster")
 		}
@@ -449,7 +450,7 @@ func (m *manager) GetRecentRun(id string) (*v1.ComplianceRun, error) {
 func (m *manager) ExpandSelection(clusterIDOrWildcard, standardIDOrWildcard string) ([]compliance.ClusterStandardPair, error) {
 	var clusterIDs []string
 	if clusterIDOrWildcard == Wildcard {
-		clusters, err := m.clusterStore.GetClusters()
+		clusters, err := m.clusterStore.GetClusters(context.TODO())
 		if err != nil {
 			return nil, errors.Wrap(err, "retrieving clusters")
 		}

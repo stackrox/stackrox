@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/secret/index"
 	"github.com/stackrox/rox/central/secret/search"
@@ -13,15 +15,15 @@ import (
 // DataStore is an intermediary to SecretStorage.
 //go:generate mockgen-wrapper DataStore
 type DataStore interface {
-	Search(q *v1.Query) ([]searchPkg.Result, error)
-	SearchSecrets(q *v1.Query) ([]*v1.SearchResult, error)
-	SearchListSecrets(q *v1.Query) ([]*storage.ListSecret, error)
+	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
+	SearchSecrets(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
+	SearchListSecrets(ctx context.Context, q *v1.Query) ([]*storage.ListSecret, error)
 
-	CountSecrets() (int, error)
-	ListSecrets() ([]*storage.ListSecret, error)
-	GetSecret(id string) (*storage.Secret, bool, error)
-	UpsertSecret(request *storage.Secret) error
-	RemoveSecret(id string) error
+	CountSecrets(ctx context.Context) (int, error)
+	ListSecrets(ctx context.Context) ([]*storage.ListSecret, error)
+	GetSecret(ctx context.Context, id string) (*storage.Secret, bool, error)
+	UpsertSecret(ctx context.Context, request *storage.Secret) error
+	RemoveSecret(ctx context.Context, id string) error
 }
 
 // New returns a new instance of DataStore using the input store, indexer, and searcher.

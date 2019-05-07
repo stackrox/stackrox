@@ -1,6 +1,7 @@
 package policyrefresh
 
 import (
+	"context"
 	"time"
 
 	"github.com/stackrox/rox/central/detection"
@@ -82,7 +83,7 @@ func (s *pipelineImpl) OnFinish(clusterID string) {}
 
 // Update all of the policies that pass the input list of predicates.
 func (s *pipelineImpl) updatePolicies(predicates []*predicate) error {
-	policies, err := s.policies.GetPolicies()
+	policies, err := s.policies.GetPolicies(context.TODO())
 	if err != nil {
 		return err
 	}

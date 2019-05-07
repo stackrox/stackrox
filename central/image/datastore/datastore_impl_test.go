@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -53,7 +54,7 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithoutMetadata() {
 	suite.mockStore.EXPECT().UpsertImage(image).Return(nil)
 	suite.mockIndexer.EXPECT().AddImage(image).Return(nil)
 
-	err := suite.datastore.UpsertImage(image)
+	err := suite.datastore.UpsertImage(context.TODO(), image)
 	suite.NoError(err)
 }
 
@@ -73,6 +74,6 @@ func (suite *ImageDataStoreTestSuite) TestNewImageAddedWithMetadata() {
 	suite.mockStore.EXPECT().UpsertImage(upsertedImage).Return(nil)
 	suite.mockIndexer.EXPECT().AddImage(upsertedImage).Return(nil)
 
-	err := suite.datastore.UpsertImage(newImage)
+	err := suite.datastore.UpsertImage(context.TODO(), newImage)
 	suite.NoError(err)
 }

@@ -29,7 +29,7 @@ func (resolver *subjectWithClusterIDResolver) Name(ctx context.Context) (string,
 		return "", err
 	}
 
-	return resolver.subject.Name(), nil
+	return resolver.subject.Name(ctx), nil
 }
 
 func (resolver *subjectWithClusterIDResolver) Namespace(ctx context.Context) (string, error) {
@@ -37,7 +37,7 @@ func (resolver *subjectWithClusterIDResolver) Namespace(ctx context.Context) (st
 		return "", err
 	}
 
-	return resolver.subject.Namespace(), nil
+	return resolver.subject.Namespace(ctx), nil
 }
 
 func (resolver *subjectWithClusterIDResolver) Type(ctx context.Context) (string, error) {
@@ -65,14 +65,14 @@ func (resolver *subjectWithClusterIDResolver) Roles(ctx context.Context) ([]*k8S
 	}
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.clusterID).ProtoQuery()
-	bindings, err := resolver.subject.root.K8sRoleBindingStore.SearchRawRoleBindings(q)
+	bindings, err := resolver.subject.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
 
 	if err != nil {
 		return nil, err
 	}
 
 	q = search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.clusterID).ProtoQuery()
-	roles, err := resolver.subject.root.K8sRoleStore.SearchRawRoles(q)
+	roles, err := resolver.subject.root.K8sRoleStore.SearchRawRoles(ctx, q)
 
 	if err != nil {
 		return nil, err

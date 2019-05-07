@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -43,7 +44,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 	nodes := nodeMocks.NewMockGlobalDataStore(suite.mockCtrl)
 	secrets := secretMocks.NewMockDataStore(suite.mockCtrl)
 
-	nodes.EXPECT().GetAllClusterNodeStores().AnyTimes().Return(nil, nil)
+	nodes.EXPECT().GetAllClusterNodeStores(gomock.Any()).AnyTimes().Return(nil, nil)
 
 	suite.clusters.EXPECT().GetClusters().Return(([]*storage.Cluster)(nil), nil)
 	suite.indexer.EXPECT().AddClusters(nil).Return(nil)
@@ -63,7 +64,7 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesClusterDoesNotExist() {
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return((*storage.Cluster)(nil), false, nil)
 
 	// run removal.
-	err := suite.clusterDataStore.RemoveCluster(fakeClusterID)
+	err := suite.clusterDataStore.RemoveCluster(context.TODO(), fakeClusterID)
 	suite.Error(err, "expected an error since the cluster did not exist")
 }
 
@@ -74,6 +75,6 @@ func (suite *ClusterDataStoreTestSuite) TestHandlesErrorGettingCluster() {
 	suite.clusters.EXPECT().GetCluster(fakeClusterID).Return((*storage.Cluster)(nil), true, expectedErr)
 
 	// run removal.
-	err := suite.clusterDataStore.RemoveCluster(fakeClusterID)
+	err := suite.clusterDataStore.RemoveCluster(context.TODO(), fakeClusterID)
 	suite.Equal(expectedErr, err)
 }

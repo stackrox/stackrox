@@ -1,6 +1,8 @@
 package builders
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,7 +19,7 @@ func (p ProcessWhitelistingBuilder) Query(fields *storage.PolicyFields, optionsM
 	}
 
 	q = search.NewQueryBuilder().AddStrings(search.DeploymentID, search.WildcardString).ProtoQuery()
-	v = func(search.Result) searchbasedpolicies.Violations {
+	v = func(context.Context, search.Result) searchbasedpolicies.Violations {
 		return searchbasedpolicies.Violations{
 			AlertViolations: []*storage.Alert_Violation{
 				{

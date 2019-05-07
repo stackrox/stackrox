@@ -1,6 +1,7 @@
 package builders
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -55,7 +56,7 @@ func (e HostMountQueryBuilder) Query(fields *storage.PolicyFields, optionsMap ma
 	queryStrings := []interface{}{search.WildcardString, volumeType, search.WildcardString, false}
 
 	q = search.NewQueryBuilder().AddGenericTypeLinkedFieldsHighligted(fieldLabels, queryStrings).ProtoQuery()
-	v = func(result search.Result) searchbasedpolicies.Violations {
+	v = func(_ context.Context, result search.Result) searchbasedpolicies.Violations {
 		nameMatches := result.Matches[nameSearchField.GetFieldPath()]
 		typeMatches := result.Matches[typeSearchField.GetFieldPath()]
 		sourceMatches := result.Matches[sourceSearchField.GetFieldPath()]

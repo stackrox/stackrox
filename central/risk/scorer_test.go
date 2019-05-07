@@ -40,8 +40,8 @@ func TestScore(t *testing.T) {
 		},
 	}, mockIndicators, mockWhitelists, mockRoles, mockBindings, mockServiceAccounts)
 
-	mockWhitelists.EXPECT().GetProcessWhitelist(gomock.Any()).MaxTimes(4).Return(nil, nil)
-	mockIndicators.EXPECT().SearchRawProcessIndicators(gomock.Any()).MaxTimes(2).Return(nil, nil)
+	mockWhitelists.EXPECT().GetProcessWhitelist(gomock.Any(), gomock.Any()).MaxTimes(4).Return(nil, nil)
+	mockIndicators.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).MaxTimes(2).Return(nil, nil)
 
 	// Without user defined function
 	expectedRiskScore := 9.016
@@ -88,7 +88,7 @@ func TestScore(t *testing.T) {
 	}
 
 	if features.K8sRBAC.Enabled() {
-		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(gomock.Any()).Return(nil, nil)
+		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return(nil, nil)
 	}
 
 	actualRisk := scorer.Score(deployment)
@@ -134,7 +134,7 @@ func TestScore(t *testing.T) {
 	}...)
 
 	if features.K8sRBAC.Enabled() {
-		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(gomock.Any()).Return(nil, nil)
+		mockServiceAccounts.EXPECT().SearchRawServiceAccounts(gomock.Any(), gomock.Any()).Return(nil, nil)
 	}
 
 	actualRisk = scorer.Score(deployment)

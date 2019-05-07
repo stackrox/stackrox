@@ -221,11 +221,11 @@ func isDeployTimeEnforcement(actions []storage.EnforcementAction) bool {
 	return false
 }
 
-func (s *serviceImpl) populateDeploymentWithClusterInfo(clusterID string, deployment *storage.Deployment) error {
+func (s *serviceImpl) populateDeploymentWithClusterInfo(ctx context.Context, clusterID string, deployment *storage.Deployment) error {
 	if clusterID == "" {
 		return nil
 	}
-	cluster, exists, err := s.clusters.GetCluster(clusterID)
+	cluster, exists, err := s.clusters.GetCluster(ctx, clusterID)
 	if err != nil {
 		return err
 	}
@@ -241,7 +241,7 @@ func (s *serviceImpl) DetectDeployTime(ctx context.Context, req *apiV1.DeployDet
 	if req.GetDeployment() == nil {
 		return nil, status.Error(codes.InvalidArgument, "Deployment must be passed to deploy time detection")
 	}
-	if err := s.populateDeploymentWithClusterInfo(req.GetClusterId(), req.GetDeployment()); err != nil {
+	if err := s.populateDeploymentWithClusterInfo(ctx, req.GetClusterId(), req.GetDeployment()); err != nil {
 		return nil, err
 	}
 

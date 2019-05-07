@@ -1,6 +1,7 @@
 package builders
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -37,7 +38,7 @@ func (e EnvQueryBuilder) Query(fields *storage.PolicyFields, optionsMap map[sear
 		[]search.FieldLabel{search.EnvironmentKey, search.EnvironmentValue},
 		[]string{keyQuery, valueQuery}).ProtoQuery()
 
-	v = func(result search.Result) searchbasedpolicies.Violations {
+	v = func(_ context.Context, result search.Result) searchbasedpolicies.Violations {
 		keyMatches := result.Matches[keySearchField.GetFieldPath()]
 		valueMatches := result.Matches[valueSearchField.GetFieldPath()]
 		if len(keyMatches) == 0 || len(valueMatches) == 0 {

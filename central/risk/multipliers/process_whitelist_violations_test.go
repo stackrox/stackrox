@@ -117,8 +117,8 @@ func TestProcessWhitelists(t *testing.T) {
 			mockWhitelists := processWhitelistMocks.NewMockDataStore(mockCtrl)
 			mockIndicators := processIndicatorMocks.NewMockDataStore(mockCtrl)
 
-			mockWhitelists.EXPECT().GetProcessWhitelist(gomock.Any()).MaxTimes(len(deployment.GetContainers())).Return(c.whitelist, c.whitelistErr)
-			mockIndicators.EXPECT().SearchRawProcessIndicators(gomock.Any()).Return(c.indicators, c.indicatorErr)
+			mockWhitelists.EXPECT().GetProcessWhitelist(gomock.Any(), gomock.Any()).MaxTimes(len(deployment.GetContainers())).Return(c.whitelist, c.whitelistErr)
+			mockIndicators.EXPECT().SearchRawProcessIndicators(gomock.Any(), gomock.Any()).Return(c.indicators, c.indicatorErr)
 
 			result := NewProcessWhitelists(mockWhitelists, mockIndicators).Score(deployment)
 			assert.ElementsMatch(t, c.expected.GetFactors(), result.GetFactors())

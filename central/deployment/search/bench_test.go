@@ -1,6 +1,7 @@
 package search
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"testing"
@@ -20,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/defaults"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/require"
 )
 
@@ -95,14 +97,15 @@ func BenchmarkPolicies(b *testing.B) {
 		for _, pNum := range numProcessIndicators {
 			processDatastore, _, indexer := setup(b)
 			require.NoError(b, indexer.AddDeployments(getDeployments(dNum)))
-			require.NoError(b, processDatastore.AddProcessIndicators(getProcesses(dNum, pNum)...))
+			require.NoError(b, processDatastore.AddProcessIndicators(context.TODO(), getProcesses(dNum, pNum)...))
 			matcherBuilder := matcher.NewBuilder(fields.NewRegistry(processDatastore), mappings.OptionsMap)
+			searcher := search.WrapContextLessSearcher(indexer)
 			for _, p := range policies {
 				b.Run(fmt.Sprintf("%s %dd %dp", p.GetName(), dNum, pNum), func(b *testing.B) {
 					mr, err := matcherBuilder.ForPolicy(p)
 					require.NoError(b, err)
 					for i := 0; i < b.N; i++ {
-						_, err = mr.Match(indexer)
+						_, err = mr.Match(context.TODO(), searcher)
 						require.NoError(b, err)
 					}
 				})

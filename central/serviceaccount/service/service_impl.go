@@ -58,7 +58,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetServiceAccount returns the service account for the id.
 func (s *serviceImpl) GetServiceAccount(ctx context.Context, request *v1.ResourceByID) (*v1.GetServiceAccountResponse, error) {
-	sa, exists, err := s.serviceAccounts.GetServiceAccount(request.GetId())
+	sa, exists, err := s.serviceAccounts.GetServiceAccount(ctx, request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -66,7 +66,7 @@ func (s *serviceImpl) GetServiceAccount(ctx context.Context, request *v1.Resourc
 		return nil, status.Errorf(codes.NotFound, "service account with id '%s' does not exist", request.GetId())
 	}
 
-	clusterRoles, scopedRoles, err := s.getRoles(sa)
+	clusterRoles, scopedRoles, err := s.getRoles(ctx, sa)
 
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (s *serviceImpl) GetServiceAccount(ctx context.Context, request *v1.Resourc
 			ServiceAccount:          sa,
 			ClusterRoles:            clusterRoles,
 			ScopedRoles:             scopedRoles,
-			DeploymentRelationships: s.getDeploymentRelationships(sa),
+			DeploymentRelationships: s.getDeploymentRelationships(ctx, sa),
 		},
 	}, nil
 }
@@ -87,14 +87,14 @@ func (s *serviceImpl) ListServiceAccounts(ctx context.Context, rawQuery *v1.RawQ
 	var serviceAccounts []*storage.ServiceAccount
 	var err error
 	if rawQuery.GetQuery() == "" {
-		serviceAccounts, err = s.serviceAccounts.ListServiceAccounts()
+		serviceAccounts, err = s.serviceAccounts.ListServiceAccounts(ctx)
 	} else {
 		var q *v1.Query
 		q, err = search.ParseRawQueryOrEmpty(rawQuery.GetQuery())
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		serviceAccounts, err = s.serviceAccounts.SearchRawServiceAccounts(q)
+		serviceAccounts, err = s.serviceAccounts.SearchRawServiceAccounts(ctx, q)
 	}
 
 	if err != nil {
@@ -107,7 +107,7 @@ func (s *serviceImpl) ListServiceAccounts(ctx context.Context, rawQuery *v1.RawQ
 
 	saAndRoles := make([]*v1.ServiceAccountAndRoles, 0, len(serviceAccounts))
 	for _, sa := range serviceAccounts {
-		clusterRoles, scopedRoles, err := s.getRoles(sa)
+		clusterRoles, scopedRoles, err := s.getRoles(ctx, sa)
 
 		if err != nil {
 			return nil, err
@@ -117,7 +117,7 @@ func (s *serviceImpl) ListServiceAccounts(ctx context.Context, rawQuery *v1.RawQ
 			ServiceAccount:          sa,
 			ClusterRoles:            clusterRoles,
 			ScopedRoles:             scopedRoles,
-			DeploymentRelationships: s.getDeploymentRelationships(sa),
+			DeploymentRelationships: s.getDeploymentRelationships(ctx, sa),
 		})
 
 	}
@@ -126,14 +126,14 @@ func (s *serviceImpl) ListServiceAccounts(ctx context.Context, rawQuery *v1.RawQ
 	}, nil
 }
 
-func (s *serviceImpl) getDeploymentRelationships(sa *storage.ServiceAccount) []*v1.SADeploymentRelationship {
+func (s *serviceImpl) getDeploymentRelationships(ctx context.Context, sa *storage.ServiceAccount) []*v1.SADeploymentRelationship {
 	psr := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, sa.GetClusterId()).
 		AddExactMatches(search.Namespace, sa.GetNamespace()).
 		AddExactMatches(search.ServiceAccountName, sa.GetName()).
 		ProtoQuery()
 
-	deploymentResults, err := s.deployments.SearchListDeployments(psr)
+	deploymentResults, err := s.deployments.SearchListDeployments(ctx, psr)
 	if err != nil {
 		return nil
 	}
@@ -149,7 +149,7 @@ func (s *serviceImpl) getDeploymentRelationships(sa *storage.ServiceAccount) []*
 	return deployments
 }
 
-func (s *serviceImpl) getRoles(sa *storage.ServiceAccount) ([]*storage.K8SRole, []*v1.ScopedRoles, error) {
+func (s *serviceImpl) getRoles(ctx context.Context, sa *storage.ServiceAccount) ([]*storage.K8SRole, []*v1.ScopedRoles, error) {
 	subject := &storage.Subject{
 		Name:      sa.GetName(),
 		Namespace: sa.GetNamespace(),
@@ -160,7 +160,7 @@ func (s *serviceImpl) getRoles(sa *storage.ServiceAccount) ([]*storage.K8SRole, 
 	clusterRoles := clusterEvaluator.RolesForSubject(subject)
 
 	namespaceQuery := search.NewQueryBuilder().AddExactMatches(search.ClusterID, sa.ClusterId).ProtoQuery()
-	namespaces, err := s.namespaces.SearchNamespaces(namespaceQuery)
+	namespaces, err := s.namespaces.SearchNamespaces(ctx, namespaceQuery)
 	if err != nil {
 		return clusterRoles, nil, err
 	}

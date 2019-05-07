@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -37,34 +38,34 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // AddCluster mocks base method
-func (m *MockDataStore) AddCluster(arg0 *storage.Cluster) (string, error) {
-	ret := m.ctrl.Call(m, "AddCluster", arg0)
+func (m *MockDataStore) AddCluster(arg0 context.Context, arg1 *storage.Cluster) (string, error) {
+	ret := m.ctrl.Call(m, "AddCluster", arg0, arg1)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // AddCluster indicates an expected call of AddCluster
-func (mr *MockDataStoreMockRecorder) AddCluster(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCluster", reflect.TypeOf((*MockDataStore)(nil).AddCluster), arg0)
+func (mr *MockDataStoreMockRecorder) AddCluster(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCluster", reflect.TypeOf((*MockDataStore)(nil).AddCluster), arg0, arg1)
 }
 
 // CountClusters mocks base method
-func (m *MockDataStore) CountClusters() (int, error) {
-	ret := m.ctrl.Call(m, "CountClusters")
+func (m *MockDataStore) CountClusters(arg0 context.Context) (int, error) {
+	ret := m.ctrl.Call(m, "CountClusters", arg0)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CountClusters indicates an expected call of CountClusters
-func (mr *MockDataStoreMockRecorder) CountClusters() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountClusters", reflect.TypeOf((*MockDataStore)(nil).CountClusters))
+func (mr *MockDataStoreMockRecorder) CountClusters(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountClusters", reflect.TypeOf((*MockDataStore)(nil).CountClusters), arg0)
 }
 
 // GetCluster mocks base method
-func (m *MockDataStore) GetCluster(arg0 string) (*storage.Cluster, bool, error) {
-	ret := m.ctrl.Call(m, "GetCluster", arg0)
+func (m *MockDataStore) GetCluster(arg0 context.Context, arg1 string) (*storage.Cluster, bool, error) {
+	ret := m.ctrl.Call(m, "GetCluster", arg0, arg1)
 	ret0, _ := ret[0].(*storage.Cluster)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -72,80 +73,80 @@ func (m *MockDataStore) GetCluster(arg0 string) (*storage.Cluster, bool, error) 
 }
 
 // GetCluster indicates an expected call of GetCluster
-func (mr *MockDataStoreMockRecorder) GetCluster(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCluster", reflect.TypeOf((*MockDataStore)(nil).GetCluster), arg0)
+func (mr *MockDataStoreMockRecorder) GetCluster(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCluster", reflect.TypeOf((*MockDataStore)(nil).GetCluster), arg0, arg1)
 }
 
 // GetClusters mocks base method
-func (m *MockDataStore) GetClusters() ([]*storage.Cluster, error) {
-	ret := m.ctrl.Call(m, "GetClusters")
+func (m *MockDataStore) GetClusters(arg0 context.Context) ([]*storage.Cluster, error) {
+	ret := m.ctrl.Call(m, "GetClusters", arg0)
 	ret0, _ := ret[0].([]*storage.Cluster)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetClusters indicates an expected call of GetClusters
-func (mr *MockDataStoreMockRecorder) GetClusters() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusters", reflect.TypeOf((*MockDataStore)(nil).GetClusters))
+func (mr *MockDataStoreMockRecorder) GetClusters(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClusters", reflect.TypeOf((*MockDataStore)(nil).GetClusters), arg0)
 }
 
 // RemoveCluster mocks base method
-func (m *MockDataStore) RemoveCluster(arg0 string) error {
-	ret := m.ctrl.Call(m, "RemoveCluster", arg0)
+func (m *MockDataStore) RemoveCluster(arg0 context.Context, arg1 string) error {
+	ret := m.ctrl.Call(m, "RemoveCluster", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveCluster indicates an expected call of RemoveCluster
-func (mr *MockDataStoreMockRecorder) RemoveCluster(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveCluster", reflect.TypeOf((*MockDataStore)(nil).RemoveCluster), arg0)
+func (mr *MockDataStoreMockRecorder) RemoveCluster(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveCluster", reflect.TypeOf((*MockDataStore)(nil).RemoveCluster), arg0, arg1)
 }
 
 // Search mocks base method
-func (m *MockDataStore) Search(arg0 *v1.Query) ([]search.Result, error) {
-	ret := m.ctrl.Call(m, "Search", arg0)
+func (m *MockDataStore) Search(arg0 context.Context, arg1 *v1.Query) ([]search.Result, error) {
+	ret := m.ctrl.Call(m, "Search", arg0, arg1)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Search indicates an expected call of Search
-func (mr *MockDataStoreMockRecorder) Search(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), arg0)
+func (mr *MockDataStoreMockRecorder) Search(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), arg0, arg1)
 }
 
 // UpdateCluster mocks base method
-func (m *MockDataStore) UpdateCluster(arg0 *storage.Cluster) error {
-	ret := m.ctrl.Call(m, "UpdateCluster", arg0)
+func (m *MockDataStore) UpdateCluster(arg0 context.Context, arg1 *storage.Cluster) error {
+	ret := m.ctrl.Call(m, "UpdateCluster", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateCluster indicates an expected call of UpdateCluster
-func (mr *MockDataStoreMockRecorder) UpdateCluster(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCluster", reflect.TypeOf((*MockDataStore)(nil).UpdateCluster), arg0)
+func (mr *MockDataStoreMockRecorder) UpdateCluster(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCluster", reflect.TypeOf((*MockDataStore)(nil).UpdateCluster), arg0, arg1)
 }
 
 // UpdateClusterContactTime mocks base method
-func (m *MockDataStore) UpdateClusterContactTime(arg0 string, arg1 time.Time) error {
-	ret := m.ctrl.Call(m, "UpdateClusterContactTime", arg0, arg1)
+func (m *MockDataStore) UpdateClusterContactTime(arg0 context.Context, arg1 string, arg2 time.Time) error {
+	ret := m.ctrl.Call(m, "UpdateClusterContactTime", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateClusterContactTime indicates an expected call of UpdateClusterContactTime
-func (mr *MockDataStoreMockRecorder) UpdateClusterContactTime(arg0, arg1 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterContactTime", reflect.TypeOf((*MockDataStore)(nil).UpdateClusterContactTime), arg0, arg1)
+func (mr *MockDataStoreMockRecorder) UpdateClusterContactTime(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterContactTime", reflect.TypeOf((*MockDataStore)(nil).UpdateClusterContactTime), arg0, arg1, arg2)
 }
 
 // UpdateClusterStatus mocks base method
-func (m *MockDataStore) UpdateClusterStatus(arg0 string, arg1 *storage.ClusterStatus) error {
-	ret := m.ctrl.Call(m, "UpdateClusterStatus", arg0, arg1)
+func (m *MockDataStore) UpdateClusterStatus(arg0 context.Context, arg1 string, arg2 *storage.ClusterStatus) error {
+	ret := m.ctrl.Call(m, "UpdateClusterStatus", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateClusterStatus indicates an expected call of UpdateClusterStatus
-func (mr *MockDataStoreMockRecorder) UpdateClusterStatus(arg0, arg1 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterStatus", reflect.TypeOf((*MockDataStore)(nil).UpdateClusterStatus), arg0, arg1)
+func (mr *MockDataStoreMockRecorder) UpdateClusterStatus(arg0, arg1, arg2 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateClusterStatus", reflect.TypeOf((*MockDataStore)(nil).UpdateClusterStatus), arg0, arg1, arg2)
 }

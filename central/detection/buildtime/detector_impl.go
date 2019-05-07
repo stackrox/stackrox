@@ -1,6 +1,8 @@
 package buildtime
 
 import (
+	"context"
+
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/detection"
@@ -9,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -37,6 +40,7 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "inserting into temp index")
 	}
+	tempSearcher := search.WrapContextLessSearcher(tempIndexer)
 
 	var alerts []*storage.Alert
 	err = d.policySet.ForEach(detection.FunctionAsExecutor(func(compiled detection.CompiledPolicy) error {
@@ -46,7 +50,7 @@ func (d *detectorImpl) Detect(image *storage.Image) ([]*storage.Alert, error) {
 		if !compiled.AppliesTo(image) {
 			return nil
 		}
-		violations, err := compiled.Matcher().MatchOne(tempIndexer, types.NewDigest(image.GetId()).Digest())
+		violations, err := compiled.Matcher().MatchOne(context.TODO(), tempSearcher, types.NewDigest(image.GetId()).Digest())
 		if err != nil {
 			return errors.Wrapf(err, "matching against policy %s", compiled.Policy().GetName())
 		}

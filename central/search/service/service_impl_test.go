@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -149,7 +150,7 @@ func TestAutocomplete(t *testing.T) {
 		},
 	} {
 		t.Run(fmt.Sprintf("Test case %q", testCase.query), func(t *testing.T) {
-			results, err := service.autocomplete(testCase.query, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
+			results, err := service.autocomplete(context.TODO(), testCase.query, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
 			require.NoError(t, err)
 			if testCase.ignoreOrder {
 				assert.ElementsMatch(t, testCase.expectedResults, results)
@@ -187,7 +188,7 @@ func TestAutocompleteForEnums(t *testing.T) {
 		WithAggregator(nil).
 		Build().(*serviceImpl)
 
-	results, err := service.autocomplete(fmt.Sprintf("%s:", search.Severity), []v1.SearchCategory{v1.SearchCategory_POLICIES})
+	results, err := service.autocomplete(context.TODO(), fmt.Sprintf("%s:", search.Severity), []v1.SearchCategory{v1.SearchCategory_POLICIES})
 	require.NoError(t, err)
 	assert.Equal(t, []string{fixtures.GetPolicy().GetSeverity().String()}, results)
 }

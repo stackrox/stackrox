@@ -1,6 +1,7 @@
 package roles
 
 import (
+	"context"
 	"fmt"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
@@ -47,7 +48,7 @@ type pipelineImpl struct {
 func (s *pipelineImpl) Reconcile(clusterID string) error {
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	results, err := s.roles.Search(query)
+	results, err := s.roles.Search(context.TODO(), query)
 	if err != nil {
 		return err
 	}
@@ -99,7 +100,7 @@ func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, event *s
 	}
 
 	// Add/Update/Remove the k8s role from persistence depending on the event action.
-	if err := s.roles.RemoveRole(event.GetId()); err != nil {
+	if err := s.roles.RemoveRole(context.TODO(), event.GetId()); err != nil {
 		return err
 	}
 
@@ -116,7 +117,7 @@ func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, role *s
 		return err
 	}
 
-	if err := s.roles.UpsertRole(role); err != nil {
+	if err := s.roles.UpsertRole(context.TODO(), role); err != nil {
 		return err
 	}
 
@@ -134,7 +135,7 @@ func (s *pipelineImpl) validateInput(role *storage.K8SRole) error {
 func (s *pipelineImpl) enrichCluster(role *storage.K8SRole) error {
 	role.ClusterName = ""
 
-	cluster, clusterExists, err := s.clusters.GetCluster(role.GetClusterId())
+	cluster, clusterExists, err := s.clusters.GetCluster(context.TODO(), role.GetClusterId())
 	switch {
 	case err != nil:
 		log.Errorf("Couldn't get name of cluster: %v", err)

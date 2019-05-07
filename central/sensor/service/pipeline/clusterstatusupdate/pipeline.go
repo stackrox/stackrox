@@ -1,6 +1,8 @@
 package clusterstatusupdate
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/deploymentenvs"
@@ -51,7 +53,7 @@ func (s *pipelineImpl) Run(clusterID string, msg *central.MsgFromSensor, _ commo
 		s.deploymentEnvsMgr.UpdateDeploymentEnvironments(clusterID, m.DeploymentEnvUpdate.Environments)
 		return nil
 	case *central.ClusterStatusUpdate_Status:
-		return s.clusters.UpdateClusterStatus(clusterID, m.Status)
+		return s.clusters.UpdateClusterStatus(context.TODO(), clusterID, m.Status)
 	default:
 		return errors.Errorf("unknown cluster status update message type %T", m)
 	}

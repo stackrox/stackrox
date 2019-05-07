@@ -86,7 +86,7 @@ func (z zipHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	wrapper := zip.NewWrapper()
 
 	// Add cluster YAML and command
-	cluster, _, err := z.clusterStore.GetCluster(clusterID.GetId())
+	cluster, _, err := z.clusterStore.GetCluster(r.Context(), clusterID.GetId())
 	if cluster == nil {
 		if err == nil {
 			err = fmt.Errorf("cluster %q not found", clusterID.GetId())

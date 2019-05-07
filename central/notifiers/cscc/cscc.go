@@ -1,6 +1,7 @@
 package cscc
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sort"
@@ -110,7 +111,7 @@ func processUUID(u string) string {
 }
 
 func (c *cscc) getCluster(id string) (*storage.Cluster, error) {
-	cluster, exists, err := c.clusters.GetCluster(id)
+	cluster, exists, err := c.clusters.GetCluster(context.TODO(), id)
 	if err != nil {
 		return nil, err
 	}

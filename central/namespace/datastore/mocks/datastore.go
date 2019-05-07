@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -36,20 +37,20 @@ func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 }
 
 // AddNamespace mocks base method
-func (m *MockDataStore) AddNamespace(arg0 *storage.NamespaceMetadata) error {
-	ret := m.ctrl.Call(m, "AddNamespace", arg0)
+func (m *MockDataStore) AddNamespace(arg0 context.Context, arg1 *storage.NamespaceMetadata) error {
+	ret := m.ctrl.Call(m, "AddNamespace", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddNamespace indicates an expected call of AddNamespace
-func (mr *MockDataStoreMockRecorder) AddNamespace(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNamespace", reflect.TypeOf((*MockDataStore)(nil).AddNamespace), arg0)
+func (mr *MockDataStoreMockRecorder) AddNamespace(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNamespace", reflect.TypeOf((*MockDataStore)(nil).AddNamespace), arg0, arg1)
 }
 
 // GetNamespace mocks base method
-func (m *MockDataStore) GetNamespace(arg0 string) (*storage.NamespaceMetadata, bool, error) {
-	ret := m.ctrl.Call(m, "GetNamespace", arg0)
+func (m *MockDataStore) GetNamespace(arg0 context.Context, arg1 string) (*storage.NamespaceMetadata, bool, error) {
+	ret := m.ctrl.Call(m, "GetNamespace", arg0, arg1)
 	ret0, _ := ret[0].(*storage.NamespaceMetadata)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -57,82 +58,82 @@ func (m *MockDataStore) GetNamespace(arg0 string) (*storage.NamespaceMetadata, b
 }
 
 // GetNamespace indicates an expected call of GetNamespace
-func (mr *MockDataStoreMockRecorder) GetNamespace(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespace", reflect.TypeOf((*MockDataStore)(nil).GetNamespace), arg0)
+func (mr *MockDataStoreMockRecorder) GetNamespace(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespace", reflect.TypeOf((*MockDataStore)(nil).GetNamespace), arg0, arg1)
 }
 
 // GetNamespaces mocks base method
-func (m *MockDataStore) GetNamespaces() ([]*storage.NamespaceMetadata, error) {
-	ret := m.ctrl.Call(m, "GetNamespaces")
+func (m *MockDataStore) GetNamespaces(arg0 context.Context) ([]*storage.NamespaceMetadata, error) {
+	ret := m.ctrl.Call(m, "GetNamespaces", arg0)
 	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetNamespaces indicates an expected call of GetNamespaces
-func (mr *MockDataStoreMockRecorder) GetNamespaces() *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespaces", reflect.TypeOf((*MockDataStore)(nil).GetNamespaces))
+func (mr *MockDataStoreMockRecorder) GetNamespaces(arg0 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespaces", reflect.TypeOf((*MockDataStore)(nil).GetNamespaces), arg0)
 }
 
 // RemoveNamespace mocks base method
-func (m *MockDataStore) RemoveNamespace(arg0 string) error {
-	ret := m.ctrl.Call(m, "RemoveNamespace", arg0)
+func (m *MockDataStore) RemoveNamespace(arg0 context.Context, arg1 string) error {
+	ret := m.ctrl.Call(m, "RemoveNamespace", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveNamespace indicates an expected call of RemoveNamespace
-func (mr *MockDataStoreMockRecorder) RemoveNamespace(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveNamespace", reflect.TypeOf((*MockDataStore)(nil).RemoveNamespace), arg0)
+func (mr *MockDataStoreMockRecorder) RemoveNamespace(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveNamespace", reflect.TypeOf((*MockDataStore)(nil).RemoveNamespace), arg0, arg1)
 }
 
 // Search mocks base method
-func (m *MockDataStore) Search(arg0 *v1.Query) ([]search.Result, error) {
-	ret := m.ctrl.Call(m, "Search", arg0)
+func (m *MockDataStore) Search(arg0 context.Context, arg1 *v1.Query) ([]search.Result, error) {
+	ret := m.ctrl.Call(m, "Search", arg0, arg1)
 	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Search indicates an expected call of Search
-func (mr *MockDataStoreMockRecorder) Search(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), arg0)
+func (mr *MockDataStoreMockRecorder) Search(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockDataStore)(nil).Search), arg0, arg1)
 }
 
 // SearchNamespaces mocks base method
-func (m *MockDataStore) SearchNamespaces(arg0 *v1.Query) ([]*storage.NamespaceMetadata, error) {
-	ret := m.ctrl.Call(m, "SearchNamespaces", arg0)
+func (m *MockDataStore) SearchNamespaces(arg0 context.Context, arg1 *v1.Query) ([]*storage.NamespaceMetadata, error) {
+	ret := m.ctrl.Call(m, "SearchNamespaces", arg0, arg1)
 	ret0, _ := ret[0].([]*storage.NamespaceMetadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchNamespaces indicates an expected call of SearchNamespaces
-func (mr *MockDataStoreMockRecorder) SearchNamespaces(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchNamespaces", reflect.TypeOf((*MockDataStore)(nil).SearchNamespaces), arg0)
+func (mr *MockDataStoreMockRecorder) SearchNamespaces(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchNamespaces", reflect.TypeOf((*MockDataStore)(nil).SearchNamespaces), arg0, arg1)
 }
 
 // SearchResults mocks base method
-func (m *MockDataStore) SearchResults(arg0 *v1.Query) ([]*v1.SearchResult, error) {
-	ret := m.ctrl.Call(m, "SearchResults", arg0)
+func (m *MockDataStore) SearchResults(arg0 context.Context, arg1 *v1.Query) ([]*v1.SearchResult, error) {
+	ret := m.ctrl.Call(m, "SearchResults", arg0, arg1)
 	ret0, _ := ret[0].([]*v1.SearchResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SearchResults indicates an expected call of SearchResults
-func (mr *MockDataStoreMockRecorder) SearchResults(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchResults", reflect.TypeOf((*MockDataStore)(nil).SearchResults), arg0)
+func (mr *MockDataStoreMockRecorder) SearchResults(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchResults", reflect.TypeOf((*MockDataStore)(nil).SearchResults), arg0, arg1)
 }
 
 // UpdateNamespace mocks base method
-func (m *MockDataStore) UpdateNamespace(arg0 *storage.NamespaceMetadata) error {
-	ret := m.ctrl.Call(m, "UpdateNamespace", arg0)
+func (m *MockDataStore) UpdateNamespace(arg0 context.Context, arg1 *storage.NamespaceMetadata) error {
+	ret := m.ctrl.Call(m, "UpdateNamespace", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateNamespace indicates an expected call of UpdateNamespace
-func (mr *MockDataStoreMockRecorder) UpdateNamespace(arg0 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNamespace", reflect.TypeOf((*MockDataStore)(nil).UpdateNamespace), arg0)
+func (mr *MockDataStoreMockRecorder) UpdateNamespace(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateNamespace", reflect.TypeOf((*MockDataStore)(nil).UpdateNamespace), arg0, arg1)
 }

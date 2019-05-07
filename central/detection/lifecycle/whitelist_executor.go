@@ -1,6 +1,8 @@
 package lifecycle
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
@@ -34,7 +36,9 @@ func (w *whitelistExecutor) Execute(compiled detection.CompiledPolicy) error {
 		return nil
 	}
 
-	violationsByDeployment, err := compiled.Matcher().MatchMany(w.deployments, w.deploymentIDs...)
+	ctx := context.TODO()
+
+	violationsByDeployment, err := compiled.Matcher().MatchMany(ctx, w.deployments, w.deploymentIDs...)
 	if err != nil {
 		return errors.Wrapf(err, "matching policy %s", compiled.Policy().GetName())
 	}
@@ -43,7 +47,7 @@ func (w *whitelistExecutor) Execute(compiled detection.CompiledPolicy) error {
 		violations.ProcessViolation = &storage.Alert_ProcessViolation{
 			Processes: w.deploymentsToIndicators[deploymentID],
 		}
-		dep, exists, err := w.deployments.GetDeployment(deploymentID)
+		dep, exists, err := w.deployments.GetDeployment(ctx, deploymentID)
 		if err != nil {
 			return err
 		}

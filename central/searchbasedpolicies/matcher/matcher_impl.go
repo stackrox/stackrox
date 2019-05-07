@@ -1,6 +1,7 @@
 package matcher
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stackrox/rox/central/searchbasedpolicies"
@@ -14,17 +15,17 @@ type matcherImpl struct {
 	violationPrinter searchbasedpolicies.ViolationPrinter
 }
 
-func (m *matcherImpl) MatchMany(searcher search.Searcher, ids ...string) (map[string]searchbasedpolicies.Violations, error) {
-	return m.violationsMapFromQuery(searcher, search.ConjunctionQuery(search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(), m.q))
+func (m *matcherImpl) MatchMany(ctx context.Context, searcher search.Searcher, ids ...string) (map[string]searchbasedpolicies.Violations, error) {
+	return m.violationsMapFromQuery(ctx, searcher, search.ConjunctionQuery(search.NewQueryBuilder().AddDocIDs(ids...).ProtoQuery(), m.q))
 }
 
 func (m *matcherImpl) errorPrefixForMatchOne(id string) string {
 	return fmt.Sprintf("matching policy %s against %s", m.policyName, id)
 }
 
-func (m *matcherImpl) MatchOne(searcher search.Searcher, id string) (violations searchbasedpolicies.Violations, err error) {
+func (m *matcherImpl) MatchOne(ctx context.Context, searcher search.Searcher, id string) (violations searchbasedpolicies.Violations, err error) {
 	q := search.ConjunctionQuery(search.NewQueryBuilder().AddDocIDs(id).ProtoQuery(), m.q)
-	results, err := searcher.Search(q)
+	results, err := searcher.Search(ctx, q)
 	if err != nil {
 		return
 	}
@@ -41,7 +42,7 @@ func (m *matcherImpl) MatchOne(searcher search.Searcher, id string) (violations 
 		return
 	}
 
-	violations = m.violationPrinter(result)
+	violations = m.violationPrinter(ctx, result)
 	if violationsEmpty(violations) {
 		err = fmt.Errorf("%s: result matched query but couldn't find any violation messages: %+v", m.errorPrefixForMatchOne(id), result)
 		return
@@ -49,12 +50,12 @@ func (m *matcherImpl) MatchOne(searcher search.Searcher, id string) (violations 
 	return violations, nil
 }
 
-func (m *matcherImpl) Match(searcher search.Searcher) (map[string]searchbasedpolicies.Violations, error) {
-	return m.violationsMapFromQuery(searcher, m.q)
+func (m *matcherImpl) Match(ctx context.Context, searcher search.Searcher) (map[string]searchbasedpolicies.Violations, error) {
+	return m.violationsMapFromQuery(ctx, searcher, m.q)
 }
 
-func (m *matcherImpl) violationsMapFromQuery(searcher search.Searcher, q *v1.Query) (map[string]searchbasedpolicies.Violations, error) {
-	results, err := searcher.Search(q)
+func (m *matcherImpl) violationsMapFromQuery(ctx context.Context, searcher search.Searcher, q *v1.Query) (map[string]searchbasedpolicies.Violations, error) {
+	results, err := searcher.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +70,7 @@ func (m *matcherImpl) violationsMapFromQuery(searcher search.Searcher, q *v1.Que
 			return nil, fmt.Errorf("matching policy %s: got empty result id: %+v", m.policyName, result)
 		}
 
-		violations := m.violationPrinter(result)
+		violations := m.violationPrinter(ctx, result)
 		if violationsEmpty(violations) {
 			return nil, fmt.Errorf("matching policy %s: result matched query but couldn't find any violation messages: %+v", m.policyName, result)
 		}

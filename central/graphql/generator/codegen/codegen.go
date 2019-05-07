@@ -20,6 +20,7 @@ var templates = map[string]string{
 package resolvers
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/graph-gophers/graphql-go"
@@ -110,17 +111,17 @@ func (resolver *Resolver) wrapList{{plural .Data.Name}}(values []*{{listName .Da
 	return output, nil
 }
 
-func (resolver *{{lower .Data.Name}}Resolver) ensureData() {
+func (resolver *{{lower .Data.Name}}Resolver) ensureData(ctx context.Context) {
 	if resolver.data == nil {
-		resolver.data = resolver.root.get{{.Data.Name}}(resolver.list.GetId())
+		resolver.data = resolver.root.get{{.Data.Name}}(ctx, resolver.list.GetId())
 	}
 }
 {{end -}}
 {{range $_, $fd := .Data.FieldData -}}
 {{$vt := valueType $fd}}{{if $vt}}
-func (resolver *{{lower $td.Data.Name}}Resolver) {{ $fd.Name }}() {{ $vt }} {
+func (resolver *{{lower $td.Data.Name}}Resolver) {{ $fd.Name }}(ctx context.Context) {{ $vt }} {
 {{- if $td.ListData}}{{if nonListField $td $fd}}
-	resolver.ensureData()
+	resolver.ensureData(ctx)
 {{- end}}{{end}}
 	value := resolver.data.Get{{$fd.Name}}()
 {{- if listField $td $fd}}

@@ -29,7 +29,7 @@ func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
-	return resolver.wrapDeployment(resolver.DeploymentDataStore.GetDeployment(string(*args.ID)))
+	return resolver.wrapDeployment(resolver.DeploymentDataStore.GetDeployment(ctx, string(*args.ID)))
 }
 
 // Deployments returns GraphQL resolvers all deployments
@@ -43,10 +43,10 @@ func (resolver *Resolver) Deployments(ctx context.Context, args rawQuery) ([]*de
 	}
 	if q == nil {
 		return resolver.wrapListDeployments(
-			resolver.DeploymentDataStore.ListDeployments())
+			resolver.DeploymentDataStore.ListDeployments(ctx))
 	}
 	return resolver.wrapListDeployments(
-		resolver.DeploymentDataStore.SearchListDeployments(q))
+		resolver.DeploymentDataStore.SearchListDeployments(ctx, q))
 }
 
 // Cluster returns a GraphQL resolver for the cluster where this deployment runs
@@ -60,7 +60,7 @@ func (resolver *deploymentResolver) GroupedProcesses(ctx context.Context) ([]*pr
 		return nil, err
 	}
 	query := search.NewQueryBuilder().AddStrings(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
-	indicators, err := resolver.root.ProcessIndicatorStore.SearchRawProcessIndicators(query)
+	indicators, err := resolver.root.ProcessIndicatorStore.SearchRawProcessIndicators(ctx, query)
 	return resolver.root.wrapProcessNameGroups(service.IndicatorsToGroupedResponses(indicators), err)
 }
 
@@ -70,11 +70,11 @@ func (resolver *deploymentResolver) Alerts(ctx context.Context) ([]*alertResolve
 	}
 	query := search.NewQueryBuilder().AddStrings(search.DeploymentID, resolver.data.GetId()).ProtoQuery()
 	return resolver.root.wrapAlerts(
-		resolver.root.ViolationsDataStore.SearchRawAlerts(query))
+		resolver.root.ViolationsDataStore.SearchRawAlerts(ctx, query))
 }
 
-func (resolver *Resolver) getDeployment(id string) *storage.Deployment {
-	deployment, ok, err := resolver.DeploymentDataStore.GetDeployment(id)
+func (resolver *Resolver) getDeployment(ctx context.Context, id string) *storage.Deployment {
+	deployment, ok, err := resolver.DeploymentDataStore.GetDeployment(ctx, id)
 	if err != nil || !ok {
 		return nil
 	}

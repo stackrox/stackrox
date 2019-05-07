@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/gogo/protobuf/types"
@@ -82,7 +83,7 @@ func (g *generator) getNetworkPolicies(deleteExistingMode v1.GenerateNetworkPoli
 	}
 }
 
-func (g *generator) generateGraph(clusterID string, since *types.Timestamp) (map[networkgraph.Entity]*node, error) {
+func (g *generator) generateGraph(ctx context.Context, clusterID string, since *types.Timestamp) (map[networkgraph.Entity]*node, error) {
 	clusterFlowStore := g.globalFlowStore.GetFlowStore(clusterID)
 	if clusterFlowStore == nil {
 		return nil, fmt.Errorf("could not obtain flow store for cluster %q", clusterID)
@@ -93,7 +94,7 @@ func (g *generator) generateGraph(clusterID string, since *types.Timestamp) (map
 		return nil, errors.Wrapf(err, "could not obtain network flow information for cluster %q", clusterID)
 	}
 
-	deployments, err := g.deploymentStore.SearchRawDeployments(&v1.Query{
+	deployments, err := g.deploymentStore.SearchRawDeployments(ctx, &v1.Query{
 		Query: &v1.Query_BaseQuery{
 			BaseQuery: &v1.BaseQuery{
 				Query: &v1.BaseQuery_MatchFieldQuery{
@@ -161,8 +162,8 @@ func (g *generator) generatePolicies(graph map[networkgraph.Entity]*node, deploy
 	return generatedPolicies
 }
 
-func (g *generator) Generate(req *v1.GenerateNetworkPoliciesRequest) (generated []*storage.NetworkPolicy, toDelete []*storage.NetworkPolicyReference, err error) {
-	graph, err := g.generateGraph(req.GetClusterId(), req.GetNetworkDataSince())
+func (g *generator) Generate(ctx context.Context, req *v1.GenerateNetworkPoliciesRequest) (generated []*storage.NetworkPolicy, toDelete []*storage.NetworkPolicyReference, err error) {
+	graph, err := g.generateGraph(ctx, req.GetClusterId(), req.GetNetworkDataSince())
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "generating network graph")
 	}
@@ -182,7 +183,7 @@ func (g *generator) Generate(req *v1.GenerateNetworkPoliciesRequest) (generated 
 	if deploymentsQuery.Query != nil {
 		query = search.ConjunctionQuery(query, deploymentsQuery)
 
-		relevantDeploymentsResult, err := g.deploymentStore.Search(query)
+		relevantDeploymentsResult, err := g.deploymentStore.Search(ctx, query)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "determining relevant deployments")
 		}
@@ -190,7 +191,7 @@ func (g *generator) Generate(req *v1.GenerateNetworkPoliciesRequest) (generated 
 		relevantDeploymentIDs = set.NewStringSet(search.ResultsToIDs(relevantDeploymentsResult)...)
 	}
 
-	namespaces, err := g.namespacesStore.SearchNamespaces(query)
+	namespaces, err := g.namespacesStore.SearchNamespaces(ctx, query)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "could not obtain namespaces metadata")
 	}

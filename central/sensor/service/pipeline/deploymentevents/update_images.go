@@ -1,6 +1,8 @@
 package deploymentevents
 
 import (
+	"context"
+
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -23,7 +25,7 @@ func (s *updateImagesImpl) do(deployment *storage.Deployment) {
 			continue
 		}
 
-		err := s.images.UpsertImage(image)
+		err := s.images.UpsertImage(context.TODO(), image)
 		if err != nil {
 			log.Error(err)
 			continue

@@ -1,6 +1,8 @@
 package deploytime
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/generated/storage"
@@ -26,12 +28,12 @@ func (d *allDeploymentsExecutor) ClearAlerts() {
 }
 
 func (d *allDeploymentsExecutor) Execute(compiled detection.CompiledPolicy) error {
-	violationsByDeployment, err := compiled.Matcher().Match(d.deployments)
+	violationsByDeployment, err := compiled.Matcher().Match(context.TODO(), d.deployments)
 	if err != nil {
 		return err
 	}
 	for deploymentID, violations := range violationsByDeployment {
-		dep, exists, err := d.deployments.GetDeployment(deploymentID)
+		dep, exists, err := d.deployments.GetDeployment(context.TODO(), deploymentID)
 		if err != nil {
 			return err
 		}

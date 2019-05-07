@@ -1,6 +1,7 @@
 package serviceaccounts
 
 import (
+	"context"
 	"fmt"
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -55,7 +56,7 @@ func (s *pipelineImpl) Reconcile(clusterID string) error {
 	defer s.reconcileStore.Close()
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	results, err := s.serviceaccounts.Search(query)
+	results, err := s.serviceaccounts.Search(context.TODO(), query)
 	if err != nil {
 		return err
 	}
@@ -129,7 +130,7 @@ func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, sa *sto
 		AddExactMatches(search.Namespace, sa.Namespace).
 		AddExactMatches(search.ServiceAccountName, sa.Name).ProtoQuery()
 
-	deployments, err := s.deployments.SearchListDeployments(q)
+	deployments, err := s.deployments.SearchListDeployments(context.TODO(), q)
 	if err != nil {
 		log.Errorf("error searching for deployments with service account %q", sa.GetName())
 		return err
@@ -156,7 +157,7 @@ func (s *pipelineImpl) validateInput(sa *storage.ServiceAccount) error {
 func (s *pipelineImpl) enrichCluster(sa *storage.ServiceAccount) error {
 	sa.ClusterName = ""
 
-	cluster, clusterExists, err := s.clusters.GetCluster(sa.GetClusterId())
+	cluster, clusterExists, err := s.clusters.GetCluster(context.TODO(), sa.GetClusterId())
 	switch {
 	case err != nil:
 		log.Warnf("Couldn't get name of cluster: %s", err)
@@ -173,9 +174,9 @@ func (s *pipelineImpl) enrichCluster(sa *storage.ServiceAccount) error {
 func (s *pipelineImpl) persistServiceAccount(action central.ResourceAction, sa *storage.ServiceAccount) error {
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE, central.ResourceAction_UPDATE_RESOURCE:
-		return s.serviceaccounts.UpsertServiceAccount(sa)
+		return s.serviceaccounts.UpsertServiceAccount(context.TODO(), sa)
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.serviceaccounts.RemoveServiceAccount(sa.GetId())
+		return s.serviceaccounts.RemoveServiceAccount(context.TODO(), sa.GetId())
 	default:
 		return fmt.Errorf("Event action '%s' for service account does not exist", action)
 	}

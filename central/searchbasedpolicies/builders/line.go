@@ -1,6 +1,7 @@
 package builders
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 
@@ -59,7 +60,7 @@ func (c *dockerFileLineFieldQueryBuilder) Query(fields *storage.PolicyFields, op
 		[]search.FieldLabel{search.DockerfileInstructionKeyword, search.DockerfileInstructionValue},
 		[]string{lineRule.GetInstruction(), search.RegexQueryString(lineRule.GetValue())}).ProtoQuery()
 
-	v = func(result search.Result) searchbasedpolicies.Violations {
+	v = func(_ context.Context, result search.Result) searchbasedpolicies.Violations {
 		instMatches := result.Matches[instSearchField.GetFieldPath()]
 		valMatches := result.Matches[valSearchField.GetFieldPath()]
 		if len(instMatches) == 0 || len(valMatches) == 0 {

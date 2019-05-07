@@ -1,6 +1,7 @@
 package pruning
 
 import (
+	"context"
 	"time"
 
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
@@ -64,7 +65,7 @@ func (g *garbageCollectorImpl) runImageGC() {
 
 func (g *garbageCollectorImpl) collectImages() {
 	qb := search.NewQueryBuilder().AddDays(search.LastUpdatedTime, pruneImagesAfterDays).ProtoQuery()
-	imageResults, err := g.images.Search(qb)
+	imageResults, err := g.images.Search(context.TODO(), qb)
 	if err != nil {
 		log.Error(err)
 		return
@@ -73,7 +74,7 @@ func (g *garbageCollectorImpl) collectImages() {
 	var imagesToPrune []string
 	for _, result := range imageResults {
 		q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, result.ID).ProtoQuery()
-		results, err := g.deployments.Search(q)
+		results, err := g.deployments.Search(context.TODO(), q)
 		if err != nil {
 			log.Error(err)
 			continue
@@ -85,7 +86,7 @@ func (g *garbageCollectorImpl) collectImages() {
 	}
 	if len(imagesToPrune) > 0 {
 		log.Infof("Image Pruner will be removing the following images: %+v", imagesToPrune)
-		if err := g.images.DeleteImages(imagesToPrune...); err != nil {
+		if err := g.images.DeleteImages(context.TODO(), imagesToPrune...); err != nil {
 			log.Error(err)
 		}
 	}

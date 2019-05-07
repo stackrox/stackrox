@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"context"
 	"fmt"
 
 	ptypes "github.com/gogo/protobuf/types"
@@ -53,9 +54,9 @@ func (d *alertCollectingExecutorImpl) Execute(compiled detection.CompiledPolicy)
 	var err error
 	var violationsByDeployment map[string]searchbasedpolicies.Violations
 	if len(d.deploymentIDs) == 0 {
-		violationsByDeployment, err = compiled.Matcher().Match(d.deployments)
+		violationsByDeployment, err = compiled.Matcher().Match(context.TODO(), d.deployments)
 	} else {
-		violationsByDeployment, err = compiled.Matcher().MatchMany(d.deployments, d.deploymentIDs...)
+		violationsByDeployment, err = compiled.Matcher().MatchMany(context.TODO(), d.deployments, d.deploymentIDs...)
 	}
 
 	if err != nil {
@@ -63,7 +64,7 @@ func (d *alertCollectingExecutorImpl) Execute(compiled detection.CompiledPolicy)
 	}
 
 	for deploymentID, violations := range violationsByDeployment {
-		dep, exists, err := d.deployments.GetDeployment(deploymentID)
+		dep, exists, err := d.deployments.GetDeployment(context.TODO(), deploymentID)
 		if err != nil {
 			return err
 		}

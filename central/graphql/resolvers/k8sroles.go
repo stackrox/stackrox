@@ -70,7 +70,7 @@ func (resolver *k8SRoleResolver) Subjects(ctx context.Context) ([]*subjectWithCl
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
 		AddExactMatches(search.RoleID, resolver.data.GetId()).ProtoQuery()
-	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(q)
+	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
 
 	if err != nil {
 		return subjects, err
@@ -94,7 +94,7 @@ func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context) ([]*servic
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetClusterId()).
 		AddExactMatches(search.RoleID, resolver.data.GetId()).ProtoQuery()
-	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(q)
+	bindings, err := resolver.root.K8sRoleBindingStore.SearchRawRoleBindings(ctx, q)
 
 	if err != nil {
 		return nil, err
@@ -104,7 +104,7 @@ func (resolver *k8SRoleResolver) ServiceAccounts(ctx context.Context) ([]*servic
 	saResolvers := make([]*serviceAccountResolver, 0, len(subjects))
 
 	for i, subject := range subjects {
-		sa, err := resolver.convertSubjectToServiceAccount(resolver.data.GetClusterId(), subject)
+		sa, err := resolver.convertSubjectToServiceAccount(ctx, resolver.data.GetClusterId(), subject)
 		if err != nil {
 			continue
 		}
@@ -129,11 +129,11 @@ func (resolver *k8SRoleResolver) RoleNamespace(ctx context.Context) (*namespaceR
 	return resolver.root.wrapNamespace(r.data, true, err)
 }
 
-func (resolver *k8SRoleResolver) convertSubjectToServiceAccount(clusterID string, subject *storage.Subject) (*storage.ServiceAccount, error) {
+func (resolver *k8SRoleResolver) convertSubjectToServiceAccount(ctx context.Context, clusterID string, subject *storage.Subject) (*storage.ServiceAccount, error) {
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).
 		AddExactMatches(search.ServiceAccountName, subject.GetName()).ProtoQuery()
 
-	serviceAccounts, err := resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(q)
+	serviceAccounts, err := resolver.root.ServiceAccountsDataStore.SearchRawServiceAccounts(ctx, q)
 	if err != nil {
 		return nil, err
 	}

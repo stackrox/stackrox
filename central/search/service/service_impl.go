@@ -45,7 +45,7 @@ type autocompleteResult struct {
 }
 
 // SearchFunc represents a function that goes from a query to a proto search result.
-type SearchFunc func(q *v1.Query) ([]*v1.SearchResult, error)
+type SearchFunc func(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 
 func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 	searchfuncs := map[v1.SearchCategory]SearchFunc{
@@ -206,7 +206,7 @@ func isMapMatch(matches map[string][]string) bool {
 }
 
 // RunAutoComplete runs an autocomplete request. It's a free function used by both regular search and by GraphQL.
-func RunAutoComplete(queryString string, categories []v1.SearchCategory, searchers map[v1.SearchCategory]search.Searcher) ([]string, error) {
+func RunAutoComplete(ctx context.Context, queryString string, categories []v1.SearchCategory, searchers map[v1.SearchCategory]search.Searcher) ([]string, error) {
 	query, err := search.ParseAutocompleteRawQuery(queryString)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "unable to parse query %q: %v", queryString, err)
@@ -231,7 +231,7 @@ func RunAutoComplete(queryString string, categories []v1.SearchCategory, searche
 			}
 			return nil, status.Errorf(codes.InvalidArgument, "Search category '%s' is not implemented", category.String())
 		}
-		results, err := searcher.Search(query)
+		results, err := searcher.Search(ctx, query)
 		if err != nil {
 			log.Error(err)
 			return nil, status.Error(codes.Internal, err.Error())
@@ -266,15 +266,15 @@ func RunAutoComplete(queryString string, categories []v1.SearchCategory, searche
 	return stringResults, nil
 }
 
-func (s *serviceImpl) autocomplete(queryString string, categories []v1.SearchCategory) ([]string, error) {
-	return RunAutoComplete(queryString, categories, s.getAutocompleteSearchers())
+func (s *serviceImpl) autocomplete(ctx context.Context, queryString string, categories []v1.SearchCategory) ([]string, error) {
+	return RunAutoComplete(ctx, queryString, categories, s.getAutocompleteSearchers())
 }
 
 func (s *serviceImpl) Autocomplete(ctx context.Context, req *v1.RawSearchRequest) (*v1.AutocompleteResponse, error) {
 	if req.GetQuery() == "" {
 		return nil, status.Error(codes.InvalidArgument, "query cannot be empty")
 	}
-	results, err := s.autocomplete(req.GetQuery(), req.GetCategories())
+	results, err := s.autocomplete(ctx, req.GetQuery(), req.GetCategories())
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +329,7 @@ func shouldProcessAlerts(q *v1.Query) (shouldProcess bool) {
 }
 
 // GlobalSearch runs a global search request with the given arguments. It's a shared function between gRPC and GraphQL.
-func GlobalSearch(query string, categories []v1.SearchCategory, searchFuncMap map[v1.SearchCategory]SearchFunc) (results []*v1.SearchResult,
+func GlobalSearch(ctx context.Context, query string, categories []v1.SearchCategory, searchFuncMap map[v1.SearchCategory]SearchFunc) (results []*v1.SearchResult,
 	counts []*v1.SearchResponse_Count, err error) {
 
 	parsedRequest, err := search.ParseRawQuery(query)
@@ -351,7 +351,7 @@ func GlobalSearch(query string, categories []v1.SearchCategory, searchFuncMap ma
 			return
 		}
 		var resultsFromCategory []*v1.SearchResult
-		resultsFromCategory, err = searchFunc(parsedRequest)
+		resultsFromCategory, err = searchFunc(ctx, parsedRequest)
 		if err != nil {
 			log.Error(err)
 			err = status.Error(codes.Internal, err.Error())
@@ -367,7 +367,7 @@ func GlobalSearch(query string, categories []v1.SearchCategory, searchFuncMap ma
 
 // Search implements the ability to search through indexes for data
 func (s *serviceImpl) Search(ctx context.Context, request *v1.RawSearchRequest) (*v1.SearchResponse, error) {
-	results, counts, err := GlobalSearch(request.GetQuery(), request.GetCategories(), s.getSearchFuncs())
+	results, counts, err := GlobalSearch(ctx, request.GetQuery(), request.GetCategories(), s.getSearchFuncs())
 	if err != nil {
 		return nil, err
 	}

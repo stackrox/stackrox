@@ -51,7 +51,7 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetSecret returns the secret for the id.
 func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (*storage.Secret, error) {
-	secret, exists, err := s.storage.GetSecret(request.GetId())
+	secret, exists, err := s.storage.GetSecret(ctx, request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -65,7 +65,7 @@ func (s *serviceImpl) GetSecret(ctx context.Context, request *v1.ResourceByID) (
 		AddExactMatches(search.SecretName, secret.GetName()).
 		ProtoQuery()
 
-	deploymentResults, err := s.deployments.SearchDeployments(psr)
+	deploymentResults, err := s.deployments.SearchDeployments(ctx, psr)
 	if err != nil {
 		return nil, err
 	}
@@ -88,14 +88,14 @@ func (s *serviceImpl) ListSecrets(ctx context.Context, rawQuery *v1.RawQuery) (*
 	var secrets []*storage.ListSecret
 	var err error
 	if rawQuery.GetQuery() == "" {
-		secrets, err = s.storage.ListSecrets()
+		secrets, err = s.storage.ListSecrets(ctx)
 	} else {
 		var q *v1.Query
 		q, err = search.ParseRawQueryOrEmpty(rawQuery.GetQuery())
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
-		secrets, err = s.storage.SearchListSecrets(q)
+		secrets, err = s.storage.SearchListSecrets(ctx, q)
 	}
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to retrieve secrets: %s", err)

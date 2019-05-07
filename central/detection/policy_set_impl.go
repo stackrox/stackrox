@@ -1,6 +1,7 @@
 package detection
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -104,7 +105,7 @@ func (p *setImpl) RemoveNotifier(notifierID string) error {
 		}
 		policy.Notifiers = filtered
 
-		err := p.policyStore.UpdatePolicy(policy)
+		err := p.policyStore.UpdatePolicy(context.TODO(), policy)
 		if err != nil {
 			return err
 		}

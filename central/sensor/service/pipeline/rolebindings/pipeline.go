@@ -1,6 +1,7 @@
 package rolebindings
 
 import (
+	"context"
 	"fmt"
 
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
@@ -47,7 +48,7 @@ type pipelineImpl struct {
 func (s *pipelineImpl) Reconcile(clusterID string) error {
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	results, err := s.bindings.Search(query)
+	results, err := s.bindings.Search(context.TODO(), query)
 	if err != nil {
 		return err
 	}
@@ -99,7 +100,7 @@ func (s *pipelineImpl) runRemovePipeline(action central.ResourceAction, event *s
 	}
 
 	// Add/Update/Remove the k8s role binding from persistence depending on the event action.
-	if err := s.bindings.RemoveRoleBinding(event.GetId()); err != nil {
+	if err := s.bindings.RemoveRoleBinding(context.TODO(), event.GetId()); err != nil {
 		return err
 	}
 
@@ -116,7 +117,7 @@ func (s *pipelineImpl) runGeneralPipeline(action central.ResourceAction, binding
 		return err
 	}
 
-	if err := s.bindings.UpsertRoleBinding(binding); err != nil {
+	if err := s.bindings.UpsertRoleBinding(context.TODO(), binding); err != nil {
 		return err
 	}
 
@@ -134,7 +135,7 @@ func (s *pipelineImpl) validateInput(binding *storage.K8SRoleBinding) error {
 func (s *pipelineImpl) enrichCluster(binding *storage.K8SRoleBinding) error {
 	binding.ClusterName = ""
 
-	cluster, clusterExists, err := s.clusters.GetCluster(binding.GetClusterId())
+	cluster, clusterExists, err := s.clusters.GetCluster(context.TODO(), binding.GetClusterId())
 	switch {
 	case err != nil:
 		log.Errorf("Couldn't get name of cluster: %v", err)

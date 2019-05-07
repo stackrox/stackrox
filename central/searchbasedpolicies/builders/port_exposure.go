@@ -1,6 +1,8 @@
 package builders
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/searchbasedpolicies"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -31,7 +33,7 @@ func (e PortExposureQueryBuilder) Query(fields *storage.PolicyFields, optionsMap
 	}
 
 	q = search.NewQueryBuilder().AddStringsHighlighted(search.ExposureLevel, queryStrings...).ProtoQuery()
-	v = func(result search.Result) searchbasedpolicies.Violations {
+	v = func(_ context.Context, result search.Result) searchbasedpolicies.Violations {
 		matches := result.Matches[searchField.GetFieldPath()]
 
 		if len(matches) == 0 {

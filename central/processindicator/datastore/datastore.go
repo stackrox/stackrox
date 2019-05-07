@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/processindicator/index"
 	"github.com/stackrox/rox/central/processindicator/pruner"
 	"github.com/stackrox/rox/central/processindicator/search"
@@ -14,16 +16,16 @@ import (
 // DataStore is an intermediary to PolicyStorage.
 //go:generate mockgen-wrapper DataStore
 type DataStore interface {
-	Search(q *v1.Query) ([]pkgSearch.Result, error)
-	SearchRawProcessIndicators(q *v1.Query) ([]*storage.ProcessIndicator, error)
+	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
+	SearchRawProcessIndicators(ctx context.Context, q *v1.Query) ([]*storage.ProcessIndicator, error)
 
-	GetProcessIndicator(id string) (*storage.ProcessIndicator, bool, error)
-	GetProcessIndicators() ([]*storage.ProcessIndicator, error)
-	AddProcessIndicator(*storage.ProcessIndicator) error
-	AddProcessIndicators(...*storage.ProcessIndicator) error
-	RemoveProcessIndicator(id string) error
-	RemoveProcessIndicatorsByDeployment(id string) error
-	RemoveProcessIndicatorsOfStaleContainers(deploymentID string, currentContainerIDs []string) error
+	GetProcessIndicator(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error)
+	GetProcessIndicators(ctx context.Context) ([]*storage.ProcessIndicator, error)
+	AddProcessIndicator(context.Context, *storage.ProcessIndicator) error
+	AddProcessIndicators(context.Context, ...*storage.ProcessIndicator) error
+	RemoveProcessIndicator(ctx context.Context, id string) error
+	RemoveProcessIndicatorsByDeployment(ctx context.Context, id string) error
+	RemoveProcessIndicatorsOfStaleContainers(ctx context.Context, deploymentID string, currentContainerIDs []string) error
 
 	// Stop signals all goroutines associated with this object to terminate.
 	Stop() bool

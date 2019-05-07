@@ -84,7 +84,7 @@ func (suite *PipelineTestSuite) TestPersistDeploymentCreate() {
 	events[0].Action = central.ResourceAction_CREATE_RESOURCE
 
 	// Expect that our enforcement generator is called with expected data.
-	suite.deployments.EXPECT().UpsertDeployment(events[0].GetDeployment()).Return(nil)
+	suite.deployments.EXPECT().UpsertDeployment(gomock.Any(), events[0].GetDeployment()).Return(nil)
 
 	// Call function.
 	tested := &persistDeploymentImpl{
@@ -101,7 +101,7 @@ func (suite *PipelineTestSuite) TestPersistDeploymentUpdate() {
 	events[0].Action = central.ResourceAction_UPDATE_RESOURCE
 
 	// Expect that our enforcement generator is called with expected data.
-	suite.deployments.EXPECT().UpsertDeployment(events[0].GetDeployment()).Return(nil)
+	suite.deployments.EXPECT().UpsertDeployment(gomock.Any(), events[0].GetDeployment()).Return(nil)
 
 	// Call function.
 	tested := &persistDeploymentImpl{
@@ -118,7 +118,7 @@ func (suite *PipelineTestSuite) TestPersistDeploymentRemove() {
 	events[0].Action = central.ResourceAction_REMOVE_RESOURCE
 
 	// Expect that our enforcement generator is called with expected data.
-	suite.deployments.EXPECT().RemoveDeployment("", events[0].GetDeployment().GetId()).Return(nil)
+	suite.deployments.EXPECT().RemoveDeployment(gomock.Any(), "", events[0].GetDeployment().GetId()).Return(nil)
 
 	// Call function.
 	tested := &persistDeploymentImpl{
@@ -135,7 +135,7 @@ func (suite *PipelineTestSuite) TestUpdateImages() {
 
 	// Expect that our enforcement generator is called with expected data.
 	expectedImage0 := events[0].GetDeployment().GetContainers()[0].GetImage()
-	suite.images.EXPECT().UpsertImage(expectedImage0).Return(nil)
+	suite.images.EXPECT().UpsertImage(gomock.Any(), expectedImage0).Return(nil)
 
 	// Call function.
 	tested := &updateImagesImpl{

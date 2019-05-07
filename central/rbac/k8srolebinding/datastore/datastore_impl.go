@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/index"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/search"
 	"github.com/stackrox/rox/central/rbac/k8srolebinding/store"
@@ -16,7 +18,7 @@ type datastoreImpl struct {
 	searcher search.Searcher
 }
 
-func (d *datastoreImpl) ListRoleBindings() ([]*storage.K8SRoleBinding, error) {
+func (d *datastoreImpl) ListRoleBindings(ctx context.Context) ([]*storage.K8SRoleBinding, error) {
 	return d.storage.ListAllRoleBindings()
 }
 
@@ -29,36 +31,36 @@ func (d *datastoreImpl) buildIndex() error {
 	return d.indexer.UpsertRoleBindings(bindings...)
 }
 
-func (d *datastoreImpl) GetRoleBinding(id string) (*storage.K8SRoleBinding, bool, error) {
+func (d *datastoreImpl) GetRoleBinding(ctx context.Context, id string) (*storage.K8SRoleBinding, bool, error) {
 	return d.storage.GetRoleBinding(id)
 }
 
-func (d *datastoreImpl) SearchRoleBindings(q *v1.Query) ([]*v1.SearchResult, error) {
+func (d *datastoreImpl) SearchRoleBindings(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	return d.searcher.SearchRoleBindings(q)
 }
 
-func (d *datastoreImpl) SearchRawRoleBindings(request *v1.Query) ([]*storage.K8SRoleBinding, error) {
+func (d *datastoreImpl) SearchRawRoleBindings(ctx context.Context, request *v1.Query) ([]*storage.K8SRoleBinding, error) {
 	return d.searcher.SearchRawRoleBindings(request)
 }
 
-func (d *datastoreImpl) CountRoleBindings() (int, error) {
+func (d *datastoreImpl) CountRoleBindings(ctx context.Context) (int, error) {
 	return d.storage.CountRoleBindings()
 }
 
-func (d *datastoreImpl) UpsertRoleBinding(request *storage.K8SRoleBinding) error {
+func (d *datastoreImpl) UpsertRoleBinding(ctx context.Context, request *storage.K8SRoleBinding) error {
 	if err := d.storage.UpsertRoleBinding(request); err != nil {
 		return err
 	}
 	return d.indexer.UpsertRoleBinding(request)
 }
 
-func (d *datastoreImpl) RemoveRoleBinding(id string) error {
+func (d *datastoreImpl) RemoveRoleBinding(ctx context.Context, id string) error {
 	if err := d.storage.RemoveRoleBinding(id); err != nil {
 		return err
 	}
 	return d.indexer.RemoveRoleBinding(id)
 }
 
-func (d *datastoreImpl) Search(q *v1.Query) ([]searchPkg.Result, error) {
+func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
 	return d.searcher.Search(q)
 }

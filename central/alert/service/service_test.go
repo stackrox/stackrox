@@ -977,11 +977,11 @@ func (s *patchAlertTests) TearDownTest() {
 
 func (s *patchAlertTests) TestSnoozeAlert() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().GetAlert(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	snoozeTill, err := timestamp.TimestampProto(time.Now().Add(1 * time.Hour))
 	s.NoError(err)
 	fakeAlert.SnoozeTill = snoozeTill
-	s.storage.EXPECT().UpdateAlert(fakeAlert).Return(nil)
+	s.storage.EXPECT().UpdateAlert(gomock.Any(), fakeAlert).Return(nil)
 	// We should get a notification for the snoozed alert.
 	s.notifierMock.EXPECT().ProcessAlert(fakeAlert).Return()
 	_, err = s.service.SnoozeAlert(context.Background(), &v1.SnoozeAlertRequest{Id: alerttest.FakeAlertID, SnoozeTill: snoozeTill})
@@ -993,7 +993,7 @@ func (s *patchAlertTests) TestSnoozeAlert() {
 
 func (s *patchAlertTests) TestSnoozeAlertWithSnoozeTillInThePast() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).AnyTimes().Return(fakeAlert, true, nil)
+	s.storage.EXPECT().GetAlert(gomock.Any(), alerttest.FakeAlertID).AnyTimes().Return(fakeAlert, true, nil)
 
 	snoozeTill, err := timestamp.TimestampProto(time.Now().Add(-1 * time.Hour))
 	s.NoError(err)
@@ -1003,9 +1003,9 @@ func (s *patchAlertTests) TestSnoozeAlertWithSnoozeTillInThePast() {
 
 func (s *patchAlertTests) TestResolveAlert() {
 	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().GetAlert(alerttest.FakeAlertID).Return(fakeAlert, true, nil)
+	s.storage.EXPECT().GetAlert(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, true, nil)
 	fakeAlert.State = storage.ViolationState_RESOLVED
-	s.storage.EXPECT().UpdateAlert(fakeAlert).Return(nil)
+	s.storage.EXPECT().UpdateAlert(gomock.Any(), fakeAlert).Return(nil)
 	// We should get a notification for the resolved alert.
 	s.notifierMock.EXPECT().ProcessAlert(fakeAlert).Return()
 

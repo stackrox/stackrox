@@ -80,38 +80,38 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 // GetSummaryCounts returns the global counts of alerts, clusters, deployments, and images.
-func (s *serviceImpl) GetSummaryCounts(context.Context, *v1.Empty) (*v1.SummaryCountsResponse, error) {
-	alerts, err := s.alerts.CountAlerts()
+func (s *serviceImpl) GetSummaryCounts(ctx context.Context, _ *v1.Empty) (*v1.SummaryCountsResponse, error) {
+	alerts, err := s.alerts.CountAlerts(ctx)
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	numClusters, err := s.clusters.CountClusters()
+	numClusters, err := s.clusters.CountClusters(ctx)
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	numNodes, err := s.nodes.CountAllNodes()
+	numNodes, err := s.nodes.CountAllNodes(ctx)
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	deployments, err := s.deployments.CountDeployments()
+	deployments, err := s.deployments.CountDeployments(ctx)
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	images, err := s.images.CountImages()
+	images, err := s.images.CountImages(ctx)
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	secrets, err := s.secrets.CountSecrets()
+	secrets, err := s.secrets.CountSecrets(ctx)
 	if err != nil {
 		log.Error(err)
 		return nil, status.Error(codes.Internal, err.Error())

@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/processwhitelist/index"
@@ -18,11 +20,11 @@ type datastoreImpl struct {
 	whitelistLock *concurrency.KeyedMutex
 }
 
-func (ds *datastoreImpl) SearchRawProcessWhitelists(q *v1.Query) ([]*storage.ProcessWhitelist, error) {
+func (ds *datastoreImpl) SearchRawProcessWhitelists(ctx context.Context, q *v1.Query) ([]*storage.ProcessWhitelist, error) {
 	return ds.searcher.SearchRawProcessWhitelists(q)
 }
 
-func (ds *datastoreImpl) GetProcessWhitelist(key *storage.ProcessWhitelistKey) (*storage.ProcessWhitelist, error) {
+func (ds *datastoreImpl) GetProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey) (*storage.ProcessWhitelist, error) {
 	id, err := keyToID(key)
 	if err != nil {
 		return nil, err
@@ -30,11 +32,11 @@ func (ds *datastoreImpl) GetProcessWhitelist(key *storage.ProcessWhitelistKey) (
 	return ds.storage.GetWhitelist(id)
 }
 
-func (ds *datastoreImpl) GetProcessWhitelists() ([]*storage.ProcessWhitelist, error) {
+func (ds *datastoreImpl) GetProcessWhitelists(ctx context.Context) ([]*storage.ProcessWhitelist, error) {
 	return ds.storage.GetWhitelists()
 }
 
-func (ds *datastoreImpl) AddProcessWhitelist(whitelist *storage.ProcessWhitelist) (string, error) {
+func (ds *datastoreImpl) AddProcessWhitelist(ctx context.Context, whitelist *storage.ProcessWhitelist) (string, error) {
 	id, err := keyToID(whitelist.GetKey())
 	if err != nil {
 		return "", err
@@ -60,7 +62,7 @@ func (ds *datastoreImpl) addProcessWhitelistUnlocked(id string, whitelist *stora
 	return id, nil
 }
 
-func (ds *datastoreImpl) RemoveProcessWhitelist(key *storage.ProcessWhitelistKey) error {
+func (ds *datastoreImpl) RemoveProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey) error {
 	id, err := keyToID(key)
 	if err != nil {
 		return err
@@ -125,7 +127,7 @@ func (ds *datastoreImpl) updateProcessWhitelistElementsUnlocked(whitelist *stora
 	return whitelist, nil
 }
 
-func (ds *datastoreImpl) UpdateProcessWhitelistElements(key *storage.ProcessWhitelistKey, addElements []*storage.WhitelistItem, removeElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error) {
+func (ds *datastoreImpl) UpdateProcessWhitelistElements(ctx context.Context, key *storage.ProcessWhitelistKey, addElements []*storage.WhitelistItem, removeElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error) {
 	id, err := keyToID(key)
 	if err != nil {
 		return nil, err
@@ -141,7 +143,7 @@ func (ds *datastoreImpl) UpdateProcessWhitelistElements(key *storage.ProcessWhit
 	return ds.updateProcessWhitelistElementsUnlocked(whitelist, addElements, removeElements, auto)
 }
 
-func (ds *datastoreImpl) UpsertProcessWhitelist(key *storage.ProcessWhitelistKey, addElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error) {
+func (ds *datastoreImpl) UpsertProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey, addElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error) {
 	id, err := keyToID(key)
 	if err != nil {
 		return nil, err
@@ -150,7 +152,7 @@ func (ds *datastoreImpl) UpsertProcessWhitelist(key *storage.ProcessWhitelistKey
 	ds.whitelistLock.Lock(id)
 	defer ds.whitelistLock.Unlock(id)
 
-	whitelist, err := ds.GetProcessWhitelist(key)
+	whitelist, err := ds.GetProcessWhitelist(ctx, key)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +180,7 @@ func (ds *datastoreImpl) UpsertProcessWhitelist(key *storage.ProcessWhitelistKey
 	return whitelist, nil
 }
 
-func (ds *datastoreImpl) UserLockProcessWhitelist(key *storage.ProcessWhitelistKey, locked bool) (*storage.ProcessWhitelist, error) {
+func (ds *datastoreImpl) UserLockProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey, locked bool) (*storage.ProcessWhitelist, error) {
 	id, err := keyToID(key)
 	if err != nil {
 		return nil, err
@@ -204,7 +206,7 @@ func (ds *datastoreImpl) UserLockProcessWhitelist(key *storage.ProcessWhitelistK
 	return whitelist, nil
 }
 
-func (ds *datastoreImpl) RoxLockProcessWhitelist(key *storage.ProcessWhitelistKey, locked bool) (*storage.ProcessWhitelist, error) {
+func (ds *datastoreImpl) RoxLockProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey, locked bool) (*storage.ProcessWhitelist, error) {
 	id, err := keyToID(key)
 	if err != nil {
 		return nil, err

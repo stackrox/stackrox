@@ -115,7 +115,7 @@ func (suite *ServiceAccountServiceTestSuite) TestGetServiceAccount() {
 
 	suite.setupMocks()
 
-	suite.mockServiceAccountStore.EXPECT().GetServiceAccount(saID).Return(expectedSA, true, nil)
+	suite.mockServiceAccountStore.EXPECT().GetServiceAccount(gomock.Any(), saID).Return(expectedSA, true, nil)
 
 	sa, err := suite.service.GetServiceAccount((context.Context)(nil), &v1.ResourceByID{Id: saID})
 	suite.NoError(err)
@@ -132,7 +132,7 @@ func (suite *ServiceAccountServiceTestSuite) TestGetServiceAccount() {
 func (suite *ServiceAccountServiceTestSuite) TestGetSAWithStoreSANotExists() {
 	saID := "id1"
 
-	suite.mockServiceAccountStore.EXPECT().GetServiceAccount(saID).Return((*storage.ServiceAccount)(nil), false, nil)
+	suite.mockServiceAccountStore.EXPECT().GetServiceAccount(gomock.Any(), saID).Return((*storage.ServiceAccount)(nil), false, nil)
 
 	_, err := suite.service.GetServiceAccount((context.Context)(nil), &v1.ResourceByID{Id: saID})
 	suite.Error(err)
@@ -143,7 +143,7 @@ func (suite *ServiceAccountServiceTestSuite) TestGetSAWithStoreSAFailure() {
 	saID := "id1"
 
 	expectedErr := fmt.Errorf("failure")
-	suite.mockServiceAccountStore.EXPECT().GetServiceAccount(saID).Return((*storage.ServiceAccount)(nil), true, expectedErr)
+	suite.mockServiceAccountStore.EXPECT().GetServiceAccount(gomock.Any(), saID).Return((*storage.ServiceAccount)(nil), true, expectedErr)
 
 	_, actualErr := suite.service.GetServiceAccount((context.Context)(nil), &v1.ResourceByID{Id: saID})
 	suite.Error(actualErr)
@@ -153,13 +153,13 @@ func (suite *ServiceAccountServiceTestSuite) TestGetSAWithStoreSAFailure() {
 func (suite *ServiceAccountServiceTestSuite) TestSearchServiceAccount() {
 	suite.setupMocks()
 
-	suite.mockServiceAccountStore.EXPECT().ListServiceAccounts().Return([]*storage.ServiceAccount{expectedSA}, nil)
+	suite.mockServiceAccountStore.EXPECT().ListServiceAccounts(gomock.Any()).Return([]*storage.ServiceAccount{expectedSA}, nil)
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ClusterID, expectedSA.ClusterId).
 		AddExactMatches(search.Namespace, expectedSA.GetNamespace()).
 		AddExactMatches(search.ServiceAccountName, expectedSA.GetName()).ProtoQuery()
 
-	suite.mockDeploymentStore.EXPECT().SearchListDeployments(q).AnyTimes().Return([]*storage.ListDeployment{listDeployment}, nil)
+	suite.mockDeploymentStore.EXPECT().SearchListDeployments(gomock.Any(), q).AnyTimes().Return([]*storage.ListDeployment{listDeployment}, nil)
 
 	_, err := suite.service.ListServiceAccounts((context.Context)(nil), &v1.RawQuery{})
 	suite.NoError(err)
@@ -169,7 +169,7 @@ func (suite *ServiceAccountServiceTestSuite) TestSearchServiceAccount() {
 func (suite *ServiceAccountServiceTestSuite) TestSearchServiceAccountFailure() {
 	expectedError := fmt.Errorf("failure")
 
-	suite.mockServiceAccountStore.EXPECT().ListServiceAccounts().Return(nil, expectedError)
+	suite.mockServiceAccountStore.EXPECT().ListServiceAccounts(gomock.Any()).Return(nil, expectedError)
 
 	_, actualErr := suite.service.ListServiceAccounts((context.Context)(nil), &v1.RawQuery{})
 	suite.True(strings.Contains(actualErr.Error(), expectedError.Error()))
@@ -181,26 +181,26 @@ func (suite *ServiceAccountServiceTestSuite) setupMocks() {
 		AddExactMatches(search.Namespace, expectedSA.GetNamespace()).
 		AddExactMatches(search.ServiceAccountName, expectedSA.GetName()).ProtoQuery()
 
-	suite.mockDeploymentStore.EXPECT().SearchListDeployments(q).Return([]*storage.ListDeployment{listDeployment}, nil)
+	suite.mockDeploymentStore.EXPECT().SearchListDeployments(gomock.Any(), q).Return([]*storage.ListDeployment{listDeployment}, nil)
 
-	suite.mockRoleStore.EXPECT().GetRole("role1").AnyTimes().Return(role, true, nil)
-	suite.mockRoleStore.EXPECT().GetRole("role2").AnyTimes().Return(clusterRole, true, nil)
+	suite.mockRoleStore.EXPECT().GetRole(gomock.Any(), "role1").AnyTimes().Return(role, true, nil)
+	suite.mockRoleStore.EXPECT().GetRole(gomock.Any(), "role2").AnyTimes().Return(clusterRole, true, nil)
 
 	namespaceQ := search.NewQueryBuilder().AddExactMatches(search.ClusterID, "cluster").ProtoQuery()
-	suite.mockNamespaceStore.EXPECT().SearchNamespaces(namespaceQ).AnyTimes().
+	suite.mockNamespaceStore.EXPECT().SearchNamespaces(gomock.Any(), namespaceQ).AnyTimes().
 		Return([]*storage.NamespaceMetadata{namespaceMetadata}, nil)
 
 	clusterScopeQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
 		AddBools(search.ClusterRole, true).ProtoQuery()
-	suite.mockBindingStore.EXPECT().SearchRawRoleBindings(clusterScopeQuery).AnyTimes().
+	suite.mockBindingStore.EXPECT().SearchRawRoleBindings(gomock.Any(), clusterScopeQuery).AnyTimes().
 		Return([]*storage.K8SRoleBinding{clusterRoleBinding}, nil)
 
 	namespaceScopeQuery := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, "cluster").
 		AddExactMatches(search.Namespace, "namespace").
 		AddBools(search.ClusterRole, false).ProtoQuery()
-	suite.mockBindingStore.EXPECT().SearchRawRoleBindings(namespaceScopeQuery).AnyTimes().
+	suite.mockBindingStore.EXPECT().SearchRawRoleBindings(gomock.Any(), namespaceScopeQuery).AnyTimes().
 		Return([]*storage.K8SRoleBinding{rolebinding}, nil)
 
 }

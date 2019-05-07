@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	deploymentIndex "github.com/stackrox/rox/central/deployment/index"
 	deploymentSearch "github.com/stackrox/rox/central/deployment/search"
@@ -25,45 +27,45 @@ type datastoreImpl struct {
 	keyedMutex       *concurrency.KeyedMutex
 }
 
-func (ds *datastoreImpl) Search(q *v1.Query) ([]pkgSearch.Result, error) {
+func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
 	return ds.deploymentIndexer.Search(q)
 }
 
-func (ds *datastoreImpl) ListDeployment(id string) (*storage.ListDeployment, bool, error) {
+func (ds *datastoreImpl) ListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error) {
 	return ds.deploymentStore.ListDeployment(id)
 }
 
-func (ds *datastoreImpl) SearchListDeployments(q *v1.Query) ([]*storage.ListDeployment, error) {
+func (ds *datastoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
 	return ds.deploymentSearcher.SearchListDeployments(q)
 }
 
 // ListDeployments returns all deploymentStore in their minimal form
-func (ds *datastoreImpl) ListDeployments() ([]*storage.ListDeployment, error) {
+func (ds *datastoreImpl) ListDeployments(ctx context.Context) ([]*storage.ListDeployment, error) {
 	return ds.deploymentStore.ListDeployments()
 }
 
 // SearchDeployments
-func (ds *datastoreImpl) SearchDeployments(q *v1.Query) ([]*v1.SearchResult, error) {
+func (ds *datastoreImpl) SearchDeployments(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	return ds.deploymentSearcher.SearchDeployments(q)
 }
 
 // SearchRawDeployments
-func (ds *datastoreImpl) SearchRawDeployments(q *v1.Query) ([]*storage.Deployment, error) {
+func (ds *datastoreImpl) SearchRawDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
 	return ds.deploymentSearcher.SearchRawDeployments(q)
 }
 
 // GetDeployment
-func (ds *datastoreImpl) GetDeployment(id string) (*storage.Deployment, bool, error) {
+func (ds *datastoreImpl) GetDeployment(ctx context.Context, id string) (*storage.Deployment, bool, error) {
 	return ds.deploymentStore.GetDeployment(id)
 }
 
 // GetDeployments
-func (ds *datastoreImpl) GetDeployments() ([]*storage.Deployment, error) {
+func (ds *datastoreImpl) GetDeployments(ctx context.Context) ([]*storage.Deployment, error) {
 	return ds.deploymentStore.GetDeployments()
 }
 
 // CountDeployments
-func (ds *datastoreImpl) CountDeployments() (int, error) {
+func (ds *datastoreImpl) CountDeployments(ctx context.Context) (int, error) {
 	return ds.deploymentStore.CountDeployments()
 }
 
@@ -80,7 +82,7 @@ func containerIds(deployment *storage.Deployment) (ids []string) {
 }
 
 // UpsertDeployment inserts a deployment into deploymentStore and into the deploymentIndexer
-func (ds *datastoreImpl) UpsertDeployment(deployment *storage.Deployment) error {
+func (ds *datastoreImpl) UpsertDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	ds.keyedMutex.Lock(deployment.GetId())
 	defer ds.keyedMutex.Unlock(deployment.GetId())
 	if err := ds.deploymentStore.UpsertDeployment(deployment); err != nil {
@@ -90,7 +92,7 @@ func (ds *datastoreImpl) UpsertDeployment(deployment *storage.Deployment) error 
 		return errors.Wrapf(err, "inserting deployment '%s' to index", deployment.GetId())
 	}
 
-	if err := ds.processDataStore.RemoveProcessIndicatorsOfStaleContainers(deployment.GetId(), containerIds(deployment)); err != nil {
+	if err := ds.processDataStore.RemoveProcessIndicatorsOfStaleContainers(ctx, deployment.GetId(), containerIds(deployment)); err != nil {
 		log.Errorf("Failed to remove stale process indicators for deployment %s/%s: %s",
 			deployment.GetNamespace(), deployment.GetName(), err)
 	}
@@ -98,7 +100,7 @@ func (ds *datastoreImpl) UpsertDeployment(deployment *storage.Deployment) error 
 }
 
 // UpdateDeployment updates a deployment in deploymentStore and in the deploymentIndexer
-func (ds *datastoreImpl) UpdateDeployment(deployment *storage.Deployment) error {
+func (ds *datastoreImpl) UpdateDeployment(ctx context.Context, deployment *storage.Deployment) error {
 	ds.keyedMutex.Lock(deployment.GetId())
 	defer ds.keyedMutex.Unlock(deployment.GetId())
 	if err := ds.deploymentStore.UpdateDeployment(deployment); err != nil {
@@ -108,7 +110,7 @@ func (ds *datastoreImpl) UpdateDeployment(deployment *storage.Deployment) error 
 }
 
 // RemoveDeployment removes an alert from the deploymentStore and the deploymentIndexer
-func (ds *datastoreImpl) RemoveDeployment(clusterID, id string) error {
+func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id string) error {
 	ds.keyedMutex.Lock(id)
 	defer ds.keyedMutex.Unlock(id)
 
@@ -119,7 +121,7 @@ func (ds *datastoreImpl) RemoveDeployment(clusterID, id string) error {
 		return err
 	}
 
-	if err := ds.processDataStore.RemoveProcessIndicatorsByDeployment(id); err != nil {
+	if err := ds.processDataStore.RemoveProcessIndicatorsByDeployment(ctx, id); err != nil {
 		return err
 	}
 	flowStore := ds.networkFlowStore.GetFlowStore(clusterID)

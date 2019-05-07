@@ -1,6 +1,7 @@
 package pruning
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -65,7 +66,7 @@ func generateDataStructures(t *testing.T) (imageStore.Store, imageIndexer.Indexe
 
 	ctrl := gomock.NewController(t)
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
-	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any()).Return((error)(nil))
+	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any(), gomock.Any()).Return((error)(nil))
 
 	deployments := deploymentDatastore.New(deploymentStore, deploymentIndexer, deploymentSearcher, mockProcessDataStore, nil)
 	return imageStore, imageIndexer, images, deployments
@@ -137,14 +138,14 @@ func TestImagePruning(t *testing.T) {
 				require.NoError(t, imageStore.UpsertImage(image))
 			}
 			if c.deployment != nil {
-				require.NoError(t, deployments.UpsertDeployment(c.deployment))
+				require.NoError(t, deployments.UpsertDeployment(context.TODO(), c.deployment))
 			}
 
 			// Garbage collect all of the images
 			gc.collectImages()
 
 			// Grab the  actual remaining images and make sure they match the images expected to be remaining
-			remainingImages, err := imageDatastore.ListImages()
+			remainingImages, err := imageDatastore.ListImages(context.TODO())
 			require.NoError(t, err)
 
 			var ids []string

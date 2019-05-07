@@ -1,6 +1,7 @@
 package multipliers
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -40,7 +41,7 @@ func NewViolations(getter getters.AlertGetter) *ViolationsMultiplier {
 func (v *ViolationsMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
 	qb := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).AddStrings(search.ViolationState, storage.ViolationState_ACTIVE.String())
 
-	alerts, err := v.getter.ListAlerts(&v1.ListAlertsRequest{
+	alerts, err := v.getter.ListAlerts(context.TODO(), &v1.ListAlertsRequest{
 		Query: qb.Query(),
 	})
 	if err != nil {

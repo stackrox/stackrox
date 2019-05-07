@@ -25,13 +25,13 @@ func (resolver *Resolver) Node(ctx context.Context, args struct{ graphql.ID }) (
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-	clusters, err := resolver.ClusterDataStore.GetClusters()
+	clusters, err := resolver.ClusterDataStore.GetClusters(ctx)
 	if err != nil {
 		return nil, err
 	}
 	var output *nodeResolver
 	for _, cluster := range clusters {
-		store, err := resolver.NodeGlobalDataStore.GetClusterNodeStore(cluster.GetId())
+		store, err := resolver.NodeGlobalDataStore.GetClusterNodeStore(ctx, cluster.GetId())
 		if err != nil {
 			return nil, err
 		}

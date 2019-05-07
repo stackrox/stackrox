@@ -44,8 +44,8 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 	return v1.RegisterNamespaceServiceHandler(ctx, mux, conn)
 }
 
-func (s *serviceImpl) GetNamespaces(context.Context, *v1.Empty) (*v1.GetNamespacesResponse, error) {
-	namespaces, err := namespace.ResolveAll(s.datastore, s.deployments, s.secrets, s.networkPolicies)
+func (s *serviceImpl) GetNamespaces(ctx context.Context, _ *v1.Empty) (*v1.GetNamespacesResponse, error) {
+	namespaces, err := namespace.ResolveAll(ctx, s.datastore, s.deployments, s.secrets, s.networkPolicies)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to retrieve namespaces: %v", err)
 	}
@@ -58,7 +58,7 @@ func (s *serviceImpl) GetNamespace(ctx context.Context, req *v1.ResourceByID) (*
 	if req.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "ID cannot be empty")
 	}
-	resolvedNS, found, err := namespace.ResolveByID(req.GetId(), s.datastore, s.deployments, s.secrets, s.networkPolicies)
+	resolvedNS, found, err := namespace.ResolveByID(ctx, req.GetId(), s.datastore, s.deployments, s.secrets, s.networkPolicies)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "Failed to retrieve namespace: %v", err)
 	}

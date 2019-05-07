@@ -30,7 +30,7 @@ func (resolver *Resolver) Violations(ctx context.Context, args rawQuery) ([]*ale
 		q = search.EmptyQuery()
 	}
 	return resolver.wrapListAlerts(
-		resolver.ViolationsDataStore.SearchListAlerts(q))
+		resolver.ViolationsDataStore.SearchListAlerts(ctx, q))
 }
 
 // Violation returns the violation with the requested ID
@@ -39,11 +39,11 @@ func (resolver *Resolver) Violation(ctx context.Context, args struct{ graphql.ID
 		return nil, err
 	}
 	return resolver.wrapAlert(
-		resolver.ViolationsDataStore.GetAlert(string(args.ID)))
+		resolver.ViolationsDataStore.GetAlert(ctx, string(args.ID)))
 }
 
-func (resolver *Resolver) getAlert(id string) *storage.Alert {
-	alert, ok, err := resolver.ViolationsDataStore.GetAlert(id)
+func (resolver *Resolver) getAlert(ctx context.Context, id string) *storage.Alert {
+	alert, ok, err := resolver.ViolationsDataStore.GetAlert(ctx, id)
 	if err != nil || !ok {
 		return nil
 	}

@@ -2,6 +2,7 @@
 package resolvers
 
 import (
+	"context"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 )
@@ -11,8 +12,8 @@ type complianceAggregationResponseWithDomainResolver struct {
 	domainMap map[*v1.ComplianceAggregation_Result]*storage.ComplianceDomain
 }
 
-func (r *complianceAggregationResponseWithDomainResolver) Results() ([]*complianceAggregationResultWithDomainResolver, error) {
-	results, err := r.complianceAggregation_ResponseResolver.Results()
+func (r *complianceAggregationResponseWithDomainResolver) Results(ctx context.Context) ([]*complianceAggregationResultWithDomainResolver, error) {
+	results, err := r.complianceAggregation_ResponseResolver.Results(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"context"
 	"time"
 
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
@@ -24,17 +25,17 @@ var (
 // DataStore is the entry point for modifying Cluster data.
 //go:generate mockgen-wrapper DataStore
 type DataStore interface {
-	GetCluster(id string) (*storage.Cluster, bool, error)
-	GetClusters() ([]*storage.Cluster, error)
-	CountClusters() (int, error)
+	GetCluster(ctx context.Context, id string) (*storage.Cluster, bool, error)
+	GetClusters(ctx context.Context) ([]*storage.Cluster, error)
+	CountClusters(ctx context.Context) (int, error)
 
-	AddCluster(cluster *storage.Cluster) (string, error)
-	UpdateCluster(cluster *storage.Cluster) error
-	RemoveCluster(id string) error
-	UpdateClusterContactTime(id string, t time.Time) error
-	UpdateClusterStatus(id string, status *storage.ClusterStatus) error
+	AddCluster(ctx context.Context, cluster *storage.Cluster) (string, error)
+	UpdateCluster(ctx context.Context, cluster *storage.Cluster) error
+	RemoveCluster(ctx context.Context, id string) error
+	UpdateClusterContactTime(ctx context.Context, id string, t time.Time) error
+	UpdateClusterStatus(ctx context.Context, id string, status *storage.ClusterStatus) error
 
-	Search(q *v1.Query) ([]search.Result, error)
+	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 }
 
 // New returns an instance of DataStore.
@@ -60,6 +61,6 @@ func New(
 	if err := ds.buildIndex(); err != nil {
 		return ds, err
 	}
-	go ds.cleanUpNodeStore()
+	go ds.cleanUpNodeStore(context.TODO())
 	return ds, nil
 }

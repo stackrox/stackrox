@@ -48,8 +48,8 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) GetProcessWhitelists(context.Context, *v1.Empty) (*v1.ProcessWhitelistsResponse, error) {
-	whitelists, err := s.dataStore.GetProcessWhitelists()
+func (s *serviceImpl) GetProcessWhitelists(ctx context.Context, _ *v1.Empty) (*v1.ProcessWhitelistsResponse, error) {
+	whitelists, err := s.dataStore.GetProcessWhitelists(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (s *serviceImpl) GetProcessWhitelist(ctx context.Context, request *v1.GetPr
 	if err := validateKeyNotEmpty(request.GetKey()); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	whitelist, err := s.dataStore.GetProcessWhitelist(request.GetKey())
+	whitelist, err := s.dataStore.GetProcessWhitelist(ctx, request.GetKey())
 	if err != nil {
 		return nil, err
 	}
@@ -101,14 +101,14 @@ func bulkUpdate(keys []*storage.ProcessWhitelistKey, parallelFunc func(*storage.
 
 func (s *serviceImpl) UpdateProcessWhitelists(ctx context.Context, request *v1.UpdateProcessWhitelistsRequest) (*v1.UpdateProcessWhitelistsResponse, error) {
 	updateFunc := func(key *storage.ProcessWhitelistKey) (*storage.ProcessWhitelist, error) {
-		return s.dataStore.UpdateProcessWhitelistElements(key, request.GetAddElements(), request.GetRemoveElements(), false)
+		return s.dataStore.UpdateProcessWhitelistElements(ctx, key, request.GetAddElements(), request.GetRemoveElements(), false)
 	}
 	return bulkUpdate(request.GetKeys(), updateFunc), nil
 }
 
 func (s *serviceImpl) LockProcessWhitelists(ctx context.Context, request *v1.LockProcessWhitelistsRequest) (*v1.UpdateProcessWhitelistsResponse, error) {
 	updateFunc := func(key *storage.ProcessWhitelistKey) (*storage.ProcessWhitelist, error) {
-		return s.dataStore.UserLockProcessWhitelist(key, request.GetLocked())
+		return s.dataStore.UserLockProcessWhitelist(ctx, key, request.GetLocked())
 	}
 	return bulkUpdate(request.GetKeys(), updateFunc), nil
 }

@@ -73,18 +73,18 @@ func makeIndicator() (*storage.ProcessWhitelistKey, *storage.ProcessIndicator) {
 func (suite *ManagerTestSuite) TestWhitelistNotFound() {
 	key, indicator := makeIndicator()
 	elements := fixtures.MakeWhitelistItems(indicator.Signal.GetName())
-	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(nil, nil)
-	suite.whitelists.EXPECT().UpsertProcessWhitelist(key, elements, true).Return(nil, nil)
+	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(nil, nil)
+	suite.whitelists.EXPECT().UpsertProcessWhitelist(gomock.Any(), key, elements, true).Return(nil, nil)
 	_, _, err := suite.manager.checkWhitelist(indicator)
 	suite.NoError(err)
 
 	expectedError := errors.Errorf("Expected error")
-	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(nil, expectedError)
+	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(nil, expectedError)
 	_, _, err = suite.manager.checkWhitelist(indicator)
 	suite.Equal(expectedError, err)
 
-	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(nil, nil)
-	suite.whitelists.EXPECT().UpsertProcessWhitelist(key, elements, true).Return(nil, expectedError)
+	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(nil, nil)
+	suite.whitelists.EXPECT().UpsertProcessWhitelist(gomock.Any(), key, elements, true).Return(nil, expectedError)
 	_, _, err = suite.manager.checkWhitelist(indicator)
 	suite.Equal(expectedError, err)
 }
@@ -93,15 +93,15 @@ func (suite *ManagerTestSuite) TestWhitelistShouldBeUpdated() {
 	key, indicator := makeIndicator()
 	whitelist := &storage.ProcessWhitelist{}
 	elements := fixtures.MakeWhitelistItems(indicator.Signal.GetName())
-	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(whitelist, nil)
-	suite.whitelists.EXPECT().UpdateProcessWhitelistElements(key, elements, nil, true).Return(nil, nil)
+	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(whitelist, nil)
+	suite.whitelists.EXPECT().UpdateProcessWhitelistElements(gomock.Any(), key, elements, nil, true).Return(nil, nil)
 	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
 	_, _, err := suite.manager.checkWhitelist(indicator)
 	suite.NoError(err)
 
 	expectedError := errors.Errorf("Expected error")
-	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(whitelist, nil)
-	suite.whitelists.EXPECT().UpdateProcessWhitelistElements(key, elements, nil, true).Return(nil, expectedError)
+	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(whitelist, nil)
+	suite.whitelists.EXPECT().UpdateProcessWhitelistElements(gomock.Any(), key, elements, nil, true).Return(nil, expectedError)
 	_, _, err = suite.manager.checkWhitelist(indicator)
 	suite.Equal(expectedError, err)
 }
@@ -109,7 +109,7 @@ func (suite *ManagerTestSuite) TestWhitelistShouldBeUpdated() {
 func (suite *ManagerTestSuite) TestWhitelistShouldPass() {
 	key, indicator := makeIndicator()
 	whitelist := &storage.ProcessWhitelist{Elements: fixtures.MakeWhitelistElements(indicator.Signal.GetName())}
-	suite.whitelists.EXPECT().GetProcessWhitelist(key).Return(whitelist, nil)
+	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(whitelist, nil)
 	_, _, err := suite.manager.checkWhitelist(indicator)
 	suite.NoError(err)
 }
