@@ -17,4 +17,7 @@ var (
 
 	// ProcessWhitelist will enable the process whitelist API
 	ProcessWhitelist = registerFeature("Enable Process Whitelist API", "ROX_PROCESS_WHITELIST", false)
+
+	// ScopedAccessControl controls whether scoped access control is enabled.
+	ScopedAccessControl = registerFeature("Scoped Access Control", "ROX_SCOPED_ACCESS_CONTROL", false)
 )
