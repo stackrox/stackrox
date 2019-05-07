@@ -436,6 +436,12 @@ func createEnforcementAction(deployment *storage.Deployment, containerID string)
 					ContainerInstance: &central.ContainerInstanceEnforcement{
 						ContainerInstanceId: instance.GetInstanceId().GetId(),
 						PodId:               instance.GetContainingPodId(),
+						DeploymentEnforcement: &central.DeploymentEnforcement{
+							DeploymentId:   deployment.GetId(),
+							DeploymentName: deployment.GetName(),
+							Namespace:      deployment.GetNamespace(),
+							DeploymentType: deployment.GetType(),
+						},
 					},
 				}
 				return &central.SensorEnforcement{

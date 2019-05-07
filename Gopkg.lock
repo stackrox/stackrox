@@ -639,6 +639,14 @@
   revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
 
 [[projects]]
+  branch = "master"
+  digest = "1:b7cb6054d3dff43b38ad2e92492f220f57ae6087ee797dca298139776749ace8"
+  name = "github.com/golang/groupcache"
+  packages = ["lru"]
+  pruneopts = "NUT"
+  revision = "5b532d6fd5efaf7fa130d4e859a2fde0fc3a9e1b"
+
+[[projects]]
   digest = "1:b60efdeb75d3c0ceed88783ac2495256aba3491a537d0f31401202579fd62a94"
   name = "github.com/golang/mock"
   packages = ["gomock"]
@@ -1672,7 +1680,7 @@
   version = "kubernetes-1.10.0"
 
 [[projects]]
-  digest = "1:912a2bed08850f9bb0f2078dd8381e162f2e393bf0ee5650ff79073f9fa9fac5"
+  digest = "1:793b4fdb4feb01a03f70b74e04e8058bf0e4ad71726acd2c7c7e203a9cc8be34"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/errors",
@@ -1703,15 +1711,18 @@
     "pkg/util/framer",
     "pkg/util/intstr",
     "pkg/util/json",
+    "pkg/util/mergepatch",
     "pkg/util/net",
     "pkg/util/runtime",
     "pkg/util/sets",
+    "pkg/util/strategicpatch",
     "pkg/util/validation",
     "pkg/util/validation/field",
     "pkg/util/wait",
     "pkg/util/yaml",
     "pkg/version",
     "pkg/watch",
+    "third_party/forked/golang/json",
     "third_party/forked/golang/reflect",
   ]
   pruneopts = "NUT"
@@ -1735,7 +1746,7 @@
   version = "kubernetes-1.10.0"
 
 [[projects]]
-  digest = "1:436d472a5087af3e401f62b7b219fab8974f9c39b3f3ff2381fd281c4a2b53ab"
+  digest = "1:f963173d115cc943dd82982121696e8e4d2a3c8ff8b9c689d242a6a1a80c95d5"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -1843,6 +1854,7 @@
     "tools/clientcmd/api",
     "tools/metrics",
     "tools/pager",
+    "tools/record",
     "tools/reference",
     "transport",
     "util/buffer",
@@ -1880,6 +1892,14 @@
   pruneopts = "NUT"
   revision = "71442cd4037d612096940ceb0f3fec3f7fff66e0"
   version = "v0.2.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:42674e29bf0cf4662d49bd9528e24b9ecc4895b32d0be281f9cf04d3a7671846"
+  name = "k8s.io/kube-openapi"
+  packages = ["pkg/util/proto"]
+  pruneopts = "NUT"
+  revision = "411b2483e5034420675ebcdd4a55fc76fe5e55cf"
 
 [[projects]]
   digest = "1:03e9a8d230ac8eddff986a566513191bbb0809f4fbc755eb90765e6c45c52e00"
@@ -2066,6 +2086,7 @@
     "k8s.io/client-go/listers/core/v1",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/cache",
+    "k8s.io/client-go/tools/record",
     "k8s.io/helm/pkg/chartutil",
     "k8s.io/helm/pkg/proto/hapi/chart",
     "k8s.io/helm/pkg/renderutil",

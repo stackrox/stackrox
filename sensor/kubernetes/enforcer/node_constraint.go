@@ -5,7 +5,7 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/sensor/kubernetes/enforcer/common"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/daemonset"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/deployment"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/replicaset"
@@ -46,10 +46,13 @@ func (e *enforcerImpl) unsatisfiableNodeConstraint(enforcement *central.SensorEn
 	}
 
 	// Retry any retriable errors encountered when trying to run the enforcement function.
-	return retry.WithRetry(function,
-		retry.Tries(5),
-		retry.OnlyRetryableErrors(),
-		retry.OnFailedAttempts(func(e error) {
-			log.Error(e)
-		}))
+	err = withReasonableRetry(function)
+	if err != nil {
+		return
+	}
+
+	// Mark the deployment as having the node constraint applied.
+	return withReasonableRetry(func() error {
+		return common.MarkNodeConstraintApplied(e.recorder, getRef(enforcement))
+	})
 }

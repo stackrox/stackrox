@@ -2,10 +2,9 @@ package enforcer
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/sensor/kubernetes/enforcer/common"
 	"github.com/stackrox/rox/sensor/kubernetes/enforcer/pod"
 )
 
@@ -17,18 +16,15 @@ func (e *enforcerImpl) kill(enforcement *central.SensorEnforcement) (err error) 
 	}
 
 	// Try to kill the pod containing the container instance.
-	function := func() error {
+	err = withReasonableRetry(func() error {
 		return pod.EnforceKill(e.client, containerInfo)
+	})
+	if err != nil {
+		return
 	}
 
-	// Retry any retryable errors encountered when trying to run the enforcement function.
-	return retry.WithRetry(function,
-		retry.Tries(5),
-		retry.OnlyRetryableErrors(),
-		retry.BetweenAttempts(func() {
-			time.Sleep(time.Second)
-		}),
-		retry.OnFailedAttempts(func(e error) {
-			log.Error(e)
-		}))
+	// Try to mark the deployment as having the pod killed.
+	return withReasonableRetry(func() error {
+		return common.MarkPodKilled(e.recorder, getRef(enforcement))
+	})
 }

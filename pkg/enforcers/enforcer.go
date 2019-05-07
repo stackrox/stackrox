@@ -61,9 +61,9 @@ func (e *enforcer) Start() {
 			}
 
 			if err := f(action); err != nil {
-				log.Errorf("failed to take enforcement action: %s err: %s", proto.MarshalTextString(action), err)
+				log.Errorf("error during enforcement. action: %s err: %v", proto.MarshalTextString(action), err)
 			} else {
-				log.Infof("Successfully taken action %s", proto.MarshalTextString(action))
+				log.Infof("enforcement successful. action %s", proto.MarshalTextString(action))
 			}
 		case <-e.stopC.Done():
 			log.Info("Shutting down Enforcer")

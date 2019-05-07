@@ -76,6 +76,8 @@ message DeploymentEnforcement {
 message ContainerInstanceEnforcement {
     string container_instance_id = 1;
     string pod_id                = 2;
+
+    DeploymentEnforcement deployment_enforcement = 3;
 }
 
 // Scrape commands sent to sensor.
