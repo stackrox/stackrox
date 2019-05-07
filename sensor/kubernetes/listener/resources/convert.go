@@ -328,11 +328,6 @@ func (w *deploymentWrap) populateImageShas(pods ...*v1.Pod) {
 			}
 			if sha := imageUtils.ExtractImageSha(c.ImageID); sha != "" {
 				sha = types.NewDigest(sha).Digest()
-				// Logging to see that we are clobbering a value from an old sha
-				currentSHA := w.Deployment.GetContainers()[i].GetImage().GetId()
-				if currentSHA != "" && currentSHA != sha {
-					log.Warnf("Clobbering SHA '%s' found for image '%s' with SHA '%s'", currentSHA, c.Image, sha)
-				}
 				w.Deployment.Containers[i].Image.Id = types.NewDigest(sha).Digest()
 			}
 		}
