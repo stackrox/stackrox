@@ -129,7 +129,7 @@ func dockerConfigToImageIntegration(registry string, dce credentialprovider.Dock
 	}
 }
 
-func getImageIntegrationSensorEvents(secret *v1.Secret) []*central.SensorEvent {
+func getImageIntegrationSensorEvents(secret *v1.Secret, action central.ResourceAction) []*central.SensorEvent {
 	var dockerConfig credentialprovider.DockerConfig
 	protoSecret := getProtoSecret(secret)
 	switch secret.Type {
@@ -189,7 +189,7 @@ func getImageIntegrationSensorEvents(secret *v1.Secret) []*central.SensorEvent {
 	metadata.ImagePullSecret.Registries = registries
 	protoSecret.Files[0].Metadata = metadata
 
-	return append(sensorEvents, secretToSensorEvent(central.ResourceAction_UPDATE_RESOURCE, protoSecret))
+	return append(sensorEvents, secretToSensorEvent(action, protoSecret))
 }
 
 func getProtoSecret(secret *v1.Secret) *storage.Secret {
@@ -222,7 +222,7 @@ func (*secretDispatcher) ProcessEvent(obj interface{}, action central.ResourceAc
 	// Also filter out DockerConfigJson/DockerCfgs because we don't really care about them.
 	switch secret.Type {
 	case v1.SecretTypeDockerConfigJson, v1.SecretTypeDockercfg:
-		return getImageIntegrationSensorEvents(secret)
+		return getImageIntegrationSensorEvents(secret, action)
 	case v1.SecretTypeServiceAccountToken:
 		return nil
 	}
