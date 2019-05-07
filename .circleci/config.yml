@@ -737,6 +737,12 @@ jobs:
             make go-generated-srcs
             git diff --exit-code HEAD
 
+      - run:
+          name: Ensure that all TODO references to fixed tickets are gone
+          command: |
+            .circleci/check-pr-fixes.sh
+
+
   integration-unit-tests:
     <<: *defaults
     resource_class: large
