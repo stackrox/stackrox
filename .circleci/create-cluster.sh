@@ -42,10 +42,28 @@ create-cluster() {
           break
       elif [[ "${status}" == 124 ]];
       then
-          echo >&2 "gcloud command timed out. Trying another zone..."
+          echo >&2 "gcloud command timed out. Checking to see if cluster is still creating"
+          if ! gcloud container clusters describe "${CLUSTER_NAME}" > /dev/null; then
+            echo >&2 "Create cluster did not create the cluster in Google. Trying a different zone..."
+          else
+            for i in {1..120}; do
+                if [[ "$(gcloud container clusters describe ${CLUSTER_NAME} --format json | jq -r .status)" == "RUNNING" ]]; then
+                  success=1
+                  break
+                fi
+                sleep 5
+                echo "Currently have waited $((i * 5)) for cluster ${CLUSTER_NAME} in ${zone} to move to running state"
+            done
+          fi
+
+          if [[ "${success}" == 1 ]]; then
+            echo "Successfully launched cluster ${CLUSTER_NAME}"
+            break
+          fi
+          echo >&2 "Timed out after 10 more minutes. Trying another zone..."
+          echo >&2 "Deleting the cluster"
+          gcloud container clusters delete "${CLUSTER_NAME}" --async
       fi
-      echo >&2 "Deleting the cluster"
-      gcloud container clusters delete "${CLUSTER_NAME}" --async
   done
 
   if [[ "${success}" == "0" ]]; then
