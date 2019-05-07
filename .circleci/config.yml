@@ -418,11 +418,10 @@ commands:
           wait: false
 
       - run:
-          name: Save kube config
+          name: Save cluster config
           command: |
             CONFIG_DIR="/go/src/github.com/stackrox/rox/.ci-clusters/<< parameters.cluster-id >>"
             mkdir -p "$CONFIG_DIR"
-            cp "${KUBECONFIG:-${HOME}/.kube/config}" "${CONFIG_DIR}/config"
             echo "$CLUSTER_NAME" >>"${CONFIG_DIR}/name"
             gcloud config get-value compute/zone >>"${CONFIG_DIR}/zone"
 
@@ -441,17 +440,15 @@ commands:
           name: Restore config for << parameters.cluster-id >> cluster
           command: |
             CONFIG_DIR="/go/src/github.com/stackrox/rox/.ci-clusters/<< parameters.cluster-id >>"
-            KUBECONFIG="${CONFIG_DIR}/config"
-            [[ -f "$KUBECONFIG" ]]
             CLUSTER_NAME="$(cat "${CONFIG_DIR}/name")"
             [[ -n "$CLUSTER_NAME" ]]
             ZONE="$(cat "${CONFIG_DIR}/zone")"
             [[ -n "$ZONE" ]]
             gcloud config set compute/zone "$ZONE"
+            gcloud container clusters get-credentials --project stackrox-ci "$CLUSTER_NAME"
             echo "Restored config for cluster ${CLUSTER_NAME}"
 
             cat >>"$BASH_ENV" \<<EOF
-              export KUBECONFIG='$KUBECONFIG'
               export CLUSTER_NAME='$CLUSTER_NAME'
             EOF
 
