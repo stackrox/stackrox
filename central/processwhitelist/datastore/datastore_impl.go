@@ -89,31 +89,54 @@ func (ds *datastoreImpl) getWhitelistForUpdate(id string) (*storage.ProcessWhite
 	return whitelist, nil
 }
 
-func (ds *datastoreImpl) updateProcessWhitelistElementsUnlocked(whitelist *storage.ProcessWhitelist, addElements []*storage.WhitelistItem, removeElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error) {
-	whitelistMap := make(map[string]*storage.WhitelistElement, len(whitelist.Elements))
-	for _, listItem := range whitelist.Elements {
-		whitelistMap[listItem.GetElement().GetProcessName()] = listItem
+func makeElementMap(elementList []*storage.WhitelistElement) map[string]*storage.WhitelistElement {
+	elementMap := make(map[string]*storage.WhitelistElement, len(elementList))
+	for _, listItem := range elementList {
+		elementMap[listItem.GetElement().GetProcessName()] = listItem
 	}
+	return elementMap
+}
+
+func makeElementList(elementMap map[string]*storage.WhitelistElement) []*storage.WhitelistElement {
+	elementList := make([]*storage.WhitelistElement, 0, len(elementMap))
+	for _, process := range elementMap {
+		elementList = append(elementList, process)
+	}
+	return elementList
+}
+
+func (ds *datastoreImpl) updateProcessWhitelistElementsUnlocked(whitelist *storage.ProcessWhitelist, addElements []*storage.WhitelistItem, removeElements []*storage.WhitelistItem, auto bool) (*storage.ProcessWhitelist, error) {
+	whitelistMap := makeElementMap(whitelist.GetElements())
+	graveyardMap := makeElementMap(whitelist.GetElementGraveyard())
 
 	for _, element := range addElements {
+		// Don't automatically add anything which has been previously removed
+		if _, ok := graveyardMap[element.GetProcessName()]; auto && ok {
+			continue
+		}
 		existing, ok := whitelistMap[element.GetProcessName()]
 		if !ok || existing.Auto {
+			delete(graveyardMap, element.GetProcessName())
 			whitelistMap[element.GetProcessName()] = &storage.WhitelistElement{
-				Element: &storage.WhitelistItem{
-					Item: &storage.WhitelistItem_ProcessName{ProcessName: element.GetProcessName()},
-				},
-				Auto: auto,
+				Element: element,
+				Auto:    auto,
 			}
 		}
 	}
 
 	for _, removeElement := range removeElements {
 		delete(whitelistMap, removeElement.GetProcessName())
+		existing, ok := graveyardMap[removeElement.GetProcessName()]
+		if !ok || existing.Auto {
+			graveyardMap[removeElement.GetProcessName()] = &storage.WhitelistElement{
+				Element: removeElement,
+				Auto:    auto,
+			}
+		}
 	}
-	whitelist.Elements = make([]*storage.WhitelistElement, 0, len(whitelistMap))
-	for _, process := range whitelistMap {
-		whitelist.Elements = append(whitelist.Elements, process)
-	}
+
+	whitelist.Elements = makeElementList(whitelistMap)
+	whitelist.ElementGraveyard = makeElementList(graveyardMap)
 
 	err := ds.storage.UpdateWhitelist(whitelist)
 	if err != nil {

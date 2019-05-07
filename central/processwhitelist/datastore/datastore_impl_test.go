@@ -223,3 +223,35 @@ func (suite *ProcessWhitelistDataStoreTestSuite) TestUpsertProcessWhitelist() {
 	suite.ElementsMatch([]string{firstProcess, secondProcess}, processNames)
 	suite.Equal(key, whitelist.GetKey())
 }
+
+func makeItemList(elementList []*storage.WhitelistElement) []*storage.WhitelistItem {
+	itemList := make([]*storage.WhitelistItem, len(elementList))
+	for i, element := range elementList {
+		itemList[i] = element.GetElement()
+	}
+	return itemList
+}
+
+func (suite *ProcessWhitelistDataStoreTestSuite) TestGraveyard() {
+	whitelist := suite.createAndStoreWhitelistWithRandomKey()
+	itemList := makeItemList(whitelist.GetElements())
+	suite.NotEmpty(itemList)
+	suite.Empty(whitelist.GetElementGraveyard())
+	updatedWhitelist, err := suite.datastore.UpdateProcessWhitelistElements(whitelist.GetKey(), nil, itemList, true)
+	// The elements should have been removed from the whitelist and put in the graveyard
+	suite.NoError(err)
+	suite.ElementsMatch(whitelist.GetElements(), updatedWhitelist.GetElementGraveyard())
+
+	updatedWhitelist, err = suite.datastore.UpdateProcessWhitelistElements(whitelist.GetKey(), itemList, nil, true)
+	suite.NoError(err)
+	// The elements should NOT be added back on to the whitelist because they are in the graveyard and auto = true
+	suite.Empty(updatedWhitelist.GetElements())
+	suite.ElementsMatch(whitelist.GetElements(), updatedWhitelist.GetElementGraveyard())
+
+	updatedWhitelist, err = suite.datastore.UpdateProcessWhitelistElements(whitelist.GetKey(), itemList, nil, false)
+	suite.NoError(err)
+	// The elements SHOULD be added back on to the whitelist because auto = false
+	suite.Empty(updatedWhitelist.GetElementGraveyard())
+	updatedItems := makeItemList(updatedWhitelist.GetElements())
+	suite.ElementsMatch(itemList, updatedItems)
+}
