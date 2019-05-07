@@ -9,7 +9,7 @@ import (
 	clusterIndexMocks "github.com/stackrox/rox/central/cluster/index/mocks"
 	clusterMocks "github.com/stackrox/rox/central/cluster/store/mocks"
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	nodeMocks "github.com/stackrox/rox/central/node/globalstore/mocks"
+	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
 	notifierMocks "github.com/stackrox/rox/central/notifier/processor/mocks"
 	secretMocks "github.com/stackrox/rox/central/secret/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -40,7 +40,7 @@ func (suite *ClusterDataStoreTestSuite) SetupTest() {
 
 	deployments := deploymentMocks.NewMockDataStore(suite.mockCtrl)
 	alerts := alertMocks.NewMockDataStore(suite.mockCtrl)
-	nodes := nodeMocks.NewMockGlobalStore(suite.mockCtrl)
+	nodes := nodeMocks.NewMockGlobalDataStore(suite.mockCtrl)
 	secrets := secretMocks.NewMockDataStore(suite.mockCtrl)
 
 	nodes.EXPECT().GetAllClusterNodeStores().AnyTimes().Return(nil, nil)

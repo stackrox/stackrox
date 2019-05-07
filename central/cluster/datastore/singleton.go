@@ -7,7 +7,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/globalindex"
-	nodeStore "github.com/stackrox/rox/central/node/globalstore"
+	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -26,7 +26,7 @@ func initialize() {
 	indexer := index.New(globalindex.GetGlobalIndex())
 
 	var err error
-	ad, err = New(storage, indexer, alertDataStore.Singleton(), deploymentDataStore.Singleton(), nodeStore.Singleton(), secretDataStore.Singleton(), connection.ManagerSingleton(), notifierProcessor.Singleton())
+	ad, err = New(storage, indexer, alertDataStore.Singleton(), deploymentDataStore.Singleton(), nodeDataStore.Singleton(), secretDataStore.Singleton(), connection.ManagerSingleton(), notifierProcessor.Singleton())
 	utils.Must(err)
 }
 

@@ -76,7 +76,7 @@ func (resolver *clusterResolver) Nodes(ctx context.Context) ([]*nodeResolver, er
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-	store, err := resolver.root.NodeGlobalStore.GetClusterNodeStore(resolver.data.GetId())
+	store, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(resolver.data.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (resolver *clusterResolver) Node(ctx context.Context, args struct{ Node gra
 	if err := readNodes(ctx); err != nil {
 		return nil, err
 	}
-	store, err := resolver.root.NodeGlobalStore.GetClusterNodeStore(resolver.data.GetId())
+	store, err := resolver.root.NodeGlobalDataStore.GetClusterNodeStore(resolver.data.GetId())
 	if err != nil {
 		return nil, err
 	}

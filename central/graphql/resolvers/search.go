@@ -38,7 +38,7 @@ func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]searc
 		v1.SearchCategory_POLICIES:    resolver.PolicyDataStore,
 		v1.SearchCategory_SECRETS:     resolver.SecretsDataStore,
 		v1.SearchCategory_NAMESPACES:  resolver.NamespaceDataStore,
-		v1.SearchCategory_NODES:       resolver.NodeGlobalStore,
+		v1.SearchCategory_NODES:       resolver.NodeGlobalDataStore,
 		v1.SearchCategory_COMPLIANCE:  resolver.ComplianceAggregator,
 	}
 
@@ -58,7 +58,7 @@ func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.S
 		v1.SearchCategory_POLICIES:    resolver.PolicyDataStore.SearchPolicies,
 		v1.SearchCategory_SECRETS:     resolver.SecretsDataStore.SearchSecrets,
 		v1.SearchCategory_NAMESPACES:  resolver.NamespaceDataStore.SearchResults,
-		v1.SearchCategory_NODES:       resolver.NodeGlobalStore.SearchResults,
+		v1.SearchCategory_NODES:       resolver.NodeGlobalDataStore.SearchResults,
 	}
 
 	if features.K8sRBAC.Enabled() {

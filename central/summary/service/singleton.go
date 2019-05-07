@@ -5,7 +5,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	nodeStore "github.com/stackrox/rox/central/node/globalstore"
+	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -19,7 +19,7 @@ var (
 func initialize() {
 	as = New(alertDataStore.Singleton(), clusterDataStore.Singleton(),
 		deploymentDataStore.Singleton(), imageDataStore.Singleton(),
-		secretDataStore.Singleton(), nodeStore.Singleton())
+		secretDataStore.Singleton(), nodeDataStore.Singleton())
 }
 
 // Singleton provides the instance of the Service interface to register.

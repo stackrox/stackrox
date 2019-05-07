@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/central/cluster/index"
 	"github.com/stackrox/rox/central/cluster/store"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	nodeStore "github.com/stackrox/rox/central/node/globalstore"
+	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -43,7 +43,7 @@ func New(
 	indexer index.Indexer,
 	ads alertDataStore.DataStore,
 	dds deploymentDataStore.DataStore,
-	ns nodeStore.GlobalStore,
+	ns nodeDataStore.GlobalDataStore,
 	ss secretDataStore.DataStore,
 	cm connection.Manager,
 	notifier notifierProcessor.Processor) (DataStore, error) {

@@ -14,7 +14,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
-	nodeDataStore "github.com/stackrox/rox/central/node/globalstore"
+	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	roleDataStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	roleBindingDataStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
@@ -157,7 +157,7 @@ type serviceImpl struct {
 	policies        policyDataStore.DataStore
 	secrets         secretDataStore.DataStore
 	serviceaccounts serviceAccountDataStore.DataStore
-	nodes           nodeDataStore.GlobalStore
+	nodes           nodeDataStore.GlobalDataStore
 	namespaces      namespaceDataStore.DataStore
 	roles           roleDataStore.DataStore
 	bindings        roleBindingDataStore.DataStore

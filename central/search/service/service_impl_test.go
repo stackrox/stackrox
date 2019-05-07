@@ -12,7 +12,7 @@ import (
 	"github.com/stackrox/rox/central/globalindex"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	nodeMocks "github.com/stackrox/rox/central/node/globalstore/mocks"
+	nodeMocks "github.com/stackrox/rox/central/node/globaldatastore/mocks"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
 	policyIndex "github.com/stackrox/rox/central/policy/index"
@@ -50,7 +50,7 @@ func TestSearchFuncs(t *testing.T) {
 		WithPolicyStore(policyMocks.NewMockDataStore(mockCtrl)).
 		WithSecretStore(secretMocks.NewMockDataStore(mockCtrl)).
 		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(mockCtrl)).
-		WithNodeStore(nodeMocks.NewMockGlobalStore(mockCtrl)).
+		WithNodeStore(nodeMocks.NewMockGlobalDataStore(mockCtrl)).
 		WithNamespaceStore(namespaceMocks.NewMockDataStore(mockCtrl)).
 		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
@@ -103,7 +103,7 @@ func TestAutocomplete(t *testing.T) {
 		WithPolicyStore(policyMocks.NewMockDataStore(mockCtrl)).
 		WithSecretStore(secretMocks.NewMockDataStore(mockCtrl)).
 		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(mockCtrl)).
-		WithNodeStore(nodeMocks.NewMockGlobalStore(mockCtrl)).
+		WithNodeStore(nodeMocks.NewMockGlobalDataStore(mockCtrl)).
 		WithNamespaceStore(namespaceMocks.NewMockDataStore(mockCtrl)).
 		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).
@@ -180,7 +180,7 @@ func TestAutocompleteForEnums(t *testing.T) {
 		WithSecretStore(secretMocks.NewMockDataStore(mockCtrl)).
 		WithSecretStore(secretMocks.NewMockDataStore(mockCtrl)).
 		WithServiceAccountStore(serviceAccountMocks.NewMockDataStore(mockCtrl)).
-		WithNodeStore(nodeMocks.NewMockGlobalStore(mockCtrl)).
+		WithNodeStore(nodeMocks.NewMockGlobalDataStore(mockCtrl)).
 		WithNamespaceStore(namespaceMocks.NewMockDataStore(mockCtrl)).
 		WithRoleStore(roleMocks.NewMockDataStore(mockCtrl)).
 		WithRoleBindingStore(roleBindingsMocks.NewMockDataStore(mockCtrl)).

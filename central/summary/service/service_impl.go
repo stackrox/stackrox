@@ -8,7 +8,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
-	nodeStore "github.com/stackrox/rox/central/node/globalstore"
+	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -45,7 +45,7 @@ type serviceImpl struct {
 	deployments deploymentDataStore.DataStore
 	images      imageDataStore.DataStore
 	secrets     secretDataStore.DataStore
-	nodes       nodeStore.GlobalStore
+	nodes       nodeDataStore.GlobalDataStore
 
 	authorizer authz.Authorizer
 }

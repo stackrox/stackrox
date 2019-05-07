@@ -2,10 +2,7 @@ package globalstore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/globalindex"
-	"github.com/stackrox/rox/central/node/index"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -16,10 +13,7 @@ var (
 // Singleton returns the singleton global node instance.
 func Singleton() GlobalStore {
 	initGlobalStoreInstance.Do(func() {
-		var err error
-		indexer := index.New(globalindex.GetGlobalIndex())
-		globalStoreInstance, err = NewGlobalStore(globaldb.GetGlobalDB(), indexer)
-		utils.Must(err)
+		globalStoreInstance = NewGlobalStore(globaldb.GetGlobalDB())
 	})
 	return globalStoreInstance
 }

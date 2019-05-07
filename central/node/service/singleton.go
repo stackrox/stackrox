@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/node/globalstore"
+	"github.com/stackrox/rox/central/node/globaldatastore"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -14,7 +14,7 @@ var (
 // Singleton returns the singleton instance for the node service.
 func Singleton() grpc.APIService {
 	serviceInstanceInit.Do(func() {
-		serviceInstance = New(globalstore.Singleton())
+		serviceInstance = New(globaldatastore.Singleton())
 	})
 	return serviceInstance
 }

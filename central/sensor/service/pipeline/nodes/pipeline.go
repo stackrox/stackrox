@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/node/globalstore"
+	"github.com/stackrox/rox/central/node/globaldatastore"
 	"github.com/stackrox/rox/central/node/store"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -28,11 +28,11 @@ var (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(clusterDataStore.Singleton(), globalstore.Singleton())
+	return NewPipeline(clusterDataStore.Singleton(), globaldatastore.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(clusters clusterDataStore.DataStore, nodes globalstore.GlobalStore) pipeline.Fragment {
+func NewPipeline(clusters clusterDataStore.DataStore, nodes globaldatastore.GlobalDataStore) pipeline.Fragment {
 	return &pipelineImpl{
 		clusterStore:   clusters,
 		nodeStore:      nodes,
@@ -42,7 +42,7 @@ func NewPipeline(clusters clusterDataStore.DataStore, nodes globalstore.GlobalSt
 
 type pipelineImpl struct {
 	clusterStore   clusterDataStore.DataStore
-	nodeStore      globalstore.GlobalStore
+	nodeStore      globaldatastore.GlobalDataStore
 	reconcileStore reconciliation.Store
 }
 
