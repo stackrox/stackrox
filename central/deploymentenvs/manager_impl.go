@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	fetchMetadataTimeout = 30 * time.Second
+	fetchMetadataTimeout = 60 * time.Second
 )
 
 var (
