@@ -83,7 +83,7 @@ wait-for-cluster() {
   while true; do
     NUMSTARTING=$(kubectl -n kube-system get pod -o json | jq '[(.items[].status.containerStatuses // [])[].ready | select(. | not)] | length')
     if (( NUMSTARTING == 0 )); then
-      LAST_START_TS="$(kubectl -n kube-system get pod -o json | jq '[(.items[].status.containerStatuses // [])[].state.running.startedAt | fromdate] | max')"
+      LAST_START_TS="$(kubectl -n kube-system get pod -o json | jq '[(.items[].status.containerStatuses // [])[] | (.state.running.startedAt // (now | todate)) | fromdate] | max')"
       CURR_TS="$(date '+%s')"
       REMAINING_GRACE_PERIOD=$((LAST_START_TS + GRACE_PERIOD - CURR_TS))
       if (( REMAINING_GRACE_PERIOD <= 0 )); then
