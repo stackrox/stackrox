@@ -145,9 +145,9 @@ func (resolver *complianceDomainKeyResolver) ToDeployment() (deployment *deploym
 	return nil, false
 }
 
-func (resolver *complianceDomainKeyResolver) ToNamespace(ctx context.Context) (*namespaceResolver, bool) {
+func (resolver *complianceDomainKeyResolver) ToNamespace() (*namespaceResolver, bool) {
 	if resolver.key.GetScope() == v1.ComplianceAggregation_NAMESPACE {
-		receivedNS, found, err := namespace.ResolveByID(ctx, resolver.key.GetId(), resolver.root.NamespaceDataStore,
+		receivedNS, found, err := namespace.ResolveByID(context.TODO(), resolver.key.GetId(), resolver.root.NamespaceDataStore,
 			resolver.root.DeploymentDataStore, resolver.root.SecretsDataStore, resolver.root.NetworkPoliciesStore)
 		if err == nil && found {
 			return &namespaceResolver{resolver.root, receivedNS}, true
