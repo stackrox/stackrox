@@ -121,99 +121,102 @@ func (resolver *Resolver) AggregatedResults(ctx context.Context, args aggregated
 }
 
 type complianceDomainKeyResolver struct {
-	root   *Resolver
-	domain *storage.ComplianceDomain
-	key    *v1.ComplianceAggregation_AggregationKey
+	wrapped interface{}
+}
+
+func newComplianceDomainKeyResolverWrapped(ctx context.Context, root *Resolver, domain *storage.ComplianceDomain, key *v1.ComplianceAggregation_AggregationKey) interface{} {
+	switch key.GetScope() {
+	case v1.ComplianceAggregation_CLUSTER:
+		if domain.GetCluster() != nil {
+			return &clusterResolver{root, domain.GetCluster()}
+		}
+	case v1.ComplianceAggregation_DEPLOYMENT:
+		deployment, found := domain.GetDeployments()[key.GetId()]
+		if found {
+			return &deploymentResolver{root, deployment, nil}
+		}
+	case v1.ComplianceAggregation_NAMESPACE:
+		receivedNS, found, err := namespace.ResolveByID(ctx, key.GetId(), root.NamespaceDataStore,
+			root.DeploymentDataStore, root.SecretsDataStore, root.NetworkPoliciesStore)
+		if err == nil && found {
+			return &namespaceResolver{root, receivedNS}
+		}
+	case v1.ComplianceAggregation_NODE:
+		node, found := domain.GetNodes()[key.GetId()]
+		if found {
+			return &nodeResolver{root, node}
+		}
+	case v1.ComplianceAggregation_STANDARD:
+		standard, found, err := root.ComplianceStandardStore.StandardMetadata(key.GetId())
+		if err == nil && found {
+			return &complianceStandardMetadataResolver{root, standard}
+		}
+	case v1.ComplianceAggregation_CONTROL:
+		controlID := key.GetId()
+		control := root.ComplianceStandardStore.Control(controlID)
+		if control != nil {
+			return &complianceControlResolver{
+				root: root,
+				data: control,
+			}
+		}
+	case v1.ComplianceAggregation_CATEGORY:
+		groupID := key.GetId()
+		control := root.ComplianceStandardStore.Group(groupID)
+		if control != nil {
+			return &complianceControlGroupResolver{
+				root: root,
+				data: control,
+			}
+		}
+	}
+	return nil
 }
 
 func (resolver *complianceDomainKeyResolver) ToCluster() (cluster *clusterResolver, found bool) {
-	if resolver.key.GetScope() == v1.ComplianceAggregation_CLUSTER {
-		if resolver.domain.GetCluster() != nil {
-			return &clusterResolver{resolver.root, resolver.domain.GetCluster()}, true
-		}
-	}
-	return nil, false
+	r, ok := resolver.wrapped.(*clusterResolver)
+	return r, ok
 }
 
 func (resolver *complianceDomainKeyResolver) ToDeployment() (deployment *deploymentResolver, found bool) {
-	if resolver.key.GetScope() == v1.ComplianceAggregation_DEPLOYMENT {
-		deployment, found := resolver.domain.GetDeployments()[resolver.key.GetId()]
-		if found {
-			return &deploymentResolver{resolver.root, deployment, nil}, found
-		}
-	}
-	return nil, false
+	r, ok := resolver.wrapped.(*deploymentResolver)
+	return r, ok
 }
 
 func (resolver *complianceDomainKeyResolver) ToNamespace() (*namespaceResolver, bool) {
-	if resolver.key.GetScope() == v1.ComplianceAggregation_NAMESPACE {
-		receivedNS, found, err := namespace.ResolveByID(context.TODO(), resolver.key.GetId(), resolver.root.NamespaceDataStore,
-			resolver.root.DeploymentDataStore, resolver.root.SecretsDataStore, resolver.root.NetworkPoliciesStore)
-		if err == nil && found {
-			return &namespaceResolver{resolver.root, receivedNS}, true
-		}
-	}
-	return nil, false
+	r, ok := resolver.wrapped.(*namespaceResolver)
+	return r, ok
 }
 
 func (resolver *complianceDomainKeyResolver) ToNode() (node *nodeResolver, found bool) {
-	if resolver.key.GetScope() == v1.ComplianceAggregation_NODE {
-		node, found := resolver.domain.GetNodes()[resolver.key.GetId()]
-		if found {
-			return &nodeResolver{resolver.root, node}, found
-		}
-	}
-	return nil, false
+	r, ok := resolver.wrapped.(*nodeResolver)
+	return r, ok
 }
 
 func (resolver *complianceDomainKeyResolver) ToComplianceStandardMetadata() (standard *complianceStandardMetadataResolver, found bool) {
-	if resolver.key.GetScope() == v1.ComplianceAggregation_STANDARD {
-		standard, found, err := resolver.root.ComplianceStandardStore.StandardMetadata(resolver.key.GetId())
-		if err == nil && found {
-			return &complianceStandardMetadataResolver{resolver.root, standard}, found
-		}
-	}
-	return nil, false
+	r, ok := resolver.wrapped.(*complianceStandardMetadataResolver)
+	return r, ok
 }
 
 // ToComplianceControl returns a resolver for a control if the domain key refers to a control and it exists
 func (resolver *complianceDomainKeyResolver) ToComplianceControl() (control *complianceControlResolver, found bool) {
-	if resolver.key.GetScope() == v1.ComplianceAggregation_CONTROL {
-		controlID := resolver.key.GetId()
-		control := resolver.root.ComplianceStandardStore.Control(controlID)
-		if control != nil {
-			return &complianceControlResolver{
-				root: resolver.root,
-				data: control,
-			}, true
-		}
-	}
-	return nil, false
+	r, ok := resolver.wrapped.(*complianceControlResolver)
+	return r, ok
 }
 
 // ToComplianceControlGroup returns a resolver for a group if the domain key refers to a control group and it exists
 func (resolver *complianceDomainKeyResolver) ToComplianceControlGroup() (group *complianceControlGroupResolver, found bool) {
-	if (resolver.key.GetScope()) == v1.ComplianceAggregation_CATEGORY {
-		groupID := resolver.key.GetId()
-		control := resolver.root.ComplianceStandardStore.Group(groupID)
-		if control != nil {
-			return &complianceControlGroupResolver{
-				root: resolver.root,
-				data: control,
-			}, true
-		}
-	}
-	return nil, false
+	r, ok := resolver.wrapped.(*complianceControlGroupResolver)
+	return r, ok
 }
 
 // ComplianceDomain returns a graphql resolver that loads the underlying object for an aggregation key
-func (resolver *complianceAggregationResultWithDomainResolver) Keys() ([]*complianceDomainKeyResolver, error) {
+func (resolver *complianceAggregationResultWithDomainResolver) Keys(ctx context.Context) ([]*complianceDomainKeyResolver, error) {
 	output := make([]*complianceDomainKeyResolver, len(resolver.data.AggregationKeys))
 	for i, v := range resolver.data.AggregationKeys {
+		wrapped := newComplianceDomainKeyResolverWrapped(ctx, resolver.root, resolver.domain, v)
 		output[i] = &complianceDomainKeyResolver{
-			root:   resolver.root,
-			domain: resolver.domain,
-			key:    v,
+			wrapped: wrapped,
 		}
 	}
 	return output, nil
