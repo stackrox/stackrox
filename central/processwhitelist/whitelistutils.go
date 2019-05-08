@@ -33,7 +33,8 @@ func IsUserLocked(whitelist *storage.ProcessWhitelist) bool {
 	return locked(whitelist.GetUserLockedTimestamp())
 }
 
-func lockedUnderMode(whitelist *storage.ProcessWhitelist, mode EvaluationMode) bool {
+// LockedUnderMode checks whether a whitelist is locked under the given evaluation mode.
+func LockedUnderMode(whitelist *storage.ProcessWhitelist, mode EvaluationMode) bool {
 	switch mode {
 	case RoxLocked:
 		return IsRoxLocked(whitelist)
@@ -52,7 +53,7 @@ func lockedUnderMode(whitelist *storage.ProcessWhitelist, mode EvaluationMode) b
 // It returns nil if the whitelist is not locked under the passed EvaluationMode --
 // if it returns nil, it means that all processes are whitelisted under the given mode.
 func Processes(whitelist *storage.ProcessWhitelist, mode EvaluationMode) *set.StringSet {
-	if !lockedUnderMode(whitelist, mode) {
+	if !LockedUnderMode(whitelist, mode) {
 		return nil
 	}
 	processes := set.NewStringSet()

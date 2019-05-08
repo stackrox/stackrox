@@ -5,8 +5,13 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/grpc/testutils"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestAuthz(t *testing.T) {
+	testutils.AssertAuthzWorks(t, &serviceImpl{})
+}
 
 func TestLabelsMap(t *testing.T) {
 	t.Parallel()
