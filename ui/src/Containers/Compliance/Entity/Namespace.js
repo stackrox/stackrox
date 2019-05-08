@@ -17,6 +17,8 @@ import URLService from 'modules/URLService';
 import ComplianceList from 'Containers/Compliance/List/List';
 import ResourceTabs from 'Components/ResourceTabs';
 import ResourceCount from 'Containers/Compliance/widgets/ResourceCount';
+import PageNotFound from 'Components/PageNotFound';
+import Loader from 'Components/Loader';
 import Header from './Header';
 import SearchInput from '../SearchInput';
 
@@ -46,6 +48,8 @@ const NamespacePage = ({ match, location, namespaceId, sidePanelMode }) => {
     return (
         <Query query={QUERY} variables={{ id: entityId }}>
             {({ loading, data }) => {
+                if (loading) return <Loader />;
+                if (!data.results) return <PageNotFound resourceType={entityTypes.NAMESPACE} />;
                 const namespace = processData(data);
                 const { name, id, clusterName, labels, numNetworkPolicies } = namespace;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';

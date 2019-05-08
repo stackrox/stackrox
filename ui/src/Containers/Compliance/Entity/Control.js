@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import isEmpty from 'lodash/isEmpty';
 import { standardLabels } from 'messages/standards';
 import entityTypes, { searchCategories as searchCategoryTypes } from 'constants/entityTypes';
 import Widget from 'Components/Widget';
@@ -15,14 +14,10 @@ import ComplianceList from 'Containers/Compliance/List/List';
 import Loader from 'Components/Loader';
 import ResourceTabs from 'Components/ResourceTabs';
 import ControlAssessment from 'Containers/Compliance/widgets/ControlAssessment';
+import PageNotFound from 'Components/PageNotFound';
 import Header from './Header';
 import SearchInput from '../SearchInput';
 import EntitiesAssessed from '../widgets/EntitiesAssessed';
-
-function processData(data) {
-    if (!data || !data.results) return {};
-    return { control: data.results, standards: data.complianceStandards };
-}
 
 const ControlPage = ({ match, location, controlId, sidePanelMode, controlResult }) => {
     const params = URLService.getParams(match, location);
@@ -33,10 +28,10 @@ const ControlPage = ({ match, location, controlId, sidePanelMode, controlResult 
         <Query query={QUERY} variables={{ id: entityId }}>
             {({ data, loading }) => {
                 if (loading) return <Loader />;
-                const controlData = processData(data);
-                const { control, standards } = controlData;
+                if (!data || !data.results)
+                    return <PageNotFound resourceType={entityTypes.CONTROL} />;
 
-                if (isEmpty(control)) return null;
+                const { results: control, complianceStandards: standards } = data;
                 const standard = standards.find(item => item.id === control.standardId);
                 const { name, standardId, interpretationText, description } = control;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';

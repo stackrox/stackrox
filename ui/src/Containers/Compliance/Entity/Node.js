@@ -23,6 +23,7 @@ import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 import ResourceTabs from 'Components/ResourceTabs';
 import ComplianceList from 'Containers/Compliance/List/List';
+import PageNotFound from 'Components/PageNotFound';
 import Header from './Header';
 import SearchInput from '../SearchInput';
 
@@ -50,7 +51,8 @@ const NodePage = ({ match, location, nodeId, sidePanelMode }) => {
     return (
         <Query query={NODE_QUERY} variables={{ id: entityId }}>
             {({ loading, data }) => {
-                if (loading || !data) return <Loader />;
+                if (loading) return <Loader />;
+                if (!data.node) return <PageNotFound resourceType={entityTypes.NODE} />;
                 const node = processData(data);
                 const {
                     name,

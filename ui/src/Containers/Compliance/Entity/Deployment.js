@@ -18,6 +18,7 @@ import IconWidget from 'Components/IconWidget';
 import pluralize from 'pluralize';
 import Labels from 'Containers/Compliance/widgets/Labels';
 import contextTypes from 'constants/contextTypes';
+import PageNotFound from 'Components/PageNotFound';
 
 import pageTypes from 'constants/pageTypes';
 import Header from './Header';
@@ -39,6 +40,8 @@ const DeploymentPage = ({ match, location, deploymentId, sidePanelMode }) => {
         <Query query={DEPLOYMENT_QUERY} variables={{ id: entityId }}>
             {({ loading, data }) => {
                 if (loading || !data) return <Loader />;
+                if (!data || !data.deployment)
+                    return <PageNotFound resourceType={entityTypes.DEPLOYMENT} />;
                 const deployment = processData(data);
                 const {
                     name,

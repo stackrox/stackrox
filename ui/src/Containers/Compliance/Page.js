@@ -1,6 +1,7 @@
 import React from 'react';
 import { withRouter, Route, Switch } from 'react-router-dom';
 import { nestedCompliancePaths as PATHS } from 'routePaths';
+import PageNotFound from 'Components/PageNotFound';
 import Dashboard from './Dashboard/Page';
 import ClusterPage from './Entity/Cluster';
 import NamespacePage from './Entity/Namespace';
@@ -18,6 +19,7 @@ const Page = () => (
         <Route exact path={PATHS.CONTROL} component={ControlPage} />
         <Route exact path={PATHS.DEPLOYMENT} component={DeploymentPage} />
         <Route exact path={PATHS.LIST} component={List} />
+        <Route render={PageNotFound} />
     </Switch>
 );
 

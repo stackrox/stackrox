@@ -96,6 +96,7 @@ function getLinkTo(context, pageType, params) {
 
 export default {
     getParams,
+    getContext,
     getLinkTo,
     getEntityTypeKeyFromValue
 };

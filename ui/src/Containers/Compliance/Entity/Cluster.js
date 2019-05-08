@@ -13,6 +13,7 @@ import ReactRouterPropTypes from 'react-router-prop-types';
 import { withRouter } from 'react-router-dom';
 import URLService from 'modules/URLService';
 import ResourceTabs from 'Components/ResourceTabs';
+import PageNotFound from 'Components/PageNotFound';
 import Header from './Header';
 import SearchInput from '../SearchInput';
 
@@ -31,6 +32,7 @@ const ClusterPage = ({ match, location, clusterId, sidePanelMode }) => {
         <Query query={QUERY} variables={{ id: entityId }}>
             {({ loading, data }) => {
                 if (loading) return <Loader />;
+                if (!data.results) return <PageNotFound resourceType={entityTypes.CLUSTER} />;
                 const cluster = processData(data);
                 const { name, id } = cluster;
                 const pdfClassName = !sidePanelMode ? 'pdf-page' : '';
