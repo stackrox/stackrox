@@ -32,6 +32,7 @@ class Deployment {
     Boolean exposeAsService = false
     Boolean createLoadBalancer = false
     String serviceName
+    String serviceAccountName
 
     Deployment setName(String n) {
         this.name = n
@@ -123,6 +124,11 @@ class Deployment {
 
     Deployment setHostNetwork(boolean val) {
         this.hostNetwork = val
+        return this
+    }
+
+    Deployment setServiceAccountName(String n) {
+        this.serviceAccountName = n
         return this
     }
 

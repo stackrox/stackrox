@@ -1,6 +1,7 @@
 import common.Constants
 import io.stackrox.proto.api.v1.ServiceAccountServiceOuterClass
 import io.stackrox.proto.storage.Rbac
+import objects.Deployment
 import objects.K8sPolicyRule
 import objects.K8sRole
 import objects.K8sServiceAccount
@@ -14,6 +15,7 @@ class K8sRbacTest extends BaseSpecification {
     private static final String SERVICE_ACCOUNT_NAME = "test-service-account"
     private static final String ROLE_NAME = "test-role"
     private static final String CLUSTER_ROLE_NAME = "test-cluster-role"
+    private static final String DEPLOYMENT_NAME = "test-deployment"
 
     private static final K8sServiceAccount NEW_SA = new K8sServiceAccount(
             name: SERVICE_ACCOUNT_NAME,
@@ -73,6 +75,32 @@ class K8sRbacTest extends BaseSpecification {
         expect:
         "SR should detect the new service account"
         ServiceAccountService.waitForServiceAccount(NEW_SA)
+    }
+
+    def "Create deployment with service account and verify relationships"() {
+        given:
+
+        Deployment deployment = new Deployment()
+                .setName(DEPLOYMENT_NAME)
+                .setNamespace(Constants.ORCHESTRATOR_NAMESPACE)
+                .setServiceAccountName(SERVICE_ACCOUNT_NAME)
+                .setImage("nginx:1.15.4-alpine")
+        orchestrator.createDeployment(deployment)
+        assert Services.waitForDeployment(deployment)
+
+        expect:
+        "SR should have the service account and its relationship to the deployment"
+        def stackroxSAs = ServiceAccountService.getServiceAccounts()
+        for (ServiceAccountServiceOuterClass.ServiceAccountAndRoles s : stackroxSAs) {
+            def sa = s.serviceAccount
+            if ( sa.name == NEW_SA.name && sa.namespace == NEW_SA.namespace ) {
+                assert(s.deploymentRelationshipsCount == 1)
+                assert(s.deploymentRelationshipsList[0].name == DEPLOYMENT_NAME)
+            }
+        }
+
+        cleanup:
+        orchestrator.deleteAndWaitForDeploymentDeletion(deployment)
     }
 
     def "Remove Service Account and verify it is removed"() {

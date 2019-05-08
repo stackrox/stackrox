@@ -1113,6 +1113,7 @@ class Kubernetes implements OrchestratorMain {
                                 ),
                                 spec: generatePodSpec(deployment)
                         )
+
                 )
         )
 
@@ -1306,7 +1307,8 @@ class Kubernetes implements OrchestratorMain {
                 containers: [container],
                 volumes: volumes,
                 imagePullSecrets: imagePullSecrets,
-                hostNetwork: deployment.hostNetwork
+                hostNetwork: deployment.hostNetwork,
+                serviceAccountName: deployment.serviceAccountName
         )
         return podSpec
     }
