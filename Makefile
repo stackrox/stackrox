@@ -140,7 +140,11 @@ endif
 .PHONY: blanks
 blanks:
 	@echo "+ $@"
+ifdef CI
 	@find . \( \( -name vendor -o -name generated \) -type d -prune \) -o \( -name \*.go -print0 \) | xargs -0 $(BASE_PATH)/tools/import_validate.py
+else
+	@find . \( \( -name vendor -o -name generated \) -type d -prune \) -o \( -name \*.go -print0 \) | xargs -0 $(BASE_PATH)/tools/fix-blanks.sh
+endif
 
 .PHONY: dev
 dev:
