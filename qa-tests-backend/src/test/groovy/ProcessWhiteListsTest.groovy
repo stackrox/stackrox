@@ -16,7 +16,7 @@ import org.junit.experimental.categories.Category
 import services.ProcessWhitelistService
 import spock.lang.Unroll
 
-class ProcessWhiteListsE2ETest extends BaseSpecification {
+class ProcessWhiteListsTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX = "deploymentnginx"
     static final private String DEPLOYMENTNGINX_RESOLVE_VIOLATION = "deploymentnginx-violation-resolve"
     static final private String DEPLOYMENTNGINX_RESOLVE_AND_WHITELIST_VIOLATION =
@@ -66,9 +66,10 @@ class ProcessWhiteListsE2ETest extends BaseSpecification {
     def "Verify  whitelist processes for the given key before and after locking "() {
         Assume.assumeTrue(Constants.RUN_PROCESS_WHITELIST_TESTS)
         when:
-        String deploymentId = DEPLOYMENTS[0].getDeploymentUid()
-        String containerName = DEPLOYMENTS[0].getName()
-        String processName = "nginx"
+        def deploymentId = DEPLOYMENTS.find { it.name == deploymentName }.getDeploymentUid()
+        // Currently, we always create a deployment where the container name is the same
+        // as the deployment name
+        def containerName = deploymentName
         "get process whitelists is called for a key"
         ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
                 getProcessWhitelist(deploymentId, containerName)
@@ -85,8 +86,14 @@ class ProcessWhiteListsE2ETest extends BaseSpecification {
         List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists = ProcessWhitelistService.
                 lockProcessWhitelists(deploymentId, containerName, true)
         assert  lockProcessWhitelists.size() == 1
-        assert  lockProcessWhitelists.get(0).getElementsList().get(0).
-                element.processName.contains(processName)
+        assert  lockProcessWhitelists.get(0).getElementsList().
+            find { it.element.processName.equalsIgnoreCase(processName) } != null
+
+        where:
+        "Data inputs are :"
+        deploymentName     | processName
+
+        DEPLOYMENTNGINX    | "nginx"
     }
 
     @Unroll
@@ -104,13 +111,15 @@ class ProcessWhiteListsE2ETest extends BaseSpecification {
         */
         when:
         "get process whitelists is called for a key"
+        def deployment = DEPLOYMENTS.find { it.name == deploymentName }
+        assert deployment != null
         String deploymentId = deployment.getDeploymentUid()
         String containerName = deployment.getName()
         ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
                  getProcessWhitelist(deploymentId, containerName)
         assert ((whitelist.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
                  (whitelist.key.containerName.equalsIgnoreCase(containerName)))
-        assert whitelist.getElements(0).element.processName.contains(process_name)
+        assert whitelist.getElements(0).element.processName.contains(processName)
 
         List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists = ProcessWhitelistService.
                  lockProcessWhitelists(deploymentId, containerName, true)
@@ -124,7 +133,7 @@ class ProcessWhiteListsE2ETest extends BaseSpecification {
         String alertId
         for (AlertOuterClass.ListAlert alert : alertList) {
             if (alert.getPolicy().name.equalsIgnoreCase("Unauthorized Process Execution") &&
-                     alert.deployment.id.equalsIgnoreCase(deploymentId) && resolve_whitelist) {
+                     alert.deployment.id.equalsIgnoreCase(deploymentId) && resolveWhitelist) {
                 alertId = alert.id
                 AlertService.resolveAlert(alertId, true)
             }
@@ -135,7 +144,7 @@ class ProcessWhiteListsE2ETest extends BaseSpecification {
             }
          }
         orchestrator.execInContainer(deployment, "pwd")
-        if (resolve_whitelist) {
+        if (resolveWhitelist) {
             waitForViolation(containerName, "Unauthorized Process Execution", 90)
         }
         else {
@@ -154,15 +163,15 @@ class ProcessWhiteListsE2ETest extends BaseSpecification {
              }
          }
         System.out.println("numAlertsAfterResolve .. " + numAlertsAfterResolve)
-        assert (numAlertsAfterResolve  == expected_violations_count)
+        assert (numAlertsAfterResolve  == expectedViolationsCount)
 
         where:
         "Data inputs are :"
-        deployment     | process_name | resolve_whitelist | expected_violations_count
+        deploymentName                                   | processName  | resolveWhitelist | expectedViolationsCount
 
-        DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_RESOLVE_VIOLATION } | "nginx" | false | 1
+        DEPLOYMENTNGINX_RESOLVE_VIOLATION               | "nginx"      | false            | 1
 
-        DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_RESOLVE_AND_WHITELIST_VIOLATION } | "nginx" | true  | 0
+        DEPLOYMENTNGINX_RESOLVE_AND_WHITELIST_VIOLATION | "nginx"      | true             | 0
      }
 
     }
