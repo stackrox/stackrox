@@ -955,8 +955,10 @@ class Kubernetes implements OrchestratorMain {
             pump.close()
         } catch (Exception e) {
             println "Error exec'ing in pod: ${e.toString()}"
+            return false
         }
         executorService.shutdown()
+        return true
     }
 
     def createClairifyDeployment() {

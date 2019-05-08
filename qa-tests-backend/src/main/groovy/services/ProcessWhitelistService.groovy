@@ -9,10 +9,6 @@ class ProcessWhitelistService extends BaseService {
     static getProcessWhitelistService() {
         return ProcessWhitelistServiceGrpc.newBlockingStub(getChannel())
     }
-    static List<ProcessWhitelistOuterClass.ProcessWhitelist> getProcessWhiteLists() {
-        return getProcessWhitelistService().getProcessWhitelists().getWhitelistsList()
-    }
-
     static  ProcessWhitelistOuterClass.ProcessWhitelist getProcessWhitelist(
             String deploymentId, String containerName, int iterations = 15, int interval = 6) {
         ProcessWhitelistServiceOuterClass.GetProcessWhitelistRequest request = ProcessWhitelistServiceOuterClass.
@@ -33,16 +29,9 @@ class ProcessWhitelistService extends BaseService {
                 "${iterations * interval} seconds"
         return null
     }
-    static List<ProcessWhitelistOuterClass.ProcessWhitelist> updateProcessWhitelists(
-            ProcessWhitelistServiceOuterClass.UpdateProcessWhitelistsRequest request) {
-        try {
-            return getProcessWhitelistService().updateProcessWhitelists(request).whitelistsList
-        } catch (Exception e) {
-            println "Error updating process whitelists: ${e}"
-        }
-    }
+
     static List<ProcessWhitelistOuterClass.ProcessWhitelist> lockProcessWhitelists(
-            String deploymentId, String containerName) {
+            String deploymentId, String containerName, boolean  lock) {
         try {
             ProcessWhitelistServiceOuterClass.LockProcessWhitelistsRequest lockRequest =
                      ProcessWhitelistServiceOuterClass
@@ -50,7 +39,7 @@ class ProcessWhitelistService extends BaseService {
                     .addKeys(ProcessWhitelistOuterClass.ProcessWhitelistKey
                     .newBuilder().setDeploymentId(deploymentId)
                     .setContainerName(containerName).build())
-                    .setLocked(true).build()
+                    .setLocked(lock).build()
             return getProcessWhitelistService().lockProcessWhitelists(lockRequest).whitelistsList
         } catch (Exception e) {
             println "Error locking process whitelists : ${e}"
