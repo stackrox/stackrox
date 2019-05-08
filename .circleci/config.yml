@@ -313,6 +313,19 @@ checkScaleLabel: &checkScaleLabel
         circleci step halt
       fi
 
+check-qa-tests-kernel-module-label: &check-qa-tests-kernel-module-label
+  run:
+    name: Determine whether to run qa tests with kernel module
+    command: |
+      set +e
+      if [ -z "${CIRCLE_TAG}" ]; then
+        .circleci/pr_has_label.sh ci-qa-tests-kernel-module
+        if [ $? -ne 0 ]; then
+          echo "Skipping tests because we're not on a PR OR the PR doesn't have the ci-qa-tests-kernel-module label. Apply the ci-qa-tests-kernel-module label to your PR if you want to run them."
+          circleci step halt
+        fi
+      fi
+
 version: 2.1
 
 commands:
@@ -905,17 +918,21 @@ jobs:
 
   provision-cluster-qa-tests:
     <<: *defaults
+    environment:
+      - GCP_IMAGE_TYPE: "COS"
     steps:
       - checkout
       - check-qa-tests-label
       - provision-gke-cluster:
           cluster-id: qa-tests
 
+
   qa-tests:
     <<: *defaults
     environment:
       - LOCAL_PORT: 443
-      - RUNTIME_SUPPORT: kernel-module
+      - RUNTIME_SUPPORT: ebpf
+      - GCP_IMAGE_TYPE: "COS"
       - MONITORING_SUPPORT: true
       - ROX_PERFORM_DEPLOYMENT_RECONCILIATION: true
       - ROX_K8S_RBAC: true
@@ -977,24 +994,22 @@ jobs:
       - teardown-gke
 
 
-  provision-cluster-qa-tests-cos-ebpf:
+  provision-cluster-qa-tests-kernel-module:
     <<: *defaults
-    environment:
-      - GCP_IMAGE_TYPE: "COS"
 
     steps:
       - checkout
       - check-qa-tests-label
+      - *check-qa-tests-kernel-module-label
       - provision-gke-cluster:
-          cluster-id: qa-tests-cos-ebpf
+          cluster-id: qa-tests-kernel-module
 
-  qa-tests-cos-ebpf:
+  qa-tests-kernel-module:
     <<: *defaults
     environment:
       - LOCAL_PORT: 443
-      - RUNTIME_SUPPORT: ebpf
+      - RUNTIME_SUPPORT: kernel-module
       - MONITORING_SUPPORT: true
-      - GCP_IMAGE_TYPE: "COS"
       - ROX_PERFORM_DEPLOYMENT_RECONCILIATION: true
       - ROX_K8S_RBAC: true
       - ROX_PROCESS_WHITELIST: true
@@ -1004,7 +1019,7 @@ jobs:
     steps:
       - checkout
 
-      - check-qa-tests-label
+      - *check-qa-tests-kernel-module-label
 
       - setup_remote_docker
 
@@ -1014,7 +1029,7 @@ jobs:
       - *setupRoxctl
       - setup-gcp
       - attach-gke-cluster:
-          cluster-id: qa-tests-cos-ebpf
+          cluster-id: qa-tests-kernel-module
       - *setupGoogleAppCreds
       - *setupLicense
       - *deployGKE
@@ -1841,18 +1856,18 @@ workflows:
           filters:
             tags:
               only: /.*/
-      - provision-cluster-qa-tests-cos-ebpf:
+      - provision-cluster-qa-tests-kernel-module:
           context: docker-io-pull
           filters:
             tags:
               only: /.*/
-      - qa-tests-cos-ebpf:
+      - qa-tests-kernel-module:
           context: docker-io-pull
           requires:
             - build
             - build-rhel
             - build-scale-monitoring-and-mock-server
-            - provision-cluster-qa-tests-cos-ebpf
+            - provision-cluster-qa-tests-kernel-module
           filters:
             tags:
               only: /.*/
