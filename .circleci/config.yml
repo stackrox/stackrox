@@ -393,6 +393,60 @@ commands:
 
           when: always
 
+  cleanup-clusters-on-fail:
+    steps:
+      - run:
+          name: Ensure GCloud is configured
+          command: |
+            gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_CIRCLECI_ROX")
+            gcloud auth list
+
+            gcloud config set project stackrox-ci
+            gcloud config set compute/region us-central1
+            gcloud config unset compute/zone
+            gcloud config set core/disable_prompts True
+          when: on_fail
+
+      - run:
+          name: Record step as fatal failure
+          command: |
+            gsutil cp - "gs://stackrox-ci-status/workflows/${CIRCLE_WORKFLOW_ID}/fatal-failures/${CIRCLE_JOB}" \
+              </dev/null
+          when: on_fail
+
+      - run:
+          name: Delete all GKE clusters for this CI run
+          # The command is inline here instead of invoking a script so we can even run it
+          # when checkout failed due to a force push.
+          command: |
+            echo "Deleting all GKE clusters for workflow $CIRCLE_WORKFLOW_ID"
+
+            while IFS='' read -r line || [[ -n "$line" ]]; do
+            	[[ -n "$line" ]] || continue
+
+            	if [[ "$line" =~ ^([^[:space:]]+)[[:space:]]+([^[:space:]]+)$ ]]; then
+            		cluster="${BASH_REMATCH[1]}"
+            		zone="${BASH_REMATCH[2]}"
+            	else
+            		echo >&2 "Could not parse line $line"
+            	fi
+
+            	echo "Deleting cluster ${cluster} in zone ${zone} ..."
+            	gcloud container clusters delete "$cluster" \
+            		--async \
+            		--project stackrox-ci \
+            		--zone "$zone" \
+            		--quiet || true
+
+            done < <(
+            	gcloud container clusters list \
+            		--project stackrox-ci \
+            		--filter "resourceLabels.stackrox-ci-workflow=${CIRCLE_WORKFLOW_ID}" \
+            		--format 'csv[no-heading,separator=" "](name,zone)'
+            	)
+
+          when: on_fail
+
   provision-gke-cluster:
     parameters:
       cluster-id:
@@ -424,6 +478,17 @@ commands:
             mkdir -p "$CONFIG_DIR"
             echo "$CLUSTER_NAME" >>"${CONFIG_DIR}/name"
             gcloud config get-value compute/zone >>"${CONFIG_DIR}/zone"
+
+      - run:
+          name: Ensure workflow is still live
+          command: |
+            .circleci/check-workflow-live.sh
+
+      - run:
+          name: Tear down cluster upon failure
+          command: |
+            gcloud container clusters delete "$CLUSTER_NAME" --async
+          when: on_fail
 
       - persist_to_workspace:
           root: /go/src/github.com/stackrox/rox
@@ -489,6 +554,8 @@ jobs:
             - ui/build # Copied directly into the image downstream.
             - ui/deps
 
+      - cleanup-clusters-on-fail
+
   pre-build-cli:
     <<: *defaults
     resource_class: large
@@ -512,6 +579,8 @@ jobs:
             - bazel-bin/roxctl/linux_amd64_pure_stripped/roxctl
             - bazel-bin/roxctl/darwin_amd64_pure_stripped/roxctl
             - bazel-bin/roxctl/windows_amd64_pure_stripped/roxctl.exe
+
+      - cleanup-clusters-on-fail
 
   pre-build-go-binaries:
     <<: *defaults
@@ -559,6 +628,8 @@ jobs:
             - generated # Used to speed up k8s-tests
             - vendor # Used to speed up k8s-tests
 
+      - cleanup-clusters-on-fail
+
   build:
     <<: *defaults
     resource_class: large
@@ -602,6 +673,9 @@ jobs:
 
             export TAG=$(make tag)
             hub-comment -template-file .circleci/comment-template.tpl
+
+      - cleanup-clusters-on-fail
+
 
   build-rhel:
     <<: *defaults
@@ -657,6 +731,8 @@ jobs:
             TAG="$(make tag)"
             docker push "docker.io/stackrox/main-rhel:${TAG}" | cat
 
+      - cleanup-clusters-on-fail
+
   build-scale-monitoring-and-mock-server:
     <<: *defaults
     resource_class: large
@@ -684,6 +760,8 @@ jobs:
             for img in scale grpc-server monitoring; do
               docker push "docker.io/stackrox/${img}:${TAG}" | cat
             done
+
+      - cleanup-clusters-on-fail
 
   unit-tests:
     <<: *defaults
