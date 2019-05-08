@@ -1,11 +1,10 @@
 package orchestratormanager
 
-import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding
-import io.fabric8.kubernetes.api.model.rbac.RoleBinding
 import io.kubernetes.client.models.V1beta1ValidatingWebhookConfiguration
 import objects.DaemonSet
 import objects.Deployment
 import objects.K8sRole
+import objects.K8sRoleBinding
 import objects.K8sServiceAccount
 import objects.Namespace
 import objects.NetworkPolicy
@@ -90,7 +89,9 @@ interface OrchestratorMain {
     def deleteRole(K8sRole role)
 
     //RoleBindings
-    List<RoleBinding> getRoleBindings()
+    List<K8sRoleBinding> getRoleBindings()
+    def createRoleBinding(K8sRoleBinding roleBinding)
+    def deleteRoleBinding(K8sRoleBinding roleBinding)
 
     //ClusterRoles
     List<K8sRole> getClusterRoles()
@@ -98,7 +99,9 @@ interface OrchestratorMain {
     def deleteClusterRole(K8sRole role)
 
     //ClusterRoleBindings
-    List<ClusterRoleBinding> getClusterRoleBindings()
+    List<K8sRoleBinding> getClusterRoleBindings()
+    def createClusterRoleBinding(K8sRoleBinding roleBinding)
+    def deleteClusterRoleBinding(K8sRoleBinding roleBinding)
 
     //Misc
     def execInContainer(Deployment deployment, String cmd)

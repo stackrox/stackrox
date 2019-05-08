@@ -45,6 +45,8 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule
 import io.fabric8.kubernetes.api.model.rbac.Role
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding
+import io.fabric8.kubernetes.api.model.rbac.RoleRef
+import io.fabric8.kubernetes.api.model.rbac.Subject
 import io.fabric8.kubernetes.client.Callback
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 import io.fabric8.kubernetes.client.KubernetesClient
@@ -60,7 +62,9 @@ import objects.DaemonSet
 import objects.Deployment
 import objects.K8sPolicyRule
 import objects.K8sRole
+import objects.K8sRoleBinding
 import objects.K8sServiceAccount
+import objects.K8sSubject
 import objects.NetworkPolicy
 import objects.NetworkPolicyTypes
 import objects.Node
@@ -757,7 +761,7 @@ class Kubernetes implements OrchestratorMain {
                     )
                 }
         )
-        client.rbac().roles().inNamespace(role.namespace).createOrReplace(r)
+        role.uid = client.rbac().roles().inNamespace(role.namespace).createOrReplace(r).metadata.uid
     }
 
     def deleteRole(K8sRole role) {
@@ -768,8 +772,53 @@ class Kubernetes implements OrchestratorMain {
         RoleBindings
      */
 
-    List<RoleBinding> getRoleBindings() {
-        return client.rbac().roleBindings().inAnyNamespace().list().items
+    List<K8sRoleBinding> getRoleBindings() {
+        def bindings = []
+        client.rbac().roleBindings().inAnyNamespace().list().items.each {
+            def b = new K8sRoleBinding(
+                    new K8sRole(
+                            name: it.metadata.name,
+                            namespace: it.metadata.namespace,
+                            clusterRole: false,
+                            labels: it.metadata.labels ? it.metadata.labels : [:],
+                            annotations: it.metadata.annotations ? it.metadata.annotations : [:]
+                    ),
+                    it.subjects.collect { new K8sSubject(kind: it.kind, name: it.name, namespace: it.namespace) }
+            )
+            def uid = client.rbac().clusterRoles().withName(it.roleRef.name).get()?.metadata?.uid ?:
+                    client.rbac().roles()
+                            .inNamespace(it.metadata.namespace)
+                            .withName(it.roleRef.name).get()?.metadata?.uid
+            b.roleRef.uid = uid ?: ""
+            bindings.add(b)
+        }
+        return bindings
+    }
+
+    def createRoleBinding(K8sRoleBinding roleBinding) {
+        RoleBinding r = new RoleBinding(
+                metadata: new ObjectMeta(
+                        name: roleBinding.name,
+                        namespace: roleBinding.namespace,
+                        labels: roleBinding.labels,
+                        annotations: roleBinding.annotations
+                ),
+                subjects: roleBinding.subjects.collect {
+                    new Subject(kind: it.kind, name: it.name, namespace: it.namespace)
+                },
+                roleRef: new RoleRef(
+                        name: roleBinding.roleRef.name,
+                        kind: roleBinding.roleRef.clusterRole ? "ClusterRole" : "Role"
+                )
+        )
+        client.rbac().roleBindings().inNamespace(roleBinding.namespace).createOrReplace(r)
+    }
+
+    def deleteRoleBinding(K8sRoleBinding roleBinding) {
+        client.rbac().roleBindings()
+                .inNamespace(roleBinding.namespace)
+                .withName(roleBinding.name)
+                .delete()
     }
 
     /*
@@ -816,7 +865,7 @@ class Kubernetes implements OrchestratorMain {
                     )
                 }
         )
-        client.rbac().clusterRoles().createOrReplace(r)
+        role.uid = client.rbac().clusterRoles().createOrReplace(r).metadata.uid
     }
 
     def deleteClusterRole(K8sRole role) {
@@ -827,8 +876,49 @@ class Kubernetes implements OrchestratorMain {
         ClusterRoleBindings
      */
 
-    List<ClusterRoleBinding> getClusterRoleBindings() {
-        return client.rbac().clusterRoleBindings().inAnyNamespace().list().items
+    List<K8sRoleBinding> getClusterRoleBindings() {
+        def clusterBindings = []
+        client.rbac().clusterRoleBindings().inAnyNamespace().list().items.each {
+            def b = new K8sRoleBinding(
+                    new K8sRole(
+                            name: it.metadata.name,
+                            namespace: "",
+                            clusterRole: true,
+                            labels: it.metadata.labels ? it.metadata.labels : [:],
+                            annotations: it.metadata.annotations ? it.metadata.annotations : [:]
+                    ),
+                    it.subjects.collect { new K8sSubject(kind: it.kind, name: it.name, namespace: it.namespace) }
+            )
+            def uid = client.rbac().clusterRoles().withName(it.roleRef.name).get()?.metadata?.uid ?:
+                    client.rbac().roles()
+                            .inNamespace(it.metadata.namespace)
+                            .withName(it.roleRef.name).get()?.metadata?.uid
+            b.roleRef.uid = uid ?: ""
+            clusterBindings.add(b)
+        }
+        return clusterBindings
+    }
+
+    def createClusterRoleBinding(K8sRoleBinding roleBinding) {
+        ClusterRoleBinding r = new ClusterRoleBinding(
+                metadata: new ObjectMeta(
+                        name: roleBinding.name,
+                        labels: roleBinding.labels,
+                        annotations: roleBinding.annotations
+                ),
+                subjects: roleBinding.subjects.collect {
+                    new Subject(kind: it.kind, name: it.name, namespace: it.namespace)
+                },
+                roleRef: new RoleRef(
+                        name: roleBinding.roleRef.name,
+                        kind: roleBinding.roleRef.clusterRole ? "ClusterRole" : "Role"
+                )
+        )
+        client.rbac().clusterRoleBindings().createOrReplace(r)
+    }
+
+    def deleteClusterRoleBinding(K8sRoleBinding roleBinding) {
+        client.rbac().clusterRoleBindings().withName(roleBinding.name).delete()
     }
 
     /*
