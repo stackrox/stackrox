@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	lockTimeout = 1 * time.Second
+	// TODO(ROX-2163) - tracks the move to 5 seconds from 1 second
+	lockTimeout = 5 * time.Second
 )
 
 func watchdog(action string, ch <-chan struct{}, timeout time.Duration, stacktrace debug.LazyStacktrace) {
