@@ -19,6 +19,7 @@ class Enforcement extends BaseSpecification {
     private final static String APT_GET_POLICY = "Ubuntu Package Manager Execution"
     private final static String LATEST_TAG = "Latest tag"
     private final static String CVSS = "Fixable CVSS >= 7"
+    private final static String SCAN_AGE = "30-Day Scan Age"
 
     @Shared
     private String gcrId
@@ -631,7 +632,7 @@ class Enforcement extends BaseSpecification {
 
         lifecycles                                        | policy         | allowed
 
-        [LifecycleStage.BUILD,]   | LATEST_TAG     | true
+        [LifecycleStage.BUILD,]   | SCAN_AGE     | true
 
         [LifecycleStage.DEPLOY,]  | LATEST_TAG     | true
 
@@ -701,7 +702,7 @@ class Enforcement extends BaseSpecification {
          */
         [LifecycleStage.BUILD,]                        |
                 [EnforcementAction.FAIL_BUILD_ENFORCEMENT]                     |
-                LATEST_TAG
+                SCAN_AGE
 
         [LifecycleStage.DEPLOY,]                       |
                 [EnforcementAction.SCALE_TO_ZERO_ENFORCEMENT,
