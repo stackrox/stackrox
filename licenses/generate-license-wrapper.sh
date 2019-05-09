@@ -15,7 +15,7 @@ fi
 profile="$1"
 shift
 
-dir="$(dirname $0)"
+dir="$(dirname "${BASH_SOURCE[0]}")"
 
 if ! "$generate_license_bin" -config "${dir}/config.yaml" -profile "$profile" -input "${dir}/templates/${profile}.json" "$@"; then
     echo >&2 'Generating a license key failed. If the error message mentions credentials or'

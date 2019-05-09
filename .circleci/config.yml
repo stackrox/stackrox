@@ -1769,6 +1769,74 @@ jobs:
               gsutil cp windows_amd64_pure_stripped/roxctl.exe "gs://sr-roxc/${release}/bin/Windows/roxctl.exe"
             done
 
+  regenerate-dev-license:
+    <<: *defaults
+    resource_class: small
+    steps:
+      - checkout
+      - *setupGoogleAppCreds
+
+      - run:
+          name: Regenerate development license
+          command: |
+            scripts/regenerate-dev-license.sh
+
+      - run:
+          name: Configure git
+          command: |
+            git config user.email "roxbot@stackrox.com"
+            git config user.name "RoxBot"
+
+      - add_ssh_keys:
+          fingerprints:
+            - "b0:90:e9:6f:77:d5:fe:b6:8c:1a:a5:3f:a4:e3:41:e5"
+
+      - run:
+          name: Add SSH key of github.com
+          command: |
+            ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+
+      - run:
+          name: Create temporary branch with license update commit
+          command: |
+            git add deploy/common/dev-license.lic
+            git checkout -b "roxbot-tmp/regenerate-dev-license-${CIRCLE_BUILD_NUM}"
+            git commit \
+              -m"Automatic re-generation of development license ($(date '+%Y-%m-%d'))"
+
+      - run:
+          name: Push updated dev license to remote
+          command: |
+            commit="$(git rev-parse "roxbot-tmp/regenerate-dev-license-${CIRCLE_BUILD_NUM}")"
+
+            git checkout master
+
+            for i in $(seq 1 3); do
+              echo "Attempting to merge into master (attempt $i of 3) ..."
+
+              git fetch && git reset --hard origin/master
+              # Note that the above `git reset --hard` requires a clean working tree. We therefore
+              # cherry-pick the license update commit instead of generating it now such that we
+              # invoke all scripts from the current branch (mostly relevant for testing purposes).
+              git cherry-pick "$commit"
+              if git push origin master:"roxbot/regenerate-dev-license-${CIRCLE_BUILD_NUM}"; then
+                echo "Success!"
+                exit 0
+              fi
+
+              echo "Push did not succeed. Sleeping for 10 seconds, then trying again."
+              sleep 10
+            done
+
+            echo "Failed to merge into master."
+            exit 1
+
+      - run:
+          name: Create PR
+          command: |
+            git checkout "$CIRCLE_BRANCH"
+            scripts/ci/create-dev-license-update-pr.sh "roxbot/regenerate-dev-license-${CIRCLE_BUILD_NUM}"
+
 workflows:
   version: 2
   build_all:
@@ -1956,3 +2024,19 @@ workflows:
               ignore: /.*/
             tags:
               only: /^(?!.*-rc\.\d+$).*$/
+
+
+  update_dev_license:
+    triggers:
+      - schedule:
+          cron: "0 0 1,16 * *"
+          filters:
+            branches:
+              only: master
+
+    jobs:
+      - regenerate-dev-license:
+          context: docker-io-pull
+          filters:
+            branches:
+              only: master
