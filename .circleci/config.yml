@@ -296,6 +296,9 @@ checkKopsLabel: &checkKopsLabel
       set +e
       if [ -z "${CIRCLE_TAG}" ]; then
         .circleci/pr_has_label.sh ci-kops-tests
+        # SPECIAL CASE: kops-tests are currently NOT run on master.
+        # If you want to run it on master, change this block to be like
+        # checkOpenShiftLabel.
         if [ $? -ne 0 ]; then
           echo "Skipping tests because we're not on a PR OR the PR doesn't have the ci-kops-tests label. Apply the ci-kops-tests label to your PR if you want to run them."
           circleci step halt
@@ -318,12 +321,10 @@ check-qa-tests-kernel-module-label: &check-qa-tests-kernel-module-label
     name: Determine whether to run qa tests with kernel module
     command: |
       set +e
-      if [ -z "${CIRCLE_TAG}" ]; then
-        .circleci/pr_has_label.sh ci-qa-tests-kernel-module
-        if [ $? -ne 0 ]; then
-          echo "Skipping tests because we're not on a PR OR the PR doesn't have the ci-qa-tests-kernel-module label. Apply the ci-qa-tests-kernel-module label to your PR if you want to run them."
-          circleci step halt
-        fi
+      .circleci/pr_has_label.sh ci-qa-tests-kernel-module
+      if [ $? -eq 1 ]; then
+        echo "Skipping tests because we're on a PR. Apply the ci-qa-tests-kernel-module label to your PR if you want to run them."
+        circleci step halt
       fi
 
 version: 2.1
