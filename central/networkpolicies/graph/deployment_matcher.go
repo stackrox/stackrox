@@ -6,17 +6,6 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 )
 
-type deploymentMatcher struct {
-	namespaceStore namespaceProvider
-}
-
-// newDeploymentPolicyMatcher takes in namespaces
-func newDeploymentPolicyMatcher(namespaceStore namespaceProvider) *deploymentMatcher {
-	return &deploymentMatcher{
-		namespaceStore: namespaceStore,
-	}
-}
-
 // DeploymentPolicyData groups the network policy relationships and internet access flag together for output.
 type DeploymentPolicyData struct {
 	appliedIngress set.StringSet
@@ -29,7 +18,7 @@ type DeploymentPolicyData struct {
 // MatchDeploymentToPolicies takes in a deployment and a set of policies, and returns a struct that describes which
 // of the input policies affect the deployment, and whether or not the deployment is able to access the internet as
 // a result.
-func (g *deploymentMatcher) MatchDeploymentToPolicies(deployments *storage.Deployment, networkPolicies []*storage.NetworkPolicy) *DeploymentPolicyData {
+func MatchDeploymentToPolicies(namespace *storage.NamespaceMetadata, deployments *storage.Deployment, networkPolicies []*storage.NetworkPolicy) *DeploymentPolicyData {
 	dpd := &DeploymentPolicyData{
 		appliedIngress: set.NewStringSet(),
 		appliedEgress:  set.NewStringSet(),
@@ -43,7 +32,7 @@ func (g *deploymentMatcher) MatchDeploymentToPolicies(deployments *storage.Deplo
 		if ingressNetworkPolicySelectorAppliesToDeployment(deployments, n) {
 			dpd.appliedIngress.Add(n.GetId())
 		}
-		if g.doesIngressNetworkPolicyRuleMatchDeployment(deployments, n) {
+		if doesIngressNetworkPolicyRuleMatchDeployment(namespace, deployments, n) {
 			dpd.matchedIngress.Add(n.GetId())
 		}
 		if applies, internetConnection := egressNetworkPolicySelectorAppliesToDeployment(deployments, n); applies {
@@ -52,7 +41,7 @@ func (g *deploymentMatcher) MatchDeploymentToPolicies(deployments *storage.Deplo
 				dpd.internetAccess = true
 			}
 		}
-		if g.doesEgressNetworkPolicyRuleMatchDeployment(deployments, n) {
+		if doesEgressNetworkPolicyRuleMatchDeployment(namespace, deployments, n) {
 			dpd.matchedEgress.Add(n.GetId())
 		}
 	}
@@ -98,37 +87,37 @@ func ingressNetworkPolicySelectorAppliesToDeployment(d *storage.Deployment, np *
 	return true
 }
 
-func (g *deploymentMatcher) doesEgressNetworkPolicyRuleMatchDeployment(src *storage.Deployment, np *storage.NetworkPolicy) bool {
+func doesEgressNetworkPolicyRuleMatchDeployment(namespace *storage.NamespaceMetadata, src *storage.Deployment, np *storage.NetworkPolicy) bool {
 	for _, egressRule := range np.GetSpec().GetEgress() {
-		if g.matchPolicyPeers(src, np.GetNamespace(), egressRule.GetTo()) {
+		if matchPolicyPeers(namespace, src, np.GetNamespace(), egressRule.GetTo()) {
 			return true
 		}
 	}
 	return false
 }
 
-func (g *deploymentMatcher) doesIngressNetworkPolicyRuleMatchDeployment(src *storage.Deployment, np *storage.NetworkPolicy) bool {
+func doesIngressNetworkPolicyRuleMatchDeployment(namespace *storage.NamespaceMetadata, src *storage.Deployment, np *storage.NetworkPolicy) bool {
 	for _, ingressRule := range np.GetSpec().GetIngress() {
-		if g.matchPolicyPeers(src, np.GetNamespace(), ingressRule.GetFrom()) {
+		if matchPolicyPeers(namespace, src, np.GetNamespace(), ingressRule.GetFrom()) {
 			return true
 		}
 	}
 	return false
 }
 
-func (g *deploymentMatcher) matchPolicyPeers(d *storage.Deployment, namespace string, peers []*storage.NetworkPolicyPeer) bool {
+func matchPolicyPeers(namespace *storage.NamespaceMetadata, d *storage.Deployment, policyNamespace string, peers []*storage.NetworkPolicyPeer) bool {
 	if len(peers) == 0 {
 		return true
 	}
 	for _, p := range peers {
-		if g.matchPolicyPeer(d, namespace, p) {
+		if matchPolicyPeer(namespace, d, policyNamespace, p) {
 			return true
 		}
 	}
 	return false
 }
 
-func (g *deploymentMatcher) matchPolicyPeer(deployment *storage.Deployment, policyNamespace string, peer *storage.NetworkPolicyPeer) bool {
+func matchPolicyPeer(namespace *storage.NamespaceMetadata, deployment *storage.Deployment, policyNamespace string, peer *storage.NetworkPolicyPeer) bool {
 	if peer.IpBlock != nil {
 		log.Debug("IP Block network policy is currently not handled")
 		return false
@@ -137,7 +126,6 @@ func (g *deploymentMatcher) matchPolicyPeer(deployment *storage.Deployment, poli
 	// If namespace selector is specified, then make sure the namespace matches
 	// Other you fall back to the fact that the deployment must be in the policy's namespace
 	if peer.GetNamespaceSelector() != nil {
-		namespace := g.getNamespace(deployment)
 		if !doesNamespaceMatchLabel(namespace, peer.GetNamespaceSelector()) {
 			return false
 		}
@@ -149,23 +137,6 @@ func (g *deploymentMatcher) matchPolicyPeer(deployment *storage.Deployment, poli
 		return doesPodLabelsMatchLabel(deployment, peer.GetPodSelector())
 	}
 	return true
-}
-
-func (g *deploymentMatcher) getNamespace(deployment *storage.Deployment) *storage.NamespaceMetadata {
-	namespaces, err := g.namespaceStore.GetNamespaces()
-	if err != nil {
-		return &storage.NamespaceMetadata{
-			Name: deployment.GetNamespace(),
-		}
-	}
-	for _, n := range namespaces {
-		if n.GetName() == deployment.GetNamespace() && n.GetClusterId() == deployment.GetClusterId() {
-			return n
-		}
-	}
-	return &storage.NamespaceMetadata{
-		Name: deployment.GetNamespace(),
-	}
 }
 
 func doesNamespaceMatchLabel(namespace *storage.NamespaceMetadata, selector *storage.LabelSelector) bool {

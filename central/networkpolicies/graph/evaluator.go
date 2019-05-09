@@ -31,13 +31,13 @@ type namespaceProvider interface {
 type evaluatorImpl struct {
 	epoch uint32
 
-	deploymentMatcher *deploymentMatcher
+	namespaceStore namespaceProvider
 }
 
 // newGraphEvaluator takes in namespaces
 func newGraphEvaluator(namespaceStore namespaceProvider) *evaluatorImpl {
 	return &evaluatorImpl{
-		deploymentMatcher: newDeploymentPolicyMatcher(namespaceStore),
+		namespaceStore: namespaceStore,
 	}
 }
 
@@ -63,10 +63,12 @@ func (g *evaluatorImpl) GetGraph(deployments []*storage.Deployment, networkPolic
 // GetAppliedPolicies creates a filtered list of policies from the input network policies, composed of only the policies
 // that apply to one or more of the input deployments.
 func (g *evaluatorImpl) GetAppliedPolicies(deployments []*storage.Deployment, networkPolicies []*storage.NetworkPolicy) []*storage.NetworkPolicy {
+	namespacesByID := g.getNamespacesByID()
+
 	// For every deployment, determine the policies that apply to it.
 	allApplied := set.NewStringSet()
 	for _, deployment := range deployments {
-		data := g.deploymentMatcher.MatchDeploymentToPolicies(deployment, networkPolicies)
+		data := MatchDeploymentToPolicies(namespacesByID[deployment.GetNamespaceId()], deployment, networkPolicies)
 		allApplied = allApplied.Union(data.appliedEgress.Union(data.appliedIngress))
 	}
 	if allApplied.Cardinality() == 0 {
@@ -84,11 +86,13 @@ func (g *evaluatorImpl) GetAppliedPolicies(deployments []*storage.Deployment, ne
 }
 
 func (g *evaluatorImpl) evaluate(deployments []*storage.Deployment, networkPolicies []*storage.NetworkPolicy) (nodes []*v1.NetworkNode) {
+	namespacesByID := g.getNamespacesByID()
+
 	// Create the nodes, with some extra data attached.
 	nodes = make([]*v1.NetworkNode, 0, len(deployments))
 	nodeToNodeData := make(map[*v1.NetworkNode]*DeploymentPolicyData, len(deployments))
 	for _, deployment := range deployments {
-		data := g.deploymentMatcher.MatchDeploymentToPolicies(deployment, networkPolicies)
+		data := MatchDeploymentToPolicies(namespacesByID[deployment.GetNamespaceId()], deployment, networkPolicies)
 		node := createNode(deployment, data)
 
 		nodes = append(nodes, node)
@@ -98,6 +102,20 @@ func (g *evaluatorImpl) evaluate(deployments []*storage.Deployment, networkPolic
 	// Use the indices to fill in the outgoing edges.
 	setOutgoingEdges(nodes, nodeToNodeData)
 	return nodes
+}
+
+func (g *evaluatorImpl) getNamespacesByID() map[string]*storage.NamespaceMetadata {
+	namespaces, err := g.namespaceStore.GetNamespaces()
+	if err != nil {
+		log.Errorf("unable to read namespaces: %v", err)
+		return nil
+	}
+
+	namespacesByID := make(map[string]*storage.NamespaceMetadata)
+	for _, namespace := range namespaces {
+		namespacesByID[namespace.GetId()] = namespace
+	}
+	return namespacesByID
 }
 
 func createNode(deployment *storage.Deployment, dpd *DeploymentPolicyData) *v1.NetworkNode {

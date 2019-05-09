@@ -27,26 +27,35 @@ func init() {
 	}
 }
 
+var namespaces = []*storage.NamespaceMetadata{
+	{
+		Name: "default",
+		Id:   "default",
+		Labels: map[string]string{
+			"name": "default",
+		},
+	},
+	{
+		Name: "stackrox",
+		Id:   "stackrox",
+		Labels: map[string]string{
+			"name": "stackrox",
+		},
+	},
+	{
+		Name: "other",
+	},
+}
+
+var namespacesByID = map[string]*storage.NamespaceMetadata{
+	namespaces[0].GetId(): namespaces[0],
+	namespaces[1].GetId(): namespaces[1],
+}
+
 type namespaceGetter struct{}
 
 func (n *namespaceGetter) GetNamespaces() ([]*storage.NamespaceMetadata, error) {
-	return []*storage.NamespaceMetadata{
-		{
-			Name: "default",
-			Labels: map[string]string{
-				"name": "default",
-			},
-		},
-		{
-			Name: "stackrox",
-			Labels: map[string]string{
-				"name": "stackrox",
-			},
-		},
-		{
-			Name: "other",
-		},
-	}, nil
+	return namespaces, nil
 }
 
 func newMockGraphEvaluator() *evaluatorImpl {
@@ -236,8 +245,6 @@ func TestHasIngress(t *testing.T) {
 }
 
 func TestMatchPolicyPeer(t *testing.T) {
-	g := newMockGraphEvaluator()
-
 	cases := []struct {
 		name            string
 		deployment      *storage.Deployment
@@ -286,7 +293,8 @@ func TestMatchPolicyPeer(t *testing.T) {
 		{
 			name: "match namespace selector",
 			deployment: &storage.Deployment{
-				Namespace: "default",
+				Namespace:   "default",
+				NamespaceId: "default",
 			},
 			peer: &storage.NetworkPolicyPeer{
 				NamespaceSelector: &storage.LabelSelector{
@@ -301,7 +309,8 @@ func TestMatchPolicyPeer(t *testing.T) {
 		{
 			name: "non match namespace selector",
 			deployment: &storage.Deployment{
-				Namespace: "default",
+				Namespace:   "default",
+				NamespaceId: "default",
 			},
 			peer: &storage.NetworkPolicyPeer{
 				NamespaceSelector: &storage.LabelSelector{
@@ -316,7 +325,8 @@ func TestMatchPolicyPeer(t *testing.T) {
 		{
 			name: "different namespaces",
 			deployment: &storage.Deployment{
-				Namespace: "default",
+				Namespace:   "default",
+				NamespaceId: "default",
 			},
 			peer: &storage.NetworkPolicyPeer{
 				NamespaceSelector: &storage.LabelSelector{
@@ -333,7 +343,8 @@ func TestMatchPolicyPeer(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			assert.Equal(t, c.expected, g.deploymentMatcher.matchPolicyPeer(c.deployment, c.policyNamespace, c.peer))
+
+			assert.Equal(t, c.expected, matchPolicyPeer(namespacesByID[c.deployment.GetNamespaceId()], c.deployment, c.policyNamespace, c.peer))
 		})
 	}
 }
@@ -832,17 +843,20 @@ func TestEvaluateClusters(t *testing.T) {
 			name: "Web allow all traffic from stackrox namespace",
 			deployments: []*storage.Deployment{
 				{
-					Id:        "d1",
-					Namespace: "default",
-					PodLabels: deploymentLabels("app", "web"),
+					Id:          "d1",
+					Namespace:   "default",
+					NamespaceId: "default",
+					PodLabels:   deploymentLabels("app", "web"),
 				},
 				{
-					Id:        "d2",
-					Namespace: "other",
+					Id:          "d2",
+					Namespace:   "other",
+					NamespaceId: "other",
 				},
 				{
-					Id:        "d3",
-					Namespace: "stackrox",
+					Id:          "d3",
+					Namespace:   "stackrox",
+					NamespaceId: "stackrox",
 				},
 			},
 			edges: flattenEdges(
