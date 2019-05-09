@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import { selectors } from 'reducers';
 import { createSelector, createStructuredSelector } from 'reselect';
 import { reduxForm, formValueSelector, change } from 'redux-form';
+import Select from 'Components/ReactSelect';
 
 import flattenObject from 'utils/flattenObject';
 import removeEmptyFields from 'utils/removeEmptyFields';
@@ -11,7 +12,7 @@ import { getPolicyFormDataKeys } from 'Containers/Policies/Wizard/Form/utils';
 import policyFormFields from 'Containers/Policies/Wizard/Form/descriptors';
 
 import FormField from 'Components/FormField';
-import CustomSelect from 'Components/Select';
+
 import Field from 'Containers/Policies/Wizard/Form/Field';
 
 class FieldGroupCards extends Component {
@@ -31,9 +32,10 @@ class FieldGroupCards extends Component {
 
     addFormField = option => {
         let fieldToAdd = {};
+
         Object.keys(this.props.policyFormFields).forEach(fieldGroup => {
             const field = this.props.policyFormFields[fieldGroup].descriptor.find(
-                obj => obj.jsonpath === option.value
+                obj => obj.jsonpath === option
             );
             if (field) fieldToAdd = field;
         });
@@ -87,7 +89,7 @@ class FieldGroupCards extends Component {
                             required={field.required}
                             onRemove={removeField}
                         >
-                            <Field field={field} />
+                            <Field key={field.jsonpath} field={field} />
                         </FormField>
                     );
                 })}
@@ -109,12 +111,11 @@ class FieldGroupCards extends Component {
         return (
             <div className="flex p-3 border-t border-base-200 bg-success-100">
                 <span className="w-full">
-                    <CustomSelect
-                        className="border bg-base-100 border-success-500 text-success-600 p-3 pr-8 rounded cursor-pointer w-full font-400"
-                        placeholder={placeholder}
-                        options={availableFields}
-                        value=""
+                    <Select
                         onChange={this.addFormField}
+                        options={availableFields}
+                        placeholder={placeholder}
+                        menuPlacement="auto"
                     />
                 </span>
             </div>
