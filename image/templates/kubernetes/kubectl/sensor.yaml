@@ -161,10 +161,6 @@ spec:
         service: collector
         app: collector
       namespace: stackrox
-      {{if eq .CollectionMethod "EBPF"}}
-      annotations:
-        container.apparmor.security.beta.kubernetes.io/collector: unconfined
-      {{- end}}
     spec:
       serviceAccount: collector
       containers:
@@ -177,7 +173,7 @@ spec:
         - name: COLLECTION_METHOD
           value: {{ .CollectionMethod }}
         - name: GRPC_SERVER
-          value: sensor.stackrox:443
+          value: "sensor.stackrox:443"
         - name: MODULE_DOWNLOAD_BASE_URL
           value: {{.CollectorModuleDownloadBaseURL}}
         resources:
@@ -191,14 +187,7 @@ spec:
           capabilities:
             drop:
             - NET_RAW
-          {{if eq .CollectionMethod "EBPF"}}
-            add:
-            - SYS_ADMIN
-            - SYS_PTRACE
-            - SYS_RESOURCE
-          {{- else}}
           privileged: true
-          {{- end}}
           readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /host/var/run/docker.sock
@@ -211,21 +200,15 @@ spec:
         - mountPath: /host/etc
           name: etc-ro
           readOnly: true
-        {{if eq .CollectionMethod "EBPF"}}
-        - mountPath: /host/sys/kernel/debug/tracing/events
-          name: sys-kernel-debug-tracing-events-ro
+        - mountPath: /host/usr/lib
+          name: usr-lib-ro
           readOnly: true
-        - mountPath: /host/sys/devices/system/cpu
-          name: sys-devices-system-cpu-ro
+        - mountPath: /host/sys
+          name: sys-ro
           readOnly: true
-        {{- else}}
         - mountPath: /host/dev
           name: dev-ro
           readOnly: true
-        - mountPath: /host/sys/module
-          name: sys-module-ro
-          readOnly: true
-        {{- end}}
         - mountPath: /run/secrets/stackrox.io/certs/
           name: certs
           readOnly: true
@@ -275,21 +258,15 @@ spec:
       - hostPath: 
           path: /etc
         name: etc-ro
-      {{if eq .CollectionMethod "EBPF"}}
       - hostPath: 
-          path: /sys/kernel/debug/tracing/events
-        name: sys-kernel-debug-tracing-events-ro
+          path: /usr/lib
+        name: usr-lib-ro
       - hostPath: 
-          path: /sys/devices/system/cpu
-        name: sys-devices-system-cpu-ro
-      {{- else}}
+          path: /sys/
+        name: sys-ro
       - hostPath:
           path: /dev
         name: dev-ro
-      - hostPath:
-          path: /sys/module
-        name: sys-module-ro
-      {{- end}}
       - name: certs
         secret:
           secretName: collector-tls
