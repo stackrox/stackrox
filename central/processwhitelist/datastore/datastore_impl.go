@@ -11,6 +11,8 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errorhelpers"
+	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
 
 type datastoreImpl struct {
@@ -62,11 +64,7 @@ func (ds *datastoreImpl) addProcessWhitelistUnlocked(id string, whitelist *stora
 	return id, nil
 }
 
-func (ds *datastoreImpl) RemoveProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey) error {
-	id, err := keyToID(key)
-	if err != nil {
-		return err
-	}
+func (ds *datastoreImpl) removeProcessWhitelistByID(id string) error {
 	ds.whitelistLock.Lock(id)
 	defer ds.whitelistLock.Unlock(id)
 	if err := ds.indexer.DeleteWhitelist(id); err != nil {
@@ -75,6 +73,36 @@ func (ds *datastoreImpl) RemoveProcessWhitelist(ctx context.Context, key *storag
 	if _, err := ds.storage.DeleteWhitelist(id); err != nil {
 		return errors.Wrap(err, "error removing whitelist from store")
 	}
+	return nil
+}
+
+func (ds *datastoreImpl) RemoveProcessWhitelist(ctx context.Context, key *storage.ProcessWhitelistKey) error {
+	id, err := keyToID(key)
+	if err != nil {
+		return err
+	}
+	return ds.removeProcessWhitelistByID(id)
+}
+
+func (ds *datastoreImpl) RemoveProcessWhitelistsByDeployment(ctx context.Context, deploymentID string) error {
+	query := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.DeploymentID, deploymentID).ProtoQuery()
+	results, err := ds.indexer.Search(query)
+	if err != nil {
+		return err
+	}
+
+	var errList []error
+	for _, result := range results {
+		err := ds.removeProcessWhitelistByID(result.ID)
+		if err != nil {
+			errList = append(errList, err)
+		}
+	}
+
+	if len(errList) > 0 {
+		return errorhelpers.NewErrorListWithErrors("errors cleaning up process whitelists", errList).ToError()
+	}
+
 	return nil
 }
 

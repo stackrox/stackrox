@@ -86,6 +86,18 @@ func (mr *MockDataStoreMockRecorder) RemoveProcessWhitelist(arg0, arg1 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessWhitelist", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessWhitelist), arg0, arg1)
 }
 
+// RemoveProcessWhitelistsByDeployment mocks base method
+func (m *MockDataStore) RemoveProcessWhitelistsByDeployment(arg0 context.Context, arg1 string) error {
+	ret := m.ctrl.Call(m, "RemoveProcessWhitelistsByDeployment", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveProcessWhitelistsByDeployment indicates an expected call of RemoveProcessWhitelistsByDeployment
+func (mr *MockDataStoreMockRecorder) RemoveProcessWhitelistsByDeployment(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveProcessWhitelistsByDeployment", reflect.TypeOf((*MockDataStore)(nil).RemoveProcessWhitelistsByDeployment), arg0, arg1)
+}
+
 // RoxLockProcessWhitelist mocks base method
 func (m *MockDataStore) RoxLockProcessWhitelist(arg0 context.Context, arg1 *storage.ProcessWhitelistKey, arg2 bool) (*storage.ProcessWhitelist, error) {
 	ret := m.ctrl.Call(m, "RoxLockProcessWhitelist", arg0, arg1, arg2)

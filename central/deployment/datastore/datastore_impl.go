@@ -9,6 +9,7 @@ import (
 	deploymentStore "github.com/stackrox/rox/central/deployment/store"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
 	processDataStore "github.com/stackrox/rox/central/processindicator/datastore"
+	whitelistDataStore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -22,6 +23,8 @@ type datastoreImpl struct {
 	deploymentSearcher deploymentSearch.Searcher
 
 	networkFlowStore networkFlowStore.ClusterStore
+
+	whitelistDataStore whitelistDataStore.DataStore
 
 	processDataStore processDataStore.DataStore
 	keyedMutex       *concurrency.KeyedMutex
@@ -121,6 +124,9 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 		return err
 	}
 
+	if err := ds.whitelistDataStore.RemoveProcessWhitelistsByDeployment(ctx, id); err != nil {
+		return err
+	}
 	if err := ds.processDataStore.RemoveProcessIndicatorsByDeployment(ctx, id); err != nil {
 		return err
 	}

@@ -16,6 +16,7 @@ import (
 	imageSearcher "github.com/stackrox/rox/central/image/search"
 	imageStore "github.com/stackrox/rox/central/image/store"
 	processIndicatorDatastoreMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
+	processWhitelistDatastoreMocks "github.com/stackrox/rox/central/processwhitelist/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -68,7 +69,9 @@ func generateDataStructures(t *testing.T) (imageStore.Store, imageIndexer.Indexe
 	mockProcessDataStore := processIndicatorDatastoreMocks.NewMockDataStore(ctrl)
 	mockProcessDataStore.EXPECT().RemoveProcessIndicatorsOfStaleContainers(gomock.Any(), gomock.Any(), gomock.Any()).Return((error)(nil))
 
-	deployments := deploymentDatastore.New(deploymentStore, deploymentIndexer, deploymentSearcher, mockProcessDataStore, nil)
+	mockWhitelistDataStore := processWhitelistDatastoreMocks.NewMockDataStore(ctrl)
+
+	deployments := deploymentDatastore.New(deploymentStore, deploymentIndexer, deploymentSearcher, mockProcessDataStore, mockWhitelistDataStore, nil)
 	return imageStore, imageIndexer, images, deployments
 }
 
