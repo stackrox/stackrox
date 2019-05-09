@@ -1167,8 +1167,7 @@ jobs:
       - run:
           name: Install license key
           command: |
-            curl -sk "https://${API_HOSTNAME}:${API_PORT}/v1/licenses/add" -X POST -d @- < <(
-              jq -r -n '{"licenseKey": $key}' --arg key "$ROX_LICENSE_KEY")
+            roxctl -e "${API_HOSTNAME}:${API_PORT}" central license add --license="$ROX_LICENSE_KEY"
             sleep 3
 
       - *waitForAPI
