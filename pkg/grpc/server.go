@@ -72,6 +72,7 @@ type Config struct {
 	IdentityExtractors []authn.IdentityExtractor
 	AuthProviders      authproviders.Registry
 	Auditor            audit.Auditor
+	ContextEnrichers   []contextutil.ContextUpdater
 }
 
 // NewAPI returns an API object.
@@ -110,6 +111,10 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 	// Check if there was an auth failure and return error if so
 	u = append(u, interceptor.AuthCheckerInterceptor())
 
+	if len(a.config.ContextEnrichers) > 0 {
+		u = append(u, contextutil.UnaryServerInterceptor(a.config.ContextEnrichers...))
+	}
+
 	u = append(u, a.unaryRecovery())
 	return u
 }
@@ -123,6 +128,10 @@ func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 	}
 	// Default to deny all access. This forces services to properly override the AuthFunc.
 	s = append(s, grpc_auth.StreamServerInterceptor(deny.AuthFunc))
+
+	if len(a.config.ContextEnrichers) > 0 {
+		s = append(s, contextutil.StreamServerInterceptor(a.config.ContextEnrichers...))
+	}
 
 	s = append(s, a.streamRecovery())
 	return s
