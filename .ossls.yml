@@ -386,6 +386,17 @@ dependencies:
     attribution:
       - 2017 Glenn Flanagan
 
+  ui/node_modules/react-color:
+    url: https://github.com/casesandberg/react-color
+    license: MIT
+    files:
+      LICENSE: 5fdf3097c104962f3457494ed48267e86ad2c6ea45e4d6edf6e0646eed7df6a7
+      package.json:
+        author: 2f2a8157620d13c32773c8615086a9559a3f7b57aa960bb04a39750d401e9027
+        license: 809c46917bff0e06079ac81a33b2ee85061ce18988dc1ae584240fc6408328b1
+    attribution: 
+      - 2015 Case Sandberg
+
   ui/node_modules/react-copy-to-clipboard:
     url: https://github.com/nkbt/react-copy-to-clipboard
     license: MIT

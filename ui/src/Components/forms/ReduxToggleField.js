@@ -9,19 +9,17 @@ const ReduxToggleField = ({ name, disabled, reverse }) => {
     const label = <label className="form-switch-label" key={`{name}-label`} htmlFor={name} />;
 
     return (
-        <div className="mb-2">
-            <div className={`${classNames} mr-0 inline-block align-middle`}>
-                <Field
-                    key={name}
-                    id={name}
-                    name={name}
-                    component="input"
-                    type="checkbox"
-                    className="form-switch-checkbox"
-                    disabled={disabled}
-                />
-                {label}
-            </div>
+        <div className={`${classNames} mr-0 inline-block align-middle`}>
+            <Field
+                key={name}
+                id={name}
+                name={name}
+                component="input"
+                type="checkbox"
+                className="form-switch-checkbox"
+                disabled={disabled}
+            />
+            {label}
         </div>
     );
 };

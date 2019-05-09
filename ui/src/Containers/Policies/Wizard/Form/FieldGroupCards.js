@@ -127,7 +127,7 @@ class FieldGroupCards extends Component {
         if (!headerField) return '';
 
         return (
-            <div className="header-control float-right flex">
+            <div className="header-control float-right">
                 <span className="pr-1">{headerField.label}</span>
                 <Field field={headerField} />
             </div>

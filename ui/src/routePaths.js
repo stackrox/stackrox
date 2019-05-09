@@ -20,6 +20,7 @@ export const secretsPath = `${mainPath}/secrets/:secretId?`;
 export const apidocsPath = `${mainPath}/apidocs`;
 export const accessControlPath = `${mainPath}/access`;
 export const licensePath = `${mainPath}/license`;
+export const systemConfigPath = `${mainPath}/systemconfig`;
 
 /**
  *Compliance-related route paths

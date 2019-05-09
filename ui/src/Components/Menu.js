@@ -50,7 +50,7 @@ const Menu = ({ triggerComponent, className, options }) => {
                 {triggerComponent}
             </button>
             {isMenuOpen && (
-                <div className="absolute bg-white flex flex-col flex-no-wrap menu pin-r z-60 min-w-32 bg-base-100 shadow">
+                <div className="absolute bg-white flex flex-col flex-no-wrap menu pin-r z-60 min-w-43 bg-base-100 shadow">
                     {renderOptions}
                 </div>
             )}

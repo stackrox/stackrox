@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Field } from 'redux-form';
 
-const ReduxTextAreaField = ({ name, disabled, placeholder }) => (
+const ReduxTextAreaField = ({ name, disabled, placeholder, maxlength }) => (
     <Field
         key={name}
         name={name}
@@ -11,17 +11,20 @@ const ReduxTextAreaField = ({ name, disabled, placeholder }) => (
         disabled={disabled}
         rows={4}
         placeholder={placeholder}
+        maxlength={maxlength}
     />
 );
 
 ReduxTextAreaField.propTypes = {
     name: PropTypes.string.isRequired,
     disabled: PropTypes.bool,
-    placeholder: PropTypes.string.isRequired
+    placeholder: PropTypes.string.isRequired,
+    maxlength: PropTypes.string
 };
 
 ReduxTextAreaField.defaultProps = {
-    disabled: false
+    disabled: false,
+    maxlength: null
 };
 
 export default ReduxTextAreaField;
