@@ -17,7 +17,7 @@ type contextUpdater struct {
 }
 
 func (u contextUpdater) updateContext(ctx context.Context) (context.Context, error) {
-	id, err := u.extractor.IdentityForRequest(requestinfo.FromContext(ctx))
+	id, err := u.extractor.IdentityForRequest(ctx, requestinfo.FromContext(ctx))
 	if err != nil {
 		log.Errorf("Error extracting identity: %v", err)
 	}

@@ -6,7 +6,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	groupStore "github.com/stackrox/rox/central/group/store"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/user/store"
+	"github.com/stackrox/rox/central/user/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -34,7 +34,7 @@ var (
 )
 
 type serviceImpl struct {
-	userStore store.Store
+	users datastore.DataStore
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
@@ -49,8 +49,8 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) GetUsers(context.Context, *v1.Empty) (*v1.GetUsersResponse, error) {
-	users, err := s.userStore.GetAllUsers()
+func (s *serviceImpl) GetUsers(ctx context.Context, _ *v1.Empty) (*v1.GetUsersResponse, error) {
+	users, err := s.users.GetAllUsers(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (s *serviceImpl) GetUsers(context.Context, *v1.Empty) (*v1.GetUsersResponse
 }
 
 func (s *serviceImpl) GetUser(ctx context.Context, id *v1.ResourceByID) (*storage.User, error) {
-	user, err := s.userStore.GetUser(id.GetId())
+	user, err := s.users.GetUser(ctx, id.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +71,8 @@ func (s *serviceImpl) GetUser(ctx context.Context, id *v1.ResourceByID) (*storag
 	return user, nil
 }
 
-func (s *serviceImpl) GetUsersAttributes(context.Context, *v1.Empty) (*v1.GetUsersAttributesResponse, error) {
-	users, err := s.userStore.GetAllUsers()
+func (s *serviceImpl) GetUsersAttributes(ctx context.Context, _ *v1.Empty) (*v1.GetUsersAttributesResponse, error) {
+	users, err := s.users.GetAllUsers(ctx)
 	if err != nil {
 		return nil, err
 	}

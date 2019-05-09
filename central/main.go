@@ -63,10 +63,10 @@ import (
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
 	"github.com/stackrox/rox/central/reprocessor"
+	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
-	roleStore "github.com/stackrox/rox/central/role/store"
 	searchService "github.com/stackrox/rox/central/search/service"
 	secretService "github.com/stackrox/rox/central/secret/service"
 	sensorService "github.com/stackrox/rox/central/sensor/service"
@@ -299,7 +299,7 @@ func startGRPCServer(factory serviceFactory) {
 
 	idExtractors := []authn.IdentityExtractor{
 		service.NewExtractor(), // internal services
-		tokenbased.NewExtractor(roleStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens
+		tokenbased.NewExtractor(roleDataStore.Singleton(), jwt.ValidatorSingleton()), // JWT tokens
 		userpass.IdentityExtractorOrPanic(),
 	}
 

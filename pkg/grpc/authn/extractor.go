@@ -1,17 +1,21 @@
 package authn
 
-import "github.com/stackrox/rox/pkg/grpc/requestinfo"
+import (
+	"context"
+
+	"github.com/stackrox/rox/pkg/grpc/requestinfo"
+)
 
 // IdentityExtractor extracts the identity of a user making a request from a request info.
 type IdentityExtractor interface {
-	IdentityForRequest(ri requestinfo.RequestInfo) (Identity, error)
+	IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (Identity, error)
 }
 
 type extractorList []IdentityExtractor
 
-func (l extractorList) IdentityForRequest(ri requestinfo.RequestInfo) (Identity, error) {
+func (l extractorList) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (Identity, error) {
 	for _, extractor := range l {
-		if id, err := extractor.IdentityForRequest(ri); id != nil || err != nil {
+		if id, err := extractor.IdentityForRequest(ctx, ri); id != nil || err != nil {
 			return id, err
 		}
 	}

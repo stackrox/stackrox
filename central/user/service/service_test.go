@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	storeMocks "github.com/stackrox/rox/central/user/store/mocks"
+	dsMocks "github.com/stackrox/rox/central/user/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
@@ -21,15 +21,15 @@ type UserServiceTestSuite struct {
 
 	mockCtrl *gomock.Controller
 
-	mockStore *storeMocks.MockStore
+	usersMock *dsMocks.MockDataStore
 	ser       Service
 }
 
 func (suite *UserServiceTestSuite) SetupSuite() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 
-	suite.mockStore = storeMocks.NewMockStore(suite.mockCtrl)
-	suite.ser = New(suite.mockStore)
+	suite.usersMock = dsMocks.NewMockDataStore(suite.mockCtrl)
+	suite.ser = New(suite.usersMock)
 }
 
 func (suite *UserServiceTestSuite) TestGetUsersAttributes() {
@@ -107,9 +107,9 @@ func (suite *UserServiceTestSuite) TestGetUsersAttributes() {
 		},
 	}
 
-	suite.mockStore.EXPECT().GetAllUsers().Return(users, nil)
+	suite.usersMock.EXPECT().GetAllUsers(context.TODO()).Return(users, nil)
 
-	resp, err := suite.ser.GetUsersAttributes(context.Context(nil), nil)
+	resp, err := suite.ser.GetUsersAttributes(context.TODO(), nil)
 	suite.NoError(err, "request should not fail with valid user data")
 
 	suite.Equal(len(expectedAttributes), len(resp.GetUsersAttributes()))

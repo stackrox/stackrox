@@ -1,14 +1,15 @@
 package mapper
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
-	groupStore "github.com/stackrox/rox/central/group/store"
-	roleStore "github.com/stackrox/rox/central/role/store"
-	userStore "github.com/stackrox/rox/central/user/store"
+	groupDataStore "github.com/stackrox/rox/central/group/datastore"
+	roleDataStore "github.com/stackrox/rox/central/role/datastore"
+	userDataStore "github.com/stackrox/rox/central/user/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/auth/tokens"
@@ -17,30 +18,30 @@ import (
 
 type storeBasedMapperImpl struct {
 	authProviderID string
-	groupStore     groupStore.Store
-	roleStore      roleStore.Store
-	userStore      userStore.Store
+	groups         groupDataStore.DataStore
+	roles          roleDataStore.DataStore
+	users          userDataStore.DataStore
 }
 
 // FromTokenClaims interprets the given claim information and converts it to a role.
-func (rm *storeBasedMapperImpl) FromTokenClaims(claims *tokens.Claims) (*storage.Role, error) {
+func (rm *storeBasedMapperImpl) FromTokenClaims(ctx context.Context, claims *tokens.Claims) (*storage.Role, error) {
 	// Record the user we are creating a role for.
-	rm.recordUser(claims)
+	rm.recordUser(ctx, claims)
 	// Determine the role.
-	return rm.getRole(claims)
+	return rm.getRole(ctx, claims)
 }
 
-func (rm *storeBasedMapperImpl) recordUser(claims *tokens.Claims) {
+func (rm *storeBasedMapperImpl) recordUser(ctx context.Context, claims *tokens.Claims) {
 	user := rm.createUser(claims)
-	if err := rm.userStore.Upsert(user); err != nil {
+	if err := rm.users.Upsert(ctx, user); err != nil {
 		// Just log since we don't actually need the user information.
 		log.Errorf("unable to log user: %s", proto.MarshalTextString(user))
 	}
 }
 
-func (rm *storeBasedMapperImpl) getRole(claims *tokens.Claims) (*storage.Role, error) {
+func (rm *storeBasedMapperImpl) getRole(ctx context.Context, claims *tokens.Claims) (*storage.Role, error) {
 	// Get the groups for the user.
-	groups, err := rm.groupStore.Walk(rm.authProviderID, claims.ExternalUser.Attributes)
+	groups, err := rm.groups.Walk(ctx, rm.authProviderID, claims.ExternalUser.Attributes)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +50,7 @@ func (rm *storeBasedMapperImpl) getRole(claims *tokens.Claims) (*storage.Role, e
 	}
 
 	// Load the roles that apply to the user based on their groups.
-	roles, err := rm.rolesForGroups(groups)
+	roles, err := rm.rolesForGroups(ctx, groups)
 	if err != nil {
 		return nil, errors.Wrap(err, "failure to load roles")
 	}
@@ -58,7 +59,7 @@ func (rm *storeBasedMapperImpl) getRole(claims *tokens.Claims) (*storage.Role, e
 	return permissions.NewUnionRole(roles), nil
 }
 
-func (rm *storeBasedMapperImpl) rolesForGroups(groups []*storage.Group) ([]*storage.Role, error) {
+func (rm *storeBasedMapperImpl) rolesForGroups(ctx context.Context, groups []*storage.Group) ([]*storage.Role, error) {
 	// Get the role names in all of the groups.
 	roleNameSet := set.NewStringSet()
 	for _, group := range groups {
@@ -72,7 +73,7 @@ func (rm *storeBasedMapperImpl) rolesForGroups(groups []*storage.Group) ([]*stor
 	// Load the roles (need to load individually because we want to ignore missing roles)
 	var roles = make([]*storage.Role, 0, len(roleNamesSlice))
 	for _, roleName := range roleNamesSlice {
-		role, err := rm.roleStore.GetRole(roleName)
+		role, err := rm.roles.GetRole(ctx, roleName)
 		if err != nil {
 			return nil, err
 		}

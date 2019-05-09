@@ -1,13 +1,14 @@
 package mapper
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	groupMocks "github.com/stackrox/rox/central/group/store/mocks"
-	roleMocks "github.com/stackrox/rox/central/role/store/mocks"
-	userMocks "github.com/stackrox/rox/central/user/store/mocks"
+	groupMocks "github.com/stackrox/rox/central/group/datastore/mocks"
+	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
+	userMocks "github.com/stackrox/rox/central/user/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stretchr/testify/suite"
@@ -27,9 +28,9 @@ type MapperTestSuite struct {
 
 	mockCtrl *gomock.Controller
 
-	groupStoreMock *groupMocks.MockStore
-	roleStoreMock  *roleMocks.MockStore
-	userStoreMock  *userMocks.MockStore
+	mockGroups *groupMocks.MockDataStore
+	mockRoles  *roleMocks.MockDataStore
+	mockUsers  *userMocks.MockDataStore
 
 	mapper *storeBasedMapperImpl
 }
@@ -37,15 +38,15 @@ type MapperTestSuite struct {
 func (s *MapperTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 
-	s.groupStoreMock = groupMocks.NewMockStore(s.mockCtrl)
-	s.roleStoreMock = roleMocks.NewMockStore(s.mockCtrl)
-	s.userStoreMock = userMocks.NewMockStore(s.mockCtrl)
+	s.mockGroups = groupMocks.NewMockDataStore(s.mockCtrl)
+	s.mockRoles = roleMocks.NewMockDataStore(s.mockCtrl)
+	s.mockUsers = userMocks.NewMockDataStore(s.mockCtrl)
 
 	s.mapper = &storeBasedMapperImpl{
 		authProviderID: fakeAuthProvider,
-		groupStore:     s.groupStoreMock,
-		roleStore:      s.roleStoreMock,
-		userStore:      s.userStoreMock,
+		groups:         s.mockGroups,
+		roles:          s.mockRoles,
+		users:          s.mockUsers,
 	}
 }
 
@@ -65,7 +66,7 @@ func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 			},
 		},
 	}
-	s.userStoreMock.EXPECT().Upsert(expectedUser).Times(1).Return(nil)
+	s.mockUsers.EXPECT().Upsert(context.TODO(), expectedUser).Times(1).Return(nil)
 
 	// Expect the user to have a group mapping for a role.
 	expectedGroup := &storage.Group{
@@ -79,9 +80,9 @@ func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 	expectedAttributes := map[string][]string{
 		"email": {"coolguy@yahoo"},
 	}
-	s.groupStoreMock.
+	s.mockGroups.
 		EXPECT().
-		Walk(fakeAuthProvider, expectedAttributes).
+		Walk(context.TODO(), fakeAuthProvider, expectedAttributes).
 		Times(1).
 		Return([]*storage.Group{expectedGroup}, nil)
 
@@ -90,9 +91,9 @@ func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 		Name:         "TeamAwesome",
 		GlobalAccess: storage.Access_READ_ACCESS,
 	}
-	s.roleStoreMock.
+	s.mockRoles.
 		EXPECT().
-		GetRole("TeamAwesome").
+		GetRole(context.TODO(), "TeamAwesome").
 		Times(1).
 		Return(expectedRole, nil)
 
@@ -107,7 +108,7 @@ func (s *MapperTestSuite) TestMapperSuccessForSingleRole() {
 			},
 		},
 	}
-	role, err := s.mapper.FromTokenClaims(tokenClaims)
+	role, err := s.mapper.FromTokenClaims(context.TODO(), tokenClaims)
 	s.NoError(err, "mapping should have succeeded")
 	s.Equal(expectedRole, role, "since a single role was mapped, that role should be returned")
 }
@@ -124,7 +125,7 @@ func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 			},
 		},
 	}
-	s.userStoreMock.EXPECT().Upsert(expectedUser).Times(1).Return(nil)
+	s.mockUsers.EXPECT().Upsert(context.TODO(), expectedUser).Times(1).Return(nil)
 
 	// Expect the user to have a two group mappings for two roles.
 	expectedGroup1 := &storage.Group{
@@ -146,9 +147,9 @@ func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 	expectedAttributes := map[string][]string{
 		"email": {"coolguy@yahoo"},
 	}
-	s.groupStoreMock.
+	s.mockGroups.
 		EXPECT().
-		Walk(fakeAuthProvider, expectedAttributes).
+		Walk(context.TODO(), fakeAuthProvider, expectedAttributes).
 		Times(1).
 		Return([]*storage.Group{expectedGroup1, expectedGroup2}, nil)
 
@@ -161,14 +162,14 @@ func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 		Name:         "TeamAwesome",
 		GlobalAccess: storage.Access_READ_WRITE_ACCESS,
 	}
-	s.roleStoreMock.
+	s.mockRoles.
 		EXPECT().
-		GetRole("TeamAwesome").
+		GetRole(context.TODO(), "TeamAwesome").
 		Times(1).
 		Return(expectedRole1, nil)
-	s.roleStoreMock.
+	s.mockRoles.
 		EXPECT().
-		GetRole("TeamEvenAwesomer").
+		GetRole(context.TODO(), "TeamEvenAwesomer").
 		Times(1).
 		Return(expectedRole2, nil)
 
@@ -183,7 +184,7 @@ func (s *MapperTestSuite) TestMapperSuccessForMultiRole() {
 			},
 		},
 	}
-	role, err := s.mapper.FromTokenClaims(tokenClaims)
+	role, err := s.mapper.FromTokenClaims(context.TODO(), tokenClaims)
 	s.NoError(err, "mapping should have succeeded")
 
 	// Permissions should be the two roles' permissions combined.
@@ -205,7 +206,7 @@ func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
 			},
 		},
 	}
-	s.userStoreMock.EXPECT().Upsert(expectedUser).Times(1).Return(fmt.Errorf("error that shouldnt matter"))
+	s.mockUsers.EXPECT().Upsert(context.TODO(), expectedUser).Times(1).Return(fmt.Errorf("error that shouldnt matter"))
 
 	// Expect the user to have a group mapping for a role.
 	expectedGroup := &storage.Group{
@@ -219,9 +220,9 @@ func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
 	expectedAttributes := map[string][]string{
 		"email": {"coolguy@yahoo"},
 	}
-	s.groupStoreMock.
+	s.mockGroups.
 		EXPECT().
-		Walk(fakeAuthProvider, expectedAttributes).
+		Walk(context.TODO(), fakeAuthProvider, expectedAttributes).
 		Times(1).
 		Return([]*storage.Group{expectedGroup}, nil)
 
@@ -230,9 +231,9 @@ func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
 		Name:         "TeamAwesome",
 		GlobalAccess: storage.Access_READ_ACCESS,
 	}
-	s.roleStoreMock.
+	s.mockRoles.
 		EXPECT().
-		GetRole("TeamAwesome").
+		GetRole(context.TODO(), "TeamAwesome").
 		Times(1).
 		Return(expectedRole, nil)
 
@@ -247,7 +248,7 @@ func (s *MapperTestSuite) TestUserUpsertFailureDoesntMatter() {
 			},
 		},
 	}
-	role, err := s.mapper.FromTokenClaims(tokenClaims)
+	role, err := s.mapper.FromTokenClaims(context.TODO(), tokenClaims)
 	s.NoError(err, "mapping should have succeeded")
 	s.Equal(expectedRole, role, "since a single role was mapped, that role should be returned")
 }
@@ -264,15 +265,15 @@ func (s *MapperTestSuite) TestGroupWalkFailureCausesError() {
 			},
 		},
 	}
-	s.userStoreMock.EXPECT().Upsert(expectedUser).Times(1).Return(nil)
+	s.mockUsers.EXPECT().Upsert(context.TODO(), expectedUser).Times(1).Return(nil)
 
 	// Expect the user to have a group mapping for a role.
 	expectedAttributes := map[string][]string{
 		"email": {"coolguy@yahoo"},
 	}
-	s.groupStoreMock.
+	s.mockGroups.
 		EXPECT().
-		Walk(fakeAuthProvider, expectedAttributes).
+		Walk(context.TODO(), fakeAuthProvider, expectedAttributes).
 		Times(1).
 		Return([]*storage.Group{}, fmt.Errorf("error should be returned"))
 
@@ -287,7 +288,7 @@ func (s *MapperTestSuite) TestGroupWalkFailureCausesError() {
 			},
 		},
 	}
-	_, err := s.mapper.FromTokenClaims(tokenClaims)
+	_, err := s.mapper.FromTokenClaims(context.TODO(), tokenClaims)
 	s.Error(err, "mapping should have succeeded")
 }
 
@@ -303,7 +304,7 @@ func (s *MapperTestSuite) TestRoleFetchFailureCausesError() {
 			},
 		},
 	}
-	s.userStoreMock.EXPECT().Upsert(expectedUser).Times(1).Return(nil)
+	s.mockUsers.EXPECT().Upsert(context.TODO(), expectedUser).Times(1).Return(nil)
 
 	// Expect the user to have a group mapping for a role.
 	expectedGroup := &storage.Group{
@@ -317,16 +318,16 @@ func (s *MapperTestSuite) TestRoleFetchFailureCausesError() {
 	expectedAttributes := map[string][]string{
 		"email": {"coolguy@yahoo"},
 	}
-	s.groupStoreMock.
+	s.mockGroups.
 		EXPECT().
-		Walk(fakeAuthProvider, expectedAttributes).
+		Walk(context.TODO(), fakeAuthProvider, expectedAttributes).
 		Times(1).
 		Return([]*storage.Group{expectedGroup}, nil)
 
 	// Expect the role to be fetched.
-	s.roleStoreMock.
+	s.mockRoles.
 		EXPECT().
-		GetRole("TeamAwesome").
+		GetRole(context.TODO(), "TeamAwesome").
 		Times(1).
 		Return(nil, fmt.Errorf("error should be returned"))
 
@@ -341,6 +342,6 @@ func (s *MapperTestSuite) TestRoleFetchFailureCausesError() {
 			},
 		},
 	}
-	_, err := s.mapper.FromTokenClaims(tokenClaims)
+	_, err := s.mapper.FromTokenClaims(context.TODO(), tokenClaims)
 	s.Error(err, "mapping should have succeeded")
 }

@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/role/store"
 	"github.com/stackrox/rox/central/role/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -41,7 +41,7 @@ var (
 )
 
 type serviceImpl struct {
-	roleStore store.Store
+	roleDataStore datastore.DataStore
 }
 
 func (s *serviceImpl) RegisterServiceServer(grpcServer *grpc.Server) {
@@ -56,8 +56,8 @@ func (*serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string)
 	return ctx, authorizer.Authorized(ctx, fullMethodName)
 }
 
-func (s *serviceImpl) GetRoles(context.Context, *v1.Empty) (*v1.GetRolesResponse, error) {
-	roles, err := s.roleStore.GetAllRoles()
+func (s *serviceImpl) GetRoles(ctx context.Context, _ *v1.Empty) (*v1.GetRolesResponse, error) {
+	roles, err := s.roleDataStore.GetAllRoles(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (s *serviceImpl) GetRoles(context.Context, *v1.Empty) (*v1.GetRolesResponse
 }
 
 func (s *serviceImpl) GetRole(ctx context.Context, id *v1.ResourceByID) (*storage.Role, error) {
-	role, err := s.roleStore.GetRole(id.GetId())
+	role, err := s.roleDataStore.GetRole(ctx, id.GetId())
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func (s *serviceImpl) CreateRole(ctx context.Context, role *storage.Role) (*v1.E
 	if role.GetGlobalAccess() != storage.Access_NO_ACCESS {
 		return nil, status.Errorf(codes.InvalidArgument, "Setting global access is not supported.")
 	}
-	err := s.roleStore.AddRole(role)
+	err := s.roleDataStore.AddRole(ctx, role)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (s *serviceImpl) UpdateRole(ctx context.Context, role *storage.Role) (*v1.E
 	if role.GetGlobalAccess() != storage.Access_NO_ACCESS {
 		return nil, status.Errorf(codes.InvalidArgument, "Setting global access is not supported.")
 	}
-	err := s.roleStore.UpdateRole(role)
+	err := s.roleDataStore.UpdateRole(ctx, role)
 	if err != nil {
 		return nil, err
 	}
@@ -106,14 +106,14 @@ func (s *serviceImpl) UpdateRole(ctx context.Context, role *storage.Role) (*v1.E
 }
 
 func (s *serviceImpl) DeleteRole(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
-	role, err := s.roleStore.GetRole(id.GetId())
+	role, err := s.roleDataStore.GetRole(ctx, id.GetId())
 	if err != nil {
 		return nil, err
 	} else if role == nil {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("Role '%s' not found", id.GetId()))
 	}
 
-	err = s.roleStore.RemoveRole(id.GetId())
+	err = s.roleDataStore.RemoveRole(ctx, id.GetId())
 	if err != nil {
 		return nil, err
 	}

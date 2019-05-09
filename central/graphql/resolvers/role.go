@@ -27,7 +27,7 @@ func (resolver *Resolver) Roles(ctx context.Context) ([]*roleResolver, error) {
 	if err != nil {
 		return nil, err
 	}
-	roles, err := resolver.RoleStore.GetAllRoles()
+	roles, err := resolver.RoleDataStore.GetAllRoles(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "unable to retrieve roles")
 	}
@@ -44,7 +44,7 @@ func (resolver *Resolver) Role(ctx context.Context, args struct{ *graphql.ID }) 
 		return nil, err
 	}
 
-	role, err := resolver.RoleStore.GetRole(string(*args.ID))
+	role, err := resolver.RoleDataStore.GetRole(ctx, string(*args.ID))
 	roleUtils.FillAccessList(role)
 	return resolver.wrapRole(role, role != nil, err)
 }

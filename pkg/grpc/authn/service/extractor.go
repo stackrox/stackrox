@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -10,7 +11,7 @@ import (
 
 type extractor struct{}
 
-func (extractor) IdentityForRequest(ri requestinfo.RequestInfo) (authn.Identity, error) {
+func (extractor) IdentityForRequest(_ context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
 	l := len(ri.VerifiedChains)
 	if l == 0 {
 		return nil, nil

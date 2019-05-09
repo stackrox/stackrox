@@ -1,6 +1,7 @@
 package basic
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"os"
@@ -34,7 +35,7 @@ func parseBasicAuthToken(basicAuthToken string) (string, string, error) {
 	return parts[0], parts[1], nil
 }
 
-func (e *extractor) IdentityForRequest(ri requestinfo.RequestInfo) (authn.Identity, error) {
+func (e *extractor) IdentityForRequest(_ context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
 	md := metautils.NiceMD(ri.Metadata)
 	authHeader := md.Get("Authorization")
 	if authHeader == "" {

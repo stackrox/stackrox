@@ -1,33 +1,33 @@
 package mapper
 
 import (
-	groupStore "github.com/stackrox/rox/central/group/store"
-	roleStore "github.com/stackrox/rox/central/role/store"
-	userStore "github.com/stackrox/rox/central/user/store"
+	groupDataStore "github.com/stackrox/rox/central/group/datastore"
+	roleDataStore "github.com/stackrox/rox/central/role/datastore"
+	userDataStore "github.com/stackrox/rox/central/user/datastore"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 )
 
 // NewStoreBasedMapperFactory returns a new instance of a Factory which will use the given stores to create RoleMappers.
-func NewStoreBasedMapperFactory(groupStore groupStore.Store, roleStore roleStore.Store, userStore userStore.Store) permissions.RoleMapperFactory {
+func NewStoreBasedMapperFactory(groups groupDataStore.DataStore, roles roleDataStore.DataStore, users userDataStore.DataStore) permissions.RoleMapperFactory {
 	return &storeBasedMapperFactoryImpl{
-		groupStore: groupStore,
-		roleStore:  roleStore,
-		userStore:  userStore,
+		groups: groups,
+		roles:  roles,
+		users:  users,
 	}
 }
 
 type storeBasedMapperFactoryImpl struct {
-	groupStore groupStore.Store
-	roleStore  roleStore.Store
-	userStore  userStore.Store
+	groups groupDataStore.DataStore
+	roles  roleDataStore.DataStore
+	users  userDataStore.DataStore
 }
 
 // GetRoleMapper returns a role mapper for the given auth provider.
 func (rm *storeBasedMapperFactoryImpl) GetRoleMapper(authProviderID string) permissions.RoleMapper {
 	return &storeBasedMapperImpl{
 		authProviderID: authProviderID,
-		groupStore:     rm.groupStore,
-		roleStore:      rm.roleStore,
-		userStore:      rm.userStore,
+		groups:         rm.groups,
+		roles:          rm.roles,
+		users:          rm.users,
 	}
 }

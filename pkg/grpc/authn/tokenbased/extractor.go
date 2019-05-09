@@ -1,6 +1,7 @@
 package tokenbased
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -30,7 +31,7 @@ type extractor struct {
 	validator tokens.Validator
 }
 
-func (e *extractor) IdentityForRequest(ri requestinfo.RequestInfo) (authn.Identity, error) {
+func (e *extractor) IdentityForRequest(ctx context.Context, ri requestinfo.RequestInfo) (authn.Identity, error) {
 	rawToken := ExtractToken(ri.Metadata, "Bearer")
 	if rawToken == "" {
 		return nil, nil
@@ -48,12 +49,12 @@ func (e *extractor) IdentityForRequest(ri requestinfo.RequestInfo) (authn.Identi
 
 	// Anonymous role-based tokens.
 	if token.RoleName != "" {
-		return e.withRoleName(token)
+		return e.withRoleName(ctx, token)
 	}
 
 	// External user token
 	if token.ExternalUser != nil {
-		return e.withExternalUser(token)
+		return e.withExternalUser(ctx, token)
 	}
 
 	return nil, errors.New("could not determine token type")
@@ -73,8 +74,8 @@ func (e *extractor) withPermissions(token *tokens.TokenInfo) (authn.Identity, er
 	return id, nil
 }
 
-func (e *extractor) withRoleName(token *tokens.TokenInfo) (authn.Identity, error) {
-	role, err := e.roleStore.GetRole(token.RoleName)
+func (e *extractor) withRoleName(ctx context.Context, token *tokens.TokenInfo) (authn.Identity, error) {
+	role, err := e.roleStore.GetRole(ctx, token.RoleName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to read role role %q", token.RoleName)
 	}
@@ -98,7 +99,7 @@ func (e *extractor) withRoleName(token *tokens.TokenInfo) (authn.Identity, error
 	return id, nil
 }
 
-func (e *extractor) withExternalUser(token *tokens.TokenInfo) (authn.Identity, error) {
+func (e *extractor) withExternalUser(ctx context.Context, token *tokens.TokenInfo) (authn.Identity, error) {
 	if len(token.Sources) != 1 {
 		return nil, errors.New("external user tokens must originate from exactly one source")
 	}
@@ -116,7 +117,7 @@ func (e *extractor) withExternalUser(token *tokens.TokenInfo) (authn.Identity, e
 		return nil, errors.New("misconfigured authentication provider: no role mapper defined")
 	}
 
-	role, err := roleMapper.FromTokenClaims(token.Claims)
+	role, err := roleMapper.FromTokenClaims(ctx, token.Claims)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to load role for user")
 	}

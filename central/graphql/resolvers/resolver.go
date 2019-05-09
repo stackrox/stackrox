@@ -29,8 +29,8 @@ import (
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	k8sroleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	k8srolebindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
+	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
-	roleStore "github.com/stackrox/rox/central/role/store"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -61,7 +61,7 @@ type Resolver struct {
 	ProcessIndicatorStore       processIndicatorStore.DataStore
 	K8sRoleStore                k8sroleStore.DataStore
 	K8sRoleBindingStore         k8srolebindingStore.DataStore
-	RoleStore                   roleStore.Store
+	RoleDataStore               roleDataStore.DataStore
 	SecretsDataStore            secretDataStore.DataStore
 	ServiceAccountsDataStore    serviceAccountDataStore.DataStore
 	ViolationsDataStore         violationsDatastore.DataStore
@@ -90,7 +90,7 @@ func New() *Resolver {
 		ProcessIndicatorStore:       processIndicatorStore.Singleton(),
 		K8sRoleStore:                k8sroleStore.Singleton(),
 		K8sRoleBindingStore:         k8srolebindingStore.Singleton(),
-		RoleStore:                   roleStore.Singleton(),
+		RoleDataStore:               roleDataStore.Singleton(),
 		SecretsDataStore:            secretDataStore.Singleton(),
 		ServiceAccountsDataStore:    serviceAccountDataStore.Singleton(),
 		ViolationsDataStore:         violationsDatastore.Singleton(),

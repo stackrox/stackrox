@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/stackrox/rox/central/role/store"
+	"github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -11,7 +11,7 @@ var (
 )
 
 func initialize() {
-	svc = New(store.Singleton())
+	svc = New(datastore.Singleton())
 }
 
 // Singleton provides the instance of the service to register.

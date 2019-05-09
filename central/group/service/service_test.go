@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	storeMocks "github.com/stackrox/rox/central/group/store/mocks"
+	dsMocks "github.com/stackrox/rox/central/group/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/suite"
@@ -21,15 +21,15 @@ type UserServiceTestSuite struct {
 
 	mockCtrl *gomock.Controller
 
-	mockStore *storeMocks.MockStore
-	ser       Service
+	groupsMock *dsMocks.MockDataStore
+	ser        Service
 }
 
 func (suite *UserServiceTestSuite) SetupSuite() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 
-	suite.mockStore = storeMocks.NewMockStore(suite.mockCtrl)
-	suite.ser = New(suite.mockStore)
+	suite.groupsMock = dsMocks.NewMockDataStore(suite.mockCtrl)
+	suite.ser = New(suite.groupsMock)
 }
 
 func (suite *UserServiceTestSuite) TestBatchUpdate() {
@@ -88,13 +88,13 @@ func (suite *UserServiceTestSuite) TestBatchUpdate() {
 		},
 	}
 
-	suite.mockStore.EXPECT().
-		Mutate(
+	suite.groupsMock.EXPECT().
+		Mutate(context.TODO(),
 			[]*storage.Group{update.GetPreviousGroups()[0]},
 			[]*storage.Group{update.GetRequiredGroups()[1]},
 			[]*storage.Group{update.GetRequiredGroups()[2]}).
 		Return(nil)
 
-	_, err := suite.ser.BatchUpdate(context.Context(nil), update)
+	_, err := suite.ser.BatchUpdate(context.TODO(), update)
 	suite.NoError(err, "request should not fail with valid user data")
 }

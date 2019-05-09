@@ -1,6 +1,8 @@
 package mapper
 
 import (
+	"context"
+
 	"github.com/stackrox/rox/central/role"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -10,7 +12,7 @@ import (
 type alwaysAdminMapperImpl struct{}
 
 // FromTokenClaims always returns admin.
-func (rm *alwaysAdminMapperImpl) FromTokenClaims(claims *tokens.Claims) (*storage.Role, error) {
+func (rm *alwaysAdminMapperImpl) FromTokenClaims(ctx context.Context, claims *tokens.Claims) (*storage.Role, error) {
 	return role.DefaultRolesByName[role.Admin], nil
 }
 

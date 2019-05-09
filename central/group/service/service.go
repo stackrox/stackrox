@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/group/store"
+	"github.com/stackrox/rox/central/group/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 )
@@ -17,8 +17,8 @@ type Service interface {
 }
 
 // New returns a new instance of the service. Please use the Singleton instead.
-func New(groupStore store.Store) Service {
+func New(groups datastore.DataStore) Service {
 	return &serviceImpl{
-		groupStore: groupStore,
+		groups: groups,
 	}
 }
