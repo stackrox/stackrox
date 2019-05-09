@@ -59,7 +59,7 @@ service RbacService {
 
     rpc GetRole (ResourceByID) returns (GetRoleResponse) {
         option (google.api.http) = {
-            get: "/v1/rbac/role/{id}"
+            get: "/v1/rbac/roles/{id}"
         };
     }
 
@@ -71,7 +71,7 @@ service RbacService {
 
     rpc GetRoleBinding (ResourceByID) returns (GetRoleBindingResponse) {
         option (google.api.http) = {
-            get: "/v1/rbac/binding/{id}"
+            get: "/v1/rbac/bindings/{id}"
         };
     }
 

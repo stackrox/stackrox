@@ -300,6 +300,7 @@ func TestRBACUpdater(t *testing.T) {
 					Name:      "b1",
 					Namespace: "n1",
 					CreatedAt: protoconv.ConvertTimeToTimestamp(bindings[0].GetCreationTimestamp().Time),
+					RoleId:    "r1",
 				},
 			},
 		},

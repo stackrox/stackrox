@@ -23,20 +23,25 @@ type rbacUpdater interface {
 	removeClusterBinding(binding *v1.ClusterRoleBinding) []*central.SensorEvent
 }
 
+type namespacedRoleRef struct {
+	roleRef   v1.RoleRef
+	namespace string
+}
+
 func newRBACUpdater() rbacUpdater {
 	return &rbacUpdaterImpl{
-		roles:              make(map[v1.RoleRef]*storage.K8SRole),
+		roles:              make(map[namespacedRoleRef]*storage.K8SRole),
 		bindingsByID:       make(map[string]*storage.K8SRoleBinding),
-		bindingIDToRoleRef: make(map[string]v1.RoleRef),
+		bindingIDToRoleRef: make(map[string]namespacedRoleRef),
 	}
 }
 
 type rbacUpdaterImpl struct {
 	lock sync.Mutex
 
-	roles              map[v1.RoleRef]*storage.K8SRole
+	roles              map[namespacedRoleRef]*storage.K8SRole
 	bindingsByID       map[string]*storage.K8SRoleBinding
-	bindingIDToRoleRef map[string]v1.RoleRef
+	bindingIDToRoleRef map[string]namespacedRoleRef
 }
 
 func (rs *rbacUpdaterImpl) upsertRole(role *v1.Role) (events []*central.SensorEvent) {
@@ -143,8 +148,9 @@ func (rs *rbacUpdaterImpl) upsertBinding(binding *v1.RoleBinding) (events []*cen
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 
+	ref := roleBindingRefToNamespaceRef(binding)
 	// Check for an existing matching role.
-	currentRole, roleExists := rs.roles[binding.RoleRef]
+	currentRole, roleExists := rs.roles[ref]
 
 	// Convert to rox version of role binding
 	var roxBinding *storage.K8SRoleBinding
@@ -156,7 +162,7 @@ func (rs *rbacUpdaterImpl) upsertBinding(binding *v1.RoleBinding) (events []*cen
 	events = append(events, toBindingEvent(roxBinding, central.ResourceAction_UPDATE_RESOURCE))
 
 	// Add or Replace the old binding if necessary.
-	rs.addBindingToMaps(binding.RoleRef, roxBinding)
+	rs.addBindingToMaps(ref, roxBinding)
 	return
 }
 
@@ -164,12 +170,15 @@ func (rs *rbacUpdaterImpl) removeBinding(binding *v1.RoleBinding) (events []*cen
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 
-	// Check for an existing matching role.
-	currentRole, roleExists := rs.roles[binding.RoleRef]
+	// Check for an existing matching role. Role referenced by a role binding can be a Role or ClusterRole
+	currentRole, roleExists := rs.roles[namespacedRoleRef{roleRef: binding.RoleRef, namespace: binding.GetNamespace()}]
+	if !roleExists {
+		currentRole, roleExists = rs.roles[namespacedRoleRef{roleRef: binding.RoleRef, namespace: ""}]
+	}
 
 	// Convert to rox version of role binding
 	var roxBinding *storage.K8SRoleBinding
-	if !roleExists {
+	if roleExists {
 		roxBinding = toRoxRoleBinding(currentRole.GetId(), binding)
 	} else {
 		roxBinding = toRoxRoleBinding("", binding)
@@ -177,7 +186,7 @@ func (rs *rbacUpdaterImpl) removeBinding(binding *v1.RoleBinding) (events []*cen
 	events = append(events, toBindingEvent(roxBinding, central.ResourceAction_REMOVE_RESOURCE))
 
 	// Add or Replace the old binding if necessary.
-	rs.removeBindingFromMaps(binding.RoleRef, roxBinding)
+	rs.removeBindingFromMaps(roleBindingRefToNamespaceRef(binding), roxBinding)
 	return
 }
 
@@ -185,8 +194,9 @@ func (rs *rbacUpdaterImpl) upsertClusterBinding(binding *v1.ClusterRoleBinding) 
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 
+	ref := clusterRoleBindingRefToNamespaceRef(binding)
 	// Check for an existing matching role.
-	currentRole, roleExists := rs.roles[binding.RoleRef]
+	currentRole, roleExists := rs.roles[ref]
 
 	// Convert to rox version of role binding
 	var roxBinding *storage.K8SRoleBinding
@@ -198,7 +208,7 @@ func (rs *rbacUpdaterImpl) upsertClusterBinding(binding *v1.ClusterRoleBinding) 
 	events = append(events, toBindingEvent(roxBinding, central.ResourceAction_UPDATE_RESOURCE))
 
 	// Add or Replace the old binding if necessary.
-	rs.addBindingToMaps(binding.RoleRef, roxBinding)
+	rs.addBindingToMaps(ref, roxBinding)
 	return
 }
 
@@ -206,12 +216,13 @@ func (rs *rbacUpdaterImpl) removeClusterBinding(binding *v1.ClusterRoleBinding) 
 	rs.lock.Lock()
 	defer rs.lock.Unlock()
 
+	ref := clusterRoleBindingRefToNamespaceRef(binding)
 	// Check for an existing matching role.
-	currentRole, roleExists := rs.roles[binding.RoleRef]
+	currentRole, roleExists := rs.roles[ref]
 
 	// Convert to rox version of role binding
 	var roxBinding *storage.K8SRoleBinding
-	if !roleExists {
+	if roleExists {
 		roxBinding = toRoxClusterRoleBinding(currentRole.GetId(), binding)
 	} else {
 		roxBinding = toRoxClusterRoleBinding("", binding)
@@ -219,12 +230,12 @@ func (rs *rbacUpdaterImpl) removeClusterBinding(binding *v1.ClusterRoleBinding) 
 	events = append(events, toBindingEvent(roxBinding, central.ResourceAction_REMOVE_RESOURCE))
 
 	// Add or Replace the old binding if necessary.
-	rs.removeBindingFromMaps(binding.RoleRef, roxBinding)
+	rs.removeBindingFromMaps(ref, roxBinding)
 	return
 }
 
 // Bookkeeping helper that adds/updates a binding in the maps.
-func (rs *rbacUpdaterImpl) addBindingToMaps(ref v1.RoleRef, roxBinding *storage.K8SRoleBinding) bool {
+func (rs *rbacUpdaterImpl) addBindingToMaps(ref namespacedRoleRef, roxBinding *storage.K8SRoleBinding) bool {
 	if oldRef, oldRefExists := rs.bindingIDToRoleRef[roxBinding.GetId()]; oldRefExists {
 		rs.removeBindingFromMaps(oldRef, roxBinding) // remove binding for previous role ref
 	}
@@ -236,7 +247,7 @@ func (rs *rbacUpdaterImpl) addBindingToMaps(ref v1.RoleRef, roxBinding *storage.
 }
 
 // Bookkeeping helper that removes a binding from the maps.
-func (rs *rbacUpdaterImpl) removeBindingFromMaps(ref v1.RoleRef, roxBinding *storage.K8SRoleBinding) bool {
+func (rs *rbacUpdaterImpl) removeBindingFromMaps(ref namespacedRoleRef, roxBinding *storage.K8SRoleBinding) bool {
 	_, removed := rs.bindingsByID[roxBinding.GetId()]
 	if removed {
 		delete(rs.bindingsByID, roxBinding.GetId())
@@ -372,18 +383,45 @@ func toBindingEvent(binding *storage.K8SRoleBinding, action central.ResourceActi
 // K8s helpers since roles don't have their own refs (eye-roll).
 ////////////////////////////////////////////////////////////////
 
-func roleAsRef(role *v1.Role) v1.RoleRef {
-	return v1.RoleRef{
-		Kind:     "Role",
-		Name:     role.GetName(),
-		APIGroup: "rbac.authorization.k8s.io",
+func roleAsRef(role *v1.Role) namespacedRoleRef {
+	return namespacedRoleRef{
+		roleRef: v1.RoleRef{
+			Kind:     "Role",
+			Name:     role.GetName(),
+			APIGroup: "rbac.authorization.k8s.io",
+		},
+		namespace: role.GetNamespace(),
 	}
 }
 
-func clusterRoleAsRef(role *v1.ClusterRole) v1.RoleRef {
-	return v1.RoleRef{
-		Kind:     "ClusterRole",
-		Name:     role.GetName(),
-		APIGroup: "rbac.authorization.k8s.io",
+func clusterRoleAsRef(role *v1.ClusterRole) namespacedRoleRef {
+	return namespacedRoleRef{
+		roleRef: v1.RoleRef{
+			Kind:     "ClusterRole",
+			Name:     role.GetName(),
+			APIGroup: "rbac.authorization.k8s.io",
+		},
+		namespace: "",
+	}
+}
+
+func roleBindingRefToNamespaceRef(rolebinding *v1.RoleBinding) namespacedRoleRef {
+	if rolebinding.RoleRef.Kind == "ClusterRole" {
+		return namespacedRoleRef{
+			roleRef:   rolebinding.RoleRef,
+			namespace: "",
+		}
+	}
+
+	return namespacedRoleRef{
+		roleRef:   rolebinding.RoleRef,
+		namespace: rolebinding.GetNamespace(),
+	}
+}
+
+func clusterRoleBindingRefToNamespaceRef(rolebinding *v1.ClusterRoleBinding) namespacedRoleRef {
+	return namespacedRoleRef{
+		roleRef:   rolebinding.RoleRef,
+		namespace: "",
 	}
 }
