@@ -91,7 +91,14 @@ class Table extends Component {
     getHeaderClassName = column => column.headerClassName || defaultHeaderClassName;
 
     renderTooltip = headerText => () => (
-        <Tooltip useContext position="top" trigger="mouseenter" arrow html={headerTooltipContent}>
+        <Tooltip
+            useContext
+            position="top"
+            trigger="mouseenter"
+            arrow
+            html={headerTooltipContent}
+            unmountHTMLWhenHide
+        >
             <div className="table-header-text">{headerText}</div>
         </Tooltip>
     );
@@ -100,10 +107,15 @@ class Table extends Component {
         const { rows, columns, ...rest } = this.props;
         columns.forEach(column => {
             const headerText = column.Header;
+            if (typeof column.Header === 'string') {
+                Object.assign(column, {
+                    HeaderText: headerText,
+                    Header: this.renderTooltip(headerText)()
+                });
+            }
             Object.assign(column, {
                 className: this.getColumnClassName(column),
-                headerClassName: this.getHeaderClassName(column),
-                Header: this.renderTooltip(headerText)
+                headerClassName: this.getHeaderClassName(column)
             });
         });
         return (

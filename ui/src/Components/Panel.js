@@ -49,6 +49,7 @@ const TooltipDiv = ({ header, isUpperCase }) => {
                 arrow
                 html={tooltipContent}
                 className="truncate"
+                unmountHTMLWhenHide
             >
                 <div ref={tooltipRef} className="truncate flex-none">
                     {header}
