@@ -24,6 +24,7 @@ var (
 
 	imageCachesDataSize      = 50000
 	imageCacheExpiryDuration = 1 * time.Hour
+	imagePruneInterval       = 1 * time.Minute
 )
 
 func initialize() {
@@ -46,7 +47,7 @@ func ImageEnricherSingleton() enricher.ImageEnricher {
 // ImageScanCacheSingleton returns the cache for image scans
 func ImageScanCacheSingleton() expiringcache.Cache {
 	scanCacheOnce.Do(func() {
-		scanCache = expiringcache.NewExpiringCacheOrPanic(imageCachesDataSize, imageCacheExpiryDuration)
+		scanCache = expiringcache.NewExpiringCacheOrPanic(imageCachesDataSize, imageCacheExpiryDuration, imagePruneInterval)
 	})
 	return scanCache
 }
@@ -54,7 +55,7 @@ func ImageScanCacheSingleton() expiringcache.Cache {
 // ImageMetadataCacheSingleton returns the cache for image metadata
 func ImageMetadataCacheSingleton() expiringcache.Cache {
 	metadataCacheOnce.Do(func() {
-		metadataCache = expiringcache.NewExpiringCacheOrPanic(imageCachesDataSize, imageCacheExpiryDuration)
+		metadataCache = expiringcache.NewExpiringCacheOrPanic(imageCachesDataSize, imageCacheExpiryDuration, imagePruneInterval)
 	})
 	return metadataCache
 }

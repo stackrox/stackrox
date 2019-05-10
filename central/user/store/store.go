@@ -20,6 +20,6 @@ type Store interface {
 // For now we will store information for up to 1000 users for 1 day.
 func New() Store {
 	return &storeImpl{
-		ec: expiringcache.NewExpiringCacheOrPanic(1000, 24*time.Hour),
+		ec: expiringcache.NewExpiringCacheOrPanic(1000, 24*time.Hour, 1*time.Hour),
 	}
 }

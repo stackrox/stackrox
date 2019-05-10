@@ -226,8 +226,8 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 // ReassessPolicies manually triggers enrichment of all deployments, and re-assesses policies if there's updated data.
 func (s *serviceImpl) ReassessPolicies(context.Context, *v1.Empty) (*v1.Empty, error) {
 	// Invalidate scan and metadata caches
-	s.metadataCache.Purge()
-	s.scanCache.Purge()
+	s.metadataCache.RemoveAll()
+	s.scanCache.RemoveAll()
 
 	go s.reprocessor.ShortCircuit()
 	return &v1.Empty{}, nil
