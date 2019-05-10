@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+option go_package = "storage";
+option java_package = "io.stackrox.proto.storage";
+
+package storage;
+
+message LoginNotice {
+    bool enabled = 1;
+    string text  = 2;
+}
+
+message BannerConfig {
+    enum Size {
+        UNSET  = 0;
+        SMALL  = 1;
+        MEDIUM = 2;
+        LARGE  = 3;
+    }
+
+    bool   enabled          = 1;
+    string text             = 2;
+    Size   size             = 3;
+    string color            = 4;
+    string background_color = 5;
+}
+
+message Config {
+    LoginNotice login_notice = 1;
+    BannerConfig header      = 2;
+    BannerConfig footer      = 3;
+}

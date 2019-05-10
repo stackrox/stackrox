@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
+import "storage/config.proto";
+
+package v1;
+
+message PutConfigRequest {
+    storage.Config config      = 1;
+}
+
+// ConfigService APIs can be used to manage Central config.
+service ConfigService {
+
+    rpc GetLoginConfig(Empty) returns (storage.LoginNotice) {
+        option (google.api.http) = {
+            get: "/v1/config/login"
+        };
+    }
+
+    rpc GetConfig(Empty) returns (storage.Config) {
+        option (google.api.http) = {
+            get: "/v1/config"
+        };
+    }
+
+    rpc PutConfig(PutConfigRequest) returns (storage.Config) {
+        option (google.api.http) = {
+            put: "/v1/config"
+            body: "*"
+        };
+    }
+
+}

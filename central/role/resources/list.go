@@ -17,6 +17,7 @@ var (
 	Compliance            = newResource("Compliance")
 	ComplianceRunSchedule = newResource("ComplianceRunSchedule")
 	ComplianceRuns        = newResource("ComplianceRuns")
+	Config                = newResource("Config")
 	DebugMetrics          = newResource("DebugMetrics")
 	DebugLogs             = newResource("DebugLogs")
 	Deployment            = newResource("Deployment")
