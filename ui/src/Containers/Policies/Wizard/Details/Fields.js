@@ -52,7 +52,7 @@ class Fields extends Component {
                             }
                             if (typeof value === 'object') {
                                 return (
-                                    <div key={field}>
+                                    <div>
                                         {Object.keys(value).map(key => (
                                             <div className="mb-4" key={field}>
                                                 <div className="text-base-600 font-700">{key}:</div>
