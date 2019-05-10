@@ -6,7 +6,7 @@ metadata:
   namespace: {{.Values.namespace}}
 spec:
   port:
-    targetPort: api
+    targetPort: https
   tls:
     termination: passthrough
   to:
@@ -21,7 +21,7 @@ metadata:
 spec:
   host: central.{{.Values.namespace}}
   port:
-    targetPort: api
+    targetPort: https
   tls:
     termination: passthrough
   to:
