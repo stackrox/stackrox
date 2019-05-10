@@ -18,6 +18,14 @@ webhooks:
           - replicationcontrollers
           - statefulsets
           - daemonsets
+    namespaceSelector:
+       matchExpressions:
+       - key: namespace.metadata.stackrox.io/name
+         operator: NotIn
+         values:
+         - stackrox
+         - kube-system
+         - kube-public
     failurePolicy: Ignore
     clientConfig:
       caBundle: {{.CABundle}}
