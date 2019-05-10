@@ -1,3 +1,4 @@
+import io.stackrox.proto.storage.DeploymentOuterClass
 import io.stackrox.proto.api.v1.DetectionServiceOuterClass.BuildDetectionRequest
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
 import io.stackrox.proto.storage.Common
@@ -104,6 +105,22 @@ class Services extends BaseService {
                         .build()
         return getSearchServiceClient().search(rawSearchRequest)
       }
+
+    static waitForSuspiciousProcessInRiskIndicators(String deploymentId, int timeoutSeconds = 30) {
+        int intervalSeconds = 3
+        int iterations = timeoutSeconds / intervalSeconds
+        Timer t = new Timer(iterations, intervalSeconds)
+        while (t.IsValid()) {
+            DeploymentOuterClass.Risk risk = Services.getDeployment(deploymentId).risk
+            DeploymentOuterClass.Risk.Result result = risk.resultsList
+                    .find { it.name == "Suspicious Process Executions" }
+            if (result != null) {
+                return result
+            }
+        }
+        println "No suspicious process executions found in risk indicator after waiting ${t.SecondsSince()} seconds"
+        return null
+    }
 
     static waitForViolation(String deploymentName, String policyName, int timeoutSeconds = 30) {
         def violations = getViolationsWithTimeout(deploymentName, policyName, timeoutSeconds)

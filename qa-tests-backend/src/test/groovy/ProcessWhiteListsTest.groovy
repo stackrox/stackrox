@@ -1,4 +1,6 @@
 import static Services.waitForViolation
+import static Services.waitForSuspiciousProcessInRiskIndicators
+import io.stackrox.proto.storage.DeploymentOuterClass
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass
 import services.AlertService
@@ -21,9 +23,11 @@ class ProcessWhiteListsTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX_RESOLVE_VIOLATION = "deploymentnginx-violation-resolve"
     static final private String DEPLOYMENTNGINX_RESOLVE_AND_WHITELIST_VIOLATION =
             "deploymentnginx-violation-resolve-whitelist"
+    static final private String DEPLOYMENTNGINX_SOFTLOCK = "deploymentnginx-softlock"
 
     static final private List<Deployment> DEPLOYMENTS =
-            [new Deployment()
+            [
+                    new Deployment()
                      .setName(DEPLOYMENTNGINX)
                      .setImage("nginx:1.7.9")
                      .addPort(22, "TCP")
@@ -39,6 +43,13 @@ class ProcessWhiteListsTest extends BaseSpecification {
                      .addLabel("app", "test"),
              new Deployment()
                      .setName(DEPLOYMENTNGINX_RESOLVE_AND_WHITELIST_VIOLATION)
+                     .setImage("nginx:1.7.9")
+                     .addPort(22, "TCP")
+                     .addAnnotation("test", "annotation")
+                     .setEnv(["CLUSTER_NAME": "main"])
+                     .addLabel("app", "test"),
+             new Deployment()
+                     .setName(DEPLOYMENTNGINX_SOFTLOCK)
                      .setImage("nginx:1.7.9")
                      .addPort(22, "TCP")
                      .addAnnotation("test", "annotation")
@@ -99,16 +110,17 @@ class ProcessWhiteListsTest extends BaseSpecification {
     @Unroll
     @Category(BAT)
     def "Verify whitelist processes violations or no violations after resolving,whitelisting for the given key"() {
-        /*
-                a)Lock the whitelists for the key
-                b)exec into the container and run a process
-                c)verify violation alert for Unauthorized Process Execution
-                d)
-                    test case :choose to only resolve violation
-                        exec into the container and run the  process again and verify violation alert
-                    test case : choose to both resolve and whitelist
-                        exec into the container and run the  process again and verify no violation alert
-        */
+               /*
+                    a)Lock the whitelists for the key
+                    b)exec into the container and run a process
+                    c)verify violation alert for Unauthorized Process Execution
+                    d)
+                        test case :choose to only resolve violation
+                            exec into the container and run the  process again and verify violation alert
+                        test case : choose to both resolve and whitelist
+                            exec into the container and run the  process again and verify no violation alert
+               */
+        Assume.assumeTrue(Constants.RUN_PROCESS_WHITELIST_TESTS)
         when:
         "get process whitelists is called for a key"
         def deployment = DEPLOYMENTS.find { it.name == deploymentName }
@@ -173,5 +185,30 @@ class ProcessWhiteListsTest extends BaseSpecification {
 
         DEPLOYMENTNGINX_RESOLVE_AND_WHITELIST_VIOLATION | "nginx"      | true             | 0
      }
-
+    @Unroll
+    @Category(BAT)
+    def "Verify  processes risk indicators for the given key after soft-lock "() {
+        when:
+        "get process whitelists is called for a key"
+        def deployment = DEPLOYMENTS.find { it.name == deploymentName }
+        assert deployment != null
+        String deploymentId = deployment.getDeploymentUid()
+        String containerName = deployment.getName()
+        ProcessWhitelistOuterClass.ProcessWhitelist whitelist = ProcessWhitelistService.
+                    getProcessWhitelist(deploymentId, containerName)
+        assert ((whitelist.key.deploymentId.equalsIgnoreCase(deploymentId)) &&
+                    (whitelist.key.containerName.equalsIgnoreCase(containerName)))
+        assert whitelist.getElements(0).element.processName.contains(processName)
+        Thread.sleep(60000)
+        orchestrator.execInContainer(deployment, "pwd")
+        then:
+        DeploymentOuterClass.Risk.Result result = waitForSuspiciousProcessInRiskIndicators(deploymentId, 60)
+        assert (result != null)
+        DeploymentOuterClass.Risk.Result.Factor factor =  result.factorsList.find { it.message.contains("pwd") }
+        assert factor != null
+        where:
+        "Data inputs are :"
+        deploymentName                                   | processName
+        DEPLOYMENTNGINX_SOFTLOCK            |   "nginx"
+    }
     }

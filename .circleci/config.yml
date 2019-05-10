@@ -938,6 +938,7 @@ jobs:
       - ROX_PERFORM_DEPLOYMENT_RECONCILIATION: true
       - ROX_K8S_RBAC: true
       - ROX_PROCESS_WHITELIST: true
+      - ROX_WHITELIST_GENERATION_DURATION: 1m 
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
 
@@ -1014,6 +1015,7 @@ jobs:
       - ROX_PERFORM_DEPLOYMENT_RECONCILIATION: true
       - ROX_K8S_RBAC: true
       - ROX_PROCESS_WHITELIST: true
+      - ROX_WHITELIST_GENERATION_DURATION: 1m
       - INFLUXDB_URL: "http://monitoring-1.us-central1-c.c.stackrox-ci.internal:8086"
       - LOAD_BALANCER: lb
 
@@ -1363,6 +1365,7 @@ jobs:
       - ROX_PERFORM_DEPLOYMENT_RECONCILIATION: true
       - ROX_K8S_RBAC: true
       - ROX_PROCESS_WHITELIST: true
+      - ROX_WHITELIST_GENERATION_DURATION: 1m
 
     steps:
       - checkout
@@ -1544,6 +1547,7 @@ jobs:
       - ROX_PERFORM_DEPLOYMENT_RECONCILIATION: true
       - ROX_K8S_RBAC: true
       - ROX_PROCESS_WHITELIST: true
+      - ROX_WHITELIST_GENERATION_DURATION: 1m
 
     steps:
       - checkout
