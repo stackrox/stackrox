@@ -5,6 +5,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 // ForResourceHelper is a helper for querying access scopes related to a resource.
@@ -38,4 +40,12 @@ func (h ForResourceHelper) ReadAllowed(ctx context.Context, keys ...ScopeKey) (b
 // WriteAllowed checks if in the given context, we have write access to the resource or a subscope thereof.
 func (h ForResourceHelper) WriteAllowed(ctx context.Context, keys ...ScopeKey) (bool, error) {
 	return h.AccessAllowed(ctx, storage.Access_READ_WRITE_ACCESS, keys...)
+}
+
+// MustCreateSearchHelper creates and returns a search helper with the given options, or panics if the
+// search helper could not be created.
+func (h ForResourceHelper) MustCreateSearchHelper(options search.OptionsMap, namespaceScoped bool) *SearchHelper {
+	searchHelper, err := NewSearchHelper(h.resource, options, namespaceScoped)
+	utils.Must(err)
+	return searchHelper
 }
