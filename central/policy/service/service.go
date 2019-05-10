@@ -5,8 +5,8 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/detection"
 	"github.com/stackrox/rox/central/detection/lifecycle"
+	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
-	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
@@ -29,7 +29,7 @@ type Service interface {
 func New(policies datastore.DataStore,
 	clusters clusterDataStore.DataStore,
 	deployments deploymentDataStore.DataStore,
-	notifiers notifierStore.Store,
+	notifiers notifierDataStore.DataStore,
 	reprocessor reprocessor.Loop,
 	buildTimePolicies detection.PolicySet,
 	deploymentMatcherBuilder matcher.Builder,

@@ -24,7 +24,7 @@ import (
 	networkFlowStoreSingleton "github.com/stackrox/rox/central/networkflow/store/singleton"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/globaldatastore"
-	notifierStore "github.com/stackrox/rox/central/notifier/store"
+	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
 	k8sroleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
@@ -56,7 +56,7 @@ type Resolver struct {
 	NetworkFlowStore            networkFlowStore.ClusterStore
 	NetworkPoliciesStore        npDS.DataStore
 	NodeGlobalDataStore         nodeDataStore.GlobalDataStore
-	NotifierStore               notifierStore.Store
+	NotifierStore               notifierDataStore.DataStore
 	PolicyDataStore             policyDatastore.DataStore
 	ProcessIndicatorStore       processIndicatorStore.DataStore
 	K8sRoleStore                k8sroleStore.DataStore
@@ -85,7 +85,7 @@ func New() *Resolver {
 		NetworkPoliciesStore:        npDS.Singleton(),
 		NetworkFlowStore:            networkFlowStoreSingleton.Singleton(),
 		NodeGlobalDataStore:         nodeDataStore.Singleton(),
-		NotifierStore:               notifierStore.Singleton(),
+		NotifierStore:               notifierDataStore.Singleton(),
 		PolicyDataStore:             policyDatastore.Singleton(),
 		ProcessIndicatorStore:       processIndicatorStore.Singleton(),
 		K8sRoleStore:                k8sroleStore.Singleton(),

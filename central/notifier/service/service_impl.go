@@ -5,8 +5,8 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/detection"
+	"github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
-	"github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -40,7 +40,7 @@ var (
 
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
-	storage   store.Store
+	storage   datastore.DataStore
 	processor processor.Processor
 
 	buildTimePolicies  detection.PolicySet
@@ -68,7 +68,7 @@ func (s *serviceImpl) GetNotifier(ctx context.Context, request *v1.ResourceByID)
 	if request.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "Notifier id must be provided")
 	}
-	notifier, exists, err := s.storage.GetNotifier(request.GetId())
+	notifier, exists, err := s.storage.GetNotifier(ctx, request.GetId())
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -81,7 +81,7 @@ func (s *serviceImpl) GetNotifier(ctx context.Context, request *v1.ResourceByID)
 
 // GetNotifiers retrieves all notifiers that match the request filters
 func (s *serviceImpl) GetNotifiers(ctx context.Context, request *v1.GetNotifiersRequest) (*v1.GetNotifiersResponse, error) {
-	notifiers, err := s.storage.GetNotifiers(request)
+	notifiers, err := s.storage.GetNotifiers(ctx, request)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -118,7 +118,7 @@ func (s *serviceImpl) PutNotifier(ctx context.Context, request *storage.Notifier
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	if err := s.storage.UpdateNotifier(request); err != nil {
+	if err := s.storage.UpdateNotifier(ctx, request); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	s.processor.UpdateNotifier(notifier)
@@ -137,7 +137,7 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifie
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
-	id, err := s.storage.AddNotifier(request)
+	id, err := s.storage.AddNotifier(ctx, request)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -178,7 +178,7 @@ func (s *serviceImpl) DeleteNotifier(ctx context.Context, request *v1.DeleteNoti
 		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Notifier is still in use by policies. Error: %s", err))
 	}
 
-	if err := s.storage.RemoveNotifier(request.GetId()); err != nil {
+	if err := s.storage.RemoveNotifier(ctx, request.GetId()); err != nil {
 		return nil, err
 	}
 

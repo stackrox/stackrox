@@ -10,7 +10,7 @@ import (
 	dDataStoreMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	npMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	npGraphMocks "github.com/stackrox/rox/central/networkpolicies/graph/mocks"
-	notifierStoreMocks "github.com/stackrox/rox/central/notifier/store/mocks"
+	nDataStoreMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	grpcTestutils "github.com/stackrox/rox/pkg/grpc/testutils"
@@ -82,7 +82,7 @@ type ServiceTestSuite struct {
 	deployments     *dDataStoreMocks.MockDataStore
 	networkPolicies *npMocks.MockDataStore
 	evaluator       *npGraphMocks.MockEvaluator
-	notifiers       *notifierStoreMocks.MockStore
+	notifiers       *nDataStoreMocks.MockDataStore
 	tested          Service
 
 	mockCtrl *gomock.Controller
@@ -94,7 +94,7 @@ func (suite *ServiceTestSuite) SetupTest() {
 	suite.evaluator = npGraphMocks.NewMockEvaluator(suite.mockCtrl)
 	suite.clusters = cDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 	suite.deployments = dDataStoreMocks.NewMockDataStore(suite.mockCtrl)
-	suite.notifiers = notifierStoreMocks.NewMockStore(suite.mockCtrl)
+	suite.notifiers = nDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 
 	suite.tested = New(suite.networkPolicies, suite.deployments, suite.evaluator, nil, suite.clusters, suite.notifiers, nil, nil)
 }

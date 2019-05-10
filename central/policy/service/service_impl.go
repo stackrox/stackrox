@@ -154,7 +154,7 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *storage.Policy) (
 	if request.GetId() != "" {
 		return nil, status.Error(codes.InvalidArgument, "Id field should be empty when posting a new policy")
 	}
-	if err := s.validator.validate(request); err != nil {
+	if err := s.validator.validate(ctx, request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -172,7 +172,7 @@ func (s *serviceImpl) PostPolicy(ctx context.Context, request *storage.Policy) (
 
 // PutPolicy updates a current policy in the system.
 func (s *serviceImpl) PutPolicy(ctx context.Context, request *storage.Policy) (*v1.Empty, error) {
-	if err := s.validator.validate(request); err != nil {
+	if err := s.validator.validate(ctx, request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -235,7 +235,7 @@ func (s *serviceImpl) ReassessPolicies(context.Context, *v1.Empty) (*v1.Empty, e
 
 // DryRunPolicy runs a dry run of the policy and determines what deployments would violate it
 func (s *serviceImpl) DryRunPolicy(ctx context.Context, request *storage.Policy) (*v1.DryRunResponse, error) {
-	if err := s.validator.validate(request); err != nil {
+	if err := s.validator.validate(ctx, request); err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 

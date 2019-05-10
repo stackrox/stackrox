@@ -1,8 +1,6 @@
 package processor
 
 import (
-	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -16,23 +14,6 @@ type processorImpl struct {
 
 	notifiersToPolicies     map[string]map[string]*storage.Policy
 	notifiersToPoliciesLock sync.RWMutex
-
-	storage store.Store
-}
-
-func (p *processorImpl) initializeNotifiers() error {
-	protoNotifiers, err := p.storage.GetNotifiers(&v1.GetNotifiersRequest{})
-	if err != nil {
-		return err
-	}
-	for _, protoNotifier := range protoNotifiers {
-		notifier, err := notifiers.CreateNotifier(protoNotifier)
-		if err != nil {
-			return errors.Wrapf(err, "Error creating notifier with %v (%v) and type %v", protoNotifier.GetId(), protoNotifier.GetName(), protoNotifier.GetType())
-		}
-		p.UpdateNotifier(notifier)
-	}
-	return nil
 }
 
 func (p *processorImpl) HasNotifiers() bool {

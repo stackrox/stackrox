@@ -234,7 +234,7 @@ func (r *repository) init(domain framework.ComplianceDomain, scrapeResults map[s
 		return err
 	}
 
-	r.notifiers, err = f.notifierStore.GetNotifiers(&v1.GetNotifiersRequest{})
+	r.notifiers, err = f.notifierDataStore.GetNotifiers(ctx, &v1.GetNotifiersRequest{})
 	if err != nil {
 		return err
 	}

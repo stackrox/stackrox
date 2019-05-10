@@ -6,8 +6,8 @@ import (
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	"github.com/stackrox/rox/central/enrichment"
+	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
-	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
@@ -24,7 +24,7 @@ func initialize() {
 	as = New(datastore.Singleton(),
 		clusterDataStore.Singleton(),
 		deploymentDataStore.Singleton(),
-		notifierStore.Singleton(),
+		notifierDataStore.Singleton(),
 		reprocessor.Singleton(),
 		buildTimeDetection.SingletonPolicySet(),
 		matcher.DeploymentBuilderSingleton(),

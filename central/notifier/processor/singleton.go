@@ -1,7 +1,11 @@
 package processor
 
 import (
-	"github.com/stackrox/rox/central/notifier/store"
+	"context"
+
+	"github.com/stackrox/rox/central/notifier/datastore"
+	"github.com/stackrox/rox/central/notifiers"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -12,10 +16,18 @@ var (
 )
 
 func initialize() {
-	var err error
-	pr, err = New(store.Singleton())
+	pr = New()
+	protoNotifiers, err := datastore.Singleton().GetNotifiers(context.TODO(), &v1.GetNotifiersRequest{})
 	if err != nil {
-		panic(err)
+		log.Panicf("unable to fetch notifiers: %v", err)
+	}
+
+	for _, protoNotifier := range protoNotifiers {
+		notifier, err := notifiers.CreateNotifier(protoNotifier)
+		if err != nil {
+			log.Panicf("Error creating notifier with %v (%v) and type %v: %v", protoNotifier.GetId(), protoNotifier.GetName(), protoNotifier.GetType(), err)
+		}
+		pr.UpdateNotifier(notifier)
 	}
 }
 

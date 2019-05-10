@@ -1,13 +1,14 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
-	notifierMocks "github.com/stackrox/rox/central/notifier/store/mocks"
+	notifierMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
 	matcherMocks "github.com/stackrox/rox/central/searchbasedpolicies/matcher/mocks"
 	sbpMocks "github.com/stackrox/rox/central/searchbasedpolicies/mocks"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,7 @@ func TestPolicyValidator(t *testing.T) {
 type PolicyValidatorTestSuite struct {
 	suite.Suite
 	validator      *policyValidator
-	nStorage       *notifierMocks.MockStore
+	nStorage       *notifierMocks.MockDataStore
 	cStorage       *clusterMocks.MockDataStore
 	matcherBuilder *matcherMocks.MockBuilder
 
@@ -31,7 +32,7 @@ type PolicyValidatorTestSuite struct {
 
 func (suite *PolicyValidatorTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
-	suite.nStorage = notifierMocks.NewMockStore(suite.mockCtrl)
+	suite.nStorage = notifierMocks.NewMockDataStore(suite.mockCtrl)
 	suite.cStorage = clusterMocks.NewMockDataStore(suite.mockCtrl)
 	suite.matcherBuilder = matcherMocks.NewMockBuilder(suite.mockCtrl)
 
@@ -463,8 +464,8 @@ func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
 			"id1",
 		},
 	}
-	suite.nStorage.EXPECT().GetNotifier("id1").Return((*storage.Notifier)(nil), true, nil)
-	err := suite.validator.validateNotifiers(policy)
+	suite.nStorage.EXPECT().GetNotifier(context.TODO(), "id1").Return((*storage.Notifier)(nil), true, nil)
+	err := suite.validator.validateNotifiers(context.TODO(), policy)
 	suite.NoError(err, "severity should pass when set")
 
 	policy = &storage.Policy{
@@ -472,8 +473,8 @@ func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
 			"id2",
 		},
 	}
-	suite.nStorage.EXPECT().GetNotifier("id2").Return((*storage.Notifier)(nil), false, nil)
-	err = suite.validator.validateNotifiers(policy)
+	suite.nStorage.EXPECT().GetNotifier(context.TODO(), "id2").Return((*storage.Notifier)(nil), false, nil)
+	err = suite.validator.validateNotifiers(context.TODO(), policy)
 	suite.Error(err, "should fail when it does not exist")
 
 	policy = &storage.Policy{
@@ -481,8 +482,8 @@ func (suite *PolicyValidatorTestSuite) TestValidateNotifiers() {
 			"id3",
 		},
 	}
-	suite.nStorage.EXPECT().GetNotifier("id3").Return((*storage.Notifier)(nil), true, fmt.Errorf("oh noes"))
-	err = suite.validator.validateNotifiers(policy)
+	suite.nStorage.EXPECT().GetNotifier(context.TODO(), "id3").Return((*storage.Notifier)(nil), true, fmt.Errorf("oh noes"))
+	err = suite.validator.validateNotifiers(context.TODO(), policy)
 	suite.Error(err, "should fail when an error is thrown")
 }
 

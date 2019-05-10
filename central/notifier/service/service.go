@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/detection"
+	"github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
-	"github.com/stackrox/rox/central/notifier/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -31,7 +31,7 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(storage store.Store,
+func New(storage datastore.DataStore,
 	processor processor.Processor,
 	buildTimePolicies detection.PolicySet,
 	deployTimePolicies detection.PolicySet,

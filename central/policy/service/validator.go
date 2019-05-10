@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
@@ -8,14 +9,14 @@ import (
 	mapset "github.com/deckarep/golang-set"
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
-	notifierStore "github.com/stackrox/rox/central/notifier/store"
+	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/searchbasedpolicies/matcher"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/policies"
 )
 
-func newPolicyValidator(notifierStorage notifierStore.Store, clusterStorage clusterDataStore.DataStore, deploymentMatcherBuilder, imageMatcherBuilder matcher.Builder) *policyValidator {
+func newPolicyValidator(notifierStorage notifierDataStore.DataStore, clusterStorage clusterDataStore.DataStore, deploymentMatcherBuilder, imageMatcherBuilder matcher.Builder) *policyValidator {
 	return &policyValidator{
 		notifierStorage:          notifierStorage,
 		clusterStorage:           clusterStorage,
@@ -28,7 +29,7 @@ func newPolicyValidator(notifierStorage notifierStore.Store, clusterStorage clus
 
 // policyValidator validates the incoming policy.
 type policyValidator struct {
-	notifierStorage          notifierStore.Store
+	notifierStorage          notifierDataStore.DataStore
 	clusterStorage           clusterDataStore.DataStore
 	deploymentMatcherBuilder matcher.Builder
 	imageMatcherBuilder      matcher.Builder
@@ -37,7 +38,7 @@ type policyValidator struct {
 	descriptionValidator *regexp.Regexp
 }
 
-func (s *policyValidator) validate(policy *storage.Policy) error {
+func (s *policyValidator) validate(ctx context.Context, policy *storage.Policy) error {
 	s.removeEnforcementsForMissingLifecycles(policy)
 
 	errorList := errorhelpers.NewErrorList("policy invalid")
@@ -49,6 +50,7 @@ func (s *policyValidator) validate(policy *storage.Policy) error {
 	errorList.AddError(s.validateScopes(policy))
 	errorList.AddError(s.validateWhitelists(policy))
 	errorList.AddError(s.validateCapabilities(policy))
+	errorList.AddError(s.validateNotifiers(ctx, policy))
 	return errorList.ToError()
 }
 
@@ -134,9 +136,9 @@ func (s *policyValidator) validateCategories(policy *storage.Policy) error {
 	return nil
 }
 
-func (s *policyValidator) validateNotifiers(policy *storage.Policy) error {
+func (s *policyValidator) validateNotifiers(ctx context.Context, policy *storage.Policy) error {
 	for _, n := range policy.GetNotifiers() {
-		_, exists, err := s.notifierStorage.GetNotifier(n)
+		_, exists, err := s.notifierStorage.GetNotifier(ctx, n)
 		if err != nil {
 			return fmt.Errorf("error checking if notifier %s is valid", n)
 		}

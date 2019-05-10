@@ -13,7 +13,7 @@ import (
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/generator"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
-	notifierStore "github.com/stackrox/rox/central/notifier/store"
+	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/notifiers"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -64,7 +64,7 @@ type serviceImpl struct {
 	clusterStore    clusterDataStore.DataStore
 	deployments     deploymentDataStore.DataStore
 	networkPolicies npDS.DataStore
-	notifierStore   notifierStore.Store
+	notifierStore   notifierDataStore.DataStore
 	graphEvaluator  graph.Evaluator
 
 	policyGenerator generator.Generator
@@ -323,7 +323,7 @@ func (s *serviceImpl) SendNetworkPolicyYAML(ctx context.Context, request *v1.Sen
 
 	errorList := errorhelpers.NewErrorList("unable to use all requested notifiers")
 	for _, notifierID := range request.GetNotifierIds() {
-		notifierProto, exists, err := s.notifierStore.GetNotifier(notifierID)
+		notifierProto, exists, err := s.notifierStore.GetNotifier(ctx, notifierID)
 		if err != nil {
 			errorList.AddError(err)
 			continue

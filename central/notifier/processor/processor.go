@@ -1,7 +1,6 @@
 package processor
 
 import (
-	"github.com/stackrox/rox/central/notifier/store"
 	"github.com/stackrox/rox/central/notifiers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,12 +27,9 @@ type Processor interface {
 }
 
 // New returns a new Processor
-func New(s store.Store) (Processor, error) {
-	processor := &processorImpl{
+func New() Processor {
+	return &processorImpl{
 		notifiers:           make(map[string]notifiers.Notifier),
 		notifiersToPolicies: make(map[string]map[string]*storage.Policy),
-		storage:             s,
 	}
-	err := processor.initializeNotifiers()
-	return processor, err
 }

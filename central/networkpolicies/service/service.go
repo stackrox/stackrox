@@ -10,7 +10,7 @@ import (
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/generator"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
-	notifierStore "github.com/stackrox/rox/central/notifier/store"
+	notifierDataStore "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -31,7 +31,7 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(storage npDS.DataStore, deployments deploymentDataStore.DataStore, graphEvaluator graph.Evaluator, namespacesStore nsDataStore.DataStore, clusterStore clusterDataStore.DataStore, notifierStore notifierStore.Store, globalFlowStore flowStore.ClusterStore, sensorConnMgr connection.Manager) Service {
+func New(storage npDS.DataStore, deployments deploymentDataStore.DataStore, graphEvaluator graph.Evaluator, namespacesStore nsDataStore.DataStore, clusterStore clusterDataStore.DataStore, notifierStore notifierDataStore.DataStore, globalFlowStore flowStore.ClusterStore, sensorConnMgr connection.Manager) Service {
 	return &serviceImpl{
 		sensorConnMgr:   sensorConnMgr,
 		deployments:     deployments,
