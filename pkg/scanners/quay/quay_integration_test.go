@@ -64,9 +64,9 @@ func (suite *QuayIntegrationSuite) TestGetLastScan() {
 		scan, err = suite.quay.GetLastScan(image)
 		return err
 	},
-		retry.Tries(5),
+		retry.Tries(10),
 		retry.BetweenAttempts(func() {
-			time.Sleep(time.Second)
+			time.Sleep(30 * time.Second)
 		}),
 	)
 	suite.NoError(err)
