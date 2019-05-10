@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/namespace/datastore"
-	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
+	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,7 +17,7 @@ import (
 
 // ResolveAll resolves all namespaces, populating volatile runtime data (like deployment and secret counts) by querying related stores.
 func ResolveAll(ctx context.Context, dataStore datastore.DataStore, deploymentDataStore deploymentDataStore.DataStore,
-	secretDataStore secretDataStore.DataStore, npStore networkPoliciesStore.Store) ([]*v1.Namespace, error) {
+	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore) ([]*v1.Namespace, error) {
 	metadataSlice, err := dataStore.GetNamespaces(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "retrieving namespaces")
@@ -27,7 +27,7 @@ func ResolveAll(ctx context.Context, dataStore datastore.DataStore, deploymentDa
 
 // ResolveByClusterID resolves all namespaces for the given cluster.
 func ResolveByClusterID(ctx context.Context, clusterID string, datastore datastore.DataStore, deploymentDataStore deploymentDataStore.DataStore,
-	secretDataStore secretDataStore.DataStore, npStore networkPoliciesStore.Store) ([]*v1.Namespace, error) {
+	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore) ([]*v1.Namespace, error) {
 	metadataSlice, err := datastore.SearchNamespaces(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusterID).
 		ProtoQuery())
@@ -38,7 +38,7 @@ func ResolveByClusterID(ctx context.Context, clusterID string, datastore datasto
 }
 
 func populateFromMetadataSlice(ctx context.Context, metadataSlice []*storage.NamespaceMetadata, deploymentDataStore deploymentDataStore.DataStore,
-	secretDataStore secretDataStore.DataStore, npStore networkPoliciesStore.Store) ([]*v1.Namespace, error) {
+	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore) ([]*v1.Namespace, error) {
 	if len(metadataSlice) == 0 {
 		return nil, nil
 	}
@@ -55,7 +55,7 @@ func populateFromMetadataSlice(ctx context.Context, metadataSlice []*storage.Nam
 
 // ResolveByClusterIDAndName resolves a namespace given its cluster ID and its name.
 func ResolveByClusterIDAndName(ctx context.Context, clusterID string, name string, dataStore datastore.DataStore, deploymentDataStore deploymentDataStore.DataStore,
-	secretDataStore secretDataStore.DataStore, npStore networkPoliciesStore.Store) (*v1.Namespace, bool, error) {
+	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore) (*v1.Namespace, bool, error) {
 	q := search.NewQueryBuilder().AddExactMatches(search.Namespace, name).AddStrings(search.ClusterID, clusterID).ProtoQuery()
 	namespaces, err := dataStore.SearchNamespaces(ctx, q)
 	if err != nil {
@@ -73,7 +73,7 @@ func ResolveByClusterIDAndName(ctx context.Context, clusterID string, name strin
 
 // ResolveByID resolves a namespace by id given all the stores.
 func ResolveByID(ctx context.Context, id string, dataStore datastore.DataStore, deploymentDataStore deploymentDataStore.DataStore,
-	secretDataStore secretDataStore.DataStore, npStore networkPoliciesStore.Store) (*v1.Namespace, bool, error) {
+	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore) (*v1.Namespace, bool, error) {
 	ns, exists, err := dataStore.GetNamespace(ctx, id)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "retrieving from store")
@@ -87,7 +87,7 @@ func ResolveByID(ctx context.Context, id string, dataStore datastore.DataStore, 
 
 // populate takes the namespace and fills in data by querying related stores.
 func populate(ctx context.Context, storageNamespace *storage.NamespaceMetadata, deploymentDataStore deploymentDataStore.DataStore,
-	secretDataStore secretDataStore.DataStore, npStore networkPoliciesStore.Store) (*v1.Namespace, error) {
+	secretDataStore secretDataStore.DataStore, npStore npDS.DataStore) (*v1.Namespace, error) {
 	q := search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, storageNamespace.GetClusterId()).
 		AddExactMatches(search.Namespace, storageNamespace.GetName()).
@@ -103,6 +103,7 @@ func populate(ctx context.Context, storageNamespace *storage.NamespaceMetadata, 
 	}
 
 	networkPolicyCount, err := npStore.CountMatchingNetworkPolicies(
+		ctx,
 		storageNamespace.GetClusterId(),
 		storageNamespace.GetName(),
 	)

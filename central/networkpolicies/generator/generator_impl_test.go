@@ -8,10 +8,10 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
-	mocks2 "github.com/stackrox/rox/central/deployment/datastore/mocks"
-	mocks4 "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	mocks3 "github.com/stackrox/rox/central/networkflow/store/mocks"
-	"github.com/stackrox/rox/central/networkpolicies/store/mocks"
+	dDSMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
+	nsDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
+	nfSMocks "github.com/stackrox/rox/central/networkflow/store/mocks"
+	npDSMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/namespaces"
@@ -23,11 +23,11 @@ type generatorTestSuite struct {
 	suite.Suite
 	generator *generator
 
-	mockCtrl               *gomock.Controller
-	mockNetworkPolicyStore *mocks.MockStore
-	mockDeploymentsStore   *mocks2.MockDataStore
-	mockGlobalFlowStore    *mocks3.MockClusterStore
-	mockNamespaceStore     *mocks4.MockDataStore
+	mockCtrl             *gomock.Controller
+	mocksNetworkPolicies *npDSMocks.MockDataStore
+	mockDeployments      *dDSMocks.MockDataStore
+	mockGlobalFlowStore  *nfSMocks.MockClusterStore
+	mockNamespaceStore   *nsDSMocks.MockDataStore
 }
 
 func TestGenerator(t *testing.T) {
@@ -66,16 +66,16 @@ var testNetworkPolicies = []*storage.NetworkPolicy{
 
 func (s *generatorTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
-	s.mockNetworkPolicyStore = mocks.NewMockStore(s.mockCtrl)
-	s.mockDeploymentsStore = mocks2.NewMockDataStore(s.mockCtrl)
-	s.mockGlobalFlowStore = mocks3.NewMockClusterStore(s.mockCtrl)
-	s.mockNamespaceStore = mocks4.NewMockDataStore(s.mockCtrl)
+	s.mocksNetworkPolicies = npDSMocks.NewMockDataStore(s.mockCtrl)
+	s.mockDeployments = dDSMocks.NewMockDataStore(s.mockCtrl)
+	s.mockGlobalFlowStore = nfSMocks.NewMockClusterStore(s.mockCtrl)
+	s.mockNamespaceStore = nsDSMocks.NewMockDataStore(s.mockCtrl)
 
 	s.generator = &generator{
-		networkPolicyStore: s.mockNetworkPolicyStore,
-		deploymentStore:    s.mockDeploymentsStore,
-		globalFlowStore:    s.mockGlobalFlowStore,
-		namespacesStore:    s.mockNamespaceStore,
+		networkPolicies: s.mocksNetworkPolicies,
+		deploymentStore: s.mockDeployments,
+		globalFlowStore: s.mockGlobalFlowStore,
+		namespacesStore: s.mockNamespaceStore,
 	}
 }
 
@@ -84,18 +84,18 @@ func (s *generatorTestSuite) TearDownTest() {
 }
 
 func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteNone() {
-	s.mockNetworkPolicyStore.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any()).Return(testNetworkPolicies, nil)
+	s.mocksNetworkPolicies.EXPECT().GetNetworkPolicies(context.TODO(), gomock.Any(), gomock.Any()).Return(testNetworkPolicies, nil)
 
-	existing, toDelete, err := s.generator.getNetworkPolicies(v1.GenerateNetworkPoliciesRequest_NONE, "cluster")
+	existing, toDelete, err := s.generator.getNetworkPolicies(context.TODO(), v1.GenerateNetworkPoliciesRequest_NONE, "cluster")
 	s.NoError(err)
 	s.ElementsMatch(existing, testNetworkPolicies)
 	s.Empty(toDelete)
 }
 
 func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteGenerated() {
-	s.mockNetworkPolicyStore.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any()).Return(testNetworkPolicies, nil)
+	s.mocksNetworkPolicies.EXPECT().GetNetworkPolicies(context.TODO(), gomock.Any(), gomock.Any()).Return(testNetworkPolicies, nil)
 
-	existing, toDelete, err := s.generator.getNetworkPolicies(v1.GenerateNetworkPoliciesRequest_GENERATED_ONLY, "cluster")
+	existing, toDelete, err := s.generator.getNetworkPolicies(context.TODO(), v1.GenerateNetworkPoliciesRequest_GENERATED_ONLY, "cluster")
 	s.NoError(err)
 	s.ElementsMatch(existing, []*storage.NetworkPolicy{testNetworkPolicies[0], testNetworkPolicies[2]})
 	s.ElementsMatch(toDelete, []*storage.NetworkPolicyReference{
@@ -111,9 +111,9 @@ func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteGenerated() {
 }
 
 func (s *generatorTestSuite) TestGetNetworkPolicies_DeleteAll() {
-	s.mockNetworkPolicyStore.EXPECT().GetNetworkPolicies(gomock.Any(), gomock.Any()).Return(testNetworkPolicies, nil)
+	s.mocksNetworkPolicies.EXPECT().GetNetworkPolicies(context.TODO(), gomock.Any(), gomock.Any()).Return(testNetworkPolicies, nil)
 
-	existing, toDelete, err := s.generator.getNetworkPolicies(v1.GenerateNetworkPoliciesRequest_ALL, "cluster")
+	existing, toDelete, err := s.generator.getNetworkPolicies(context.TODO(), v1.GenerateNetworkPoliciesRequest_ALL, "cluster")
 	s.NoError(err)
 	s.Empty(existing)
 	s.ElementsMatch(toDelete, []*storage.NetworkPolicyReference{
@@ -160,7 +160,7 @@ func (s *generatorTestSuite) TestGenerate() {
 		NetworkDataSince: ts,
 	}
 
-	s.mockDeploymentsStore.EXPECT().SearchRawDeployments(gomock.Any(), gomock.Any()).Return(
+	s.mockDeployments.EXPECT().SearchRawDeployments(gomock.Any(), gomock.Any()).Return(
 		[]*storage.Deployment{
 			{
 				Id:        "depA",
@@ -219,7 +219,7 @@ func (s *generatorTestSuite) TestGenerate() {
 		}, nil)
 
 	clusterIDMatcher := testutils.PredMatcher("check cluster ID", func(clusterID string) bool { return clusterID == "mycluster" })
-	s.mockNetworkPolicyStore.EXPECT().GetNetworkPolicies(clusterIDMatcher, "").Return(
+	s.mocksNetworkPolicies.EXPECT().GetNetworkPolicies(context.TODO(), clusterIDMatcher, "").Return(
 		[]*storage.NetworkPolicy{
 			{
 				Id:        "np1",
@@ -245,7 +245,7 @@ func (s *generatorTestSuite) TestGenerate() {
 			},
 		}, nil)
 
-	mockFlowStore := mocks3.NewMockFlowStore(s.mockCtrl)
+	mockFlowStore := nfSMocks.NewMockFlowStore(s.mockCtrl)
 	mockFlowStore.EXPECT().GetAllFlows(gomock.Eq(ts)).Return(
 		[]*storage.NetworkFlow{
 			{

@@ -7,7 +7,7 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/namespace"
 	"github.com/stackrox/rox/central/namespace/datastore"
-	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
+	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -33,7 +33,7 @@ type serviceImpl struct {
 	datastore       datastore.DataStore
 	deployments     deploymentDataStore.DataStore
 	secrets         secretDataStore.DataStore
-	networkPolicies networkPoliciesStore.Store
+	networkPolicies npDS.DataStore
 }
 
 func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {

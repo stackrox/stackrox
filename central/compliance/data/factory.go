@@ -9,8 +9,8 @@ import (
 	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
 	networkFlowStoreSingleton "github.com/stackrox/rox/central/networkflow/store/singleton"
+	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
-	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
 	notifierStore "github.com/stackrox/rox/central/notifier/store"
 	policiesStore "github.com/stackrox/rox/central/policy/datastore"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
@@ -26,7 +26,7 @@ type RepositoryFactory interface {
 
 type factory struct {
 	alertStore            alertStore.DataStore
-	networkPoliciesStore  networkPoliciesStore.Store
+	networkPoliciesStore  npDS.DataStore
 	networkGraphEvaluator graph.Evaluator
 	policyStore           policiesStore.DataStore
 	imageStore            imageStore.DataStore
@@ -44,7 +44,7 @@ type factory struct {
 func NewDefaultFactory() RepositoryFactory {
 	return &factory{
 		alertStore:            alertStore.Singleton(),
-		networkPoliciesStore:  networkPoliciesStore.Singleton(),
+		networkPoliciesStore:  npDS.Singleton(),
 		networkGraphEvaluator: graph.Singleton(),
 		policyStore:           policiesStore.Singleton(),
 		imageStore:            imageStore.Singleton(),

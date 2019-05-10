@@ -6,8 +6,8 @@ import (
 
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	countMetrics "github.com/stackrox/rox/central/metrics"
+	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
-	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
@@ -27,11 +27,11 @@ var (
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(clusterDataStore.Singleton(), networkPoliciesStore.Singleton(), graph.Singleton())
+	return NewPipeline(clusterDataStore.Singleton(), npDS.Singleton(), graph.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(clusters clusterDataStore.DataStore, networkPolicies networkPoliciesStore.Store, graphEvaluator graph.Evaluator) pipeline.Fragment {
+func NewPipeline(clusters clusterDataStore.DataStore, networkPolicies npDS.DataStore, graphEvaluator graph.Evaluator) pipeline.Fragment {
 	return &pipelineImpl{
 		clusters:        clusters,
 		networkPolicies: networkPolicies,
@@ -42,13 +42,13 @@ func NewPipeline(clusters clusterDataStore.DataStore, networkPolicies networkPol
 
 type pipelineImpl struct {
 	clusters        clusterDataStore.DataStore
-	networkPolicies networkPoliciesStore.Store
+	networkPolicies npDS.DataStore
 	graphEvaluator  graph.Evaluator
 	reconcileStore  reconciliation.Store
 }
 
 func (s *pipelineImpl) Reconcile(clusterID string) error {
-	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(clusterID, "")
+	networkPolicies, err := s.networkPolicies.GetNetworkPolicies(context.TODO(), clusterID, "")
 	if err != nil {
 		return err
 	}
@@ -142,13 +142,15 @@ func (s *pipelineImpl) enrichCluster(np *storage.NetworkPolicy) error {
 }
 
 func (s *pipelineImpl) persistNetworkPolicy(action central.ResourceAction, np *storage.NetworkPolicy) error {
+	ctx := context.TODO()
+
 	switch action {
 	case central.ResourceAction_CREATE_RESOURCE:
-		return s.networkPolicies.AddNetworkPolicy(np)
+		return s.networkPolicies.AddNetworkPolicy(ctx, np)
 	case central.ResourceAction_UPDATE_RESOURCE:
-		return s.networkPolicies.UpdateNetworkPolicy(np)
+		return s.networkPolicies.UpdateNetworkPolicy(ctx, np)
 	case central.ResourceAction_REMOVE_RESOURCE:
-		return s.networkPolicies.RemoveNetworkPolicy(string(np.GetId()))
+		return s.networkPolicies.RemoveNetworkPolicy(ctx, string(np.GetId()))
 	default:
 		return fmt.Errorf("Event action '%s' for network policy does not exist", action)
 	}

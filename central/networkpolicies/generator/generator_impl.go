@@ -6,10 +6,10 @@ import (
 
 	"github.com/gogo/protobuf/types"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/deployment/datastore"
-	namespacesDataStore "github.com/stackrox/rox/central/namespace/datastore"
+	dDS "github.com/stackrox/rox/central/deployment/datastore"
+	nsDS "github.com/stackrox/rox/central/namespace/datastore"
 	flowStore "github.com/stackrox/rox/central/networkflow/store"
-	"github.com/stackrox/rox/central/networkpolicies/store"
+	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -29,10 +29,10 @@ func isGeneratedPolicy(policy *storage.NetworkPolicy) bool {
 }
 
 type generator struct {
-	networkPolicyStore store.Store
-	deploymentStore    datastore.DataStore
-	namespacesStore    namespacesDataStore.DataStore
-	globalFlowStore    flowStore.ClusterStore
+	networkPolicies npDS.DataStore
+	deploymentStore dDS.DataStore
+	namespacesStore nsDS.DataStore
+	globalFlowStore flowStore.ClusterStore
 }
 
 func markGeneratedPoliciesForDeletion(policies []*storage.NetworkPolicy) ([]*storage.NetworkPolicy, []*storage.NetworkPolicyReference) {
@@ -64,8 +64,8 @@ func markAllPoliciesForDeletion(policies []*storage.NetworkPolicy) []*storage.Ne
 	return toDelete
 }
 
-func (g *generator) getNetworkPolicies(deleteExistingMode v1.GenerateNetworkPoliciesRequest_DeleteExistingPoliciesMode, clusterID string) ([]*storage.NetworkPolicy, []*storage.NetworkPolicyReference, error) {
-	policies, err := g.networkPolicyStore.GetNetworkPolicies(clusterID, "")
+func (g *generator) getNetworkPolicies(ctx context.Context, deleteExistingMode v1.GenerateNetworkPoliciesRequest_DeleteExistingPoliciesMode, clusterID string) ([]*storage.NetworkPolicy, []*storage.NetworkPolicyReference, error) {
+	policies, err := g.networkPolicies.GetNetworkPolicies(ctx, clusterID, "")
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "obtaining network policies")
 	}
@@ -167,7 +167,7 @@ func (g *generator) Generate(ctx context.Context, req *v1.GenerateNetworkPolicie
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "generating network graph")
 	}
-	existingPolicies, toDelete, err := g.getNetworkPolicies(req.GetDeleteExisting(), req.GetClusterId())
+	existingPolicies, toDelete, err := g.getNetworkPolicies(ctx, req.GetDeleteExisting(), req.GetClusterId())
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "obtaining existing network policies")
 	}

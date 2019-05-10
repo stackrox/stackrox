@@ -3,7 +3,7 @@ package service
 import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/namespace/datastore"
-	networkPoliciesStore "github.com/stackrox/rox/central/networkpolicies/store"
+	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	secretDataStore "github.com/stackrox/rox/central/secret/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -21,7 +21,7 @@ type Service interface {
 }
 
 // New returns a new instance of service.
-func New(datastore datastore.DataStore, deployments deploymentDataStore.DataStore, secrets secretDataStore.DataStore, networkPolicies networkPoliciesStore.Store) Service {
+func New(datastore datastore.DataStore, deployments deploymentDataStore.DataStore, secrets secretDataStore.DataStore, networkPolicies npDS.DataStore) Service {
 	return &serviceImpl{
 		datastore:       datastore,
 		deployments:     deployments,
