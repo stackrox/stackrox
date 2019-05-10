@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/apitoken/backend"
-	rolestore "github.com/stackrox/rox/central/role/store"
+	roleDS "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 )
@@ -19,6 +19,6 @@ type Service interface {
 }
 
 // New returns a ready-to-use instance of Service.
-func New(backend backend.Backend, roleStore rolestore.Store) Service {
-	return &serviceImpl{backend: backend, roleStore: roleStore}
+func New(backend backend.Backend, roles roleDS.DataStore) Service {
+	return &serviceImpl{backend: backend, roles: roles}
 }

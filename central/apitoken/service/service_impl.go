@@ -5,8 +5,8 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/apitoken/backend"
+	roleDS "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/central/role/resources"
-	"github.com/stackrox/rox/central/role/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -32,8 +32,8 @@ var (
 )
 
 type serviceImpl struct {
-	backend   backend.Backend
-	roleStore store.Store
+	backend backend.Backend
+	roles   roleDS.DataStore
 }
 
 func (s *serviceImpl) GetAPIToken(ctx context.Context, req *v1.ResourceByID) (*storage.TokenMetadata, error) {
@@ -77,7 +77,7 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 	}
 
 	// Make sure the role exists. We do not allow people to generate a token for a role that doesn't exist.
-	role, err := s.roleStore.GetRole(req.GetRole())
+	role, err := s.roles.GetRole(ctx, req.GetRole())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "unable to fetch role %q", req.GetRole())
 	}

@@ -21,7 +21,7 @@ func (resolver *Resolver) Groups(ctx context.Context) ([]*groupResolver, error) 
 	if err != nil {
 		return nil, err
 	}
-	return resolver.wrapGroups(resolver.GroupDataStore.GetAll())
+	return resolver.wrapGroups(resolver.GroupDataStore.GetAll(ctx))
 }
 
 // Group returns a GraphQL resolver for the matching group, if it exists
@@ -40,6 +40,6 @@ func (resolver *Resolver) Group(ctx context.Context, args struct{ AuthProviderID
 	if args.Value != nil {
 		props.Value = *args.Value
 	}
-	grp, err := resolver.GroupDataStore.Get(props)
+	grp, err := resolver.GroupDataStore.Get(ctx, props)
 	return resolver.wrapGroup(grp, grp != nil, err)
 }

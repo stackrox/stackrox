@@ -17,7 +17,7 @@ import (
 	complianceStandards "github.com/stackrox/rox/central/compliance/standards"
 	complianceStore "github.com/stackrox/rox/central/compliance/store"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
-	groupDataStore "github.com/stackrox/rox/central/group/store"
+	groupDataStore "github.com/stackrox/rox/central/group/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	networkFlowStore "github.com/stackrox/rox/central/networkflow/store"
@@ -51,7 +51,7 @@ type Resolver struct {
 	ComplianceManager           complianceManager.ComplianceManager
 	DeploymentDataStore         deploymentDatastore.DataStore
 	ImageDataStore              imageDatastore.DataStore
-	GroupDataStore              groupDataStore.Store
+	GroupDataStore              groupDataStore.DataStore
 	NamespaceDataStore          namespaceDataStore.DataStore
 	NetworkFlowStore            networkFlowStore.ClusterStore
 	NetworkPoliciesStore        npDS.DataStore

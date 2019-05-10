@@ -6,7 +6,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/group/datastore"
-	"github.com/stackrox/rox/central/group/store"
+	"github.com/stackrox/rox/central/group/datastore/serialize"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -117,11 +117,11 @@ func (s *serviceImpl) DeleteGroup(ctx context.Context, props *storage.GroupPrope
 func diffGroups(previous []*storage.Group, required []*storage.Group) (removed []*storage.Group, updated []*storage.Group, added []*storage.Group) {
 	previousByProps := make(map[string]*storage.Group)
 	for _, group := range previous {
-		previousByProps[store.PropsKey(group.GetProps())] = group
+		previousByProps[serialize.PropsKey(group.GetProps())] = group
 	}
 	requiredByProps := make(map[string]*storage.Group)
 	for _, group := range required {
-		requiredByProps[store.PropsKey(group.GetProps())] = group
+		requiredByProps[serialize.PropsKey(group.GetProps())] = group
 	}
 
 	for key, group := range previousByProps {

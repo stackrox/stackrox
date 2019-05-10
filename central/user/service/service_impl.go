@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	groupStore "github.com/stackrox/rox/central/group/store"
+	"github.com/stackrox/rox/central/group/datastore/serialize"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/user/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -89,7 +89,7 @@ func aggregateUserAttributes(users []*storage.User) (attrs []*v1.UserAttributeTu
 	tups := make(map[string]*v1.UserAttributeTuple)
 	for _, user := range users {
 		for _, attr := range user.GetAttributes() {
-			key := groupStore.StringKey(user.GetAuthProviderId(), attr.GetKey(), attr.GetValue())
+			key := serialize.StringKey(user.GetAuthProviderId(), attr.GetKey(), attr.GetValue())
 			if _, exists := tups[key]; !exists {
 				tups[key] = &v1.UserAttributeTuple{
 					AuthProviderId: user.GetAuthProviderId(),

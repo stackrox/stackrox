@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/stackrox/rox/central/apitoken/backend"
-	rolestore "github.com/stackrox/rox/central/role/store"
+	roleDS "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -12,7 +12,7 @@ var (
 )
 
 func initialize() {
-	svc = New(backend.Singleton(), rolestore.Singleton())
+	svc = New(backend.Singleton(), roleDS.Singleton())
 }
 
 // Singleton returns the API token singleton.

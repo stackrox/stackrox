@@ -3,7 +3,7 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/role/store"
+	"github.com/stackrox/rox/central/role/datastore/internal/store"
 	"github.com/stackrox/rox/generated/storage"
 )
 

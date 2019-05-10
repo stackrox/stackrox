@@ -1,7 +1,7 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/role/store"
+	"github.com/stackrox/rox/central/role/datastore/internal/store"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
