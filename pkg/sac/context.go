@@ -4,6 +4,13 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/features"
+)
+
+var (
+	// noSAC stores whether scoped access control is disabled. This is to prevent
+	// a (relatively expensive) call to `Enabled()` on every data access.
+	noSAC = !features.ScopedAccessControl.Enabled()
 )
 
 type globalAccessScopeContextKey struct{}
@@ -11,13 +18,15 @@ type globalAccessScopeContextKey struct{}
 // GlobalAccessScopeChecker retrieves the global access scope from the context.
 // This function is guaranteed to return a non-nil value.
 func GlobalAccessScopeChecker(ctx context.Context) ScopeChecker {
+	if noSAC {
+		return NewScopeChecker(AllowAllAccessScopeChecker())
+	}
+
 	core, _ := ctx.Value(globalAccessScopeContextKey{}).(ScopeCheckerCore)
 	if core == nil {
 		core = ErrorAccessScopeCheckerCore(errors.New("global access scope was not found in context"))
 	}
-	return ScopeChecker{
-		core: core,
-	}
+	return NewScopeChecker(core)
 }
 
 // WithGlobalAccessScopeChecker returns a context that is a child of the given context and contains

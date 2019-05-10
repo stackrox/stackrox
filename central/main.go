@@ -84,7 +84,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders/saml"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
@@ -314,17 +313,12 @@ func startGRPCServer(factory serviceFactory) {
 		config.Auditor = audit.New(processor.Singleton())
 	}
 
-	var sacContextEnricher contextutil.ContextUpdater
 	if features.ScopedAccessControl.Enabled() {
-		sacContextEnricher = func(ctx context.Context) (context.Context, error) {
+		sacContextEnricher := func(ctx context.Context) (context.Context, error) {
 			return sac.WithGlobalAccessScopeChecker(ctx, sac.ErrorAccessScopeCheckerCore(errors.New("not yet implemented"))), nil
 		}
-	} else {
-		sacContextEnricher = func(ctx context.Context) (context.Context, error) {
-			return sac.WithAllAccess(ctx), nil
-		}
+		config.ContextEnrichers = append(config.ContextEnrichers, sacContextEnricher)
 	}
-	config.ContextEnrichers = append(config.ContextEnrichers, sacContextEnricher)
 
 	server := pkgGRPC.NewAPI(config)
 
