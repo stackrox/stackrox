@@ -15,9 +15,10 @@ var (
 // We don't store the tokens themselves, but do store metadata.
 // Importantly, the Store persists token revocations.
 type Store interface {
-	AddToken(*storage.TokenMetadata) error
 	GetTokenOrNil(id string) (token *storage.TokenMetadata, err error)
 	GetTokens(*v1.GetAPITokensRequest) ([]*storage.TokenMetadata, error)
+
+	AddToken(*storage.TokenMetadata) error
 	RevokeToken(id string) (exists bool, err error)
 }
 

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
-	"github.com/stackrox/rox/central/apitoken"
+	"github.com/stackrox/rox/central/apitoken/backend"
 	"github.com/stackrox/rox/central/role/resources"
 	"github.com/stackrox/rox/central/role/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -32,7 +32,7 @@ var (
 )
 
 type serviceImpl struct {
-	backend   apitoken.Backend
+	backend   backend.Backend
 	roleStore store.Store
 }
 
@@ -40,7 +40,7 @@ func (s *serviceImpl) GetAPIToken(ctx context.Context, req *v1.ResourceByID) (*s
 	if req.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "empty id passed")
 	}
-	token, err := s.backend.GetTokenOrNil(req.GetId())
+	token, err := s.backend.GetTokenOrNil(ctx, req.GetId())
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "token retrieval failed: %s", err)
 	}
@@ -51,7 +51,7 @@ func (s *serviceImpl) GetAPIToken(ctx context.Context, req *v1.ResourceByID) (*s
 }
 
 func (s *serviceImpl) GetAPITokens(ctx context.Context, req *v1.GetAPITokensRequest) (*v1.GetAPITokensResponse, error) {
-	tokens, err := s.backend.GetTokens(req)
+	tokens, err := s.backend.GetTokens(ctx, req)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "retrieval of tokens failed: %s", err)
 	}
@@ -61,7 +61,7 @@ func (s *serviceImpl) GetAPITokens(ctx context.Context, req *v1.GetAPITokensRequ
 }
 
 func (s *serviceImpl) RevokeToken(ctx context.Context, req *v1.ResourceByID) (*v1.Empty, error) {
-	exists, err := s.backend.RevokeToken(req.GetId())
+	exists, err := s.backend.RevokeToken(ctx, req.GetId())
 	if err != nil {
 		return &v1.Empty{}, status.Errorf(codes.Internal, "couldn't revoke token: %s", err)
 	}
@@ -85,7 +85,7 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 		return nil, status.Errorf(codes.InvalidArgument, "role %q doesn't exist", req.GetRole())
 	}
 
-	token, metadata, err := s.backend.IssueRoleToken(req.GetName(), role)
+	token, metadata, err := s.backend.IssueRoleToken(ctx, req.GetName(), role)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

@@ -8,7 +8,7 @@ import (
 	"reflect"
 
 	violationsDatastore "github.com/stackrox/rox/central/alert/datastore"
-	"github.com/stackrox/rox/central/apitoken"
+	"github.com/stackrox/rox/central/apitoken/backend"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/compliance/aggregation"
 	complianceManager "github.com/stackrox/rox/central/compliance/manager"
@@ -42,7 +42,7 @@ import (
 // Resolver is the root GraphQL resolver
 type Resolver struct {
 	ComplianceAggregator        aggregation.Aggregator
-	APITokenBackend             apitoken.Backend
+	APITokenBackend             backend.Backend
 	ClusterDataStore            clusterDatastore.DataStore
 	ComplianceDataStore         complianceStore.Store
 	ComplianceStandardStore     complianceStandards.Repository
@@ -71,7 +71,7 @@ type Resolver struct {
 func New() *Resolver {
 	resolver := &Resolver{
 		ComplianceAggregator:        aggregation.Singleton(),
-		APITokenBackend:             apitoken.BackendSingleton(),
+		APITokenBackend:             backend.Singleton(),
 		ComplianceDataStore:         complianceStore.Singleton(),
 		ComplianceStandardStore:     complianceStandards.RegistrySingleton(),
 		ComplianceManagementService: service.Singleton(),
