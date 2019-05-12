@@ -37,7 +37,6 @@ class PolicyConfigurationTest extends BaseSpecification {
                     .setName(DEPLOYMENTNGINX)
                     .setImage("nginx:1.7.9")
                     .addPort(22, "TCP")
-                    .addAnnotation("test", "annotation")
                     .setEnv(["CLUSTER_NAME": "main"])
                     .addLabel("app", "test")
                     .setPrivilegedFlag(true)

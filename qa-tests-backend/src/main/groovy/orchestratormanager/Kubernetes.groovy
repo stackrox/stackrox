@@ -1098,7 +1098,8 @@ class Kubernetes implements OrchestratorMain {
                 metadata: new ObjectMeta(
                         name: deployment.name,
                         namespace: deployment.namespace,
-                        labels: deployment.labels
+                        labels: deployment.labels,
+                        annotations: deployment.annotation,
                 ),
                 spec: new DeploymentSpec(
                         selector: new LabelSelector(null, deployment.labels),
@@ -1109,7 +1110,6 @@ class Kubernetes implements OrchestratorMain {
                                         name: deployment.name,
                                         namespace: deployment.namespace,
                                         labels: deployment.labels,
-                                        annotations: deployment.annotation
                                 ),
                                 spec: generatePodSpec(deployment)
                         )
@@ -1120,8 +1120,10 @@ class Kubernetes implements OrchestratorMain {
         try {
             client.apps().deployments().inNamespace(deployment.namespace).createOrReplace(d)
             println("Told the orchestrator to create " + deployment.getName())
+            return true
         } catch (Exception e) {
             println("Error creating k8s deployment: " + e.toString())
+            return false
         }
     }
 
