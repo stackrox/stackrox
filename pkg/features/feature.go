@@ -3,6 +3,8 @@ package features
 import (
 	"os"
 	"strings"
+
+	"github.com/stackrox/rox/pkg/buildinfo"
 )
 
 type feature struct {
@@ -20,6 +22,10 @@ func (f *feature) Name() string {
 }
 
 func (f *feature) Enabled() bool {
+	if buildinfo.ReleaseBuild {
+		return f.defaultValue
+	}
+
 	switch strings.ToLower(os.Getenv(f.envVar)) {
 	case "false":
 		return false
