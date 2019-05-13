@@ -316,8 +316,10 @@ func startGRPCServer(factory serviceFactory) {
 		config.Auditor = audit.New(processor.Singleton())
 	}
 
+	log.Infof("Scoped access control enabled: %v", features.ScopedAccessControl.Enabled())
 	if features.ScopedAccessControl.Enabled() {
 		config.ContextEnrichers = append(config.ContextEnrichers, transitional.LegacyAccessScopesContextEnricher)
+		config.UnaryInterceptors = append(config.UnaryInterceptors, transitional.VerifySACScopeChecksInterceptor)
 	}
 
 	server := pkgGRPC.NewAPI(config)

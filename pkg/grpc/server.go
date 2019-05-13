@@ -73,6 +73,9 @@ type Config struct {
 	AuthProviders      authproviders.Registry
 	Auditor            audit.Auditor
 	ContextEnrichers   []contextutil.ContextUpdater
+
+	UnaryInterceptors  []grpc.UnaryServerInterceptor
+	StreamInterceptors []grpc.StreamServerInterceptor
 }
 
 // NewAPI returns an API object.
@@ -115,6 +118,8 @@ func (a *apiImpl) unaryInterceptors() []grpc.UnaryServerInterceptor {
 		u = append(u, contextutil.UnaryServerInterceptor(a.config.ContextEnrichers...))
 	}
 
+	u = append(u, a.config.UnaryInterceptors...)
+
 	u = append(u, a.unaryRecovery())
 	return u
 }
@@ -132,6 +137,8 @@ func (a *apiImpl) streamInterceptors() []grpc.StreamServerInterceptor {
 	if len(a.config.ContextEnrichers) > 0 {
 		s = append(s, contextutil.StreamServerInterceptor(a.config.ContextEnrichers...))
 	}
+
+	s = append(s, a.config.StreamInterceptors...)
 
 	s = append(s, a.streamRecovery())
 	return s

@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
+	"github.com/stackrox/rox/pkg/grpc/authz/internal/permissioncheck"
 )
 
 type permissionChecker struct {
@@ -16,6 +17,14 @@ type permissionChecker struct {
 }
 
 func (p *permissionChecker) Authorized(ctx context.Context, _ string) error {
+	if pc := permissioncheck.FromContext(ctx); pc != nil {
+		for _, perm := range p.requiredPermissions {
+			pc.Add(permissions.Resource(perm.Resource), perm.Access)
+		}
+
+		return permissioncheck.ErrPermissionCheckOnly
+	}
+
 	id := authn.IdentityFromContext(ctx)
 	if id == nil {
 		return authz.ErrNoCredentials
