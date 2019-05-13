@@ -8,8 +8,8 @@ import (
 	"github.com/stackrox/rox/central/deployment/datastore"
 	multiplierStore "github.com/stackrox/rox/central/multiplier/store"
 	processIndicatorStore "github.com/stackrox/rox/central/processindicator/datastore"
-	"github.com/stackrox/rox/central/processwhitelist"
 	processWhitelistStore "github.com/stackrox/rox/central/processwhitelist/datastore"
+	processWhitelistResultsStore "github.com/stackrox/rox/central/processwhitelistresults/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -48,69 +48,20 @@ var (
 
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
-	datastore         datastore.DataStore
-	processWhitelists processWhitelistStore.DataStore
-	processIndicators processIndicatorStore.DataStore
-	multipliers       multiplierStore.Store
-	manager           manager.Manager
+	datastore               datastore.DataStore
+	processWhitelists       processWhitelistStore.DataStore
+	processIndicators       processIndicatorStore.DataStore
+	processWhitelistResults processWhitelistResultsStore.DataStore
+	multipliers             multiplierStore.Store
+	manager                 manager.Manager
 }
 
-func getWhitelistStatus(whitelist *storage.ProcessWhitelist) v1.ListDeploymentsWithProcessInfoResponse_WhitelistStatus {
-	if processwhitelist.LockedUnderMode(whitelist, processwhitelist.RoxOrUserLocked) {
-		return v1.ListDeploymentsWithProcessInfoResponse_LOCKED
-	}
-	return v1.ListDeploymentsWithProcessInfoResponse_UNLOCKED
-}
-
-func (s *serviceImpl) processInfoForDeployment(ctx context.Context, deployment *storage.ListDeployment) (*v1.ListDeploymentsWithProcessInfoResponse_ProcessInfo, error) {
-	processInfo := &v1.ListDeploymentsWithProcessInfoResponse_ProcessInfo{}
-
-	indicators, err := s.processIndicators.SearchRawProcessIndicators(ctx, search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).ProtoQuery())
+func (s *serviceImpl) whitelistResultsForDeployment(ctx context.Context, deployment *storage.ListDeployment) (*storage.ProcessWhitelistResults, error) {
+	whitelistResults, err := s.processWhitelistResults.GetWhitelistResults(ctx, deployment.GetId())
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, err.Error())
 	}
-	processInfo.NumProcesses = int32(len(indicators))
-
-	containerNameToWhitelists := make(map[string]*set.StringSet)
-	containerNameToWhitelistStatus := make(map[string]*v1.ListDeploymentsWithProcessInfoResponse_ContainerNameAndWhitelistStatus)
-	for _, indicator := range indicators {
-
-		var whitelistSet *set.StringSet
-		whitelistStatus, found := containerNameToWhitelistStatus[indicator.GetContainerName()]
-		if found {
-			// If we've already established that anomalous processes were executed, we can't really get
-			// more information from this indicator anyway.
-			if whitelistStatus.GetAnomalousProcessesExecuted() {
-				continue
-			}
-			whitelistSet = containerNameToWhitelists[indicator.GetContainerName()]
-		} else {
-			whitelist, err := s.processWhitelists.GetProcessWhitelist(ctx, &storage.ProcessWhitelistKey{
-				DeploymentId:  deployment.GetId(),
-				ContainerName: indicator.GetContainerName(),
-			})
-			if err != nil {
-				return nil, status.Error(codes.Internal, err.Error())
-			}
-			whitelistSet = processwhitelist.Processes(whitelist, processwhitelist.RoxOrUserLocked)
-			containerNameToWhitelists[indicator.GetContainerName()] = whitelistSet
-
-			containerNameToWhitelistStatus[indicator.GetContainerName()] = &v1.ListDeploymentsWithProcessInfoResponse_ContainerNameAndWhitelistStatus{
-				ContainerName:   indicator.GetContainerName(),
-				WhitelistStatus: getWhitelistStatus(whitelist),
-			}
-		}
-		if whitelistSet != nil {
-			if !whitelistSet.Contains(indicator.GetSignal().GetName()) {
-				containerNameToWhitelistStatus[indicator.GetContainerName()].AnomalousProcessesExecuted = true
-			}
-		}
-	}
-
-	for _, whitelistStatus := range containerNameToWhitelistStatus {
-		processInfo.WhitelistStatuses = append(processInfo.WhitelistStatuses, whitelistStatus)
-	}
-	return processInfo, nil
+	return whitelistResults, nil
 }
 
 func (s *serviceImpl) ListDeploymentsWithProcessInfo(ctx context.Context, rawQuery *v1.RawQuery) (*v1.ListDeploymentsWithProcessInfoResponse, error) {
@@ -120,13 +71,13 @@ func (s *serviceImpl) ListDeploymentsWithProcessInfo(ctx context.Context, rawQue
 	}
 	resp := &v1.ListDeploymentsWithProcessInfoResponse{}
 	for _, deployment := range deployments.Deployments {
-		processInfo, err := s.processInfoForDeployment(ctx, deployment)
+		whitelistResults, err := s.whitelistResultsForDeployment(ctx, deployment)
 		if err != nil {
 			return nil, err
 		}
 		resp.Deployments = append(resp.Deployments, &v1.ListDeploymentsWithProcessInfoResponse_DeploymentWithProcessInfo{
-			Deployment:  deployment,
-			ProcessInfo: processInfo,
+			Deployment:        deployment,
+			WhitelistStatuses: whitelistResults.WhitelistStatuses,
 		})
 	}
 	return resp, nil

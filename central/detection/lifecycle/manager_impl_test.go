@@ -3,6 +3,7 @@ package lifecycle
 import (
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/gogo/protobuf/types"
 	"github.com/golang/mock/gomock"
@@ -10,7 +11,9 @@ import (
 	processWhitelistDataStoreMocks "github.com/stackrox/rox/central/processwhitelist/datastore/mocks"
 	reprocessorMocks "github.com/stackrox/rox/central/reprocessor/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
@@ -71,20 +74,32 @@ func makeIndicator() (*storage.ProcessWhitelistKey, *storage.ProcessIndicator) {
 }
 
 func (suite *ManagerTestSuite) TestWhitelistNotFound() {
+	envIsolator := testutils.NewEnvIsolator(suite.T())
+	defer envIsolator.RestoreAll()
+
+	envIsolator.Setenv(env.WhitelistGenerationDuration.EnvVar(), time.Millisecond.String())
 	key, indicator := makeIndicator()
-	elements := fixtures.MakeWhitelistItems(indicator.Signal.GetName())
+	elements := fixtures.MakeWhitelistItems(indicator.GetSignal().GetExecFilePath())
 	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(nil, nil)
 	suite.whitelists.EXPECT().UpsertProcessWhitelist(gomock.Any(), key, elements, true).Return(nil, nil)
+	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(indicator.GetDeploymentId()).Times(2)
 	_, _, err := suite.manager.checkWhitelist(indicator)
 	suite.NoError(err)
+	time.Sleep(whitelistLockingGracePeriod + 2*time.Second)
+	suite.mockCtrl.Finish()
 
+	suite.mockCtrl = gomock.NewController(suite.T())
 	expectedError := errors.Errorf("Expected error")
 	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(nil, expectedError)
+	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(indicator.GetDeploymentId())
 	_, _, err = suite.manager.checkWhitelist(indicator)
 	suite.Equal(expectedError, err)
+	suite.mockCtrl.Finish()
 
+	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(nil, nil)
 	suite.whitelists.EXPECT().UpsertProcessWhitelist(gomock.Any(), key, elements, true).Return(nil, expectedError)
+	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(indicator.GetDeploymentId())
 	_, _, err = suite.manager.checkWhitelist(indicator)
 	suite.Equal(expectedError, err)
 }
@@ -92,24 +107,26 @@ func (suite *ManagerTestSuite) TestWhitelistNotFound() {
 func (suite *ManagerTestSuite) TestWhitelistShouldBeUpdated() {
 	key, indicator := makeIndicator()
 	whitelist := &storage.ProcessWhitelist{}
-	elements := fixtures.MakeWhitelistItems(indicator.Signal.GetName())
+	elements := fixtures.MakeWhitelistItems(indicator.Signal.GetExecFilePath())
 	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(whitelist, nil)
 	suite.whitelists.EXPECT().UpdateProcessWhitelistElements(gomock.Any(), key, elements, nil, true).Return(nil, nil)
-	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
+	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(indicator.GetDeploymentId())
 	_, _, err := suite.manager.checkWhitelist(indicator)
 	suite.NoError(err)
 
 	expectedError := errors.Errorf("Expected error")
 	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(whitelist, nil)
 	suite.whitelists.EXPECT().UpdateProcessWhitelistElements(gomock.Any(), key, elements, nil, true).Return(nil, expectedError)
+	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(indicator.GetDeploymentId())
 	_, _, err = suite.manager.checkWhitelist(indicator)
 	suite.Equal(expectedError, err)
 }
 
 func (suite *ManagerTestSuite) TestWhitelistShouldPass() {
 	key, indicator := makeIndicator()
-	whitelist := &storage.ProcessWhitelist{Elements: fixtures.MakeWhitelistElements(indicator.Signal.GetName())}
+	whitelist := &storage.ProcessWhitelist{Elements: fixtures.MakeWhitelistElements(indicator.Signal.GetExecFilePath())}
 	suite.whitelists.EXPECT().GetProcessWhitelist(gomock.Any(), key).Return(whitelist, nil)
+	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(indicator.GetDeploymentId())
 	_, _, err := suite.manager.checkWhitelist(indicator)
 	suite.NoError(err)
 }

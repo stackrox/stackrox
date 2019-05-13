@@ -1,14 +1,10 @@
 package multipliers
 
 import (
-	"context"
 	"strings"
 
-	"github.com/stackrox/rox/central/processwhitelist"
-	"github.com/stackrox/rox/central/risk/getters"
+	"github.com/stackrox/rox/central/processwhitelist/evaluator"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 )
 
@@ -46,15 +42,13 @@ func (s *scorer) getScore() float32 {
 }
 
 type processWhitelistMultiplier struct {
-	whitelistGetter getters.ProcessWhitelists
-	indicatorGetter getters.ProcessIndicators
+	evaluator evaluator.Evaluator
 }
 
 // NewProcessWhitelists returns a multiplier for process whitelists.
-func NewProcessWhitelists(whitelistGetter getters.ProcessWhitelists, indicatorGetter getters.ProcessIndicators) Multiplier {
+func NewProcessWhitelists(evaluator evaluator.Evaluator) Multiplier {
 	return &processWhitelistMultiplier{
-		whitelistGetter: whitelistGetter,
-		indicatorGetter: indicatorGetter,
+		evaluator: evaluator,
 	}
 }
 
@@ -69,49 +63,22 @@ func formatProcess(process *storage.ProcessIndicator) string {
 }
 
 func (p *processWhitelistMultiplier) Score(deployment *storage.Deployment) *storage.Risk_Result {
-	ctx := context.TODO()
+	violatingProcesses, err := p.evaluator.EvaluateWhitelistsAndPersistResult(deployment)
+	if err != nil {
+		log.Errorf("Couldn't evaluate whitelist: %v", err)
+		return nil
+	}
 
 	scorer := newScorer()
 	riskResult := &storage.Risk_Result{
 		Name: processWhitelistHeading,
 	}
 
-	containerNameToWhitelistedProcesses := make(map[string]set.StringSet)
-	for _, container := range deployment.GetContainers() {
-		whitelist, err := p.whitelistGetter.GetProcessWhitelist(ctx, &storage.ProcessWhitelistKey{
-			DeploymentId:  deployment.GetId(),
-			ContainerName: container.GetName(),
+	for _, process := range violatingProcesses {
+		scorer.addProcess()
+		riskResult.Factors = append(riskResult.Factors, &storage.Risk_Result_Factor{
+			Message: formatProcess(process),
 		})
-		if err != nil {
-			log.Error(err)
-			return nil
-		}
-		if whitelist == nil {
-			continue
-		}
-		processSet := processwhitelist.Processes(whitelist, processwhitelist.RoxLocked)
-		if processSet != nil {
-			containerNameToWhitelistedProcesses[container.GetName()] = *processSet
-		}
-	}
-
-	processes, err := p.indicatorGetter.SearchRawProcessIndicators(ctx, search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deployment.GetId()).ProtoQuery())
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-	for _, process := range processes {
-		processSet, exists := containerNameToWhitelistedProcesses[process.GetContainerName()]
-		// If no explicit whitelist, then all processes are valid.
-		if !exists {
-			continue
-		}
-		if !processSet.Contains(process.GetSignal().GetName()) {
-			scorer.addProcess()
-			riskResult.Factors = append(riskResult.Factors, &storage.Risk_Result_Factor{
-				Message: formatProcess(process),
-			})
-		}
 	}
 
 	if len(riskResult.GetFactors()) == 0 {

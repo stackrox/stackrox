@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/policies"
@@ -186,7 +187,14 @@ func (m *managerImpl) getWhitelistAlerts(deploymentsToIndicators map[string][]*s
 	return whitelistExecutor.alerts, nil
 }
 
+const (
+	whitelistLockingGracePeriod = 5 * time.Second
+)
+
 func (m *managerImpl) checkWhitelist(indicator *storage.ProcessIndicator) (userWhitelist bool, roxWhitelist bool, err error) {
+	// Always reprocess risk for the deployment, since that's needed to update its process-related information.
+	defer m.reprocessor.ReprocessRiskForDeployments(indicator.GetDeploymentId())
+
 	ctx := context.TODO()
 
 	key := &storage.ProcessWhitelistKey{
@@ -200,9 +208,18 @@ func (m *managerImpl) checkWhitelist(indicator *storage.ProcessIndicator) (userW
 		return
 	}
 
-	insertableElement := &storage.WhitelistItem{Item: &storage.WhitelistItem_ProcessName{ProcessName: indicator.GetSignal().GetName()}}
+	insertableElement := &storage.WhitelistItem{Item: &storage.WhitelistItem_ProcessName{ProcessName: processwhitelist.WhitelistItemFromProcess(indicator)}}
 	if whitelist == nil {
 		_, err = m.whitelists.UpsertProcessWhitelist(ctx, key, []*storage.WhitelistItem{insertableElement}, true)
+		if err == nil {
+			// This updates the risk for deployments after the whitelist gets locked.
+			// This isn't super pretty, but otherwise, our whitelistStatus for the deployment can become stale
+			// since we don't explicit lock a whitelist -- we just set a locked time which is in the future.
+			go func() {
+				time.Sleep(env.WhitelistGenerationDuration.DurationSetting() + whitelistLockingGracePeriod)
+				m.reprocessor.ReprocessRiskForDeployments(indicator.GetDeploymentId())
+			}()
+		}
 		return
 	}
 
@@ -220,7 +237,6 @@ func (m *managerImpl) checkWhitelist(indicator *storage.ProcessIndicator) (userW
 	if err != nil {
 		return
 	}
-	m.reprocessor.ReprocessRiskForDeployments(indicator.GetDeploymentId())
 	return
 }
 

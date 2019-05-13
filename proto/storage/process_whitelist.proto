@@ -43,3 +43,26 @@ message WhitelistItem {
         string process_name = 1 [(gogoproto.moretags) = "search:\"Process Name\""];
     }
 }
+
+// COntainerNameAndWhitelistStatus represents a cached result of process evaluation on a specific container name.
+// @protolock:skip
+message ContainerNameAndWhitelistStatus {
+    enum WhitelistStatus {
+        INVALID       = 0;
+        NOT_GENERATED = 1; // In current implementation, this is a temporary condition.
+        UNLOCKED      = 2;
+        LOCKED        = 3;
+    }
+    string          container_name               = 1;
+    WhitelistStatus whitelist_status             = 2;
+    bool            anomalous_processes_executed = 3;
+}
+
+
+// ProcessWhitelistResults represent cached results of process whitelist evaluation.
+// @protolock:skip
+message ProcessWhitelistResults {
+    string                                   deployment_id      = 1;
+    repeated ContainerNameAndWhitelistStatus whitelist_statuses = 2;
+}
+

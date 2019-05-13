@@ -24,6 +24,7 @@ func LightweightDeployment() *storage.Deployment {
 		},
 		Containers: []*storage.Container{
 			{
+				Name: "nginx110container",
 				Image: &storage.Image{
 					Id: "sha256:SHA1",
 					Name: &storage.ImageName{
@@ -94,6 +95,6 @@ func LightweightDeployment() *storage.Deployment {
 // GetDeployment returns a Mock Deployment
 func GetDeployment() *storage.Deployment {
 	dep := LightweightDeployment()
-	dep.Containers = append(dep.Containers, &storage.Container{Image: GetImage()})
+	dep.Containers = append(dep.Containers, &storage.Container{Name: "supervulnerable", Image: GetImage()})
 	return dep
 }

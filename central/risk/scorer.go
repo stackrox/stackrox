@@ -1,6 +1,7 @@
 package risk
 
 import (
+	"github.com/stackrox/rox/central/processwhitelist/evaluator"
 	roleStore "github.com/stackrox/rox/central/rbac/k8srole/datastore"
 	bindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
 	saStore "github.com/stackrox/rox/central/serviceaccount/datastore"
@@ -25,7 +26,7 @@ type Scorer interface {
 }
 
 // NewScorer returns a new scorer that encompasses both static and user defined multipliers
-func NewScorer(alertGetter getters.AlertGetter, indicatorGetter getters.ProcessIndicators, whitelistGetter getters.ProcessWhitelists, roles roleStore.DataStore, bindings bindingStore.DataStore, serviceAccounts saStore.DataStore) Scorer {
+func NewScorer(alertGetter getters.AlertGetter, roles roleStore.DataStore, bindings bindingStore.DataStore, serviceAccounts saStore.DataStore, whitelistEvaluator evaluator.Evaluator) Scorer {
 	scoreImpl := &scoreImpl{
 		// These multipliers are intentionally ordered based on the order that we want them to be displayed in.
 		// Order aligns with the maximum output multiplier value, which would make sense to correlate
@@ -33,7 +34,7 @@ func NewScorer(alertGetter getters.AlertGetter, indicatorGetter getters.ProcessI
 		// DO NOT REORDER WITHOUT THOUGHT.
 		ConfiguredMultipliers: []multipliers.Multiplier{
 			multipliers.NewViolations(alertGetter),
-			multipliers.NewProcessWhitelists(whitelistGetter, indicatorGetter),
+			multipliers.NewProcessWhitelists(whitelistEvaluator),
 			multipliers.NewVulnerabilities(),
 			multipliers.NewServiceConfig(),
 			multipliers.NewReachability(),

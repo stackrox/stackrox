@@ -62,3 +62,9 @@ func Processes(whitelist *storage.ProcessWhitelist, mode EvaluationMode) *set.St
 	}
 	return &processes
 }
+
+// WhitelistItemFromProcess returns what we whitelist for a given process.
+// It exists to make sure that we're using the same thing in every place (name vs execfilepath).
+func WhitelistItemFromProcess(process *storage.ProcessIndicator) string {
+	return process.GetSignal().GetExecFilePath()
+}

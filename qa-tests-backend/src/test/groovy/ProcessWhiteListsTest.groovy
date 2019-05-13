@@ -104,7 +104,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
         "Data inputs are :"
         deploymentName     | processName
 
-        DEPLOYMENTNGINX    | "nginx"
+        DEPLOYMENTNGINX    | "/usr/sbin/nginx"
     }
 
     @Unroll
@@ -181,9 +181,9 @@ class ProcessWhiteListsTest extends BaseSpecification {
         "Data inputs are :"
         deploymentName                                   | processName  | resolveWhitelist | expectedViolationsCount
 
-        DEPLOYMENTNGINX_RESOLVE_VIOLATION               | "nginx"      | false            | 1
+        DEPLOYMENTNGINX_RESOLVE_VIOLATION               | "/usr/sbin/nginx"      | false            | 1
 
-        DEPLOYMENTNGINX_RESOLVE_AND_WHITELIST_VIOLATION | "nginx"      | true             | 0
+        DEPLOYMENTNGINX_RESOLVE_AND_WHITELIST_VIOLATION | "/usr/sbin/nginx"      | true             | 0
      }
     @Unroll
     @Category(BAT)
@@ -209,7 +209,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
         assert factor != null
         where:
         "Data inputs are :"
-        deploymentName                                   | processName
-        DEPLOYMENTNGINX_SOFTLOCK            |   "nginx"
+        deploymentName                      |   processName
+        DEPLOYMENTNGINX_SOFTLOCK            |   "/usr/sbin/nginx"
     }
     }

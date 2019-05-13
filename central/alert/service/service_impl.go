@@ -9,6 +9,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/alert/datastore"
 	notifierProcessor "github.com/stackrox/rox/central/notifier/processor"
+	"github.com/stackrox/rox/central/processwhitelist"
 	whitelistDatastore "github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -152,7 +153,7 @@ func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequ
 		for _, process := range alert.GetProcessViolation().GetProcesses() {
 			itemMap[process.GetContainerName()] = append(itemMap[process.GetContainerName()], &storage.WhitelistItem{
 				Item: &storage.WhitelistItem_ProcessName{
-					ProcessName: process.GetSignal().GetName(),
+					ProcessName: processwhitelist.WhitelistItemFromProcess(process),
 				},
 			})
 		}
