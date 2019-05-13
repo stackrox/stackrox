@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+option go_package = "v1";
+
+option java_package = "io.stackrox.proto.api.v1";
+
+import weak "google/api/annotations.proto";
+import "api/v1/empty.proto";
+
+package v1;
+
+message FeatureFlag {
+    string name    = 1;
+    string env_var = 2;
+    bool   enabled = 3;
+}
+
+message GetFeatureFlagsResponse {
+    repeated FeatureFlag feature_flags = 1;
+}
+
+// FeatureFlagService retrieves information about feature flags.
+service FeatureFlagService {
+    rpc GetFeatureFlags (Empty) returns (GetFeatureFlagsResponse) {
+        option (google.api.http) = {
+            get: "/v1/featureflags"
+        };
+    }
+}

@@ -37,7 +37,7 @@ var (
 	}
 )
 
-func testFlagEnabled(t *testing.T, feature Feature, test envTest) {
+func testFlagEnabled(t *testing.T, feature FeatureFlag, test envTest) {
 	t.Run(fmt.Sprintf("%s/%s", feature.Name(), test.env), func(t *testing.T) {
 		oldValue, exists := os.LookupEnv(feature.EnvVar())
 

@@ -120,7 +120,7 @@ func outputZip(config renderer.Config) error {
 
 	config.Environment = make(map[string]string)
 	for _, flag := range features.Flags {
-		config.Environment[flag.EnvVar()] = strconv.FormatBool(flag.(features.Feature).Enabled())
+		config.Environment[flag.EnvVar()] = strconv.FormatBool(flag.Enabled())
 	}
 
 	htpasswd, err := renderer.GenerateHtpasswd(&config)

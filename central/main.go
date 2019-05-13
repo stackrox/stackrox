@@ -35,6 +35,7 @@ import (
 	"github.com/stackrox/rox/central/ed"
 	_ "github.com/stackrox/rox/central/externalbackups/plugins/all" // Import all of the external backup plugins
 	backupService "github.com/stackrox/rox/central/externalbackups/service"
+	featureFlagService "github.com/stackrox/rox/central/featureflags/service"
 	"github.com/stackrox/rox/central/globaldb"
 	globaldbHandlers "github.com/stackrox/rox/central/globaldb/handlers"
 	graphqlHandler "github.com/stackrox/rox/central/graphql/handler"
@@ -226,6 +227,7 @@ func (f defaultFactory) ServicesToRegister(registry authproviders.Registry) []pk
 		debugService.Singleton(),
 		deploymentService.Singleton(),
 		detectionService.Singleton(),
+		featureFlagService.Singleton(),
 		groupService.Singleton(),
 		imageService.Singleton(),
 		iiService.Singleton(),
