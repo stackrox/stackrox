@@ -1,8 +1,10 @@
 package search
 
 import (
-	"github.com/blevesearch/bleve"
-	"github.com/stackrox/rox/central/rbac/k8srole/store"
+	"context"
+
+	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
+	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -16,15 +18,15 @@ var (
 // Searcher provides search functionality on existing k8s roles.
 //go:generate mockgen-wrapper Searcher
 type Searcher interface {
-	Search(query *v1.Query) ([]search.Result, error)
-	SearchRoles(*v1.Query) ([]*v1.SearchResult, error)
-	SearchRawRoles(query *v1.Query) ([]*storage.K8SRole, error)
+	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)
+	SearchRoles(context.Context, *v1.Query) ([]*v1.SearchResult, error)
+	SearchRawRoles(ctx context.Context, query *v1.Query) ([]*storage.K8SRole, error)
 }
 
 // New returns a new instance of Searcher for the given storage and index.
-func New(storage store.Store, index bleve.Index) Searcher {
+func New(storage store.Store, indexer index.Indexer) Searcher {
 	return &searcherImpl{
 		storage: storage,
-		index:   index,
+		indexer: indexer,
 	}
 }

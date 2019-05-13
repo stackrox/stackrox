@@ -1,25 +1,31 @@
 package search
 
 import (
-	"github.com/blevesearch/bleve"
-	"github.com/pkg/errors"
+	"context"
+
+	"github.com/stackrox/rox/central/rbac/k8srole/internal/index"
+	"github.com/stackrox/rox/central/rbac/k8srole/internal/store"
 	"github.com/stackrox/rox/central/rbac/k8srole/search/options"
-	"github.com/stackrox/rox/central/rbac/k8srole/store"
+	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/blevesearch"
+)
+
+var (
+	k8sRolesSACSearchHelper = sac.ForResource(resources.K8sRole).MustCreateSearchHelper(options.Map, true)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
 type searcherImpl struct {
 	storage store.Store
-	index   bleve.Index
+	indexer index.Indexer
 }
 
 // SearchSecrets returns the search results from indexed k8s roles for the query.
-func (ds *searcherImpl) SearchRoles(q *v1.Query) ([]*v1.SearchResult, error) {
-	roles, results, err := ds.searchRoles(q)
+func (ds *searcherImpl) SearchRoles(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	roles, results, err := ds.searchRoles(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -28,21 +34,21 @@ func (ds *searcherImpl) SearchRoles(q *v1.Query) ([]*v1.SearchResult, error) {
 }
 
 // Search returns the raw search results from the query
-func (ds *searcherImpl) Search(q *v1.Query) ([]search.Result, error) {
-	return ds.getSearchResults(q)
+func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return ds.getSearchResults(ctx, q)
 }
 
 // SearchSecrets returns the secrets and relationships that match the query.
-func (ds *searcherImpl) SearchRawRoles(q *v1.Query) ([]*storage.K8SRole, error) {
-	roles, _, err := ds.searchRoles(q)
+func (ds *searcherImpl) SearchRawRoles(ctx context.Context, q *v1.Query) ([]*storage.K8SRole, error) {
+	roles, _, err := ds.searchRoles(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 	return roles, nil
 }
 
-func (ds *searcherImpl) searchRoles(q *v1.Query) ([]*storage.K8SRole, []search.Result, error) {
-	results, err := ds.getSearchResults(q)
+func (ds *searcherImpl) searchRoles(ctx context.Context, q *v1.Query) ([]*storage.K8SRole, []search.Result, error) {
+	results, err := ds.getSearchResults(ctx, q)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -61,12 +67,8 @@ func (ds *searcherImpl) searchRoles(q *v1.Query) ([]*storage.K8SRole, []search.R
 	return roles, results, nil
 }
 
-func (ds *searcherImpl) getSearchResults(q *v1.Query) ([]search.Result, error) {
-	results, err := blevesearch.RunSearchRequest(v1.SearchCategory_ROLES, q, ds.index, options.Map)
-	if err != nil {
-		return nil, errors.Wrapf(err, "error running search request")
-	}
-	return results, nil
+func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) ([]search.Result, error) {
+	return k8sRolesSACSearchHelper.Apply(ds.indexer.Search)(ctx, q)
 }
 
 func convertMany(roles []*storage.K8SRole, results []search.Result) []*v1.SearchResult {
