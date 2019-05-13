@@ -13,9 +13,7 @@
     "prettier/prettier": ["error", {
       "printWidth": 100,
       "singleQuote": true,
-      "tabWidth": 4,
-      "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "warn"
+      "tabWidth": 4
     }],
 
     "jsx-a11y/label-has-for": [ "error", {
@@ -34,6 +32,9 @@
           "src/setupProxy.js"
       ],
       "optionalDependencies": false
-    }]
+    }],
+
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn"
   }
 }

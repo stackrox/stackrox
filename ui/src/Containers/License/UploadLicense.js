@@ -29,7 +29,7 @@ const UploadLicense = ({ licenseUploadStatus, activateLicense, isStartUpScreen }
                 verifyLicense(false);
             }
         },
-        [licenseUploadStatus]
+        [licenseUploadStatus, message, status]
     );
 
     function onUploadHandler(data) {

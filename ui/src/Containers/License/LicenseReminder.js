@@ -38,9 +38,6 @@ const getDelay = expirationDate => {
 };
 
 const LicenseReminder = ({ expirationDate, history, shouldHaveReadPermission }) => {
-    if (!shouldHaveReadPermission('Licenses')) {
-        return null;
-    }
     const createExpirationMessage = shouldHaveReadPermission('Licenses')
         ? createExpirationMessageWithLink
         : createExpirationMessageWithoutLink;
@@ -52,25 +49,29 @@ const LicenseReminder = ({ expirationDate, history, shouldHaveReadPermission }) 
         () => {
             setExpirationMessage(createExpirationMessage(expirationDate));
         },
-        [expirationDate]
+        [createExpirationMessage, expirationDate]
     );
 
-    useEffect(() => {
-        const delay = getDelay(expirationDate);
-        let timerID;
-        if (delay) {
-            timerID = setInterval(
-                () => setExpirationMessage(createExpirationMessage(expirationDate)),
-                delay
-            );
-        } else {
-            history.push(licenseStartUpPath);
-        }
-        return function cleanup() {
-            clearInterval(timerID);
-        };
-    }, []);
+    useEffect(
+        () => {
+            const delay = getDelay(expirationDate);
+            let timerID;
+            if (delay) {
+                timerID = setInterval(
+                    () => setExpirationMessage(createExpirationMessage(expirationDate)),
+                    delay
+                );
+            } else {
+                history.push(licenseStartUpPath);
+            }
+            return function cleanup() {
+                clearInterval(timerID);
+            };
+        },
+        [createExpirationMessage, expirationDate, history]
+    );
 
+    if (!shouldHaveReadPermission('Licenses')) return null;
     if (!showReminder) return null;
     if (!expirationMessage || expirationMessage.type === 'info') return null;
 
