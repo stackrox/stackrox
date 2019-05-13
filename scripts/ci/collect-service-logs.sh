@@ -21,7 +21,7 @@ usage() {
     echo "e.g. ./scripts/ci/collect-service-logs.sh stackrox"
 }
 
-main() (
+main() {
     set -x
     namespace="$1"
     if [ -z "${namespace}" ]; then
@@ -33,14 +33,14 @@ main() (
     mkdir -p "$log_dir"
 
 	set +e
-	kubectl describe po -n "${namespace}" > "${log_dir}/describe.log"
     for pod in $(kubectl -n "${namespace}" get po | tail +2 | awk '{print $1}'); do
+        kubectl describe po "${pod}" -n "${namespace}" > "${log_dir}/${pod}_describe.log"
         for ctr in $(kubectl -n "${namespace}" get po $pod -o jsonpath='{.status.containerStatuses[*].name}'); do
             kubectl -n "${namespace}" logs "po/${pod}" -c "$ctr" > "${log_dir}/${pod}-${ctr}.log"
             kubectl -n "${namespace}" logs "po/${pod}" -p -c "$ctr" > "${log_dir}/${pod}-${ctr}-previous.log"
         done
     done
     find "${log_dir}" -type f -size 0 -delete
-)
+}
 
 main "$@"
