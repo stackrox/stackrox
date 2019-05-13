@@ -9,7 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	alertService "github.com/stackrox/rox/central/alert/service"
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
@@ -69,6 +68,7 @@ import (
 	"github.com/stackrox/rox/central/role/mapper"
 	"github.com/stackrox/rox/central/role/resources"
 	roleService "github.com/stackrox/rox/central/role/service"
+	"github.com/stackrox/rox/central/sac/transitional"
 	searchService "github.com/stackrox/rox/central/search/service"
 	secretService "github.com/stackrox/rox/central/secret/service"
 	sensorService "github.com/stackrox/rox/central/sensor/service"
@@ -100,7 +100,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
-	"github.com/stackrox/rox/pkg/sac"
 )
 
 var (
@@ -318,10 +317,7 @@ func startGRPCServer(factory serviceFactory) {
 	}
 
 	if features.ScopedAccessControl.Enabled() {
-		sacContextEnricher := func(ctx context.Context) (context.Context, error) {
-			return sac.WithGlobalAccessScopeChecker(ctx, sac.ErrorAccessScopeCheckerCore(errors.New("not yet implemented"))), nil
-		}
-		config.ContextEnrichers = append(config.ContextEnrichers, sacContextEnricher)
+		config.ContextEnrichers = append(config.ContextEnrichers, transitional.LegacyAccessScopesContextEnricher)
 	}
 
 	server := pkgGRPC.NewAPI(config)
