@@ -5,11 +5,13 @@ import (
 	"testing"
 
 	"github.com/etcd-io/bbolt"
+	"github.com/golang/mock/gomock"
 	"github.com/stackrox/rox/central/globalindex"
 	"github.com/stackrox/rox/central/processwhitelist/datastore"
 	"github.com/stackrox/rox/central/processwhitelist/index"
 	whitelistSearch "github.com/stackrox/rox/central/processwhitelist/search"
 	"github.com/stackrox/rox/central/processwhitelist/store"
+	"github.com/stackrox/rox/central/reprocessor/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/bolthelper"
@@ -18,24 +20,8 @@ import (
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
-
-func setupTest(t *testing.T) (*bbolt.DB, datastore.DataStore, Service) {
-	db, err := bolthelper.NewTemp("process_whitelist_service_test.db")
-	assert.NoError(t, err)
-	wlStore := store.New(db)
-
-	tmpIndex, err := globalindex.TempInitializeIndices("")
-	assert.NoError(t, err)
-	indexer := index.New(tmpIndex)
-
-	searcher, err := whitelistSearch.New(wlStore, indexer)
-	assert.NoError(t, err)
-
-	ds := datastore.New(wlStore, indexer, searcher)
-	service := New(ds)
-	return db, ds, service
-}
 
 func fillDB(t *testing.T, ds datastore.DataStore, whitelists []*storage.ProcessWhitelist) {
 	initialContents, err := ds.GetProcessWhitelists(context.TODO())
@@ -55,10 +41,44 @@ func emptyDB(t *testing.T, ds datastore.DataStore) {
 	}
 }
 
-func TestGetProcessWhitelists(t *testing.T) {
-	db, ds, service := setupTest(t)
-	defer testutils.TearDownDB(db)
+func TestProcessWhitelistService(t *testing.T) {
+	suite.Run(t, new(ProcessWhitelistServiceTestSuite))
+}
 
+type ProcessWhitelistServiceTestSuite struct {
+	suite.Suite
+	datastore   datastore.DataStore
+	service     Service
+	db          *bbolt.DB
+	reprocessor *mocks.MockLoop
+	mockCtrl    *gomock.Controller
+}
+
+func (suite *ProcessWhitelistServiceTestSuite) SetupTest() {
+	var err error
+	suite.db, err = bolthelper.NewTemp("process_whitelist_service_test.db")
+	suite.NoError(err)
+	wlStore := store.New(suite.db)
+
+	tmpIndex, err := globalindex.TempInitializeIndices("")
+	suite.NoError(err)
+	indexer := index.New(tmpIndex)
+
+	searcher, err := whitelistSearch.New(wlStore, indexer)
+	suite.NoError(err)
+
+	suite.datastore = datastore.New(wlStore, indexer, searcher)
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.reprocessor = mocks.NewMockLoop(suite.mockCtrl)
+	suite.service = New(suite.datastore, suite.reprocessor)
+}
+
+func (suite *ProcessWhitelistServiceTestSuite) TearDownTest() {
+	testutils.TearDownDB(suite.db)
+	suite.mockCtrl.Finish()
+}
+
+func (suite *ProcessWhitelistServiceTestSuite) TestGetProcessWhitelists() {
 	cases := []struct {
 		name       string
 		whitelists []*storage.ProcessWhitelist
@@ -81,19 +101,17 @@ func TestGetProcessWhitelists(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			fillDB(t, ds, c.whitelists)
-			defer emptyDB(t, ds)
-			gotWhitelists, err := service.GetProcessWhitelists((context.Context)(nil), nil)
+		suite.T().Run(c.name, func(t *testing.T) {
+			fillDB(t, suite.datastore, c.whitelists)
+			defer emptyDB(t, suite.datastore)
+			gotWhitelists, err := suite.service.GetProcessWhitelists((context.Context)(nil), nil)
 			assert.NoError(t, err)
 			assert.ElementsMatch(t, gotWhitelists.Whitelists, c.whitelists)
 		})
 	}
 }
 
-func TestGetProcessWhitelist(t *testing.T) {
-	db, ds, service := setupTest(t)
-	defer testutils.TearDownDB(db)
+func (suite *ProcessWhitelistServiceTestSuite) TestGetProcessWhitelist() {
 	knownWhitelist := fixtures.GetProcessWhitelistWithKey()
 	cases := []struct {
 		name           string
@@ -134,26 +152,22 @@ func TestGetProcessWhitelist(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			fillDB(t, ds, c.whitelists)
-			defer emptyDB(t, ds)
+		suite.T().Run(c.name, func(t *testing.T) {
+			fillDB(t, suite.datastore, c.whitelists)
+			defer emptyDB(t, suite.datastore)
 			requestByKey := &v1.GetProcessWhitelistRequest{Key: knownWhitelist.GetKey()}
-			whitelist, err := service.GetProcessWhitelist((context.Context)(nil), requestByKey)
+			whitelist, err := suite.service.GetProcessWhitelist((context.Context)(nil), requestByKey)
 			if c.shouldFail {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, c.expectedResult, whitelist)
 			}
-			emptyDB(t, ds)
 		})
 	}
 }
 
-func TestUpdateProcessWhitelist(t *testing.T) {
-	db, ds, service := setupTest(t)
-	defer testutils.TearDownDB(db)
-
+func (suite *ProcessWhitelistServiceTestSuite) TestUpdateProcessWhitelist() {
 	stockProcesses := []string{"stock_process_1", "stock_process_2"}
 
 	whitelistCollection := make(map[int]*storage.ProcessWhitelist)
@@ -243,16 +257,17 @@ func TestUpdateProcessWhitelist(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			fillDB(t, ds, c.whitelists)
-			defer emptyDB(t, ds)
+		suite.T().Run(c.name, func(t *testing.T) {
+			fillDB(t, suite.datastore, c.whitelists)
+			defer emptyDB(t, suite.datastore)
 
 			request := &v1.UpdateProcessWhitelistsRequest{
 				Keys:           c.toUpdate,
 				AddElements:    fixtures.MakeWhitelistItems(c.toAdd...),
 				RemoveElements: fixtures.MakeWhitelistItems(c.toRemove...),
 			}
-			response, err := service.UpdateProcessWhitelists((context.Context)(nil), request)
+			suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
+			response, err := suite.service.UpdateProcessWhitelists((context.Context)(nil), request)
 			assert.NoError(t, err)
 			var successKeys []*storage.ProcessWhitelistKey
 			for _, wl := range response.Whitelists {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/stackrox/rox/central/processwhitelist/datastore"
+	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -13,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -33,7 +35,8 @@ var (
 )
 
 type serviceImpl struct {
-	dataStore datastore.DataStore
+	dataStore   datastore.DataStore
+	reprocessor reprocessor.Loop
 }
 
 func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {
@@ -99,10 +102,19 @@ func bulkUpdate(keys []*storage.ProcessWhitelistKey, parallelFunc func(*storage.
 	return response
 }
 
+func (s *serviceImpl) reprocessDeploymentRisks(keys []*storage.ProcessWhitelistKey) {
+	deploymentIDs := set.NewStringSet()
+	for _, key := range keys {
+		deploymentIDs.Add(key.GetDeploymentId())
+	}
+	s.reprocessor.ReprocessRiskForDeployments(deploymentIDs.AsSlice()...)
+}
+
 func (s *serviceImpl) UpdateProcessWhitelists(ctx context.Context, request *v1.UpdateProcessWhitelistsRequest) (*v1.UpdateProcessWhitelistsResponse, error) {
 	updateFunc := func(key *storage.ProcessWhitelistKey) (*storage.ProcessWhitelist, error) {
 		return s.dataStore.UpdateProcessWhitelistElements(ctx, key, request.GetAddElements(), request.GetRemoveElements(), false)
 	}
+	defer s.reprocessDeploymentRisks(request.GetKeys())
 	return bulkUpdate(request.GetKeys(), updateFunc), nil
 }
 
@@ -110,5 +122,6 @@ func (s *serviceImpl) LockProcessWhitelists(ctx context.Context, request *v1.Loc
 	updateFunc := func(key *storage.ProcessWhitelistKey) (*storage.ProcessWhitelist, error) {
 		return s.dataStore.UserLockProcessWhitelist(ctx, key, request.GetLocked())
 	}
+	defer s.reprocessDeploymentRisks(request.GetKeys())
 	return bulkUpdate(request.GetKeys(), updateFunc), nil
 }

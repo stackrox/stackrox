@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/processwhitelist/datastore"
+	"github.com/stackrox/rox/central/reprocessor"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
@@ -23,8 +24,9 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(store datastore.DataStore) Service {
+func New(store datastore.DataStore, reprocessor reprocessor.Loop) Service {
 	return &serviceImpl{
-		dataStore: store,
+		dataStore:   store,
+		reprocessor: reprocessor,
 	}
 }
