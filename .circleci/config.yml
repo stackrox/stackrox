@@ -821,8 +821,15 @@ jobs:
       - run:
           name: Ensure that generated files are up to date. (If this fails, run `make go-generated-srcs` and commit the result.)
           command: |
+            git ls-files --others --exclude-standard >/tmp/untracked
             make go-generated-srcs
             git diff --exit-code HEAD
+            { git ls-files --others --exclude-standard ; cat /tmp/untracked ; } | sort | uniq -u >/tmp/untracked-new
+            if [[ -s /tmp/untracked-new ]]; then
+              echo 'Found new untracked files after running `make go-generated-srcs`. Did you forget to git add generated mocks?'
+              cat /tmp/untracked-new
+              exit 1
+            fi
 
       - run:
           name: Ensure that all TODO references to fixed tickets are gone
