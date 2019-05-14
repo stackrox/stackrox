@@ -47,8 +47,8 @@ function processData(data, type) {
         const link = URLService.getLinkTo(contextTypes.COMPLIANCE, pageTypes.LIST, {
             entityType: entityTypes.CONTROL,
             query: {
-                groupBy: type,
-                Standard: standard.id
+                Standard: standard.id,
+                Type: type
             }
         });
         const dataPoint = {
