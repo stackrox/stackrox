@@ -777,6 +777,8 @@ jobs:
 
   unit-tests:
     <<: *defaults
+    environment:
+      - ROX_SCOPED_ACCESS_CONTROL: true
     resource_class: xlarge
     steps:
       - checkout
