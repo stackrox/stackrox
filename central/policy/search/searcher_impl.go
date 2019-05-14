@@ -1,19 +1,11 @@
 package search
 
 import (
-	"context"
-
 	"github.com/stackrox/rox/central/policy/index"
 	"github.com/stackrox/rox/central/policy/store"
-	"github.com/stackrox/rox/central/role/resources"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
-)
-
-var (
-	policySAC = sac.ForResource(resources.Policy)
 )
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
@@ -30,24 +22,15 @@ func (ds *searcherImpl) buildIndex() error {
 	return ds.indexer.AddPolicies(policies)
 }
 
-// Search retrieves SearchResults from the indexer and storage
-func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	_, results, err := ds.searchPolicies(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-	return results, nil
-}
-
 // SearchRawPolicies retrieves Policies from the indexer and storage
-func (ds *searcherImpl) SearchRawPolicies(ctx context.Context, q *v1.Query) ([]*storage.Policy, error) {
-	policies, _, err := ds.searchPolicies(ctx, q)
+func (ds *searcherImpl) SearchRawPolicies(q *v1.Query) ([]*storage.Policy, error) {
+	policies, _, err := ds.searchPolicies(q)
 	return policies, err
 }
 
 // Search retrieves SearchResults from the indexer and storage
-func (ds *searcherImpl) SearchPolicies(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	policies, results, err := ds.searchPolicies(ctx, q)
+func (ds *searcherImpl) SearchPolicies(q *v1.Query) ([]*v1.SearchResult, error) {
+	policies, results, err := ds.searchPolicies(q)
 	if err != nil {
 		return nil, err
 	}
@@ -58,11 +41,7 @@ func (ds *searcherImpl) SearchPolicies(ctx context.Context, q *v1.Query) ([]*v1.
 	return protoResults, nil
 }
 
-func (ds *searcherImpl) searchPolicies(ctx context.Context, q *v1.Query) ([]*storage.Policy, []search.Result, error) {
-	if ok, err := policySAC.ReadAllowed(ctx); err != nil || !ok {
-		return nil, nil, err
-	}
-
+func (ds *searcherImpl) searchPolicies(q *v1.Query) ([]*storage.Policy, []search.Result, error) {
 	results, err := ds.indexer.Search(q)
 	if err != nil {
 		return nil, nil, err

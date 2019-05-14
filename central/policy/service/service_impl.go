@@ -214,14 +214,12 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("Policy with id '%s' not found", request.GetId()))
 	}
 
-	if err := s.policies.RemovePolicy(ctx, request.GetId()); err != nil {
-		return nil, err
-	}
-
 	if err := s.removeActivePolicy(policy); err != nil {
 		return nil, err
 	}
-
+	if err := s.policies.RemovePolicy(ctx, request.GetId()); err != nil {
+		return nil, err
+	}
 	return &v1.Empty{}, nil
 }
 
