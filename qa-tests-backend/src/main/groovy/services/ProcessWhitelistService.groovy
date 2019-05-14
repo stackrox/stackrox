@@ -57,4 +57,51 @@ class ProcessWhitelistService extends BaseService {
         return true
     }
 
+    static List<ProcessWhitelistOuterClass.ProcessWhitelist> getProcessWhitelists() {
+        try {
+            return getProcessWhitelistService().getProcessWhitelists().whitelistsList
+        }
+        catch (Exception e) {
+            println "Error getting all process whitelists"
+        }
+    }
+
+    static boolean waitForDeploymentWhitelistsCreated(String deploymentId) {
+        Timer t = new Timer(20, 6)
+        try {
+            while (t.IsValid()) {
+                def whitelists = getProcessWhitelistService().getProcessWhitelists().whitelistsList
+                for (ProcessWhitelistOuterClass.ProcessWhitelist whitelist : whitelists) {
+                    if (whitelist.getKey().getDeploymentId() == deploymentId) {
+                        return true
+                    }
+                }
+                println("Did not find whitelists for deployment ${deploymentId}")
+            }
+        }
+        catch (Exception e) {
+            println "Error waiting for deployment whitelists to be created"
+        }
+        return false
+    }
+
+    static boolean waitForDeploymentWhitelistsDeleted(String deploymentId) {
+        Timer t = new Timer(5, 2)
+        try {
+            while (t.IsValid()) {
+                def whitelists = getProcessWhitelistService().getProcessWhitelists().whitelistsList
+                for (ProcessWhitelistOuterClass.ProcessWhitelist whitelist : whitelists) {
+                    if (whitelist.getKey().getDeploymentId() == deploymentId) {
+                        println("Whitelists still exist for deployment ${deploymentId}")
+                        continue
+                    }
+                }
+                return true
+            }
+        }
+        catch (Exception e) {
+            println "Error waiting for deployment whitelists to be deleted"
+        }
+        return false
+    }
 }

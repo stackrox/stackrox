@@ -1,3 +1,4 @@
+
 import static Services.waitForViolation
 import static Services.waitForSuspiciousProcessInRiskIndicators
 import io.stackrox.proto.storage.DeploymentOuterClass
@@ -24,6 +25,7 @@ class ProcessWhiteListsTest extends BaseSpecification {
     static final private String DEPLOYMENTNGINX_RESOLVE_AND_WHITELIST_VIOLATION =
             "deploymentnginx-violation-resolve-whitelist"
     static final private String DEPLOYMENTNGINX_SOFTLOCK = "deploymentnginx-softlock"
+    static final private String DEPLOYMENTNGINX_DELETE = "deploymentnginx-delete"
 
     static final private List<Deployment> DEPLOYMENTS =
             [
@@ -50,6 +52,13 @@ class ProcessWhiteListsTest extends BaseSpecification {
                      .addLabel("app", "test"),
              new Deployment()
                      .setName(DEPLOYMENTNGINX_SOFTLOCK)
+                     .setImage("nginx:1.7.9")
+                     .addPort(22, "TCP")
+                     .addAnnotation("test", "annotation")
+                     .setEnv(["CLUSTER_NAME": "main"])
+                     .addLabel("app", "test"),
+             new Deployment()
+                     .setName(DEPLOYMENTNGINX_DELETE)
                      .setImage("nginx:1.7.9")
                      .addPort(22, "TCP")
                      .addAnnotation("test", "annotation")
@@ -211,4 +220,35 @@ class ProcessWhiteListsTest extends BaseSpecification {
         deploymentName                      |   processName
         DEPLOYMENTNGINX_SOFTLOCK            |   "/usr/sbin/nginx"
     }
+
+    @Unroll
+    @Category(BAT)
+    def "Verify whitelists are deleted when their deployment is deleted"() {
+        /*
+                a)get all whitelists
+                b)verify whitelists exist for a deployment
+                c)delete the deployment
+                d)get all whitelists
+                e)verify all whitelists for the deployment have been deleted
+        */
+        Assume.assumeTrue(Constants.RUN_PROCESS_WHITELIST_TESTS)
+        when:
+        "a deployment is deleted"
+        //Get all whitelists for our deployment and assert they exist
+        def deployment = DEPLOYMENTS.find { it.name == DEPLOYMENTNGINX_DELETE }
+        assert deployment != null
+        String deploymentId = deployment.getDeploymentUid()
+        def whitelistsCreated = ProcessWhitelistService.waitForDeploymentWhitelistsCreated(deploymentId)
+        assert(whitelistsCreated)
+
+        //Delete the deployment
+        orchestrator.deleteDeployment(deployment)
+        Services.waitForSRDeletion(deployment)
+
+        then:
+        "Verify that all whitelists with that deployment ID have been deleted"
+        def whitelistsDeleted = ProcessWhitelistService.waitForDeploymentWhitelistsDeleted(deploymentId)
+        assert(whitelistsDeleted)
+    }
+
     }
