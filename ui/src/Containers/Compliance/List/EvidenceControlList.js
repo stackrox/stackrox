@@ -81,7 +81,13 @@ const createTableData = data => {
     };
 };
 
-const EvidenceControlList = ({ selectedRow, updateSelectedRow, match, location }) => {
+const EvidenceControlList = ({
+    searchComponent,
+    selectedRow,
+    updateSelectedRow,
+    match,
+    location
+}) => {
     const [page, setPage] = useState(0);
     const params = URLService.getParams(match, location);
     const variables = getQueryVariables(params);
@@ -92,17 +98,18 @@ const EvidenceControlList = ({ selectedRow, updateSelectedRow, match, location }
                 if (loading) return <Loader />;
                 const tableData = createTableData(data);
                 const header = `${tableData.numControls} Controls`;
+                const headerComponents = (
+                    <>
+                        <div className="flex flex-1 justify-start">{searchComponent}</div>
+                        <TablePagination
+                            page={page}
+                            dataLength={tableData.rows.length}
+                            setPage={setPage}
+                        />
+                    </>
+                );
                 return (
-                    <Panel
-                        header={header}
-                        headerComponents={
-                            <TablePagination
-                                page={page}
-                                dataLength={tableData.rows.length}
-                                setPage={setPage}
-                            />
-                        }
-                    >
+                    <Panel header={header} headerComponents={headerComponents}>
                         <Table
                             rows={tableData.rows}
                             columns={tableData.columns}
@@ -120,6 +127,7 @@ const EvidenceControlList = ({ selectedRow, updateSelectedRow, match, location }
 };
 
 EvidenceControlList.propTypes = {
+    searchComponent: PropTypes.node,
     selectedRow: PropTypes.shape({}),
     updateSelectedRow: PropTypes.func.isRequired,
     match: ReactRouterPropTypes.match.isRequired,
@@ -127,6 +135,7 @@ EvidenceControlList.propTypes = {
 };
 
 EvidenceControlList.defaultProps = {
+    searchComponent: null,
     selectedRow: null
 };
 

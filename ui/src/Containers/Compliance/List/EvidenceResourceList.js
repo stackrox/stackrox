@@ -94,6 +94,7 @@ const createTableData = (data, resourceType) => {
 };
 
 const EvidenceResourceList = ({
+    searchComponent,
     resourceType,
     selectedRow,
     updateSelectedRow,
@@ -110,17 +111,18 @@ const EvidenceResourceList = ({
                 if (loading) return <Loader />;
                 const tableData = createTableData(data, resourceType);
                 const header = `${tableData.numControls} Controls`;
+                const headerComponents = (
+                    <>
+                        <div className="flex flex-1 justify-start">{searchComponent}</div>
+                        <TablePagination
+                            page={page}
+                            dataLength={tableData.rows.length}
+                            setPage={setPage}
+                        />
+                    </>
+                );
                 return (
-                    <Panel
-                        header={header}
-                        headerComponents={
-                            <TablePagination
-                                page={page}
-                                dataLength={tableData.rows.length}
-                                setPage={setPage}
-                            />
-                        }
-                    >
+                    <Panel header={header} headerComponents={headerComponents}>
                         <Table
                             rows={tableData.rows}
                             columns={tableData.columns}
@@ -140,6 +142,7 @@ const EvidenceResourceList = ({
 };
 
 EvidenceResourceList.propTypes = {
+    searchComponent: PropTypes.node,
     resourceType: PropTypes.string.isRequired,
     selectedRow: PropTypes.shape({}),
     updateSelectedRow: PropTypes.func.isRequired,
@@ -148,6 +151,7 @@ EvidenceResourceList.propTypes = {
 };
 
 EvidenceResourceList.defaultProps = {
+    searchComponent: null,
     selectedRow: null
 };
 

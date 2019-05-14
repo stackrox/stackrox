@@ -44,7 +44,7 @@ class ComplianceList extends Component {
 
     getContentsForControlsList = () => {
         const { selectedRow } = this.state;
-        const { entityType } = this.props;
+        const { searchComponent, entityType } = this.props;
 
         let sidePanel = null;
 
@@ -68,6 +68,7 @@ class ComplianceList extends Component {
         return (
             <div className="flex flex-1">
                 <EvidenceControlList
+                    searchComponent={searchComponent}
                     selectedRow={selectedRow}
                     updateSelectedRow={this.updateSelectedRow}
                 />
@@ -78,7 +79,7 @@ class ComplianceList extends Component {
 
     getContentsForEvidenceResourceList = () => {
         const { selectedRow } = this.state;
-        const { entityType } = this.props;
+        const { searchComponent, entityType } = this.props;
 
         let sidePanel = null;
 
@@ -103,6 +104,7 @@ class ComplianceList extends Component {
         return (
             <div className="flex flex-1">
                 <EvidenceResourceList
+                    searchComponent={searchComponent}
                     resourceType={entityType}
                     selectedRow={selectedRow}
                     updateSelectedRow={this.updateSelectedRow}

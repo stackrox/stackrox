@@ -156,6 +156,7 @@ export const COMPLIANCE_DATA_ON_CLUSTERS = gql`
 export const COMPLIANCE_DATA_ON_NODES = gql`
     query complianceDataOnNodes {
         results: clusters {
+            id
             nodes {
                 id
                 name
