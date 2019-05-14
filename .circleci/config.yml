@@ -895,6 +895,19 @@ jobs:
 
       - *setupGoogleAppCreds
       - *setupLicense
+
+      - run:
+          name: Setup default TLS certificates
+          command: |
+            cert_dir="$(mktemp -d)"
+            ./tests/scripts/setup-certs.sh "$cert_dir" custom-tls-cert.central.stackrox.local
+            cat >>"$BASH_ENV" \<<EOF
+              export ROX_DEFAULT_TLS_CERT_FILE='${cert_dir}/tls.crt'
+              export ROX_DEFAULT_TLS_KEY_FILE='${cert_dir}/tls.key'
+              export ROX_TEST_CA_PEM='$(cat "${cert_dir}/ca.crt")'
+              export ROX_TEST_CENTRAL_CN='custom-tls-cert.central.stackrox.local'
+            EOF
+
       - *deployGKE
       - *setupCIMonitoring
       - *waitForAPI

@@ -56,3 +56,17 @@ if [[ -n "${TRUSTED_CA_FILE}" ]]; then
 else
   echo "No TRUSTED_CA_FILE provided"
 fi
+
+export ROX_DEFAULT_TLS_CERT_FILE="${ROX_DEFAULT_TLS_CERT_FILE:-}"
+export ROX_DEFAULT_TLS_KEY_FILE="${ROX_DEFAULT_TLS_KEY_FILE:-}"
+
+if [[ -n "$ROX_DEFAULT_TLS_CERT_FILE" ]]; then
+	[[ -f "$ROX_DEFAULT_TLS_CERT_FILE" ]] || { echo "Default TLS certificate ${ROX_DEFAULT_TLS_CERT_FILE} not found"; return 1; }
+	[[ -f "$ROX_DEFAULT_TLS_KEY_FILE" ]] || { echo "Default TLS key ${ROX_DEFAULT_TLS_KEY_FILE} not found"; return 1; }
+	echo "Using default TLS certificate/key material from $ROX_DEFAULT_TLS_CERT_FILE, $ROX_DEFAULT_TLS_KEY_FILE"
+elif [[ -n "$ROX_DEFAULT_TLS_KEY_FILE" ]]; then
+	echo "ROX_DEFAULT_TLS_KEY_FILE is nonempty, but ROX_DEFAULT_TLS_CERT_FILE is"
+	return 1
+else
+	echo "No default TLS certificates provided"
+fi

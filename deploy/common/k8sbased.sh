@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+function realpath {
+	[[ -n "$1" ]] || return 0
+	python -c 'import os, sys; print(os.path.realpath(sys.argv[1]))' "$1"
+}
+
 function launch_service {
     local dir="$1"
     local service="$2"
@@ -22,34 +27,68 @@ function launch_central {
 
     echo "Generating central config..."
 
-    EXTRA_ARGS=()
+    local EXTRA_ARGS=()
+    local EXTRA_DOCKER_ARGS=()
+
+	local use_docker=1
+    if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
+    	use_docker=0
+    fi
+
+    add_args() {
+    	EXTRA_ARGS+=("$@")
+    }
+    add_maybe_file_arg() {
+    	if [[ -f "$1" ]]; then
+    		add_file_arg "$1"
+    	else
+    		add_args "$1"
+    	fi
+    }
+    add_file_arg() {
+    	if (( use_docker )); then
+    		EXTRA_DOCKER_ARGS+=(-v "$(realpath "$1"):$(realpath "$1")")
+    	fi
+    	EXTRA_ARGS+=("$(realpath "$1")")
+    }
+
     if [[ "$MONITORING_SUPPORT" == "false" ]]; then
-        EXTRA_ARGS+=("--monitoring-type=none")
+    	add_args "--monitoring-type=none"
     else
-        EXTRA_ARGS+=("--monitoring-lb-type=$MONITORING_LOAD_BALANCER")
+        add_args "--monitoring-lb-type=$MONITORING_LOAD_BALANCER"
     fi
 
     if [ -n "${OUTPUT_FORMAT}" ]; then
-        EXTRA_ARGS+=("--output-format=${OUTPUT_FORMAT}")
+        add_args "--output-format=${OUTPUT_FORMAT}"
     fi
 
-    EXTRA_ARGS+=("--lb-type=$LOAD_BALANCER")
+    add_args "--lb-type=$LOAD_BALANCER"
+
+    add_args "--license"
+    add_maybe_file_arg "${ROX_LICENSE_KEY:-${k8s_dir}/../common/dev-license.lic}"
+
+    if [[ -n "$ROX_DEFAULT_TLS_CERT_FILE" ]]; then
+    	add_args "--default-tls-cert"
+    	add_file_arg "$ROX_DEFAULT_TLS_CERT_FILE"
+    	add_args "--default-tls-key"
+    	add_file_arg "$ROX_DEFAULT_TLS_KEY_FILE"
+    fi
+
+    add_args "--monitoring-password=stackrox" -i "${MAIN_IMAGE}" --monitoring-persistence-type="${STORAGE}"
 
     pkill -f "$ORCH_CMD"'.*port-forward.*' || true    # terminate stale port forwarding from earlier runs
     pkill -9 -f "$ORCH_CMD"'.*port-forward.*' || true
+
     local unzip_dir="${k8s_dir}/central-deploy/"
     rm -rf "${unzip_dir}"
-    if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
-        EXTRA_ARGS+=(--license "${ROX_LICENSE_KEY:-${k8s_dir}/../common/dev-license.lic}")
+    if ! (( use_docker )); then
         rm -rf central-bundle "${k8s_dir}/central-bundle"
-        roxctl central generate ${ORCH} ${EXTRA_ARGS[@]} --output-dir="central-bundle" --monitoring-password=stackrox \
-            -i "${MAIN_IMAGE}" --scanner-image "${SCANNER_IMAGE}" --monitoring-persistence-type="${STORAGE}" "${STORAGE}"
+        roxctl central generate "${ORCH}" "${EXTRA_ARGS[@]}" --output-dir="central-bundle" "${STORAGE}"
         cp -R central-bundle/ "${unzip_dir}/"
         rm -rf central-bundle
     else
-        EXTRA_ARGS+=(--license "${ROX_LICENSE_KEY:-/input/dev-license.lic}")
-        docker run --rm --volume "${k8s_dir}/../common/dev-license.lic":/input/dev-license.lic --env-file <(env | grep '^ROX_') "$MAIN_IMAGE" central generate ${ORCH} ${EXTRA_ARGS[@]} \
-            --monitoring-password=stackrox -i "${MAIN_IMAGE}" --monitoring-persistence-type="${STORAGE}" "${STORAGE}" > "${k8s_dir}/central.zip"
+        docker run --rm "${EXTRA_DOCKER_ARGS[@]}" --env-file <(env | grep '^ROX_') "$MAIN_IMAGE" \
+        	central generate "${ORCH}" "${EXTRA_ARGS[@]}" "${STORAGE}" > "${k8s_dir}/central.zip"
         unzip "${k8s_dir}/central.zip" -d "${unzip_dir}"
     fi
 
