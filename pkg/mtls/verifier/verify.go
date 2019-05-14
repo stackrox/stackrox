@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/mtls"
 )
 
@@ -14,30 +13,13 @@ type TLSConfigurer interface {
 	TLSConfig() (*tls.Config, error)
 }
 
-// FirstWorkingConfigurer is a TLS configurer that takes the TLS config from the first working
-// TLS configurer contained in the wrapped slice.
-type FirstWorkingConfigurer []TLSConfigurer
+// TLSConfigurerFunc wraps a plain function as a TLSConfigurer.
+type TLSConfigurerFunc func() (*tls.Config, error)
 
-// TLSConfig returns the config from the first TLS configurer in the wrapped slice that returned a
-// non-error result.
-func (c FirstWorkingConfigurer) TLSConfig() (*tls.Config, error) {
-	if len(c) == 0 {
-		return nil, errors.New("no TLS configurer specified")
-	}
-
-	errs := errorhelpers.NewErrorList("determining TLS configuration")
-	for _, configurer := range c {
-		cfg, err := configurer.TLSConfig()
-		if err == nil {
-			return cfg, nil
-		}
-		errs.AddError(err)
-	}
-	return nil, errs.ToError()
+// TLSConfig returns the TLS config by invoking f.
+func (f TLSConfigurerFunc) TLSConfig() (*tls.Config, error) {
+	return f()
 }
-
-// A CA issues itself a certificate and serves it.
-type CA struct{}
 
 // A NonCA verifier picks up a certificate from the file system, rather than
 // issuing one to itself, and serves it.
@@ -52,27 +34,6 @@ func TrustedCertPool() (*x509.CertPool, error) {
 	certPool := x509.NewCertPool()
 	certPool.AddCert(caCert)
 	return certPool, nil
-}
-
-// TLSConfig initializes a server configuration that requires client TLS
-// authentication based on the Certificate Authority we are using.
-func (CA) TLSConfig() (*tls.Config, error) {
-	issuedCert, err := mtls.IssueNewCert(mtls.CentralSubject, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "server keypair")
-	}
-	caPEM, err := mtls.CACertPEM()
-	if err != nil {
-		return nil, errors.Wrap(err, "CA cert retrieval")
-	}
-	serverCertBundle := append(issuedCert.CertPEM, caPEM...)
-
-	serverTLSCert, err := tls.X509KeyPair(serverCertBundle, issuedCert.KeyPEM)
-	if err != nil {
-		return nil, errors.Wrap(err, "tls conversion")
-	}
-
-	return config(serverTLSCert)
 }
 
 // TLSConfig initializes a server configuration that requires client TLS

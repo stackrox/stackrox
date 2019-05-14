@@ -78,6 +78,7 @@ import (
 	siService "github.com/stackrox/rox/central/serviceidentities/service"
 	siStore "github.com/stackrox/rox/central/serviceidentities/store"
 	summaryService "github.com/stackrox/rox/central/summary/service"
+	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/central/ui"
 	userService "github.com/stackrox/rox/central/user/service"
 	"github.com/stackrox/rox/central/version"
@@ -99,7 +100,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/migrations"
-	"github.com/stackrox/rox/pkg/mtls/verifier"
 )
 
 var (
@@ -307,7 +307,7 @@ func startGRPCServer(factory serviceFactory) {
 
 	config := pkgGRPC.Config{
 		CustomRoutes:       factory.CustomRoutes(),
-		TLS:                verifier.FirstWorkingConfigurer{verifier.NonCA{}, verifier.CA{}},
+		TLS:                tlsconfig.NewCentralTLSConfigurer(),
 		IdentityExtractors: idExtractors,
 		AuthProviders:      registry,
 	}

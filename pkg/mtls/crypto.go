@@ -30,10 +30,10 @@ const (
 	// caKeyFilePath is where the key is stored.
 	caKeyFilePath = certsPrefix + "ca-key.pem"
 
-	// certFilePath is where the certificate is stored.
-	certFilePath = certsPrefix + "cert.pem"
-	// keyFilePath is where the key is stored.
-	keyFilePath = certsPrefix + "key.pem"
+	// CertFilePath is where the certificate is stored.
+	CertFilePath = certsPrefix + "cert.pem"
+	// KeyFilePath is where the key is stored.
+	KeyFilePath = certsPrefix + "key.pem"
 
 	// To account for clock skew, set certificates to be valid some time in the past.
 	beforeGracePeriod = 1 * time.Hour
@@ -67,7 +67,7 @@ type IssuedCert struct {
 // LeafCertificateFromFile reads a tls.Certificate (including private key and cert)
 // from the canonical locations on non-central services.
 func LeafCertificateFromFile() (tls.Certificate, error) {
-	return tls.LoadX509KeyPair(certFilePath, keyFilePath)
+	return tls.LoadX509KeyPair(CertFilePath, KeyFilePath)
 }
 
 // CACertDER reads the PEM-decoded bytes of the cert from the local file system.
